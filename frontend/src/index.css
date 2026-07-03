@@ -865,6 +865,23 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     --btn-rim-hover: #0e2d18;
     --btn-rim-active: #154124;
   }
+  /* Planner-accent CTA. The planner workspace runs on the moss forest-green
+     ramp (Fern #3C7C49 face); dark mode inverts to the light Muted Olive
+     face + near-black text, mirroring how btn-primary flips. Use this for
+     planner-side primary actions so the portal keeps one accent voice. */
+  .btn-moss {
+    @apply btn bg-moss-600 text-white hover:bg-moss-700
+      dark:bg-moss-400 dark:text-moss-950 dark:hover:bg-moss-300;
+    --btn-rim: theme("colors.moss.800");
+    --btn-rim-hover: theme("colors.moss.900");
+    --btn-rim-active: theme("colors.moss.700");
+  }
+  html.dark .btn-moss {
+    --btn-rim: theme("colors.moss.200");
+    --btn-rim-hover: theme("colors.moss.100");
+    --btn-rim-active: theme("colors.moss.300");
+    --btn-highlight: rgba(255, 255, 255, 0.30);
+  }
   /* Destructive / "needs attention" CTA. Blush face + warmer rim so it
      reads as an alert without escalating to red (which clashes with the
      stationery palette). Used by the dashboard date-changed banner. */

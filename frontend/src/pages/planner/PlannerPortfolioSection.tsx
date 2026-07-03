@@ -78,7 +78,7 @@ export function PlannerPortfolioSection({
           {items.map((item) => (
             <div
               key={item.id}
-              className="group relative overflow-hidden rounded-xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900"
+              className="group relative overflow-hidden rounded-xl border border-paper-300 bg-white shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:shadow-none"
             >
               {item.image_url && (
                 <img

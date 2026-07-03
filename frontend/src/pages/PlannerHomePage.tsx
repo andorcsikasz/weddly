@@ -1,4 +1,20 @@
-import { CheckCircle2, ChevronDown, ChevronUp, Circle } from "lucide-react";
+import {
+  AlertTriangle,
+  BarChart3,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Circle,
+  ClipboardCheck,
+  ListTodo,
+  type LucideIcon,
+  MailQuestion,
+  SlidersHorizontal,
+  Users,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import type {
@@ -22,12 +38,14 @@ import { PlannerDashRightRail } from "./planner/PlannerDashRightRail";
 function KpiTile({
   label,
   value,
+  icon: Icon,
   progress,
   accent,
   to,
 }: {
   label: string;
   value: string | number;
+  icon: LucideIcon;
   progress?: { done: number; total: number } | null;
   accent?: "red" | "amber" | "green";
   to?: string;
@@ -35,52 +53,63 @@ function KpiTile({
   const isRed = accent === "red" && Number(value) > 0;
   const isAmber = accent === "amber" && Number(value) > 0;
   const isGreen = accent === "green";
+  // The icon chip carries the status colour; the frame stays the shared
+  // card chrome so the four tiles read as one row, not four alerts.
+  const chip = isRed
+    ? "bg-red-50 text-red-600 dark:bg-red-900/25 dark:text-red-400"
+    : isAmber
+      ? "bg-amber-50 text-amber-600 dark:bg-amber-900/25 dark:text-amber-400"
+      : "bg-moss-50 text-moss-600 dark:bg-moss-900/40 dark:text-moss-300";
   const inner = (
     <>
-      <div className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-        {label}
-      </div>
-      <div className="mt-2 text-center">
-        <div
-          className={`text-2xl font-bold leading-none tabular-nums ${
-            isRed
-              ? "text-red-500 dark:text-red-400"
-              : isAmber
-                ? "text-amber-500 dark:text-amber-400"
-                : isGreen
-                  ? "text-moss-700 dark:text-moss-300"
-                  : "text-ink-900 dark:text-paper-50"
-          }`}
-        >
-          {value}
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          {label}
         </div>
-        {progress && progress.total > 0 && (
-          <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
-            <div
-              className="h-full rounded-full bg-moss-500 transition-all dark:bg-moss-400"
-              style={{
-                width: `${Math.max(2, Math.round((progress.done / progress.total) * 100))}%`,
-              }}
-            />
-          </div>
-        )}
+        <span
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${chip}`}
+          title={label}
+        >
+          <Icon size={14} aria-hidden="true" />
+        </span>
       </div>
+      <div
+        className={`mt-1 text-2xl font-bold leading-none tabular-nums ${
+          isRed
+            ? "text-red-500 dark:text-red-400"
+            : isAmber
+              ? "text-amber-500 dark:text-amber-400"
+              : isGreen
+                ? "text-moss-600 dark:text-moss-300"
+                : "text-ink-900 dark:text-paper-50"
+        }`}
+      >
+        {value}
+      </div>
+      {progress && progress.total > 0 && (
+        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+          <div
+            className="h-full rounded-full bg-moss-600 transition-all dark:bg-moss-400"
+            style={{
+              width: `${Math.max(2, Math.round((progress.done / progress.total) * 100))}%`,
+            }}
+          />
+        </div>
+      )}
     </>
   );
-  // Dark-olive frame on every tile; the hovered/focused ("selected") one reads
-  // slightly thicker via a same-colour ring so the layout never shifts.
-  const frame = "border-moss-600 dark:border-moss-500";
   if (to) {
     return (
       <Link
         to={to}
-        className={`card block p-4 ${frame} transition hover:bg-moss-50 hover:ring-1 hover:ring-moss-600 focus-visible:ring-1 focus-visible:ring-moss-600 dark:hover:bg-moss-900/20 dark:hover:ring-moss-500 dark:focus-visible:ring-moss-500`}
+        title={label}
+        className="card block p-4 transition hover:-translate-y-0.5 hover:border-moss-400 hover:shadow-pop focus-visible:ring-2 focus-visible:ring-moss-600 dark:hover:border-moss-500 dark:focus-visible:ring-moss-400"
       >
         {inner}
       </Link>
     );
   }
-  return <div className={`card p-4 ${frame}`}>{inner}</div>;
+  return <div className="card p-4">{inner}</div>;
 }
 
 // ─── Task overview chart ──────────────────────────────────────────────────────
@@ -112,10 +141,15 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
 
   return (
     <section className="mb-0">
-      <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
+      <h2 className="mb-4 flex items-center gap-2 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
+        <BarChart3
+          size={16}
+          className="shrink-0 text-moss-600 dark:text-moss-400"
+          aria-hidden="true"
+        />
         {t("planner_home.chart_heading")}
       </h2>
-      <div className="rounded-xl border border-paper-200 bg-white px-5 py-4 dark:border-umber-800 dark:bg-umber-900">
+      <div className="card px-5 py-4">
         <div className="space-y-3">
           {visible.map((c) => {
             const total = c.task_total;
@@ -156,7 +190,7 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
                 <div className="flex h-3 flex-1 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                   {donePct > 0 && (
                     <div
-                      className="h-full bg-sage-500"
+                      className="h-full bg-moss-500"
                       style={{ width: `${donePct}%` }}
                       title={`${t("planner_home.chart_done_label")}: ${c.task_done}`}
                     />
@@ -186,7 +220,7 @@ function TaskOverviewChart({ stats }: { stats: PlannerStats }) {
 
         <div className="mt-4 flex flex-wrap gap-3 border-t border-paper-100 pt-3 dark:border-umber-800">
           <span className="flex items-center gap-1.5 text-[10px] tabular-nums text-ink-500 dark:text-umber-400">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-sage-500" />
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-moss-500" />
             {t("planner_home.chart_done_label")} · {totals.done}
           </span>
           {totals.overdue > 0 && (
@@ -250,9 +284,8 @@ function TaskFilterPanel({
   const pillBase =
     "rounded-full border border-paper-300 px-3 py-1 text-xs transition-colors dark:border-umber-700";
   const pillActive =
-    "bg-ink-900 text-paper-50 border-ink-900 dark:bg-paper-100 dark:text-umber-900 dark:border-paper-100";
-  const pillInactive =
-    "text-ink-700 hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800";
+    "bg-moss-700 text-paper-50 border-moss-700 dark:bg-moss-300 dark:text-moss-950 dark:border-moss-300";
+  const pillInactive = "text-ink-700 hover:bg-moss-50 dark:text-paper-200 dark:hover:bg-umber-800";
 
   return (
     <div className="mb-4 space-y-2">
@@ -737,18 +770,21 @@ export default function PlannerHomePage() {
               <KpiTile
                 label={t("planner_home.kpi_overdue")}
                 value={stats.overdue_tasks}
+                icon={AlertTriangle}
                 accent={stats.overdue_tasks > 0 ? "red" : undefined}
                 to="/app/planner/stats"
               />
               <KpiTile
                 label={t("planner_home.kpi_due_this_week")}
                 value={stats.due_this_week}
+                icon={CalendarDays}
                 accent={stats.due_this_week > 0 ? "amber" : undefined}
                 to="/app/planner/calendar"
               />
               <KpiTile
                 label={t("planner_home.kpi_total_tasks")}
                 value={stats.done_tasks}
+                icon={ClipboardCheck}
                 accent="green"
                 progress={
                   stats.total_tasks > 0
@@ -760,6 +796,7 @@ export default function PlannerHomePage() {
               <KpiTile
                 label={t("planner_home.kpi_active_clients")}
                 value={stats.active_clients}
+                icon={Users}
                 progress={
                   stats.max_clients > 0
                     ? { done: stats.active_clients, total: stats.max_clients }
@@ -777,38 +814,55 @@ export default function PlannerHomePage() {
         {/* Pending invites from couples */}
         {!loading && invites.length > 0 && (
           <section>
-            <h2 className="mb-4 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
+            <h2 className="mb-4 flex items-center gap-2 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
+              <MailQuestion
+                size={16}
+                className="shrink-0 text-moss-600 dark:text-moss-400"
+                aria-hidden="true"
+              />
               {t("planner_home.invites_heading")}
             </h2>
             <div className="space-y-3">
               {invites.map((inv) => (
                 <div
                   key={inv.couple_id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-800/40 dark:bg-amber-900/10"
+                  className="card flex items-center justify-between gap-4 px-5 py-4"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-grotesk font-semibold text-umber-900 dark:text-paper-50">
-                      {inv.display_name}
-                    </p>
-                    <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
-                      {inv.wedding_date
-                        ? formatDate(inv.wedding_date, locale)
-                        : t("planner_home.client_wedding_date_none")}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-amber-900/25 dark:text-amber-400"
+                      title={t("planner_home.pipeline_pending")}
+                    >
+                      <MailQuestion size={16} aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-grotesk font-semibold text-umber-900 dark:text-paper-50">
+                        {inv.display_name}
+                      </p>
+                      <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
+                        {inv.wedding_date
+                          ? formatDate(inv.wedding_date, locale)
+                          : t("planner_home.client_wedding_date_none")}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex shrink-0 gap-2">
                     <button
                       type="button"
                       onClick={() => void handleAcceptInvite(inv.couple_id)}
-                      className="btn-primary btn-sm"
+                      className="btn-moss btn-sm flex items-center gap-1.5"
+                      title={t("planner_home.invite_accept")}
                     >
+                      <Check size={14} aria-hidden="true" />
                       {t("planner_home.invite_accept")}
                     </button>
                     <button
                       type="button"
                       onClick={() => void handleDeclineInvite(inv)}
-                      className="btn-outline btn-sm"
+                      className="btn-outline btn-sm flex items-center gap-1.5"
+                      title={t("planner_home.invite_decline")}
                     >
+                      <X size={14} aria-hidden="true" />
                       {t("planner_home.invite_decline")}
                     </button>
                   </div>
@@ -840,29 +894,35 @@ export default function PlannerHomePage() {
         {!loading && clients.length > 0 && (
           <section>
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
+              <h2 className="flex items-center gap-2 font-grotesk text-lg font-medium text-umber-800 dark:text-paper-200">
+                <ListTodo
+                  size={16}
+                  className="shrink-0 text-moss-600 dark:text-moss-400"
+                  aria-hidden="true"
+                />
                 {t("planner_home.upcoming_heading")}
               </h2>
               {tasks.length > 0 && (
                 <button
                   type="button"
-                  className="btn-outline btn-sm flex items-center gap-1"
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                    showTaskFilters
+                      ? "bg-moss-100 text-moss-800 dark:bg-moss-900/40 dark:text-moss-200"
+                      : "text-umber-600 hover:bg-moss-50 hover:text-moss-800 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-moss-200"
+                  }`}
                   aria-expanded={showTaskFilters}
+                  aria-label={t("planner_home.filter_toggle")}
+                  title={t("planner_home.filter_toggle")}
                   onClick={() => setShowTaskFilters((v) => !v)}
                 >
-                  {t("planner_home.filter_toggle")}
-                  {showTaskFilters ? (
-                    <ChevronUp size={13} aria-hidden="true" />
-                  ) : (
-                    <ChevronDown size={13} aria-hidden="true" />
-                  )}
+                  <SlidersHorizontal size={16} aria-hidden="true" />
                 </button>
               )}
             </div>
             {tasks.length > 0 && showTaskFilters && (
               <TaskFilterPanel clients={clients} filters={taskFilters} onChange={setTaskFilters} />
             )}
-            <div className="rounded-xl border border-paper-200 bg-white px-5 py-5 dark:border-umber-800 dark:bg-umber-900">
+            <div className="card px-5 py-5">
               <UpcomingTasks
                 tasks={tasks}
                 filters={taskFilters}

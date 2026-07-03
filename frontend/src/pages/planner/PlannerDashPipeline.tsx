@@ -1,4 +1,4 @@
-import { Clock, Plus, UserPlus } from "lucide-react";
+import { ArrowRight, Clock, Plus, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { PlannerClientView } from "@shared/types";
@@ -148,8 +148,10 @@ function ClientCard({ client }: { client: PlannerClientView }) {
     // The whole card is a mouse-convenience click target for active clients;
     // the "Enter" Link below stays the keyboard/screen-reader affordance.
     <div
-      className={`card p-4 hover:shadow-md transition-shadow ${
-        isActive ? "cursor-pointer" : "cursor-default"
+      className={`card p-4 transition ${
+        isActive
+          ? "cursor-pointer hover:-translate-y-0.5 hover:border-moss-400 hover:shadow-pop dark:hover:border-moss-500"
+          : "cursor-default"
       }`}
       onClick={isActive ? () => navigate(`/app/planner/clients/${client.couple_id}`) : undefined}
     >
@@ -241,10 +243,12 @@ function ClientCard({ client }: { client: PlannerClientView }) {
         {client.status === "active" && (
           <Link
             to={`/app/planner/clients/${client.couple_id}`}
-            className="btn-success btn-sm flex-shrink-0"
+            className="btn-moss btn-sm flex flex-shrink-0 items-center gap-1.5"
             onClick={(e) => e.stopPropagation()}
+            title={t("planner_home.pipeline_enter")}
           >
             {t("planner_home.pipeline_enter")}
+            <ArrowRight size={14} aria-hidden="true" />
           </Link>
         )}
       </div>
@@ -267,7 +271,12 @@ export function PlannerDashPipeline({ clients, onAddClientClick, inviteCount }: 
     <section>
       {/* Section header */}
       <div className="flex items-center justify-between gap-3 mb-4">
-        <h2 className="font-grotesk text-lg font-semibold text-umber-900 dark:text-paper-50">
+        <h2 className="flex items-center gap-2 font-grotesk text-lg font-semibold text-umber-900 dark:text-paper-50">
+          <Users
+            size={16}
+            className="shrink-0 text-moss-600 dark:text-moss-400"
+            aria-hidden="true"
+          />
           {t("planner_home.pipeline_title")} ({clients.length})
         </h2>
 

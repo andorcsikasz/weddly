@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  CalendarDays,
   CheckCircle2,
   ChevronDown,
   Clock,
@@ -66,20 +67,17 @@ export function PlannerDashRightRail({ tasks, clients }: Props) {
   return (
     <div className="flex flex-col gap-4">
       {/* One merged card: today's agenda on top, collapsible urgent alerts below.
-          The alert state is a single left border accent + header icon instead
-          of a fully amber-filled panel. */}
-      <div
-        className={`card p-4 ${
-          visibleOverdue.length > 0 ? "border-l-4 border-l-amber-500 dark:border-l-amber-500" : ""
-        }`}
-      >
+          The frame is the shared card chrome — no alert-coloured border, so the
+          rail matches every other dashboard card; urgency lives in the amber
+          icon + count inside. */}
+      <div className="card p-4">
         {/* TODAY'S AGENDA — opens the calendar */}
         <Link
           to="/app/planner/calendar"
           className="-m-2 block space-y-3 rounded-lg p-2 transition-colors hover:bg-moss-50 dark:hover:bg-moss-900/20"
         >
           <div>
-            <SectionHeader label={t("planner_home.rail_today_title")} />
+            <SectionHeader icon={CalendarDays} label={t("planner_home.rail_today_title")} />
             <p className="text-xs text-umber-400 -mt-1">{todayLabel}</p>
             {nameDay && (
               <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
@@ -140,7 +138,7 @@ export function PlannerDashRightRail({ tasks, clients }: Props) {
               >
                 <AlertTriangle
                   size={13}
-                  className="shrink-0 text-umber-500 dark:text-umber-400"
+                  className="shrink-0 text-amber-500 dark:text-amber-400"
                   aria-hidden="true"
                 />
                 <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">

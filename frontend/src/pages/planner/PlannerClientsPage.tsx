@@ -3,6 +3,7 @@
 // an inline add-client flow. Pending couple invites are surfaced here too so
 // they can be accepted/declined away from the dashboard.
 
+import { Check, MailQuestion, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { PlannerClientView, PlannerInviteView } from "@shared/types";
 import { useConfirm } from "../../components/ui";
@@ -81,31 +82,43 @@ export default function PlannerClientsPage() {
             {invites.map((inv) => (
               <div
                 key={inv.couple_id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-800/40 dark:bg-amber-900/10"
+                className="card flex items-center justify-between gap-4 px-5 py-4"
               >
-                <div className="min-w-0">
-                  <p className="truncate font-grotesk font-semibold text-umber-900 dark:text-paper-50">
-                    {inv.display_name}
-                  </p>
-                  <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
-                    {inv.wedding_date
-                      ? formatDate(inv.wedding_date, locale)
-                      : t("planner_home.client_wedding_date_none")}
-                  </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-amber-900/25 dark:text-amber-400"
+                    title={t("planner_home.pipeline_pending")}
+                  >
+                    <MailQuestion size={16} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate font-grotesk font-semibold text-umber-900 dark:text-paper-50">
+                      {inv.display_name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-umber-500 dark:text-umber-400">
+                      {inv.wedding_date
+                        ? formatDate(inv.wedding_date, locale)
+                        : t("planner_home.client_wedding_date_none")}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <button
                     type="button"
                     onClick={() => void handleAcceptInvite(inv.couple_id)}
-                    className="btn-primary btn-sm"
+                    className="btn-moss btn-sm flex items-center gap-1.5"
+                    title={t("planner_home.invite_accept")}
                   >
+                    <Check size={14} aria-hidden="true" />
                     {t("planner_home.invite_accept")}
                   </button>
                   <button
                     type="button"
                     onClick={() => void handleDeclineInvite(inv)}
-                    className="btn-outline btn-sm"
+                    className="btn-outline btn-sm flex items-center gap-1.5"
+                    title={t("planner_home.invite_decline")}
                   >
+                    <X size={14} aria-hidden="true" />
                     {t("planner_home.invite_decline")}
                   </button>
                 </div>

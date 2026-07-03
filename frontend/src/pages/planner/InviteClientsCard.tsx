@@ -118,7 +118,7 @@ export function InviteClientsCard() {
                 <span
                   className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                     inv.status === "accepted"
-                      ? "bg-sage-100 text-sage-700 dark:bg-sage-900/30 dark:text-sage-400"
+                      ? "bg-moss-100 text-moss-700 dark:bg-moss-900/30 dark:text-moss-400"
                       : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                   }`}
                 >

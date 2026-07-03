@@ -46,7 +46,7 @@ function ThreadSidebar({
               type="button"
               onClick={() => navigate(`/app/planner/messages/${th.couple_id}`)}
               className={`w-full px-4 py-3 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800 ${
-                activeCoupleId === th.couple_id ? "bg-sage-50 dark:bg-sage-900/30" : ""
+                activeCoupleId === th.couple_id ? "bg-moss-50 dark:bg-moss-900/30" : ""
               }`}
             >
               <p className="truncate text-sm font-medium text-umber-900 dark:text-paper-100">
@@ -64,7 +64,7 @@ function ThreadSidebar({
               type="button"
               onClick={() => navigate(`/app/planner/messages/${c.couple_id}`)}
               className={`w-full px-4 py-3 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800 ${
-                activeCoupleId === c.couple_id ? "bg-sage-50 dark:bg-sage-900/30" : ""
+                activeCoupleId === c.couple_id ? "bg-moss-50 dark:bg-moss-900/30" : ""
               }`}
             >
               <p className="truncate text-sm font-medium text-umber-900 dark:text-paper-100">
@@ -123,7 +123,7 @@ function ComposeForm({
   }
 
   const inputCls =
-    "w-full rounded-lg border border-paper-200 px-3 py-2 text-sm text-ink-800 focus:outline-none focus:ring-1 focus:ring-sage-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100";
+    "w-full rounded-lg border border-paper-200 px-3 py-2 text-sm text-ink-800 focus:outline-none focus:ring-1 focus:ring-moss-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100";
 
   return (
     <form
@@ -171,7 +171,7 @@ function ComposeForm({
       <div className="flex items-center justify-between">
         <div className="text-sm">
           {status === "ok" && (
-            <span className="text-sage-600">{t("planner_messages.sent_ok")}</span>
+            <span className="text-moss-600">{t("planner_messages.sent_ok")}</span>
           )}
           {status === "error" && (
             <span className="text-red-500">{t("planner_messages.error_send")}</span>
@@ -180,7 +180,7 @@ function ComposeForm({
         <button
           type="submit"
           disabled={status === "sending"}
-          className="flex items-center gap-1.5 rounded-lg bg-sage-600 px-4 py-2 text-sm font-medium text-white hover:bg-sage-700 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg bg-moss-600 px-4 py-2 text-sm font-medium text-white hover:bg-moss-700 disabled:opacity-50"
         >
           <Send size={14} />
           {status === "sending" ? t("planner_messages.sending") : t("planner_messages.send")}
@@ -260,7 +260,7 @@ function ThreadPanel({
             <div
               className={`max-w-[75%] rounded-2xl px-4 py-3 ${
                 msg.direction === "out"
-                  ? "bg-sage-600 text-white"
+                  ? "bg-moss-600 text-white"
                   : "bg-paper-100 text-ink-800 dark:bg-umber-700 dark:text-paper-100"
               }`}
             >
@@ -329,7 +329,7 @@ export default function PlannerMessagesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
+    <div className="flex h-[calc(100vh-8rem)] overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
       {/* Sidebar — 280px on desktop, full-width on mobile when no thread selected */}
       <div
         className={`${

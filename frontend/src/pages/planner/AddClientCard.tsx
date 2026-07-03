@@ -75,7 +75,7 @@ export function AddClientCard({
         {t("planner_home.add_client_hint")}
       </p>
       {status === "ok" && (
-        <p className="mt-2 text-xs text-sage-600">{t("planner_home.add_client_success")}</p>
+        <p className="mt-2 text-xs text-moss-600">{t("planner_home.add_client_success")}</p>
       )}
       {status === "error" && <p className="mt-2 text-xs text-red-500">{error}</p>}
     </div>

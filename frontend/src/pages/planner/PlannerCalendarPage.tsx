@@ -257,7 +257,7 @@ function MonthView({
   const start = addDays(first, -offset);
   const cells = Array.from({ length: 42 }, (_, i) => addDays(start, i));
   return (
-    <div className="overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
+    <div className="overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
       <div className="grid grid-cols-7 border-b border-paper-200 dark:border-umber-800">
         {weekdays.map((w) => (
           <div
@@ -342,7 +342,7 @@ function TimeGridView({
     new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", { weekday: "short" }).format(d);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
+    <div className="overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
       {/* Day headers */}
       <div
         className="grid border-b border-paper-200 dark:border-umber-800"
@@ -466,7 +466,7 @@ function ScheduleView({
   const dot = (ev: CalEvent) =>
     ev.coupleId != null ? clientColor(ev.coupleId).dot : "bg-moss-500";
   return (
-    <div className="overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
+    <div className="overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
       {upcoming.map((ev, i) => {
         const rowClass =
           "flex w-full items-center gap-4 border-b border-paper-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-moss-50 dark:border-umber-800 dark:hover:bg-moss-900/20";
@@ -807,7 +807,7 @@ function TasksView({
       </div>
 
       {shown.length === 0 ? (
-        <div className="rounded-2xl border border-paper-200 bg-white p-10 text-center dark:border-umber-800 dark:bg-umber-900">
+        <div className="rounded-2xl border border-paper-300 bg-white p-10 text-center shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
           <ListChecks
             size={40}
             strokeWidth={1.3}
@@ -876,7 +876,7 @@ function TasksView({
           })}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
+        <div className="overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
           {listVisible.map((tk) => {
             const overdue = tk.due_date < todayStr;
             return (
