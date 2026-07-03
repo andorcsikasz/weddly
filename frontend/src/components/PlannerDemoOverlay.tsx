@@ -178,7 +178,7 @@ function PlannerDemoNudgeModal({
         <div className="p-7 text-center sm:p-9">
           <h2
             id="planner-demo-nudge-title"
-            className="font-grotesk text-3xl italic leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl"
+            className="font-grotesk text-3xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-4xl"
           >
             {t("planner_demo.popup_title")}
           </h2>
@@ -192,9 +192,6 @@ function PlannerDemoNudgeModal({
           >
             {t("planner_demo.popup_cta")}
           </button>
-          <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
-            {t("planner_demo.popup_microcopy")}
-          </p>
         </div>
       </div>
     </div>
