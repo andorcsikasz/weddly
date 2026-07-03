@@ -103,6 +103,11 @@ function BillingBanner({
     text = t("vendor_home.billing_founding", { date: fmtDate(billing.founding_until) });
   } else if (billing.reason === "trialing") {
     text = t("vendor_home.billing_trial", { date: fmtDate(billing.trial_ends_at) });
+  } else if (billing.reason === "lead_window") {
+    text = t("vendor_home.billing_lead_window", {
+      used: String(billing.lead_credits_used),
+      total: String(billing.lead_credits_total),
+    });
   } else {
     return null; // subscribed / active → no banner
   }
@@ -111,8 +116,16 @@ function BillingBanner({
     ? "border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/10 dark:text-blush-200"
     : "border-steel-200 bg-steel-50 text-ink-700 dark:border-steel-600/40 dark:bg-steel-600/15 dark:text-steel-100";
   return (
-    <div className={`mb-4 rounded-xl border px-4 py-3 text-sm ${cls}`} role="status">
-      {text}
+    <div
+      className={`mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3.5 py-2 text-sm ${cls}`}
+      role="status"
+    >
+      <span>{text}</span>
+      {warn && (
+        <Link to="/vendor/billing" className="font-medium underline underline-offset-2">
+          {t("vendor_home.billing_lapsed_cta")}
+        </Link>
+      )}
     </div>
   );
 }
@@ -506,13 +519,20 @@ export default function VendorListingPage() {
       {view?.billing && <BillingBanner billing={view.billing} locale={locale} t={t} />}
 
       {form && view && (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
           {/* Live couple's-eye preview: stacked above the form on small
-              screens, sticky right column from lg up. */}
-          <aside className="order-1 space-y-2 lg:sticky lg:top-6 lg:order-2">
-            <h2 className="text-sm font-semibold text-ink-700 dark:text-umber-100">
-              {t("vendor_home.preview_panel_title")}
-            </h2>
+              screens, sticky right column from lg up. The "live" marker is a
+              broadcast-style badge in the top-right corner of the card (red
+              dot + label) instead of a heading row above it. */}
+          <aside className="relative order-1 lg:sticky lg:top-6 lg:order-2">
+            <h2 className="sr-only">{t("vendor_home.preview_panel_title")}</h2>
+            <span className="pointer-events-none absolute right-2 top-2 z-10 inline-flex items-center gap-1.5 rounded-full bg-ink-900/75 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500"
+              />
+              {t("vendor_home.visibility_live")}
+            </span>
             <VendorListingPreview
               name={view.listing.name}
               heroUrl={view.listing.hero_image_url ?? null}
@@ -526,37 +546,9 @@ export default function VendorListingPage() {
             />
           </aside>
 
-          <form onSubmit={onSubmit} className="order-2 space-y-3 lg:order-1">
-            {/* Autosave status: live region near the top of the editor. */}
-            <div className="flex items-center justify-end" aria-live="polite">
-              {autosaveStatus === "saving" && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
-                  <span
-                    aria-hidden="true"
-                    className="h-1.5 w-1.5 animate-pulse rounded-full bg-steel-500 dark:bg-steel-300"
-                  />
-                  {t("vendor_home.autosave_saving")}
-                </span>
-              )}
-              {autosaveStatus === "saved" && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-sage-700 dark:text-sage-300">
-                  <Check aria-hidden="true" size={14} strokeWidth={2.4} />
-                  {t("vendor_home.autosave_saved")}
-                </span>
-              )}
-              {autosaveStatus === "unsaved" && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-300">
-                  <span
-                    aria-hidden="true"
-                    className="h-1.5 w-1.5 rounded-full bg-steel-400 dark:bg-steel-400"
-                  />
-                  {t("vendor_home.autosave_unsaved")}
-                </span>
-              )}
-            </div>
-
+          <form onSubmit={onSubmit} className="order-2 space-y-2.5 lg:order-1">
             {/* Brand lock info card: the listing name is admin-moderated. */}
-            <div className="card flex items-start gap-3">
+            <div className="card flex items-start gap-3 p-4">
               <Lock
                 aria-hidden="true"
                 size={20}
@@ -564,29 +556,26 @@ export default function VendorListingPage() {
                 className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
               />
               <div className="min-w-0">
-                <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-100">
+                <h2 className="text-base font-semibold text-ink-900 dark:text-paper-100">
                   {view.listing.name}
                 </h2>
-                <p className="mt-1 text-sm font-medium text-ink-700 dark:text-umber-100">
-                  {t("vendor_home.brand_locked_card_title")}
-                </p>
-                <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                <p className="mt-0.5 text-sm text-ink-600 dark:text-umber-200">
+                  <span className="font-medium text-ink-700 dark:text-umber-100">
+                    {t("vendor_home.brand_locked_card_title")}
+                  </span>{" "}
                   {t("vendor_home.brand_locked_card_body")}
                 </p>
                 <a
                   href={`mailto:${supportEmail}`}
-                  className="mt-2 inline-flex text-sm font-medium text-steel-600 underline decoration-steel-200 underline-offset-2 hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+                  className="mt-1.5 inline-flex text-sm font-medium text-steel-600 underline decoration-steel-200 underline-offset-2 hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
                 >
                   {t("vendor_home.brand_locked_contact_cta")}
                 </a>
               </div>
             </div>
 
-            <fieldset className="card space-y-3" disabled={saving || heroBusy}>
+            <fieldset className="card space-y-2.5 p-4" disabled={saving || heroBusy}>
               <legend className="font-semibold">{t("vendor_home.section_hero")}</legend>
-              <p className="text-sm text-ink-600 dark:text-umber-200">
-                {t("vendor_home.hero_intro")}
-              </p>
               <input
                 ref={heroInputRef}
                 type="file"
@@ -615,7 +604,7 @@ export default function VendorListingPage() {
                 }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={onHeroDrop}
-                className={`relative flex min-h-[11rem] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
+                className={`relative flex min-h-[8rem] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
                   dragOver
                     ? "border-steel-400 bg-steel-50 dark:border-steel-500 dark:bg-steel-600/15"
                     : "border-paper-300 bg-paper-50 hover:border-steel-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-steel-500"
@@ -635,7 +624,7 @@ export default function VendorListingPage() {
                     </span>
                   </>
                 ) : (
-                  <div className="px-4 py-8">
+                  <div className="px-4 py-4">
                     <p className="text-sm font-medium text-ink-700 dark:text-umber-100">
                       {heroBusy
                         ? t("vendor_home.hero_uploading")
@@ -673,14 +662,14 @@ export default function VendorListingPage() {
               </div>
             </fieldset>
 
-            <fieldset className="card space-y-3" disabled={saving}>
+            <fieldset className="card space-y-2.5 p-4" disabled={saving}>
               <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>
               <label className="block" htmlFor="vendor-blurb-hu">
                 <span className="field-label">{t("vendor_home.label_blurb_hu")}</span>
                 <textarea
                   id="vendor-blurb-hu"
                   className="input"
-                  rows={4}
+                  rows={3}
                   maxLength={2000}
                   value={form.blurb_hu}
                   onChange={onChange("blurb_hu")}
@@ -691,18 +680,15 @@ export default function VendorListingPage() {
                 <textarea
                   id="vendor-blurb-en"
                   className="input"
-                  rows={4}
+                  rows={3}
                   maxLength={2000}
                   value={form.blurb_en}
                   onChange={onChange("blurb_en")}
                 />
               </label>
-              <p className="text-xs text-ink-500 dark:text-umber-300">
-                {t("vendor_home.label_blurb_hint")}
-              </p>
             </fieldset>
 
-            <fieldset className="card space-y-3" disabled={saving}>
+            <fieldset className="card space-y-2.5 p-4" disabled={saving}>
               <legend className="font-semibold">{t("vendor_home.section_contact")}</legend>
               <TextField
                 id="vendor-city"
@@ -736,7 +722,6 @@ export default function VendorListingPage() {
               <TextField
                 id="vendor-contact-email"
                 label={t("vendor_home.label_contact_email")}
-                helperText={t("vendor_home.label_contact_email_hint")}
                 value={form.contact_email}
                 onChange={onChange("contact_email")}
                 type="email"
@@ -752,7 +737,7 @@ export default function VendorListingPage() {
               />
             </fieldset>
 
-            <fieldset className="card space-y-3" disabled={saving}>
+            <fieldset className="card space-y-2.5 p-4" disabled={saving}>
               <legend className="font-semibold">{t("vendor_home.section_pricing")}</legend>
 
               <div>
@@ -869,7 +854,7 @@ export default function VendorListingPage() {
               </div>
             </fieldset>
 
-            <div className="flex items-center justify-between gap-3 pt-2">
+            <div className="flex items-center justify-between gap-3 pt-1">
               <Link to="/vendors" className="btn-ghost">
                 {t("vendor_home.back_to_directory")}
               </Link>
@@ -888,27 +873,25 @@ export default function VendorListingPage() {
       {/* Visibility: self-serve pause for fully-booked seasons. Moderation
           states are read-only here; the admin pipeline owns those. */}
       {view && (
-        <section className="card mt-3 space-y-3">
+        <section className="card mt-2.5 space-y-2.5 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="font-semibold">{t("vendor_home.visibility_title")}</h2>
-              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-                {t("vendor_home.visibility_body")}
-              </p>
-            </div>
-            <span
-              className={
-                view.listing.status === "active"
-                  ? "inline-flex items-center rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-sage-700 dark:bg-sage-500/20 dark:text-sage-200"
-                  : "inline-flex items-center rounded-full bg-paper-200 px-2.5 py-0.5 text-xs font-medium text-ink-600 dark:bg-umber-700 dark:text-paper-300"
-              }
-            >
-              {view.listing.status === "active"
-                ? t("vendor_home.visibility_live")
-                : view.listing.status === "hidden"
+            <h2 className="min-w-0 font-semibold">{t("vendor_home.visibility_title")}</h2>
+            {view.listing.status === "active" ? (
+              // Broadcast-style LIVE pill: red pulsing dot + uppercase label.
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-ink-900/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white dark:bg-white/10 dark:text-paper-100">
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500"
+                />
+                {t("vendor_home.visibility_live")}
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-paper-200 px-2.5 py-0.5 text-xs font-medium text-ink-600 dark:bg-umber-700 dark:text-paper-300">
+                {view.listing.status === "hidden"
                   ? t("vendor_home.visibility_paused")
                   : t("vendor_home.visibility_moderated")}
-            </span>
+              </span>
+            )}
           </div>
           {view.listing.status === "active" || view.listing.status === "hidden" ? (
             <button
@@ -935,14 +918,36 @@ export default function VendorListingPage() {
         </section>
       )}
 
-      {availability && (
-        <section className="card mt-3 space-y-3">
-          <div>
-            <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
-            <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-              {t("vendor_home.availability_intro")}
-            </p>
+      {/* Freemium: the availability calendar is PRO. A FREE vendor sees the
+          locked state with the upgrade path instead of a form whose writes
+          would 402. */}
+      {availability && view?.billing && !view.billing.entitled && (
+        <section className="card mt-2.5 flex flex-col gap-3 p-4">
+          <div className="flex items-start gap-2.5">
+            <Lock
+              size={18}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-ink-400 dark:text-paper-500"
+            />
+            <div>
+              <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
+              <p className="mt-0.5 text-sm text-ink-600 dark:text-umber-200">
+                {t("vendor_home.availability_locked")}
+              </p>
+            </div>
           </div>
+          <Link
+            to="/vendor/billing"
+            className="btn w-fit bg-steel-600 text-white hover:bg-steel-700"
+          >
+            {t("vendor.upgrade.cta")}
+          </Link>
+        </section>
+      )}
+
+      {availability && (!view?.billing || view.billing.entitled) && (
+        <section className="card mt-2.5 space-y-2.5 p-4">
+          <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
 
           <form onSubmit={onAddBlock} className="flex flex-wrap items-end gap-2">
             <label className="block" htmlFor="vendor-block-date">

@@ -702,6 +702,7 @@ export interface LocaleMessages {
     nav: {
       dashboard: string;
       clients: string;
+      calendar: string;
       listing: string;
       stats: string;
       billing: string;
@@ -720,6 +721,16 @@ export interface LocaleMessages {
       menu_label: string;
       menu_plan: string;
       menu_settings: string;
+    };
+    /** Header notification bell (mirrors the planner shell's). */
+    notif: {
+      aria: string;
+      heading: string;
+      none: string;
+      /** Receives `{count}` (bookings still in 'requested'). */
+      new_inquiries: string;
+      /** Receives `{count}` (confirmed events in the next 7 days). */
+      upcoming_week: string;
     };
     dashboard: {
       page_title: string;
@@ -940,6 +951,59 @@ export interface LocaleMessages {
       feature_locked: string;
       learn_more: string;
     };
+  };
+  /** Vendor calendar + to-do board at /vendor/calendar. The calendar mode is
+   *  the occupancy month grid (blocked + booked days, next-free line); the
+   *  tasks mode is the Trello-style board (todo / doing / done). */
+  vendor_calendar: {
+    page_title: string;
+    mode_calendar: string;
+    mode_tasks: string;
+    month_prev: string;
+    month_next: string;
+    today: string;
+    legend_blocked: string;
+    legend_booked: string;
+    /** Receives `{name}` - the couple name(s) booked on the day. */
+    booked_title: string;
+    /** Receives `{date}` - the day a click would block. */
+    block_day_title: string;
+    section_availability: string;
+    availability_intro: string;
+    availability_add_label: string;
+    availability_add: string;
+    availability_empty: string;
+    /** Receives `{date}`. */
+    availability_remove: string;
+    /** Receives `{date}`. */
+    availability_next_free: string;
+    availability_none_free: string;
+    availability_blocked: string;
+    availability_block_failed: string;
+    availability_unblocked: string;
+    availability_unblock_failed: string;
+    availability_locked: string;
+    availability_no_listing: string;
+    task_add_label: string;
+    task_add_placeholder: string;
+    task_due_label: string;
+    task_add: string;
+    task_add_failed: string;
+    tasks_empty: string;
+    board_todo: string;
+    board_doing: string;
+    board_done: string;
+    board_empty: string;
+    board_move_prev: string;
+    board_move_next: string;
+    task_move_error: string;
+    task_delete: string;
+    task_delete_title: string;
+    /** Receives `{title}` - the task title being deleted. */
+    task_delete_body: string;
+    task_delete_confirm: string;
+    task_deleted: string;
+    task_delete_failed: string;
   };
   /** Supplier Outreach Inbox (P2.E v1) — the in-app surface where a couple
    *  sends a localised cold-outreach mail to up to 5 shortlisted vendors

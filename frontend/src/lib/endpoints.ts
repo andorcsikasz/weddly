@@ -171,8 +171,14 @@ import type {
   CompleteVendorOnboardingInput,
   VendorOnboardingVerifyView,
 } from "@shared/vendor_onboarding";
-import type { VendorBilling } from "@shared/vendor_billing";
+import type { VendorBillingStatus } from "@shared/vendor_billing";
 import type { VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
+import type {
+  VendorBoardStatus,
+  VendorTask,
+  VendorTaskCreateInput,
+  VendorTaskUpdateInput,
+} from "@shared/vendor_tasks";
 import type {
   VendorClientDetail,
   VendorClientPayment,
@@ -1918,6 +1924,10 @@ export const vendorListingApi = {
   me: () => apiFetch<VendorListingView>("GET", "/api/vendor/listing/me"),
   patch: (body: VendorListingEditInput) =>
     apiFetch<VendorListingView>("PATCH", "/api/vendor/listing/me", body),
+  /** Self-serve pause/unpause: flips listings.status 'active' <-> 'hidden'.
+   *  Moderation states are refused server-side with 409. */
+  setVisibility: (published: boolean) =>
+    apiFetch<VendorListingView>("POST", "/api/vendor/listing/me/visibility", { published }),
   /** Multipart-only — `apiFetch` is JSON-shaped, so the hero upload bypasses
    *  it and posts FormData directly. The route accepts JPEG/PNG/WebP up to
    *  4 MB; the server enforces the constraints + writes a cache-busted URL
@@ -1985,6 +1995,19 @@ export const vendorAvailabilityApi = {
     ),
 };
 
+/** Vendor to-do board: private, vendor-scoped tasks on the kanban at
+ *  /vendor/calendar?mode=tasks. FREE-tier surface (couples never see it). */
+export const vendorTaskApi = {
+  list: () => apiFetch<{ tasks: VendorTask[] }>("GET", "/api/vendor/tasks"),
+  create: (body: VendorTaskCreateInput) =>
+    apiFetch<{ task: VendorTask }>("POST", "/api/vendor/tasks", body),
+  update: (id: number, body: VendorTaskUpdateInput) =>
+    apiFetch<{ task: VendorTask }>("PATCH", `/api/vendor/tasks/${id}`, body),
+  move: (id: number, board_status: VendorBoardStatus) =>
+    apiFetch<{ task: VendorTask }>("PATCH", `/api/vendor/tasks/${id}`, { board_status }),
+  remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/vendor/tasks/${id}`),
+};
+
 /** Vendor "clients" — couples that reached the vendor THROUGH Weddly (their
  *  Weddly-sourced bookings). The basic list is FREE; the CRM detail + payment
  *  tracking are PRO-gated server-side (a FREE vendor gets a 403 the UI turns
@@ -2020,13 +2043,20 @@ export const vendorStatsApi = {
   get: () => apiFetch<VendorStats>("GET", "/api/vendor/stats"),
 };
 
-/** Vendor billing snapshot + derived FREE/PRO plan + per-feature flags. */
+/** Vendor billing snapshot + derived FREE/PRO plan + per-feature flags, plus
+ *  the freemium money path (Stripe-hosted card setup / checkout / portal). */
 export const vendorBillingApi = {
   get: () =>
-    apiFetch<{ billing: VendorBilling; plan: VendorPlan; features: VendorFeatureFlags }>(
+    apiFetch<VendorBillingStatus & { plan: VendorPlan; features: VendorFeatureFlags }>(
       "GET",
       "/api/vendor/billing",
     ),
+  /** Stripe Checkout in SETUP mode: save a card, no charge (opens the
+   *  3-free-inquiries lead window). Returns the hosted checkout URL. */
+  setup: () => apiFetch<{ url: string }>("POST", "/api/vendor/billing/setup"),
+  /** Classic subscription Checkout: the lapsed-vendor recovery path. */
+  checkout: () => apiFetch<{ url: string }>("POST", "/api/vendor/billing/checkout"),
+  portal: () => apiFetch<{ url: string }>("POST", "/api/vendor/billing/portal"),
 };
 
 /** Supplier Outreach Inbox (P2.E v1). Couple-facing endpoints; the
