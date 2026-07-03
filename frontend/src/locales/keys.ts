@@ -1738,17 +1738,41 @@ export interface LocaleMessages {
     have_account_cta: string;
     cta_title: string;
     cta_body: string;
+    demo_cta: string;
+    demo_loading: string;
+    demo_error: string;
   };
   vendor_register: {
     seo_title: string;
     seo_description: string;
     title: string;
     subtitle: string;
+    /** Stepper labels: account basics, then company identity. */
+    step_account: string;
+    step_business: string;
+    email_required: string;
     business_name_label: string;
     business_name_required: string;
     category_label: string;
     category_placeholder: string;
     category_required: string;
+    /** The "my service isn't listed" escape hatch in the category select. */
+    category_other_option: string;
+    custom_category_label: string;
+    custom_category_placeholder: string;
+    custom_category_required: string;
+    /** Company identity fields (auto-filled by the registry lookup). */
+    country_label: string;
+    registry_number_label: string;
+    vat_number_label: string;
+    address_label: string;
+    city_label: string;
+    postal_code_label: string;
+    phone_label: string;
+    website_label: string;
+    /** Post-signup confetti screen. */
+    success_title: string;
+    success_body: string;
     submit: string;
     continue_to_onboarding: string;
   };
@@ -4419,6 +4443,7 @@ export interface LocaleMessages {
       stationery: string;
       wedding_website: string;
       transport: string;
+      other: string;
     };
     /** Venue character labels (the "jelleg" tag, normalised) — one per
      *  VenueStyle in @shared/suppliers. Rendered as a chip beside the
@@ -6968,6 +6993,18 @@ export interface LocaleMessages {
   /** Planner-side demo (Fairy Godmother Weddings sandbox) — banner + nudge
    *  inside /app/planner while the active session is the demo planner. */
   planner_demo: {
+    banner_title: string;
+    banner_exit: string;
+    banner_cta: string;
+    banner_dismiss_aria: string;
+    popup_title: string;
+    popup_body: string;
+    popup_cta: string;
+    popup_microcopy: string;
+  };
+  /** Vendor-side demo (Shrek-themed bakery sandbox) — banner + nudge inside
+   *  /vendor while the active session is the demo vendor. */
+  vendor_demo: {
     banner_title: string;
     banner_exit: string;
     banner_cta: string;

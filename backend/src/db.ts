@@ -1445,6 +1445,19 @@ addColumnIfMissing(
   "onboarding_done",
   "onboarding_done INTEGER NOT NULL DEFAULT 1",
 );
+// Company identity collected at vendor signup (mirrors the planner_* block on
+// users), auto-filled from the free official registry lookup where one
+// exists, manual entry elsewhere. All nullable; signup only requires the
+// business name + category.
+addColumnIfMissing("vendor_accounts", "country", "country TEXT");
+addColumnIfMissing("vendor_accounts", "registry_number", "registry_number TEXT");
+addColumnIfMissing("vendor_accounts", "legal_form", "legal_form TEXT");
+addColumnIfMissing("vendor_accounts", "address", "address TEXT");
+addColumnIfMissing("vendor_accounts", "city", "city TEXT");
+addColumnIfMissing("vendor_accounts", "postal_code", "postal_code TEXT");
+// Vendor-written label behind category='other' listings: the "my service
+// isn't in the taxonomy yet" escape hatch on the signup form.
+addColumnIfMissing("listings", "custom_category", "custom_category TEXT");
 // Uniqueness indexes live here (not schema.sql) per the May 2026 ordering rule —
 // the column must exist before the index that references it. Partial so the
 // pre-backfill NULLs don't collide with each other.

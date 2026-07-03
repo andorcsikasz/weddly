@@ -42,6 +42,16 @@ interface VendorRegisterBody {
   full_name?: unknown;
   business_name?: unknown;
   category?: unknown;
+  custom_category?: unknown;
+  country?: unknown;
+  registry_number?: unknown;
+  vat_number?: unknown;
+  legal_form?: unknown;
+  address?: unknown;
+  city?: unknown;
+  postal_code?: unknown;
+  contact_phone?: unknown;
+  website?: unknown;
   privacy_version?: unknown;
   terms_version?: unknown;
   locale?: unknown;
@@ -86,6 +96,36 @@ function parseCategory(raw: unknown): SupplierCategory {
   return raw as SupplierCategory;
 }
 
+/** Optional free-text company field: trimmed, empty → null, hard length cap.
+ *  Missing and non-string both read as "not provided"; the whole company
+ *  block is optional at signup. */
+function parseOptional(raw: unknown, maxLen: number): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > maxLen) throw new HttpError(400, "Field too long");
+  return trimmed;
+}
+
+function parseCountry(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim().toUpperCase();
+  if (trimmed.length === 0) return null;
+  if (!/^[A-Z]{2}$/.test(trimmed)) throw new HttpError(400, "Country must be ISO 3166-1 alpha-2");
+  return trimmed;
+}
+
+/** The vendor-written label behind category='other'. Required exactly when
+ *  the vendor picked "other" (an unlabeled "other" card is useless in the
+ *  directory) and dropped otherwise so a stray value can't shadow a real
+ *  category. */
+function parseCustomCategory(raw: unknown, category: SupplierCategory): string | null {
+  if (category !== "other") return null;
+  const label = parseOptional(raw, 60);
+  if (!label) throw new HttpError(400, "Tell us what your service is");
+  return label;
+}
+
 async function handleRegister(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "vendor:register", AUTH_BUCKET);
   const body = await readJson<VendorRegisterBody>(ctx.req);
@@ -95,6 +135,16 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   const fullName = parseName(body.full_name, "Name", 200);
   const businessName = parseName(body.business_name, "Business name", 120);
   const category = parseCategory(body.category);
+  const customCategory = parseCustomCategory(body.custom_category, category);
+  const country = parseCountry(body.country);
+  const registryNumber = parseOptional(body.registry_number, 40);
+  const vatNumber = parseOptional(body.vat_number, 40);
+  const legalForm = parseOptional(body.legal_form, 80);
+  const address = parseOptional(body.address, 240);
+  const city = parseOptional(body.city, 80);
+  const postalCode = parseOptional(body.postal_code, 20);
+  const contactPhone = parseOptional(body.contact_phone, 40);
+  const website = parseOptional(body.website, 240);
 
   // GDPR Art. 7(1): refuse a stale client so the consent ledger only ever
   // records the exact policy version the vendor actually saw (mirrors auth.ts).
@@ -156,18 +206,31 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
       ownerUserId: newUserId,
       displayName: businessName,
       contactEmail: email,
+      contactPhone,
+      vatNumber,
+      country,
+      registryNumber,
+      legalForm,
+      address,
+      city,
+      postalCode,
       onboardingDone: false, // run the in-app wizard after signup
     });
     newVendorAccountId = account.id;
 
-    // Give the vendor a live listing to land on + refine in the wizard. City
-    // is seeded empty (collected in step 1 of the wizard).
+    // Give the vendor a live listing to land on + refine in the wizard,
+    // seeded with whatever the company step collected so the wizard opens
+    // prefilled instead of blank.
     createVendorListing({
       vendorAccountId: newVendorAccountId,
       category,
+      customCategory,
       name: businessName,
-      city: "",
+      city: city ?? "",
+      address,
       contactEmail: email,
+      contactPhone,
+      website,
     });
 
     // Founding (free year) or trial — inside the tx so the cohort count and the

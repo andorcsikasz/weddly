@@ -49,6 +49,7 @@ import {
   Send,
   ShieldCheck,
   Shirt,
+  Sparkles,
   Speaker,
   Star,
   StickyNote,
@@ -117,6 +118,7 @@ const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
   stationery: StickyNote,
   wedding_website: Globe,
   transport: Bus,
+  other: Sparkles,
 };
 
 function readSavedSet(): Set<string> {

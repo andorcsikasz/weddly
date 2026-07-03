@@ -158,6 +158,7 @@ const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
   stationery: StickyNote,
   wedding_website: Globe,
   transport: Bus,
+  other: Sparkles,
 };
 
 /** Categories the cake & drinks calculator is relevant to. The tool estimates

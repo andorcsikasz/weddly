@@ -41,6 +41,7 @@ const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
   rings: "Karikagyűrűk",
   tent_pavilion: "Sátor & pavilon",
   wedding_website: "Esküvői honlap",
+  other: "Egyéb",
 };
 
 /** Convenience: resolve a row's free-text `category` slug to a localized HU

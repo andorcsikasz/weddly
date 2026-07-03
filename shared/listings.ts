@@ -45,6 +45,9 @@ export interface Listing {
    *  listing id — couple_picks etc. stay valid. */
   vendor_account_id: number | null;
   category: SupplierCategory;
+  /** Vendor-written label shown instead of the generic "other" category name.
+   *  Only ever set when `category === "other"`; null everywhere else. */
+  custom_category: string | null;
   name: string;
   city: string;
   address: string | null;
@@ -95,6 +98,15 @@ export interface VendorAccount {
   contact_email: string | null;
   contact_phone: string | null;
   vat_number: string | null;
+  /** Company identity, collected at signup (auto-filled from the official
+   *  registry lookup where a free source exists, manual elsewhere). All
+   *  nullable; signup only requires the business name + category. */
+  country: string | null;
+  registry_number: string | null;
+  legal_form: string | null;
+  address: string | null;
+  city: string | null;
+  postal_code: string | null;
   /** Whether the vendor has finished the post-signup onboarding wizard. The
    *  dashboard redirects into the wizard while this is false. True for accounts
    *  created via the claim flow (no wizard) and for all pre-wizard rows. */

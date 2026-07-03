@@ -25,6 +25,16 @@ interface RegBody {
   full_name?: string;
   business_name?: string;
   category?: string;
+  custom_category?: string;
+  country?: string;
+  registry_number?: string;
+  vat_number?: string;
+  legal_form?: string;
+  address?: string;
+  city?: string;
+  postal_code?: string;
+  contact_phone?: string;
+  website?: string;
   privacy_version?: string | null;
   terms_version?: string | null;
   locale?: string;
@@ -126,6 +136,118 @@ describe("vendor self-serve registration", () => {
     wipeAll();
     const bad = await register({ ...baseBody, category: "not_a_real_category" });
     expect(bad.status).toBe(400);
+  });
+
+  test("stores the company identity block on the account and seeds the listing from it", async () => {
+    wipeAll();
+    const reg = await register({
+      ...baseBody,
+      country: "hu", // lowercase in, uppercased at the boundary
+      registry_number: "01-09-123456",
+      vat_number: "12345678-2-41",
+      legal_form: "Kft.",
+      address: "Fő utca 1.",
+      city: "Budapest",
+      postal_code: "1011",
+      contact_phone: "+36 30 123 4567",
+      website: "https://florea.example",
+    });
+    expect(reg.status).toBe(201);
+
+    const account = db
+      .prepare(
+        `SELECT country, registry_number, vat_number, legal_form, address, city, postal_code, contact_phone
+           FROM vendor_accounts WHERE owner_user_id = ?`,
+      )
+      .get(reg.data.user.id) as {
+      country: string;
+      registry_number: string;
+      vat_number: string;
+      legal_form: string;
+      address: string;
+      city: string;
+      postal_code: string;
+      contact_phone: string;
+    };
+    expect(account.country).toBe("HU");
+    expect(account.registry_number).toBe("01-09-123456");
+    expect(account.vat_number).toBe("12345678-2-41");
+    expect(account.legal_form).toBe("Kft.");
+    expect(account.address).toBe("Fő utca 1.");
+    expect(account.city).toBe("Budapest");
+    expect(account.postal_code).toBe("1011");
+    expect(account.contact_phone).toBe("+36 30 123 4567");
+
+    // the seeded listing carries the public-facing subset so the onboarding
+    // wizard opens prefilled
+    const listing = db
+      .prepare(
+        "SELECT city, address, contact_phone, website FROM listings WHERE vendor_account_id = (SELECT id FROM vendor_accounts WHERE owner_user_id = ?)",
+      )
+      .get(reg.data.user.id) as {
+      city: string;
+      address: string;
+      contact_phone: string;
+      website: string;
+    };
+    expect(listing.city).toBe("Budapest");
+    expect(listing.address).toBe("Fő utca 1.");
+    expect(listing.contact_phone).toBe("+36 30 123 4567");
+    expect(listing.website).toBe("https://florea.example");
+  });
+
+  test("category 'other' requires a custom label and stores it on the listing", async () => {
+    wipeAll();
+    // missing label → 400, nothing created
+    const missing = await register({ ...baseBody, category: "other" });
+    expect(missing.status).toBe(400);
+    expect(db.prepare("SELECT 1 FROM users WHERE email = ?").get(baseBody.email)).toBeNull();
+
+    const reg = await register({
+      ...baseBody,
+      category: "other",
+      custom_category: "Tűzijáték show",
+    });
+    expect(reg.status).toBe(201);
+    const listing = db
+      .prepare(
+        "SELECT category, custom_category FROM listings WHERE vendor_account_id = (SELECT id FROM vendor_accounts WHERE owner_user_id = ?)",
+      )
+      .get(reg.data.user.id) as { category: string; custom_category: string };
+    expect(listing.category).toBe("other");
+    expect(listing.custom_category).toBe("Tűzijáték show");
+  });
+
+  test("drops a stray custom label when a real category is picked", async () => {
+    wipeAll();
+    const reg = await register({ ...baseBody, custom_category: "should be ignored" });
+    expect(reg.status).toBe(201);
+    const listing = db
+      .prepare(
+        "SELECT custom_category FROM listings WHERE vendor_account_id = (SELECT id FROM vendor_accounts WHERE owner_user_id = ?)",
+      )
+      .get(reg.data.user.id) as { custom_category: string | null };
+    expect(listing.custom_category).toBeNull();
+  });
+
+  test("company lookup availability + search are reachable without a session", async () => {
+    wipeAll();
+    // Signup runs pre-account, so the lookup endpoints must not 401. FR has a
+    // free provider; the fake provider (COMPANY_LOOKUP_FAKE=1 in tests/setup)
+    // serves fixtures.
+    const availability = await req<{ available: boolean }>(
+      "GET",
+      "/api/company-lookup/availability?country=FR",
+    );
+    expect(availability.status).toBe(200);
+    expect(availability.data.available).toBe(true);
+
+    const search = await req<{ results: unknown[] }>(
+      "GET",
+      "/api/company-lookup/search?country=FR&q=fixture",
+    );
+    expect(search.status).toBe(200);
+    expect(Array.isArray(search.data.results)).toBe(true);
   });
 
   test("hands the next vendor a trial once the founding cohort is full", async () => {

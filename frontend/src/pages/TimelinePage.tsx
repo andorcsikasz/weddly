@@ -85,6 +85,7 @@ const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
   stationery: StickyNote,
   wedding_website: Globe,
   transport: Bus,
+  other: Sparkles,
 };
 
 /** Lightweight directory-shape for the contact panel. Covers curated +

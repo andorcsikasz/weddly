@@ -21,7 +21,8 @@ export type SupplierCategory =
   | "rings"
   | "stationery"
   | "wedding_website"
-  | "transport";
+  | "transport"
+  | "other";
 
 export type SupplierGroup =
   | "venue_stay"
@@ -99,6 +100,7 @@ export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
   stationery: "stationery",
   wedding_website: "stationery",
   transport: "transport",
+  other: "other",
 };
 
 // Ordered chain — mirrors the recommended booking sequence: lock the venue
@@ -110,7 +112,7 @@ export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
   { id: "atmosphere", categories: ["decor_floral", "lighting"] },
   { id: "experience", categories: ["music_dj", "sound_tech", "photo_video", "entertainment"] },
   { id: "style", categories: ["attire", "hair_makeup", "nails", "rings"] },
-  { id: "details", categories: ["stationery", "wedding_website", "transport"] },
+  { id: "details", categories: ["stationery", "wedding_website", "transport", "other"] },
 ];
 
 /** Shape of a directory entry without the per-request overlay (votes). Used

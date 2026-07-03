@@ -101,6 +101,7 @@ const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
   stationery: StickyNote,
   wedding_website: Globe,
   transport: Bus,
+  other: Sparkles,
 };
 
 const GROUP_ICON: Record<SupplierGroup, IconCmp> = {

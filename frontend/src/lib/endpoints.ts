@@ -340,6 +340,14 @@ export const demoApi = {
       session: AuthSession;
       seeded: Record<string, number>;
     }>("POST", "/api/demo/planner/start", { locale }),
+  /** Vendor-side demo: spins up a Shrek-themed "Mézi Tortaműhely" / "Gingy's
+   *  Wedding Cakes" vendor account pre-loaded with fairy-tale client inquiries
+   *  and returns a session token. Drop the visitor into /vendor. */
+  startVendor: (locale: "hu" | "en") =>
+    apiFetch<{
+      session: AuthSession;
+      seeded: Record<string, number>;
+    }>("POST", "/api/demo/vendor/start", { locale }),
 };
 
 export const authApi = {
@@ -1863,6 +1871,17 @@ export const vendorAuthApi = {
     full_name: string;
     business_name: string;
     category: string;
+    /** Required when category === "other": the vendor-written service label. */
+    custom_category?: string;
+    country?: string;
+    registry_number?: string;
+    vat_number?: string;
+    legal_form?: string;
+    address?: string;
+    city?: string;
+    postal_code?: string;
+    contact_phone?: string;
+    website?: string;
     privacy_version: string;
     terms_version: string;
     locale?: string;

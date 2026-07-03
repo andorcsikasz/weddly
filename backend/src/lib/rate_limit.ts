@@ -11,7 +11,7 @@ interface BucketRow {
   updated_at: number;
 }
 
-interface BucketConfig {
+export interface BucketConfig {
   /** Bucket capacity (also the cold-start refill). */
   capacity: number;
   /** Tokens refilled per second. */
@@ -52,6 +52,11 @@ export const AUTH_BUCKET: BucketConfig = { capacity: 5, refillRate: 1 / 12 };
  *  onboarding session while keeping farm traffic off the upstream registries
  *  (the KVK open-data API in particular allows only ~1 query/min). */
 export const COMPANY_LOOKUP_BUCKET: BucketConfig = { capacity: 8, refillRate: 1 / 4 };
+
+/** Anonymous company lookup (the pre-account vendor signup form). Stingier
+ *  than the signed-in bucket: enough for one signup's worth of searches,
+ *  useless as an open registry proxy. */
+export const COMPANY_LOOKUP_ANON_BUCKET: BucketConfig = { capacity: 5, refillRate: 1 / 15 };
 
 // ─── Per-account failed-login throttle ──────────────────────────────────────
 // The per-IP AUTH_BUCKET can't see a distributed credential-stuffing run (many

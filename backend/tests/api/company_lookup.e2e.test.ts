@@ -57,9 +57,13 @@ describe("company lookup: availability", () => {
     wipeAll();
   });
 
-  test("requires auth", async () => {
-    const r = await req("GET", "/api/company-lookup/availability?country=FR");
-    expect(r.status).toBe(401);
+  test("is reachable anonymously (vendor signup runs pre-account)", async () => {
+    const r = await req<CompanyLookupAvailability>(
+      "GET",
+      "/api/company-lookup/availability?country=FR",
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.available).toBe(true);
   });
 
   test("rejects a malformed country param", async () => {
@@ -150,9 +154,12 @@ describe("company lookup: search + getCompany", () => {
     wipeAll();
   });
 
-  test("requires auth and a query", async () => {
-    const anon = await req("GET", "/api/company-lookup/search?country=FR&q=fleur");
-    expect(anon.status).toBe(401);
+  test("works anonymously (stingier rate bucket) and requires a query", async () => {
+    const anon = await req<{ results: unknown[] }>(
+      "GET",
+      "/api/company-lookup/search?country=FR&q=fleur",
+    );
+    expect(anon.status).toBe(200);
     const { token } = await registerVerified("search-noq@test.weddly");
     const noq = await req("GET", "/api/company-lookup/search?country=FR&q=", undefined, { token });
     expect(noq.status).toBe(400);

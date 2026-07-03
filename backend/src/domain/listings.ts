@@ -36,6 +36,7 @@ export interface ListingRow {
   source: string;
   vendor_account_id: number | null;
   category: string;
+  custom_category: string | null;
   name: string;
   city: string;
   address: string | null;
@@ -66,6 +67,12 @@ export interface VendorAccountRow {
   contact_email: string | null;
   contact_phone: string | null;
   vat_number: string | null;
+  country: string | null;
+  registry_number: string | null;
+  legal_form: string | null;
+  address: string | null;
+  city: string | null;
+  postal_code: string | null;
   onboarding_done: number;
   created_at: number;
   updated_at: number;
@@ -98,6 +105,7 @@ export function toListing(row: ListingRow): Listing {
     source: toListingSource(row.source),
     vendor_account_id: row.vendor_account_id,
     category: row.category as SupplierCategory,
+    custom_category: row.custom_category,
     name: row.name,
     city: row.city,
     address: row.address,
@@ -129,6 +137,12 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
     contact_email: row.contact_email,
     contact_phone: row.contact_phone,
     vat_number: row.vat_number,
+    country: row.country,
+    registry_number: row.registry_number,
+    legal_form: row.legal_form,
+    address: row.address,
+    city: row.city,
+    postal_code: row.postal_code,
     onboarding_done: row.onboarding_done === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -368,13 +382,17 @@ export function getListingByVendorAccountId(vendorAccountId: number): Listing | 
 export function createVendorListing(input: {
   vendorAccountId: number;
   category: string;
+  /** Vendor-written label behind category='other'; see Listing.custom_category. */
+  customCategory?: string | null;
   name: string;
   city: string;
   contactEmail: string | null;
   /** Optional seed from the vendor's earlier submission (e.g. the waitlist
-   *  application). Carried onto the fresh listing so the vendor doesn't
-   *  re-type details they already gave us. */
+   *  application or the signup company step). Carried onto the fresh listing
+   *  so the vendor doesn't re-type details they already gave us. */
   website?: string | null;
+  address?: string | null;
+  contactPhone?: string | null;
 }): Listing {
   const ts = now();
   const id = `v${input.vendorAccountId}`;
@@ -385,10 +403,10 @@ export function createVendorListing(input: {
     $category: input.category,
     $name: input.name,
     $city: input.city,
-    $address: null,
+    $address: input.address ?? null,
     $website: input.website ?? null,
     $contact_email: input.contactEmail,
-    $contact_phone: null,
+    $contact_phone: input.contactPhone ?? null,
     $blurb_hu: null,
     $blurb_en: null,
     $price_band: null,
@@ -403,6 +421,14 @@ export function createVendorListing(input: {
     $created_at: ts,
     $updated_at: ts,
   });
+  // custom_category is written outside the shared upsert so the curated /
+  // community sync paths never have to carry (or clobber) the column.
+  if (input.customCategory !== undefined) {
+    db.prepare("UPDATE listings SET custom_category = ? WHERE id = ?").run(
+      input.customCategory ?? null,
+      id,
+    );
+  }
   const row = getListingById(id);
   if (!row) throw new Error("vendor listing create failed");
   return row;
