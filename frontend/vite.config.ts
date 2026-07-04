@@ -29,7 +29,14 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    sourcemap: true,
+    // No production source maps. `true` emitted a .js.map next to every
+    // bundle plus a `//# sourceMappingURL=` comment, so the backend (which
+    // serves frontend/dist statically) handed anyone with DevTools a full
+    // reconstruction of our original TypeScript. There's no Sentry sourcemap
+    // upload wired up, so the maps bought us nothing — they only leaked source.
+    // Dev debugging is unaffected: the Vite dev server maps via native ESM,
+    // independent of this build-only flag.
+    sourcemap: false,
     rollupOptions: {
       output: {
         // Split heavy third-party deps into named vendor chunks so a
