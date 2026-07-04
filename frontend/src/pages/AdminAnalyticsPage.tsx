@@ -747,11 +747,15 @@ function MoneySection({
   const m = state.data;
   const hasMoneyData = m.couples_with_budget > 0;
   const histogramMax = Math.max(0, ...m.budget_histogram.map((b) => b.count));
-  // "No budget" share, derived from the histogram so numerator + denominator
-  // are self-consistent (bucket_max_huf === 0 is the no-budget bucket; the full
-  // histogram sums to every couple in the audience-scoped money view).
-  const noBudgetCount = m.budget_histogram.find((b) => b.bucket_max_huf === 0)?.count ?? 0;
+  // "No budget" share. Denominator = every couple in the audience-scoped money
+  // view (the histogram sums to exactly that). Numerator uses the SAME broad
+  // "has budget" definition as the KPI tile + per-category table
+  // (couples_with_budget = ceiling set OR ≥1 budget_lines row), so a couple who
+  // entered per-category amounts without a top-level ceiling no longer counts as
+  // "no budget". Using the ceiling-only histogram bucket here read as a
+  // contradiction against the per-category PÁR counts.
   const moneyCouples = m.budget_histogram.reduce((s, b) => s + b.count, 0);
+  const noBudgetCount = Math.max(0, moneyCouples - m.couples_with_budget);
 
   return (
     <SectionCard title={title}>
