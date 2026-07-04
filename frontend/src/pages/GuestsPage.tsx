@@ -1096,7 +1096,6 @@ export default function GuestsPage() {
             onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
             onDeleteGuest={onDeleteGuest}
             onCycleInviteState={onCycleInviteState}
-            onPrintPlaceCard={onPrintPlaceCard}
           />
         </div>
       ) : flatView ? (
@@ -1606,6 +1605,54 @@ function HouseholdCell({
   );
 }
 
+/** Inline email editor: a quiet text input that commits on blur / Enter (Escape
+ *  reverts). Empty clears the address (email is nullable). Format is checked
+ *  server-side; a rejected value rolls back through the optimistic update path. */
+function EmailCell({
+  email,
+  onChange,
+}: {
+  email: string | null;
+  onChange: (value: string | null) => void;
+}) {
+  const { t } = useT();
+  const [text, setText] = useState(email ?? "");
+  const revertRef = useRef(false);
+  useEffect(() => setText(email ?? ""), [email]);
+
+  function commit() {
+    if (revertRef.current) {
+      revertRef.current = false;
+      setText(email ?? "");
+      return;
+    }
+    const trimmed = text.trim();
+    if (trimmed === (email ?? "").trim()) return; // no change
+    onChange(trimmed || null);
+  }
+
+  return (
+    <input
+      type="email"
+      value={text}
+      aria-label={t("guests.email")}
+      placeholder={t("guests.table_email_placeholder")}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.currentTarget.blur();
+        } else if (e.key === "Escape") {
+          revertRef.current = true;
+          e.currentTarget.blur();
+        }
+      }}
+      className="h-8 w-full min-w-[9rem] cursor-text truncate rounded-lg border border-transparent bg-transparent px-2 py-0 text-xs text-ink-700 transition-colors placeholder:text-ink-400 hover:border-paper-300 hover:bg-paper-100 focus:border-umber-500 focus:outline-none dark:text-paper-100 dark:placeholder:text-umber-400 dark:hover:border-umber-600 dark:hover:bg-umber-800"
+    />
+  );
+}
+
 /** Always-present blank row pinned to the bottom of the table: type a name (and
  *  optionally a household / group), press Enter or hit the +, and the guest is
  *  created inline, then the row clears and refocuses so the couple can keep
@@ -1622,6 +1669,7 @@ function GuestTableNewRow({
   const { t } = useT();
   const [name, setName] = useState("");
   const [householdText, setHouseholdText] = useState("");
+  const [email, setEmail] = useState("");
   const [group, setGroup] = useState<GuestGroupTag>("other");
   const [saving, setSaving] = useState(false);
   // Ref-guard against a double-submit from a fast second Enter before `saving`
@@ -1635,6 +1683,7 @@ function GuestTableNewRow({
     savingRef.current = true;
     setSaving(true);
     const body: GuestUpsert = { full_name: trimmed, group_tag: group };
+    if (email.trim()) body.email = email.trim();
     const target = resolveHouseholdTarget(householdText, households);
     if (target && "household_id" in target) {
       body.household_id = target.household_id;
@@ -1647,6 +1696,7 @@ function GuestTableNewRow({
     setSaving(false);
     if (ok) {
       setName("");
+      setEmail("");
       setHouseholdText("");
       setGroup("other");
       nameRef.current?.focus();
@@ -1679,6 +1729,23 @@ function GuestTableNewRow({
             className={`${cellInput} font-medium`}
           />
         </span>
+      </td>
+      <td className="px-3 py-2">
+        <input
+          type="email"
+          value={email}
+          placeholder={t("guests.table_email_placeholder")}
+          aria-label={t("guests.email")}
+          disabled={saving}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void commit();
+            }
+          }}
+          className={`${cellInput} min-w-[9rem] truncate`}
+        />
       </td>
       <td className="px-3 py-2">
         <span className="relative inline-flex w-full min-w-[7rem]">
@@ -1761,7 +1828,6 @@ function GuestTable({
   onEditGuest,
   onDeleteGuest,
   onCycleInviteState,
-  onPrintPlaceCard,
 }: {
   guests: Guest[];
   households: Household[];
@@ -1778,7 +1844,6 @@ function GuestTable({
   onEditGuest: (g: Guest) => void;
   onDeleteGuest: (id: number) => void | Promise<void>;
   onCycleInviteState: (g: Guest) => void | Promise<void>;
-  onPrintPlaceCard: (g: Guest) => void | Promise<void>;
 }) {
   const { t } = useT();
   const householdLabelById = useMemo(() => {
@@ -1811,6 +1876,9 @@ function GuestTable({
           <tr className="border-b border-paper-200 dark:border-umber-700">
             <th className={th} scope="col">
               {sortableHeader("name", t("guests.table_col_name"))}
+            </th>
+            <th className={th} scope="col">
+              {t("guests.email")}
             </th>
             <th className={th} scope="col">
               {t("guests.table_col_household")}
@@ -1854,7 +1922,6 @@ function GuestTable({
               onEditGuest={onEditGuest}
               onDeleteGuest={onDeleteGuest}
               onCycleInviteState={onCycleInviteState}
-              onPrintPlaceCard={onPrintPlaceCard}
             />
           ))}
           {/* Always-present blank row so a guest can be added inline without
@@ -1877,7 +1944,6 @@ function GuestTableRow({
   onEditGuest,
   onDeleteGuest,
   onCycleInviteState,
-  onPrintPlaceCard,
 }: {
   guest: Guest;
   householdLabel: string | null;
@@ -1892,7 +1958,6 @@ function GuestTableRow({
   onEditGuest: (g: Guest) => void;
   onDeleteGuest: (id: number) => void | Promise<void>;
   onCycleInviteState: (g: Guest) => void | Promise<void>;
-  onPrintPlaceCard: (g: Guest) => void | Promise<void>;
 }) {
   const { t } = useT();
   const dietary = parseDietaryTags(g.dietary);
@@ -1916,9 +1981,9 @@ function GuestTableRow({
             {g.full_name}
           </span>
         </span>
-        {g.email && (
-          <span className="block truncate text-xs text-ink-500 dark:text-umber-300">{g.email}</span>
-        )}
+      </td>
+      <td className="max-w-[14rem] px-3 py-2">
+        <EmailCell email={g.email} onChange={(v) => void onUpdateGuest(g, { email: v })} />
       </td>
       <td className="max-w-[11rem] px-3 py-2">
         {/* A +1's household is bound to its host server-side, so editing it here
@@ -2035,15 +2100,6 @@ function GuestTableRow({
             title={t("guests.edit")}
           >
             <Pencil size={14} />
-          </button>
-          <button
-            type="button"
-            className="btn-ghost btn-sm"
-            onClick={() => void onPrintPlaceCard(g)}
-            aria-label={t("guests.print_place_card")}
-            title={t("guests.print_place_card")}
-          >
-            <Printer size={14} />
           </button>
           <button
             type="button"

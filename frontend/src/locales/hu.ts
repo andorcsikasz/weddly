@@ -3433,6 +3433,7 @@ const hu: LocaleMessages = {
     table_sort_hint: "Rendezés az oszlop szerint",
     table_household_placeholder: "Válassz vagy írj be",
     table_new_name_placeholder: "Új vendég neve…",
+    table_email_placeholder: "E-mail cím",
   },
   budget: {
     title: "Költségvetés",

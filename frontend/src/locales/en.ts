@@ -3397,6 +3397,7 @@ const en: LocaleMessages = {
     table_sort_hint: "Sort by this column",
     table_household_placeholder: "Pick or type",
     table_new_name_placeholder: "New guest name…",
+    table_email_placeholder: "Email address",
   },
   budget: {
     title: "Budget",

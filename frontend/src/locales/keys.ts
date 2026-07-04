@@ -3635,6 +3635,7 @@ export interface LocaleMessages {
     table_sort_hint: string;
     table_household_placeholder: string;
     table_new_name_placeholder: string;
+    table_email_placeholder: string;
     dietary: string;
     /** Allergies / free-text dietary notes — separate from `meal` (the picker). */
     allergies: string;
