@@ -87,6 +87,17 @@ const OUTCOME_LABEL_KEY: Record<VendorWaitlistOutcome, string> = {
 
 const FILTERS: VendorWaitlistStatus[] = ["new", "under_review", "accepted", "rejected"];
 
+/** Two-letter avatar initials from the business name (falls back to email).
+ *  Mirrors the planner/vendor admin cards so all three KEZELÉS lists share the
+ *  same identity chip. */
+function initials(name: string, email: string): string {
+  const src = (name || email).trim();
+  const parts = src.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? src[0] ?? "?";
+  const second = parts.length > 1 ? (parts[1]?.[0] ?? "") : "";
+  return (first + second).toUpperCase();
+}
+
 type ChannelKey = "website" | "instagram" | "youtube" | "facebook";
 
 interface ChannelDetection {
@@ -323,7 +334,7 @@ export default function AdminVendorWaitlistPage() {
               className={`flex min-h-tap flex-col items-start justify-center gap-0.5 rounded-2xl px-4 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 ${
                 active
                   ? "bg-neutral-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
-                  : "bg-paper-50 text-neutral-900 ring-1 ring-ink-100 hover:bg-paper-100 dark:bg-umber-900 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-umber-800"
+                  : "bg-paper-50 text-umber-900 ring-1 ring-ink-100 hover:bg-paper-100 dark:bg-umber-900 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-umber-800"
               }`}
             >
               <span className="font-grotesk text-2xl font-semibold leading-none tabular-nums">
@@ -333,7 +344,7 @@ export default function AdminVendorWaitlistPage() {
                 className={`text-[11px] font-medium uppercase tracking-[0.08em] ${
                   active
                     ? "text-paper-200 dark:text-umber-700"
-                    : "text-neutral-500 dark:text-umber-300"
+                    : "text-umber-500 dark:text-umber-300"
                 }`}
               >
                 {t(FILTER_KEY[f])}
@@ -372,17 +383,22 @@ export default function AdminVendorWaitlistPage() {
       )}
 
       {loading ? (
-        <ul className="grid gap-2">
+        <ul className="grid gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <li key={i}>
               <article className="admin-card">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1 flex flex-col gap-1">
+                <div className="flex items-center gap-4">
+                  <Skeleton
+                    variant="circle"
+                    width={44}
+                    height={44}
+                    className="hidden shrink-0 sm:block"
+                  />
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <Skeleton width={200} height={18} />
                     <Skeleton width={260} height={12} />
                   </div>
-                  <Skeleton width={70} height={18} rounded="full" />
-                  <Skeleton width={120} height={28} rounded="md" />
+                  <Skeleton width={110} height={32} rounded="md" />
                 </div>
               </article>
             </li>
@@ -391,7 +407,7 @@ export default function AdminVendorWaitlistPage() {
       ) : visibleEntries.length === 0 ? (
         <AdminEmptyState>{t(EMPTY_KEY[filter])}</AdminEmptyState>
       ) : (
-        <ul className="grid gap-2">
+        <ul className="grid gap-4">
           {visibleEntries.map((e) => (
             <li key={e.id}>
               <EntryCard
@@ -461,11 +477,20 @@ function EntryCard({
   const primaryLabel =
     entry.status === "new" ? t("admin.waitlist_action_respond") : t("admin.waitlist_action_review");
   return (
-    <article className="admin-card transition-shadow duration-150 hover:shadow-pop">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+    <article className="admin-card">
+      <div className="flex items-center gap-4">
+        {/* Identity — muted initials avatar, matching the pending planner/vendor
+         *  cards so the three KEZELÉS lists read as one rhythm. */}
+        <div
+          aria-hidden="true"
+          className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-paper-200 text-sm font-semibold text-umber-700 sm:flex dark:bg-umber-800 dark:text-umber-200"
+        >
+          {initials(entry.business_name, entry.email)}
+        </div>
+
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="m-0 truncate text-[15px] font-semibold text-neutral-900 dark:text-paper-50">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="m-0 truncate font-semibold text-umber-900 dark:text-paper-50">
               {entry.business_name}
             </h2>
             <Pill
@@ -478,24 +503,32 @@ function EntryCard({
           </div>
           <a
             href={`mailto:${entry.email}`}
-            className="mt-1 inline-flex items-center gap-1 text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
+            className="block truncate text-sm text-umber-700 hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
           >
-            <Mail size={11} aria-hidden /> {entry.email}
+            {entry.email}
           </a>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-neutral-600 dark:text-umber-200">
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-umber-500 dark:text-umber-400">
             <span>{fmtDate(entry.created_at)}</span>
-            <span className="rounded-full bg-paper-100 px-1.5 py-0.5 dark:bg-umber-800">
-              {t(`suppliers.cat.${entry.category}`)}
-            </span>
-            {entry.location && <span className="truncate">{entry.location}</span>}
+            <span aria-hidden="true">·</span>
+            <span>{t(`suppliers.cat.${entry.category}`)}</span>
+            {entry.location && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="truncate">{entry.location}</span>
+              </>
+            )}
             {entry.outcome_at && (
-              <span>
-                {t("admin.waitlist_card_decided")}: {fmtDate(entry.outcome_at)}
-              </span>
+              <>
+                <span aria-hidden="true">·</span>
+                <span>
+                  {t("admin.waitlist_card_decided")}: {fmtDate(entry.outcome_at)}
+                </span>
+              </>
             )}
           </div>
           {hasChannelRow && <ChannelRow channels={channels} t={t} />}
         </div>
+
         {/* Action column: one bold primary that opens the respond sheet
          *  (where details + the approve action live together). Decided rows
          *  also expose the destructive reopen as a low-weight ghost. */}
