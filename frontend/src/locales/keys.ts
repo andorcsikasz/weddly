@@ -4968,14 +4968,26 @@ export interface LocaleMessages {
       subtitle: string;
       filter_all: string;
       filter_active: string;
+      filter_pending: string;
       filter_suspended: string;
       empty: string;
       status_active: string;
       status_suspended: string;
       status_pending_activation: string;
+      /** Pill for an accepted waitlist applicant with no account yet. */
+      status_applied: string;
       clients: string;
       onboarding_pending: string;
       free_until: string;
+      /** Collapsible profile section (company, location, styles, …). */
+      details_toggle: string;
+      field_company: string;
+      field_location: string;
+      field_weddings: string;
+      field_styles: string;
+      field_web: string;
+      field_references: string;
+      early_tester: string;
       provision_cta: string;
       provision_title: string;
       provision_intro: string;

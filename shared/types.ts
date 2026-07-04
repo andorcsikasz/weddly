@@ -1791,7 +1791,28 @@ export const PLANNER_PLAN_LIMITS: Record<PlannerPlan, number> = {
  *  `user_type='planner'`; there is no separate table. Surfaced in the admin
  *  Szervezők management list with plan tier, client cap and how many couples
  *  are actively linked. Suspension rides the shared `users.status`. */
-export interface AdminPlannerView {
+/** Rich profile a planner submitted through the public `/planners` waitlist
+ *  form. Matched to a live account by email (so the admin Szervezők card can
+ *  show it in a collapsible section) and carried inline on a pending
+ *  (accepted-but-not-yet-registered) applicant. All fields optional-ish
+ *  because the form only requires name + email. */
+export interface AdminPlannerWaitlistDetail {
+  company_name: string | null;
+  city: string | null;
+  km_radius: number | null;
+  weddings_per_year: number | null;
+  /** Chosen wedding styles in form order; empty when none were given. */
+  wedding_styles: string[];
+  other_style: string | null;
+  website: string | null;
+  reference_links: string | null;
+  early_bird: boolean;
+  message: string | null;
+}
+
+/** A live planner account — a `users` row with user_type='planner'. */
+export interface AdminPlannerAccount {
+  state: "active";
   user_id: number;
   full_name: string;
   email: string;
@@ -1812,7 +1833,31 @@ export interface AdminPlannerView {
   /** End of the free window (planner_subscriptions.founding_until) when the
    *  planner is on a founding/comp grant; null on trial or paid statuses. */
   founding_until: UnixMs | null;
+  /** The planner's waitlist submission matched by email, or null when the
+   *  account never came through the waitlist (e.g. admin-provisioned). Feeds
+   *  the collapsible detail section on the admin card. */
+  waitlist: AdminPlannerWaitlistDetail | null;
 }
+
+/** An accepted planner-waitlist applicant who does NOT yet have a planner
+ *  account (no `users` row matches their email — they applied but haven't
+ *  registered / been granted). Surfaced in the admin Szervezők list so
+ *  accepted applicants are visible before sign-up, mirroring the vendor
+ *  "pending" onboarding rows. */
+export interface AdminPlannerPending {
+  state: "pending";
+  /** planner_waitlist.id — the identity for a pending row (no user yet). */
+  waitlist_id: number;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  created_at: UnixMs;
+  waitlist: AdminPlannerWaitlistDetail;
+}
+
+/** Row in the admin Szervezők list: either a live account or an accepted
+ *  waitlist applicant with no account yet. Discriminated by `state`. */
+export type AdminPlannerView = AdminPlannerAccount | AdminPlannerPending;
 
 /** Input for the admin "register a planner" form. The provisioned planner
  *  gets a 2-year free comp and an emailed activation link. */

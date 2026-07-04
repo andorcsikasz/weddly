@@ -156,7 +156,10 @@ describe("admin planner provisioning", () => {
       undefined,
       { token: adminToken },
     );
-    const row = list.data.planners.find((p) => p.user_id === res.data.user_id);
+    const row = list.data.planners.find(
+      (p): p is Extract<AdminPlannerView, { state: "active" }> =>
+        p.state === "active" && p.user_id === res.data.user_id,
+    );
     expect(row).toBeDefined();
     expect(row?.pending_activation).toBe(true);
     expect(row?.business_name).toBe("Anna Weddings");
@@ -233,9 +236,12 @@ describe("admin planner provisioning", () => {
       undefined,
       { token: adminToken },
     );
-    expect(list.data.planners.find((p) => p.user_id === res.data.user_id)?.pending_activation).toBe(
-      false,
-    );
+    expect(
+      list.data.planners.find(
+        (p): p is Extract<AdminPlannerView, { state: "active" }> =>
+          p.state === "active" && p.user_id === res.data.user_id,
+      )?.pending_activation,
+    ).toBe(false);
   });
 
   test("expired token is refused with 410 and unknown tokens 404", async () => {

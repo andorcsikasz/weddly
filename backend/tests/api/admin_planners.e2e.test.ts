@@ -45,10 +45,87 @@ describe("admin planner management", () => {
       { token: adminToken },
     );
     expect(res.status).toBe(200);
-    const planner = res.data.planners.find((p) => p.user_id === plannerId);
+    const planner = res.data.planners.find(
+      (p): p is Extract<AdminPlannerView, { state: "active" }> =>
+        p.state === "active" && p.user_id === plannerId,
+    );
     expect(planner).toBeDefined();
     expect(planner?.client_count).toBe(1);
     expect(planner?.planner_plan).toBe("starter");
+  });
+
+  test("merges accepted waitlist applicants: pending rows for no-account emails, profile attached to matching accounts", async () => {
+    const adminToken = await bootstrapAdmin();
+    const plannerId = await seedPlanner("hasaccount@weddly.test");
+
+    const ts = Math.floor(Date.now() / 1000);
+    const insertWaitlist = db.prepare(
+      `INSERT INTO planner_waitlist
+         (full_name, email, phone, company_name, city, km_radius, website,
+          wedding_style_1, wedding_style_2, early_bird, reference_links,
+          status, outcome_at, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'accepted', ?, ?)`,
+    );
+    // Matched by email (case-insensitive) to the seeded account.
+    insertWaitlist.run(
+      "Planner Person",
+      "HasAccount@weddly.test",
+      "+3611",
+      "Acc Co",
+      "Budapest",
+      120,
+      "acc.example",
+      "romantic",
+      "vintage",
+      1,
+      "instagram.com/acc",
+      ts,
+      ts,
+    );
+    // No account for this email → should surface as a pending row.
+    insertWaitlist.run(
+      "No Account",
+      "noaccount@weddly.test",
+      "+3622",
+      "NoAcc Co",
+      "Szeged",
+      80,
+      "noacc.example",
+      "classic",
+      null,
+      0,
+      null,
+      ts,
+      ts,
+    );
+
+    const res = await req<{ planners: AdminPlannerView[] }>(
+      "GET",
+      "/api/admin/planners",
+      undefined,
+      { token: adminToken },
+    );
+    expect(res.status).toBe(200);
+
+    const account = res.data.planners.find(
+      (p): p is Extract<AdminPlannerView, { state: "active" }> =>
+        p.state === "active" && p.user_id === plannerId,
+    );
+    expect(account?.waitlist?.company_name).toBe("Acc Co");
+    expect(account?.waitlist?.wedding_styles).toEqual(["romantic", "vintage"]);
+    expect(account?.waitlist?.early_bird).toBe(true);
+
+    const pending = res.data.planners.find(
+      (p): p is Extract<AdminPlannerView, { state: "pending" }> =>
+        p.state === "pending" && p.email === "noaccount@weddly.test",
+    );
+    expect(pending).toBeDefined();
+    expect(pending?.full_name).toBe("No Account");
+    expect(pending?.waitlist.city).toBe("Szeged");
+    // The no-account applicant must NOT also appear as an active account.
+    expect(
+      res.data.planners.some((p) => p.state === "active" && p.email === "noaccount@weddly.test"),
+    ).toBe(false);
   });
 
   test("suspend + reactivate flips users.status", async () => {

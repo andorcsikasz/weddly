@@ -1,7 +1,9 @@
 // Planner-account domain helpers (distinct from couple-side `planning.ts`).
 
 import {
-  type AdminPlannerView,
+  type AdminPlannerAccount,
+  type AdminPlannerPending,
+  type AdminPlannerWaitlistDetail,
   PLANNER_PLAN_LIMITS,
   type PlannerPlan,
   type UserStatus,
@@ -67,9 +69,74 @@ interface AdminPlannerRow {
   founding_until: number | null;
 }
 
-function toAdminPlannerView(row: AdminPlannerRow): AdminPlannerView {
+/** The `planner_waitlist` columns we surface in the admin card's collapsible
+ *  detail section. A local shape (not the route's full `PlannerWaitlistRow`) so
+ *  domain code stays independent of the route layer. */
+interface WaitlistDetailRow {
+  id: number;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  company_name: string | null;
+  city: string | null;
+  km_radius: number | null;
+  weddings_per_year: number | null;
+  wedding_style_1: string | null;
+  wedding_style_2: string | null;
+  wedding_style_3: string | null;
+  other_style: string | null;
+  website: string | null;
+  reference_links: string | null;
+  early_bird: number | null;
+  message: string | null;
+  created_at: number;
+}
+
+const WAITLIST_DETAIL_COLUMNS = `id, full_name, email, phone, company_name, city, km_radius,
+  weddings_per_year, wedding_style_1, wedding_style_2, wedding_style_3, other_style,
+  website, reference_links, early_bird, message, created_at`;
+
+function toWaitlistDetail(row: WaitlistDetailRow): AdminPlannerWaitlistDetail {
+  return {
+    company_name: row.company_name,
+    city: row.city,
+    km_radius: row.km_radius,
+    weddings_per_year: row.weddings_per_year,
+    wedding_styles: [row.wedding_style_1, row.wedding_style_2, row.wedding_style_3].filter(
+      (s): s is string => Boolean(s),
+    ),
+    other_style: row.other_style,
+    website: row.website,
+    reference_links: row.reference_links,
+    early_bird: row.early_bird === 1,
+    message: row.message,
+  };
+}
+
+/** Latest accepted waitlist submission per email, keyed by lowercased email.
+ *  Used to hang the rich profile onto a matching live account. A planner who
+ *  re-applied keeps only their newest row (MAX(id)). */
+function latestAcceptedWaitlistByEmail(): Map<string, WaitlistDetailRow> {
+  const rows = db
+    .prepare(
+      `SELECT ${WAITLIST_DETAIL_COLUMNS} FROM planner_waitlist w
+        WHERE w.status = 'accepted'
+          AND w.id = (SELECT MAX(w2.id) FROM planner_waitlist w2
+                        WHERE lower(w2.email) = lower(w.email) AND w2.status = 'accepted')`,
+    )
+    .all() as WaitlistDetailRow[];
+  const map = new Map<string, WaitlistDetailRow>();
+  for (const r of rows) map.set(r.email.toLowerCase(), r);
+  return map;
+}
+
+function toAdminPlannerView(
+  row: AdminPlannerRow,
+  waitlist: AdminPlannerWaitlistDetail | null,
+): AdminPlannerAccount {
   const plan = isPlannerPlan(row.planner_plan) ? row.planner_plan : "starter";
   return {
+    state: "active",
     user_id: row.user_id,
     full_name: row.full_name,
     email: row.email,
@@ -84,12 +151,15 @@ function toAdminPlannerView(row: AdminPlannerRow): AdminPlannerView {
     planner_category: row.planner_category,
     pending_activation: row.pending_activation === 1,
     founding_until: row.founding_until,
+    waitlist,
   };
 }
 
 /** Every planner account (a `users` row with user_type='planner'), with a count
- *  of their active `planner_clients` links, for the admin Szervezők list. */
-export function listAdminPlanners(): AdminPlannerView[] {
+ *  of their active `planner_clients` links, for the admin Szervezők list. Each
+ *  row carries its matching waitlist profile (by email) for the collapsible
+ *  detail section. */
+export function listAdminPlanners(): AdminPlannerAccount[] {
   const rows = db
     .prepare(
       `SELECT u.id AS user_id,
@@ -115,7 +185,44 @@ export function listAdminPlanners(): AdminPlannerView[] {
         ORDER BY u.created_at DESC`,
     )
     .all() as AdminPlannerRow[];
-  return rows.map(toAdminPlannerView);
+  const details = latestAcceptedWaitlistByEmail();
+  return rows.map((r) => toAdminPlannerView(r, waitlistDetailOrNull(details, r.email)));
+}
+
+function waitlistDetailOrNull(
+  map: Map<string, WaitlistDetailRow>,
+  email: string,
+): AdminPlannerWaitlistDetail | null {
+  const row = map.get(email.toLowerCase());
+  return row ? toWaitlistDetail(row) : null;
+}
+
+/** Accepted waitlist applicants who have NO planner account yet (their email
+ *  matches no `users` row of user_type='planner'). These surface as "pending"
+ *  rows in the admin Szervezők list — the planner-side analogue of the vendor
+ *  onboarding pending rows. `created_at` is normalised to ms (the waitlist
+ *  table stores seconds). */
+export function listPendingPlannerWaitlist(): AdminPlannerPending[] {
+  const rows = db
+    .prepare(
+      `SELECT ${WAITLIST_DETAIL_COLUMNS} FROM planner_waitlist w
+        WHERE w.status = 'accepted'
+          AND w.id = (SELECT MAX(w2.id) FROM planner_waitlist w2
+                        WHERE lower(w2.email) = lower(w.email) AND w2.status = 'accepted')
+          AND lower(w.email) NOT IN (
+                SELECT lower(u.email) FROM users u WHERE u.user_type = 'planner')
+        ORDER BY w.created_at DESC`,
+    )
+    .all() as WaitlistDetailRow[];
+  return rows.map((r) => ({
+    state: "pending" as const,
+    waitlist_id: r.id,
+    full_name: r.full_name,
+    email: r.email,
+    phone: r.phone,
+    created_at: r.created_at * 1000,
+    waitlist: toWaitlistDetail(r),
+  }));
 }
 
 /** Admin sets a planner's plan tier; keeps `planner_max_clients` in lockstep. */

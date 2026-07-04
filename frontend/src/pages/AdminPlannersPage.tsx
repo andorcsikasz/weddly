@@ -5,10 +5,18 @@
 // category): the account is provisioned dormant with a 2-year free comp and
 // the planner activates it through an emailed link.
 
-import type { AdminPlannerView, PlannerPlan } from "@shared/types";
+import type {
+  AdminPlannerAccount,
+  AdminPlannerPending,
+  AdminPlannerView,
+  AdminPlannerWaitlistDetail,
+  PlannerPlan,
+} from "@shared/types";
 import {
   Ban,
   Check,
+  ChevronDown,
+  Clock,
   Handshake,
   Loader2,
   MailPlus,
@@ -25,7 +33,146 @@ import { ApiError } from "../lib/api";
 import { adminPlannerMgmtApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
-type Filter = "all" | "active" | "suspended";
+type Filter = "all" | "active" | "pending" | "suspended";
+
+/** Which filter bucket a row falls into. Pending (accepted waitlist, no
+ *  account) is its own bucket; accounts split by suspension. */
+function plannerBucket(p: AdminPlannerView): "pending" | "suspended" | "active" {
+  if (p.state === "pending") return "pending";
+  return p.status === "suspended" ? "suspended" : "active";
+}
+
+/** True when there's at least one field worth showing in the collapsible
+ *  detail section (company/location/waitlist profile). */
+function hasPlannerDetails(
+  company: string | null,
+  location: string | null,
+  w: AdminPlannerWaitlistDetail | null,
+): boolean {
+  return Boolean(
+    company ||
+      location ||
+      (w &&
+        (w.city ||
+          w.weddings_per_year != null ||
+          w.wedding_styles.length > 0 ||
+          w.other_style ||
+          w.website ||
+          w.reference_links ||
+          w.early_bird ||
+          w.message)),
+  );
+}
+
+/** The rich profile rows shown inside the collapsible section, shared by the
+ *  active-account and pending cards. Mirrors the waitlist card's detail block
+ *  but reads its labels from i18n. */
+function PlannerDetailRows({
+  company,
+  category,
+  location,
+  waitlist,
+}: {
+  company: string | null;
+  category: string | null;
+  location: string | null;
+  waitlist: AdminPlannerWaitlistDetail | null;
+}) {
+  const { t } = useT();
+  const loc = location || waitlist?.city || null;
+  const km = waitlist?.km_radius ?? null;
+  const styles = waitlist?.wedding_styles ?? [];
+  const website = waitlist?.website ?? null;
+  const labelC = "font-medium text-umber-900 dark:text-paper-100";
+  return (
+    <div className="grid gap-y-1 text-sm text-umber-700 dark:text-umber-300">
+      {company && (
+        <p>
+          <span className={labelC}>{t("admin.planners.field_company")}:</span> {company}
+          {category ? ` (${category})` : ""}
+        </p>
+      )}
+      {loc && (
+        <p>
+          <span className={labelC}>{t("admin.planners.field_location")}:</span> {loc}
+          {km !== null ? ` · ${km} km` : ""}
+        </p>
+      )}
+      {waitlist?.weddings_per_year != null && (
+        <p>
+          <span className={labelC}>{t("admin.planners.field_weddings")}:</span>{" "}
+          {waitlist.weddings_per_year}
+        </p>
+      )}
+      {(styles.length > 0 || waitlist?.other_style) && (
+        <p>
+          <span className={labelC}>{t("admin.planners.field_styles")}:</span> {styles.join(", ")}
+          {waitlist?.other_style ? `${styles.length ? " " : ""}(${waitlist.other_style})` : ""}
+        </p>
+      )}
+      {website && (
+        <p>
+          <span className={labelC}>{t("admin.planners.field_web")}:</span>{" "}
+          <a
+            href={website.startsWith("http") ? website : `https://${website}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-umber-900 dark:hover:text-paper-50"
+          >
+            {website}
+          </a>
+        </p>
+      )}
+      {waitlist?.reference_links && (
+        <p>
+          <span className={labelC}>{t("admin.planners.field_references")}:</span>{" "}
+          {waitlist.reference_links}
+        </p>
+      )}
+      {waitlist?.early_bird && (
+        <p className="text-xs font-medium text-sage-700 dark:text-sage-400">
+          {t("admin.planners.early_tester")}
+        </p>
+      )}
+      {waitlist?.message && (
+        <p className="mt-1 whitespace-pre-wrap rounded-md bg-paper-100 p-2 text-xs dark:bg-umber-800">
+          {waitlist.message}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Toggle + collapsible body wrapper. Renders nothing when there's no content
+ *  so a bare account (no waitlist profile) shows just its main info. */
+function PlannerDetails(props: {
+  company: string | null;
+  category: string | null;
+  location: string | null;
+  waitlist: AdminPlannerWaitlistDetail | null;
+}) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  if (!hasPlannerDetails(props.company, props.location, props.waitlist)) return null;
+  return (
+    <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-800">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex items-center gap-1 text-xs font-medium text-umber-600 transition hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
+      >
+        <ChevronDown size={13} className={`transition-transform ${open ? "" : "-rotate-90"}`} />
+        {t("admin.planners.details_toggle")}
+      </button>
+      {open && (
+        <div className="mt-2">
+          <PlannerDetailRows {...props} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 const PLANS: PlannerPlan[] = ["starter", "pro", "premium"];
 
@@ -194,11 +341,55 @@ function ProvisionPlannerDialog({
   );
 }
 
+/** An accepted waitlist applicant with no account yet: read-only card (no plan
+ *  chip or account actions) with the same collapsible profile. */
+function PendingPlannerCard({ entry }: { entry: AdminPlannerPending }) {
+  const { t, locale } = useT();
+  return (
+    <div className="admin-card">
+      <div className="flex items-center gap-4">
+        <div
+          aria-hidden="true"
+          className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-paper-200 text-sm font-semibold text-umber-700 sm:flex dark:bg-umber-800 dark:text-umber-200"
+        >
+          {initials(entry.full_name, entry.email)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate font-semibold text-umber-900 dark:text-paper-50">
+              {entry.full_name || entry.email}
+            </p>
+            <Pill tone="blush" icon={<Clock size={11} />}>
+              {t("admin.planners.status_applied")}
+            </Pill>
+          </div>
+          <p className="truncate text-sm text-umber-700 dark:text-umber-300">{entry.email}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-umber-500 dark:text-umber-400">
+            {entry.phone && (
+              <>
+                <span>{entry.phone}</span>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
+            <span>{fmtDate(entry.created_at, locale)}</span>
+          </div>
+        </div>
+      </div>
+      <PlannerDetails
+        company={entry.waitlist.company_name}
+        category={null}
+        location={entry.waitlist.city}
+        waitlist={entry.waitlist}
+      />
+    </div>
+  );
+}
+
 function PlannerCard({
   planner,
   onChanged,
 }: {
-  planner: AdminPlannerView;
+  planner: AdminPlannerAccount;
   onChanged: () => void;
 }) {
   const { t, locale } = useT();
@@ -309,15 +500,6 @@ function PlannerCard({
           </div>
           <p className="truncate text-sm text-umber-700 dark:text-umber-300">{planner.email}</p>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-umber-500 dark:text-umber-400">
-            {planner.business_name && (
-              <>
-                <span className="truncate">
-                  {planner.business_name}
-                  {planner.planner_category ? ` (${planner.planner_category})` : ""}
-                </span>
-                <span aria-hidden="true">·</span>
-              </>
-            )}
             <span>
               {t("admin.planners.clients", {
                 n: planner.client_count,
@@ -326,12 +508,6 @@ function PlannerCard({
             </span>
             <span aria-hidden="true">·</span>
             <span>{fmtDate(planner.created_at, locale)}</span>
-            {planner.planner_city && (
-              <>
-                <span aria-hidden="true">·</span>
-                <span>{planner.planner_city}</span>
-              </>
-            )}
             {planner.founding_until && (
               <>
                 <span aria-hidden="true">·</span>
@@ -412,6 +588,13 @@ function PlannerCard({
           </button>
         </div>
       </div>
+
+      <PlannerDetails
+        company={planner.business_name ?? planner.waitlist?.company_name ?? null}
+        category={planner.planner_category}
+        location={planner.planner_city}
+        waitlist={planner.waitlist}
+      />
     </div>
   );
 }
@@ -442,22 +625,15 @@ export default function AdminPlannersPage() {
   }, []);
 
   const counts = useMemo(() => {
-    const c = { all: planners.length, active: 0, suspended: 0 };
-    for (const p of planners) {
-      if (p.status === "suspended") c.suspended++;
-      else c.active++;
-    }
+    const c = { all: planners.length, active: 0, pending: 0, suspended: 0 };
+    for (const p of planners) c[plannerBucket(p)]++;
     return c;
   }, [planners]);
 
   const visible =
-    filter === "all"
-      ? planners
-      : planners.filter((p) =>
-          filter === "suspended" ? p.status === "suspended" : p.status === "active",
-        );
+    filter === "all" ? planners : planners.filter((p) => plannerBucket(p) === filter);
 
-  const FILTERS: Filter[] = ["all", "active", "suspended"];
+  const FILTERS: Filter[] = ["all", "active", "pending", "suspended"];
 
   return (
     <>
@@ -506,9 +682,13 @@ export default function AdminPlannersPage() {
         <AdminEmptyState>{t("admin.planners.empty")}</AdminEmptyState>
       ) : (
         <div className="space-y-4">
-          {visible.map((p) => (
-            <PlannerCard key={p.user_id} planner={p} onChanged={load} />
-          ))}
+          {visible.map((p) =>
+            p.state === "pending" ? (
+              <PendingPlannerCard key={`w-${p.waitlist_id}`} entry={p} />
+            ) : (
+              <PlannerCard key={`u-${p.user_id}`} planner={p} onChanged={load} />
+            ),
+          )}
         </div>
       )}
     </>

@@ -10,7 +10,12 @@
 
 import { CONFIG } from "../config";
 import { sendKind } from "../domain/emails";
-import { isPlannerPlan, listAdminPlanners, updatePlannerPlan } from "../domain/planner";
+import {
+  isPlannerPlan,
+  listAdminPlanners,
+  listPendingPlannerWaitlist,
+  updatePlannerPlan,
+} from "../domain/planner";
 import { getPlannerSub } from "../domain/planner_billing";
 import { provisionPlanner, reissueActivationToken } from "../domain/planner_provisioning";
 import { purgeOneUser } from "../domain/purge";
@@ -32,9 +37,12 @@ function requirePlannerUser(userId: number) {
   return user;
 }
 
+// One list, two row kinds: accepted waitlist applicants without an account yet
+// (state:"pending") lead, then the live accounts (state:"active"). Pending
+// first so newly accepted planners surface at the top for the admin to notice.
 function handleList(ctx: Ctx): Response {
   requireAdmin(ctx);
-  return json({ planners: listAdminPlanners() });
+  return json({ planners: [...listPendingPlannerWaitlist(), ...listAdminPlanners()] });
 }
 
 /** Trimmed, length-capped required string field, 400 on anything else. */
