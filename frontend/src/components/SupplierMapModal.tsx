@@ -169,14 +169,40 @@ export default function SupplierMapModal({
             </div>
           )}
           {state === "ready" && coords && (
-            <iframe
-              key={`${coords.lat},${coords.lng}`}
-              title={t("suppliers.detail.map.iframeTitle", { name })}
-              src={osmEmbedUrl(coords, label)}
-              loading="eager"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="absolute inset-0 h-full w-full border-0"
-            />
+            <>
+              <iframe
+                key={`${coords.lat},${coords.lng}`}
+                title={t("suppliers.detail.map.iframeTitle", { name })}
+                src={osmEmbedUrl(coords, label)}
+                loading="eager"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="absolute inset-0 h-full w-full border-0"
+              />
+              {/* Our own red pin, overlaid on the iframe. OSM's built-in embed
+                  marker is green and lives in a cross-origin iframe, so it can't
+                  be recoloured. We drop it (see osmEmbedUrl) and drop this pin at
+                  the map centre instead — OSM renders the bbox centre at the
+                  viewport centre, and the bbox is symmetric around (lat,lng), so
+                  the tip lands exactly on the venue. */}
+              <div
+                className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full"
+                aria-hidden="true"
+              >
+                <svg
+                  width="30"
+                  height="42"
+                  viewBox="0 0 24 34"
+                  fill="none"
+                  className="text-celebrate drop-shadow-md"
+                >
+                  <path
+                    d="M12 0C5.4 0 0 5.4 0 12c0 9 12 22 12 22s12-13 12-22C24 5.4 18.6 0 12 0z"
+                    fill="currentColor"
+                  />
+                  <circle cx="12" cy="12" r="4.5" className="fill-white" />
+                </svg>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -194,10 +220,12 @@ function osmEmbedUrl(coords: Coords, label: string): string {
   // 16:9 display) so the marker stays centred.
   const halfHeight = halfWidth * 0.75;
   const bbox = [lng - halfWidth, lat - halfHeight, lng + halfWidth, lat + halfHeight];
+  // Intentionally no `marker` param: OSM's default embed marker is green and,
+  // being cross-origin, can't be recoloured. We overlay our own red pin at the
+  // map centre in the JSX above instead.
   const params = new URLSearchParams({
     bbox: bbox.join(","),
     layer: "mapnik",
-    marker: `${lat},${lng}`,
   });
   return `https://www.openstreetmap.org/export/embed.html?${params.toString()}`;
 }
