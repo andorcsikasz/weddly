@@ -8,7 +8,7 @@ import type {
 import { buildPlannerEmailDraft } from "@shared/planner_waitlist";
 import { Check, Clock, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
+import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
 import type { PillTone } from "../components/admin";
 import { Button, useConfirm, useToast } from "../components/ui";
 import { adminPlannerWaitlistApi } from "../lib/endpoints";
@@ -379,19 +379,47 @@ export default function AdminPlannerWaitlistPage() {
     <>
       <AdminPageHeader
         title={t("admin.nav_planner_waitlist")}
-        subtitle={`${entries.filter((e) => e.status === "new").length} beérkezett`}
+        subtitle="A /planners űrlapon beérkezett jelentkezések."
       />
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      {/* Uber-style segmented stat bar — mirrors the vendor waitlist: the count
+       *  is the headline (bold tabular figure), the status label sits under it,
+       *  and the whole tile is the filter. Active tile flips to a koromfekete
+       *  fill so the current segment reads at a glance on either theme. */}
+      <div
+        role="tablist"
+        aria-label={t("admin.nav_planner_waitlist")}
+        className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4"
+      >
         {ALL_STATUSES.map((s) => {
           const count = entries.filter((e) => e.status === s).length;
+          const active = filter === s;
           return (
-            <AdminFilterChip
+            <button
               key={s}
-              label={`${FILTER_LABELS[s]}${count > 0 ? ` · ${count}` : ""}`}
-              active={filter === s}
+              type="button"
+              role="tab"
+              aria-selected={active}
               onClick={() => setFilter(s)}
-            />
+              className={`flex min-h-tap flex-col items-start justify-center gap-0.5 rounded-2xl px-4 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 ${
+                active
+                  ? "bg-neutral-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                  : "bg-paper-50 text-neutral-900 ring-1 ring-ink-100 hover:bg-paper-100 dark:bg-umber-900 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-umber-800"
+              }`}
+            >
+              <span className="font-grotesk text-2xl font-semibold leading-none tabular-nums">
+                {count}
+              </span>
+              <span
+                className={`text-[11px] font-medium uppercase tracking-[0.08em] ${
+                  active
+                    ? "text-paper-200 dark:text-umber-700"
+                    : "text-neutral-500 dark:text-umber-300"
+                }`}
+              >
+                {FILTER_LABELS[s]}
+              </span>
+            </button>
           );
         })}
       </div>
