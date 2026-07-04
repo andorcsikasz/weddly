@@ -106,6 +106,15 @@ const TAB_ICON: Record<PlanningTab, typeof CheckCircle2> = {
   decision: ListChecks,
 };
 
+// Collapsed icon-tool group for the Tasks-tab actions (Timeline / Generate /
+// Template). Mirrors the guest toolbar: each segment shows only its icon until
+// hovered, when its label slides open (max-width + opacity) and the native
+// `title` tooltip appears. Literal class strings so Tailwind's JIT picks them up.
+const PLAN_TOOL_BTN =
+  "group flex items-center px-3 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-700/5 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-100 dark:hover:bg-paper-100/10";
+const PLAN_TOOL_LABEL =
+  "max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 group-hover:ml-1.5 group-hover:max-w-[14rem] group-hover:opacity-100";
+
 /** Single source of truth for the Ideas-tab category tags. Maps each
  *  `IdeaTag` to its i18n label key plus a token-based chip + dot colour
  *  class (tailwind tokens only). Drives the tag chips, the tag picker, and
@@ -946,64 +955,74 @@ export default function PlanningPage() {
           <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
             {activeKind === "task" && (
               <>
-                <Link
-                  to="/app/timeline"
-                  className="btn-outline btn-sm inline-flex items-center gap-1.5"
-                  title={t("planning.timeline_link_hint")}
-                >
-                  <GanttChartSquare size={14} aria-hidden="true" />
-                  <span>{t("planning.timeline_link")}</span>
-                  <ArrowRight size={12} aria-hidden="true" />
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setTimelineGenOpen(true)}
-                  className="btn-outline btn-sm inline-flex items-center gap-1.5"
-                  title={t("planning.timeline_gen_button_hint")}
-                >
-                  <CalendarClock size={14} aria-hidden="true" />
-                  <span>{t("planning.timeline_gen_button")}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTaskWandOpen(true)}
-                  className="btn-ghost btn-sm inline-flex items-center gap-1.5"
-                  title={t("planning.task_template_button_hint")}
-                >
-                  <Wand2 size={14} aria-hidden="true" />
-                  <span>{t("planning.task_template_button")}</span>
-                </button>
-                {/* List / Board view toggle */}
+                {/* List / Board view toggle — anchored left of the action pill. */}
                 <div
                   role="group"
                   aria-label={`${t("planning.view_list")} / ${t("planning.view_board")}`}
-                  className="inline-flex rounded-lg border border-ink-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800"
+                  className="inline-flex items-stretch overflow-hidden rounded-lg border border-ink-700 dark:border-paper-100"
                 >
                   <button
                     type="button"
                     onClick={() => setViewMode("list")}
                     aria-pressed={viewMode === "list"}
                     title={t("planning.view_list")}
-                    className={`flex items-center rounded-l-lg px-2 py-1.5 transition-colors ${
+                    aria-label={t("planning.view_list")}
+                    className={`flex items-center px-2.5 py-2 transition-colors ${
                       viewMode === "list"
-                        ? "bg-ink-800 text-paper-50 dark:bg-umber-900 dark:text-paper-50"
-                        : "text-ink-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-700"
+                        ? "bg-ink-800 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                        : "text-ink-500 hover:bg-ink-700/5 dark:text-umber-300 dark:hover:bg-paper-100/10"
                     }`}
                   >
-                    <LayoutList size={14} aria-hidden="true" />
+                    <LayoutList size={16} aria-hidden="true" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setViewMode("board")}
                     aria-pressed={viewMode === "board"}
                     title={t("planning.view_board")}
-                    className={`flex items-center rounded-r-lg px-2 py-1.5 transition-colors ${
+                    aria-label={t("planning.view_board")}
+                    className={`flex items-center border-l border-ink-300 px-2.5 py-2 transition-colors dark:border-umber-600 ${
                       viewMode === "board"
-                        ? "bg-ink-800 text-paper-50 dark:bg-umber-900 dark:text-paper-50"
-                        : "text-ink-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-700"
+                        ? "bg-ink-800 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                        : "text-ink-500 hover:bg-ink-700/5 dark:text-umber-300 dark:hover:bg-paper-100/10"
                     }`}
                   >
-                    <Columns3 size={14} aria-hidden="true" />
+                    <Columns3 size={16} aria-hidden="true" />
+                  </button>
+                </div>
+
+                {/* Collapsed icon-tool group: Timeline / Generate schedule /
+                 *  Template. Each segment is icon-only until hovered, when its
+                 *  label slides open (mirrors the guest toolbar). */}
+                <div className="inline-flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100">
+                  <Link
+                    to="/app/timeline"
+                    className={PLAN_TOOL_BTN}
+                    title={t("planning.timeline_link_hint")}
+                    aria-label={t("planning.timeline_link")}
+                  >
+                    <GanttChartSquare size={16} aria-hidden="true" />
+                    <span className={PLAN_TOOL_LABEL}>{t("planning.timeline_link")}</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setTimelineGenOpen(true)}
+                    className={PLAN_TOOL_BTN}
+                    title={t("planning.timeline_gen_button_hint")}
+                    aria-label={t("planning.timeline_gen_button")}
+                  >
+                    <CalendarClock size={16} aria-hidden="true" />
+                    <span className={PLAN_TOOL_LABEL}>{t("planning.timeline_gen_button")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTaskWandOpen(true)}
+                    className={PLAN_TOOL_BTN}
+                    title={t("planning.task_template_button_hint")}
+                    aria-label={t("planning.task_template_button")}
+                  >
+                    <Wand2 size={16} aria-hidden="true" />
+                    <span className={PLAN_TOOL_LABEL}>{t("planning.task_template_button")}</span>
                   </button>
                 </div>
               </>
