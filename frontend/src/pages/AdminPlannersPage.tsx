@@ -143,34 +143,35 @@ function PlannerDetailRows({
   );
 }
 
-/** Toggle + collapsible body wrapper. Renders nothing when there's no content
- *  so a bare account (no waitlist profile) shows just its main info. */
-function PlannerDetails(props: {
-  company: string | null;
-  category: string | null;
-  location: string | null;
-  waitlist: AdminPlannerWaitlistDetail | null;
+// Shared round icon button for the account row's right-hand action cluster
+// (suspend/reactivate, resend, delete, and the details disclosure).
+const ICON_BTN =
+  "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-umber-700 transition hover:border-umber-400 hover:text-umber-900 disabled:opacity-50 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:text-paper-50";
+
+/** Chevron disclosure that lives in the row's right-hand cluster (or the right
+ *  corner of a pending row) so a collapsed row stays a single line — the old
+ *  full-width "Részletek" footer took a row of its own. Reveals the profile
+ *  block rendered directly below the row. */
+function DetailsToggle({
+  open,
+  onToggle,
+  label,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  label: string;
 }) {
-  const { t } = useT();
-  const [open, setOpen] = useState(false);
-  if (!hasPlannerDetails(props.company, props.location, props.waitlist)) return null;
   return (
-    <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-800">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex items-center gap-1 text-xs font-medium text-umber-600 transition hover:text-umber-900 dark:text-umber-300 dark:hover:text-paper-50"
-      >
-        <ChevronDown size={13} className={`transition-transform ${open ? "" : "-rotate-90"}`} />
-        {t("admin.planners.details_toggle")}
-      </button>
-      {open && (
-        <div className="mt-2">
-          <PlannerDetailRows {...props} />
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-label={label}
+      title={label}
+      className={ICON_BTN}
+    >
+      <ChevronDown size={16} className={`transition-transform ${open ? "" : "-rotate-90"}`} />
+    </button>
   );
 }
 
@@ -345,6 +346,12 @@ function ProvisionPlannerDialog({
  *  chip or account actions) with the same collapsible profile. */
 function PendingPlannerCard({ entry }: { entry: AdminPlannerPending }) {
   const { t, locale } = useT();
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const hasDetails = hasPlannerDetails(
+    entry.waitlist.company_name,
+    entry.waitlist.city,
+    entry.waitlist,
+  );
   return (
     <div className="admin-card">
       <div className="flex items-center gap-4">
@@ -374,13 +381,24 @@ function PendingPlannerCard({ entry }: { entry: AdminPlannerPending }) {
             <span>{fmtDate(entry.created_at, locale)}</span>
           </div>
         </div>
+        {hasDetails && (
+          <DetailsToggle
+            open={detailsOpen}
+            onToggle={() => setDetailsOpen((o) => !o)}
+            label={t("admin.planners.details_toggle")}
+          />
+        )}
       </div>
-      <PlannerDetails
-        company={entry.waitlist.company_name}
-        category={null}
-        location={entry.waitlist.city}
-        waitlist={entry.waitlist}
-      />
+      {hasDetails && detailsOpen && (
+        <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-800">
+          <PlannerDetailRows
+            company={entry.waitlist.company_name}
+            category={null}
+            location={entry.waitlist.city}
+            waitlist={entry.waitlist}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -397,7 +415,13 @@ function PlannerCard({
   const promptEntry = useEntryPrompt();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const suspended = planner.status === "suspended";
+  const hasDetails = hasPlannerDetails(
+    planner.business_name ?? planner.waitlist?.company_name ?? null,
+    planner.planner_city,
+    planner.waitlist,
+  );
 
   const statusPill: { tone: PillTone; Icon: typeof Handshake; label: string } = suspended
     ? { tone: "muted", Icon: Ban, label: t("admin.planners.status_suspended") }
@@ -475,9 +499,6 @@ function PlannerCard({
     handlePlanChange(nextPlan(planner.planner_plan));
   }
 
-  const iconBtnClass =
-    "inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-umber-700 transition hover:border-umber-400 hover:text-umber-900 disabled:opacity-50 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:text-paper-50";
-
   return (
     <div className="admin-card">
       <div className="flex items-center gap-4">
@@ -547,7 +568,7 @@ function PlannerCard({
           {planner.pending_activation && (
             <button
               type="button"
-              className={iconBtnClass}
+              className={ICON_BTN}
               onClick={handleResendActivation}
               disabled={busy}
               title={t("admin.planners.resend_activation")}
@@ -559,7 +580,7 @@ function PlannerCard({
           {suspended ? (
             <button
               type="button"
-              className={iconBtnClass}
+              className={ICON_BTN}
               onClick={handleReactivate}
               disabled={busy}
               aria-label={t("admin.planners.reactivate")}
@@ -569,7 +590,7 @@ function PlannerCard({
           ) : (
             <button
               type="button"
-              className={iconBtnClass}
+              className={ICON_BTN}
               onClick={handleSuspend}
               disabled={busy}
               aria-label={t("admin.planners.suspend")}
@@ -579,22 +600,33 @@ function PlannerCard({
           )}
           <button
             type="button"
-            className={iconBtnClass}
+            className={ICON_BTN}
             onClick={handleDelete}
             disabled={busy}
             aria-label={t("admin.planners.delete")}
           >
             <Trash2 size={15} />
           </button>
+          {hasDetails && (
+            <DetailsToggle
+              open={detailsOpen}
+              onToggle={() => setDetailsOpen((o) => !o)}
+              label={t("admin.planners.details_toggle")}
+            />
+          )}
         </div>
       </div>
 
-      <PlannerDetails
-        company={planner.business_name ?? planner.waitlist?.company_name ?? null}
-        category={planner.planner_category}
-        location={planner.planner_city}
-        waitlist={planner.waitlist}
-      />
+      {hasDetails && detailsOpen && (
+        <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-800">
+          <PlannerDetailRows
+            company={planner.business_name ?? planner.waitlist?.company_name ?? null}
+            category={planner.planner_category}
+            location={planner.planner_city}
+            waitlist={planner.waitlist}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -630,8 +662,7 @@ export default function AdminPlannersPage() {
     return c;
   }, [planners]);
 
-  const visible =
-    filter === "all" ? planners : planners.filter((p) => plannerBucket(p) === filter);
+  const visible = filter === "all" ? planners : planners.filter((p) => plannerBucket(p) === filter);
 
   const FILTERS: Filter[] = ["all", "active", "pending", "suspended"];
 
