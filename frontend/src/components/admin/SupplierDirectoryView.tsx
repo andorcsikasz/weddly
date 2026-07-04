@@ -195,7 +195,7 @@ export function SupplierDirectoryView() {
   async function onDeleteEntry(row: SupplierDirectoryAdminRow) {
     const ok = await confirm({
       title: t("admin.confirm_delete_title"),
-      body: t("admin.confirm_delete_body"),
+      body: t("admin.directory_delete_confirm_body", { name: row.name }),
       confirmLabel: t("admin.delete"),
       cancelLabel: t("common.cancel"),
       destructive: true,
@@ -503,14 +503,17 @@ export function SupplierDirectoryView() {
                 <th scope="col" className="px-3 py-2">
                   {t("admin.directory_col_submitter_seen")}
                 </th>
-                <th scope="col" className="px-3 py-2 text-right">
+                <th
+                  scope="col"
+                  className="sticky right-0 z-20 border-l border-paper-300 bg-paper-100 px-3 py-2 text-right dark:border-umber-700 dark:bg-umber-800"
+                >
                   {t("admin.directory_col_actions")}
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-paper-200 bg-paper-50 dark:divide-umber-700 dark:bg-umber-800/40">
               {sortedRows.map((row) => (
-                <tr key={row.id} className="hover:bg-paper-100 dark:hover:bg-umber-700/40">
+                <tr key={row.id} className="group hover:bg-paper-100 dark:hover:bg-umber-700/40">
                   <td className="px-3 py-2 font-medium text-neutral-900 dark:text-paper-50">
                     <span className="block">{row.name}</span>
                     {row.website && (
@@ -599,7 +602,7 @@ export function SupplierDirectoryView() {
                         ? formatTimestamp(row.submitter_last_seen_at, locale)
                         : t("admin.directory_last_event_never")}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="sticky right-0 z-10 border-l border-paper-300 bg-paper-50 px-3 py-2 group-hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:group-hover:bg-umber-800">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"

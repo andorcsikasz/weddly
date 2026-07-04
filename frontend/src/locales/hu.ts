@@ -5017,6 +5017,8 @@ const hu: LocaleMessages = {
     directory_submitter_self: "Saját feltöltés",
     directory_submitter_user: "Pár ajánlása",
     directory_delete_entry: "Bejegyzés törlése",
+    directory_delete_confirm_body:
+      "Törlöd a(z) „{name}” szolgáltatót a katalógusból? Nem vonható vissza.",
     directory_delete_account: "Beküldő fiók törlése",
     directory_purge_submitter_title: "Beküldő teljes fiókjának törlése",
     directory_purge_submitter_body:

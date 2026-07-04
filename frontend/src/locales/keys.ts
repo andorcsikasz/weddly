@@ -5584,6 +5584,7 @@ export interface LocaleMessages {
     directory_submitter_self: string;
     directory_submitter_user: string;
     directory_delete_entry: string;
+    directory_delete_confirm_body: string;
     directory_delete_account: string;
     directory_purge_submitter_title: string;
     directory_purge_submitter_body: string;

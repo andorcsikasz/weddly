@@ -4964,6 +4964,7 @@ const en: LocaleMessages = {
     directory_submitter_self: "Self-submitted",
     directory_submitter_user: "Couple recommendation",
     directory_delete_entry: "Delete entry",
+    directory_delete_confirm_body: "Delete “{name}” from the directory? This can't be undone.",
     directory_delete_account: "Delete submitter account",
     directory_purge_submitter_title: "Delete submitter's entire account",
     directory_purge_submitter_body:
