@@ -83,7 +83,14 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { guestCountBaseline } from "../lib/budget";
-import { coupleApi, fetchPdfBlob, guestApi, householdApi, placeCardsUrl } from "../lib/endpoints";
+import {
+  type GuestUpsert,
+  coupleApi,
+  fetchPdfBlob,
+  guestApi,
+  householdApi,
+  placeCardsUrl,
+} from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -502,6 +509,50 @@ export default function GuestsPage() {
       setHouseholds(prevHouseholds);
       setSearchResults(prevSearch);
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
+  /** Household edit from the table view (pick an existing household or type a
+   *  new one). Reassigning ripples into both households' member lists and the
+   *  guest's household-canonical group_tag, so we optimistically move the row
+   *  for instant feedback, ship the PATCH, then refresh() to reconcile the
+   *  aggregates. `new_household_label` needs an explicit `household_id: null`
+   *  (backend contract on PATCH). */
+  async function onInlineChangeHousehold(
+    g: Guest,
+    target: { household_id: number } | { new_household_label: string },
+  ) {
+    if ("household_id" in target) {
+      const hid = target.household_id;
+      const apply = (list: Guest[]) =>
+        list.map((row) => (row.id === g.id ? { ...row, household_id: hid } : row));
+      setGuests(apply);
+      setSearchResults((prev) => (prev ? apply(prev) : prev));
+    }
+    try {
+      const body: GuestUpsert =
+        "household_id" in target
+          ? { ...g, household_id: target.household_id }
+          : { ...g, household_id: null, new_household_label: target.new_household_label };
+      await guestApi.update(g.id, body);
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      await refresh();
+    }
+  }
+
+  /** Inline create from the always-empty bottom row. Returns success so the row
+   *  knows to clear + refocus. A full refresh() picks up the new guest plus any
+   *  household the backend minted (auto household-of-one or `new_household_label`). */
+  async function onCreateGuestInline(body: GuestUpsert): Promise<boolean> {
+    try {
+      await guestApi.create(body);
+      await refresh();
+      return true;
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      return false;
     }
   }
 
@@ -1040,6 +1091,8 @@ export default function GuestsPage() {
             onSetSort={setSort}
             onUpdateGuest={onInlineUpdateGuest}
             onChangeGroup={onTableChangeGroup}
+            onChangeHousehold={onInlineChangeHousehold}
+            onCreateGuest={onCreateGuestInline}
             onEditGuest={(g) => setEditing({ guest: g, defaultHouseholdId: g.household_id })}
             onDeleteGuest={onDeleteGuest}
             onCycleInviteState={onCycleInviteState}
@@ -1439,6 +1492,257 @@ function CellSelect({
   );
 }
 
+const HOUSEHOLD_DATALIST_ID = "guest-household-options";
+
+/** Map a typed household name to an upsert target: an exact (case-insensitive)
+ *  label match reuses that household so we never mint a duplicate, otherwise it
+ *  becomes a fresh household. Blank input → null (no household field sent; the
+ *  backend auto-creates a household-of-one). Shared by the inline household cell
+ *  and the always-empty new-guest row. */
+function resolveHouseholdTarget(
+  text: string,
+  households: Household[],
+): { household_id: number } | { new_household_label: string } | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  const match = households.find((h) => h.label.trim().toLowerCase() === trimmed.toLowerCase());
+  return match ? { household_id: match.id } : { new_household_label: trimmed };
+}
+
+/** Shared list of household labels for every inline household combobox. One
+ *  native <datalist> feeds all rows' `list=` inputs. The native popup escapes
+ *  the table's horizontal scroll-clip (a custom dropdown wouldn't) and gives
+ *  free type-in for free. */
+function HouseholdDatalist({ households }: { households: Household[] }) {
+  // De-dupe labels so the native dropdown doesn't show the same name twice.
+  const labels = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const h of households) {
+      const key = h.label.trim();
+      if (!key || seen.has(key.toLowerCase())) continue;
+      seen.add(key.toLowerCase());
+      out.push(key);
+    }
+    return out;
+  }, [households]);
+  return (
+    <datalist id={HOUSEHOLD_DATALIST_ID}>
+      {labels.map((label) => (
+        <option key={label} value={label} />
+      ))}
+    </datalist>
+  );
+}
+
+/** Inline household editor: a datalist-backed combobox so the couple can pick an
+ *  existing household from the native dropdown OR type a brand-new name.
+ *  Committed on blur / Enter; Escape reverts. Resolution goes through
+ *  {@link resolveHouseholdTarget} (reuse-or-create). Empty text reverts so an
+ *  edit never orphans the guest. */
+function HouseholdCell({
+  label,
+  households,
+  onChange,
+}: {
+  label: string | null;
+  households: Household[];
+  onChange: (target: { household_id: number } | { new_household_label: string }) => void;
+}) {
+  const { t } = useT();
+  const [text, setText] = useState(label ?? "");
+  // Set on Escape so the blur it triggers reverts instead of committing. A ref
+  // (not state) because commit runs synchronously inside that same blur, before
+  // any state update would flush.
+  const revertRef = useRef(false);
+  // Re-sync when the row's household changes underneath us (optimistic update,
+  // refresh, or a move triggered elsewhere).
+  useEffect(() => setText(label ?? ""), [label]);
+
+  function commit() {
+    if (revertRef.current) {
+      revertRef.current = false;
+      setText(label ?? "");
+      return;
+    }
+    const trimmed = text.trim();
+    const current = (label ?? "").trim();
+    if (trimmed === current) return; // no change
+    if (!trimmed) {
+      setText(label ?? ""); // empty → revert, never orphan
+      return;
+    }
+    const target = resolveHouseholdTarget(trimmed, households);
+    if (target) onChange(target);
+  }
+
+  return (
+    <span className="relative inline-flex w-full min-w-[7rem]">
+      <input
+        type="text"
+        list={HOUSEHOLD_DATALIST_ID}
+        value={text}
+        aria-label={t("guests.table_col_household")}
+        placeholder={t("guests.table_household_placeholder")}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            e.currentTarget.blur();
+          } else if (e.key === "Escape") {
+            revertRef.current = true;
+            e.currentTarget.blur();
+          }
+        }}
+        className="h-8 w-full cursor-text truncate rounded-lg border border-transparent bg-transparent py-0 pl-2 pr-6 text-xs text-ink-700 transition-colors hover:border-paper-300 hover:bg-paper-100 focus:border-umber-500 focus:outline-none dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800"
+      />
+      <ChevronDown
+        size={12}
+        aria-hidden
+        className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+      />
+    </span>
+  );
+}
+
+/** Always-present blank row pinned to the bottom of the table: type a name (and
+ *  optionally a household / group), press Enter or hit the +, and the guest is
+ *  created inline, then the row clears and refocuses so the couple can keep
+ *  adding without leaving the spreadsheet. Household resolution matches the
+ *  inline cell (existing label reused, new one created, blank → the backend
+ *  auto-creates a household-of-one). */
+function GuestTableNewRow({
+  households,
+  onCreateGuest,
+}: {
+  households: Household[];
+  onCreateGuest: (body: GuestUpsert) => Promise<boolean>;
+}) {
+  const { t } = useT();
+  const [name, setName] = useState("");
+  const [householdText, setHouseholdText] = useState("");
+  const [group, setGroup] = useState<GuestGroupTag>("other");
+  const [saving, setSaving] = useState(false);
+  // Ref-guard against a double-submit from a fast second Enter before `saving`
+  // state flushes (the button uses the state; keydown needs the ref).
+  const savingRef = useRef(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  async function commit() {
+    const trimmed = name.trim();
+    if (!trimmed || savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    const body: GuestUpsert = { full_name: trimmed, group_tag: group };
+    const target = resolveHouseholdTarget(householdText, households);
+    if (target && "household_id" in target) {
+      body.household_id = target.household_id;
+    } else if (target) {
+      body.household_id = null;
+      body.new_household_label = target.new_household_label;
+    }
+    const ok = await onCreateGuest(body);
+    savingRef.current = false;
+    setSaving(false);
+    if (ok) {
+      setName("");
+      setHouseholdText("");
+      setGroup("other");
+      nameRef.current?.focus();
+    }
+  }
+
+  const cellInput =
+    "h-8 w-full rounded-lg border border-transparent bg-transparent py-0 px-2 text-xs text-ink-800 transition-colors placeholder:text-ink-400 hover:border-paper-300 focus:border-umber-500 focus:bg-paper-100 focus:outline-none disabled:opacity-60 dark:text-paper-50 dark:placeholder:text-umber-400 dark:hover:border-umber-600 dark:focus:bg-umber-800";
+  const placeholderCell = "px-3 py-2 text-xs text-ink-300 dark:text-umber-600";
+
+  return (
+    <tr className="bg-paper-50/50 dark:bg-umber-900/30">
+      <td className="px-3 py-2">
+        <span className="flex items-center gap-1.5">
+          <Plus size={13} aria-hidden className="shrink-0 text-ink-300 dark:text-umber-500" />
+          <input
+            ref={nameRef}
+            type="text"
+            value={name}
+            placeholder={t("guests.table_new_name_placeholder")}
+            aria-label={t("guests.table_new_name_placeholder")}
+            disabled={saving}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void commit();
+              }
+            }}
+            className={`${cellInput} font-medium`}
+          />
+        </span>
+      </td>
+      <td className="px-3 py-2">
+        <span className="relative inline-flex w-full min-w-[7rem]">
+          <input
+            type="text"
+            list={HOUSEHOLD_DATALIST_ID}
+            value={householdText}
+            placeholder={t("guests.table_household_placeholder")}
+            aria-label={t("guests.table_col_household")}
+            disabled={saving}
+            onChange={(e) => setHouseholdText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void commit();
+              }
+            }}
+            className={`${cellInput} truncate pr-6`}
+          />
+          <ChevronDown
+            size={12}
+            aria-hidden
+            className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+          />
+        </span>
+      </td>
+      <td className="px-3 py-2">
+        <CellSelect
+          value={group}
+          ariaLabel={t("guests.table_col_group")}
+          onChange={(v) => setGroup(v as GuestGroupTag)}
+        >
+          {GROUPS.map((gr) => (
+            <option key={gr} value={gr}>
+              {t(`guests.group_${gr}`)}
+            </option>
+          ))}
+        </CellSelect>
+      </td>
+      {/* RSVP / meal / dietary / accommodation / invite are meaningless until
+          the guest exists; quiet placeholders keep the columns aligned. */}
+      <td className={placeholderCell}>–</td>
+      <td className={placeholderCell}>–</td>
+      <td className={placeholderCell}>–</td>
+      <td className={`${placeholderCell} text-center`}>–</td>
+      <td className={`${placeholderCell} text-center`}>–</td>
+      <td className="px-3 py-2">
+        <span className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => void commit()}
+            disabled={!name.trim() || saving}
+            aria-label={t("guests.add")}
+            title={t("guests.add")}
+          >
+            <Plus size={14} />
+          </button>
+        </span>
+      </td>
+    </tr>
+  );
+}
+
 /** Spreadsheet lens over the (filtered) guest list. Group, RSVP, meal and the
  *  dietary tags are edited inline via dropdowns; dietary uses a toggle-select
  *  (picking an option flips that allergen tag on/off) so the free-text
@@ -1452,6 +1756,8 @@ function GuestTable({
   onSetSort,
   onUpdateGuest,
   onChangeGroup,
+  onChangeHousehold,
+  onCreateGuest,
   onEditGuest,
   onDeleteGuest,
   onCycleInviteState,
@@ -1464,6 +1770,11 @@ function GuestTable({
   onSetSort: (k: SortKey) => void;
   onUpdateGuest: (g: Guest, patch: Partial<Guest>) => void | Promise<void>;
   onChangeGroup: (g: Guest, tag: GuestGroupTag) => void | Promise<void>;
+  onChangeHousehold: (
+    g: Guest,
+    target: { household_id: number } | { new_household_label: string },
+  ) => void | Promise<void>;
+  onCreateGuest: (body: GuestUpsert) => Promise<boolean>;
   onEditGuest: (g: Guest) => void;
   onDeleteGuest: (id: number) => void | Promise<void>;
   onCycleInviteState: (g: Guest) => void | Promise<void>;
@@ -1475,14 +1786,6 @@ function GuestTable({
     for (const hh of households) m.set(hh.id, hh.label);
     return m;
   }, [households]);
-
-  if (guests.length === 0) {
-    return (
-      <p className="card text-sm text-ink-500 dark:text-umber-300">
-        {t("guests.filtered_results_empty")}
-      </p>
-    );
-  }
 
   const th =
     "px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-ink-400 dark:text-umber-500";
@@ -1502,6 +1805,7 @@ function GuestTable({
 
   return (
     <div className="card overflow-x-auto p-0">
+      <HouseholdDatalist households={households} />
       <table className="w-full min-w-[920px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-paper-200 dark:border-umber-700">
@@ -1542,15 +1846,20 @@ function GuestTable({
               householdLabel={
                 g.household_id != null ? (householdLabelById.get(g.household_id) ?? null) : null
               }
+              households={households}
               mealMenu={mealMenu}
               onUpdateGuest={onUpdateGuest}
               onChangeGroup={onChangeGroup}
+              onChangeHousehold={onChangeHousehold}
               onEditGuest={onEditGuest}
               onDeleteGuest={onDeleteGuest}
               onCycleInviteState={onCycleInviteState}
               onPrintPlaceCard={onPrintPlaceCard}
             />
           ))}
+          {/* Always-present blank row so a guest can be added inline without
+              opening the drawer. */}
+          <GuestTableNewRow households={households} onCreateGuest={onCreateGuest} />
         </tbody>
       </table>
     </div>
@@ -1560,9 +1869,11 @@ function GuestTable({
 function GuestTableRow({
   guest: g,
   householdLabel,
+  households,
   mealMenu,
   onUpdateGuest,
   onChangeGroup,
+  onChangeHousehold,
   onEditGuest,
   onDeleteGuest,
   onCycleInviteState,
@@ -1570,9 +1881,14 @@ function GuestTableRow({
 }: {
   guest: Guest;
   householdLabel: string | null;
+  households: Household[];
   mealMenu: MealMenu | null;
   onUpdateGuest: (g: Guest, patch: Partial<Guest>) => void | Promise<void>;
   onChangeGroup: (g: Guest, tag: GuestGroupTag) => void | Promise<void>;
+  onChangeHousehold: (
+    g: Guest,
+    target: { household_id: number } | { new_household_label: string },
+  ) => void | Promise<void>;
   onEditGuest: (g: Guest) => void;
   onDeleteGuest: (id: number) => void | Promise<void>;
   onCycleInviteState: (g: Guest) => void | Promise<void>;
@@ -1604,8 +1920,21 @@ function GuestTableRow({
           <span className="block truncate text-xs text-ink-500 dark:text-umber-300">{g.email}</span>
         )}
       </td>
-      <td className="max-w-[10rem] truncate px-3 py-2 text-xs text-ink-600 dark:text-umber-200">
-        {householdLabel ?? "–"}
+      <td className="max-w-[11rem] px-3 py-2">
+        {/* A +1's household is bound to its host server-side, so editing it here
+            would silently revert, so show it read-only. Everyone else gets the
+            pick-or-type combobox. */}
+        {g.is_plus_one ? (
+          <span className="truncate text-xs text-ink-600 dark:text-umber-200">
+            {householdLabel ?? "–"}
+          </span>
+        ) : (
+          <HouseholdCell
+            label={householdLabel}
+            households={households}
+            onChange={(target) => void onChangeHousehold(g, target)}
+          />
+        )}
       </td>
       <td className="px-3 py-2">
         {/* Group is household-canonical on the backend, so this select edits
