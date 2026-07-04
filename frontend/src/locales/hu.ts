@@ -1850,11 +1850,8 @@ const hu: LocaleMessages = {
     tab_ideas: "Ötletek",
     tab_decisions: "Döntések",
     tab_schedule: "Programterv",
-    tab_tasks_micro: "Tennivalók",
     tab_tasks_tip: "Konkrét tennivalók: foglalások, megrendelések, intézések",
-    tab_ideas_micro: "Inspiráció",
     tab_ideas_tip: "Kreatív ötletek és inspirációk, amiket még nem döntöttetek el",
-    tab_decisions_micro: "Átgondolnivalók",
     tab_decisions_tip: "Kérdések, amiket a nagy nap előtt meg kell válaszolnotok",
     decisions: {
       intake_title: "Pár kérdés, hogy csak a rátok tartozó dolgokat mutassuk",
@@ -3434,6 +3431,8 @@ const hu: LocaleMessages = {
     table_dietary_none: "Nincs",
     table_dietary_selected: "{count} kiválasztva",
     table_sort_hint: "Rendezés az oszlop szerint",
+    table_household_placeholder: "Válassz vagy írj be",
+    table_new_name_placeholder: "Új vendég neve…",
   },
   budget: {
     title: "Költségvetés",

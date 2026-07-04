@@ -1829,11 +1829,8 @@ const en: LocaleMessages = {
     tab_ideas: "Ideas",
     tab_decisions: "Decisions",
     tab_schedule: "Schedule",
-    tab_tasks_micro: "To-dos",
     tab_tasks_tip: "Concrete to-dos: bookings, orders, errands",
-    tab_ideas_micro: "Inspiration",
     tab_ideas_tip: "Creative ideas and inspiration you haven't decided on yet",
-    tab_decisions_micro: "To think through",
     tab_decisions_tip: "Questions to answer before the big day",
     decisions: {
       intake_title: "A few questions so we only show what applies to you",
@@ -3398,6 +3395,8 @@ const en: LocaleMessages = {
     table_dietary_none: "None",
     table_dietary_selected: "{count} selected",
     table_sort_hint: "Sort by this column",
+    table_household_placeholder: "Pick or type",
+    table_new_name_placeholder: "New guest name…",
   },
   budget: {
     title: "Budget",

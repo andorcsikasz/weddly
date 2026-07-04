@@ -2087,13 +2087,10 @@ export interface LocaleMessages {
     tab_ideas: string;
     tab_decisions: string;
     tab_schedule: string;
-    /** Micro-labels + hover tooltips under each tab name, for instant
-     *  scannability of what each surface is for. */
-    tab_tasks_micro: string;
+    /** Hover tooltips under each tab name, for instant scannability of what
+     *  each surface is for. */
     tab_tasks_tip: string;
-    tab_ideas_micro: string;
     tab_ideas_tip: string;
-    tab_decisions_micro: string;
     tab_decisions_tip: string;
     /** "Döntések" decision-prompt deck. */
     decisions: {
@@ -3636,6 +3633,8 @@ export interface LocaleMessages {
     table_dietary_none: string;
     table_dietary_selected: string;
     table_sort_hint: string;
+    table_household_placeholder: string;
+    table_new_name_placeholder: string;
     dietary: string;
     /** Allergies / free-text dietary notes — separate from `meal` (the picker). */
     allergies: string;

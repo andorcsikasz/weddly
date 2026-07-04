@@ -82,23 +82,20 @@ type PlanningTabKind = Exclude<PlanningKind, "schedule">;
  *  so the tab key is its own union member, not a PlanningKind. */
 type PlanningTab = PlanningTabKind | "decision";
 
-const TABS: { kind: PlanningTab; labelKey: string; microKey: string; tipKey: string }[] = [
+const TABS: { kind: PlanningTab; labelKey: string; tipKey: string }[] = [
   {
     kind: "task",
     labelKey: "planning.tab_tasks",
-    microKey: "planning.tab_tasks_micro",
     tipKey: "planning.tab_tasks_tip",
   },
   {
     kind: "idea",
     labelKey: "planning.tab_ideas",
-    microKey: "planning.tab_ideas_micro",
     tipKey: "planning.tab_ideas_tip",
   },
   {
     kind: "decision",
     labelKey: "planning.tab_decisions",
-    microKey: "planning.tab_decisions_micro",
     tipKey: "planning.tab_decisions_tip",
   },
 ];
@@ -897,15 +894,6 @@ export default function PlanningPage() {
                   <span className="flex items-center gap-2 text-sm leading-none">
                     <Icon size={16} aria-hidden="true" />
                     <span>{t(tab.labelKey)}</span>
-                  </span>
-                  <span
-                    className={`text-[10px] font-normal leading-none ${
-                      active
-                        ? "text-paper-200 dark:text-umber-200"
-                        : "text-ink-400 dark:text-umber-300"
-                    }`}
-                  >
-                    {t(tab.microKey)}
                   </span>
                   {/* Instant styled tooltip (same visual language as the guest
                    *  header stat tooltips). aria-hidden since the tab already
