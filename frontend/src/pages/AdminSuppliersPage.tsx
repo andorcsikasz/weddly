@@ -16,7 +16,7 @@ import {
   User,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
+import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
 import { SupplierDirectoryView } from "../components/admin/SupplierDirectoryView";
 import { SegmentedControl, Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -89,6 +89,16 @@ function formatDateTime(unixMs: number | null, locale: string): string {
  *  is the moderation queue and the default place the admin lands. */
 type StatusFilter = "all" | "pending" | "awaiting_review" | "active" | "hidden";
 
+/** Filter buckets in lifecycle order, each doubling as a KPI tile. `all`
+ *  leads (total submissions), then the queue → live → hidden progression. */
+const STATUS_FILTERS: { key: StatusFilter; labelKey: string }[] = [
+  { key: "all", labelKey: "admin.filter_status_all" },
+  { key: "pending", labelKey: "admin.filter_status_pending" },
+  { key: "awaiting_review", labelKey: "admin.filter_status_awaiting_review" },
+  { key: "active", labelKey: "admin.filter_status_active" },
+  { key: "hidden", labelKey: "admin.filter_status_hidden" },
+];
+
 export default function AdminSuppliersPage() {
   const { t } = useT();
   useDocumentMeta("seo.admin_suppliers_title", "seo.admin_suppliers_description");
@@ -159,11 +169,6 @@ function ModerationView() {
     if (filter === "all") return suppliers;
     return suppliers.filter((s) => s.status === filter);
   }, [suppliers, filter]);
-
-  const awaitingReviewCount = useMemo(
-    () => suppliers.filter((s) => s.status === "awaiting_review").length,
-    [suppliers],
-  );
 
   // Soft duplicate detection: group every loaded listing (all statuses) by its
   // normalized name, then map each id to the OTHER listings sharing that key.
@@ -355,38 +360,47 @@ function ModerationView() {
 
   return (
     <>
-      {/* Status filter chips. */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="eyebrow">{t("admin.filter_status_label")}</span>
-        <AdminFilterChip
-          label={t("admin.filter_status_all")}
-          active={filter === "all"}
-          onClick={() => setFilter("all")}
-        />
-        <AdminFilterChip
-          label={t("admin.filter_status_pending")}
-          active={filter === "pending"}
-          onClick={() => setFilter("pending")}
-        />
-        <AdminFilterChip
-          label={
-            awaitingReviewCount > 0
-              ? `${t("admin.filter_status_awaiting_review")} · ${awaitingReviewCount}`
-              : t("admin.filter_status_awaiting_review")
-          }
-          active={filter === "awaiting_review"}
-          onClick={() => setFilter("awaiting_review")}
-        />
-        <AdminFilterChip
-          label={t("admin.filter_status_active")}
-          active={filter === "active"}
-          onClick={() => setFilter("active")}
-        />
-        <AdminFilterChip
-          label={t("admin.filter_status_hidden")}
-          active={filter === "hidden"}
-          onClick={() => setFilter("hidden")}
-        />
+      {/* Uber-style segmented stat bar — mirrors the waitlist boards: the count
+       *  is the headline (bold tabular figure), the status label sits under it,
+       *  and the whole tile is the filter. Active tile flips to a koromfekete
+       *  fill so the current segment reads at a glance on either theme. */}
+      <div
+        role="tablist"
+        aria-label={t("admin.filter_status_label")}
+        className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5"
+      >
+        {STATUS_FILTERS.map(({ key, labelKey }) => {
+          const count =
+            key === "all" ? suppliers.length : suppliers.filter((s) => s.status === key).length;
+          const active = filter === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setFilter(key)}
+              className={`flex min-h-tap flex-col items-start justify-center gap-0.5 rounded-2xl px-4 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 ${
+                active
+                  ? "bg-neutral-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                  : "bg-paper-50 text-neutral-900 ring-1 ring-ink-100 hover:bg-paper-100 dark:bg-umber-900 dark:text-paper-100 dark:ring-umber-700 dark:hover:bg-umber-800"
+              }`}
+            >
+              <span className="font-grotesk text-2xl font-semibold leading-none tabular-nums">
+                {count}
+              </span>
+              <span
+                className={`text-[11px] font-medium uppercase tracking-[0.08em] ${
+                  active
+                    ? "text-paper-200 dark:text-umber-700"
+                    : "text-neutral-500 dark:text-umber-300"
+                }`}
+              >
+                {t(labelKey)}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Bulk-action toolbar. Stays mounted for layout stability when the
