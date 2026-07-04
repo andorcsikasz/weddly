@@ -1004,17 +1004,18 @@ function SideLink({
   // the same height collapsed or expanded, and an icon stays on the exact
   // same row when the user toggles the rail (paired with the fixed-height
   // SidebarGroupHeader below, which does the same for section breaks).
-  // `lg:w-auto` on purpose: in the flex column it stretches the row to fill
-  // its width, so the active pill's dark background runs all the way under the
-  // floating collapse toggle — the toggle's own paper disc keeps it readable on
-  // top. (A `w-fit` pill that stops at the label was tried and rejected: the
-  // dark part must reach under the « icon.) `lg:mx-2` insets the pill box by the
-  // same 8px the section dividers use (`inset-x-2`), so the dark header, every
-  // hover row, and the group hairlines all share one left/right axis instead of
-  // the pill bleeding flush to the rail edges and looking ~8px wider.
+  // `lg:w-fit` on purpose: the active pill hugs its icon + label instead of
+  // stretching the full rail width. An earlier `w-auto` stretched it edge-to-
+  // edge so the dark background ran all the way under the floating collapse
+  // toggle, which left a wide, unbalanced slab of dark trailing off to the
+  // right of the « on the first row — rejected. The toggle carries its own
+  // bordered paper/umber disc, so it stays readable floating over the plain
+  // rail to the right of the shortened pill. `lg:mx-2` insets the pill box by
+  // the same 8px the section dividers use (`inset-x-2`), so the dark header,
+  // every hover row, and the group hairlines all share one left edge.
   const shape = collapsed
     ? "h-8 w-9 justify-center"
-    : "h-8 w-9 justify-center lg:mx-2 lg:w-auto lg:justify-start lg:px-3";
+    : "h-8 w-9 justify-center lg:mx-2 lg:w-fit lg:justify-start lg:px-3";
   return (
     <NavLink
       to={to}
