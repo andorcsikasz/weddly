@@ -131,161 +131,178 @@ describe("vendor tasks board", () => {
   // the default 5s is fine solo but flakes when other suites share the run.
   const BOOTSTRAP_TIMEOUT = 30_000;
 
-  test("create → list → move lane → edit → delete lifecycle", async () => {
-    wipeAll();
-    const { vendorToken } = await bootstrapVendor("lifecycle");
+  test(
+    "create → list → move lane → edit → delete lifecycle",
+    async () => {
+      wipeAll();
+      const { vendorToken } = await bootstrapVendor("lifecycle");
 
-    // Create: default lane is 'todo'.
-    const created = await req<{ task: VendorTask }>(
-      "POST",
-      "/api/vendor/tasks",
-      { title: "Send the quote", due_date: "2027-05-10" },
-      { token: vendorToken },
-    );
-    expect(created.status).toBe(201);
-    expect(created.data.task.title).toBe("Send the quote");
-    expect(created.data.task.board_status).toBe("todo");
-    expect(created.data.task.due_date).toBe("2027-05-10");
-    const taskId = created.data.task.id;
+      // Create: default lane is 'todo'.
+      const created = await req<{ task: VendorTask }>(
+        "POST",
+        "/api/vendor/tasks",
+        { title: "Send the quote", due_date: "2027-05-10" },
+        { token: vendorToken },
+      );
+      expect(created.status).toBe(201);
+      expect(created.data.task.title).toBe("Send the quote");
+      expect(created.data.task.board_status).toBe("todo");
+      expect(created.data.task.due_date).toBe("2027-05-10");
+      const taskId = created.data.task.id;
 
-    // A second, undated task sorts AFTER the deadlined one.
-    const second = await req<{ task: VendorTask }>(
-      "POST",
-      "/api/vendor/tasks",
-      { title: "Order new lenses" },
-      { token: vendorToken },
-    );
-    expect(second.status).toBe(201);
-    expect(second.data.task.due_date).toBeNull();
+      // A second, undated task sorts AFTER the deadlined one.
+      const second = await req<{ task: VendorTask }>(
+        "POST",
+        "/api/vendor/tasks",
+        { title: "Order new lenses" },
+        { token: vendorToken },
+      );
+      expect(second.status).toBe(201);
+      expect(second.data.task.due_date).toBeNull();
 
-    const list = await req<{ tasks: VendorTask[] }>("GET", "/api/vendor/tasks", undefined, {
-      token: vendorToken,
-    });
-    expect(list.status).toBe(200);
-    expect(list.data.tasks.map((tk) => tk.title)).toEqual(["Send the quote", "Order new lenses"]);
+      const list = await req<{ tasks: VendorTask[] }>("GET", "/api/vendor/tasks", undefined, {
+        token: vendorToken,
+      });
+      expect(list.status).toBe(200);
+      expect(list.data.tasks.map((tk) => tk.title)).toEqual(["Send the quote", "Order new lenses"]);
 
-    // Drag to 'doing' → audit entry.
-    const moved = await req<{ task: VendorTask }>(
-      "PATCH",
-      `/api/vendor/tasks/${taskId}`,
-      { board_status: "doing" },
-      { token: vendorToken },
-    );
-    expect(moved.status).toBe(200);
-    expect(moved.data.task.board_status).toBe("doing");
-    const audit = db
-      .prepare(
-        "SELECT COUNT(*) AS n FROM audit_log WHERE action = 'vendor.task_board_move' AND target_id = ?",
-      )
-      .get(taskId) as { n: number };
-    expect(audit.n).toBe(1);
+      // Drag to 'doing' → audit entry.
+      const moved = await req<{ task: VendorTask }>(
+        "PATCH",
+        `/api/vendor/tasks/${taskId}`,
+        { board_status: "doing" },
+        { token: vendorToken },
+      );
+      expect(moved.status).toBe(200);
+      expect(moved.data.task.board_status).toBe("doing");
+      const audit = db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM audit_log WHERE action = 'vendor.task_board_move' AND target_id = ?",
+        )
+        .get(taskId) as { n: number };
+      expect(audit.n).toBe(1);
 
-    // Edit title + clear the due date in one PATCH.
-    const edited = await req<{ task: VendorTask }>(
-      "PATCH",
-      `/api/vendor/tasks/${taskId}`,
-      { title: "Send the final quote", due_date: null },
-      { token: vendorToken },
-    );
-    expect(edited.status).toBe(200);
-    expect(edited.data.task.title).toBe("Send the final quote");
-    expect(edited.data.task.due_date).toBeNull();
-    expect(edited.data.task.board_status).toBe("doing");
+      // Edit title + clear the due date in one PATCH.
+      const edited = await req<{ task: VendorTask }>(
+        "PATCH",
+        `/api/vendor/tasks/${taskId}`,
+        { title: "Send the final quote", due_date: null },
+        { token: vendorToken },
+      );
+      expect(edited.status).toBe(200);
+      expect(edited.data.task.title).toBe("Send the final quote");
+      expect(edited.data.task.due_date).toBeNull();
+      expect(edited.data.task.board_status).toBe("doing");
 
-    // Delete → gone from the list.
-    const del = await req<{ ok: true }>("DELETE", `/api/vendor/tasks/${taskId}`, undefined, {
-      token: vendorToken,
-    });
-    expect(del.status).toBe(200);
-    const after = await req<{ tasks: VendorTask[] }>("GET", "/api/vendor/tasks", undefined, {
-      token: vendorToken,
-    });
-    expect(after.data.tasks.map((tk) => tk.id)).toEqual([second.data.task.id]);
-  }, BOOTSTRAP_TIMEOUT);
+      // Delete → gone from the list.
+      const del = await req<{ ok: true }>("DELETE", `/api/vendor/tasks/${taskId}`, undefined, {
+        token: vendorToken,
+      });
+      expect(del.status).toBe(200);
+      const after = await req<{ tasks: VendorTask[] }>("GET", "/api/vendor/tasks", undefined, {
+        token: vendorToken,
+      });
+      expect(after.data.tasks.map((tk) => tk.id)).toEqual([second.data.task.id]);
+    },
+    BOOTSTRAP_TIMEOUT,
+  );
 
-  test("validates title, due_date and board_status", async () => {
-    wipeAll();
-    const { vendorToken } = await bootstrapVendor("validate");
+  test(
+    "validates title, due_date and board_status",
+    async () => {
+      wipeAll();
+      const { vendorToken } = await bootstrapVendor("validate");
 
-    const empty = await req("POST", "/api/vendor/tasks", { title: "   " }, { token: vendorToken });
-    expect(empty.status).toBe(400);
+      const empty = await req(
+        "POST",
+        "/api/vendor/tasks",
+        { title: "   " },
+        { token: vendorToken },
+      );
+      expect(empty.status).toBe(400);
 
-    const longTitle = await req(
-      "POST",
-      "/api/vendor/tasks",
-      { title: "x".repeat(201) },
-      { token: vendorToken },
-    );
-    expect(longTitle.status).toBe(400);
+      const longTitle = await req(
+        "POST",
+        "/api/vendor/tasks",
+        { title: "x".repeat(201) },
+        { token: vendorToken },
+      );
+      expect(longTitle.status).toBe(400);
 
-    const badDate = await req(
-      "POST",
-      "/api/vendor/tasks",
-      { title: "ok", due_date: "next tuesday" },
-      { token: vendorToken },
-    );
-    expect(badDate.status).toBe(400);
+      const badDate = await req(
+        "POST",
+        "/api/vendor/tasks",
+        { title: "ok", due_date: "next tuesday" },
+        { token: vendorToken },
+      );
+      expect(badDate.status).toBe(400);
 
-    const badLane = await req(
-      "POST",
-      "/api/vendor/tasks",
-      { title: "ok", board_status: "archived" },
-      { token: vendorToken },
-    );
-    expect(badLane.status).toBe(400);
+      const badLane = await req(
+        "POST",
+        "/api/vendor/tasks",
+        { title: "ok", board_status: "archived" },
+        { token: vendorToken },
+      );
+      expect(badLane.status).toBe(400);
 
-    const ok = await req<{ task: VendorTask }>(
-      "POST",
-      "/api/vendor/tasks",
-      { title: "ok", board_status: "doing" },
-      { token: vendorToken },
-    );
-    expect(ok.status).toBe(201);
-    expect(ok.data.task.board_status).toBe("doing");
+      const ok = await req<{ task: VendorTask }>(
+        "POST",
+        "/api/vendor/tasks",
+        { title: "ok", board_status: "doing" },
+        { token: vendorToken },
+      );
+      expect(ok.status).toBe(201);
+      expect(ok.data.task.board_status).toBe("doing");
 
-    const badPatch = await req(
-      "PATCH",
-      `/api/vendor/tasks/${ok.data.task.id}`,
-      { board_status: "later" },
-      { token: vendorToken },
-    );
-    expect(badPatch.status).toBe(400);
-  }, BOOTSTRAP_TIMEOUT);
+      const badPatch = await req(
+        "PATCH",
+        `/api/vendor/tasks/${ok.data.task.id}`,
+        { board_status: "later" },
+        { token: vendorToken },
+      );
+      expect(badPatch.status).toBe(400);
+    },
+    BOOTSTRAP_TIMEOUT,
+  );
 
-  test("a foreign vendor's task reads as 404", async () => {
-    wipeAll();
-    const { vendorToken: tokenA } = await bootstrapVendor("owner-a");
-    const { vendorToken: tokenB } = await bootstrapVendor("owner-b");
+  test(
+    "a foreign vendor's task reads as 404",
+    async () => {
+      wipeAll();
+      const { vendorToken: tokenA } = await bootstrapVendor("owner-a");
+      const { vendorToken: tokenB } = await bootstrapVendor("owner-b");
 
-    const created = await req<{ task: VendorTask }>(
-      "POST",
-      "/api/vendor/tasks",
-      { title: "Private plan" },
-      { token: tokenA },
-    );
-    expect(created.status).toBe(201);
-    const taskId = created.data.task.id;
+      const created = await req<{ task: VendorTask }>(
+        "POST",
+        "/api/vendor/tasks",
+        { title: "Private plan" },
+        { token: tokenA },
+      );
+      expect(created.status).toBe(201);
+      const taskId = created.data.task.id;
 
-    const patch = await req(
-      "PATCH",
-      `/api/vendor/tasks/${taskId}`,
-      { board_status: "done" },
-      { token: tokenB },
-    );
-    expect(patch.status).toBe(404);
-    const del = await req("DELETE", `/api/vendor/tasks/${taskId}`, undefined, { token: tokenB });
-    expect(del.status).toBe(404);
+      const patch = await req(
+        "PATCH",
+        `/api/vendor/tasks/${taskId}`,
+        { board_status: "done" },
+        { token: tokenB },
+      );
+      expect(patch.status).toBe(404);
+      const del = await req("DELETE", `/api/vendor/tasks/${taskId}`, undefined, { token: tokenB });
+      expect(del.status).toBe(404);
 
-    // B's list stays empty; A's task is untouched.
-    const listB = await req<{ tasks: VendorTask[] }>("GET", "/api/vendor/tasks", undefined, {
-      token: tokenB,
-    });
-    expect(listB.data.tasks).toEqual([]);
-    const listA = await req<{ tasks: VendorTask[] }>("GET", "/api/vendor/tasks", undefined, {
-      token: tokenA,
-    });
-    expect(listA.data.tasks[0]?.board_status).toBe("todo");
-  }, BOOTSTRAP_TIMEOUT);
+      // B's list stays empty; A's task is untouched.
+      const listB = await req<{ tasks: VendorTask[] }>("GET", "/api/vendor/tasks", undefined, {
+        token: tokenB,
+      });
+      expect(listB.data.tasks).toEqual([]);
+      const listA = await req<{ tasks: VendorTask[] }>("GET", "/api/vendor/tasks", undefined, {
+        token: tokenA,
+      });
+      expect(listA.data.tasks[0]?.board_status).toBe("todo");
+    },
+    BOOTSTRAP_TIMEOUT,
+  );
 
   test("401 for anon, 403 for couple-role users", async () => {
     wipeAll();

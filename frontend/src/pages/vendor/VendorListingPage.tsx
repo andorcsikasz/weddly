@@ -734,12 +734,7 @@ export default function VendorListingPage() {
                     key={p.id}
                     className="group relative aspect-[3/2] overflow-hidden rounded-lg bg-paper-100 dark:bg-umber-800"
                   >
-                    <img
-                      src={p.url}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
+                    <img src={p.url} alt="" loading="lazy" className="h-full w-full object-cover" />
                     <button
                       type="button"
                       aria-label={t("vendor_home.gallery_delete")}
@@ -760,9 +755,7 @@ export default function VendorListingPage() {
                   >
                     <Plus size={18} aria-hidden="true" />
                     <span className="text-xs font-medium">
-                      {galleryBusy
-                        ? t("vendor_home.hero_uploading")
-                        : t("vendor_home.gallery_add")}
+                      {galleryBusy ? t("vendor_home.hero_uploading") : t("vendor_home.gallery_add")}
                     </span>
                   </button>
                 )}

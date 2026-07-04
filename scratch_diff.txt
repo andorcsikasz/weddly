@@ -1,0 +1,1263 @@
+diff --git a/backend/src/domain/demo_seed.ts b/backend/src/domain/demo_seed.ts
+index d9059f91..59a7ad83 100644
+--- a/backend/src/domain/demo_seed.ts
++++ b/backend/src/domain/demo_seed.ts
+@@ -13,7 +13,24 @@ import { db, now } from "../db";
+ import { generateInviteCode, generateHouseholdCode } from "./invite_codes";
+ import { purgeOneCouple } from "./purge";
+ 
+-const FAR_FAR_AWAY = "Far Far Away";
++/** Locale the demo dataset is written in. Mirrors the frontend `Locale`. */
++export type DemoLocale = "hu" | "en";
++
++/** A localisable seed string. Plain string = same in both languages (names
++ *  like "Shrek" or "Fiona"); the object form carries both translations. */
++export type LText = string | { en: string; hu: string };
++
++/** Resolve a localisable string for the given locale. */
++export function pickL(l: LText, locale: DemoLocale): string {
++  return typeof l === "string" ? l : l[locale];
++}
++
++/** Canonical (EN) form of a localisable string — used as the stable key for
++ *  cross-references inside the seed (seat assignments, accommodation and
++ *  transfer rosters point at guests by this key, never the localised name). */
++export function keyL(l: LText): string {
++  return typeof l === "string" ? l : l.en;
++}
+ 
+ /** Wedding date for the demo: ~120 days from now, snapped to a Saturday.
+  *  Recomputed every demo so the dashboard's countdown is always meaningful. */
+@@ -29,7 +46,7 @@ function demoWeddingDate(): string {
+ }
+ 
+ interface GuestSeed {
+-  full_name: string;
++  full_name: LText;
+   group_tag:
+     | "his_family"
+     | "her_family"
+@@ -41,14 +58,14 @@ interface GuestSeed {
+   kind: "adult" | "child" | "baby";
+   rsvp_status: "pending" | "yes" | "no" | "maybe";
+   meal_choice: "meat" | "fish" | "vegetarian" | "vegan" | "child" | "none" | null;
+-  dietary: string | null;
+-  notes: string | null;
++  dietary: LText | null;
++  notes: LText | null;
+ }
+ 
+ interface HouseholdSeed {
+-  label: string;
++  label: LText;
+   group_tag: GuestSeed["group_tag"];
+-  notes: string | null;
++  notes: LText | null;
+   members: GuestSeed[];
+ }
+ 
+@@ -57,78 +74,105 @@ interface HouseholdSeed {
+  *  show non-trivial data on first load. */
+ const HOUSEHOLDS: HouseholdSeed[] = [
+   {
+-    label: "King Harold & Queen Lillian",
++    label: { en: "King Harold & Queen Lillian", hu: "Harold király és Lillian királynő" },
+     group_tag: "her_family",
+-    notes: "Bride's parents. Royal protocol, please.",
++    notes: {
++      en: "Bride's parents. Royal protocol, please.",
++      hu: "A menyasszony szülei. Királyi protokoll, kérjük.",
++    },
+     members: [
+       {
+-        full_name: "King Harold",
++        full_name: { en: "King Harold", hu: "Harold király" },
+         group_tag: "her_family",
+         kind: "adult",
+         rsvp_status: "yes",
+         meal_choice: "fish",
+-        dietary: "no shellfish, turns back into a frog",
+-        notes: "Father of the bride.",
++        dietary: {
++          en: "no shellfish, turns back into a frog",
++          hu: "kagylófélék nélkül, visszaváltozik békává",
++        },
++        notes: { en: "Father of the bride.", hu: "A menyasszony édesapja." },
+       },
+       {
+-        full_name: "Queen Lillian",
++        full_name: { en: "Queen Lillian", hu: "Lillian királynő" },
+         group_tag: "her_family",
+         kind: "adult",
+         rsvp_status: "yes",
+         meal_choice: "meat",
+         dietary: null,
+-        notes: "Mother of the bride.",
++        notes: { en: "Mother of the bride.", hu: "A menyasszony édesanyja." },
+       },
+     ],
+   },
+   {
+-    label: "Donkey & Dragon",
++    label: { en: "Donkey & Dragon", hu: "Szamár és Sárkány" },
+     group_tag: "his_friends",
+-    notes: "Best man + plus one. Dragon needs a wide aisle.",
++    notes: {
++      en: "Best man + plus one. Dragon needs a wide aisle.",
++      hu: "Tanú + kísérő. Sárkánynak széles átjáró kell.",
++    },
+     members: [
+       {
+-        full_name: "Donkey",
++        full_name: { en: "Donkey", hu: "Szamár" },
+         group_tag: "his_friends",
+         kind: "adult",
+         rsvp_status: "yes",
+         meal_choice: "vegetarian",
+-        dietary: "waffles, parfait, layered desserts",
+-        notes: "BEST MAN. Will talk through the ceremony.",
++        dietary: {
++          en: "waffles, parfait, layered desserts",
++          hu: "gofri, parfé, réteges desszertek",
++        },
++        notes: {
++          en: "BEST MAN. Will talk through the ceremony.",
++          hu: "TANÚ. Végig fogja beszélni a szertartást.",
++        },
+       },
+       {
+-        full_name: "Dragon",
++        full_name: { en: "Dragon", hu: "Sárkány" },
+         group_tag: "his_friends",
+         kind: "adult",
+         rsvp_status: "yes",
+         meal_choice: "meat",
+-        dietary: "extra spicy, fire-breather",
+-        notes: "Tail does not fit under round tables.",
++        dietary: { en: "extra spicy, fire-breather", hu: "extra csípős, tűzokádó" },
++        notes: {
++          en: "Tail does not fit under round tables.",
++          hu: "A farka nem fér el a kerek asztalok alatt.",
++        },
+       },
+     ],
+   },
+   {
+-    label: "Puss in Boots",
++    label: { en: "Puss in Boots", hu: "Csizmás Kandúr" },
+     group_tag: "shared_friends",
+-    notes: "Bringing his own sword. Will sit in a small chair.",
++    notes: {
++      en: "Bringing his own sword. Will sit in a small chair.",
++      hu: "Hozza a saját kardját. Kis széken ül.",
++    },
+     members: [
+       {
+-        full_name: "Puss in Boots",
++        full_name: { en: "Puss in Boots", hu: "Csizmás Kandúr" },
+         group_tag: "shared_friends",
+         kind: "adult",
+         rsvp_status: "yes",
+         meal_choice: "fish",
+-        dietary: "lactose intolerant, but loves cream",
+-        notes: "Eyes will be deployed.",
++        dietary: {
++          en: "lactose intolerant, but loves cream",
++          hu: "laktózérzékeny, de imádja a tejszínt",
++        },
++        notes: { en: "Eyes will be deployed.", hu: "A nagy szemek bevetésre kerülnek." },
+       },
+     ],
+   },
+   {
+-    label: "The Three Little Pigs",
++    label: { en: "The Three Little Pigs", hu: "A három kismalac" },
+     group_tag: "his_friends",
+-    notes: "Came as a household. Please seat together, away from any wolves.",
++    notes: {
++      en: "Came as a household. Please seat together, away from any wolves.",
++      hu: "Egy háztartásként jönnek. Kérjük együtt ültetni, farkasoktól távol.",
++    },
+     members: [
+       {
+-        full_name: "Pig One (Straw)",
++        full_name: { en: "Pig One (Straw)", hu: "Első kismalac (szalma)" },
+         group_tag: "his_friends",
+         kind: "adult",
+         rsvp_status: "yes",
+@@ -137,54 +181,66 @@ const HOUSEHOLDS: HouseholdSeed[] = [
+         notes: null,
+       },
+       {
+-        full_name: "Pig Two (Sticks)",
++        full_name: { en: "Pig Two (Sticks)", hu: "Második kismalac (gally)" },
+         group_tag: "his_friends",
+         kind: "adult",
+         rsvp_status: "maybe",
+         meal_choice: "vegetarian",
+         dietary: null,
+-        notes: "Anxious, depends on the wolf situation.",
++        notes: {
++          en: "Anxious, depends on the wolf situation.",
++          hu: "Izgul, a farkashelyzettől függ.",
++        },
+       },
+       {
+-        full_name: "Pig Three (Bricks)",
++        full_name: { en: "Pig Three (Bricks)", hu: "Harmadik kismalac (tégla)" },
+         group_tag: "his_friends",
+         kind: "adult",
+         rsvp_status: "yes",
+         meal_choice: "vegetarian",
+         dietary: null,
+-        notes: "Will give a structured toast.",
++        notes: {
++          en: "Will give a structured toast.",
++          hu: "Jól felépített pohárköszöntőt mond.",
++        },
+       },
+     ],
+   },
+   {
+-    label: "Gingy",
++    label: { en: "Gingy", hu: "Mézi" },
+     group_tag: "his_friends",
+-    notes: "Will arrive in a small cookie tin. No oven seating.",
++    notes: {
++      en: "Will arrive in a small cookie tin. No oven seating.",
++      hu: "Kis kekszesdobozban érkezik. Sütő közelébe ne ültessük.",
++    },
+     members: [
+       {
+-        full_name: "Gingerbread Man",
++        full_name: { en: "Gingerbread Man", hu: "Mézeskalács Ember" },
+         group_tag: "his_friends",
+         kind: "adult",
+         rsvp_status: "yes",
+         meal_choice: "none",
+-        dietary: "gluten-free (paradoxically)",
+-        notes: "Do NOT dunk in milk.",
++        dietary: { en: "gluten-free (paradoxically)", hu: "gluténmentes (paradox módon)" },
++        notes: { en: "Do NOT dunk in milk.", hu: "TILOS tejbe mártani." },
+       },
+     ],
+   },
+   {
+-    label: "Pinocchio & Geppetto",
++    label: { en: "Pinocchio & Geppetto", hu: "Pinokkió és Geppetto" },
+     group_tag: "shared_friends",
+-    notes: "Lie-detector seating.",
++    notes: { en: "Lie-detector seating.", hu: "Hazugságvizsgáló ültetés." },
+     members: [
+       {
+-        full_name: "Pinocchio",
++        full_name: { en: "Pinocchio", hu: "Pinokkió" },
+         group_tag: "shared_friends",
+         kind: "adult",
+         rsvp_status: "yes",
+         meal_choice: "vegan",
+-        dietary: "no wood-fired pizza",
+-        notes: "Says he RSVPed. Nose did NOT grow.",
++        dietary: { en: "no wood-fired pizza", hu: "fatüzelésű pizza kizárva" },
++        notes: {
++          en: "Says he RSVPed. Nose did NOT grow.",
++          hu: "Azt mondja, visszajelzett. Az orra NEM nőtt meg.",
++        },
+       },
+       {
+         full_name: "Geppetto",
+@@ -198,25 +254,28 @@ const HOUSEHOLDS: HouseholdSeed[] = [
+     ],
+   },
+   {
+-    label: "Fairy Godmother",
++    label: { en: "Fairy Godmother", hu: "Tündérkeresztanya" },
+     group_tag: "her_family",
+-    notes: "Plus-one declined. RSVPed in glitter.",
++    notes: {
++      en: "Plus-one declined. RSVPed in glitter.",
++      hu: "Kísérő nélkül. Csillámporral jelzett vissza.",
++    },
+     members: [
+       {
+-        full_name: "Fairy Godmother",
++        full_name: { en: "Fairy Godmother", hu: "Tündérkeresztanya" },
+         group_tag: "her_family",
+         kind: "adult",
+         rsvp_status: "no",
+         meal_choice: null,
+         dietary: null,
+-        notes: "Declined, long story.",
++        notes: { en: "Declined, long story.", hu: "Lemondta, hosszú történet." },
+       },
+     ],
+   },
+   {
+     label: "Lord Farquaad",
+     group_tag: "other",
+-    notes: "Awkward invite. Decline expected.",
++    notes: { en: "Awkward invite. Decline expected.", hu: "Kínos meghívó. Lemondás várható." },
+     members: [
+       {
+         full_name: "Lord Farquaad",
+@@ -225,42 +284,54 @@ const HOUSEHOLDS: HouseholdSeed[] = [
+         rsvp_status: "no",
+         meal_choice: null,
+         dietary: null,
+-        notes: "He is not invited. He is on the list.",
++        notes: {
++          en: "He is not invited. He is on the list.",
++          hu: "Nincs meghívva. Rajta van a listán.",
++        },
+       },
+     ],
+   },
+   {
+-    label: "Magic Mirror",
++    label: { en: "Magic Mirror", hu: "Varázstükör" },
+     group_tag: "work",
+-    notes: "Coming with the venue. Will MC.",
++    notes: {
++      en: "Coming with the venue. Will MC.",
++      hu: "A helyszínnel érkezik. Ő lesz a ceremóniamester.",
++    },
+     members: [
+       {
+-        full_name: "Magic Mirror",
++        full_name: { en: "Magic Mirror", hu: "Varázstükör" },
+         group_tag: "work",
+         kind: "adult",
+         rsvp_status: "pending",
+         meal_choice: null,
+         dietary: null,
+-        notes: "Will reflect on the speeches.",
++        notes: {
++          en: "Will reflect on the speeches.",
++          hu: "A beszédekre majd reflektál. Szó szerint.",
++        },
+       },
+     ],
+   },
+   {
+-    label: "Three Blind Mice",
++    label: { en: "Three Blind Mice", hu: "A három vak egér" },
+     group_tag: "shared_friends",
+-    notes: "Need help finding their seats, please print large place cards.",
++    notes: {
++      en: "Need help finding their seats, please print large place cards.",
++      hu: "Segítség kell a helyük megtalálásához, kérünk nagy betűs ültetőkártyát.",
++    },
+     members: [
+       {
+-        full_name: "Mouse #1",
++        full_name: { en: "Mouse #1", hu: "1. egér" },
+         group_tag: "shared_friends",
+         kind: "adult",
+         rsvp_status: "yes",
+         meal_choice: "vegetarian",
+-        dietary: "cheese plate, please",
++        dietary: { en: "cheese plate, please", hu: "sajttál, kérjük" },
+         notes: null,
+       },
+       {
+-        full_name: "Mouse #2",
++        full_name: { en: "Mouse #2", hu: "2. egér" },
+         group_tag: "shared_friends",
+         kind: "adult",
+         rsvp_status: "yes",
+@@ -269,7 +340,7 @@ const HOUSEHOLDS: HouseholdSeed[] = [
+         notes: null,
+       },
+       {
+-        full_name: "Mouse #3",
++        full_name: { en: "Mouse #3", hu: "3. egér" },
+         group_tag: "shared_friends",
+         kind: "adult",
+         rsvp_status: "yes",
+@@ -300,10 +371,10 @@ const BUDGET_LINES: Array<{
+     | "favours"
+     | "rings"
+     | "other";
+-  label: string;
++  label: LText;
+   planned: number;
+   actual: number;
+-  notes: string | null;
++  notes: LText | null;
+ }> = [
+   // Sized for an intimate 15-guest HU wedding, ~3.2M HUF total,
+   // ~215K per guest. Sits between the mid (90K/fő) and max (150K/fő) bands
+@@ -311,197 +382,227 @@ const BUDGET_LINES: Array<{
+   // to look like a boutique wedding, not a Vegas elopement or a 200-fő bash.
+   {
+     category: "venue",
+-    label: "Swamp clearing + small marquee",
++    label: { en: "Swamp clearing + small marquee", hu: "Mocsári tisztás + kis rendezvénysátor" },
+     planned: 720_000,
+     actual: 360_000,
+-    notes: "Half-deposit paid.",
++    notes: { en: "Half-deposit paid.", hu: "Fél előleg kifizetve." },
+   },
+   {
+     category: "catering",
+-    label: "Far Far Away catering, onion-forward menu",
++    label: {
++      en: "Far Far Away catering, onion-forward menu",
++      hu: "Túl az Óperencián catering, hagyma-központú menü",
++    },
+     planned: 450_000,
+     actual: 0,
+     notes: null,
+   },
+   {
+     category: "drinks",
+-    label: "Bog-water bar + mead pairings",
++    label: { en: "Bog-water bar + mead pairings", hu: "Lápvíz-bár + mézsör-párosítások" },
+     planned: 150_000,
+     actual: 0,
+     notes: null,
+   },
+   {
+     category: "attire",
+-    label: "Ogre-cut wedding dress + Shrek's vest",
++    label: {
++      en: "Ogre-cut wedding dress + Shrek's vest",
++      hu: "Ogre-szabású menyasszonyi ruha + Shrek mellénye",
++    },
+     planned: 280_000,
+     actual: 280_000,
+-    notes: "Tailor: Wolf in Granny's Clothes.",
++    notes: { en: "Tailor: Wolf in Granny's Clothes.", hu: "Szabó: Farkas nagyi ruhájában." },
+   },
+   {
+     category: "decor_floral",
+-    label: "Swamp lilies + fire-resistant garlands",
++    label: {
++      en: "Swamp lilies + fire-resistant garlands",
++      hu: "Mocsári liliomok + tűzálló girlandok",
++    },
+     planned: 180_000,
+     actual: 60_000,
+-    notes: "Dragon-proof centrepieces.",
++    notes: { en: "Dragon-proof centrepieces.", hu: "Sárkánybiztos asztaldíszek." },
+   },
+   {
+     category: "photo_video",
+-    label: "Magic Mirror live broadcast",
++    label: { en: "Magic Mirror live broadcast", hu: "Varázstükör élő közvetítés" },
+     planned: 420_000,
+     actual: 420_000,
+-    notes: "Books fast, Mirror is in high demand.",
++    notes: {
++      en: "Books fast, Mirror is in high demand.",
++      hu: "Gyorsan betelik, a Tükör nagyon keresett.",
++    },
+   },
+   {
+     category: "music_dj",
+-    label: "DJ Donkey & the Three Pigs (live)",
++    label: {
++      en: "DJ Donkey & the Three Pigs (live)",
++      hu: "DJ Szamár és a három kismalac (élőben)",
++    },
+     planned: 180_000,
+     actual: 180_000,
+-    notes: "Setlist negotiated.",
++    notes: { en: "Setlist negotiated.", hu: "Számlista leegyeztetve." },
+   },
+   {
+     category: "cake_dessert",
+-    label: "Seven-tier ogre cake + Gingy croquembouche",
++    label: {
++      en: "Seven-tier ogre cake + Gingy croquembouche",
++      hu: "Hétemeletes ogretorta + Mézi croquembouche",
++    },
+     planned: 90_000,
+     actual: 0,
+-    notes: "Order 6 weeks out.",
++    notes: { en: "Order 6 weeks out.", hu: "6 héttel előre rendelendő." },
+   },
+   {
+     category: "hair_makeup",
+-    label: "Royal grooming, Fiona prep",
++    label: { en: "Royal grooming, Fiona prep", hu: "Királyi szépészet, Fiona készülődés" },
+     planned: 75_000,
+     actual: 0,
+     notes: null,
+   },
+   {
+     category: "transport",
+-    label: "Donkey shuttle service",
++    label: { en: "Donkey shuttle service", hu: "Szamár-transzferjárat" },
+     planned: 90_000,
+     actual: 90_000,
+-    notes: "Round trips. Loud. Reliable.",
++    notes: { en: "Round trips. Loud. Reliable.", hu: "Oda-vissza járatok. Hangos. Megbízható." },
+   },
+   {
+     category: "honeymoon",
+-    label: "Honeymoon, Honeymoon Isle (the literal one)",
++    label: {
++      en: "Honeymoon, Honeymoon Isle (the literal one)",
++      hu: "Nászút, Nászút-sziget (szó szerint az)",
++    },
+     planned: 320_000,
+     actual: 0,
+     notes: null,
+   },
+   {
+     category: "stationery",
+-    label: "Scroll-style invites + place cards",
++    label: { en: "Scroll-style invites + place cards", hu: "Tekercses meghívók + ültetőkártyák" },
+     planned: 60_000,
+     actual: 60_000,
+     notes: null,
+   },
+   {
+     category: "favours",
+-    label: "Onion-themed favours (peeling guide included)",
++    label: {
++      en: "Onion-themed favours (peeling guide included)",
++      hu: "Hagymás köszönőajándékok (hámozási útmutatóval)",
++    },
+     planned: 30_000,
+     actual: 0,
+     notes: null,
+   },
+   {
+     category: "rings",
+-    label: "Wedding bands, solid iron",
++    label: { en: "Wedding bands, solid iron", hu: "Karikagyűrűk, tömör vasból" },
+     planned: 180_000,
+     actual: 180_000,
+-    notes: "Resized for ogre fingers.",
++    notes: { en: "Resized for ogre fingers.", hu: "Ogreméretű ujjakra igazítva." },
+   },
+ ];
+ 
+ interface SchedSeed {
+-  label: string;
++  label: LText;
+   starts_at_minutes: number;
+   duration_minutes: number | null;
+-  location: string | null;
+-  notes: string | null;
++  location: LText | null;
++  notes: LText | null;
+ }
+ 
+ const SCHEDULE_EVENTS: SchedSeed[] = [
+   {
+-    label: "Donkey arrives (early, as always)",
++    label: {
++      en: "Donkey arrives (early, as always)",
++      hu: "Szamár megérkezik (korán, mint mindig)",
++    },
+     starts_at_minutes: 9 * 60,
+     duration_minutes: 30,
+-    location: "Swamp gate",
+-    notes: "Bring his own coffee.",
++    location: { en: "Swamp gate", hu: "Mocsárkapu" },
++    notes: { en: "Bring his own coffee.", hu: "Hozza a saját kávéját." },
+   },
+   {
+-    label: "Hair & makeup, Fiona",
++    label: { en: "Hair & makeup, Fiona", hu: "Haj és smink, Fiona" },
+     starts_at_minutes: 10 * 60,
+     duration_minutes: 90,
+-    location: "The royal tent",
++    location: { en: "The royal tent", hu: "A királyi sátor" },
+     notes: null,
+   },
+   {
+-    label: "Guest arrivals + welcome drinks",
++    label: { en: "Guest arrivals + welcome drinks", hu: "Vendégek érkezése + welcome drink" },
+     starts_at_minutes: 14 * 60,
+     duration_minutes: 60,
+-    location: "Swamp clearing",
+-    notes: "Mead on tap.",
++    location: { en: "Swamp clearing", hu: "Mocsári tisztás" },
++    notes: { en: "Mead on tap.", hu: "Csapolt mézsör." },
+   },
+   {
+-    label: "Ceremony, Shrek + Fiona",
++    label: { en: "Ceremony, Shrek + Fiona", hu: "Szertartás, Shrek + Fiona" },
+     starts_at_minutes: 15 * 60 + 30,
+     duration_minutes: 45,
+-    location: "Onion arch",
+-    notes: "Magic Mirror live-broadcasts.",
++    location: { en: "Onion arch", hu: "Hagymaboltív" },
++    notes: { en: "Magic Mirror live-broadcasts.", hu: "A Varázstükör élőben közvetít." },
+   },
+   {
+-    label: "Photos (Magic Mirror)",
++    label: { en: "Photos (Magic Mirror)", hu: "Fotózás (Varázstükör)" },
+     starts_at_minutes: 16 * 60 + 30,
+     duration_minutes: 60,
+-    location: "Far Far Away meadow",
++    location: { en: "Far Far Away meadow", hu: "Túl az Óperencián rét" },
+     notes: null,
+   },
+   {
+-    label: "Dinner served",
++    label: { en: "Dinner served", hu: "Vacsora" },
+     starts_at_minutes: 18 * 60,
+     duration_minutes: 120,
+-    location: "Marquee",
++    location: { en: "Marquee", hu: "Rendezvénysátor" },
+     notes: null,
+   },
+   {
+-    label: "First dance",
++    label: { en: "First dance", hu: "Nyitótánc" },
+     starts_at_minutes: 20 * 60 + 30,
+     duration_minutes: 15,
+-    location: "Dance floor",
++    location: { en: "Dance floor", hu: "Táncparkett" },
+     notes: '"I\'m a Believer"',
+   },
+   {
+-    label: "Best-man speech (Donkey)",
++    label: { en: "Best-man speech (Donkey)", hu: "Tanú beszéde (Szamár)" },
+     starts_at_minutes: 21 * 60,
+     duration_minutes: 20,
+-    location: "Marquee",
+-    notes: "Hard cap: 20 min. (Likely will run over.)",
++    location: { en: "Marquee", hu: "Rendezvénysátor" },
++    notes: {
++      en: "Hard cap: 20 min. (Likely will run over.)",
++      hu: "Kemény limit: 20 perc. (Úgyis túllépi.)",
++    },
+   },
+   {
+-    label: "Cake cutting, seven-tier ogre cake",
++    label: { en: "Cake cutting, seven-tier ogre cake", hu: "Tortavágás, hétemeletes ogretorta" },
+     starts_at_minutes: 21 * 60 + 30,
+     duration_minutes: 15,
+-    location: "Marquee",
++    location: { en: "Marquee", hu: "Rendezvénysátor" },
+     notes: null,
+   },
+   {
+-    label: "Dance floor opens (DJ Donkey)",
++    label: { en: "Dance floor opens (DJ Donkey)", hu: "Táncparkett nyit (DJ Szamár)" },
+     starts_at_minutes: 22 * 60,
+     duration_minutes: 180,
+-    location: "Marquee",
++    location: { en: "Marquee", hu: "Rendezvénysátor" },
+     notes: null,
+   },
+   {
+-    label: "Last call + Donkey shuttle departs",
++    label: { en: "Last call + Donkey shuttle departs", hu: "Utolsó kör + Szamár-transzfer indul" },
+     starts_at_minutes: 25 * 60,
+     duration_minutes: 30,
+-    location: "Swamp gate",
+-    notes: "Past midnight, day-2 row.",
++    location: { en: "Swamp gate", hu: "Mocsárkapu" },
++    notes: { en: "Past midnight, day-2 row.", hu: "Éjfél után, másnapi sor." },
+   },
+ ];
+ 
+ interface PlanningSeed {
+   kind: "task" | "idea" | "schedule";
+   topic: "wedding" | "honeymoon" | null;
+-  title: string;
+-  body: string | null;
++  title: LText;
++  body: LText | null;
+   done: boolean;
+   /** Days before the wedding the task starts. Negative = before, null = no
+    *  range (the row falls into the "open ranges" panel on /app/timeline). */
+@@ -510,18 +611,23 @@ interface PlanningSeed {
+    *  draw a Gantt bar; pair with null start_offset to draw a single-day
+    *  milestone marker. */
+   due_offset: number | null;
+-  assignee: string | null;
++  assignee: LText | null;
+   priority: 0 | 1 | 2;
+ }
+ 
++const DONKEY: LText = { en: "Donkey", hu: "Szamár" };
++
+ const PLANNING_ITEMS: PlanningSeed[] = [
+   // Done tasks, drawn as solid bars in the past months. Spaced so the
+   // Gantt reads chronologically: venue first, then suppliers, then invites.
+   {
+     kind: "task",
+     topic: "wedding",
+-    title: "Book the swamp",
+-    body: "Confirm with the Witch, onion fields included.",
++    title: { en: "Book the swamp", hu: "Mocsár lefoglalása" },
++    body: {
++      en: "Confirm with the Witch, onion fields included.",
++      hu: "Megerősítés a boszorkánnyal, hagymaföldekkel együtt.",
++    },
+     done: true,
+     start_offset: -150,
+     due_offset: -135,
+@@ -531,8 +637,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "wedding",
+-    title: "Hire Magic Mirror as photographer",
+-    body: "Negotiated rate.",
++    title: { en: "Hire Magic Mirror as photographer", hu: "Varázstükör felkérése fotósnak" },
++    body: { en: "Negotiated rate.", hu: "Lealkudott ár." },
+     done: true,
+     start_offset: -130,
+     due_offset: -110,
+@@ -542,12 +648,12 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "wedding",
+-    title: "Send invites",
+-    body: "Pinocchio is delivering by hand.",
++    title: { en: "Send invites", hu: "Meghívók kiküldése" },
++    body: { en: "Pinocchio is delivering by hand.", hu: "Pinokkió kézbesíti személyesen." },
+     done: true,
+     start_offset: -95,
+     due_offset: -80,
+-    assignee: "Donkey",
++    assignee: DONKEY,
+     priority: 1,
+   },
+   // Open tasks, bars staggered through the next 6 weeks so the Gantt has
+@@ -555,8 +661,11 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "wedding",
+-    title: "Final dress fitting",
+-    body: "Ogre-cut alteration, needs one more pass.",
++    title: { en: "Final dress fitting", hu: "Utolsó ruhapróba" },
++    body: {
++      en: "Ogre-cut alteration, needs one more pass.",
++      hu: "Ogre-szabású igazítás, még egy kör kell.",
++    },
+     done: false,
+     start_offset: -42,
+     due_offset: -21,
+@@ -566,7 +675,7 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "wedding",
+-    title: "Order the cake (seven tiers)",
++    title: { en: "Order the cake (seven tiers)", hu: "Torta megrendelése (hét emelet)" },
+     body: null,
+     done: false,
+     start_offset: -60,
+@@ -577,8 +686,14 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "wedding",
+-    title: "Chase Fairy Godmother for plus-one",
+-    body: "She RSVPed no, see if she'll bring Charming anyway.",
++    title: {
++      en: "Chase Fairy Godmother for plus-one",
++      hu: "Tündérkeresztanya kísérőjének utánajárni",
++    },
++    body: {
++      en: "She RSVPed no, see if she'll bring Charming anyway.",
++      hu: "Nemet mondott, hátha mégis elhozza a Szőke Herceget.",
++    },
+     done: false,
+     start_offset: -28,
+     due_offset: -14,
+@@ -588,8 +703,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "wedding",
+-    title: "Confirm Donkey's speech length",
+-    body: "Cap at 20 min. (It will run over.)",
++    title: { en: "Confirm Donkey's speech length", hu: "Szamár beszédhosszának egyeztetése" },
++    body: { en: "Cap at 20 min. (It will run over.)", hu: "Max 20 perc. (Túl fogja lépni.)" },
+     done: false,
+     start_offset: -21,
+     due_offset: -7,
+@@ -599,8 +714,14 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "wedding",
+-    title: "Print place cards & seating chart",
+-    body: "A4 + A6 from the Wēddly print export.",
++    title: {
++      en: "Print place cards & seating chart",
++      hu: "Ültetőkártyák és ültetési rend nyomtatása",
++    },
++    body: {
++      en: "A4 + A6 from the Wēddly print export.",
++      hu: "A4 + A6 a Wēddly nyomtatási exportból.",
++    },
+     done: false,
+     start_offset: -14,
+     due_offset: -3,
+@@ -613,8 +734,11 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "honeymoon",
+-    title: "Check passport validity",
+-    body: "Needs to be valid at least 6 months past the return date.",
++    title: { en: "Check passport validity", hu: "Útlevél érvényességének ellenőrzése" },
++    body: {
++      en: "Needs to be valid at least 6 months past the return date.",
++      hu: "A visszaút után még legalább 6 hónapig érvényesnek kell lennie.",
++    },
+     done: true,
+     start_offset: -100,
+     due_offset: -90,
+@@ -624,8 +748,11 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "honeymoon",
+-    title: "Book Honeymoon Isle flights",
+-    body: "Round trip. Avoid Lord Farquaad's airline.",
++    title: { en: "Book Honeymoon Isle flights", hu: "Repjegyek a Nászút-szigetre" },
++    body: {
++      en: "Round trip. Avoid Lord Farquaad's airline.",
++      hu: "Retúr. Lord Farquaad légitársaságát kerüljük.",
++    },
+     done: false,
+     start_offset: -45,
+     due_offset: -30,
+@@ -635,8 +762,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "honeymoon",
+-    title: "Reserve the Honeymoon Isle villa",
+-    body: "Ocean view, two-room suite.",
++    title: { en: "Reserve the Honeymoon Isle villa", hu: "Villa foglalása a Nászút-szigeten" },
++    body: { en: "Ocean view, two-room suite.", hu: "Óceánra néző, kétszobás lakosztály." },
+     done: false,
+     start_offset: -40,
+     due_offset: -25,
+@@ -646,8 +773,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "honeymoon",
+-    title: "Buy travel insurance",
+-    body: "Includes dragon-incident coverage.",
++    title: { en: "Buy travel insurance", hu: "Utasbiztosítás megkötése" },
++    body: { en: "Includes dragon-incident coverage.", hu: "Sárkány-incidensekre is kiterjed." },
+     done: false,
+     start_offset: -20,
+     due_offset: -14,
+@@ -657,8 +784,11 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "honeymoon",
+-    title: "Notify the bank of travel",
+-    body: "Card declines on Honeymoon Isle would be inconvenient.",
++    title: { en: "Notify the bank of travel", hu: "Bank értesítése az utazásról" },
++    body: {
++      en: "Card declines on Honeymoon Isle would be inconvenient.",
++      hu: "Kártyaelutasítás a Nászút-szigeten kellemetlen lenne.",
++    },
+     done: false,
+     start_offset: -10,
+     due_offset: -3,
+@@ -668,8 +798,11 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "task",
+     topic: "honeymoon",
+-    title: "Pack the essentials",
+-    body: "Sunscreen, swimsuit, mosquito spray, charger.",
++    title: { en: "Pack the essentials", hu: "Alapfelszerelés bepakolása" },
++    body: {
++      en: "Sunscreen, swimsuit, mosquito spray, charger.",
++      hu: "Naptej, fürdőruha, szúnyogriasztó, töltő.",
++    },
+     done: false,
+     start_offset: -7,
+     due_offset: -2,
+@@ -682,8 +815,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "idea",
+     topic: "wedding",
+-    title: "Fireworks finale",
+-    body: "Dragon. Obviously.",
++    title: { en: "Fireworks finale", hu: "Tűzijáték a végén" },
++    body: { en: "Dragon. Obviously.", hu: "Sárkány. Nyilván." },
+     done: false,
+     start_offset: null,
+     due_offset: null,
+@@ -693,8 +826,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "idea",
+     topic: "wedding",
+-    title: "Skip the dance floor, do mud pit",
+-    body: "Floor optional.",
++    title: { en: "Skip the dance floor, do mud pit", hu: "Táncparkett helyett sárgödör" },
++    body: { en: "Floor optional.", hu: "A parkett opcionális." },
+     done: false,
+     start_offset: null,
+     due_offset: null,
+@@ -704,8 +837,8 @@ const PLANNING_ITEMS: PlanningSeed[] = [
+   {
+     kind: "idea",
+     topic: "wedding",
+-    title: "Onion bouquet instead of flowers",
+-    body: "Layers!",
++    title: { en: "Onion bouquet instead of flowers", hu: "Hagymacsokor virág helyett" },
++    body: { en: "Layers!", hu: "Rétegek!" },
+     done: false,
+     start_offset: null,
+     due_offset: null,
+@@ -740,7 +873,7 @@ function uniqueGuestCode(): string {
+ interface SeatPlan {
+   /** Tables. mm coordinates land the layout inside the canvas. */
+   tables: Array<{
+-    label: string;
++    label: LText;
+     shape: "head" | "round" | "long" | "square";
+     seats: number;
+     x_mm: number;
+@@ -749,7 +882,8 @@ interface SeatPlan {
+     length_mm: number;
+     is_kids_table: boolean;
+   }>;
+-  /** Per-table seat assignments by guest full_name (resolved at insert time). */
++  /** Per-table seat assignments by CANONICAL (EN) table label + guest
++   *  full_name — resolved to real ids at insert time via keyL(). */
+   seating: Array<{ table_label: string; seats: Array<{ index: number; full_name: string }> }>;
+ }
+ 
+@@ -767,7 +901,7 @@ interface SeatPlan {
+ const SEAT_PLAN: SeatPlan = {
+   tables: [
+     {
+-      label: "Head table",
++      label: { en: "Head table", hu: "Főasztal" },
+       shape: "head",
+       seats: 6,
+       x_mm: 5_000,
+@@ -777,7 +911,7 @@ const SEAT_PLAN: SeatPlan = {
+       is_kids_table: false,
+     },
+     {
+-      label: "Family, bride's side",
++      label: { en: "Family, bride's side", hu: "Család, menyasszonyi oldal" },
+       shape: "round",
+       seats: 8,
+       x_mm: 2_500,
+@@ -787,7 +921,7 @@ const SEAT_PLAN: SeatPlan = {
+       is_kids_table: false,
+     },
+     {
+-      label: "Best man's table",
++      label: { en: "Best man's table", hu: "A tanú asztala" },
+       shape: "round",
+       seats: 8,
+       x_mm: 7_500,
+@@ -797,7 +931,7 @@ const SEAT_PLAN: SeatPlan = {
+       is_kids_table: false,
+     },
+     {
+-      label: "Friends, fairytale crowd",
++      label: { en: "Friends, fairytale crowd", hu: "Barátok, mesebeli társaság" },
+       shape: "round",
+       seats: 8,
+       x_mm: 5_000,
+@@ -847,74 +981,87 @@ const SEAT_PLAN: SeatPlan = {
+ };
+ 
+ interface AccommodationSeed {
+-  name: string;
+-  address: string | null;
++  name: LText;
++  address: LText | null;
+   capacity: number;
+   price_huf: number | null;
+   link: string | null;
+   contact: string | null;
+-  notes: string | null;
+-  /** Resolves to a guest by full_name at insert time. */
++  notes: LText | null;
++  /** Resolves to a guest by canonical (EN) full_name at insert time. */
+   assigned_to: string[];
+ }
+ 
+ const ACCOMMODATIONS: AccommodationSeed[] = [
+   {
+-    name: "Far Far Away Inn, royal suite",
+-    address: "1 Cobblestone Square, Far Far Away",
++    name: {
++      en: "Far Far Away Inn, royal suite",
++      hu: "Túl az Óperencián Fogadó, királyi lakosztály",
++    },
++    address: { en: "1 Cobblestone Square, Far Far Away", hu: "Macskakő tér 1., Túl az Óperencián" },
+     capacity: 2,
+     price_huf: 95_000,
+     link: null,
+     contact: "+36 1 555 0000",
+-    notes: "Soundproofed against trumpet announcements.",
++    notes: {
++      en: "Soundproofed against trumpet announcements.",
++      hu: "Hangszigetelt a harsonás bejelentések ellen.",
++    },
+     assigned_to: ["King Harold", "Queen Lillian"],
+   },
+   {
+-    name: "The Swamp Cabin (Shrek's place)",
+-    address: "Deep in the swamp",
++    name: { en: "The Swamp Cabin (Shrek's place)", hu: "A mocsári kunyhó (Shrek háza)" },
++    address: { en: "Deep in the swamp", hu: "A mocsár mélyén" },
+     capacity: 4,
+     price_huf: null,
+     link: null,
+     contact: null,
+-    notes: "Free. Bring your own mud.",
++    notes: { en: "Free. Bring your own mud.", hu: "Ingyenes. Sarat mindenki hozzon magával." },
+     assigned_to: ["Donkey", "Dragon"],
+   },
+   {
+-    name: "The Three Pigs B&B (brick wing)",
+-    address: "End of the lane",
++    name: { en: "The Three Pigs B&B (brick wing)", hu: "Három Kismalac Panzió (tégla szárny)" },
++    address: { en: "End of the lane", hu: "A dűlő vége" },
+     capacity: 6,
+     price_huf: 32_000,
+     link: null,
+     contact: null,
+-    notes: "Brick wing only. The other two are still under construction.",
++    notes: {
++      en: "Brick wing only. The other two are still under construction.",
++      hu: "Csak a tégla szárny. A másik kettő még építés alatt.",
++    },
+     assigned_to: ["Pig One (Straw)", "Pig Two (Sticks)", "Pig Three (Bricks)"],
+   },
+ ];
+ 
+ interface TransferSeed {
+-  label: string;
+-  direction: string | null;
++  label: LText;
++  direction: LText | null;
+   depart_at: string | null;
+   capacity: number | null;
+-  notes: string | null;
++  notes: LText | null;
++  /** Canonical (EN) guest names, resolved at insert time. */
+   assigned_to: string[];
+ }
+ 
+ const TRANSFERS: TransferSeed[] = [
+   {
+-    label: "Donkey shuttle, pickup",
+-    direction: "Far Far Away → Swamp",
++    label: { en: "Donkey shuttle, pickup", hu: "Szamár-transzfer, odaút" },
++    direction: { en: "Far Far Away → Swamp", hu: "Túl az Óperencián → Mocsár" },
+     depart_at: null,
+     capacity: 6,
+-    notes: "Loud. Will sing.",
++    notes: { en: "Loud. Will sing.", hu: "Hangos. Énekelni fog." },
+     assigned_to: ["Puss in Boots", "Gingerbread Man", "Pinocchio", "Geppetto"],
+   },
+   {
+-    label: "Donkey shuttle, return",
+-    direction: "Swamp → Far Far Away",
++    label: { en: "Donkey shuttle, return", hu: "Szamár-transzfer, visszaút" },
++    direction: { en: "Swamp → Far Far Away", hu: "Mocsár → Túl az Óperencián" },
+     depart_at: null,
+     capacity: 6,
+-    notes: "Post-cake. Wear a seatbelt, Donkey takes the corners hard.",
++    notes: {
++      en: "Post-cake. Wear a seatbelt, Donkey takes the corners hard.",
++      hu: "Torta után. Öv kötelező, Szamár élesen veszi a kanyarokat.",
++    },
+     assigned_to: ["Mouse #1", "Mouse #2", "Mouse #3"],
+   },
+ ];
+@@ -933,10 +1080,14 @@ export interface SeedResult {
+ /** Seed the entire Shrek & Fiona demo dataset into a fresh couple workspace.
+  *  Caller must have already INSERTed the empty couple row (with bride_name =
+  *  "Fiona", groom_name = "Shrek") AND linked the owner user via couple_members.
+- *  All writes happen inside one DB transaction. */
+-export function seedShrekDemo(coupleId: number): SeedResult {
++ *  All writes happen inside one DB transaction. `locale` picks the language
++ *  every human-readable seed string is written in — the demo must read fully
++ *  HU for Hungarian visitors and fully EN for everyone else. */
++export function seedShrekDemo(coupleId: number, locale: DemoLocale = "en"): SeedResult {
+   const ts = now();
+   const weddingDate = demoWeddingDate();
++  /** Resolve an optional localisable string for this seed's locale. */
++  const T = (l: LText | null): string | null => (l === null ? null : pickL(l, locale));
+ 
+   const result: SeedResult = {
+     guests_created: 0,
+@@ -968,7 +1119,7 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+       weddingDate,
+       Number(weddingDate.slice(0, 4)),
+       Number(weddingDate.slice(5, 7)),
+-      "Honeymoon Isle",
++      pickL({ en: "Honeymoon Isle", hu: "Nászút-sziget" }, locale),
+       // Honeymoon = day after wedding + 7 nights
+       addDaysIso(weddingDate, 1),
+       addDaysIso(weddingDate, 8),
+@@ -1010,10 +1161,16 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+       "adult",
+       "yes",
+       "fish",
+-      "no shellfish",
++      pickL({ en: "no shellfish", hu: "kagylófélék nélkül" }, locale),
+       0,
+       "Stay (Stay Forever)",
+-      "Bride. Princess by day, ogre by night.",
++      pickL(
++        {
++          en: "Bride. Princess by day, ogre by night.",
++          hu: "Menyasszony. Nappal hercegnő, éjjel ogre.",
++        },
++        locale,
++      ),
+       ts, // rsvp_responded_at
+       ts, // invited_at
+       hostHhId,
+@@ -1029,10 +1186,10 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+       "adult",
+       "yes",
+       "meat",
+-      "onions, obviously",
++      pickL({ en: "onions, obviously", hu: "hagyma, természetesen" }, locale),
+       0,
+       "I'm a Believer",
+-      "Groom. Big guy, big heart.",
++      pickL({ en: "Groom. Big guy, big heart.", hu: "Vőlegény. Nagy test, nagy szív." }, locale),
+       ts,
+       ts,
+       hostHhId,
+@@ -1050,23 +1207,23 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+         .prepare(
+           "INSERT INTO households (couple_id, code, label, notes, group_tag, auto_created, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 0, ?, ?)",
+         )
+-        .run(coupleId, code, hh.label, hh.notes, hh.group_tag, ts, ts);
++        .run(coupleId, code, pickL(hh.label, locale), T(hh.notes), hh.group_tag, ts, ts);
+       const hhId = Number(hhRes.lastInsertRowid);
+       result.households_created += 1;
+       for (const m of hh.members) {
+         const respondedAt = m.rsvp_status === "pending" ? null : ts;
+         const r = insertGuest.run(
+           coupleId,
+-          m.full_name,
++          pickL(m.full_name, locale),
+           m.group_tag,
+           uniqueGuestCode(),
+           m.kind,
+           m.rsvp_status,
+           m.meal_choice,
+-          m.dietary,
++          T(m.dietary),
+           0,
+           null,
+-          m.notes,
++          T(m.notes),
+           respondedAt, // rsvp_responded_at
+           ts, // invited_at, invitation_delivered_at stays NULL in SQL
+           hhId,
+@@ -1074,7 +1231,7 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+           ts,
+           ts,
+         );
+-        guestIdByName.set(m.full_name, Number(r.lastInsertRowid));
++        guestIdByName.set(keyL(m.full_name), Number(r.lastInsertRowid));
+         result.guests_created += 1;
+       }
+     }
+@@ -1086,7 +1243,16 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+        VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?)`,
+     );
+     for (const b of BUDGET_LINES) {
+-      insertBudget.run(coupleId, b.category, b.label, b.planned, b.actual, b.notes, ts, ts);
++      insertBudget.run(
++        coupleId,
++        b.category,
++        pickL(b.label, locale),
++        b.planned,
++        b.actual,
++        T(b.notes),
++        ts,
++        ts,
++      );
+       result.budget_lines_created += 1;
+     }
+     // Stamp the budget ceiling on the couple, sum of planned rows.
+@@ -1104,11 +1270,11 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+     for (const e of SCHEDULE_EVENTS) {
+       insertSchedule.run(
+         coupleId,
+-        e.label,
++        pickL(e.label, locale),
+         e.starts_at_minutes,
+         e.duration_minutes,
+-        e.location,
+-        e.notes,
++        T(e.location),
++        T(e.notes),
+         ts,
+         ts,
+       );
+@@ -1135,12 +1301,12 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+         coupleId,
+         p.kind,
+         p.topic,
+-        p.title,
+-        p.body,
++        pickL(p.title, locale),
++        T(p.body),
+         p.done ? 1 : 0,
+         dueDate,
+         pos++,
+-        p.assignee,
++        T(p.assignee),
+         startDate,
+         p.priority,
+         ts,
+@@ -1161,7 +1327,7 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+     for (const t of SEAT_PLAN.tables) {
+       const r = insertTable.run(
+         coupleId,
+-        t.label,
++        pickL(t.label, locale),
+         t.shape,
+         t.seats,
+         t.x_mm,
+@@ -1172,7 +1338,7 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+         ts,
+         ts,
+       );
+-      tableIdByLabel.set(t.label, Number(r.lastInsertRowid));
++      tableIdByLabel.set(keyL(t.label), Number(r.lastInsertRowid));
+       result.tables_created += 1;
+     }
+     const insertAssign = db.prepare(
+@@ -1208,13 +1374,13 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+     for (const a of ACCOMMODATIONS) {
+       const r = insertAcc.run(
+         coupleId,
+-        a.name,
+-        a.address,
++        pickL(a.name, locale),
++        T(a.address),
+         a.capacity,
+         a.price_huf,
+         a.link,
+         a.contact,
+-        a.notes,
++        T(a.notes),
+         ts,
+         ts,
+       );
+@@ -1238,11 +1404,11 @@ export function seedShrekDemo(coupleId: number): SeedResult {
+     for (const t of TRANSFERS) {
+       const r = insertTransfer.run(
+         coupleId,
+-        t.label,
+-        t.direction,
++        pickL(t.label, locale),
++        T(t.direction),
+         t.depart_at,
+         t.capacity,
+-        t.notes,
++        T(t.notes),
+         ts,
+         ts,
+       );
