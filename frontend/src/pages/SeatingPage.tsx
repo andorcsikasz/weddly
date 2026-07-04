@@ -405,6 +405,18 @@ export default function SeatingPage() {
       ),
     [guests, seatedIds, partnerRole, showDeclined],
   );
+  // Flat pool of everyone not yet seated — feeds the inline "seat someone
+  // here" typeahead in the table panel. Partners first (they're the couple),
+  // then the rest of the unassigned list; no duplicates since `unassigned`
+  // already excludes partner-role rows.
+  const unseatedCandidates = useMemo(() => {
+    const out: { id: number; name: string }[] = [];
+    for (const slot of partnerSlots) {
+      if (slot.guest) out.push({ id: slot.guest.id, name: slot.guest.full_name });
+    }
+    for (const g of unassigned) out.push({ id: g.id, name: g.full_name });
+    return out;
+  }, [partnerSlots, unassigned]);
   // How many hidden-by-default declined guests exist (drives the toggle count).
   const declinedUnseatedCount = useMemo(
     () =>
@@ -1933,6 +1945,8 @@ export default function SeatingPage() {
               <TableSeatPanel
                 table={selected}
                 seatGuests={seatGuestsByTable.get(selectedId)}
+                candidates={unseatedCandidates}
+                onAssign={(seatIndex, guestId) => requestAssign(selectedId, seatIndex, guestId)}
                 onUnassign={unassignGuest}
                 onClose={() => setSelectedId(null)}
                 t={t}
@@ -3424,18 +3438,48 @@ function ShapePicker({
 function TableSeatPanel({
   table,
   seatGuests,
+  candidates,
+  onAssign,
   onUnassign,
   onClose,
   t,
 }: {
   table: SeatingTable;
   seatGuests: Map<number, { id: number; name: string; dietary?: string | null }> | undefined;
+  candidates: { id: number; name: string }[];
+  onAssign: (seatIndex: number, guestId: number) => void;
   onUnassign: (guestId: number) => void;
   onClose: () => void;
   t: (key: string) => string;
 }) {
   const filled = seatGuests?.size ?? 0;
   const disabledSet = new Set(table.disabled_seats ?? []);
+  // Which empty seat currently has its inline "seat someone here" typeahead
+  // open, plus its live query. Only one picker is open at a time.
+  const [openSeat, setOpenSeat] = useState<number | null>(null);
+  const [pickQuery, setPickQuery] = useState("");
+  const pickInputRef = useRef<HTMLInputElement | null>(null);
+
+  const openPicker = (seatIndex: number) => {
+    setOpenSeat(seatIndex);
+    setPickQuery("");
+  };
+  const closePicker = () => {
+    setOpenSeat(null);
+    setPickQuery("");
+  };
+
+  const pickMatches = useMemo(() => {
+    const q = normalizeName(pickQuery.trim());
+    const rows =
+      q === "" ? candidates : candidates.filter((c) => normalizeName(c.name).includes(q));
+    return rows.slice(0, 40);
+  }, [candidates, pickQuery]);
+
+  // Focus the search box as soon as a picker opens.
+  useEffect(() => {
+    if (openSeat !== null) pickInputRef.current?.focus();
+  }, [openSeat]);
 
   return (
     <div className="flex w-full shrink-0 flex-col rounded-xl border border-paper-200 bg-paper-50 md:h-full md:w-[280px] dark:border-umber-700 dark:bg-umber-900">
@@ -3467,18 +3511,23 @@ function TableSeatPanel({
         {Array.from({ length: table.seats }, (_, i) => {
           if (disabledSet.has(i)) return null;
           const guest = seatGuests?.get(i) ?? null;
+          const picking = openSeat === i;
           return (
             <li
               key={i}
-              className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
-                guest ? "bg-ink-50 dark:bg-umber-800" : "bg-paper-100 dark:bg-umber-850"
+              className={`rounded-lg text-sm ${
+                guest
+                  ? "flex items-center gap-2 bg-ink-50 px-2 py-1.5 dark:bg-umber-800"
+                  : picking
+                    ? "bg-paper-100 p-2 dark:bg-umber-850"
+                    : "bg-paper-100 dark:bg-umber-850"
               }`}
             >
-              <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-ink-400 dark:text-umber-500">
-                {i + 1}
-              </span>
               {guest ? (
                 <>
+                  <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-ink-400 dark:text-umber-500">
+                    {i + 1}
+                  </span>
                   <span className="flex-1 truncate font-medium text-ink-900 dark:text-paper-50">
                     {guest.name}
                   </span>
@@ -3501,10 +3550,95 @@ function TableSeatPanel({
                     <X size={11} />
                   </button>
                 </>
+              ) : picking ? (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-ink-400 dark:text-umber-500">
+                      {i + 1}
+                    </span>
+                    <div className="relative flex-1">
+                      <Search
+                        size={12}
+                        aria-hidden
+                        className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-400"
+                      />
+                      <input
+                        ref={pickInputRef}
+                        type="search"
+                        value={pickQuery}
+                        onChange={(e) => setPickQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") {
+                            e.preventDefault();
+                            closePicker();
+                          } else if (e.key === "Enter" && pickMatches[0]) {
+                            e.preventDefault();
+                            onAssign(i, pickMatches[0].id);
+                            closePicker();
+                          }
+                        }}
+                        placeholder={t("seating.table_panel_assign_placeholder")}
+                        aria-label={t("seating.table_panel_assign_placeholder")}
+                        className="w-full rounded-lg border border-paper-300 bg-paper-50 py-1 pl-7 pr-2 text-xs text-ink-900 placeholder:text-ink-400 focus:border-ink-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:placeholder:text-umber-400 dark:focus:border-paper-100"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closePicker}
+                      className="shrink-0 rounded p-1.5 text-ink-400 hover:bg-paper-200 hover:text-ink-700 md:p-0.5 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                      aria-label={t("seating.table_panel_close")}
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                  <ul className="ml-7 max-h-44 space-y-0.5 overflow-y-auto overscroll-contain">
+                    {candidates.length === 0 ? (
+                      <li className="px-2 py-1.5 text-xs text-ink-500 dark:text-umber-300">
+                        {t("seating.table_panel_assign_none")}
+                      </li>
+                    ) : pickMatches.length === 0 ? (
+                      <li className="px-2 py-1.5 text-xs text-ink-500 dark:text-umber-300">
+                        {t("seating.table_panel_assign_no_match")}
+                      </li>
+                    ) : (
+                      pickMatches.map((c) => (
+                        <li key={c.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onAssign(i, c.id);
+                              closePicker();
+                            }}
+                            className="flex w-full items-center gap-2 truncate rounded-md px-2 py-1.5 text-left text-xs font-medium text-ink-800 hover:bg-umber-100 dark:text-paper-100 dark:hover:bg-umber-700"
+                          >
+                            <User size={12} className="shrink-0 text-ink-400 dark:text-umber-400" />
+                            <span className="truncate">{c.name}</span>
+                          </button>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
               ) : (
-                <span className="flex-1 text-xs text-ink-500 dark:text-umber-300">
-                  {t("seating.table_panel_empty_seat")}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => openPicker(i)}
+                  className="group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-paper-200 dark:hover:bg-umber-800"
+                  aria-label={t("seating.table_panel_assign_here")}
+                  title={t("seating.table_panel_assign_here")}
+                >
+                  <span className="w-5 shrink-0 text-center text-[10px] font-semibold text-ink-400 dark:text-umber-500">
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 text-xs text-ink-500 dark:text-umber-300">
+                    {t("seating.table_panel_empty_seat")}
+                  </span>
+                  <Plus
+                    size={13}
+                    className="shrink-0 text-ink-400 opacity-0 transition-opacity group-hover:opacity-100 dark:text-umber-400"
+                    aria-hidden
+                  />
+                </button>
               )}
             </li>
           );

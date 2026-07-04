@@ -4304,6 +4304,10 @@ export interface LocaleMessages {
     table_panel_filled: string;
     table_panel_seat_n: string;
     table_panel_empty_seat: string;
+    table_panel_assign_here: string;
+    table_panel_assign_placeholder: string;
+    table_panel_assign_none: string;
+    table_panel_assign_no_match: string;
     table_panel_unassign: string;
     table_panel_close: string;
     /** Seat-mode progress summary bar (top of page). */
