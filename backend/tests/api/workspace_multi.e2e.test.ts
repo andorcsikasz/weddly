@@ -533,6 +533,32 @@ describe("workspace_multi: onboarding vs additional creation gates", () => {
   });
 });
 
+describe("workspace_multi: additional workspaces are editable (billing)", () => {
+  test("21b additional workspace starts a trial (not read-only 'none')", async () => {
+    wipeAll();
+    const { token, coupleId: alphaId } = await bootstrapCouple("ws-mbill-trial@weddly.test");
+    const bravoId = await spawnEvent(token, "Civil ceremony");
+    expect(bravoId).not.toBe(alphaId);
+
+    // The additional workspace must start on the same trial the onboarding
+    // path grants — otherwise it's born at the schema default 'none' and goes
+    // read-only ("Csak olvasható") the instant it's created.
+    const bravo = db
+      .prepare("SELECT subscription_status, trial_ends_at FROM couples WHERE id = ?")
+      .get(bravoId) as { subscription_status: string; trial_ends_at: number | null };
+    expect(bravo.subscription_status).toBe("trialing");
+    expect(bravo.trial_ends_at).not.toBeNull();
+
+    // Every workspace the user owns is independently on a trial — a third one
+    // is editable too, not just the first.
+    const charlieId = await spawnEvent(token, "Family dinner");
+    const charlie = db
+      .prepare("SELECT subscription_status FROM couples WHERE id = ?")
+      .get(charlieId) as { subscription_status: string };
+    expect(charlie.subscription_status).toBe("trialing");
+  });
+});
+
 describe("workspace_multi: cross-workspace data isolation", () => {
   test("22 guests scope per workspace: 5 guests on A → switch to B → list returns 0 user-created → back to A returns 5", async () => {
     wipeAll();

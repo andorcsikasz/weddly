@@ -3358,6 +3358,13 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
     userId,
   );
 
+  // Start the same 14-day trial the onboarding path grants. Without this an
+  // additional workspace is born with subscription_status='none' and goes
+  // read-only ("Csak olvasható") the instant it's created — so a user running
+  // several events (civil ceremony, dinner, the wedding) could only edit the
+  // first. Every workspace a user owns is independently editable on its trial.
+  initBillingAtOnboarding(coupleId, ts);
+
   addAuditLog({
     actor_user_id: userId,
     couple_id: coupleId,

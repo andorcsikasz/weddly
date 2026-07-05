@@ -5,7 +5,7 @@
 import { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { partnerFreeWindowEnd } from "@shared/billing";
+import { PAID_LAUNCH_DATE, partnerFreeWindowEnd, TRIAL_DURATION_MS } from "@shared/billing";
 import { CONFIG } from "./config";
 import { generateOrganiserCode, generateVendorCode } from "./domain/invite_codes";
 
@@ -1104,6 +1104,30 @@ db.prepare(
       }
     })();
   }
+}
+
+// One-time backfill: additional workspaces (couple.create_additional) were
+// historically inserted at the schema-default subscription_status='none' and
+// never trialed, so they went read-only ("Csak olvasható") the instant they
+// were created — a user running several events could only edit the first. The
+// route now starts a trial like onboarding does; this heals the rows created
+// before that fix. Discriminator: a couple that went through onboarding ALWAYS
+// has trial_ends_at stamped by startTrial, so status='none' AND trial_ends_at
+// IS NULL uniquely marks a never-trialed additional workspace — a revoked comp
+// (which trialed first) keeps its trial_ends_at and is left untouched.
+// Pre-launch 'none' rows were already flipped to 'founding' by the grandfather
+// above, so they don't match either. Idempotent: once trialed the rows are
+// 'trialing' and never match again.
+{
+  const nowMs = Date.now();
+  const trialEnd = Math.max(nowMs + TRIAL_DURATION_MS, PAID_LAUNCH_DATE);
+  db.prepare(
+    `UPDATE couples
+        SET subscription_status = 'trialing', trial_ends_at = ?, updated_at = ?
+      WHERE is_demo = 0
+        AND subscription_status = 'none'
+        AND trial_ends_at IS NULL`,
+  ).run(trialEnd, nowMs);
 }
 
 // One-time grandfather: every planner that existed BEFORE planner billing
