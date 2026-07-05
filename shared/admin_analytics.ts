@@ -70,6 +70,12 @@ export interface AdminMoneyAnalytics {
    *  "no budget set". Buckets are chosen by the server to fit HU 2026
    *  market expectations (1M / 3M / 5M / 10M / 20M / 30M+ HUF). */
   budget_histogram: Array<{ bucket_max_huf: number; count: number }>;
+  /** Same buckets + shape as `budget_histogram`, but binned by each couple's
+   *  TOTAL planned cost (the sum of their `budget_lines.planned_huf`) rather
+   *  than the top-level ceiling. Couples who skipped the overall ceiling but
+   *  filled in per-category amounts still land in a real bucket here;
+   *  `bucket_max_huf=0` means "no cost entered" (total planned ≤ 0). */
+  cost_histogram: Array<{ bucket_max_huf: number; count: number }>;
 }
 
 // ─── /api/admin/analytics/activity ───────────────────────────────────────

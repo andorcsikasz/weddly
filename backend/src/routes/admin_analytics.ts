@@ -232,35 +232,49 @@ function moneyAnalytics(audience: AnalyticsAudience): AdminMoneyAnalytics {
     };
   });
 
-  // Right-anchored histogram. Each bucket carries the inclusive upper bound
+  // Right-anchored histograms. Each bucket carries the inclusive upper bound
   // in HUF; the trailing 30M bucket catches the open-ended high tail. Zero
-  // is the "no budget set" pseudo-bucket.
+  // is the "not given" pseudo-bucket. Two parallel views over the same
+  // couples:
+  //  - budget_histogram bins the top-level `budget_ceiling_huf`.
+  //  - cost_histogram bins the SUM of per-line `planned_huf` (the couple's
+  //    total planned wedding cost), so couples who skipped the ceiling but
+  //    filled in per-category amounts still land in a real bucket.
   const BUCKET_MAX_HUF = [1_000_000, 3_000_000, 5_000_000, 10_000_000, 20_000_000, 30_000_000];
-  const histogram = [
+  const makeHistogram = () => [
     { bucket_max_huf: 0, count: 0 },
     ...BUCKET_MAX_HUF.map((b) => ({ bucket_max_huf: b, count: 0 })),
   ];
-  for (const c of couples) {
-    if (c.budget_ceiling_huf === null || c.budget_ceiling_huf === undefined) {
+  // Place one HUF amount into `histogram`. Missing / non-positive values land
+  // in the `bucket_max_huf=0` "not given" pseudo-bucket; everything else falls
+  // into the first bucket whose inclusive upper bound it clears, or the 30M+
+  // open-ended tail.
+  const place = (
+    histogram: Array<{ bucket_max_huf: number; count: number }>,
+    huf: number | null | undefined,
+  ) => {
+    if (huf === null || huf === undefined || huf <= 0) {
       const row = histogram[0];
       if (row) row.count += 1;
-      continue;
+      return;
     }
-    let placed = false;
     for (let i = 0; i < BUCKET_MAX_HUF.length - 1; i += 1) {
       const max = BUCKET_MAX_HUF[i];
-      if (max !== undefined && c.budget_ceiling_huf <= max) {
+      if (max !== undefined && huf <= max) {
         const row = histogram[i + 1];
         if (row) row.count += 1;
-        placed = true;
-        break;
+        return;
       }
     }
-    if (!placed) {
-      // 30M+ open-ended tail.
-      const row = histogram[histogram.length - 1];
-      if (row) row.count += 1;
-    }
+    const row = histogram[histogram.length - 1];
+    if (row) row.count += 1;
+  };
+
+  const histogram = makeHistogram();
+  const costHistogram = makeHistogram();
+  for (const c of couples) {
+    place(histogram, c.budget_ceiling_huf);
+    place(costHistogram, plannedByCouple.get(c.id) ?? 0);
   }
 
   return {
@@ -271,6 +285,7 @@ function moneyAnalytics(audience: AnalyticsAudience): AdminMoneyAnalytics {
     actual_huf: quantiles(actualValues),
     per_category: perCategory,
     budget_histogram: histogram,
+    cost_histogram: costHistogram,
   };
 }
 

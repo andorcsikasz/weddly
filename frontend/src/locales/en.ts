@@ -5279,6 +5279,7 @@ const en: LocaleMessages = {
     analytics_money_col_avg_actual: "Avg actual",
     analytics_money_col_couples_with_data: "Couples",
     analytics_money_histogram_title: "Budget distribution",
+    analytics_money_cost_histogram_title: "Total cost distribution",
     analytics_money_histogram_no_budget: "No budget",
     analytics_money_no_budget_warning: "{pct} of couples ({count}) haven't set a budget yet.",
     analytics_money_histogram_bucket_upper: "up to {max}",

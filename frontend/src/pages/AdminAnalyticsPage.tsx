@@ -746,7 +746,6 @@ function MoneySection({
 
   const m = state.data;
   const hasMoneyData = m.couples_with_budget > 0;
-  const histogramMax = Math.max(0, ...m.budget_histogram.map((b) => b.count));
   // "No budget" share. Denominator = every couple in the audience-scoped money
   // view (the histogram sums to exactly that). Numerator uses the SAME broad
   // "has budget" definition as the KPI tile + per-category table
@@ -801,41 +800,20 @@ function MoneySection({
           </div>
 
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            <InnerCard title={t("admin.analytics_money_histogram_title")}>
-              {m.budget_histogram.length === 0 ? (
-                <p className="text-sm text-neutral-500 dark:text-umber-300">
-                  {t("admin.analytics_money_histogram_empty")}
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-1">
-                  {m.budget_histogram.map((b) => (
-                    <li
-                      key={b.bucket_max_huf}
-                      className="grid grid-cols-[8rem_1fr_3rem] items-center gap-2"
-                    >
-                      <span
-                        className={`text-left text-xs text-neutral-600 dark:text-umber-200 ${
-                          b.bucket_max_huf === 0 ? "" : "stat-num"
-                        }`}
-                      >
-                        {b.bucket_max_huf === 0
-                          ? t("admin.analytics_money_histogram_no_budget")
-                          : t("admin.analytics_money_histogram_bucket_upper", {
-                              max: formatHuf(b.bucket_max_huf, locale),
-                            })}
-                      </span>
-                      <HBar
-                        pct={histogramMax > 0 ? (b.count / histogramMax) * 100 : 0}
-                        ariaLabel={`${b.count}`}
-                      />
-                      <span className="stat-num text-right text-xs font-medium text-neutral-700 dark:text-paper-100">
-                        {formatNumber(b.count, locale)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </InnerCard>
+            {/* Two histograms stacked in the left column (fills the gap left by
+                the taller per-category table), the category table in the right. */}
+            <div className="flex flex-col gap-3">
+              <MoneyHistogram
+                title={t("admin.analytics_money_histogram_title")}
+                buckets={m.budget_histogram}
+                locale={locale}
+              />
+              <MoneyHistogram
+                title={t("admin.analytics_money_cost_histogram_title")}
+                buckets={m.cost_histogram}
+                locale={locale}
+              />
+            </div>
 
             <InnerCard title={t("admin.analytics_money_per_category_title")}>
               <PerCategoryTable rows={m.per_category} locale={locale} />
@@ -844,6 +822,56 @@ function MoneySection({
         </>
       )}
     </SectionCard>
+  );
+}
+
+// Right-anchored HUF distribution bars. Shared by the budget-ceiling and
+// total-cost histograms — both carry the same bucket shape (a `bucket_max_huf=0`
+// "not given" pseudo-bucket + inclusive upper bounds), only the data differs.
+function MoneyHistogram({
+  title,
+  buckets,
+  locale,
+}: {
+  title: string;
+  buckets: Array<{ bucket_max_huf: number; count: number }>;
+  locale: "hu" | "en";
+}) {
+  const { t } = useT();
+  const max = Math.max(0, ...buckets.map((b) => b.count));
+  return (
+    <InnerCard title={title}>
+      {buckets.length === 0 ? (
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
+          {t("admin.analytics_money_histogram_empty")}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-1">
+          {buckets.map((b) => (
+            <li
+              key={b.bucket_max_huf}
+              className="grid grid-cols-[8rem_1fr_3rem] items-center gap-2"
+            >
+              <span
+                className={`text-left text-xs text-neutral-600 dark:text-umber-200 ${
+                  b.bucket_max_huf === 0 ? "" : "stat-num"
+                }`}
+              >
+                {b.bucket_max_huf === 0
+                  ? t("admin.analytics_money_histogram_no_budget")
+                  : t("admin.analytics_money_histogram_bucket_upper", {
+                      max: formatHuf(b.bucket_max_huf, locale),
+                    })}
+              </span>
+              <HBar pct={max > 0 ? (b.count / max) * 100 : 0} ariaLabel={`${b.count}`} />
+              <span className="stat-num text-right text-xs font-medium text-neutral-700 dark:text-paper-100">
+                {formatNumber(b.count, locale)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </InnerCard>
   );
 }
 

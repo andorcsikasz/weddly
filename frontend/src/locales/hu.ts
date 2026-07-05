@@ -5335,6 +5335,7 @@ const hu: LocaleMessages = {
     analytics_money_col_avg_actual: "Átl. tényleges",
     analytics_money_col_couples_with_data: "Pár",
     analytics_money_histogram_title: "Költségkeret eloszlás",
+    analytics_money_cost_histogram_title: "Teljes költség eloszlás",
     analytics_money_histogram_no_budget: "Nincs megadva",
     analytics_money_no_budget_warning:
       "A párok {pct}-a ({count}) még nem állított be költségvetést.",

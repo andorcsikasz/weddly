@@ -1649,6 +1649,7 @@ describe("admin analytics", () => {
       actual_huf: { count: number; sum: number };
       per_category: Array<{ category: string; avg_planned: number; couples_with_data: number }>;
       budget_histogram: Array<{ bucket_max_huf: number; count: number }>;
+      cost_histogram: Array<{ bucket_max_huf: number; count: number }>;
     }>("GET", "/api/admin/analytics/money", undefined, { token: adminToken });
     expect(r.status).toBe(200);
     expect(r.data.couples_with_budget).toBe(0);
@@ -1662,8 +1663,10 @@ describe("admin analytics", () => {
       expect(c.couples_with_data).toBe(0);
       expect(c.avg_planned).toBe(0);
     }
-    // Histogram has the 0-bucket + the 6 size buckets.
+    // Both histograms return the 0-bucket + the 6 size buckets, all zeroed.
     expect(r.data.budget_histogram.length).toBe(7);
+    expect(r.data.cost_histogram.length).toBe(7);
+    for (const b of r.data.cost_histogram) expect(b.count).toBe(0);
   });
 
   test("money — populated couple shows up in couples_with_budget + histogram", async () => {
@@ -1680,6 +1683,23 @@ describe("admin analytics", () => {
     // 5M ceiling lands in the bucket_max_huf=5_000_000 bucket.
     const five = r.data.budget_histogram.find((b) => b.bucket_max_huf === 5_000_000);
     expect(five?.count).toBe(1);
+  });
+
+  test("money — cost_histogram bins couples by total planned cost", async () => {
+    const adminToken = await bootstrapAdmin();
+    await bootstrapCouple("withcost@weddly.test");
+    const r = await req<{
+      budget_histogram: Array<{ bucket_max_huf: number; count: number }>;
+      cost_histogram: Array<{ bucket_max_huf: number; count: number }>;
+    }>("GET", "/api/admin/analytics/money", undefined, { token: adminToken });
+    // Onboarding seeds per-category budget lines that sum to the 5M ceiling, so
+    // the couple's TOTAL planned cost lands in the same 5M bucket as its ceiling.
+    expect(r.data.cost_histogram.length).toBe(7);
+    const five = r.data.cost_histogram.find((b) => b.bucket_max_huf === 5_000_000);
+    expect(five?.count).toBe(1);
+    // Both histograms cover the same couple universe, so their bars sum equally.
+    const total = (h: Array<{ count: number }>) => h.reduce((s, b) => s + b.count, 0);
+    expect(total(r.data.cost_histogram)).toBe(total(r.data.budget_histogram));
   });
 
   test("activity — empty: registered=0, signups.total=0", async () => {

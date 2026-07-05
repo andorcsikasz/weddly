@@ -5916,6 +5916,8 @@ export interface LocaleMessages {
     analytics_money_col_couples_with_data: string;
     /** Budget histogram chart. */
     analytics_money_histogram_title: string;
+    /** Total-cost histogram chart (sum of per-line planned amounts). */
+    analytics_money_cost_histogram_title: string;
     analytics_money_histogram_no_budget: string;
     analytics_money_no_budget_warning: string;
     analytics_money_histogram_bucket_upper: string;
