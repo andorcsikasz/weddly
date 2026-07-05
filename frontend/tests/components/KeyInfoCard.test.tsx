@@ -17,7 +17,11 @@ import { KeyInfoCard } from "@/components/KeyInfoCard";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { I18nProvider } from "@/lib/i18n";
 
+type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+type Call = { url: string; method: Method; body: unknown };
+
 const realFetch = globalThis.fetch;
+const calls: Call[] = [];
 let picks: CouplePick[] = [];
 let suppliers: DirectorySupplier[] = [];
 
@@ -29,8 +33,23 @@ function jsonResponse(status: number, payload: unknown): Response {
 }
 
 function installFetch() {
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
+    const method = ((init?.method ?? "GET").toUpperCase() as Method) ?? "GET";
+    let body: unknown = null;
+    if (typeof init?.body === "string" && init.body.length > 0) {
+      try {
+        body = JSON.parse(init.body);
+      } catch {
+        body = init.body;
+      }
+    }
+    calls.push({ url, method, body });
+    if (method === "PATCH" && url.includes("/api/couples/current")) {
+      // Echo the patched fields back as the updated couple (the card only reads
+      // the venue/contact fields off the response via pickFields).
+      return jsonResponse(200, { couple: body });
+    }
     if (url.includes("/api/couple-suppliers")) return jsonResponse(200, { suppliers: [] });
     if (url.includes("/api/suppliers")) return jsonResponse(200, { suppliers, countries: [] });
     if (url.includes("/api/picks")) return jsonResponse(200, { picks });
@@ -97,6 +116,7 @@ function couple(over: Partial<Couple> = {}): Couple {
 }
 
 beforeEach(() => {
+  calls.length = 0;
   picks = [];
   suppliers = [];
   try {
@@ -113,7 +133,7 @@ afterEach(() => {
 });
 
 describe("<KeyInfoCard>", () => {
-  it("uses the picked directory venue (rich: coords + phone) over the free-text name", async () => {
+  it("shows the picked directory venue richly (coords + phone) when nothing is overridden", async () => {
     picks = [pick("venue", "v1"), pick("photo_video", "p1"), pick("music_dj", "d1")];
     suppliers = [
       dir({
@@ -136,14 +156,13 @@ describe("<KeyInfoCard>", () => {
     ];
     const { container } = render(
       <Providers>
-        <KeyInfoCard couple={couple({ venue_name: "Sári Csárda", venue_city: "Dunakiliti" })} />
+        <KeyInfoCard couple={couple({})} />
       </Providers>,
     );
     await flush();
 
-    // The pick wins — free-text name is not shown.
+    // No manual override → the picked venue's own name/address/coords surface.
     expect(screen.getByText("Aranybástya")).toBeInTheDocument();
-    expect(screen.queryByText("Sári Csárda")).not.toBeInTheDocument();
     expect(screen.getByText("Budai Vár")).toBeInTheDocument();
 
     // Map link uses the exact coordinates.
@@ -161,6 +180,92 @@ describe("<KeyInfoCard>", () => {
     expect(container.querySelector('a[href="tel:+36201112222"]')).toBeTruthy();
     // "All vendors" jumps to the timeline contact panel.
     expect(container.querySelector('a[href="/app/timeline"]')).toBeTruthy();
+  });
+
+  it("manual venue fields override the picked venue, and renders coordinator + emergency rows", async () => {
+    picks = [pick("venue", "v1")];
+    suppliers = [
+      dir({
+        id: "v1",
+        name: "Aranybástya",
+        category: "venue",
+        city: "Budapest",
+        address: "Budai Vár",
+        contact_phone: "+36 1 200 8817",
+        lat: 47.5,
+        lng: 19.04,
+      }),
+    ];
+    const { container } = render(
+      <Providers>
+        <KeyInfoCard
+          couple={couple({
+            venue_name: "Sári Csárda",
+            venue_city: "Dunakiliti",
+            venue_address: "Fő út 1",
+            venue_phone: "+36 30 111 2222",
+            coordinator_name: "Anna",
+            coordinator_phone: "+36 20 333 4444",
+            emergency_name: "Béla",
+            emergency_phone: "+36 70 555 6666",
+          })}
+        />
+      </Providers>,
+    );
+    await flush();
+
+    // Manual name + phone win over the picked venue.
+    expect(screen.getByText("Sári Csárda")).toBeInTheDocument();
+    expect(screen.queryByText("Aranybástya")).not.toBeInTheDocument();
+    expect(container.querySelector('a[href="tel:+36301112222"]')).toBeTruthy();
+    // Manual address wins over the picked venue's coords for the map query.
+    const q = encodeURIComponent("Fő út 1, Dunakiliti");
+    expect(
+      container.querySelector(`a[href="https://www.google.com/maps/search/?api=1&query=${q}"]`),
+    ).toBeTruthy();
+
+    // Coordinator + emergency rows with their own call buttons.
+    expect(screen.getByText("Coordinator")).toBeInTheDocument();
+    expect(screen.getByText("Anna")).toBeInTheDocument();
+    expect(container.querySelector('a[href="tel:+36203334444"]')).toBeTruthy();
+    expect(screen.getByText("Emergency")).toBeInTheDocument();
+    expect(screen.getByText("Béla")).toBeInTheDocument();
+    expect(container.querySelector('a[href="tel:+36705556666"]')).toBeTruthy();
+  });
+
+  it("edits and saves the venue phone via PATCH, updating the panel", async () => {
+    picks = [];
+    suppliers = [];
+    const { container } = render(
+      <Providers>
+        <KeyInfoCard couple={couple({ venue_name: "Sári Csárda" })} />
+      </Providers>,
+    );
+    await flush();
+    // No phone yet → no venue call button.
+    expect(container.querySelector('a[href^="tel:"]')).toBeNull();
+
+    // Open the editor, type a venue phone, save.
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    });
+    await flush();
+    const phoneInput = screen.getByLabelText("Venue phone");
+    await act(async () => {
+      fireEvent.change(phoneInput, { target: { value: "+36 30 111 2222" } });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    });
+    await flush();
+
+    // PATCH carried the new phone.
+    const patch = calls.find((c) => c.method === "PATCH" && c.url.includes("/api/couples/current"));
+    expect(patch).toBeDefined();
+    expect(patch?.body).toMatchObject({ venue_phone: "+36 30 111 2222" });
+
+    // Panel now offers a call button for the venue.
+    expect(container.querySelector('a[href="tel:+36301112222"]')).toBeTruthy();
   });
 
   it("falls back to the free-text venue name + a Maps search link when nothing is picked", async () => {

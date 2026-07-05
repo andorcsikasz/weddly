@@ -203,6 +203,13 @@ export interface CoupleRow {
   venue_name: string | null;
   /** Settlement (city/town) shown next to the venue name. Null when unset. */
   venue_city: string | null;
+  /** Couple-entered venue + day-of contacts for the private Kulcsinfó panel. */
+  venue_address: string | null;
+  venue_phone: string | null;
+  coordinator_name: string | null;
+  coordinator_phone: string | null;
+  emergency_name: string | null;
+  emergency_phone: string | null;
   /** Couple-pasted http(s) URL for the hero image on the public site.
    *  No upload pipeline yet; this is BYO-URL with boundary validation. */
   cover_image_url: string | null;
@@ -461,6 +468,12 @@ export function toCouple(row: CoupleRow): Couple {
     welcome_desk_active: Boolean(row.welcome_desk_active),
     venue_name: row.venue_name,
     venue_city: row.venue_city,
+    venue_address: row.venue_address,
+    venue_phone: row.venue_phone,
+    coordinator_name: row.coordinator_name,
+    coordinator_phone: row.coordinator_phone,
+    emergency_name: row.emergency_name,
+    emergency_phone: row.emergency_phone,
     cover_image_url: row.cover_image_url,
     cover_position_x: row.cover_position_x ?? 50,
     cover_position_y: row.cover_position_y ?? 50,

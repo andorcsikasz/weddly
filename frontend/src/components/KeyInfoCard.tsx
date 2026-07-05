@@ -32,22 +32,26 @@ import {
   Lightbulb,
   MapPin,
   PartyPopper,
+  Pencil,
   Phone,
   Pizza,
   Plus,
   Shirt,
+  Siren,
   Sparkles,
   Speaker,
   StickyNote,
   Tent,
+  UserRound,
   Wine,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { coupleSupplierApi, picksApi, supplierApi } from "../lib/endpoints";
+import { ApiError } from "../lib/api";
+import { coupleApi, coupleSupplierApi, picksApi, supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
-import { Skeleton } from "./ui";
+import { Dialog, Skeleton, useToast } from "./ui";
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
@@ -104,51 +108,105 @@ type Contact = {
   phone: string | null;
 };
 
-/** Resolve the couple's venue from the richest source available:
- *  1. a picked directory venue (address / phone / coords),
- *  2. a picked DIY venue (name only),
- *  3. the free-text `venue_name` + `venue_city`,
- *  4. nothing → null (card shows a CTA). */
+/** The couple-editable venue + day-of contact fields, as a plain string form
+ *  (empty string = unset). Kept local so a save reflects immediately without
+ *  threading state back through the dashboard. */
+type VenueFields = {
+  venue_name: string;
+  venue_city: string;
+  venue_address: string;
+  venue_phone: string;
+  coordinator_name: string;
+  coordinator_phone: string;
+  emergency_name: string;
+  emergency_phone: string;
+};
+
+function pickFields(c: Couple): VenueFields {
+  return {
+    venue_name: c.venue_name ?? "",
+    venue_city: c.venue_city ?? "",
+    venue_address: c.venue_address ?? "",
+    venue_phone: c.venue_phone ?? "",
+    coordinator_name: c.coordinator_name ?? "",
+    coordinator_phone: c.coordinator_phone ?? "",
+    emergency_name: c.emergency_name ?? "",
+    emergency_phone: c.emergency_phone ?? "",
+  };
+}
+
+/** The picked directory venue (curated/community) behind the "venue" category
+ *  pick, or undefined when the couple picked a DIY venue / nothing. */
+function pickedVenueDir(
+  venuePick: CouplePick | undefined,
+  directoryById: Map<string, DirectorySupplier>,
+): DirectorySupplier | undefined {
+  return venuePick ? directoryById.get(venuePick.supplier_id) : undefined;
+}
+
+/** Merge the couple's manually-entered venue fields (highest priority, field by
+ *  field) over the picked venue's derived details. Returns null when there's
+ *  nothing to show a venue row for (card falls back to the set-venue CTA). The
+ *  map query prefers a picked venue's exact coordinates, then a street address,
+ *  then the name + city. */
 function resolveVenue(
-  couple: Couple,
+  f: VenueFields,
   venuePick: CouplePick | undefined,
   directoryById: Map<string, DirectorySupplier>,
   diyById: Map<string, CoupleSupplier>,
 ): VenueInfo | null {
-  if (venuePick) {
-    const dir = directoryById.get(venuePick.supplier_id);
-    if (dir) {
-      const detail = dir.address ?? (dir.city || null);
-      const mapQuery =
-        dir.lat !== null && dir.lng !== null
-          ? `${dir.lat},${dir.lng}`
-          : [dir.address ?? dir.name, dir.city].filter(Boolean).join(", ");
-      return { name: dir.name, detail, phone: dir.contact_phone, mapQuery };
-    }
-    const diy = diyById.get(venuePick.supplier_id);
-    if (diy) {
-      const detail = couple.venue_city || null;
-      return {
-        name: diy.name,
-        detail,
-        phone: null,
-        mapQuery: [diy.name, couple.venue_city].filter(Boolean).join(", "),
-      };
-    }
+  const picked = pickedVenueDir(venuePick, directoryById);
+  const diy = venuePick && !picked ? diyById.get(venuePick.supplier_id) : undefined;
+
+  const name = f.venue_name || picked?.name || diy?.name || null;
+  const address = f.venue_address || picked?.address || null;
+  const city = f.venue_city || picked?.city || null;
+  const phone = f.venue_phone || picked?.contact_phone || null;
+
+  if (!name && !address) return null;
+
+  const primary = name ?? address ?? "";
+  const secondary = name ? address || city : city;
+
+  let mapQuery: string;
+  if (f.venue_address) {
+    // The couple typed their own address — trust it over the picked pin.
+    mapQuery = [f.venue_address, city].filter(Boolean).join(", ");
+  } else if (picked && picked.lat !== null && picked.lng !== null) {
+    mapQuery = `${picked.lat},${picked.lng}`;
+  } else if (address) {
+    mapQuery = [address, city].filter(Boolean).join(", ");
+  } else {
+    mapQuery = [name, city].filter(Boolean).join(", ");
   }
-  if (couple.venue_name) {
-    return {
-      name: couple.venue_name,
-      detail: couple.venue_city || null,
-      phone: null,
-      mapQuery: [couple.venue_name, couple.venue_city].filter(Boolean).join(", "),
-    };
-  }
-  return null;
+  return { name: primary, detail: secondary, phone, mapQuery };
 }
 
 export function KeyInfoCard({ couple }: { couple: Couple }) {
   const { t } = useT();
+  const toast = useToast();
+
+  // Local mirror of the couple-editable fields — a save reflects here without
+  // threading state back up to the dashboard. Re-synced if the prop changes.
+  const [fields, setFields] = useState<VenueFields>(() => pickFields(couple));
+  useEffect(() => setFields(pickFields(couple)), [couple]);
+  // Edit dialog draft — null when the dialog is closed.
+  const [draft, setDraft] = useState<VenueFields | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function saveDraft() {
+    if (!draft) return;
+    setSaving(true);
+    try {
+      const resp = await coupleApi.update(draft);
+      setFields(pickFields(resp.couple));
+      setDraft(null);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setSaving(false);
+    }
+  }
 
   // Collapse state persists per browser so a couple who tucks it away keeps it
   // that way. Defaults to open (the panel is meant to be glanceable above fold).
@@ -178,7 +236,11 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
     let cancelled = false;
     Promise.all([picksApi.list(), supplierApi.list(), coupleSupplierApi.list()])
       .then(([p, d, m]) => {
-        if (!cancelled) setData({ picks: p.picks, directory: d.suppliers, diy: m.suppliers });
+        // Default every list so a thin/unexpected response can't make a later
+        // `.find` / `for…of` throw during render.
+        if (!cancelled) {
+          setData({ picks: p.picks ?? [], directory: d.suppliers ?? [], diy: m.suppliers ?? [] });
+        }
       })
       .catch(() => {
         // Degrade quietly: the card still shows the free-text venue + CTAs.
@@ -203,18 +265,27 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
     return map;
   }, [data]);
 
-  const venuePick = useMemo(() => data?.picks.find((p) => p.category === "venue"), [data]);
+  const venuePick = useMemo(() => data?.picks?.find((p) => p.category === "venue"), [data]);
   const venue = useMemo(
-    () => resolveVenue(couple, venuePick, directoryById, diyById),
-    [couple, venuePick, directoryById, diyById],
+    () => resolveVenue(fields, venuePick, directoryById, diyById),
+    [fields, venuePick, directoryById, diyById],
   );
+  // Directory venue behind the pick — its name/address/phone become the edit
+  // form's placeholders so the couple sees what's auto-filled vs. overridden.
+  const pickedDir = useMemo(
+    () => pickedVenueDir(venuePick, directoryById),
+    [venuePick, directoryById],
+  );
+
+  const hasCoordinator = Boolean(fields.coordinator_name || fields.coordinator_phone);
+  const hasEmergency = Boolean(fields.emergency_name || fields.emergency_phone);
 
   // Contacts = every pick except the venue (it has its own row above). Resolve
   // each to a display name + phone; DIY picks resolve to name-only.
   const contacts = useMemo<Contact[]>(() => {
     if (!data) return [];
     const out: Contact[] = [];
-    for (const p of data.picks) {
+    for (const p of data.picks ?? []) {
       if (p.category === "venue") continue;
       const dir = directoryById.get(p.supplier_id);
       if (dir) {
@@ -250,19 +321,30 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           <span className="inline-block h-5 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
           {t("dashboard.keyinfo_title")}
         </h2>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label={t("dashboard.keyinfo_title")}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
-        >
-          <ChevronDown
-            size={18}
-            aria-hidden="true"
-            className={`transition-transform ${open ? "" : "-rotate-90"}`}
-          />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setDraft(fields)}
+            aria-label={t("dashboard.keyinfo_edit")}
+            title={t("dashboard.keyinfo_edit")}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+          >
+            <Pencil size={16} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-label={t("dashboard.keyinfo_title")}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+          >
+            <ChevronDown
+              size={18}
+              aria-hidden="true"
+              className={`transition-transform ${open ? "" : "-rotate-90"}`}
+            />
+          </button>
+        </div>
       </header>
 
       {open && (
@@ -337,6 +419,28 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                 </Link>
               )}
 
+              {/* ── Day-of contacts (coordinator + emergency) ─────────── */}
+              {(hasCoordinator || hasEmergency) && (
+                <div className="mt-4 space-y-2 border-t border-paper-200 pt-4 dark:border-umber-700">
+                  {hasCoordinator && (
+                    <PersonRow
+                      Icon={UserRound}
+                      label={t("dashboard.keyinfo_coordinator")}
+                      name={fields.coordinator_name}
+                      phone={fields.coordinator_phone}
+                    />
+                  )}
+                  {hasEmergency && (
+                    <PersonRow
+                      Icon={Siren}
+                      label={t("dashboard.keyinfo_emergency")}
+                      name={fields.emergency_name}
+                      phone={fields.emergency_phone}
+                    />
+                  )}
+                </div>
+              )}
+
               {/* ── Suppliers ─────────────────────────────────────────── */}
               <div className="mt-4 border-t border-paper-200 pt-4 dark:border-umber-700">
                 <div className="mb-2 flex items-center justify-between">
@@ -407,6 +511,175 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           )}
         </div>
       )}
+
+      {draft && (
+        <Dialog
+          open
+          role="dialog"
+          closeOnBackdrop
+          size="sm"
+          title={t("dashboard.keyinfo_edit_title")}
+          onClose={() => (saving ? undefined : setDraft(null))}
+          footer={
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setDraft(null)}
+                disabled={saving}
+              >
+                {t("common.cancel")}
+              </button>
+              <button type="button" className="btn-primary" onClick={saveDraft} disabled={saving}>
+                {t("common.save")}
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <fieldset className="space-y-2">
+              <legend className="mb-1 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                {t("dashboard.keyinfo_venue_label")}
+              </legend>
+              <Field
+                label={t("dashboard.keyinfo_field_venue_name")}
+                value={draft.venue_name}
+                placeholder={pickedDir?.name ?? ""}
+                onChange={(v) => setDraft({ ...draft, venue_name: v })}
+              />
+              <Field
+                label={t("dashboard.keyinfo_field_venue_city")}
+                value={draft.venue_city}
+                placeholder={pickedDir?.city ?? ""}
+                onChange={(v) => setDraft({ ...draft, venue_city: v })}
+              />
+              <Field
+                label={t("dashboard.keyinfo_field_venue_address")}
+                value={draft.venue_address}
+                placeholder={pickedDir?.address ?? ""}
+                onChange={(v) => setDraft({ ...draft, venue_address: v })}
+              />
+              <Field
+                label={t("dashboard.keyinfo_field_venue_phone")}
+                type="tel"
+                value={draft.venue_phone}
+                placeholder={pickedDir?.contact_phone ?? ""}
+                onChange={(v) => setDraft({ ...draft, venue_phone: v })}
+              />
+            </fieldset>
+
+            <fieldset className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <legend className="mb-1 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                {t("dashboard.keyinfo_coordinator")}
+              </legend>
+              <Field
+                label={t("dashboard.keyinfo_field_name")}
+                value={draft.coordinator_name}
+                onChange={(v) => setDraft({ ...draft, coordinator_name: v })}
+              />
+              <Field
+                label={t("dashboard.keyinfo_field_phone")}
+                type="tel"
+                value={draft.coordinator_phone}
+                onChange={(v) => setDraft({ ...draft, coordinator_phone: v })}
+              />
+            </fieldset>
+
+            <fieldset className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <legend className="mb-1 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                {t("dashboard.keyinfo_emergency")}
+              </legend>
+              <Field
+                label={t("dashboard.keyinfo_field_name")}
+                value={draft.emergency_name}
+                onChange={(v) => setDraft({ ...draft, emergency_name: v })}
+              />
+              <Field
+                label={t("dashboard.keyinfo_field_phone")}
+                type="tel"
+                value={draft.emergency_phone}
+                onChange={(v) => setDraft({ ...draft, emergency_phone: v })}
+              />
+            </fieldset>
+          </div>
+        </Dialog>
+      )}
     </section>
+  );
+}
+
+/** A person row (coordinator / emergency contact): icon, label, name, and a
+ *  tel: call button when a number is set. Falls back to showing the number
+ *  itself as the primary line when no name was entered. */
+function PersonRow({
+  Icon,
+  label,
+  name,
+  phone,
+}: {
+  Icon: IconCmp;
+  label: string;
+  name: string;
+  phone: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
+        <Icon size={15} aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+          {label}
+        </p>
+        <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+          {name || phone}
+        </p>
+      </div>
+      {phone && <CallPill phone={phone} />}
+    </div>
+  );
+}
+
+/** Small tel: call button shared by day-of contact rows. */
+function CallPill({ phone }: { phone: string }) {
+  const { t } = useT();
+  return (
+    <a
+      href={`tel:${phone.replace(/\s+/g, "")}`}
+      className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-paper-100 px-3 text-xs font-medium text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 sm:min-h-[36px] dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
+    >
+      <Phone size={13} aria-hidden="true" />
+      <span>{t("dashboard.keyinfo_call")}</span>
+    </a>
+  );
+}
+
+/** Labelled text input for the edit dialog. */
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: "text" | "tel";
+}) {
+  return (
+    <label className="block text-sm">
+      <span className="mb-1 block text-xs font-medium text-ink-600 dark:text-umber-200">
+        {label}
+      </span>
+      <input
+        type={type}
+        className="input"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </label>
   );
 }

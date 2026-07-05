@@ -866,6 +866,17 @@ addColumnIfMissing("couples", "venue_name", "venue_name TEXT");
 // place picker's locality; the display also falls back to the part of
 // venue_name after a comma when this is empty.
 addColumnIfMissing("couples", "venue_city", "venue_city TEXT");
+// Couple-entered venue contact details for the private "Kulcsinfó" dashboard
+// panel (NOT the public site, unlike venue_name/venue_city). Free-text; the
+// couple fills these in when their venue isn't a picked directory listing.
+// venue_address doubles as the Google-Maps search query. Phone fields power a
+// one-tap tel: call button; coordinator/emergency are day-of point-of-contact.
+addColumnIfMissing("couples", "venue_address", "venue_address TEXT");
+addColumnIfMissing("couples", "venue_phone", "venue_phone TEXT");
+addColumnIfMissing("couples", "coordinator_name", "coordinator_name TEXT");
+addColumnIfMissing("couples", "coordinator_phone", "coordinator_phone TEXT");
+addColumnIfMissing("couples", "emergency_name", "emergency_name TEXT");
+addColumnIfMissing("couples", "emergency_phone", "emergency_phone TEXT");
 addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
 // Cover-photo focal point as object-position percentages (0..100, default 50 =
 // centred). The hero crops the cover to a wide band, so the couple drags the

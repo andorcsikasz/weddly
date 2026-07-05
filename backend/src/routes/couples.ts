@@ -202,6 +202,14 @@ interface OnboardBody {
   venue_name?: unknown;
   /** Settlement (city/town) shown next to the venue name. Empty string clears. */
   venue_city?: unknown;
+  /** Couple-entered venue + day-of contacts for the private Kulcsinfó panel.
+   *  All free text; empty string clears the column. */
+  venue_address?: unknown;
+  venue_phone?: unknown;
+  coordinator_name?: unknown;
+  coordinator_phone?: unknown;
+  emergency_name?: unknown;
+  emergency_phone?: unknown;
   /** http(s) URL the couple pastes for the wedding-site hero image. Empty
    *  string clears. We validate scheme + length only — no fetch/probe at
    *  the API boundary, that's a v2 concern once upload pipeline lands. */
@@ -1396,6 +1404,18 @@ function parseVenueName(raw: unknown): string | null {
   return trimmed;
 }
 
+/** Generic optional free-text field. Empty/whitespace → null (clears the
+ *  column); trimmed and length-capped. Used for the Kulcsinfó venue/day-of
+ *  contact fields (address, phones, coordinator/emergency names). */
+function parseOptionalText(raw: unknown, field: string, max: number): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, `${field} must be a string`);
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > max) throw new HttpError(400, `${field} must be ≤${max} chars`);
+  return trimmed;
+}
+
 /** http(s) URL the couple pastes for the wedding-site hero image. Empty
  *  string → null. We require an explicit http or https scheme (no
  *  protocol-relative URLs, no data:, no javascript:), and cap the length at
@@ -1975,6 +1995,30 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.venue_name_update",
         before: { venue_city: prev },
         after: { venue_city: next },
+      });
+    }
+  }
+
+  // Kulcsinfó venue + day-of contact fields — uniform optional free text.
+  const CONTACT_TEXT_FIELDS: { key: keyof OnboardBody; max: number }[] = [
+    { key: "venue_address", max: 300 },
+    { key: "venue_phone", max: 40 },
+    { key: "coordinator_name", max: 120 },
+    { key: "coordinator_phone", max: 40 },
+    { key: "emergency_name", max: 120 },
+    { key: "emergency_phone", max: 40 },
+  ];
+  for (const f of CONTACT_TEXT_FIELDS) {
+    const raw = body[f.key];
+    if (raw === undefined) continue;
+    const next = parseOptionalText(raw, f.key, f.max);
+    const prev = (couple as unknown as Record<string, string | null>)[f.key] ?? null;
+    if (next !== prev) {
+      updates.push({ col: f.key, val: next });
+      auditEntries.push({
+        action: "couple.venue_contact_update",
+        before: { [f.key]: prev },
+        after: { [f.key]: next },
       });
     }
   }

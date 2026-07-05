@@ -622,6 +622,14 @@ export const coupleApi = {
     venue_name?: string | null;
     /** City/town shown next to the venue name. */
     venue_city?: string | null;
+    /** Kulcsinfó venue + day-of contacts (private dashboard panel). Empty
+     *  string clears. */
+    venue_address?: string | null;
+    venue_phone?: string | null;
+    coordinator_name?: string | null;
+    coordinator_phone?: string | null;
+    emergency_name?: string | null;
+    emergency_phone?: string | null;
     /** http(s) URL the couple pastes for the wedding site's hero image. */
     cover_image_url?: string | null;
     /** Cover-photo focal point as object-position percentages (0..100). */

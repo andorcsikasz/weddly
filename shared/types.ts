@@ -686,6 +686,16 @@ export interface Couple {
   /** Settlement (city/town) shown next to the venue name, e.g. "Dunakiliti".
    *  Auto-filled from the place picker; null when unset. */
   venue_city: string | null;
+  /** Couple-entered venue + day-of contact details for the private "Kulcsinfó"
+   *  dashboard panel (not the public site). All null until the couple fills
+   *  them in; `venue_address` doubles as the Maps search query, the phones
+   *  power one-tap tel: buttons. */
+  venue_address: string | null;
+  venue_phone: string | null;
+  coordinator_name: string | null;
+  coordinator_phone: string | null;
+  emergency_name: string | null;
+  emergency_phone: string | null;
   /** Couple-pasted http(s) URL for the wedding site's hero image. */
   cover_image_url: string | null;
   /** Cover-photo focal point as object-position percentages (0..100, 50 =
