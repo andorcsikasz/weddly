@@ -1322,6 +1322,15 @@ export interface LocaleMessages {
     feature_seating: string;
     feature_print: string;
     feature_suppliers: string;
+    // ── Kulcsinfó quick-access panel ─────────────────────────────────
+    keyinfo_title: string;
+    keyinfo_venue_label: string;
+    keyinfo_map: string;
+    keyinfo_call: string;
+    keyinfo_suppliers: string;
+    keyinfo_all_suppliers: string;
+    keyinfo_no_venue: string;
+    keyinfo_add_suppliers: string;
     // ── KPI dashboard ────────────────────────────────────────────────
     kpi_days_label: string;
     kpi_days_unit: string;

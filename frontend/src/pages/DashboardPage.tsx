@@ -53,6 +53,7 @@ import { SpendingCharts } from "../components/SpendingCharts";
 import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { PlannerApprovalBanner } from "../components/PlannerApprovalBanner";
 import { TimelineStatusCard } from "../components/TimelineStatusCard";
+import { KeyInfoCard } from "../components/KeyInfoCard";
 import { UpcomingTasksCard } from "../components/UpcomingTasksCard";
 import { CalendarPicker, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -1306,6 +1307,9 @@ export default function DashboardPage() {
           stays focused on the jumbo check-in panel. ───────────────── */}
       {!dayOfMode && (
         <>
+          {/* ── Kulcsinfó — venue map/phone + booked-supplier quick-dial. Self-fetching. ── */}
+          <KeyInfoCard couple={couple} />
+
           {/* ── Couple's own upcoming tasks — self-fetching; renders its own empty states. ── */}
           <UpcomingTasksCard weddingDate={couple.wedding_date} nudges={setupNudges} />
 
