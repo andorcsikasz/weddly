@@ -5317,6 +5317,11 @@ export interface LocaleMessages {
     solo_count_one: string;
     solo_count_other: string;
     solo_empty: string;
+    /** "×N" pill + tooltip on a banded owner card (one owner, several event
+     *  workspaces), and the fallback owner label when the owner can't resolve. */
+    owner_workspaces_pill: string;
+    owner_workspaces_title: string;
+    owner_band_generic: string;
     /** Collapse/expand toggle labels shared by the admin users-page lists. */
     section_show: string;
     section_hide: string;

@@ -13,6 +13,7 @@ import {
   Gift,
   Heart,
   History,
+  Layers,
   Mail,
   RefreshCw,
   Search,
@@ -277,6 +278,62 @@ export default function AdminUsersPage() {
     () => visibleCouples.filter((c) => !c.is_demo && c.billing.is_founding_member),
     [visibleCouples],
   );
+
+  // ── Owner grouping ────────────────────────────────────────────────────────
+  // Every real workspace grouped by its owner so ONE person appears exactly
+  // once: their FIRST (oldest) workspace is the anchor, any additional events
+  // they spun up band underneath it with an "×N" pill. Keyed by owner_user_id
+  // (the owner-role member, resolved server-side); a workspace with no
+  // resolvable owner keys on its own id so it never merges into someone else's
+  // group. Ordered oldest-first, so workspaces[0] is the primary — the same
+  // "first workspace" the billing verdict is anchored to server-side.
+  interface OwnerGroup {
+    key: string;
+    ownerId: number | null;
+    workspaces: AdminCoupleView[];
+    primary: AdminCoupleView;
+    /** Primary has both partners present → the group lives in "Páros"; else
+     *  "Egyedüli". Additional events are always solo and nest either way. */
+    paired: boolean;
+  }
+  const ownerGroups = useMemo<OwnerGroup[]>(() => {
+    const byOwner = new Map<string, AdminCoupleView[]>();
+    for (const c of realCouples) {
+      const key = c.owner_user_id != null ? `u${c.owner_user_id}` : `c${c.id}`;
+      const bucket = byOwner.get(key);
+      if (bucket) bucket.push(c);
+      else byOwner.set(key, [c]);
+    }
+    const groups: OwnerGroup[] = [];
+    for (const [key, items] of byOwner) {
+      const workspaces = [...items].sort((a, b) => a.created_at - b.created_at || a.id - b.id);
+      const primary = workspaces[0];
+      if (!primary) continue;
+      const paired = primary.partners.filter((p) => userById.has(p.id)).length >= 2;
+      groups.push({ key, ownerId: primary.owner_user_id, workspaces, primary, paired });
+    }
+    return groups;
+  }, [realCouples, userById]);
+
+  // Order groups by their primary using the active workspace sort, so bands and
+  // single cards interleave in the same order the columns are sorted by.
+  function sortGroups(groups: OwnerGroup[]): OwnerGroup[] {
+    const order = new Map(sortCouples(groups.map((g) => g.primary)).map((c, i) => [c.id, i]));
+    return [...groups].sort(
+      (a, b) => (order.get(a.primary.id) ?? 0) - (order.get(b.primary.id) ?? 0),
+    );
+  }
+  // Narrow each group's workspaces to the active search, keeping the group's
+  // authoritative primary/paired class. Groups with no match drop out.
+  function filterGroupsForDisplay(groups: OwnerGroup[]): OwnerGroup[] {
+    if (searchQuery === "") return groups;
+    const out: OwnerGroup[] = [];
+    for (const g of groups) {
+      const workspaces = g.workspaces.filter(coupleMatches);
+      if (workspaces.length > 0) out.push({ ...g, workspaces });
+    }
+    return out;
+  }
   // Demo activity in the last 24h — drives the collapsed summary headline so
   // a glance tells the admin whether the bucket is hot.
   const demoRecent24h = useMemo(() => {
@@ -290,12 +347,15 @@ export default function AdminUsersPage() {
   // digest pinned to the top so a returning admin sees what's new at a glance.
   // Demo + beta are excluded (realCouples already drops them) so the digest
   // reflects actual signups. Newest first.
-  const unseenCouples = useMemo(
+  // A "new registration" is a new OWNER, not a new workspace: key on the
+  // group's PRIMARY (first workspace) so an existing owner spinning up an extra
+  // event doesn't re-surface here. Newest owner first.
+  const unseenGroups = useMemo(
     () =>
-      realCouples
-        .filter((c) => c.created_at > newThreshold)
-        .sort((a, b) => b.created_at - a.created_at),
-    [realCouples, newThreshold],
+      ownerGroups
+        .filter((g) => g.primary.created_at > newThreshold)
+        .sort((a, b) => b.primary.created_at - a.primary.created_at),
+    [ownerGroups, newThreshold],
   );
   const unseenOrphans = useMemo(
     () =>
@@ -304,7 +364,7 @@ export default function AdminUsersPage() {
         .sort((a, b) => b.created_at - a.created_at),
     [orphans, newThreshold],
   );
-  const unseenCount = unseenCouples.length + unseenOrphans.length;
+  const unseenCount = unseenGroups.length + unseenOrphans.length;
 
   // Display codes are positional, not the raw DB id: real signups get a
   // gap-free 5-digit sequence ("00001"…) while demo workspaces get a separate
@@ -380,28 +440,24 @@ export default function AdminUsersPage() {
     // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [flaggedCouples, searchQuery, userById],
   );
-  // Split the real-signup couples into actual pairs (both partners present)
-  // vs solo workspaces (one member — the partner was never invited/joined).
-  // Member count uses the locally-resolved partner list, mirroring the
-  // `members.length === 1` check renderCoupleCard uses for the solo label.
-  const couplePairs = useMemo(
-    () =>
-      filteredRealCouples.filter((c) => c.partners.filter((p) => userById.has(p.id)).length >= 2),
-    [filteredRealCouples, userById],
+  // Owner groups split into pairs (primary has both partners) vs solo (primary
+  // is a one-member workspace), search-filtered and sorted for display. An
+  // owner's additional solo events nest under the PRIMARY's section wherever it
+  // lives, so a paired-primary owner never also shows up as a loose solo card.
+  const pairedGroups = useMemo(
+    () => sortGroups(filterGroupsForDisplay(ownerGroups.filter((g) => g.paired))),
+    [ownerGroups, searchQuery, userById, sortKey, sortDir],
   );
-  const soloWorkspaces = useMemo(
-    () =>
-      filteredRealCouples.filter((c) => c.partners.filter((p) => userById.has(p.id)).length < 2),
-    [filteredRealCouples, userById],
+  const soloGroups = useMemo(
+    () => sortGroups(filterGroupsForDisplay(ownerGroups.filter((g) => !g.paired))),
+    [ownerGroups, searchQuery, userById, sortKey, sortDir],
   );
-  const totalCouplePairs = useMemo(
-    () =>
-      realCouples.filter((c) => c.partners.filter((p) => userById.has(p.id)).length >= 2).length,
-    [realCouples, userById],
-  );
+  // Header stat counts are per-OWNER (one card each), computed over the full
+  // unfiltered set so the top-of-page tally stays stable while searching.
+  const totalCouplePairs = useMemo(() => ownerGroups.filter((g) => g.paired).length, [ownerGroups]);
   const totalSoloWorkspaces = useMemo(
-    () => realCouples.filter((c) => c.partners.filter((p) => userById.has(p.id)).length < 2).length,
-    [realCouples, userById],
+    () => ownerGroups.filter((g) => !g.paired).length,
+    [ownerGroups],
   );
   const filteredOrphans = useMemo(
     () => (searchQuery === "" ? orphans : orphans.filter(orphanMatches)),
@@ -1035,16 +1091,31 @@ export default function AdminUsersPage() {
     );
   }
 
-  /** Several solo workspaces owned by the SAME user, wrapped under one band
-   *  (a single `.admin-card`) with hairline dividers between the rows, so the
-   *  admin reads "these all belong to hlilla97@gmail.com" at a glance instead
-   *  of three loose cards. Each row keeps its full content + per-workspace
-   *  actions; only the card chrome is shared. `group` is pre-sorted. */
-  function renderOwnerBand(group: AdminCoupleView[], ownerId: number) {
+  /** All of ONE owner's workspaces under a single band (one `.admin-card`): a
+   *  header row naming the owner + an "×N" pill, then each workspace as a
+   *  divided row keeping its full content + per-workspace actions. So the admin
+   *  reads "these N events all belong to hlilla97@gmail.com" at a glance instead
+   *  of loose cards. `g.workspaces` is pre-sorted oldest-first. */
+  function renderOwnerBand(g: OwnerGroup) {
+    const owner = g.ownerId != null ? userById.get(g.ownerId) : undefined;
+    const ownerLabel = owner ? owner.full_name || owner.email : t("admin.owner_band_generic");
+    const n = g.workspaces.length;
     return (
-      <li key={`owner-band-${ownerId}`} className="admin-card !p-0 overflow-hidden">
+      <li key={`owner-band-${g.key}`} className="admin-card !p-0 overflow-hidden">
+        <div className="flex items-center justify-between gap-2 border-b border-paper-200/70 bg-paper-100/50 px-4 py-1.5 dark:border-umber-700 dark:bg-umber-800/40">
+          <span className="min-w-0 truncate eyebrow text-neutral-500 dark:text-umber-300">
+            {ownerLabel}
+          </span>
+          <Pill
+            tone="ink"
+            icon={<Layers size={11} />}
+            srLabel={t("admin.owner_workspaces_title", { n })}
+          >
+            {t("admin.owner_workspaces_pill", { n })}
+          </Pill>
+        </div>
         <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
-          {group.map((c) => (
+          {g.workspaces.map((c) => (
             <li
               key={c.id}
               className={`px-4 py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${isNew(c.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
@@ -1057,39 +1128,13 @@ export default function AdminUsersPage() {
     );
   }
 
-  /** Render the solo-workspace list, banding same-owner workspaces together.
-   *  Single-owner workspaces render as their own standalone card; owners with
-   *  more than one get one shared band. Bands + cards are interleaved in the
-   *  active sort order (keyed off each group's representative). Grouping runs
-   *  over the passed (already search-filtered) list so search narrows a band. */
-  function renderSoloList(list: AdminCoupleView[]) {
-    // Bucket by owner user id; rows with no resolvable member key by their own
-    // id so they never merge into someone else's band.
-    const byOwner = new Map<string, { items: AdminCoupleView[]; ownerId: number | null }>();
-    for (const c of list) {
-      const ownerId = c.partners.find((p) => userById.has(p.id))?.id ?? null;
-      const key = ownerId != null ? `u${ownerId}` : `c${c.id}`;
-      const bucket = byOwner.get(key);
-      if (bucket) bucket.items.push(c);
-      else byOwner.set(key, { items: [c], ownerId });
-    }
-    const groups = [...byOwner.values()];
-    const byRepId = new Map<number, { owned: AdminCoupleView[]; ownerId: number | null }>();
-    for (const g of groups) {
-      const owned = sortCouples(g.items);
-      const rep = owned[0];
-      if (rep) byRepId.set(rep.id, { owned, ownerId: g.ownerId });
-    }
-    const reps = sortCouples(
-      groups.map((g) => g.items[0]).filter((c): c is AdminCoupleView => c != null),
-    );
-    return reps.map((rep) => {
-      const entry = byRepId.get(rep.id);
-      if (!entry) return renderCoupleCard(rep);
-      return entry.owned.length > 1 && entry.ownerId != null
-        ? renderOwnerBand(entry.owned, entry.ownerId)
-        : renderCoupleCard(rep);
-    });
+  /** Render one owner group: a band when they own several workspaces (with the
+   *  "×N" pill), a plain card when it's just the one. Shared by the Páros and
+   *  Egyedüli sections and the new-signups digest so grouping is consistent. */
+  function renderOwnerGroup(g: OwnerGroup) {
+    if (g.workspaces.length > 1) return renderOwnerBand(g);
+    const only = g.workspaces[0];
+    return only ? renderCoupleCard(only) : null;
   }
 
   /** One orphan (no-workspace) user as a card — used by the "new sign-ups"
@@ -1419,21 +1464,22 @@ export default function AdminUsersPage() {
                     description={t("admin.new_section_help")}
                   />
                   <ul className="space-y-1.5">
-                    {unseenCouples.map((c) => renderCoupleCard(c))}
+                    {unseenGroups.map((g) => renderOwnerGroup(g))}
                     {unseenOrphans.map(renderOrphanCard)}
                   </ul>
                 </section>
               )}
 
-              {/* ── Paired couples — both partners present, one card each ── */}
+              {/* ── Paired couples — primary has both partners; the owner's
+               *  additional solo events (if any) nest under the same card ── */}
               <section id="admin-section-couples" className="mb-6 scroll-mt-20">
                 <AdminSectionHeader
                   title={t("admin.workspaces_section")}
                   count={t(
-                    couplePairs.length === 1
+                    pairedGroups.length === 1
                       ? "admin.couples_count_one"
                       : "admin.couples_count_other",
-                    { n: couplePairs.length },
+                    { n: pairedGroups.length },
                   )}
                   collapse={
                     !isSearching
@@ -1446,25 +1492,26 @@ export default function AdminUsersPage() {
                   }
                 />
                 {couplesListOpen &&
-                  (couplePairs.length === 0 ? (
+                  (pairedGroups.length === 0 ? (
                     <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
                   ) : (
                     <>
                       {workspaceColumnHeader}
                       <ul className="space-y-1.5">
-                        {sortCouples(couplePairs).map((c) => renderCoupleCard(c))}
+                        {pairedGroups.map((g) => renderOwnerGroup(g))}
                       </ul>
                     </>
                   ))}
               </section>
 
-              {/* ── Solo workspaces — one member, partner never joined ───── */}
+              {/* ── Solo workspaces — primary is a one-member workspace; an
+               *  owner's several solo events band together under one card ── */}
               <section id="admin-section-solo" className="mb-6 scroll-mt-20">
                 <AdminSectionHeader
                   title={t("admin.solo_section")}
                   count={t(
-                    soloWorkspaces.length === 1 ? "admin.solo_count_one" : "admin.solo_count_other",
-                    { n: soloWorkspaces.length },
+                    soloGroups.length === 1 ? "admin.solo_count_one" : "admin.solo_count_other",
+                    { n: soloGroups.length },
                   )}
                   collapse={
                     !isSearching
@@ -1477,12 +1524,12 @@ export default function AdminUsersPage() {
                   }
                 />
                 {soloListOpen &&
-                  (soloWorkspaces.length === 0 ? (
+                  (soloGroups.length === 0 ? (
                     <AdminEmptyState>{t("admin.solo_empty")}</AdminEmptyState>
                   ) : (
                     <>
                       {workspaceColumnHeader}
-                      <ul className="space-y-1.5">{renderSoloList(soloWorkspaces)}</ul>
+                      <ul className="space-y-1.5">{soloGroups.map((g) => renderOwnerGroup(g))}</ul>
                     </>
                   ))}
               </section>
