@@ -15,7 +15,7 @@ import { grantFreeAccess, revokeFreeAccess } from "../domain/billing";
 import { sendKind } from "../domain/emails";
 import { purgeOneUser } from "../domain/purge";
 import { isAdminEmail, requireAdmin, type UserRow } from "../domain/users";
-import { type CoupleRow, getCoupleById, toCouple } from "../domain/couples";
+import { type CoupleRow, getCoupleById, ownerUserIdOf, toCouple } from "../domain/couples";
 import {
   activeFlagsByUserId,
   createUserFlag,
@@ -223,6 +223,7 @@ function toAdminCouple(
     groom_name: row.groom_name ?? null,
     status: c.status,
     partners: partnersForCouple(c.id),
+    owner_user_id: ownerUserIdOf(row),
     created_at: c.created_at,
     last_seen_at: seen.max,
     is_demo: c.is_demo,

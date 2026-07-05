@@ -88,20 +88,73 @@ export function coupleHasActivePlanner(coupleId: number): boolean {
   );
 }
 
+/** The user who owns/created this workspace: the `owner`-role couple_member
+ *  (whoever onboarded it or spun it up as an additional event), falling back to
+ *  `partner_a_id` for legacy rows that pre-date the membership table. Null only
+ *  when neither can be resolved. Shared by the admin overview (which groups
+ *  workspaces by owner) and the billing anchor below, so the two always agree
+ *  on who "owns" a workspace. */
+export function ownerUserIdOf(row: Pick<CoupleRow, "id" | "partner_a_id">): number | null {
+  const m = db
+    .prepare(
+      `SELECT user_id FROM couple_members
+        WHERE couple_id = ? AND role = 'owner'
+        ORDER BY created_at ASC, user_id ASC LIMIT 1`,
+    )
+    .get(row.id) as { user_id: number } | undefined;
+  return m?.user_id ?? row.partner_a_id ?? null;
+}
+
+/** The couple whose subscription verdict GOVERNS `row`. Additional event-
+ *  workspaces a user spins up ride the SAME billing rules as the owner's FIRST
+ *  workspace: "every workspace under one account follows the same rules as the
+ *  first" — a second event can't mint its own fresh trial, nor stay editable
+ *  once the primary lapses. Returns the owner's oldest non-deleting workspace;
+ *  falls back to `row` itself when it already IS the oldest (the common single-
+ *  workspace path, one indexed query, no behaviour change) or when the owner
+ *  can't be resolved. The oldest workspace is always its own anchor, so there
+ *  are no inheritance chains. */
+function billingSourceRow(row: CoupleRow): CoupleRow {
+  const anchor = db
+    .prepare(
+      `SELECT anchor.couple_id AS id
+         FROM couple_members anchor
+         JOIN couples c ON c.id = anchor.couple_id AND c.status != 'deleting'
+        WHERE anchor.user_id = COALESCE(
+                (SELECT o.user_id FROM couple_members o
+                  WHERE o.couple_id = ? AND o.role = 'owner'
+                  ORDER BY o.created_at ASC, o.user_id ASC LIMIT 1),
+                ?)
+        ORDER BY anchor.created_at ASC, anchor.couple_id ASC
+        LIMIT 1`,
+    )
+    .get(row.id, row.partner_a_id) as { id: number } | undefined;
+  if (anchor == null || anchor.id === row.id) return row;
+  return getCoupleById(anchor.id) ?? row;
+}
+
 /** Build the billing snapshot for a couple row, computing live entitlement.
  *  Demo couples are always entitled — billing never touches the throwaway
- *  demo workspaces. Exported so route guards can reuse the same verdict. */
+ *  demo workspaces. Exported so route guards can reuse the same verdict.
+ *
+ *  Additional event-workspaces inherit the owner's FIRST workspace's verdict
+ *  (see billingSourceRow): the status + trial/founding timestamps below come
+ *  from that governing row so a secondary reads the same "free trial / founding
+ *  / lapsed" state as the primary. `is_founding_member` stays the couple's OWN
+ *  value, though — a secondary rides the primary's entitlement without itself
+ *  consuming a founding slot, so the FOUNDING_CAP accounting can't be inflated. */
 export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): CoupleBilling {
+  const src = billingSourceRow(row);
   const status: SubscriptionStatus = VALID_SUBSCRIPTION_STATUSES.has(
-    row.subscription_status as SubscriptionStatus,
+    src.subscription_status as SubscriptionStatus,
   )
-    ? (row.subscription_status as SubscriptionStatus)
+    ? (src.subscription_status as SubscriptionStatus)
     : "none";
   const verdict = row.is_demo
     ? ({ entitled: true, reason: "subscribed" } as const)
     : computeEntitlement(status, {
-        trial_ends_at: row.trial_ends_at,
-        founding_until: row.founding_until,
+        trial_ends_at: src.trial_ends_at,
+        founding_until: src.founding_until,
         nowMs,
       });
   // Always-free / not-yet-enforced overrides. Only consulted when the plain
@@ -128,10 +181,10 @@ export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): Cou
     !entitled && plannerManaged ? "planner_managed_viewer" : verdict.reason;
   return {
     subscription_status: status,
-    trial_ends_at: row.trial_ends_at,
-    founding_until: row.founding_until,
+    trial_ends_at: src.trial_ends_at,
+    founding_until: src.founding_until,
     is_founding_member: Boolean(row.is_founding_member),
-    current_period_end: row.current_period_end,
+    current_period_end: src.current_period_end,
     entitled,
     reason,
     planner_managed: plannerManaged,

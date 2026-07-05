@@ -345,3 +345,106 @@ describe("billing state machine", () => {
     expect(webhook.status).toBe(503);
   });
 });
+
+// ── Multi-workspace billing inheritance ─────────────────────────────────────
+// An additional event-workspace rides the billing VERDICT of the owner's FIRST
+// workspace — "the same rules apply to every workspace under one account as to
+// the first". This both stops a second event minting its own fresh trial to
+// dodge a lapsed primary AND lets a free (founding/trial) primary keep the
+// owner's other events editable.
+
+/** Spin up an additional (Bravo) workspace for `token` and return its id. The
+ *  create flow also switches the user's ACTIVE pointer to it, so a subsequent
+ *  GET /api/couples/current reads the new workspace. */
+async function spawnEvent(token: string, label: string): Promise<number> {
+  const r = await req<{ couple: { id: number } }>(
+    "POST",
+    "/api/couples",
+    {
+      event_name: label,
+      wedding_date_goal: {
+        kind: "tbd",
+        exact_date: null,
+        target_year: null,
+        target_month: null,
+        target_season: null,
+      },
+    },
+    { token },
+  );
+  expect(r.status).toBe(201);
+  return r.data.couple.id;
+}
+
+describe("multi-workspace billing inheritance", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  test("a second event rides a founding primary: entitled even with its OWN trial expired, but not itself a founding member", async () => {
+    const { token, coupleId: primaryId } = await bootstrapCouple("multi-a@weddly.test");
+    // Put the primary (the owner's first workspace) on the founding free plan.
+    const until = Date.now() + 1000 * 60 * 60 * 24 * 365;
+    db.prepare(
+      "UPDATE couples SET subscription_status = 'founding', is_founding_member = 1, founding_until = ? WHERE id = ?",
+    ).run(until, primaryId);
+
+    const secondaryId = await spawnEvent(token, "Civil ceremony");
+    // Expire the secondary's OWN trial so only inheritance can keep it alive,
+    // and turn the paywall on so a non-inherited secondary WOULD go read-only.
+    db.prepare("UPDATE couples SET trial_ends_at = 1 WHERE id = ?").run(secondaryId);
+    setBillingEnforcement(true, 1);
+
+    // The active workspace is now the secondary; it reads the primary's plan.
+    const cur = await getCouple(token);
+    expect(cur.data.couple.id).toBe(secondaryId);
+    expect(cur.data.couple.billing.entitled).toBe(true);
+    expect(cur.data.couple.billing.subscription_status).toBe("founding");
+    // ...but it does NOT itself count as a founding member (no slot consumed).
+    expect(cur.data.couple.billing.is_founding_member).toBe(false);
+
+    // And it is actually editable (not blocked by the read-only gate).
+    const edit = await req("POST", "/api/households", { label: "Smith family" }, { token });
+    expect(edit.status).not.toBe(402);
+  });
+
+  test("a lapsed primary makes new events read-only too — a second workspace can't mint a fresh trial to dodge the paywall", async () => {
+    const { token, coupleId: primaryId } = await bootstrapCouple("multi-b@weddly.test");
+    const secondaryId = await spawnEvent(token, "After-party");
+
+    // Lapse the PRIMARY (expired trial, never subscribed) and turn the paywall on.
+    db.prepare(
+      "UPDATE couples SET subscription_status = 'trialing', trial_ends_at = 1 WHERE id = ?",
+    ).run(primaryId);
+    setBillingEnforcement(true, 1);
+
+    // The secondary still has its own fresh, unexpired trial — but inheritance
+    // from the lapsed primary wins, so it is read-only.
+    const cur = await getCouple(token);
+    expect(cur.data.couple.id).toBe(secondaryId);
+    expect(cur.data.couple.billing.entitled).toBe(false);
+
+    const edit = await req("POST", "/api/households", { label: "x" }, { token });
+    expect(edit.status).toBe(402);
+  });
+
+  test("admin overview stamps owner_user_id so all of one owner's workspaces group together", async () => {
+    const { token } = await bootstrapCouple("multi-c@weddly.test");
+    const secondaryId = await spawnEvent(token, "Rehearsal dinner");
+    const adminToken = await addAdmin();
+
+    const list = await req<{ couples: AdminCoupleView[] }>(
+      "GET",
+      "/api/admin/couples",
+      undefined,
+      { token: adminToken },
+    );
+    expect(list.status).toBe(200);
+    const owner = list.data.couples.find((c) => c.id === secondaryId)?.owner_user_id ?? null;
+    expect(owner).not.toBeNull();
+    // Every workspace this owner created shares the same owner_user_id, so the
+    // admin UI can collapse them under one card with an "×N" pill.
+    const owned = list.data.couples.filter((c) => c.owner_user_id === owner);
+    expect(owned.length).toBe(2);
+  });
+});

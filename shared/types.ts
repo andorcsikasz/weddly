@@ -356,6 +356,13 @@ export interface AdminCoupleView {
   groom_name: string | null;
   status: CoupleStatus;
   partners: { id: number; full_name: string; email: string }[];
+  /** The user who owns/created this workspace: the `owner`-role member (whoever
+   *  onboarded it or spun it up as an additional event), falling back to
+   *  `partner_a_id` for legacy rows. The admin overview groups every workspace
+   *  by this id so one person appears exactly ONCE — their first workspace is
+   *  the card, any additional events band underneath it with an "×N" pill.
+   *  Null only when the owner can't be resolved (no members + no partner_a). */
+  owner_user_id: number | null;
   created_at: UnixMs;
   /** MAX(last_seen_at) across the workspace's members. Null when nobody on
    *  the workspace has been seen since the column was added. */
