@@ -5918,6 +5918,8 @@ export interface LocaleMessages {
     analytics_money_histogram_title: string;
     /** Total-cost histogram chart (sum of per-line planned amounts). */
     analytics_money_cost_histogram_title: string;
+    /** 0-bucket label for the total-cost histogram ("no cost entered"). */
+    analytics_money_cost_histogram_no_cost: string;
     analytics_money_histogram_no_budget: string;
     analytics_money_no_budget_warning: string;
     analytics_money_histogram_bucket_upper: string;

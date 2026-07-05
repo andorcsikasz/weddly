@@ -806,11 +806,13 @@ function MoneySection({
               <MoneyHistogram
                 title={t("admin.analytics_money_histogram_title")}
                 buckets={m.budget_histogram}
+                zeroLabel={t("admin.analytics_money_histogram_no_budget")}
                 locale={locale}
               />
               <MoneyHistogram
                 title={t("admin.analytics_money_cost_histogram_title")}
                 buckets={m.cost_histogram}
+                zeroLabel={t("admin.analytics_money_cost_histogram_no_cost")}
                 locale={locale}
               />
             </div>
@@ -827,14 +829,17 @@ function MoneySection({
 
 // Right-anchored HUF distribution bars. Shared by the budget-ceiling and
 // total-cost histograms — both carry the same bucket shape (a `bucket_max_huf=0`
-// "not given" pseudo-bucket + inclusive upper bounds), only the data differs.
+// "not given" pseudo-bucket + inclusive upper bounds), only the data + the
+// wording of the 0-bucket differ (`zeroLabel`).
 function MoneyHistogram({
   title,
   buckets,
+  zeroLabel,
   locale,
 }: {
   title: string;
   buckets: Array<{ bucket_max_huf: number; count: number }>;
+  zeroLabel: string;
   locale: "hu" | "en";
 }) {
   const { t } = useT();
@@ -858,7 +863,7 @@ function MoneyHistogram({
                 }`}
               >
                 {b.bucket_max_huf === 0
-                  ? t("admin.analytics_money_histogram_no_budget")
+                  ? zeroLabel
                   : t("admin.analytics_money_histogram_bucket_upper", {
                       max: formatHuf(b.bucket_max_huf, locale),
                     })}
