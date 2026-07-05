@@ -1143,6 +1143,8 @@ const en: LocaleMessages = {
     keyinfo_field_venue_phone: "Venue phone",
     keyinfo_field_name: "Name",
     keyinfo_field_phone: "Phone",
+    keyinfo_venue_suggestions: "Venue suggestions",
+    keyinfo_venue_current: "Selected",
     kpi_days_label: "Days to go",
     kpi_days_unit: "days",
     kpi_days_tbd: "Date TBD",

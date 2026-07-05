@@ -1341,6 +1341,8 @@ export interface LocaleMessages {
     keyinfo_field_venue_phone: string;
     keyinfo_field_name: string;
     keyinfo_field_phone: string;
+    keyinfo_venue_suggestions: string;
+    keyinfo_venue_current: string;
     // ── KPI dashboard ────────────────────────────────────────────────
     kpi_days_label: string;
     kpi_days_unit: string;

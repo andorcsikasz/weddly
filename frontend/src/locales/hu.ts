@@ -1158,6 +1158,8 @@ const hu: LocaleMessages = {
     keyinfo_field_venue_phone: "Helyszín telefonszáma",
     keyinfo_field_name: "Név",
     keyinfo_field_phone: "Telefonszám",
+    keyinfo_venue_suggestions: "Helyszín-javaslatok",
+    keyinfo_venue_current: "Kiválasztva",
     kpi_days_label: "Hátralévő napok",
     kpi_days_unit: "nap",
     kpi_days_tbd: "Dátum később",

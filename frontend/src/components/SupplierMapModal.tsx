@@ -44,8 +44,10 @@ export default function SupplierMapModal({
   const [coords, setCoords] = useState<Coords | null>(
     typeof lat === "number" && typeof lng === "number" ? { lat, lng } : null,
   );
-  // Address label drives both the iframe title and the zoom heuristic.
-  const label = address ? `${address}, ${city}` : city;
+  // Address label drives both the iframe title and the zoom heuristic. City may
+  // be empty for a free-text venue (e.g. the dashboard Kulcsinfó map), so fall
+  // back to whichever part we have rather than emit a dangling comma.
+  const label = address && city ? `${address}, ${city}` : address || city;
   const [state, setState] = useState<"loading" | "ready" | "not_found" | "error">(
     typeof lat === "number" && typeof lng === "number" ? "ready" : "loading",
   );
@@ -64,7 +66,10 @@ export default function SupplierMapModal({
       try {
         const alreadyHasCity =
           address && city && address.toLowerCase().includes(city.toLowerCase());
-        const query = address ? (alreadyHasCity ? address : `${address}, ${city}`) : city;
+        let query: string;
+        if (!address) query = city;
+        else if (!city || alreadyHasCity) query = address;
+        else query = `${address}, ${city}`;
         const r = await placesApi.search(query);
         if (cancelled) return;
         const first = r.places[0];

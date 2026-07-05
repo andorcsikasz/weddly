@@ -46,12 +46,19 @@ import {
   Wine,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { coupleApi, coupleSupplierApi, picksApi, supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { lazyWithReload } from "../lib/lazy_reload";
+import { setSelection } from "../lib/supplier_selection";
 import { Dialog, Skeleton, useToast } from "./ui";
+
+// Lazy so the OpenStreetMap embed bundle only loads when a couple opens the
+// venue map. Reused verbatim from the supplier detail page so the in-app map
+// reads identically here (no external Maps hand-off).
+const SupplierMapModal = lazyWithReload(() => import("./SupplierMapModal"));
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
@@ -85,11 +92,14 @@ const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
 const MAX_CONTACTS = 4;
 const STORAGE_KEY = "weddly.dashboard.keyinfo";
 
-/** Google Maps deep link from a free-text query (name/address + city) or exact
- *  coordinates. `?api=1` is the documented universal-link form; it opens the
- *  native Maps app on mobile and maps.google.com on desktop. */
-function mapsUrl(query: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+/** Diacritic-folded lower-case, for the venue autocomplete match. Mirrors the
+ *  helper in BookedSupplierCard (the "Már foglaltam" flow) so typing folds the
+ *  same way here. */
+function fold(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
 }
 
 type VenueInfo = {
@@ -97,7 +107,13 @@ type VenueInfo = {
   /** Secondary line — street address if we have one, else the city/town. */
   detail: string | null;
   phone: string | null;
-  mapQuery: string;
+  /** In-app map modal inputs. Exact coordinates when a picked directory venue
+   *  carries them; otherwise the modal geocodes `address` (falling back to the
+   *  name) within `city`. */
+  lat: number | null;
+  lng: number | null;
+  address: string | null;
+  city: string;
 };
 
 type Contact = {
@@ -168,18 +184,23 @@ function resolveVenue(
   const primary = name ?? address ?? "";
   const secondary = name ? address || city : city;
 
-  let mapQuery: string;
-  if (f.venue_address) {
-    // The couple typed their own address — trust it over the picked pin.
-    mapQuery = [f.venue_address, city].filter(Boolean).join(", ");
-  } else if (picked && picked.lat !== null && picked.lng !== null) {
-    mapQuery = `${picked.lat},${picked.lng}`;
-  } else if (address) {
-    mapQuery = [address, city].filter(Boolean).join(", ");
-  } else {
-    mapQuery = [name, city].filter(Boolean).join(", ");
-  }
-  return { name: primary, detail: secondary, phone, mapQuery };
+  // Map modal inputs. When the couple typed their own address we trust it over
+  // a picked pin (null coords → the modal geocodes the text). Otherwise a
+  // picked directory venue's exact coordinates win; failing that we hand the
+  // modal the best geocodable string (street address, or the name).
+  const manualAddr = Boolean(f.venue_address);
+  const lat = manualAddr ? null : (picked?.lat ?? null);
+  const lng = manualAddr ? null : (picked?.lng ?? null);
+  const mapAddress = f.venue_address || address || (lat === null ? name : null);
+  return {
+    name: primary,
+    detail: secondary,
+    phone,
+    lat,
+    lng,
+    address: mapAddress,
+    city: city ?? "",
+  };
 }
 
 export function KeyInfoCard({ couple }: { couple: Couple }) {
@@ -193,6 +214,31 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
   // Edit dialog draft — null when the dialog is closed.
   const [draft, setDraft] = useState<VenueFields | null>(null);
   const [saving, setSaving] = useState(false);
+  // The venue directory vendor the couple picked from the edit dialog's
+  // autocomplete, staged until Save so the pick and the field edits commit
+  // together (a Cancel leaves everything untouched).
+  const [pendingVenue, setPendingVenue] = useState<DirectorySupplier | null>(null);
+  // In-app venue map modal (replaces the old external Google Maps hand-off).
+  const [mapOpen, setMapOpen] = useState(false);
+
+  function openDialog() {
+    setDraft(fields);
+    setPendingVenue(null);
+  }
+  function closeDialog() {
+    setDraft(null);
+    setPendingVenue(null);
+  }
+
+  // Stage a directory venue chosen from the autocomplete: fill the name and
+  // clear the manual city/address/phone so the vendor's canonical details
+  // (incl. map coordinates) drive the row once the pick is written on Save.
+  function selectVenueSuggestion(s: DirectorySupplier) {
+    setDraft((d) =>
+      d ? { ...d, venue_name: s.name, venue_city: "", venue_address: "", venue_phone: "" } : d,
+    );
+    setPendingVenue(s);
+  }
 
   async function saveDraft() {
     if (!draft) return;
@@ -200,7 +246,25 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
     try {
       const resp = await coupleApi.update(draft);
       setFields(pickFields(resp.couple));
-      setDraft(null);
+      if (pendingVenue) {
+        // Write the "our venue" pick like the "Már foglaltam" flow does, then
+        // reflect it in this card's own picks/directory cache so the venue row
+        // updates without a refetch.
+        const picked = pendingVenue;
+        setSelection(couple.id, "venue", picked.id);
+        setData((prev) => {
+          if (!prev) return prev;
+          const picks: CouplePick[] = [
+            ...prev.picks.filter((p) => p.category !== "venue"),
+            { category: "venue", supplier_id: picked.id, picked_by_user_id: null, picked_at: 0 },
+          ];
+          const directory = prev.directory.some((d) => d.id === picked.id)
+            ? prev.directory
+            : [...prev.directory, picked];
+          return { ...prev, picks, directory };
+        });
+      }
+      closeDialog();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
@@ -276,6 +340,15 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
     () => pickedVenueDir(venuePick, directoryById),
     [venuePick, directoryById],
   );
+  // Venue-category directory vendors, offered as autocomplete suggestions in
+  // the edit dialog ("primarily suggest venue vendors").
+  const venueOptions = useMemo(
+    () => (data?.directory ?? []).filter((s) => s.category === "venue"),
+    [data],
+  );
+  // Placeholders follow the pending selection while the dialog is open, so the
+  // city/address/phone hints reflect the vendor the couple just picked.
+  const placeholderVenue = pendingVenue ?? pickedDir;
 
   const hasCoordinator = Boolean(fields.coordinator_name || fields.coordinator_phone);
   const hasEmergency = Boolean(fields.emergency_name || fields.emergency_phone);
@@ -324,7 +397,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => setDraft(fields)}
+            onClick={openDialog}
             aria-label={t("dashboard.keyinfo_edit")}
             title={t("dashboard.keyinfo_edit")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
@@ -384,15 +457,14 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <a
-                      href={mapsUrl(venue.mapQuery)}
-                      target="_blank"
-                      rel="noreferrer noopener"
+                    <button
+                      type="button"
+                      onClick={() => setMapOpen(true)}
                       className="btn-outline btn-sm inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[38px]"
                     >
                       <MapPin size={15} aria-hidden="true" />
                       <span>{t("dashboard.keyinfo_map")}</span>
-                    </a>
+                    </button>
                     {venue.phone && (
                       <a
                         href={`tel:${venue.phone.replace(/\s+/g, "")}`}
@@ -519,15 +591,10 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           closeOnBackdrop
           size="sm"
           title={t("dashboard.keyinfo_edit_title")}
-          onClose={() => (saving ? undefined : setDraft(null))}
+          onClose={() => (saving ? undefined : closeDialog())}
           footer={
             <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => setDraft(null)}
-                disabled={saving}
-              >
+              <button type="button" className="btn-ghost" onClick={closeDialog} disabled={saving}>
                 {t("common.cancel")}
               </button>
               <button type="button" className="btn-primary" onClick={saveDraft} disabled={saving}>
@@ -541,29 +608,32 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
               <legend className="mb-1 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
                 {t("dashboard.keyinfo_venue_label")}
               </legend>
-              <Field
+              <VenueNameField
                 label={t("dashboard.keyinfo_field_venue_name")}
                 value={draft.venue_name}
-                placeholder={pickedDir?.name ?? ""}
+                placeholder={placeholderVenue?.name ?? ""}
+                options={venueOptions}
+                currentId={pendingVenue?.id ?? venuePick?.supplier_id ?? null}
                 onChange={(v) => setDraft({ ...draft, venue_name: v })}
+                onSelect={selectVenueSuggestion}
               />
               <Field
                 label={t("dashboard.keyinfo_field_venue_city")}
                 value={draft.venue_city}
-                placeholder={pickedDir?.city ?? ""}
+                placeholder={placeholderVenue?.city ?? ""}
                 onChange={(v) => setDraft({ ...draft, venue_city: v })}
               />
               <Field
                 label={t("dashboard.keyinfo_field_venue_address")}
                 value={draft.venue_address}
-                placeholder={pickedDir?.address ?? ""}
+                placeholder={placeholderVenue?.address ?? ""}
                 onChange={(v) => setDraft({ ...draft, venue_address: v })}
               />
               <Field
                 label={t("dashboard.keyinfo_field_venue_phone")}
                 type="tel"
                 value={draft.venue_phone}
-                placeholder={pickedDir?.contact_phone ?? ""}
+                placeholder={placeholderVenue?.contact_phone ?? ""}
                 onChange={(v) => setDraft({ ...draft, venue_phone: v })}
               />
             </fieldset>
@@ -603,6 +673,19 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
             </fieldset>
           </div>
         </Dialog>
+      )}
+
+      {mapOpen && venue && (
+        <Suspense fallback={null}>
+          <SupplierMapModal
+            name={venue.name}
+            lat={venue.lat}
+            lng={venue.lng}
+            address={venue.address}
+            city={venue.city}
+            onClose={() => setMapOpen(false)}
+          />
+        </Suspense>
       )}
     </section>
   );
@@ -680,6 +763,104 @@ function Field({
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
+    </label>
+  );
+}
+
+/** Venue-name field for the edit dialog: a text input that "primarily suggests
+ *  venue vendors" from the directory as the couple types. Picking a suggestion
+ *  adopts it as the couple's venue (via `onSelect`); if the venue isn't listed,
+ *  the couple just types it in, mirroring the "Már foglaltam" flow on the
+ *  vendor page. */
+function VenueNameField({
+  label,
+  value,
+  placeholder,
+  options,
+  currentId,
+  onChange,
+  onSelect,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  options: DirectorySupplier[];
+  /** Supplier id of the already-picked / just-picked venue, for the "current" marker. */
+  currentId: string | null;
+  onChange: (v: string) => void;
+  onSelect: (s: DirectorySupplier) => void;
+}) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const queryNorm = useMemo(() => fold(value.trim()), [value]);
+  const matches = useMemo<DirectorySupplier[]>(() => {
+    if (!queryNorm) return [];
+    return options.filter((s) => fold(`${s.name} ${s.city}`).includes(queryNorm)).slice(0, 6);
+  }, [queryNorm, options]);
+
+  return (
+    <label className="relative block text-sm">
+      <span className="mb-1 block text-xs font-medium text-ink-600 dark:text-umber-200">
+        {label}
+      </span>
+      <input
+        type="text"
+        autoComplete="off"
+        className="input"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        // Delay the close so a mousedown on a suggestion lands before the
+        // dropdown unmounts.
+        onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && matches.length > 0) {
+            e.preventDefault();
+            onSelect(matches[0]!);
+            setOpen(false);
+          } else if (e.key === "Escape") {
+            setOpen(false);
+          }
+        }}
+      />
+      {open && queryNorm && matches.length > 0 && (
+        <div
+          role="listbox"
+          aria-label={t("dashboard.keyinfo_venue_suggestions")}
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-56 overflow-auto rounded-xl border border-paper-300 bg-white py-1 shadow-lg dark:border-umber-700 dark:bg-umber-800"
+        >
+          {matches.map((s) => {
+            const current = currentId === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                role="option"
+                aria-selected={current}
+                // mousedown fires before the input's blur → click would race the
+                // dropdown's unmount. mousedown wins cleanly.
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onSelect(s);
+                  setOpen(false);
+                }}
+                className="flex w-full items-baseline justify-between gap-3 px-3 py-1.5 text-left text-sm transition hover:bg-paper-100 dark:hover:bg-umber-700"
+              >
+                <span className="truncate font-medium text-ink-800 dark:text-paper-100">
+                  {s.name}
+                </span>
+                <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
+                  {current ? t("dashboard.keyinfo_venue_current") : s.city}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </label>
   );
 }
