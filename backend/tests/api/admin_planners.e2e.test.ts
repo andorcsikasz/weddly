@@ -220,4 +220,145 @@ describe("admin planner management", () => {
     const res = await req("GET", "/api/admin/planners", undefined, { token });
     expect(res.status).toBe(403);
   });
+
+  /** Insert an accepted planner_waitlist row, returning its id. */
+  function seedAcceptedWaitlist(email: string, fullName = "Applicant"): number {
+    const ts = Math.floor(Date.now() / 1000);
+    const info = db
+      .prepare(
+        `INSERT INTO planner_waitlist (full_name, email, phone, status, created_at)
+         VALUES (?, ?, '+3630', 'accepted', ?)`,
+      )
+      .run(fullName, email, ts);
+    return Number(info.lastInsertRowid);
+  }
+
+  test("send-invite to a no-account applicant emails a register CTA and keeps them pending", async () => {
+    const adminToken = await bootstrapAdmin();
+    const waitlistId = seedAcceptedWaitlist("newbie@weddly.test", "Newbie Planner");
+
+    const res = await req<{ ok: true; granted: boolean; has_account: boolean }>(
+      "POST",
+      `/api/admin/planners/pending/${waitlistId}/send-invite`,
+      {},
+      { token: adminToken },
+    );
+    expect(res.status).toBe(200);
+    expect(res.data.granted).toBe(false);
+    expect(res.data.has_account).toBe(false);
+
+    const mail = db
+      .prepare(
+        "SELECT kind FROM email_log WHERE kind = 'planner_access_invite' AND to_email = ?",
+      )
+      .all("newbie@weddly.test") as { kind: string }[];
+    expect(mail.length).toBe(1);
+
+    // Nothing granted (no account existed) → still a pending row.
+    const list = await req<{ planners: AdminPlannerView[] }>(
+      "GET",
+      "/api/admin/planners",
+      undefined,
+      { token: adminToken },
+    );
+    expect(
+      list.data.planners.some((p) => p.state === "pending" && p.email === "newbie@weddly.test"),
+    ).toBe(true);
+  });
+
+  test("send-invite to an orphaned account grants planner + moves it out of pending", async () => {
+    const adminToken = await bootstrapAdmin();
+    // Registered under this email as a COUPLE (the orphan case): an account
+    // exists but user_type != 'planner', so the email-only waitlist match never
+    // cleared it and it stays stuck on "Regisztrációra vár".
+    const { coupleId } = await bootstrapCouple("orphan@weddly.test");
+    const user = db.prepare("SELECT id FROM users WHERE email = ?").get("orphan@weddly.test") as {
+      id: number;
+    };
+    // Waitlist email carries different casing to prove the match is case-insensitive.
+    const waitlistId = seedAcceptedWaitlist("Orphan@weddly.test", "Orphan Planner");
+
+    // Before: surfaces as pending (the couple account doesn't clear it).
+    const before = await req<{ planners: AdminPlannerView[] }>(
+      "GET",
+      "/api/admin/planners",
+      undefined,
+      { token: adminToken },
+    );
+    expect(
+      before.data.planners.some(
+        (p) => p.state === "pending" && p.email.toLowerCase() === "orphan@weddly.test",
+      ),
+    ).toBe(true);
+
+    const res = await req<{ ok: true; granted: boolean; has_account: boolean }>(
+      "POST",
+      `/api/admin/planners/pending/${waitlistId}/send-invite`,
+      {},
+      { token: adminToken },
+    );
+    expect(res.status).toBe(200);
+    expect(res.data.granted).toBe(true);
+    expect(res.data.has_account).toBe(true);
+
+    // Existing account is now a planner, couple_id preserved (non-destructive).
+    const row = db.prepare("SELECT user_type, couple_id FROM users WHERE id = ?").get(user.id) as {
+      user_type: string;
+      couple_id: number | null;
+    };
+    expect(row.user_type).toBe("planner");
+    expect(row.couple_id).toBe(coupleId);
+
+    // initPlannerBilling ran on the existing account.
+    const sub = db
+      .prepare("SELECT user_id FROM planner_subscriptions WHERE user_id = ?")
+      .get(user.id);
+    expect(sub).toBeDefined();
+
+    // The sign-in email went to the account holder.
+    const mail = db
+      .prepare("SELECT kind FROM email_log WHERE kind = 'planner_access_invite' AND to_email = ?")
+      .all("orphan@weddly.test") as { kind: string }[];
+    expect(mail.length).toBe(1);
+
+    // After: no longer pending; now an active account.
+    const after = await req<{ planners: AdminPlannerView[] }>(
+      "GET",
+      "/api/admin/planners",
+      undefined,
+      { token: adminToken },
+    );
+    expect(
+      after.data.planners.some(
+        (p) => p.state === "pending" && p.email.toLowerCase() === "orphan@weddly.test",
+      ),
+    ).toBe(false);
+    expect(after.data.planners.some((p) => p.state === "active" && p.user_id === user.id)).toBe(
+      true,
+    );
+  });
+
+  test("send-invite 404s for an unknown waitlist id", async () => {
+    const adminToken = await bootstrapAdmin();
+    const res = await req(
+      "POST",
+      "/api/admin/planners/pending/999999/send-invite",
+      {},
+      { token: adminToken },
+    );
+    expect(res.status).toBe(404);
+  });
+
+  test("send-invite rejects a non-admin", async () => {
+    await bootstrapAdmin();
+    const { token } = await bootstrapCouple("notadmin-invite@weddly.test");
+    const waitlistId = seedAcceptedWaitlist("x-invite@weddly.test");
+    const res = await req(
+      "POST",
+      `/api/admin/planners/pending/${waitlistId}/send-invite`,
+      {},
+      { token },
+    );
+    expect(res.status).toBe(403);
+  });
 });

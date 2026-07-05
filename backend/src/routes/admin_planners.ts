@@ -11,15 +11,17 @@
 import { CONFIG } from "../config";
 import { sendKind } from "../domain/emails";
 import {
+  getPlannerWaitlistById,
+  grantPlannerAccount,
   isPlannerPlan,
   listAdminPlanners,
   listPendingPlannerWaitlist,
   updatePlannerPlan,
 } from "../domain/planner";
-import { getPlannerSub } from "../domain/planner_billing";
+import { getPlannerSub, initPlannerBilling } from "../domain/planner_billing";
 import { provisionPlanner, reissueActivationToken } from "../domain/planner_provisioning";
 import { purgeOneUser } from "../domain/purge";
-import { getUserById, requireAdmin, setUserStatus } from "../domain/users";
+import { getUserByEmail, getUserById, requireAdmin, setUserStatus } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 
@@ -155,6 +157,49 @@ async function handleResendActivation(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+// (Re)send the "get into your planner account" email to an accepted applicant
+// stuck on "Regisztrációra vár" (keyed on planner_waitlist.id — a pending row
+// has no user yet). Registering with the same email auto-grants planner, so a
+// brand-new applicant just needs the /signup CTA. But if they already
+// registered under this email as a non-planner (the email-only waitlist match
+// never cleared — the orphan case), grant planner + init billing on that
+// existing account first (non-destructive: users.couple_id is untouched, so any
+// couple data stays) and send the "sign in" CTA instead. Either way they leave
+// the pending list on the next refresh.
+async function handleSendInvite(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const waitlistId = parseId(ctx);
+  const entry = getPlannerWaitlistById(waitlistId);
+  if (!entry) throw new HttpError(404, "Waitlist entry not found");
+
+  const existing = getUserByEmail(entry.email);
+  let granted = false;
+  if (existing && existing.user_type !== "planner") {
+    grantPlannerAccount(existing.id);
+    initPlannerBilling(existing.id);
+    granted = true;
+  }
+  const hasAccount = existing !== null;
+
+  await sendKind(
+    "planner_access_invite",
+    { plannerName: existing?.full_name || entry.full_name, hasAccount },
+    existing
+      ? { user: { id: existing.id, email: existing.email, full_name: existing.full_name } }
+      : { user: null, guest: { email: entry.email, full_name: entry.full_name } },
+  );
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: granted ? "admin.planner_waitlist_grant_invite" : "admin.planner_waitlist_invite",
+    target_kind: "planner_waitlist",
+    target_id: waitlistId,
+    after: { email: entry.email, has_account: hasAccount, granted },
+  });
+  return json({ ok: true, granted, has_account: hasAccount });
+}
+
 function setPlannerStatus(ctx: Ctx, status: "active" | "suspended"): Response {
   const admin = requireAdmin(ctx);
   const userId = parseId(ctx);
@@ -223,6 +268,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 export function registerAdminPlannerRoutes(router: Router) {
   router.get("/api/admin/planners", handleList, true);
   router.post("/api/admin/planners/provision", handleProvision, true);
+  router.post("/api/admin/planners/pending/:id/send-invite", handleSendInvite, true);
   router.post("/api/admin/planners/:id/resend-activation", handleResendActivation, true);
   router.post("/api/admin/planners/:id/suspend", handleSuspend, true);
   router.post("/api/admin/planners/:id/reactivate", handleReactivate, true);

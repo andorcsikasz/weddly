@@ -1852,6 +1852,16 @@ export const adminPlannerMgmtApi = {
     apiFetch<{ ok: true; user_id: number }>("POST", "/api/admin/planners/provision", body),
   resendActivation: (id: number) =>
     apiFetch<{ ok: true }>("POST", `/api/admin/planners/${id}/resend-activation`, {}),
+  /** (Re)send the access email to an accepted waitlist applicant (keyed on
+   *  planner_waitlist.id). If they already have a non-planner account under that
+   *  email, the server grants planner first (`granted: true`) and the email is a
+   *  sign-in link; otherwise it's a register-with-this-email link. */
+  sendInvite: (waitlistId: number) =>
+    apiFetch<{ ok: true; granted: boolean; has_account: boolean }>(
+      "POST",
+      `/api/admin/planners/pending/${waitlistId}/send-invite`,
+      {},
+    ),
 };
 
 /** Admin-provisioned planner activation landing (public, token-gated). The

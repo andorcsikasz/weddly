@@ -509,6 +509,16 @@ export interface PlannerWaitlistReceivedPayload {
   hasAccount: boolean;
 }
 
+export interface PlannerAccessInvitePayload {
+  /** Applicant's name, used in the greeting. */
+  plannerName: string;
+  /** Whether a Weddly account already exists for this email. false → CTA to
+   *  /signup ("register with the same email", which auto-grants planner);
+   *  true → the admin just granted planner on their existing account, CTA to
+   *  /app/planner ("sign in"). */
+  hasAccount: boolean;
+}
+
 export interface PlannerInviteOutcomePayload {
   /** Planner's display label (business name / full name / fallback). */
   plannerLabel: string;
@@ -580,6 +590,7 @@ export type KindPayload = {
   planner_client_invite: PlannerClientInvitePayload;
   planner_email_invite: PlannerEmailInvitePayload;
   planner_waitlist_received: PlannerWaitlistReceivedPayload;
+  planner_access_invite: PlannerAccessInvitePayload;
   planner_invite_outcome: PlannerInviteOutcomePayload;
   newsletter_confirm: NewsletterConfirmPayload;
 };
@@ -2218,6 +2229,52 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
             "Then fill in your profile (business name and city) to appear in the planner directory couples browse.",
           ],
       cta: p.hasAccount ? "Open planner dashboard" : "Create your account",
+    },
+  }),
+
+  // Admin-triggered "get into your planner account" mail for an accepted
+  // applicant stuck on "Regisztrációra vár" (see admin_planners handleSendInvite).
+  // Transactional, not outreach: the hasAccount branch goes to a real account
+  // holder, so the outreach "you have no account" footer would be false.
+  // hasAccount=false → register with the SAME email (auto-grants planner);
+  // hasAccount=true → the admin already granted planner on their existing
+  // account, so the CTA just carries them to sign in.
+  planner_access_invite: (p) => ({
+    subject: "A tervezői fiókod készen áll / Your planner account is ready · Weddly",
+    ctaUrl: p.hasAccount
+      ? `${CONFIG.frontendBaseUrl}/app/planner`
+      : `${CONFIG.frontendBaseUrl}/signup`,
+    hu: {
+      preheader: p.hasAccount
+        ? "A tervezői felületed készen áll, lépj be."
+        : "Már csak egy lépés: hozd létre a fiókod.",
+      greeting: `Szia ${p.plannerName}!`,
+      paragraphs: p.hasAccount
+        ? [
+            "Aktiváltuk a tervezői hozzáférésed a meglévő Weddly-fiókodon, mostantól eléred a tervező felületet.",
+            "Lépj be az alábbi gombbal, és folytasd a profilod kitöltésével (vállalkozásnév és város), hogy megjelenj a pároknak szóló szervezői ajánlóban.",
+          ]
+        : [
+            "Elfogadtuk a jelentkezésed a Weddly tervezői programjába, és a hozzáférésed készen áll.",
+            "Már csak egy lépés van hátra: regisztrálj **ugyanezzel az e-mail címmel**, és a fiókod automatikusan tervezői fiókként jön létre.",
+          ],
+      cta: p.hasAccount ? "Belépés a fiókba" : "Fiók létrehozása",
+    },
+    en: {
+      preheader: p.hasAccount
+        ? "Your planner dashboard is ready, sign in."
+        : "One step left: create your account.",
+      greeting: `Hi ${p.plannerName},`,
+      paragraphs: p.hasAccount
+        ? [
+            "We have activated your planner access on your existing Weddly account, so your planner dashboard is now ready.",
+            "Sign in with the button below and finish your profile (business name and city) to appear in the planner directory couples browse.",
+          ]
+        : [
+            "We have accepted your application to the Weddly planner programme, and your access is ready.",
+            "One step left: sign up with **this same email address** and your account is set up as a planner automatically.",
+          ],
+      cta: p.hasAccount ? "Sign in" : "Create your account",
     },
   }),
 

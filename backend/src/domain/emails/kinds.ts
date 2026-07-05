@@ -59,6 +59,7 @@ export type EmailKind =
   | "planner_client_invite" // couple invited a planner to their workspace, heads-up to the planner
   | "planner_email_invite" // planner invited a not-yet-registered person by email to become their client
   | "planner_waitlist_received" // /planners application confirm, next-step CTA (register / open dashboard)
+  | "planner_access_invite" // admin (re)send of the "get into your planner account" CTA to a stuck applicant
   | "planner_invite_outcome" // planner accepted or declined the couple's invite, heads-up to the couple
   | "newsletter_confirm"; // double opt-in confirm link for the landing/blog newsletter capture
 
@@ -165,6 +166,12 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Outreach: planner submitted the /planners application; like the vendor
   // waitlist confirm, they may have no Weddly account yet.
   planner_waitlist_received: "outreach",
+  // Transactional: the admin explicitly (re)sends an access CTA to an applicant
+  // stuck on "Regisztrációra vár". The has-account branch reaches a real account
+  // holder (the admin just granted planner on their existing account), so the
+  // outreach "you have no account" footer would be false; and as admin-triggered
+  // account-access info it must always deliver, never opt-out.
+  planner_access_invite: "transactional",
   // Transactional: the admin provisioned an account in the recipient's name
   // (agreed in person beforehand) and the activation link inside is the only
   // way into that account, so it must always deliver.

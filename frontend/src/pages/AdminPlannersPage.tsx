@@ -342,16 +342,46 @@ function ProvisionPlannerDialog({
   );
 }
 
-/** An accepted waitlist applicant with no account yet: read-only card (no plan
- *  chip or account actions) with the same collapsible profile. */
-function PendingPlannerCard({ entry }: { entry: AdminPlannerPending }) {
+/** An accepted waitlist applicant with no planner account yet. The one action
+ *  is "send invite": (re)email the access CTA. If they already registered under
+ *  this email as a non-planner, the server grants planner first and the list
+ *  refreshes them into an Aktív account. */
+function PendingPlannerCard({
+  entry,
+  onChanged,
+}: {
+  entry: AdminPlannerPending;
+  onChanged: () => void;
+}) {
   const { t, locale } = useT();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const hasDetails = hasPlannerDetails(
     entry.waitlist.company_name,
     entry.waitlist.city,
     entry.waitlist,
   );
+
+  async function handleSendInvite() {
+    setBusy(true);
+    try {
+      const r = await adminPlannerMgmtApi.sendInvite(entry.waitlist_id);
+      toast.success(
+        t(
+          r.granted
+            ? "admin.planners.invite_granted_success"
+            : "admin.planners.invite_sent_success",
+        ),
+      );
+      onChanged();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="admin-card">
       <div className="flex items-center gap-4">
@@ -381,13 +411,25 @@ function PendingPlannerCard({ entry }: { entry: AdminPlannerPending }) {
             <span>{fmtDate(entry.created_at, locale)}</span>
           </div>
         </div>
-        {hasDetails && (
-          <DetailsToggle
-            open={detailsOpen}
-            onToggle={() => setDetailsOpen((o) => !o)}
-            label={t("admin.planners.details_toggle")}
-          />
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            className={ICON_BTN}
+            onClick={handleSendInvite}
+            disabled={busy}
+            title={t("admin.planners.send_invite")}
+            aria-label={t("admin.planners.send_invite")}
+          >
+            {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+          </button>
+          {hasDetails && (
+            <DetailsToggle
+              open={detailsOpen}
+              onToggle={() => setDetailsOpen((o) => !o)}
+              label={t("admin.planners.details_toggle")}
+            />
+          )}
+        </div>
       </div>
       {hasDetails && detailsOpen && (
         <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-800">
@@ -715,7 +757,7 @@ export default function AdminPlannersPage() {
         <div className="space-y-4">
           {visible.map((p) =>
             p.state === "pending" ? (
-              <PendingPlannerCard key={`w-${p.waitlist_id}`} entry={p} />
+              <PendingPlannerCard key={`w-${p.waitlist_id}`} entry={p} onChanged={load} />
             ) : (
               <PlannerCard key={`u-${p.user_id}`} planner={p} onChanged={load} />
             ),

@@ -275,6 +275,10 @@ const STUBS: KindPayload = {
     plannerName: "Anna",
     hasAccount: false,
   },
+  planner_access_invite: {
+    plannerName: "Anna",
+    hasAccount: true,
+  },
   planner_invite_outcome: {
     plannerLabel: "Eventful Studio",
     accepted: true,

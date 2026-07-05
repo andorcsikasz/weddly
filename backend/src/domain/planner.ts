@@ -225,6 +225,19 @@ export function listPendingPlannerWaitlist(): AdminPlannerPending[] {
   }));
 }
 
+/** Load the identity fields of a planner_waitlist row by id. Used by the admin
+ *  "send invite" action to (re)email an accepted applicant stuck on
+ *  "Regisztrációra vár". Returns null if the id doesn't exist. */
+export function getPlannerWaitlistById(
+  id: number,
+): { id: number; email: string; full_name: string } | null {
+  return (
+    (db.prepare("SELECT id, email, full_name FROM planner_waitlist WHERE id = ?").get(id) as
+      | { id: number; email: string; full_name: string }
+      | undefined) ?? null
+  );
+}
+
 /** Admin sets a planner's plan tier; keeps `planner_max_clients` in lockstep. */
 export function updatePlannerPlan(userId: number, plan: PlannerPlan): void {
   db.prepare(

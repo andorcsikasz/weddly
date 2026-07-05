@@ -4976,6 +4976,13 @@ export interface LocaleMessages {
       status_pending_activation: string;
       /** Pill for an accepted waitlist applicant with no account yet. */
       status_applied: string;
+      /** Button on a pending applicant card: (re)send the access email. */
+      send_invite: string;
+      /** Toast: access email sent to a not-yet-registered applicant. */
+      invite_sent_success: string;
+      /** Toast: applicant already had an account, so we granted planner and
+       *  emailed a sign-in link. */
+      invite_granted_success: string;
       clients: string;
       onboarding_pending: string;
       free_until: string;
