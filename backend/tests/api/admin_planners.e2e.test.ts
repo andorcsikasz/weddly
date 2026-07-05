@@ -248,9 +248,7 @@ describe("admin planner management", () => {
     expect(res.data.has_account).toBe(false);
 
     const mail = db
-      .prepare(
-        "SELECT kind FROM email_log WHERE kind = 'planner_access_invite' AND to_email = ?",
-      )
+      .prepare("SELECT kind FROM email_log WHERE kind = 'planner_access_invite' AND to_email = ?")
       .all("newbie@weddly.test") as { kind: string }[];
     expect(mail.length).toBe(1);
 

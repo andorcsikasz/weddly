@@ -120,7 +120,9 @@ describe("couple planner directory", () => {
 
     // The link is couple-initiated, so the PLANNER accepts it.
     const row = db
-      .prepare("SELECT initiated_by FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?")
+      .prepare(
+        "SELECT initiated_by FROM planner_clients WHERE planner_user_id = ? AND couple_id = ?",
+      )
       .get(userId, coupleId) as { initiated_by: string };
     expect(row.initiated_by).toBe("couple");
 
@@ -149,7 +151,9 @@ describe("couple planner directory", () => {
       { token: plannerToken },
     );
     const r = await directory(coupleToken);
-    expect(r.data.planners.find((p) => p.planner_user_id === userId)?.link_status).toBe("requested");
+    expect(r.data.planners.find((p) => p.planner_user_id === userId)?.link_status).toBe(
+      "requested",
+    );
   });
 
   test("connect by id rejects a non-planner target", async () => {
@@ -185,9 +189,7 @@ describe("planner funnel emails", () => {
     expect(submit.status).toBe(201);
 
     const log = db
-      .prepare(
-        "SELECT kind FROM email_log WHERE to_email = ? ORDER BY id DESC LIMIT 1",
-      )
+      .prepare("SELECT kind FROM email_log WHERE to_email = ? ORDER BY id DESC LIMIT 1")
       .get("kata@planner.test") as { kind: string } | undefined;
     expect(log?.kind).toBe("planner_waitlist_received");
   });

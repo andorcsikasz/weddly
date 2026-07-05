@@ -675,7 +675,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               tightened row rhythm below keeps it scrollbar-free on most
               displays. `min-h-0` lets the inner nav shrink so overflow works.
               `lg:w-full` fills the expanded rail so the floating collapse
-              toggle (`absolute right-14`, positioned against this box) keeps a
+              toggle (`absolute right-2`, positioned against this box) keeps a
               stable offset from the panel's right edge — without it the column
               shrinks to its content width and the toggle crowds the
               "Áttekintés" label. Kept off at md so the tablet icon rail stays
@@ -686,9 +686,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 (absolute, out of flow) so it stops reserving a whole row —
                 the first nav item rises to the top, and the freed ~40px of
                 vertical space goes to the bottom of the rail instead of
-                sitting empty above. `right-14` pulls it in off the panel edge
-                so it never juts past the rightmost sidebar text (the long
-                "INSPIRÁCIÓ ÉS EMLÉKEK" header). When collapsed it keeps a
+                sitting empty above. `right-2` docks it in the top-right corner
+                so it caps the end of the active row's full-width dark pill (see
+                SideLink's `lg:w-auto`) instead of floating mid-row with dark
+                trailing off past it. When collapsed it keeps a
                 small centered
                 row (a top-right float would collide with the first icon).
                 Hidden on tablet (md) because the rail is forced icon-only
@@ -697,7 +698,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className={`hidden lg:flex ${
                 sidebarCollapsed
                   ? "justify-center pb-1"
-                  : "lg:absolute lg:right-14 lg:top-1 lg:z-10 lg:h-6 lg:items-center lg:justify-end"
+                  : "lg:absolute lg:right-2 lg:top-1 lg:z-10 lg:h-6 lg:items-center lg:justify-end"
               }`}
             >
               <button
@@ -1004,18 +1005,17 @@ function SideLink({
   // the same height collapsed or expanded, and an icon stays on the exact
   // same row when the user toggles the rail (paired with the fixed-height
   // SidebarGroupHeader below, which does the same for section breaks).
-  // `lg:w-fit` on purpose: the active pill hugs its icon + label instead of
-  // stretching the full rail width. An earlier `w-auto` stretched it edge-to-
-  // edge so the dark background ran all the way under the floating collapse
-  // toggle, which left a wide, unbalanced slab of dark trailing off to the
-  // right of the « on the first row — rejected. The toggle carries its own
-  // bordered paper/umber disc, so it stays readable floating over the plain
-  // rail to the right of the shortened pill. `lg:mx-2` insets the pill box by
-  // the same 8px the section dividers use (`inset-x-2`), so the dark header,
-  // every hover row, and the group hairlines all share one left edge.
+  // Width is per-state (applied in the className below, not here): the active
+  // row stretches to fill the rail (`lg:w-auto`) so its dark pill runs out to
+  // the collapse toggle now docked in the top-right corner (see the toggle's
+  // `lg:right-2` — it reads as an endcap on the bar instead of a disc floating
+  // mid-row). Inactive rows keep `lg:w-fit` so they hug their icon + label and
+  // their hover highlight doesn't span the whole rail. `lg:mx-2` insets the
+  // pill box by the same 8px the section dividers use (`inset-x-2`), so the
+  // dark header, every hover row, and the group hairlines share one left edge.
   const shape = collapsed
     ? "h-8 w-9 justify-center"
-    : "h-8 w-9 justify-center lg:mx-2 lg:w-fit lg:justify-start lg:px-3";
+    : "h-8 w-9 justify-center lg:mx-2 lg:justify-start lg:px-3";
   return (
     <NavLink
       to={to}
@@ -1025,7 +1025,10 @@ function SideLink({
         const active = darkActive
           ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
           : "stationery-coffee text-paper-50 dark:text-paper-50";
-        return `group/sl relative flex items-center rounded-xl text-sm transition-colors ${shape} ${
+        // Collapsed rows stay the fixed `w-9` icon square (base shape); at lg+
+        // the active row fills the rail while idle rows hug their content.
+        const width = collapsed ? "" : isActive ? "lg:w-auto" : "lg:w-fit";
+        return `group/sl relative flex items-center rounded-xl text-sm transition-colors ${shape} ${width} ${
           isActive
             ? active
             : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
