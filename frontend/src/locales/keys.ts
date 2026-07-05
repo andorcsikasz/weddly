@@ -5315,6 +5315,11 @@ export interface LocaleMessages {
     solo_count_one: string;
     solo_count_other: string;
     solo_empty: string;
+    /** Tooltip on the "×N" pill next to a solo row whose owner runs several
+     *  workspaces. Clicking it peeks their names. `{n}` = workspace count. */
+    owner_worksheets_tooltip: string;
+    /** Tag marking the current workspace inside the "×N" name-peek list. */
+    owner_worksheets_current: string;
     /** Collapse/expand toggle labels shared by the admin users-page lists. */
     section_show: string;
     section_hide: string;

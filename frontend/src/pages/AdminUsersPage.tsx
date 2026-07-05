@@ -171,6 +171,12 @@ export default function AdminUsersPage() {
   const [couplesOpen, setCouplesOpen] = useState(true);
   const [soloOpen, setSoloOpen] = useState(true);
   const [orphansOpen, setOrphansOpen] = useState(true);
+  // A single user can spin up several solo workspaces for themselves (test
+  // runs, a real wedding, a family dinner). We keep one admin row per
+  // workspace, but tag rows whose owner has more than one with an "×N" pill;
+  // clicking it lists that user's workspace names inline. This tracks which
+  // row's pill panel is open (one at a time).
+  const [namesOpenForCouple, setNamesOpenForCouple] = useState<number | null>(null);
 
   type WorkspaceSortKey =
     | "id"
@@ -403,6 +409,23 @@ export default function AdminUsersPage() {
     () => realCouples.filter((c) => c.partners.filter((p) => userById.has(p.id)).length < 2).length,
     [realCouples, userById],
   );
+  // Owner → their solo workspaces. Computed over the full real-couple set (not
+  // the search-filtered slice) so the "×N" pill always reflects the true count
+  // even when a search narrows the visible rows. Keyed by the single member's
+  // user id; workspaces with no resolvable member are skipped (no owner).
+  const soloWorkspacesByOwner = useMemo(() => {
+    const m = new Map<number, AdminCoupleView[]>();
+    for (const c of realCouples) {
+      const memberPartners = c.partners.filter((p) => userById.has(p.id));
+      if (memberPartners.length !== 1) continue;
+      const ownerId = memberPartners[0]?.id;
+      if (ownerId == null) continue;
+      const arr = m.get(ownerId);
+      if (arr) arr.push(c);
+      else m.set(ownerId, [c]);
+    }
+    return m;
+  }, [realCouples, userById]);
   const filteredOrphans = useMemo(
     () => (searchQuery === "" ? orphans : orphans.filter(orphanMatches)),
     // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
@@ -869,13 +892,21 @@ export default function AdminUsersPage() {
   /** One workspace card — id, name, members (info + actions), created/active
    *  dates. Shared by the real-couple list and the beta-tester bucket so both
    *  render identically. */
-  function renderCoupleCard(c: AdminCoupleView) {
+  function renderCoupleCard(c: AdminCoupleView, ownerWorkspaces?: AdminCoupleView[]) {
     // Server returns partners scrubbed of users we already know are missing
     // (rare race); fall back to userById for the freshest local state.
     const members = c.partners
       .map((p) => userById.get(p.id))
       .filter((u): u is AdminUserView => u != null);
     const statusLabel = c.status === "paused" ? t("admin.workspace_status_paused") : null;
+
+    // "×N" index: when this row's owner runs several solo workspaces, tag the
+    // id with a small pill. Rows are NOT collapsed — every workspace keeps its
+    // own row and actions; the pill just lets the admin peek the owner's other
+    // workspace names inline. `ownerWorkspaces` is the owner's full set (incl.
+    // `c`), passed only from the solo list.
+    const siblingSet = ownerWorkspaces && ownerWorkspaces.length > 1 ? ownerWorkspaces : null;
+    const namesOpen = siblingSet != null && namesOpenForCouple === c.id;
 
     // Shared clusters — composed into a 6-column grid on md+ and into a
     // compact stacked layout on phones (where the grid would otherwise turn
@@ -886,6 +917,25 @@ export default function AdminUsersPage() {
         <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
           {workspaceId(c)}
         </code>
+        {/* "×N" index — this owner runs several workspaces; click to peek their
+            names inline. The row itself stays put; nothing is collapsed. */}
+        {siblingSet && (
+          <button
+            type="button"
+            onClick={() => setNamesOpenForCouple((cur) => (cur === c.id ? null : c.id))}
+            aria-expanded={namesOpen}
+            title={t("admin.owner_worksheets_tooltip", { n: siblingSet.length })}
+            aria-label={t("admin.owner_worksheets_tooltip", { n: siblingSet.length })}
+            className="inline-flex items-center gap-0.5 rounded-full bg-paper-200 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-700 hover:bg-paper-300 dark:bg-umber-700/60 dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            ×{siblingSet.length}
+            <ChevronDown
+              size={10}
+              aria-hidden
+              className={`transition-transform${namesOpen ? " rotate-180" : ""}`}
+            />
+          </button>
+        )}
         {/* Early-bird mark: one of the first 200 founding couples. */}
         {!c.is_demo && c.billing.is_founding_member && (
           <span
@@ -1018,9 +1068,50 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
+        {/* "×N" peek — this owner's other workspaces, revealed inline by the
+            pill. Read-only name reference (id + label + billing badge); the row
+            for the current workspace is highlighted so its place is obvious.
+            Nothing is collapsed — this is a lookup, not a grouped row. */}
+        {namesOpen && siblingSet && (
+          <ul className="mt-2 space-y-1 border-t border-paper-200/70 pt-2 dark:border-umber-700">
+            {siblingSet.map((o) => (
+              <li
+                key={o.id}
+                className={`flex flex-wrap items-center gap-x-2 gap-y-1 rounded px-1 py-0.5 text-xs${
+                  o.id === c.id ? " bg-paper-100 dark:bg-umber-800/60" : ""
+                }`}
+              >
+                <code className="rounded bg-paper-100 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:bg-umber-700/60 dark:text-paper-100">
+                  {workspaceId(o)}
+                </code>
+                <span className="font-medium text-neutral-900 dark:text-paper-50">
+                  {workspaceLabel(o)}
+                </span>
+                {o.status === "paused" && (
+                  <Pill tone="muted">{t("admin.workspace_status_paused")}</Pill>
+                )}
+                {renderBillingPill(o)}
+                {o.id === c.id && (
+                  <span className="text-[10px] uppercase tracking-wide text-neutral-400 dark:text-umber-400">
+                    {t("admin.owner_worksheets_current")}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="px-0.5">{members.map((u) => renderEmailLogPanel(u.id))}</div>
       </li>
     );
+  }
+
+  /** Render a solo-workspace row with the owner's full workspace set threaded
+   *  in, so renderCoupleCard can tag it with the "×N" name-peek pill when that
+   *  user runs more than one. Rows stay one-per-workspace (no collapsing). */
+  function renderSoloCard(c: AdminCoupleView) {
+    const ownerId = c.partners.find((p) => userById.has(p.id))?.id;
+    const owned = ownerId != null ? soloWorkspacesByOwner.get(ownerId) : undefined;
+    return renderCoupleCard(c, owned);
   }
 
   /** One orphan (no-workspace) user as a card — used by the "new sign-ups"
@@ -1350,7 +1441,7 @@ export default function AdminUsersPage() {
                     description={t("admin.new_section_help")}
                   />
                   <ul className="space-y-1.5">
-                    {unseenCouples.map(renderCoupleCard)}
+                    {unseenCouples.map((c) => renderCoupleCard(c))}
                     {unseenOrphans.map(renderOrphanCard)}
                   </ul>
                 </section>
@@ -1383,7 +1474,7 @@ export default function AdminUsersPage() {
                     <>
                       {workspaceColumnHeader}
                       <ul className="space-y-1.5">
-                        {sortCouples(couplePairs).map(renderCoupleCard)}
+                        {sortCouples(couplePairs).map((c) => renderCoupleCard(c))}
                       </ul>
                     </>
                   ))}
@@ -1414,7 +1505,7 @@ export default function AdminUsersPage() {
                     <>
                       {workspaceColumnHeader}
                       <ul className="space-y-1.5">
-                        {sortCouples(soloWorkspaces).map(renderCoupleCard)}
+                        {sortCouples(soloWorkspaces).map(renderSoloCard)}
                       </ul>
                     </>
                   ))}
@@ -1450,7 +1541,7 @@ export default function AdminUsersPage() {
                       <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
                     ) : (
                       <ul className="space-y-1.5">
-                        {filteredFlaggedCouples.map(renderCoupleCard)}
+                        {filteredFlaggedCouples.map((c) => renderCoupleCard(c))}
                       </ul>
                     ))}
                 </section>
@@ -1480,7 +1571,9 @@ export default function AdminUsersPage() {
                     (filteredBetaCouples.length === 0 ? (
                       <AdminEmptyState>{t("admin.couples_empty")}</AdminEmptyState>
                     ) : (
-                      <ul className="space-y-1.5">{filteredBetaCouples.map(renderCoupleCard)}</ul>
+                      <ul className="space-y-1.5">
+                        {filteredBetaCouples.map((c) => renderCoupleCard(c))}
+                      </ul>
                     ))}
                 </section>
               )}

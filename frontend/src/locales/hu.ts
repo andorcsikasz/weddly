@@ -4772,6 +4772,9 @@ const hu: LocaleMessages = {
     solo_count_one: "{n} egyedüli",
     solo_count_other: "{n} egyedüli",
     solo_empty: "Nincs egyedüli felhasználó.",
+    owner_worksheets_tooltip:
+      "Ennek a felhasználónak {n} munkaterülete van, kattints a nevek megtekintéséhez",
+    owner_worksheets_current: "ez a munkaterület",
     section_show: "Kibontás",
     section_hide: "Összecsukás",
     demo_workspaces_section: "Demo munkaterületek",
