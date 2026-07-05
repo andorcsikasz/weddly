@@ -4724,8 +4724,6 @@ const en: LocaleMessages = {
     solo_count_one: "{n} solo",
     solo_count_other: "{n} solo",
     solo_empty: "No solo users.",
-    owner_worksheets_tooltip: "{n} workspaces owned by this user, click to see the names",
-    owner_worksheets_current: "this workspace",
     section_show: "Expand",
     section_hide: "Collapse",
     demo_workspaces_section: "Demo workspaces",
