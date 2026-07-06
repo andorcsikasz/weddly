@@ -1035,6 +1035,8 @@ export interface LocaleMessages {
     all_day: string;
     schedule_empty: string;
     legend_blocked: string;
+    /** Legend entry for a day blocked only for certain hours. */
+    legend_blocked_partial: string;
     legend_booked: string;
     legend_pending: string;
     legend_tasks: string;
@@ -1042,6 +1044,26 @@ export interface LocaleMessages {
     blocked_pill_label: string;
     /** Receives `{date}` - the day a click would block. */
     block_day_title: string;
+    /** Day-block editor modal. `block_editor_title` receives `{date}`. */
+    block_editor_title: string;
+    /** Aria-label for the whole-day / hours segmented control. */
+    block_mode_label: string;
+    block_all_day: string;
+    block_certain_hours: string;
+    block_all_day_hint: string;
+    block_from: string;
+    block_to: string;
+    /** Receives `{count}` - hours blocked in the chosen range. */
+    block_hours_summary: string;
+    block_save: string;
+    block_remove: string;
+    /** Compact pill badge on a partial-day block. Receives `{count}`. */
+    block_hours_badge: string;
+    /** Schedule/agenda + tooltip summary for a whole-day block. */
+    blocked_all_day_label: string;
+    /** Schedule/agenda + tooltip summary for a partial block. Receives
+     *  `{from}`, `{to}`, `{count}`. */
+    blocked_hours_label: string;
     section_availability: string;
     availability_intro: string;
     availability_add_label: string;
@@ -4911,6 +4933,8 @@ export interface LocaleMessages {
       busy: {
         title: string;
         legendBooked: string;
+        /** Legend for a day the vendor blocked only for certain hours. */
+        legendPartial: string;
         empty: string;
         prevMonth: string;
         nextMonth: string;

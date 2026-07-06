@@ -1431,6 +1431,10 @@ function BusyCalendarCard({
     () => new Set(availability?.unavailable_dates ?? []),
     [availability?.unavailable_dates],
   );
+  const partial = useMemo(
+    () => new Set(availability?.partial_dates ?? []),
+    [availability?.partial_dates],
+  );
 
   const monthLabel = useMemo(() => {
     const d = new Date(cursor.year, cursor.month, 1);
@@ -1475,7 +1479,7 @@ function BusyCalendarCard({
     });
   };
 
-  const hasAny = blocked.size > 0;
+  const hasAny = blocked.size > 0 || partial.size > 0;
 
   return (
     <SidebarCard
@@ -1515,6 +1519,9 @@ function BusyCalendarCard({
           const inMonth = d.getMonth() === cursor.month;
           const iso = ymd(d);
           const isBlocked = blocked.has(iso);
+          // Partial (certain-hours) blocks get a distinct amber marker; a full
+          // block always wins if a day is somehow in both sets.
+          const isPartial = !isBlocked && partial.has(iso);
           const isToday = ymd(d) === ymd(today);
           return (
             <div
@@ -1524,18 +1531,39 @@ function BusyCalendarCard({
                   ? "text-ink-300 dark:text-umber-500"
                   : isBlocked
                     ? "bg-rose-200/70 font-medium text-rose-800 line-through dark:bg-rose-400/30 dark:text-rose-100"
-                    : "text-ink-700 dark:text-umber-200"
-              } ${isToday && inMonth && !isBlocked ? "ring-1 ring-rose-400" : ""}`}
-              title={isBlocked ? iso : undefined}
+                    : isPartial
+                      ? "bg-amber-200/60 font-medium text-amber-800 dark:bg-amber-400/25 dark:text-amber-100"
+                      : "text-ink-700 dark:text-umber-200"
+              } ${isToday && inMonth && !isBlocked && !isPartial ? "ring-1 ring-rose-400" : ""}`}
+              title={isBlocked || isPartial ? iso : undefined}
             >
               {d.getDate()}
             </div>
           );
         })}
       </div>
-      <div className="mt-3 flex items-center gap-2 text-[11px] text-ink-500 dark:text-umber-300">
-        <span className="inline-block h-3 w-3 rounded bg-rose-200/70 dark:bg-rose-400/30" />
-        {hasAny ? t("suppliers.detail.busy.legendBooked") : t("suppliers.detail.busy.empty")}
+      <div className="mt-3 space-y-1.5 text-[11px] text-ink-500 dark:text-umber-300">
+        {!hasAny ? (
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-3 w-3 rounded bg-rose-200/70 dark:bg-rose-400/30" />
+            {t("suppliers.detail.busy.empty")}
+          </div>
+        ) : (
+          <>
+            {blocked.size > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-3 w-3 rounded bg-rose-200/70 dark:bg-rose-400/30" />
+                {t("suppliers.detail.busy.legendBooked")}
+              </div>
+            )}
+            {partial.size > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-3 w-3 rounded bg-amber-200/60 dark:bg-amber-400/25" />
+                {t("suppliers.detail.busy.legendPartial")}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </SidebarCard>
   );

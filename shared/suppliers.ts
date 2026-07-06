@@ -409,9 +409,15 @@ export interface CreateBookingBody {
 }
 
 export interface SupplierAvailability {
-  /** Sorted ascending list of 'YYYY-MM-DD' dates the vendor has blocked. */
+  /** Sorted ascending list of 'YYYY-MM-DD' dates the vendor has blocked for the
+   *  WHOLE day. Shown as fully booked (red) on the public busy calendar. */
   unavailable_dates: string[];
-  /** Earliest available date from "today" that is NOT blocked and has no
+  /** Sorted ascending 'YYYY-MM-DD' dates the vendor blocked only for certain
+   *  hours. The day still has open hours, so it counts as available for
+   *  next_available / bookability — couples just see a distinct "partly booked"
+   *  marker. */
+  partial_dates: string[];
+  /** Earliest available date from "today" that is NOT fully blocked and has no
    *  pending booking. Null when the supplier is unclaimed (no vendor calendar
    *  to consult). */
   next_available: string | null;

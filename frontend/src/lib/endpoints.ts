@@ -2046,8 +2046,14 @@ export const vendorAccountApi = {
  *  re-renders from the server's truth after each block/unblock. */
 export const vendorAvailabilityApi = {
   me: () => apiFetch<VendorAvailabilityView>("GET", "/api/vendor/availability/me"),
-  block: (date: string, reason?: string) =>
-    apiFetch<VendorAvailabilityView>("POST", "/api/vendor/availability/me", { date, reason }),
+  /** `hours` null/omitted = block the whole day; a non-empty hour list (0-23)
+   *  blocks only those hours (a partial-day block). */
+  block: (date: string, hours?: number[] | null, reason?: string) =>
+    apiFetch<VendorAvailabilityView>("POST", "/api/vendor/availability/me", {
+      date,
+      hours: hours ?? null,
+      reason,
+    }),
   unblock: (date: string) =>
     apiFetch<VendorAvailabilityView>(
       "DELETE",

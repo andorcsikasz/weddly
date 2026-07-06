@@ -6,11 +6,13 @@
 // The vendor's calendar "events" are: confirmed bookings (booked weddings),
 // pending inquiries (requested / vendor_seen), self-blocked Foglaltsag days,
 // and open task deadlines from the board. CALENDAR mode is also the blocking
-// editor: clicking a free future day in the month grid blocks it, clicking a
-// blocked day (or its pill in any view) unblocks it, and the classic
-// date-input + chips + next-free-date section sits below. Couples see the
-// blocked days on the public busy calendar. Blocking is a PRO feature; a
-// FREE vendor gets the read-only calendar plus the upgrade prompt.
+// editor: clicking any editable day (in the grid or its pill in any view) opens
+// a small modal to block the whole day or only a from-to hour range. A
+// whole-day block shows a bare lock ("zero text"), a partial one a lock + the
+// blocked-hour count; the auto-updating next-free date sits below. Couples see
+// whole-day blocks as booked and partial blocks as a distinct "partly booked"
+// marker on the public busy calendar. Blocking is a PRO feature; a FREE vendor
+// gets the read-only calendar plus the upgrade prompt.
 //
 // TASKS mode is the Trello-style board (todo / doing / done) with native
 // HTML5 drag & drop lifted from the planner board, plus create and delete.
@@ -29,10 +31,12 @@ import {
 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import type { VendorAvailabilityView } from "@shared/listings";
+import type { VendorAvailabilityView, VendorBlockedDay } from "@shared/listings";
 import type { VendorClientView } from "@shared/vendor_clients";
 import type { VendorBoardStatus, VendorTask } from "@shared/vendor_tasks";
 import { useConfirm } from "../../components/ui/ConfirmDialogProvider";
+import { Dialog } from "../../components/ui/Dialog";
+import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { useToast } from "../../components/ui/ToastProvider";
 import {
   vendorAvailabilityApi,
@@ -50,12 +54,17 @@ const VIEW_KEY = "weddly.vendor_cal_view";
 const MODE_KEY = "weddly.vendor_cal_mode";
 
 /** One pill on the calendar. `bookingId` set for booked/pending (links to the
- *  client), `date` doubles as the unblock target for kind 'blocked'. */
+ *  client), `date` doubles as the edit target for kind 'blocked'. For 'blocked',
+ *  `hours` is null (whole day) or the sorted blocked hours; `hoursBadge` is the
+ *  compact "4 ó" shown next to the lock on a partial-day pill (absent = whole
+ *  day, so the pill is a lock icon with no text). */
 interface CalEvent {
   kind: "booked" | "pending" | "blocked" | "task";
   date: string; // YYYY-MM-DD
   label: string;
   bookingId?: number;
+  hours?: number[] | null;
+  hoursBadge?: string;
 }
 
 // ── date helpers (local-time safe, same as the planner page) ────────────────
@@ -87,6 +96,20 @@ function formatDay(iso: string, locale: string): string {
   }).format(d);
 }
 
+/** Contiguous [start, end) the editor produces from a stored hour list — the
+ *  editor only ever blocks a single from–to range, so min..max+1 reconstructs
+ *  it exactly. `end` is exclusive (24 = midnight). */
+function blockedHoursRange(hours: number[]): { start: number; end: number } {
+  const start = Math.min(...hours);
+  const end = Math.max(...hours) + 1;
+  return { start, end };
+}
+
+/** "09:00" style label for an hour boundary 0-24. */
+function hourLabel(h: number): string {
+  return `${String(h).padStart(2, "0")}:00`;
+}
+
 // ── event pills ──────────────────────────────────────────────────────────────
 
 function pillColor(kind: CalEvent["kind"]): string {
@@ -103,14 +126,22 @@ function pillColor(kind: CalEvent["kind"]): string {
 }
 
 function PillBody({ ev }: { ev: CalEvent }) {
+  // Blocked pills are icon-first with no day label: a whole-day block is a bare
+  // lock ("zero text"), a partial block adds the blocked-hour count ("4 ó").
+  if (ev.kind === "blocked") {
+    return (
+      <>
+        <Lock size={10} className="shrink-0" aria-hidden="true" />
+        {ev.hoursBadge ? <span className="truncate tabular-nums">{ev.hoursBadge}</span> : null}
+      </>
+    );
+  }
   return (
     <>
       {ev.kind === "booked" ? (
         <Heart size={10} className="shrink-0" aria-hidden="true" />
       ) : ev.kind === "pending" ? (
         <Clock size={10} className="shrink-0" aria-hidden="true" />
-      ) : ev.kind === "blocked" ? (
-        <Lock size={10} className="shrink-0" aria-hidden="true" />
       ) : (
         <span
           className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-70"
@@ -123,23 +154,23 @@ function PillBody({ ev }: { ev: CalEvent }) {
 }
 
 /** Booked/pending pills link to the client, task pills jump to the board,
- *  blocked pills unblock on click (when the vendor may edit). Blocked pills
- *  are role="button" spans because month-grid cells are themselves <button>s
- *  and nesting buttons is invalid markup. */
+ *  blocked pills open the day-block editor on click (when the vendor may edit).
+ *  Blocked pills are role="button" spans because month-grid cells are
+ *  themselves <button>s and nesting buttons is invalid markup. */
 function EventPill({
   ev,
-  onUnblock,
-  unblockTitle,
+  onOpenDay,
+  openTitle,
 }: {
   ev: CalEvent;
-  onUnblock?: (iso: string) => void;
-  unblockTitle?: string;
+  onOpenDay?: (iso: string) => void;
+  openTitle?: string;
 }) {
   const base = `flex w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-[11px] transition-colors ${pillColor(
     ev.kind,
   )}`;
   if (ev.kind === "blocked") {
-    if (!onUnblock) {
+    if (!onOpenDay) {
       return (
         <span title={ev.label} className={base}>
           <PillBody ev={ev} />
@@ -151,17 +182,17 @@ function EventPill({
       <span
         role="button"
         tabIndex={0}
-        title={unblockTitle ?? ev.label}
+        title={openTitle ?? ev.label}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          onUnblock(iso);
+          onOpenDay(iso);
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             e.stopPropagation();
-            onUnblock(iso);
+            onOpenDay(iso);
           }
         }}
         className={`${base} cursor-pointer text-left`}
@@ -276,27 +307,23 @@ function YearView({
 function MonthView({
   cursor,
   eventsByDate,
-  blockedSet,
+  blockedDays,
   weekdays,
   todayStr,
   canEdit,
   busy,
-  onToggleDay,
-  onUnblock,
-  unblockTitleFor,
-  blockTitleFor,
+  onOpenDay,
+  openTitleFor,
 }: {
   cursor: Date;
   eventsByDate: Map<string, CalEvent[]>;
-  blockedSet: Set<string>;
+  blockedDays: Map<string, number[] | null>;
   weekdays: string[];
   todayStr: string;
   canEdit: boolean;
   busy: boolean;
-  onToggleDay: (iso: string, isBlocked: boolean) => void;
-  onUnblock?: (iso: string) => void;
-  unblockTitleFor: (iso: string) => string;
-  blockTitleFor: (iso: string) => string;
+  onOpenDay: (iso: string) => void;
+  openTitleFor: (iso: string) => string;
 }) {
   const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   const offset = (first.getDay() + 6) % 7;
@@ -319,23 +346,27 @@ function MonthView({
           const key = ymd(d);
           const inMonth = d.getMonth() === cursor.getMonth();
           const isToday = key === todayStr;
-          const isBlocked = blockedSet.has(key);
+          const isBlocked = blockedDays.has(key);
+          const isPartial = isBlocked && blockedDays.get(key) != null;
           const evs = eventsByDate.get(key) ?? [];
           const hasBooking = evs.some((e) => e.kind === "booked");
-          // The month grid doubles as the blocking editor: a click on a free
-          // future day blocks it, a click on a blocked day unblocks it.
-          // Booked days and the past stay inert.
+          // The month grid is the blocking editor: clicking a free future day
+          // (or an already-blocked one) opens the day-block editor where the
+          // vendor picks whole-day or specific hours. Booked days and the past
+          // stay inert.
           const editable = canEdit && !busy && inMonth && key >= todayStr && !hasBooking;
           return (
             <button
               type="button"
               key={key}
               disabled={!editable}
-              onClick={() => onToggleDay(key, isBlocked)}
-              title={editable ? (isBlocked ? unblockTitleFor(key) : blockTitleFor(key)) : undefined}
+              onClick={() => onOpenDay(key)}
+              title={editable ? openTitleFor(key) : undefined}
               className={`min-h-[6rem] border-b border-r border-paper-100 p-1.5 text-left transition-colors disabled:cursor-default dark:border-umber-800 ${
                 isBlocked
-                  ? "bg-blush-100/60 dark:bg-blush-900/20"
+                  ? isPartial
+                    ? "bg-blush-50 dark:bg-blush-900/10"
+                    : "bg-blush-100/60 dark:bg-blush-900/20"
                   : inMonth
                     ? editable
                       ? "hover:bg-paper-50 dark:hover:bg-umber-800/60"
@@ -359,8 +390,8 @@ function MonthView({
                   <EventPill
                     key={`${ev.kind}-${ev.bookingId ?? ev.date}-${i}`}
                     ev={ev}
-                    onUnblock={onUnblock}
-                    unblockTitle={unblockTitleFor(ev.date)}
+                    onOpenDay={editable ? onOpenDay : undefined}
+                    openTitle={openTitleFor(ev.date)}
                   />
                 ))}
                 {evs.length > 3 && (
@@ -384,15 +415,15 @@ function TimeGridView({
   eventsByDate,
   todayStr,
   allDayLabel,
-  onUnblock,
-  unblockTitleFor,
+  onOpenDay,
+  openTitleFor,
 }: {
   days: Date[];
   eventsByDate: Map<string, CalEvent[]>;
   todayStr: string;
   allDayLabel: string;
-  onUnblock?: (iso: string) => void;
-  unblockTitleFor: (iso: string) => string;
+  onOpenDay?: (iso: string) => void;
+  openTitleFor: (iso: string) => string;
 }) {
   const { locale } = useT();
   const now = new Date();
@@ -453,8 +484,8 @@ function TimeGridView({
                 <EventPill
                   key={`${ev.kind}-${ev.bookingId ?? ev.date}-${i}`}
                   ev={ev}
-                  onUnblock={onUnblock}
-                  unblockTitle={unblockTitleFor(ev.date)}
+                  onOpenDay={onOpenDay}
+                  openTitle={openTitleFor(ev.date)}
                 />
               ))}
             </div>
@@ -504,12 +535,12 @@ function TimeGridView({
 
 function ScheduleView({
   events,
-  onUnblock,
-  unblockTitleFor,
+  onOpenDay,
+  openTitleFor,
 }: {
   events: CalEvent[];
-  onUnblock?: (iso: string) => void;
-  unblockTitleFor: (iso: string) => string;
+  onOpenDay?: (iso: string) => void;
+  openTitleFor: (iso: string) => string;
 }) {
   const { t, locale } = useT();
   const todayStr = ymd(new Date());
@@ -557,13 +588,13 @@ function ScheduleView({
           </>
         );
         const key = `${ev.date}-${ev.kind}-${ev.bookingId ?? i}`;
-        if (ev.kind === "blocked" && onUnblock) {
+        if (ev.kind === "blocked" && onOpenDay) {
           return (
             <button
               key={key}
               type="button"
-              onClick={() => onUnblock(ev.date)}
-              title={unblockTitleFor(ev.date)}
+              onClick={() => onOpenDay(ev.date)}
+              title={openTitleFor(ev.date)}
               className={rowClass}
             >
               {body}
@@ -896,6 +927,152 @@ function TasksBoard({
   );
 }
 
+// ── day-block editor ─────────────────────────────────────────────────────────
+
+type BlockMode = "all_day" | "hours";
+
+/** Modal to block a single day: the whole day, or a single from–to hour range.
+ *  Opens on any editable day click in the calendar. When the day is already
+ *  blocked it pre-fills the current state and offers "remove block". `current`:
+ *  undefined = not blocked yet, null = whole day, number[] = partial. */
+function DayBlockEditor({
+  iso,
+  current,
+  busy,
+  onSave,
+  onRemove,
+  onClose,
+}: {
+  iso: string;
+  current: number[] | null | undefined;
+  busy: boolean;
+  onSave: (hours: number[] | null) => void;
+  onRemove: () => void;
+  onClose: () => void;
+}) {
+  const { t, locale } = useT();
+  const alreadyBlocked = current !== undefined;
+  const initialRange =
+    current && current.length > 0 ? blockedHoursRange(current) : { start: 9, end: 17 };
+  const [mode, setMode] = useState<BlockMode>(current && current.length > 0 ? "hours" : "all_day");
+  const [start, setStart] = useState(initialRange.start);
+  const [end, setEnd] = useState(initialRange.end);
+
+  const validRange = end > start;
+  const hourCount = validRange ? end - start : 0;
+
+  function save() {
+    if (mode === "all_day") {
+      onSave(null);
+      return;
+    }
+    if (!validRange) return;
+    onSave(Array.from({ length: end - start }, (_, i) => start + i));
+  }
+
+  return (
+    <Dialog
+      open
+      role="dialog"
+      closeOnBackdrop
+      title={t("vendor_calendar.block_editor_title", { date: formatDay(iso, locale) })}
+      onClose={onClose}
+      footer={
+        <>
+          {alreadyBlocked && (
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={busy}
+              className="btn mr-auto text-red-600 hover:bg-red-50 disabled:opacity-50 dark:text-red-300 dark:hover:bg-red-900/30"
+            >
+              {t("vendor_calendar.block_remove")}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            className="btn border border-paper-300 dark:border-umber-700"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={save}
+            disabled={busy || (mode === "hours" && !validRange)}
+            className="btn bg-steel-600 text-white hover:bg-steel-700 disabled:opacity-50"
+          >
+            {t("vendor_calendar.block_save")}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <SegmentedControl
+          ariaLabel={t("vendor_calendar.block_mode_label")}
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: "all_day", label: t("vendor_calendar.block_all_day") },
+            { value: "hours", label: t("vendor_calendar.block_certain_hours") },
+          ]}
+        />
+
+        {mode === "all_day" ? (
+          <p className="flex items-center gap-2 text-sm text-ink-600 dark:text-umber-200">
+            <Lock size={14} aria-hidden="true" className="shrink-0 text-blush-500" />
+            {t("vendor_calendar.block_all_day_hint")}
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="block">
+                <span className="field-label">{t("vendor_calendar.block_from")}</span>
+                <select
+                  className="input"
+                  value={start}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setStart(v);
+                    if (end <= v) setEnd(Math.min(v + 1, 24));
+                  }}
+                >
+                  {Array.from({ length: 24 }, (_, h) => h).map((h) => (
+                    <option key={h} value={h}>
+                      {hourLabel(h)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="field-label">{t("vendor_calendar.block_to")}</span>
+                <select
+                  className="input"
+                  value={end}
+                  onChange={(e) => setEnd(Number(e.target.value))}
+                >
+                  {Array.from({ length: 24 }, (_, h) => h + 1)
+                    .filter((h) => h > start)
+                    .map((h) => (
+                      <option key={h} value={h}>
+                        {hourLabel(h)}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            </div>
+            <p className="flex items-center gap-2 text-sm text-ink-600 dark:text-umber-200">
+              <Lock size={14} aria-hidden="true" className="shrink-0 text-blush-500" />
+              {t("vendor_calendar.block_hours_summary", { count: hourCount })}
+            </p>
+          </div>
+        )}
+      </div>
+    </Dialog>
+  );
+}
+
 // ── page ─────────────────────────────────────────────────────────────────────
 
 export default function VendorCalendarPage() {
@@ -915,7 +1092,8 @@ export default function VendorCalendarPage() {
   const [clients, setClients] = useState<VendorClientView[]>([]);
   const [canEdit, setCanEdit] = useState(true);
   const [availBusy, setAvailBusy] = useState(false);
-  const [newDate, setNewDate] = useState("");
+  // ISO date whose block editor is open (null = closed).
+  const [editorDate, setEditorDate] = useState<string | null>(null);
 
   const [tasks, setTasks] = useState<VendorTask[]>([]);
   const [createBusy, setCreateBusy] = useState(false);
@@ -980,7 +1158,27 @@ export default function VendorCalendarPage() {
       .catch(() => {});
   }, []);
 
-  const blockedSet = useMemo(() => new Set(availability?.blocked_dates ?? []), [availability]);
+  // date → blocked hours (null = whole day). The month grid + editor read this.
+  const blockedDays = useMemo(() => {
+    const map = new Map<string, number[] | null>();
+    for (const bd of availability?.blocked_days ?? []) map.set(bd.date, bd.hours);
+    return map;
+  }, [availability]);
+
+  // Human summary for the schedule/agenda row + tooltip: "Egész nap foglalt"
+  // for a whole-day block, "Foglalt 09:00-13:00 (4 ó)" for a partial one.
+  const blockedLabel = useCallback(
+    (hours: number[] | null): string => {
+      if (hours == null || hours.length === 0) return t("vendor_calendar.blocked_all_day_label");
+      const { start, end } = blockedHoursRange(hours);
+      return t("vendor_calendar.blocked_hours_label", {
+        from: hourLabel(start),
+        to: hourLabel(end),
+        count: hours.length,
+      });
+    },
+    [t],
+  );
 
   // Everything the vendor tracks, as date-keyed pills: confirmed bookings,
   // pending inquiries, blocked days, open task deadlines.
@@ -1003,8 +1201,17 @@ export default function VendorCalendarPage() {
         });
       }
     }
-    for (const d of blockedSet) {
-      out.push({ kind: "blocked", date: d, label: t("vendor_calendar.blocked_pill_label") });
+    for (const [date, hours] of blockedDays) {
+      out.push({
+        kind: "blocked",
+        date,
+        label: blockedLabel(hours),
+        hours,
+        hoursBadge:
+          hours && hours.length > 0
+            ? t("vendor_calendar.block_hours_badge", { count: hours.length })
+            : undefined,
+      });
     }
     for (const tk of tasks) {
       if (tk.due_date && tk.board_status !== "done") {
@@ -1012,7 +1219,7 @@ export default function VendorCalendarPage() {
       }
     }
     return out;
-  }, [clients, blockedSet, tasks, t]);
+  }, [clients, blockedDays, blockedLabel, tasks, t]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalEvent[]>();
@@ -1068,10 +1275,10 @@ export default function VendorCalendarPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, view, cursor, gridDays, locale, t]);
 
-  async function blockDay(iso: string) {
+  async function blockDay(iso: string, hours: number[] | null) {
     setAvailBusy(true);
     try {
-      setAvailability(await vendorAvailabilityApi.block(iso));
+      setAvailability(await vendorAvailabilityApi.block(iso, hours));
       toast.success(t("vendor_calendar.availability_blocked"));
     } catch {
       toast.error(t("vendor_calendar.availability_block_failed"));
@@ -1092,27 +1299,34 @@ export default function VendorCalendarPage() {
     }
   }
 
-  function onToggleDay(iso: string, isBlocked: boolean) {
-    if (isBlocked) void unblockDay(iso);
-    else void blockDay(iso);
+  const canEditAvailability = canEdit && !availabilityMissing;
+
+  // A day click anywhere in the calendar opens the block editor for that date.
+  function openDay(iso: string) {
+    if (!canEditAvailability || availBusy) return;
+    setEditorDate(iso);
+  }
+  // Editor "Save": persist the chosen block (null = whole day, else hours).
+  function saveBlock(hours: number[] | null) {
+    const iso = editorDate;
+    if (iso === null) return;
+    setEditorDate(null);
+    void blockDay(iso, hours);
+  }
+  // Editor "Remove block": clear the whole day.
+  function removeBlock() {
+    const iso = editorDate;
+    if (iso === null) return;
+    setEditorDate(null);
+    void unblockDay(iso);
   }
 
-  function onAddBlock(e: FormEvent) {
-    e.preventDefault();
-    if (newDate.trim().length === 0) return;
-    void blockDay(newDate.trim()).then(() => setNewDate(""));
-  }
-
-  const unblockTitleFor = useCallback(
-    (iso: string) => t("vendor_calendar.availability_remove", { date: formatDay(iso, locale) }),
-    [t, locale],
-  );
-  const blockTitleFor = useCallback(
+  const openTitleFor = useCallback(
     (iso: string) => t("vendor_calendar.block_day_title", { date: formatDay(iso, locale) }),
     [t, locale],
   );
-  // Blocked pills / rows unblock on click only when the vendor may edit.
-  const unblockHandler = canEdit && !availabilityMissing && !availBusy ? unblockDay : undefined;
+  // Blocked pills / rows open the editor on click only when the vendor may edit.
+  const openHandler = canEditAvailability && !availBusy ? openDay : undefined;
 
   /** Optimistic kanban move: flip the lane locally, then persist; roll back
    *  with a toast if the API rejects it. */
@@ -1275,30 +1489,24 @@ export default function VendorCalendarPage() {
             <MonthView
               cursor={cursor}
               eventsByDate={eventsByDate}
-              blockedSet={blockedSet}
+              blockedDays={blockedDays}
               weekdays={weekdays}
               todayStr={todayStr}
-              canEdit={canEdit && !availabilityMissing}
+              canEdit={canEditAvailability}
               busy={availBusy}
-              onToggleDay={onToggleDay}
-              onUnblock={unblockHandler}
-              unblockTitleFor={unblockTitleFor}
-              blockTitleFor={blockTitleFor}
+              onOpenDay={openDay}
+              openTitleFor={openTitleFor}
             />
           ) : view === "schedule" ? (
-            <ScheduleView
-              events={events}
-              onUnblock={unblockHandler}
-              unblockTitleFor={unblockTitleFor}
-            />
+            <ScheduleView events={events} onOpenDay={openHandler} openTitleFor={openTitleFor} />
           ) : (
             <TimeGridView
               days={gridDays}
               eventsByDate={eventsByDate}
               todayStr={todayStr}
               allDayLabel={t("vendor_calendar.all_day")}
-              onUnblock={unblockHandler}
-              unblockTitleFor={unblockTitleFor}
+              onOpenDay={openHandler}
+              openTitleFor={openTitleFor}
             />
           )}
 
@@ -1315,6 +1523,10 @@ export default function VendorCalendarPage() {
             <span className="flex items-center gap-1.5">
               <Lock size={12} className="text-blush-500" aria-hidden="true" />
               {t("vendor_calendar.legend_blocked")}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Lock size={12} className="text-blush-400/70" aria-hidden="true" />
+              {t("vendor_calendar.legend_blocked_partial")}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-moss-500" aria-hidden="true" />
@@ -1345,72 +1557,33 @@ export default function VendorCalendarPage() {
             </section>
           )}
 
+          {/* Blocking is now driven by clicking a day in the grid above (the
+              editor picks whole-day or specific hours), so this is just the
+              hint + the auto-updating next-free date. */}
           {!availabilityMissing && canEdit && availability && (
-            <section className="card mt-4 space-y-2.5 p-4">
-              <h2 className="font-semibold">{t("vendor_calendar.section_availability")}</h2>
-              <p className="text-sm text-ink-600 dark:text-umber-200">
-                {t("vendor_calendar.availability_intro")}
-              </p>
-
-              <form onSubmit={onAddBlock} className="flex flex-wrap items-end gap-2">
-                <label className="block" htmlFor="vendor-cal-block-date">
-                  <span className="field-label">{t("vendor_calendar.availability_add_label")}</span>
-                  <input
-                    id="vendor-cal-block-date"
-                    type="date"
-                    className="input"
-                    value={newDate}
-                    min={todayStr}
-                    onChange={(e) => setNewDate(e.target.value)}
-                    disabled={availBusy}
-                  />
-                </label>
-                <button
-                  type="submit"
-                  className="btn bg-steel-600 text-white hover:bg-steel-700"
-                  disabled={availBusy || newDate.trim().length === 0}
-                >
-                  {t("vendor_calendar.availability_add")}
-                </button>
-              </form>
-
-              {availability.blocked_dates.length === 0 ? (
-                <p className="text-sm text-ink-500 dark:text-umber-300">
-                  {t("vendor_calendar.availability_empty")}
-                </p>
-              ) : (
-                <ul className="flex flex-wrap gap-2">
-                  {availability.blocked_dates.map((d) => (
-                    <li
-                      key={d}
-                      className="inline-flex items-center gap-2 rounded-full bg-paper-100 py-1 pl-3 pr-1 text-sm text-ink-800 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-100 dark:ring-umber-700"
-                    >
-                      <span>{formatDay(d, locale)}</span>
-                      <button
-                        type="button"
-                        onClick={() => void unblockDay(d)}
-                        disabled={availBusy}
-                        aria-label={unblockTitleFor(d)}
-                        title={unblockTitleFor(d)}
-                        className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-300 hover:text-ink-800 disabled:opacity-50 dark:text-umber-300 dark:hover:bg-umber-700"
-                      >
-                        ×
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <p className="text-xs text-ink-500 dark:text-umber-300">
+            <div className="mt-3 space-y-1 text-sm text-ink-500 dark:text-umber-300">
+              <p>{t("vendor_calendar.availability_intro")}</p>
+              <p className="text-xs">
                 {availability.next_available
                   ? t("vendor_calendar.availability_next_free", {
                       date: formatDay(availability.next_available, locale),
                     })
                   : t("vendor_calendar.availability_none_free")}
               </p>
-            </section>
+            </div>
           )}
         </>
+      )}
+
+      {editorDate !== null && (
+        <DayBlockEditor
+          iso={editorDate}
+          current={blockedDays.has(editorDate) ? (blockedDays.get(editorDate) ?? null) : undefined}
+          busy={availBusy}
+          onSave={saveBlock}
+          onRemove={removeBlock}
+          onClose={() => setEditorDate(null)}
+        />
       )}
     </div>
   );

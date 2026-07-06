@@ -187,6 +187,87 @@ describe("vendor availability — GET/POST/DELETE /api/vendor/availability/me", 
     expect(pub.data.unavailable_dates).toContain("2030-07-04");
   });
 
+  test("partial-hour block: off the couple busy calendar but flagged as partial", async () => {
+    wipeAll();
+    const { vendorToken, listingId } = await bootstrapVendor("avail-partial");
+
+    const block = await req<VendorAvailabilityView>(
+      "POST",
+      "/api/vendor/availability/me",
+      { date: "2030-08-05", hours: [9, 10, 11, 12] },
+      { token: vendorToken },
+    );
+    expect(block.status).toBe(201);
+    // The vendor view carries the hour detail...
+    expect(block.data.blocked_days.find((d) => d.date === "2030-08-05")?.hours).toEqual([
+      9, 10, 11, 12,
+    ]);
+    // ...and the date still shows in the flat blocked_dates list (chip surfaces).
+    expect(block.data.blocked_dates).toContain("2030-08-05");
+
+    // Couples: a partial day is NOT fully booked — it lands in partial_dates,
+    // stays off unavailable_dates, and the listing stays bookable.
+    const { token: coupleToken } = await bootstrapCouple("couple-partial@weddly.test");
+    const pub = await req<SupplierAvailability>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(listingId)}/availability`,
+      undefined,
+      { token: coupleToken },
+    );
+    expect(pub.status).toBe(200);
+    expect(pub.data.bookable).toBe(true);
+    expect(pub.data.unavailable_dates).not.toContain("2030-08-05");
+    expect(pub.data.partial_dates).toContain("2030-08-05");
+  });
+
+  test("re-blocking a day upserts between whole-day and partial", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("avail-upsert");
+
+    // Whole day first → hours is null.
+    const full = await req<VendorAvailabilityView>(
+      "POST",
+      "/api/vendor/availability/me",
+      { date: "2030-09-04" },
+      { token: vendorToken },
+    );
+    expect(full.data.blocked_days.find((d) => d.date === "2030-09-04")?.hours).toBeNull();
+
+    // Re-block the same day with hours → switches to partial, no duplicate row.
+    const partial = await req<VendorAvailabilityView>(
+      "POST",
+      "/api/vendor/availability/me",
+      { date: "2030-09-04", hours: [14, 15] },
+      { token: vendorToken },
+    );
+    expect(partial.data.blocked_days.filter((d) => d.date === "2030-09-04").length).toBe(1);
+    expect(partial.data.blocked_days.find((d) => d.date === "2030-09-04")?.hours).toEqual([14, 15]);
+
+    // Empty hours → back to a whole-day block.
+    const backToFull = await req<VendorAvailabilityView>(
+      "POST",
+      "/api/vendor/availability/me",
+      { date: "2030-09-04", hours: [] },
+      { token: vendorToken },
+    );
+    expect(backToFull.data.blocked_days.find((d) => d.date === "2030-09-04")?.hours).toBeNull();
+  });
+
+  test("rejects out-of-range or non-integer hours", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("avail-badhours");
+
+    for (const hours of [[24], [-1], [9.5], ["x"], "nope"]) {
+      const r = await req(
+        "POST",
+        "/api/vendor/availability/me",
+        { date: "2030-10-01", hours },
+        { token: vendorToken },
+      );
+      expect(r.status).toBe(400);
+    }
+  });
+
   test("rejects a past date and a malformed date", async () => {
     wipeAll();
     const { vendorToken } = await bootstrapVendor("avail-bad");

@@ -17,6 +17,7 @@ import {
   blockDate,
   isIsoDate,
   listBlockedDates,
+  listBlockedDays,
   nextAvailableDate,
   unblockDate,
 } from "../domain/supplier_bookings";
@@ -27,8 +28,28 @@ const MAX_REASON_LEN = 200;
 function buildView(vendorAccountId: number): VendorAvailabilityView {
   return {
     blocked_dates: listBlockedDates(vendorAccountId),
+    blocked_days: listBlockedDays(vendorAccountId),
     next_available: nextAvailableDate(vendorAccountId),
   };
+}
+
+/** Validate an inbound `hours` field into a sorted, deduped hour list (0-23) or
+ *  null (= whole-day block). Absent/null → whole day. A present-but-invalid
+ *  value throws so the client can't silently create a garbage partial block. */
+function parseHoursInput(raw: unknown): number[] | null {
+  if (raw === undefined || raw === null) return null;
+  if (!Array.isArray(raw)) throw new HttpError(400, "hours must be an array of integers 0-23");
+  const hours = new Set<number>();
+  for (const h of raw) {
+    if (typeof h !== "number" || !Number.isInteger(h) || h < 0 || h > 23) {
+      throw new HttpError(400, "hours must be integers between 0 and 23");
+    }
+    hours.add(h);
+  }
+  // An empty array means "no hours" — treat as a whole-day block rather than a
+  // partial block that blocks nothing.
+  if (hours.size === 0) return null;
+  return Array.from(hours).sort((a, b) => a - b);
 }
 
 /** Today as ISO 'YYYY-MM-DD' in UTC — matches the window nextAvailableDate
@@ -46,23 +67,24 @@ async function handleGet(ctx: Ctx): Promise<Response> {
 
 async function handleBlock(ctx: Ctx): Promise<Response> {
   const { account } = resolveVendorListing(ctx);
-  const body = await readJson<{ date?: unknown; reason?: unknown }>(ctx.req);
+  const body = await readJson<{ date?: unknown; hours?: unknown; reason?: unknown }>(ctx.req);
   const date = typeof body.date === "string" ? body.date.trim() : "";
   if (!isIsoDate(date)) throw new HttpError(400, "date must be a valid YYYY-MM-DD");
   if (date < todayIso()) throw new HttpError(400, "cannot block a past date");
+  const hours = parseHoursInput(body.hours);
   const reason =
     typeof body.reason === "string" && body.reason.trim()
       ? body.reason.trim().slice(0, MAX_REASON_LEN)
       : null;
 
-  blockDate(account.id, date, reason);
+  blockDate(account.id, date, hours, reason);
   addAuditLog({
     actor_user_id: account.owner_user_id,
     couple_id: null,
     action: "vendor.availability_block",
     target_kind: "vendor_account",
     target_id: account.id,
-    after: { blocked_date: date, has_reason: reason !== null },
+    after: { blocked_date: date, hours: hours ?? "all_day", has_reason: reason !== null },
   });
   return json(buildView(account.id), { status: 201 });
 }

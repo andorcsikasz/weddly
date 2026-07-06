@@ -266,11 +266,27 @@ export interface VendorListingView {
   photos?: ListingPhoto[];
 }
 
+/** One day a vendor has marked unavailable. `hours === null` means the whole
+ *  day is blocked; otherwise it's the sorted list of blocked hour-starts (0-23)
+ *  — a partial block, so the day still counts as free for couples / next-free.
+ *  A `hours` array of length N means N hours are blocked (contiguous in the
+ *  editor: from min(hours) to max(hours)+1). */
+export interface VendorBlockedDay {
+  /** ISO 'YYYY-MM-DD'. */
+  date: string;
+  /** null = whole day; else sorted blocked hour-starts (0-23). */
+  hours: number[] | null;
+}
+
 /** Vendor self-serve availability (the dates a claimed vendor marks as taken).
- *  `blocked_dates` are ISO 'YYYY-MM-DD', sorted ascending. `next_available`
+ *  `blocked_dates` are ISO 'YYYY-MM-DD', sorted ascending (every blocked day,
+ *  full or partial — kept for the compact chip lists on the listing editors).
+ *  `blocked_days` carries the per-day hour detail for the calendar. `next_available`
  *  is the earliest free day from today, or null if the next 365 days are full
- *  — the same value the public busy calendar shows couples. */
+ *  — the same value the public busy calendar shows couples. Partial-day blocks
+ *  do NOT consume a day here (the vendor still has open hours). */
 export interface VendorAvailabilityView {
   blocked_dates: string[];
+  blocked_days: VendorBlockedDay[];
   next_available: string | null;
 }

@@ -1551,6 +1551,13 @@ addColumnIfMissing(
 );
 addColumnIfMissing("vendor_subscriptions", "billing_starts_at", "billing_starts_at INTEGER");
 
+// Partial-day availability: a vendor can block only certain hours of a day
+// instead of the whole day. blocked_hours holds a JSON array of blocked
+// hour-starts (integers 0-23, sorted); NULL = the whole day is blocked (the
+// original behaviour, so every pre-existing row stays a full-day block and the
+// couple-facing busy calendar / next-free logic is unchanged for them).
+addColumnIfMissing("vendor_unavailable_dates", "blocked_hours", "blocked_hours TEXT");
+
 // One-time grandfather: every vendor account that existed BEFORE the vendor
 // freemium launch is an early adopter: grant the founding year (free, no
 // card), the same promise activation makes. Idempotent: only accounts with no
