@@ -4727,6 +4727,7 @@ const en: LocaleMessages = {
     owner_workspaces_pill: "×{n}",
     owner_workspaces_title: "{n} event workspaces under one account",
     owner_band_generic: "Unknown owner",
+    also_events: "Also:",
     section_show: "Expand",
     section_hide: "Collapse",
     demo_workspaces_section: "Demo workspaces",

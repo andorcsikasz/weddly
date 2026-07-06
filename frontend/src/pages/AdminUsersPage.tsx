@@ -323,16 +323,13 @@ export default function AdminUsersPage() {
       (a, b) => (order.get(a.primary.id) ?? 0) - (order.get(b.primary.id) ?? 0),
     );
   }
-  // Narrow each group's workspaces to the active search, keeping the group's
-  // authoritative primary/paired class. Groups with no match drop out.
+  // Keep an owner group whenever ANY of its workspaces matches the search —
+  // and keep the group whole (primary + all extras) so the collapsed one-row
+  // card always shows the primary as context, with the matched extra listed
+  // beneath it. Groups with no match at all drop out.
   function filterGroupsForDisplay(groups: OwnerGroup[]): OwnerGroup[] {
     if (searchQuery === "") return groups;
-    const out: OwnerGroup[] = [];
-    for (const g of groups) {
-      const workspaces = g.workspaces.filter(coupleMatches);
-      if (workspaces.length > 0) out.push({ ...g, workspaces });
-    }
-    return out;
+    return groups.filter((g) => g.workspaces.some(coupleMatches));
   }
   // Demo activity in the last 24h — drives the collapsed summary headline so
   // a glance tells the admin whether the bucket is hot.
@@ -1096,16 +1093,21 @@ export default function AdminUsersPage() {
    *  divided row keeping its full content + per-workspace actions. So the admin
    *  reads "these N events all belong to hlilla97@gmail.com" at a glance instead
    *  of loose cards. `g.workspaces` is pre-sorted oldest-first. */
-  function renderOwnerBand(g: OwnerGroup) {
-    const owner = g.ownerId != null ? userById.get(g.ownerId) : undefined;
-    const ownerLabel = owner ? owner.full_name || owner.email : t("admin.owner_band_generic");
+  function renderPrimaryWithExtras(g: OwnerGroup) {
+    // One row = the owner's PRIMARY (its ID, both members, billing controls,
+    // its actions). The additional events are just RECORDED under it: no extra
+    // row, no extra ID — a muted chip each (event name + date), with an "×N"
+    // pill so the admin sees at a glance that this account runs several events.
+    const primary = g.primary;
+    const extras = g.workspaces.filter((c) => c.id !== primary.id);
     const n = g.workspaces.length;
     return (
-      <li key={`owner-band-${g.key}`} className="admin-card !p-0 overflow-hidden">
-        <div className="flex items-center justify-between gap-2 border-b border-paper-200/70 bg-paper-100/50 px-4 py-1.5 dark:border-umber-700 dark:bg-umber-800/40">
-          <span className="min-w-0 truncate eyebrow text-neutral-500 dark:text-umber-300">
-            {ownerLabel}
-          </span>
+      <li
+        key={`owner-${primary.id}`}
+        className={`admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${isNew(primary.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
+      >
+        {renderCoupleCardBody(primary)}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-paper-200/70 pt-2 dark:border-umber-700">
           <Pill
             tone="ink"
             icon={<Layers size={11} />}
@@ -1113,26 +1115,26 @@ export default function AdminUsersPage() {
           >
             {t("admin.owner_workspaces_pill", { n })}
           </Pill>
-        </div>
-        <ul className="divide-y divide-paper-200/70 dark:divide-umber-700">
-          {g.workspaces.map((c) => (
-            <li
-              key={c.id}
-              className={`px-4 py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${isNew(c.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
-            >
-              {renderCoupleCardBody(c)}
-            </li>
+          <span className="eyebrow text-neutral-500 dark:text-umber-300">
+            {t("admin.also_events")}
+          </span>
+          {extras.map((c) => (
+            <Pill key={c.id} tone="muted">
+              {workspaceLabel(c)}
+              {c.wedding_date ? ` · ${c.wedding_date}` : ""}
+            </Pill>
           ))}
-        </ul>
+        </div>
       </li>
     );
   }
 
-  /** Render one owner group: a band when they own several workspaces (with the
-   *  "×N" pill), a plain card when it's just the one. Shared by the Páros and
-   *  Egyedüli sections and the new-signups digest so grouping is consistent. */
+  /** Render one owner group: the primary as a single row with any additional
+   *  events recorded as chips beneath it (one account = one ID = one row), or a
+   *  plain card when the owner has just the one workspace. Shared by the Páros
+   *  and Egyedüli sections and the new-signups digest. */
   function renderOwnerGroup(g: OwnerGroup) {
-    if (g.workspaces.length > 1) return renderOwnerBand(g);
+    if (g.workspaces.length > 1) return renderPrimaryWithExtras(g);
     const only = g.workspaces[0];
     return only ? renderCoupleCard(only) : null;
   }

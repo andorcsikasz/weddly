@@ -5322,6 +5322,8 @@ export interface LocaleMessages {
     owner_workspaces_pill: string;
     owner_workspaces_title: string;
     owner_band_generic: string;
+    /** "Also:" label preceding the chips of an owner's additional events. */
+    also_events: string;
     /** Collapse/expand toggle labels shared by the admin users-page lists. */
     section_show: string;
     section_hide: string;

@@ -4777,6 +4777,7 @@ const hu: LocaleMessages = {
     owner_workspaces_pill: "×{n}",
     owner_workspaces_title: "{n} esemény-munkaterület ugyanazon fiók alatt",
     owner_band_generic: "Ismeretlen tulajdonos",
+    also_events: "További események:",
     section_show: "Kibontás",
     section_hide: "Összecsukás",
     demo_workspaces_section: "Demo munkaterületek",
