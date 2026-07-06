@@ -53,14 +53,13 @@ function KpiTile({
   const isRed = accent === "red" && Number(value) > 0;
   const isAmber = accent === "amber" && Number(value) > 0;
   const isGreen = accent === "green";
-  // The icon carries the status colour as a bare outline; the soft chip
-  // background only appears while the cursor is over the tile (group-hover),
-  // so at rest the row stays quiet.
+  // The icon carries the status colour as a bare outline. No hover state — the
+  // tile stays completely still under the cursor.
   const chip = isRed
-    ? "text-red-500 group-hover:bg-red-50 dark:text-red-400 dark:group-hover:bg-red-900/25"
+    ? "text-red-500 dark:text-red-400"
     : isAmber
-      ? "text-amber-500 group-hover:bg-amber-50 dark:text-amber-400 dark:group-hover:bg-amber-900/25"
-      : "text-moss-600 group-hover:bg-moss-50 dark:text-moss-300 dark:group-hover:bg-moss-900/40";
+      ? "text-amber-500 dark:text-amber-400"
+      : "text-moss-600 dark:text-moss-300";
   const inner = (
     <>
       <div className="flex items-start justify-between gap-2">
@@ -68,7 +67,7 @@ function KpiTile({
           {label}
         </div>
         <span
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${chip}`}
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${chip}`}
           title={label}
         >
           <Icon size={14} aria-hidden="true" />
@@ -104,7 +103,7 @@ function KpiTile({
       <Link
         to={to}
         title={label}
-        className="card group block p-4 transition hover:-translate-y-0.5 hover:border-moss-400 hover:shadow-pop focus-visible:ring-2 focus-visible:ring-moss-600 dark:hover:border-moss-500 dark:focus-visible:ring-moss-400"
+        className="card block p-4 focus-visible:ring-2 focus-visible:ring-moss-600 dark:focus-visible:ring-moss-400"
       >
         {inner}
       </Link>
@@ -991,7 +990,7 @@ export default function PlannerHomePage() {
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-amber-600 transition-colors group-hover:bg-amber-50 dark:text-amber-400 dark:group-hover:bg-amber-900/25"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-umber-800 transition-colors group-hover:bg-umber-100 dark:text-paper-200 dark:group-hover:bg-umber-800/25"
                       title={t("planner_home.pipeline_pending")}
                     >
                       <MailQuestion size={16} aria-hidden="true" />
