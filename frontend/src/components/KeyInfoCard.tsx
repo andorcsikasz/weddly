@@ -463,6 +463,8 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                     {venue.phone && (
                       <a
                         href={`tel:${venue.phone.replace(/\s+/g, "")}`}
+                        title={venue.phone}
+                        aria-label={`${t("dashboard.keyinfo_call")} ${venue.phone}`}
                         className="btn-primary btn-sm inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[38px]"
                       >
                         <Phone size={15} aria-hidden="true" />
@@ -578,6 +580,8 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                           {c.phone ? (
                             <a
                               href={`tel:${c.phone.replace(/\s+/g, "")}`}
+                              title={c.phone}
+                              aria-label={`${t("dashboard.keyinfo_call")} ${c.phone}`}
                               className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-paper-100 px-3 text-xs font-medium text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 sm:min-h-[36px] dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
                             >
                               <Phone size={13} aria-hidden="true" />
@@ -765,6 +769,8 @@ function CallPill({ phone }: { phone: string }) {
   return (
     <a
       href={`tel:${phone.replace(/\s+/g, "")}`}
+      title={phone}
+      aria-label={`${t("dashboard.keyinfo_call")} ${phone}`}
       className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-paper-100 px-3 text-xs font-medium text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 sm:min-h-[36px] dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
     >
       <Phone size={13} aria-hidden="true" />
