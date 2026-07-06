@@ -20,6 +20,7 @@ import type {
 } from "@shared/listings";
 import type { VendorBilling } from "@shared/vendor_billing";
 import { Shell } from "../components/Shell";
+import { TranslateButton } from "../components/TranslateButton";
 import { TextField } from "../components/ui/TextField";
 import { useToast } from "../components/ui/ToastProvider";
 import { useAuth } from "../lib/auth";
@@ -382,7 +383,19 @@ export default function VendorHomePage() {
             <fieldset className="card space-y-3" disabled={saving}>
               <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>
               <label className="block" htmlFor="vendor-blurb-hu">
-                <span className="field-label">{t("vendor_home.label_blurb_hu")}</span>
+                <span className="mb-1 flex items-center justify-between gap-2">
+                  <span className="field-label !mb-0">{t("vendor_home.label_blurb_hu")}</span>
+                  <TranslateButton
+                    source="EN"
+                    target="HU"
+                    sourceText={form.blurb_en}
+                    hasExisting={form.blurb_hu.trim().length > 0}
+                    disabled={saving}
+                    onTranslated={(text) =>
+                      setForm((prev) => (prev ? { ...prev, blurb_hu: text } : prev))
+                    }
+                  />
+                </span>
                 <textarea
                   id="vendor-blurb-hu"
                   className="input"
@@ -393,7 +406,19 @@ export default function VendorHomePage() {
                 />
               </label>
               <label className="block" htmlFor="vendor-blurb-en">
-                <span className="field-label">{t("vendor_home.label_blurb_en")}</span>
+                <span className="mb-1 flex items-center justify-between gap-2">
+                  <span className="field-label !mb-0">{t("vendor_home.label_blurb_en")}</span>
+                  <TranslateButton
+                    source="HU"
+                    target="EN"
+                    sourceText={form.blurb_hu}
+                    hasExisting={form.blurb_en.trim().length > 0}
+                    disabled={saving}
+                    onTranslated={(text) =>
+                      setForm((prev) => (prev ? { ...prev, blurb_en: text } : prev))
+                    }
+                  />
+                </span>
                 <textarea
                   id="vendor-blurb-en"
                   className="input"
