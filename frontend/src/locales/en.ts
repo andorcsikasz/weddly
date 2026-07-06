@@ -435,6 +435,16 @@ const en: LocaleMessages = {
     error_expired: "This activation link expired. Write to us and we'll send a new one.",
     error_consumed: "This account was already activated. Sign in with your email.",
   },
+  translate: {
+    from_hu: "Translate from Hungarian",
+    from_en: "Translate from English",
+    working: "Translating…",
+    needs_source: "Write some text in the other language first.",
+    error: "Translation failed just now. Please try again in a moment.",
+    overwrite_title: "Overwrite existing text?",
+    overwrite_body: "This field already has text. Translating will replace it.",
+    overwrite_confirm: "Overwrite",
+  },
   vendor_home: {
     page_title: "Your listing",
     page_body: "Edit the listing couples see in the Weddly directory.",

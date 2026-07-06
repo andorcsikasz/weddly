@@ -595,6 +595,17 @@ export interface LocaleMessages {
     error_expired: string;
     error_consumed: string;
   };
+  /** DeepL-backed auto-translate for the bilingual "Leírás" fields. */
+  translate: {
+    from_hu: string;
+    from_en: string;
+    working: string;
+    needs_source: string;
+    error: string;
+    overwrite_title: string;
+    overwrite_body: string;
+    overwrite_confirm: string;
+  };
   /** Vendor self-serve listing editor (P2.D). The single screen a vendor has
    *  after the claim flow — edits the public listing fields couples see. */
   vendor_home: {

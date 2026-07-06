@@ -445,6 +445,16 @@ const hu: LocaleMessages = {
     error_expired: "Ez az aktiváló link lejárt. Írj nekünk, és küldünk újat.",
     error_consumed: "Ezt a fiókot már élesítették. Jelentkezz be az email címeddel.",
   },
+  translate: {
+    from_hu: "Fordítás magyarból",
+    from_en: "Fordítás angolból",
+    working: "Fordítás…",
+    needs_source: "Előbb írj be szöveget a másik nyelven.",
+    error: "A fordítás most nem sikerült. Próbáld újra kicsit később.",
+    overwrite_title: "Meglévő szöveg felülírása?",
+    overwrite_body: "Ez a mező már tartalmaz szöveget. A fordítás felülírja a jelenlegit.",
+    overwrite_confirm: "Felülírás",
+  },
   vendor_home: {
     page_title: "A hirdetésed",
     page_body: "Szerkeszd, ahogy a párok látnak a Weddly katalógusban.",

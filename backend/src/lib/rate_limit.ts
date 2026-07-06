@@ -67,6 +67,11 @@ export const ADDRESS_SUGGEST_BUCKET: BucketConfig = { capacity: 30, refillRate: 
  *  one signup's worth of typing, useless as an open geocoder proxy. */
 export const ADDRESS_SUGGEST_ANON_BUCKET: BucketConfig = { capacity: 20, refillRate: 1 / 3 };
 
+/** Auto-translate (DeepL proxy) on the vendor listing editor. A click action:
+ *  the burst covers translating both blurb fields a few times, and the slow
+ *  refill keeps the paid upstream from being farmed as an open translator. */
+export const TRANSLATE_BUCKET: BucketConfig = { capacity: 12, refillRate: 1 / 6 };
+
 // ─── Per-account failed-login throttle ──────────────────────────────────────
 // The per-IP AUTH_BUCKET can't see a distributed credential-stuffing run (many
 // IPs, one target account). This counts FAILED attempts per claimed email and

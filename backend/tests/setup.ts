@@ -122,6 +122,13 @@ process.env.GEMI_API_KEY = "test-gemi-key";
 // (src/lib/address_suggest.ts) so the suite never touches the real geocoder.
 process.env.ADDRESS_SUGGEST_FAKE = "1";
 
+// Auto-translate: DEEPL_API_KEY is pinned NON-empty so translateConfigured()
+// reports the feature available; DEEPL_FAKE=1 makes the provider answer from a
+// deterministic stub instead of ever hitting DeepL (mirrors the company-lookup
+// fake gate above).
+process.env.DEEPL_API_KEY = "test-deepl-key";
+process.env.DEEPL_FAKE = "1";
+
 // Wipe the test DB before the server boots — every run starts clean.
 for (const ext of ["", "-shm", "-wal"]) {
   const f = `./data/test-weddly.db${ext}`;

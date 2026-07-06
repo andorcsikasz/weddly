@@ -90,6 +90,7 @@ import type {
 } from "@shared/admin_financial_planner";
 import type { BillingStatusResponse } from "@shared/billing";
 import type { CompanyLookupAvailability, CompanyLookupResult } from "@shared/company_lookup";
+import type { TranslateAvailability, TranslateRequest, TranslateResult } from "@shared/translate";
 import type { AddressSuggestion } from "@shared/geo";
 import type { PlannerBillingStatus } from "@shared/planner_billing";
 import type { CoupleDesignInput } from "@shared/design";
@@ -1961,6 +1962,14 @@ export const vendorOnboardingApi = {
 
 /** Vendor self-serve listing editor — P2.D. The vendor lands on /vendor after
  *  the claim flow finishes; this is the only screen they have today. */
+/** DeepL-backed auto-translate for the bilingual vendor "Leírás" fields.
+ *  `availability` is a feature-flag probe (hides the button when no DeepL key
+ *  is configured server-side); `translate` does the HU <-> EN round-trip. */
+export const translateApi = {
+  availability: () => apiFetch<TranslateAvailability>("GET", "/api/translate/availability"),
+  translate: (body: TranslateRequest) => apiFetch<TranslateResult>("POST", "/api/translate", body),
+};
+
 export const vendorListingApi = {
   me: () => apiFetch<VendorListingView>("GET", "/api/vendor/listing/me"),
   patch: (body: VendorListingEditInput) =>
