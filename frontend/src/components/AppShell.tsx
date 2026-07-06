@@ -698,7 +698,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className={`hidden lg:flex ${
                 sidebarCollapsed
                   ? "justify-center pb-1"
-                  : "lg:absolute lg:right-2 lg:top-1 lg:z-10 lg:h-6 lg:items-center lg:justify-end"
+                  : "lg:absolute lg:right-3 lg:top-1 lg:z-10 lg:h-6 lg:items-center lg:justify-end"
               }`}
             >
               <button

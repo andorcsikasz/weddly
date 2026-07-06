@@ -898,7 +898,7 @@ function TasksView({
                   {titleCaseName(tk.display_name)}
                 </span>
                 <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                  className={`w-20 shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-medium tabular-nums ${
                     overdue
                       ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300"
                       : "bg-paper-200 text-umber-600 dark:bg-umber-700 dark:text-umber-200"

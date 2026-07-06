@@ -67,7 +67,6 @@ function RailTaskRow({
   task,
   clientName,
   overdueLabel,
-  tone,
   onMarkDone,
   doneLabel,
   tabbable,
@@ -76,15 +75,11 @@ function RailTaskRow({
   clientName: string;
   /** e.g. "3 napja esedékes": only on overdue rows. */
   overdueLabel?: string;
-  tone: "neutral" | "alert";
   onMarkDone: (taskId: number) => void;
   doneLabel: string;
   tabbable: boolean;
 }) {
-  const hover =
-    tone === "alert"
-      ? "hover:bg-blush-100/60 dark:hover:bg-blush-900/25"
-      : "hover:bg-moss-50 dark:hover:bg-moss-900/20";
+  const hover = "hover:bg-moss-50 dark:hover:bg-moss-900/20";
   return (
     <li className="flex items-start gap-2 min-w-0">
       <DoneToggle onDone={() => onMarkDone(task.task_id)} label={doneLabel} />
@@ -104,7 +99,7 @@ function RailTaskRow({
           {overdueLabel && (
             <>
               {clientName ? " · " : ""}
-              <span className="font-medium text-blush-600 dark:text-blush-400">{overdueLabel}</span>
+              <span className="font-medium text-ink-700 dark:text-paper-300">{overdueLabel}</span>
             </>
           )}
         </span>
@@ -192,8 +187,8 @@ export function PlannerDashRightRail({
       )}
 
       {/* One merged card: today's agenda on top, collapsible urgent alerts
-          below. The frame is the shared card chrome; urgency lives in the
-          blush panel inside, never on the border. */}
+          below. The frame is the shared card chrome; urgency reads through
+          the heading and count, not a tinted panel or the border. */}
       <div className={`card p-4 ${collapsed ? "lg:hidden" : ""}`}>
         {/* HEADER: the date block opens the calendar; the collapse control
             sits on the card itself (desktop only). */}
@@ -233,7 +228,6 @@ export function PlannerDashRightRail({
                 key={tk.task_id}
                 task={tk}
                 clientName={clientDisplayName(clients, tk.couple_id)}
-                tone="neutral"
                 onMarkDone={onMarkDone}
                 doneLabel={doneLabel}
                 tabbable={true}
@@ -250,7 +244,7 @@ export function PlannerDashRightRail({
           </Link>
         )}
 
-        {/* URGENT ALERTS: collapsible blush panel; rows open the tasks list */}
+        {/* URGENT ALERTS: collapsible neutral block; rows open the tasks list */}
         <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-800">
           {overdueTasks.length === 0 ? (
             <>
@@ -263,31 +257,31 @@ export function PlannerDashRightRail({
               </div>
             </>
           ) : (
-            /* Blush-tinted panel (the palette's warm terracotta signal: never
-               amber) so the urgent block reads as its own zone inside the
-               card; the list collapses with an animated height
+            /* Urgent block: no tinted background, neutral dark text. The
+               alert reads through the heading + count, not a colored zone;
+               the list collapses with an animated height
                (grid-rows 0fr↔1fr trick, pure CSS). */
-            <div className="-mx-2 rounded-xl bg-blush-50/70 p-2 dark:bg-blush-950/25">
+            <div>
               <button
                 type="button"
                 onClick={() => setUrgentOpen((o) => !o)}
                 aria-expanded={urgentOpen}
-                className="flex w-full items-center gap-1.5 rounded-lg p-1 transition-colors hover:bg-blush-100/60 dark:hover:bg-blush-900/25"
+                className="-mx-1 flex w-[calc(100%+0.5rem)] items-center gap-1.5 rounded-lg p-1 transition-colors hover:bg-moss-50 dark:hover:bg-moss-900/20"
               >
                 <AlertTriangle
                   size={13}
-                  className="shrink-0 text-blush-500 dark:text-blush-400"
+                  className="shrink-0 text-umber-500 dark:text-umber-400"
                   aria-hidden="true"
                 />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-blush-700 dark:text-blush-300">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-500 dark:text-umber-400">
                   {t("planner_home.rail_urgent_title")}
                 </span>
-                <span className="text-[10px] font-semibold tabular-nums text-blush-600 dark:text-blush-400">
+                <span className="text-[10px] font-semibold tabular-nums text-umber-500 dark:text-umber-400">
                   {overdueTasks.length}
                 </span>
                 <ChevronDown
                   size={14}
-                  className={`ml-auto shrink-0 text-blush-400 transition-transform duration-300 ${
+                  className={`ml-auto shrink-0 text-umber-400 transition-transform duration-300 ${
                     urgentOpen ? "rotate-180" : ""
                   }`}
                   aria-hidden="true"
@@ -307,7 +301,6 @@ export function PlannerDashRightRail({
                         task={tk}
                         clientName={clientDisplayName(clients, tk.couple_id)}
                         overdueLabel={overdueLabelFor(tk.due_date)}
-                        tone="alert"
                         onMarkDone={onMarkDone}
                         doneLabel={doneLabel}
                         tabbable={urgentOpen}
@@ -318,7 +311,7 @@ export function PlannerDashRightRail({
                     <Link
                       to="/app/planner/calendar?mode=tasks"
                       tabIndex={urgentOpen ? undefined : -1}
-                      className="mt-1.5 block px-1.5 pb-1 text-xs text-blush-600 underline-offset-2 hover:underline dark:text-blush-400"
+                      className="mt-1.5 block px-1.5 pb-1 text-xs text-umber-500 underline-offset-2 hover:underline dark:text-umber-400"
                     >
                       {t("planner_home.rail_more_overdue").replace("{{n}}", String(extraOverdue))}
                     </Link>
