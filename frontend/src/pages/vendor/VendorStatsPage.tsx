@@ -12,7 +12,7 @@
 
 import { BarChart3, CalendarClock, Inbox, Info, Lock, RefreshCw, TrendingUp } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorFeatureFlags } from "@shared/vendor_plan";
 import { Skeleton, SkeletonText } from "../../components/ui";
@@ -336,10 +336,11 @@ function StatusDonut({
   total,
   centerLabel,
 }: {
-  segments: { status: string; count: number; color: string }[];
+  segments: { status: string; count: number; color: string; label?: string }[];
   total: number;
   centerLabel: string;
 }) {
+  const navigate = useNavigate();
   const size = 132;
   const stroke = 18;
   const radius = (size - stroke) / 2;
@@ -365,6 +366,9 @@ function StatusDonut({
         {total > 0 &&
           segments.map((seg) => {
             const length = (seg.count / total) * circumference;
+            // Each arc mirrors its legend row: hover shows a native tooltip and a
+            // subtle brighten, click deep-links to the pre-filtered client list.
+            const tip = seg.label ? `${seg.label}: ${seg.count}` : `${seg.status}: ${seg.count}`;
             const arc = (
               <circle
                 key={seg.status}
@@ -375,18 +379,23 @@ function StatusDonut({
                 strokeWidth={stroke}
                 strokeDasharray={`${length} ${circumference - length}`}
                 strokeDashoffset={-drawn}
-                className={`stroke-chart-${seg.color}`}
-              />
+                onClick={() =>
+                  navigate(`/vendor/clients?status=${encodeURIComponent(seg.status)}`)
+                }
+                className={`cursor-pointer stroke-chart-${seg.color} transition-[filter] duration-150 hover:brightness-110`}
+              >
+                <title>{tip}</title>
+              </circle>
             );
             drawn += length;
             return arc;
           })}
       </svg>
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center leading-none">
         <span className="font-grotesk text-2xl font-semibold leading-none text-ink-900 tabular-nums dark:text-paper-50">
           {total}
         </span>
-        <span className="mt-1 max-w-[5.5rem] truncate text-[10px] font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
+        <span className="mt-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-normal text-ink-500 dark:text-paper-400">
           {centerLabel}
         </span>
       </div>
