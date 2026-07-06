@@ -44,11 +44,11 @@ export default function PlannerSettingsData() {
         <p className="mt-1.5 text-sm text-umber-600 dark:text-umber-300">
           {t("planner_settings.data_export_desc")}
         </p>
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
             disabled
-            className="btn-outline cursor-not-allowed text-sm opacity-60"
+            className="btn-outline inline-flex min-h-[44px] cursor-not-allowed items-center whitespace-nowrap text-sm opacity-60"
           >
             {t("planner_profile.data_export_button")}
           </button>
@@ -73,7 +73,7 @@ export default function PlannerSettingsData() {
           type="button"
           disabled={deleting}
           onClick={() => void handleDelete()}
-          className="mt-4 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50 dark:border-red-700 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+          className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50 dark:border-red-700 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
         >
           {deleting ? t("common.loading") : t("planner_profile.data_delete_button")}
         </button>

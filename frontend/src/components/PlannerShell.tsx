@@ -116,7 +116,7 @@ function NotificationBell({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={toggleOpen}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
+        className="relative inline-flex h-11 w-11 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
         aria-label={t("planner_home.topbar_notif_aria")}
       >
         <Bell size={18} />
@@ -195,13 +195,11 @@ function getInitials(fullName: string, email: string): string {
 function PlannerProfileMenu({
   user,
   avatarUrl,
-  stats,
   onLogout,
   onOpenFeedback,
 }: {
   user: User;
   avatarUrl: string | null;
-  stats: PlannerStats | null;
   onLogout: () => void;
   onOpenFeedback: () => void;
 }) {
@@ -243,7 +241,7 @@ function PlannerProfileMenu({
         aria-expanded={open}
         aria-label={t("planner_shell.menu_label")}
         onClick={() => setOpen((v) => !v)}
-        className="group inline-flex h-9 items-center gap-2 rounded-full pl-1 pr-2 text-ink-700 transition-colors hover:bg-moss-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-moss-500 focus-visible:ring-offset-2 dark:text-paper-100 dark:hover:bg-umber-800 dark:focus-visible:ring-moss-300"
+        className="group inline-flex h-11 items-center gap-2 rounded-full pl-1 pr-2 text-ink-700 transition-colors hover:bg-moss-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-moss-500 focus-visible:ring-offset-2 dark:text-paper-100 dark:hover:bg-umber-800 dark:focus-visible:ring-moss-300"
       >
         {avatarUrl ? (
           <img
@@ -274,22 +272,6 @@ function PlannerProfileMenu({
             <p className="truncate text-xs text-ink-500 dark:text-umber-300">{user.email}</p>
           </div>
           <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
-          {stats && (
-            <Link
-              to="/app/planner/stats"
-              role="menuitem"
-              title={t("planner_home.topbar_clients_aria")}
-              className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 dark:text-paper-100 dark:hover:bg-umber-700"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Users size={16} aria-hidden="true" />
-                <span>{t("planner_shell.menu_plan")}</span>
-              </span>
-              <span className="text-xs font-medium capitalize text-moss-800 dark:text-moss-100">
-                {`${stats.plan} · ${stats.active_clients}/${stats.max_clients}`}
-              </span>
-            </Link>
-          )}
           <Link
             to="/app/planner/settings/account"
             role="menuitem"
@@ -445,11 +427,11 @@ export function PlannerShell({ children }: { children: ReactNode }) {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             <button
               type="button"
               onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
               title={`${t("nav.switch_language")} (${locale} → ${locale === "hu" ? "en" : "hu"})`}
               aria-label={t("nav.switch_language")}
             >
@@ -459,7 +441,7 @@ export function PlannerShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
               aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
               title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
             >
@@ -480,7 +462,6 @@ export function PlannerShell({ children }: { children: ReactNode }) {
               <PlannerProfileMenu
                 user={user}
                 avatarUrl={avatarUrl}
-                stats={stats}
                 onLogout={() => void onLogout()}
                 onOpenFeedback={() => setFeedbackOpen(true)}
               />

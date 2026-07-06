@@ -61,19 +61,19 @@ export default function PlannerSettingsLayout() {
             initials={initials}
             onUpdated={setProfile}
           />
-          <div>
-            <h1 className="font-grotesk text-2xl font-semibold leading-tight tracking-tight text-umber-900 dark:text-paper-50">
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate font-grotesk text-2xl font-semibold leading-tight tracking-tight text-umber-900 dark:text-paper-50">
               {profile?.full_name ?? " "}
             </h1>
-            <div className="mt-1 flex items-center gap-2">
-              <span className="text-sm text-umber-500 dark:text-umber-300">
+            <div className="mt-1 flex min-w-0 items-center gap-2">
+              <span className="truncate text-sm text-umber-500 dark:text-umber-300">
                 {profile?.email ?? ""}
               </span>
-              <span className="rounded-md bg-paper-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-umber-600 dark:bg-umber-800 dark:text-umber-300">
+              <span className="shrink-0 rounded-md bg-paper-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-umber-600 dark:bg-umber-800 dark:text-umber-300">
                 {t("planner_profile.badge_planner")}
               </span>
             </div>
-            <p className="mt-1.5 text-xs text-umber-400 dark:text-umber-500">
+            <p className="mt-1.5 text-xs text-umber-500 dark:text-umber-300">
               {t("planner_profile.avatar_hint")}
             </p>
           </div>
