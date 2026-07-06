@@ -522,7 +522,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                   </p>
                   {contacts.length > 0 && (
                     <Link
-                      to="/app/timeline"
+                      to="/app/vendors"
                       className="inline-flex items-center gap-1 text-xs font-medium text-ink-600 transition-colors hover:text-blush-700 dark:text-umber-200 dark:hover:text-blush-300"
                     >
                       <span>{t("dashboard.keyinfo_all_suppliers")}</span>
