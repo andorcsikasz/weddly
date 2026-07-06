@@ -17,7 +17,13 @@ import type { Currency } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import { db, now } from "../db";
 import { type Ctx, HttpError } from "../lib/http";
-import { type CoupleRow, getCoupleById, getCoupleForUser, toCoupleBilling } from "./couples";
+import {
+  type CoupleRow,
+  getCoupleById,
+  getCoupleForUser,
+  isBillingAnchor,
+  toCoupleBilling,
+} from "./couples";
 
 // ── Stripe client ─────────────────────────────────────────────────────────
 let _stripe: Stripe | null = null;
@@ -177,6 +183,14 @@ export function claimStripeEvent(
 export function activatePartnerFreeWindow(coupleId: number, nowMs: number = now()): boolean {
   const couple = getCoupleById(coupleId);
   if (!couple || couple.is_demo) return false;
+  // Founding is a per-OWNER property, earned once on the owner's FIRST workspace
+  // (the billing anchor). NEVER mint a founding badge on a secondary event — it
+  // would consume a FOUNDING_CAP slot per event and contradict the inheritance
+  // verdict a secondary already rides via billingAnchorRow. A single-workspace
+  // couple is its own anchor, so the common path is unaffected. Structural
+  // guard: even a caller that hands us a secondary (e.g. a partner accepting an
+  // invite that was created from a secondary workspace) can't grant here.
+  if (!isBillingAnchor(couple)) return false;
   // Don't downgrade a paying subscriber or re-stamp an existing founder.
   if (["founding", "active", "past_due"].includes(couple.subscription_status)) return false;
   if (couple.partner_b_id == null) return false; // both partners required

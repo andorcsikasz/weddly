@@ -115,6 +115,7 @@ import { registerSupplierRoutes } from "./routes/suppliers";
 import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
 import { seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
+import { backfillPartnerPropagation } from "./domain/couples";
 import { registerUserCoupleRoutes } from "./routes/user_couple";
 import { registerUserProfileRoutes } from "./routes/user_profile";
 import { registerReceivedGiftsRoutes } from "./routes/received_gifts";
@@ -130,6 +131,14 @@ seedBlogPostsIfEmpty();
 {
   const counts = backfillListings();
   log.info("listings.backfill", counts);
+}
+// Mirror each couple's invited partner across all of that owner's event-
+// workspaces (membership only, billing-neutral, idempotent). Fixes existing
+// couples whose partner only ever joined their first event so every workspace
+// under one account carries the pair. New joins/creates keep it in sync inline.
+{
+  const owners = backfillPartnerPropagation();
+  log.info("partners.backfill", { owners });
 }
 
 const router = new Router();

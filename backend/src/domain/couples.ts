@@ -34,7 +34,7 @@ import type {
   WeddingSeason,
   WeddingStyleTag,
 } from "@shared/types";
-import { billingEnforcementOn, db } from "../db";
+import { billingEnforcementOn, db, now } from "../db";
 import { generateOrganiserCode } from "./invite_codes";
 import { isAdminEmail } from "./users";
 
@@ -113,8 +113,9 @@ export function ownerUserIdOf(row: Pick<CoupleRow, "id" | "partner_a_id">): numb
  *  falls back to `row` itself when it already IS the oldest (the common single-
  *  workspace path, one indexed query, no behaviour change) or when the owner
  *  can't be resolved. The oldest workspace is always its own anchor, so there
- *  are no inheritance chains. */
-function billingSourceRow(row: CoupleRow): CoupleRow {
+ *  are no inheritance chains. Exported so the founding grant can target — and
+ *  restrict itself to — the anchor (see activatePartnerFreeWindow). */
+export function billingAnchorRow(row: CoupleRow): CoupleRow {
   const anchor = db
     .prepare(
       `SELECT anchor.couple_id AS id
@@ -133,18 +134,27 @@ function billingSourceRow(row: CoupleRow): CoupleRow {
   return getCoupleById(anchor.id) ?? row;
 }
 
+/** True when `row` IS its owner's first (oldest) workspace — the billing
+ *  anchor. Founding is a per-OWNER property earned once on the anchor, so this
+ *  gates activatePartnerFreeWindow: a secondary event can never mint its own
+ *  founding badge (which would consume a FOUNDING_CAP slot per event and break
+ *  the inheritance invariant). A single-workspace couple is its own anchor. */
+export function isBillingAnchor(row: CoupleRow): boolean {
+  return billingAnchorRow(row).id === row.id;
+}
+
 /** Build the billing snapshot for a couple row, computing live entitlement.
  *  Demo couples are always entitled — billing never touches the throwaway
  *  demo workspaces. Exported so route guards can reuse the same verdict.
  *
  *  Additional event-workspaces inherit the owner's FIRST workspace's verdict
- *  (see billingSourceRow): the status + trial/founding timestamps below come
+ *  (see billingAnchorRow): the status + trial/founding timestamps below come
  *  from that governing row so a secondary reads the same "free trial / founding
  *  / lapsed" state as the primary. `is_founding_member` stays the couple's OWN
  *  value, though — a secondary rides the primary's entitlement without itself
  *  consuming a founding slot, so the FOUNDING_CAP accounting can't be inflated. */
 export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): CoupleBilling {
-  const src = billingSourceRow(row);
+  const src = billingAnchorRow(row);
   const status: SubscriptionStatus = VALID_SUBSCRIPTION_STATUSES.has(
     src.subscription_status as SubscriptionStatus,
   )
@@ -633,6 +643,86 @@ export function isCoupleMember(coupleId: number, userId: number): boolean {
     .prepare("SELECT 1 AS ok FROM couple_members WHERE couple_id = ? AND user_id = ? LIMIT 1")
     .get(coupleId, userId) as { ok: number } | undefined;
   return !!row;
+}
+
+/** Mirror a couple's invited partner onto ALL of the owner's other event-
+ *  workspaces. Once a co-user has joined ANY workspace an owner has, they are
+ *  the same two people planning every event, so partner B should be a member of
+ *  each of the owner's non-deleting workspaces — that is what "if one workspace
+ *  has a co-user, the pair is auto-assigned to the others too" means.
+ *
+ *  Contract (deliberately narrow so it is safe to call from every write path):
+ *   - MEMBERSHIP-ONLY. It writes `couple_members` rows and fills a NULL
+ *     `partner_b_id`; it NEVER touches billing. Founding stays a per-OWNER grant
+ *     earned once on the anchor (see activatePartnerFreeWindow) — mirroring the
+ *     partner here must not mint a founding badge on a secondary event or it
+ *     would consume a FOUNDING_CAP slot per event.
+ *   - Never moves `users.couple_id` (the active-workspace pointer stays put).
+ *   - Idempotent: `addCoupleMember` is INSERT OR IGNORE and partner_b_id is only
+ *     filled when NULL, so re-runs are no-ops.
+ *   - Leaves a workspace that already records a DIFFERENT second person alone —
+ *     never clobbers a genuinely distinct relationship. The canonical partner is
+ *     the earliest-joined partner across the owner's workspaces. */
+export function propagatePartnerToOwnerWorkspaces(ownerUserId: number, ts: number = now()): void {
+  const owned = db
+    .prepare(
+      `SELECT cm.couple_id AS id, c.partner_b_id AS partner_b_id
+         FROM couple_members cm
+         JOIN couples c ON c.id = cm.couple_id
+        WHERE cm.user_id = ? AND cm.role = 'owner' AND c.status != 'deleting'
+        ORDER BY cm.created_at ASC, cm.couple_id ASC`,
+    )
+    .all(ownerUserId) as { id: number; partner_b_id: number | null }[];
+  if (owned.length < 2) return; // one workspace → nothing to mirror across
+
+  const placeholders = owned.map(() => "?").join(",");
+  const partner = db
+    .prepare(
+      `SELECT cm.user_id AS id
+         FROM couple_members cm
+         JOIN users u ON u.id = cm.user_id
+        WHERE cm.couple_id IN (${placeholders})
+          AND cm.role = 'partner'
+          AND cm.user_id != ?
+          AND u.status = 'active'
+        ORDER BY cm.created_at ASC, cm.couple_id ASC
+        LIMIT 1`,
+    )
+    .get(...owned.map((o) => o.id), ownerUserId) as { id: number } | undefined;
+  if (!partner) return; // no partner has joined any of the workspaces yet
+
+  for (const w of owned) {
+    // A workspace already holding a different second person keeps it — that is a
+    // separate relationship, not this couple. Skip it entirely (no membership,
+    // no partner_b write).
+    if (w.partner_b_id != null && w.partner_b_id !== partner.id) continue;
+    addCoupleMember(w.id, partner.id, "partner");
+    if (w.partner_b_id == null) {
+      db.prepare(
+        "UPDATE couples SET partner_b_id = ?, updated_at = ? WHERE id = ? AND partner_b_id IS NULL",
+      ).run(partner.id, ts, w.id);
+    }
+  }
+}
+
+/** One-time boot reconciliation: apply propagatePartnerToOwnerWorkspaces to
+ *  every owner who has more than one workspace, so existing couples whose
+ *  partner only ever joined their first event get mirrored onto the rest.
+ *  Idempotent and billing-neutral (see the helper's contract), so it is safe on
+ *  every reboot. Returns the number of owners reconciled for the boot log. */
+export function backfillPartnerPropagation(ts: number = now()): number {
+  const owners = db
+    .prepare(
+      `SELECT cm.user_id AS id
+         FROM couple_members cm
+         JOIN couples c ON c.id = cm.couple_id AND c.status != 'deleting'
+        WHERE cm.role = 'owner'
+        GROUP BY cm.user_id
+       HAVING COUNT(*) > 1`,
+    )
+    .all() as { id: number }[];
+  for (const o of owners) propagatePartnerToOwnerWorkspaces(o.id, ts);
+  return owners.length;
 }
 
 export interface CoupleMembershipView {

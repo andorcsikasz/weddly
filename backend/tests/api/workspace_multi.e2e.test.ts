@@ -3,6 +3,11 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
 import { db } from "../../src/db";
+import { foundingSlotsUsed } from "../../src/domain/billing";
+import {
+  backfillPartnerPropagation,
+  propagatePartnerToOwnerWorkspaces,
+} from "../../src/domain/couples";
 
 // Multi-workspace + couple-member edge-case sweep. Complements the
 // `couples_lifecycle` and root `e2e.test.ts` multi-workspace blocks with
@@ -838,13 +843,14 @@ describe("workspace_multi: integrity + edge invariants", () => {
     expect(aList.data.couples).toHaveLength(2);
     expect(aList.data.couples.every((c) => c.role === "owner")).toBe(true);
 
-    // B: partner on Alpha. Switch a few times — still partner.
+    // B: partner on Alpha, and auto-propagated onto Bravo when A spawned it
+    // (same couple, every event) — but a partner on BOTH, never an owner.
     const bList1 = await req<MembershipsResp>("GET", "/api/users/me/couples", undefined, {
       token: bToken,
     });
-    expect(bList1.data.couples).toHaveLength(1);
-    expect(bList1.data.couples[0]!.role).toBe("partner");
-    expect(bList1.data.couples[0]!.couple_id).toBe(alphaId);
+    expect(bList1.data.couples).toHaveLength(2);
+    expect(bList1.data.couples.every((c) => c.role === "partner")).toBe(true);
+    expect(bList1.data.couples.map((c) => c.couple_id).sort()).toEqual([alphaId, bravoId].sort());
 
     // Switch A back to Alpha to confirm role on Alpha didn't drift.
     await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token: aToken });
@@ -880,5 +886,182 @@ describe("workspace_multi: integrity + edge invariants", () => {
       token,
     });
     expect(cur.data.couple.id).toBe(userRow.couple_id);
+  });
+});
+
+// ─── Partner auto-propagation ─────────────────────────────────────────────
+// "If one of a user's workspaces already has a co-user (an invited partner)
+// then the partner is auto-assigned to the user's OTHER workspaces too." Both
+// partners of a couple end up members of every one of that couple's event-
+// workspaces. Founding stays a per-OWNER grant, earned once on the anchor.
+
+const userIdByEmail = (email: string): number =>
+  (db.prepare("SELECT id FROM users WHERE email = ?").get(email) as { id: number }).id;
+
+const foundingFlag = (coupleId: number): number =>
+  (
+    db.prepare("SELECT is_founding_member FROM couples WHERE id = ?").get(coupleId) as {
+      is_founding_member: number;
+    }
+  ).is_founding_member;
+
+const partnerBId = (coupleId: number): number | null =>
+  (
+    db.prepare("SELECT partner_b_id FROM couples WHERE id = ?").get(coupleId) as {
+      partner_b_id: number | null;
+    }
+  ).partner_b_id;
+
+const isPartnerMember = (coupleId: number, userId: number): boolean =>
+  db
+    .prepare(
+      "SELECT 1 FROM couple_members WHERE couple_id = ? AND user_id = ? AND role = 'partner' LIMIT 1",
+    )
+    .get(coupleId, userId) != null;
+
+/** Create an invite from the caller's ACTIVE workspace and return its token. */
+async function createInvite(token: string): Promise<string> {
+  const r = await req<{ invite: { token: string } }>("POST", "/api/couples/invites", {}, { token });
+  expect(r.status).toBe(201);
+  return r.data.invite.token;
+}
+
+describe("workspace_multi: partner auto-propagation", () => {
+  test("partner joining the PRIMARY is mirrored onto the owner's other events", async () => {
+    wipeAll();
+    const { token, coupleId: alphaId } = await bootstrapCouple("prop-fwd-a@weddly.test");
+    const bravoId = await spawnEvent(token, "Bravo"); // solo secondary
+    // spawn flipped active to Bravo — flip back so the invite targets Alpha.
+    await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token });
+    const inviteToken = await createInvite(token);
+    await registerAndAcceptInvite("prop-fwd-b@weddly.test", inviteToken);
+    const partnerId = userIdByEmail("prop-fwd-b@weddly.test");
+
+    // Partner is now a member of BOTH workspaces, and Bravo records them as B.
+    expect(isPartnerMember(alphaId, partnerId)).toBe(true);
+    expect(isPartnerMember(bravoId, partnerId)).toBe(true);
+    expect(partnerBId(bravoId)).toBe(partnerId);
+    // Active pointer of the partner stays where they joined (Alpha), not moved.
+    const pRow = db.prepare("SELECT couple_id FROM users WHERE id = ?").get(partnerId) as {
+      couple_id: number;
+    };
+    expect(pRow.couple_id).toBe(alphaId);
+  });
+
+  test("a workspace created AFTER the partner joined is born with the partner", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("prop-late-a@weddly.test");
+    const inviteToken = await createInvite(token); // active = Alpha
+    await registerAndAcceptInvite("prop-late-b@weddly.test", inviteToken);
+    const partnerId = userIdByEmail("prop-late-b@weddly.test");
+
+    const charlieId = await spawnEvent(token, "Charlie");
+    expect(isPartnerMember(charlieId, partnerId)).toBe(true);
+    expect(partnerBId(charlieId)).toBe(partnerId);
+  });
+
+  test("founding is granted ONCE, on the anchor — a second event never eats a slot", async () => {
+    wipeAll();
+    expect(foundingSlotsUsed()).toBe(0);
+    const { token, coupleId: alphaId } = await bootstrapCouple("prop-found-a@weddly.test");
+    const bravoId = await spawnEvent(token, "Bravo");
+    await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token });
+    const inviteToken = await createInvite(token);
+    await registerAndAcceptInvite("prop-found-b@weddly.test", inviteToken);
+
+    expect(foundingSlotsUsed()).toBe(1); // exactly one slot for the whole couple
+    expect(foundingFlag(alphaId)).toBe(1); // anchor holds the badge
+    expect(foundingFlag(bravoId)).toBe(0); // secondary does NOT
+    // Secondary still edits (inherits the anchor's founding entitlement).
+    await req("POST", "/api/users/me/active-couple", { couple_id: bravoId }, { token });
+    const cur = await req<{
+      couple: { billing: { entitled: boolean; is_founding_member: boolean } };
+    }>("GET", "/api/couples/current", undefined, { token });
+    expect(cur.data.couple.billing.entitled).toBe(true);
+    expect(cur.data.couple.billing.is_founding_member).toBe(false);
+  });
+
+  test("inviting from a SECONDARY still lands founding on the ANCHOR (latent-bug guard)", async () => {
+    wipeAll();
+    const { token, coupleId: alphaId } = await bootstrapCouple("prop-sec-a@weddly.test");
+    const bravoId = await spawnEvent(token, "Bravo"); // active stays Bravo
+    // Invite is created from Bravo (the active secondary).
+    const inviteToken = await createInvite(token);
+    await registerAndAcceptInvite("prop-sec-b@weddly.test", inviteToken);
+
+    // The founding badge must land on Alpha (anchor), never on the secondary.
+    expect(foundingFlag(alphaId)).toBe(1);
+    expect(foundingFlag(bravoId)).toBe(0);
+    expect(foundingSlotsUsed()).toBe(1);
+    // Both partners are members of both workspaces regardless of where they joined.
+    const partnerId = userIdByEmail("prop-sec-b@weddly.test");
+    expect(isPartnerMember(alphaId, partnerId)).toBe(true);
+    expect(isPartnerMember(bravoId, partnerId)).toBe(true);
+  });
+
+  test("creating a third event after founding: inherits, consumes no new slot", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("prop-third-a@weddly.test");
+    const inviteToken = await createInvite(token);
+    await registerAndAcceptInvite("prop-third-b@weddly.test", inviteToken);
+    const partnerId = userIdByEmail("prop-third-b@weddly.test");
+    const slotsAfterJoin = foundingSlotsUsed();
+    expect(slotsAfterJoin).toBe(1);
+
+    const charlieId = await spawnEvent(token, "Charlie");
+    expect(foundingSlotsUsed()).toBe(slotsAfterJoin); // no extra slot
+    expect(partnerBId(charlieId)).toBe(partnerId);
+    expect(foundingFlag(charlieId)).toBe(0);
+  });
+
+  test("propagation is idempotent and never clobbers a different partner_b", async () => {
+    wipeAll();
+    const { token, coupleId: alphaId } = await bootstrapCouple("prop-idem-a@weddly.test");
+    const bravoId = await spawnEvent(token, "Bravo");
+    await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token });
+    const inviteToken = await createInvite(token);
+    await registerAndAcceptInvite("prop-idem-b@weddly.test", inviteToken);
+    const partnerId = userIdByEmail("prop-idem-b@weddly.test");
+    const ownerId = userIdByEmail("prop-idem-a@weddly.test");
+
+    // Re-running is a no-op (no duplicate members, partner_b unchanged).
+    propagatePartnerToOwnerWorkspaces(ownerId);
+    const memberCount = (
+      db
+        .prepare("SELECT COUNT(*) AS n FROM couple_members WHERE couple_id = ? AND user_id = ?")
+        .get(bravoId, partnerId) as { n: number }
+    ).n;
+    expect(memberCount).toBe(1);
+    expect(partnerBId(bravoId)).toBe(partnerId);
+
+    // A workspace already recording a DIFFERENT second person is left untouched.
+    db.prepare("UPDATE couples SET partner_b_id = 999999 WHERE id = ?").run(bravoId);
+    propagatePartnerToOwnerWorkspaces(ownerId);
+    expect(partnerBId(bravoId)).toBe(999999);
+  });
+
+  test("boot backfill mirrors the partner onto a legacy solo secondary", async () => {
+    wipeAll();
+    const { token, coupleId: alphaId } = await bootstrapCouple("prop-bf-a@weddly.test");
+    const bravoId = await spawnEvent(token, "Bravo");
+    await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token });
+    const inviteToken = await createInvite(token);
+    await registerAndAcceptInvite("prop-bf-b@weddly.test", inviteToken);
+    const partnerId = userIdByEmail("prop-bf-b@weddly.test");
+
+    // Simulate legacy data: the partner only ever landed on Alpha.
+    db.prepare("DELETE FROM couple_members WHERE couple_id = ? AND user_id = ?").run(
+      bravoId,
+      partnerId,
+    );
+    db.prepare("UPDATE couples SET partner_b_id = NULL WHERE id = ?").run(bravoId);
+    expect(isPartnerMember(bravoId, partnerId)).toBe(false);
+
+    const owners = backfillPartnerPropagation();
+    expect(owners).toBeGreaterThanOrEqual(1);
+    expect(isPartnerMember(bravoId, partnerId)).toBe(true);
+    expect(partnerBId(bravoId)).toBe(partnerId);
+    // Backfill is billing-neutral: still exactly one founding slot.
+    expect(foundingSlotsUsed()).toBe(1);
   });
 });

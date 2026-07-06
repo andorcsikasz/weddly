@@ -67,14 +67,17 @@ import { addAuditLog } from "../lib/audit";
 import {
   addCoupleMember,
   assignOrganiserCode,
+  billingAnchorRow,
   type CoupleRow,
   getCoupleById,
   getCoupleForUser,
   isCoupleMember,
   listCouplesForUser,
   MEDIA_SOURCES,
+  ownerUserIdOf,
   parseDesignJson,
   parseMediaLinksJson,
+  propagatePartnerToOwnerWorkspaces,
   removeCoupleMember,
   seedCoupleFromCouple,
   toCouple,
@@ -996,9 +999,16 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   addCoupleMember(couple.id, userId, "partner");
   db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
 
-  // Both partners are now in: inviting your partner unlocks the free
-  // platform, so grant the "free until your wedding day" window.
-  activatePartnerFreeWindow(couple.id, ts);
+  // Same two people, every event: mirror the partner onto the owner's other
+  // workspaces (membership only — no billing, see the helper). Then grant the
+  // "free until your wedding day" founding window on the owner's ANCHOR (first
+  // workspace), never on the workspace the invite happened to target — that
+  // keeps founding a per-couple grant even when the invite came from a
+  // secondary event. billingAnchorRow(couple) == couple for a single-workspace
+  // couple, so the common path is unchanged.
+  const inviteOwner = ownerUserIdOf(couple);
+  if (inviteOwner != null) propagatePartnerToOwnerWorkspaces(inviteOwner, ts);
+  activatePartnerFreeWindow(billingAnchorRow(couple).id, ts);
   // Referral reward: if this couple was referred by another, the referrer
   // gets 1 month free now that both partners have joined.
   maybeGrantCoupleReferral(couple.id, ts);
@@ -1234,8 +1244,12 @@ async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
     addCoupleMember(target.id, userId, "partner");
     db.prepare("UPDATE couple_invites SET consumed_at = ? WHERE id = ?").run(ts, row.id);
 
-    // Both partners are now in: grant the "free until your wedding day" window.
-    activatePartnerFreeWindow(target.id, ts);
+    // Same two people, every event: mirror the partner onto the owner's other
+    // workspaces, then grant founding on the owner's ANCHOR (not necessarily
+    // `target`). See the accept-invite path above for the reasoning.
+    const mergeOwner = ownerUserIdOf(target);
+    if (mergeOwner != null) propagatePartnerToOwnerWorkspaces(mergeOwner, ts);
+    activatePartnerFreeWindow(billingAnchorRow(target).id, ts);
     maybeGrantCoupleReferral(target.id, ts);
 
     addAuditLog({
@@ -3364,6 +3378,12 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
   // several events (civil ceremony, dinner, the wedding) could only edit the
   // first. Every workspace a user owns is independently editable on its trial.
   initBillingAtOnboarding(coupleId, ts);
+
+  // If this owner already invited their partner on an earlier event, the new
+  // workspace is the same couple's — mirror the partner onto it right away
+  // (membership only; the new event still inherits its billing from the owner's
+  // first workspace via billingAnchorRow).
+  propagatePartnerToOwnerWorkspaces(userId, ts);
 
   addAuditLog({
     actor_user_id: userId,
