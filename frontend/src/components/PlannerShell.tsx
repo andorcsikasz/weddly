@@ -203,7 +203,7 @@ function PlannerProfileMenu({
   onLogout: () => void;
   onOpenFeedback: () => void;
 }) {
-  const { t } = useT();
+  const { t, locale, setLocale } = useT();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -301,6 +301,26 @@ function PlannerProfileMenu({
           >
             <MessageCircle size={16} aria-hidden="true" />
             <span>{t("landing.nav_feedback")}</span>
+          </button>
+          {/* Language toggle lives inline in the header on tablet+, so it's a
+           *  mobile-only entry here (`sm:hidden`) - mirrors the couple-side
+           *  ProfileMenu. */}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              setLocale(locale === "hu" ? "en" : "hu");
+            }}
+            className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 sm:hidden dark:text-paper-100 dark:hover:bg-umber-700"
+          >
+            <span className="inline-flex items-center gap-2">
+              <Languages size={16} aria-hidden="true" />
+              <span>{t("nav.switch_language")}</span>
+            </span>
+            <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
+              {locale} → {locale === "hu" ? "en" : "hu"}
+            </span>
           </button>
           <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
           <button
@@ -431,7 +451,7 @@ export function PlannerShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
+              className="hidden h-11 w-11 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800"
               title={`${t("nav.switch_language")} (${locale} → ${locale === "hu" ? "en" : "hu"})`}
               aria-label={t("nav.switch_language")}
             >
