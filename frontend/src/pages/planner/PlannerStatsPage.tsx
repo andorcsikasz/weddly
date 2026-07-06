@@ -19,11 +19,12 @@ import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 import { useDocumentMeta } from "../../lib/seo";
 
-// Dark-olive frame shared by every card on this page; the hovered/focused
-// ("selected") card thickens via a same-colour ring so nothing shifts.
-const STAT_FRAME = "border-moss-600 dark:border-moss-500";
+// Cards rest with a quiet neutral border. The dark-olive frame (border + a
+// same-colour ring + soft tint) appears ONLY on the hovered/focused card, so
+// nothing but the one under the cursor carries the strong green edge.
+const STAT_FRAME = "border-paper-300 dark:border-umber-700";
 const STAT_FRAME_HOVER =
-  "transition hover:bg-moss-50 hover:ring-1 hover:ring-moss-600 focus-visible:ring-1 focus-visible:ring-moss-600 dark:hover:bg-moss-900/20 dark:hover:ring-moss-500 dark:focus-visible:ring-moss-500";
+  "transition hover:border-moss-600 hover:bg-moss-50 hover:ring-1 hover:ring-moss-600 focus-visible:border-moss-600 focus-visible:ring-1 focus-visible:ring-moss-600 dark:hover:border-moss-500 dark:hover:bg-moss-900/20 dark:hover:ring-moss-500 dark:focus-visible:border-moss-500 dark:focus-visible:ring-moss-500";
 
 function StatTile({
   icon,
