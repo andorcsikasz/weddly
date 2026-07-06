@@ -394,30 +394,20 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           <span className="inline-block h-5 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
           {t("dashboard.keyinfo_title")}
         </h2>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={openDialog}
-            aria-label={t("dashboard.keyinfo_edit")}
-            title={t("dashboard.keyinfo_edit")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
-          >
-            <Pencil size={16} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-label={t("dashboard.keyinfo_title")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
-          >
-            <ChevronDown
-              size={18}
-              aria-hidden="true"
-              className={`transition-transform ${open ? "" : "-rotate-90"}`}
-            />
-          </button>
-        </div>
+        {/* Edit lives on the venue row (with the map/call actions), not up here. */}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={t("dashboard.keyinfo_title")}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+        >
+          <ChevronDown
+            size={18}
+            aria-hidden="true"
+            className={`transition-transform ${open ? "" : "-rotate-90"}`}
+          />
+        </button>
       </header>
 
       {open && (
@@ -474,21 +464,25 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                         <span>{t("dashboard.keyinfo_call")}</span>
                       </a>
                     )}
+                    <EditButton label={t("dashboard.keyinfo_edit")} onClick={openDialog} />
                   </div>
                 </div>
               ) : (
-                <Link
-                  to="/app/guest-page"
-                  className="flex items-center gap-3 rounded-2xl border border-dashed border-paper-300 px-4 py-3 text-sm text-ink-600 transition-colors hover:border-blush-300 hover:bg-paper-100/50 dark:border-umber-700 dark:text-umber-200 dark:hover:bg-umber-900/40"
-                >
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-umber-200">
-                    <MapPin size={18} aria-hidden="true" />
-                  </span>
-                  <span className="flex-1 font-medium text-ink-800 dark:text-paper-100">
-                    {t("dashboard.keyinfo_no_venue")}
-                  </span>
-                  <ChevronRight size={16} aria-hidden="true" />
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/app/guest-page"
+                    className="flex flex-1 items-center gap-3 rounded-2xl border border-dashed border-paper-300 px-4 py-3 text-sm text-ink-600 transition-colors hover:border-blush-300 hover:bg-paper-100/50 dark:border-umber-700 dark:text-umber-200 dark:hover:bg-umber-900/40"
+                  >
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-umber-200">
+                      <MapPin size={18} aria-hidden="true" />
+                    </span>
+                    <span className="flex-1 font-medium text-ink-800 dark:text-paper-100">
+                      {t("dashboard.keyinfo_no_venue")}
+                    </span>
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </Link>
+                  <EditButton label={t("dashboard.keyinfo_edit")} onClick={openDialog} />
+                </div>
               )}
 
               {/* ── Day-of contacts (coordinator + emergency) ─────────── */}
@@ -720,6 +714,22 @@ function PersonRow({
       </div>
       {phone && <CallPill phone={phone} />}
     </div>
+  );
+}
+
+/** Round icon button that opens the Kulcsinfó edit dialog. Sits on the venue
+ *  row (with the map/call actions) so editing is inline with what it edits. */
+function EditButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-9 sm:w-9 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+    >
+      <Pencil size={16} aria-hidden="true" />
+    </button>
   );
 }
 
