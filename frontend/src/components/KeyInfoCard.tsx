@@ -122,6 +122,9 @@ type Contact = {
   name: string;
   category: SupplierCategory;
   phone: string | null;
+  // Directory entries (curated + community) have a `/app/suppliers/:id` detail
+  // page; DIY entries don't surface there, so their name stays non-clickable.
+  linkable: boolean;
 };
 
 /** The couple-editable venue + day-of contact fields, as a plain string form
@@ -368,6 +371,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           name: dir.name,
           category: dir.category,
           phone: dir.contact_phone,
+          linkable: true,
         });
         continue;
       }
@@ -379,6 +383,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           name: diy.name,
           category: diy.category,
           phone: null,
+          linkable: false,
         });
       }
     }
@@ -538,17 +543,38 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                       const Icon = CATEGORY_ICON[c.category] ?? Building2;
                       return (
                         <li key={c.key} className="flex items-center gap-3 py-2">
-                          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
-                            <Icon size={15} aria-hidden="true" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
-                              {c.name}
-                            </p>
-                            <p className="truncate text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                              {t(`suppliers.cat.${c.category}`)}
-                            </p>
-                          </div>
+                          {c.linkable ? (
+                            <Link
+                              to={`/app/suppliers/${encodeURIComponent(c.id)}`}
+                              className="group flex min-w-0 flex-1 items-center gap-3 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
+                            >
+                              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
+                                <Icon size={15} aria-hidden="true" />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
+                                  {c.name}
+                                </p>
+                                <p className="truncate text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                                  {t(`suppliers.cat.${c.category}`)}
+                                </p>
+                              </div>
+                            </Link>
+                          ) : (
+                            <>
+                              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
+                                <Icon size={15} aria-hidden="true" />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+                                  {c.name}
+                                </p>
+                                <p className="truncate text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                                  {t(`suppliers.cat.${c.category}`)}
+                                </p>
+                              </div>
+                            </>
+                          )}
                           {c.phone ? (
                             <a
                               href={`tel:${c.phone.replace(/\s+/g, "")}`}
