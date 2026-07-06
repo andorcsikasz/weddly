@@ -5394,6 +5394,8 @@ export interface LocaleMessages {
     badge_admin: string;
     badge_suspended: string;
     badge_unverified: string;
+    badge_vendor: string;
+    badge_planner: string;
     /** Moderation flag — admin manually flags an account with a reason, the
      *  user is emailed and gets 7 days to reply, and the hourly sweep
      *  auto-purges past the deadline unless the admin clears the flag. */

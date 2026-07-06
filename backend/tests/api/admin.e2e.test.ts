@@ -237,6 +237,8 @@ interface AdminUserRow {
   email: string;
   is_admin: boolean;
   verified_email: boolean;
+  couple_id: number | null;
+  account_type: "couple" | "vendor" | "planner";
   last_seen_at: number | null;
   active_flag: { id: number; reason: string } | null;
   activity: {
@@ -289,6 +291,49 @@ describe("admin users — list, engagement, badges", () => {
       token: adminToken,
     });
     expect(list.data.users[0]?.email).toBe("second@weddly.test");
+  });
+
+  test("account_type distinguishes vendor/planner from a not-yet-onboarded couple", async () => {
+    const adminToken = await bootstrapAdmin();
+    // Three plain accounts, then flip two of them at the DB layer to mirror how
+    // vendor signup (role='vendor') and planner provisioning (user_type='planner')
+    // leave the row — both legitimately have no `couples` workspace.
+    const couple = await bootstrapCouple("stuck-couple@weddly.test");
+    const vendor = await bootstrapCouple("shop@weddly.test");
+    const planner = await bootstrapCouple("wedplanner@weddly.test");
+    // Null out couple_id so all three land in the "no workspace" bucket, then
+    // stamp the class-defining columns.
+    db.prepare("UPDATE users SET couple_id = NULL WHERE email = ?").run("stuck-couple@weddly.test");
+    db.prepare("UPDATE users SET couple_id = NULL, role = 'vendor' WHERE email = ?").run(
+      "shop@weddly.test",
+    );
+    db.prepare("UPDATE users SET couple_id = NULL, user_type = 'planner' WHERE email = ?").run(
+      "wedplanner@weddly.test",
+    );
+    void couple;
+    void vendor;
+    void planner;
+
+    const list = await req<UsersListResp>("GET", "/api/admin/users", undefined, {
+      token: adminToken,
+    });
+    const byEmail = (e: string) => list.data.users.find((u) => u.email === e);
+
+    const stuck = byEmail("stuck-couple@weddly.test");
+    expect(stuck?.couple_id).toBeNull();
+    expect(stuck?.account_type).toBe("couple");
+
+    const shop = byEmail("shop@weddly.test");
+    expect(shop?.couple_id).toBeNull();
+    expect(shop?.account_type).toBe("vendor");
+
+    const wed = byEmail("wedplanner@weddly.test");
+    expect(wed?.couple_id).toBeNull();
+    expect(wed?.account_type).toBe("planner");
+
+    // Sanity: a default account (no vendor role / planner type) is a couple.
+    const adminRow = byEmail("admin@test.test");
+    expect(adminRow?.account_type).toBe("couple");
   });
 
   test("supplier_tip_count rolls into the activity record", async () => {

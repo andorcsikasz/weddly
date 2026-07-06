@@ -118,6 +118,12 @@ function toAdminUser(
     is_admin: isAdminEmail(row.email),
     verified_email: Boolean(row.verified_email),
     couple_id: row.couple_id,
+    // Vendors (role='vendor') and planners (user_type='planner') never own a
+    // `couples` workspace, so they land in the "no workspace" bucket looking
+    // identical to a couple that abandoned onboarding. Surface the class so the
+    // admin can tell "expected-empty" apart from "stuck couple".
+    account_type:
+      row.role === "vendor" ? "vendor" : row.user_type === "planner" ? "planner" : "couple",
     created_at: row.created_at,
     last_seen_at: row.last_seen_at,
     active_flag: flag ? toUserFlag(flag) : null,

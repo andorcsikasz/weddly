@@ -4785,6 +4785,8 @@ const en: LocaleMessages = {
     badge_admin: "Admin",
     badge_suspended: "Suspended",
     badge_unverified: "Unverified",
+    badge_vendor: "Vendor",
+    badge_planner: "Planner",
     flag_badge_days_left: "Flagged · {n}d",
     activity_supplier_tips: "{n} tip",
     activity_supplier_tips_tooltip: "{n} supplier tips · last {when}",

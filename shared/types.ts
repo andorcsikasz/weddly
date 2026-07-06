@@ -240,6 +240,12 @@ export interface AdminUserView {
   is_admin: boolean;
   verified_email: boolean;
   couple_id: number | null;
+  /** Derived account class for the admin list, so a vendor/planner (which
+   *  legitimately never gets a `couples` workspace) is visually distinct from
+   *  a couple user who simply hasn't onboarded yet. 'vendor' when role='vendor',
+   *  else 'planner' when user_type='planner', else 'couple'. A couple with a
+   *  null couple_id is a genuine registered-but-not-onboarded signup. */
+  account_type: "couple" | "vendor" | "planner";
   created_at: UnixMs;
   /** Last successful bearer-token verify, throttled to once per 5 minutes
    *  in `verifySessionToken`. Null if the user hasn't loaded the app since

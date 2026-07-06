@@ -1,6 +1,7 @@
 import type { AdminCoupleView, AdminEmailLogEntry, AdminUserView } from "@shared/types";
 import {
   Bird,
+  Briefcase,
   Check,
   ChevronDown,
   ChevronRight,
@@ -17,6 +18,7 @@ import {
   Mail,
   RefreshCw,
   Search,
+  Store,
   Trash2,
   User,
   X,
@@ -729,6 +731,16 @@ export default function AdminUsersPage() {
           {u.is_admin && (
             <Pill tone="violet" srLabel={t("admin.badge_admin")}>
               {t("admin.badge_admin")}
+            </Pill>
+          )}
+          {u.account_type === "vendor" && (
+            <Pill tone="ink" icon={<Store size={11} aria-hidden />}>
+              {t("admin.badge_vendor")}
+            </Pill>
+          )}
+          {u.account_type === "planner" && (
+            <Pill tone="ink" icon={<Briefcase size={11} aria-hidden />}>
+              {t("admin.badge_planner")}
             </Pill>
           )}
           {u.status === "suspended" && (

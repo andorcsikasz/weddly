@@ -4836,6 +4836,8 @@ const hu: LocaleMessages = {
     badge_admin: "Admin",
     badge_suspended: "Felfüggesztve",
     badge_unverified: "Nem hitelesített",
+    badge_vendor: "Szolgáltató",
+    badge_planner: "Tervező",
     flag_badge_days_left: "Megjelölve · {n} nap",
     activity_supplier_tips: "{n} tipp",
     activity_supplier_tips_tooltip: "{n} szolgáltatói tipp · utolsó {when}",
