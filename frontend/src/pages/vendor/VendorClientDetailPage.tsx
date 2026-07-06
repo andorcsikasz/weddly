@@ -322,10 +322,12 @@ export default function VendorClientDetailPage() {
             detail.couple_contact_email ? (
               <a
                 href={`mailto:${detail.couple_contact_email}`}
-                className="inline-flex items-center gap-1.5 text-ink-800 underline-offset-2 hover:underline dark:text-paper-100"
+                className="flex items-start gap-1.5 text-ink-800 underline-offset-2 hover:underline dark:text-paper-100"
               >
-                <Mail size={15} aria-hidden="true" />
-                {detail.couple_contact_email}
+                <Mail size={15} aria-hidden="true" className="mt-0.5 shrink-0" />
+                {/* break-all so a long address wraps inside the card instead of
+                    running off the right edge on mobile. */}
+                <span className="min-w-0 break-all">{detail.couple_contact_email}</span>
               </a>
             ) : (
               <span className="text-ink-500 dark:text-paper-400">
@@ -420,7 +422,8 @@ export default function VendorClientDetailPage() {
             </label>
             <textarea
               id="vc-notes"
-              className="input min-h-[6rem]"
+              rows={4}
+              className="input min-h-[6rem] resize-y leading-relaxed"
               placeholder={t("vendor.clients.notes_placeholder")}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -520,8 +523,11 @@ export default function VendorClientDetailPage() {
             </ul>
           )}
 
+          {/* Stacks on mobile: at ~300px three money figures in a 3-col grid
+              overflow their tracks and overlap. One column per row keeps each
+              label + value readable; 3-up returns at sm. */}
           {payments.length > 0 && (
-            <div className="grid grid-cols-3 gap-3 rounded-xl bg-paper-100 px-4 py-3 dark:bg-umber-900">
+            <div className="grid grid-cols-1 gap-2 rounded-xl bg-paper-100 px-4 py-3 sm:grid-cols-3 sm:gap-3 dark:bg-umber-900">
               <SummaryItem label={t("vendor.payments.total")} value={fmt(paymentTotals.total)} />
               <SummaryItem
                 label={t("vendor.payments.total_paid")}
@@ -580,9 +586,11 @@ export default function VendorClientDetailPage() {
 
 function SummaryItem({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="space-y-0.5">
+    // min-w-0 lets the item shrink inside its grid track instead of overflowing
+    // (and lets long values like an email wrap rather than clip at the edge).
+    <div className="min-w-0 space-y-0.5">
       <p className="field-label mb-0">{label}</p>
-      <div className="text-sm text-ink-900 dark:text-paper-50">{value}</div>
+      <div className="break-words text-sm text-ink-900 dark:text-paper-50">{value}</div>
     </div>
   );
 }

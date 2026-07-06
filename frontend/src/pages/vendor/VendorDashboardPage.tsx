@@ -269,7 +269,9 @@ export default function VendorDashboardPage() {
       </section>
 
       {/* Secondary KPIs — each opens the surface behind the number. */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+      {/* Three KPIs: two per row on small screens with the odd third spanning
+          the full width (no lonely half-empty row), three-up from lg. */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 [&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
         <KpiCard
           icon={<Inbox size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.inquiries_total")}

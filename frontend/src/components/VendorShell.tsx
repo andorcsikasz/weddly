@@ -463,7 +463,10 @@ export function VendorShell({ children }: { children: ReactNode }) {
             collapsed ? "lg:w-16" : "lg:w-56"
           }`}
         >
-          <nav className="flex gap-0.5 overflow-x-auto lg:sticky lg:top-20 lg:flex-col lg:overflow-visible">
+          {/* Mobile: wrap the tabs across rows so none get pushed off-screen
+              (a horizontal scroller silently clipped the later tabs with no
+              affordance). Desktop: the vertical, sticky rail. */}
+          <nav className="flex flex-wrap gap-1 lg:sticky lg:top-20 lg:flex-col lg:flex-nowrap lg:gap-0.5 lg:overflow-visible">
             {/* Collapse toggle at the TOP of the rail - desktop only. */}
             <button
               type="button"
