@@ -239,6 +239,7 @@ interface AdminUserRow {
   verified_email: boolean;
   couple_id: number | null;
   account_type: "couple" | "vendor" | "planner";
+  is_demo: boolean;
   last_seen_at: number | null;
   active_flag: { id: number; reason: string } | null;
   activity: {
@@ -397,6 +398,53 @@ describe("admin users — list, engagement, badges", () => {
       token: adminToken,
     });
     expect(after.data.users).toBe(before.data.users);
+  });
+
+  test("sidebar users badge ignores freshly generated demo vendor + planner accounts", async () => {
+    const adminToken = await bootstrapAdmin();
+    await req(
+      "POST",
+      "/api/admin/sidebar-badges/seen",
+      { section: "users" },
+      { token: adminToken },
+    );
+    const before = await req<{ users: number }>("GET", "/api/admin/sidebar-badges", undefined, {
+      token: adminToken,
+    });
+    // Demo vendor + demo planner are workspace-less throwaway accounts
+    // (demo-…@demo.weddly.local). Neither may light up the users badge — the
+    // couple-join is_demo test misses them, so the email-suffix guard must.
+    expect((await req("POST", "/api/demo/vendor/start", {})).status).toBe(201);
+    expect((await req("POST", "/api/demo/planner/start", {})).status).toBe(201);
+    const after = await req<{ users: number }>("GET", "/api/admin/sidebar-badges", undefined, {
+      token: adminToken,
+    });
+    expect(after.data.users).toBe(before.data.users);
+  });
+
+  test("admin users list flags demo accounts via is_demo (vendor, planner, couple)", async () => {
+    const adminToken = await bootstrapAdmin();
+    await bootstrapCouple("real-signup@weddly.test");
+    await req("POST", "/api/demo/vendor/start", {});
+    await req("POST", "/api/demo/planner/start", {});
+    await req("POST", "/api/demo/start", {});
+
+    const list = await req<UsersListResp>("GET", "/api/admin/users", undefined, {
+      token: adminToken,
+    });
+    const demoUsers = list.data.users.filter((u) => u.email.endsWith("@demo.weddly.local"));
+    // Three demo kinds → at least three demo users, every one flagged is_demo.
+    expect(demoUsers.length).toBeGreaterThanOrEqual(3);
+    for (const u of demoUsers) expect(u.is_demo).toBe(true);
+    // The demo vendor + demo planner are workspace-less, so account_type tells
+    // the two apart in the list.
+    expect(demoUsers.some((u) => u.account_type === "vendor" && u.couple_id === null)).toBe(true);
+    expect(demoUsers.some((u) => u.account_type === "planner" && u.couple_id === null)).toBe(true);
+
+    // Real signups (and the admin) are never flagged demo.
+    const real = list.data.users.find((u) => u.email === "real-signup@weddly.test");
+    expect(real?.is_demo).toBe(false);
+    expect(list.data.users.find((u) => u.email === "admin@test.test")?.is_demo).toBe(false);
   });
 
   test("sidebar mark-seen clears the section it touches", async () => {

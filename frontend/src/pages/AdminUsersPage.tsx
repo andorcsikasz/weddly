@@ -248,7 +248,29 @@ export default function AdminUsersPage() {
   // Split rows into "in a workspace" vs "orphan" so each couple collapses
   // into a single line (members listed inside) instead of one row per user.
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
-  const orphans = useMemo(() => users.filter((u) => u.couple_id == null), [users]);
+  // Orphans = real registered users with no workspace yet. Demo vendors/planners
+  // are also workspace-less (demo-…@demo.weddly.local, no couples row), but they
+  // must NOT pool with real signups — they'd inflate the orphan list AND the
+  // "new sign-ups" digest/count. Pull them out here so both fall away, then
+  // surface them separately in the Demo section below.
+  const orphans = useMemo(() => users.filter((u) => u.couple_id == null && !u.is_demo), [users]);
+  const demoOrphans = useMemo(() => users.filter((u) => u.couple_id == null && u.is_demo), [users]);
+  // Demo vendors and demo planners, split so the admin can tell the two demo
+  // kinds apart at a glance (alongside demo couples, which live in demoCouples).
+  const demoVendors = useMemo(
+    () =>
+      demoOrphans
+        .filter((u) => u.account_type === "vendor")
+        .sort((a, b) => b.created_at - a.created_at),
+    [demoOrphans],
+  );
+  const demoPlanners = useMemo(
+    () =>
+      demoOrphans
+        .filter((u) => u.account_type === "planner")
+        .sort((a, b) => b.created_at - a.created_at),
+    [demoOrphans],
+  );
   // Couples flagged "deleting" are already-purged tombstones (PII scrubbed,
   // row kept for audit retention). Hide them from the main list — the hourly
   // purge sweep finalises any residue automatically, so there's nothing for an
@@ -334,11 +356,18 @@ export default function AdminUsersPage() {
     return groups.filter((g) => g.workspaces.some(coupleMatches));
   }
   // Demo activity in the last 24h — drives the collapsed summary headline so
-  // a glance tells the admin whether the bucket is hot.
+  // a glance tells the admin whether the bucket is hot. Covers all three demo
+  // kinds: couples + demo vendors + demo planners.
   const demoRecent24h = useMemo(() => {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    return demoCouples.filter((c) => c.last_seen_at != null && c.last_seen_at >= cutoff).length;
-  }, [demoCouples]);
+    const fresh = (ts: number | null) => ts != null && ts >= cutoff;
+    return (
+      demoCouples.filter((c) => fresh(c.last_seen_at)).length +
+      demoOrphans.filter((u) => fresh(u.last_seen_at)).length
+    );
+  }, [demoCouples, demoOrphans]);
+  // Total demo accounts across every kind — drives the section header count.
+  const demoTotal = demoCouples.length + demoOrphans.length;
 
   // "Not yet seen" bucket — every real signup created since the admin's last
   // visit (the localStorage watermark read into `newThreshold` at mount). These
@@ -743,6 +772,7 @@ export default function AdminUsersPage() {
               {t("admin.badge_planner")}
             </Pill>
           )}
+          {u.is_demo && <Pill tone="muted">{t("admin.demo_badge")}</Pill>}
           {u.status === "suspended" && (
             <Pill tone="muted" srLabel={t("admin.badge_suspended")}>
               {t("admin.badge_suspended")}
@@ -1159,6 +1189,25 @@ export default function AdminUsersPage() {
       <li
         key={`new-orphan-${u.id}`}
         className={`admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60${isNew(u.created_at) ? " bg-sage-50 dark:bg-sage-900/20" : ""}`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">{renderUserInfo(u, { showLastActive: true })}</div>
+          {renderUserActions(u)}
+        </div>
+        {renderEmailLogPanel(u.id)}
+      </li>
+    );
+  }
+
+  /** One demo vendor / demo planner (workspace-less demo account) as a card
+   *  for the Demo section. Same layout as an orphan card; the Demo + account
+   *  badges are rendered by renderUserInfo, so the three demo kinds stay
+   *  visually distinct. Keyed apart from the orphan digest to avoid collisions. */
+  function renderDemoUserCard(u: AdminUserView) {
+    return (
+      <li
+        key={`demo-user-${u.id}`}
+        className="admin-card !py-2.5 transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
       >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">{renderUserInfo(u, { showLastActive: true })}</div>
@@ -1615,24 +1664,22 @@ export default function AdminUsersPage() {
                 </section>
               )}
 
-              {/* ── Demo workspaces — landing-page "try Shrek & Fiona" seedlings.
-               *  Collapsed by default to a one-line summary so the real-couple
-               *  list owns the above-the-fold space. The demo-purge worker on the
-               *  backend reaps these on its own schedule, so no destructive
-               *  action surface here. Suppressed entirely while the admin is
-               *  actively searching — the search results live in the workspaces
-               *  + orphans lists above. ────────────────────────────────────── */}
-              {!isSearching && demoCouples.length > 0 && (
+              {/* ── Demo accounts — landing-page "try the demo" seedlings, all
+               *  three kinds in one collapsed bucket: demo couples ("Shrek &
+               *  Fiona"), demo vendors, demo planners. Kept apart from the real
+               *  lists (and the new-sign-ups digest) so signup metrics stay
+               *  honest; the backend purge worker reaps them on its own
+               *  schedule, so no destructive action surface here. Suppressed
+               *  while searching — results live in the lists above. ────────── */}
+              {!isSearching && demoTotal > 0 && (
                 <section id="admin-section-demo" className="mb-6 scroll-mt-20">
                   <AdminSectionHeader
-                    title={t("admin.demo_workspaces_section")}
+                    title={t("admin.demo_section")}
                     count={
                       <span>
                         {t(
-                          demoCouples.length === 1
-                            ? "admin.demo_workspaces_summary_one"
-                            : "admin.demo_workspaces_summary_other",
-                          { n: demoCouples.length },
+                          demoTotal === 1 ? "admin.demo_summary_one" : "admin.demo_summary_other",
+                          { n: demoTotal },
                         )}{" "}
                         <span className="text-neutral-400 dark:text-umber-400">
                           · {t("admin.demo_workspaces_recent_24h", { n: demoRecent24h })}
@@ -1646,83 +1693,108 @@ export default function AdminUsersPage() {
                     }}
                   />
                   {demoOpen && (
-                    <ul className="space-y-1.5">
-                      {demoCouples.map((c) => {
-                        const members = c.partners
-                          .map((p) => userById.get(p.id))
-                          .filter((u): u is AdminUserView => u != null);
-                        const firstMemberEmail = members[0]?.email ?? "-";
-                        // Feature-usage chips: sort by event count desc, show the
-                        // top 6 inline + a "+N more" pill when the demo went deep.
-                        const counts = c.demo_feature_counts ?? {};
-                        const total = c.demo_total_events ?? 0;
-                        // The demo.start row is bookkeeping noise — strip it so the
-                        // chips only reflect what the visitor actually touched.
-                        const usable = Object.entries(counts).filter(
-                          ([feature]) => feature !== "demo",
-                        );
-                        const usableTotal = usable.reduce((s, [, n]) => s + n, 0);
-                        const sortedFeatures = usable.sort(
-                          (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
-                        );
-                        const visible = sortedFeatures.slice(0, 6);
-                        const hidden = sortedFeatures.length - visible.length;
-                        return (
-                          <li
-                            key={c.id}
-                            className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
-                          >
-                            <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_10rem] md:items-center">
-                              <div className="whitespace-nowrap">
-                                <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
-                                  {workspaceId(c)}
-                                </code>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-paper-100">
-                                <Pill tone="muted">{t("admin.demo_badge")}</Pill>
-                                <span className="truncate">{workspaceLabel(c)}</span>
-                              </div>
-                              <div className="truncate text-xs text-neutral-500 dark:text-umber-300">
-                                {firstMemberEmail}
-                              </div>
-                              <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
-                                <div>{formatDate(c.created_at, locale)}</div>
-                                <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
-                                  {formatRelative(c.last_seen_at, locale, t)}
-                                </div>
-                              </div>
-                            </div>
-                            {c.demo_feature_counts !== null && (
-                              <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-                                <span className="text-neutral-500 dark:text-umber-300">
-                                  {usableTotal === 0
-                                    ? t("admin.demo_events_none")
-                                    : t(
-                                        total === 1
-                                          ? "admin.demo_events_label_one"
-                                          : "admin.demo_events_label_other",
-                                        { n: total },
+                    <div className="space-y-4">
+                      {demoCouples.length > 0 && (
+                        <div>
+                          <p className="mb-1.5 eyebrow text-neutral-500 dark:text-umber-300">
+                            {t("admin.demo_couples_subhead", { n: demoCouples.length })}
+                          </p>
+                          <ul className="space-y-1.5">
+                            {demoCouples.map((c) => {
+                              const members = c.partners
+                                .map((p) => userById.get(p.id))
+                                .filter((u): u is AdminUserView => u != null);
+                              const firstMemberEmail = members[0]?.email ?? "-";
+                              // Feature-usage chips: sort by event count desc, show the
+                              // top 6 inline + a "+N more" pill when the demo went deep.
+                              const counts = c.demo_feature_counts ?? {};
+                              const total = c.demo_total_events ?? 0;
+                              // The demo.start row is bookkeeping noise — strip it so the
+                              // chips only reflect what the visitor actually touched.
+                              const usable = Object.entries(counts).filter(
+                                ([feature]) => feature !== "demo",
+                              );
+                              const usableTotal = usable.reduce((s, [, n]) => s + n, 0);
+                              const sortedFeatures = usable.sort(
+                                (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+                              );
+                              const visible = sortedFeatures.slice(0, 6);
+                              const hidden = sortedFeatures.length - visible.length;
+                              return (
+                                <li
+                                  key={c.id}
+                                  className="admin-card transition-colors duration-150 hover:bg-paper-100/60 dark:hover:bg-umber-800/60"
+                                >
+                                  <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1.4fr)_10rem] md:items-center">
+                                    <div className="whitespace-nowrap">
+                                      <code className="rounded bg-paper-100 dark:bg-umber-700/60 px-1.5 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-paper-100">
+                                        {workspaceId(c)}
+                                      </code>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-paper-100">
+                                      <Pill tone="muted">{t("admin.demo_badge")}</Pill>
+                                      <span className="truncate">{workspaceLabel(c)}</span>
+                                    </div>
+                                    <div className="truncate text-xs text-neutral-500 dark:text-umber-300">
+                                      {firstMemberEmail}
+                                    </div>
+                                    <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
+                                      <div>{formatDate(c.created_at, locale)}</div>
+                                      <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
+                                        {formatRelative(c.last_seen_at, locale, t)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {c.demo_feature_counts !== null && (
+                                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                                      <span className="text-neutral-500 dark:text-umber-300">
+                                        {usableTotal === 0
+                                          ? t("admin.demo_events_none")
+                                          : t(
+                                              total === 1
+                                                ? "admin.demo_events_label_one"
+                                                : "admin.demo_events_label_other",
+                                              { n: total },
+                                            )}
+                                      </span>
+                                      {visible.map(([feature, n]) => (
+                                        <Pill key={feature} tone="paper">
+                                          <span className="font-medium">{feature}</span>
+                                          <span className="ml-1 text-neutral-500 dark:text-umber-300">
+                                            {n}
+                                          </span>
+                                        </Pill>
+                                      ))}
+                                      {hidden > 0 && (
+                                        <span className="text-neutral-500 dark:text-umber-300">
+                                          {t("admin.demo_feature_more", { n: hidden })}
+                                        </span>
                                       )}
-                                </span>
-                                {visible.map(([feature, n]) => (
-                                  <Pill key={feature} tone="paper">
-                                    <span className="font-medium">{feature}</span>
-                                    <span className="ml-1 text-neutral-500 dark:text-umber-300">
-                                      {n}
-                                    </span>
-                                  </Pill>
-                                ))}
-                                {hidden > 0 && (
-                                  <span className="text-neutral-500 dark:text-umber-300">
-                                    {t("admin.demo_feature_more", { n: hidden })}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
+                                    </div>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
+                      {demoVendors.length > 0 && (
+                        <div>
+                          <p className="mb-1.5 eyebrow text-neutral-500 dark:text-umber-300">
+                            {t("admin.demo_vendors_subhead", { n: demoVendors.length })}
+                          </p>
+                          <ul className="space-y-1.5">{demoVendors.map(renderDemoUserCard)}</ul>
+                        </div>
+                      )}
+                      {demoPlanners.length > 0 && (
+                        <div>
+                          <p className="mb-1.5 eyebrow text-neutral-500 dark:text-umber-300">
+                            {t("admin.demo_planners_subhead", { n: demoPlanners.length })}
+                          </p>
+                          <ul className="space-y-1.5">{demoPlanners.map(renderDemoUserCard)}</ul>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </section>
               )}

@@ -5365,6 +5365,15 @@ export interface LocaleMessages {
     /** Demo workspaces are landing-page Shrek & Fiona seedlings — kept in
      *  their own section so the real-couple list stays scannable. */
     demo_workspaces_section: string;
+    /** Umbrella "Demo accounts" section covering all three demo kinds:
+     *  demo couples + demo vendors + demo planners, each in its own labelled
+     *  sub-list so they stay distinct. */
+    demo_section: string;
+    demo_summary_one: string;
+    demo_summary_other: string;
+    demo_couples_subhead: string;
+    demo_vendors_subhead: string;
+    demo_planners_subhead: string;
     demo_workspaces_count_one: string;
     demo_workspaces_count_other: string;
     demo_workspaces_help: string;

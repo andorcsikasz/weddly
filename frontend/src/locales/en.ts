@@ -4756,6 +4756,12 @@ const en: LocaleMessages = {
     section_show: "Expand",
     section_hide: "Collapse",
     demo_workspaces_section: "Demo workspaces",
+    demo_section: "Demo accounts",
+    demo_summary_one: "{n} demo account",
+    demo_summary_other: "{n} demo accounts",
+    demo_couples_subhead: "Demo couples · {n}",
+    demo_vendors_subhead: "Demo vendors · {n}",
+    demo_planners_subhead: "Demo planners · {n}",
     demo_workspaces_count_one: "{n} demo",
     demo_workspaces_count_other: "{n} demo",
     demo_workspaces_help:

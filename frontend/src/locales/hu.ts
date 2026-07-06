@@ -4806,6 +4806,12 @@ const hu: LocaleMessages = {
     section_show: "Kibontás",
     section_hide: "Összecsukás",
     demo_workspaces_section: "Demo munkaterületek",
+    demo_section: "Demo fiókok",
+    demo_summary_one: "{n} demo fiók",
+    demo_summary_other: "{n} demo fiók",
+    demo_couples_subhead: "Demo párok · {n}",
+    demo_vendors_subhead: "Demo szolgáltatók · {n}",
+    demo_planners_subhead: "Demo tervezők · {n}",
     demo_workspaces_count_one: "{n} demo",
     demo_workspaces_count_other: "{n} demo",
     demo_workspaces_help:

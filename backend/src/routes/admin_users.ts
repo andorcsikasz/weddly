@@ -28,6 +28,12 @@ import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { insertCoupleNotification } from "../domain/notifications";
 import { createVerificationToken } from "./email_verify";
 
+// Demo vendor/planner accounts carry no `couples` row, so demo-ness can't be
+// read off a joined `is_demo` column — it's derived from the email suffix, the
+// same canonical marker the purge sweeps + analytics use (see vendor_demo_seed
+// / planner_demo_seed). Keep this in sync with those.
+const DEMO_EMAIL_SUFFIX = "@demo.weddly.local";
+
 function toUserFlag(row: UserFlagRow): UserFlag {
   return {
     id: row.id,
@@ -124,6 +130,7 @@ function toAdminUser(
     // admin can tell "expected-empty" apart from "stuck couple".
     account_type:
       row.role === "vendor" ? "vendor" : row.user_type === "planner" ? "planner" : "couple",
+    is_demo: row.email.endsWith(DEMO_EMAIL_SUFFIX),
     created_at: row.created_at,
     last_seen_at: row.last_seen_at,
     active_flag: flag ? toUserFlag(flag) : null,
@@ -803,8 +810,9 @@ function handleSidebarBadges(ctx: Ctx): Response {
   // since the admin last looked + moderation flags raised since then.
   // Purged tombstones are excluded from the new-user count so a deleted
   // user doesn't re-light the badge every time the sweep stamps their row.
-  // Demo accounts (users attached to an is_demo couple) are excluded too —
-  // generating a demo workspace shouldn't light up the admin badge.
+  // Demo accounts are excluded too — generating a demo shouldn't light up the
+  // badge. That's two shapes: demo couples (the couple-join is_demo test) and
+  // demo vendors/planners (no couples row — matched by the demo email suffix).
   const newUsers = (
     db
       .prepare(
@@ -813,6 +821,7 @@ function handleSidebarBadges(ctx: Ctx): Response {
            LEFT JOIN couples c ON c.id = u.couple_id
           WHERE u.created_at > ?
             AND u.email NOT LIKE '%@purged.local'
+            AND u.email NOT LIKE '%${DEMO_EMAIL_SUFFIX}'
             AND COALESCE(c.is_demo, 0) = 0`,
       )
       .get(seen.users) as { n: number }

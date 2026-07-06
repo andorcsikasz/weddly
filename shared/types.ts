@@ -246,6 +246,12 @@ export interface AdminUserView {
    *  else 'planner' when user_type='planner', else 'couple'. A couple with a
    *  null couple_id is a genuine registered-but-not-onboarded signup. */
   account_type: "couple" | "vendor" | "planner";
+  /** True for a demo account (landing-page "try the demo" seed). Demo
+   *  vendors/planners carry no `couples` row, so demo-ness is derived from
+   *  the `@demo.weddly.local` email suffix — the same canonical marker the
+   *  purge sweeps and analytics use. Drives the admin "Demo" bucketing:
+   *  these are kept out of the real orphan list + the new-signups digest. */
+  is_demo: boolean;
   created_at: UnixMs;
   /** Last successful bearer-token verify, throttled to once per 5 minutes
    *  in `verifySessionToken`. Null if the user hasn't loaded the app since
