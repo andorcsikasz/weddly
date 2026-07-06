@@ -519,7 +519,7 @@ function TrendChart({
         {buckets.map((b, i) => (
           <span
             key={`${b.label}-${i}`}
-            className="flex-1 truncate text-center text-[10px] text-ink-400 dark:text-paper-500"
+            className="min-w-0 flex-1 whitespace-nowrap text-center text-[10px] text-ink-400 dark:text-paper-500"
           >
             {i % step === 0 ? b.label : ""}
           </span>
