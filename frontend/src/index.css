@@ -882,6 +882,13 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     --btn-rim-active: theme("colors.moss.300");
     --btn-highlight: rgba(255, 255, 255, 0.30);
   }
+  /* Outline counterpart to .btn-moss — transparent face + moss rim/text for a
+     lower-emphasis planner CTA (e.g. the pipeline "Belépés" link). Keeps the
+     moss accent voice without the solid green fill. */
+  .btn-moss-outline {
+    @apply btn border border-moss-600 bg-transparent text-moss-700 hover:bg-moss-50
+      dark:border-moss-500 dark:text-moss-300 dark:hover:bg-moss-900/40;
+  }
   /* Destructive / "needs attention" CTA. Blush face + warmer rim so it
      reads as an alert without escalating to red (which clashes with the
      stationery palette). Used by the dashboard date-changed banner. */

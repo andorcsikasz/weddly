@@ -243,7 +243,7 @@ function ClientCard({ client }: { client: PlannerClientView }) {
         {client.status === "active" && (
           <Link
             to={`/app/planner/clients/${client.couple_id}`}
-            className="btn-moss btn-sm flex flex-shrink-0 items-center gap-1.5"
+            className="btn-moss-outline btn-sm flex flex-shrink-0 items-center gap-1.5"
             onClick={(e) => e.stopPropagation()}
             title={t("planner_home.pipeline_enter")}
           >
