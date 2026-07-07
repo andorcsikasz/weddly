@@ -432,7 +432,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
             <>
               {/* ── Venue ─────────────────────────────────────────────── */}
               {venue ? (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3">
                     <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
                       <MapPin size={18} aria-hidden="true" />
@@ -455,10 +455,12 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                     <button
                       type="button"
                       onClick={() => setMapOpen(true)}
+                      aria-label={t("dashboard.keyinfo_map")}
+                      title={t("dashboard.keyinfo_map")}
                       className="btn-outline btn-sm inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[38px]"
                     >
                       <MapPin size={15} aria-hidden="true" />
-                      <span>{t("dashboard.keyinfo_map")}</span>
+                      <span className="hidden sm:inline">{t("dashboard.keyinfo_map")}</span>
                     </button>
                     {venue.phone && (
                       <a
@@ -468,7 +470,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                         className="btn-primary btn-sm inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[38px]"
                       >
                         <Phone size={15} aria-hidden="true" />
-                        <span>{t("dashboard.keyinfo_call")}</span>
+                        <span className="hidden sm:inline">{t("dashboard.keyinfo_call")}</span>
                       </a>
                     )}
                     <EditButton label={t("dashboard.keyinfo_edit")} onClick={openDialog} />
