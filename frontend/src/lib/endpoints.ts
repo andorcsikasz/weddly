@@ -2038,6 +2038,30 @@ export const vendorListingApi = {
     apiFetch<VendorListingView>("PATCH", "/api/vendor/listing/me/videos/reorder", {
       ordered_ids: orderedIds,
     }),
+  /** Price offers / packages (árajánlat). Text fields are plain JSON; the
+   *  optional PDF is a separate multipart call. The server enforces the max-3
+   *  cap (409 `packages_full`) and returns the refreshed view with `packages`. */
+  addPackage: (body: { name: string; price_text?: string | null; description?: string | null }) =>
+    apiFetch<VendorListingView>("POST", "/api/vendor/listing/me/packages", body),
+  updatePackage: (
+    packageId: number,
+    body: { name?: string; price_text?: string | null; description?: string | null },
+  ) => apiFetch<VendorListingView>("PATCH", `/api/vendor/listing/me/packages/${packageId}`, body),
+  deletePackage: (packageId: number) =>
+    apiFetch<VendorListingView>("DELETE", `/api/vendor/listing/me/packages/${packageId}`),
+  /** Attach a price-list PDF to a package (multipart, application/pdf, 8 MB).
+   *  Overwrites any existing PDF on that package. Returns the refreshed view. */
+  uploadPackagePdf: (packageId: number, file: File): Promise<VendorListingView> => {
+    const form = new FormData();
+    form.append("file", file);
+    return uploadMultipart<VendorListingView>(
+      "POST",
+      `/api/vendor/listing/me/packages/${packageId}/pdf`,
+      form,
+    );
+  },
+  deletePackagePdf: (packageId: number) =>
+    apiFetch<VendorListingView>("DELETE", `/api/vendor/listing/me/packages/${packageId}/pdf`),
   /** Marks the post-signup onboarding wizard complete so the dashboard stops
    *  redirecting back into it. Returns the refreshed view (account.onboarding_done
    *  is now true). Idempotent. */

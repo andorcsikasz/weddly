@@ -1175,3 +1175,234 @@ describe("vendor listing — video reel (/api/vendor/listing/me/videos)", () => 
     expect(couple.status).toBe(403);
   });
 });
+
+// ── Packages (árajánlat / price offers) ──────────────────────────────────────
+
+/** Minimal valid PDF — the `%PDF` magic header is all the upload sniff checks. */
+function tinyPdfBlob(type = "application/pdf"): Blob {
+  const bytes = new Uint8Array([
+    0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a, 0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a,
+  ]); // "%PDF-1.4\n%..."
+  return new Blob([bytes], { type });
+}
+
+async function uploadPackagePdf(
+  vendorToken: string,
+  packageId: number,
+  blob: Blob,
+  filename = "arlista.pdf",
+): Promise<Response> {
+  const form = new FormData();
+  form.append("file", blob, filename);
+  return await fetch(`${VENDOR_BASE}/api/vendor/listing/me/packages/${packageId}/pdf`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${vendorToken}`,
+      "x-test-client-ip": `10.0.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`,
+    },
+    body: form,
+  });
+}
+
+describe("vendor listing — packages (/api/vendor/listing/me/packages)", () => {
+  test("add up to the cap, partial update + clear, public detail exposure, delete", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-pkg@weddly.test",
+      "vendor-pkg@weddly.test",
+      "Package Photo Studio",
+    );
+    const { vendorToken } = await claimListing(listingId, "vendor-pkg@weddly.test", "Vendor Owner");
+
+    // Add the first package with all fields.
+    const a = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/packages",
+      { name: "Félnapos csomag", price_text: "250 000 Ft-tól", description: "4 óra fotózás" },
+      { token: vendorToken },
+    );
+    expect(a.status).toBe(201);
+    expect(a.data.packages?.length).toBe(1);
+    const p0 = a.data.packages?.[0];
+    expect(p0?.name).toBe("Félnapos csomag");
+    expect(p0?.price_text).toBe("250 000 Ft-tól");
+    expect(p0?.description).toBe("4 óra fotózás");
+    expect(p0?.pdf_url).toBeNull();
+    expect(p0?.pdf_name).toBeNull();
+
+    // Two more → at the cap of 3.
+    await req(
+      "POST",
+      "/api/vendor/listing/me/packages",
+      { name: "Egész napos csomag" },
+      { token: vendorToken },
+    );
+    const third = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/packages",
+      { name: "Prémium" },
+      { token: vendorToken },
+    );
+    expect(third.status).toBe(201);
+    expect(third.data.packages?.length).toBe(3);
+
+    // Fourth → 409 packages_full.
+    const fourth = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/vendor/listing/me/packages",
+      { name: "Extra" },
+      { token: vendorToken },
+    );
+    expect(fourth.status).toBe(409);
+    expect(fourth.data.detail?.code).toBe("packages_full");
+
+    // Partial update — price only; name + description untouched.
+    const upd = await req<VendorListingView>(
+      "PATCH",
+      `/api/vendor/listing/me/packages/${p0?.id}`,
+      { price_text: "300 000 Ft" },
+      { token: vendorToken },
+    );
+    expect(upd.status).toBe(200);
+    const updated = upd.data.packages?.find((p) => p.id === p0?.id);
+    expect(updated?.price_text).toBe("300 000 Ft");
+    expect(updated?.name).toBe("Félnapos csomag");
+    expect(updated?.description).toBe("4 óra fotózás");
+
+    // Clear the description via explicit null.
+    const clr = await req<VendorListingView>(
+      "PATCH",
+      `/api/vendor/listing/me/packages/${p0?.id}`,
+      { description: null },
+      { token: vendorToken },
+    );
+    expect(clr.data.packages?.find((p) => p.id === p0?.id)?.description).toBeNull();
+
+    // Public detail exposes all three in creation order.
+    const detail = await req<{ packages: Array<{ id: number; name: string }> }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(listingId)}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(detail.status).toBe(200);
+    expect(detail.data.packages.map((p) => p.name)).toEqual([
+      "Félnapos csomag",
+      "Egész napos csomag",
+      "Prémium",
+    ]);
+
+    // Delete the first → two remain, and the deleted id is gone.
+    const del = await req<VendorListingView>(
+      "DELETE",
+      `/api/vendor/listing/me/packages/${p0?.id}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(del.status).toBe(200);
+    expect(del.data.packages?.length).toBe(2);
+    expect(del.data.packages?.some((p) => p.id === p0?.id)).toBe(false);
+  });
+
+  test("PDF upload writes a public url + name; delete clears it; non-PDF → 415", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-pkgpdf@weddly.test",
+      "vendor-pkgpdf@weddly.test",
+      "PDF Photo Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-pkgpdf@weddly.test",
+      "Vendor Owner",
+    );
+    const a = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/packages",
+      { name: "Csomag" },
+      { token: vendorToken },
+    );
+    const pkgId = a.data.packages?.[0]?.id as number;
+
+    // Upload a valid PDF.
+    const up = await uploadPackagePdf(vendorToken, pkgId, tinyPdfBlob(), "arlista.pdf");
+    expect(up.status).toBe(200);
+    const upBody = (await up.json()) as VendorListingView;
+    const pkg = upBody.packages?.find((p) => p.id === pkgId);
+    expect(pkg?.pdf_url).toMatch(
+      new RegExp(
+        `^/uploads/listings/${listingId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/packages/${pkgId}\\.pdf\\?v=\\d+$`,
+      ),
+    );
+    expect(pkg?.pdf_name).toBe("arlista.pdf");
+
+    // A file that claims application/pdf but isn't (no %PDF header) → 415.
+    const bad = await uploadPackagePdf(
+      vendorToken,
+      pkgId,
+      new Blob([new Uint8Array([1, 2, 3, 4, 5])], { type: "application/pdf" }),
+      "fake.pdf",
+    );
+    expect(bad.status).toBe(415);
+
+    // Delete the PDF → url + name cleared.
+    const del = await req<VendorListingView>(
+      "DELETE",
+      `/api/vendor/listing/me/packages/${pkgId}/pdf`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(del.status).toBe(200);
+    const cleared = del.data.packages?.find((p) => p.id === pkgId);
+    expect(cleared?.pdf_url).toBeNull();
+    expect(cleared?.pdf_name).toBeNull();
+  });
+
+  test("validation + scoping: empty/oversize name 400, missing package 404, couple 403", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-pkgval@weddly.test",
+      "vendor-pkgval@weddly.test",
+      "Val Photo Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-pkgval@weddly.test",
+      "Vendor Owner",
+    );
+
+    const empty = await req(
+      "POST",
+      "/api/vendor/listing/me/packages",
+      { name: "   " },
+      { token: vendorToken },
+    );
+    expect(empty.status).toBe(400);
+
+    const long = await req(
+      "POST",
+      "/api/vendor/listing/me/packages",
+      { name: "x".repeat(61) },
+      { token: vendorToken },
+    );
+    expect(long.status).toBe(400);
+
+    const missing = await req<{ detail?: { code?: string } }>(
+      "PATCH",
+      "/api/vendor/listing/me/packages/999999",
+      { name: "Nope" },
+      { token: vendorToken },
+    );
+    expect(missing.status).toBe(404);
+    expect(missing.data.detail?.code).toBe("package_not_found");
+
+    const { token: coupleToken } = await bootstrapCouple("pkg-couple@weddly.test");
+    const forbidden = await req(
+      "POST",
+      "/api/vendor/listing/me/packages",
+      { name: "X" },
+      { token: coupleToken },
+    );
+    expect(forbidden.status).toBe(403);
+  });
+});

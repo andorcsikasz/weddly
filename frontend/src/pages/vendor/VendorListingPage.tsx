@@ -34,6 +34,7 @@ import {
 import type { VendorBilling } from "@shared/vendor_billing";
 import { AddressAutocomplete } from "../../components/AddressAutocomplete";
 import { TranslateButton } from "../../components/TranslateButton";
+import { VendorListingPackages } from "../../components/VendorListingPackages";
 import { VendorListingVideos } from "../../components/VendorListingVideos";
 import { TextField } from "../../components/ui/TextField";
 import { useToast } from "../../components/ui/ToastProvider";
@@ -774,6 +775,14 @@ export default function VendorListingPage() {
                 (own busy state + toasts); hits the server per action like the
                 gallery, so it lives outside the autosave form flow. */}
             <VendorListingVideos videos={view.videos ?? []} onChange={setView} />
+
+            {/* Price offers / packages (árajánlat) — self-contained, per-action
+                server writes like the reel; category drives the name suggestions. */}
+            <VendorListingPackages
+              packages={view.packages ?? []}
+              category={view.listing.category}
+              onChange={setView}
+            />
 
             <fieldset className="card space-y-2.5 p-4" disabled={saving}>
               <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>

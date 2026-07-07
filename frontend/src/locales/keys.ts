@@ -750,6 +750,43 @@ export interface LocaleMessages {
     videos_move_up: string;
     videos_move_down: string;
     videos_drag: string;
+    section_packages: string;
+    packages_intro: string;
+    packages_add: string;
+    packages_default_name: string;
+    /** Receives `{n}` and `{max}`. */
+    packages_count: string;
+    /** Receives `{max}`. */
+    packages_full: string;
+    packages_add_success: string;
+    packages_add_failed: string;
+    packages_name_label: string;
+    packages_name_placeholder: string;
+    packages_suggestions_label: string;
+    packages_price_label: string;
+    packages_price_placeholder: string;
+    packages_desc_label: string;
+    packages_desc_placeholder: string;
+    packages_save: string;
+    packages_saved: string;
+    packages_save_failed: string;
+    packages_delete: string;
+    packages_delete_confirm_title: string;
+    /** Receives `{name}`. */
+    packages_delete_confirm_body: string;
+    packages_delete_success: string;
+    packages_delete_failed: string;
+    packages_pdf_label: string;
+    packages_pdf_upload: string;
+    packages_pdf_replace: string;
+    packages_pdf_remove: string;
+    packages_pdf_hint: string;
+    packages_pdf_upload_success: string;
+    packages_pdf_upload_failed: string;
+    packages_pdf_removed: string;
+    /** Receives `{max}`. */
+    packages_pdf_too_large: string;
+    packages_pdf_invalid: string;
     preview_open: string;
     preview_no_photo: string;
     /** Receives `{min}` - minimum guest capacity. */
@@ -4972,6 +5009,10 @@ export interface LocaleMessages {
         title: string;
         /** Receives `{name}` supplier name and `{n}` 1-based index. */
         playAria: string;
+      };
+      packages: {
+        title: string;
+        download: string;
       };
     };
     /** Review tag labels shared between the composer (admin selects up to 5)

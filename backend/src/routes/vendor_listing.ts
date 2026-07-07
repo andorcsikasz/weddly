@@ -23,6 +23,13 @@ import {
   type VendorListingEditInput,
   type VendorListingView,
 } from "@shared/listings";
+import {
+  MAX_LISTING_PACKAGES,
+  PACKAGE_DESCRIPTION_MAX,
+  PACKAGE_NAME_MAX,
+  PACKAGE_PDF_MAX_BYTES,
+  PACKAGE_PRICE_MAX,
+} from "@shared/listing_packages";
 import { MAX_LISTING_VIDEOS, parseVideoUrl } from "@shared/listing_videos";
 import { db, now } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
@@ -34,21 +41,29 @@ import {
 } from "../domain/community_suppliers";
 import { clearCuratedOverride, setCuratedOverride } from "../domain/curated_overrides";
 import {
+  addListingPackage,
   addListingPhoto,
   addListingVideo,
+  clearListingPackagePdf,
+  countListingPackages,
   countListingPhotos,
   countListingVideos,
+  deleteListingPackage,
   deleteListingPhoto,
   deleteListingVideo,
   getListingById,
   getListingByVendorAccountId,
+  getListingPackage,
   getListingPhoto,
   getListingVideo,
+  listListingPackages,
   listListingPhotos,
   listListingVideos,
   patchListing,
   reorderListingVideos,
+  setListingPackagePdf,
   toVendorAccount,
+  updateListingPackage,
   updateListingVideo,
   type ListingPatch,
 } from "../domain/listings";
@@ -96,6 +111,7 @@ function listingViewWithMedia(
     ...(extra?.billing !== undefined ? { billing: extra.billing } : {}),
     photos: listListingPhotos(listing.id),
     videos: listListingVideos(listing.id),
+    packages: listListingPackages(listing.id),
   };
 }
 
@@ -567,6 +583,222 @@ async function handleReorderVideos(ctx: Ctx): Promise<Response> {
   return json(listingViewWithMedia(listing, account));
 }
 
+// ── Listing packages (árajánlat / price offers) ────────────────────────────
+//
+// Up to MAX_LISTING_PACKAGES named price tiers, each with a vendor-chosen name,
+// an optional free-text price, an optional description, and an optional attached
+// PDF (a printable price list). The text fields flow through a JSON body; the
+// PDF is a separate multipart endpoint mirroring the photo pipeline (size cap +
+// %PDF magic-byte sniff, never trusting the client Content-Type). Public
+// exposure: routes/suppliers.ts folds these into the detail payload's
+// `packages`. Sits under the same /api/vendor/listing EDIT entitlement surface
+// as the gallery/reel — FREE vendors can publish offers, a lapsed one goes
+// read-only along with the rest of the listing.
+
+function parsePackageId(ctx: Ctx): number {
+  const id = Number(ctx.params.package_id);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new HttpError(400, "package_id must be a positive integer");
+  }
+  return id;
+}
+
+/** Required, non-empty, length-capped package name. */
+function requirePackageName(v: unknown): string {
+  if (typeof v !== "string") {
+    throw new HttpError(400, "`name` must be a string", { code: "bad_name" });
+  }
+  const trimmed = v.trim();
+  if (trimmed.length === 0) {
+    throw new HttpError(400, "`name` cannot be empty", { code: "bad_name" });
+  }
+  if (trimmed.length > PACKAGE_NAME_MAX) {
+    throw new HttpError(400, `name too long (max ${PACKAGE_NAME_MAX})`, { code: "bad_name" });
+  }
+  return trimmed;
+}
+
+/** Optional text field. `undefined` => key absent (leave alone). `null` or an
+ *  empty string => clear the value. A string => trimmed + length-capped. */
+function optionalPackageText(
+  v: unknown,
+  field: string,
+  max: number,
+): string | null | undefined {
+  if (v === undefined) return undefined;
+  if (v === null) return null;
+  if (typeof v !== "string") {
+    throw new HttpError(400, `\`${field}\` must be a string or null`, { code: "bad_field" });
+  }
+  const trimmed = v.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > max) {
+    throw new HttpError(400, `\`${field}\` too long (max ${max})`, { code: "bad_field" });
+  }
+  return trimmed;
+}
+
+const MAX_PDF_NAME_LEN = 120;
+
+/** Pull + validate the `file` field of a package-PDF upload: a non-empty file
+ *  within the size cap whose real magic bytes are `%PDF`. Returns the file plus
+ *  a sanitised display filename. Never trusts the client Content-Type. */
+async function readUploadedPdf(ctx: Ctx): Promise<{ raw: File; filename: string }> {
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
+  });
+  const raw = form.get("file");
+  if (!(raw instanceof File)) {
+    throw new HttpError(400, "`file` field required", { code: "missing_file" });
+  }
+  if (raw.size <= 0) {
+    throw new HttpError(400, "Empty file", { code: "empty_file" });
+  }
+  if (raw.size > PACKAGE_PDF_MAX_BYTES) {
+    throw new HttpError(413, `File too large (max ${PACKAGE_PDF_MAX_BYTES / 1024 / 1024} MB)`, {
+      code: "file_too_large",
+    });
+  }
+  if (raw.type && raw.type !== "application/pdf") {
+    throw new HttpError(415, `Unsupported type: ${raw.type}`, { code: "unsupported_type" });
+  }
+  const head = new Uint8Array(await raw.arrayBuffer()).subarray(0, 5);
+  const isPdf = head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46; // %PDF
+  if (!isPdf) {
+    throw new HttpError(415, "File contents are not a valid PDF", { code: "unsupported_type" });
+  }
+  // Display filename: strip any path, cap length, guarantee a .pdf suffix.
+  const base = (raw.name || "arajanlat.pdf").replace(/^.*[\\/]/, "").trim();
+  let filename = base.length > 0 ? base : "arajanlat.pdf";
+  if (filename.length > MAX_PDF_NAME_LEN) filename = filename.slice(0, MAX_PDF_NAME_LEN);
+  if (!/\.pdf$/i.test(filename)) filename = `${filename}.pdf`;
+  return { raw, filename };
+}
+
+async function handleAddPackage(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  if (countListingPackages(listing.id) >= MAX_LISTING_PACKAGES) {
+    throw new HttpError(409, `Packages are full (max ${MAX_LISTING_PACKAGES})`, {
+      code: "packages_full",
+    });
+  }
+  const body = await readJson<{ name?: unknown; price_text?: unknown; description?: unknown }>(
+    ctx.req,
+  );
+  const name = requirePackageName(body.name);
+  const priceText = optionalPackageText(body.price_text, "price_text", PACKAGE_PRICE_MAX);
+  const description = optionalPackageText(body.description, "description", PACKAGE_DESCRIPTION_MAX);
+  const pkg = addListingPackage(listing.id, {
+    name,
+    price_text: priceText ?? null,
+    description: description ?? null,
+  });
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.listing_package_add",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listing.id },
+    after: { package_id: pkg.id, name },
+  });
+  return json(listingViewWithMedia(listing, account), { status: 201 });
+}
+
+async function handleUpdatePackage(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const packageId = parsePackageId(ctx);
+  const existing = getListingPackage(listing.id, packageId);
+  if (!existing) throw new HttpError(404, "Package not found", { code: "package_not_found" });
+  const body = await readJson<{ name?: unknown; price_text?: unknown; description?: unknown }>(
+    ctx.req,
+  );
+  const patch: { name?: string; price_text?: string | null; description?: string | null } = {};
+  if (body.name !== undefined) patch.name = requirePackageName(body.name);
+  const priceText = optionalPackageText(body.price_text, "price_text", PACKAGE_PRICE_MAX);
+  if (priceText !== undefined) patch.price_text = priceText;
+  const description = optionalPackageText(body.description, "description", PACKAGE_DESCRIPTION_MAX);
+  if (description !== undefined) patch.description = description;
+  updateListingPackage(listing.id, packageId, patch);
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.listing_package_update",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listing.id, package_id: packageId },
+    after: { keys: Object.keys(patch) },
+  });
+  return json(listingViewWithMedia(listing, account));
+}
+
+async function handleDeletePackage(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const packageId = parsePackageId(ctx);
+  const existing = getListingPackage(listing.id, packageId);
+  if (existing) {
+    if (existing.pdf_url) {
+      const k = keyFromUploadUrl(existing.pdf_url);
+      if (k) await storage.delete(k);
+    }
+    deleteListingPackage(listing.id, packageId);
+    addAuditLog({
+      actor_user_id: account.owner_user_id,
+      couple_id: null,
+      action: "vendor.listing_package_delete",
+      target_kind: "listing",
+      target_id: null,
+      before: { listing_id: listing.id, package_id: packageId, name: existing.name },
+      after: {},
+    });
+  }
+  return json(listingViewWithMedia(listing, account));
+}
+
+async function handleUploadPackagePdf(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const packageId = parsePackageId(ctx);
+  const existing = getListingPackage(listing.id, packageId);
+  if (!existing) throw new HttpError(404, "Package not found", { code: "package_not_found" });
+  const { raw, filename } = await readUploadedPdf(ctx);
+  const key = `listings/${listing.id}/packages/${packageId}.pdf`;
+  await storage.write(key, raw, "application/pdf");
+  const ts = now();
+  const publicUrl = `/uploads/${key}?v=${ts}`;
+  setListingPackagePdf(listing.id, packageId, publicUrl, filename);
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.listing_package_pdf_upload",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listing.id, package_id: packageId },
+    after: { pdf_name: filename, bytes: raw.size },
+  });
+  return json(listingViewWithMedia(listing, account));
+}
+
+async function handleDeletePackagePdf(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const packageId = parsePackageId(ctx);
+  const existing = getListingPackage(listing.id, packageId);
+  if (existing?.pdf_url) {
+    const k = keyFromUploadUrl(existing.pdf_url);
+    if (k) await storage.delete(k);
+    clearListingPackagePdf(listing.id, packageId);
+    addAuditLog({
+      actor_user_id: account.owner_user_id,
+      couple_id: null,
+      action: "vendor.listing_package_pdf_delete",
+      target_kind: "listing",
+      target_id: null,
+      before: { listing_id: listing.id, package_id: packageId, pdf_name: existing.pdf_name },
+      after: {},
+    });
+  }
+  return json(listingViewWithMedia(listing, account));
+}
+
 // ── Visibility toggle (pause / unpause) ────────────────────────────────────
 //
 // A fully-booked vendor can take their card offline without support: 'active'
@@ -717,5 +949,12 @@ export function registerVendorListingRoutes(router: Router) {
   router.patch("/api/vendor/listing/me/videos/reorder", handleReorderVideos);
   router.patch("/api/vendor/listing/me/videos/:video_id", handleUpdateVideo);
   router.delete("/api/vendor/listing/me/videos/:video_id", handleDeleteVideo);
+  // Packages (árajánlat). The `/pdf` sub-path sits under :package_id, distinct in
+  // method + depth from the bare :package_id routes, so ordering is unambiguous.
+  router.post("/api/vendor/listing/me/packages", handleAddPackage);
+  router.patch("/api/vendor/listing/me/packages/:package_id", handleUpdatePackage);
+  router.delete("/api/vendor/listing/me/packages/:package_id", handleDeletePackage);
+  router.post("/api/vendor/listing/me/packages/:package_id/pdf", handleUploadPackagePdf);
+  router.delete("/api/vendor/listing/me/packages/:package_id/pdf", handleDeletePackagePdf);
   router.post("/api/vendor/onboarding/complete", handleCompleteOnboarding);
 }

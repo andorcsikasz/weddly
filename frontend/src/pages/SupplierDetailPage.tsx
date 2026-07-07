@@ -35,6 +35,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Disc3,
+  FileText,
   Flag,
   Flower2,
   Gem,
@@ -565,6 +566,50 @@ export default function SupplierDetailPage() {
               </div>
             )}
           </section>
+
+          {/* Packages (árajánlat) — the vendor's published price offers. Card
+              grid, each with an optional free-text price + optional PDF price
+              list. Renders only when the claimed vendor added at least one. */}
+          {detail.packages.length > 0 && (
+            <section className="mb-10">
+              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+                {t("suppliers.detail.packages.title")}
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {detail.packages.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex flex-col rounded-xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800"
+                  >
+                    <h3 className="text-base font-semibold text-ink-900 dark:text-cream-50">
+                      {p.name}
+                    </h3>
+                    {p.price_text && (
+                      <p className="mt-1 text-sm font-semibold text-steel-700 dark:text-steel-300">
+                        {p.price_text}
+                      </p>
+                    )}
+                    {p.description && (
+                      <p className="mt-2 whitespace-pre-line text-sm text-ink-600 dark:text-umber-200">
+                        {p.description}
+                      </p>
+                    )}
+                    {p.pdf_url && (
+                      <a
+                        href={p.pdf_url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="mt-3 inline-flex items-center gap-1.5 self-start text-sm text-steel-700 hover:underline dark:text-steel-300"
+                      >
+                        <FileText size={15} aria-hidden />
+                        {p.pdf_name ?? t("suppliers.detail.packages.download")}
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Reviews */}
           <ReviewsSection

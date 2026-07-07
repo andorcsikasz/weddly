@@ -30,6 +30,7 @@ import type {
   ListingSubmitterType,
   VendorAccount,
 } from "@shared/listings";
+import type { ListingPackage } from "@shared/listing_packages";
 import type { ListingVideo, VideoProvider } from "@shared/listing_videos";
 import { type SupplierCategory, type VenueStyle, VENUE_STYLES } from "@shared/suppliers";
 
@@ -667,4 +668,129 @@ export function reorderListingVideos(listingId: string, orderedIds: number[]): v
     }
   });
   tx(orderedIds);
+}
+
+// ── Listing packages (árajánlat / price offers) ──────────────────────────────
+// Named price tiers a claimed vendor publishes on their listing (max enforced
+// in the route). Oldest first so creation order is display order — same
+// treatment as the photo gallery. `price_text` is free-text; the optional PDF
+// lives at listings/<id>/packages/<packageId>.pdf.
+
+type ListingPackageRow = {
+  id: number;
+  name: string;
+  price_text: string | null;
+  description: string | null;
+  pdf_url: string | null;
+  pdf_name: string | null;
+};
+
+function toListingPackage(row: ListingPackageRow): ListingPackage {
+  return {
+    id: row.id,
+    name: row.name,
+    price_text: row.price_text,
+    description: row.description,
+    pdf_url: row.pdf_url,
+    pdf_name: row.pdf_name,
+  };
+}
+
+const PACKAGE_COLS = "id, name, price_text, description, pdf_url, pdf_name";
+
+export function listListingPackages(listingId: string): ListingPackage[] {
+  const rows = db
+    .prepare(`SELECT ${PACKAGE_COLS} FROM listing_packages WHERE listing_id = ? ORDER BY id ASC`)
+    .all(listingId) as ListingPackageRow[];
+  return rows.map(toListingPackage);
+}
+
+export function countListingPackages(listingId: string): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS n FROM listing_packages WHERE listing_id = ?")
+    .get(listingId) as { n: number };
+  return row.n;
+}
+
+export function addListingPackage(
+  listingId: string,
+  input: { name: string; price_text: string | null; description: string | null },
+): ListingPackage {
+  const ts = now();
+  const res = db
+    .prepare(
+      `INSERT INTO listing_packages (listing_id, name, price_text, description, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .run(listingId, input.name, input.price_text, input.description, ts, ts);
+  return {
+    id: Number(res.lastInsertRowid),
+    name: input.name,
+    price_text: input.price_text,
+    description: input.description,
+    pdf_url: null,
+    pdf_name: null,
+  };
+}
+
+export function getListingPackage(listingId: string, packageId: number): ListingPackage | null {
+  const row = db
+    .prepare(`SELECT ${PACKAGE_COLS} FROM listing_packages WHERE id = ? AND listing_id = ?`)
+    .get(packageId, listingId) as ListingPackageRow | undefined;
+  return row ? toListingPackage(row) : null;
+}
+
+/** Partial update of a package's text fields — only present keys are applied,
+ *  scoped by listing_id so a stray id from another listing is a no-op. */
+export function updateListingPackage(
+  listingId: string,
+  packageId: number,
+  patch: { name?: string; price_text?: string | null; description?: string | null },
+): void {
+  const sets: string[] = [];
+  const vals: (string | null)[] = [];
+  if (patch.name !== undefined) {
+    sets.push("name = ?");
+    vals.push(patch.name);
+  }
+  if (patch.price_text !== undefined) {
+    sets.push("price_text = ?");
+    vals.push(patch.price_text);
+  }
+  if (patch.description !== undefined) {
+    sets.push("description = ?");
+    vals.push(patch.description);
+  }
+  if (sets.length === 0) return;
+  sets.push("updated_at = ?");
+  db.prepare(`UPDATE listing_packages SET ${sets.join(", ")} WHERE id = ? AND listing_id = ?`).run(
+    ...vals,
+    now(),
+    packageId,
+    listingId,
+  );
+}
+
+export function setListingPackagePdf(
+  listingId: string,
+  packageId: number,
+  pdfUrl: string,
+  pdfName: string,
+): void {
+  db.prepare(
+    "UPDATE listing_packages SET pdf_url = ?, pdf_name = ?, updated_at = ? WHERE id = ? AND listing_id = ?",
+  ).run(pdfUrl, pdfName, now(), packageId, listingId);
+}
+
+export function clearListingPackagePdf(listingId: string, packageId: number): void {
+  db.prepare(
+    "UPDATE listing_packages SET pdf_url = NULL, pdf_name = NULL, updated_at = ? WHERE id = ? AND listing_id = ?",
+  ).run(now(), packageId, listingId);
+}
+
+export function deleteListingPackage(listingId: string, packageId: number): void {
+  db.prepare("DELETE FROM listing_packages WHERE id = ? AND listing_id = ?").run(
+    packageId,
+    listingId,
+  );
 }

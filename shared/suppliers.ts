@@ -1,6 +1,7 @@
 // Static suppliers directory contract. Backend curates the list (v1); the v2
 // marketplace will swap this for a `suppliers` DB table with the same shape.
 
+import type { ListingPackage } from "./listing_packages";
 import type { ListingVideo } from "./listing_videos";
 
 export type SupplierCategory =
@@ -447,4 +448,8 @@ export interface SupplierDetail extends DirectorySupplier {
    *  vendors add these, so it's `[]` for the unclaimed majority. Rendered as a
    *  lazy, click-to-play grid right after the photo gallery. */
   videos: ListingVideo[];
+  /** Price offers / packages (árajánlat), oldest first. Only claimed vendors
+   *  publish these, so `[]` for the unclaimed majority. Rendered as a card
+   *  grid with the optional PDF download. */
+  packages: ListingPackage[];
 }
