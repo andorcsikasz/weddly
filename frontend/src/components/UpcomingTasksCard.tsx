@@ -365,7 +365,7 @@ export function UpcomingTasksCard({
         ) : (
           <>
             {hasNudges && (
-              <ul className="grid gap-1">
+              <ul className="flex flex-col gap-1">
                 {nudges.map((nudge) => (
                   <li key={nudge.label}>{nudgeRow(nudge)}</li>
                 ))}
@@ -376,7 +376,7 @@ export function UpcomingTasksCard({
             )}
             {upcoming.length > 0 && (
               <>
-                <ul className="grid gap-1">
+                <ul className="flex flex-col gap-1">
                   {upcoming.map((item) => {
                     const chip = dueChip(item.due_date as string);
                     return (
@@ -430,7 +430,7 @@ export function UpcomingTasksCard({
                 <p className="mb-1.5 text-xs text-umber-500 dark:text-umber-300">
                   {t("dashboard.upcoming_undated_hint")}
                 </p>
-                <ul className="grid gap-1">
+                <ul className="flex flex-col gap-1">
                   {fallback.map((item) => (
                     <li
                       key={item.id}
