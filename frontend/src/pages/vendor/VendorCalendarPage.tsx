@@ -1026,8 +1026,8 @@ function DayBlockEditor({
           </p>
         ) : (
           <div className="space-y-3">
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="block">
+            <div className="flex items-end gap-2">
+              <label className="block min-w-0 flex-1">
                 <span className="field-label">{t("vendor_calendar.block_from")}</span>
                 <select
                   className="input"
@@ -1045,7 +1045,7 @@ function DayBlockEditor({
                   ))}
                 </select>
               </label>
-              <label className="block">
+              <label className="block min-w-0 flex-1">
                 <span className="field-label">{t("vendor_calendar.block_to")}</span>
                 <select
                   className="input"

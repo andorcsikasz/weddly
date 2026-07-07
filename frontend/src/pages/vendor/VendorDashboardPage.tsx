@@ -387,7 +387,14 @@ function KpiCard({
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
       </div>
-      <div className={`text-center text-2xl font-semibold ${valueTone}`}>{value}</div>
+      {/* Shrinks a notch on mobile and wraps (break-words) so a large money
+          value like "1 200 000 Ft" stays inside the narrow tile instead of
+          overflowing its right edge. */}
+      <div
+        className={`break-words text-center text-xl font-semibold leading-tight tabular-nums sm:text-2xl ${valueTone}`}
+      >
+        {value}
+      </div>
       {sub && <div className="text-center text-xs text-ink-500 dark:text-paper-400">{sub}</div>}
     </>
   );
