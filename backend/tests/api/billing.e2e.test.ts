@@ -433,12 +433,9 @@ describe("multi-workspace billing inheritance", () => {
     const secondaryId = await spawnEvent(token, "Rehearsal dinner");
     const adminToken = await addAdmin();
 
-    const list = await req<{ couples: AdminCoupleView[] }>(
-      "GET",
-      "/api/admin/couples",
-      undefined,
-      { token: adminToken },
-    );
+    const list = await req<{ couples: AdminCoupleView[] }>("GET", "/api/admin/couples", undefined, {
+      token: adminToken,
+    });
     expect(list.status).toBe(200);
     const owner = list.data.couples.find((c) => c.id === secondaryId)?.owner_user_id ?? null;
     expect(owner).not.toBeNull();

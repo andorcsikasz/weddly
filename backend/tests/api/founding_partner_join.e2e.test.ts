@@ -44,7 +44,12 @@ async function joinPartner(email: string, inviteToken: string): Promise<void> {
   });
   expect(reg.status).toBe(201);
   await verifyUserEmail(email);
-  const acc = await req("POST", `/api/invites/${inviteToken}/accept`, {}, { token: reg.data.token });
+  const acc = await req(
+    "POST",
+    `/api/invites/${inviteToken}/accept`,
+    {},
+    { token: reg.data.token },
+  );
   expect(acc.status).toBe(200);
 }
 

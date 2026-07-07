@@ -379,9 +379,7 @@ function StatusDonut({
                 strokeWidth={stroke}
                 strokeDasharray={`${length} ${circumference - length}`}
                 strokeDashoffset={-drawn}
-                onClick={() =>
-                  navigate(`/vendor/clients?status=${encodeURIComponent(seg.status)}`)
-                }
+                onClick={() => navigate(`/vendor/clients?status=${encodeURIComponent(seg.status)}`)}
                 className={`cursor-pointer stroke-chart-${seg.color} transition-[filter] duration-150 hover:brightness-110`}
               >
                 <title>{tip}</title>
