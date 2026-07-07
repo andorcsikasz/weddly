@@ -211,6 +211,11 @@ export function listAdminVendorAccounts(): AdminVendorView[] {
          FROM vendor_accounts va
          LEFT JOIN users u ON u.id = va.owner_user_id
          LEFT JOIN vendor_subscriptions vs ON vs.vendor_account_id = va.id
+        -- Demo vendors (demo-…@demo.weddly.local owner) are kept out of the
+        -- admin vendor list + its filter counts, mirroring how listAdminPlanners
+        -- excludes demo planners. They stay visible, distinguished, in the admin
+        -- Users overview's Demo section.
+        WHERE u.email IS NULL OR u.email NOT LIKE '%@demo.weddly.local'
         ORDER BY va.created_at DESC`,
     )
     .all() as AdminVendorRow[];

@@ -177,6 +177,23 @@ describe("admin vendor management", () => {
     expect(view?.is_founding_member).toBe(true);
   });
 
+  test("demo vendors are excluded from the admin vendor list", async () => {
+    const adminToken = await bootstrapAdmin();
+    // A real activated vendor, then a throwaway demo vendor (demo-…@demo.weddly.local).
+    const { accountId } = await seedActivatedVendor("realvendor@weddly.test", "Real Studio");
+    expect((await req("POST", "/api/demo/vendor/start", {})).status).toBe(201);
+
+    const res = await req<{ active: AdminVendorView[] }>("GET", "/api/admin/vendors", undefined, {
+      token: adminToken,
+    });
+    expect(res.status).toBe(200);
+    // Only the real vendor survives — the demo one is filtered out (mirrors the
+    // planner list), so it never inflates the admin vendor list or its counts.
+    expect(res.data.active).toHaveLength(1);
+    expect(res.data.active[0]?.id).toBe(accountId);
+    expect(res.data.active.some((v) => v.owner_email?.endsWith("@demo.weddly.local"))).toBe(false);
+  });
+
   test("non-admin is rejected", async () => {
     await bootstrapAdmin();
     const { token } = await bootstrapCouple("notadmin@weddly.test");

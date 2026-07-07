@@ -492,6 +492,27 @@ export default function AdminUsersPage() {
     // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
     [orphans, searchQuery],
   );
+  // Demo accounts are the only place a demo vendor/planner is listed (they're
+  // filtered out of the dedicated admin Vendors/Planners pages), so the Demo
+  // section stays searchable — otherwise a search for a demo account by name
+  // would turn up nothing.
+  const filteredDemoCouples = useMemo(
+    () => (searchQuery === "" ? demoCouples : demoCouples.filter(coupleMatches)),
+    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
+    [demoCouples, searchQuery, userById],
+  );
+  const filteredDemoVendors = useMemo(
+    () => (searchQuery === "" ? demoVendors : demoVendors.filter(orphanMatches)),
+    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
+    [demoVendors, searchQuery],
+  );
+  const filteredDemoPlanners = useMemo(
+    () => (searchQuery === "" ? demoPlanners : demoPlanners.filter(orphanMatches)),
+    // biome-ignore lint/correctness/useExhaustiveDependencies: matcher closure
+    [demoPlanners, searchQuery],
+  );
+  const filteredDemoTotal =
+    filteredDemoCouples.length + filteredDemoVendors.length + filteredDemoPlanners.length;
   const isSearching = searchQuery !== "";
   // Auto-expand the beta bucket while searching so matching beta workspaces
   // surface inline instead of hiding behind the collapsed summary.
@@ -502,8 +523,14 @@ export default function AdminUsersPage() {
   const couplesListOpen = couplesOpen || isSearching;
   const soloListOpen = soloOpen || isSearching;
   const orphansListOpen = orphansOpen || isSearching;
+  // Auto-expand the demo bucket while searching so matching demo accounts
+  // surface inline instead of hiding behind the collapsed summary.
+  const demoListOpen = demoOpen || isSearching;
   const totalFilteredHits =
-    filteredRealCouples.length + filteredBetaCouples.length + filteredOrphans.length;
+    filteredRealCouples.length +
+    filteredBetaCouples.length +
+    filteredOrphans.length +
+    filteredDemoTotal;
 
   async function onResendVerify(u: AdminUserView) {
     setPendingId(u.id);
@@ -1671,7 +1698,7 @@ export default function AdminUsersPage() {
                *  honest; the backend purge worker reaps them on its own
                *  schedule, so no destructive action surface here. Suppressed
                *  while searching — results live in the lists above. ────────── */}
-              {!isSearching && demoTotal > 0 && (
+              {demoTotal > 0 && (filteredDemoTotal > 0 || !isSearching) && (
                 <section id="admin-section-demo" className="mb-6 scroll-mt-20">
                   <AdminSectionHeader
                     title={t("admin.demo_section")}
@@ -1686,21 +1713,25 @@ export default function AdminUsersPage() {
                         </span>
                       </span>
                     }
-                    collapse={{
-                      open: demoOpen,
-                      onToggle: () => setDemoOpen((v) => !v),
-                      label: t(demoOpen ? "admin.section_hide" : "admin.section_show"),
-                    }}
+                    collapse={
+                      !isSearching
+                        ? {
+                            open: demoOpen,
+                            onToggle: () => setDemoOpen((v) => !v),
+                            label: t(demoOpen ? "admin.section_hide" : "admin.section_show"),
+                          }
+                        : undefined
+                    }
                   />
-                  {demoOpen && (
+                  {demoListOpen && (
                     <div className="space-y-4">
-                      {demoCouples.length > 0 && (
+                      {filteredDemoCouples.length > 0 && (
                         <div>
                           <p className="mb-1.5 eyebrow text-neutral-500 dark:text-umber-300">
-                            {t("admin.demo_couples_subhead", { n: demoCouples.length })}
+                            {t("admin.demo_couples_subhead", { n: filteredDemoCouples.length })}
                           </p>
                           <ul className="space-y-1.5">
-                            {demoCouples.map((c) => {
+                            {filteredDemoCouples.map((c) => {
                               const members = c.partners
                                 .map((p) => userById.get(p.id))
                                 .filter((u): u is AdminUserView => u != null);
@@ -1778,20 +1809,24 @@ export default function AdminUsersPage() {
                           </ul>
                         </div>
                       )}
-                      {demoVendors.length > 0 && (
+                      {filteredDemoVendors.length > 0 && (
                         <div>
                           <p className="mb-1.5 eyebrow text-neutral-500 dark:text-umber-300">
-                            {t("admin.demo_vendors_subhead", { n: demoVendors.length })}
+                            {t("admin.demo_vendors_subhead", { n: filteredDemoVendors.length })}
                           </p>
-                          <ul className="space-y-1.5">{demoVendors.map(renderDemoUserCard)}</ul>
+                          <ul className="space-y-1.5">
+                            {filteredDemoVendors.map(renderDemoUserCard)}
+                          </ul>
                         </div>
                       )}
-                      {demoPlanners.length > 0 && (
+                      {filteredDemoPlanners.length > 0 && (
                         <div>
                           <p className="mb-1.5 eyebrow text-neutral-500 dark:text-umber-300">
-                            {t("admin.demo_planners_subhead", { n: demoPlanners.length })}
+                            {t("admin.demo_planners_subhead", { n: filteredDemoPlanners.length })}
                           </p>
-                          <ul className="space-y-1.5">{demoPlanners.map(renderDemoUserCard)}</ul>
+                          <ul className="space-y-1.5">
+                            {filteredDemoPlanners.map(renderDemoUserCard)}
+                          </ul>
                         </div>
                       )}
                     </div>
