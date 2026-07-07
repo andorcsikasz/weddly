@@ -140,7 +140,21 @@ function toAdminUser(
 }
 
 function listAllUsers(): UserRow[] {
-  return db.prepare("SELECT * FROM users ORDER BY created_at DESC").all() as UserRow[];
+  // Vendors (role='vendor') and planners (user_type='planner') each have their
+  // own dedicated FIÓKOK page (Szolgáltatók / Szervezők) — a real vendor/planner
+  // must NOT also show up in this couples-oriented user list (that's the "why is
+  // this szolgáltató in Felhasználók?" bug). The ONE exception is DEMO
+  // vendors/planners (@demo.weddly.local): the dedicated pages exclude demos
+  // (see listAdminVendorAccounts / listAdminPlanners), so the admin Users "Demo"
+  // section is their only home. So: drop only the REAL ones, keep the demos.
+  return db
+    .prepare(
+      `SELECT * FROM users
+        WHERE email LIKE ?
+           OR (role != 'vendor' AND user_type != 'planner')
+        ORDER BY created_at DESC`,
+    )
+    .all(`%${DEMO_EMAIL_SUFFIX}`) as UserRow[];
 }
 
 function listAllCouples(): CoupleRow[] {
@@ -822,7 +836,13 @@ function handleSidebarBadges(ctx: Ctx): Response {
           WHERE u.created_at > ?
             AND u.email NOT LIKE '%@purged.local'
             AND u.email NOT LIKE '%${DEMO_EMAIL_SUFFIX}'
-            AND COALESCE(c.is_demo, 0) = 0`,
+            AND COALESCE(c.is_demo, 0) = 0
+            -- Real vendors/planners live on their own FIÓKOK pages and are
+            -- filtered out of the Felhasználók list (see listAllUsers), so they
+            -- must not light up this badge either — it would point the admin at a
+            -- page where the "new" account never appears.
+            AND u.role != 'vendor'
+            AND u.user_type != 'planner'`,
       )
       .get(seen.users) as { n: number }
   ).n;

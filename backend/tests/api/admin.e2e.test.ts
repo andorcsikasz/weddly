@@ -294,16 +294,19 @@ describe("admin users — list, engagement, badges", () => {
     expect(list.data.users[0]?.email).toBe("second@weddly.test");
   });
 
-  test("account_type distinguishes vendor/planner from a not-yet-onboarded couple", async () => {
+  test("real vendors + planners are excluded from the couples user list (they have their own FIÓKOK pages)", async () => {
     const adminToken = await bootstrapAdmin();
     // Three plain accounts, then flip two of them at the DB layer to mirror how
-    // vendor signup (role='vendor') and planner provisioning (user_type='planner')
-    // leave the row — both legitimately have no `couples` workspace.
+    // a real vendor signup (role='vendor') and planner provisioning
+    // (user_type='planner') leave the row — both legitimately have no `couples`
+    // workspace. A real vendor lives on FIÓKOK → Szolgáltatók, a real planner on
+    // FIÓKOK → Szervezők, so NEITHER may also surface in this couples-oriented
+    // Felhasználók list (that's the "why is this szolgáltató in Felhasználók?" bug).
     const couple = await bootstrapCouple("stuck-couple@weddly.test");
     const vendor = await bootstrapCouple("shop@weddly.test");
     const planner = await bootstrapCouple("wedplanner@weddly.test");
-    // Null out couple_id so all three land in the "no workspace" bucket, then
-    // stamp the class-defining columns.
+    // Null out couple_id so all three would otherwise land in the "no workspace"
+    // bucket, then stamp the class-defining columns.
     db.prepare("UPDATE users SET couple_id = NULL WHERE email = ?").run("stuck-couple@weddly.test");
     db.prepare("UPDATE users SET couple_id = NULL, role = 'vendor' WHERE email = ?").run(
       "shop@weddly.test",
@@ -320,19 +323,17 @@ describe("admin users — list, engagement, badges", () => {
     });
     const byEmail = (e: string) => list.data.users.find((u) => u.email === e);
 
+    // The abandoned-onboarding couple stays — it's a real couple-track user with
+    // no dedicated page of its own.
     const stuck = byEmail("stuck-couple@weddly.test");
     expect(stuck?.couple_id).toBeNull();
     expect(stuck?.account_type).toBe("couple");
 
-    const shop = byEmail("shop@weddly.test");
-    expect(shop?.couple_id).toBeNull();
-    expect(shop?.account_type).toBe("vendor");
+    // The real vendor + real planner are gone from this list.
+    expect(byEmail("shop@weddly.test")).toBeUndefined();
+    expect(byEmail("wedplanner@weddly.test")).toBeUndefined();
 
-    const wed = byEmail("wedplanner@weddly.test");
-    expect(wed?.couple_id).toBeNull();
-    expect(wed?.account_type).toBe("planner");
-
-    // Sanity: a default account (no vendor role / planner type) is a couple.
+    // Sanity: a default account (no vendor role / planner type) is a couple and stays.
     const adminRow = byEmail("admin@test.test");
     expect(adminRow?.account_type).toBe("couple");
   });

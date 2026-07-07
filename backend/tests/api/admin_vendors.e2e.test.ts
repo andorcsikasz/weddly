@@ -66,6 +66,30 @@ describe("admin vendor management", () => {
     expect(res.data.pending[0]?.display_name).toBe("Pending Florals");
   });
 
+  test("an activated vendor lives on the vendors page, NOT in the couples user list", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { accountId } = await seedActivatedVendor("shopowner@weddly.test", "Studio Bloom");
+
+    // Present on FIÓKOK → Szolgáltatók (its home).
+    const vendors = await req<{ active: AdminVendorView[] }>(
+      "GET",
+      "/api/admin/vendors",
+      undefined,
+      { token: adminToken },
+    );
+    expect(vendors.data.active.some((v) => v.id === accountId)).toBe(true);
+
+    // Absent from FIÓKOK → Felhasználók — a real vendor has its own page and must
+    // not double up in the couples-oriented user list.
+    const users = await req<{ users: { email: string }[] }>(
+      "GET",
+      "/api/admin/users",
+      undefined,
+      { token: adminToken },
+    );
+    expect(users.data.users.some((u) => u.email === "shopowner@weddly.test")).toBe(false);
+  });
+
   test("suspend + reactivate flips the owner's users.status", async () => {
     const adminToken = await bootstrapAdmin();
     const { userId, accountId } = await seedActivatedVendor("vendor2@weddly.test", "Cake Co");
