@@ -5663,8 +5663,6 @@ const en: LocaleMessages = {
       "One more click will cancel the partner invite. Click cancel anywhere else to back out.",
     partner_invite_cancelling: "Cancelling…",
     activity_title: "What's been happening",
-    activity_body:
-      "Edits, uploads, deletes and RSVPs across the workspace, last 14 days. Older entries disappear from this view automatically.",
     activity_empty: "Nothing logged yet. Saves, uploads and RSVPs will appear here.",
     activity_actor_you: "You",
     activity_actor_unknown: "Someone",

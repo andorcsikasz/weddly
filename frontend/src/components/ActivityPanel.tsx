@@ -345,9 +345,6 @@ export function ActivityPanel({
             <History size={18} className="text-ink-400 dark:text-ink-300" aria-hidden />
             {t("profile.activity_title")}
           </span>
-          <span className="mt-1 block text-xs text-ink-500 dark:text-ink-200">
-            {t("profile.activity_body")}
-          </span>
           {attributed > 0 && (
             <span className="mt-2.5 block">
               <span className="flex h-1 overflow-hidden rounded-full">

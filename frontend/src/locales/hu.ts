@@ -5722,8 +5722,6 @@ const hu: LocaleMessages = {
       "Még egy kattintás visszavonja a partner-meghívót. Bárhova máshova kattintva mégse vonod vissza.",
     partner_invite_cancelling: "Visszavonás…",
     activity_title: "Mi történt a munkaterületen",
-    activity_body:
-      "Mentések, feltöltések, törlések és RSVP-k az elmúlt 14 napból. A régebbi bejegyzések innen automatikusan eltűnnek.",
     activity_empty:
       "Még semmi nincs naplózva. A mentések, feltöltések és RSVP-k itt fognak megjelenni.",
     activity_actor_you: "Te",

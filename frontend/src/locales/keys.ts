@@ -6406,7 +6406,6 @@ export interface LocaleMessages {
      *  per-action `activity_action_*` keys cover the visible set defined
      *  in routes/couples.ts (`ACTIVITY_VISIBLE_ACTIONS`). */
     activity_title: string;
-    activity_body: string;
     activity_empty: string;
     activity_actor_you: string;
     activity_actor_unknown: string;
