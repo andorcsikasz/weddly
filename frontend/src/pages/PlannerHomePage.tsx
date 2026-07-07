@@ -277,6 +277,8 @@ interface FilterOption {
   label: string;
   selected: boolean;
   onSelect: () => void;
+  /** Optional task count shown after the label (e.g. the timing facets). */
+  count?: number;
 }
 
 function FilterDropdown({
@@ -365,6 +367,11 @@ function FilterDropdown({
                 />
               )}
               <span className="min-w-0 flex-1 truncate">{opt.label}</span>
+              {opt.count !== undefined && (
+                <span className="shrink-0 tabular-nums text-xs text-ink-400 dark:text-paper-500">
+                  {opt.count}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -380,10 +387,12 @@ function toggleInList<T>(list: T[], item: T): T[] {
 const PRIORITY_ORDER: TaskPriority[] = ["high", "medium"];
 
 function TaskFilterPanel({
+  tasks,
   clients,
   filters,
   onChange,
 }: {
+  tasks: PlannerTaskRow[];
   clients: PlannerClientView[];
   filters: TaskFilters;
   onChange: (f: TaskFilters) => void;
@@ -418,6 +427,14 @@ function TaskFilterPanel({
     all: t("planner_home.filter_timing_all"),
     week: t("planner_home.filter_timing_week"),
     overdue: t("planner_home.filter_timing_overdue"),
+  };
+
+  // How many tasks each timing facet would show, honouring the other active
+  // filters (client + priority) so the count matches what a pick would reveal.
+  const timingCounts: Record<TimingFilter, number> = {
+    all: applyTaskFilters(tasks, { ...filters, timing: "all" }).length,
+    week: applyTaskFilters(tasks, { ...filters, timing: "week" }).length,
+    overdue: applyTaskFilters(tasks, { ...filters, timing: "overdue" }).length,
   };
 
   const anyActive =
@@ -456,6 +473,7 @@ function TaskFilterPanel({
           id: tm,
           label: timingLabels[tm],
           selected: filters.timing === tm,
+          count: timingCounts[tm],
           onSelect: () => onChange({ ...filters, timing: tm }),
         }))}
       />
@@ -1088,7 +1106,12 @@ export default function PlannerHomePage() {
               )}
             </div>
             {tasks.length > 0 && showTaskFilters && (
-              <TaskFilterPanel clients={clients} filters={taskFilters} onChange={setTaskFilters} />
+              <TaskFilterPanel
+                tasks={tasks}
+                clients={clients}
+                filters={taskFilters}
+                onChange={setTaskFilters}
+              />
             )}
             <div className="card px-5 py-5">
               <UpcomingTasks
