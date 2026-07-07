@@ -32,7 +32,12 @@ import {
   type LText,
   pickL,
 } from "./demo_seed";
-import { addListingPhoto, createVendorListing, patchListing } from "./listings";
+import {
+  addListingPackage,
+  addListingPhoto,
+  createVendorListing,
+  patchListing,
+} from "./listings";
 import { uniqueCoupleSlug } from "./slug";
 
 export interface VendorDemoResult {
@@ -85,6 +90,36 @@ const DEMO_CAKE_MEDIA = {
     "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Wedding_cake_dessert.jpg/1280px-Wedding_cake_dessert.jpg",
   ],
 } as const;
+
+/** Price offers (árajánlat) for the demo cake vendor — one per tier so the demo
+ *  showcases the packages section on both the editor and the public card. Price
+ *  is free-text (HU forint vs EUR); descriptions stay in the fairy-tale voice. */
+const DEMO_CAKE_PACKAGES = [
+  {
+    name: { en: "Cake tasting", hu: "Kóstoló" },
+    price: { hu: "12 000 Ft", en: "€30" },
+    description: {
+      en: "Five flavour samples for the couple, with a design consultation.",
+      hu: "Öt ízminta a párnak, tervezési konzultációval.",
+    },
+  },
+  {
+    name: { en: "Wedding cake", hu: "Esküvői torta" },
+    price: { hu: "95 000 Ft-tól", en: "from €250" },
+    description: {
+      en: "A three-tier gingerbread cake with bespoke decoration.",
+      hu: "Háromemeletes mézeskalács-torta, egyedi díszítéssel.",
+    },
+  },
+  {
+    name: { en: "Full dessert table", hu: "Teljes desszertasztal" },
+    price: { hu: "180 000 Ft-tól", en: "from €480" },
+    description: {
+      en: "Cake, pastries and gumdrops for up to 80 guests.",
+      hu: "Torta, sütemények és cukorgombok akár 80 főre.",
+    },
+  },
+] as const;
 
 export function vendorDemoBusinessName(locale: DemoLocale): string {
   return pickL(BUSINESS_NAME, locale);
@@ -389,6 +424,15 @@ export function seedVendorDemo(
       listing.id,
     );
     for (const url of DEMO_CAKE_MEDIA.gallery) addListingPhoto(listing.id, url);
+
+    // Price offers (árajánlat) so the packages section is populated in the demo.
+    for (const p of DEMO_CAKE_PACKAGES) {
+      addListingPackage(listing.id, {
+        name: pickL(p.name, locale),
+        price_text: huf ? p.price.hu : p.price.en,
+        description: pickL(p.description, locale),
+      });
+    }
 
     // 2. Client inquiries, one is_demo couple + one booking each, with the
     //    CRM fields and payment schedules that light up the PRO surfaces.
