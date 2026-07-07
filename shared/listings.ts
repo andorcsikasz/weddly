@@ -158,6 +158,23 @@ export interface AdminVendorView {
   billing_reason: VendorBillingReason | null;
   /** Founding-cohort badge (free first year). False for pending rows. */
   is_founding_member: boolean;
+  /** Epoch ms — end of the 1-year founding window. Null unless founding. Lets
+   *  the admin see "free until {date}" on an early-adopter vendor. */
+  founding_until: number | null;
+  /** Epoch ms — end of the no-card trial (vendor 101+). Null unless trialing. */
+  trial_ends_at: number | null;
+  /** A payment card is on file with Stripe (checkout setup completed). Drives
+   *  the "will pay" vs "never will" distinction the binary paying/not marker
+   *  can't make on its own. False for pending rows. */
+  card_on_file: boolean;
+  /** Epoch ms — scheduled first payment (start of the month after the last
+   *  free lead landed). Null until the free credits are spent. */
+  billing_starts_at: number | null;
+  /** Epoch ms — paid period end from Stripe. Null when not a paying sub. */
+  current_period_end: number | null;
+  /** Free inquiries delivered so far while in the lead window (0..3). Null for
+   *  pending rows / no subscription. */
+  lead_credits_used: number | null;
   /** How many `listings` this vendor owns (0 for pending rows). */
   listing_count: number;
   /** For pending rows: whether the onboarding token has expired. */

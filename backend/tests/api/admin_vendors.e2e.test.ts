@@ -188,6 +188,14 @@ describe("admin vendor management", () => {
     expect(view?.billing_reason).toBe("founding");
     expect(view?.is_founding_member).toBe(true);
     expect(view?.subscription_status).toBe("founding");
+    // Billing-detail fields the admin row now surfaces (early-adopter "free
+    // until" date + the honest payment-status pill inputs).
+    expect(typeof view?.founding_until).toBe("number");
+    expect(view?.card_on_file).toBe(false);
+    expect(view).toHaveProperty("trial_ends_at");
+    expect(view).toHaveProperty("current_period_end");
+    expect(view).toHaveProperty("billing_starts_at");
+    expect(view).toHaveProperty("lead_credits_used");
 
     // Lapse the founding window → the derived plan falls to FREE.
     db.prepare(

@@ -151,6 +151,8 @@ interface AdminVendorRow extends VendorAccountRow {
   sub_is_founding_member: number | null;
   sub_lead_credits_used: number | null;
   sub_billing_starts_at: number | null;
+  sub_card_on_file: number | null;
+  sub_current_period_end: number | null;
   listing_count: number;
 }
 
@@ -189,6 +191,12 @@ export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
     plan,
     billing_reason: billingReason,
     is_founding_member: row.sub_is_founding_member === 1,
+    founding_until: row.sub_founding_until,
+    trial_ends_at: row.sub_trial_ends_at,
+    card_on_file: row.sub_card_on_file === 1,
+    billing_starts_at: row.sub_billing_starts_at,
+    current_period_end: row.sub_current_period_end,
+    lead_credits_used: row.sub_lead_credits_used,
     listing_count: row.listing_count,
     token_expired: false,
     created_at: row.created_at,
@@ -207,6 +215,8 @@ export function listAdminVendorAccounts(): AdminVendorView[] {
               vs.is_founding_member   AS sub_is_founding_member,
               vs.lead_credits_used    AS sub_lead_credits_used,
               vs.billing_starts_at    AS sub_billing_starts_at,
+              vs.card_on_file         AS sub_card_on_file,
+              vs.current_period_end   AS sub_current_period_end,
               (SELECT COUNT(*) FROM listings l WHERE l.vendor_account_id = va.id) AS listing_count
          FROM vendor_accounts va
          LEFT JOIN users u ON u.id = va.owner_user_id

@@ -1,11 +1,35 @@
-// Admin vendor management (KEZELÉS → Szolgáltatók). Lists activated vendor
+// Admin vendor management (FIÓKOK → Szolgáltatók). Lists activated vendor
 // accounts plus accepted-but-not-yet-activated onboarding rows, and lets an
 // admin suspend/reactivate, edit details, delete, and resend the activation
 // link. Sibling of AdminUsersPage; the BEÉRKEZŐ vendor waitlist stays separate.
+//
+// The row speaks the same visual language as the couples user page: an early-
+// adopter Bird glyph for founding members, and an HONEST payment-status pill —
+// tone carries the fast read (sage = paying, blush = past-due, ink = card on
+// file / will pay, muted = free) so a founding vendor paying nothing never
+// looks like a churned one (the trap a binary paying/not marker falls into).
 
 import type { AdminVendorView } from "@shared/listings";
+import { VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
 import type { VendorPlan } from "@shared/vendor_plan";
-import { Ban, Check, Clock, Loader2, Mail, Pencil, RotateCcw, Store, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Ban,
+  Bird,
+  CalendarClock,
+  Check,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Loader2,
+  Mail,
+  MinusCircle,
+  Pencil,
+  RotateCcw,
+  Search,
+  Store,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
 import type { PillTone } from "../components/admin";
@@ -14,7 +38,11 @@ import { ApiError } from "../lib/api";
 import { adminVendorMgmtApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
-type Filter = "all" | "active" | "pending" | "suspended";
+// Filter buckets double as the "who's an early adopter / who pays" aggregate the
+// flat list never surfaced. Non-exclusive views (a suspended payer counts under
+// both) — counts are a lens, not a partition.
+type Filter = "all" | "founding" | "paying" | "trial" | "free" | "pending" | "suspended";
+const FILTERS: Filter[] = ["all", "founding", "paying", "trial", "free", "pending", "suspended"];
 
 // Mirrors the planner list's tier chip: the FREE/PRO tier reads at a glance
 // across a dense list. Display-only here, since the vendor plan is derived
@@ -32,7 +60,8 @@ function initials(name: string, email: string | null): string {
   return (first + second).toUpperCase();
 }
 
-function fmtDate(unixMs: number, locale: string): string {
+function fmtDate(unixMs: number | null, locale: string): string {
+  if (unixMs == null) return "";
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
   return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
@@ -42,11 +71,126 @@ function fmtDate(unixMs: number, locale: string): string {
   }).format(d);
 }
 
-/** Which bucket a row falls into for the filter chips. Pending rows are their
- *  own bucket; active rows split by the owner's suspension state. */
+type Translate = (key: string, vars?: Record<string, string | number>) => string;
+
+/** Which bucket a row falls into for the status pill + suspended/pending
+ *  filters. Pending rows are their own bucket; active rows split by the owner's
+ *  suspension state. */
 function vendorBucket(v: AdminVendorView): "pending" | "suspended" | "active" {
   if (v.state === "pending") return "pending";
   return v.owner_status === "suspended" ? "suspended" : "active";
+}
+
+/** Non-exclusive filter predicate driving both the chip counts and the visible
+ *  list. Every bucket except `all`/`pending` is active-account-only. */
+function matchesFilter(v: AdminVendorView, f: Filter): boolean {
+  if (f === "all") return true;
+  if (f === "pending") return v.state === "pending";
+  if (v.state !== "active") return false;
+  if (f === "suspended") return v.owner_status === "suspended";
+  if (f === "founding") return v.is_founding_member;
+  if (f === "paying")
+    return v.subscription_status === "active" || v.subscription_status === "past_due";
+  if (f === "trial")
+    return v.subscription_status === "trialing" || v.subscription_status === "lead_window";
+  if (f === "free") return v.plan === "free";
+  return false;
+}
+
+function vendorSearchHay(v: AdminVendorView): string {
+  return [v.display_name, v.contact_email, v.owner_email, v.vendor_code]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+interface PayState {
+  key: string;
+  tone: PillTone;
+  Icon: typeof Store;
+  label: string;
+  tooltip?: string;
+}
+
+/** The honest payment-status pill. Returns null for pending rows and for an
+ *  actively-free founding member (the Bird glyph already says "free early
+ *  adopter", so the pill would be redundant — mirrors how the couples page
+ *  suppresses its payment marker for founding workspaces). */
+function vendorPaymentState(v: AdminVendorView, t: Translate, locale: string): PayState | null {
+  if (v.state !== "active") return null;
+  const s = v.subscription_status;
+  if (s === "founding") return null;
+  const d = (ts: number | null) => fmtDate(ts, locale);
+  if (!s || s === "none") {
+    return { key: "none", tone: "muted", Icon: MinusCircle, label: t("admin.vendors.pay_none") };
+  }
+  if (s === "active") {
+    return {
+      key: "paying",
+      tone: "sage",
+      Icon: DollarSign,
+      label: t("admin.vendors.pay_paying"),
+      tooltip: v.current_period_end
+        ? t("admin.vendors.pay_paying_tooltip", { date: d(v.current_period_end) })
+        : undefined,
+    };
+  }
+  if (s === "past_due") {
+    return {
+      key: "past_due",
+      tone: "blush",
+      Icon: AlertTriangle,
+      label: t("admin.vendors.pay_past_due"),
+      tooltip: t("admin.vendors.pay_past_due_tooltip"),
+    };
+  }
+  if (s === "trialing") {
+    return {
+      key: "trial",
+      tone: "paper",
+      Icon: Clock,
+      label: t("admin.vendors.pay_trial"),
+      tooltip: v.trial_ends_at
+        ? t("admin.vendors.pay_trial_tooltip", { date: d(v.trial_ends_at) })
+        : undefined,
+    };
+  }
+  if (s === "lead_window") {
+    const used = v.lead_credits_used ?? 0;
+    if (used < VENDOR_FREE_LEAD_CREDITS) {
+      return {
+        key: "leads",
+        tone: "ink",
+        Icon: CreditCard,
+        label: `${t("admin.vendors.pay_leads")} · ${used}/${VENDOR_FREE_LEAD_CREDITS}`,
+        tooltip: t("admin.vendors.pay_leads_tooltip", { used, total: VENDOR_FREE_LEAD_CREDITS }),
+      };
+    }
+    if (v.billing_starts_at && v.billing_starts_at > Date.now()) {
+      return {
+        key: "scheduled",
+        tone: "ink",
+        Icon: CalendarClock,
+        label: t("admin.vendors.pay_scheduled"),
+        tooltip: t("admin.vendors.pay_scheduled_tooltip", { date: d(v.billing_starts_at) }),
+      };
+    }
+    return {
+      key: "free",
+      tone: "muted",
+      Icon: MinusCircle,
+      label: t("admin.vendors.pay_free"),
+      tooltip: t("admin.vendors.pay_free_tooltip"),
+    };
+  }
+  // canceled / any other lapsed status → the vendor is back on the FREE plan.
+  return {
+    key: "free",
+    tone: "muted",
+    Icon: MinusCircle,
+    label: t("admin.vendors.pay_free"),
+    tooltip: t("admin.vendors.pay_free_tooltip"),
+  };
 }
 
 // ── Edit modal ────────────────────────────────────────────────────────────────
@@ -169,6 +313,10 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const bucket = vendorBucket(vendor);
+  const pay = vendorPaymentState(vendor, t, locale);
+  const foundingTip = vendor.founding_until
+    ? t("admin.vendors.founding_until_tooltip", { date: fmtDate(vendor.founding_until, locale) })
+    : t("admin.vendors.founding_tooltip");
 
   const statusPill: { tone: PillTone; Icon: typeof Store; label: string } =
     bucket === "pending"
@@ -257,7 +405,25 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                 {statusPill.label}
               </Pill>
               {vendor.token_expired && <Pill tone="muted">{t("admin.vendors.token_expired")}</Pill>}
-              {vendor.is_founding_member && <Pill tone="blush">{t("admin.vendors.founding")}</Pill>}
+              {/* Early-adopter mark: one of the first VENDOR_FOUNDING_CAP vendors.
+                  Same Bird glyph the couples page uses for founding workspaces. */}
+              {vendor.is_founding_member && (
+                <span
+                  title={foundingTip}
+                  aria-label={foundingTip}
+                  className="inline-flex items-center text-umber-600 dark:text-umber-300"
+                >
+                  <Bird size={15} aria-hidden />
+                </span>
+              )}
+              {/* Honest payment-status pill (tone carries the fast read). */}
+              {pay && (
+                <span title={pay.tooltip}>
+                  <Pill tone={pay.tone} icon={<pay.Icon size={11} />} srLabel={t("admin.vendors.pay_label")}>
+                    {pay.label}
+                  </Pill>
+                </span>
+              )}
             </div>
             {email && (
               <p className="truncate text-sm text-umber-700 dark:text-umber-300">{email}</p>
@@ -270,14 +436,6 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                 <>
                   <span aria-hidden="true">·</span>
                   <span>{t("admin.vendors.listing_count", { n: vendor.listing_count })}</span>
-                </>
-              )}
-              {vendor.subscription_status && (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span>
-                    {t("admin.vendors.subscription")}: {vendor.subscription_status}
-                  </span>
                 </>
               )}
               {vendor.contact_phone && (
@@ -373,6 +531,15 @@ export default function AdminVendorsPage() {
   const [pending, setPending] = useState<AdminVendorView[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Debounce the search so typing stays snappy on a long list (same 150ms
+  // pacing as the couples user page + supplier directory filter).
+  useEffect(() => {
+    const handle = window.setTimeout(() => setSearchQuery(searchInput.trim().toLowerCase()), 150);
+    return () => window.clearTimeout(handle);
+  }, [searchInput]);
 
   async function load() {
     setLoading(true);
@@ -395,14 +562,32 @@ export default function AdminVendorsPage() {
   const all = useMemo(() => [...pending, ...active], [pending, active]);
 
   const counts = useMemo(() => {
-    const c = { all: all.length, active: 0, pending: 0, suspended: 0 };
-    for (const v of all) c[vendorBucket(v)]++;
+    const c: Record<Filter, number> = {
+      all: all.length,
+      founding: 0,
+      paying: 0,
+      trial: 0,
+      free: 0,
+      pending: 0,
+      suspended: 0,
+    };
+    for (const v of all) {
+      for (const f of FILTERS) {
+        if (f !== "all" && matchesFilter(v, f)) c[f]++;
+      }
+    }
     return c;
   }, [all]);
 
-  const visible = filter === "all" ? all : all.filter((v) => vendorBucket(v) === filter);
-
-  const FILTERS: Filter[] = ["all", "active", "pending", "suspended"];
+  const visible = useMemo(
+    () =>
+      all.filter(
+        (v) =>
+          matchesFilter(v, filter) &&
+          (searchQuery === "" || vendorSearchHay(v).includes(searchQuery)),
+      ),
+    [all, filter, searchQuery],
+  );
 
   return (
     <>
@@ -414,6 +599,19 @@ export default function AdminVendorsPage() {
         }
         subtitle={t("admin.vendors.subtitle")}
       />
+
+      {/* Search across name / email / vendor code. */}
+      <div className="mb-4 flex items-center gap-2 rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 dark:border-umber-700 dark:bg-umber-900">
+        <Search size={16} aria-hidden className="shrink-0 text-umber-400 dark:text-umber-500" />
+        <input
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder={t("admin.vendors.search_placeholder")}
+          aria-label={t("admin.vendors.search_placeholder")}
+          className="w-full bg-transparent text-sm text-umber-900 placeholder:text-umber-400 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-500"
+        />
+      </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
@@ -431,8 +629,10 @@ export default function AdminVendorsPage() {
           <Loader2 size={14} className="animate-spin" />
           {t("common.loading")}
         </div>
-      ) : visible.length === 0 ? (
+      ) : all.length === 0 ? (
         <AdminEmptyState>{t("admin.vendors.empty")}</AdminEmptyState>
+      ) : visible.length === 0 ? (
+        <AdminEmptyState>{t("admin.vendors.empty_filtered")}</AdminEmptyState>
       ) : (
         <div className="space-y-4">
           {visible.map((v) => (
