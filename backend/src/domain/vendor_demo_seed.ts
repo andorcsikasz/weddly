@@ -32,7 +32,7 @@ import {
   type LText,
   pickL,
 } from "./demo_seed";
-import { createVendorListing, patchListing } from "./listings";
+import { addListingPhoto, createVendorListing, patchListing } from "./listings";
 import { uniqueCoupleSlug } from "./slug";
 
 export interface VendorDemoResult {
@@ -68,6 +68,23 @@ function isoDaysFromNow(days: number): string {
 }
 
 const BUSINESS_NAME: LText = { en: "Gingy's Wedding Cakes", hu: "Mézi Tortaműhely" };
+
+/** Cover + gallery photos for the demo cake studio, so the demo listing looks
+ *  like a real, finished card instead of an empty monogram. These are freely
+ *  licensed wedding-cake photos on Wikimedia Commons — `upload.wikimedia.org`
+ *  is already CSP-whitelisted (same as the blog covers), so they render on the
+ *  card, the public detail gallery, and the editor preview with no bundling.
+ *  Hotlinked rather than copied per demo: the demo purge drops the listing row,
+ *  and external URLs leave nothing behind to clean up. `hero` is a wide shot for
+ *  the 3:2/16:9 crop; `gallery` runs classic → modern → playful to show range. */
+const DEMO_CAKE_MEDIA = {
+  hero: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Twenty_tier_Wedding_cake%281%29.JPG/1280px-Twenty_tier_Wedding_cake%281%29.JPG",
+  gallery: [
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Mazel_Tov%21_Wedding_cake_in_the_time_of_corona.jpg/1280px-Mazel_Tov%21_Wedding_cake_in_the_time_of_corona.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/8/89/Wedding_Cake_Framboises_-_Cake_Design.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Wedding_cake_dessert.jpg/1280px-Wedding_cake_dessert.jpg",
+  ],
+} as const;
 
 export function vendorDemoBusinessName(locale: DemoLocale): string {
   return pickL(BUSINESS_NAME, locale);
@@ -342,8 +359,8 @@ export function seedVendorDemo(
   const tx = db.transaction(() => {
     // 1. The public listing card, complete enough that the editor + preview
     //    have something to show (blurbs in BOTH languages, the editor exposes
-    //    both fields). No hero image: the "add a photo" nudge on the dashboard
-    //    is part of the product tour.
+    //    both fields), plus a cover photo + a small cake gallery so the demo
+    //    card looks finished rather than an empty monogram (see DEMO_CAKE_MEDIA).
     const listing = createVendorListing({
       vendorAccountId,
       category: "cake_dessert",
@@ -362,6 +379,16 @@ export function seedVendorDemo(
       capacity_max: 250,
     });
     result.listing_id = listing.id;
+
+    // Cover photo (hero_image_url has no ListingPatch field, so it's stamped
+    // with a direct UPDATE, mirroring the real hero-upload route) + a few
+    // portfolio photos so the gallery on the public card + editor is populated.
+    db.prepare("UPDATE listings SET hero_image_url = ?, updated_at = ? WHERE id = ?").run(
+      DEMO_CAKE_MEDIA.hero,
+      now(),
+      listing.id,
+    );
+    for (const url of DEMO_CAKE_MEDIA.gallery) addListingPhoto(listing.id, url);
 
     // 2. Client inquiries, one is_demo couple + one booking each, with the
     //    CRM fields and payment schedules that light up the PRO surfaces.

@@ -117,9 +117,9 @@ describe("vendor demo", () => {
       "Donkey & Dragon",
     ]);
     expect(stats.data.blocked_dates_count).toBe(3);
-    // Blurbs + contact + price band + capacity are seeded; the hero photo is
-    // deliberately left empty (the "add a photo" nudge is part of the tour).
-    expect(stats.data.listing_completeness).toBe(80);
+    // Blurbs + contact + price band + capacity + hero cover photo are all
+    // seeded, so the demo card scores a full, finished-looking listing.
+    expect(stats.data.listing_completeness).toBe(100);
     // EN demo bills in EUR: recorded deposits 400 (Shrek) + 210 (Donkey).
     expect(stats.data.currency).toBe("EUR");
     expect(stats.data.revenue_tracked).toBe(610);
