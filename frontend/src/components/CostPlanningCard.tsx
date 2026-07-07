@@ -11,7 +11,6 @@ import {
   Cake,
   Camera,
   Car,
-  Circle,
   Flower2,
   Gift,
   Heart,
@@ -91,6 +90,35 @@ export const PER_GUEST_CATEGORIES = new Set<BudgetCategory>([
   "stationery",
 ]);
 
+/** Rings category glyph. Lucide ships no wedding-ring icon (the old
+ *  `rings: Circle` was just a bare band), so this hand-drawn SVG mounts a
+ *  brilliant-cut diamond on a round band to read unmistakably as a ring.
+ *  Matches the lucide convention (24 viewBox, currentColor, 2px stroke) so it
+ *  sits flush with the other category icons at size 14. */
+function RingDiamond({ size = 24, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* band */}
+      <circle cx="12" cy="17" r="4" />
+      {/* brilliant-cut diamond seated above the band */}
+      <path d="M12 3.5 15 7 12 11 9 7z" />
+      {/* girdle facet line */}
+      <path d="M9 7h6" />
+    </svg>
+  );
+}
+
 /** Lucide icon per category — minimalist 14–16px, ink-600 stroke. */
 export const CATEGORY_ICONS: Record<
   BudgetCategory,
@@ -109,7 +137,7 @@ export const CATEGORY_ICONS: Record<
   honeymoon: Plane,
   stationery: Mail,
   favours: Gift,
-  rings: Circle,
+  rings: RingDiamond,
   other: MoreHorizontal,
 };
 
@@ -895,15 +923,13 @@ function CategoryRowInner({
       ) : (
         <Icon size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
       )}
-      {/* 8-char compact label on phones (with ellipsis) so the row's
-       *  left column can shrink from 7rem → 5rem and hand 2rem of width
-       *  back to the slider rail. The full label still renders on `sm:`
-       *  upwards where the column has room. */}
-      <span className={`min-w-0 truncate ${frozen ? "text-blush-700 dark:text-blush-300" : ""}`}>
-        <span className="sm:hidden">
-          {categoryLabel.length > 8 ? `${categoryLabel.slice(0, 8)}…` : categoryLabel}
-        </span>
-        <span className="hidden sm:inline">{categoryLabel}</span>
+      {/* Icon-only on phones: the label is hidden `<sm` so the left column
+       *  collapses to just the glyph and hands its width to the slider rail.
+       *  The full label returns at `sm:` upwards where the column has room. */}
+      <span
+        className={`hidden min-w-0 truncate sm:inline ${frozen ? "text-blush-700 dark:text-blush-300" : ""}`}
+      >
+        {categoryLabel}
       </span>
     </>
   );
@@ -1046,7 +1072,7 @@ function CategoryRowInner({
            * and `4.5rem` (amount, sans the "actual/" prefix that's hidden
            * `<sm`) — the slider rail picks up the extra 3rem and the
            * progress is readable at a glance instead of squashed. */
-          className="grid grid-cols-[5rem_minmax(0,1fr)_4.5rem] items-center gap-2 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm -mx-2 px-2 rounded-md dark:hover:bg-umber-700"
+          className="grid grid-cols-[2rem_minmax(0,1fr)_4.5rem] items-center gap-2 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm -mx-2 px-2 rounded-md dark:hover:bg-umber-700"
           aria-label={categoryLabel}
         >
           <span className="flex items-center gap-2 text-ink-700 dark:text-paper-100">
@@ -1067,7 +1093,7 @@ function CategoryRowInner({
   return (
     <li
       id={`cat-${category}`}
-      className="grid grid-cols-[5rem_minmax(0,1fr)_4.5rem] scroll-mt-24 items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm"
+      className="grid grid-cols-[2rem_minmax(0,1fr)_4.5rem] scroll-mt-24 items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm"
     >
       {leftTile}
       <div className="w-full">
@@ -1165,29 +1191,30 @@ function CustomRowInner({
   }
 
   return (
-    <li className="grid grid-cols-[5rem_minmax(0,1fr)_4.5rem] items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm">
+    <li className="grid grid-cols-[2rem_minmax(0,1fr)_4.5rem] items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm">
       <span className="flex items-center gap-1.5 text-ink-700 dark:text-paper-100">
-        {onRemove ? (
+        {/* Phones show the row's icon so it stays identifiable when the label
+         *  is hidden; the delete button (which would otherwise replace the
+         *  icon) moves to `sm:` where the label + width are back. Deletion on
+         *  a phone stays available via the budget table's mobile card. */}
+        {onRemove && (
           <button
             type="button"
             onClick={() => onRemove(line.id)}
-            className="-ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+            className="-ml-1 hidden h-5 w-5 shrink-0 items-center justify-center rounded-full text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 sm:inline-flex dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
             aria-label={t("budget.custom_row_delete_aria", { label: line.label })}
           >
             <X size={12} aria-hidden />
           </button>
-        ) : (
-          <Icon size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
         )}
-        {/* 8-char compact label on phones; full label on tablet+. Same
-         *  pattern as CategoryRow so custom rows scan with identical
-         *  rhythm. */}
-        <span className="min-w-0 truncate">
-          <span className="sm:hidden">
-            {line.label.length > 8 ? `${line.label.slice(0, 8)}…` : line.label}
-          </span>
-          <span className="hidden sm:inline">{line.label}</span>
-        </span>
+        <Icon
+          size={14}
+          className={`shrink-0 text-ink-500 dark:text-umber-300 ${onRemove ? "sm:hidden" : ""}`}
+          aria-hidden
+        />
+        {/* Icon-only on phones (label hidden `<sm`); full label on tablet+,
+         *  matching CategoryRow's rhythm. */}
+        <span className="hidden min-w-0 truncate sm:inline">{line.label}</span>
       </span>
       <div className="w-full">
         <input
