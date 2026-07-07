@@ -19,6 +19,7 @@ import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import type { Listing, VendorAccount, VendorListingView } from "@shared/listings";
+import { MAX_LISTING_VIDEOS, parseVideoUrl } from "@shared/listing_videos";
 
 interface ClaimRow {
   token: string;
@@ -954,6 +955,223 @@ describe("vendor listing — portfolio gallery (/api/vendor/listing/me/photos)",
       headers: { Authorization: `Bearer ${token}` },
       body: coupleForm,
     });
+    expect(couple.status).toBe(403);
+  });
+});
+
+// ── Video reel ─────────────────────────────────────────────────────────────
+// Reference videos (YouTube) beside the photo gallery. Pasted links, not
+// uploads, so these ride the JSON `req` helper. Pairs with the video handlers
+// in routes/vendor_listing.ts and the shared parser in shared/listing_videos.ts.
+
+describe("shared/listing_videos parseVideoUrl", () => {
+  test("recognises every YouTube URL flavour + Shorts, extracts the id", () => {
+    const cases: Array<[string, string]> = [
+      ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+      ["https://youtu.be/dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+      ["https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s", "dQw4w9WgXcQ"],
+      ["https://www.youtube.com/watch?list=PL123&v=dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+      ["https://www.youtube.com/shorts/abcdefghijk", "abcdefghijk"],
+      ["https://youtube.com/embed/dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+      ["https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ", "dQw4w9WgXcQ"],
+      ["  https://youtu.be/dQw4w9WgXcQ  ", "dQw4w9WgXcQ"], // trailing/leading space
+    ];
+    for (const [url, id] of cases) {
+      const parsed = parseVideoUrl(url);
+      expect(parsed).not.toBeNull();
+      expect(parsed?.provider).toBe("youtube");
+      expect(parsed?.video_id).toBe(id);
+    }
+  });
+
+  test("rejects non-video / non-YouTube links", () => {
+    const bad = [
+      "",
+      "   ",
+      "not a url",
+      "https://vimeo.com/12345678",
+      "https://example.com/watch?v=dQw4w9WgXcQ",
+      "https://www.youtube.com/channel/UC123",
+      "https://notyoutube.com/watch?v=dQw4w9WgXcQ",
+    ];
+    for (const url of bad) {
+      expect(parseVideoUrl(url)).toBeNull();
+    }
+  });
+});
+
+describe("vendor listing — video reel (/api/vendor/listing/me/videos)", () => {
+  test("add, list, public detail exposure, edit, reorder, delete", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-vid@weddly.test",
+      "vendor-vid@weddly.test",
+      "Video Photo Studio",
+    );
+    const { vendorToken } = await claimListing(listingId, "vendor-vid@weddly.test", "Vendor Owner");
+
+    // Add three videos; each lands at the end of the reel.
+    const a = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/videos",
+      { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+      { token: vendorToken },
+    );
+    expect(a.status).toBe(201);
+    expect(a.data.videos?.length).toBe(1);
+    const v0 = a.data.videos?.[0];
+    expect(v0?.provider).toBe("youtube");
+    expect(v0?.video_id).toBe("dQw4w9WgXcQ");
+    expect(v0?.position).toBe(0);
+    expect(v0?.url).toBe("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+
+    const b = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/videos",
+      { url: "https://youtu.be/9bZkp7q19f0" },
+      { token: vendorToken },
+    );
+    expect(b.status).toBe(201);
+    const c = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/videos",
+      { url: "https://www.youtube.com/shorts/abcdefghijk" },
+      { token: vendorToken },
+    );
+    expect(c.status).toBe(201);
+    const ids = (c.data.videos ?? []).map((v) => v.id);
+    expect(ids.length).toBe(3);
+    expect((c.data.videos ?? []).map((v) => v.video_id)).toEqual([
+      "dQw4w9WgXcQ",
+      "9bZkp7q19f0",
+      "abcdefghijk",
+    ]);
+
+    // Public detail exposes the reel in the same order.
+    const detail = await req<{ videos: Array<{ id: number; video_id: string }> }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(listingId)}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(detail.status).toBe(200);
+    expect(detail.data.videos.map((v) => v.video_id)).toEqual([
+      "dQw4w9WgXcQ",
+      "9bZkp7q19f0",
+      "abcdefghijk",
+    ]);
+
+    // Edit the first video's link — keeps its row id + position, swaps the id.
+    const edit = await req<VendorListingView>(
+      "PATCH",
+      `/api/vendor/listing/me/videos/${v0?.id}`,
+      { url: "https://www.youtube.com/watch?v=kJQP7kiw5Fk" },
+      { token: vendorToken },
+    );
+    expect(edit.status).toBe(200);
+    const edited = (edit.data.videos ?? []).find((v) => v.id === v0?.id);
+    expect(edited?.video_id).toBe("kJQP7kiw5Fk");
+    expect(edited?.position).toBe(0);
+
+    // Reorder to [c, a, b]; the reel comes back in that order.
+    const [id0, id1, id2] = ids as [number, number, number];
+    const reorder = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me/videos/reorder",
+      { ordered_ids: [id2, id0, id1] },
+      { token: vendorToken },
+    );
+    expect(reorder.status).toBe(200);
+    expect((reorder.data.videos ?? []).map((v) => v.id)).toEqual([id2, id0, id1]);
+
+    // Delete one; a replayed delete is a 200 no-op.
+    const del = await req<VendorListingView>(
+      "DELETE",
+      `/api/vendor/listing/me/videos/${id0}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(del.status).toBe(200);
+    expect((del.data.videos ?? []).map((v) => v.id)).toEqual([id2, id1]);
+    const replay = await req<VendorListingView>(
+      "DELETE",
+      `/api/vendor/listing/me/videos/${id0}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(replay.status).toBe(200);
+    expect(replay.data.videos?.length).toBe(2);
+  });
+
+  test("invalid URL → 400 invalid_video_url", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-vidbad@weddly.test",
+      "vendor-vidbad@weddly.test",
+      "BadVideo Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-vidbad@weddly.test",
+      "Vendor Owner",
+    );
+    const bad = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/vendor/listing/me/videos",
+      { url: "https://example.com/not-a-video" },
+      { token: vendorToken },
+    );
+    expect(bad.status).toBe(400);
+    expect(bad.data.detail?.code).toBe("invalid_video_url");
+  });
+
+  test("the cap rejects the 7th video with 409 videos_full", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-vidcap@weddly.test",
+      "vendor-vidcap@weddly.test",
+      "VideoCap Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-vidcap@weddly.test",
+      "Vendor Owner",
+    );
+    for (let i = 0; i < MAX_LISTING_VIDEOS; i++) {
+      // Each id is exactly 11 chars: "vid0000000" (10) + one digit.
+      const r = await req(
+        "POST",
+        "/api/vendor/listing/me/videos",
+        { url: `https://www.youtube.com/watch?v=vid0000000${i}` },
+        { token: vendorToken },
+      );
+      expect(r.status).toBe(201);
+    }
+    // Cap is checked before the URL parse, so this 409s regardless of the id.
+    const overflow = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/vendor/listing/me/videos",
+      { url: "https://www.youtube.com/watch?v=overflow123" },
+      { token: vendorToken },
+    );
+    expect(overflow.status).toBe(409);
+    expect(overflow.data.detail?.code).toBe("videos_full");
+  });
+
+  test("anon → 401, couple-role → 403", async () => {
+    wipeAll();
+    const anon = await req("POST", "/api/vendor/listing/me/videos", {
+      url: "https://youtu.be/dQw4w9WgXcQ",
+    });
+    expect(anon.status).toBe(401);
+
+    const { token } = await bootstrapCouple("not-vendor-video@weddly.test");
+    const couple = await req(
+      "POST",
+      "/api/vendor/listing/me/videos",
+      { url: "https://youtu.be/dQw4w9WgXcQ" },
+      { token },
+    );
     expect(couple.status).toBe(403);
   });
 });

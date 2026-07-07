@@ -5,6 +5,7 @@
 // because one account can own multiple listings (photo+video studios,
 // multi-city venues, agencies).
 
+import type { ListingVideo } from "./listing_videos";
 import type { SupplierCategory, VenueStyle } from "./suppliers";
 import type { VendorBilling, VendorBillingReason } from "./vendor_billing";
 import type { VendorClientDetail } from "./vendor_clients";
@@ -264,6 +265,10 @@ export interface VendorListingView {
   /** Portfolio gallery, oldest first. Present on the listing-editor payloads
    *  (GET/upload/delete under /api/vendor/listing/me). */
   photos?: ListingPhoto[];
+  /** Reference-video reel, in vendor drag order. Present on the same
+   *  listing-editor payloads as `photos` (GET + every video mutation under
+   *  /api/vendor/listing/me/videos). */
+  videos?: ListingVideo[];
 }
 
 /** One day a vendor has marked unavailable. `hours === null` means the whole

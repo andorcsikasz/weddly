@@ -16,11 +16,14 @@
 // dedicated visibility toggle, which refuses to touch moderation states.
 
 import {
+  type Listing,
   MAX_LISTING_PHOTOS,
   priceBandLockedUntil,
+  type VendorAccount,
   type VendorListingEditInput,
   type VendorListingView,
 } from "@shared/listings";
+import { MAX_LISTING_VIDEOS, parseVideoUrl } from "@shared/listing_videos";
 import { db, now } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { sniffUploadedImage } from "../lib/image_sniff";
@@ -32,14 +35,21 @@ import {
 import { clearCuratedOverride, setCuratedOverride } from "../domain/curated_overrides";
 import {
   addListingPhoto,
+  addListingVideo,
   countListingPhotos,
+  countListingVideos,
   deleteListingPhoto,
+  deleteListingVideo,
   getListingById,
   getListingByVendorAccountId,
   getListingPhoto,
+  getListingVideo,
   listListingPhotos,
+  listListingVideos,
   patchListing,
+  reorderListingVideos,
   toVendorAccount,
+  updateListingVideo,
   type ListingPatch,
 } from "../domain/listings";
 import { getVendorAccountByOwnerUserId } from "../domain/vendor_accounts";
@@ -70,14 +80,33 @@ export function resolveVendorListing(ctx: Ctx): VendorListingView {
   return { listing, account: toVendorAccount(accountRow) };
 }
 
+/** Assemble the editor payload for `listing` with both media reels attached.
+ *  Every GET + mutating handler returns this so the client's `photos`/`videos`
+ *  arrays never go stale after an unrelated action (e.g. adding a video must
+ *  not blank out the gallery, and vice-versa). `billing` is only threaded in
+ *  where the caller already resolved a subscription snapshot. */
+function listingViewWithMedia(
+  listing: Listing,
+  account: VendorAccount,
+  extra?: { billing?: VendorListingView["billing"] },
+): VendorListingView {
+  return {
+    listing,
+    account,
+    ...(extra?.billing !== undefined ? { billing: extra.billing } : {}),
+    photos: listListingPhotos(listing.id),
+    videos: listListingVideos(listing.id),
+  };
+}
+
 async function handleGetMe(ctx: Ctx): Promise<Response> {
   const view = resolveVendorListing(ctx);
   const sub = getVendorSub(view.account.id);
-  return json({
-    ...view,
-    billing: sub ? toVendorBilling(sub) : null,
-    photos: listListingPhotos(view.listing.id),
-  });
+  return json(
+    listingViewWithMedia(view.listing, view.account, {
+      billing: sub ? toVendorBilling(sub) : null,
+    }),
+  );
 }
 
 // ── PATCH input parsing ────────────────────────────────────────────────────
@@ -211,12 +240,7 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
       ...(patch.price_band !== undefined ? { price_band: patch.price_band } : {}),
     },
   });
-  const view: VendorListingView = {
-    listing: updated,
-    account,
-    photos: listListingPhotos(updated.id),
-  };
-  return json(view);
+  return json(listingViewWithMedia(updated, account));
 }
 
 // ── Hero image upload ──────────────────────────────────────────────────────
@@ -313,12 +337,7 @@ async function handleUploadHero(ctx: Ctx): Promise<Response> {
   if (!refreshed) {
     throw new HttpError(404, "Listing vanished mid-upload");
   }
-  const view: VendorListingView = {
-    listing: refreshed,
-    account,
-    photos: listListingPhotos(refreshed.id),
-  };
-  return json(view);
+  return json(listingViewWithMedia(refreshed, account));
 }
 
 async function handleDeleteHero(ctx: Ctx): Promise<Response> {
@@ -326,8 +345,7 @@ async function handleDeleteHero(ctx: Ctx): Promise<Response> {
   if (!listing.hero_image_url) {
     // Idempotent: deleting a non-existent hero is fine — the client may
     // double-click or replay the action after a network blip.
-    const view: VendorListingView = { listing, account, photos: listListingPhotos(listing.id) };
-    return json(view);
+    return json(listingViewWithMedia(listing, account));
   }
   const k = keyFromUploadUrl(listing.hero_image_url);
   if (k) await storage.delete(k);
@@ -347,12 +365,7 @@ async function handleDeleteHero(ctx: Ctx): Promise<Response> {
   });
   const refreshed = getListingById(listing.id);
   if (!refreshed) throw new HttpError(404, "Listing vanished mid-delete");
-  const view: VendorListingView = {
-    listing: refreshed,
-    account,
-    photos: listListingPhotos(refreshed.id),
-  };
-  return json(view);
+  return json(listingViewWithMedia(refreshed, account));
 }
 
 // ── Portfolio gallery ──────────────────────────────────────────────────────
@@ -390,8 +403,7 @@ async function handleUploadPhoto(ctx: Ctx): Promise<Response> {
     after: { photo_id: photo.id, url: photo.url, bytes: raw.size, mime: raw.type },
   });
 
-  const view: VendorListingView = { listing, account, photos: listListingPhotos(listing.id) };
-  return json(view, { status: 201 });
+  return json(listingViewWithMedia(listing, account), { status: 201 });
 }
 
 async function handleDeletePhoto(ctx: Ctx): Promise<Response> {
@@ -417,8 +429,142 @@ async function handleDeletePhoto(ctx: Ctx): Promise<Response> {
       after: {},
     });
   }
-  const view: VendorListingView = { listing, account, photos: listListingPhotos(listing.id) };
-  return json(view);
+  return json(listingViewWithMedia(listing, account));
+}
+
+// ── Listing video reel ─────────────────────────────────────────────────────
+//
+// Reference videos (YouTube today) beside the photo gallery — up to
+// MAX_LISTING_VIDEOS. Unlike photos these are pasted links, not binary
+// uploads, so the pipeline is a JSON body + shared URL parse
+// (shared/listing_videos.ts) rather than a multipart sniff. The parser is
+// provider-agnostic, so a future Vimeo paste flows through unchanged. Public
+// exposure: routes/suppliers.ts folds these into the detail payload's `videos`.
+// Sits under the same /api/vendor/listing entitlement EDIT surface as the
+// gallery, so FREE vendors can curate their reel but a lapsed one goes
+// read-only along with the rest of the listing.
+
+const MAX_VIDEO_URL_LEN = 400;
+
+/** Pull + validate the `url` field of a video mutation body: a non-empty
+ *  string within the length cap that the shared parser recognises. Returns the
+ *  trimmed original url plus the parsed provider + id. */
+function readVideoUrl(body: { url?: unknown }): {
+  url: string;
+  provider: "youtube";
+  video_id: string;
+} {
+  if (typeof body.url !== "string") {
+    throw new HttpError(400, "`url` must be a string", { code: "bad_url" });
+  }
+  const trimmed = body.url.trim();
+  if (trimmed.length === 0) {
+    throw new HttpError(400, "`url` cannot be empty", { code: "bad_url" });
+  }
+  if (trimmed.length > MAX_VIDEO_URL_LEN) {
+    throw new HttpError(400, `url is too long (max ${MAX_VIDEO_URL_LEN})`, { code: "bad_url" });
+  }
+  const parsed = parseVideoUrl(trimmed);
+  if (!parsed) {
+    throw new HttpError(400, "Not a recognised video URL", { code: "invalid_video_url" });
+  }
+  return { url: trimmed, provider: parsed.provider, video_id: parsed.video_id };
+}
+
+async function handleAddVideo(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  if (countListingVideos(listing.id) >= MAX_LISTING_VIDEOS) {
+    throw new HttpError(409, `Video reel is full (max ${MAX_LISTING_VIDEOS} videos)`, {
+      code: "videos_full",
+    });
+  }
+  const body = await readJson<{ url?: unknown }>(ctx.req);
+  const { url, provider, video_id } = readVideoUrl(body);
+  const video = addListingVideo(listing.id, provider, video_id, url);
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.listing_video_add",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listing.id },
+    after: { video_id: video.id, provider, provider_video_id: video_id, url },
+  });
+  return json(listingViewWithMedia(listing, account), { status: 201 });
+}
+
+async function handleUpdateVideo(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const rowId = Number(ctx.params.video_id);
+  if (!Number.isInteger(rowId) || rowId <= 0) {
+    throw new HttpError(400, "video_id must be a positive integer");
+  }
+  // Scoped lookup — a video id belonging to another listing reads as absent.
+  const existing = getListingVideo(listing.id, rowId);
+  if (!existing) {
+    throw new HttpError(404, "Video not found", { code: "video_not_found" });
+  }
+  const body = await readJson<{ url?: unknown }>(ctx.req);
+  const { url, provider, video_id } = readVideoUrl(body);
+  updateListingVideo(listing.id, rowId, provider, video_id, url);
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.listing_video_update",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listing.id, video_id: rowId, url: existing.url },
+    after: { provider, provider_video_id: video_id, url },
+  });
+  return json(listingViewWithMedia(listing, account));
+}
+
+async function handleDeleteVideo(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const rowId = Number(ctx.params.video_id);
+  if (!Number.isInteger(rowId) || rowId <= 0) {
+    throw new HttpError(400, "video_id must be a positive integer");
+  }
+  // Scoped lookup keeps delete idempotent + cross-listing-safe (a stray id
+  // reads as absent, so a double-click / replay is a clean no-op).
+  const existing = getListingVideo(listing.id, rowId);
+  if (existing) {
+    deleteListingVideo(listing.id, rowId);
+    addAuditLog({
+      actor_user_id: account.owner_user_id,
+      couple_id: null,
+      action: "vendor.listing_video_delete",
+      target_kind: "listing",
+      target_id: null,
+      before: { listing_id: listing.id, video_id: rowId, url: existing.url },
+      after: {},
+    });
+  }
+  return json(listingViewWithMedia(listing, account));
+}
+
+async function handleReorderVideos(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const body = await readJson<{ ordered_ids?: unknown }>(ctx.req);
+  if (
+    !Array.isArray(body.ordered_ids) ||
+    !body.ordered_ids.every((v) => Number.isInteger(v) && (v as number) > 0)
+  ) {
+    throw new HttpError(400, "`ordered_ids` must be an array of positive integers", {
+      code: "bad_ordered_ids",
+    });
+  }
+  reorderListingVideos(listing.id, body.ordered_ids as number[]);
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.listing_video_reorder",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listing.id },
+    after: { ordered_ids: body.ordered_ids },
+  });
+  return json(listingViewWithMedia(listing, account));
 }
 
 // ── Visibility toggle (pause / unpause) ────────────────────────────────────
@@ -522,12 +668,7 @@ async function handleSetVisibility(ctx: Ctx): Promise<Response> {
   }
   const refreshed = getListingById(listing.id);
   if (!refreshed) throw new HttpError(404, "Listing vanished mid-update");
-  const view: VendorListingView = {
-    listing: refreshed,
-    account,
-    photos: listListingPhotos(refreshed.id),
-  };
-  return json(view);
+  return json(listingViewWithMedia(refreshed, account));
 }
 
 // ── Onboarding completion ──────────────────────────────────────────────────
@@ -570,5 +711,11 @@ export function registerVendorListingRoutes(router: Router) {
   router.delete("/api/vendor/listing/me/hero", handleDeleteHero);
   router.post("/api/vendor/listing/me/photos", handleUploadPhoto);
   router.delete("/api/vendor/listing/me/photos/:photo_id", handleDeletePhoto);
+  router.post("/api/vendor/listing/me/videos", handleAddVideo);
+  // Literal "reorder" registered BEFORE the `:video_id` PATCH so the router
+  // doesn't swallow it as video_id="reorder" (mirrors households.reorder).
+  router.patch("/api/vendor/listing/me/videos/reorder", handleReorderVideos);
+  router.patch("/api/vendor/listing/me/videos/:video_id", handleUpdateVideo);
+  router.delete("/api/vendor/listing/me/videos/:video_id", handleDeleteVideo);
   router.post("/api/vendor/onboarding/complete", handleCompleteOnboarding);
 }

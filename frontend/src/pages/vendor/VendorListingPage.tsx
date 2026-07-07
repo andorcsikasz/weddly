@@ -34,6 +34,7 @@ import {
 import type { VendorBilling } from "@shared/vendor_billing";
 import { AddressAutocomplete } from "../../components/AddressAutocomplete";
 import { TranslateButton } from "../../components/TranslateButton";
+import { VendorListingVideos } from "../../components/VendorListingVideos";
 import { TextField } from "../../components/ui/TextField";
 import { useToast } from "../../components/ui/ToastProvider";
 import { vendorAvailabilityApi, vendorListingApi } from "../../lib/endpoints";
@@ -768,6 +769,11 @@ export default function VendorListingPage() {
                 })}
               </p>
             </fieldset>
+
+            {/* Video reel — reference videos beside the gallery. Self-contained
+                (own busy state + toasts); hits the server per action like the
+                gallery, so it lives outside the autosave form flow. */}
+            <VendorListingVideos videos={view.videos ?? []} onChange={setView} />
 
             <fieldset className="card space-y-2.5 p-4" disabled={saving}>
               <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>

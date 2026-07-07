@@ -30,6 +30,7 @@ import type {
   ListingSubmitterType,
   VendorAccount,
 } from "@shared/listings";
+import type { ListingVideo, VideoProvider } from "@shared/listing_videos";
 import { type SupplierCategory, type VenueStyle, VENUE_STYLES } from "@shared/suppliers";
 
 export interface ListingRow {
@@ -550,4 +551,120 @@ export function getListingPhoto(listingId: string, photoId: number): ListingPhot
 
 export function deleteListingPhoto(listingId: string, photoId: number): void {
   db.prepare("DELETE FROM listing_photos WHERE id = ? AND listing_id = ?").run(photoId, listingId);
+}
+
+// ── Listing video reel ───────────────────────────────────────────────────────
+// Reference videos (YouTube today) beside the photo gallery. Ordered by the
+// vendor's drag `position`, `id` as the stable tie-breaker so equal positions
+// (never expected, but cheap to be safe) stay deterministic.
+
+type ListingVideoRow = {
+  id: number;
+  provider: string;
+  video_id: string;
+  url: string;
+  position: number;
+};
+
+function toListingVideo(row: ListingVideoRow): ListingVideo {
+  return {
+    id: row.id,
+    provider: row.provider as VideoProvider,
+    video_id: row.video_id,
+    url: row.url,
+    position: row.position,
+  };
+}
+
+export function listListingVideos(listingId: string): ListingVideo[] {
+  const rows = db
+    .prepare(
+      "SELECT id, provider, video_id, url, position FROM listing_videos WHERE listing_id = ? ORDER BY position ASC, id ASC",
+    )
+    .all(listingId) as ListingVideoRow[];
+  return rows.map(toListingVideo);
+}
+
+export function countListingVideos(listingId: string): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS n FROM listing_videos WHERE listing_id = ?")
+    .get(listingId) as { n: number };
+  return row.n;
+}
+
+/** Append a video to the end of the reel — its `position` is one past the
+ *  current max so a fresh add always lands last, honouring insertion order
+ *  until the vendor drags. */
+export function addListingVideo(
+  listingId: string,
+  provider: VideoProvider,
+  videoId: string,
+  url: string,
+): ListingVideo {
+  const ts = now();
+  const maxRow = db
+    .prepare(
+      "SELECT COALESCE(MAX(position), -1) AS max_pos FROM listing_videos WHERE listing_id = ?",
+    )
+    .get(listingId) as { max_pos: number };
+  const position = maxRow.max_pos + 1;
+  const res = db
+    .prepare(
+      "INSERT INTO listing_videos (listing_id, provider, video_id, url, position, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+    )
+    .run(listingId, provider, videoId, url, position, ts);
+  return { id: Number(res.lastInsertRowid), provider, video_id: videoId, url, position };
+}
+
+export function getListingVideo(listingId: string, videoId: number): ListingVideo | null {
+  const row = db
+    .prepare(
+      "SELECT id, provider, video_id, url, position FROM listing_videos WHERE id = ? AND listing_id = ?",
+    )
+    .get(videoId, listingId) as ListingVideoRow | undefined;
+  return row ? toListingVideo(row) : null;
+}
+
+/** Replace the link on an existing video row (edit flow) — keeps its `id` and
+ *  `position` so an in-place edit never reshuffles the reel. Scoped by
+ *  listing_id so a stray id from another listing is a no-op. */
+export function updateListingVideo(
+  listingId: string,
+  videoId: number,
+  provider: VideoProvider,
+  parsedId: string,
+  url: string,
+): void {
+  db.prepare(
+    "UPDATE listing_videos SET provider = ?, video_id = ?, url = ? WHERE id = ? AND listing_id = ?",
+  ).run(provider, parsedId, url, videoId, listingId);
+}
+
+export function deleteListingVideo(listingId: string, videoId: number): void {
+  db.prepare("DELETE FROM listing_videos WHERE id = ? AND listing_id = ?").run(videoId, listingId);
+}
+
+/** Persist a drag reorder: assign `position` = array index for the ids the
+ *  listing actually owns, in one transaction. Ids not owned by the listing are
+ *  ignored (a partial/stale client list can't corrupt another listing's reel);
+ *  ids the client omits keep their old position and sort after the reordered
+ *  ones on the next read. */
+export function reorderListingVideos(listingId: string, orderedIds: number[]): void {
+  const owned = new Set(
+    (
+      db.prepare("SELECT id FROM listing_videos WHERE listing_id = ?").all(listingId) as {
+        id: number;
+      }[]
+    ).map((r) => r.id),
+  );
+  const stmt = db.prepare("UPDATE listing_videos SET position = ? WHERE id = ? AND listing_id = ?");
+  const tx = db.transaction((ids: number[]) => {
+    let pos = 0;
+    for (const id of ids) {
+      if (!owned.has(id)) continue;
+      stmt.run(pos, id, listingId);
+      pos += 1;
+    }
+  });
+  tx(orderedIds);
 }

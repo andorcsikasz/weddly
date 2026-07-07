@@ -1,6 +1,8 @@
 // Static suppliers directory contract. Backend curates the list (v1); the v2
 // marketplace will swap this for a `suppliers` DB table with the same shape.
 
+import type { ListingVideo } from "./listing_videos";
+
 export type SupplierCategory =
   | "venue"
   | "accommodation"
@@ -441,4 +443,8 @@ export interface SupplierDetail extends DirectorySupplier {
   /** Whether the supplier accepts booking inquiries today (claimed + has a
    *  vendor_account_id). Always present so the CTA logic can branch. */
   bookable: boolean;
+  /** Reference-video reel (YouTube today), in vendor drag order. Only claimed
+   *  vendors add these, so it's `[]` for the unclaimed majority. Rendered as a
+   *  lazy, click-to-play grid right after the photo gallery. */
+  videos: ListingVideo[];
 }

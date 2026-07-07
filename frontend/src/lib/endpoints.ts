@@ -2023,6 +2023,21 @@ export const vendorListingApi = {
   },
   deletePhoto: (photoId: number) =>
     apiFetch<VendorListingView>("DELETE", `/api/vendor/listing/me/photos/${photoId}`),
+  /** Video reel — pasted links, not uploads, so these are plain JSON calls.
+   *  The server parses + validates the URL (400 `invalid_video_url` on a bad
+   *  paste, 409 `videos_full` at the cap) and returns the refreshed view with
+   *  the `videos` array in drag order. */
+  addVideo: (url: string) =>
+    apiFetch<VendorListingView>("POST", "/api/vendor/listing/me/videos", { url }),
+  updateVideo: (videoId: number, url: string) =>
+    apiFetch<VendorListingView>("PATCH", `/api/vendor/listing/me/videos/${videoId}`, { url }),
+  deleteVideo: (videoId: number) =>
+    apiFetch<VendorListingView>("DELETE", `/api/vendor/listing/me/videos/${videoId}`),
+  /** Persist a drag reorder: the full list of video row ids in the new order. */
+  reorderVideos: (orderedIds: number[]) =>
+    apiFetch<VendorListingView>("PATCH", "/api/vendor/listing/me/videos/reorder", {
+      ordered_ids: orderedIds,
+    }),
   /** Marks the post-signup onboarding wizard complete so the dashboard stops
    *  redirecting back into it. Returns the refreshed view (account.onboarding_done
    *  is now true). Idempotent. */

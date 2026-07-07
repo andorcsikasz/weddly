@@ -18,7 +18,7 @@ import { curatedOverrideMap, isCuratedPubliclyVisible } from "../domain/curated_
 import { DIRECTORY } from "../domain/suppliers_data";
 import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
 import { recordSupplierEvents } from "../domain/supplier_views";
-import { listListingPhotos } from "../domain/listings";
+import { listListingPhotos, listListingVideos } from "../domain/listings";
 import { getReviewSummary } from "../domain/reviews";
 import { countNonDeletedComments } from "../domain/supplier_comments";
 import { getAvailability } from "../domain/supplier_bookings";
@@ -331,6 +331,9 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
     reviews_summary: reviewsSummary,
     bookable: availability.bookable,
     next_available: availability.next_available,
+    // Reference-video reel, in vendor drag order. Empty for the unclaimed
+    // majority; the detail page renders a lazy click-to-play grid when present.
+    videos: listListingVideos(supplierId),
     ...(viewerIsAdmin ? { comments_count: countNonDeletedComments(supplierId) } : {}),
   };
   return json(payload);

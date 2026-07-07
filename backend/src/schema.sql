@@ -1704,6 +1704,24 @@ CREATE TABLE IF NOT EXISTS listing_photos (
 );
 CREATE INDEX IF NOT EXISTS idx_listing_photos_listing ON listing_photos(listing_id);
 
+-- Listing video reel (reference videos beside the photo gallery). Claimed
+-- vendors embed up to a capped number of YouTube links; the public supplier
+-- detail page renders them as a lazy click-to-play grid right after the
+-- gallery. `provider`+`video_id` are the source of truth for the embed URL
+-- (never the raw `url`, which is preserved only so the edit field round-trips
+-- the vendor's paste). `position` is the 0-based drag order. Provider-agnostic
+-- by design so Vimeo drops in without a schema change (see shared/listing_videos.ts).
+CREATE TABLE IF NOT EXISTS listing_videos (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  listing_id TEXT    NOT NULL,
+  provider   TEXT    NOT NULL DEFAULT 'youtube',
+  video_id   TEXT    NOT NULL,
+  url        TEXT    NOT NULL,
+  position   INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_listing_videos_listing ON listing_videos(listing_id);
+
 -- Admin-provisioned planner activations. An admin pre-registers a planner
 -- (email + name + business name + category) with a 2-year free comp; the
 -- planner receives an activation link and goes live by setting a password

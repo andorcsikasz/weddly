@@ -275,7 +275,10 @@ const CSP = [
   // DEFAULT_PHOTO_BY_SLUG in BlogCoverArt — without this the SVG <image>
   // tag is blocked and every default blog cover falls back to the paper
   // composition.
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com https://imgsct.cookiebot.com https://*.clarity.ms https://c.bing.com https://*.usercentrics.eu",
+  // img.youtube.com + i.ytimg.com host the vendor video-reel poster thumbnails
+  // (hqdefault.jpg) shown before the click-to-play iframe on supplier detail
+  // pages; img.youtube.com 302s to i.ytimg.com, so both origins are needed.
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com https://imgsct.cookiebot.com https://*.clarity.ms https://c.bing.com https://*.usercentrics.eu https://img.youtube.com https://i.ytimg.com",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
   // GA4 sends its `collect` hits via fetch/sendBeacon to *.google-analytics.com
   // (incl. region1.google-analytics.com) and *.analytics.google.com; gtm.js may
@@ -294,7 +297,11 @@ const CSP = [
   // renders it inline. Without blob: in frame-src the iframe loads blank.
   // accounts.google.com renders the GSI one-tap / button iframe.
   // appleid.apple.com renders the Sign in with Apple popup/iframe.
-  "frame-src https://www.openstreetmap.org https://accounts.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://*.usercentrics.eu blob:",
+  // youtube-nocookie.com (privacy-mode) + youtube.com host the vendor
+  // reference-video embeds on supplier detail pages; the nocookie host serves
+  // the iframe but redirects some players through www.youtube.com, so both are
+  // whitelisted.
+  "frame-src https://www.openstreetmap.org https://accounts.google.com https://appleid.apple.com https://consentcdn.cookiebot.com https://*.usercentrics.eu https://www.youtube-nocookie.com https://www.youtube.com blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

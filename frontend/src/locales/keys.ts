@@ -725,6 +725,31 @@ export interface LocaleMessages {
     gallery_full: string;
     gallery_delete_success: string;
     gallery_delete_failed: string;
+    section_videos: string;
+    videos_intro: string;
+    videos_hint: string;
+    videos_add: string;
+    videos_url_label: string;
+    videos_url_placeholder: string;
+    videos_url_invalid: string;
+    /** Receives `{n}` current count and `{max}` cap. */
+    videos_count: string;
+    /** Receives `{max}` cap. */
+    videos_full: string;
+    videos_add_success: string;
+    videos_add_failed: string;
+    videos_update_success: string;
+    videos_update_failed: string;
+    videos_delete: string;
+    videos_delete_success: string;
+    videos_delete_failed: string;
+    videos_edit: string;
+    videos_edit_save: string;
+    videos_edit_cancel: string;
+    videos_reorder_failed: string;
+    videos_move_up: string;
+    videos_move_down: string;
+    videos_drag: string;
     preview_open: string;
     preview_no_photo: string;
     /** Receives `{min}` - minimum guest capacity. */
@@ -4942,6 +4967,11 @@ export interface LocaleMessages {
       about: {
         title: string;
         empty: string;
+      };
+      videos: {
+        title: string;
+        /** Receives `{name}` supplier name and `{n}` 1-based index. */
+        playAria: string;
       };
     };
     /** Review tag labels shared between the composer (admin selects up to 5)

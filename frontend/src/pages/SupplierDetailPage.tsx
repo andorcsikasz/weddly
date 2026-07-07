@@ -77,6 +77,7 @@ import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { ComposeDialog } from "../components/OutreachInbox";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
+import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
@@ -517,6 +518,30 @@ export default function SupplierDetailPage() {
               )}
             </div>
           </section>
+
+          {/* Videos — reference reel, directly after the photo gallery. A
+              responsive grid (1 col on mobile, 2 from sm up) of lazy,
+              click-to-play embeds. Renders only when the vendor added at
+              least one. */}
+          {detail.videos.length > 0 && (
+            <section className="mb-10">
+              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+                {t("suppliers.detail.videos.title")}
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {detail.videos.map((v, i) => (
+                  <LazyVideoPlayer
+                    key={v.id}
+                    video={v}
+                    title={t("suppliers.detail.videos.playAria", {
+                      name: detail.name,
+                      n: i + 1,
+                    })}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* About / blurb */}
           <section className="mb-10">
