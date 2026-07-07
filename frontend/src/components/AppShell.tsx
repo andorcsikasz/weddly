@@ -680,25 +680,30 @@ export function AppShell({ children }: { children: ReactNode }) {
               shrinks to its content width and the toggle crowds the
               "Áttekintés" label. Kept off at md so the tablet icon rail stays
               content-width/centered. */}
-          <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] min-h-0 flex-col gap-1 overflow-y-auto lg:w-full [scrollbar-width:thin]">
+          {/* Sticky rail wrapper — bounds the nav to the viewport (it scrolls
+              inside the inner box below on short laptops). It has NO overflow of
+              its own, so the floating collapse toggle can hang in the top-right
+              corner without the scroll box's thin scrollbar / overflow clip
+              eating its border (the old bug: the toggle lived inside the
+              overflow-y-auto box and the scrollbar clipped its right + top
+              edge). `sticky` also makes this the containing block that pins the
+              absolute toggle; `lg:w-full` fills the expanded rail so the toggle
+              keeps a stable offset from the right edge. */}
+          <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] min-h-0 flex-col lg:w-full">
             {/* Collapse toggle — same affordance in both couple and admin
-                views. When expanded it floats over the first row's right side
-                (absolute, out of flow) so it stops reserving a whole row —
-                the first nav item rises to the top, and the freed ~40px of
-                vertical space goes to the bottom of the rail instead of
-                sitting empty above. `right-2` docks it in the top-right corner
-                so it caps the end of the active row's full-width dark pill (see
-                SideLink's `lg:w-auto`) instead of floating mid-row with dark
-                trailing off past it. When collapsed it keeps a
-                small centered
-                row (a top-right float would collide with the first icon).
-                Hidden on tablet (md) because the rail is forced icon-only
-                there — there's nothing to collapse into. */}
+                views. When expanded it floats over the first row's top-right
+                (absolute, out of flow) so it stops reserving a whole row — the
+                first nav item rises to the top. Nudged in from the edge
+                (`right-4`/`top-2`) so it clears the inner box's scrollbar and
+                the corner instead of being clipped by them. When collapsed it
+                keeps a small centered in-flow row (a top-right float would
+                collide with the first icon). Hidden on tablet (md) because the
+                rail is forced icon-only there — nothing to collapse into. */}
             <div
               className={`hidden lg:flex ${
                 sidebarCollapsed
                   ? "justify-center pb-1"
-                  : "lg:absolute lg:right-3 lg:top-1 lg:z-10 lg:h-6 lg:items-center lg:justify-end"
+                  : "lg:absolute lg:right-4 lg:top-2 lg:z-20 lg:h-6 lg:items-center lg:justify-end"
               }`}
             >
               <button
@@ -716,86 +721,92 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               </button>
             </div>
-            {inAdminView ? (
-              <nav className="flex flex-col gap-0.5">
-                {/* "Admin" eyebrow — only renders in the fully-expanded rail.
+            {/* Scroll box — the actual overflow container, kept separate from
+                the sticky wrapper above so its scrollbar never overlaps the
+                floating toggle. `flex-1 min-h-0` lets it fill the rail and
+                scroll on short viewports. */}
+            <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto [scrollbar-width:thin]">
+              {inAdminView ? (
+                <nav className="flex flex-col gap-0.5">
+                  {/* "Admin" eyebrow — only renders in the fully-expanded rail.
                     Hidden at md (icon-only) and at lg+ when the user has
                     collapsed the rail, matching SidebarGroupHeader behaviour. */}
-                {!sidebarCollapsed && (
-                  <div className="hidden items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-950 lg:flex dark:text-neutral-300">
-                    <ShieldCheck size={11} aria-hidden="true" />
-                    {t("admin.nav_label")}
-                  </div>
-                )}
-                {(() => {
-                  // Render admin items in declaration order, injecting a thin
-                  // `.eyebrow`-styled subhead whenever the `group` field flips.
-                  // Subheads only render in the fully-expanded rail; tablet
-                  // (icon-only) + collapsed laptop get a quiet hairline divider
-                  // so the grouping is still readable without labels.
-                  let lastGroup: AdminNavGroup | null = null;
-                  return displayItems.map((item) => {
-                    const adminItem = item as AdminNavItem;
-                    const itemGroup = adminItem.group ?? null;
-                    const showHeader = itemGroup !== null && itemGroup !== lastGroup;
-                    const isFirstGroupHeader = lastGroup === null;
-                    lastGroup = itemGroup;
-                    const badgeKey = adminItem.badgeKey;
-                    const badgeCount = badgeKey && adminBadges ? adminBadges[badgeKey] : 0;
-                    return (
-                      <div key={item.to}>
-                        {showHeader && itemGroup && (
-                          <AdminSidebarGroupHeader
-                            label={t(`admin.nav_group_${itemGroup}`)}
+                  {!sidebarCollapsed && (
+                    <div className="hidden items-center gap-1.5 px-2 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-950 lg:flex dark:text-neutral-300">
+                      <ShieldCheck size={11} aria-hidden="true" />
+                      {t("admin.nav_label")}
+                    </div>
+                  )}
+                  {(() => {
+                    // Render admin items in declaration order, injecting a thin
+                    // `.eyebrow`-styled subhead whenever the `group` field flips.
+                    // Subheads only render in the fully-expanded rail; tablet
+                    // (icon-only) + collapsed laptop get a quiet hairline divider
+                    // so the grouping is still readable without labels.
+                    let lastGroup: AdminNavGroup | null = null;
+                    return displayItems.map((item) => {
+                      const adminItem = item as AdminNavItem;
+                      const itemGroup = adminItem.group ?? null;
+                      const showHeader = itemGroup !== null && itemGroup !== lastGroup;
+                      const isFirstGroupHeader = lastGroup === null;
+                      lastGroup = itemGroup;
+                      const badgeKey = adminItem.badgeKey;
+                      const badgeCount = badgeKey && adminBadges ? adminBadges[badgeKey] : 0;
+                      return (
+                        <div key={item.to}>
+                          {showHeader && itemGroup && (
+                            <AdminSidebarGroupHeader
+                              label={t(`admin.nav_group_${itemGroup}`)}
+                              collapsed={sidebarCollapsed}
+                              isFirst={isFirstGroupHeader}
+                            />
+                          )}
+                          <AdminSideLink
+                            to={item.to}
+                            icon={item.icon}
+                            label={t(item.labelKey)}
                             collapsed={sidebarCollapsed}
-                            isFirst={isFirstGroupHeader}
+                            badgeCount={badgeCount}
                           />
-                        )}
-                        <AdminSideLink
-                          to={item.to}
-                          icon={item.icon}
-                          label={t(item.labelKey)}
-                          collapsed={sidebarCollapsed}
-                          badgeCount={badgeCount}
-                        />
-                      </div>
-                    );
-                  });
-                })()}
-              </nav>
-            ) : (
-              <nav className="flex flex-col gap-0">
-                {(() => {
-                  // Render items in stable order, injecting a small section
-                  // header (or, when collapsed, a thin divider) whenever the
-                  // `group` field flips. The first item lives in `default` so
-                  // no header sits above the dashboard.
-                  let lastGroup: NavGroup = "default";
-                  return displayItems.map((item) => {
-                    const itemGroup: NavGroup = (item as NavItem).group ?? "default";
-                    const showHeader = itemGroup !== lastGroup && itemGroup !== "default";
-                    lastGroup = itemGroup;
-                    return (
-                      <div key={item.to}>
-                        {showHeader && (
-                          <SidebarGroupHeader
-                            label={t(`nav.group_${itemGroup}`)}
+                        </div>
+                      );
+                    });
+                  })()}
+                </nav>
+              ) : (
+                <nav className="flex flex-col gap-0">
+                  {(() => {
+                    // Render items in stable order, injecting a small section
+                    // header (or, when collapsed, a thin divider) whenever the
+                    // `group` field flips. The first item lives in `default` so
+                    // no header sits above the dashboard.
+                    let lastGroup: NavGroup = "default";
+                    return displayItems.map((item) => {
+                      const itemGroup: NavGroup = (item as NavItem).group ?? "default";
+                      const showHeader = itemGroup !== lastGroup && itemGroup !== "default";
+                      lastGroup = itemGroup;
+                      return (
+                        <div key={item.to}>
+                          {showHeader && (
+                            <SidebarGroupHeader
+                              label={t(`nav.group_${itemGroup}`)}
+                              collapsed={sidebarCollapsed}
+                            />
+                          )}
+                          <SideLink
+                            to={item.to}
+                            icon={item.icon}
+                            label={t(item.labelKey)}
                             collapsed={sidebarCollapsed}
+                            darkActive={itemGroup === "guest"}
                           />
-                        )}
-                        <SideLink
-                          to={item.to}
-                          icon={item.icon}
-                          label={t(item.labelKey)}
-                          collapsed={sidebarCollapsed}
-                          darkActive={itemGroup === "guest"}
-                        />
-                      </div>
-                    );
-                  });
-                })()}
-              </nav>
-            )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </nav>
+              )}
+            </div>
           </div>
         </aside>
         <main
