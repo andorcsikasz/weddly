@@ -267,6 +267,7 @@ export function NotificationBell() {
   const [showHistory, setShowHistory] = useState(false);
   const [surveyOpen, setSurveyOpen] = useState(false);
   const cancelled = useRef(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     cancelled.current = false;
@@ -296,6 +297,34 @@ export function NotificationBell() {
       clearInterval(interval);
     };
   }, []);
+
+  // Close the panel on any click outside the bell + panel, or on Escape (same
+  // pattern the vendor and planner shells use). Replaces the old full-screen
+  // backdrop button, which sat below the sticky header and so ignored clicks up
+  // in the header row.
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+        setShowSettings(false);
+        setShowHistory(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setShowSettings(false);
+        setShowHistory(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   function dismissSurvey() {
     setSurveyOpen(false);
@@ -343,7 +372,7 @@ export function NotificationBell() {
         context="survey_prompt"
         preface={t("notifications.feedback_survey_intro")}
       />
-      <div className="relative">
+      <div className="relative" ref={menuRef}>
         <button
           type="button"
           onClick={toggleOpen}
@@ -364,106 +393,93 @@ export function NotificationBell() {
         </button>
 
         {open && (
-          <>
-            <button
-              type="button"
-              aria-hidden="true"
-              tabIndex={-1}
-              className="fixed inset-0 z-30 cursor-default"
-              onClick={() => {
-                setOpen(false);
-                setShowSettings(false);
-                setShowHistory(false);
-              }}
-            />
-            <div
-              role="menu"
-              className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
-            >
-              {showSettings ? (
-                <SettingsPanel onBack={() => setShowSettings(false)} />
-              ) : (
-                <>
-                  <div className="flex items-center justify-between border-b border-paper-200 px-4 py-3 dark:border-umber-700">
-                    <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
-                      {t("notifications.title")}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setShowSettings(true)}
-                      aria-label={t("notifications.settings_title")}
-                      title={t("notifications.settings_title")}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                    >
-                      <Settings size={14} aria-hidden="true" />
-                    </button>
-                  </div>
-                  {(() => {
-                    const unreadItems = items.filter((i) => !i.read);
-                    const readItems = items.filter((i) => i.read);
-                    const visibleItems = showHistory ? items : unreadItems;
-                    return (
-                      <>
-                        {visibleItems.length === 0 ? (
-                          <p className="px-4 py-8 text-center text-sm text-ink-500 dark:text-umber-300">
-                            {readItems.length > 0
-                              ? t("notifications.no_new")
-                              : t("notifications.empty")}
-                          </p>
-                        ) : (
-                          <ul className="max-h-96 divide-y divide-paper-200 overflow-y-auto dark:divide-umber-700">
-                            {visibleItems.map((item) => {
-                              const Icon = KIND_ICON[item.kind] ?? Bell;
-                              const overdue = item.kind === "timeline_overdue";
-                              return (
-                                <li key={item.id}>
-                                  <button
-                                    type="button"
-                                    onClick={() => openItem(item)}
-                                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
+          <div
+            role="menu"
+            className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+          >
+            {showSettings ? (
+              <SettingsPanel onBack={() => setShowSettings(false)} />
+            ) : (
+              <>
+                <div className="flex items-center justify-between border-b border-paper-200 px-4 py-3 dark:border-umber-700">
+                  <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
+                    {t("notifications.title")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowSettings(true)}
+                    aria-label={t("notifications.settings_title")}
+                    title={t("notifications.settings_title")}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                  >
+                    <Settings size={14} aria-hidden="true" />
+                  </button>
+                </div>
+                {(() => {
+                  const unreadItems = items.filter((i) => !i.read);
+                  const readItems = items.filter((i) => i.read);
+                  const visibleItems = showHistory ? items : unreadItems;
+                  return (
+                    <>
+                      {visibleItems.length === 0 ? (
+                        <p className="px-4 py-8 text-center text-sm text-ink-500 dark:text-umber-300">
+                          {readItems.length > 0
+                            ? t("notifications.no_new")
+                            : t("notifications.empty")}
+                        </p>
+                      ) : (
+                        <ul className="max-h-96 divide-y divide-paper-200 overflow-y-auto dark:divide-umber-700">
+                          {visibleItems.map((item) => {
+                            const Icon = KIND_ICON[item.kind] ?? Bell;
+                            const overdue = item.kind === "timeline_overdue";
+                            return (
+                              <li key={item.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => openItem(item)}
+                                  className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
+                                >
+                                  <span
+                                    className={`mt-0.5 shrink-0 ${overdue ? "text-blush-600 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
                                   >
+                                    <Icon size={16} aria-hidden="true" />
+                                  </span>
+                                  <span
+                                    className={`min-w-0 flex-1 text-sm ${item.read ? "text-ink-600 dark:text-umber-200" : "font-medium text-ink-900 dark:text-paper-50"}`}
+                                  >
+                                    {label(item)}
+                                  </span>
+                                  {!item.read && (
                                     <span
-                                      className={`mt-0.5 shrink-0 ${overdue ? "text-blush-600 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
-                                    >
-                                      <Icon size={16} aria-hidden="true" />
-                                    </span>
-                                    <span
-                                      className={`min-w-0 flex-1 text-sm ${item.read ? "text-ink-600 dark:text-umber-200" : "font-medium text-ink-900 dark:text-paper-50"}`}
-                                    >
-                                      {label(item)}
-                                    </span>
-                                    {!item.read && (
-                                      <span
-                                        className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blush-500"
-                                        aria-hidden="true"
-                                      />
-                                    )}
-                                  </button>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
-                        {readItems.length > 0 && (
-                          <div className="border-t border-paper-200 px-4 py-2 dark:border-umber-700">
-                            <button
-                              type="button"
-                              onClick={() => setShowHistory((v) => !v)}
-                              className="w-full text-center text-xs text-ink-400 transition-colors hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
-                            >
-                              {showHistory
-                                ? t("notifications.hide_history")
-                                : t("notifications.show_history")}
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </>
-              )}
-            </div>
-          </>
+                                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blush-500"
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                      {readItems.length > 0 && (
+                        <div className="border-t border-paper-200 px-4 py-2 dark:border-umber-700">
+                          <button
+                            type="button"
+                            onClick={() => setShowHistory((v) => !v)}
+                            className="w-full text-center text-xs text-ink-400 transition-colors hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
+                          >
+                            {showHistory
+                              ? t("notifications.hide_history")
+                              : t("notifications.show_history")}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </>
+            )}
+          </div>
         )}
       </div>
     </>
