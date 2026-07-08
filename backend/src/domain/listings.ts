@@ -32,7 +32,12 @@ import type {
 } from "@shared/listings";
 import type { ListingPackage } from "@shared/listing_packages";
 import type { ListingVideo, VideoProvider } from "@shared/listing_videos";
-import { type SupplierCategory, type VenueStyle, VENUE_STYLES } from "@shared/suppliers";
+import {
+  type DirectorySupplierBase,
+  type SupplierCategory,
+  type VenueStyle,
+  VENUE_STYLES,
+} from "@shared/suppliers";
 
 export interface ListingRow {
   id: string;
@@ -152,6 +157,84 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
+}
+
+// ── Registered-vendor ('claimed') directory cards ──────────────────────────
+//
+// The public directory (routes/suppliers.ts) merges the static curated list +
+// active community submissions. A vendor's OWN standalone listing (self-serve
+// signup or admin convert-to-vendor: id `v{N}`, source='claimed') isn't in
+// either set, so these helpers surface them there too — the "active suppliers
+// show up among the vendors" behaviour. Country is taken from the owning
+// vendor account (default HU); suspended owners + demo accounts are dropped.
+
+/** ListingRow joined to its owner's country for the directory card mapper. */
+interface ClaimedDirectoryRow extends ListingRow {
+  owner_country: string | null;
+}
+
+const CLAIMED_DIRECTORY_FROM = `
+  FROM listings l
+  JOIN vendor_accounts va ON va.id = l.vendor_account_id
+  JOIN users u ON u.id = va.owner_user_id
+ WHERE l.source = 'claimed'
+   AND l.status = 'active'
+   AND u.status = 'active'
+   AND u.email NOT LIKE '%@demo.weddly.local'`;
+
+function claimedListingToDirectoryBase(row: ClaimedDirectoryRow): DirectorySupplierBase {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category as SupplierCategory,
+    city: row.city,
+    country: (row.owner_country ?? "HU").toUpperCase(),
+    blurb_hu: row.blurb_hu ?? "",
+    blurb_en: row.blurb_en ?? "",
+    website: row.website ?? "",
+    contact_email: row.contact_email,
+    contact_phone: row.contact_phone,
+    address: row.address,
+    capacity_min: row.capacity_min,
+    capacity_max: row.capacity_max,
+    venue_style: toVenueStyle(row.venue_style),
+    lat: row.lat,
+    lng: row.lng,
+    source: "claimed",
+    // A registered vendor listed themselves — mirrors the 'self' marker on a
+    // self-submitted community entry.
+    submitter_type: "self",
+    price_band: clampPriceBand(row.price_band),
+    vendor_account_id: row.vendor_account_id,
+    hero_image_url: row.hero_image_url,
+    gallery_urls: null,
+  };
+}
+
+/** Active standalone registered-vendor listings for the public directory,
+ *  optionally category-filtered. The route dedupes these by id against the
+ *  curated+community set (a vendor who CLAIMED a curated/community entry keeps
+ *  that entry's id, so it already shows there). */
+export function listActiveClaimedListingsForDirectory(
+  category?: SupplierCategory | null,
+): DirectorySupplierBase[] {
+  const select = `SELECT l.*, va.country AS owner_country ${CLAIMED_DIRECTORY_FROM}`;
+  const rows = (
+    category
+      ? db.prepare(`${select} AND l.category = ? ORDER BY l.created_at DESC`).all(category)
+      : db.prepare(`${select} ORDER BY l.created_at DESC`).all()
+  ) as ClaimedDirectoryRow[];
+  return rows.map(claimedListingToDirectoryBase);
+}
+
+/** Resolve one active registered-vendor listing to its directory base (for the
+ *  detail + website-redirect paths, which key off the listing id). Null when
+ *  the id isn't a live claimed listing (or its owner is suspended / demo). */
+export function getClaimedDirectoryBaseById(id: string): DirectorySupplierBase | null {
+  const row = db
+    .prepare(`SELECT l.*, va.country AS owner_country ${CLAIMED_DIRECTORY_FROM} AND l.id = ?`)
+    .get(id) as ClaimedDirectoryRow | undefined;
+  return row ? claimedListingToDirectoryBase(row) : null;
 }
 
 // ── Idempotent upsert + content-hash short-circuit ─────────────────────────

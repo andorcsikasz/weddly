@@ -4767,7 +4767,9 @@ export interface LocaleMessages {
       experience: string;
       style: string;
       details: string;
+      planner: string;
     };
+    planner_none: string;
     cat: {
       venue: string;
       accommodation: string;

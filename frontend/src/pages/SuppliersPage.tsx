@@ -27,9 +27,11 @@ import {
   ArrowBigDown,
   ArrowBigUp,
   ArrowUpRight,
+  BadgeCheck,
   Bookmark,
   BookmarkCheck,
   ChevronRight,
+  ClipboardList,
   LayoutGrid,
   List,
   Map as MapIcon,
@@ -71,7 +73,7 @@ import { CakeDrinksCalculator } from "../components/CakeDrinksCalculator";
 import { InfoHint } from "../components/InfoHint";
 import { DiyEntryModal } from "../components/DiyEntryModal";
 import { OutreachInbox } from "../components/OutreachInbox";
-import { PlannerDirectoryRail } from "../components/PlannerDirectoryRail";
+import { PlannerCard } from "../components/PlannerDirectoryRail";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SupplierCountryFilter } from "../components/SupplierCountryFilter";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
@@ -84,12 +86,13 @@ import {
 import {
   budgetApi,
   coupleApi,
+  couplePlannerApi,
   coupleSupplierApi,
   placesApi,
   supplierApi,
   supplierCostApi,
 } from "../lib/endpoints";
-import type { BudgetLine, Currency } from "@shared/types";
+import type { BudgetLine, Currency, PlannerDirectoryEntry } from "@shared/types";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { SupplierCompareDialog } from "../components/SupplierCompareDialog";
 import { formatMoney } from "../lib/format";
@@ -242,6 +245,12 @@ export default function SuppliersPage() {
   const [selection, setSelectionState] = useState<SelectionMap>({});
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
   const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
+  // Wedding planners are a distinct aggregate (a consent/invite flow, not the
+  // outbound-contact directory), so they get their own chain step rather than a
+  // real SUPPLIER_GROUPS entry. `showPlanners` is the chain's planner step being
+  // active; it's mutually exclusive with a picked supplier group/category.
+  const [planners, setPlanners] = useState<PlannerDirectoryEntry[]>([]);
+  const [showPlanners, setShowPlanners] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false);
   const [diyOpen, setDiyOpen] = useState(false);
@@ -433,6 +442,7 @@ export default function SuppliersPage() {
     p.delete("guests");
     setActiveGroup(null);
     setActiveCat(null);
+    setShowPlanners(false);
   }
   function toggleSavedFilter() {
     const p = new URLSearchParams(params);
@@ -588,6 +598,31 @@ export default function SuppliersPage() {
     // params is read once at mount to pick the initial view-ping scope; we
     // deliberately don't re-run the whole bootstrap when the URL changes.
   }, []);
+
+  // Wedding-planner directory. Feeds the "Esküvőszervező" chain step + its grid.
+  // A failed load just leaves the step hidden (planners stays empty), matching
+  // the previous rail's silent-degrade behaviour.
+  useEffect(() => {
+    let cancelled = false;
+    couplePlannerApi
+      .directory()
+      .then((r) => {
+        if (!cancelled) setPlanners(r.planners);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handlePlannerChanged = useCallback(
+    (id: number, status: PlannerDirectoryEntry["link_status"]) => {
+      setPlanners((prev) =>
+        prev.map((p) => (p.planner_user_id === id ? { ...p, link_status: status } : p)),
+      );
+    },
+    [],
+  );
 
   // Cross-tab pick sync — partner B picks a venue in another tab, we
   // reflect it here without a refresh.
@@ -959,6 +994,17 @@ export default function SuppliersPage() {
     return sorted;
   }, [filteredBeforeCategory, activeGroup, activeCat, sortMode, locale, queryNorm]);
 
+  // Planners honour only the free-text search (name / business / city / bio) —
+  // the venue-oriented country / price / guest filters don't apply to a service
+  // that works nationwide. Drives both the chain step's count and its grid.
+  const filteredPlanners = useMemo<PlannerDirectoryEntry[]>(() => {
+    const q = queryNorm;
+    if (!q) return planners;
+    return planners.filter((p) =>
+      normalize(`${p.business_name} ${p.full_name} ${p.city ?? ""} ${p.bio ?? ""}`).includes(q),
+    );
+  }, [planners, queryNorm]);
+
   // How many of `filtered` are laid out right now. Reset to the first page
   // whenever the filtered set changes (new search / category / sort) so we
   // never show a stale offset, then grow it a page at a time on "load more".
@@ -1028,6 +1074,20 @@ export default function SuppliersPage() {
   function pickGroup(id: SupplierGroup | null) {
     setActiveGroup(id);
     setActiveCat(null);
+    setShowPlanners(false);
+  }
+
+  // Toggle the planner chain step. Turning it on clears any active supplier
+  // group/category (the two browse modes are mutually exclusive).
+  function togglePlanners() {
+    setShowPlanners((prev) => {
+      const next = !prev;
+      if (next) {
+        setActiveGroup(null);
+        setActiveCat(null);
+      }
+      return next;
+    });
   }
 
   // Jump straight to a single category from a card's avatar icon: open the
@@ -1037,6 +1097,7 @@ export default function SuppliersPage() {
     const group = SUPPLIER_GROUPS.find((g) => g.categories.includes(cat));
     setActiveGroup(group ? group.id : null);
     setActiveCat(cat);
+    setShowPlanners(false);
   }
 
   // Route a picked search suggestion to the right action: a supplier jumps to
@@ -1057,12 +1118,11 @@ export default function SuppliersPage() {
 
   return (
     <>
-      {/* Two-column shell: directory content left, wedding-planner rail right
-          (lg+, stacks below on mobile). The rail renders nothing while the
-          planner directory is empty, so the main column keeps its full width
-          until there is real planner supply. */}
-      <div className="lg:flex lg:items-start lg:gap-6">
-        <div className="min-w-0 lg:flex-1">
+      {/* Single-column shell. Wedding planners used to sit in a right-hand rail
+          here; they now live inline as a dedicated "Esküvőszervező" step in the
+          supplier chain, so the directory owns the full page width. */}
+      <div>
+        <div className="min-w-0">
           <header className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div className="flex min-w-0 items-center gap-2">
               <h1 className="font-grotesk">{t("suppliers.title")}</h1>
@@ -1357,6 +1417,25 @@ export default function SuppliersPage() {
                     </div>
                   );
                 })}
+                {/* Wedding-planner step — a peer chain tile after the supplier
+                    groups. Only shown once at least one planner is listed, so an
+                    empty directory keeps the chain exactly as before. No progress
+                    bars: it's a browse mode, not a per-pick checklist. */}
+                {planners.length > 0 && (
+                  <div className="flex snap-start items-stretch gap-1">
+                    <span className="self-center text-paper-400 dark:text-umber-300" aria-hidden>
+                      →
+                    </span>
+                    <ChainStep
+                      active={showPlanners}
+                      onClick={togglePlanners}
+                      label={t("suppliers.group.planner")}
+                      count={filteredPlanners.length}
+                      icon={<ClipboardList size={16} />}
+                      t={t}
+                    />
+                  </div>
+                )}
               </div>
             </div>
             {/* Right-edge fade — only when the row overflows. */}
@@ -1552,20 +1631,45 @@ export default function SuppliersPage() {
           old blush variant: blush is the codebase's error colour
           (ToastProvider, FieldError, AlertCircle pills) and the banner
           was reading as a warning rather than a hint. */}
-          {(() => {
-            const townLabel = nearbyTownLabel(queryNorm);
-            if (!townLabel) return null;
-            return (
-              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200">
-                <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
-                <span>
-                  {t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}
-                </span>
-              </p>
-            );
-          })()}
+          {!showPlanners &&
+            (() => {
+              const townLabel = nearbyTownLabel(queryNorm);
+              if (!townLabel) return null;
+              return (
+                <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200">
+                  <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
+                  <span>
+                    {t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}
+                  </span>
+                </p>
+              );
+            })()}
 
-          {viewMode === "map" ? (
+          {showPlanners ? (
+            <div data-tour-target="vendors-list">
+              {/* Planner directory as a vendor-style grid. Reuses PlannerCard
+                  (which carries the full invite/consent state machine) so the
+                  behaviour matches the old right-hand rail exactly. */}
+              <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">
+                {t("planner_directory.subtitle")}
+              </p>
+              {filteredPlanners.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-paper-300 bg-paper-50 px-4 py-8 text-center text-sm text-ink-500 dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300">
+                  {t("suppliers.planner_none")}
+                </p>
+              ) : (
+                <div className="grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {filteredPlanners.map((p) => (
+                    <PlannerCard
+                      key={p.planner_user_id}
+                      planner={p}
+                      onChanged={handlePlannerChanged}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : viewMode === "map" ? (
             // Same tour target as the grid/list container so the feature tour's
             // "vendors-list" steps still have something to spotlight in map view —
             // otherwise steps 2-3 find no element and the card drifts to center
@@ -1790,6 +1894,7 @@ export default function SuppliersPage() {
                             ) : (
                               <h3 className="truncate text-sm font-semibold">{s.name}</h3>
                             )}
+                            {s.source === "claimed" && <VerifiedBadge t={t} />}
                             {s.source === "community" && s.submitter_type === "self" && (
                               <span
                                 className="hidden shrink-0 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 sm:inline-flex"
@@ -2019,9 +2124,10 @@ export default function SuppliersPage() {
                         className={`flex flex-1 flex-col px-4 pb-3 pt-2.5 ${isPicked ? "bg-sage-50/60 dark:bg-sage-400/15" : ""}`}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="min-w-0 flex-1 truncate text-base font-semibold">
-                            {s.name}
-                          </h3>
+                          <div className="flex min-w-0 flex-1 items-center gap-1">
+                            <h3 className="min-w-0 truncate text-base font-semibold">{s.name}</h3>
+                            {s.source === "claimed" && <VerifiedBadge t={t} />}
+                          </div>
                           {s.price_band !== null && (
                             <span
                               className="shrink-0 text-ink-600 dark:text-umber-200"
@@ -2109,7 +2215,6 @@ export default function SuppliersPage() {
             </>
           )}
         </div>
-        <PlannerDirectoryRail />
       </div>
 
       {/* Outreach Inbox — the "shop → message" flow lives on the same
@@ -2382,6 +2487,22 @@ function Avatar({
 function PriceBandDots({ band }: { band: number }) {
   const filled = Math.max(0, Math.min(5, band));
   return <span className="font-mono">{"$".repeat(filled)}</span>;
+}
+
+/** Twitter/Instagram-style blue verified check, shown next to a registered
+ *  vendor's name (source === "claimed"): the business itself is on Weddly, as
+ *  opposed to a curated/editorial or community-tipped entry. Uses the vendor
+ *  "steel" accent so it reads as the vendor identity across light + dark. */
+function VerifiedBadge({ t }: { t: (key: string) => string }) {
+  return (
+    <span
+      className="inline-flex shrink-0 items-center text-steel-600 dark:text-steel-300"
+      title={t("suppliers.verified_vendor")}
+      aria-label={t("suppliers.verified_vendor")}
+    >
+      <BadgeCheck size={15} aria-hidden />
+    </span>
+  );
 }
 
 /** Small "~45 km" hint that slots into the supplier card's meta row

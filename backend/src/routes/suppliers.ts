@@ -18,7 +18,13 @@ import { curatedOverrideMap, isCuratedPubliclyVisible } from "../domain/curated_
 import { DIRECTORY } from "../domain/suppliers_data";
 import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
 import { recordSupplierEvents } from "../domain/supplier_views";
-import { listListingPackages, listListingPhotos, listListingVideos } from "../domain/listings";
+import {
+  getClaimedDirectoryBaseById,
+  listActiveClaimedListingsForDirectory,
+  listListingPackages,
+  listListingPhotos,
+  listListingVideos,
+} from "../domain/listings";
 import { getReviewSummary } from "../domain/reviews";
 import { countNonDeletedComments } from "../domain/supplier_comments";
 import { getAvailability } from "../domain/supplier_bookings";
@@ -115,6 +121,17 @@ async function handleList(ctx: Ctx): Promise<Response> {
   const curated = cat ? scoped.filter((s) => s.category === cat) : scoped;
   const community = listActiveCommunitySuppliers((cat as SupplierCategory | null) ?? null);
   let allBase: DirectorySupplierBase[] = [...curated, ...community.map(toDirectorySupplierBase)];
+
+  // Registered vendors' own standalone listings (self-serve signup / admin
+  // convert-to-vendor). Not country-scoped (like community) so a vendor stays
+  // visible to every couple. Dedupe by id: a vendor who CLAIMED a curated /
+  // community entry already appears via that entry (same id), so only the
+  // self-serve `v{N}` cards are genuinely new here.
+  const seenIds = new Set(allBase.map((b) => b.id));
+  const claimed = listActiveClaimedListingsForDirectory((cat as SupplierCategory | null) ?? null);
+  for (const c of claimed) {
+    if (!seenIds.has(c.id)) allBase.push(c);
+  }
 
   if (hasGeoFilter) {
     allBase = allBase.filter((s) => {
@@ -254,9 +271,13 @@ function resolveSupplierBase(supplierId: string): DirectorySupplierBase | null {
   const curated = DIRECTORY.find((s) => s.id === supplierId);
   // A hidden/deleted curated entry 404s on the public detail + redirect paths.
   if (curated) return isCuratedPubliclyVisible(supplierId) ? curated : null;
-  if (!supplierId.startsWith("c")) return null;
-  const community = listActiveCommunitySuppliers().find((c) => `c${c.id}` === supplierId);
-  return community ? toDirectorySupplierBase(community) : null;
+  if (supplierId.startsWith("c")) {
+    const community = listActiveCommunitySuppliers().find((c) => `c${c.id}` === supplierId);
+    if (community) return toDirectorySupplierBase(community);
+    // Fall through: a claimed community entry can also carry a c-id.
+  }
+  // Standalone registered-vendor ('claimed') listing (self-serve id `v{N}`).
+  return getClaimedDirectoryBaseById(supplierId);
 }
 
 /** GET /api/suppliers/:supplier_id — detail-page payload. v1 is admin-only on

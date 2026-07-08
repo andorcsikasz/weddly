@@ -149,11 +149,18 @@ export interface DirectorySupplierBase {
    *  (no geocode pipeline yet) and on curated entries we haven't placed. */
   lat: number | null;
   lng: number | null;
-  /** "curated" = vetted entries from suppliers_data.ts; "community" = user-submitted. */
-  source: "curated" | "community";
-  /** Only meaningful when `source === "community"`. Distinguishes a vendor
-   *  who self-submitted ('self') from a couple who recommended a supplier
-   *  ('user'). Always null on curated entries — they don't have a submitter. */
+  /** "curated" = vetted entries from suppliers_data.ts; "community" =
+   *  user-submitted; "claimed" = a registered vendor's OWN standalone listing
+   *  (self-serve signup or admin convert-to-vendor). A `claimed` card is the
+   *  "verified vendor" signal on the directory — the business itself is on
+   *  Weddly, not an editorial/community entry. Note: a vendor who claimed a
+   *  curated/community entry keeps that entry's `source` (the claim shows via
+   *  `vendor_account_id`), so `source === "claimed"` is specifically the
+   *  standalone self-serve card. */
+  source: "curated" | "community" | "claimed";
+  /** Distinguishes a vendor who self-listed ('self') from a couple who
+   *  recommended a supplier ('user'). 'self' on `claimed` (registered) cards
+   *  and on self-submitted community entries; always null on curated entries. */
   submitter_type: "user" | "self" | null;
   /** 1 = $, 5 = $$$$$. Null for entries that haven't been priced yet. */
   price_band: 1 | 2 | 3 | 4 | 5 | null;
