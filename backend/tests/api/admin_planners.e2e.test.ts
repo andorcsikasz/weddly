@@ -233,26 +233,47 @@ describe("admin planner management", () => {
     return Number(info.lastInsertRowid);
   }
 
-  test("send-invite to a no-account applicant emails a register CTA and keeps them pending", async () => {
+  test("approve provisions a dormant planner + emails the activation link, leaves pending", async () => {
     const adminToken = await bootstrapAdmin();
     const waitlistId = seedAcceptedWaitlist("newbie@weddly.test", "Newbie Planner");
 
-    const res = await req<{ ok: true; granted: boolean; has_account: boolean }>(
-      "POST",
-      `/api/admin/planners/pending/${waitlistId}/send-invite`,
-      {},
-      { token: adminToken },
-    );
+    const res = await req<{
+      ok: true;
+      provisioned?: boolean;
+      converted?: boolean;
+      has_account: boolean;
+    }>("POST", `/api/admin/planners/pending/${waitlistId}/send-invite`, {}, { token: adminToken });
     expect(res.status).toBe(200);
-    expect(res.data.granted).toBe(false);
+    expect(res.data.provisioned).toBe(true);
     expect(res.data.has_account).toBe(false);
 
+    // A dormant planner account now exists (verified/password not set yet).
+    const user = db
+      .prepare("SELECT user_type, verified_email, password_set FROM users WHERE email = ?")
+      .get("newbie@weddly.test") as
+      | { user_type: string; verified_email: number; password_set: number }
+      | undefined;
+    expect(user?.user_type).toBe("planner");
+    expect(user?.verified_email).toBe(0);
+    expect(user?.password_set).toBe(0);
+
+    // The activation-link email (pre-filled onboarding invite) went out.
     const mail = db
-      .prepare("SELECT kind FROM email_log WHERE kind = 'planner_access_invite' AND to_email = ?")
+      .prepare(
+        "SELECT kind FROM email_log WHERE kind = 'planner_onboarding_invite' AND to_email = ?",
+      )
       .all("newbie@weddly.test") as { kind: string }[];
     expect(mail.length).toBe(1);
 
-    // Nothing granted (no account existed) → still a pending row.
+    // Taking the email means they can no longer self-register a couple account.
+    const dup = await req("POST", "/api/auth/register", {
+      email: "newbie@weddly.test",
+      password: "supersafe123",
+      full_name: "Newbie Again",
+    });
+    expect(dup.status).toBe(409);
+
+    // No longer pending (has a planner account now); surfaces as an active row.
     const list = await req<{ planners: AdminPlannerView[] }>(
       "GET",
       "/api/admin/planners",
@@ -261,10 +282,13 @@ describe("admin planner management", () => {
     );
     expect(
       list.data.planners.some((p) => p.state === "pending" && p.email === "newbie@weddly.test"),
+    ).toBe(false);
+    expect(
+      list.data.planners.some((p) => p.state === "active" && p.email === "newbie@weddly.test"),
     ).toBe(true);
   });
 
-  test("send-invite to an orphaned account grants planner + moves it out of pending", async () => {
+  test("approve on an orphaned account converts planner + moves it out of pending", async () => {
     const adminToken = await bootstrapAdmin();
     // Registered under this email as a COUPLE (the orphan case): an account
     // exists but user_type != 'planner', so the email-only waitlist match never
@@ -289,14 +313,14 @@ describe("admin planner management", () => {
       ),
     ).toBe(true);
 
-    const res = await req<{ ok: true; granted: boolean; has_account: boolean }>(
-      "POST",
-      `/api/admin/planners/pending/${waitlistId}/send-invite`,
-      {},
-      { token: adminToken },
-    );
+    const res = await req<{
+      ok: true;
+      provisioned?: boolean;
+      converted?: boolean;
+      has_account: boolean;
+    }>("POST", `/api/admin/planners/pending/${waitlistId}/send-invite`, {}, { token: adminToken });
     expect(res.status).toBe(200);
-    expect(res.data.granted).toBe(true);
+    expect(res.data.converted).toBe(true);
     expect(res.data.has_account).toBe(true);
 
     // Existing account is now a planner, couple_id preserved (non-destructive).

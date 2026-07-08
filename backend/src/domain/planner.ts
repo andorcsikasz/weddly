@@ -205,7 +205,9 @@ function waitlistDetailOrNull(
 export function listPendingPlannerWaitlist(): AdminPlannerPending[] {
   const rows = db
     .prepare(
-      `SELECT ${WAITLIST_DETAIL_COLUMNS} FROM planner_waitlist w
+      `SELECT ${WAITLIST_DETAIL_COLUMNS},
+              EXISTS(SELECT 1 FROM users u WHERE lower(u.email) = lower(w.email)) AS has_account
+         FROM planner_waitlist w
         WHERE w.status = 'accepted'
           AND w.id = (SELECT MAX(w2.id) FROM planner_waitlist w2
                         WHERE lower(w2.email) = lower(w.email) AND w2.status = 'accepted')
@@ -213,7 +215,7 @@ export function listPendingPlannerWaitlist(): AdminPlannerPending[] {
                 SELECT lower(u.email) FROM users u WHERE u.user_type = 'planner')
         ORDER BY w.created_at DESC`,
     )
-    .all() as WaitlistDetailRow[];
+    .all() as (WaitlistDetailRow & { has_account: number })[];
   return rows.map((r) => ({
     state: "pending" as const,
     waitlist_id: r.id,
@@ -221,6 +223,7 @@ export function listPendingPlannerWaitlist(): AdminPlannerPending[] {
     email: r.email,
     phone: r.phone,
     created_at: r.created_at * 1000,
+    has_account: r.has_account === 1,
     waitlist: toWaitlistDetail(r),
   }));
 }

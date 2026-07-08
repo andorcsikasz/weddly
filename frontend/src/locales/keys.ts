@@ -5127,8 +5127,14 @@ export interface LocaleMessages {
       status_applied: string;
       /** Button on a pending applicant card: (re)send the access email. */
       send_invite: string;
+      /** Button on a pending applicant card: approve + open their planner
+       *  account (provision or convert). */
+      approve_open: string;
       /** Toast: access email sent to a not-yet-registered applicant. */
       invite_sent_success: string;
+      /** Toast: provisioned a fresh planner and emailed the activation link
+       *  into a pre-filled onboarding. */
+      invite_activation_sent: string;
       /** Toast: applicant already had an account, so we granted planner and
        *  emailed a sign-in link. */
       invite_granted_success: string;

@@ -379,6 +379,18 @@ export interface PlannerProvisionedPayload {
   freeUntilEn: string;
 }
 
+export interface PlannerOnboardingInvitePayload {
+  /** The applicant's name, used in the greeting. */
+  plannerName: string;
+  /** Business name from their /planners application. */
+  businessName: string;
+  /** Full activation URL with the single-use token. */
+  activateUrl: string;
+  /** Human date the free (founding or trial) window runs until, per locale. */
+  freeUntilHu: string;
+  freeUntilEn: string;
+}
+
 export interface CommunitySupplierVerifyPayload {
   /** Business / listing name surfaced in the email body. */
   supplierName: string;
@@ -576,6 +588,7 @@ export type KindPayload = {
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   planner_waitlist_decision: PlannerWaitlistDecisionPayload;
   planner_provisioned: PlannerProvisionedPayload;
+  planner_onboarding_invite: PlannerOnboardingInvitePayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
   community_supplier_published: CommunitySupplierPublishedPayload;
   community_supplier_rejected: CommunitySupplierRejectedPayload;
@@ -1752,6 +1765,41 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ctaSubtext: "The link is valid for 30 days and can be used once.",
       footnote:
         "If you didn't ask for this account, there's nothing to do: without activation the profile never goes live.",
+    },
+  }),
+
+  // The applicant applied on /planners themselves and an admin approved them.
+  // Distinct from planner_provisioned (admin-in-person, "in your name"): here the
+  // copy says "we reviewed and approved YOUR application" and the onboarding is
+  // pre-filled from what they submitted. The link opens a real planner account.
+  planner_onboarding_invite: (p) => ({
+    subject: "Jóváhagytuk a jelentkezésed / Your planner application is approved",
+    ctaUrl: p.activateUrl,
+    hu: {
+      preheader: "Átnéztük a jelentkezésed, nyisd meg a szervezői fiókod.",
+      greeting: `Szia ${p.plannerName}!`,
+      paragraphs: [
+        `Köszönjük a jelentkezésed a Weddly tervezői programjába. Átnéztük és **jóváhagytuk** a(z) **${p.businessName}** profilját.`,
+        "Már csak egy lépés van hátra: nyisd meg a fiókod a lenti gombbal, és állíts be egy jelszót. Az onboardingot **előre kitöltöttük a jelentkezésed adataival**, csak át kell nézned.",
+        `A hozzáférés ingyenes eddig: ${p.freeUntilHu}. Nincs bankkártya, nincs apró betű.`,
+        `A fiók megnyitásával elfogadod az Általános Szerződési Feltételeket (${CONFIG.frontendBaseUrl}/terms) és az Adatkezelési tájékoztatót (${CONFIG.frontendBaseUrl}/privacy). Mindkettőt a gomb után is megtalálod, mielőtt véglegesítenél.`,
+      ],
+      cta: "Fiók megnyitása",
+      ctaSubtext: "A link 30 napig érvényes és egyszer használható.",
+      footnote: "Ha nem te jelentkeztél, nincs teendőd: megnyitás nélkül a fiók nem lép életbe.",
+    },
+    en: {
+      greeting: `Hi ${p.plannerName},`,
+      paragraphs: [
+        `Thanks for applying to the Weddly planner programme. We have reviewed and **approved** the profile for **${p.businessName}**.`,
+        "One step left: open your account with the button below and set a password. We have **pre-filled your onboarding with the details from your application**, so you just need to review them.",
+        `Your access is free until ${p.freeUntilEn}. No card, no fine print.`,
+        `By opening the account you accept the Terms of Service (${CONFIG.frontendBaseUrl}/terms) and the Privacy Policy (${CONFIG.frontendBaseUrl}/privacy). Both are shown again on the activation page before you confirm.`,
+      ],
+      cta: "Open your account",
+      ctaSubtext: "The link is valid for 30 days and can be used once.",
+      footnote:
+        "If you didn't apply, there's nothing to do: without opening it the account never goes live.",
     },
   }),
 

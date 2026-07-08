@@ -117,6 +117,7 @@ import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
 import { seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
 import { backfillPartnerPropagation } from "./domain/couples";
+import { backfillWaitlistPlannerConversions } from "./domain/planner_conversion";
 import { registerUserCoupleRoutes } from "./routes/user_couple";
 import { registerUserProfileRoutes } from "./routes/user_profile";
 import { registerReceivedGiftsRoutes } from "./routes/received_gifts";
@@ -140,6 +141,14 @@ seedBlogPostsIfEmpty();
 {
   const owners = backfillPartnerPropagation();
   log.info("partners.backfill", { owners });
+}
+// Heal accepted planner applicants who landed on a plain couple account instead
+// of a planner (the "Regisztrációra vár" mis-route). Account only, idempotent,
+// billing-neutral to couple data. New approvals go through the gated
+// provision/convert path in admin_planners.ts.
+{
+  const converted = backfillWaitlistPlannerConversions();
+  log.info("planner.convert_backfill", { converted });
 }
 
 const router = new Router();

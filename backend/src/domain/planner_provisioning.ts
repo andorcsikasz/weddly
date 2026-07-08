@@ -16,6 +16,8 @@ import { hashPassword } from "../auth/password";
 import { hashToken, mintToken } from "../auth/tokens";
 import { db, now } from "../db";
 import { HttpError } from "../lib/http";
+import { type PlannerWaitlistSeedRow, seedPlannerProfileFromWaitlist } from "./planner_conversion";
+import { initPlannerBilling } from "./planner_billing";
 import { getUserByEmail } from "./users";
 
 /** Activation-link validity. Generous on purpose: these are hand-picked
@@ -38,12 +40,20 @@ export interface ProvisionPlannerInput {
   category: string;
 }
 
-/** Create the dormant planner account + the 2-year comp + the first activation
- *  token. Returns the new user id and the PLAINTEXT token for the email link.
- *  Throws 409 when the email already belongs to any account. */
+/** Create the dormant planner account + the first activation token, returning the
+ *  new user id and the PLAINTEXT token for the email link. Throws 409 when the
+ *  email already belongs to any account.
+ *
+ *  Billing: by default (`grantComp` true, the admin in-person path) it grants the
+ *  2-year comp with `is_founding_member=0`, so it does NOT consume one of the
+ *  PLANNER_FOUNDING_CAP founding slots. The waitlist-approval path passes
+ *  `grantComp:false` and grants standard founding-or-trial billing via
+ *  `initPlannerBilling` afterwards (see provisionPlannerFromWaitlist). */
 export async function provisionPlanner(
   input: ProvisionPlannerInput,
+  opts: { grantComp?: boolean } = {},
 ): Promise<{ userId: number; token: string }> {
+  const grantComp = opts.grantComp ?? true;
   const email = input.email.trim().toLowerCase();
   if (getUserByEmail(email)) throw new HttpError(409, "Email already registered");
 
@@ -67,16 +77,18 @@ export async function provisionPlanner(
       .run(email, placeholderHash, input.fullName, input.businessName, input.category, ts, ts);
     const userId = Number(result.lastInsertRowid);
 
-    // 2-year comp, admin-granted: founding status keeps the shared entitlement
-    // math happy, is_founding_member=0 keeps the 25 founding slots untouched.
-    // Currency defaults to the null-locale pick and is re-pinned at activation
-    // once the planner's real UI locale is known.
-    db.prepare(
-      `INSERT INTO planner_subscriptions
-         (user_id, subscription_status, trial_ends_at, founding_until,
-          is_founding_member, currency, created_at, updated_at)
-       VALUES (?, 'founding', NULL, ?, 0, ?, ?, ?)`,
-    ).run(userId, ts + PLANNER_FOUNDING_DURATION_MS, plannerCurrencyForLocale(null), ts, ts);
+    if (grantComp) {
+      // 2-year comp, admin-granted: founding status keeps the shared entitlement
+      // math happy, is_founding_member=0 keeps the 25 founding slots untouched.
+      // Currency defaults to the null-locale pick and is re-pinned at activation
+      // once the planner's real UI locale is known.
+      db.prepare(
+        `INSERT INTO planner_subscriptions
+           (user_id, subscription_status, trial_ends_at, founding_until,
+            is_founding_member, currency, created_at, updated_at)
+         VALUES (?, 'founding', NULL, ?, 0, ?, ?, ?)`,
+      ).run(userId, ts + PLANNER_FOUNDING_DURATION_MS, plannerCurrencyForLocale(null), ts, ts);
+    }
 
     db.prepare(
       `INSERT INTO planner_activation_tokens (user_id, token, expires_at, created_at)
@@ -87,6 +99,29 @@ export async function provisionPlanner(
   });
 
   return { userId: run(), token };
+}
+
+/** Provision a dormant planner for an accepted waitlist applicant. Mirrors the
+ *  vendor "accept -> activate" flow: creates the account + activation token (so
+ *  approving takes the email and the applicant can no longer self-register a
+ *  couple account), grants standard founding-or-trial billing (a genuine early
+ *  applicant, first-come, same as initVendorBilling), and seeds the profile from
+ *  their application so the onboarding wizard arrives pre-filled. */
+export async function provisionPlannerFromWaitlist(
+  row: PlannerWaitlistSeedRow,
+): Promise<{ userId: number; token: string }> {
+  const { userId, token } = await provisionPlanner(
+    {
+      email: row.email,
+      fullName: row.full_name,
+      businessName: row.company_name?.trim() || row.full_name,
+      category: "",
+    },
+    { grantComp: false },
+  );
+  initPlannerBilling(userId);
+  seedPlannerProfileFromWaitlist(userId, row);
+  return { userId, token };
 }
 
 /** True while the planner still has an unconsumed activation token, i.e. the

@@ -29,15 +29,19 @@ function handleView(ctx: Ctx): Response {
   if (!user) throw new HttpError(404, "Activation not found");
 
   const sub = db
-    .prepare("SELECT founding_until FROM planner_subscriptions WHERE user_id = ?")
-    .get(row.user_id) as { founding_until: number | null } | undefined;
+    .prepare("SELECT founding_until, trial_ends_at FROM planner_subscriptions WHERE user_id = ?")
+    .get(row.user_id) as
+    | { founding_until: number | null; trial_ends_at: number | null }
+    | undefined;
 
   const view: PlannerActivationView = {
     email: user.email,
     full_name: user.full_name,
     business_name: user.business_name ?? null,
     planner_category: user.planner_category ?? null,
-    free_until: sub?.founding_until ?? row.expires_at,
+    // Founding window when a slot was granted, else the (short) trial window;
+    // fall back to the token's own expiry only when there is no sub row.
+    free_until: sub?.founding_until ?? sub?.trial_ends_at ?? row.expires_at,
     expires_at: row.expires_at,
   };
   return json(view);

@@ -11,15 +11,18 @@
 import { CONFIG } from "../config";
 import { sendKind } from "../domain/emails";
 import {
-  getPlannerWaitlistById,
-  grantPlannerAccount,
   isPlannerPlan,
   listAdminPlanners,
   listPendingPlannerWaitlist,
   updatePlannerPlan,
 } from "../domain/planner";
-import { getPlannerSub, initPlannerBilling } from "../domain/planner_billing";
-import { provisionPlanner, reissueActivationToken } from "../domain/planner_provisioning";
+import { getPlannerSub } from "../domain/planner_billing";
+import { convertUserToPlanner, getWaitlistSeedRowById } from "../domain/planner_conversion";
+import {
+  provisionPlanner,
+  provisionPlannerFromWaitlist,
+  reissueActivationToken,
+} from "../domain/planner_provisioning";
 import { purgeOneUser } from "../domain/purge";
 import { getUserByEmail, getUserById, requireAdmin, setUserStatus } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
@@ -157,47 +160,71 @@ async function handleResendActivation(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
-// (Re)send the "get into your planner account" email to an accepted applicant
-// stuck on "Regisztrációra vár" (keyed on planner_waitlist.id — a pending row
-// has no user yet). Registering with the same email auto-grants planner, so a
-// brand-new applicant just needs the /signup CTA. But if they already
-// registered under this email as a non-planner (the email-only waitlist match
-// never cleared — the orphan case), grant planner + init billing on that
-// existing account first (non-destructive: users.couple_id is untouched, so any
-// couple data stays) and send the "sign in" CTA instead. Either way they leave
-// the pending list on the next refresh.
+// Approve an accepted applicant stuck on "Regisztrációra vár" and open their
+// planner account (keyed on planner_waitlist.id — a pending row may or may not
+// already have a user). This is the admin approval gate: three branches.
+//   1. No account yet -> provision a dormant planner (which takes the email, so
+//      they can no longer self-register a couple account), seed the profile from
+//      their application, and email an activation link that opens the account and
+//      lands them in a pre-filled onboarding wizard.
+//   2. Existing NON-planner account (the orphan / mis-route case) -> convert it
+//      to a planner + seed the profile (non-destructive: users.couple_id and any
+//      couple data are untouched), and email the "sign in" CTA.
+//   3. Already a planner -> re-seed (idempotent) + "sign in" CTA.
+// Either way they leave the pending list on the next refresh.
 async function handleSendInvite(ctx: Ctx): Promise<Response> {
   const admin = requireAdmin(ctx);
   const waitlistId = parseId(ctx);
-  const entry = getPlannerWaitlistById(waitlistId);
-  if (!entry) throw new HttpError(404, "Waitlist entry not found");
+  const row = getWaitlistSeedRowById(waitlistId);
+  if (!row) throw new HttpError(404, "Waitlist entry not found");
 
-  const existing = getUserByEmail(entry.email);
-  let granted = false;
-  if (existing && existing.user_type !== "planner") {
-    grantPlannerAccount(existing.id);
-    initPlannerBilling(existing.id);
-    granted = true;
+  const existing = getUserByEmail(row.email);
+
+  // Branch 1: provision + activation link -> pre-filled onboarding.
+  if (!existing) {
+    const { userId, token } = await provisionPlannerFromWaitlist(row);
+    const sub = getPlannerSub(userId);
+    const labels = freeUntilLabels(sub?.founding_until ?? sub?.trial_ends_at ?? Date.now());
+    await sendKind(
+      "planner_onboarding_invite",
+      {
+        plannerName: row.full_name,
+        businessName: row.company_name?.trim() || row.full_name,
+        activateUrl: `${CONFIG.frontendBaseUrl}/planner/activate/${token}`,
+        freeUntilHu: labels.hu,
+        freeUntilEn: labels.en,
+      },
+      { user: { id: userId, email: row.email, full_name: row.full_name } },
+    );
+    addAuditLog({
+      actor_user_id: admin.id,
+      couple_id: null,
+      action: "admin.planner_waitlist_provision",
+      target_kind: "user",
+      target_id: userId,
+      after: { email: row.email, waitlist_id: waitlistId },
+    });
+    return json({ ok: true, provisioned: true, has_account: false });
   }
-  const hasAccount = existing !== null;
 
+  // Branches 2 & 3: convert (idempotent for an existing planner) + seed, then
+  // send the sign-in CTA to the real account holder.
+  const wasPlanner = existing.user_type === "planner";
+  convertUserToPlanner(existing.id);
   await sendKind(
     "planner_access_invite",
-    { plannerName: existing?.full_name || entry.full_name, hasAccount },
-    existing
-      ? { user: { id: existing.id, email: existing.email, full_name: existing.full_name } }
-      : { user: null, guest: { email: entry.email, full_name: entry.full_name } },
+    { plannerName: existing.full_name, hasAccount: true },
+    { user: { id: existing.id, email: existing.email, full_name: existing.full_name } },
   );
-
   addAuditLog({
     actor_user_id: admin.id,
     couple_id: null,
-    action: granted ? "admin.planner_waitlist_grant_invite" : "admin.planner_waitlist_invite",
-    target_kind: "planner_waitlist",
-    target_id: waitlistId,
-    after: { email: entry.email, has_account: hasAccount, granted },
+    action: wasPlanner ? "admin.planner_waitlist_reseed" : "admin.planner_waitlist_convert",
+    target_kind: "user",
+    target_id: existing.id,
+    after: { email: existing.email, waitlist_id: waitlistId, converted: !wasPlanner },
   });
-  return json({ ok: true, granted, has_account: hasAccount });
+  return json({ ok: true, converted: !wasPlanner, has_account: true });
 }
 
 function setPlannerStatus(ctx: Ctx, status: "active" | "suspended"): Response {

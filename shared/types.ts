@@ -1875,12 +1875,16 @@ export interface AdminPlannerAccount {
  *  "pending" onboarding rows. */
 export interface AdminPlannerPending {
   state: "pending";
-  /** planner_waitlist.id — the identity for a pending row (no user yet). */
+  /** planner_waitlist.id — the identity for a pending row (no planner yet). */
   waitlist_id: number;
   full_name: string;
   email: string;
   phone: string | null;
   created_at: UnixMs;
+  /** True when a NON-planner account already exists for this email (the
+   *  mis-route / orphan case). Drives the admin action copy: approving CONVERTS
+   *  an existing account vs PROVISIONS a fresh one. */
+  has_account: boolean;
   waitlist: AdminPlannerWaitlistDetail;
 }
 

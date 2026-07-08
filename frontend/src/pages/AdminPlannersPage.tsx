@@ -343,9 +343,10 @@ function ProvisionPlannerDialog({
 }
 
 /** An accepted waitlist applicant with no planner account yet. The one action
- *  is "send invite": (re)email the access CTA. If they already registered under
- *  this email as a non-planner, the server grants planner first and the list
- *  refreshes them into an Aktív account. */
+ *  is "Approve & open account": provision a dormant planner + email an
+ *  activation link into a pre-filled onboarding, or (if they already registered
+ *  under this email as a non-planner) convert + seed that account and email a
+ *  sign-in link. Either way the list refreshes them into an Aktív account. */
 function PendingPlannerCard({
   entry,
   onChanged,
@@ -369,9 +370,11 @@ function PendingPlannerCard({
       const r = await adminPlannerMgmtApi.sendInvite(entry.waitlist_id);
       toast.success(
         t(
-          r.granted
-            ? "admin.planners.invite_granted_success"
-            : "admin.planners.invite_sent_success",
+          r.provisioned
+            ? "admin.planners.invite_activation_sent"
+            : r.converted
+              ? "admin.planners.invite_granted_success"
+              : "admin.planners.invite_sent_success",
         ),
       );
       onChanged();
@@ -417,8 +420,8 @@ function PendingPlannerCard({
             className={ICON_BTN}
             onClick={handleSendInvite}
             disabled={busy}
-            title={t("admin.planners.send_invite")}
-            aria-label={t("admin.planners.send_invite")}
+            title={t("admin.planners.approve_open")}
+            aria-label={t("admin.planners.approve_open")}
           >
             {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
           </button>

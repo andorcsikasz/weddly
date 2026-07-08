@@ -45,6 +45,7 @@ export type EmailKind =
   | "vendor_waitlist_decision" // admin-edited triage reply (accepted / under_review / rejected)
   | "planner_waitlist_decision" // admin-edited planner triage reply (accepted / under_review / rejected)
   | "planner_provisioned" // admin pre-registered a planner account (2-year comp), activation link inside
+  | "planner_onboarding_invite" // admin approved a /planners applicant, activation link + pre-filled onboarding inside
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
   | "community_supplier_published" // admin approved the listing, it's now live
   | "community_supplier_rejected" // admin rejected a pending listing during moderation
@@ -176,6 +177,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // (agreed in person beforehand) and the activation link inside is the only
   // way into that account, so it must always deliver.
   planner_provisioned: "transactional",
+  // Transactional: the admin approved this person's own /planners application
+  // and the activation link inside is how they open their planner account
+  // (details pre-filled from their application). Must always deliver.
+  planner_onboarding_invite: "transactional",
   // Outreach: a couple added this business to the community directory; the
   // recipient never asked for anything and has no Weddly account.
   community_supplier_verify: "outreach",

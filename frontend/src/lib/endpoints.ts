@@ -1861,16 +1861,19 @@ export const adminPlannerMgmtApi = {
     apiFetch<{ ok: true; user_id: number }>("POST", "/api/admin/planners/provision", body),
   resendActivation: (id: number) =>
     apiFetch<{ ok: true }>("POST", `/api/admin/planners/${id}/resend-activation`, {}),
-  /** (Re)send the access email to an accepted waitlist applicant (keyed on
-   *  planner_waitlist.id). If they already have a non-planner account under that
-   *  email, the server grants planner first (`granted: true`) and the email is a
-   *  sign-in link; otherwise it's a register-with-this-email link. */
+  /** Approve an accepted waitlist applicant and open their planner account
+   *  (keyed on planner_waitlist.id). No account yet -> provisions a dormant
+   *  planner + emails an activation link into a pre-filled onboarding
+   *  (`provisioned: true`). Existing non-planner account -> converts + seeds it
+   *  (`converted: true`) and emails a sign-in link. Already a planner -> re-seed
+   *  + sign-in link. */
   sendInvite: (waitlistId: number) =>
-    apiFetch<{ ok: true; granted: boolean; has_account: boolean }>(
-      "POST",
-      `/api/admin/planners/pending/${waitlistId}/send-invite`,
-      {},
-    ),
+    apiFetch<{
+      ok: true;
+      provisioned?: boolean;
+      converted?: boolean;
+      has_account: boolean;
+    }>("POST", `/api/admin/planners/pending/${waitlistId}/send-invite`, {}),
 };
 
 /** Admin-provisioned planner activation landing (public, token-gated). The

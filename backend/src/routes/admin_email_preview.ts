@@ -210,6 +210,13 @@ const STUBS: KindPayload = {
     freeUntilHu: "2028. július 3.",
     freeUntilEn: "3 July 2028",
   },
+  planner_onboarding_invite: {
+    plannerName: "Anna",
+    businessName: "Anna Weddings",
+    activateUrl: `${BASE_URL}/planner/activate/preview-token`,
+    freeUntilHu: "2028. július 3.",
+    freeUntilEn: "3 July 2028",
+  },
   community_supplier_verify: {
     supplierName: "Bloom Studio",
     verifyUrl: `${BASE_URL}/supplier/verify?token=preview`,
