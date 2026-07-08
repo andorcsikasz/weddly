@@ -4008,6 +4008,7 @@ const hu: LocaleMessages = {
     community_pill_tooltip: "Egy Weddly-t használó pár ajánlotta, közvetlen tapasztalat alapján.",
     self_pill: "Szolgáltató",
     self_pill_tooltip: "A szolgáltató maga jelentkezett be a Weddly közösségbe.",
+    verified_vendor: "Ellenőrzött szolgáltató · saját Weddly-fiók",
     drop_your_own: "Tipp leadása",
     calc: {
       open: "Kalkulátor",
@@ -4286,7 +4287,9 @@ const hu: LocaleMessages = {
       experience: "Élmény",
       style: "Stílus",
       details: "Részletek",
+      planner: "Esküvőszervező",
     },
+    planner_none: "Nincs a keresésnek megfelelő szervező.",
     cat: {
       venue: "Esküvői helyszín",
       accommodation: "Szállás",
@@ -4640,7 +4643,7 @@ const hu: LocaleMessages = {
       plan_starter: "Starter",
       plan_pro: "Pro",
       plan_premium: "Premium",
-      plan_cycle_hint: "Katt a váltáshoz",
+      plan_change_hint: "Csomag módosítása",
       suspend: "Felfüggesztés",
       reactivate: "Újraaktiválás",
       delete: "Törlés",

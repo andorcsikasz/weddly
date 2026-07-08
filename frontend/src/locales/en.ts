@@ -3962,6 +3962,7 @@ const en: LocaleMessages = {
     community_pill_tooltip: "Recommended by a Weddly couple, from first-hand experience.",
     self_pill: "Supplier",
     self_pill_tooltip: "The supplier joined the Weddly community themselves.",
+    verified_vendor: "Verified vendor · has their own Weddly account",
     drop_your_own: "Drop your own",
     calc: {
       open: "Calculator",
@@ -4238,7 +4239,9 @@ const en: LocaleMessages = {
       experience: "Experience",
       style: "Style",
       details: "Details",
+      planner: "Wedding planner",
     },
+    planner_none: "No planners match your search.",
     cat: {
       venue: "Wedding venue",
       accommodation: "Accommodation",
@@ -4591,7 +4594,7 @@ const en: LocaleMessages = {
       plan_starter: "Starter",
       plan_pro: "Pro",
       plan_premium: "Premium",
-      plan_cycle_hint: "Tap to switch",
+      plan_change_hint: "Change plan",
       suspend: "Suspend",
       reactivate: "Reactivate",
       delete: "Delete",

@@ -4452,6 +4452,7 @@ export interface LocaleMessages {
     community_pill_tooltip: string;
     self_pill: string;
     self_pill_tooltip: string;
+    verified_vendor: string;
     drop_your_own: string;
     /** Cake & drinks calculator — surfaced from the food/drink category header. */
     calc: {
@@ -5167,7 +5168,7 @@ export interface LocaleMessages {
       plan_starter: string;
       plan_pro: string;
       plan_premium: string;
-      plan_cycle_hint: string;
+      plan_change_hint: string;
       suspend: string;
       reactivate: string;
       delete: string;

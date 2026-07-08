@@ -25,7 +25,7 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
 import type { PillTone } from "../components/admin";
 import { Button, Dialog, TextField, useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -178,17 +178,12 @@ function DetailsToggle({
 const PLANS: PlannerPlan[] = ["starter", "pro", "premium"];
 
 // Uber-style tier chip: each tier gets a distinct fill so the plan reads at a
-// glance across a dense list. Clicking cycles starter → pro → premium.
+// glance across a dense list. Clicking opens a picker with all three tiers.
 const PLAN_STYLE: Record<PlannerPlan, string> = {
   starter: "bg-paper-200 text-neutral-700 dark:bg-umber-800 dark:text-umber-200",
   pro: "bg-neutral-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900",
   premium: "bg-sage-600 text-paper-50 dark:bg-sage-500 dark:text-umber-900",
 };
-
-function nextPlan(plan: PlannerPlan): PlannerPlan {
-  const i = PLANS.indexOf(plan);
-  return PLANS[(i + 1) % PLANS.length] ?? "starter";
-}
 
 function initials(name: string, email: string): string {
   const src = (name || email).trim();
@@ -461,6 +456,8 @@ function PlannerCard({
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [planMenuOpen, setPlanMenuOpen] = useState(false);
+  const planMenuRef = useRef<HTMLDivElement>(null);
   const suspended = planner.status === "suspended";
   const hasDetails = hasPlannerDetails(
     planner.business_name ?? planner.waitlist?.company_name ?? null,
@@ -531,7 +528,8 @@ function PlannerCard({
     );
   }
 
-  function handlePlanChange(plan: PlannerPlan) {
+  function selectPlan(plan: PlannerPlan) {
+    setPlanMenuOpen(false);
     if (plan === planner.planner_plan) return;
     void run(
       () => adminPlannerMgmtApi.setPlan(planner.user_id, plan),
@@ -539,10 +537,22 @@ function PlannerCard({
     );
   }
 
-  function cyclePlan() {
-    if (busy) return;
-    handlePlanChange(nextPlan(planner.planner_plan));
-  }
+  // Close the plan picker on any outside click or Escape.
+  useEffect(() => {
+    if (!planMenuOpen) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!planMenuRef.current?.contains(e.target as Node)) setPlanMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPlanMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [planMenuOpen]);
 
   return (
     <div className="admin-card">
@@ -595,20 +605,58 @@ function PlannerCard({
 
         {/* Plan + actions */}
         <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={cyclePlan}
-            disabled={busy}
-            title={t("admin.planners.plan_cycle_hint")}
-            aria-label={`${t("admin.planners.plan")}: ${t(`admin.planners.plan_${planner.planner_plan}`)}. ${t("admin.planners.plan_cycle_hint")}`}
-            className={`inline-flex min-w-[76px] select-none items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide transition active:scale-95 disabled:opacity-60 ${PLAN_STYLE[planner.planner_plan]}`}
-          >
-            {busy ? (
-              <Loader2 size={13} className="animate-spin" />
-            ) : (
-              t(`admin.planners.plan_${planner.planner_plan}`)
+          <div className="relative" ref={planMenuRef}>
+            <button
+              type="button"
+              onClick={() => !busy && setPlanMenuOpen((v) => !v)}
+              disabled={busy}
+              aria-haspopup="menu"
+              aria-expanded={planMenuOpen}
+              title={t("admin.planners.plan_change_hint")}
+              aria-label={`${t("admin.planners.plan")}: ${t(`admin.planners.plan_${planner.planner_plan}`)}. ${t("admin.planners.plan_change_hint")}`}
+              className={`inline-flex min-w-[76px] select-none items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide transition active:scale-95 disabled:opacity-60 ${PLAN_STYLE[planner.planner_plan]}`}
+            >
+              {busy ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                t(`admin.planners.plan_${planner.planner_plan}`)
+              )}
+            </button>
+            {planMenuOpen && (
+              <div
+                role="menu"
+                aria-label={t("admin.planners.plan_change_hint")}
+                className="absolute right-0 top-full z-40 mt-2 w-44 overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+              >
+                {PLANS.map((p) => {
+                  const active = p === planner.planner_plan;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={active}
+                      onClick={() => selectPlan(p)}
+                      className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-700"
+                    >
+                      <span
+                        className={`inline-flex min-w-[64px] items-center justify-center rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide ${PLAN_STYLE[p]}`}
+                      >
+                        {t(`admin.planners.plan_${p}`)}
+                      </span>
+                      {active && (
+                        <Check
+                          size={15}
+                          className="ml-auto shrink-0 text-sage-600 dark:text-sage-400"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             )}
-          </button>
+          </div>
 
           {planner.pending_activation && (
             <button
