@@ -29,6 +29,7 @@ export default function PlannerProfilePage() {
     planner_styles: null,
     planner_plan: "starter",
     planner_avatar_url: null,
+    planner_availability: null,
     portfolio: [],
     waitlist_prefill: null,
   });
@@ -58,6 +59,7 @@ export default function PlannerProfilePage() {
         planner_city: form.planner_city,
         planner_website: form.planner_website,
         planner_phone: form.planner_phone,
+        planner_availability: form.planner_availability,
       });
       setForm(updated);
       toast.success(t("planner_profile.save_success"));
@@ -182,6 +184,21 @@ export default function PlannerProfilePage() {
             <p className="mt-1 text-right text-xs text-umber-400">
               {(form.planner_bio ?? "").length}/400
             </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-umber-700 dark:text-umber-300">
+              {t("planner_profile.availability_label")}
+            </label>
+            <input
+              type="text"
+              className="input w-full"
+              maxLength={200}
+              value={form.planner_availability ?? ""}
+              onChange={(e) => set("planner_availability", e.target.value)}
+              placeholder={t("planner_profile.availability_placeholder")}
+            />
+            <p className="mt-1 text-xs text-umber-400">{t("planner_profile.availability_help")}</p>
           </div>
 
           <button type="submit" disabled={saving} className="btn-primary w-full">

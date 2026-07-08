@@ -1472,6 +1472,9 @@ addColumnIfMissing("users", "planner_onboarding_done", "planner_onboarding_done 
 addColumnIfMissing("users", "planner_weddings_per_year", "planner_weddings_per_year INTEGER");
 addColumnIfMissing("users", "planner_km_radius", "planner_km_radius INTEGER");
 addColumnIfMissing("users", "planner_styles", "planner_styles TEXT");
+// Planner-set free-text availability shown to couples in the directory detail
+// (e.g. "2027 Q3-ra van szabad dátumom"). Nullable, planner-editable.
+addColumnIfMissing("users", "planner_availability", "planner_availability TEXT");
 // Planner profile photo — an uploaded avatar served from /uploads/planners/...
 addColumnIfMissing("users", "planner_avatar_url", "planner_avatar_url TEXT");
 // Business category typed by the admin at planner provisioning (free text,

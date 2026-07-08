@@ -16,6 +16,7 @@ import {
 } from "../domain/planner_invitations";
 import { COUNTRIES } from "@shared/country_list";
 import type {
+  PlannerDirectoryDetail,
   PlannerDirectoryEntry,
   PlannerEvent,
   PlannerPlan,
@@ -955,12 +956,14 @@ interface PlannerUserRow {
   planner_styles: string | null;
   planner_plan: string | null;
   planner_avatar_url: string | null;
+  planner_availability: string | null;
 }
 
 const PLANNER_PROFILE_COLUMNS =
   "full_name, email, business_name, planner_bio, planner_city, planner_website, planner_phone, " +
   "planner_country, planner_registry_number, planner_vat_number, planner_legal_form, planner_address, " +
-  "planner_weddings_per_year, planner_km_radius, planner_styles, planner_plan, planner_avatar_url";
+  "planner_weddings_per_year, planner_km_radius, planner_styles, planner_plan, planner_avatar_url, " +
+  "planner_availability";
 
 /** Parse a planner_styles JSON column into a clean string[] (or null). */
 function parseStyles(raw: string | null): string[] | null {
@@ -999,6 +1002,7 @@ function toPlannerProfileBase(
     planner_styles: parseStyles(row.planner_styles),
     planner_plan: (row.planner_plan as PlannerPlan | null) ?? "starter",
     planner_avatar_url: row.planner_avatar_url,
+    planner_availability: row.planner_availability,
     portfolio: listPortfolio(userId),
   };
 }
@@ -1087,6 +1091,7 @@ async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
     planner_km_radius?: unknown;
     planner_styles?: unknown;
     planner_plan?: unknown;
+    planner_availability?: unknown;
   }>(ctx.req);
 
   const fields: string[] = [];
@@ -1129,6 +1134,14 @@ async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
   if (phone !== undefined) {
     fields.push("planner_phone = ?");
     vals.push(phone);
+  }
+  const availability = str(body.planner_availability);
+  if (availability !== undefined) {
+    if (availability !== null && availability.length > 200) {
+      throw new HttpError(400, "planner_availability too long");
+    }
+    fields.push("planner_availability = ?");
+    vals.push(availability);
   }
   const country = str(body.planner_country);
   if (country !== undefined) {
@@ -1557,6 +1570,95 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
   }));
 
   return json({ planners });
+}
+
+/** Map the raw planner_clients link state to the directory's link_status enum. */
+function linkStatusOf(
+  state: string | null,
+  initiatedBy: string | null,
+): PlannerDirectoryEntry["link_status"] {
+  if (state === "active") return "active";
+  if (state === "pending") return initiatedBy === "couple" ? "invited" : "requested";
+  return "none";
+}
+
+// Single-planner detail behind a directory card (opened from the name). Same
+// visibility rules as the directory list, enriched with the planner's free-text
+// availability, external reference links (from their application), and public
+// portfolio gallery. Auth: the requesting couple, same as the list.
+async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
+  const { coupleId } = requireCoupleAuth(ctx);
+  const plannerId = Number(ctx.params.id);
+  if (!Number.isInteger(plannerId) || plannerId < 1) throw new HttpError(400, "invalid id");
+
+  const r = db
+    .prepare(
+      `SELECT u.id, u.email, u.full_name, u.business_name, u.planner_bio, u.planner_city,
+              u.planner_country, u.planner_website, u.planner_styles, u.planner_km_radius,
+              u.planner_weddings_per_year, u.planner_avatar_url, u.planner_availability,
+              pc.status AS link_state, pc.initiated_by AS link_initiated_by
+         FROM users u
+         LEFT JOIN planner_clients pc
+           ON pc.planner_user_id = u.id AND pc.couple_id = ?
+        WHERE u.id = ?
+          AND u.user_type = 'planner'
+          AND u.status = 'active'
+          AND u.verified_email = 1
+          AND u.email NOT LIKE '%@demo.weddly.local'
+          AND TRIM(COALESCE(u.business_name, '')) != ''
+          AND TRIM(COALESCE(u.planner_city, '')) != ''`,
+    )
+    .get(coupleId, plannerId) as
+    | {
+        id: number;
+        email: string;
+        full_name: string;
+        business_name: string;
+        planner_bio: string | null;
+        planner_city: string;
+        planner_country: string | null;
+        planner_website: string | null;
+        planner_styles: string | null;
+        planner_km_radius: number | null;
+        planner_weddings_per_year: number | null;
+        planner_avatar_url: string | null;
+        planner_availability: string | null;
+        link_state: string | null;
+        link_initiated_by: string | null;
+      }
+    | undefined;
+  if (!r) throw new HttpError(404, "planner not found");
+
+  // Reference links come from the planner's own /planners application (the only
+  // place captured today). Read-only, split into a clean list.
+  const wl = db
+    .prepare(
+      "SELECT reference_links FROM planner_waitlist WHERE LOWER(email) = LOWER(?) ORDER BY id DESC LIMIT 1",
+    )
+    .get(r.email) as { reference_links: string | null } | undefined;
+  const referenceLinks = (wl?.reference_links ?? "")
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const detail: PlannerDirectoryDetail = {
+    planner_user_id: r.id,
+    business_name: r.business_name,
+    full_name: r.full_name,
+    city: r.planner_city,
+    country: r.planner_country,
+    bio: r.planner_bio,
+    website: r.planner_website,
+    styles: parseStyles(r.planner_styles),
+    km_radius: r.planner_km_radius,
+    weddings_per_year: r.planner_weddings_per_year,
+    avatar_url: r.planner_avatar_url,
+    link_status: linkStatusOf(r.link_state, r.link_initiated_by),
+    availability: r.planner_availability,
+    reference_links: referenceLinks.length ? referenceLinks : null,
+    portfolio: listPortfolio(r.id),
+  };
+  return json(detail);
 }
 
 /** Couple-side approval of a planner-initiated access request. Flips the
@@ -2175,6 +2277,7 @@ export function registerPlannerRoutes(router: Router) {
   // Couple-side: planner panel (M7)
   router.get("/api/couples/planners", handleListLinkedPlanners, true);
   router.get("/api/couples/planner-directory", handlePlannerDirectory, true);
+  router.get("/api/couples/planner-directory/:id", handlePlannerDetail, true);
   router.post("/api/couples/planner-invite", handleInvitePlanner, true);
   router.post("/api/couples/planners/:plannerUserId/accept", handleAcceptPlannerRequest, true);
   router.delete("/api/couples/planners/:plannerUserId", handleRevokePlanner, true);

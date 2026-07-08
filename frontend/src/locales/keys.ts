@@ -8286,6 +8286,9 @@ export interface LocaleMessages {
     address_label: string;
     bio_label: string;
     bio_placeholder: string;
+    availability_label: string;
+    availability_placeholder: string;
+    availability_help: string;
     save_button: string;
     save_success: string;
     tabs_aria: string;
@@ -8381,6 +8384,11 @@ export interface LocaleMessages {
     /** "{n} weddings a year" chip on the planner card. */
     weddings_per_year: string;
     website_aria: string;
+    website: string;
+    km_radius: string;
+    availability_label: string;
+    references_label: string;
+    view_profile: string;
   };
   couple_planners: {
     heading: string;

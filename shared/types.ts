@@ -178,6 +178,8 @@ export interface PlannerProfile {
   planner_styles: string[] | null;
   planner_plan: PlannerPlan;
   planner_avatar_url: string | null;
+  /** Free-text availability shown to couples in the directory (e.g. "2027 Q3"). */
+  planner_availability: string | null;
   portfolio: PlannerPortfolioItem[];
   waitlist_prefill: PlannerWaitlistPrefill | null;
 }
@@ -227,6 +229,19 @@ export interface PlannerDirectoryEntry {
    *  planner asked this couple for access (pending on the couple side);
    *  'active' = linked. */
   link_status: "none" | "invited" | "requested" | "active";
+}
+
+/** The single-planner detail behind a directory card (opened from the name).
+ *  Everything in the list entry plus the richer profile a couple sees before
+ *  deciding to send a "Felkérés": free-text availability, external reference
+ *  links (from the planner's application), and the public portfolio gallery. */
+export interface PlannerDirectoryDetail extends PlannerDirectoryEntry {
+  /** Planner-set free-text availability, e.g. "2027 Q3-ra van szabad dátumom". */
+  availability: string | null;
+  /** External reference links captured on the planner's application (read-only). */
+  reference_links: string[] | null;
+  /** Public portfolio gallery the planner uploaded. */
+  portfolio: PlannerPortfolioItem[];
 }
 
 // ─── Admin dashboard (users + couples directory) ─────────────────────────────

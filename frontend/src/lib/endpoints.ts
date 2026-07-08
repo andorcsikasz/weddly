@@ -72,6 +72,7 @@ import type {
   PlannerProfile,
   PlannerPortfolioItem,
   LinkedPlannerView,
+  PlannerDirectoryDetail,
   PlannerDirectoryEntry,
   PlannerInviteView,
   PlannerInvitation,
@@ -3057,6 +3058,10 @@ export const couplePlannerApi = {
   /** Browsable planner directory for the /app/vendors rail. */
   directory: () =>
     apiFetch<{ planners: PlannerDirectoryEntry[] }>("GET", "/api/couples/planner-directory"),
+  /** Single-planner detail (opened from the card name): bio, references,
+   *  availability, website, styles, portfolio + link_status for the CTA. */
+  plannerDetail: (plannerUserId: number) =>
+    apiFetch<PlannerDirectoryDetail>("GET", `/api/couples/planner-directory/${plannerUserId}`),
   invitePlanner: (email: string) =>
     apiFetch<{ ok: boolean }>("POST", "/api/couples/planner-invite", { planner_email: email }),
   /** Directory-rail variant — the rail never sees planner emails. */

@@ -7,7 +7,7 @@ import "../setup";
 
 import { beforeEach, describe, expect, test } from "bun:test";
 import { PRIVACY_VERSION } from "@shared/legal";
-import type { PlannerDirectoryEntry } from "@shared/types";
+import type { PlannerDirectoryDetail, PlannerDirectoryEntry } from "@shared/types";
 import { db } from "../../src/db";
 import { bootstrapCouple, latestCredentialToken, req, wipeAll } from "../helpers";
 
@@ -218,5 +218,76 @@ describe("planner funnel emails", () => {
       )
       .get("outcome-couple@weddly.test") as { kind: string } | undefined;
     expect(log?.kind).toBe("planner_invite_outcome");
+  });
+});
+
+describe("planner directory detail", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+
+  test("returns the enriched profile: availability, portfolio, reference links, link_status", async () => {
+    const { userId } = await makePlanner("detail@weddly.test", {
+      overrides: { planner_availability: "2027 Q3" },
+    });
+    // A portfolio image (references) + external reference links from the waitlist.
+    db.prepare(
+      "INSERT INTO planner_portfolio (planner_user_id, title, description, image_url, sort_order, created_at) VALUES (?, 'Villa wedding', '', '/uploads/planners/x/portfolio/1.jpg', 0, ?)",
+    ).run(userId, Date.now());
+    db.prepare(
+      "INSERT INTO planner_waitlist (full_name, email, phone, reference_links, status, created_at) VALUES ('Eszter', 'detail@weddly.test', '+3630', 'instagram.com/nagy, nagy-weddings.hu', 'accepted', ?)",
+    ).run(Math.floor(Date.now() / 1000));
+
+    const { token: coupleToken } = await bootstrapCouple("detail-couple@weddly.test");
+    const r = await req<PlannerDirectoryDetail>(
+      "GET",
+      `/api/couples/planner-directory/${userId}`,
+      undefined,
+      { token: coupleToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.business_name).toBe("Nagy Weddings");
+    expect(r.data.city).toBe("Budapest");
+    expect(r.data.availability).toBe("2027 Q3");
+    expect(r.data.link_status).toBe("none");
+    expect(r.data.portfolio.length).toBe(1);
+    expect(r.data.portfolio[0]?.title).toBe("Villa wedding");
+    expect(r.data.reference_links).toEqual(["instagram.com/nagy", "nagy-weddings.hu"]);
+    // Email must never leak through the detail DTO either.
+    expect(JSON.stringify(r.data)).not.toContain("detail@weddly.test");
+  });
+
+  test("reflects an active link and 404s a non-planner id", async () => {
+    const { token: plannerToken, userId } = await makePlanner("detail2@weddly.test");
+    const { token: coupleToken, coupleId } = await bootstrapCouple("detail2-couple@weddly.test");
+    await req(
+      "POST",
+      "/api/couples/planner-invite",
+      { planner_user_id: userId },
+      { token: coupleToken },
+    );
+    await req("POST", `/api/planner/invites/${coupleId}/accept`, {}, { token: plannerToken });
+
+    const r = await req<PlannerDirectoryDetail>(
+      "GET",
+      `/api/couples/planner-directory/${userId}`,
+      undefined,
+      { token: coupleToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.link_status).toBe("active");
+
+    // A plain couple user id is not a planner -> 404.
+    const otherCouple = (
+      db
+        .prepare("SELECT id FROM users WHERE LOWER(email) = ?")
+        .get("detail2-couple@weddly.test") as {
+        id: number;
+      }
+    ).id;
+    const bad = await req("GET", `/api/couples/planner-directory/${otherCouple}`, undefined, {
+      token: coupleToken,
+    });
+    expect(bad.status).toBe(404);
   });
 });
