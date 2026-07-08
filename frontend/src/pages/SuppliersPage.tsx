@@ -286,6 +286,9 @@ export default function SuppliersPage() {
   const cityFilter = params.get("city") ?? "";
   const showSavedOnly = params.get("saved") === "1";
   const showPickedOnly = params.get("picked") === "1";
+  // Verified-only: keep just registered vendors (source === "claimed", the
+  // blue-badge listings). Drops curated/community entries and DIY rows.
+  const showVerifiedOnly = params.get("verified") === "1";
   const sortMode: "top" | "alpha" | "price_asc" | "price_desc" = (() => {
     const v = params.get("sort");
     if (v === "alpha" || v === "price_asc" || v === "price_desc") return v;
@@ -464,6 +467,12 @@ export default function SuppliersPage() {
       p.delete("saved");
       clearNarrowingFilters(p);
     }
+    setParams(p, { replace: true });
+  }
+  function toggleVerifiedFilter() {
+    const p = new URLSearchParams(params);
+    if (showVerifiedOnly) p.delete("verified");
+    else p.set("verified", "1");
     setParams(p, { replace: true });
   }
   function toggleCompare(id: string) {
@@ -1417,15 +1426,14 @@ export default function SuppliersPage() {
                     </div>
                   );
                 })}
-                {/* Wedding-planner step — a peer chain tile after the supplier
-                    groups. Only shown once at least one planner is listed, so an
-                    empty directory keeps the chain exactly as before. No progress
+                {/* Wedding-planner tile — a standalone browse mode, NOT the next
+                    link in the supplier booking chain, so it drops the "→"
+                    connector and sits set apart (ml-4) from the group tiles.
+                    Only shown once at least one planner is listed, so an empty
+                    directory keeps the chain exactly as before. No progress
                     bars: it's a browse mode, not a per-pick checklist. */}
                 {planners.length > 0 && (
-                  <div className="flex snap-start items-stretch gap-1">
-                    <span className="self-center text-paper-400 dark:text-umber-300" aria-hidden>
-                      →
-                    </span>
+                  <div className="ml-4 flex snap-start items-stretch gap-1">
                     <ChainStep
                       active={showPlanners}
                       onClick={togglePlanners}
