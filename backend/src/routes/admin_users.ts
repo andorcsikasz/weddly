@@ -2,6 +2,7 @@
 // Gate with requireAdmin() — same ADMIN_EMAILS allowlist as the supplier
 // moderation routes.
 
+import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import type {
   AdminCoupleView,
   AdminEmailLogEntry,
@@ -14,7 +15,8 @@ import { db } from "../db";
 import { grantFreeAccess, revokeFreeAccess } from "../domain/billing";
 import { sendKind } from "../domain/emails";
 import { purgeOneUser } from "../domain/purge";
-import { isAdminEmail, requireAdmin, type UserRow } from "../domain/users";
+import { getUserById, isAdminEmail, requireAdmin, type UserRow } from "../domain/users";
+import { convertUserToVendor } from "../domain/vendor_conversion";
 import { type CoupleRow, getCoupleById, ownerUserIdOf, toCouple } from "../domain/couples";
 import {
   activeFlagsByUserId,
@@ -33,6 +35,11 @@ import { createVerificationToken } from "./email_verify";
 // same canonical marker the purge sweeps + analytics use (see vendor_demo_seed
 // / planner_demo_seed). Keep this in sync with those.
 const DEMO_EMAIL_SUFFIX = "@demo.weddly.local";
+
+/** Flat set of every valid supplier category, built once from the taxonomy
+ *  source of truth so the convert-to-vendor endpoint rejects an unknown
+ *  category at the boundary (mirrors routes/vendor_register.ts). */
+const VALID_CATEGORIES: ReadonlySet<string> = new Set(SUPPLIER_GROUPS.flatMap((g) => g.categories));
 
 function toUserFlag(row: UserFlagRow): UserFlag {
   return {
@@ -962,6 +969,78 @@ async function handleSetUserType(ctx: Ctx): Promise<Response> {
   return json({ ok: true, user_type: body.user_type });
 }
 
+/**
+ * "Channel over" a mis-routed account to a real vendor. The motivating case: a
+ * wedding supplier who signed up as a couple (or otherwise landed on the wrong
+ * account kind) and needs to become a `role='vendor'` account with a listing.
+ *
+ * Flips the role, creates the vendor_account + a live listing seeded with the
+ * admin-chosen category, and grants founding-or-trial billing — the full
+ * self-serve-signup shape, minus a fresh password. Non-destructive:
+ * `users.couple_id` and any workspace data are preserved (the domain helper
+ * guarantees this). The account is created with the onboarding wizard pending
+ * so the vendor finishes their own profile on next sign-in. After conversion
+ * the user leaves the Felhasználók list and appears on Szolgáltatók.
+ */
+async function handleConvertToVendor(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const userId = parseId(ctx);
+
+  const user = getUserById(userId);
+  if (!user) throw new HttpError(404, "User not found");
+  if (user.email.endsWith("@purged.local"))
+    throw new HttpError(400, "Cannot convert a purged user");
+  if (user.email.endsWith(DEMO_EMAIL_SUFFIX))
+    throw new HttpError(400, "Cannot convert a demo user");
+  if (isAdminEmail(user.email)) throw new HttpError(400, "Cannot convert an admin account");
+  if (user.role === "vendor") {
+    throw new HttpError(409, "User is already a vendor", { code: "already_vendor" });
+  }
+
+  const body = await readJson<{
+    business_name?: unknown;
+    category?: unknown;
+    custom_category?: unknown;
+  }>(ctx.req);
+
+  if (typeof body.category !== "string" || !VALID_CATEGORIES.has(body.category)) {
+    throw new HttpError(400, "Pick a valid category");
+  }
+  const category = body.category as SupplierCategory;
+
+  // custom_category is required exactly when the admin picked "other" (an
+  // unlabeled "other" card is useless in the directory), and dropped otherwise.
+  let customCategory: string | null = null;
+  if (category === "other") {
+    if (typeof body.custom_category !== "string" || !body.custom_category.trim()) {
+      throw new HttpError(400, "Tell us what the service is");
+    }
+    customCategory = body.custom_category.trim().slice(0, 60);
+  }
+
+  const businessName =
+    typeof body.business_name === "string" && body.business_name.trim()
+      ? body.business_name.trim().slice(0, 120)
+      : null;
+
+  const { vendorAccountId, created } = convertUserToVendor(user, {
+    category,
+    customCategory,
+    businessName,
+  });
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.user_convert_to_vendor",
+    target_kind: "user",
+    target_id: userId,
+    after: { email: user.email, vendor_account_id: vendorAccountId, category, created },
+  });
+
+  return json({ ok: true, vendor_account_id: vendorAccountId });
+}
+
 export function registerAdminUserRoutes(router: Router) {
   router.get("/api/admin/users", handleListUsers, true);
   router.get("/api/admin/couples", handleListCouples, true);
@@ -975,6 +1054,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.get("/api/admin/users/:id/emails", handleListUserEmails, true);
   router.post("/api/admin/users/:id/beta", handleSetBetaTester, true);
   router.post("/api/admin/users/:id/set-type", handleSetUserType, true);
+  router.post("/api/admin/users/:id/convert-to-vendor", handleConvertToVendor, true);
   router.post("/api/admin/couples/:id/remind-invite-partner", handleRemindInvitePartner, true);
   router.post("/api/admin/couples/:id/notify", handleNotifyCouple, true);
   router.post("/api/admin/couples/:id/grant-free", handleGrantFree, true);

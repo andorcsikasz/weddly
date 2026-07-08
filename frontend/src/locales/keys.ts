@@ -5551,6 +5551,14 @@ export interface LocaleMessages {
     activity_feedback: string;
     activity_feedback_tooltip: string;
     activity_prior_flags_tooltip: string;
+    convert_vendor_button: string;
+    convert_vendor_title: string;
+    convert_vendor_help: string;
+    convert_vendor_business_name: string;
+    convert_vendor_category: string;
+    convert_vendor_confirm: string;
+    convert_vendor_pending: string;
+    convert_vendor_success: string;
     flag_user_button: string;
     flag_user_title: string;
     flag_user_label: string;

@@ -1779,6 +1779,20 @@ export const adminUserApi = {
    *  the workspace may move between groups. */
   setBetaTester: (id: number, beta: boolean) =>
     apiFetch<{ user: AdminUserView | null }>("POST", `/api/admin/users/${id}/beta`, { beta }),
+  /** "Channel over" a mis-routed account (e.g. a supplier who signed up as a
+   *  couple) to a real vendor: flips role='vendor', creates the vendor account
+   *  + a live listing seeded with the category, and grants billing.
+   *  Non-destructive (couple data preserved). The user moves off the
+   *  Felhasználók list onto Szolgáltatók, so the caller refetches. */
+  convertToVendor: (
+    id: number,
+    body: { business_name?: string; category: string; custom_category?: string },
+  ) =>
+    apiFetch<{ ok: true; vendor_account_id: number }>(
+      "POST",
+      `/api/admin/users/${id}/convert-to-vendor`,
+      body,
+    ),
   /** Manually nudge a solo workspace owner to invite their partner. One
    *  send per workspace — the server stamps `couples.invite_partner_reminded_at`
    *  and returns 409 with `code: "already_reminded"` on a second attempt.

@@ -24,7 +24,9 @@ import {
   X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import type { SupplierCategory } from "@shared/suppliers";
 import { AdminEmptyState, AdminPageHeader, AdminSectionHeader, Pill } from "../components/admin";
+import { ConvertToVendorDialog } from "../components/ConvertToVendorDialog";
 import { FlagUserDialog } from "../components/FlagUserDialog";
 import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -631,6 +633,41 @@ export default function AdminUsersPage() {
     }
   }
 
+  // "Channel over to vendor" flow — a dedicated dialog collects the business
+  // name + supplier category, then converts the account server-side. The user
+  // leaves this couples-oriented list and lands on Szolgáltatók, so we refetch
+  // both lists on success rather than patching in place.
+  const [convertTarget, setConvertTarget] = useState<AdminUserView | null>(null);
+  const [convertPending, setConvertPending] = useState(false);
+
+  function onConvertToVendor(u: AdminUserView) {
+    setConvertTarget(u);
+  }
+
+  async function onConvertConfirm(body: {
+    business_name: string;
+    category: SupplierCategory;
+    custom_category?: string;
+  }) {
+    if (!convertTarget) return;
+    const target = convertTarget;
+    setConvertPending(true);
+    setPendingId(target.id);
+    try {
+      await adminUserApi.convertToVendor(target.id, body);
+      const [u2, c2] = await Promise.all([adminUserApi.listUsers(), adminUserApi.listCouples()]);
+      setUsers(u2.users);
+      setCouples(c2.couples);
+      toast.success(t("admin.convert_vendor_success"));
+      setConvertTarget(null);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setConvertPending(false);
+      setPendingId(null);
+    }
+  }
+
   async function onUnflag(u: AdminUserView) {
     const note = await promptEntry({
       title: t("admin.unflag_user_title"),
@@ -972,6 +1009,18 @@ export default function AdminUsersPage() {
         >
           <History size={14} aria-hidden />
         </button>
+        {!isSelf && !u.is_admin && !u.is_demo && u.account_type === "couple" && (
+          <button
+            type="button"
+            className="btn-ghost btn-sm inline-flex items-center"
+            onClick={() => onConvertToVendor(u)}
+            disabled={isPending}
+            title={t("admin.convert_vendor_button")}
+            aria-label={t("admin.convert_vendor_button")}
+          >
+            <Store size={14} aria-hidden />
+          </button>
+        )}
         {!isSelf && (
           <button
             type="button"
@@ -1910,6 +1959,16 @@ export default function AdminUsersPage() {
           if (!flagPending) setFlagTarget(null);
         }}
         onConfirm={onFlagConfirm}
+      />
+      <ConvertToVendorDialog
+        open={convertTarget !== null}
+        targetEmail={convertTarget?.email ?? ""}
+        defaultBusinessName={convertTarget?.full_name ?? ""}
+        pending={convertPending}
+        onClose={() => {
+          if (!convertPending) setConvertTarget(null);
+        }}
+        onConfirm={onConvertConfirm}
       />
     </>
   );
