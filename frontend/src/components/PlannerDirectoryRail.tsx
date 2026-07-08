@@ -337,7 +337,7 @@ export function PlannerCard({
             </button>
             {planner.website && (
               <a
-                href={planner.website}
+                href={hrefFor(planner.website)}
                 target="_blank"
                 rel="noreferrer noopener"
                 aria-label={t("planner_directory.website_aria")}
