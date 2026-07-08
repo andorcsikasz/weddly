@@ -1019,14 +1019,14 @@ function SideLink({
   // the same height collapsed or expanded, and an icon stays on the exact
   // same row when the user toggles the rail (paired with the fixed-height
   // SidebarGroupHeader below, which does the same for section breaks).
-  // Width is per-state (applied in the className below, not here): the active
-  // row stretches to fill the rail (`lg:w-auto`) so its dark pill runs out to
-  // the collapse toggle now docked in the top-right corner (see the toggle's
-  // `lg:right-2` — it reads as an endcap on the bar instead of a disc floating
-  // mid-row). Inactive rows keep `lg:w-fit` so they hug their icon + label and
-  // their hover highlight doesn't span the whole rail. `lg:mx-2` insets the
-  // pill box by the same 8px the section dividers use (`inset-x-2`), so the
-  // dark header, every hover row, and the group hairlines share one left edge.
+  // Width (applied in the className below, not here): every expanded row
+  // stretches to fill the rail (`lg:w-auto`), so a hover highlight covers the
+  // exact same box as the active "Áttekintés" pill instead of hugging its
+  // content — the couple asked for a uniform full-width target on hover (this
+  // also matches AdminSideLink, which was already `lg:w-auto` on every row).
+  // `lg:mx-2` insets the pill box by the same 8px the section dividers use
+  // (`inset-x-2`), so the dark header, every hover row, and the group hairlines
+  // share one left edge.
   const shape = collapsed
     ? "h-8 w-9 justify-center"
     : "h-8 w-9 justify-center lg:mx-2 lg:justify-start lg:px-3";
@@ -1040,8 +1040,8 @@ function SideLink({
           ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
           : "stationery-coffee text-paper-50 dark:text-paper-50";
         // Collapsed rows stay the fixed `w-9` icon square (base shape); at lg+
-        // the active row fills the rail while idle rows hug their content.
-        const width = collapsed ? "" : isActive ? "lg:w-auto" : "lg:w-fit";
+        // every row fills the rail so hover + active share one box size.
+        const width = collapsed ? "" : "lg:w-auto";
         return `group/sl relative flex items-center rounded-xl text-sm transition-colors ${shape} ${width} ${
           isActive
             ? active
