@@ -37,7 +37,7 @@ function styleLabel(t: (k: string) => string, style: string): string {
   return known.includes(style) ? t(`planners.style_${style}`) : style;
 }
 
-function PlannerCard({
+export function PlannerCard({
   planner,
   onChanged,
 }: {
@@ -65,7 +65,7 @@ function PlannerCard({
     .join(" · ");
 
   return (
-    <div className="card !p-4">
+    <div className="card !p-4 flex h-full flex-col">
       <div className="flex items-start gap-3">
         {planner.avatar_url ? (
           <img
@@ -126,7 +126,7 @@ function PlannerCard({
         </div>
       )}
 
-      <div className="mt-3">
+      <div className="mt-auto pt-3">
         {planner.link_status === "none" && (
           <button
             type="button"
