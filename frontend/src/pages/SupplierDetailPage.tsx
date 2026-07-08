@@ -394,7 +394,7 @@ export default function SupplierDetailPage() {
                 <BadgeCheck
                   size={28}
                   aria-label={t("suppliers.detail.verifiedAria")}
-                  className="shrink-0 fill-paper-500 stroke-white dark:stroke-ink-900"
+                  className="shrink-0 fill-steel-600 stroke-white"
                 />
               )}
             </h1>
