@@ -3963,6 +3963,7 @@ const en: LocaleMessages = {
     self_pill: "Supplier",
     self_pill_tooltip: "The supplier joined the Weddly community themselves.",
     verified_vendor: "Verified vendor · has their own Weddly account",
+    verified_filter: "Verified",
     drop_your_own: "Drop your own",
     calc: {
       open: "Calculator",

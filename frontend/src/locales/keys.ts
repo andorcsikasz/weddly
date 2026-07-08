@@ -4453,6 +4453,8 @@ export interface LocaleMessages {
     self_pill: string;
     self_pill_tooltip: string;
     verified_vendor: string;
+    /** Short label for the verified-only filter toggle in the country/price row. */
+    verified_filter: string;
     drop_your_own: string;
     /** Cake & drinks calculator — surfaced from the food/drink category header. */
     calc: {

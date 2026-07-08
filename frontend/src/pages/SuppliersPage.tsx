@@ -861,6 +861,7 @@ export default function SuppliersPage() {
       }
     }
     if (showSavedOnly) dir = dir.filter((s) => saved.has(s.id));
+    if (showVerifiedOnly) dir = dir.filter((s) => s.source === "claimed");
     if (showPickedOnly) {
       const pickedIds = new Set(Object.values(selection));
       dir = dir.filter((s) => pickedIds.has(s.id));
@@ -907,8 +908,9 @@ export default function SuppliersPage() {
       });
     }
     // Saved-only view is a directory feature; DIY entries are always "yours"
-    // so they don't belong in the saved-list summary either way.
-    let mine = showSavedOnly ? [] : coupleSuppliers;
+    // so they don't belong in the saved-list summary either way. Verified-only
+    // is registered vendors only, so DIY rows are likewise excluded.
+    let mine = showSavedOnly || showVerifiedOnly ? [] : coupleSuppliers;
     if (showPickedOnly) {
       const pickedIds = new Set(Object.values(selection));
       mine = mine.filter((s) => pickedIds.has(s.id));
@@ -922,6 +924,7 @@ export default function SuppliersPage() {
     coupleSuppliers,
     cityFilter,
     showSavedOnly,
+    showVerifiedOnly,
     saved,
     showPickedOnly,
     selection,
@@ -1380,6 +1383,35 @@ export default function SuppliersPage() {
                 className="text-ink-400 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100"
               />
             </Link>
+            <div
+              className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
+              aria-hidden
+            />
+            {/* Verified-only toggle — the blue vendor badge doubles as the
+            control. Off = quiet grey outline; on = filled steel badge +
+            steel label, and the grid drops to registered (claimed) vendors. */}
+            <button
+              type="button"
+              onClick={toggleVerifiedFilter}
+              aria-pressed={showVerifiedOnly}
+              title={t("suppliers.verified_filter")}
+              className={
+                showVerifiedOnly
+                  ? "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 text-steel-600 dark:text-steel-300"
+                  : "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 text-ink-500 transition hover:bg-paper-50 dark:text-umber-300 dark:hover:bg-umber-800"
+              }
+            >
+              <BadgeCheck
+                size={14}
+                aria-hidden
+                className={
+                  showVerifiedOnly ? "fill-steel-600 stroke-white dark:fill-steel-400" : ""
+                }
+              />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em]">
+                {t("suppliers.verified_filter")}
+              </span>
+            </button>
           </div>
 
           {/* Step chain. Sequence numbers dropped — the icons carry the meaning.

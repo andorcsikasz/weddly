@@ -4009,6 +4009,7 @@ const hu: LocaleMessages = {
     self_pill: "Szolgáltató",
     self_pill_tooltip: "A szolgáltató maga jelentkezett be a Weddly közösségbe.",
     verified_vendor: "Ellenőrzött szolgáltató · saját Weddly-fiók",
+    verified_filter: "Ellenőrzött",
     drop_your_own: "Tipp leadása",
     calc: {
       open: "Kalkulátor",
