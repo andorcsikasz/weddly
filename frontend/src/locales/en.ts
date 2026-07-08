@@ -1707,14 +1707,11 @@ const en: LocaleMessages = {
       "Weddly's curated directory is where couples discover wedding suppliers. Join the waitlist and we'll notify you the moment we open in your category.",
     trust_signal: "Join 47 vendors already on the waitlist",
     benefit_1_title: "A handpicked shortlist",
-    benefit_1_body:
-      "We cap listings per category, so couples meet a focused shortlist of suppliers who genuinely fit their plans.",
-    benefit_2_title: "Local expertise, not lead spam",
-    benefit_2_body:
-      "Built around how weddings actually run in your market, language, regions, rhythms. Couples meet vendors who fit, not a paginated mass.",
-    benefit_3_title: "Direct contact today",
-    benefit_3_body:
-      "Couples reach you directly, phone, email, Instagram. Bookings, messaging and reviews join later, and we'll tell you when.",
+    benefit_1_body: "Capped per category, so only couples who fit reach you.",
+    benefit_2_title: "Local, not lead spam",
+    benefit_2_body: "Matched by category, region and price to couples nearby.",
+    benefit_3_title: "Direct contact",
+    benefit_3_body: "Couples reach you directly: phone, email or Instagram.",
     form_title: "Join the waitlist",
     form_business_label: "Business name",
     form_email_label: "Email",

@@ -3,7 +3,8 @@
 // (admin-accept → emailed token activation) is retired — vendors now create an
 // account directly and run the in-app onboarding wizard.
 
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, MapPin, MessageCircle, Sparkles } from "lucide-react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
@@ -49,9 +50,21 @@ export default function VendorsPage() {
       <section className="bg-paper-100/60 dark:bg-umber-900/40">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="grid gap-4 lg:grid-cols-3 lg:items-stretch">
-            <Benefit title={t("vendors.benefit_1_title")} body={t("vendors.benefit_1_body")} />
-            <Benefit title={t("vendors.benefit_2_title")} body={t("vendors.benefit_2_body")} />
-            <Benefit title={t("vendors.benefit_3_title")} body={t("vendors.benefit_3_body")} />
+            <Benefit
+              icon={<Sparkles size={20} aria-hidden />}
+              title={t("vendors.benefit_1_title")}
+              body={t("vendors.benefit_1_body")}
+            />
+            <Benefit
+              icon={<MapPin size={20} aria-hidden />}
+              title={t("vendors.benefit_2_title")}
+              body={t("vendors.benefit_2_body")}
+            />
+            <Benefit
+              icon={<MessageCircle size={20} aria-hidden />}
+              title={t("vendors.benefit_3_title")}
+              body={t("vendors.benefit_3_body")}
+            />
           </div>
         </div>
       </section>
@@ -85,9 +98,12 @@ export default function VendorsPage() {
   );
 }
 
-function Benefit({ title, body }: { title: string; body: string }) {
+function Benefit({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
   return (
-    <article className="card h-full !p-4">
+    <article className="card flex h-full flex-col !p-5">
+      <span className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-umber-100 text-umber-700 dark:bg-umber-800 dark:text-umber-200">
+        {icon}
+      </span>
       <h3 className="font-grotesk text-lg text-ink-900 dark:text-paper-50">{title}</h3>
       <p className="mt-1.5 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
     </article>

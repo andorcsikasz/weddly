@@ -1727,15 +1727,12 @@ const hu: LocaleMessages = {
     hero_sub:
       "A Wēddly válogatott címjegyzéke az első hely, ahol a párok esküvői szolgáltatókat keresnek. Csatlakozzatok a várólistára, és értesítünk, amint nyitunk a kategóriátokban.",
     trust_signal: "Csatlakozz a 47 várólistás szolgáltató mellé",
-    benefit_1_title: "Válogatott válogatás",
-    benefit_1_body:
-      "Kategóriánként korlátozott a hely, így a párok pont azt böngészik, ami passzol hozzájuk, és ti pont azokat éritek el, akik most döntenek.",
+    benefit_1_title: "Válogatott lista",
+    benefit_1_body: "Kategóriánként limitált hely, csak a hozzátok illő párokat kapjátok.",
     benefit_2_title: "Helyi piac, helyi adatok",
-    benefit_2_body:
-      "A párok ott keresnek, ahol a helyi szolgáltatók is dolgoznak; mi a kategóriát, a régiót és az árszintet hozzuk össze.",
-    benefit_3_title: "Most közvetlen kapcsolat",
-    benefit_3_body:
-      "A párok telefonon, e-mailen, Instagramon érnek el titeket, semmi platformközi kommunikáció. A foglalás, üzenetek és értékelések később jönnek, és időben szólunk.",
+    benefit_2_body: "Kategória, régió és árszint szerint párosítunk a helyi párokkal.",
+    benefit_3_title: "Közvetlen kapcsolat",
+    benefit_3_body: "A párok közvetlenül keresnek: telefon, e-mail, Instagram.",
     form_title: "Iratkozzatok fel",
     form_business_label: "Vállalkozás neve",
     form_email_label: "E-mail",
