@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   ChevronDown,
+  ClipboardList,
   Download,
   FileText,
   Filter,
@@ -17,6 +18,7 @@ import {
   Smartphone,
   Sparkles,
   Store,
+  UserCheck,
   Users,
   Wallet,
 } from "lucide-react";
@@ -67,6 +69,17 @@ import {
   redLevel,
   saveLemonadeRevealed,
 } from "../lib/couple_cards";
+
+// Hero "who are you" chips. Collapsed to an icon-only pill; the label track
+// animates from 0fr → 1fr on hover/focus (overflow-hidden gives the grid track
+// a 0 min-width so it can fully collapse). aria-label carries the full label so
+// the control stays legible to assistive tech even while the text is clipped.
+const roleChipClass =
+  "group inline-flex items-center rounded-full border border-paper-400/70 bg-paper-50/70 py-2 pl-2.5 pr-2.5 text-umber-900 shadow-soft transition-colors duration-200 hover:border-umber-800 hover:bg-umber-900 hover:text-paper-50 focus-visible:border-umber-800 focus-visible:bg-umber-900 focus-visible:text-paper-50 dark:border-umber-700 dark:bg-umber-800/50 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:bg-paper-50 dark:hover:text-umber-950 dark:focus-visible:border-paper-200 dark:focus-visible:bg-paper-50 dark:focus-visible:text-umber-950";
+const roleChipTextWrap =
+  "grid grid-cols-[0fr] transition-[grid-template-columns] duration-300 ease-out group-hover:grid-cols-[1fr] group-focus-visible:grid-cols-[1fr]";
+const roleChipText =
+  "overflow-hidden whitespace-nowrap pl-2 font-grotesk text-sm font-medium tracking-tight";
 
 // Hand-rolled hamburger glyph. lucide 0.469 ships no burger icon (only `Beef`),
 // and the price tooltip's value-prop is "for the price of a BigMac menu", so we
@@ -250,11 +263,6 @@ export default function LandingPage() {
                 <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                   {t("landing.hero_title")}
                 </h1>
-                {t("landing.hero_sub") && (
-                  <p className="mt-4 hidden max-w-sm font-grotesk text-base leading-snug text-umber-700 dark:text-umber-200 sm:mt-5 sm:block sm:text-lg">
-                    {t("landing.hero_sub")}
-                  </p>
-                )}
                 <div className="mt-4 max-w-[18ch] sm:mt-6 sm:max-w-md">
                   <Link
                     to="/signup"
@@ -262,6 +270,45 @@ export default function LandingPage() {
                   >
                     {t("landing.cta_signup")}
                   </Link>
+                </div>
+                {/* Role escape-hatch chips: icon-only pills that reveal their
+                 *  label on hover/focus. Same three audiences (+ icons) as the
+                 *  footer who-are-you band; the guest chip opens the invite-code
+                 *  prompt rather than navigating. */}
+                <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-5">
+                  <Link
+                    to="/vendors"
+                    aria-label={t("landing.footer_band_cta_vendor")}
+                    className={roleChipClass}
+                  >
+                    <Store size={16} strokeWidth={1.6} aria-hidden />
+                    <span className={roleChipTextWrap}>
+                      <span className={roleChipText}>{t("landing.footer_band_cta_vendor")}</span>
+                    </span>
+                  </Link>
+                  <Link
+                    to="/planners"
+                    aria-label={t("landing.footer_band_cta_planner")}
+                    className={roleChipClass}
+                  >
+                    <ClipboardList size={16} strokeWidth={1.6} aria-hidden />
+                    <span className={roleChipTextWrap}>
+                      <span className={roleChipText}>{t("landing.footer_band_cta_planner")}</span>
+                    </span>
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label={t("landing.footer_band_cta")}
+                    className={roleChipClass}
+                    onClick={() => {
+                      void askGuestCode();
+                    }}
+                  >
+                    <UserCheck size={16} strokeWidth={1.6} aria-hidden />
+                    <span className={roleChipTextWrap}>
+                      <span className={roleChipText}>{t("landing.footer_band_cta")}</span>
+                    </span>
+                  </button>
                 </div>
               </div>
               <div className="mt-6 flex justify-end lg:mt-0 lg:justify-end">
