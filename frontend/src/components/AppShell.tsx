@@ -691,19 +691,22 @@ export function AppShell({ children }: { children: ReactNode }) {
               keeps a stable offset from the right edge. */}
           <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] min-h-0 flex-col lg:w-full">
             {/* Collapse toggle — same affordance in both couple and admin
-                views. When expanded it floats over the first row's top-right
+                views. When expanded it floats over the first row's right side
                 (absolute, out of flow) so it stops reserving a whole row — the
-                first nav item rises to the top. Nudged in from the edge
-                (`right-4`/`top-2`) so it clears the inner box's scrollbar and
-                the corner instead of being clipped by them. When collapsed it
-                keeps a small centered in-flow row (a top-right float would
-                collide with the first icon). Hidden on tablet (md) because the
-                rail is forced icon-only there — nothing to collapse into. */}
+                first nav item rises to the top. The wrapper spans that first
+                row's full height (`top-0 h-8`) and centers the button
+                (`items-center`), so the disc reads as an endcap vertically
+                centered on the "Áttekintés" bar rather than nudged up against
+                its top. `right-4` insets it from the edge so it clears the
+                inner box's scrollbar + corner. When collapsed it keeps a small
+                centered in-flow row (a top-right float would collide with the
+                first icon). Hidden on tablet (md) because the rail is forced
+                icon-only there — nothing to collapse into. */}
             <div
               className={`hidden lg:flex ${
                 sidebarCollapsed
                   ? "justify-center pb-1"
-                  : "lg:absolute lg:right-4 lg:top-2 lg:z-20 lg:h-6 lg:items-center lg:justify-end"
+                  : "lg:absolute lg:right-4 lg:top-0 lg:z-20 lg:h-8 lg:items-center lg:justify-end"
               }`}
             >
               <button
