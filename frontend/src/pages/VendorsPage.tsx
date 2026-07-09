@@ -3,7 +3,7 @@
 // (admin-accept → emailed token activation) is retired — vendors now create an
 // account directly and run the in-app onboarding wizard.
 
-import { ArrowLeft, Check, MapPin, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Gem, MapPinned, PhoneCall } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
@@ -51,36 +51,21 @@ export default function VendorsPage() {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="grid gap-4 lg:grid-cols-3 lg:items-stretch">
             <Benefit
-              icon={<Sparkles size={20} aria-hidden />}
+              icon={<Gem size={26} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_1_title")}
               body={t("vendors.benefit_1_body")}
             />
             <Benefit
-              icon={<MapPin size={20} aria-hidden />}
+              icon={<MapPinned size={26} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_2_title")}
               body={t("vendors.benefit_2_body")}
             />
             <Benefit
-              icon={<MessageCircle size={20} aria-hidden />}
+              icon={<PhoneCall size={26} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_3_title")}
               body={t("vendors.benefit_3_body")}
             />
           </div>
-        </div>
-      </section>
-
-      {/* Closing CTA */}
-      <section className="mx-auto max-w-2xl px-4 py-14 text-center sm:px-6">
-        <h2 className="font-grotesk text-2xl text-ink-900 sm:text-3xl dark:text-paper-50">
-          {t("vendors.cta_title")}
-        </h2>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink-600 dark:text-umber-200">
-          {t("vendors.cta_body")}
-        </p>
-        <div className="mt-6">
-          <Link to="/vendors/signup" className="btn-primary btn-lg shadow-sm">
-            {t("vendors.signup_cta")}
-          </Link>
         </div>
       </section>
 
@@ -100,12 +85,10 @@ export default function VendorsPage() {
 
 function Benefit({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
   return (
-    <article className="card flex h-full flex-col !p-5">
-      <span className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-umber-100 text-umber-700 dark:bg-umber-800 dark:text-umber-200">
-        {icon}
-      </span>
+    <article className="card flex h-full flex-col !p-6">
+      <span className="mb-4 inline-flex text-ink-900 dark:text-paper-50">{icon}</span>
       <h3 className="font-grotesk text-lg text-ink-900 dark:text-paper-50">{title}</h3>
-      <p className="mt-1.5 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
     </article>
   );
 }

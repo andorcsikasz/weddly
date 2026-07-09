@@ -2057,8 +2057,6 @@ export interface LocaleMessages {
     price_list_remove: string;
     signup_cta: string;
     have_account_cta: string;
-    cta_title: string;
-    cta_body: string;
     demo_cta: string;
     demo_loading: string;
     demo_error: string;
