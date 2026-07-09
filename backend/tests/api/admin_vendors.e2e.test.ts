@@ -81,12 +81,9 @@ describe("admin vendor management", () => {
 
     // Absent from FIÓKOK → Felhasználók — a real vendor has its own page and must
     // not double up in the couples-oriented user list.
-    const users = await req<{ users: { email: string }[] }>(
-      "GET",
-      "/api/admin/users",
-      undefined,
-      { token: adminToken },
-    );
+    const users = await req<{ users: { email: string }[] }>("GET", "/api/admin/users", undefined, {
+      token: adminToken,
+    });
     expect(users.data.users.some((u) => u.email === "shopowner@weddly.test")).toBe(false);
   });
 

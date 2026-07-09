@@ -32,12 +32,7 @@ import {
   type LText,
   pickL,
 } from "./demo_seed";
-import {
-  addListingPackage,
-  addListingPhoto,
-  createVendorListing,
-  patchListing,
-} from "./listings";
+import { addListingPackage, addListingPhoto, createVendorListing, patchListing } from "./listings";
 import { uniqueCoupleSlug } from "./slug";
 
 export interface VendorDemoResult {

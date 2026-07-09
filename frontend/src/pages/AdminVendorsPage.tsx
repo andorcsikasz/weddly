@@ -419,7 +419,11 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
               {/* Honest payment-status pill (tone carries the fast read). */}
               {pay && (
                 <span title={pay.tooltip}>
-                  <Pill tone={pay.tone} icon={<pay.Icon size={11} />} srLabel={t("admin.vendors.pay_label")}>
+                  <Pill
+                    tone={pay.tone}
+                    icon={<pay.Icon size={11} />}
+                    srLabel={t("admin.vendors.pay_label")}
+                  >
                     {pay.label}
                   </Pill>
                 </span>

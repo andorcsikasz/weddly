@@ -620,11 +620,7 @@ function requirePackageName(v: unknown): string {
 
 /** Optional text field. `undefined` => key absent (leave alone). `null` or an
  *  empty string => clear the value. A string => trimmed + length-capped. */
-function optionalPackageText(
-  v: unknown,
-  field: string,
-  max: number,
-): string | null | undefined {
+function optionalPackageText(v: unknown, field: string, max: number): string | null | undefined {
   if (v === undefined) return undefined;
   if (v === null) return null;
   if (typeof v !== "string") {

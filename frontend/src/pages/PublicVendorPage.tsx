@@ -12,16 +12,7 @@ import type {
   SupplierDetail,
   SupplierReview,
 } from "@shared/suppliers";
-import {
-  BadgeCheck,
-  ExternalLink,
-  FileText,
-  Globe,
-  Mail,
-  MapPin,
-  Phone,
-  Star,
-} from "lucide-react";
+import { BadgeCheck, ExternalLink, FileText, Globe, Mail, MapPin, Phone, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
@@ -37,7 +28,9 @@ function StarRow({ value, size = 14 }: { value: number; size?: number }) {
         <Star
           key={n}
           size={size}
-          className={n <= value ? "fill-star stroke-star" : "stroke-paper-300 dark:stroke-umber-500"}
+          className={
+            n <= value ? "fill-star stroke-star" : "stroke-paper-300 dark:stroke-umber-500"
+          }
         />
       ))}
     </span>
@@ -145,9 +138,7 @@ export default function PublicVendorPage() {
           <h1 className="text-2xl font-bold text-ink-900 dark:text-paper-50">
             {t("publicVendor.notFoundTitle")}
           </h1>
-          <p className="mt-2 text-ink-600 dark:text-umber-200">
-            {t("publicVendor.notFoundBody")}
-          </p>
+          <p className="mt-2 text-ink-600 dark:text-umber-200">{t("publicVendor.notFoundBody")}</p>
           <Link
             to="/vendors"
             className="mt-6 inline-flex rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900"

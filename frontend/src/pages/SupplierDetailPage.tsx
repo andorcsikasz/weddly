@@ -188,9 +188,7 @@ function StarRow({
           size={size}
           aria-hidden
           className={
-            n <= value
-              ? "fill-star stroke-star"
-              : "stroke-paper-300 dark:stroke-umber-500"
+            n <= value ? "fill-star stroke-star" : "stroke-paper-300 dark:stroke-umber-500"
           }
         />
       ))}
@@ -515,7 +513,9 @@ export default function SupplierDetailPage() {
               <div className="mt-3 flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setReporting({ id: Number(detail.id.slice(1)), name: detail.name })}
+                  onClick={() =>
+                    setReporting({ id: Number(detail.id.slice(1)), name: detail.name })
+                  }
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 text-ink-500 transition hover:border-ink-400 hover:bg-paper-100 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-500 dark:hover:bg-umber-700"
                   aria-label={t("suppliers.report.aria_label")}
                   title={t("suppliers.report.aria_label")}
