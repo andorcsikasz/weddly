@@ -2527,6 +2527,8 @@ const hu: LocaleMessages = {
     film_save_qr: "QR mentése",
     film_share_btn: "Megosztás",
     film_guest_view: "Kamera",
+    film_collapse: "Film elrejtése",
+    film_expand: "Film megjelenítése",
     film_expired_alert: "A feltöltési időszak lezárult.",
     film_expired_body:
       "A vendégek már nem tölthetnek fel fotókat. Te és a párod bármikor hozzáadhattok képeket.",

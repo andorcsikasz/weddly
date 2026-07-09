@@ -2717,6 +2717,8 @@ export interface LocaleMessages {
     film_save_qr: string;
     film_share_btn: string;
     film_guest_view: string;
+    film_collapse: string;
+    film_expand: string;
     film_expired_alert: string;
     film_expired_body: string;
     film_expired_action: string;

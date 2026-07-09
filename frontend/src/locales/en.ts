@@ -2501,6 +2501,8 @@ const en: LocaleMessages = {
     film_save_qr: "Save QR",
     film_share_btn: "Share",
     film_guest_view: "Camera",
+    film_collapse: "Hide film",
+    film_expand: "Show film",
     film_expired_alert: "Upload window has closed.",
     film_expired_body:
       "Guests can no longer upload photos. You and your partner can still add your own.",
