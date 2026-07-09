@@ -160,6 +160,14 @@ export default {
         // per user direction 2026-07-09. A truer gold than the oat paper-500 the
         // stars used before. Single value; reads on light paper + dark umber.
         star: "#FFD000",
+        // Vote — the community up/down arrows on directory supplier cards. The
+        // arrow fills fully in these colours once you cast your vote, per user
+        // direction 2026-07-09: vote.up = green (#067D00), vote.down = red
+        // (#D50000). Single saturated values; read on light paper + dark umber.
+        vote: {
+          up: "#067D00",
+          down: "#D50000",
+        },
         // Moss — the warm olive-green accent for the PLANNER portal, per user
         // direction 2026-06-29. Anchored on the three requested colours:
         // moss-100 = #DBF4AD (light fills, active-nav background, badges),

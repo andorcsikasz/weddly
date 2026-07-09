@@ -2829,11 +2829,11 @@ function VoteRow({
         aria-label={t("suppliers.vote_up_aria")}
         className={
           my === 1
-            ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-blush-100 text-blush-700 dark:bg-blush-400/20 dark:text-blush-300"
-            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-blush-300"
+            ? "inline-flex h-6 w-6 items-center justify-center rounded-full text-vote-up"
+            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-vote-up dark:text-umber-200 dark:hover:bg-umber-700"
         }
       >
-        <ArrowBigUp size={16} aria-hidden />
+        <ArrowBigUp size={16} aria-hidden className={my === 1 ? "fill-current" : undefined} />
       </button>
       <span
         className={`min-w-[1.25rem] text-center tabular-nums ${
@@ -2853,11 +2853,11 @@ function VoteRow({
         aria-label={t("suppliers.vote_down_aria")}
         className={
           my === -1
-            ? "inline-flex h-6 w-6 items-center justify-center rounded-full bg-paper-300 text-ink-800 dark:bg-umber-600 dark:text-paper-50"
-            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-ink-800 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+            ? "inline-flex h-6 w-6 items-center justify-center rounded-full text-vote-down"
+            : "inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-200 hover:text-vote-down dark:text-umber-200 dark:hover:bg-umber-700"
         }
       >
-        <ArrowBigDown size={16} aria-hidden />
+        <ArrowBigDown size={16} aria-hidden className={my === -1 ? "fill-current" : undefined} />
       </button>
     </div>
   );
