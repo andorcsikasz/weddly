@@ -156,6 +156,10 @@ export default {
         // account), per user direction 2026-07-09. Single value; reads on both
         // light paper and dark umber backgrounds.
         verified: "#1fa6e1",
+        // Star — the gold used for rating stars (review picker + rating rows),
+        // per user direction 2026-07-09. A truer gold than the oat paper-500 the
+        // stars used before. Single value; reads on light paper + dark umber.
+        star: "#FFD000",
         // Moss — the warm olive-green accent for the PLANNER portal, per user
         // direction 2026-06-29. Anchored on the three requested colours:
         // moss-100 = #DBF4AD (light fills, active-nav background, badges),

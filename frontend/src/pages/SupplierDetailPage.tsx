@@ -188,7 +188,7 @@ function StarRow({
           aria-hidden
           className={
             n <= value
-              ? "fill-paper-500 stroke-paper-500"
+              ? "fill-star stroke-star"
               : "stroke-paper-300 dark:stroke-umber-500"
           }
         />
@@ -216,7 +216,7 @@ function StarPicker({
           aria-checked={value === n}
           onClick={() => onChange(n as 1 | 2 | 3 | 4 | 5)}
           className={`text-2xl leading-none transition ${
-            n <= value ? "text-paper-600" : "text-paper-300 hover:text-paper-500"
+            n <= value ? "text-star" : "text-paper-300 hover:text-star"
           }`}
         >
           {n <= value ? "★" : "☆"}
