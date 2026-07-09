@@ -4285,7 +4285,7 @@ const hu: LocaleMessages = {
       planning: "Szervezés & koordináció",
       venue_stay: "Helyszín & szállás",
       food_drink: "Étel & ital",
-      atmosphere: "Hangulat",
+      atmosphere: "Dekor",
       experience: "Élmény",
       style: "Stílus",
       details: "Részletek",

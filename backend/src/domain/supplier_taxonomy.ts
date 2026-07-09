@@ -387,8 +387,8 @@ const SEED: SeedGroup[] = [
   },
   {
     slug: "atmosphere",
-    label_hu: "Hangulat",
-    label_en: "Atmosphere",
+    label_hu: "Dekor",
+    label_en: "Decor",
     categories: [
       {
         slug: "decor_floral",

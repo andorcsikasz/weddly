@@ -4237,7 +4237,7 @@ const en: LocaleMessages = {
       planning: "Planning & coordination",
       venue_stay: "Venue & stay",
       food_drink: "Food & drink",
-      atmosphere: "Atmosphere",
+      atmosphere: "Decor",
       experience: "Experience",
       style: "Style",
       details: "Details",
