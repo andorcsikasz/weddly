@@ -2472,7 +2472,7 @@ function ChainStep({
         onClick={onClick}
         title={label}
         aria-label={label}
-        className="group relative flex items-center justify-center rounded-lg border border-sage-400 bg-sage-50 px-2.5 py-2 text-sage-700 transition-colors duration-300 ease-out hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
+        className="group relative flex items-center justify-center rounded-lg border border-sage-600 bg-sage-600 px-2.5 py-2 text-white transition-colors duration-300 ease-out hover:border-sage-700 hover:bg-sage-700 dark:border-sage-600 dark:bg-sage-600 dark:text-white dark:hover:border-sage-700 dark:hover:bg-sage-700"
       >
         <span className="flex h-5 items-center leading-none" aria-hidden>
           {icon}
