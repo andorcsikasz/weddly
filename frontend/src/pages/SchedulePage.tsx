@@ -843,7 +843,7 @@ function ScheduleSummaryCard({
     <section className="card mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {couple.display_name && (
-          <p className="truncate font-serif text-2xl italic text-ink-900 dark:text-paper-50">
+          <p className="truncate font-grotesk text-2xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
             {couple.display_name}
           </p>
         )}
