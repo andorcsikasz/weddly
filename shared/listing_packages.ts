@@ -49,6 +49,10 @@ export const PACKAGE_PDF_MAX_BYTES = 8 * 1024 * 1024;
  *  (the "kategóriánként megkülönböztetve" requirement). First entry doubles as
  *  the default name when the vendor adds a package without typing one. */
 export const PACKAGE_NAME_SUGGESTIONS: Record<SupplierCategory, { hu: string[]; en: string[] }> = {
+  wedding_planner: {
+    hu: ["Teljes körű szervezés", "Részleges szervezés", "Napi koordináció"],
+    en: ["Full planning", "Partial planning", "Day-of coordination"],
+  },
   venue: {
     hu: ["Hétköznapi bérlés", "Hétvégi csomag", "Exkluzív teljes nap"],
     en: ["Weekday hire", "Weekend package", "Exclusive full day"],
@@ -137,10 +141,7 @@ export const PACKAGE_NAME_SUGGESTIONS: Record<SupplierCategory, { hu: string[]; 
 
 /** Suggested tier names for a category in the given locale. Falls back to the
  *  `other` set for any unmapped category, and to HU only for non-EN locales. */
-export function packageNameSuggestions(
-  category: SupplierCategory,
-  locale: string,
-): string[] {
+export function packageNameSuggestions(category: SupplierCategory, locale: string): string[] {
   const entry = PACKAGE_NAME_SUGGESTIONS[category] ?? PACKAGE_NAME_SUGGESTIONS.other;
   return locale === "en" ? entry.en : entry.hu;
 }

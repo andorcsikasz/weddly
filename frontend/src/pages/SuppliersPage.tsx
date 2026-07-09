@@ -133,6 +133,7 @@ const SupplierMap = lazyWithReload(() => import("../components/SupplierMap"));
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
 const GROUP_ICON: Record<SupplierGroup, IconCmp> = {
+  planning: ClipboardList,
   venue_stay: MapPin,
   food_drink: UtensilsCrossed,
   atmosphere: Sparkles,
@@ -142,6 +143,7 @@ const GROUP_ICON: Record<SupplierGroup, IconCmp> = {
 };
 
 const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
+  wedding_planner: ClipboardList,
   venue: Building2,
   accommodation: BedDouble,
   tent_pavilion: Tent,
@@ -245,12 +247,10 @@ export default function SuppliersPage() {
   const [selection, setSelectionState] = useState<SelectionMap>({});
   const [activeGroup, setActiveGroup] = useState<SupplierGroup | null>(null);
   const [activeCat, setActiveCat] = useState<SupplierCategory | null>(null);
-  // Wedding planners are a distinct aggregate (a consent/invite flow, not the
-  // outbound-contact directory), so they get their own chain step rather than a
-  // real SUPPLIER_GROUPS entry. `showPlanners` is the chain's planner step being
-  // active; it's mutually exclusive with a picked supplier group/category.
+  // Registered planner ACCOUNTS (a consent/invite flow, distinct from the
+  // outbound-contact directory). They surface as a slim strip atop the real
+  // `wedding_planner` category (the curated planner listings live in the grid).
   const [planners, setPlanners] = useState<PlannerDirectoryEntry[]>([]);
-  const [showPlanners, setShowPlanners] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false);
   const [diyOpen, setDiyOpen] = useState(false);
@@ -445,7 +445,6 @@ export default function SuppliersPage() {
     p.delete("guests");
     setActiveGroup(null);
     setActiveCat(null);
-    setShowPlanners(false);
   }
   function toggleSavedFilter() {
     const p = new URLSearchParams(params);
@@ -1086,20 +1085,6 @@ export default function SuppliersPage() {
   function pickGroup(id: SupplierGroup | null) {
     setActiveGroup(id);
     setActiveCat(null);
-    setShowPlanners(false);
-  }
-
-  // Toggle the planner chain step. Turning it on clears any active supplier
-  // group/category (the two browse modes are mutually exclusive).
-  function togglePlanners() {
-    setShowPlanners((prev) => {
-      const next = !prev;
-      if (next) {
-        setActiveGroup(null);
-        setActiveCat(null);
-      }
-      return next;
-    });
   }
 
   // Jump straight to a single category from a card's avatar icon: open the
@@ -1109,7 +1094,6 @@ export default function SuppliersPage() {
     const group = SUPPLIER_GROUPS.find((g) => g.categories.includes(cat));
     setActiveGroup(group ? group.id : null);
     setActiveCat(cat);
-    setShowPlanners(false);
   }
 
   // Route a picked search suggestion to the right action: a supplier jumps to
@@ -1458,24 +1442,6 @@ export default function SuppliersPage() {
                     </div>
                   );
                 })}
-                {/* Wedding-planner tile — a standalone browse mode, NOT the next
-                    link in the supplier booking chain, so it drops the "→"
-                    connector and sits set apart (ml-4) from the group tiles.
-                    Only shown once at least one planner is listed, so an empty
-                    directory keeps the chain exactly as before. No progress
-                    bars: it's a browse mode, not a per-pick checklist. */}
-                {planners.length > 0 && (
-                  <div className="ml-4 flex snap-start items-stretch gap-1">
-                    <ChainStep
-                      active={showPlanners}
-                      onClick={togglePlanners}
-                      label={t("suppliers.group.planner")}
-                      count={filteredPlanners.length}
-                      icon={<ClipboardList size={16} />}
-                      t={t}
-                    />
-                  </div>
-                )}
               </div>
             </div>
             {/* Right-edge fade — only when the row overflows. */}
@@ -1671,45 +1637,42 @@ export default function SuppliersPage() {
           old blush variant: blush is the codebase's error colour
           (ToastProvider, FieldError, AlertCircle pills) and the banner
           was reading as a warning rather than a hint. */}
-          {!showPlanners &&
-            (() => {
-              const townLabel = nearbyTownLabel(queryNorm);
-              if (!townLabel) return null;
-              return (
-                <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200">
-                  <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
-                  <span>
-                    {t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}
-                  </span>
-                </p>
-              );
-            })()}
+          {(() => {
+            const townLabel = nearbyTownLabel(queryNorm);
+            if (!townLabel) return null;
+            return (
+              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-600 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-200">
+                <MapPin size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
+                <span>
+                  {t("suppliers.nearby_banner", { town: townLabel, radius: NEARBY_RADIUS_KM })}
+                </span>
+              </p>
+            );
+          })()}
 
-          {showPlanners ? (
-            <div data-tour-target="vendors-list">
-              {/* Planner directory as a vendor-style grid. Reuses PlannerCard
-                  (which carries the full invite/consent state machine) so the
-                  behaviour matches the old right-hand rail exactly. */}
+          {/* Registered planner ACCOUNTS strip — surfaced atop the
+              wedding_planner category. These are Weddly planner users reachable
+              via the consent flow (invite → accept → linked), distinct from the
+              curated planner listings that render in the grid below. Search
+              filters both (filteredPlanners honours the query). */}
+          {activeGroup === "planning" && viewMode !== "map" && filteredPlanners.length > 0 && (
+            <section aria-label={t("planner_directory.title")} className="mb-5">
               <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">
                 {t("planner_directory.subtitle")}
               </p>
-              {filteredPlanners.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-paper-300 bg-paper-50 px-4 py-8 text-center text-sm text-ink-500 dark:border-umber-700 dark:bg-umber-800/40 dark:text-umber-300">
-                  {t("suppliers.planner_none")}
-                </p>
-              ) : (
-                <div className="grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {filteredPlanners.map((p) => (
-                    <PlannerCard
-                      key={p.planner_user_id}
-                      planner={p}
-                      onChanged={handlePlannerChanged}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : viewMode === "map" ? (
+              <div className="grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {filteredPlanners.map((p) => (
+                  <PlannerCard
+                    key={p.planner_user_id}
+                    planner={p}
+                    onChanged={handlePlannerChanged}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {viewMode === "map" ? (
             // Same tour target as the grid/list container so the feature tour's
             // "vendors-list" steps still have something to spotlight in map view —
             // otherwise steps 2-3 find no element and the card drifts to center

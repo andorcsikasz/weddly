@@ -40,6 +40,7 @@ const PRICE_LIST_EXTS: Record<string, string> = {
 };
 
 const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
+  wedding_planner: "Esküvőszervező",
   venue: "Esküvői helyszín",
   accommodation: "Szállás",
   catering: "Catering",
@@ -64,6 +65,7 @@ const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
 };
 
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
+  "wedding_planner",
   "venue",
   "accommodation",
   "tent_pavilion",

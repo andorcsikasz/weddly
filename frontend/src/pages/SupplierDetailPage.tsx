@@ -34,6 +34,7 @@ import {
   ChefHat,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   Disc3,
   FileText,
   Flag,
@@ -100,6 +101,7 @@ type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string 
 // Per-category glyph for the empty-state hero. Mirrors the mapping in
 // SuppliersPage.tsx so the placeholder reads as "same brand, this category".
 const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
+  wedding_planner: ClipboardList,
   venue: Building2,
   accommodation: BedDouble,
   tent_pavilion: Tent,

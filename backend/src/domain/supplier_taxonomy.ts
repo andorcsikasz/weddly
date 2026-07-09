@@ -338,6 +338,19 @@ interface SeedGroup {
  */
 const SEED: SeedGroup[] = [
   {
+    slug: "planning",
+    label_hu: "Szervezés & koordináció",
+    label_en: "Planning & coordination",
+    categories: [
+      {
+        slug: "wedding_planner",
+        label_hu: "Esküvőszervező",
+        label_en: "Wedding planner",
+        budget: "other",
+      },
+    ],
+  },
+  {
     slug: "venue_stay",
     label_hu: "Helyszín & szállás",
     label_en: "Venue & stay",

@@ -24,6 +24,7 @@ import {
   ChefHat,
   ChevronDown,
   ChevronRight,
+  ClipboardList,
   Disc3,
   Flower2,
   Gem,
@@ -66,6 +67,7 @@ type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string 
 // surfaces read the same. Kept local (presentational constant) to keep this a
 // surgical, self-contained addition.
 const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
+  wedding_planner: ClipboardList,
   venue: Building2,
   accommodation: BedDouble,
   tent_pavilion: Tent,

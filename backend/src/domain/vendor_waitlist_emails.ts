@@ -21,6 +21,7 @@ export { buildEmailDraftPure as buildEmailDraft };
  *  module) so the frontend's category-pill labels can drive their own copy
  *  without us coupling backend domain text to the UI's label system. */
 const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
+  wedding_planner: "Esküvőszervező",
   venue: "Esküvői helyszín",
   accommodation: "Szállás",
   catering: "Catering",

@@ -18,6 +18,7 @@ import {
   Camera,
   Check,
   ChefHat,
+  ClipboardList,
   Disc3,
   Flower2,
   Gem,
@@ -81,6 +82,7 @@ type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string 
 // Mirrors the icon palette in SuppliersPage so the chip grid + preview card
 // stay visually consistent with the directory cards.
 const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
+  wedding_planner: ClipboardList,
   venue: Building2,
   accommodation: BedDouble,
   tent_pavilion: Tent,
@@ -105,6 +107,7 @@ const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
 };
 
 const GROUP_ICON: Record<SupplierGroup, IconCmp> = {
+  planning: ClipboardList,
   venue_stay: MapPin,
   food_drink: UtensilsCrossed,
   atmosphere: Sparkle,

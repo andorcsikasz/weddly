@@ -1910,7 +1910,7 @@ describe("admin analytics", () => {
     expect(r.data.total_picks).toBe(0);
     expect(r.data.picks_per_couple.count).toBe(0);
     expect(r.data.top_picks.length).toBe(0);
-    expect(r.data.category_coverage.length).toBe(19);
+    expect(r.data.category_coverage.length).toBe(20);
     expect(r.data.source_breakdown.curated).toBe(0);
     expect(r.data.source_breakdown.community).toBe(0);
     expect(r.data.source_breakdown.diy).toBe(0);
@@ -2591,11 +2591,11 @@ interface TaxonomyResp {
 }
 
 describe("supplier taxonomy — admin groups CRUD", () => {
-  test("public GET returns the seeded 6 groups", async () => {
+  test("public GET returns the seeded 7 groups", async () => {
     wipeAll();
     const r = await req<TaxonomyResp>("GET", "/api/supplier-categories");
     expect(r.status).toBe(200);
-    expect(r.data.groups.length).toBe(6);
+    expect(r.data.groups.length).toBe(7);
   });
 
   test("admin POST create group — happy path", async () => {

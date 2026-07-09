@@ -73,6 +73,7 @@ const BUDGET_CATEGORIES: readonly BudgetCategory[] = [
 // reasoning as BUDGET_CATEGORIES — the UI needs every row even when picks
 // are empty so the table doesn't develop gaps.
 const SUPPLIER_CATEGORIES: readonly SupplierCategory[] = [
+  "wedding_planner",
   "venue",
   "accommodation",
   "tent_pavilion",

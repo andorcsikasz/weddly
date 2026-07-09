@@ -4763,16 +4763,16 @@ export interface LocaleMessages {
       };
     };
     group: {
+      planning: string;
       venue_stay: string;
       food_drink: string;
       atmosphere: string;
       experience: string;
       style: string;
       details: string;
-      planner: string;
     };
-    planner_none: string;
     cat: {
+      wedding_planner: string;
       venue: string;
       accommodation: string;
       tent_pavilion: string;

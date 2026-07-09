@@ -5419,13 +5419,13 @@ describe("supplier taxonomy (admin-editable groups + categories)", () => {
     return r.data.token;
   }
 
-  test("public GET /api/supplier-categories returns the seeded 6 groups / 19 categories", async () => {
+  test("public GET /api/supplier-categories returns the seeded 7 groups / 20 categories", async () => {
     wipeAll();
     const r = await req<TaxonomyResponse>("GET", "/api/supplier-categories");
     expect(r.status).toBe(200);
-    expect(r.data.groups.length).toBe(6);
+    expect(r.data.groups.length).toBe(7);
     const allCats = r.data.groups.flatMap((g) => g.categories);
-    expect(allCats.length).toBe(19);
+    expect(allCats.length).toBe(20);
     const venueGroup = r.data.groups.find((g) => g.slug === "venue_stay");
     expect(venueGroup?.label_hu).toBe("Helyszín & szállás");
     expect(venueGroup?.categories.map((c) => c.slug)).toEqual([

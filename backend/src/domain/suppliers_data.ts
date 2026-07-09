@@ -2283,11 +2283,12 @@ const RAW_DIRECTORY: (Omit<
     price_band: 3,
   },
 
-  // Planners (mapped to "entertainment", closest existing category)
+  // Wedding planners — their own "wedding_planner" category (Szervezés &
+  // koordináció group). Previously mis-filed under "entertainment".
   {
     id: "budapest-wedding",
     name: "Budapest Wedding",
-    category: "entertainment",
+    category: "wedding_planner",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2304,7 +2305,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "beautiful-wedding",
     name: "Beautiful Wedding (Wedding Planner in Hungary)",
-    category: "entertainment",
+    category: "wedding_planner",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2321,7 +2322,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "cinderellas-day",
     name: "Cinderella's Day",
-    category: "entertainment",
+    category: "wedding_planner",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2338,7 +2339,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "hungarianweddings",
     name: "HungarianWeddings.com",
-    category: "entertainment",
+    category: "wedding_planner",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2353,7 +2354,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "my-wedding-planner-hungary",
     name: "My Wedding Planner in Hungary",
-    category: "entertainment",
+    category: "wedding_planner",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -3027,9 +3028,12 @@ const RAW_DIRECTORY: (Omit<
     price_band: 4,
   },
   {
+    // MC / officiant — belongs under Szervezés & koordináció rather than
+    // animáció. Sits in wedding_planner until a dedicated "Ceremóniamester"
+    // subcategory lands (see the deferred subcategory split).
     id: "gabor-herendi",
     name: "Gábor Herendi",
-    category: "entertainment",
+    category: "wedding_planner",
     city: "Budapest",
     address: null,
     capacity_min: null,

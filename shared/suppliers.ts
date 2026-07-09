@@ -5,6 +5,7 @@ import type { ListingPackage } from "./listing_packages";
 import type { ListingVideo } from "./listing_videos";
 
 export type SupplierCategory =
+  | "wedding_planner"
   | "venue"
   | "accommodation"
   | "tent_pavilion"
@@ -28,6 +29,7 @@ export type SupplierCategory =
   | "other";
 
 export type SupplierGroup =
+  | "planning"
   | "venue_stay"
   | "food_drink"
   | "atmosphere"
@@ -83,6 +85,8 @@ export interface SupplierGroupDef {
  *  rather than scattering them under "other". Keep both sides in sync when
  *  adding new categories. */
 export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
+  // Planner fees have no dedicated budget bucket yet — fold into "other".
+  wedding_planner: "other",
   venue: "venue",
   accommodation: "other",
   tent_pavilion: "venue",
@@ -106,10 +110,12 @@ export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
   other: "other",
 };
 
-// Ordered chain — mirrors the recommended booking sequence: lock the venue
-// first, then food, then look & feel, then experience, then personal style,
-// then the remaining details.
+// Ordered chain — mirrors the recommended booking sequence. Planning &
+// coordination leads: a full-service planner is hired first (they help pick the
+// venue and every vendor after it). Then venue, food, look & feel, experience,
+// personal style, and the remaining details.
 export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
+  { id: "planning", categories: ["wedding_planner"] },
   { id: "venue_stay", categories: ["venue", "accommodation", "tent_pavilion"] },
   { id: "food_drink", categories: ["catering", "cake_dessert", "bar_drinks", "pizza"] },
   { id: "atmosphere", categories: ["decor_floral", "lighting"] },

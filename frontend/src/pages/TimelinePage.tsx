@@ -65,6 +65,7 @@ import { useDocumentMeta } from "../lib/seo";
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
 const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
+  wedding_planner: ClipboardList,
   venue: Building2,
   accommodation: BedDouble,
   tent_pavilion: Tent,
