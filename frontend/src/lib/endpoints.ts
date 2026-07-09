@@ -968,6 +968,21 @@ export const scheduleApi = {
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/schedule/${id}`),
 };
 
+/** Timeline -> Google Calendar push-sync. `status.configured` gates the whole
+ *  UI; `connect()` returns the Google consent URL the page redirects to. */
+export const googleCalendarApi = {
+  status: () =>
+    apiFetch<import("@shared/types").GoogleCalendarStatus>("GET", "/api/google-calendar/status"),
+  connect: () => apiFetch<{ url: string }>("GET", "/api/google-calendar/connect"),
+  sync: () =>
+    apiFetch<import("@shared/types").GoogleCalendarStatus>("POST", "/api/google-calendar/sync"),
+  disconnect: () =>
+    apiFetch<import("@shared/types").GoogleCalendarStatus>(
+      "POST",
+      "/api/google-calendar/disconnect",
+    ),
+};
+
 /** Couple-curated wishlist / gift registry. Mirrors `scheduleApi`: list +
  *  CRUD with an optional optimistic-concurrency guard on update. No money
  *  moves in-app — `target_amount_minor` is informational only. Guests see a
@@ -1613,10 +1628,7 @@ export const supplierApi = {
    *  public Q&A + busy calendar) for the shareable `/vendors/:id` page. Works
    *  with or without a session token. */
   publicDetail: (supplierId: string) =>
-    apiFetch<PublicVendorPageData>(
-      "GET",
-      `/api/public/vendors/${encodeURIComponent(supplierId)}`,
-    ),
+    apiFetch<PublicVendorPageData>("GET", `/api/public/vendors/${encodeURIComponent(supplierId)}`),
 };
 
 export const reviewApi = {

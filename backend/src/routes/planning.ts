@@ -20,6 +20,7 @@ import type {
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
+import { markCoupleCalendarDirty } from "../domain/google_calendar";
 import { insertCoupleNotification } from "../domain/notifications";
 import {
   getPlanningItemJoined,
@@ -300,6 +301,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
 
   const row = getPlanningItemJoined(id, couple.id);
   if (!row) throw new HttpError(500, "Planning item missing after insert");
+  markCoupleCalendarDirty(couple.id);
   return json({ item: toPlanningItem(row) }, { status: 201 });
 }
 
@@ -417,6 +419,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 
   const row = getPlanningItemJoined(id, couple.id);
   if (!row) throw new HttpError(500, "Planning item missing after update");
+  markCoupleCalendarDirty(couple.id);
   return json({ item: toPlanningItem(row) });
 }
 
@@ -438,6 +441,7 @@ function handleDelete(ctx: Ctx): Response {
     target_id: id,
     before: { kind: existing.kind, title: existing.title },
   });
+  markCoupleCalendarDirty(couple.id);
   return json({ ok: true });
 }
 
@@ -641,6 +645,7 @@ async function handleBulkSchedule(ctx: Ctx): Promise<Response> {
     });
   }
 
+  if (applied > 0) markCoupleCalendarDirty(couple.id);
   return json({ items: listPlanningItemsByCouple(couple.id), applied });
 }
 

@@ -1735,6 +1735,27 @@ export interface PlanningItem {
   updated_at: UnixMs;
 }
 
+/** State of the Timeline -> Google Calendar push-sync connection, surfaced by
+ *  `GET /api/google-calendar/status`. `configured` gates the whole UI: false =
+ *  the operator hasn't wired the Google OAuth secret, so the frontend hides the
+ *  "Connect Google Calendar" affordance entirely. */
+export interface GoogleCalendarStatus {
+  /** The integration is wired server-side (OAuth client + secret present). */
+  configured: boolean;
+  /** This couple has an active connection. */
+  connected: boolean;
+  /** The Google account the calendar lives in. `null` when not connected. */
+  email: string | null;
+  /** Id of the dedicated Google calendar. `null` until the first sync creates it. */
+  calendarId: string | null;
+  /** Last successful reconcile (unix ms), or `null` if never synced. */
+  lastSyncedAt: UnixMs | null;
+  /** 'dirty' = a re-sync is pending. `null` when not connected. */
+  syncState: "idle" | "dirty" | null;
+  /** Most recent sync failure message, or `null` when the last sync was clean. */
+  lastError: string | null;
+}
+
 /** A single segment within a flight offer's outbound itinerary. */
 export interface FlightSegment {
   /** Operating carrier IATA on this segment (e.g. "LH"). */

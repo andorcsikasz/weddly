@@ -232,6 +232,23 @@ export interface LocaleMessages {
     calendar_event_one: string;
     calendar_event_other: string;
     calendar_no_tasks: string;
+    /** Google Calendar push-sync: connect button, connected pill + menu, and
+     *  the toasts shown after the OAuth redirect returns. */
+    gcal_connect: string;
+    gcal_connecting: string;
+    gcal_connected_label: string;
+    gcal_sync_now: string;
+    gcal_syncing: string;
+    gcal_disconnect: string;
+    gcal_disconnect_title: string;
+    gcal_disconnect_body: string;
+    gcal_disconnect_confirm: string;
+    gcal_menu_aria: string;
+    gcal_toast_connected: string;
+    gcal_toast_synced: string;
+    gcal_toast_disconnected: string;
+    gcal_toast_error: string;
+    gcal_toast_denied: string;
   };
   a11y: {
     /** Generic close button label (dialogs, sheets). */

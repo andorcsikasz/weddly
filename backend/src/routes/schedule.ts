@@ -5,6 +5,7 @@
 import { MAX_KEY_MOMENTS, type UpsertScheduleEventInput } from "@shared/schedule";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
+import { markCoupleCalendarDirty } from "../domain/google_calendar";
 import {
   countKeyMoments,
   deleteScheduleEvent,
@@ -50,6 +51,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     },
   });
 
+  markCoupleCalendarDirty(couple.id);
   return json({ event: toScheduleEvent(row) }, { status: 201 });
 }
 
@@ -106,6 +108,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     },
   });
 
+  markCoupleCalendarDirty(couple.id);
   return json({ event: toScheduleEvent(row) });
 }
 
@@ -151,6 +154,7 @@ function handleDuplicate(ctx: Ctx): Response {
     after: { source_id: id, label: baseLabel },
   });
 
+  markCoupleCalendarDirty(couple.id);
   return json({ event: toScheduleEvent(row) }, { status: 201 });
 }
 
@@ -175,6 +179,7 @@ function handleDelete(ctx: Ctx): Response {
     before: { label: existing.label },
   });
 
+  markCoupleCalendarDirty(couple.id);
   return json({ ok: true });
 }
 

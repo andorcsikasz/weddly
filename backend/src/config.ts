@@ -84,6 +84,18 @@ export const CONFIG = {
    *  with `jwtSecret`, so only callers who already own the secret (i.e. the
    *  E2E test process) can mint one. Never set this in production. */
   googleTestBypass: !REQUIRE_PROD_HARDENING && process.env.GOOGLE_TEST_BYPASS === "1",
+  /** OAuth2 client secret for the Google Calendar push-sync integration. The
+   *  existing GSI Web client id (`googleClientId`) is reused as the OAuth
+   *  `client_id`; this is its paired secret, needed for the server-side
+   *  authorization-code exchange. Empty = the "Connect Google Calendar" feature
+   *  stays hidden (status.configured=false) and its /connect endpoint 503s, so
+   *  the app boots fine without it — same "configured?" pattern as Stripe. */
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+  /** Test-only escape hatch: when `1`, the Google Calendar lib answers OAuth +
+   *  Calendar API calls from a deterministic in-memory fake instead of hitting
+   *  Google, so the E2E suite exercises the full connect -> sync -> disconnect
+   *  pipeline hermetically. Never set this in production. */
+  googleCalendarFake: !REQUIRE_PROD_HARDENING && process.env.GOOGLE_CALENDAR_FAKE === "1",
   /** Apple "Sign in with Apple" Services ID (e.g. "hu.weddly.signin"). This is
    *  the `client_id` the Apple JS SDK is initialised with AND the `aud` claim
    *  the id-token verifier checks. When empty, `/api/auth/apple` returns 503 so
@@ -195,3 +207,10 @@ export const R2_ENABLED =
 /** True when a Stripe secret key is configured. Billing endpoints check this
  *  and 503 when false, mirroring the Google-OAuth "configured?" pattern. */
 export const STRIPE_ENABLED = CONFIG.stripeSecretKey !== "";
+
+/** True when the Google Calendar push-sync integration is fully wired: the GSI
+ *  Web client id AND its OAuth client secret are set (or the E2E fake is on).
+ *  The status endpoint surfaces this to the frontend so the "Connect Google
+ *  Calendar" affordance stays hidden until an operator finishes Google setup. */
+export const GOOGLE_CALENDAR_ENABLED =
+  CONFIG.googleClientId !== "" && (CONFIG.googleClientSecret !== "" || CONFIG.googleCalendarFake);

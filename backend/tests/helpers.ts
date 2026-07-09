@@ -13,6 +13,7 @@ import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@sha
 import { __testPlaintextForHash } from "../src/auth/tokens";
 import { db } from "../src/db";
 import { seedSupplierTaxonomy } from "../src/domain/supplier_taxonomy";
+import { __resetGoogleCalendarFake } from "../src/lib/google_calendar";
 
 /** Single-use credential token tables whose values are now stored hashed
  *  (auth/tokens.ts). Tests can't read the plaintext from the row anymore, so
@@ -251,6 +252,11 @@ export function wipeAll(): void {
     // before users) so a leaked founding badge can't bleed the cohort count
     // into the next test.
     "planner_subscriptions",
+    // Google Calendar push-sync — cascade off couples/users, but wipe
+    // explicitly (child map before the connection) so a leaked connection can't
+    // bleed into the next test's status assertions.
+    "google_calendar_event_map",
+    "google_calendar_connections",
     // users MUST come before couples — users.couple_id REFERENCES couples(id)
     // with no CASCADE, so deleting couples first FK-fails (silently swallowed
     // by the try/catch below) and leaves stale rows that bleed into the next
@@ -286,6 +292,9 @@ export function wipeAll(): void {
   } catch {
     // Table may not exist on a very old DB; ignore.
   }
+  // Drop any fake Google calendars a prior test created so their event counts
+  // don't leak into the next case's assertions.
+  __resetGoogleCalendarFake();
 }
 
 /** Mark the most recently-issued verification token for the email as used.

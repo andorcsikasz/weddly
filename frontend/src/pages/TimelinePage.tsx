@@ -8,13 +8,15 @@ import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { CouplePick } from "@shared/picks";
 import type { DirectorySupplier, DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
 import { toIsoDate } from "@shared/planning_timeline";
-import type { PlanningItem } from "@shared/types";
+import type { GoogleCalendarStatus, PlanningItem } from "@shared/types";
 import {
   BedDouble,
   Brush,
   Building2,
   Bus,
   Cake,
+  CalendarCheck2,
+  CalendarPlus,
   Camera,
   ChefHat,
   ChevronDown,
@@ -36,20 +38,22 @@ import {
   PartyPopper,
   Phone,
   Pizza,
+  RefreshCw,
   Shirt,
   Sparkles,
   Speaker,
   StickyNote,
   Tent,
+  Unlink,
   Wand2,
   Wine,
   X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { ComponentType, ReactNode, SVGProps } from "react";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Skeleton, useToast } from "../components/ui";
+import { Skeleton, useConfirm, useToast } from "../components/ui";
 import CalendarBoard from "./timeline/CalendarBoard";
 import DayView from "./timeline/DayView";
 import GanttView, { computeAllRange } from "./timeline/GanttView";
@@ -57,7 +61,14 @@ import MonthView from "./timeline/MonthView";
 import ScheduleWand from "./timeline/ScheduleWand";
 import WeekView from "./timeline/WeekView";
 import { ApiError } from "../lib/api";
-import { coupleApi, coupleSupplierApi, picksApi, planningApi, supplierApi } from "../lib/endpoints";
+import {
+  coupleApi,
+  coupleSupplierApi,
+  googleCalendarApi,
+  picksApi,
+  planningApi,
+  supplierApi,
+} from "../lib/endpoints";
 import { maxIsoDate, todayIso } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -307,7 +318,10 @@ export default function TimelinePage() {
                 <ClipboardList size={18} aria-hidden="true" />
               </Link>
             </div>
-            <CountdownChip weddingDate={weddingDate} />
+            <div className="flex items-center gap-3">
+              <GoogleCalendarConnect />
+              <CountdownChip weddingDate={weddingDate} />
+            </div>
           </div>
         </header>
 
@@ -384,6 +398,169 @@ function CountdownChip({ weddingDate }: { weddingDate: Date | null }) {
       <Heart size={14} aria-hidden="true" />
       <span className="tabular-nums">{label}</span>
     </span>
+  );
+}
+
+/** Header control for the Timeline -> Google Calendar push-sync. Renders
+ *  nothing until the status endpoint confirms the integration is configured
+ *  server-side. Not connected → a "Connect" button that redirects into the
+ *  Google OAuth consent flow. Connected → a pill with a menu (Sync now /
+ *  Disconnect). Also turns the `?gcal=…` flag from the OAuth redirect into a
+ *  toast. */
+function GoogleCalendarConnect() {
+  const { t } = useT();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [status, setStatus] = useState<GoogleCalendarStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const refresh = useCallback(() => {
+    googleCalendarApi
+      .status()
+      .then(setStatus)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  // Turn the OAuth redirect result (?gcal=connected|denied|error) into a toast,
+  // then strip the param so a reload doesn't re-fire it. One-shot on mount.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const flag = params.get("gcal");
+    if (!flag) return;
+    if (flag === "connected") toast.success(t("timeline.gcal_toast_connected"));
+    else if (flag === "denied") toast.error(t("timeline.gcal_toast_denied"));
+    else toast.error(t("timeline.gcal_toast_error"));
+    params.delete("gcal");
+    const qs = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+    refresh();
+  }, []);
+
+  if (!status || !status.configured) return null;
+
+  async function onConnect() {
+    setBusy(true);
+    try {
+      const { url } = await googleCalendarApi.connect();
+      window.location.href = url;
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      setBusy(false);
+    }
+  }
+
+  async function onSync() {
+    setMenuOpen(false);
+    setBusy(true);
+    try {
+      setStatus(await googleCalendarApi.sync());
+      toast.success(t("timeline.gcal_toast_synced"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDisconnect() {
+    setMenuOpen(false);
+    const ok = await confirm({
+      title: t("timeline.gcal_disconnect_title"),
+      body: t("timeline.gcal_disconnect_body"),
+      confirmLabel: t("timeline.gcal_disconnect_confirm"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      setStatus(await googleCalendarApi.disconnect());
+      toast.success(t("timeline.gcal_toast_disconnected"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const pillBase =
+    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 disabled:opacity-60 dark:focus-visible:ring-paper-100";
+
+  if (!status.connected) {
+    return (
+      <button
+        type="button"
+        onClick={onConnect}
+        disabled={busy}
+        className={`${pillBase} bg-paper-100 text-ink-700 hover:bg-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700`}
+      >
+        <CalendarPlus size={15} aria-hidden="true" />
+        {busy ? t("timeline.gcal_connecting") : t("timeline.gcal_connect")}
+      </button>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setMenuOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        aria-label={t("timeline.gcal_menu_aria")}
+        className={`${pillBase} bg-sage-100 text-sage-800 hover:bg-sage-200 dark:bg-sage-900/40 dark:text-sage-200 dark:hover:bg-sage-900/60`}
+      >
+        <CalendarCheck2 size={15} aria-hidden="true" />
+        <span>{t("timeline.gcal_connected_label")}</span>
+        <ChevronDown size={14} aria-hidden="true" />
+      </button>
+      {menuOpen && (
+        <>
+          <button
+            type="button"
+            aria-hidden="true"
+            tabIndex={-1}
+            className="fixed inset-0 z-10 cursor-default"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div
+            role="menu"
+            className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-paper-200 bg-white py-1 shadow-lg dark:border-umber-700 dark:bg-umber-900"
+          >
+            {status.email && (
+              <p className="truncate px-3 py-1.5 text-xs text-ink-500 dark:text-umber-300">
+                {status.email}
+              </p>
+            )}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onSync}
+              disabled={busy}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-paper-100 disabled:opacity-60 dark:text-paper-100 dark:hover:bg-umber-800"
+            >
+              <RefreshCw size={14} aria-hidden="true" />
+              {busy ? t("timeline.gcal_syncing") : t("timeline.gcal_sync_now")}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onDisconnect}
+              disabled={busy}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/40"
+            >
+              <Unlink size={14} aria-hidden="true" />
+              {t("timeline.gcal_disconnect")}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 

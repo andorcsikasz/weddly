@@ -46,6 +46,12 @@ process.env.FX_DISABLED = "1"; // no outbound FX call in tests; fx endpoint retu
 // bearers via mintTestBearer(); see backend/src/lib/google_oauth.ts.
 process.env.GOOGLE_TEST_BYPASS = "1";
 process.env.GOOGLE_CLIENT_ID = "test-google-client.apps.googleusercontent.com";
+// Google Calendar push-sync: pin the OAuth secret NON-empty so
+// GOOGLE_CALENDAR_ENABLED (status.configured) is true, and GOOGLE_CALENDAR_FAKE=1
+// so the lib answers OAuth + Calendar API calls from a deterministic in-memory
+// fake instead of hitting Google. See backend/src/lib/google_calendar.ts.
+process.env.GOOGLE_CLIENT_SECRET = "test-google-client-secret";
+process.env.GOOGLE_CALENDAR_FAKE = "1";
 // Same escape hatch for the Apple ID-token verifier — the E2E suite exercises
 // /api/auth/apple via HMAC'd test bearers (mintAppleTestBearer) instead of
 // hitting Apple; see backend/src/lib/apple_oauth.ts.

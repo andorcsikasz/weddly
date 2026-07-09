@@ -1755,3 +1755,38 @@ CREATE TABLE IF NOT EXISTS planner_activation_tokens (
   created_at  INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_planner_activation_user ON planner_activation_tokens(user_id);
+
+-- Google Calendar push-sync. One connection row per couple (the partner who
+-- authorised owns the sync); Weddly creates a dedicated secondary calendar in
+-- their Google account and one-way pushes dated tasks + the wedding day + the
+-- day-of run sheet into it. OAuth tokens are stored AES-256-GCM-encrypted
+-- (never plaintext). `sync_state='dirty'` marks a couple whose events changed
+-- and need reconciling; the background worker flips it back to 'idle'.
+CREATE TABLE IF NOT EXISTS google_calendar_connections (
+  couple_id         INTEGER PRIMARY KEY REFERENCES couples(id) ON DELETE CASCADE,
+  connected_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  google_email      TEXT    NOT NULL,
+  calendar_id       TEXT,                                   -- Google secondary calendar id, set after creation
+  time_zone         TEXT    NOT NULL DEFAULT 'Europe/Budapest',
+  access_token_enc  TEXT,                                   -- AES-256-GCM(iv:tag:ct)
+  refresh_token_enc TEXT,                                   -- AES-256-GCM(iv:tag:ct)
+  token_expiry      INTEGER,                                -- unix ms; refresh before this
+  sync_state        TEXT    NOT NULL DEFAULT 'dirty',       -- 'idle' | 'dirty'
+  last_synced_at    INTEGER,
+  last_error        TEXT,
+  created_at        INTEGER NOT NULL,
+  updated_at        INTEGER NOT NULL
+);
+
+-- Maps each synced Weddly source item to its Google event so the reconciler can
+-- insert / patch / delete by diffing `content_hash`. PK is the stable source
+-- key so a re-sync never duplicates events.
+CREATE TABLE IF NOT EXISTS google_calendar_event_map (
+  couple_id       INTEGER NOT NULL REFERENCES couples(id) ON DELETE CASCADE,
+  source_kind     TEXT    NOT NULL,                         -- 'task' | 'wedding_day' | 'schedule'
+  source_id       TEXT    NOT NULL,                         -- planning_items.id / 'wedding' / schedule_events.id
+  google_event_id TEXT    NOT NULL,
+  content_hash    TEXT    NOT NULL,
+  updated_at      INTEGER NOT NULL,
+  PRIMARY KEY (couple_id, source_kind, source_id)
+);
