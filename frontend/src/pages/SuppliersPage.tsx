@@ -2494,12 +2494,13 @@ function PriceBandDots({ band }: { band: number }) {
 
 /** Twitter/Instagram-style blue verified check, shown next to a registered
  *  vendor's name (source === "claimed"): the business itself is on Weddly, as
- *  opposed to a curated/editorial or community-tipped entry. Uses the vendor
- *  "steel" accent so it reads as the vendor identity across light + dark. */
+ *  opposed to a curated/editorial or community-tipped entry. Uses the azure
+ *  `verified` token (#1fa6e1) so it reads as the familiar social "verified"
+ *  blue across light + dark. */
 function VerifiedBadge({ t }: { t: (key: string) => string }) {
   return (
     <span
-      className="inline-flex shrink-0 items-center text-steel-600 dark:text-steel-300"
+      className="inline-flex shrink-0 items-center text-verified"
       title={t("suppliers.verified_vendor")}
       aria-label={t("suppliers.verified_vendor")}
     >

@@ -151,6 +151,11 @@ export default {
           800: "#344850",
           900: "#28373d",
         },
+        // Verified — the Twitter/Instagram-style azure blue for the directory
+        // "verified vendor" check (registered vendors with their own Weddly
+        // account), per user direction 2026-07-09. Single value; reads on both
+        // light paper and dark umber backgrounds.
+        verified: "#1fa6e1",
         // Moss — the warm olive-green accent for the PLANNER portal, per user
         // direction 2026-06-29. Anchored on the three requested colours:
         // moss-100 = #DBF4AD (light fills, active-nav background, badges),
