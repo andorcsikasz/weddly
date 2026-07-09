@@ -122,6 +122,7 @@ import {
   subscribeSaved,
 } from "../lib/supplier_saved";
 import { useAuth } from "../lib/auth";
+import { fireConfetti } from "../lib/confetti";
 import { useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { useDocumentMeta } from "../lib/seo";
@@ -207,6 +208,21 @@ const SUPPLIERS_PAGE_SIZE = 50;
 // listing, so it resolves the planning step without highlighting any card. The
 // picks backend accepts any non-empty string id (it doesn't validate existence).
 const SELF_ORGANIZED_PICK = "self-organized";
+
+/** True when a selection change to `cat` just completed its whole chain group
+ *  (every category in the group now picked) that wasn't complete before — the
+ *  "a tab is ready" moment that fires the confetti. */
+function groupJustCompleted(
+  cat: SupplierCategory,
+  prev: SelectionMap,
+  next: SelectionMap,
+): boolean {
+  const group = SUPPLIER_GROUPS.find((g) => g.categories.includes(cat));
+  if (!group) return false;
+  const wasDone = group.categories.every((c) => Boolean(prev[c]));
+  const isDone = group.categories.every((c) => Boolean(next[c]));
+  return !wasDone && isDone;
+}
 
 export default function SuppliersPage() {
   const { t, locale } = useT();
@@ -663,6 +679,7 @@ export default function SuppliersPage() {
       const isPicked = selection[cat] === supplier.id;
       const next = setSelection(coupleId, cat, isPicked ? null : supplier.id);
       setSelectionState(next);
+      if (!isPicked && groupJustCompleted(cat, selection, next)) fireConfetti();
     },
     [coupleId, selection, toast, t],
   );
@@ -681,13 +698,17 @@ export default function SuppliersPage() {
       toast.info(t("suppliers.save_no_couple"));
       return;
     }
-    const next = setSelection(
-      coupleId,
-      "wedding_planner",
-      selfOrganized ? null : SELF_ORGANIZED_PICK,
-    );
+    const turningOn = !selfOrganized;
+    const next = setSelection(coupleId, "wedding_planner", turningOn ? SELF_ORGANIZED_PICK : null);
     setSelectionState(next);
-  }, [coupleId, selfOrganized, toast, t]);
+    if (turningOn) {
+      // Fire the confetti, then immediately close the "Szervezés & koordináció"
+      // tab so the chip collapses to its green done-pill right away.
+      if (groupJustCompleted("wedding_planner", selection, next)) fireConfetti();
+      setActiveGroup(null);
+      setActiveCat(null);
+    }
+  }, [coupleId, selfOrganized, selection, toast, t]);
 
   // Once we know the couple, default the URL's `guests` filter — preferring
   // the live cost-planning slider value over the static onboarding target.
@@ -1401,8 +1422,8 @@ export default function SuppliersPage() {
               aria-hidden
             />
             {/* Verified-only toggle — the blue vendor badge doubles as the
-            control. Off = quiet grey outline; on = filled steel badge +
-            steel label, and the grid drops to registered (claimed) vendors. */}
+            control. Off = quiet grey outline; on = filled azure badge +
+            azure label, and the grid drops to registered (claimed) vendors. */}
             <button
               type="button"
               onClick={toggleVerifiedFilter}
@@ -1410,16 +1431,14 @@ export default function SuppliersPage() {
               title={t("suppliers.verified_filter")}
               className={
                 showVerifiedOnly
-                  ? "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 text-steel-600 dark:text-steel-300"
+                  ? "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 text-verified"
                   : "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 text-ink-500 transition hover:bg-paper-50 dark:text-umber-300 dark:hover:bg-umber-800"
               }
             >
               <BadgeCheck
                 size={14}
                 aria-hidden
-                className={
-                  showVerifiedOnly ? "fill-steel-600 stroke-white dark:fill-steel-400" : ""
-                }
+                className={showVerifiedOnly ? "fill-verified stroke-white" : ""}
               />
               <span className="text-[11px] font-semibold uppercase tracking-[0.08em]">
                 {t("suppliers.verified_filter")}
@@ -1703,30 +1722,23 @@ export default function SuppliersPage() {
               type="button"
               onClick={toggleSelfOrganize}
               aria-pressed={selfOrganized}
-              className={
-                selfOrganized
-                  ? "mb-4 flex w-full items-center gap-3 rounded-2xl border border-sage-400 bg-sage-50 px-4 py-3 text-left transition dark:border-sage-400/40 dark:bg-sage-400/15"
-                  : "mb-4 flex w-full items-center gap-3 rounded-2xl border border-paper-300 bg-paper-50 px-4 py-3 text-left transition hover:border-umber-600 dark:border-umber-700 dark:bg-umber-800/40 dark:hover:border-umber-600"
-              }
+              className="group mb-4 flex w-full items-center gap-3 py-1 text-left"
             >
+              {/* Uber-style checkbox: no card, black-fill when checked, thin
+                  square outline when not. The check is always mounted (goes
+                  transparent when unchecked) so the box never resizes. */}
               <span
                 className={
                   selfOrganized
-                    ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-sage-500 text-white"
-                    : "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-umber-500 dark:border-umber-500"
+                    ? "flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                    : "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 border-ink-300 text-transparent transition group-hover:border-ink-500 dark:border-umber-500 dark:group-hover:border-umber-300"
                 }
                 aria-hidden
               >
-                {selfOrganized && <Check size={14} strokeWidth={3} />}
+                <Check size={15} strokeWidth={3} />
               </span>
               <span className="min-w-0">
-                <span
-                  className={
-                    selfOrganized
-                      ? "block text-sm font-semibold text-sage-800 dark:text-sage-200"
-                      : "block text-sm font-semibold text-ink-900 dark:text-paper-100"
-                  }
-                >
+                <span className="block text-sm font-semibold text-ink-900 dark:text-paper-100">
                   {t("suppliers.self_organize_label")}
                 </span>
                 <span className="block text-xs text-ink-500 dark:text-umber-300">
@@ -2606,11 +2618,11 @@ function PriceBandDots({ band }: { band: number }) {
 function VerifiedBadge({ t }: { t: (key: string) => string }) {
   return (
     <span
-      className="inline-flex shrink-0 items-center text-verified"
+      className="inline-flex shrink-0 items-center"
       title={t("suppliers.verified_vendor")}
       aria-label={t("suppliers.verified_vendor")}
     >
-      <BadgeCheck size={15} aria-hidden />
+      <BadgeCheck size={15} aria-hidden className="fill-verified stroke-white" />
     </span>
   );
 }
