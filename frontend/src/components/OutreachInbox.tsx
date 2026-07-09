@@ -35,10 +35,11 @@ import {
   type OutreachCampaignDetail,
 } from "@shared/outreach";
 import type { DirectorySupplier } from "@shared/suppliers";
-import type { GuestCountGoal } from "@shared/types";
+import type { Couple } from "@shared/types";
 import { Dialog } from "./ui/Dialog";
 import { useToast } from "./ui/ToastProvider";
 import { ApiError } from "../lib/api";
+import { guestCountBaseline } from "../lib/budget";
 import { coupleApi, outreachApi, supplierApi } from "../lib/endpoints";
 import { formatDate } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -242,19 +243,37 @@ export function OutreachInbox() {
 const TEMPLATE_KEYS = ["quote", "availability", "details", "intro"] as const;
 type TemplateKey = (typeof TEMPLATE_KEYS)[number];
 
-/** Single display string for the couple's budget guest count: the exact
- *  number, "min–max" for a range, or null when unset. Sourced from the same
- *  `guest_count_goal` the budget headcount slider owns, so a couple who set a
- *  range (target_guest_count stays null) still gets a real number here instead
- *  of the "[létszám]" placeholder. */
-function guestGoalLabel(goal: GuestCountGoal | null): string | null {
-  if (!goal) return null;
-  if (goal.exact != null) return String(goal.exact);
-  if (goal.min != null && goal.max != null) {
-    return goal.min === goal.max ? String(goal.min) : `${goal.min}–${goal.max}`;
+/** Guest-count display for the outreach templates. Anchored on the budget
+ *  baseline (`guestCountBaseline` — the single headcount the cost planner uses)
+ *  and presented as a TIGHT range so vendors get a realistic spread instead of
+ *  the couple's raw planning range, which is often wildly wide (e.g. 40–150).
+ *  The shown range never exceeds base ±10%; a tighter couple range is honoured
+ *  as-is. An exact target renders as a single number. Returns null when the
+ *  couple has no real headcount yet, so the caller falls back to "[létszám]". */
+function outreachGuestLabel(couple: Couple | null): string | null {
+  if (!couple) return null;
+  const g = couple.guest_count_goal;
+  const hasGoal =
+    (g.kind === "exact" && g.exact != null) ||
+    (g.kind === "range" && g.min != null && g.max != null) ||
+    couple.target_guest_count != null;
+  if (!hasGoal) return null;
+
+  // A committed exact count reads cleaner as a single number.
+  if (g.kind === "exact" && g.exact != null) return String(g.exact);
+
+  const base = guestCountBaseline(couple, 0);
+  const round5 = (n: number) => Math.round(n / 5) * 5;
+  // Clamp to base ±10%, but never widen a range the couple set tighter.
+  let lo = base * 0.9;
+  let hi = base * 1.1;
+  if (g.kind === "range" && g.min != null && g.max != null) {
+    lo = Math.max(g.min, lo);
+    hi = Math.min(g.max, hi);
   }
-  if (goal.min != null) return String(goal.min);
-  return null;
+  const loR = Math.max(1, round5(lo));
+  const hiR = round5(hi);
+  return loR >= hiR ? String(base) : `${loR}–${hiR}`;
 }
 
 /** Diacritic-folded lower-case for accent-insensitive supplier search.
@@ -296,7 +315,7 @@ export function ComposeDialog({
   const [activeIdx, setActiveIdx] = useState(0);
   const [allSuppliers, setAllSuppliers] = useState<DirectorySupplier[]>([]);
   const [weddingDate, setWeddingDate] = useState<string | null>(null);
-  const [guestGoal, setGuestGoal] = useState<GuestCountGoal | null>(null);
+  const [couple, setCouple] = useState<Couple | null>(null);
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cap = OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP;
@@ -314,7 +333,7 @@ export function ComposeDialog({
       .current()
       .then((r) => {
         setWeddingDate(r.couple?.wedding_date ?? null);
-        setGuestGoal(r.couple?.guest_count_goal ?? null);
+        setCouple(r.couple ?? null);
       })
       .catch(() => undefined);
   }, []);
@@ -323,7 +342,7 @@ export function ComposeDialog({
   const tplDate = weddingDate
     ? formatDate(weddingDate, locale === "hu" ? "hu" : "en")
     : t("outreach.tpl_placeholder_date");
-  const tplGuests = guestGoalLabel(guestGoal) ?? t("outreach.tpl_placeholder_guests");
+  const tplGuests = outreachGuestLabel(couple) ?? t("outreach.tpl_placeholder_guests");
 
   const applyTemplate = (key: TemplateKey) => {
     setSubject(t(`outreach.tpl_${key}_subject`, { date: tplDate, guests: tplGuests }));
