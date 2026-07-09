@@ -1175,6 +1175,13 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     @apply border-blush-500 focus:border-blush-500 focus:ring-blush-100
       dark:border-blush-400 dark:focus:border-blush-400 dark:focus:ring-blush-400/30;
   }
+  /* Native form-control chrome (the <input type="time"> / date picker icon,
+     number spinners, scrollbars) follows the dark theme so the picker icon
+     stays visible against the dark input background instead of rendering as a
+     black glyph on dark umber. */
+  html.dark .input {
+    color-scheme: dark;
+  }
   .field-label {
     @apply mb-1 block text-xs font-medium uppercase tracking-wide text-ink-600
       dark:text-umber-200;

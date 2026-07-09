@@ -1056,44 +1056,50 @@ function ScheduleEventDialog({
             />
           </FormRow>
 
-          <div className="grid grid-cols-2 gap-3">
-            <FormRow label={t("schedule.field_time")} error={timeError}>
-              <input
-                className={`input ${timeError ? "input-invalid" : ""}`}
-                type="time"
-                value={time}
-                onChange={(e) => {
-                  setTime(e.target.value);
-                  if (timeError) setTimeError(null);
-                }}
-                aria-invalid={timeError ? true : undefined}
-              />
-            </FormRow>
-            <FormRow label={t("schedule.field_duration")}>
-              <input
-                className="input"
-                type="number"
-                min={SCHEDULE_MIN_DURATION}
-                max={SCHEDULE_MAX_DURATION}
-                inputMode="numeric"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                placeholder={t("schedule.field_duration_placeholder")}
-              />
-            </FormRow>
+          {/* Time, duration and the next-day toggle share one line. */}
+          <div className="mb-3">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="min-w-[6rem] flex-1">
+                <label className="field-label">{t("schedule.field_time")}</label>
+                <input
+                  className={`input ${timeError ? "input-invalid" : ""}`}
+                  type="time"
+                  value={time}
+                  onChange={(e) => {
+                    setTime(e.target.value);
+                    if (timeError) setTimeError(null);
+                  }}
+                  aria-invalid={timeError ? true : undefined}
+                />
+              </div>
+              <div className="min-w-[6rem] flex-1">
+                <label className="field-label">{t("schedule.field_duration")}</label>
+                <input
+                  className="input"
+                  type="number"
+                  min={SCHEDULE_MIN_DURATION}
+                  max={SCHEDULE_MAX_DURATION}
+                  inputMode="numeric"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder={t("schedule.field_duration_placeholder")}
+                />
+              </div>
+              <label className="flex min-h-tap shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap text-sm text-ink-700 dark:text-paper-100">
+                <input
+                  type="checkbox"
+                  checked={nextDay}
+                  onChange={(e) => {
+                    setNextDay(e.target.checked);
+                    if (timeError) setTimeError(null);
+                  }}
+                  className="h-4 w-4 cursor-pointer rounded border-paper-300 text-ink-900 dark:border-umber-600"
+                />
+                <span>{t("schedule.field_next_day")}</span>
+              </label>
+            </div>
+            {timeError && <p className="field-error mt-1">{timeError}</p>}
           </div>
-          <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
-            <input
-              type="checkbox"
-              checked={nextDay}
-              onChange={(e) => {
-                setNextDay(e.target.checked);
-                if (timeError) setTimeError(null);
-              }}
-              className="h-4 w-4 cursor-pointer rounded border-paper-300 text-ink-900 dark:border-umber-600"
-            />
-            <span>{t("schedule.field_next_day")}</span>
-          </label>
 
           <FormRow label={t("schedule.field_location")}>
             <input
