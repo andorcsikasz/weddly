@@ -469,57 +469,23 @@ export default function SupplierDetailPage() {
               </button>
             </div>
 
-            {/* Quick contact + report actions — surfaced up here (not just in
-                the sidebar card) so they're reachable the moment the user opens
-                a listing, especially on mobile where the sidebar sits far
-                below. Mirrors the icon pill the directory card used to carry. */}
-            <div className="mt-3 flex items-center gap-1.5">
-              {detail.website && (
-                <a
-                  href={`/r/supplier/${encodeURIComponent(detail.id)}`}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 text-ink-600 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-                  aria-label={t("suppliers.detail.contact.website")}
-                  title={t("suppliers.detail.contact.website")}
-                >
-                  <Globe size={16} aria-hidden />
-                </a>
-              )}
-              {detail.contact_phone && (
-                <a
-                  href={`tel:${detail.contact_phone}`}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 text-ink-600 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-                  aria-label={detail.contact_phone}
-                  title={detail.contact_phone}
-                >
-                  <Phone size={16} aria-hidden />
-                </a>
-              )}
-              {detail.contact_email && (
-                <a
-                  href={`mailto:${detail.contact_email}`}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 text-ink-600 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-                  aria-label={detail.contact_email}
-                  title={detail.contact_email}
-                >
-                  <Mail size={16} aria-hidden />
-                </a>
-              )}
-              {detail.source === "community" && (
+            {/* Vendor contact (website / email / phone) lives solely in the
+                sidebar Kapcsolat card — not duplicated under the CTA. The only
+                thing that surfaces here is the community-report action, and
+                only for user-submitted tips (never a claimed vendor). */}
+            {detail.source === "community" && (
+              <div className="mt-3 flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() =>
-                    setReporting({ id: Number(detail.id.slice(1)), name: detail.name })
-                  }
+                  onClick={() => setReporting({ id: Number(detail.id.slice(1)), name: detail.name })}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 text-ink-500 transition hover:border-ink-400 hover:bg-paper-100 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-500 dark:hover:bg-umber-700"
                   aria-label={t("suppliers.report.aria_label")}
                   title={t("suppliers.report.aria_label")}
                 >
                   <Flag size={16} aria-hidden />
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </section>
 
           {/* Videos — reference reel, directly after the photo gallery. A
