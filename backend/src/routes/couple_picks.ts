@@ -16,6 +16,7 @@ import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
+  "wedding_planner",
   "venue",
   "accommodation",
   "tent_pavilion",

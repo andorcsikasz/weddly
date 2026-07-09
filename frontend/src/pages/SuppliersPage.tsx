@@ -30,6 +30,7 @@ import {
   BadgeCheck,
   Bookmark,
   BookmarkCheck,
+  Check,
   ChevronRight,
   ClipboardList,
   LayoutGrid,
@@ -200,6 +201,12 @@ function trackSupplierClick(supplierId: string, type: "website_click" | "phone_c
 // up front; the rest expands in via a "load more" button. Keeps the initial
 // paint cheap on broad filters (the directory can run to hundreds of cards).
 const SUPPLIERS_PAGE_SIZE = 50;
+
+// Sentinel "pick" id recorded on the wedding_planner category when a couple
+// chooses to organize the wedding themselves (no planner). Matches no real
+// listing, so it resolves the planning step without highlighting any card. The
+// picks backend accepts any non-empty string id (it doesn't validate existence).
+const SELF_ORGANIZED_PICK = "self-organized";
 
 export default function SuppliersPage() {
   const { t, locale } = useT();
@@ -659,6 +666,28 @@ export default function SuppliersPage() {
     },
     [coupleId, selection, toast, t],
   );
+
+  // "Magam szervezem" — the couple decides to organize the wedding themselves
+  // instead of hiring a planner. Recorded as a sentinel pick on the
+  // wedding_planner category so it persists server-side + cross-partner and
+  // resolves the planning step (green + collapsed chip) via the normal pick
+  // progress machinery. Toggling it off clears the pick.
+  const selfOrganized = selection.wedding_planner === SELF_ORGANIZED_PICK;
+  // The planning step is "resolved" once the couple has decided either way:
+  // picked/contacted a planner, or chose to self-organize.
+  const planningResolved = Boolean(selection.wedding_planner);
+  const toggleSelfOrganize = useCallback(() => {
+    if (coupleId === null) {
+      toast.info(t("suppliers.save_no_couple"));
+      return;
+    }
+    const next = setSelection(
+      coupleId,
+      "wedding_planner",
+      selfOrganized ? null : SELF_ORGANIZED_PICK,
+    );
+    setSelectionState(next);
+  }, [coupleId, selfOrganized, toast, t]);
 
   // Once we know the couple, default the URL's `guests` filter — preferring
   // the live cost-planning slider value over the static onboarding target.
@@ -1437,6 +1466,14 @@ export default function SuppliersPage() {
                         count={groupCounts.get(g.id) ?? 0}
                         icon={<Icon size={16} />}
                         progress={progress}
+                        // Planning collapses to a green icon-only "done" pill
+                        // once the couple resolves it (picked a planner or chose
+                        // to self-organize) and isn't currently viewing it.
+                        // Clicking it (via onClick above) re-opens the step; the
+                        // label rides in the tooltip while collapsed.
+                        collapsed={
+                          g.id === "planning" && planningResolved && activeGroup !== "planning"
+                        }
                         t={t}
                       />
                     </div>
@@ -1532,17 +1569,23 @@ export default function SuppliersPage() {
                     <span>{t("suppliers.calc.open")}</span>
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDiyEditing(null);
-                    setDiyOpen(true);
-                  }}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
-                >
-                  <Pencil size={13} aria-hidden />
-                  <span className="lowercase">{t("suppliers.diy_button_short")}</span>
-                </button>
+                {/* No "csinálom magam" DIY entry for planners — self-organizing
+                    means NOT hiring a planner, so the honest control is the
+                    "Magam szervezem" done-toggle rendered in the results area
+                    below, not a DIY vendor row. */}
+                {activeGroup !== "planning" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDiyEditing(null);
+                      setDiyOpen(true);
+                    }}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
+                  >
+                    <Pencil size={13} aria-hidden />
+                    <span className="lowercase">{t("suppliers.diy_button_short")}</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -1649,6 +1692,49 @@ export default function SuppliersPage() {
               </p>
             );
           })()}
+
+          {/* "Magam szervezem" — the self-organize done-toggle. Replaces the
+              DIY "csinálom magam" entry for planners (self-organizing means NOT
+              hiring anyone, so there's no vendor row to add). Clicking it marks
+              the planning step done: it records a sentinel pick, which greens +
+              collapses the "Szervezés & koordináció" chain chip. */}
+          {activeGroup === "planning" && (
+            <button
+              type="button"
+              onClick={toggleSelfOrganize}
+              aria-pressed={selfOrganized}
+              className={
+                selfOrganized
+                  ? "mb-4 flex w-full items-center gap-3 rounded-2xl border border-sage-400 bg-sage-50 px-4 py-3 text-left transition dark:border-sage-400/40 dark:bg-sage-400/15"
+                  : "mb-4 flex w-full items-center gap-3 rounded-2xl border border-paper-300 bg-paper-50 px-4 py-3 text-left transition hover:border-umber-600 dark:border-umber-700 dark:bg-umber-800/40 dark:hover:border-umber-600"
+              }
+            >
+              <span
+                className={
+                  selfOrganized
+                    ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-sage-500 text-white"
+                    : "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-umber-500 dark:border-umber-500"
+                }
+                aria-hidden
+              >
+                {selfOrganized && <Check size={14} strokeWidth={3} />}
+              </span>
+              <span className="min-w-0">
+                <span
+                  className={
+                    selfOrganized
+                      ? "block text-sm font-semibold text-sage-800 dark:text-sage-200"
+                      : "block text-sm font-semibold text-ink-900 dark:text-paper-100"
+                  }
+                >
+                  {t("suppliers.self_organize_label")}
+                </span>
+                <span className="block text-xs text-ink-500 dark:text-umber-300">
+                  {t("suppliers.self_organize_hint")}
+                </span>
+              </span>
+            </button>
+          )}
 
           {/* Registered planner ACCOUNTS strip — surfaced atop the
               wedding_planner category. These are Weddly planner users reachable
@@ -2347,6 +2433,7 @@ function ChainStep({
   isAll,
   count,
   progress,
+  collapsed,
   t,
 }: {
   active: boolean;
@@ -2359,9 +2446,28 @@ function ChainStep({
    *  thin bars under the label — sage once a pick lands, full-tile sage tint
    *  when every sub-cat is done. */
   progress?: { done: number; total: number };
+  /** When true, render a compact green icon-only "done" pill — the label rides
+   *  in the tooltip. Used for a step the couple has resolved (e.g. planning:
+   *  picked a planner or chose to self-organize) to reclaim chain space. */
+  collapsed?: boolean;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const allDone = progress !== undefined && progress.done > 0 && progress.done >= progress.total;
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={label}
+        aria-label={label}
+        className="group relative flex items-center justify-center rounded-lg border border-sage-400 bg-sage-50 px-2.5 py-2 text-sage-700 transition-colors duration-300 ease-out hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
+      >
+        <span className="flex h-5 items-center leading-none" aria-hidden>
+          {icon}
+        </span>
+      </button>
+    );
+  }
   return (
     <button
       type="button"

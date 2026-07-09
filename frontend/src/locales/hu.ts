@@ -1025,19 +1025,19 @@ const hu: LocaleMessages = {
     tpl_quote: "Árajánlat",
     tpl_quote_subject: "Árajánlatkérés, {date} dátumú esküvő",
     tpl_quote_body:
-      "Sziasztok!\n\n{date} dátumra tervezzük az esküvőnket, {guests} fő részvételével. Szeretnénk árajánlatot kérni a szolgáltatásaitokra, küldenétek a csomagjaitokat és minden lényeges részletet?\n\nElőre is köszönjük, várjuk a válaszotokat!",
+      "Sziasztok!\n\n**{date}** dátumra tervezzük az esküvőnket, **{guests} fő** részvételével. Szeretnénk árajánlatot kérni a szolgáltatásaitokra, küldenétek a csomagjaitokat és minden lényeges részletet?\n\nElőre is köszönjük, várjuk a válaszotokat!",
     tpl_availability: "Elérhetőség",
     tpl_availability_subject: "Szabad-e a(z) {date}?",
     tpl_availability_body:
-      "Sziasztok!\n\nA(z) {date} napra szervezzük az esküvőnket. Visszajeleznétek, hogy szabad-e a naptáratokban ez a dátum?\n\nKöszönjük!",
+      "Sziasztok!\n\nA(z) **{date}** napra szervezzük az esküvőnket. Visszajeleznétek, hogy szabad-e a naptáratokban ez a dátum?\n\nKöszönjük!",
     tpl_details: "Részletek",
     tpl_details_subject: "Esküvői részletek, {date}",
     tpl_details_body:
-      "Sziasztok!\n\nAz esküvőnket {date} napjára tervezzük, {guests} fő részvételével. Szívesen megismerkednénk veletek, küldenétek pár szót a munkátokról, a csomagjaitokról és a folyamatról?\n\nKöszönjük!",
+      "Sziasztok!\n\nAz esküvőnket **{date}** napjára tervezzük, **{guests} fő** részvételével. Szívesen megismerkednénk veletek, küldenétek pár szót a munkátokról, a csomagjaitokról és a folyamatról?\n\nKöszönjük!",
     tpl_intro: "Bemutatkozás",
     tpl_intro_subject: "Portfólió kérés, {date} esküvő",
     tpl_intro_body:
-      "Sziasztok!\n\nA(z) {date} napra tervezett esküvőnkhöz ({guests} fő) keressük a megfelelő szolgáltatókat. Be tudnátok mutatkozni, és küldenétek pár referenciát vagy portfóliót?\n\nKöszönjük!",
+      "Sziasztok!\n\nA(z) **{date}** napra tervezett esküvőnkhöz (**{guests} fő**) keressük a megfelelő szolgáltatókat. Be tudnátok mutatkozni, és küldenétek pár referenciát vagy portfóliót?\n\nKöszönjük!",
     err_no_suppliers: "Adj hozzá legalább egy szolgáltatót.",
     err_too_many_suppliers: "Egyszerre legfeljebb {max} szolgáltatónak küldhetsz.",
     err_rate_limited: "Túl gyakori: heti legfeljebb 3 körlevél mehet ki.",
@@ -4062,6 +4062,8 @@ const hu: LocaleMessages = {
     diy_pill: "Saját",
     diy_button: "Csinálom magam",
     diy_button_short: "Csinálom magam",
+    self_organize_label: "Magam szervezem",
+    self_organize_hint: "Nincs szükségem szervezőre — ezt a lépést késznek jelölöm.",
     diy_modal_title: "Saját szervezés",
     diy_modal_intro:
       "Ha valakit a családból vagy ismeretségi körből kérsz fel, vagy magatok intézitek, rögzítsd itt. Csak ti látjátok, máshova nem kerül.",

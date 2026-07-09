@@ -1013,19 +1013,19 @@ const en: LocaleMessages = {
     tpl_quote: "Quote",
     tpl_quote_subject: "Quote request, wedding on {date}",
     tpl_quote_body:
-      "Hi!\n\nWe're planning our wedding for {date} with {guests} guests. Could you send a quote and your packages, plus anything you think we should know?\n\nThanks in advance, looking forward to your reply!",
+      "Hi!\n\nWe're planning our wedding for **{date}** with **{guests} guests**. Could you send a quote and your packages, plus anything you think we should know?\n\nThanks in advance, looking forward to your reply!",
     tpl_availability: "Availability",
     tpl_availability_subject: "Are you free on {date}?",
     tpl_availability_body:
-      "Hi!\n\nWe're planning our wedding for {date}. Could you confirm whether you're available that day?\n\nThanks!",
+      "Hi!\n\nWe're planning our wedding for **{date}**. Could you confirm whether you're available that day?\n\nThanks!",
     tpl_details: "Details",
     tpl_details_subject: "Wedding details, {date}",
     tpl_details_body:
-      "Hi!\n\nWe're planning our wedding for {date} with {guests} guests. We'd love to learn more about you, could you share a short intro, your packages and how you work?\n\nThanks!",
+      "Hi!\n\nWe're planning our wedding for **{date}** with **{guests} guests**. We'd love to learn more about you, could you share a short intro, your packages and how you work?\n\nThanks!",
     tpl_intro: "Intro",
     tpl_intro_subject: "Portfolio request, wedding on {date}",
     tpl_intro_body:
-      "Hi!\n\nWe're looking for the right vendors for our wedding on {date} ({guests} guests). Could you send a short intro and a few references or your portfolio?\n\nThanks!",
+      "Hi!\n\nWe're looking for the right vendors for our wedding on **{date}** (**{guests} guests**). Could you send a short intro and a few references or your portfolio?\n\nThanks!",
     err_no_suppliers: "Add at least one vendor.",
     err_too_many_suppliers: "You can send to at most {max} vendors at once.",
     err_rate_limited: "Too frequent: max 3 campaigns per 7 days.",
@@ -4016,6 +4016,8 @@ const en: LocaleMessages = {
     diy_pill: "Yours",
     diy_button: "I'll do it myself",
     diy_button_short: "Do it myself",
+    self_organize_label: "I'll organize it myself",
+    self_organize_hint: "No planner needed — mark this step as done.",
     diy_modal_title: "Your own plan",
     diy_modal_intro:
       "Got someone from family or a friend helping out, or doing it yourselves? Track it here. Only you see it; nothing leaves your workspace.",

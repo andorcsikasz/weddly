@@ -26,6 +26,7 @@ function lsKey(coupleId: number): string {
 }
 
 const VALID_CATEGORIES: readonly SupplierCategory[] = [
+  "wedding_planner",
   "venue",
   "accommodation",
   "tent_pavilion",

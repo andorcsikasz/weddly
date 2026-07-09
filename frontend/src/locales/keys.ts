@@ -4508,6 +4508,9 @@ export interface LocaleMessages {
     diy_pill: string;
     diy_button: string;
     diy_button_short: string;
+    /** Planner self-organize done-toggle (replaces DIY for planners). */
+    self_organize_label: string;
+    self_organize_hint: string;
     diy_modal_title: string;
     diy_modal_intro: string;
     diy_modal_name_label: string;
