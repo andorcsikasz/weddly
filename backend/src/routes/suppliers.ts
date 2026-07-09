@@ -3,8 +3,10 @@
 // caller's own vote. Anonymous callers get votes_score but user_vote = 0.
 
 import type {
+  CommentVisibility,
   DirectorySupplier,
   DirectorySupplierBase,
+  PublicVendorPageData,
   SupplierCategory,
   SupplierDetail,
   SupplierEventInput,
@@ -15,18 +17,18 @@ import {
 } from "../domain/community_suppliers";
 import { getCoupleForUser } from "../domain/couples";
 import { curatedOverrideMap, isCuratedPubliclyVisible } from "../domain/curated_overrides";
+import { resolveSupplierBase } from "../domain/resolve_supplier";
 import { DIRECTORY } from "../domain/suppliers_data";
 import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
 import { recordSupplierEvents } from "../domain/supplier_views";
 import {
-  getClaimedDirectoryBaseById,
   listActiveClaimedListingsForDirectory,
   listListingPackages,
   listListingPhotos,
   listListingVideos,
 } from "../domain/listings";
-import { getReviewSummary } from "../domain/reviews";
-import { countNonDeletedComments } from "../domain/supplier_comments";
+import { getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
+import { countNonDeletedComments, listCommentsForSupplier } from "../domain/supplier_comments";
 import { getAvailability } from "../domain/supplier_bookings";
 import { isAdminEmail } from "../domain/users";
 import { db } from "../db";
@@ -267,28 +269,17 @@ async function handleRecordEvents(ctx: Ctx): Promise<Response> {
   return json({ recorded: written });
 }
 
-function resolveSupplierBase(supplierId: string): DirectorySupplierBase | null {
-  const curated = DIRECTORY.find((s) => s.id === supplierId);
-  // A hidden/deleted curated entry 404s on the public detail + redirect paths.
-  if (curated) return isCuratedPubliclyVisible(supplierId) ? curated : null;
-  if (supplierId.startsWith("c")) {
-    const community = listActiveCommunitySuppliers().find((c) => `c${c.id}` === supplierId);
-    if (community) return toDirectorySupplierBase(community);
-    // Fall through: a claimed community entry can also carry a c-id.
-  }
-  // Standalone registered-vendor ('claimed') listing (self-serve id `v{N}`).
-  return getClaimedDirectoryBaseById(supplierId);
-}
-
-/** GET /api/suppliers/:supplier_id — detail-page payload. v1 is admin-only on
- *  the route layer (the detail page itself is admin-gated); flipping the auth
- *  rule to requireAuth in Phase 3 makes the same shape couple-friendly. */
-async function handleDetail(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
-  const supplierId = ctx.params.supplier_id?.trim();
-  if (!supplierId) throw new HttpError(400, "supplier_id required");
+/** Assemble the full SupplierDetail payload for a resolved id. Shared by the
+ *  authed detail endpoint and the public vendor page. `viewerUserId` drives the
+ *  per-couple vote overlay (null for anonymous → user_vote 0); `includeComments`
+ *  gates the admin-only moderation count. Returns null when the id resolves to
+ *  nothing public (hidden/unknown), so both callers 404 the same way. */
+function buildSupplierDetail(
+  supplierId: string,
+  opts: { viewerUserId: number | null; includeCommentsCount: boolean },
+): SupplierDetail | null {
   const resolved = resolveSupplierBase(supplierId);
-  if (!resolved) throw new HttpError(404, "Unknown supplier");
+  if (!resolved) return null;
   // Copy before overlaying — resolveSupplierBase can hand back the shared
   // static DIRECTORY object, and mutating that would leak one request's
   // overlay into every later request.
@@ -325,7 +316,7 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
   // Vote overlay so the detail page can keep the up/down hint above the
   // stars during the migration window (v1 retains both surfaces).
   const scores = getScoresMap();
-  const couple = getCoupleForUser(userId);
+  const couple = opts.viewerUserId ? getCoupleForUser(opts.viewerUserId) : null;
   const coupleVotes = couple ? getCoupleVotesMap(couple.id) : null;
   const directory: DirectorySupplier = {
     ...base,
@@ -336,18 +327,7 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
   const reviewsSummary = getReviewSummary(supplierId);
   const availability = getAvailability(supplierId);
 
-  // `next_available` is public: couples compare suppliers on it in the
-  // shortlist comparison dialog. It's only ever non-null for claimed vendor
-  // accounts (the rest stay null and render an "ask to confirm" fallback),
-  // so exposing it leaks nothing an unclaimed listing didn't already imply.
-  // `comments_count` stays admin-only — it's a moderation signal, not a
-  // couple-facing fact.
-  const userRow = db.prepare("SELECT email FROM users WHERE id = ?").get(userId) as
-    | { email: string }
-    | undefined;
-  const viewerIsAdmin = userRow ? isAdminEmail(userRow.email) : false;
-
-  const payload: SupplierDetail = {
+  return {
     ...directory,
     reviews_summary: reviewsSummary,
     bookable: availability.bookable,
@@ -357,7 +337,72 @@ async function handleDetail(ctx: Ctx): Promise<Response> {
     videos: listListingVideos(supplierId),
     // Price offers / packages (árajánlat). Empty for the unclaimed majority.
     packages: listListingPackages(supplierId),
-    ...(viewerIsAdmin ? { comments_count: countNonDeletedComments(supplierId) } : {}),
+    // `comments_count` stays admin-only — it's a moderation signal, not a
+    // couple-facing fact — so it's gated by the caller.
+    ...(opts.includeCommentsCount ? { comments_count: countNonDeletedComments(supplierId) } : {}),
+  };
+}
+
+/** GET /api/suppliers/:supplier_id — detail-page payload. Requires auth (the
+ *  in-app detail page serves couples + admins). Admins additionally get the
+ *  `comments_count` moderation signal. */
+async function handleDetail(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const supplierId = ctx.params.supplier_id?.trim();
+  if (!supplierId) throw new HttpError(400, "supplier_id required");
+
+  // `next_available` is public: couples compare suppliers on it in the
+  // shortlist comparison dialog. It's only ever non-null for claimed vendor
+  // accounts (the rest stay null and render an "ask to confirm" fallback),
+  // so exposing it leaks nothing an unclaimed listing didn't already imply.
+  const userRow = db.prepare("SELECT email FROM users WHERE id = ?").get(userId) as
+    | { email: string }
+    | undefined;
+  const viewerIsAdmin = userRow ? isAdminEmail(userRow.email) : false;
+
+  const payload = buildSupplierDetail(supplierId, {
+    viewerUserId: userId,
+    includeCommentsCount: viewerIsAdmin,
+  });
+  if (!payload) throw new HttpError(404, "Unknown supplier");
+  return json(payload);
+}
+
+/** GET /api/public/vendors/:supplier_id — the unauthenticated, shareable
+ *  vendor page payload. This is the ONE endpoint that leaves the workspace
+ *  auth wall, so it deliberately returns a curated public subset: the detail
+ *  (never the admin-only comments_count, votes anonymised), PUBLISHED reviews
+ *  only, the PUBLIC Q&A tier only, and the busy calendar (public by design).
+ *  Rate-limited per IP so it can't be scraped into the ground. */
+const PUBLIC_VISIBILITIES: CommentVisibility[] = ["public"];
+async function handlePublicDetail(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "public.vendor", { capacity: 60, refillRate: 1 });
+  const supplierId = ctx.params.supplier_id?.trim();
+  if (!supplierId) throw new HttpError(400, "supplier_id required");
+
+  const detail = buildSupplierDetail(supplierId, {
+    viewerUserId: null,
+    includeCommentsCount: false,
+  });
+  if (!detail) throw new HttpError(404, "Unknown supplier");
+
+  const reviews = listReviewsForSupplier(supplierId, {
+    limit: 50,
+    cursor: null,
+    includeUnpublished: false,
+  });
+  const comments = listCommentsForSupplier(supplierId, {
+    limit: 50,
+    cursor: null,
+    visibilities: PUBLIC_VISIBILITIES,
+  });
+  const availability = getAvailability(supplierId);
+
+  const payload: PublicVendorPageData = {
+    detail,
+    reviews: reviews.items,
+    comments: comments.items,
+    availability,
   };
   return json(payload);
 }
@@ -406,6 +451,8 @@ function recordSupplierEventsSafe(
 export function registerSupplierRoutes(router: Router) {
   router.get("/api/suppliers", handleList);
   router.get("/api/suppliers/:supplier_id", handleDetail, true);
+  // Public, unauthenticated vendor page payload (the shareable surface).
+  router.get("/api/public/vendors/:supplier_id", handlePublicDetail);
   router.post("/api/suppliers/events", handleRecordEvents);
   router.put("/api/suppliers/:supplier_id/vote", handleVote, true);
   router.get("/r/supplier/:supplier_id", handleRedirect);

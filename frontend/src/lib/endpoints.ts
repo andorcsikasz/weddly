@@ -152,6 +152,7 @@ import type {
   CreateCommentBody,
   CreateReviewBody,
   DirectorySupplier,
+  PublicVendorPageData,
   ReviewListResponse,
   SupplierAvailability,
   SupplierBooking,
@@ -1608,6 +1609,14 @@ export const supplierApi = {
    *  in v1; will downgrade to requireAuth in Phase 3. */
   detail: (supplierId: string) =>
     apiFetch<SupplierDetail>("GET", `/api/suppliers/${encodeURIComponent(supplierId)}`),
+  /** Public, unauthenticated vendor-page payload (detail + published reviews +
+   *  public Q&A + busy calendar) for the shareable `/vendors/:id` page. Works
+   *  with or without a session token. */
+  publicDetail: (supplierId: string) =>
+    apiFetch<PublicVendorPageData>(
+      "GET",
+      `/api/public/vendors/${encodeURIComponent(supplierId)}`,
+    ),
 };
 
 export const reviewApi = {

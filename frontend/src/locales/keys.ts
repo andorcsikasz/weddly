@@ -4915,6 +4915,11 @@ export interface LocaleMessages {
         inquireSent: string;
         save: string;
         savedActive: string;
+        /** Share the vendor with someone outside Weddly (native share sheet
+         *  on mobile, clipboard copy on desktop). */
+        share: string;
+        shareText: string;
+        shareCopied: string;
       };
       reviews: {
         title: string;
@@ -8501,5 +8506,20 @@ export interface LocaleMessages {
     cancel_confirm_body: string;
     cancel_confirm_yes: string;
     cancel_success: string;
+  };
+  /** Public, unauthenticated vendor page (`/vendors/:id`) — the shareable
+   *  surface for people outside Weddly. */
+  publicVendor: {
+    signupCta: string;
+    notFoundTitle: string;
+    notFoundBody: string;
+    browseCta: string;
+    bandTitle: string;
+    bandBody: string;
+    bandCta: string;
+    footerHome: string;
+    footerVendors: string;
+    footerAbout: string;
+    nextAvailable: string;
   };
 }

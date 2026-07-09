@@ -49,6 +49,7 @@ import {
   Phone,
   Pizza,
   Send,
+  Share2,
   ShieldCheck,
   Shirt,
   Sparkles,
@@ -311,6 +312,34 @@ export default function SupplierDetailPage() {
   // so the user can write a tailored inquiry without re-picking a vendor.
   const [composeOpen, setComposeOpen] = useState(false);
 
+  // Share the vendor with someone outside Weddly. Native share sheet first
+  // (the real "send to a friend" affordance on mobile — a dismissed sheet
+  // rejects with AbortError, which we swallow); desktop / unsupported falls
+  // back to a clipboard copy + toast. The link is the vendor page URL; the
+  // share text carries the name so the message reads well even unopened.
+  const shareVendor = useCallback(async () => {
+    if (!detail) return;
+    // Share the PUBLIC vendor page (`/vendors/:id`), not the auth-gated in-app
+    // URL — the whole point is that someone outside Weddly can open it.
+    const url = `${window.location.origin}/vendors/${encodeURIComponent(detail.id)}`;
+    const shareText = t("suppliers.detail.cta.shareText", { name: detail.name });
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: detail.name, text: shareText, url });
+      } catch {
+        // User dismissed the sheet or the payload was rejected — stay quiet.
+      }
+      return;
+    }
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("no_clipboard");
+      await navigator.clipboard.writeText(url);
+      toast.success(t("suppliers.detail.cta.shareCopied"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    }
+  }, [detail, t, toast]);
+
   if (loading || !detail) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
@@ -332,6 +361,7 @@ export default function SupplierDetailPage() {
   const canInquire = Boolean(detail.contact_email);
   const inquireLabel = t("suppliers.detail.cta.sendInquiry");
   const saveLabel = t(isSaved ? "suppliers.detail.cta.savedActive" : "suppliers.detail.cta.save");
+  const shareLabel = t("suppliers.detail.cta.share");
 
   return (
     // data-admin-shell opts every h1..h6 inside into the sans typography
@@ -466,6 +496,14 @@ export default function SupplierDetailPage() {
                   <Bookmark size={14} aria-hidden />
                 )}
                 {saveLabel}
+              </button>
+              <button
+                type="button"
+                onClick={shareVendor}
+                className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+              >
+                <Share2 size={14} aria-hidden />
+                {shareLabel}
               </button>
             </div>
 
@@ -657,6 +695,14 @@ export default function SupplierDetailPage() {
             ) : (
               <Bookmark size={18} aria-hidden />
             )}
+          </button>
+          <button
+            type="button"
+            onClick={shareVendor}
+            aria-label={shareLabel}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+          >
+            <Share2 size={18} aria-hidden />
           </button>
           <button
             type="button"

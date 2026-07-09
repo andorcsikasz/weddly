@@ -4407,6 +4407,9 @@ const hu: LocaleMessages = {
         inquireSent: "Megkeresés elküldve",
         save: "Mentés",
         savedActive: "Mentve",
+        share: "Megosztás",
+        shareText: "Nézd meg ezt a szolgáltatót a Weddly-n: {name}",
+        shareCopied: "Link a vágólapra másolva",
       },
       reviews: {
         title: "Értékelések",
@@ -7930,6 +7933,20 @@ const hu: LocaleMessages = {
     cancel_confirm_body: "Az időzített üzenet nem kerül kiküldésre.",
     cancel_confirm_yes: "Üzenet visszavonása",
     cancel_success: "Üzenet visszavonva",
+  },
+  publicVendor: {
+    signupCta: "Esküvőtervezés",
+    notFoundTitle: "Ez a szolgáltató nem található",
+    notFoundBody: "Lehet, hogy a lista megváltozott vagy a link elavult.",
+    browseCta: "Szolgáltatók böngészése",
+    bandTitle: "Tervezd meg az esküvődet a Weddly-vel",
+    bandBody:
+      "Költségvetés, vendéglista, ültetés, szolgáltatók, egy közös felületen, mindkettőtöknek.",
+    bandCta: "Kezdés ingyen",
+    footerHome: "Főoldal",
+    footerVendors: "Szolgáltatók",
+    footerAbout: "Rólunk",
+    nextAvailable: "Legközelebbi szabad időpont: {date}",
   },
 };
 

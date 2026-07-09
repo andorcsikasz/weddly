@@ -80,6 +80,7 @@ const SchedulePage = lazyWithReload(() => import("./pages/SchedulePage"));
 const SeatingPage = lazyWithReload(() => import("./pages/SeatingPage"));
 const SuppliersPage = lazyWithReload(() => import("./pages/SuppliersPage"));
 const SupplierDetailPage = lazyWithReload(() => import("./pages/SupplierDetailPage"));
+const PublicVendorPage = lazyWithReload(() => import("./pages/PublicVendorPage"));
 const TimelinePage = lazyWithReload(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazyWithReload(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazyWithReload(() => import("./pages/VendorClaimVerifyPage"));
@@ -343,6 +344,17 @@ export default function App() {
                 <VendorRegisterPage />
               </Page>
             </RedirectIfAuthed>
+          }
+        />
+        {/* Public, unauthenticated vendor profile — the shareable page a couple
+            sends to someone outside Weddly. Static `/vendors/signup` above wins
+            over this param route. */}
+        <Route
+          path="/vendors/:supplier_id"
+          element={
+            <Page>
+              <PublicVendorPage />
+            </Page>
           }
         />
         <Route

@@ -4359,6 +4359,9 @@ const en: LocaleMessages = {
         inquireSent: "Inquiry sent",
         save: "Save",
         savedActive: "Saved",
+        share: "Share",
+        shareText: "Check out this vendor on Weddly: {name}",
+        shareCopied: "Link copied to clipboard",
       },
       reviews: {
         title: "Reviews",
@@ -7866,6 +7869,19 @@ const en: LocaleMessages = {
     cancel_confirm_body: "The scheduled broadcast won't be sent.",
     cancel_confirm_yes: "Cancel broadcast",
     cancel_success: "Broadcast cancelled",
+  },
+  publicVendor: {
+    signupCta: "Plan a wedding",
+    notFoundTitle: "This vendor could not be found",
+    notFoundBody: "The listing may have changed or the link is out of date.",
+    browseCta: "Browse vendors",
+    bandTitle: "Plan your wedding with Weddly",
+    bandBody: "Budget, guest list, seating and vendors, in one shared workspace for both of you.",
+    bandCta: "Start free",
+    footerHome: "Home",
+    footerVendors: "Vendors",
+    footerAbout: "About",
+    nextAvailable: "Next available: {date}",
   },
 };
 

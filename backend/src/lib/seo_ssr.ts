@@ -20,6 +20,7 @@ import type { BlogBlock } from "../../../shared/blog_posts";
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { enPathFor, huPathFor, lookupRouteSeo, type RouteSeo } from "../../../shared/seo_routes";
 import { db } from "../db";
+import { resolveSupplierBase } from "../domain/resolve_supplier";
 import { normalizeSlugInput } from "../domain/slug";
 
 // Canonical apex moved from weddly.hu to tryweddly.com in the June 2026 domain
@@ -716,6 +717,46 @@ export function lookupWeddingSiteMeta(pathname: string | null | undefined): Wedd
   };
 }
 
+/** Per-vendor meta for the public vendor page (`/vendors/:id`). Powers the
+ *  share-card `<title>` / description / og:image when a couple sends a vendor
+ *  link to someone with no Weddly account — the WhatsApp/iMessage/Slack
+ *  preview must show the vendor's name + photo, not the brand strapline. Same
+ *  role `lookupWeddingSiteMeta` plays for `/w/:slug`. Returns null for the
+ *  static `/vendors` and `/vendors/signup` routes and for any id that doesn't
+ *  resolve to a publicly-visible listing. */
+export interface VendorPageMeta {
+  name: string;
+  city: string;
+  blurbHu: string;
+  blurbEn: string;
+  heroImageUrl: string | null;
+}
+
+const VENDOR_PATH_RE = /^\/vendors\/([^/?#]+)/;
+
+export function lookupVendorPageMeta(pathname: string | null | undefined): VendorPageMeta | null {
+  if (!pathname) return null;
+  const m = VENDOR_PATH_RE.exec(pathname);
+  if (!m) return null;
+  const idRaw = decodeURIComponent(m[1] ?? "").trim();
+  // `/vendors/signup` is the vendor-registration route, not a vendor id.
+  if (!idRaw || idRaw === "signup" || idRaw.length > 80) return null;
+  const base = resolveSupplierBase(idRaw);
+  if (!base) return null;
+  // Prefer the vendor-uploaded / re-hosted hero (CSP-safe local path) from the
+  // listings table; fall back to whatever the base carries.
+  const listing = db.prepare("SELECT hero_image_url FROM listings WHERE id = ?").get(idRaw) as
+    | { hero_image_url: string | null }
+    | undefined;
+  return {
+    name: base.name,
+    city: base.city,
+    blurbHu: base.blurb_hu,
+    blurbEn: base.blurb_en,
+    heroImageUrl: listing?.hero_image_url ?? base.hero_image_url ?? null,
+  };
+}
+
 function buildHeadBlock(opts: {
   host: string | null;
   pathname: string;
@@ -731,6 +772,9 @@ function buildHeadBlock(opts: {
    *  card on FB / WhatsApp / iMessage must say "Mia & Lucas · 12 Sept 2026"
    *  and show their cover image, not "Plan your wedding together". */
   weddingMeta?: WeddingSiteMeta | null;
+  /** Per-vendor overrides for the `/vendors/:id` public page — same role as
+   *  `weddingMeta`, applied to the vendor share card. */
+  vendorMeta?: VendorPageMeta | null;
 }): string {
   const locale = localeForHost(opts.host, opts.acceptLanguage ?? null);
   const defaultMeta = META[locale];
@@ -807,6 +851,13 @@ function buildHeadBlock(opts: {
     ogImage = opts.weddingMeta.cover_image_url;
     ogImageAlt = opts.weddingMeta.display_name;
     isBrandOgImage = false;
+  } else if (opts.vendorMeta?.heroImageUrl) {
+    // Vendor hero is stored relative (`/uploads/…`) — make it absolute against
+    // the canonical host so scrapers can fetch it. Unknown size/format, so no
+    // dimension hints (same as blog/wedding covers).
+    ogImage = absoluteImageUrl(`https://${canonicalHost}`, opts.vendorMeta.heroImageUrl) as string;
+    ogImageAlt = opts.vendorMeta.name;
+    isBrandOgImage = false;
   } else if (blogArticle && blogCover) {
     ogImage = blogCover;
     ogImageAlt = locale === "hu" ? blogArticle.huTitle : blogArticle.enTitle;
@@ -842,6 +893,20 @@ function buildHeadBlock(opts: {
       locale === "hu"
         ? `${wm.display_name} esküvői oldala, programterv, helyszín, RSVP.`
         : `${wm.display_name}, schedule, venue and RSVP in one place.`;
+    twDescription = description;
+  } else if (opts.vendorMeta) {
+    const vm = opts.vendorMeta;
+    title = `${vm.name} · ${vm.city}`;
+    // Prefer the vendor's own blurb (locale-matched, collapsed + clipped to the
+    // SERP window); fall back to a short brand sentence when they haven't
+    // written one (the unclaimed-listing majority).
+    const blurb = (locale === "hu" ? vm.blurbHu : vm.blurbEn).replace(/\s+/g, " ").trim();
+    const clipped = blurb.length > 155 ? `${blurb.slice(0, 152).trimEnd()}…` : blurb;
+    description =
+      clipped ||
+      (locale === "hu"
+        ? `${vm.name} a Weddly esküvői szolgáltató katalógusában.`
+        : `${vm.name} on Weddly's wedding vendor directory.`);
     twDescription = description;
   } else {
     const routeSeo = resolveRouteSeo(path);
@@ -973,10 +1038,11 @@ export function renderIndexHtml(
   },
 ): string {
   const locale = localeForHost(opts.host, opts.acceptLanguage ?? null);
-  // Look up the couple meta once at the boundary, `buildHeadBlock` is a
-  // pure string-builder so we keep the DB read here.
+  // Look up the couple + vendor meta once at the boundary, `buildHeadBlock` is
+  // a pure string-builder so we keep the DB read here.
   const weddingMeta = lookupWeddingSiteMeta(opts.pathname);
-  const head = buildHeadBlock({ ...opts, weddingMeta });
+  const vendorMeta = weddingMeta ? null : lookupVendorPageMeta(opts.pathname);
+  const head = buildHeadBlock({ ...opts, weddingMeta, vendorMeta });
 
   // Splice the <head> block.
   let out: string;

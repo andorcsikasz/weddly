@@ -466,3 +466,16 @@ export interface SupplierDetail extends DirectorySupplier {
    *  grid with the optional PDF download. */
   packages: ListingPackage[];
 }
+
+/** Everything the PUBLIC, unauthenticated vendor page (`/vendors/:id`) needs
+ *  in one call — the shareable surface a couple sends to someone with no
+ *  Weddly account. `GET /api/public/vendors/:id`. Deliberately a curated
+ *  subset: `detail` never carries the admin-only `comments_count`, `reviews`
+ *  are published-only, and `comments` are the `public` Q&A tier only (the
+ *  `admin_internal` / `vendor_only` tiers never leave the server here). */
+export interface PublicVendorPageData {
+  detail: SupplierDetail;
+  reviews: SupplierReview[];
+  comments: SupplierComment[];
+  availability: SupplierAvailability;
+}
