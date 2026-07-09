@@ -35,6 +35,7 @@ import {
   type OutreachCampaignDetail,
 } from "@shared/outreach";
 import type { DirectorySupplier } from "@shared/suppliers";
+import type { GuestCountGoal } from "@shared/types";
 import { Dialog } from "./ui/Dialog";
 import { useToast } from "./ui/ToastProvider";
 import { ApiError } from "../lib/api";
@@ -235,9 +236,26 @@ export function OutreachInbox() {
 //   outreach.tpl_<key>_body     → body template with {date} and {guests}
 // {date} comes from the couple's wedding_date (locale-formatted) and falls
 // back to "[dátum]" / "[date]" so the user sees and edits the placeholder.
-// {guests} comes from target_guest_count, with a matching placeholder.
+// {guests} comes from the budget guest_count_goal (exact or range), with a
+// matching placeholder when unset. The date + guest number are wrapped in
+// **bold** in the body templates so they stand out in the delivered email.
 const TEMPLATE_KEYS = ["quote", "availability", "details", "intro"] as const;
 type TemplateKey = (typeof TEMPLATE_KEYS)[number];
+
+/** Single display string for the couple's budget guest count: the exact
+ *  number, "min–max" for a range, or null when unset. Sourced from the same
+ *  `guest_count_goal` the budget headcount slider owns, so a couple who set a
+ *  range (target_guest_count stays null) still gets a real number here instead
+ *  of the "[létszám]" placeholder. */
+function guestGoalLabel(goal: GuestCountGoal | null): string | null {
+  if (!goal) return null;
+  if (goal.exact != null) return String(goal.exact);
+  if (goal.min != null && goal.max != null) {
+    return goal.min === goal.max ? String(goal.min) : `${goal.min}–${goal.max}`;
+  }
+  if (goal.min != null) return String(goal.min);
+  return null;
+}
 
 /** Diacritic-folded lower-case for accent-insensitive supplier search.
  *  Same shape as the helper on SuppliersPage — duplicated rather than
@@ -278,7 +296,7 @@ export function ComposeDialog({
   const [activeIdx, setActiveIdx] = useState(0);
   const [allSuppliers, setAllSuppliers] = useState<DirectorySupplier[]>([]);
   const [weddingDate, setWeddingDate] = useState<string | null>(null);
-  const [targetGuestCount, setTargetGuestCount] = useState<number | null>(null);
+  const [guestGoal, setGuestGoal] = useState<GuestCountGoal | null>(null);
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cap = OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP;
@@ -296,7 +314,7 @@ export function ComposeDialog({
       .current()
       .then((r) => {
         setWeddingDate(r.couple?.wedding_date ?? null);
-        setTargetGuestCount(r.couple?.target_guest_count ?? null);
+        setGuestGoal(r.couple?.guest_count_goal ?? null);
       })
       .catch(() => undefined);
   }, []);
@@ -305,8 +323,7 @@ export function ComposeDialog({
   const tplDate = weddingDate
     ? formatDate(weddingDate, locale === "hu" ? "hu" : "en")
     : t("outreach.tpl_placeholder_date");
-  const tplGuests =
-    targetGuestCount != null ? String(targetGuestCount) : t("outreach.tpl_placeholder_guests");
+  const tplGuests = guestGoalLabel(guestGoal) ?? t("outreach.tpl_placeholder_guests");
 
   const applyTemplate = (key: TemplateKey) => {
     setSubject(t(`outreach.tpl_${key}_subject`, { date: tplDate, guests: tplGuests }));
