@@ -2178,7 +2178,7 @@ export default function SuppliersPage() {
                         )}
                         {/* Top-right: pick + save */}
                         <div
-                          className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
+                          className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/95 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/90"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
@@ -2205,7 +2205,7 @@ export default function SuppliersPage() {
                         </div>
                         {/* Bottom-right: compare + community vote, also on the card */}
                         <div
-                          className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-xl bg-paper-50/85 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/80"
+                          className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-xl bg-paper-50/95 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/90"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <CompareToggle
@@ -2697,7 +2697,7 @@ function CompareToggle({
       data-supplier-id={supplierId}
       className={
         isCompared
-          ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush-100 text-blush-700 transition hover:bg-blush-200 dark:bg-blush-400/20 dark:text-blush-300 dark:hover:bg-blush-400/30"
+          ? "inline-flex h-7 w-7 items-center justify-center rounded-full border border-ink-900 text-ink-900 transition hover:bg-ink-900/5 dark:border-paper-200 dark:text-paper-100 dark:hover:bg-paper-100/10"
           : disabled
             ? "inline-flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-full text-ink-300 dark:text-umber-500"
             : "inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
