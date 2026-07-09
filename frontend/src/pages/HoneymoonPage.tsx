@@ -752,7 +752,7 @@ export default function HoneymoonPage() {
           </section>
         ))}
 
-      <section className="mt-8">
+      <section className="mt-12">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-grotesk">{t("honeymoon.costs_title")}</h2>
@@ -1779,7 +1779,7 @@ function TravelSafetyBlock({
   ];
 
   return (
-    <section className="card stationery-light mt-4 mx-4 !p-5 sm:mx-8">
+    <section className="card stationery-light mt-12 mx-4 !p-5 sm:mx-8">
       {/* Compact, single-row header that doubles as the collapse toggle. */}
       <button
         type="button"
@@ -2624,7 +2624,7 @@ function HoneymoonTodoSection({
   );
 
   return (
-    <section className="mt-8">
+    <section className="mt-12">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="font-grotesk">{t("honeymoon.todo_title")}</h2>
