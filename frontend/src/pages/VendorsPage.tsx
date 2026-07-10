@@ -61,17 +61,17 @@ export default function VendorsPage() {
             {/* Direct contact leads — it's the differentiator vendors care about
                 most (audit item 9). */}
             <Benefit
-              icon={<PhoneCall size={26} strokeWidth={1.75} aria-hidden />}
+              icon={<PhoneCall size={22} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_3_title")}
               body={t("vendors.benefit_3_body")}
             />
             <Benefit
-              icon={<Gem size={26} strokeWidth={1.75} aria-hidden />}
+              icon={<Gem size={22} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_1_title")}
               body={t("vendors.benefit_1_body")}
             />
             <Benefit
-              icon={<MapPinned size={26} strokeWidth={1.75} aria-hidden />}
+              icon={<MapPinned size={22} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_2_title")}
               body={t("vendors.benefit_2_body")}
             />
@@ -95,10 +95,12 @@ export default function VendorsPage() {
 
 function Benefit({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
   return (
-    <article className="card flex h-full flex-col !p-6">
-      <span className="mb-4 inline-flex text-ink-900 dark:text-paper-50">{icon}</span>
-      <h3 className="font-grotesk text-lg text-ink-900 dark:text-paper-50">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
+    <article className="card flex h-full items-start gap-3.5 !p-5">
+      <span className="mt-0.5 inline-flex shrink-0 text-ink-900 dark:text-paper-50">{icon}</span>
+      <div className="min-w-0">
+        <h3 className="font-grotesk text-base text-ink-900 dark:text-paper-50">{title}</h3>
+        <p className="mt-1 text-sm leading-relaxed text-ink-600 dark:text-umber-200">{body}</p>
+      </div>
     </article>
   );
 }
