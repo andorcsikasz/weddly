@@ -74,7 +74,7 @@ import {
   COMMENT_BODY_MAX_CHARS,
   MAX_REVIEW_TAGS,
   REVIEW_BODY_MAX_CHARS,
-  SUPPLIER_REVIEW_TAGS,
+  reviewTagsForCategory,
 } from "@shared/suppliers";
 import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
@@ -625,6 +625,7 @@ export default function SupplierDetailPage() {
             count={ratingCount}
             canReview={canReview}
             alreadyReviewed={alreadyReviewed}
+            category={detail.category}
             onChange={refresh}
             confirm={confirm}
             toast={toast}
@@ -800,6 +801,7 @@ function ReviewsSection({
   count,
   canReview,
   alreadyReviewed,
+  category,
   ...ctx
 }: SectionCtx & {
   reviews: SupplierReview[];
@@ -807,8 +809,12 @@ function ReviewsSection({
   count: number;
   canReview: boolean;
   alreadyReviewed: boolean;
+  category: SupplierCategory;
 }) {
   const { supplierId, onChange, toast, confirm, locale, isAdmin, t } = ctx;
+  // Suggest only the review tags that fit this vendor's category (venue →
+  // parking/garden, caterer → vegan/kosher, …) instead of one generic list.
+  const tagOptions = reviewTagsForCategory(category);
   // Default 0 = no rating picked yet. Stars render as hollow glyphs and the
   // Beküldés button stays disabled until the user actually clicks one.
   // Avoids the "everyone defaults to 5 stars" trap that inflates aggregates.
@@ -921,7 +927,7 @@ function ReviewsSection({
               {t("suppliers.detail.reviews.tagsLabel", { max: MAX_REVIEW_TAGS })}
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {SUPPLIER_REVIEW_TAGS.map((tag) => {
+              {tagOptions.map((tag) => {
                 const on = tags.includes(tag);
                 return (
                   <button

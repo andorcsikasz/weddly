@@ -309,6 +309,67 @@ export const SUPPLIER_REVIEW_TAGS = [
 ] as const;
 export type SupplierReviewTag = (typeof SUPPLIER_REVIEW_TAGS)[number];
 export const MAX_REVIEW_TAGS = 5;
+
+/** Service-quality tags relevant to EVERY vendor, whatever they sell: how they
+ *  are to work with. Appended after each category's specific tags. */
+const UNIVERSAL_REVIEW_TAGS: readonly SupplierReviewTag[] = [
+  "english_speaking",
+  "flexible",
+  "value",
+  "responsive",
+  "punctual",
+];
+
+/** Review-tag suggestions shown per supplier category, so a couple rating a
+ *  venue sees "parking / accessible / garden" and one rating a caterer sees
+ *  "vegan / kosher / halal" instead of the whole generic list. Category-specific
+ *  tags come first, then the universal service tags; `other` shows the full
+ *  vocabulary. Every value is still a member of SUPPLIER_REVIEW_TAGS, so the
+ *  backend validation is unchanged; this only curates what's SUGGESTED. */
+export const REVIEW_TAGS_BY_CATEGORY: Record<SupplierCategory, readonly SupplierReviewTag[]> = {
+  wedding_planner: [...UNIVERSAL_REVIEW_TAGS],
+  venue: [
+    "parking",
+    "accessible",
+    "outdoor_space",
+    "pet_friendly",
+    "kid_friendly",
+    ...UNIVERSAL_REVIEW_TAGS,
+  ],
+  accommodation: [
+    "parking",
+    "accessible",
+    "outdoor_space",
+    "pet_friendly",
+    "kid_friendly",
+    ...UNIVERSAL_REVIEW_TAGS,
+  ],
+  tent_pavilion: ["outdoor_space", "accessible", "parking", ...UNIVERSAL_REVIEW_TAGS],
+  catering: ["vegan_options", "kosher", "halal", "kid_friendly", ...UNIVERSAL_REVIEW_TAGS],
+  cake_dessert: ["vegan_options", "kosher", "halal", ...UNIVERSAL_REVIEW_TAGS],
+  bar_drinks: ["vegan_options", ...UNIVERSAL_REVIEW_TAGS],
+  pizza: ["vegan_options", "kosher", "halal", "kid_friendly", ...UNIVERSAL_REVIEW_TAGS],
+  decor_floral: [...UNIVERSAL_REVIEW_TAGS],
+  lighting: [...UNIVERSAL_REVIEW_TAGS],
+  music_dj: [...UNIVERSAL_REVIEW_TAGS],
+  sound_tech: [...UNIVERSAL_REVIEW_TAGS],
+  photo_video: [...UNIVERSAL_REVIEW_TAGS],
+  entertainment: ["kid_friendly", "outdoor_space", ...UNIVERSAL_REVIEW_TAGS],
+  attire: [...UNIVERSAL_REVIEW_TAGS],
+  hair_makeup: [...UNIVERSAL_REVIEW_TAGS],
+  nails: [...UNIVERSAL_REVIEW_TAGS],
+  rings: [...UNIVERSAL_REVIEW_TAGS],
+  stationery: [...UNIVERSAL_REVIEW_TAGS],
+  wedding_website: [...UNIVERSAL_REVIEW_TAGS],
+  transport: ["accessible", "kid_friendly", "pet_friendly", ...UNIVERSAL_REVIEW_TAGS],
+  other: [...SUPPLIER_REVIEW_TAGS],
+};
+
+/** Relevant review-tag suggestions for a category, falling back to the full
+ *  vocabulary for any unknown value. */
+export function reviewTagsForCategory(category: SupplierCategory): readonly SupplierReviewTag[] {
+  return REVIEW_TAGS_BY_CATEGORY[category] ?? SUPPLIER_REVIEW_TAGS;
+}
 export const REVIEW_BODY_MAX_CHARS = 4000;
 export const COMMENT_BODY_MAX_CHARS = 1500;
 
