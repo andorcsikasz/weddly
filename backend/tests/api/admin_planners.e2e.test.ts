@@ -210,9 +210,11 @@ describe("admin planner management", () => {
     );
     expect(row?.verified).toBe(true);
     expect(
-      (db.prepare("SELECT planner_verified FROM users WHERE id = ?").get(plannerId) as {
-        planner_verified: number;
-      }).planner_verified,
+      (
+        db.prepare("SELECT planner_verified FROM users WHERE id = ?").get(plannerId) as {
+          planner_verified: number;
+        }
+      ).planner_verified,
     ).toBe(1);
 
     const off = await req<{ ok: true; verified: boolean }>(
@@ -224,9 +226,11 @@ describe("admin planner management", () => {
     expect(off.status).toBe(200);
     expect(off.data.verified).toBe(false);
     expect(
-      (db.prepare("SELECT planner_verified FROM users WHERE id = ?").get(plannerId) as {
-        planner_verified: number;
-      }).planner_verified,
+      (
+        db.prepare("SELECT planner_verified FROM users WHERE id = ?").get(plannerId) as {
+          planner_verified: number;
+        }
+      ).planner_verified,
     ).toBe(0);
   });
 
@@ -249,12 +253,7 @@ describe("admin planner management", () => {
     await bootstrapAdmin();
     const plannerId = await seedPlanner("verify-noadmin@weddly.test");
     const { token } = await bootstrapCouple("verify-couple@weddly.test");
-    const res = await req(
-      "POST",
-      `/api/admin/planners/${plannerId}/verify`,
-      {},
-      { token },
-    );
+    const res = await req("POST", `/api/admin/planners/${plannerId}/verify`, {}, { token });
     expect(res.status).toBe(403);
   });
 

@@ -697,9 +697,14 @@ function PlannerCard({
             disabled={busy}
             aria-pressed={planner.verified}
             title={planner.verified ? t("admin.planners.unverify") : t("admin.planners.verify")}
-            aria-label={planner.verified ? t("admin.planners.unverify") : t("admin.planners.verify")}
+            aria-label={
+              planner.verified ? t("admin.planners.unverify") : t("admin.planners.verify")
+            }
           >
-            <BadgeCheck size={15} className={planner.verified ? "fill-verified stroke-white" : ""} />
+            <BadgeCheck
+              size={15}
+              className={planner.verified ? "fill-verified stroke-white" : ""}
+            />
           </button>
           {suspended ? (
             <button
