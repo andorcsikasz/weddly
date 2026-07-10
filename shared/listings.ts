@@ -178,6 +178,10 @@ export interface AdminVendorView {
   lead_credits_used: number | null;
   /** How many `listings` this vendor owns (0 for pending rows). */
   listing_count: number;
+  /** Supplier categories this vendor is listed under — distinct across their
+   *  listings for active rows, the single onboarding category for pending rows.
+   *  Empty when unknown. Lets the admin see which category each vendor is in. */
+  categories: SupplierCategory[];
   /** For pending rows: whether the onboarding token has expired. */
   token_expired: boolean;
   created_at: number;

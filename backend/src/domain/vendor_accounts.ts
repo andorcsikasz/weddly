@@ -8,6 +8,7 @@
 // Kept off P2.C by design — don't pre-build infra.
 
 import type { AdminVendorView, VendorAccount } from "@shared/listings";
+import type { SupplierCategory } from "@shared/suppliers";
 import { computeVendorEntitlement, type VendorSubscriptionStatus } from "@shared/vendor_billing";
 import { vendorPlanFromEntitlement } from "@shared/vendor_plan";
 import { db, now } from "../db";
@@ -154,6 +155,18 @@ interface AdminVendorRow extends VendorAccountRow {
   sub_card_on_file: number | null;
   sub_current_period_end: number | null;
   listing_count: number;
+  /** Comma-separated distinct listing categories (SQLite GROUP_CONCAT), or null
+   *  when the vendor has no listings yet. */
+  categories: string | null;
+}
+
+/** Split the GROUP_CONCAT category blob into a clean SupplierCategory[]. */
+function splitCategories(raw: string | null): SupplierCategory[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean) as SupplierCategory[];
 }
 
 export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
@@ -198,6 +211,7 @@ export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
     current_period_end: row.sub_current_period_end,
     lead_credits_used: row.sub_lead_credits_used,
     listing_count: row.listing_count,
+    categories: splitCategories(row.categories),
     token_expired: false,
     created_at: row.created_at,
   };
@@ -217,7 +231,8 @@ export function listAdminVendorAccounts(): AdminVendorView[] {
               vs.billing_starts_at    AS sub_billing_starts_at,
               vs.card_on_file         AS sub_card_on_file,
               vs.current_period_end   AS sub_current_period_end,
-              (SELECT COUNT(*) FROM listings l WHERE l.vendor_account_id = va.id) AS listing_count
+              (SELECT COUNT(*) FROM listings l WHERE l.vendor_account_id = va.id) AS listing_count,
+              (SELECT GROUP_CONCAT(DISTINCT l.category) FROM listings l WHERE l.vendor_account_id = va.id) AS categories
          FROM vendor_accounts va
          LEFT JOIN users u ON u.id = va.owner_user_id
          LEFT JOIN vendor_subscriptions vs ON vs.vendor_account_id = va.id

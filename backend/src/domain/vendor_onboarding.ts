@@ -5,6 +5,7 @@
 
 import { randomBytes } from "node:crypto";
 import type { AdminVendorView } from "@shared/listings";
+import type { SupplierCategory } from "@shared/suppliers";
 import { VENDOR_ONBOARDING_TOKEN_TTL_MS } from "@shared/vendor_onboarding";
 import { db, now } from "../db";
 
@@ -116,6 +117,7 @@ export function listPendingOnboardings(): AdminVendorView[] {
     current_period_end: null,
     lead_credits_used: null,
     listing_count: 0,
+    categories: row.category ? [row.category as SupplierCategory] : [],
     token_expired: row.expires_at < ts,
     created_at: row.created_at,
   }));

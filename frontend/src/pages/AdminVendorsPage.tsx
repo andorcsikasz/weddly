@@ -404,6 +404,12 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
               <Pill tone={statusPill.tone} icon={<statusPill.Icon size={11} />}>
                 {statusPill.label}
               </Pill>
+              {/* Which supplier category this vendor is listed under. */}
+              {vendor.categories.map((cat) => (
+                <Pill key={cat} tone="paper">
+                  {t(`suppliers.cat.${cat}`)}
+                </Pill>
+              ))}
               {vendor.token_expired && <Pill tone="muted">{t("admin.vendors.token_expired")}</Pill>}
               {/* Early-adopter mark: one of the first VENDOR_FOUNDING_CAP vendors.
                   Same Bird glyph the couples page uses for founding workspaces. */}
