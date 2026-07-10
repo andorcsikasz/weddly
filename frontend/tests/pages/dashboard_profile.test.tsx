@@ -110,7 +110,7 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     post_rsvp_content: null,
     envelope_tip_enabled: true,
     envelope_tip_amount_override: null,
-    media_links: { guests: null, photographer: null, other: null },
+    media_links: { guests: null, photographer: [], other: null },
     design: resolveDesign(null),
     created_at: Date.now() - 86_400_000,
     onboarded_at: Date.now() - 86_400_000,

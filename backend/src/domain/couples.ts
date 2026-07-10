@@ -34,6 +34,7 @@ import type {
   WeddingSeason,
   WeddingStyleTag,
 } from "@shared/types";
+import { MAX_PHOTOGRAPHER_LINKS } from "@shared/types";
 import { billingEnforcementOn, db, now } from "../db";
 import { generateOrganiserCode } from "./invite_codes";
 import { isAdminEmail } from "./users";
@@ -440,16 +441,27 @@ export const MEDIA_SOURCES: readonly MediaSource[] = ["guests", "photographer", 
  *  NULL, malformed JSON, or missing keys all degrade to null per slot, so the
  *  DTO always carries the three slots. Non-string values are dropped to null. */
 export function parseMediaLinksJson(json: string | null): MediaLinks {
-  const out: MediaLinks = { guests: null, photographer: null, other: null };
+  const out: MediaLinks = { guests: null, photographer: [], other: null };
   if (!json) return out;
   try {
     const parsed = JSON.parse(json) as Record<string, unknown>;
-    for (const source of MEDIA_SOURCES) {
-      const val = parsed[source];
-      if (typeof val === "string" && val.trim()) out[source] = val;
-    }
+    if (typeof parsed.guests === "string" && parsed.guests.trim()) out.guests = parsed.guests;
+    if (typeof parsed.other === "string" && parsed.other.trim()) out.other = parsed.other;
+    out.photographer = normalizePhotographerLinks(parsed.photographer);
   } catch {
-    // Malformed JSON in the DB shouldn't crash the API; leave all-null.
+    // Malformed JSON in the DB shouldn't crash the API; leave defaults.
+  }
+  return out;
+}
+
+/** Legacy rows stored `photographer` as a single string; new rows store an
+ *  array. Normalise both to an array of up to MAX_PHOTOGRAPHER_LINKS non-empty
+ *  strings so readers always get an array. */
+function normalizePhotographerLinks(raw: unknown): string[] {
+  const arr = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : [];
+  const out: string[] = [];
+  for (const v of arr) {
+    if (typeof v === "string" && v.trim() && out.length < MAX_PHOTOGRAPHER_LINKS) out.push(v);
   }
   return out;
 }

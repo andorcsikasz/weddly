@@ -494,9 +494,20 @@ export interface BudgetGoal {
 /** The three fixed photo-share sources on the Photos page. */
 export type MediaSource = "guests" | "photographer" | "other";
 
-/** One photo-share URL per source. Each slot is null until the couple pastes
- *  a link. Stored couple-side as a single JSON blob (`media_links_json`). */
-export type MediaLinks = Record<MediaSource, string | null>;
+/** Max links the "Pro Gallery" (photographer) slot accepts. */
+export const MAX_PHOTOGRAPHER_LINKS = 3;
+
+/** Photo-share URLs on the Photos page. `guests` / `other` are single links;
+ *  `photographer` (the "Pro Gallery") holds up to {@link MAX_PHOTOGRAPHER_LINKS}
+ *  external gallery links (Pixieset, Drive, Dropbox, own site…). Stored
+ *  couple-side as a single JSON blob (`media_links_json`); legacy rows that
+ *  saved `photographer` as one string are normalised to a 1-element array on
+ *  read. */
+export interface MediaLinks {
+  guests: string | null;
+  photographer: string[];
+  other: string | null;
+}
 
 /** Guest photo collection album owned by a couple. */
 export type FilmAesthetic = "natural" | "vintage" | "bw" | "cinematic" | "warm";

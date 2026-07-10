@@ -17,6 +17,7 @@ import {
   type GuestCountGoal,
   type GuestCountKind,
   INVITE_TTL_MS,
+  MAX_PHOTOGRAPHER_LINKS,
   type MediaLinks,
   type WeddingDateGoal,
   type WeddingDateKind,
@@ -73,7 +74,6 @@ import {
   getCoupleForUser,
   isCoupleMember,
   listCouplesForUser,
-  MEDIA_SOURCES,
   ownerUserIdOf,
   parseDesignJson,
   parseMediaLinksJson,
@@ -1488,6 +1488,31 @@ function parseMediaLink(raw: unknown, source: string): string | null {
   return parsed.href;
 }
 
+/** The Pro Gallery (photographer) slot: up to MAX_PHOTOGRAPHER_LINKS http(s)
+ *  links. Accepts an array of strings, or a single string (legacy client), or
+ *  null/undefined (clears to []). Empty entries are dropped; each surviving one
+ *  is validated like a single media link; more than the cap is a 400. */
+function parsePhotographerLinks(raw: unknown): string[] {
+  if (raw === null || raw === undefined) return [];
+  const arr = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : null;
+  if (arr === null) {
+    throw new HttpError(400, "media_links.photographer must be a string or an array of strings");
+  }
+  const out: string[] = [];
+  for (const item of arr) {
+    const link = parseMediaLink(item, "photographer");
+    if (link) out.push(link);
+  }
+  if (out.length > MAX_PHOTOGRAPHER_LINKS) {
+    throw new HttpError(
+      400,
+      `media_links.photographer allows at most ${MAX_PHOTOGRAPHER_LINKS} links`,
+      { code: "too_many_links" },
+    );
+  }
+  return out;
+}
+
 /** Free-text markdown block author authors for the merged Vendégoldal.
  *  Empty string → null (clears the column). Cap chosen large enough to
  *  hold a 2-3 paragraph welcome message without enabling someone to
@@ -2110,15 +2135,22 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
     if (incoming === null || typeof incoming !== "object" || Array.isArray(incoming)) {
       throw new HttpError(400, "media_links must be an object");
     }
+    const inc = incoming as Record<string, unknown>;
     const prev = parseMediaLinksJson(couple.media_links_json);
-    const next: MediaLinks = { ...prev };
-    for (const source of MEDIA_SOURCES) {
-      if (source in incoming) {
-        next[source] = parseMediaLink((incoming as Record<string, unknown>)[source], source);
-      }
-    }
-    if (MEDIA_SOURCES.some((s) => next[s] !== prev[s])) {
-      const allEmpty = MEDIA_SOURCES.every((s) => next[s] === null);
+    // guests / other stay single links; photographer (Pro Gallery) is an array
+    // of up to MAX_PHOTOGRAPHER_LINKS. Only keys present in the body are touched.
+    const next: MediaLinks = {
+      guests: "guests" in inc ? parseMediaLink(inc.guests, "guests") : prev.guests,
+      other: "other" in inc ? parseMediaLink(inc.other, "other") : prev.other,
+      photographer:
+        "photographer" in inc ? parsePhotographerLinks(inc.photographer) : prev.photographer,
+    };
+    const photographerChanged =
+      next.photographer.length !== prev.photographer.length ||
+      next.photographer.some((v, i) => v !== prev.photographer[i]);
+    if (next.guests !== prev.guests || next.other !== prev.other || photographerChanged) {
+      const allEmpty =
+        next.guests === null && next.other === null && next.photographer.length === 0;
       updates.push({ col: "media_links_json", val: allEmpty ? null : JSON.stringify(next) });
       auditEntries.push({
         action: "couple.media_links_update",

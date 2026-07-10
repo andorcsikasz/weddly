@@ -1,21 +1,22 @@
-// 15-user media_links probe — covers the photographer gallery link save/clear
-// flow that backs the "By photographer" card on /app/media. Tests span:
+// media_links probe — covers the Photos-page link save/clear flow that backs
+// the "Pro Gallery" (photographer) + guests/other cards on /app/media. The
+// photographer slot is a list (up to MAX_PHOTOGRAPHER_LINKS); guests/other stay
+// single links. Tests span:
 //
 //   A. 15 couples concurrently save links → all succeed, no cross-couple bleed
 //   B. All three slots (guests / photographer / other) work independently
 //   C. Partial update: one slot doesn't wipe the others
 //   D. Null / empty-string clear flow
 //   E. Partner B (invited second user) sees the same links as partner A
-//   F. Input validation: non-http, non-string, too-long, non-object all rejected
+//   F. Input validation: non-http, non-string items, too-long, non-object rejected
+//   G. Pro Gallery: array of up to 3 links, legacy single-string coercion, cap
 
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 
-const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
-
-type MediaLinks = { guests: string | null; photographer: string | null; other: string | null };
+type MediaLinks = { guests: string | null; photographer: string[]; other: string | null };
 type CoupleResp = { couple: { id: number; media_links: MediaLinks } };
 
 async function getLinks(token: string): Promise<MediaLinks> {
@@ -26,7 +27,7 @@ async function getLinks(token: string): Promise<MediaLinks> {
 
 async function setLinks(
   token: string,
-  patch: Record<string, string | null>,
+  patch: Record<string, unknown>,
 ): Promise<{ status: number; links: MediaLinks }> {
   const r = await req<CoupleResp>(
     "PATCH",
@@ -39,7 +40,7 @@ async function setLinks(
     links:
       r.status === 200
         ? r.data.couple.media_links
-        : { guests: null, photographer: null, other: null },
+        : { guests: null, photographer: [], other: null },
   };
 }
 
@@ -60,21 +61,21 @@ describe("A. 15 concurrent photographer link saves", () => {
 
     // All save their own link in parallel.
     const saves = await Promise.all(
-      couples.map(({ token, url }) => setLinks(token, { photographer: url })),
+      couples.map(({ token, url }) => setLinks(token, { photographer: [url] })),
     );
     expect(saves.every((s) => s.status === 200)).toBe(true);
 
     // Each couple reads back only their own link.
     const reads = await Promise.all(couples.map(({ token }) => getLinks(token)));
     for (let i = 0; i < COHORT; i++) {
-      expect(reads[i]!.photographer).toBe(couples[i]!.url);
-      // guests and other must remain null — no spillover from other couples.
+      expect(reads[i]!.photographer).toEqual([couples[i]!.url]);
+      // guests and other must remain unset — no spillover from other couples.
       expect(reads[i]!.guests).toBeNull();
       expect(reads[i]!.other).toBeNull();
     }
 
     // Every link is distinct — no couple received a neighbor's value.
-    const stored = reads.map((r) => r.photographer);
+    const stored = reads.map((r) => r.photographer[0]);
     expect(new Set(stored).size).toBe(COHORT);
   }, 60_000);
 });
@@ -89,12 +90,12 @@ describe("B. all three slots are independent", () => {
     const { token } = await bootstrapCouple("photos-b@weddly.test");
 
     await setLinks(token, { guests: "https://guests.example.com" });
-    await setLinks(token, { photographer: "https://photographer.example.com" });
+    await setLinks(token, { photographer: ["https://photographer.example.com"] });
     await setLinks(token, { other: "https://other.example.com" });
 
     const links = await getLinks(token);
     expect(links.guests).toBe("https://guests.example.com/");
-    expect(links.photographer).toBe("https://photographer.example.com/");
+    expect(links.photographer).toEqual(["https://photographer.example.com/"]);
     expect(links.other).toBe("https://other.example.com/");
   });
 });
@@ -111,52 +112,52 @@ describe("C. partial update", () => {
     // Seed all three.
     await setLinks(token, {
       guests: "https://guests.example.com",
-      photographer: "https://photographer.example.com",
+      photographer: ["https://photographer.example.com"],
       other: "https://other.example.com",
     });
 
     // Update only photographer.
     const { status, links } = await setLinks(token, {
-      photographer: "https://new-gallery.example.com",
+      photographer: ["https://new-gallery.example.com"],
     });
     expect(status).toBe(200);
-    expect(links.photographer).toBe("https://new-gallery.example.com/");
+    expect(links.photographer).toEqual(["https://new-gallery.example.com/"]);
     expect(links.guests).toBe("https://guests.example.com/");
     expect(links.other).toBe("https://other.example.com/");
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// D. Null / empty-string clears the slot
+// D. Null / empty clears the photographer slot
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("D. clearing a link", () => {
-  test("null removes the slot", async () => {
+describe("D. clearing links", () => {
+  test("null empties the photographer slot", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("photos-d1@weddly.test");
-    await setLinks(token, { photographer: "https://gallery.example.com" });
+    await setLinks(token, { photographer: ["https://gallery.example.com"] });
     const { status, links } = await setLinks(token, { photographer: null });
     expect(status).toBe(200);
-    expect(links.photographer).toBeNull();
+    expect(links.photographer).toEqual([]);
   });
 
-  test("empty string is treated as null (clear)", async () => {
+  test("empty string is dropped (clear)", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("photos-d2@weddly.test");
-    await setLinks(token, { photographer: "https://gallery.example.com" });
+    await setLinks(token, { photographer: ["https://gallery.example.com"] });
     const { status, links } = await setLinks(token, { photographer: "" });
     expect(status).toBe(200);
-    expect(links.photographer).toBeNull();
+    expect(links.photographer).toEqual([]);
   });
 
   test("clearing the last slot nullifies the whole media_links object", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("photos-d3@weddly.test");
-    await setLinks(token, { photographer: "https://gallery.example.com" });
-    await setLinks(token, { photographer: null });
+    await setLinks(token, { photographer: ["https://gallery.example.com"] });
+    await setLinks(token, { photographer: [] });
     const links = await getLinks(token);
     expect(links.guests).toBeNull();
-    expect(links.photographer).toBeNull();
+    expect(links.photographer).toEqual([]);
     expect(links.other).toBeNull();
   });
 });
@@ -170,7 +171,7 @@ describe("E. couple-shared visibility", () => {
     wipeAll();
     const { token: tokenA } = await bootstrapCouple("photos-e-a@weddly.test");
     await setLinks(tokenA, {
-      photographer: "https://gallery.example.com",
+      photographer: ["https://gallery.example.com"],
       other: "https://other.example.com",
     });
 
@@ -198,24 +199,24 @@ describe("E. couple-shared visibility", () => {
     expect(joinR.status).toBe(200);
 
     const linksB = await getLinks(tokenB);
-    expect(linksB.photographer).toBe("https://gallery.example.com/");
+    expect(linksB.photographer).toEqual(["https://gallery.example.com/"]);
     expect(linksB.other).toBe("https://other.example.com/");
     expect(linksB.guests).toBeNull();
 
     // Partner B can also update the link and A sees the change.
-    await setLinks(tokenB, { photographer: "https://updated-gallery.example.com" });
+    await setLinks(tokenB, { photographer: ["https://updated-gallery.example.com"] });
     const linksA = await getLinks(tokenA);
-    expect(linksA.photographer).toBe("https://updated-gallery.example.com/");
+    expect(linksA.photographer).toEqual(["https://updated-gallery.example.com/"]);
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// F. Input validation — 15 invalid payloads all rejected
+// F. Input validation — invalid payloads all rejected
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("F. input validation", () => {
   const CASES: Array<{ label: string; payload: unknown }> = [
-    // Non-http schemes
+    // Non-http schemes (single-string photographer)
     { label: "ftp:// rejected", payload: { photographer: "ftp://gallery.example.com" } },
     { label: "javascript: rejected", payload: { photographer: "javascript:alert(1)" } },
     { label: "data: rejected", payload: { photographer: "data:text/html,<h1>x</h1>" } },
@@ -224,11 +225,31 @@ describe("F. input validation", () => {
     // Not a URL at all
     { label: "bare word rejected", payload: { photographer: "not-a-url" } },
     { label: "relative path rejected", payload: { photographer: "/some/path" } },
-    // Non-string value for a slot
+    // Invalid values inside the photographer array
+    {
+      label: "array with a bad URL rejected",
+      payload: { photographer: ["https://ok.example.com", "ftp://bad.example.com"] },
+    },
+    {
+      label: "array with a non-string item rejected",
+      payload: { photographer: ["https://ok.example.com", 42] },
+    },
+    // Non-string, non-array value for the photographer slot
     { label: "number slot rejected", payload: { photographer: 42 } },
-    { label: "array slot rejected", payload: { photographer: ["https://x.com"] } },
     { label: "object slot rejected", payload: { photographer: { url: "https://x.com" } } },
     { label: "true slot rejected", payload: { photographer: true } },
+    // Over the cap
+    {
+      label: "4 links rejected",
+      payload: {
+        photographer: [
+          "https://a.example.com/1",
+          "https://b.example.com/2",
+          "https://c.example.com/3",
+          "https://d.example.com/4",
+        ],
+      },
+    },
     // Badly typed media_links container
     { label: "string container rejected", payload: "https://example.com" },
     { label: "array container rejected", payload: ["https://example.com"] },
@@ -256,4 +277,35 @@ describe("F. input validation", () => {
       expect(r.status).toBe(400);
     });
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// G. Pro Gallery — up to 3 links, legacy coercion, empties dropped
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("G. Pro Gallery multi-link", () => {
+  test("saves up to 3 links and reads them back in order", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("photos-g1@weddly.test");
+    const urls = ["https://a.example.com/x", "https://b.example.com/y", "https://c.example.com/z"];
+    const { status, links } = await setLinks(token, { photographer: urls });
+    expect(status).toBe(200);
+    expect(links.photographer).toEqual(urls);
+  });
+
+  test("a single string is coerced to a one-element array (legacy client)", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("photos-g2@weddly.test");
+    const { links } = await setLinks(token, { photographer: "https://legacy.example.com/album" });
+    expect(links.photographer).toEqual(["https://legacy.example.com/album"]);
+  });
+
+  test("empty / whitespace entries are dropped", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("photos-g3@weddly.test");
+    const { links } = await setLinks(token, {
+      photographer: ["https://a.example.com/x", "", "   "],
+    });
+    expect(links.photographer).toEqual(["https://a.example.com/x"]);
+  });
 });

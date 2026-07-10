@@ -1871,7 +1871,7 @@ describe("couples_lifecycle: welcome-desk mode toggle", () => {
 describe("couples_lifecycle: media_links", () => {
   type MediaLinksResp = {
     couple: {
-      media_links: { guests: string | null; photographer: string | null; other: string | null };
+      media_links: { guests: string | null; photographer: string[]; other: string | null };
     };
   };
 
@@ -1879,7 +1879,7 @@ describe("couples_lifecycle: media_links", () => {
     const { token } = await bootstrapCouple("media-default@weddly.test");
     const r = await req<MediaLinksResp>("GET", "/api/couples/current", undefined, { token });
     expect(r.status).toBe(200);
-    expect(r.data.couple.media_links).toEqual({ guests: null, photographer: null, other: null });
+    expect(r.data.couple.media_links).toEqual({ guests: null, photographer: [], other: null });
   });
 
   test("PATCH sets one slot and partial-merges without clobbering the others", async () => {
@@ -1895,7 +1895,7 @@ describe("couples_lifecycle: media_links", () => {
     expect(first.data.couple.media_links.guests).toBe(
       "https://drive.google.com/drive/folders/guests",
     );
-    expect(first.data.couple.media_links.photographer).toBeNull();
+    expect(first.data.couple.media_links.photographer).toEqual([]);
 
     // A second PATCH touching only `photographer` must leave `guests` intact.
     const second = await req<MediaLinksResp>(
@@ -1907,14 +1907,14 @@ describe("couples_lifecycle: media_links", () => {
     expect(second.data.couple.media_links.guests).toBe(
       "https://drive.google.com/drive/folders/guests",
     );
-    expect(second.data.couple.media_links.photographer).toBe("https://example.com/album");
+    expect(second.data.couple.media_links.photographer).toEqual(["https://example.com/album"]);
 
     // Survives a re-fetch — persisted, shared between both partners.
     const fresh = await req<MediaLinksResp>("GET", "/api/couples/current", undefined, { token });
     expect(fresh.data.couple.media_links.guests).toBe(
       "https://drive.google.com/drive/folders/guests",
     );
-    expect(fresh.data.couple.media_links.photographer).toBe("https://example.com/album");
+    expect(fresh.data.couple.media_links.photographer).toEqual(["https://example.com/album"]);
   });
 
   test("empty string clears a slot back to null", async () => {

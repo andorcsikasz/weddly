@@ -1,5 +1,5 @@
 import type { Couple, FilmAccessCheck, FilmAesthetic, FilmDevice, PhotoAlbum } from "@shared/types";
-import { FILM_AESTHETICS, FILM_FILTERS } from "@shared/types";
+import { FILM_AESTHETICS, FILM_FILTERS, MAX_PHOTOGRAPHER_LINKS } from "@shared/types";
 import {
   AlertTriangle,
   CalendarDays,
@@ -752,7 +752,7 @@ export default function MediaPage() {
       .catch(() => {});
   }
 
-  const photographerUrl = couple?.media_links?.photographer ?? null;
+  const photographerUrls = couple?.media_links?.photographer ?? [];
   const albumStatus = album ? getFilmStatus(album) : null;
   const uploadUrl = album ? `${window.location.origin}/photos/${album.uploadToken}` : null;
   // #17: prefer the prettier custom slug for display + copy/share; QR stays on the token.
@@ -795,9 +795,11 @@ export default function MediaPage() {
     !filmAccess.free &&
     (nearGuestLimit || nearPhotoLimit);
 
+  // Open the "add a link" input (blank draft — each save appends a new gallery
+  // link up to MAX_PHOTOGRAPHER_LINKS).
   function startEdit() {
     setEditing(true);
-    setDraft(photographerUrl ?? "");
+    setDraft("");
     setLinkError(null);
   }
 
@@ -806,24 +808,16 @@ export default function MediaPage() {
     setLinkError(null);
   }
 
-  async function savePhotographerLink(rawValue: string) {
-    const trimmed = rawValue.trim();
-    if (trimmed && !isHttpUrl(trimmed)) {
-      setLinkError(t("media.collect_invalid"));
-      return;
-    }
-    if (trimmed === (photographerUrl ?? "")) {
-      setEditing(false);
-      setLinkError(null);
-      return;
-    }
+  /** Persist the given photographer-link array and reflect the canonical
+   *  (server-normalised) result back into state. */
+  async function savePhotographer(next: string[], successKey: string) {
     setSaving(true);
     setLinkError(null);
     try {
-      const res = await coupleApi.update({ media_links: { photographer: trimmed || null } });
+      const res = await coupleApi.update({ media_links: { photographer: next } });
       setCouple(res.couple);
       setEditing(false);
-      toast.success(trimmed ? t("media.collect_saved") : t("media.collect_removed"));
+      toast.success(t(successKey));
     } catch (err) {
       setLinkError(err instanceof Error ? err.message : t("common.error_generic"));
     } finally {
@@ -831,12 +825,40 @@ export default function MediaPage() {
     }
   }
 
+  // Append a pasted link to the gallery. Empty just closes the input; a
+  // non-http value shows the inline error; at the cap the input is hidden so
+  // this can't overflow.
+  async function addPhotographerLink(rawValue: string) {
+    const trimmed = rawValue.trim();
+    if (!trimmed) {
+      setEditing(false);
+      setLinkError(null);
+      return;
+    }
+    if (!isHttpUrl(trimmed)) {
+      setLinkError(t("media.collect_invalid"));
+      return;
+    }
+    if (photographerUrls.length >= MAX_PHOTOGRAPHER_LINKS) {
+      setEditing(false);
+      return;
+    }
+    await savePhotographer([...photographerUrls, trimmed], "media.collect_saved");
+  }
+
+  async function removePhotographerLink(url: string) {
+    await savePhotographer(
+      photographerUrls.filter((u) => u !== url),
+      "media.collect_removed",
+    );
+  }
+
   useEffect(() => {
     if (!editing) return;
     function onPointerDown(e: MouseEvent) {
       const row = photographerRowRef.current;
       if (row && !row.contains(e.target as Node)) {
-        savePhotographerLink(draftRef.current);
+        addPhotographerLink(draftRef.current);
       }
     }
     document.addEventListener("mousedown", onPointerDown);
@@ -923,12 +945,51 @@ export default function MediaPage() {
           <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-400">
             {t("media.photographer_title")}
           </p>
-          {editing ? (
+          {/* Saved gallery links (up to MAX_PHOTOGRAPHER_LINKS). */}
+          {photographerUrls.length > 0 && (
+            <ul className="px-5 pt-1">
+              {photographerUrls.map((url) => (
+                <li key={url} className="flex items-center gap-3 py-1.5">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
+                    <Camera size={17} aria-hidden="true" />
+                  </span>
+                  <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-umber-700">
+                    <Link2 size={13} aria-hidden="true" className="shrink-0 text-umber-400" />
+                    <span className="truncate">
+                      {url.replace(/^https?:\/\//, "").split("/")[0]}
+                    </span>
+                  </span>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs font-medium text-umber-500 transition-colors hover:text-umber-900"
+                  >
+                    <ExternalLink size={12} aria-hidden="true" />
+                    {t("media.photographer_open")}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => removePhotographerLink(url)}
+                    disabled={saving}
+                    aria-label={t("media.collect_delete")}
+                    title={t("media.collect_delete")}
+                    className="text-umber-400 transition-colors hover:text-red-500 disabled:opacity-50"
+                  >
+                    <Trash2 size={13} aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Add-a-link input. */}
+          {editing && (
             <form
               className="px-5 pb-3 pt-2"
               onSubmit={(e) => {
                 e.preventDefault();
-                savePhotographerLink(draft);
+                addPhotographerLink(draft);
               }}
               noValidate
             >
@@ -965,38 +1026,17 @@ export default function MediaPage() {
                 </p>
               )}
             </form>
-          ) : (
+          )}
+
+          {/* Empty-state CTA (no links) or "add another" affordance, hidden at
+              the cap and while the input is open. */}
+          {!editing && photographerUrls.length < MAX_PHOTOGRAPHER_LINKS && (
             <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
-                <Camera size={17} aria-hidden="true" />
-              </span>
-              {photographerUrl ? (
+              {photographerUrls.length === 0 ? (
                 <>
-                  <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-umber-700">
-                    <Link2 size={13} aria-hidden="true" className="shrink-0 text-umber-400" />
-                    <span className="truncate">
-                      {photographerUrl.replace(/^https?:\/\//, "").split("/")[0]}
-                    </span>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
+                    <Camera size={17} aria-hidden="true" />
                   </span>
-                  <a
-                    href={photographerUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs font-medium text-umber-500 transition-colors hover:text-umber-900"
-                  >
-                    <ExternalLink size={12} aria-hidden="true" />
-                    {t("media.photographer_open")}
-                  </a>
-                  <button
-                    type="button"
-                    onClick={startEdit}
-                    className="text-xs text-umber-400 transition-colors hover:text-umber-700"
-                  >
-                    <Pencil size={12} aria-hidden="true" />
-                  </button>
-                </>
-              ) : (
-                <>
                   <span className="flex-1 text-sm text-umber-500">
                     {t("media.photographer_cta")}
                   </span>
@@ -1009,6 +1049,15 @@ export default function MediaPage() {
                     {t("media.collect_add")}
                   </button>
                 </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startEdit}
+                  className="flex items-center gap-1 text-xs font-medium text-umber-500 transition-colors hover:text-umber-900"
+                >
+                  <Link2 size={12} aria-hidden="true" />
+                  {t("media.collect_add")}
+                </button>
               )}
             </div>
           )}
