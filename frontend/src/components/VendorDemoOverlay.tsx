@@ -110,7 +110,7 @@ export function VendorDemoOverlay() {
             </button>
             <button
               type="button"
-              onClick={() => setNudgeOpen(true)}
+              onClick={() => exitDemo("/vendors/signup")}
               className="hidden shrink-0 rounded-full bg-sage-700 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-sage-800 dark:bg-sage-600 dark:text-paper-50 dark:hover:bg-sage-500 sm:inline-flex"
             >
               {t("vendor_demo.banner_cta")}
