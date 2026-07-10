@@ -4,6 +4,7 @@
 // granular DEFAULT_BUDGET_SPLIT. The handoff carries only the chosen guest
 // count + total budget into the onboarding draft.
 
+import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Currency } from "@shared/types";
@@ -105,6 +106,10 @@ export function InteractiveBudgetDemo() {
   const range = BUDGET_RANGES[currency];
   const [guests, setGuests] = useState(locale === "hu" ? DEFAULT_GUESTS_HU : DEFAULT_GUESTS);
   const [budget, setBudget] = useState(range.default);
+  // The breakdown is a tall list; on phones it starts collapsed so the demo
+  // controls stay above the fold. The header toggles it. On sm+ it's always
+  // shown (the toggle + chevron are hidden there).
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
 
   // Reset the figures to the market's defaults when the UI locale flips at
   // runtime (HU ↔ EN). useState only seeds the FIRST render, so without this a
@@ -237,15 +242,31 @@ export function InteractiveBudgetDemo() {
            *  vertically center text" rule. Padding tightens to `p-4` on
            *  phones to match the new section pace. */}
           <div className="rounded-2xl bg-white p-4 shadow-pop ring-1 ring-paper-300 sm:p-6 dark:bg-umber-800 dark:ring-umber-700">
-            <div className="flex items-center justify-between gap-3">
+            {/* Header doubles as the collapse toggle on phones (sm:hidden
+             *  chevron); on sm+ it's a static, non-interactive label. */}
+            <button
+              type="button"
+              onClick={() => setBreakdownOpen((o) => !o)}
+              aria-expanded={breakdownOpen}
+              className="flex w-full items-center justify-between gap-3 text-left sm:pointer-events-none"
+            >
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
                 {t("landing.demo_breakdown_eyebrow")}
               </p>
-              <p className="text-right font-grotesk text-xs italic leading-tight text-umber-600 sm:text-sm dark:text-umber-300">
-                {t("landing.demo_breakdown_sub")}
-              </p>
-            </div>
-            <ul className="mt-4 space-y-2.5">
+              <span className="flex items-center gap-2">
+                <span className="text-right font-grotesk text-xs italic leading-tight text-umber-600 sm:text-sm dark:text-umber-300">
+                  {t("landing.demo_breakdown_sub")}
+                </span>
+                <ChevronDown
+                  size={18}
+                  aria-hidden="true"
+                  className={`shrink-0 text-umber-500 transition-transform sm:hidden dark:text-umber-300 ${
+                    breakdownOpen ? "" : "-rotate-90"
+                  }`}
+                />
+              </span>
+            </button>
+            <ul className={`mt-4 space-y-2.5 sm:block ${breakdownOpen ? "" : "hidden"}`}>
               {rows.map((row) => (
                 <li key={row.i18nKey}>
                   <div className="flex items-center justify-between gap-3">
@@ -265,7 +286,11 @@ export function InteractiveBudgetDemo() {
                 </li>
               ))}
             </ul>
-            <div className="mt-4 border-t border-paper-300 pt-3 dark:border-umber-700">
+            <div
+              className={`mt-4 border-t border-paper-300 pt-3 sm:block dark:border-umber-700 ${
+                breakdownOpen ? "" : "hidden"
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <span className="font-grotesk text-base text-umber-900 dark:text-paper-50">
                   {t("landing.demo_total_label")}
