@@ -1973,16 +1973,12 @@ export interface LocaleMessages {
     seo_title: string;
     seo_description: string;
     pill: string;
-    eyebrow: string;
     wrong_audience: string;
     couple_escape_link: string;
     planner_escape_link: string;
     hero_title: string;
     hero_sub: string;
-    hero_pitch: string;
     trust_signal: string;
-    couples_stat: string;
-    sample_caption: string;
     benefit_1_title: string;
     benefit_1_body: string;
     benefit_2_title: string;

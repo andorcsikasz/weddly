@@ -4,65 +4,27 @@
 // account directly and run the in-app onboarding wizard.
 
 import { ArrowLeft, Gem, MapPinned, PhoneCall } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { VendorDemoLaunchButton } from "../components/VendorDemoLaunchButton";
-import { publicStatsApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
-
-// Hide the demand-side line below this many real couples so a thin number never
-// undersells (matches the browse page; audit item 8, no fabricated stats).
-const MIN_COUPLES_TO_SHOW = 15;
 
 export default function VendorsPage() {
   const { t } = useT();
   useDocumentMeta("vendors.seo_title", "vendors.seo_description");
-  const [couples, setCouples] = useState<number | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    publicStatsApi
-      .get()
-      .then((r) => {
-        if (!cancelled) setCouples(r.couples);
-      })
-      .catch(() => {
-        /* stat is optional — the hero works without it */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const showCouples = couples !== null && couples >= MIN_COUPLES_TO_SHOW;
 
   return (
     <PublicShell>
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-10 sm:px-6 sm:pt-20 sm:pb-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
-          <p className="font-grotesk mb-3 text-xs font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
-            {t("vendors.eyebrow")}
-          </p>
           <h1 className="font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
-          {/* One short subhead — the direct-contact differentiator (item 9). The
-              "early access / limited spots" framing lives in the benefits below,
-              so the hero stays uncluttered. */}
-          <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-ink-600 lg:mx-0 dark:text-umber-200">
-            {t("vendors.hero_pitch")}
-          </p>
-          {showCouples && (
-            <p className="mx-auto mt-4 flex items-center justify-center gap-1.5 text-sm font-medium text-sage-700 lg:justify-start dark:text-sage-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden />
-              {t("vendors.couples_stat", { count: String(couples) })}
-            </p>
-          )}
-          <div className="mt-6 flex flex-col flex-wrap items-center gap-3 sm:flex-row lg:justify-start">
+          <div className="mt-8 flex flex-col flex-wrap items-center gap-3 sm:flex-row lg:justify-start">
             <Link to="/vendors/signup" className="btn-primary btn-lg shadow-sm">
               {t("vendors.signup_cta")}
             </Link>
@@ -89,11 +51,6 @@ export default function VendorsPage() {
         </div>
         <div className="mx-auto w-full max-w-md lg:max-w-none">
           <VendorListingMockup className="h-auto w-full" />
-          {/* Honest label so the sample card doesn't read as a real vendor
-              claim (audit item 10 — no fabricated social proof). */}
-          <p className="mt-2 text-center text-xs uppercase tracking-widest text-ink-400 dark:text-umber-400">
-            {t("vendors.sample_caption")}
-          </p>
         </div>
       </section>
 

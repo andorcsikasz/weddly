@@ -1728,17 +1728,13 @@ const hu: LocaleMessages = {
     seo_description:
       "Iratkozzatok fel a Wēddly válogatott szolgáltatói listájára, és érjétek el a most tervező párokat.",
     pill: "Korai hozzáférés",
-    eyebrow: "Szolgáltató vagyok",
     wrong_audience: "Nem szolgáltató?",
     couple_escape_link: "Pároknak",
     planner_escape_link: "Szervezőknek",
     hero_title: "Érjétek el a most tervező párokat.",
     hero_sub:
       "A Wēddly válogatott címjegyzéke az első hely, ahol a párok esküvői szolgáltatókat keresnek. Csatlakozzatok a várólistára, és értesítünk, amint nyitunk a kategóriátokban.",
-    hero_pitch: "A párok közvetlenül keresnek: telefonon, e-mailben vagy Instagramon.",
     trust_signal: "Csatlakozz a 47 várólistás szolgáltató mellé",
-    couples_stat: "Jelenleg {count} pár tervezi az esküvőjét a Weddly-n",
-    sample_caption: "Példa profil",
     benefit_1_title: "Válogatott lista",
     benefit_1_body: "Kategóriánként limitált hely, csak a hozzátok illő párokat kapjátok.",
     benefit_2_title: "Helyi piac, helyi adatok",
