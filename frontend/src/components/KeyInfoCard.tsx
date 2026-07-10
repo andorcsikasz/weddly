@@ -345,6 +345,13 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
     () => pickedVenueDir(venuePick, directoryById),
     [venuePick, directoryById],
   );
+  // Where the venue row links to: a picked directory venue opens its own vendor
+  // card; any other venue (DIY / free-text, no detail page) falls back to the
+  // vendors hub. Mirrors the supplier-row behaviour.
+  const venueLinkTo = useMemo(
+    () => (pickedDir ? `/app/suppliers/${encodeURIComponent(pickedDir.id)}` : "/app/vendors"),
+    [pickedDir],
+  );
   // Venue-category directory vendors, offered as autocomplete suggestions in
   // the edit dialog ("primarily suggest venue vendors").
   const venueOptions = useMemo(
@@ -435,7 +442,10 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
               {/* ── Venue ─────────────────────────────────────────────── */}
               {venue ? (
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-3">
+                  <Link
+                    to={venueLinkTo}
+                    className="group flex min-w-0 items-start gap-3 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
+                  >
                     <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
                       <MapPin size={18} aria-hidden="true" />
                     </span>
@@ -443,7 +453,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                       <p className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
                         {t("dashboard.keyinfo_venue_label")}
                       </p>
-                      <p className="truncate text-sm font-semibold text-ink-900 dark:text-paper-50">
+                      <p className="truncate text-sm font-semibold text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
                         {venue.name}
                       </p>
                       {venue.detail && (
@@ -452,7 +462,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                         </p>
                       )}
                     </div>
-                  </div>
+                  </Link>
                   <div className="flex shrink-0 items-center gap-2">
                     <button
                       type="button"
