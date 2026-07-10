@@ -2209,6 +2209,10 @@ const en: LocaleMessages = {
     supplier_none: "(none)",
     today_label: "Today",
     error_dates: "Start can't be after end.",
+    not_relevant_hint: "Removes this task from your timeline.",
+    not_relevant_confirm_title: "Remove this task?",
+    not_relevant_confirm_body: 'This permanently removes "{title}" from your tasks.',
+    not_relevant_removed: "Task removed.",
     view_aria: "Chart zoom",
     view_day: "Daily",
     view_week: "Weekly",
@@ -2417,6 +2421,7 @@ const en: LocaleMessages = {
     collect_invalid: "Enter a link that starts with http:// or https://",
     collect_saved: "Link saved.",
     collect_removed: "Link removed.",
+    collect_delete: "Remove link",
     hero_title: "Collect every wedding memory in one place",
     hero_sub:
       "Create a private QR code so guests can share photos from your wedding. No app, no account, no chaos.",

@@ -69,6 +69,7 @@ function selectUpcoming(items: PlanningItem[], settings: UpcomingSettings): Plan
   return items
     .filter((it) => {
       if (it.kind !== "task" || it.done || it.due_date === null) return false;
+      if (it.decision_status === "not_relevant") return false;
       if (settings.topic === "wedding") return it.topic !== "honeymoon";
       if (settings.topic === "honeymoon") return it.topic === "honeymoon";
       return true;
@@ -93,6 +94,7 @@ function selectFallback(
   return items
     .filter((it) => {
       if (it.kind !== "task" || it.done) return false;
+      if (it.decision_status === "not_relevant") return false;
       if (settings.topic === "wedding") return it.topic !== "honeymoon";
       if (settings.topic === "honeymoon") return it.topic === "honeymoon";
       return true;
@@ -170,6 +172,7 @@ export function UpcomingTasksCard({
       it.kind === "task" &&
       !it.done &&
       it.due_date !== null &&
+      it.decision_status !== "not_relevant" &&
       (settings.topic === "all"
         ? true
         : settings.topic === "honeymoon"

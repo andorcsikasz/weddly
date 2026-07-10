@@ -141,6 +141,62 @@ describe("planning decisions (Döntések layer)", () => {
     expect(patched.data.item.resolution).toBeNull();
   });
 
+  // The timeline's "Not relevant" affordance runs these two operations: a
+  // prompt-derived task is dismissed (decision_status='not_relevant', keeping
+  // the row so it never re-seeds and stays recoverable), and a plain task is
+  // deleted outright (nothing to preserve).
+  test("a prompt is dismissed as not_relevant (recoverable) — a plain task is deleted", async () => {
+    const { token } = await bootstrapCouple();
+    const gen = await req<GenResp>(
+      "POST",
+      "/api/planning/prompts/generate",
+      { group: "food_drink" },
+      { token },
+    );
+    const prompt = prompts(gen.data.items)[0];
+    const promptId = prompt?.id as number;
+
+    // Dismiss the prompt.
+    const dismissed = await req<{ item: PlanningItem }>(
+      "PATCH",
+      `/api/planning/${promptId}`,
+      { decision_status: "not_relevant" },
+      { token },
+    );
+    expect(dismissed.status).toBe(200);
+    expect(dismissed.data.item.decision_status).toBe("not_relevant");
+    // The row is kept, so a re-generate of its group does NOT re-create it.
+    const regen = await req<GenResp>(
+      "POST",
+      "/api/planning/prompts/generate",
+      { group: "food_drink" },
+      { token },
+    );
+    expect(regen.data.items.some((i) => i.id === promptId)).toBe(true);
+    expect(regen.data.items.filter((i) => i.seed_key === prompt?.seed_key).length).toBe(1);
+    // Recoverable: bring it back to open from the Döntések deck.
+    const reopened = await req<{ item: PlanningItem }>(
+      "PATCH",
+      `/api/planning/${promptId}`,
+      { decision_status: "open" },
+      { token },
+    );
+    expect(reopened.data.item.decision_status).toBe("open");
+
+    // A plain task has no status to carry, so "not relevant" deletes it.
+    const plain = await req<{ item: PlanningItem }>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Manuális feladat" },
+      { token },
+    );
+    const plainId = plain.data.item.id;
+    const del = await req("DELETE", `/api/planning/${plainId}`, undefined, { token });
+    expect(del.status).toBe(200);
+    const after = await req<ListResp>("GET", "/api/planning", undefined, { token });
+    expect(after.data.items.some((i) => i.id === plainId)).toBe(false);
+  });
+
   test("intake profile persists and a 'no' answer hides its conditional prompts", async () => {
     const { token } = await bootstrapCouple();
 

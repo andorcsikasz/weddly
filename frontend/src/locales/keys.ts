@@ -182,6 +182,11 @@ export interface LocaleMessages {
     /** Tooltip label on the vertical "today" marker. */
     today_label: string;
     error_dates: string;
+    /** "Not relevant" removal affordance in the Schedule-task dialog. */
+    not_relevant_hint: string;
+    not_relevant_confirm_title: string;
+    not_relevant_confirm_body: string;
+    not_relevant_removed: string;
     /** Labels for the zoom selector (day / week / month / quarter / half-year). */
     view_aria: string;
     view_day: string;
@@ -2647,6 +2652,7 @@ export interface LocaleMessages {
     collect_invalid: string;
     collect_saved: string;
     collect_removed: string;
+    collect_delete: string;
     hero_title: string;
     hero_sub: string;
     hero_cta_create: string;

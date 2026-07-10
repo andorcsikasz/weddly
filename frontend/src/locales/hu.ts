@@ -2233,6 +2233,10 @@ const hu: LocaleMessages = {
     supplier_none: "(nincs)",
     today_label: "Ma",
     error_dates: "A kezdés nem lehet a befejezés után.",
+    not_relevant_hint: "Eltávolítja ezt a feladatot az idővonaladról.",
+    not_relevant_confirm_title: "Eltávolítod ezt a feladatot?",
+    not_relevant_confirm_body: "Ezzel véglegesen eltávolítod a(z) „{title}” feladatot.",
+    not_relevant_removed: "Feladat eltávolítva.",
     view_aria: "Nézet sűrűsége",
     view_day: "Napi",
     view_week: "Heti",
@@ -2443,6 +2447,7 @@ const hu: LocaleMessages = {
     collect_invalid: "Adj meg egy http:// vagy https:// kezdetű linket",
     collect_saved: "Link elmentve.",
     collect_removed: "Link törölve.",
+    collect_delete: "Link eltávolítása",
     hero_title: "Gyűítsd össze az esküvő minden emlékét egy helyen",
     hero_sub:
       "Hozz létre egy privát QR-kódot, hogy a vendégek megoszthassák fotóikat. App nélkül, regisztráció nélkül, káosz nélkül.",

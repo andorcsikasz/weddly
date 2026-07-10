@@ -202,6 +202,32 @@ describe("<UpcomingTasksCard>", () => {
     expect(screen.getByText("in 10d")).toBeInTheDocument();
   });
 
+  it("excludes tasks dismissed as not_relevant", async () => {
+    listResponse = {
+      items: [
+        task({ id: 1, title: "Real task", due_date: isoFromToday(2) }),
+        task({
+          id: 2,
+          title: "Dismissed prompt",
+          due_date: isoFromToday(1),
+          seed_key: "some_prompt",
+          decision_status: "not_relevant",
+        }),
+      ],
+    };
+    render(
+      <Providers>
+        <UpcomingTasksCard weddingDate={null} />
+      </Providers>,
+    );
+    await flush();
+
+    const items = screen.getAllByRole("listitem");
+    expect(items).toHaveLength(1);
+    expect(screen.getByText("Real task")).toBeInTheDocument();
+    expect(screen.queryByText("Dismissed prompt")).not.toBeInTheDocument();
+  });
+
   it("caps the list at 5 rows", async () => {
     listResponse = {
       items: Array.from({ length: 8 }, (_, i) =>

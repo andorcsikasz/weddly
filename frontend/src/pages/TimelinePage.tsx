@@ -185,6 +185,7 @@ export default function TimelinePage() {
   const { t, locale } = useT();
   useDocumentMeta("timeline.seo_title", "timeline.seo_description");
   const toast = useToast();
+  const confirm = useConfirm();
 
   const [items, setItems] = useState<PlanningItem[]>([]);
   const [directory, setDirectory] = useState<DirectorySupplier[]>([]);
@@ -247,8 +248,12 @@ export default function TimelinePage() {
   }, [picks, supplierById]);
 
   // Task rows considered for the Gantt — kind===task is the only kind with
-  // date fields in the contract.
-  const tasks = useMemo(() => items.filter((i) => i.kind === "task"), [items]);
+  // date fields in the contract. Rows dismissed as "not relevant" drop off the
+  // timeline entirely (the Döntések deck keeps them recoverable).
+  const tasks = useMemo(
+    () => items.filter((i) => i.kind === "task" && i.decision_status !== "not_relevant"),
+    [items],
+  );
 
   const datedTasks = useMemo(
     () => tasks.filter((t) => t.start_date !== null && t.due_date !== null),
@@ -286,6 +291,39 @@ export default function TimelinePage() {
       return true;
     } catch (e) {
       setItems((list) => list.map((i) => (i.id === id ? prev : i)));
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      return false;
+    }
+  }
+
+  /** "Not relevant" — take the task off the list. A prompt-derived task
+   *  (seed_key set) is dismissed via decision_status='not_relevant', which keeps
+   *  the row (so it never re-seeds) and stays recoverable from the Döntések deck.
+   *  A plain task can't carry that status, so it's deleted outright — confirm
+   *  first because that's irreversible. */
+  async function onNotRelevant(item: PlanningItem): Promise<boolean> {
+    if (!item.seed_key) {
+      const ok = await confirm({
+        title: t("timeline.not_relevant_confirm_title"),
+        body: t("timeline.not_relevant_confirm_body", { title: item.title }),
+        confirmLabel: t("common.remove"),
+        cancelLabel: t("common.cancel"),
+        destructive: true,
+      });
+      if (!ok) return false;
+    }
+    const prev = items;
+    setItems((list) => list.filter((i) => i.id !== item.id));
+    try {
+      if (item.seed_key) {
+        await planningApi.update(item.id, { decision_status: "not_relevant" });
+      } else {
+        await planningApi.remove(item.id);
+      }
+      toast.success(t("timeline.not_relevant_removed"));
+      return true;
+    } catch (e) {
+      setItems(prev);
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
       return false;
     }
@@ -362,6 +400,10 @@ export default function TimelinePage() {
           onClose={() => setEditing(null)}
           onSave={async (patch) => {
             const ok = await onSave(editing.id, patch);
+            if (ok) setEditing(null);
+          }}
+          onNotRelevant={async () => {
+            const ok = await onNotRelevant(editing);
             if (ok) setEditing(null);
           }}
         />
@@ -1266,6 +1308,7 @@ function TimelineEditDialog({
   assigneeSuggestions,
   onClose,
   onSave,
+  onNotRelevant,
 }: {
   item: PlanningItem;
   pocList: { pick: CouplePick; supplier: ResolvedSupplier | null }[];
@@ -1278,6 +1321,8 @@ function TimelineEditDialog({
     supplier_id: string | null;
     done: boolean;
   }) => Promise<void>;
+  /** Remove the task from the list (dismiss a prompt / delete a plain task). */
+  onNotRelevant: () => Promise<void>;
 }) {
   const { t } = useT();
   const [startDate, setStartDate] = useState(item.start_date ?? "");
@@ -1285,6 +1330,7 @@ function TimelineEditDialog({
   const [assignee, setAssignee] = useState(item.assignee ?? "");
   const [supplierId, setSupplierId] = useState(item.supplier_id ?? "");
   const [done, setDone] = useState(item.done);
+  const [notRelevant, setNotRelevant] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const initialFocusRef = useRef<HTMLInputElement | null>(null);
@@ -1307,6 +1353,17 @@ function TimelineEditDialog({
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    // "Not relevant" removes the task — nothing else on the form matters, so
+    // skip date validation and take it off the list.
+    if (notRelevant) {
+      setSubmitting(true);
+      try {
+        await onNotRelevant();
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
     const s = startDate.trim() || null;
     const d = dueDate.trim() || null;
     if (s && d && s > d) {
@@ -1446,11 +1503,34 @@ function TimelineEditDialog({
             <input
               type="checkbox"
               checked={done}
-              onChange={(e) => setDone(e.target.checked)}
+              onChange={(e) => {
+                setDone(e.target.checked);
+                if (e.target.checked) setNotRelevant(false);
+              }}
               className="h-4 w-4 cursor-pointer rounded border-paper-300 text-ink-900 dark:border-umber-600"
             />
             <span>{t("planning.mark_done")}</span>
           </label>
+
+          <div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-700 dark:text-paper-100">
+              <input
+                type="checkbox"
+                checked={notRelevant}
+                onChange={(e) => {
+                  setNotRelevant(e.target.checked);
+                  if (e.target.checked) setDone(false);
+                }}
+                className="h-4 w-4 cursor-pointer rounded border-paper-300 text-ink-900 dark:border-umber-600"
+              />
+              <span>{t("planning.decisions.action_not_relevant")}</span>
+            </label>
+            {notRelevant && (
+              <p className="mt-1 pl-6 text-xs text-ink-500 dark:text-umber-300">
+                {t("timeline.not_relevant_hint")}
+              </p>
+            )}
+          </div>
         </div>
         <div className="flex gap-2 border-t border-paper-200 px-6 py-4 dark:border-umber-700">
           <button
