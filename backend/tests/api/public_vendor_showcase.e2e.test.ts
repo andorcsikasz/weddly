@@ -71,7 +71,12 @@ describe("public vendor showcase", () => {
   });
 
   test("excludes hidden/deleted curated slugs", async () => {
-    insertListing({ id: "hidden-venue", source: "curated", category: "venue", name: "Hidden Venue" });
+    insertListing({
+      id: "hidden-venue",
+      source: "curated",
+      category: "venue",
+      name: "Hidden Venue",
+    });
     insertListing({ id: "shown-venue", source: "curated", category: "venue", name: "Shown Venue" });
     db.prepare(
       "INSERT INTO curated_supplier_overrides (supplier_id, status, created_at, updated_at) VALUES ('hidden-venue', 'hidden', ?, ?)",
