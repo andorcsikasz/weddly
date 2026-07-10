@@ -11,7 +11,7 @@
 // mirroring the videos/gallery flow.
 
 import { type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { FileText, Plus, Trash2, Upload } from "lucide-react";
+import { ChevronDown, FileText, Plus, Trash2, Upload } from "lucide-react";
 import {
   type ListingPackage,
   MAX_LISTING_PACKAGES,
@@ -47,6 +47,9 @@ export function VendorListingPackages({
   const { t, locale } = useT();
   const toast = useToast();
   const [adding, setAdding] = useState(false);
+  // The card the vendor just added — starts expanded so they can fill it in
+  // right away; every other card starts collapsed for a compact list.
+  const [justAddedId, setJustAddedId] = useState<number | null>(null);
   const suggestions = packageNameSuggestions(category, locale);
   const atCap = packages.length >= MAX_LISTING_PACKAGES;
 
@@ -55,8 +58,11 @@ export function VendorListingPackages({
     setAdding(true);
     try {
       const name = suggestions[0] ?? t("vendor_home.packages_default_name");
+      const prevIds = new Set(packages.map((p) => p.id));
       const view = await vendorListingApi.addPackage({ name });
+      const added = view.packages?.find((p) => !prevIds.has(p.id));
       onChange(view);
+      if (added) setJustAddedId(added.id);
       toast.success(t("vendor_home.packages_add_success"));
     } catch (err) {
       toast.error(
@@ -77,7 +83,13 @@ export function VendorListingPackages({
       {packages.length > 0 && (
         <ul className="space-y-3">
           {packages.map((p) => (
-            <PackageCard key={p.id} pkg={p} suggestions={suggestions} onChange={onChange} />
+            <PackageCard
+              key={p.id}
+              pkg={p}
+              suggestions={suggestions}
+              onChange={onChange}
+              defaultOpen={p.id === justAddedId}
+            />
           ))}
         </ul>
       )}
@@ -108,14 +120,17 @@ function PackageCard({
   pkg,
   suggestions,
   onChange,
+  defaultOpen = false,
 }: {
   pkg: ListingPackage;
   suggestions: string[];
   onChange: (view: VendorListingView) => void;
+  defaultOpen?: boolean;
 }) {
   const { t } = useT();
   const toast = useToast();
   const confirm = useConfirm();
+  const [open, setOpen] = useState(defaultOpen);
   const [name, setName] = useState(pkg.name);
   const [priceText, setPriceText] = useState(pkg.price_text ?? "");
   const [description, setDescription] = useState(pkg.description ?? "");
@@ -223,148 +238,188 @@ function PackageCard({
   };
 
   return (
-    <li className="space-y-2.5 rounded-lg border border-paper-300 p-3 dark:border-umber-700">
-      {/* Name + category-aware suggestion chips */}
-      <div>
-        <label className="field-label" htmlFor={`pkg-name-${pkg.id}`}>
-          {t("vendor_home.packages_name_label")}
-        </label>
-        <input
-          id={`pkg-name-${pkg.id}`}
-          className="input"
-          value={name}
-          maxLength={PACKAGE_NAME_MAX}
-          disabled={busy}
-          placeholder={t("vendor_home.packages_name_placeholder")}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={noEnterSubmit}
+    <li className="overflow-hidden rounded-lg border border-paper-300 dark:border-umber-700">
+      {/* Collapsible header — name + price summary, click to expand/collapse */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={`pkg-body-${pkg.id}`}
+        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/50"
+      >
+        <ChevronDown
+          size={16}
+          aria-hidden
+          className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${open ? "" : "-rotate-90"}`}
         />
-        {suggestions.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-ink-500 dark:text-umber-300">
-              {t("vendor_home.packages_suggestions_label")}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-medium text-ink-800 dark:text-paper-100">
+            {name.trim() || t("vendor_home.packages_default_name")}
+          </span>
+          {priceText.trim() && (
+            <span className="block truncate text-xs text-ink-500 dark:text-umber-300">
+              {priceText.trim()}
             </span>
-            {suggestions.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setName(s)}
-                className="rounded-full border border-paper-300 bg-paper-50 px-2.5 py-0.5 text-xs text-ink-700 transition hover:border-steel-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Optional free-text price */}
-      <div>
-        <label className="field-label" htmlFor={`pkg-price-${pkg.id}`}>
-          {t("vendor_home.packages_price_label")}
-        </label>
-        <input
-          id={`pkg-price-${pkg.id}`}
-          className="input"
-          value={priceText}
-          maxLength={PACKAGE_PRICE_MAX}
-          disabled={busy}
-          placeholder={t("vendor_home.packages_price_placeholder")}
-          onChange={(e) => setPriceText(e.target.value)}
-          onKeyDown={noEnterSubmit}
-        />
-      </div>
-
-      {/* Optional description */}
-      <div>
-        <label className="field-label" htmlFor={`pkg-desc-${pkg.id}`}>
-          {t("vendor_home.packages_desc_label")}
-        </label>
-        <textarea
-          id={`pkg-desc-${pkg.id}`}
-          className="input"
-          rows={2}
-          maxLength={PACKAGE_DESCRIPTION_MAX}
-          value={description}
-          disabled={busy}
-          placeholder={t("vendor_home.packages_desc_placeholder")}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
-
-      {/* Optional PDF price list */}
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          ref={pdfInputRef}
-          type="file"
-          accept="application/pdf"
-          className="hidden"
-          onChange={(e) => void onPickPdf(e)}
-        />
-        {pkg.pdf_url ? (
-          <>
-            <a
-              href={pkg.pdf_url}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex items-center gap-1.5 text-sm text-steel-700 hover:underline dark:text-steel-300"
-            >
-              <FileText size={15} aria-hidden />
-              {pkg.pdf_name ?? t("vendor_home.packages_pdf_label")}
-            </a>
-            <button
-              type="button"
-              onClick={() => pdfInputRef.current?.click()}
-              disabled={busy}
-              className="btn-ghost px-2 py-1 text-xs disabled:opacity-50"
-            >
-              {t("vendor_home.packages_pdf_replace")}
-            </button>
-            <button
-              type="button"
-              onClick={() => void onRemovePdf()}
-              disabled={busy}
-              className="btn-ghost px-2 py-1 text-xs text-blush-600 disabled:opacity-50 dark:text-blush-300"
-            >
-              {t("vendor_home.packages_pdf_remove")}
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => pdfInputRef.current?.click()}
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-paper-400 px-3 py-1.5 text-sm text-ink-600 transition hover:border-steel-400 disabled:opacity-50 dark:border-umber-600 dark:text-umber-200"
-          >
-            <Upload size={15} aria-hidden />
-            {t("vendor_home.packages_pdf_upload")}
-          </button>
-        )}
-        <span className="text-xs text-ink-400 dark:text-umber-400">
-          {t("vendor_home.packages_pdf_hint")}
+          )}
         </span>
-      </div>
+        {pkg.pdf_url && (
+          <FileText size={14} aria-hidden className="shrink-0 text-ink-400 dark:text-umber-300" />
+        )}
+        {dirty && (
+          <span className="shrink-0 rounded-full bg-steel-100 px-2 py-0.5 text-[11px] font-medium text-steel-700 dark:bg-steel-400/15 dark:text-steel-300">
+            {t("vendor_home.packages_unsaved")}
+          </span>
+        )}
+      </button>
 
-      {/* Row actions */}
-      <div className="flex items-center justify-between gap-2 pt-1">
-        <button
-          type="button"
-          onClick={() => void onDelete()}
-          disabled={busy}
-          className="inline-flex items-center gap-1 text-sm text-blush-600 transition hover:text-blush-700 disabled:opacity-50 dark:text-blush-300"
+      {open && (
+        <div
+          id={`pkg-body-${pkg.id}`}
+          className="space-y-2.5 border-t border-paper-200 p-3 dark:border-umber-800"
         >
-          <Trash2 size={15} aria-hidden />
-          {t("vendor_home.packages_delete")}
-        </button>
-        <button
-          type="button"
-          onClick={() => void onSave()}
-          disabled={!dirty || !nameValid || busy}
-          className="btn bg-steel-600 px-3 py-1.5 text-sm text-white hover:bg-steel-700 disabled:opacity-50"
-        >
-          {t("vendor_home.packages_save")}
-        </button>
-      </div>
+          {/* Name + category-aware suggestion chips */}
+          <div>
+            <label className="field-label" htmlFor={`pkg-name-${pkg.id}`}>
+              {t("vendor_home.packages_name_label")}
+            </label>
+            <input
+              id={`pkg-name-${pkg.id}`}
+              className="input"
+              value={name}
+              maxLength={PACKAGE_NAME_MAX}
+              disabled={busy}
+              placeholder={t("vendor_home.packages_name_placeholder")}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={noEnterSubmit}
+            />
+            {suggestions.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-ink-500 dark:text-umber-300">
+                  {t("vendor_home.packages_suggestions_label")}
+                </span>
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setName(s)}
+                    className="rounded-full border border-paper-300 bg-paper-50 px-2.5 py-0.5 text-xs text-ink-700 transition hover:border-steel-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Optional free-text price */}
+          <div>
+            <label className="field-label" htmlFor={`pkg-price-${pkg.id}`}>
+              {t("vendor_home.packages_price_label")}
+            </label>
+            <input
+              id={`pkg-price-${pkg.id}`}
+              className="input"
+              value={priceText}
+              maxLength={PACKAGE_PRICE_MAX}
+              disabled={busy}
+              placeholder={t("vendor_home.packages_price_placeholder")}
+              onChange={(e) => setPriceText(e.target.value)}
+              onKeyDown={noEnterSubmit}
+            />
+          </div>
+
+          {/* Optional description */}
+          <div>
+            <label className="field-label" htmlFor={`pkg-desc-${pkg.id}`}>
+              {t("vendor_home.packages_desc_label")}
+            </label>
+            <textarea
+              id={`pkg-desc-${pkg.id}`}
+              className="input"
+              rows={2}
+              maxLength={PACKAGE_DESCRIPTION_MAX}
+              value={description}
+              disabled={busy}
+              placeholder={t("vendor_home.packages_desc_placeholder")}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+
+          {/* Optional PDF price list */}
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              ref={pdfInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={(e) => void onPickPdf(e)}
+            />
+            {pkg.pdf_url ? (
+              <>
+                <a
+                  href={pkg.pdf_url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-1.5 text-sm text-steel-700 hover:underline dark:text-steel-300"
+                >
+                  <FileText size={15} aria-hidden />
+                  {pkg.pdf_name ?? t("vendor_home.packages_pdf_label")}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => pdfInputRef.current?.click()}
+                  disabled={busy}
+                  className="btn-ghost px-2 py-1 text-xs disabled:opacity-50"
+                >
+                  {t("vendor_home.packages_pdf_replace")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void onRemovePdf()}
+                  disabled={busy}
+                  className="btn-ghost px-2 py-1 text-xs text-blush-600 disabled:opacity-50 dark:text-blush-300"
+                >
+                  {t("vendor_home.packages_pdf_remove")}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => pdfInputRef.current?.click()}
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-paper-400 px-3 py-1.5 text-sm text-ink-600 transition hover:border-steel-400 disabled:opacity-50 dark:border-umber-600 dark:text-umber-200"
+              >
+                <Upload size={15} aria-hidden />
+                {t("vendor_home.packages_pdf_upload")}
+              </button>
+            )}
+            <span className="text-xs text-ink-400 dark:text-umber-400">
+              {t("vendor_home.packages_pdf_hint")}
+            </span>
+          </div>
+
+          {/* Row actions */}
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => void onDelete()}
+              disabled={busy}
+              className="inline-flex items-center gap-1 text-sm text-blush-600 transition hover:text-blush-700 disabled:opacity-50 dark:text-blush-300"
+            >
+              <Trash2 size={15} aria-hidden />
+              {t("vendor_home.packages_delete")}
+            </button>
+            <button
+              type="button"
+              onClick={() => void onSave()}
+              disabled={!dirty || !nameValid || busy}
+              className="btn bg-steel-600 px-3 py-1.5 text-sm text-white hover:bg-steel-700 disabled:opacity-50"
+            >
+              {t("vendor_home.packages_save")}
+            </button>
+          </div>
+        </div>
+      )}
     </li>
   );
 }

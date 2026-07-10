@@ -607,6 +607,7 @@ const en: LocaleMessages = {
     packages_desc_label: "Description (optional)",
     packages_desc_placeholder: "What's included in this package?",
     packages_save: "Save",
+    packages_unsaved: "Unsaved",
     packages_saved: "Package saved.",
     packages_save_failed: "Could not save, please try again.",
     packages_delete: "Delete package",

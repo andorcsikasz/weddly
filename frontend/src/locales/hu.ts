@@ -615,6 +615,7 @@ const hu: LocaleMessages = {
     packages_desc_label: "Leírás (nem kötelező)",
     packages_desc_placeholder: "Mit tartalmaz a csomag?",
     packages_save: "Mentés",
+    packages_unsaved: "Nem mentett",
     packages_saved: "Csomag mentve.",
     packages_save_failed: "Nem sikerült menteni, próbáld újra.",
     packages_delete: "Csomag törlése",

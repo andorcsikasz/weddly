@@ -785,6 +785,7 @@ export interface LocaleMessages {
     packages_desc_label: string;
     packages_desc_placeholder: string;
     packages_save: string;
+    packages_unsaved: string;
     packages_saved: string;
     packages_save_failed: string;
     packages_delete: string;
