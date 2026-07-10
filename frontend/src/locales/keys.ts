@@ -8579,4 +8579,14 @@ export interface LocaleMessages {
     footerAbout: string;
     nextAvailable: string;
   };
+  vendorBrowse: {
+    title: string;
+    subtitle: string;
+    couples_stat: string;
+    cta_couple: string;
+    empty: string;
+    convert_title: string;
+    convert_sub: string;
+    vendor_prompt: string;
+  };
 }

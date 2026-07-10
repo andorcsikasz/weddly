@@ -7992,6 +7992,18 @@ const hu: LocaleMessages = {
     footerAbout: "Rólunk",
     nextAvailable: "Legközelebbi szabad időpont: {date}",
   },
+  vendorBrowse: {
+    title: "Szolgáltatók böngészése",
+    subtitle:
+      "Ízelítő a Weddly szolgáltatóiból. Regisztrálj ingyen, és látod a teljes katalógust, elmentheted a kedvenceket, és közvetlenül felveheted velük a kapcsolatot.",
+    couples_stat: "Jelenleg {count} pár tervezi az esküvőjét a Weddly-n",
+    cta_couple: "Regisztrálj, és látod az összeset",
+    empty: "A katalógus épp töltődik fel, nézz vissza hamarosan.",
+    convert_title: "Nézd meg a teljes katalógust",
+    convert_sub:
+      "Ez csak ízelítő. Hozz létre egy ingyenes fiókot, böngészd az összes szolgáltatót, mentsd a kedvenceket, és keresd őket közvetlenül telefonon, e-mailben vagy Instagramon.",
+    vendor_prompt: "Szolgáltató vagy? Kerülj fel a listára",
+  },
 };
 
 export default hu;

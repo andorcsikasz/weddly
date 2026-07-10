@@ -82,6 +82,7 @@ const SuppliersPage = lazyWithReload(() => import("./pages/SuppliersPage"));
 const SupplierDetailPage = lazyWithReload(() => import("./pages/SupplierDetailPage"));
 const PlannerDetailPage = lazyWithReload(() => import("./pages/PlannerDetailPage"));
 const PublicVendorPage = lazyWithReload(() => import("./pages/PublicVendorPage"));
+const VendorBrowsePage = lazyWithReload(() => import("./pages/VendorBrowsePage"));
 const TimelinePage = lazyWithReload(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazyWithReload(() => import("./pages/VerifyEmailPage"));
 const VendorClaimVerifyPage = lazyWithReload(() => import("./pages/VendorClaimVerifyPage"));
@@ -345,6 +346,17 @@ export default function App() {
                 <VendorRegisterPage />
               </Page>
             </RedirectIfAuthed>
+          }
+        />
+        {/* Public, unauthenticated "browse teaser" — a photos-only directory
+            sample. Static path, declared before the `:supplier_id` param route
+            so it wins. */}
+        <Route
+          path="/vendors/browse"
+          element={
+            <Page>
+              <VendorBrowsePage />
+            </Page>
           }
         />
         {/* Public, unauthenticated vendor profile — the shareable page a couple

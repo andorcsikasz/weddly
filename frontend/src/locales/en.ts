@@ -7927,6 +7927,18 @@ const en: LocaleMessages = {
     footerAbout: "About",
     nextAvailable: "Next available: {date}",
   },
+  vendorBrowse: {
+    title: "Browse wedding vendors",
+    subtitle:
+      "A preview of the vendors on Weddly. Sign up free to see the full directory, save your favourites and reach out directly.",
+    couples_stat: "{count} couples are planning their wedding on Weddly right now",
+    cta_couple: "Sign up to see all",
+    empty: "The directory is filling up, check back soon.",
+    convert_title: "See the full directory",
+    convert_sub:
+      "This is just a taste. Create a free account to browse every vendor, save favourites and contact them directly by phone, email or Instagram.",
+    vendor_prompt: "Are you a vendor? Get listed",
+  },
 };
 
 export default en;

@@ -487,7 +487,10 @@ export default function LandingPage() {
               {t("landing.suppliers_section_body")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link to="/signup" className="btn-primary btn-lifted btn-landing w-full sm:w-auto">
+              <Link
+                to="/vendors/browse"
+                className="btn-primary btn-lifted btn-landing w-full sm:w-auto"
+              >
                 {t("landing.suppliers_couple_cta")}
               </Link>
               <Link to="/vendors" className="btn-outline btn-lifted btn-landing w-full sm:w-auto">
