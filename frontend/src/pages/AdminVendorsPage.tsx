@@ -21,6 +21,7 @@ import {
   Clock,
   CreditCard,
   DollarSign,
+  Gift,
   Loader2,
   Mail,
   MinusCircle,
@@ -30,8 +31,8 @@ import {
   Store,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { AdminEmptyState, AdminPageHeader, Pill, StatFilter } from "../components/admin";
 import type { PillTone } from "../components/admin";
 import { Button, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -43,6 +44,18 @@ import { useT } from "../lib/i18n";
 // both) — counts are a lens, not a partition.
 type Filter = "all" | "founding" | "paying" | "trial" | "free" | "pending" | "suspended";
 const FILTERS: Filter[] = ["all", "founding", "paying", "trial", "free", "pending", "suspended"];
+
+/** Glyph per filter bucket for the stat-filter tiles. Bird mirrors the
+ *  founding-member badge used on the cards; the rest read the billing state. */
+const VENDOR_FILTER_ICON: Record<Filter, ReactNode> = {
+  all: <Store size={16} />,
+  founding: <Bird size={16} />,
+  paying: <CreditCard size={16} />,
+  trial: <Clock size={16} />,
+  free: <Gift size={16} />,
+  pending: <Mail size={16} />,
+  suspended: <Ban size={16} />,
+};
 
 // Mirrors the planner list's tier chip: the FREE/PRO tier reads at a glance
 // across a dense list. Display-only here, since the vendor plan is derived
@@ -623,16 +636,17 @@ export default function AdminVendorsPage() {
         />
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <AdminFilterChip
-            key={f}
-            label={`${t(`admin.vendors.filter_${f}`)}${counts[f] > 0 ? ` · ${counts[f]}` : ""}`}
-            active={filter === f}
-            onClick={() => setFilter(f)}
-          />
-        ))}
-      </div>
+      <StatFilter
+        ariaLabel={t("admin.nav_vendors")}
+        onSelect={(k) => setFilter(k as Filter)}
+        segments={FILTERS.map((f) => ({
+          key: f,
+          label: t(`admin.vendors.filter_${f}`),
+          count: counts[f],
+          icon: VENDOR_FILTER_ICON[f],
+          active: filter === f,
+        }))}
+      />
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-umber-500">

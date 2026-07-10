@@ -5,5 +5,6 @@
 export { AdminPageHeader } from "./AdminPageHeader";
 export { AdminSectionHeader } from "./AdminSectionHeader";
 export { AdminFilterChip } from "./AdminFilterChip";
+export { StatFilter, type StatFilterSegment } from "./StatFilter";
 export { AdminEmptyState } from "./AdminEmptyState";
 export { Pill, type PillTone } from "./Pill";

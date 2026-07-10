@@ -26,8 +26,8 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { AdminEmptyState, AdminPageHeader, Pill, StatFilter } from "../components/admin";
 import type { PillTone } from "../components/admin";
 import { Button, Dialog, TextField, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -35,6 +35,14 @@ import { adminPlannerMgmtApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 type Filter = "all" | "active" | "pending" | "suspended";
+
+/** Glyph per filter bucket for the stat-filter tiles. */
+const PLANNER_FILTER_ICON: Record<Filter, ReactNode> = {
+  all: <Handshake size={16} />,
+  active: <BadgeCheck size={16} />,
+  pending: <UserPlus size={16} />,
+  suspended: <Ban size={16} />,
+};
 
 /** Which filter bucket a row falls into. Pending (accepted waitlist, no
  *  account) is its own bucket; accounts split by suspension. */
@@ -822,16 +830,17 @@ export default function AdminPlannersPage() {
         onCreated={() => void load()}
       />
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <AdminFilterChip
-            key={f}
-            label={`${t(`admin.planners.filter_${f}`)}${counts[f] > 0 ? ` · ${counts[f]}` : ""}`}
-            active={filter === f}
-            onClick={() => setFilter(f)}
-          />
-        ))}
-      </div>
+      <StatFilter
+        ariaLabel={t("admin.nav_planners")}
+        onSelect={(k) => setFilter(k as Filter)}
+        segments={FILTERS.map((f) => ({
+          key: f,
+          label: t(`admin.planners.filter_${f}`),
+          count: counts[f],
+          icon: PLANNER_FILTER_ICON[f],
+          active: filter === f,
+        }))}
+      />
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-umber-500">

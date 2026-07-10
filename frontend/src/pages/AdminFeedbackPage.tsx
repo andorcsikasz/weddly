@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { AdminEmptyState, AdminFilterChip, AdminPageHeader, Pill } from "../components/admin";
+import { AdminEmptyState, AdminPageHeader, Pill, StatFilter } from "../components/admin";
 import type { PillTone } from "../components/admin";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -330,19 +330,18 @@ export default function AdminFeedbackPage() {
     <>
       <AdminPageHeader title={t("admin.feedback_title")} subtitle={t("admin.feedback_sub")} />
 
-      <div className="mb-3 flex flex-wrap gap-2">
-        {STATUS_ORDER.map((f) => {
-          const count = counts[f];
-          return (
-            <AdminFilterChip
-              key={f}
-              label={`${t(`admin.feedback_filter_${f}`)}${count > 0 ? ` · ${count}` : ""}`}
-              active={filter.has(f)}
-              onClick={() => toggleFilter(f)}
-            />
-          );
-        })}
-      </div>
+      <StatFilter
+        ariaLabel={t("admin.feedback_title")}
+        multiSelect
+        onSelect={(k) => toggleFilter(k as FeedbackStatus)}
+        segments={STATUS_ORDER.map((f) => ({
+          key: f,
+          label: t(`admin.feedback_filter_${f}`),
+          count: counts[f],
+          icon: statusIcon(f, 16),
+          active: filter.has(f),
+        }))}
+      />
 
       {loadable.status === "loading" ? (
         <FeedbackSkeleton t={t} />
