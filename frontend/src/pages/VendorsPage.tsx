@@ -21,6 +21,9 @@ export default function VendorsPage() {
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-10 sm:px-6 sm:pt-20 sm:pb-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
+          <p className="font-grotesk mb-3 text-xs font-semibold uppercase tracking-widest text-umber-500 dark:text-umber-400">
+            {t("vendors.eyebrow")}
+          </p>
           <h1 className="font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
@@ -39,6 +42,22 @@ export default function VendorsPage() {
             >
               {t("vendors.have_account_cta")}
             </Link>
+          </div>
+          {/* Wrong-audience escape hatch — vendors shouldn't confuse themselves
+              with couples or planners (audit item 12). */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-sm text-ink-500 lg:justify-start dark:text-umber-300">
+            <span>
+              {t("vendors.couple_escape")}{" "}
+              <Link to="/signup" className="font-medium underline underline-offset-2">
+                {t("vendors.couple_escape_link")}
+              </Link>
+            </span>
+            <span>
+              {t("vendors.planner_escape")}{" "}
+              <Link to="/planners" className="font-medium underline underline-offset-2">
+                {t("vendors.planner_escape_link")}
+              </Link>
+            </span>
           </div>
         </div>
         <div className="mx-auto w-full max-w-md lg:max-w-none">

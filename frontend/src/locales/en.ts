@@ -1707,6 +1707,11 @@ const en: LocaleMessages = {
     seo_description:
       "Join Weddly's curated supplier directory and reach couples planning their wedding right now.",
     pill: "Early access",
+    eyebrow: "I'm a vendor",
+    couple_escape: "Planning as a couple?",
+    couple_escape_link: "Start here",
+    planner_escape: "A wedding planner?",
+    planner_escape_link: "See planner plans",
     hero_title: "Reach the couples planning right now.",
     hero_sub:
       "Weddly's curated directory is where couples discover wedding suppliers. Join the waitlist and we'll notify you the moment we open in your category.",
