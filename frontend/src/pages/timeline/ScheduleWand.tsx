@@ -166,8 +166,8 @@ export default function ScheduleWand({
             type="button"
             onClick={onClose}
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
-            aria-label={t("common.close")}
-            title={t("common.close")}
+            aria-label={t("a11y.close")}
+            title={t("a11y.close")}
           >
             <X size={18} aria-hidden="true" />
           </button>

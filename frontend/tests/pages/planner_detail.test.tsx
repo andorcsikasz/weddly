@@ -1,0 +1,153 @@
+// Full-page planner profile (/app/planners/:plannerUserId). Registered planner
+// ACCOUNTS get the same editorial detail page vendors have (name, about, styles,
+// references) fed by the couple-scoped directory-detail endpoint, with the
+// "Felkérés" consent CTA. Guards that the page fetches + renders the planner's
+// fields and that the CTA posts an invite and flips to the "invited" state.
+
+import type { PlannerDirectoryDetail } from "@shared/types";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import PlannerDetailPage from "@/pages/PlannerDetailPage";
+import { ToastProvider } from "@/components/ui/ToastProvider";
+import { I18nProvider } from "@/lib/i18n";
+
+type Method = "GET" | "POST" | "DELETE";
+type Call = { url: string; method: Method };
+
+const realFetch = globalThis.fetch;
+const calls: Call[] = [];
+let detail: PlannerDirectoryDetail;
+
+function jsonResponse(status: number, payload: unknown): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function installFetch() {
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input.toString();
+    const method = ((init?.method ?? "GET").toUpperCase() as Method) ?? "GET";
+    calls.push({ url, method });
+    if (url.includes("/api/couples/planner-directory/")) return jsonResponse(200, detail);
+    if (url.includes("/api/couples/planner-invite")) return jsonResponse(200, { ok: true });
+    return jsonResponse(200, {});
+  }) as typeof fetch;
+}
+
+async function flush(times = 3) {
+  for (let i = 0; i < times; i++) {
+    await act(async () => {
+      await Promise.resolve();
+      await new Promise((r) => setTimeout(r, 0));
+    });
+  }
+}
+
+function Providers({ children }: { children: ReactNode }) {
+  return (
+    <MemoryRouter initialEntries={["/app/planners/5"]}>
+      <I18nProvider>
+        <ToastProvider>
+          <Routes>
+            <Route path="/app/planners/:plannerUserId" element={children} />
+          </Routes>
+        </ToastProvider>
+      </I18nProvider>
+    </MemoryRouter>
+  );
+}
+
+beforeEach(() => {
+  calls.length = 0;
+  try {
+    localStorage.clear();
+    localStorage.setItem("weddly.locale", "en");
+  } catch {
+    /* happy-dom without storage — ignore */
+  }
+  detail = {
+    planner_user_id: 5,
+    business_name: "Andruskó Evelin EV",
+    full_name: "Andruskó Evelin",
+    city: "Budapest",
+    country: "HU",
+    bio: "Destination wedding planner with direct contact.",
+    website: "https://evelin.example",
+    styles: ["classic", "outdoor", "elegant"],
+    km_radius: 150,
+    weddings_per_year: 20,
+    avatar_url: null,
+    verified: true,
+    link_status: "none",
+    availability: "Free dates for 2027 Q3.",
+    reference_links: ["https://www.instagram.com/evelineskuvoszervezes"],
+    portfolio: [
+      {
+        id: 1,
+        title: "Villa wedding",
+        description: "",
+        image_url: null,
+        sort_order: 0,
+        created_at: 0,
+      },
+    ],
+  };
+  installFetch();
+});
+
+afterEach(() => {
+  globalThis.fetch = realFetch;
+});
+
+describe("PlannerDetailPage", () => {
+  it("renders the planner profile like a vendor detail page", async () => {
+    render(
+      <Providers>
+        <PlannerDetailPage />
+      </Providers>,
+    );
+    await flush();
+
+    // It fetched the couple-scoped planner detail by id.
+    expect(calls.some((c) => c.url.includes("/api/couples/planner-directory/5"))).toBe(true);
+
+    // Name (as an h1), about, availability, a style tag, and the reference link.
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Andruskó Evelin EV");
+    expect(
+      screen.getByText("Destination wedding planner with direct contact."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Free dates for 2027 Q3.")).toBeInTheDocument();
+    expect(screen.getByText("Classic")).toBeInTheDocument(); // style_classic
+    expect(
+      screen.getAllByText("https://www.instagram.com/evelineskuvoszervezes").length,
+    ).toBeGreaterThan(0);
+    // The old raw-key bug must be gone.
+    expect(screen.queryByText("common.close")).not.toBeInTheDocument();
+  });
+
+  it("the Felkérés CTA posts an invite and flips to the invited state", async () => {
+    render(
+      <Providers>
+        <PlannerDetailPage />
+      </Providers>,
+    );
+    await flush();
+
+    // "Invite" (planner_directory.connect) appears twice: header + sidebar.
+    const inviteButtons = screen.getAllByRole("button", { name: "Invite" });
+    expect(inviteButtons.length).toBeGreaterThan(0);
+    fireEvent.click(inviteButtons[0]!);
+
+    await waitFor(() =>
+      expect(
+        calls.some((c) => c.method === "POST" && c.url.includes("/api/couples/planner-invite")),
+      ).toBe(true),
+    );
+    // After inviting, the CTA reflects the pending "Invite sent" state.
+    await waitFor(() => expect(screen.getAllByText("Invite sent").length).toBeGreaterThan(0));
+  });
+});

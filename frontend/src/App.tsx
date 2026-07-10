@@ -80,6 +80,7 @@ const SchedulePage = lazyWithReload(() => import("./pages/SchedulePage"));
 const SeatingPage = lazyWithReload(() => import("./pages/SeatingPage"));
 const SuppliersPage = lazyWithReload(() => import("./pages/SuppliersPage"));
 const SupplierDetailPage = lazyWithReload(() => import("./pages/SupplierDetailPage"));
+const PlannerDetailPage = lazyWithReload(() => import("./pages/PlannerDetailPage"));
 const PublicVendorPage = lazyWithReload(() => import("./pages/PublicVendorPage"));
 const TimelinePage = lazyWithReload(() => import("./pages/TimelinePage"));
 const VerifyEmailPage = lazyWithReload(() => import("./pages/VerifyEmailPage"));
@@ -1031,6 +1032,18 @@ export default function App() {
               <Page>
                 <RequireAuth>
                   <SupplierDetailPage />
+                </RequireAuth>
+              </Page>
+            }
+          />
+          {/* Full detail page for a registered planner account (parallel to the
+              vendor detail page above; planner accounts aren't listings). */}
+          <Route
+            path="planners/:plannerUserId"
+            element={
+              <Page>
+                <RequireAuth>
+                  <PlannerDetailPage />
                 </RequireAuth>
               </Page>
             }
