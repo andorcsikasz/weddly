@@ -4,17 +4,40 @@
 // account directly and run the in-app onboarding wizard.
 
 import { ArrowLeft, Check, Gem, MapPinned, PhoneCall } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { VendorDemoLaunchButton } from "../components/VendorDemoLaunchButton";
+import { publicStatsApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+
+// Hide the demand-side line below this many real couples so a thin number never
+// undersells (matches the browse page; audit item 8, no fabricated stats).
+const MIN_COUPLES_TO_SHOW = 15;
 
 export default function VendorsPage() {
   const { t } = useT();
   useDocumentMeta("vendors.seo_title", "vendors.seo_description");
+  const [couples, setCouples] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    publicStatsApi
+      .get()
+      .then((r) => {
+        if (!cancelled) setCouples(r.couples);
+      })
+      .catch(() => {
+        /* stat is optional — the hero works without it */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const showCouples = couples !== null && couples >= MIN_COUPLES_TO_SHOW;
 
   return (
     <PublicShell>
@@ -31,6 +54,12 @@ export default function VendorsPage() {
             <Check size={14} className="text-umber-600 dark:text-umber-400" aria-hidden />
             {t("vendors.trust_signal")}
           </p>
+          {showCouples && (
+            <p className="mx-auto mt-1.5 flex items-center justify-center gap-1.5 text-sm font-medium text-sage-700 lg:justify-start dark:text-sage-300">
+              <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden />
+              {t("vendors.couples_stat", { count: String(couples) })}
+            </p>
+          )}
           <div className="mt-6 flex flex-col flex-wrap items-center gap-3 sm:flex-row lg:justify-start">
             <Link to="/vendors/signup" className="btn-primary btn-lg shadow-sm">
               {t("vendors.signup_cta")}

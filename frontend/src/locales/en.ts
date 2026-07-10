@@ -1716,6 +1716,7 @@ const en: LocaleMessages = {
     hero_sub:
       "Weddly's curated directory is where couples discover wedding suppliers. Join the waitlist and we'll notify you the moment we open in your category.",
     trust_signal: "Join 47 vendors already on the waitlist",
+    couples_stat: "{count} couples are planning their wedding on Weddly right now",
     benefit_1_title: "A handpicked shortlist",
     benefit_1_body: "Capped per category, so only couples who fit reach you.",
     benefit_2_title: "Local, not lead spam",

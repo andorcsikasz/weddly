@@ -1981,6 +1981,7 @@ export interface LocaleMessages {
     hero_title: string;
     hero_sub: string;
     trust_signal: string;
+    couples_stat: string;
     benefit_1_title: string;
     benefit_1_body: string;
     benefit_2_title: string;
