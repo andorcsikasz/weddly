@@ -125,6 +125,12 @@ interface Props {
   /** Pre-select a specific Google account in the popup. Used by the
    *  SessionExpiredDialog with the previously-signed-in email. */
   loginHint?: string;
+  /** When provided, the raw Google credential (ID-token JWT) is handed to the
+   *  caller INSTEAD of being posted to /api/auth/google. Used by the vendor
+   *  signup, which must carry the credential into a second step (business
+   *  details) and post it to a vendor-specific endpoint. `onSuccess` /
+   *  `redirectTo` are not used in this mode. */
+  onCredential?: (credential: string) => void;
   /** When provided, called with the fresh session instead of navigating.
    *  Used by the SessionExpiredDialog so re-auth resumes the current page
    *  rather than bouncing to /app. */
@@ -142,6 +148,7 @@ export function GoogleSignInButton({
   oneTap = false,
   autoSelect = false,
   loginHint,
+  onCredential,
   onSuccess,
   onError,
 }: Props) {
@@ -178,6 +185,12 @@ export function GoogleSignInButton({
           client_id: CLIENT_ID,
           callback: async (resp) => {
             if (cancelled) return;
+            // Vendor signup mode: hand the raw credential back and let the
+            // caller carry it into the business step + its own endpoint.
+            if (onCredential) {
+              onCredential(resp.credential);
+              return;
+            }
             try {
               const session = await authApi.google({
                 credential: resp.credential,
@@ -278,6 +291,7 @@ export function GoogleSignInButton({
     oneTap,
     autoSelect,
     loginHint,
+    onCredential,
     onSuccess,
     onError,
     locale,

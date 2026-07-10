@@ -316,3 +316,97 @@ describe("vendor self-serve registration", () => {
     expect(me.data.account.onboarding_done).toBe(true);
   });
 });
+
+// ─── Google-based vendor signup (POST /api/vendor/register/google) ───────────
+// Same provisioning as the password path, but the identity comes from a
+// verified Google credential (GOOGLE_TEST_BYPASS is pinned in tests/setup.ts).
+
+import { mintTestBearer } from "../../src/lib/google_oauth";
+
+function registerGoogle(body: Omit<RegBody, "email" | "password"> & { credential: string }) {
+  return req<AuthSession>("POST", "/api/vendor/register/google", body);
+}
+
+describe("vendor Google registration", () => {
+  test("creates a verified vendor from a Google credential + business fields", async () => {
+    wipeAll();
+    const credential = mintTestBearer({
+      sub: "g-vendor-1",
+      email: "gvendor@test.test",
+      name: "Gábor Vendor",
+    });
+    const reg = await registerGoogle({
+      credential,
+      full_name: "ignored — Google name wins",
+      business_name: "Google Studio",
+      category: "photo_video",
+      locale: "en",
+    });
+    expect(reg.status).toBe(201);
+    expect(reg.data.user.role).toBe("vendor");
+    expect(reg.data.user.email).toBe("gvendor@test.test");
+    // Google attests the address → verified, and it's a Google-only account.
+    const user = db
+      .prepare(
+        "SELECT id, role, verified_email, google_sub, password_set FROM users WHERE email = ?",
+      )
+      .get("gvendor@test.test") as {
+      id: number;
+      role: string;
+      verified_email: number;
+      google_sub: string;
+      password_set: number;
+    };
+    expect(user.role).toBe("vendor");
+    expect(user.verified_email).toBe(1);
+    expect(user.google_sub).toBe("g-vendor-1");
+    expect(user.password_set).toBe(0);
+    // The full vendor stack was provisioned (account + listing + founding sub).
+    const account = db
+      .prepare("SELECT id, display_name FROM vendor_accounts WHERE owner_user_id = ?")
+      .get(user.id) as { id: number; display_name: string };
+    expect(account.display_name).toBe("Google Studio");
+    const listing = db
+      .prepare("SELECT status FROM listings WHERE vendor_account_id = ?")
+      .get(account.id) as { status: string };
+    expect(listing.status).toBe("active");
+    const sub = db
+      .prepare("SELECT subscription_status FROM vendor_subscriptions WHERE vendor_account_id = ?")
+      .get(account.id) as { subscription_status: string };
+    expect(sub.subscription_status).toBe("founding");
+    // The issued session works against a vendor-only surface.
+    const me = await req<VendorListingView>("GET", "/api/vendor/listing/me", undefined, {
+      token: reg.data.token,
+    });
+    expect(me.status).toBe(200);
+  });
+
+  test("an email already in use → 409", async () => {
+    wipeAll();
+    await register(baseBody); // password vendor on studio@test.test
+    const credential = mintTestBearer({ sub: "g-dup", email: "studio@test.test", name: "Dup" });
+    const dup = await registerGoogle({
+      credential,
+      business_name: "Other",
+      category: "photo_video",
+    });
+    expect(dup.status).toBe(409);
+  });
+
+  test("missing credential → 400; unknown category → 400", async () => {
+    wipeAll();
+    const noCred = await req("POST", "/api/vendor/register/google", {
+      business_name: "X",
+      category: "photo_video",
+    });
+    expect(noCred.status).toBe(400);
+
+    const credential = mintTestBearer({ sub: "g-badcat", email: "badcat@test.test", name: "B" });
+    const badCat = await registerGoogle({
+      credential,
+      business_name: "X",
+      category: "not_a_real_category",
+    });
+    expect(badCat.status).toBe(400);
+  });
+});

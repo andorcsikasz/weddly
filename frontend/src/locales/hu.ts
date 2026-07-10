@@ -1868,6 +1868,8 @@ const hu: LocaleMessages = {
     success_title: "A fiókod elkészült!",
     success_body:
       "Küldtünk egy megerősítő e-mailt az alábbi címre. Erősítsd meg, majd fejezd be a profilod néhány gyors lépésben.",
+    success_body_verified: "Minden készen áll. Fejezd be a profilod néhány gyors lépésben.",
+    google_continue_as: "Folytatás Google-fiókkal: {email}.",
     submit: "Fiók létrehozása",
     continue_to_onboarding: "Tovább",
   },

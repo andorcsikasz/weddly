@@ -1847,6 +1847,8 @@ const en: LocaleMessages = {
     success_title: "Your account is ready!",
     success_body:
       "We've sent a confirmation email to the address below. Verify it, then finish your profile in a few quick steps.",
+    success_body_verified: "You're all set. Finish your profile in a few quick steps.",
+    google_continue_as: "Continuing with Google as {email}.",
     submit: "Create account",
     continue_to_onboarding: "Continue",
   },

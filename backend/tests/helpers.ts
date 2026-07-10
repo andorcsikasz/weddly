@@ -133,7 +133,8 @@ function withConsentVersions(method: string, path: string, body: unknown): unkno
     path === "/api/auth/register" ||
     path === "/api/auth/google" ||
     path === "/api/auth/apple" ||
-    path === "/api/vendor/register"
+    path === "/api/vendor/register" ||
+    path === "/api/vendor/register/google"
   ) {
     // Every register path requires BOTH privacy_version and terms_version
     // for brand-new accounts. Tests probing the "missing version" path

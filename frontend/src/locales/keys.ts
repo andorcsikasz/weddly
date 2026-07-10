@@ -2122,6 +2122,11 @@ export interface LocaleMessages {
     /** Post-signup confetti screen. */
     success_title: string;
     success_body: string;
+    /** Shown instead of success_body when the account is already verified
+     *  (Google signup). */
+    success_body_verified: string;
+    /** Step-2 banner when the vendor chose Google on step 1. Takes {email}. */
+    google_continue_as: string;
     submit: string;
     continue_to_onboarding: string;
   };

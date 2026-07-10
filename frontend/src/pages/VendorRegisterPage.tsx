@@ -17,6 +17,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AddressAutocomplete } from "../components/AddressAutocomplete";
 import { Confetti } from "../components/Confetti";
 import { CountryCombobox } from "../components/CountryCombobox";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { CompanyLookupBox } from "../components/planner/CompanyLookupBox";
 import { Shell } from "../components/Shell";
 import { Button, PasswordField, useToast } from "../components/ui";
@@ -26,6 +27,34 @@ import { clearDemoSessionFlag } from "../lib/demoSession";
 import { vendorAuthApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+
+/** Pull the email + display name out of a Google credential for display only
+ *  (which account the vendor picked). The backend re-verifies the credential
+ *  and uses the attested values, so a decode failure just skips the prefill.
+ *  Handles both a real ID-token JWT and the `test:` bypass string used in dev. */
+function decodeGoogleClaims(credential: string): { email: string; name: string } | null {
+  try {
+    if (credential.startsWith("test:")) {
+      const parts = credential.split(":");
+      return {
+        email: parts[2] ? decodeURIComponent(parts[2]) : "",
+        name: parts[3] ? decodeURIComponent(parts[3]) : "",
+      };
+    }
+    const payload = credential.split(".")[1];
+    if (!payload) return null;
+    const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as {
+      email?: unknown;
+      name?: unknown;
+    };
+    return {
+      email: typeof json.email === "string" ? json.email : "",
+      name: typeof json.name === "string" ? json.name : "",
+    };
+  } catch {
+    return null;
+  }
+}
 
 export default function VendorRegisterPage() {
   const { setSession } = useAuth();
@@ -41,6 +70,11 @@ export default function VendorRegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  // When the vendor signs up with Google, we hold the verified credential from
+  // step 1 and submit it (instead of a password) with the step-2 business
+  // fields. `googleEmail` is decoded from the credential for display only.
+  const [googleCredential, setGoogleCredential] = useState<string | null>(null);
+  const [googleEmail, setGoogleEmail] = useState<string | null>(null);
 
   // Step 2: company identity (only name + category are required; the rest is
   // the official-registry block the planner flow already collects)
@@ -109,6 +143,21 @@ export default function VendorRegisterPage() {
     setStep(1);
   }
 
+  // The vendor authenticated with Google on step 1. Hold the credential, prefill
+  // name/email from it for display, and jump straight to the business step —
+  // there's no password to collect.
+  function onGoogleCredential(credential: string) {
+    setError(null);
+    setGoogleCredential(credential);
+    const claims = decodeGoogleClaims(credential);
+    if (claims?.email) {
+      setEmail(claims.email);
+      setGoogleEmail(claims.email);
+    }
+    if (claims?.name) setFullName(claims.name);
+    setStep(1);
+  }
+
   // Focus the first business field when the step flips (desktop only, matching
   // the step-1 autofocus behaviour).
   useEffect(() => {
@@ -141,10 +190,9 @@ export default function VendorRegisterPage() {
       } catch {
         /* sessionStorage blocked — drop attribution, keep the signup */
       }
-      const session = await vendorAuthApi.register({
-        email: email.trim(),
-        password,
-        full_name: fullName.trim(),
+      // Everything past the identity is identical between the two signup paths;
+      // only email+password (password path) vs the Google credential differ.
+      const businessPayload = {
         business_name: businessName.trim(),
         category,
         custom_category: category === "other" ? customCategory.trim() : undefined,
@@ -162,7 +210,15 @@ export default function VendorRegisterPage() {
         locale,
         referrer,
         ...utm,
-      });
+      };
+      const session = googleCredential
+        ? await vendorAuthApi.registerGoogle({ credential: googleCredential, ...businessPayload })
+        : await vendorAuthApi.register({
+            email: email.trim(),
+            password,
+            full_name: fullName.trim(),
+            ...businessPayload,
+          });
       try {
         window.sessionStorage.removeItem("weddly.ref");
         window.sessionStorage.removeItem("weddly.utm");
@@ -233,28 +289,36 @@ export default function VendorRegisterPage() {
               {t("vendor_register.success_title")}
             </h1>
             <p className="mt-3 text-sm text-umber-800 dark:text-umber-200">
-              {t("vendor_register.success_body")}
+              {/* Google-created accounts are already verified — don't tell them
+                  to go check an inbox that has nothing to confirm. */}
+              {pendingSession.user.verified_email
+                ? t("vendor_register.success_body_verified")
+                : t("vendor_register.success_body")}
             </p>
             <p className="mt-4 break-all rounded-lg bg-paper-100 px-3 py-2 text-sm font-medium text-umber-900">
               {pendingSession.user.email}
             </p>
-            <p className="mt-4 text-xs text-umber-600 dark:text-umber-300">
-              {t("verify.check_inbox_spam_hint")}
-            </p>
+            {!pendingSession.user.verified_email && (
+              <p className="mt-4 text-xs text-umber-600 dark:text-umber-300">
+                {t("verify.check_inbox_spam_hint")}
+              </p>
+            )}
             <div className="mt-6 flex flex-col gap-3">
               <Button type="button" variant="primary" fullWidth onClick={continueToApp}>
                 {t("vendor_register.continue_to_onboarding")}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                fullWidth
-                loading={resending}
-                loadingLabel={t("verify.banner_resending")}
-                onClick={onResend}
-              >
-                {t("verify.banner_resend")}
-              </Button>
+              {!pendingSession.user.verified_email && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  fullWidth
+                  loading={resending}
+                  loadingLabel={t("verify.banner_resending")}
+                  onClick={onResend}
+                >
+                  {t("verify.banner_resend")}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -318,87 +382,105 @@ export default function VendorRegisterPage() {
 
           {/* ── Step 1: Account ── */}
           {step === 0 && (
-            <form className="mt-6 space-y-4" onSubmit={handleAccountNext} noValidate>
-              <div>
-                <label htmlFor="vr_full_name" className="field-label">
-                  {t("auth.full_name_label")}
-                </label>
-                <input
-                  ref={nameRef}
-                  id="vr_full_name"
-                  type="text"
-                  className="input"
-                  value={fullName}
+            <>
+              {/* Social sign-up — hands the credential back so we can carry it
+                  into the business step (GoogleSignInButton renders nothing when
+                  VITE_GOOGLE_CLIENT_ID is unset, leaving just the form). */}
+              <div className="mt-6">
+                <GoogleSignInButton mode="signup" onCredential={onGoogleCredential} />
+              </div>
+              <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-umber-600 dark:text-umber-300">
+                <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
+                <span>{t("auth.or")}</span>
+                <span className="h-px flex-1 bg-paper-200 dark:bg-umber-700" />
+              </div>
+              <form className="space-y-4" onSubmit={handleAccountNext} noValidate>
+                <div>
+                  <label htmlFor="vr_full_name" className="field-label">
+                    {t("auth.full_name_label")}
+                  </label>
+                  <input
+                    ref={nameRef}
+                    id="vr_full_name"
+                    type="text"
+                    className="input"
+                    value={fullName}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      clearError();
+                    }}
+                    autoComplete="name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="vr_email" className="field-label">
+                    {t("auth.email_label")}
+                  </label>
+                  <input
+                    id="vr_email"
+                    type="email"
+                    className="input"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      clearError();
+                    }}
+                    autoComplete="email"
+                    inputMode="email"
+                    required
+                  />
+                </div>
+                <PasswordField
+                  id="vr_password"
+                  label={t("auth.password_label")}
+                  value={password}
                   onChange={(e) => {
-                    setFullName(e.target.value);
+                    setPassword(e.target.value);
                     clearError();
                   }}
-                  autoComplete="name"
                   required
+                  minLength={8}
+                  autoComplete="new-password"
+                  helperText={t("auth.short_password")}
                 />
-              </div>
-              <div>
-                <label htmlFor="vr_email" className="field-label">
-                  {t("auth.email_label")}
-                </label>
-                <input
-                  id="vr_email"
-                  type="email"
-                  className="input"
-                  value={email}
+                <PasswordField
+                  id="vr_password_confirm"
+                  label={t("auth.password_confirm_label")}
+                  value={passwordConfirm}
                   onChange={(e) => {
-                    setEmail(e.target.value);
+                    setPasswordConfirm(e.target.value);
                     clearError();
                   }}
-                  autoComplete="email"
-                  inputMode="email"
                   required
+                  minLength={8}
+                  autoComplete="new-password"
+                  errorText={
+                    passwordConfirm.length > 0 && passwordConfirm !== password
+                      ? t("auth.password_mismatch")
+                      : undefined
+                  }
                 />
-              </div>
-              <PasswordField
-                id="vr_password"
-                label={t("auth.password_label")}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  clearError();
-                }}
-                required
-                minLength={8}
-                autoComplete="new-password"
-                helperText={t("auth.short_password")}
-              />
-              <PasswordField
-                id="vr_password_confirm"
-                label={t("auth.password_confirm_label")}
-                value={passwordConfirm}
-                onChange={(e) => {
-                  setPasswordConfirm(e.target.value);
-                  clearError();
-                }}
-                required
-                minLength={8}
-                autoComplete="new-password"
-                errorText={
-                  passwordConfirm.length > 0 && passwordConfirm !== password
-                    ? t("auth.password_mismatch")
-                    : undefined
-                }
-              />
-              {error && (
-                <p id={errorId} className="field-error" role="alert">
-                  {error}
-                </p>
-              )}
-              <Button type="submit" variant="primary" fullWidth>
-                {t("common.next")}
-              </Button>
-            </form>
+                {error && (
+                  <p id={errorId} className="field-error" role="alert">
+                    {error}
+                  </p>
+                )}
+                <Button type="submit" variant="primary" fullWidth>
+                  {t("common.next")}
+                </Button>
+              </form>
+            </>
           )}
 
           {/* ── Step 2: Business ── */}
           {step === 1 && (
             <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
+              {googleCredential && (
+                <p className="rounded-lg bg-paper-100 px-3 py-2 text-sm text-umber-800 dark:bg-umber-800 dark:text-umber-200">
+                  {t("vendor_register.google_continue_as", { email: googleEmail ?? "Google" })}
+                </p>
+              )}
               <CountryCombobox
                 id="vr_country"
                 label={t("vendor_register.country_label")}
@@ -598,6 +680,10 @@ export default function VendorRegisterPage() {
                   variant="outline"
                   onClick={() => {
                     setStep(0);
+                    // Going back re-opens the auth choice, so drop any held
+                    // Google credential; the user can re-pick Google or password.
+                    setGoogleCredential(null);
+                    setGoogleEmail(null);
                     clearError();
                   }}
                 >

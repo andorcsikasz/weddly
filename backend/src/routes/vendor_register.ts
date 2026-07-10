@@ -11,6 +11,7 @@
 // instead of a minted token. No card is asked — the first VENDOR_FOUNDING_CAP
 // vendors get a free founding year, everyone after lands on a 14-day trial.
 
+import { randomBytes } from "node:crypto";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import type { AuthSession } from "@shared/types";
@@ -28,9 +29,14 @@ import { createVendorAccount } from "../domain/vendor_accounts";
 import { initVendorBilling } from "../domain/vendor_billing";
 import { getUserById, getUserByEmail, toUser, type UserRow } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
+import { verifyGoogleCredential } from "../lib/google_oauth";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
 import { createVerificationToken } from "./email_verify";
+
+/** Thrown from an `insertUser` callback on a UNIQUE(email) collision so
+ *  `provisionVendor` can map the transaction failure to a clean 409. */
+const ERR_EMAIL_TAKEN = "race:email_taken";
 
 /** Flat set of every valid supplier category, built once from the taxonomy
  *  source of truth so an unknown category is rejected at the boundary. */
@@ -126,6 +132,180 @@ function parseCustomCategory(raw: unknown, category: SupplierCategory): string |
   return label;
 }
 
+/** Everything the vendor-account/listing/billing transaction needs. `email` is
+ *  the account contact email — the form email on the password path, the
+ *  Google-verified email on the Google path. */
+interface VendorProvisionInput {
+  email: string;
+  businessName: string;
+  category: SupplierCategory;
+  customCategory: string | null;
+  country: string | null;
+  registryNumber: string | null;
+  vatNumber: string | null;
+  legalForm: string | null;
+  address: string | null;
+  city: string | null;
+  postalCode: string | null;
+  contactPhone: string | null;
+  website: string | null;
+}
+
+/** Parse + validate the company/business (step 2) fields shared by the password
+ *  and Google signup paths. */
+function parseBusinessFields(body: VendorRegisterBody, email: string): VendorProvisionInput {
+  const category = parseCategory(body.category);
+  return {
+    email,
+    businessName: parseName(body.business_name, "Business name", 120),
+    category,
+    customCategory: parseCustomCategory(body.custom_category, category),
+    country: parseCountry(body.country),
+    registryNumber: parseOptional(body.registry_number, 40),
+    vatNumber: parseOptional(body.vat_number, 40),
+    legalForm: parseOptional(body.legal_form, 80),
+    address: parseOptional(body.address, 240),
+    city: parseOptional(body.city, 80),
+    postalCode: parseOptional(body.postal_code, 20),
+    contactPhone: parseOptional(body.contact_phone, 40),
+    website: parseOptional(body.website, 240),
+  };
+}
+
+/** Run the atomic user-insert + vendor_account + listing + billing transaction.
+ *  `insertUser` is the differing piece (password vs Google) — it inserts the
+ *  users row and returns the new id, throwing Error(ERR_EMAIL_TAKEN) on a
+ *  UNIQUE(email) collision. */
+function provisionVendor(
+  insertUser: () => number,
+  input: VendorProvisionInput,
+  currency: ReturnType<typeof vendorCurrencyForLocale>,
+  ts: number,
+): { userId: number; vendorAccountId: number } {
+  let userId = 0;
+  let vendorAccountId = 0;
+  const tx = db.transaction(() => {
+    userId = insertUser();
+    const account = createVendorAccount({
+      ownerUserId: userId,
+      displayName: input.businessName,
+      contactEmail: input.email,
+      contactPhone: input.contactPhone,
+      vatNumber: input.vatNumber,
+      country: input.country,
+      registryNumber: input.registryNumber,
+      legalForm: input.legalForm,
+      address: input.address,
+      city: input.city,
+      postalCode: input.postalCode,
+      onboardingDone: false, // run the in-app wizard after signup
+    });
+    vendorAccountId = account.id;
+    // Give the vendor a live listing to land on + refine in the wizard, seeded
+    // with whatever the company step collected so it opens prefilled.
+    createVendorListing({
+      vendorAccountId,
+      category: input.category,
+      customCategory: input.customCategory,
+      name: input.businessName,
+      city: input.city ?? "",
+      address: input.address,
+      contactEmail: input.email,
+      contactPhone: input.contactPhone,
+      website: input.website,
+    });
+    // Founding (free year) or trial — inside the tx so the cohort count and the
+    // grant stay consistent with the account creation.
+    initVendorBilling(vendorAccountId, currency, ts);
+  });
+  try {
+    tx();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg === ERR_EMAIL_TAKEN) {
+      throw new HttpError(409, "An account with this email already exists", {
+        code: "email_taken",
+      });
+    }
+    throw e;
+  }
+  return { userId, vendorAccountId };
+}
+
+/** Post-transaction side effects shared by both signup paths: GDPR consent
+ *  ledger, audit, growth event, optional welcome/verify email, and the issued
+ *  session response. */
+async function finalizeVendorSignup(
+  ctx: Ctx,
+  input: {
+    userId: number;
+    vendorAccountId: number;
+    email: string;
+    fullName: string;
+    category: SupplierCategory;
+    currency: ReturnType<typeof vendorCurrencyForLocale>;
+    auditAction: string;
+    /** The password path sends a verify email (verified_email=0); the Google
+     *  path skips it because Google already attested the address. */
+    sendVerifyEmail: boolean;
+  },
+): Promise<Response> {
+  const ip = ctx.clientIp;
+  const userAgent = ctx.req.headers.get("user-agent");
+  recordConsent({
+    subjectUserId: input.userId,
+    subjectKind: "user",
+    subjectRef: null,
+    document: "privacy",
+    version: PRIVACY_VERSION,
+    ip,
+    userAgent,
+  });
+  recordConsent({
+    subjectUserId: input.userId,
+    subjectKind: "user",
+    subjectRef: null,
+    document: "terms",
+    version: TERMS_VERSION,
+    ip,
+    userAgent,
+  });
+
+  addAuditLog({
+    actor_user_id: input.userId,
+    couple_id: null,
+    action: input.auditAction,
+    target_kind: "vendor_account",
+    target_id: input.vendorAccountId,
+    after: { email: input.email, category: input.category, currency: input.currency },
+  });
+
+  recordGrowthEvent("signup.completed", {
+    user_id: input.userId,
+    user_agent: userAgent,
+    payload: { role: "vendor" },
+  });
+
+  if (input.sendVerifyEmail) {
+    // Welcome + verification — single email, both purposes. Soft verification:
+    // signup is never blocked on it. Fire-and-forget so a mailer outage doesn't
+    // fail registration.
+    const verifyToken = createVerificationToken(input.userId);
+    const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-email/${verifyToken}`;
+    void sendKind(
+      "welcome_verify",
+      { verifyUrl },
+      { user: { id: input.userId, email: input.email, full_name: input.fullName } },
+    );
+  }
+
+  const token = issueSession(input.userId);
+  const userRow = getUserById(input.userId);
+  if (!userRow) throw new HttpError(500, "User vanished after vendor registration");
+  const session: AuthSession = { token, user: toUser(userRow as UserRow) };
+  return json(session, { status: 201 });
+}
+
 async function handleRegister(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "vendor:register", AUTH_BUCKET);
   const body = await readJson<VendorRegisterBody>(ctx.req);
@@ -133,18 +313,7 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   const email = parseEmail(body.email);
   const password = parsePassword(body.password);
   const fullName = parseName(body.full_name, "Name", 200);
-  const businessName = parseName(body.business_name, "Business name", 120);
-  const category = parseCategory(body.category);
-  const customCategory = parseCustomCategory(body.custom_category, category);
-  const country = parseCountry(body.country);
-  const registryNumber = parseOptional(body.registry_number, 40);
-  const vatNumber = parseOptional(body.vat_number, 40);
-  const legalForm = parseOptional(body.legal_form, 80);
-  const address = parseOptional(body.address, 240);
-  const city = parseOptional(body.city, 80);
-  const postalCode = parseOptional(body.postal_code, 20);
-  const contactPhone = parseOptional(body.contact_phone, 40);
-  const website = parseOptional(body.website, 240);
+  const input = parseBusinessFields(body, email);
 
   // GDPR Art. 7(1): refuse a stale client so the consent ledger only ever
   // records the exact policy version the vendor actually saw (mirrors auth.ts).
@@ -154,7 +323,6 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   if (body.terms_version !== TERMS_VERSION) {
     throw new HttpError(400, "Terms version is out of date — please refresh the page");
   }
-
   if (getUserByEmail(email)) {
     throw new HttpError(409, "An account with this email already exists", { code: "email_taken" });
   }
@@ -165,14 +333,9 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   const currency = vendorCurrencyForLocale(persistedLocale);
   const acq = buildSignupAcquisition(ctx, body);
 
-  let newUserId = 0;
-  let newVendorAccountId = 0;
-  const ERR_EMAIL_TAKEN = "race:email_taken";
-
-  const tx = db.transaction(() => {
-    let userResult;
+  const insertUser = () => {
     try {
-      userResult = db
+      const res = db
         .prepare(
           `INSERT INTO users
              (email, password_hash, full_name, status, role, verified_email, locale,
@@ -195,115 +358,129 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
           ts,
           ts,
         );
+      return Number(res.lastInsertRowid);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("UNIQUE")) throw new Error(ERR_EMAIL_TAKEN);
       throw e;
     }
-    newUserId = Number(userResult.lastInsertRowid);
+  };
 
-    const account = createVendorAccount({
-      ownerUserId: newUserId,
-      displayName: businessName,
-      contactEmail: email,
-      contactPhone,
-      vatNumber,
-      country,
-      registryNumber,
-      legalForm,
-      address,
-      city,
-      postalCode,
-      onboardingDone: false, // run the in-app wizard after signup
-    });
-    newVendorAccountId = account.id;
-
-    // Give the vendor a live listing to land on + refine in the wizard,
-    // seeded with whatever the company step collected so the wizard opens
-    // prefilled instead of blank.
-    createVendorListing({
-      vendorAccountId: newVendorAccountId,
-      category,
-      customCategory,
-      name: businessName,
-      city: city ?? "",
-      address,
-      contactEmail: email,
-      contactPhone,
-      website,
-    });
-
-    // Founding (free year) or trial — inside the tx so the cohort count and the
-    // grant stay consistent with the account creation.
-    initVendorBilling(newVendorAccountId, currency, ts);
+  const { userId, vendorAccountId } = provisionVendor(insertUser, input, currency, ts);
+  return finalizeVendorSignup(ctx, {
+    userId,
+    vendorAccountId,
+    email,
+    fullName,
+    category: input.category,
+    currency,
+    auditAction: "vendor.register",
+    sendVerifyEmail: true,
   });
+}
 
+/** Google-based vendor signup — same provisioning as the password path, but the
+ *  identity comes from a verified Google credential instead of a password. The
+ *  business (step 2) fields still ride along in the body; the frontend holds the
+ *  credential from step 1 and submits it together with them. */
+async function handleRegisterGoogle(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "vendor:register", AUTH_BUCKET);
+  if (!CONFIG.googleClientId && !CONFIG.googleTestBypass) {
+    throw new HttpError(503, "Google sign-in is not configured");
+  }
+  const body = await readJson<VendorRegisterBody & { credential?: unknown }>(ctx.req);
+
+  const credential = body.credential;
+  if (typeof credential !== "string" || credential.length === 0) {
+    throw new HttpError(400, "Missing Google credential");
+  }
+  let identity;
   try {
-    tx();
+    identity = await verifyGoogleCredential(credential);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (msg === ERR_EMAIL_TAKEN) {
-      throw new HttpError(409, "An account with this email already exists", {
-        code: "email_taken",
-      });
-    }
-    throw e;
+    ctx.log.warn("vendor.google_verify_failed", { error: String(e) });
+    throw new HttpError(401, "Google credential rejected");
+  }
+  if (!identity.email_verified) {
+    throw new HttpError(400, "Google account email is not verified");
   }
 
-  const ip = ctx.clientIp;
-  const userAgent = ctx.req.headers.get("user-agent");
-  recordConsent({
-    subjectUserId: newUserId,
-    subjectKind: "user",
-    subjectRef: null,
-    document: "privacy",
-    version: PRIVACY_VERSION,
-    ip,
-    userAgent,
-  });
-  recordConsent({
-    subjectUserId: newUserId,
-    subjectKind: "user",
-    subjectRef: null,
-    document: "terms",
-    version: TERMS_VERSION,
-    ip,
-    userAgent,
-  });
+  const email = identity.email.trim().toLowerCase();
+  const fullName = identity.name.length > 0 ? identity.name.slice(0, 200) : email;
+  const input = parseBusinessFields(body, email);
 
-  addAuditLog({
-    actor_user_id: newUserId,
-    couple_id: null,
-    action: "vendor.register",
-    target_kind: "vendor_account",
-    target_id: newVendorAccountId,
-    after: { email, category, currency },
+  if (body.privacy_version !== PRIVACY_VERSION) {
+    throw new HttpError(400, "Privacy policy version is out of date — please refresh the page");
+  }
+  if (body.terms_version !== TERMS_VERSION) {
+    throw new HttpError(400, "Terms version is out of date — please refresh the page");
+  }
+  // A Weddly account already on this email (couple or vendor) blocks the fresh
+  // vendor signup, exactly like the password path. The user can link Google to
+  // an existing account through the normal login flow instead.
+  if (getUserByEmail(email)) {
+    throw new HttpError(409, "An account with this email already exists", { code: "email_taken" });
+  }
+
+  // Google-only account: NOT NULL password_hash gets a random unguessable value
+  // (argon2id'd), password_set=0, verified_email=1 (Google attests it). Mirrors
+  // auth_google.ts's brand-new branch, but with role='vendor'.
+  const placeholderPw = `${randomBytes(32).toString("hex")}${randomBytes(32).toString("hex")}`;
+  const passwordHash = await hashPassword(placeholderPw);
+  const ts = now();
+  const persistedLocale = body.locale === "hu" || body.locale === "en" ? body.locale : null;
+  const currency = vendorCurrencyForLocale(persistedLocale);
+  const acq = buildSignupAcquisition(ctx, body);
+
+  const insertUser = () => {
+    try {
+      const res = db
+        .prepare(
+          `INSERT INTO users
+             (email, password_hash, full_name, status, role, verified_email,
+              google_sub, password_set, locale,
+              signup_country, device_type, utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+              created_at, updated_at)
+           VALUES (?, ?, ?, 'active', 'vendor', 1, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          email,
+          passwordHash,
+          fullName,
+          identity.sub,
+          persistedLocale,
+          acq.signup_country,
+          acq.device_type,
+          acq.utm_source,
+          acq.utm_medium,
+          acq.utm_campaign,
+          acq.utm_content,
+          acq.utm_term,
+          ts,
+          ts,
+        );
+      return Number(res.lastInsertRowid);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("UNIQUE")) throw new Error(ERR_EMAIL_TAKEN);
+      throw e;
+    }
+  };
+
+  const { userId, vendorAccountId } = provisionVendor(insertUser, input, currency, ts);
+  return finalizeVendorSignup(ctx, {
+    userId,
+    vendorAccountId,
+    email,
+    fullName,
+    category: input.category,
+    currency,
+    auditAction: "vendor.register_google",
+    sendVerifyEmail: false,
   });
-
-  recordGrowthEvent("signup.completed", {
-    user_id: newUserId,
-    user_agent: userAgent,
-    payload: { role: "vendor" },
-  });
-
-  // Welcome + verification — single email, both purposes. Soft verification:
-  // signup is never blocked on it. Fire-and-forget so a mailer outage doesn't
-  // fail registration.
-  const verifyToken = createVerificationToken(newUserId);
-  const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-email/${verifyToken}`;
-  void sendKind(
-    "welcome_verify",
-    { verifyUrl },
-    { user: { id: newUserId, email, full_name: fullName } },
-  );
-
-  const token = issueSession(newUserId);
-  const userRow = getUserById(newUserId);
-  if (!userRow) throw new HttpError(500, "User vanished after vendor registration");
-  const session: AuthSession = { token, user: toUser(userRow as UserRow) };
-  return json(session, { status: 201 });
 }
 
 export function registerVendorRegisterRoutes(router: Router) {
   router.post("/api/vendor/register", handleRegister);
+  router.post("/api/vendor/register/google", handleRegisterGoogle);
 }

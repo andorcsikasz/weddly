@@ -1987,6 +1987,34 @@ export const vendorAuthApi = {
     utm_content?: string;
     utm_term?: string;
   }) => apiFetch<AuthSession>("POST", "/api/vendor/register", body),
+
+  /** Google-based vendor signup: the identity comes from a verified Google
+   *  `credential` (held from step 1) instead of email + password; the business
+   *  (step 2) fields ride along, same as the password register. */
+  registerGoogle: (body: {
+    credential: string;
+    business_name: string;
+    category: string;
+    custom_category?: string;
+    country?: string;
+    registry_number?: string;
+    vat_number?: string;
+    legal_form?: string;
+    address?: string;
+    city?: string;
+    postal_code?: string;
+    contact_phone?: string;
+    website?: string;
+    privacy_version: string;
+    terms_version: string;
+    locale?: string;
+    referrer?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_content?: string;
+    utm_term?: string;
+  }) => apiFetch<AuthSession>("POST", "/api/vendor/register/google", body),
 };
 
 /** @deprecated Legacy waitlist → admin-accept → emailed token activation flow.
