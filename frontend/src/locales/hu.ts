@@ -4551,6 +4551,12 @@ const hu: LocaleMessages = {
       vegan_options: "Vegán választék",
       kosher: "Kóser",
       halal: "Halal",
+      professional: "Profi",
+      friendly: "Barátságos",
+      reliable: "Megbízható",
+      experienced: "Tapasztalt",
+      attentive: "Figyelmes",
+      creative: "Kreatív",
     },
   },
   admin: {
@@ -7860,6 +7866,10 @@ const hu: LocaleMessages = {
     references_label: "Referenciák",
     view_profile: "Profil megtekintése",
     verified: "Ellenőrzött szervező",
+    back: "Vissza",
+    about_label: "Bemutatkozás",
+    styles_label: "Stílus",
+    not_found: "Ez a szervező nem érhető el.",
   },
   couple_planners: {
     heading: "Tervező",

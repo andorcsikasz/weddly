@@ -4503,6 +4503,12 @@ const en: LocaleMessages = {
       vegan_options: "Vegan options",
       kosher: "Kosher",
       halal: "Halal",
+      professional: "Professional",
+      friendly: "Friendly",
+      reliable: "Reliable",
+      experienced: "Experienced",
+      attentive: "Attentive",
+      creative: "Creative",
     },
   },
   admin: {
@@ -7797,6 +7803,10 @@ const en: LocaleMessages = {
     references_label: "References",
     view_profile: "View profile",
     verified: "Verified planner",
+    back: "Back",
+    about_label: "About",
+    styles_label: "Style",
+    not_found: "This planner isn't available.",
   },
   couple_planners: {
     heading: "Planner",

@@ -5079,6 +5079,12 @@ export interface LocaleMessages {
       vegan_options: string;
       kosher: string;
       halal: string;
+      professional: string;
+      friendly: string;
+      reliable: string;
+      experienced: string;
+      attentive: string;
+      creative: string;
     };
   };
   admin: {
@@ -8442,6 +8448,11 @@ export interface LocaleMessages {
     view_profile: string;
     /** Tooltip/aria on the azure "verified" badge next to a planner's name. */
     verified: string;
+    /** Full planner detail page (/app/planners/:id). */
+    back: string;
+    about_label: string;
+    styles_label: string;
+    not_found: string;
   };
   couple_planners: {
     heading: string;

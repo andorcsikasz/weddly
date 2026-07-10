@@ -306,18 +306,31 @@ export const SUPPLIER_REVIEW_TAGS = [
   "vegan_options",
   "kosher",
   "halal",
+  "professional",
+  "friendly",
+  "reliable",
+  "experienced",
+  "attentive",
+  "creative",
 ] as const;
 export type SupplierReviewTag = (typeof SUPPLIER_REVIEW_TAGS)[number];
 export const MAX_REVIEW_TAGS = 5;
 
 /** Service-quality tags relevant to EVERY vendor, whatever they sell: how they
- *  are to work with. Appended after each category's specific tags. */
+ *  are to work with. Appended after each category's specific tags. Ten of them,
+ *  so even a category with no specific tags still offers ≥10 suggestions while
+ *  the couple picks at most MAX_REVIEW_TAGS. */
 const UNIVERSAL_REVIEW_TAGS: readonly SupplierReviewTag[] = [
   "english_speaking",
-  "flexible",
-  "value",
+  "professional",
+  "friendly",
   "responsive",
   "punctual",
+  "flexible",
+  "reliable",
+  "experienced",
+  "attentive",
+  "value",
 ];
 
 /** Review-tag suggestions shown per supplier category, so a couple rating a
@@ -327,7 +340,7 @@ const UNIVERSAL_REVIEW_TAGS: readonly SupplierReviewTag[] = [
  *  vocabulary. Every value is still a member of SUPPLIER_REVIEW_TAGS, so the
  *  backend validation is unchanged; this only curates what's SUGGESTED. */
 export const REVIEW_TAGS_BY_CATEGORY: Record<SupplierCategory, readonly SupplierReviewTag[]> = {
-  wedding_planner: [...UNIVERSAL_REVIEW_TAGS],
+  wedding_planner: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   venue: [
     "parking",
     "accessible",
@@ -346,21 +359,21 @@ export const REVIEW_TAGS_BY_CATEGORY: Record<SupplierCategory, readonly Supplier
   ],
   tent_pavilion: ["outdoor_space", "accessible", "parking", ...UNIVERSAL_REVIEW_TAGS],
   catering: ["vegan_options", "kosher", "halal", "kid_friendly", ...UNIVERSAL_REVIEW_TAGS],
-  cake_dessert: ["vegan_options", "kosher", "halal", ...UNIVERSAL_REVIEW_TAGS],
-  bar_drinks: ["vegan_options", ...UNIVERSAL_REVIEW_TAGS],
+  cake_dessert: ["vegan_options", "kosher", "halal", "creative", ...UNIVERSAL_REVIEW_TAGS],
+  bar_drinks: ["vegan_options", "creative", ...UNIVERSAL_REVIEW_TAGS],
   pizza: ["vegan_options", "kosher", "halal", "kid_friendly", ...UNIVERSAL_REVIEW_TAGS],
-  decor_floral: [...UNIVERSAL_REVIEW_TAGS],
-  lighting: [...UNIVERSAL_REVIEW_TAGS],
-  music_dj: [...UNIVERSAL_REVIEW_TAGS],
+  decor_floral: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  lighting: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  music_dj: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   sound_tech: [...UNIVERSAL_REVIEW_TAGS],
-  photo_video: [...UNIVERSAL_REVIEW_TAGS],
-  entertainment: ["kid_friendly", "outdoor_space", ...UNIVERSAL_REVIEW_TAGS],
-  attire: [...UNIVERSAL_REVIEW_TAGS],
-  hair_makeup: [...UNIVERSAL_REVIEW_TAGS],
-  nails: [...UNIVERSAL_REVIEW_TAGS],
-  rings: [...UNIVERSAL_REVIEW_TAGS],
-  stationery: [...UNIVERSAL_REVIEW_TAGS],
-  wedding_website: [...UNIVERSAL_REVIEW_TAGS],
+  photo_video: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  entertainment: ["kid_friendly", "outdoor_space", "creative", ...UNIVERSAL_REVIEW_TAGS],
+  attire: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  hair_makeup: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  nails: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  rings: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  stationery: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  wedding_website: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   transport: ["accessible", "kid_friendly", "pet_friendly", ...UNIVERSAL_REVIEW_TAGS],
   other: [...SUPPLIER_REVIEW_TAGS],
 };
