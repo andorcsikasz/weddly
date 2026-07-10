@@ -1407,12 +1407,15 @@ function CoupleCardsTeaser() {
                       </span>
                     ) : null}
                   </div>
-                  <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] sm:text-[10px] sm:tracking-[0.28em]">
-                    {"WĒDDLY · "}
-                    {hasCards
-                      ? t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })
-                      : t("tools.couple_cards.deck_soon_label")}
-                  </span>
+                  {/* Match the coverflow: LEVEL decks drop the WĒDDLY footer. */}
+                  {(isAccent || !hasCards) && (
+                    <span className="font-display text-[8px] font-bold uppercase tracking-[0.24em] sm:text-[10px] sm:tracking-[0.28em]">
+                      {"WĒDDLY · "}
+                      {hasCards
+                        ? t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })
+                        : t("tools.couple_cards.deck_soon_label")}
+                    </span>
+                  )}
                 </Link>
               </li>
             );
@@ -1561,12 +1564,18 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
                     </span>
                   ) : null}
                 </div>
-                <span className="font-display text-xs font-bold uppercase tracking-[0.28em]">
-                  {"WĒDDLY · "}
-                  {hasCards
-                    ? t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })
-                    : t("tools.couple_cards.deck_soon_label")}
-                </span>
+                {/* LEVEL decks keep only the number + (title); the WĒDDLY ·
+                 *  N CARDS footer is dropped to lighten the card. Accent decks
+                 *  and coming-soon decks keep it (the latter for the "Soon"
+                 *  cue). */}
+                {(isAccent || !hasCards) && (
+                  <span className="font-display text-xs font-bold uppercase tracking-[0.28em]">
+                    {"WĒDDLY · "}
+                    {hasCards
+                      ? t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })
+                      : t("tools.couple_cards.deck_soon_label")}
+                  </span>
+                )}
               </div>
             </Link>
           );
