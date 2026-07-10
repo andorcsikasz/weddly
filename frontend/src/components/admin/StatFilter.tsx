@@ -1,5 +1,28 @@
 import type { ReactNode } from "react";
 
+/** Responsive column count that fits ALL tiles on one line at the widest
+ *  breakpoint (2-up on phones, then N-up), so a 6- or 7-status bar stops
+ *  wrapping into an orphan second row. Literal class strings so Tailwind's JIT
+ *  actually emits them. */
+function gridColsClass(n: number): string {
+  switch (n) {
+    case 1:
+      return "grid-cols-1";
+    case 2:
+      return "grid-cols-2";
+    case 3:
+      return "grid-cols-2 sm:grid-cols-3";
+    case 4:
+      return "grid-cols-2 sm:grid-cols-4";
+    case 5:
+      return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5";
+    case 6:
+      return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6";
+    default:
+      return "grid-cols-2 sm:grid-cols-4 lg:grid-cols-7";
+  }
+}
+
 /** One tile in a {@link StatFilter}: a count headline, an optional icon, and a
  *  label. `active` drives the koromfekete fill. */
 export interface StatFilterSegment {
@@ -34,7 +57,7 @@ export function StatFilter({
     <div
       role={multiSelect ? "group" : "tablist"}
       aria-label={ariaLabel}
-      className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4"
+      className={`mb-5 grid gap-2 ${gridColsClass(segments.length)}`}
     >
       {segments.map((s) => (
         <button
