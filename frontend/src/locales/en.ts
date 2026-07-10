@@ -1715,8 +1715,11 @@ const en: LocaleMessages = {
     hero_title: "Reach the couples planning right now.",
     hero_sub:
       "Weddly's curated directory is where couples discover wedding suppliers. Join the waitlist and we'll notify you the moment we open in your category.",
+    hero_pitch:
+      "Early access, with a limited number of spots per category. Couples find and reach you directly, by phone, email or Instagram, with no platform inbox in between.",
     trust_signal: "Join 47 vendors already on the waitlist",
     couples_stat: "{count} couples are planning their wedding on Weddly right now",
+    sample_caption: "Example profile",
     benefit_1_title: "A handpicked shortlist",
     benefit_1_body: "Capped per category, so only couples who fit reach you.",
     benefit_2_title: "Local, not lead spam",

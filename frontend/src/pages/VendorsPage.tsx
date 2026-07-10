@@ -50,6 +50,11 @@ export default function VendorsPage() {
           <h1 className="font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
+          {/* Honest early-access framing + the low-friction direct-contact pitch,
+              pulled up into the hero (audit items 7 and 9). */}
+          <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-ink-600 lg:mx-0 dark:text-umber-200">
+            {t("vendors.hero_pitch")}
+          </p>
           <p className="mx-auto mt-4 flex items-center justify-center gap-1.5 text-sm text-ink-500 lg:justify-start dark:text-umber-300">
             <Check size={14} className="text-umber-600 dark:text-umber-400" aria-hidden />
             {t("vendors.trust_signal")}
@@ -91,6 +96,11 @@ export default function VendorsPage() {
         </div>
         <div className="mx-auto w-full max-w-md lg:max-w-none">
           <VendorListingMockup className="h-auto w-full" />
+          {/* Honest label so the sample card doesn't read as a real vendor
+              claim (audit item 10 — no fabricated social proof). */}
+          <p className="mt-2 text-center text-xs uppercase tracking-widest text-ink-400 dark:text-umber-400">
+            {t("vendors.sample_caption")}
+          </p>
         </div>
       </section>
 
@@ -98,6 +108,13 @@ export default function VendorsPage() {
       <section className="bg-paper-100/60 dark:bg-umber-900/40">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="grid gap-4 lg:grid-cols-3 lg:items-stretch">
+            {/* Direct contact leads — it's the differentiator vendors care about
+                most (audit item 9). */}
+            <Benefit
+              icon={<PhoneCall size={26} strokeWidth={1.75} aria-hidden />}
+              title={t("vendors.benefit_3_title")}
+              body={t("vendors.benefit_3_body")}
+            />
             <Benefit
               icon={<Gem size={26} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_1_title")}
@@ -107,11 +124,6 @@ export default function VendorsPage() {
               icon={<MapPinned size={26} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_2_title")}
               body={t("vendors.benefit_2_body")}
-            />
-            <Benefit
-              icon={<PhoneCall size={26} strokeWidth={1.75} aria-hidden />}
-              title={t("vendors.benefit_3_title")}
-              body={t("vendors.benefit_3_body")}
             />
           </div>
         </div>
