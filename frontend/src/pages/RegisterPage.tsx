@@ -351,6 +351,28 @@ export default function RegisterPage() {
               {t("auth.submit_login")}
             </Link>
           </p>
+          {/* Mobile-only escape hatch: a vendor / planner who landed on the
+              couple signup gets a clear way across. On desktop these live in
+              the landing hero's role chips + header, so hide there. */}
+          <div className="mt-4 border-t border-paper-200 pt-4 text-center sm:hidden dark:border-umber-700">
+            <p className="text-xs uppercase tracking-wider text-umber-600">
+              {t("auth.register_role_prompt")}
+            </p>
+            <div className="mt-2 flex items-center justify-center gap-5 text-sm">
+              <Link
+                to="/vendors"
+                className="font-medium text-umber-900 underline dark:text-paper-100"
+              >
+                {t("auth.register_as_vendor")}
+              </Link>
+              <Link
+                to="/planners"
+                className="font-medium text-umber-900 underline dark:text-paper-100"
+              >
+                {t("auth.register_as_planner")}
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </Shell>

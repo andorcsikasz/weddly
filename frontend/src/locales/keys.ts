@@ -268,6 +268,11 @@ export interface LocaleMessages {
     submit_register: string;
     no_account: string;
     have_account: string;
+    /** Mobile-only escape hatch on the couple signup: prompt + links to the
+     *  vendor / planner signup flows. */
+    register_role_prompt: string;
+    register_as_vendor: string;
+    register_as_planner: string;
     bad_credentials: string;
     duplicate_email: string;
     planner_invite_banner: string;
