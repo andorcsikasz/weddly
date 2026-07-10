@@ -1849,7 +1849,9 @@ export default function DesignPage() {
                     </summary>
                     <div className="mt-3">
                       <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <InfoHint text={t("design.colors.hint")} />
+                        {/* Opens upward: the swatch row sits directly below, so a
+                            downward tooltip would hide the colours being edited. */}
+                        <InfoHint text={t("design.colors.hint")} placement="top" />
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-2 py-0.5 text-[11px] font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200">
                           <span
                             className="h-2.5 w-2.5 rounded-full"
@@ -1869,10 +1871,12 @@ export default function DesignPage() {
                           const overridden = design.colors[role] !== undefined;
                           return (
                             <div key={role} className="flex flex-col items-center gap-1">
+                              {/* No native `title` here — the role name is already
+                                  the visible caption below, and a title tooltip
+                                  would pop up over the swatch, hiding its colour. */}
                               <label
                                 className="relative block h-12 w-12 cursor-pointer rounded-xl border border-paper-300 shadow-soft focus-within:ring-2 focus-within:ring-ink-300 dark:border-umber-700 dark:focus-within:ring-paper-100"
                                 style={{ backgroundColor: resolved }}
-                                title={t(`design.colors.${role}`)}
                               >
                                 <input
                                   type="color"

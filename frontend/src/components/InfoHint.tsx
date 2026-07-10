@@ -12,6 +12,7 @@ export function InfoHint({
   className = "",
   onClick,
   icon: Icon = Info,
+  placement = "bottom",
 }: {
   text: string;
   /** Accessible name for the button. Defaults to the hint text. */
@@ -24,9 +25,14 @@ export function InfoHint({
   /** Trigger glyph. Defaults to the "i" info icon; pass e.g. `Mail` to tuck a
    *  channel-specific note behind a topical affordance. */
   icon?: LucideIcon;
+  /** Which side the tooltip opens toward. Default drops it below the icon; pass
+   *  "top" when there's content directly beneath the icon that the tooltip
+   *  would otherwise cover (e.g. a colour-swatch row). */
+  placement?: "top" | "bottom";
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
+  const pos = placement === "top" ? "bottom-full mb-2" : "top-full mt-2";
   return (
     <span className={`group relative inline-flex ${className}`}>
       <button
@@ -43,7 +49,7 @@ export function InfoHint({
       <span
         id={id}
         role="tooltip"
-        className={`pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-lg bg-umber-900 px-3 py-2 text-xs font-normal normal-case leading-snug tracking-normal text-paper-50 shadow-pop transition-opacity duration-150 sm:w-80 dark:bg-umber-950 ${
+        className={`pointer-events-none absolute left-0 ${pos} z-20 w-64 rounded-lg bg-umber-900 px-3 py-2 text-xs font-normal normal-case leading-snug tracking-normal text-paper-50 shadow-pop transition-opacity duration-150 sm:w-80 dark:bg-umber-950 ${
           open ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
         }`}
       >
