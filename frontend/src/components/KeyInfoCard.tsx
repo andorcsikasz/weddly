@@ -436,7 +436,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
               {venue ? (
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3">
-                    <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
+                    <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
                       <MapPin size={18} aria-hidden="true" />
                     </span>
                     <div className="min-w-0">
@@ -547,40 +547,30 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                   <ul className="flex flex-col divide-y divide-paper-200 dark:divide-umber-700">
                     {shownContacts.map((c) => {
                       const Icon = CATEGORY_ICON[c.category] ?? Building2;
+                      // Every vendor is clickable: directory vendors open their
+                      // detail page; DIY vendors (no detail page) open the
+                      // vendors hub where they're managed.
+                      const to = c.linkable
+                        ? `/app/suppliers/${encodeURIComponent(c.id)}`
+                        : "/app/vendors";
                       return (
                         <li key={c.key} className="flex items-center gap-3 py-2">
-                          {c.linkable ? (
-                            <Link
-                              to={`/app/suppliers/${encodeURIComponent(c.id)}`}
-                              className="group flex min-w-0 flex-1 items-center gap-3 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
-                            >
-                              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
-                                <Icon size={15} aria-hidden="true" />
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
-                                  {c.name}
-                                </p>
-                                <p className="truncate text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                                  {t(`suppliers.cat.${c.category}`)}
-                                </p>
-                              </div>
-                            </Link>
-                          ) : (
-                            <>
-                              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
-                                <Icon size={15} aria-hidden="true" />
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
-                                  {c.name}
-                                </p>
-                                <p className="truncate text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                                  {t(`suppliers.cat.${c.category}`)}
-                                </p>
-                              </div>
-                            </>
-                          )}
+                          <Link
+                            to={to}
+                            className="group flex min-w-0 flex-1 items-center gap-3 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
+                          >
+                            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
+                              <Icon size={15} aria-hidden="true" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
+                                {c.name}
+                              </p>
+                              <p className="truncate text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                                {t(`suppliers.cat.${c.category}`)}
+                              </p>
+                            </div>
+                          </Link>
                           {c.phone ? (
                             <a
                               href={`tel:${c.phone.replace(/\s+/g, "")}`}
@@ -735,7 +725,7 @@ function PersonRow({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
         <Icon size={15} aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
