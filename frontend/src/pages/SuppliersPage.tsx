@@ -1685,7 +1685,7 @@ export default function SuppliersPage() {
                       className={
                         activeCatNotNeeded
                           ? "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded bg-sage-500 text-paper-50"
-                          : "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-2 border-current text-transparent"
+                          : "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-2 border-ink-400 text-transparent dark:border-umber-400"
                       }
                       aria-hidden
                     >
