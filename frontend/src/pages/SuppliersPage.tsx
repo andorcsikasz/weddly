@@ -1712,53 +1712,58 @@ export default function SuppliersPage() {
             );
           })()}
 
-          {/* "Magam szervezem" — the self-organize done-toggle. Replaces the
-              DIY "csinálom magam" entry for planners (self-organizing means NOT
-              hiring anyone, so there's no vendor row to add). Clicking it marks
-              the planning step done: it records a sentinel pick, which greens +
-              collapses the "Szervezés & koordináció" chain chip. */}
-          {activeGroup === "planning" && (
-            <button
-              type="button"
-              onClick={toggleSelfOrganize}
-              aria-pressed={selfOrganized}
-              className="group mb-4 flex w-full items-center gap-3 py-1 text-left"
-            >
-              {/* Uber-style checkbox: no card, black-fill when checked, thin
-                  square outline when not. The check is always mounted (goes
-                  transparent when unchecked) so the box never resizes. */}
-              <span
-                className={
-                  selfOrganized
-                    ? "flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                    : "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 border-ink-300 text-transparent transition group-hover:border-ink-500 dark:border-umber-500 dark:group-hover:border-umber-300"
-                }
-                aria-hidden
-              >
-                <Check size={15} strokeWidth={3} />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-ink-900 dark:text-paper-100">
-                  {t("suppliers.self_organize_label")}
-                </span>
-                <span className="block text-xs text-ink-500 dark:text-umber-300">
-                  {t("suppliers.self_organize_hint")}
-                </span>
-              </span>
-            </button>
-          )}
-
           {/* Registered planner ACCOUNTS strip — surfaced atop the
               wedding_planner category. These are Weddly planner users reachable
               via the consent flow (invite → accept → linked), distinct from the
               curated planner listings that render in the grid below. Search
-              filters both (filteredPlanners honours the query). */}
-          {activeGroup === "planning" && viewMode !== "map" && filteredPlanners.length > 0 && (
+              filters both (filteredPlanners honours the query). The
+              "Magam szervezem" self-organize tile leads the grid. */}
+          {activeGroup === "planning" && viewMode !== "map" && (
             <section aria-label={t("planner_directory.title")} className="mb-5">
-              <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">
-                {t("planner_directory.subtitle")}
-              </p>
+              {filteredPlanners.length > 0 && (
+                <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">
+                  {t("planner_directory.subtitle")}
+                </p>
+              )}
               <div className="grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {/* "Magam szervezem" — the self-organize done-toggle, now the
+                    leading card in the planner grid (was a checkbox row above).
+                    Toggling on records the sentinel pick, greens + collapses the
+                    "Szervezés & koordináció" chip, and fires confetti. */}
+                <button
+                  type="button"
+                  onClick={toggleSelfOrganize}
+                  aria-pressed={selfOrganized}
+                  className={`card group flex h-full flex-col !p-4 text-left transition ${
+                    selfOrganized
+                      ? "ring-2 ring-ink-900 dark:ring-paper-50"
+                      : "hover:border-ink-300 dark:hover:border-umber-600"
+                  }`}
+                >
+                  {/* Uber-style checkbox: black-fill + white check when chosen,
+                      thin square outline when not. Always mounted (goes
+                      transparent when unchecked) so the box never resizes. */}
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={
+                        selfOrganized
+                          ? "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                          : "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-ink-300 text-transparent transition group-hover:border-ink-500 dark:border-umber-500 dark:group-hover:border-umber-300"
+                      }
+                      aria-hidden
+                    >
+                      <Check size={20} strokeWidth={3} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <span className="block font-semibold text-ink-900 dark:text-paper-50">
+                        {t("suppliers.self_organize_label")}
+                      </span>
+                      <p className="mt-1 text-xs leading-relaxed text-ink-500 dark:text-umber-300">
+                        {t("suppliers.self_organize_hint")}
+                      </p>
+                    </div>
+                  </div>
+                </button>
                 {filteredPlanners.map((p) => (
                   <PlannerCard
                     key={p.planner_user_id}
