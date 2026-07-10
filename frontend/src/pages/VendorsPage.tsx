@@ -3,7 +3,7 @@
 // (admin-accept → emailed token activation) is retired — vendors now create an
 // account directly and run the in-app onboarding wizard.
 
-import { ArrowLeft, Check, Gem, MapPinned, PhoneCall } from "lucide-react";
+import { ArrowLeft, Gem, MapPinned, PhoneCall } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
@@ -50,17 +50,14 @@ export default function VendorsPage() {
           <h1 className="font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
-          {/* Honest early-access framing + the low-friction direct-contact pitch,
-              pulled up into the hero (audit items 7 and 9). */}
+          {/* One short subhead — the direct-contact differentiator (item 9). The
+              "early access / limited spots" framing lives in the benefits below,
+              so the hero stays uncluttered. */}
           <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-ink-600 lg:mx-0 dark:text-umber-200">
             {t("vendors.hero_pitch")}
           </p>
-          <p className="mx-auto mt-4 flex items-center justify-center gap-1.5 text-sm text-ink-500 lg:justify-start dark:text-umber-300">
-            <Check size={14} className="text-umber-600 dark:text-umber-400" aria-hidden />
-            {t("vendors.trust_signal")}
-          </p>
           {showCouples && (
-            <p className="mx-auto mt-1.5 flex items-center justify-center gap-1.5 text-sm font-medium text-sage-700 lg:justify-start dark:text-sage-300">
+            <p className="mx-auto mt-4 flex items-center justify-center gap-1.5 text-sm font-medium text-sage-700 lg:justify-start dark:text-sage-300">
               <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden />
               {t("vendors.couples_stat", { count: String(couples) })}
             </p>
@@ -77,21 +74,17 @@ export default function VendorsPage() {
               {t("vendors.have_account_cta")}
             </Link>
           </div>
-          {/* Wrong-audience escape hatch — vendors shouldn't confuse themselves
-              with couples or planners (audit item 12). */}
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-sm text-ink-500 lg:justify-start dark:text-umber-300">
-            <span>
-              {t("vendors.couple_escape")}{" "}
-              <Link to="/signup" className="font-medium underline underline-offset-2">
-                {t("vendors.couple_escape_link")}
-              </Link>
-            </span>
-            <span>
-              {t("vendors.planner_escape")}{" "}
-              <Link to="/planners" className="font-medium underline underline-offset-2">
-                {t("vendors.planner_escape_link")}
-              </Link>
-            </span>
+          {/* Wrong-audience escape hatch — one compact line so it stays quiet
+              (audit item 12). */}
+          <div className="mt-5 text-sm text-ink-500 lg:text-left dark:text-umber-300">
+            {t("vendors.wrong_audience")}{" "}
+            <Link to="/signup" className="font-medium underline underline-offset-2">
+              {t("vendors.couple_escape_link")}
+            </Link>
+            {" · "}
+            <Link to="/planners" className="font-medium underline underline-offset-2">
+              {t("vendors.planner_escape_link")}
+            </Link>
           </div>
         </div>
         <div className="mx-auto w-full max-w-md lg:max-w-none">
