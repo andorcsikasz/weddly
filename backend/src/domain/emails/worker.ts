@@ -15,6 +15,7 @@ import { log } from "../../lib/logger";
 import { reportError } from "../../lib/observability";
 import { getCoupleById } from "../couples";
 import { resolveRecipients, sendGuestMessage } from "../guest_messages";
+import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "../listings";
 import { insertCoupleNotification, listActionableTimelineTasks } from "../notifications";
 import type { EmailKind } from "./kinds";
 import { markDispatched, sendKind } from "./send";
@@ -26,6 +27,7 @@ import { markDispatched, sendKind } from "./send";
 const SENDS_PER_SWEEP_CAP = 8;
 
 const ONBOARDING_NUDGE_AFTER_MS = 1000 * 60 * 60 * 24; // 24h
+const VENDOR_SHARE_NUDGE_AFTER_MS = 1000 * 60 * 60 * 2; // 2h
 const ONBOARDING_NUDGE_WEEK_AFTER_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const INVITE_PARTNER_AUTO_AFTER_MS = 1000 * 60 * 60 * 48; // 48h
 // Solo workspaces are auto-nudged at the first 10:00 UTC at or after the 48h
@@ -57,6 +59,7 @@ export function runEmailSweep(): {
   nudges: number;
   nudgesWeek: number;
   invitePartnerAuto: number;
+  vendorShareNudges: number;
   milestones: number;
   weddings: number;
   rsvpDeadlines: number;
@@ -71,6 +74,7 @@ export function runEmailSweep(): {
   const nudges = sweepOnboardingNudges(ts);
   const nudgesWeek = sweepOnboardingNudgesWeek(ts);
   const invitePartnerAuto = sweepInvitePartnerAuto(ts);
+  const vendorShareNudges = sweepVendorProfileShareNudge(ts);
   const milestones = sweepMilestones(ts);
   const weddings = sweepWeddingDay(ts);
   const rsvpDeadlines = sweepRsvpDeadline(ts);
@@ -84,6 +88,7 @@ export function runEmailSweep(): {
     nudges,
     nudgesWeek,
     invitePartnerAuto,
+    vendorShareNudges,
     milestones,
     weddings,
     rsvpDeadlines,
@@ -225,6 +230,70 @@ function sweepOnboardingNudgesWeek(ts: number): number {
       "onboarding_nudge_week",
       { onboardingUrl: `${CONFIG.frontendBaseUrl}/onboarding` },
       { user: { id: u.id, email: u.email, full_name: u.full_name } },
+    );
+    count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
+  }
+  return count;
+}
+
+interface VendorShareNudgeRow {
+  account_id: number;
+  display_name: string;
+  owner_user_id: number;
+  email: string;
+  full_name: string;
+}
+
+function sweepVendorProfileShareNudge(ts: number): number {
+  // ~2h after a vendor sets up their profile, send a one-shot nudge that
+  // highlights the shareable public link (`/vendors/v{id}`) and names any
+  // still-empty sections (photos / bio / calendar / packages). One-shot via
+  // vendor_accounts.share_nudge_sent_at (stamped BEFORE the fire-and-forget
+  // send, so a silent mailer hiccup skips rather than re-sends). Pre-existing
+  // vendors were backfilled at migration (db.ts), so only accounts created
+  // after this shipped are ever eligible. Demo + purged owners excluded.
+  const cutoff = ts - VENDOR_SHARE_NUDGE_AFTER_MS;
+  const rows = db
+    .prepare(
+      `SELECT va.id AS account_id, va.display_name,
+              u.id AS owner_user_id, u.email, u.full_name
+         FROM vendor_accounts va
+         JOIN users u ON u.id = va.owner_user_id
+        WHERE va.share_nudge_sent_at IS NULL
+          AND va.created_at <= ?
+          AND u.status = 'active'
+          AND u.email NOT LIKE '%@purged.local'
+          AND u.email NOT LIKE '%@demo.weddly.local'`,
+    )
+    .all(cutoff) as VendorShareNudgeRow[];
+
+  let count = 0;
+  const stamp = db.prepare("UPDATE vendor_accounts SET share_nudge_sent_at = ? WHERE id = ?");
+  const blockedDates = db.prepare(
+    "SELECT COUNT(*) AS n FROM vendor_unavailable_dates WHERE vendor_account_id = ?",
+  );
+  for (const r of rows) {
+    const listingId = `v${r.account_id}`;
+    const listing = getListingByVendorAccountId(r.account_id);
+    const missing = {
+      photos: !listing?.hero_image_url && countListingPhotos(listingId) === 0,
+      bio: !(listing?.blurb_hu || listing?.blurb_en),
+      calendar: (blockedDates.get(r.account_id) as { n: number }).n === 0,
+      packages: countListingPackages(listingId) === 0,
+    };
+    // Stamp BEFORE the fire-and-forget send — a true one-shot.
+    stamp.run(ts, r.account_id);
+    void sendKind(
+      "vendor_profile_share",
+      {
+        businessName: r.display_name,
+        shareUrl: `${CONFIG.frontendBaseUrl}/vendors/${listingId}`,
+        editUrl: `${CONFIG.frontendBaseUrl}/vendor/listing`,
+        reviewsUrl: `${CONFIG.frontendBaseUrl}/vendor/reviews`,
+        missing,
+      },
+      { user: { id: r.owner_user_id, email: r.email, full_name: r.full_name }, couple_id: null },
     );
     count++;
     if (count >= SENDS_PER_SWEEP_CAP) break;
@@ -837,6 +906,7 @@ export function startEmailWorker(): void {
       r.nudges +
         r.nudgesWeek +
         r.invitePartnerAuto +
+        r.vendorShareNudges +
         r.milestones +
         r.weddings +
         r.rsvpDeadlines +
@@ -859,7 +929,9 @@ export function startEmailWorker(): void {
         const r = runEmailSweep();
         if (
           r.nudges +
+            r.nudgesWeek +
             r.invitePartnerAuto +
+            r.vendorShareNudges +
             r.milestones +
             r.weddings +
             r.rsvpDeadlines +

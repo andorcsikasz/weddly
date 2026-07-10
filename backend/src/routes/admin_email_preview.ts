@@ -204,6 +204,13 @@ const STUBS: KindPayload = {
       'Szia Bloom Studio!\n\nKöszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára. A csapatunk személyesen átnézte a profilotokat, és szeretnénk szerepeltetni titeket a pároknak ajánlott szolgáltatók között.\n\n**A következő lépés: aktiváljátok a fiókotokat a lenti „Fiók aktiválása" gombbal** (nincs szükség bankkártyára).\n\nÜdv,\nA Wēddly csapata',
     subject: "Wēddly: szívesen látnánk titeket a katalógusban",
   },
+  vendor_profile_share: {
+    businessName: "Bloom Studio",
+    shareUrl: `${BASE_URL}/vendors/v11`,
+    editUrl: `${BASE_URL}/vendor/listing`,
+    reviewsUrl: `${BASE_URL}/vendor/reviews`,
+    missing: { photos: true, bio: false, calendar: true, packages: true },
+  },
   planner_waitlist_decision: {
     subject: "Wēddly: jóváhagytuk a szervezői hozzáférésed",
     body: "Szia Anna!\n\nÁtnéztük a profilodat, és aktiváltuk a szervezői hozzáférésed. Lépj be, és a szervezői vezérlőpultból indítsd el az onboardingot.\n\nÜdv,\nA Wēddly csapata",

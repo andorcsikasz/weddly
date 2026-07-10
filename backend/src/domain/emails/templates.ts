@@ -371,6 +371,32 @@ export interface VendorActivationPayload {
   subject?: string;
 }
 
+export interface VendorProfileSharePayload {
+  /** Vendor business name, used in the greeting. Falls back to a generic
+   *  greeting when empty. */
+  businessName: string;
+  /** The vendor's PUBLIC profile URL (`/vendors/v{id}`). This is the CTA
+   *  destination AND the copy-paste share link the whole mail is built around,
+   *  so it stays UTM-free (noUtm) — the vendor pastes it into their own
+   *  socials/email and we don't want an email-attribution tag riding along. */
+  shareUrl: string;
+  /** In-app profile editor (`/vendor/listing`) where photos, bio and packages
+   *  are filled in. Rendered as a secondary link. */
+  editUrl: string;
+  /** In-app reviews page (`/vendor/reviews`), secondary link behind the
+   *  "ask a happy client for a review" nudge. */
+  reviewsUrl: string;
+  /** Which public-facing sections are still empty. Only the true ones are
+   *  named in the body; when all four are false the "finish your profile"
+   *  paragraph is dropped entirely and the mail is pure share + reviews. */
+  missing: {
+    photos: boolean;
+    bio: boolean;
+    calendar: boolean;
+    packages: boolean;
+  };
+}
+
 export interface PlannerWaitlistDecisionPayload {
   /** Subject line the admin typed in the planner triage modal, used verbatim. */
   subject: string;
@@ -603,6 +629,7 @@ export type KindPayload = {
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   vendor_activation: VendorActivationPayload;
+  vendor_profile_share: VendorProfileSharePayload;
   planner_waitlist_decision: PlannerWaitlistDecisionPayload;
   planner_provisioned: PlannerProvisionedPayload;
   planner_onboarding_invite: PlannerOnboardingInvitePayload;
@@ -1800,6 +1827,91 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     };
   },
 
+  vendor_profile_share: (p) => {
+    const name = p.businessName.trim();
+    // Only the sections that are actually empty get named, in the same order
+    // in both languages so the two blocks stay parallel.
+    const huMissing: string[] = [];
+    const enMissing: string[] = [];
+    if (p.missing.photos) {
+      huMissing.push("fotók");
+      enMissing.push("photos");
+    }
+    if (p.missing.bio) {
+      huMissing.push("bemutatkozó szöveg");
+      enMissing.push("a short bio");
+    }
+    if (p.missing.calendar) {
+      huMissing.push("foglaltsági naptár");
+      enMissing.push("an availability calendar");
+    }
+    if (p.missing.packages) {
+      huMissing.push("árcsomagok");
+      enMissing.push("pricing packages");
+    }
+
+    const huParas = [
+      "Élesítettük a profilodat a Weddly-n, és már meg is oszthatod. A lenti linkre kattintva a párok belépés nélkül látják a nyilvános oldaladat.",
+      "Tedd ki a közösségi oldaladra, küldd el e-mailben, vagy oszd meg az érdeklődő párokkal. Minél többen látják, annál több megkeresés jöhet.",
+    ];
+    if (huMissing.length > 0) {
+      huParas.push(
+        `Egy-két rész még üresen áll a profilodon: **${joinNaturalList(huMissing, "és")}**. Ha kitöltöd, sokkal meggyőzőbb lesz, és nagyobb eséllyel választanak.`,
+      );
+    }
+    huParas.push(
+      "A Weddly-n valódi párok terveznek valódi esküvőt, és tényleg böngészik a szolgáltatókat. Egy rendezett, teljes profil sokat számít az első benyomásnál.",
+      "Ha van elégedett ügyfeled, kérd meg, hogy értékeljen a profilodon. Néhány őszinte, 5 csillagos vélemény a legjobb ajánlólevél, és érezhetően dob a foglalásokon.",
+    );
+
+    const enParas = [
+      "Your profile is live on Weddly and ready to share. The link below opens your public page for couples, no login needed.",
+      "Post it on your socials, drop it into an email, or send it to couples who reach out. The more people see it, the more enquiries you can get.",
+    ];
+    if (enMissing.length > 0) {
+      enParas.push(
+        `A couple of sections are still empty on your profile: **${joinNaturalList(enMissing, "and")}**. Filling them in makes it far more convincing, and more couples will pick you.`,
+      );
+    }
+    enParas.push(
+      "Real couples plan real weddings on Weddly, and they genuinely browse vendors. A tidy, complete profile makes a strong first impression.",
+      "If you have a happy client, ask them to leave a review on your profile. A few honest 5-star reviews are the best reference you can have, and they noticeably lift bookings.",
+    );
+
+    return {
+      subject: "Oszd meg a Weddly-profilod / Share your Weddly profile",
+      ctaUrl: p.shareUrl,
+      // The CTA link IS the shareable public URL, so keep it clean: no email
+      // UTM riding along into the vendor's own socials, and render it as a
+      // copy-paste line so they can grab it directly.
+      plainCtaUrl: true,
+      noUtm: true,
+      hu: {
+        preheader: "Kész a nyilvános profilod a Weddly-n, itt a megosztható linked.",
+        greeting: name ? `Szia ${name}!` : "Szia!",
+        paragraphs: huParas,
+        cta: "Profilom megnyitása",
+        ctaSubtext: "Ez a nyilvános linked, bárkinek elküldheted, belépés nélkül is megnyílik.",
+        secondaryLinks: [
+          { label: "Profil szerkesztése", url: p.editUrl },
+          { label: "Vélemények", url: p.reviewsUrl },
+        ],
+        footnote: "Csak akkor írunk, ha van valami, amivel előrébb léphetsz a Weddly-n.",
+      },
+      en: {
+        greeting: name ? `Hi ${name},` : "Hi there,",
+        paragraphs: enParas,
+        cta: "Open my profile",
+        ctaSubtext: "This is your public link, share it with anyone, it opens without a login.",
+        secondaryLinks: [
+          { label: "Edit profile", url: p.editUrl },
+          { label: "Reviews", url: p.reviewsUrl },
+        ],
+        footnote: "We only email when there's something useful for your Weddly profile.",
+      },
+    };
+  },
+
   planner_waitlist_decision: (p) => {
     const paragraphs = splitParagraphs(p.body);
     return {
@@ -2554,6 +2666,14 @@ function splitParagraphs(body: string): string[] {
     .split(/\n\s*\n+/)
     .map((chunk) => chunk.replace(/\s*\n\s*/g, " ").trim())
     .filter((chunk) => chunk.length > 0);
+}
+
+/** Join a list into a natural sentence fragment: `["a","b","c"]` → `"a, b {conj} c"`.
+ *  `conj` is the localised "and" ("és" / "and"). Empty → "", single → itself. */
+function joinNaturalList(items: string[], conj: string): string {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0] as string;
+  return `${items.slice(0, -1).join(", ")} ${conj} ${items[items.length - 1]}`;
 }
 
 // UTM tagging on every CTA. Centralised here so future kinds inherit it

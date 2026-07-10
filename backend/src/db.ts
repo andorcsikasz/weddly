@@ -1523,6 +1523,24 @@ addColumnIfMissing("vendor_accounts", "legal_form", "legal_form TEXT");
 addColumnIfMissing("vendor_accounts", "address", "address TEXT");
 addColumnIfMissing("vendor_accounts", "city", "city TEXT");
 addColumnIfMissing("vendor_accounts", "postal_code", "postal_code TEXT");
+// One-shot stamp for the "share your profile" nudge the email worker fires ~2h
+// after a vendor account is created (domain/emails/worker.ts →
+// sweepVendorProfileShareNudge). NULL = not yet sent; a fresh account inserts
+// NULL and becomes eligible once 2h have passed. The one-time backfill just
+// below stamps every PRE-EXISTING vendor to its created_at, so shipping this
+// never floods the back catalogue with "you just created your profile" mail.
+// Guarded by the column-just-added check so it runs exactly once (a plain
+// boot-time UPDATE would also re-stamp brand-new vendors before their 2h mark
+// and silently kill the nudge).
+const shareNudgeColumnExisted = (
+  db.query("PRAGMA table_info(vendor_accounts)").all() as { name: string }[]
+).some((r) => r.name === "share_nudge_sent_at");
+addColumnIfMissing("vendor_accounts", "share_nudge_sent_at", "share_nudge_sent_at INTEGER");
+if (!shareNudgeColumnExisted) {
+  db.prepare(
+    "UPDATE vendor_accounts SET share_nudge_sent_at = created_at WHERE share_nudge_sent_at IS NULL",
+  ).run();
+}
 // Vendor-written label behind category='other' listings: the "my service
 // isn't in the taxonomy yet" escape hatch on the signup form.
 addColumnIfMissing("listings", "custom_category", "custom_category TEXT");
