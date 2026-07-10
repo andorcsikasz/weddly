@@ -4034,8 +4034,8 @@ const hu: LocaleMessages = {
     community_pill_tooltip: "Egy Weddly-t használó pár ajánlotta, közvetlen tapasztalat alapján.",
     self_pill: "Szolgáltató",
     self_pill_tooltip: "A szolgáltató maga jelentkezett be a Weddly közösségbe.",
-    verified_vendor: "Ellenőrzött szolgáltató · saját Weddly-fiók",
-    verified_filter: "Ellenőrzött",
+    verified_vendor: "Hitelesített szolgáltató · saját Weddly-fiók",
+    verified_filter: "Hitelesített",
     drop_your_own: "Tipp leadása",
     calc: {
       open: "Kalkulátor",
