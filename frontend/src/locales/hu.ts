@@ -106,7 +106,7 @@ const hu: LocaleMessages = {
   },
   auth: {
     login_title: "Bejelentkezés",
-    register_title: "Új fiók",
+    register_title: "Új fiók mint jegyespár",
     email_label: "E-mail",
     password_label: "Jelszó",
     full_name_label: "Teljes név",

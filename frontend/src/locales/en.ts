@@ -105,7 +105,7 @@ const en: LocaleMessages = {
   },
   auth: {
     login_title: "Sign in",
-    register_title: "Create account",
+    register_title: "Create account as a couple",
     email_label: "Email",
     password_label: "Password",
     full_name_label: "Full name",
