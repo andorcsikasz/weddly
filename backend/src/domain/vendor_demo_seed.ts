@@ -70,19 +70,28 @@ function isoDaysFromNow(days: number): string {
 const BUSINESS_NAME: LText = { en: "Gingy's Wedding Cakes", hu: "Mézi Tortaműhely" };
 
 /** Cover + gallery photos for the demo cake studio, so the demo listing looks
- *  like a real, finished card instead of an empty monogram. These are freely
- *  licensed wedding-cake photos on Wikimedia Commons — `upload.wikimedia.org`
- *  is already CSP-whitelisted (same as the blog covers), so they render on the
- *  card, the public detail gallery, and the editor preview with no bundling.
- *  Hotlinked rather than copied per demo: the demo purge drops the listing row,
- *  and external URLs leave nothing behind to clean up. `hero` is a wide shot for
- *  the 3:2/16:9 crop; `gallery` runs classic → modern → playful to show range. */
+ *  like a real, finished card instead of an empty monogram. Editorial-grade
+ *  free Unsplash cake photography (the old Wikimedia Commons shots read as
+ *  amateur snapshots) — `images.unsplash.com` is already CSP-whitelisted (it
+ *  serves the blog + default cover photos), so they render on the card, the
+ *  public detail gallery, and the editor preview with no bundling. Hotlinked
+ *  rather than copied per demo: the demo purge drops the listing row, and
+ *  external URLs leave nothing behind to clean up.
+ *
+ *  `hero` is a wide shot for the 3:2/16:9 crop — a lush white cake against a
+ *  green-foliage bokeh that nods at the fairy-tale swamp theme without using
+ *  any copyrighted Shrek imagery. `gallery` runs classic (red roses) → rustic
+ *  (fig + olive naked cake, again swamp-green) → playful (berry-piled cake) to
+ *  show range. `?w=1280&auto=format&fit=crop&q=75` matches the app's Unsplash
+ *  convention; Unsplash+ (`plus.unsplash.com`) premium photos are deliberately
+ *  avoided since that host is not on the CSP allow-list. */
+const UNSPLASH_PARAMS = "?w=1280&auto=format&fit=crop&q=75";
 const DEMO_CAKE_MEDIA = {
-  hero: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Twenty_tier_Wedding_cake%281%29.JPG/1280px-Twenty_tier_Wedding_cake%281%29.JPG",
+  hero: `https://images.unsplash.com/photo-1623428454614-abaf00244e52${UNSPLASH_PARAMS}`,
   gallery: [
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Mazel_Tov%21_Wedding_cake_in_the_time_of_corona.jpg/1280px-Mazel_Tov%21_Wedding_cake_in_the_time_of_corona.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/8/89/Wedding_Cake_Framboises_-_Cake_Design.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Wedding_cake_dessert.jpg/1280px-Wedding_cake_dessert.jpg",
+    `https://images.unsplash.com/photo-1525257831700-183b9b8bf5c4${UNSPLASH_PARAMS}`,
+    `https://images.unsplash.com/photo-1565661834013-d196ca46e14e${UNSPLASH_PARAMS}`,
+    `https://images.unsplash.com/photo-1535141192574-5d4897c12636${UNSPLASH_PARAMS}`,
   ],
 } as const;
 
