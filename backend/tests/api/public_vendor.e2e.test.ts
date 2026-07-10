@@ -9,8 +9,11 @@ import "../setup";
 import { describe, expect, test, beforeEach } from "bun:test";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
 import { db } from "../../src/db";
+import { addListingPhoto, createVendorListing } from "../../src/domain/listings";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
-import { lookupVendorPageMeta, renderIndexHtml } from "../../src/lib/seo_ssr";
+import { createVendorAccount } from "../../src/domain/vendor_accounts";
+import { initVendorBilling } from "../../src/domain/vendor_billing";
+import { HU_HOST, lookupVendorPageMeta, renderIndexHtml } from "../../src/lib/seo_ssr";
 
 async function registerAdmin(): Promise<string> {
   const reg = await req<{ token: string }>("POST", "/api/auth/register", {
@@ -181,5 +184,69 @@ describe("per-vendor SSR og:card meta (/vendors/:id)", () => {
     });
     expect(html).toContain(`<title>${name} · ${city}</title>`);
     expect(html).toContain(`<meta property="og:title" content="${name} · ${city}" />`);
+  });
+
+  // A claimed vendor (id `v{N}`) with no dedicated hero. Returns its `v{N}` id.
+  async function seedClaimedVendorNoHero(email: string, name: string): Promise<string> {
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email,
+      password: "supersafe123",
+      full_name: "Vendor Owner",
+    });
+    await verifyUserEmail(email);
+    const userId = reg.data.user.id;
+    db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(userId);
+    const account = createVendorAccount({
+      ownerUserId: userId,
+      displayName: name,
+      contactEmail: email,
+      onboardingDone: false,
+    });
+    createVendorListing({
+      vendorAccountId: account.id,
+      category: "photo_video",
+      name,
+      city: "Budapest",
+      contactEmail: email,
+    });
+    initVendorBilling(account.id, "HUF");
+    return `v${account.id}`;
+  }
+
+  test("og:image falls back to the vendor's first gallery photo when there's no hero", async () => {
+    const id = await seedClaimedVendorNoHero("gallery@weddly.test", "Nagy Gergely Videography");
+    // Vendor uploaded portfolio photos but never set a dedicated hero.
+    const photoUrl = `/uploads/listings/${id}/1.webp`;
+    addListingPhoto(id, photoUrl);
+    addListingPhoto(id, `/uploads/listings/${id}/2.webp`);
+
+    const meta = lookupVendorPageMeta(`/vendors/${id}`);
+    expect(meta?.heroImageUrl).toBe(photoUrl); // first uploaded photo wins
+
+    const html = renderIndexHtml(TEMPLATE, {
+      host: HU_HOST,
+      pathname: `/vendors/${id}`,
+      isRsvp: false,
+      acceptLanguage: "en-US,en;q=0.9",
+    });
+    // The vendor's own photo becomes the share-card image (made absolute), NOT
+    // the brand og.png.
+    expect(html).toContain(`<meta property="og:image" content="https://${HU_HOST}${photoUrl}" />`);
+    expect(html).not.toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
+  });
+
+  test("og:image falls back to the brand og.png when the vendor has no photos at all", async () => {
+    const id = await seedClaimedVendorNoHero("nopics@weddly.test", "No Pics Studio");
+
+    const meta = lookupVendorPageMeta(`/vendors/${id}`);
+    expect(meta?.heroImageUrl).toBeNull();
+
+    const html = renderIndexHtml(TEMPLATE, {
+      host: HU_HOST,
+      pathname: `/vendors/${id}`,
+      isRsvp: false,
+      acceptLanguage: "en-US,en;q=0.9",
+    });
+    expect(html).toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
   });
 });

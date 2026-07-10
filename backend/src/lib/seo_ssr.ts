@@ -20,6 +20,7 @@ import type { BlogBlock } from "../../../shared/blog_posts";
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { enPathFor, huPathFor, lookupRouteSeo, type RouteSeo } from "../../../shared/seo_routes";
 import { db } from "../db";
+import { listListingPhotos } from "../domain/listings";
 import { resolveSupplierBase } from "../domain/resolve_supplier";
 import { normalizeSlugInput } from "../domain/slug";
 
@@ -743,18 +744,41 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
   if (!idRaw || idRaw === "signup" || idRaw.length > 80) return null;
   const base = resolveSupplierBase(idRaw);
   if (!base) return null;
-  // Prefer the vendor-uploaded / re-hosted hero (CSP-safe local path) from the
-  // listings table; fall back to whatever the base carries.
+  // Share-card image priority, so the FB/Messenger preview shows the VENDOR's
+  // picture whenever one exists, and the brand card only as a last resort:
+  //   1. the vendor-uploaded / re-hosted hero (CSP-safe local path) from the
+  //      listings table,
+  //   2. whatever hero the resolved base carries,
+  //   3. the vendor's FIRST gallery photo (a videographer/photographer often
+  //      uploads a portfolio but never sets a dedicated hero — without this
+  //      they'd fall back to the brand og.png despite having real photos),
+  //   4. null -> buildHeadBlock uses the brand og.png.
+  // Blank/whitespace values count as "no image" so we never emit a broken
+  // og:image with no fallback behind it.
   const listing = db.prepare("SELECT hero_image_url FROM listings WHERE id = ?").get(idRaw) as
     | { hero_image_url: string | null }
     | undefined;
+  let heroImageUrl = firstNonBlank(listing?.hero_image_url, base.hero_image_url);
+  if (!heroImageUrl) {
+    heroImageUrl = firstNonBlank(listListingPhotos(idRaw)[0]?.url);
+  }
   return {
     name: base.name,
     city: base.city,
     blurbHu: base.blurb_hu,
     blurbEn: base.blurb_en,
-    heroImageUrl: listing?.hero_image_url ?? base.hero_image_url ?? null,
+    heroImageUrl,
   };
+}
+
+/** First argument that is a non-empty, non-whitespace string, else null. Guards
+ *  the og:image chain against blank DB values that would otherwise produce a
+ *  broken image URL with no fallback. */
+function firstNonBlank(...values: (string | null | undefined)[]): string | null {
+  for (const v of values) {
+    if (typeof v === "string" && v.trim().length > 0) return v;
+  }
+  return null;
 }
 
 function buildHeadBlock(opts: {
