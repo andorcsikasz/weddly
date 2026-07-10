@@ -165,12 +165,8 @@ describe("<KeyInfoCard>", () => {
     expect(screen.getByText("Aranybástya")).toBeInTheDocument();
     expect(screen.getByText("Budai Vár")).toBeInTheDocument();
 
-    // Map link uses the exact coordinates.
-    expect(
-      container.querySelector(
-        'a[href="https://www.google.com/maps/search/?api=1&query=47.5%2C19.04"]',
-      ),
-    ).toBeTruthy();
+    // The row links to the picked directory vendor's own detail page.
+    expect(container.querySelector('a[href="/app/suppliers/v1"]')).toBeTruthy();
     // Venue phone → tel: with spaces stripped.
     expect(container.querySelector('a[href="tel:+3612008817"]')).toBeTruthy();
 
@@ -178,8 +174,8 @@ describe("<KeyInfoCard>", () => {
     expect(screen.getByText("Foto Studio")).toBeInTheDocument();
     expect(screen.getByText("DJ Max")).toBeInTheDocument();
     expect(container.querySelector('a[href="tel:+36201112222"]')).toBeTruthy();
-    // "All vendors" jumps to the timeline contact panel.
-    expect(container.querySelector('a[href="/app/timeline"]')).toBeTruthy();
+    // "All vendors" jumps to the vendors hub.
+    expect(container.querySelector('a[href="/app/vendors"]')).toBeTruthy();
   });
 
   it("manual venue fields override the picked venue, and renders coordinator + emergency rows", async () => {
@@ -218,11 +214,10 @@ describe("<KeyInfoCard>", () => {
     expect(screen.getByText("Sári Csárda")).toBeInTheDocument();
     expect(screen.queryByText("Aranybástya")).not.toBeInTheDocument();
     expect(container.querySelector('a[href="tel:+36301112222"]')).toBeTruthy();
-    // Manual address wins over the picked venue's coords for the map query.
-    const q = encodeURIComponent("Fő út 1, Dunakiliti");
-    expect(
-      container.querySelector(`a[href="https://www.google.com/maps/search/?api=1&query=${q}"]`),
-    ).toBeTruthy();
+    // Renamed away from the pick → the row detaches from the stale vendor: it
+    // links to the hub, not the picked venue's detail page.
+    expect(container.querySelector('a[href="/app/vendors"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/app/suppliers/v1"]')).toBeNull();
 
     // Coordinator + emergency rows with their own call buttons.
     expect(screen.getByText("Coordinator")).toBeInTheDocument();
@@ -268,7 +263,7 @@ describe("<KeyInfoCard>", () => {
     expect(container.querySelector('a[href="tel:+36301112222"]')).toBeTruthy();
   });
 
-  it("falls back to the free-text venue name + a Maps search link when nothing is picked", async () => {
+  it("falls back to the free-text venue name (in-app map) when nothing is picked", async () => {
     picks = [];
     suppliers = [];
     const { container } = render(
@@ -280,14 +275,45 @@ describe("<KeyInfoCard>", () => {
 
     expect(screen.getByText("Sári Csárda")).toBeInTheDocument();
     expect(screen.getByText("Dunakiliti")).toBeInTheDocument();
-    const q = encodeURIComponent("Sári Csárda, Dunakiliti");
-    expect(
-      container.querySelector(`a[href="https://www.google.com/maps/search/?api=1&query=${q}"]`),
-    ).toBeTruthy();
+    // No pick → the row links to the vendors hub (no detail page to open).
+    expect(container.querySelector('a[href="/app/vendors"]')).toBeTruthy();
     // No phone available in the free-text path.
     expect(screen.queryByText("Call")).not.toBeInTheDocument();
     // No suppliers → the add-vendors CTA.
     expect(screen.getByText("Add vendors")).toBeInTheDocument();
+  });
+
+  it("detaches a stale pick when the venue is renamed: no wrong phone or vendor link", async () => {
+    // The couple picked Aranybástya, then retyped the venue name to a different
+    // venue without re-picking. The card must NOT lend the old vendor's phone or
+    // detail page to the renamed venue (the Kulcsinfó stale-relink bug).
+    picks = [pick("venue", "v1")];
+    suppliers = [
+      dir({
+        id: "v1",
+        name: "Aranybástya",
+        category: "venue",
+        city: "Budapest",
+        address: "Budai Vár",
+        contact_phone: "+36 1 200 8817",
+        lat: 47.5,
+        lng: 19.04,
+      }),
+    ];
+    const { container } = render(
+      <Providers>
+        <KeyInfoCard couple={couple({ venue_name: "Hertelendy Kastély" })} />
+      </Providers>,
+    );
+    await flush();
+
+    // The renamed venue shows; the stale vendor's name never does.
+    expect(screen.getByText("Hertelendy Kastély")).toBeInTheDocument();
+    expect(screen.queryByText("Aranybástya")).not.toBeInTheDocument();
+    // No call button dialling the stale vendor's number.
+    expect(container.querySelector('a[href="tel:+3612008817"]')).toBeNull();
+    // The row links to the vendors hub, never the stale vendor's detail page.
+    expect(container.querySelector('a[href="/app/suppliers/v1"]')).toBeNull();
     expect(container.querySelector('a[href="/app/vendors"]')).toBeTruthy();
   });
 

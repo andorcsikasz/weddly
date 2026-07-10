@@ -17,6 +17,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -86,7 +87,13 @@ import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { useAuth } from "../lib/auth";
-import { reviewApi, supplierApi, supplierBookingApi, supplierCommentApi } from "../lib/endpoints";
+import {
+  coupleApi,
+  reviewApi,
+  supplierApi,
+  supplierBookingApi,
+  supplierCommentApi,
+} from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 // Lazy so the OpenStreetMap embed modal only loads when the user opens the map.
@@ -241,6 +248,10 @@ export default function SupplierDetailPage() {
   const [alreadyReviewed, setAlreadyReviewed] = useState(false);
   const [comments, setComments] = useState<SupplierComment[] | null>(null);
   const [availability, setAvailability] = useState<SupplierAvailability | null>(null);
+  // The viewing couple's wedding date, so the busy calendar can open on the
+  // wedding month rather than today. Best-effort: a null (non-couple viewer /
+  // failed fetch) just leaves the calendar on the current month.
+  const [weddingDate, setWeddingDate] = useState<string | null>(null);
   const [bookings, setBookings] = useState<SupplierBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapOpen, setMapOpen] = useState(false);
@@ -288,6 +299,20 @@ export default function SupplierDetailPage() {
     setLoading(true);
     void refresh();
   }, [refresh]);
+
+  // Wedding date for the busy-calendar default month. Fetched once, best-effort.
+  useEffect(() => {
+    let cancelled = false;
+    void coupleApi
+      .current()
+      .then((r) => {
+        if (!cancelled) setWeddingDate(r.couple?.wedding_date ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Saved-to-shortlist state. Persisted in localStorage under the same
   // key the directory page uses, so toggling here flips the heart on the
@@ -668,7 +693,12 @@ export default function SupplierDetailPage() {
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
           <InfoCard detail={detail} t={t} onOpenMap={() => setMapOpen(true)} />
           <ContactCard detail={detail} t={t} />
-          <BusyCalendarCard availability={availability} locale={locale} t={t} />
+          <BusyCalendarCard
+            availability={availability}
+            weddingDate={weddingDate}
+            locale={locale}
+            t={t}
+          />
         </aside>
       </div>
 
@@ -1504,10 +1534,14 @@ function ymd(date: Date): string {
 
 function BusyCalendarCard({
   availability,
+  weddingDate,
   locale,
   t,
 }: {
   availability: SupplierAvailability | null;
+  /** ISO wedding date; the calendar opens on this month when set (couples care
+   *  about availability around the wedding, not today). Null → current month. */
+  weddingDate: string | null;
   locale: string;
   t: (k: string) => string;
 }) {
@@ -1516,6 +1550,18 @@ function BusyCalendarCard({
     year: today.getFullYear(),
     month: today.getMonth(),
   });
+
+  // Jump to the wedding month once, when the date is known (it may arrive after
+  // the first render). A ref guards it so a couple browsing other months isn't
+  // yanked back — and so a later re-render can't re-apply the default.
+  const appliedWeddingMonth = useRef(false);
+  useEffect(() => {
+    if (appliedWeddingMonth.current || !weddingDate) return;
+    const d = new Date(weddingDate);
+    if (Number.isNaN(d.getTime())) return;
+    appliedWeddingMonth.current = true;
+    setCursor({ year: d.getFullYear(), month: d.getMonth() });
+  }, [weddingDate]);
 
   const blocked = useMemo(
     () => new Set(availability?.unavailable_dates ?? []),

@@ -116,6 +116,11 @@ type VenueInfo = {
   lng: number | null;
   address: string | null;
   city: string;
+  /** The directory vendor this row should link to (its detail page), or null
+   *  to fall back to the vendors hub. Null when the venue is free-text OR when
+   *  the couple renamed it away from a still-attached pick (see resolveVenue) —
+   *  so a stale pick never lends its detail page to a differently-named venue. */
+  linkedSupplierId: string | null;
 };
 
 type Contact = {
@@ -179,10 +184,20 @@ function resolveVenue(
   const picked = pickedVenueDir(venuePick, directoryById);
   const diy = venuePick && !picked ? diyById.get(venuePick.supplier_id) : undefined;
 
-  const name = f.venue_name || picked?.name || diy?.name || null;
-  const address = f.venue_address || picked?.address || null;
-  const city = f.venue_city || picked?.city || null;
-  const phone = f.venue_phone || picked?.contact_phone || null;
+  // A manually-typed venue_name that differs from the still-attached directory
+  // pick means the couple renamed / changed venues without re-picking. The old
+  // vendor's phone, coordinates and detail page would then all point at the
+  // wrong place, so we DETACH from the pick: the row behaves like a free-text
+  // venue (typed values only, geocoded map, hub link). The couple can re-link
+  // via the edit dialog's autocomplete. Name comparison is diacritic-folded.
+  const detachedFromPick =
+    Boolean(f.venue_name) && picked != null && fold(f.venue_name) !== fold(picked.name);
+  const effPicked = detachedFromPick ? undefined : picked;
+
+  const name = f.venue_name || effPicked?.name || diy?.name || null;
+  const address = f.venue_address || effPicked?.address || null;
+  const city = f.venue_city || effPicked?.city || null;
+  const phone = f.venue_phone || effPicked?.contact_phone || null;
 
   if (!name && !address) return null;
 
@@ -194,8 +209,8 @@ function resolveVenue(
   // picked directory venue's exact coordinates win; failing that we hand the
   // modal the best geocodable string (street address, or the name).
   const manualAddr = Boolean(f.venue_address);
-  const lat = manualAddr ? null : (picked?.lat ?? null);
-  const lng = manualAddr ? null : (picked?.lng ?? null);
+  const lat = manualAddr ? null : (effPicked?.lat ?? null);
+  const lng = manualAddr ? null : (effPicked?.lng ?? null);
   const mapAddress = f.venue_address || address || (lat === null ? name : null);
   return {
     name: primary,
@@ -205,6 +220,7 @@ function resolveVenue(
     lng,
     address: mapAddress,
     city: city ?? "",
+    linkedSupplierId: effPicked?.id ?? null,
   };
 }
 
@@ -339,19 +355,20 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
     () => resolveVenue(fields, venuePick, directoryById, diyById),
     [fields, venuePick, directoryById, diyById],
   );
-  // Directory venue behind the pick — its name/address/phone become the edit
-  // form's placeholders so the couple sees what's auto-filled vs. overridden.
-  const pickedDir = useMemo(
-    () => pickedVenueDir(venuePick, directoryById),
-    [venuePick, directoryById],
+  // The directory venue the row is EFFECTIVELY linked to — the pick, unless the
+  // couple renamed the venue away from it (resolveVenue detaches a stale pick,
+  // exposing that decision via `venue.linkedSupplierId`). Drives both the row
+  // link and the edit-form placeholders, so neither surfaces a stale vendor.
+  const linkedDir = useMemo(
+    () => (venue?.linkedSupplierId ? directoryById.get(venue.linkedSupplierId) : undefined),
+    [venue?.linkedSupplierId, directoryById],
   );
-  // Where the venue row links to: a picked directory venue opens its own vendor
-  // card; any other venue (DIY / free-text, no detail page) falls back to the
-  // vendors hub. Mirrors the supplier-row behaviour.
-  const venueLinkTo = useMemo(
-    () => (pickedDir ? `/app/suppliers/${encodeURIComponent(pickedDir.id)}` : "/app/vendors"),
-    [pickedDir],
-  );
+  // Where the venue row links to: an effectively-linked directory venue opens
+  // its own vendor card; any other venue (DIY / free-text / detached) falls back
+  // to the vendors hub. Mirrors the supplier-row behaviour.
+  const venueLinkTo = linkedDir
+    ? `/app/suppliers/${encodeURIComponent(linkedDir.id)}`
+    : "/app/vendors";
   // Venue-category directory vendors, offered as autocomplete suggestions in
   // the edit dialog ("primarily suggest venue vendors").
   const venueOptions = useMemo(
@@ -359,8 +376,10 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
     [data],
   );
   // Placeholders follow the pending selection while the dialog is open, so the
-  // city/address/phone hints reflect the vendor the couple just picked.
-  const placeholderVenue = pendingVenue ?? pickedDir;
+  // city/address/phone hints reflect the vendor the couple just picked. Falls
+  // back to the effectively-linked pick (never a stale, detached one), so a
+  // renamed venue shows empty fields to fill rather than a prior vendor's data.
+  const placeholderVenue = pendingVenue ?? linkedDir;
 
   const hasCoordinator = Boolean(fields.coordinator_name || fields.coordinator_phone);
   const hasEmergency = Boolean(fields.emergency_name || fields.emergency_phone);
