@@ -230,6 +230,36 @@ function groupJustCompleted(
   return !wasDone && isDone;
 }
 
+/** True when a selection change resolves EVERY supplier category (picked or
+ *  marked not-needed) that wasn't fully resolved before — the "everything's
+ *  sorted" moment that earns the bigger celebration. */
+function chainJustCompleted(prev: SelectionMap, next: SelectionMap): boolean {
+  const all = SUPPLIER_GROUPS.flatMap((g) => g.categories);
+  const wasDone = all.every((c) => Boolean(prev[c]));
+  const isDone = all.every((c) => Boolean(next[c]));
+  return !wasDone && isDone;
+}
+
+/** Bigger, staggered confetti for the whole-chain-complete moment — three
+ *  bursts across the top instead of the single per-step pop. Inherits
+ *  fireConfetti's reduced-motion + SSR guards. */
+function celebrateChainComplete(): void {
+  if (typeof window === "undefined") return;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  fireConfetti({ x: w * 0.5, y: h * 0.28 });
+  window.setTimeout(() => fireConfetti({ x: w * 0.24, y: h * 0.32 }), 140);
+  window.setTimeout(() => fireConfetti({ x: w * 0.76, y: h * 0.32 }), 260);
+}
+
+/** Fire the right celebration for a completing selection change: the bigger
+ *  burst when the whole chain just finished, else the single pop when just
+ *  this group finished. No-op when nothing newly completed. */
+function celebrateSelection(cat: SupplierCategory, prev: SelectionMap, next: SelectionMap): void {
+  if (chainJustCompleted(prev, next)) celebrateChainComplete();
+  else if (groupJustCompleted(cat, prev, next)) fireConfetti();
+}
+
 export default function SuppliersPage() {
   const { t, locale } = useT();
   const navigate = useNavigate();
@@ -685,7 +715,7 @@ export default function SuppliersPage() {
       const isPicked = selection[cat] === supplier.id;
       const next = setSelection(coupleId, cat, isPicked ? null : supplier.id);
       setSelectionState(next);
-      if (!isPicked && groupJustCompleted(cat, selection, next)) fireConfetti();
+      if (!isPicked) celebrateSelection(cat, selection, next);
     },
     [coupleId, selection, toast, t],
   );
@@ -710,7 +740,7 @@ export default function SuppliersPage() {
     if (turningOn) {
       // Fire the confetti, then immediately close the "Szervezés & koordináció"
       // tab so the chip collapses to its green done-pill right away.
-      if (groupJustCompleted("wedding_planner", selection, next)) fireConfetti();
+      celebrateSelection("wedding_planner", selection, next);
       setActiveGroup(null);
       setActiveCat(null);
     }
@@ -733,8 +763,8 @@ export default function SuppliersPage() {
     const turningOn = !activeCatNotNeeded;
     const next = setSelection(coupleId, activeCat, turningOn ? NOT_NEEDED_PICK : null);
     setSelectionState(next);
-    // Confetti only when this flips the whole group green (same beat as a pick).
-    if (turningOn && groupJustCompleted(activeCat, selection, next)) fireConfetti();
+    // Celebrate when this flips the whole group (or the whole chain) green.
+    if (turningOn) celebrateSelection(activeCat, selection, next);
   }, [coupleId, activeCat, activeCatNotNeeded, selection, toast, t]);
 
   // Once we know the couple, default the URL's `guests` filter — preferring
@@ -2552,7 +2582,7 @@ function ChainStep({
         active
           ? "border-transparent stationery-coffee text-paper-50"
           : allDone
-            ? "border-sage-400 bg-sage-50 text-sage-800 hover:border-sage-500 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60"
+            ? "border-sage-600 bg-sage-600 text-white hover:border-sage-700 hover:bg-sage-700 dark:border-sage-600 dark:bg-sage-600 dark:text-white dark:hover:border-sage-700 dark:hover:bg-sage-700"
             : "border-umber-600 bg-umber-100 text-ink-800 hover:border-umber-700 hover:bg-umber-200 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
       }`}
     >
@@ -2577,7 +2607,7 @@ function ChainStep({
               active
                 ? "text-paper-50/70"
                 : allDone
-                  ? "text-sage-700/80 dark:text-sage-300/80"
+                  ? "text-white/75"
                   : "text-ink-400 dark:text-umber-300"
             }`}
           >
@@ -2601,7 +2631,9 @@ function ChainStep({
               key={bar.id}
               className={`h-[3px] w-3 rounded-full transition-colors duration-300 ease-out ${
                 bar.filled
-                  ? "bg-sage-500"
+                  ? allDone
+                    ? "bg-white/85"
+                    : "bg-sage-500"
                   : active
                     ? "bg-paper-100/30 dark:bg-umber-900/30"
                     : "bg-umber-400/60 dark:bg-umber-700"
