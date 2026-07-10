@@ -167,6 +167,95 @@ describe("admin vendor management", () => {
     expect(logged?.category).toBe("transactional");
   });
 
+  test("admin register mints a pending onboarding + activation email", async () => {
+    const adminToken = await bootstrapAdmin();
+    const res = await req<{ ok: true; onboarding_id: number }>(
+      "POST",
+      "/api/admin/vendors/register",
+      {
+        business_name: "Admin Made Studio",
+        email: "admin-made@weddly.test",
+        category: "photo_video",
+      },
+      { token: adminToken },
+    );
+    expect(res.status).toBe(201);
+
+    // A pending onboarding row exists — no user account yet (activation pending).
+    const pending = db
+      .prepare(
+        "SELECT business_name, category, status FROM vendor_onboarding WHERE email = ? AND status = 'pending'",
+      )
+      .get("admin-made@weddly.test") as
+      | { business_name: string; category: string; status: string }
+      | undefined;
+    expect(pending?.business_name).toBe("Admin Made Studio");
+    expect(pending?.category).toBe("photo_video");
+    expect(
+      db.prepare("SELECT id FROM users WHERE email = ?").get("admin-made@weddly.test") ?? null,
+    ).toBeNull();
+
+    // It surfaces in the admin "Aktiválásra vár" list.
+    const list = await req<{ pending: { contact_email: string; state: string }[] }>(
+      "GET",
+      "/api/admin/vendors",
+      undefined,
+      { token: adminToken },
+    );
+    expect(list.data.pending.some((p) => p.contact_email === "admin-made@weddly.test")).toBe(true);
+
+    // The activation email went out as the transactional vendor_activation mail.
+    const logged = db
+      .prepare("SELECT kind, category FROM email_log WHERE to_email = ? ORDER BY id DESC LIMIT 1")
+      .get("admin-made@weddly.test") as { kind: string; category: string } | undefined;
+    expect(logged?.kind).toBe("vendor_activation");
+
+    // Re-registering the same email supersedes the prior link (one live token).
+    const again = await req(
+      "POST",
+      "/api/admin/vendors/register",
+      { business_name: "Renamed", email: "admin-made@weddly.test", category: "music_dj" },
+      { token: adminToken },
+    );
+    expect(again.status).toBe(201);
+    const liveCount = db
+      .prepare("SELECT COUNT(*) AS n FROM vendor_onboarding WHERE email = ? AND status = 'pending'")
+      .get("admin-made@weddly.test") as { n: number };
+    expect(liveCount.n).toBe(1);
+  });
+
+  test("admin register rejects a taken email (409) and a bad category (400)", async () => {
+    const adminToken = await bootstrapAdmin();
+    await seedActivatedVendor("taken@weddly.test", "Existing Vendor");
+    const dup = await req(
+      "POST",
+      "/api/admin/vendors/register",
+      { business_name: "X", email: "taken@weddly.test", category: "photo_video" },
+      { token: adminToken },
+    );
+    expect(dup.status).toBe(409);
+
+    const badCat = await req(
+      "POST",
+      "/api/admin/vendors/register",
+      { business_name: "X", email: "fresh@weddly.test", category: "not_a_category" },
+      { token: adminToken },
+    );
+    expect(badCat.status).toBe(400);
+  });
+
+  test("non-admin cannot register a vendor", async () => {
+    await bootstrapAdmin();
+    const { token } = await bootstrapCouple("nota@weddly.test");
+    const res = await req(
+      "POST",
+      "/api/admin/vendors/register",
+      { business_name: "X", email: "x@weddly.test", category: "photo_video" },
+      { token },
+    );
+    expect(res.status).toBe(403);
+  });
+
   test("DELETE purges the vendor account", async () => {
     const adminToken = await bootstrapAdmin();
     const { accountId } = await seedActivatedVendor("vendor4@weddly.test", "Gone Soon");

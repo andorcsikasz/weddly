@@ -5115,6 +5115,16 @@ export interface LocaleMessages {
     /** Vendor management (/app/admin/vendors). */
     vendors: {
       subtitle: string;
+      /** Admin "register a new vendor" dialog. */
+      register_cta: string;
+      register_title: string;
+      register_intro: string;
+      register_business: string;
+      register_email: string;
+      register_category: string;
+      register_submit: string;
+      register_success: string;
+      register_email_taken: string;
       filter_all: string;
       filter_active: string;
       filter_founding: string;

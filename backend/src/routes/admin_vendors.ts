@@ -5,9 +5,10 @@
 // allowlist as the other admin routes). Distinct from the BEÉRKEZŐ vendor
 // waitlist (triage) and the community supplier moderation directory.
 
+import { SUPPLIER_GROUPS } from "@shared/suppliers";
 import { CONFIG } from "../config";
 import { purgeOneUser } from "../domain/purge";
-import { setUserStatus } from "../domain/users";
+import { getUserByEmail, setUserStatus } from "../domain/users";
 import { requireAdmin } from "../domain/users";
 import {
   getVendorAccountById,
@@ -16,6 +17,7 @@ import {
 } from "../domain/vendor_accounts";
 import {
   cancelPendingOnboarding,
+  cancelPendingOnboardingsByEmail,
   createOnboardingToken,
   getOnboardingById,
   listPendingOnboardings,
@@ -23,6 +25,9 @@ import {
 import { sendVendorActivationEmail } from "../domain/vendor_waitlist_emails";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+
+/** Every valid supplier category, from the taxonomy source of truth. */
+const VALID_CATEGORIES: ReadonlySet<string> = new Set(SUPPLIER_GROUPS.flatMap((g) => g.categories));
 
 function parseId(ctx: Ctx): number {
   const id = Number(ctx.params.id);
@@ -171,8 +176,63 @@ async function handleResendActivation(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+/** Admin-initiated vendor registration. Mints a fresh pending onboarding for a
+ *  {business name, email, category} and emails the vendor the activation link —
+ *  the same "Aktiválásra vár" state the waitlist-accept path produces, but
+ *  started directly by an admin (no waitlist entry, no card). The vendor sets
+ *  their own password + finishes onboarding via the link. Mirrors the planner
+ *  provision flow (admin_planners.ts:handleProvision). */
+async function handleRegister(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const body = await readJson<{
+    email?: unknown;
+    business_name?: unknown;
+    category?: unknown;
+  }>(ctx.req);
+
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  if (email.length < 3 || !email.includes("@") || email.startsWith("@") || email.endsWith("@")) {
+    throw new HttpError(400, "Email looks invalid");
+  }
+  const businessName = typeof body.business_name === "string" ? body.business_name.trim() : "";
+  if (!businessName) throw new HttpError(400, "Business name is required");
+  if (businessName.length > 120) throw new HttpError(400, "Business name too long");
+  const category = typeof body.category === "string" ? body.category : "";
+  if (!VALID_CATEGORIES.has(category)) throw new HttpError(400, "Pick a valid category");
+
+  // An email already tied to a real Weddly account (any role) can't be
+  // re-registered as a fresh vendor.
+  if (getUserByEmail(email)) {
+    throw new HttpError(409, "An account with this email already exists", { code: "email_taken" });
+  }
+
+  // One live activation link per email: supersede any prior admin-registered
+  // pending row (createOnboardingToken only auto-cancels waitlist_id siblings).
+  cancelPendingOnboardingsByEmail(email);
+  const token = createOnboardingToken({
+    waitlistId: null,
+    businessName,
+    email,
+    category,
+    locale: null,
+  });
+  const activateUrl = `${CONFIG.frontendBaseUrl}/vendor/activate/${encodeURIComponent(token.token)}`;
+  await sendVendorActivationEmail({ to: email, businessName, activateUrl });
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.vendor_register",
+    target_kind: "vendor_onboarding",
+    target_id: token.id,
+    after: { email, business_name: businessName, category },
+  });
+  return json({ ok: true, onboarding_id: token.id }, { status: 201 });
+}
+
 export function registerAdminVendorRoutes(router: Router) {
   router.get("/api/admin/vendors", handleList, true);
+  router.post("/api/admin/vendors/register", handleRegister, true);
   router.post("/api/admin/vendors/:id/suspend", handleSuspend, true);
   router.post("/api/admin/vendors/:id/reactivate", handleReactivate, true);
   router.patch("/api/admin/vendors/:id", handleUpdate, true);

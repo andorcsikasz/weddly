@@ -10,6 +10,7 @@
 // looks like a churned one (the trap a binary paying/not marker falls into).
 
 import type { AdminVendorView } from "@shared/listings";
+import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
 import type { VendorPlan } from "@shared/vendor_plan";
 import {
@@ -30,11 +31,12 @@ import {
   Search,
   Store,
   Trash2,
+  UserPlus,
 } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminPageHeader, Pill, StatFilter } from "../components/admin";
 import type { PillTone } from "../components/admin";
-import { Button, useConfirm, useEntryPrompt, useToast } from "../components/ui";
+import { Button, Dialog, TextField, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminVendorMgmtApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -545,6 +547,143 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
   );
 }
 
+/** Admin "register a new vendor" — collects business name + email + category,
+ *  mints a pending onboarding and emails the vendor the activation link. Mirrors
+ *  the planner ProvisionPlannerDialog; the vendor sets their own password via the
+ *  link (no full name / password collected here). */
+function RegisterVendorDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const [businessName, setBusinessName] = useState("");
+  const [email, setEmail] = useState("");
+  const [category, setCategory] = useState<SupplierCategory | "">("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fresh form every open — a cancelled half-typed vendor mustn't leak forward.
+  useEffect(() => {
+    if (!open) return;
+    setBusinessName("");
+    setEmail("");
+    setCategory("");
+    setError(null);
+  }, [open]);
+
+  const canSubmit = businessName.trim().length > 0 && email.includes("@") && category !== "";
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await adminVendorMgmtApi.register({
+        business_name: businessName.trim(),
+        email: email.trim(),
+        category,
+      });
+      toast.success(t("admin.vendors.register_success"));
+      onCreated();
+      onClose();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setError(t("admin.vendors.register_email_taken"));
+      } else {
+        setError(err instanceof ApiError ? err.message : t("common.error_generic"));
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      title={t("admin.vendors.register_title")}
+      onClose={onClose}
+      role="dialog"
+      closeOnBackdrop
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} disabled={submitting}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            type="submit"
+            form="register-vendor-form"
+            variant="primary"
+            disabled={!canSubmit}
+            loading={submitting}
+            loadingLabel={t("common.loading")}
+            leftIcon={<Mail size={15} />}
+          >
+            {t("admin.vendors.register_submit")}
+          </Button>
+        </>
+      }
+    >
+      <p className="mb-4 text-sm text-ink-600 dark:text-umber-300">
+        {t("admin.vendors.register_intro")}
+      </p>
+      <form id="register-vendor-form" className="space-y-4" onSubmit={onSubmit}>
+        <TextField
+          id="register-vendor-business"
+          label={t("admin.vendors.register_business")}
+          value={businessName}
+          onChange={(e) => setBusinessName(e.target.value)}
+          required
+          autoComplete="off"
+        />
+        <TextField
+          id="register-vendor-email"
+          type="email"
+          label={t("admin.vendors.register_email")}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="off"
+        />
+        <div>
+          <label htmlFor="register-vendor-category" className="field-label">
+            {t("admin.vendors.register_category")}
+          </label>
+          <select
+            id="register-vendor-category"
+            className="input"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as SupplierCategory | "")}
+            required
+          >
+            <option value="" disabled>
+              {t("vendor_register.category_placeholder")}
+            </option>
+            {SUPPLIER_GROUPS.map((g) => (
+              <optgroup key={g.id} label={t(`suppliers.group.${g.id}`)}>
+                {g.categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c === "other"
+                      ? t("vendor_register.category_other_option")
+                      : t(`suppliers.cat.${c}`)}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+        {error && <p className="field-error">{error}</p>}
+      </form>
+    </Dialog>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AdminVendorsPage() {
@@ -556,6 +695,7 @@ export default function AdminVendorsPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   // Debounce the search so typing stays snappy on a long list (same 150ms
   // pacing as the couples user page + supplier directory filter).
@@ -621,6 +761,21 @@ export default function AdminVendorsPage() {
           </span>
         }
         subtitle={t("admin.vendors.subtitle")}
+        actions={
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<UserPlus size={15} />}
+            onClick={() => setRegisterOpen(true)}
+          >
+            {t("admin.vendors.register_cta")}
+          </Button>
+        }
+      />
+      <RegisterVendorDialog
+        open={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        onCreated={() => void load()}
       />
 
       {/* Search across name / email / vendor code. */}

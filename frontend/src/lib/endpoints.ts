@@ -1864,6 +1864,11 @@ export const adminVendorMgmtApi = {
       "GET",
       "/api/admin/vendors",
     ),
+  /** Admin-initiated vendor registration: mints a pending onboarding and emails
+   *  the activation link (the vendor sets their own password). Lands in the
+   *  "Aktiválásra vár" list until they activate. */
+  register: (body: { email: string; business_name: string; category: string }) =>
+    apiFetch<{ ok: true; onboarding_id: number }>("POST", "/api/admin/vendors/register", body),
   suspend: (id: number) =>
     apiFetch<{ ok: true; status: string }>("POST", `/api/admin/vendors/${id}/suspend`, {}),
   reactivate: (id: number) =>

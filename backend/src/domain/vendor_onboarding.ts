@@ -133,6 +133,16 @@ export function cancelPendingOnboarding(id: number): void {
   ).run(id);
 }
 
+/** Cancel every still-pending onboarding for an email. Used by the admin
+ *  "register a vendor" action (waitlist_id-less rows aren't auto-superseded by
+ *  createOnboardingToken) so re-registering the same email leaves ONE live
+ *  activation link instead of stacking duplicates. */
+export function cancelPendingOnboardingsByEmail(email: string): void {
+  db.prepare(
+    "UPDATE vendor_onboarding SET status = 'cancelled' WHERE email = ? AND status = 'pending'",
+  ).run(email.trim().toLowerCase());
+}
+
 export function getOnboardingById(id: number): VendorOnboardingRow | null {
   return (
     (db.prepare("SELECT * FROM vendor_onboarding WHERE id = ?").get(id) as

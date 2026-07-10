@@ -4534,6 +4534,16 @@ const en: LocaleMessages = {
     nav_email_list: "Email list",
     vendors: {
       subtitle: "Every accepted vendor — activated accounts and pending activations.",
+      register_cta: "New vendor",
+      register_title: "Register a new vendor",
+      register_intro:
+        "We create a pending account and email the vendor an activation link. They set their own password from the link, no card needed.",
+      register_business: "Business name",
+      register_email: "Email",
+      register_category: "Category",
+      register_submit: "Send activation link",
+      register_success: "Activation link sent. The vendor is now awaiting activation.",
+      register_email_taken: "An account with this email already exists.",
       filter_all: "All",
       filter_active: "Active",
       filter_founding: "Founding",

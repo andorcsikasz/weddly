@@ -4582,6 +4582,16 @@ const hu: LocaleMessages = {
     nav_email_list: "Email lista",
     vendors: {
       subtitle: "Minden elfogadott szolgáltató — aktivált fiókok és aktiválásra várók.",
+      register_cta: "Új szolgáltató",
+      register_title: "Új szolgáltató regisztrálása",
+      register_intro:
+        "Létrehozunk egy aktiválásra váró fiókot, és e-mailben elküldjük az aktivációs linket. A szolgáltató a linken keresztül állítja be a saját jelszavát, bankkártya nem kell.",
+      register_business: "Vállalkozás neve",
+      register_email: "E-mail",
+      register_category: "Kategória",
+      register_submit: "Aktivációs link küldése",
+      register_success: "Aktivációs link elküldve. A szolgáltató mostantól aktiválásra vár.",
+      register_email_taken: "Ehhez az e-mail címhez már tartozik fiók.",
       filter_all: "Összes",
       filter_active: "Aktív",
       filter_founding: "Alapító",
