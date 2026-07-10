@@ -204,6 +204,23 @@ export default function LandingPage() {
   const pricingCardRef = useRef<HTMLDivElement>(null);
   const perforationRef = useRef<HTMLDivElement>(null);
   const [ticketClip, setTicketClip] = useState<string | null>(null);
+  // Touch devices have no hover, so the icon-only role chips can't reveal their
+  // label the way desktop does. The first tap expands the label (so the user
+  // can read what the chip is); a second tap on the now-labelled chip acts.
+  // Hover-capable devices keep the instant behaviour.
+  const [revealedChip, setRevealedChip] = useState<string | null>(null);
+  const chipTapProceeds = (e: React.MouseEvent, key: string): boolean => {
+    const hoverCapable =
+      typeof window !== "undefined" && !!window.matchMedia?.("(hover: hover)").matches;
+    if (hoverCapable || revealedChip === key) return true;
+    e.preventDefault();
+    setRevealedChip(key);
+    return false;
+  };
+  const chipTextWrap = (key: string) =>
+    revealedChip === key
+      ? "grid grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-out"
+      : roleChipTextWrap;
   useEffect(() => {
     const card = pricingCardRef.current;
     const perf = perforationRef.current;
@@ -257,7 +274,7 @@ export default function LandingPage() {
 
         {/* Content layer */}
         <div className="hero-content-wrap">
-          <div className="mx-auto flex min-h-[62svh] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
+          <div className="mx-auto flex min-h-[75svh] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
             <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
               <div>
                 <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
@@ -280,9 +297,10 @@ export default function LandingPage() {
                     to="/vendors"
                     aria-label={t("landing.footer_band_cta_vendor")}
                     className={roleChipClass}
+                    onClick={(e) => chipTapProceeds(e, "vendor")}
                   >
                     <Store size={16} strokeWidth={1.6} aria-hidden />
-                    <span className={roleChipTextWrap}>
+                    <span className={chipTextWrap("vendor")}>
                       <span className={roleChipText}>{t("landing.footer_band_cta_vendor")}</span>
                     </span>
                   </Link>
@@ -290,9 +308,10 @@ export default function LandingPage() {
                     to="/planners"
                     aria-label={t("landing.footer_band_cta_planner")}
                     className={roleChipClass}
+                    onClick={(e) => chipTapProceeds(e, "planner")}
                   >
                     <ClipboardList size={16} strokeWidth={1.6} aria-hidden />
-                    <span className={roleChipTextWrap}>
+                    <span className={chipTextWrap("planner")}>
                       <span className={roleChipText}>{t("landing.footer_band_cta_planner")}</span>
                     </span>
                   </Link>
@@ -300,12 +319,12 @@ export default function LandingPage() {
                     type="button"
                     aria-label={t("landing.footer_band_cta")}
                     className={roleChipClass}
-                    onClick={() => {
-                      void askGuestCode();
+                    onClick={(e) => {
+                      if (chipTapProceeds(e, "guest")) void askGuestCode();
                     }}
                   >
                     <UserCheck size={16} strokeWidth={1.6} aria-hidden />
-                    <span className={roleChipTextWrap}>
+                    <span className={chipTextWrap("guest")}>
                       <span className={roleChipText}>{t("landing.footer_band_cta")}</span>
                     </span>
                   </button>
