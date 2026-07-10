@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
  *  them through one component just lets us bump a shade (e.g. dark-mode
  *  accent text → neutral-100 for WCAG AA) in one place. The legacy
  *  "violet" tone now renders koromfekete neutral (admin lost its purple). */
-export type PillTone = "ink" | "paper" | "violet" | "blush" | "sage" | "muted";
+export type PillTone = "ink" | "paper" | "violet" | "blush" | "sage" | "muted" | "verified";
 
 export interface PillProps {
   tone?: PillTone;
@@ -36,6 +36,7 @@ const TONE_CLASSES: Record<PillTone, string> = {
     "bg-blush-50 text-blush-800 ring-1 ring-blush-300 dark:bg-blush-400/15 dark:text-blush-200 dark:ring-blush-400/40",
   sage: "bg-sage-100 text-sage-900 dark:bg-sage-400/15 dark:text-sage-200",
   muted: "bg-paper-200 text-neutral-600 dark:bg-umber-800 dark:text-umber-300",
+  verified: "bg-verified/15 text-verified ring-1 ring-verified/30 dark:bg-verified/20",
 };
 
 /** The dot variant uses the tone's text colour as the dot fill so the
@@ -50,6 +51,7 @@ const DOT_CLASSES: Record<PillTone, string> = {
   blush: "bg-blush-600 dark:bg-blush-300",
   sage: "bg-sage-600 dark:bg-sage-300",
   muted: "bg-neutral-300 dark:bg-umber-500",
+  verified: "bg-verified",
 };
 
 const BASE_CLS = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium";

@@ -185,6 +185,79 @@ describe("admin planner management", () => {
     expect(res.status).toBe(400);
   });
 
+  test("verify then unverify toggles the couple-facing trust badge", async () => {
+    const adminToken = await bootstrapAdmin();
+    const plannerId = await seedPlanner("verifyme@weddly.test");
+
+    const on = await req<{ ok: true; verified: boolean }>(
+      "POST",
+      `/api/admin/planners/${plannerId}/verify`,
+      {},
+      { token: adminToken },
+    );
+    expect(on.status).toBe(200);
+    expect(on.data.verified).toBe(true);
+
+    const listed = await req<{ planners: AdminPlannerView[] }>(
+      "GET",
+      "/api/admin/planners",
+      undefined,
+      { token: adminToken },
+    );
+    const row = listed.data.planners.find(
+      (p): p is Extract<AdminPlannerView, { state: "active" }> =>
+        p.state === "active" && p.user_id === plannerId,
+    );
+    expect(row?.verified).toBe(true);
+    expect(
+      (db.prepare("SELECT planner_verified FROM users WHERE id = ?").get(plannerId) as {
+        planner_verified: number;
+      }).planner_verified,
+    ).toBe(1);
+
+    const off = await req<{ ok: true; verified: boolean }>(
+      "POST",
+      `/api/admin/planners/${plannerId}/unverify`,
+      {},
+      { token: adminToken },
+    );
+    expect(off.status).toBe(200);
+    expect(off.data.verified).toBe(false);
+    expect(
+      (db.prepare("SELECT planner_verified FROM users WHERE id = ?").get(plannerId) as {
+        planner_verified: number;
+      }).planner_verified,
+    ).toBe(0);
+  });
+
+  test("verify targeting a non-planner user 404s", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { coupleId } = await bootstrapCouple("notaplanner@weddly.test");
+    const owner = db.prepare("SELECT id FROM users WHERE couple_id = ? LIMIT 1").get(coupleId) as {
+      id: number;
+    };
+    const res = await req(
+      "POST",
+      `/api/admin/planners/${owner.id}/verify`,
+      {},
+      { token: adminToken },
+    );
+    expect(res.status).toBe(404);
+  });
+
+  test("verify rejects a non-admin", async () => {
+    await bootstrapAdmin();
+    const plannerId = await seedPlanner("verify-noadmin@weddly.test");
+    const { token } = await bootstrapCouple("verify-couple@weddly.test");
+    const res = await req(
+      "POST",
+      `/api/admin/planners/${plannerId}/verify`,
+      {},
+      { token },
+    );
+    expect(res.status).toBe(403);
+  });
+
   test("DELETE purges the planner", async () => {
     const adminToken = await bootstrapAdmin();
     const plannerId = await seedPlanner("planner5@weddly.test");

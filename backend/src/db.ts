@@ -1481,6 +1481,10 @@ addColumnIfMissing("users", "planner_avatar_url", "planner_avatar_url TEXT");
 // e.g. "esküvőszervező", "dekoratőr"). Surfaced on the admin Szervezők list
 // and in the activation email; not used for matching.
 addColumnIfMissing("users", "planner_category", "planner_category TEXT");
+// Admin-granted trust badge. When 1 the couple-facing planner directory shows a
+// "verified" badge on the card + detail. Toggled from the admin Szervezők list;
+// defaults to 0 so a badge is an explicit editorial signal, never automatic.
+addColumnIfMissing("users", "planner_verified", "planner_verified INTEGER DEFAULT 0");
 // Official business identity, filled by the company lookup (routes/company_lookup.ts)
 // or typed manually. planner_country is ISO 3166-1 alpha-2 (shared/country_list.ts)
 // and decides whether the lookup UI appears at all.

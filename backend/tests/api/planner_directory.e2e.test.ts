@@ -76,6 +76,31 @@ describe("couple planner directory", () => {
     expect(JSON.stringify(entry)).not.toContain("listed@weddly.test");
   });
 
+  test("surfaces the admin-granted verified badge and sorts verified planners first", async () => {
+    const plain = await makePlanner("plain@weddly.test");
+    const badge = await makePlanner("badge@weddly.test", {
+      overrides: { planner_verified: 1 },
+    });
+    const { token: coupleToken } = await bootstrapCouple("verify-dir-couple@weddly.test");
+
+    const r = await directory(coupleToken);
+    expect(r.status).toBe(200);
+    expect(r.data.planners.find((p) => p.planner_user_id === plain.userId)?.verified).toBe(false);
+    expect(r.data.planners.find((p) => p.planner_user_id === badge.userId)?.verified).toBe(true);
+    // Verified planners lead the directory.
+    expect(r.data.planners[0]?.planner_user_id).toBe(badge.userId);
+
+    // The detail DTO carries the badge too.
+    const detail = await req<PlannerDirectoryDetail>(
+      "GET",
+      `/api/couples/planner-directory/${badge.userId}`,
+      undefined,
+      { token: coupleToken },
+    );
+    expect(detail.status).toBe(200);
+    expect(detail.data.verified).toBe(true);
+  });
+
   test("excludes planners with no business name / city, unverified, or suspended", async () => {
     await makePlanner("nocity@weddly.test", { listable: false });
     await makePlanner("unverified@weddly.test", { verified: false });

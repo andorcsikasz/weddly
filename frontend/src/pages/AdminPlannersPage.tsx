@@ -14,6 +14,7 @@ import type {
 } from "@shared/types";
 import {
   Ban,
+  BadgeCheck,
   Check,
   ChevronDown,
   Clock,
@@ -503,6 +504,16 @@ function PlannerCard({
     );
   }
 
+  function handleToggleVerified() {
+    void run(
+      () =>
+        planner.verified
+          ? adminPlannerMgmtApi.unverify(planner.user_id)
+          : adminPlannerMgmtApi.verify(planner.user_id),
+      planner.verified ? "admin.planners.unverify_success" : "admin.planners.verify_success",
+    );
+  }
+
   async function handleDelete() {
     const phrase = t("admin.planners.delete_confirm_phrase");
     const entered = await promptEntry({
@@ -573,6 +584,11 @@ function PlannerCard({
             <Pill tone={statusPill.tone} icon={<statusPill.Icon size={11} />}>
               {statusPill.label}
             </Pill>
+            {planner.verified && (
+              <Pill tone="verified" icon={<BadgeCheck size={11} />}>
+                {t("admin.planners.verified")}
+              </Pill>
+            )}
           </div>
           <p className="truncate text-sm text-umber-700 dark:text-umber-300">{planner.email}</p>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-umber-500 dark:text-umber-400">
@@ -670,6 +686,21 @@ function PlannerCard({
               <Send size={15} />
             </button>
           )}
+          <button
+            type="button"
+            className={
+              planner.verified
+                ? `${ICON_BTN} border-verified/40 text-verified hover:border-verified hover:text-verified`
+                : ICON_BTN
+            }
+            onClick={handleToggleVerified}
+            disabled={busy}
+            aria-pressed={planner.verified}
+            title={planner.verified ? t("admin.planners.unverify") : t("admin.planners.verify")}
+            aria-label={planner.verified ? t("admin.planners.unverify") : t("admin.planners.verify")}
+          >
+            <BadgeCheck size={15} className={planner.verified ? "fill-verified stroke-white" : ""} />
+          </button>
           {suspended ? (
             <button
               type="button"

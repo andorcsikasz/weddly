@@ -6,7 +6,7 @@
 
 import { countryName } from "@shared/country_list";
 import type { PlannerDirectoryDetail, PlannerDirectoryEntry } from "@shared/types";
-import { Check, Clock, ExternalLink, Loader2, Sparkles } from "lucide-react";
+import { BadgeCheck, Check, Clock, ExternalLink, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ApiError } from "../lib/api";
 import { couplePlannerApi } from "../lib/endpoints";
@@ -170,8 +170,17 @@ function PlannerDetailModal({
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-ink-900 dark:text-paper-50">
-                {detail.business_name}
+              <p className="flex items-center gap-1.5 font-semibold text-ink-900 dark:text-paper-50">
+                <span className="truncate">{detail.business_name}</span>
+                {detail.verified && (
+                  <span
+                    className="inline-flex shrink-0 items-center"
+                    title={t("planner_directory.verified")}
+                    aria-label={t("planner_directory.verified")}
+                  >
+                    <BadgeCheck size={15} aria-hidden className="fill-verified stroke-white" />
+                  </span>
+                )}
               </p>
               {meta && <p className="text-xs text-ink-500 dark:text-umber-300">{meta}</p>}
               {detail.website && (
@@ -335,6 +344,15 @@ export function PlannerCard({
             >
               {planner.business_name}
             </button>
+            {planner.verified && (
+              <span
+                className="inline-flex shrink-0 items-center"
+                title={t("planner_directory.verified")}
+                aria-label={t("planner_directory.verified")}
+              >
+                <BadgeCheck size={14} aria-hidden className="fill-verified stroke-white" />
+              </span>
+            )}
             {planner.website && (
               <a
                 href={hrefFor(planner.website)}

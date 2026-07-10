@@ -14,6 +14,7 @@ import {
   isPlannerPlan,
   listAdminPlanners,
   listPendingPlannerWaitlist,
+  setPlannerVerified,
   updatePlannerPlan,
 } from "../domain/planner";
 import { getPlannerSub } from "../domain/planner_billing";
@@ -252,6 +253,31 @@ function handleReactivate(ctx: Ctx): Response {
   return setPlannerStatus(ctx, "active");
 }
 
+/** Grant or revoke the couple-facing "verified" trust badge on a planner. */
+function setPlannerVerifiedBadge(ctx: Ctx, verified: boolean): Response {
+  const admin = requireAdmin(ctx);
+  const userId = parseId(ctx);
+  requirePlannerUser(userId);
+
+  setPlannerVerified(userId, verified);
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: verified ? "admin.planner_verify" : "admin.planner_unverify",
+    target_kind: "user",
+    target_id: userId,
+  });
+  return json({ ok: true, verified });
+}
+
+function handleVerify(ctx: Ctx): Response {
+  return setPlannerVerifiedBadge(ctx, true);
+}
+
+function handleUnverify(ctx: Ctx): Response {
+  return setPlannerVerifiedBadge(ctx, false);
+}
+
 function handleDelete(ctx: Ctx): Response {
   const admin = requireAdmin(ctx);
   const userId = parseId(ctx);
@@ -299,6 +325,8 @@ export function registerAdminPlannerRoutes(router: Router) {
   router.post("/api/admin/planners/:id/resend-activation", handleResendActivation, true);
   router.post("/api/admin/planners/:id/suspend", handleSuspend, true);
   router.post("/api/admin/planners/:id/reactivate", handleReactivate, true);
+  router.post("/api/admin/planners/:id/verify", handleVerify, true);
+  router.post("/api/admin/planners/:id/unverify", handleUnverify, true);
   router.patch("/api/admin/planners/:id", handleUpdate, true);
   router.delete("/api/admin/planners/:id", handleDelete, true);
 }

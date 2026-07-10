@@ -65,6 +65,7 @@ interface AdminPlannerRow {
   created_at: number;
   business_name: string | null;
   planner_category: string | null;
+  planner_verified: number;
   pending_activation: number;
   founding_until: number | null;
 }
@@ -149,6 +150,7 @@ function toAdminPlannerView(
     created_at: row.created_at,
     business_name: row.business_name,
     planner_category: row.planner_category,
+    verified: row.planner_verified === 1,
     pending_activation: row.pending_activation === 1,
     founding_until: row.founding_until,
     waitlist,
@@ -173,6 +175,7 @@ export function listAdminPlanners(): AdminPlannerAccount[] {
               u.created_at,
               u.business_name,
               u.planner_category,
+              u.planner_verified,
               (SELECT COUNT(*) FROM planner_clients pc
                 WHERE pc.planner_user_id = u.id AND pc.status = 'active') AS client_count,
               EXISTS(SELECT 1 FROM planner_activation_tokens pat
@@ -246,4 +249,14 @@ export function updatePlannerPlan(userId: number, plan: PlannerPlan): void {
   db.prepare(
     "UPDATE users SET planner_plan = ?, planner_max_clients = ?, updated_at = ? WHERE id = ?",
   ).run(plan, plannerPlanMaxClients(plan), now(), userId);
+}
+
+/** Admin grants or revokes a planner's trust badge (users.planner_verified).
+ *  Surfaced to couples in the planner directory; purely editorial. */
+export function setPlannerVerified(userId: number, verified: boolean): void {
+  db.prepare("UPDATE users SET planner_verified = ?, updated_at = ? WHERE id = ?").run(
+    verified ? 1 : 0,
+    now(),
+    userId,
+  );
 }

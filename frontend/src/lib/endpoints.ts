@@ -1888,6 +1888,10 @@ export const adminPlannerMgmtApi = {
     apiFetch<{ ok: true; status: string }>("POST", `/api/admin/planners/${id}/suspend`, {}),
   reactivate: (id: number) =>
     apiFetch<{ ok: true; status: string }>("POST", `/api/admin/planners/${id}/reactivate`, {}),
+  verify: (id: number) =>
+    apiFetch<{ ok: true; verified: boolean }>("POST", `/api/admin/planners/${id}/verify`, {}),
+  unverify: (id: number) =>
+    apiFetch<{ ok: true; verified: boolean }>("POST", `/api/admin/planners/${id}/unverify`, {}),
   setPlan: (id: number, plan: PlannerPlan) =>
     apiFetch<{ ok: true; planner_plan: PlannerPlan }>("PATCH", `/api/admin/planners/${id}`, {
       planner_plan: plan,

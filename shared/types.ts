@@ -224,6 +224,9 @@ export interface PlannerDirectoryEntry {
   km_radius: number | null;
   weddings_per_year: number | null;
   avatar_url: string | null;
+  /** Admin-granted trust badge. True → the card + detail render a "verified"
+   *  badge. Editorial signal, never derived automatically. */
+  verified: boolean;
   /** Link state relative to the requesting couple: 'invited' = this couple
    *  already invited them (pending on the planner side); 'requested' = the
    *  planner asked this couple for access (pending on the couple side);
@@ -1886,6 +1889,9 @@ export interface AdminPlannerAccount {
   planner_max_clients: number;
   planner_city: string | null;
   planner_onboarding_done: boolean;
+  /** Admin-granted trust badge (users.planner_verified). Toggled from this
+   *  same admin list; surfaced to couples in the planner directory. */
+  verified: boolean;
   /** Count of active `planner_clients` links (approved couples). */
   client_count: number;
   created_at: UnixMs;

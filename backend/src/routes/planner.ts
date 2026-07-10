@@ -1515,7 +1515,7 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
     .prepare(
       `SELECT u.id, u.full_name, u.business_name, u.planner_bio, u.planner_city,
               u.planner_country, u.planner_website, u.planner_styles, u.planner_km_radius,
-              u.planner_weddings_per_year, u.planner_avatar_url,
+              u.planner_weddings_per_year, u.planner_avatar_url, u.planner_verified,
               pc.status AS link_state, pc.initiated_by AS link_initiated_by
          FROM users u
          LEFT JOIN planner_clients pc
@@ -1526,7 +1526,8 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
           AND u.email NOT LIKE '%@demo.weddly.local'
           AND TRIM(COALESCE(u.business_name, '')) != ''
           AND TRIM(COALESCE(u.planner_city, '')) != ''
-        ORDER BY (CASE WHEN COALESCE(u.planner_avatar_url, '') != '' THEN 1 ELSE 0 END
+        ORDER BY u.planner_verified DESC,
+                 (CASE WHEN COALESCE(u.planner_avatar_url, '') != '' THEN 1 ELSE 0 END
                 + CASE WHEN TRIM(COALESCE(u.planner_bio, '')) != '' THEN 1 ELSE 0 END) DESC,
                  u.created_at DESC
         LIMIT 50`,
@@ -1543,6 +1544,7 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
     planner_km_radius: number | null;
     planner_weddings_per_year: number | null;
     planner_avatar_url: string | null;
+    planner_verified: number;
     link_state: string | null;
     link_initiated_by: string | null;
   }>;
@@ -1559,6 +1561,7 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
     km_radius: r.planner_km_radius,
     weddings_per_year: r.planner_weddings_per_year,
     avatar_url: r.planner_avatar_url,
+    verified: r.planner_verified === 1,
     link_status:
       r.link_state === "active"
         ? "active"
@@ -1596,6 +1599,7 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
       `SELECT u.id, u.email, u.full_name, u.business_name, u.planner_bio, u.planner_city,
               u.planner_country, u.planner_website, u.planner_styles, u.planner_km_radius,
               u.planner_weddings_per_year, u.planner_avatar_url, u.planner_availability,
+              u.planner_verified,
               pc.status AS link_state, pc.initiated_by AS link_initiated_by
          FROM users u
          LEFT JOIN planner_clients pc
@@ -1623,6 +1627,7 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
         planner_weddings_per_year: number | null;
         planner_avatar_url: string | null;
         planner_availability: string | null;
+        planner_verified: number;
         link_state: string | null;
         link_initiated_by: string | null;
       }
@@ -1653,6 +1658,7 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
     km_radius: r.planner_km_radius,
     weddings_per_year: r.planner_weddings_per_year,
     avatar_url: r.planner_avatar_url,
+    verified: r.planner_verified === 1,
     link_status: linkStatusOf(r.link_state, r.link_initiated_by),
     availability: r.planner_availability,
     reference_links: referenceLinks.length ? referenceLinks : null,

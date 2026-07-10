@@ -5201,6 +5201,12 @@ export interface LocaleMessages {
       suspend: string;
       reactivate: string;
       delete: string;
+      /** Couple-facing "verified" trust badge (users.planner_verified). */
+      verified: string;
+      verify: string;
+      unverify: string;
+      verify_success: string;
+      unverify_success: string;
       suspend_confirm_title: string;
       suspend_success: string;
       reactivate_success: string;
@@ -8416,6 +8422,8 @@ export interface LocaleMessages {
     availability_label: string;
     references_label: string;
     view_profile: string;
+    /** Tooltip/aria on the azure "verified" badge next to a planner's name. */
+    verified: string;
   };
   couple_planners: {
     heading: string;
