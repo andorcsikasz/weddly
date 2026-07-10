@@ -1823,7 +1823,7 @@ export default function SuppliersPage() {
                   type="button"
                   onClick={toggleSelfOrganize}
                   aria-pressed={selfOrganized}
-                  className={`card group flex h-full flex-col !p-4 text-left transition ${
+                  className={`card group flex h-full flex-col justify-center !p-4 text-left transition ${
                     selfOrganized
                       ? "ring-2 ring-ink-900 dark:ring-paper-50"
                       : "hover:border-ink-300 dark:hover:border-umber-600"
