@@ -17,6 +17,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { VENDOR_FOUNDING_CAP, VENDOR_FOUNDING_DURATION_MS } from "@shared/vendor_billing";
 import { db } from "../../src/db";
+import { buildEmail } from "../../src/domain/emails/templates";
 import { req, verifyUserEmail, wipeAll } from "../helpers";
 
 async function addAdmin(): Promise<string> {
@@ -78,6 +79,22 @@ describe("vendor onboarding — accept → activate → live", () => {
       business: "Aurora Studio",
     });
     expect(sentBody).toContain(`/vendor/activate/${token}`);
+
+    // The accepted vendor gets the dedicated, transactional `vendor_activation`
+    // mail (activation link IS the button) — NOT the outreach
+    // `vendor_waitlist_decision` reply whose button pointed at the homepage.
+    const logged = db
+      .prepare("SELECT kind, category FROM email_log WHERE to_email = ? ORDER BY id DESC LIMIT 1")
+      .get("studio@weddly.test") as { kind: string; category: string };
+    expect(logged.kind).toBe("vendor_activation");
+    expect(logged.category).toBe("transactional");
+    const decisionRows = db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM email_log WHERE to_email = ? AND kind = 'vendor_waitlist_decision'",
+      )
+      .get("studio@weddly.test") as { n: number };
+    expect(decisionRows.n).toBe(0);
+
     // Under_review / rejected must NOT mint a token.
     const reject = await acceptedWaitlistRejectMintsNothing(admin);
     expect(reject).toBe(0);
@@ -237,3 +254,65 @@ async function acceptedWaitlistRejectMintsNothing(adminToken: string): Promise<n
     .get(id) as { n: number };
   return row.n;
 }
+
+// The activation mail is the one the vendor actually clicks. Regression guard
+// for the "misleading homepage button" bug: the CTA button MUST be the
+// single-use activation link (not the marketing homepage), the link must also
+// be a clickable copy-paste fallback, and the footer must be honest
+// (transactional "concerns your account", not the outreach "you have no
+// account") now that a real account is waiting.
+describe("vendor_activation email builder points every link at the activation URL", () => {
+  const ACTIVATE_URL = "https://tryweddly.com/vendor/activate/deadbeefcafe";
+
+  test("accept variant: CTA button + copy-paste fallback both are the activation link", () => {
+    const built = buildEmail(
+      "vendor_activation",
+      {
+        businessName: "Bloom Studio",
+        activateUrl: ACTIVATE_URL,
+        introMessage: "Szia Bloom Studio!\n\nFelvettünk titeket a katalógusba.",
+        subject: "Wēddly: szívesen látnánk titeket",
+      },
+      { recipientName: "Bloom Studio" },
+    );
+    const { html, text } = built.rendered;
+
+    // Admin subject rides along.
+    expect(built.subject).toBe("Wēddly: szívesen látnánk titeket");
+    // The dark CTA button href is EXACTLY the activation link — no UTM, no
+    // homepage. `wd-cta` is the button class in the shared shell.
+    expect(html).toContain(`href="${ACTIVATE_URL}" class="wd-cta"`);
+    // Clear, bold action labels (both language cards render in the bilingual
+    // guest fallback).
+    expect(html).toContain("Fiók aktiválása");
+    expect(html).toContain("Activate account");
+    // The activation URL is ALSO a clickable copy-paste fallback line.
+    expect(html).toContain(`<a href="${ACTIVATE_URL}"`);
+    expect(html).toContain("Vagy másold be a böngészőbe:");
+    // The old misleading homepage CTA label is gone.
+    expect(html).not.toContain("Weddly megnyitása");
+    expect(html).not.toContain("Open Weddly");
+    // No UTM query string was bolted onto the single-use link.
+    expect(html).not.toContain("utm_campaign=vendor_activation");
+    // Honest, transactional footer — NOT the outreach "you have no account".
+    expect(html).not.toContain("nincs fiókod nálunk");
+    // The admin's warm intro carried through to the body + plain-text part.
+    expect(text).toContain("Felvettünk titeket a katalógusba.");
+    expect(text).toContain(ACTIVATE_URL);
+  });
+
+  test("resend variant: no admin body → clear default welcome + activation button", () => {
+    const built = buildEmail(
+      "vendor_activation",
+      { businessName: "Bloom Studio", activateUrl: ACTIVATE_URL },
+      { recipientName: "Bloom Studio" },
+    );
+    const { html } = built.rendered;
+    // Falls back to the standard bilingual activation subject.
+    expect(built.subject).toContain("Aktiváld a Weddly szolgáltatói fiókod");
+    expect(html).toContain(`href="${ACTIVATE_URL}" class="wd-cta"`);
+    expect(html).toContain("Fiók aktiválása");
+    expect(html).toContain("nincs szükség bankkártyára");
+    expect(html).not.toContain("Weddly megnyitása");
+  });
+});

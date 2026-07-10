@@ -45,6 +45,11 @@ export interface RenderInput {
   en: LocaleBlock;
   /** Where the CTA button points. */
   ctaUrl: string;
+  /** When true, also render `ctaUrl` as a clickable copy-paste line under the
+   *  button, regardless of category. For account-action mail (activation) so a
+   *  vendor whose client mangles the button still has a plain link. Outreach
+   *  mail shows this by category already, this forces it on for other kinds. */
+  plainCtaUrl?: boolean;
   /** Affects footer copy + whether unsubscribe link shows. */
   category: EmailCategory;
   /** When category=lifecycle, this is appended as ?token=… so the link is
@@ -204,7 +209,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   }
 
   function renderHtml(
-    { ctaUrl, category, unsubscribeToken, trackingPixelUrl }: RenderInput,
+    { ctaUrl, category, plainCtaUrl, unsubscribeToken, trackingPixelUrl }: RenderInput,
     blocks: PickedBlock[],
   ): string {
     const preheader = capPreheader(
@@ -216,7 +221,9 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     // is what historic bilingual rendering looked like, and we preserve it
     // for the back-compat null-locale path.
     const cards = blocks
-      .map(({ locale, block }, i) => renderCard(block, locale, i === 0, ctaUrl, category))
+      .map(({ locale, block }, i) =>
+        renderCard(block, locale, i === 0, ctaUrl, category, plainCtaUrl ?? false),
+      )
       .join(
         `<tr><td style="padding:18px 40px 0 40px;"><div style="border-top:1px solid ${COLOR.divider};font-size:0;line-height:0;height:1px;">&nbsp;</div></td></tr>`,
       );
@@ -318,6 +325,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     primary: boolean,
     ctaUrl: string,
     category: EmailCategory,
+    plainCtaUrl: boolean,
   ): string {
     if (primary) {
       const paras = block.paragraphs
@@ -351,7 +359,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                   </tr>
                 </table>
                 ${renderCtaSubtext(block.ctaSubtext)}
-                ${renderPlainUrlNote(ctaUrl, category, locale)}
+                ${renderPlainUrlNote(ctaUrl, category, locale, plainCtaUrl)}
                 ${renderSecondaryLinks(block.secondaryLinks)}
                 ${footnote}
               </td>
@@ -529,14 +537,26 @@ function renderOutreachOrientation(category: EmailCategory, locale: "hu" | "en")
 // destination, a textbook phishing shape. Render the URL in plain text
 // underneath so a skeptical recipient can verify the domain before clicking.
 // Transactional + lifecycle mails (recipient has a Weddly account) skip this
-//, the extra line is noise when there's no trust gap to bridge.
-function renderPlainUrlNote(ctaUrl: string, category: EmailCategory, locale: "hu" | "en"): string {
-  if (category !== "outreach") return "";
+//, the extra line is noise when there's no trust gap to bridge — UNLESS the
+// builder forces it (`force`) for an account-action link (activation), where a
+// copy-paste fallback matters if the button gets mangled. When forced, the URL
+// is also clickable (the recipient asked for this account); the outreach
+// variant stays a plain <span> so a skeptic reads the domain before clicking.
+function renderPlainUrlNote(
+  ctaUrl: string,
+  category: EmailCategory,
+  locale: "hu" | "en",
+  force = false,
+): string {
+  if (category !== "outreach" && !force) return "";
   const label =
     locale === "hu" ? "Vagy másold be a böngészőbe:" : "Or copy this link into your browser:";
+  const urlHtml = force
+    ? `<a href="${escapeAttr(ctaUrl)}" style="color:${COLOR.accent};text-decoration:underline;">${escapeHtml(ctaUrl)}</a>`
+    : `<span style="color:${COLOR.enInk};">${escapeHtml(ctaUrl)}</span>`;
   return `<p style="margin:14px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;word-break:break-all;">
             ${escapeHtml(label)}<br />
-            <span style="color:${COLOR.enInk};">${escapeHtml(ctaUrl)}</span>
+            ${urlHtml}
           </p>`;
 }
 

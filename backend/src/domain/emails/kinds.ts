@@ -42,7 +42,8 @@ export type EmailKind =
   | "admin_moderation_digest" // weekly digest of the moderation queue (admin recipients only)
   | "rsvp_weekly_digest_for_couple" // weekly RSVP roll-up for couples on digest mode
   | "vendor_waitlist_received" // /vendors form submission → confirm we got it
-  | "vendor_waitlist_decision" // admin-edited triage reply (accepted / under_review / rejected)
+  | "vendor_waitlist_decision" // admin-edited triage reply (under_review / rejected — accepted goes via vendor_activation)
+  | "vendor_activation" // admin accepted/re-sent a vendor: activation link IS the CTA button, pre-filled onboarding inside
   | "planner_waitlist_decision" // admin-edited planner triage reply (accepted / under_review / rejected)
   | "planner_provisioned" // admin pre-registered a planner account (2-year comp), activation link inside
   | "planner_onboarding_invite" // admin approved a /planners applicant, activation link + pre-filled onboarding inside
@@ -158,9 +159,16 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Outreach: vendor submitted the /vendors form but has no Weddly account —
   // the "fiókoddal kapcsolatban" footer line would be misleading.
   vendor_waitlist_received: "outreach",
-  // Outreach: admin manually triages a vendor's own waitlist submission. The
-  // vendor expects the reply but still has no Weddly account.
+  // Outreach: admin manually triages a vendor's own waitlist submission for the
+  // under_review / rejected outcomes. The vendor expects the reply but still has
+  // no Weddly account, so the "you have no account" footer is honest. The
+  // accepted outcome goes via `vendor_activation` (transactional) instead.
   vendor_waitlist_decision: "outreach",
+  // Transactional: the admin accepted the vendor (or re-sent the link) and the
+  // single-use activation link inside IS the CTA button — the only way into the
+  // pre-built vendor account. Must always deliver, and the transactional footer
+  // is honest ("this concerns your account") now that they have one.
+  vendor_activation: "transactional",
   // Outreach: admin manually triages a planner's waitlist submission. The
   // planner expects the reply; treated like the vendor decision mail.
   planner_waitlist_decision: "outreach",

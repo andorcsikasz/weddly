@@ -4835,7 +4835,7 @@ const hu: LocaleMessages = {
     waitlist_modal_outcome_under_review: "Átnézés alatt",
     waitlist_modal_outcome_rejected: "Elutasítva",
     waitlist_modal_accept_invite_note:
-      "Az e-mailhez automatikusan hozzáfűzünk egy egyszer használatos meghívó linket. A szolgáltató ezzel egyből beléphet a szolgáltatói felületre, és a jelentkezéskor megadott adatai már ki lesznek töltve.",
+      'Az e-mail alján automatikusan megjelenik egy „Fiók aktiválása" gomb egyszer használatos linkkel (a levélben megírt szöveged fölött). A szolgáltató ezzel egyből beléphet a szolgáltatói felületre, és a jelentkezéskor megadott adatai már ki lesznek töltve.',
     waitlist_modal_subject_label: "Tárgy",
     waitlist_modal_body_label: "Üzenet",
     waitlist_modal_notes_label: "Belső jegyzet",

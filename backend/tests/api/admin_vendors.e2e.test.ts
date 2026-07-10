@@ -157,6 +157,14 @@ describe("admin vendor management", () => {
       .prepare("SELECT COUNT(*) AS n FROM vendor_onboarding WHERE email = ? AND status = 'pending'")
       .get("resend@weddly.test") as { n: number };
     expect(pendingCount.n).toBe(1);
+
+    // The resend goes out as the transactional `vendor_activation` mail (its
+    // button IS the activation link), not the old outreach decision reply.
+    const logged = db
+      .prepare("SELECT kind, category FROM email_log WHERE to_email = ? ORDER BY id DESC LIMIT 1")
+      .get("resend@weddly.test") as { kind: string; category: string } | undefined;
+    expect(logged?.kind).toBe("vendor_activation");
+    expect(logged?.category).toBe("transactional");
   });
 
   test("DELETE purges the vendor account", async () => {

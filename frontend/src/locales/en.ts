@@ -4785,7 +4785,7 @@ const en: LocaleMessages = {
     waitlist_modal_outcome_under_review: "Under review",
     waitlist_modal_outcome_rejected: "Rejected",
     waitlist_modal_accept_invite_note:
-      "We automatically append a single-use invite link to the email. The supplier can use it to sign straight into the vendor portal, with the details from their application already filled in.",
+      'We automatically add an "Activate account" button with a single-use link at the bottom of the email (below the message you write here). The supplier can use it to sign straight into the vendor portal, with the details from their application already filled in.',
     waitlist_modal_subject_label: "Subject",
     waitlist_modal_body_label: "Message",
     waitlist_modal_notes_label: "Internal notes",

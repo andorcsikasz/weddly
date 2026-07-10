@@ -24,7 +24,7 @@ import {
   toVendorWaitlistAdminView,
   toVendorWaitlistEntry,
 } from "../domain/vendor_waitlist";
-import { sendDecisionEmail } from "../domain/vendor_waitlist_emails";
+import { sendDecisionEmail, sendVendorActivationEmail } from "../domain/vendor_waitlist_emails";
 import { createOnboardingToken } from "../domain/vendor_onboarding";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
@@ -377,12 +377,20 @@ async function handleAdminDecide(ctx: Ctx): Promise<Response> {
   const notes = typeof body.notes === "string" ? body.notes : "";
   if (notes.length > 2000) throw new HttpError(400, "notes too long (max 2000)");
 
-  // Accepting a vendor mints a single-use onboarding token and appends the
-  // activation CTA to the email — this is the bridge from "you're accepted" to
-  // a real account. Re-accepting supersedes any prior pending token (one live
-  // link per vendor). Locale is left null here; the activate page pins the
-  // vendor's own browser locale at completion, which is what drives currency.
+  // Accepting a vendor mints a single-use onboarding token. The activation link
+  // is the CTA *button* of a dedicated transactional `vendor_activation` mail
+  // (not a plain-text line appended to an outreach reply with a homepage
+  // button) — the admin's warm body rides along as the intro. Re-accepting
+  // supersedes any prior pending token (one live link per vendor). Locale is
+  // left null here; the activate page pins the vendor's own browser locale at
+  // completion, which is what drives currency.
+  //
+  // `emailBodyToSend` is what we STORE on the row for the CRM record — it keeps
+  // the activation URL visible to the admin. What we SEND is the branded
+  // activation mail below, which renders that same URL as the button + a
+  // clickable copy-paste fallback.
   let emailBodyToSend = emailBody;
+  let activateUrl: string | null = null;
   if (outcome === "accepted") {
     const token = createOnboardingToken({
       waitlistId: existing.id,
@@ -391,8 +399,8 @@ async function handleAdminDecide(ctx: Ctx): Promise<Response> {
       category: existing.category,
       locale: null,
     });
-    const activateUrl = `${CONFIG.frontendBaseUrl}/vendor/activate/${encodeURIComponent(token.token)}`;
-    emailBodyToSend = `${emailBody}\n\nAktiváld a fiókod (nincs szükség bankkártyára):\n${activateUrl}\n\nActivate your account (no card needed):\n${activateUrl}`;
+    activateUrl = `${CONFIG.frontendBaseUrl}/vendor/activate/${encodeURIComponent(token.token)}`;
+    emailBodyToSend = `${emailBody}\n\nAktiválási link / Activation link:\n${activateUrl}`;
   }
 
   // Send first; if delivery fails we still record the attempt by stamping the
@@ -400,13 +408,23 @@ async function handleAdminDecide(ctx: Ctx): Promise<Response> {
   // the send (no RESEND_API_KEY in dev/test) is a no-op and never throws.
   let sendError: string | null = null;
   try {
-    await sendDecisionEmail({
-      to: existing.email,
-      subject,
-      body: emailBodyToSend,
-      outcome: outcome as VendorWaitlistOutcome,
-      full_name: existing.business_name,
-    });
+    if (outcome === "accepted" && activateUrl) {
+      await sendVendorActivationEmail({
+        to: existing.email,
+        businessName: existing.business_name,
+        activateUrl,
+        introMessage: emailBody,
+        subject,
+      });
+    } else {
+      await sendDecisionEmail({
+        to: existing.email,
+        subject,
+        body: emailBodyToSend,
+        outcome: outcome as VendorWaitlistOutcome,
+        full_name: existing.business_name,
+      });
+    }
   } catch (e) {
     sendError = e instanceof Error ? e.message : String(e);
     log.error("vendor_waitlist.decide_send_failed", {

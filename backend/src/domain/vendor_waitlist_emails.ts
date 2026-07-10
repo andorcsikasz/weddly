@@ -86,3 +86,27 @@ export async function sendDecisionEmail(input: {
     { user: null, guest: { email: input.to, full_name: input.full_name ?? "" } },
   );
 }
+
+/** Activation mail for an accepted vendor (or an admin resend). The single-use
+ *  activation link IS the CTA button (never the homepage) and is repeated as a
+ *  clickable copy-paste fallback. On the accept path the admin's edited subject
+ *  + warm body ride along (`subject` / `introMessage`); the resend path omits
+ *  both and the template falls back to a clear default welcome + instruction. */
+export async function sendVendorActivationEmail(input: {
+  to: string;
+  businessName: string;
+  activateUrl: string;
+  introMessage?: string;
+  subject?: string;
+}): Promise<void> {
+  await sendKind(
+    "vendor_activation",
+    {
+      businessName: input.businessName,
+      activateUrl: input.activateUrl,
+      introMessage: input.introMessage,
+      subject: input.subject,
+    },
+    { user: null, guest: { email: input.to, full_name: input.businessName } },
+  );
+}

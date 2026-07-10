@@ -355,6 +355,22 @@ export interface VendorWaitlistDecisionPayload {
   outcome: "accepted" | "under_review" | "rejected";
 }
 
+export interface VendorActivationPayload {
+  /** Vendor business name, used in the greeting. Falls back to a generic
+   *  greeting when empty. */
+  businessName: string;
+  /** Full activation URL with the single-use token. This IS the CTA button's
+   *  destination AND the clickable copy-paste fallback — never the homepage. */
+  activateUrl: string;
+  /** Optional warm intro the admin edited in the accept modal. When present its
+   *  paragraphs open the letter (above the activation button); omitted on the
+   *  resend path, where a clear default welcome + instruction is used instead. */
+  introMessage?: string;
+  /** Admin-edited subject (accept path). Falls back to the standard bilingual
+   *  activation subject on resend. */
+  subject?: string;
+}
+
 export interface PlannerWaitlistDecisionPayload {
   /** Subject line the admin typed in the planner triage modal, used verbatim. */
   subject: string;
@@ -586,6 +602,7 @@ export type KindPayload = {
   rsvp_weekly_digest_for_couple: RsvpWeeklyDigestForCouplePayload;
   vendor_waitlist_received: VendorWaitlistReceivedPayload;
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
+  vendor_activation: VendorActivationPayload;
   planner_waitlist_decision: PlannerWaitlistDecisionPayload;
   planner_provisioned: PlannerProvisionedPayload;
   planner_onboarding_invite: PlannerOnboardingInvitePayload;
@@ -617,12 +634,16 @@ export function buildEmail<K extends EmailKind>(
 ): BuiltEmail {
   const built = BUILDERS[kind](payload as never, context);
   const category = KIND_CATEGORY[kind];
-  const ctaUrl = appendEmailUtm(built.ctaUrl, kind, category);
+  // Single-use account links (activation) opt out of UTM so the copy-paste
+  // fallback the recipient sees stays a clean, trustworthy URL. Everything else
+  // gets the analytics tag.
+  const ctaUrl = built.noUtm ? built.ctaUrl : appendEmailUtm(built.ctaUrl, kind, category);
   const rendered = renderEmail({
     hu: built.hu,
     en: built.en,
     ctaUrl,
     category,
+    plainCtaUrl: built.plainCtaUrl,
     unsubscribeToken: context.unsubscribeToken,
     recipientLocale: context.recipientLocale,
     primaryLocaleHint: context.primaryLocaleHint,
@@ -640,6 +661,14 @@ interface RawTemplate {
    *  global Reply-To default; left undefined the dispatcher falls back to
    *  `CONFIG.supportEmail` like every other kind. */
   replyTo?: string;
+  /** When true, the `ctaUrl` is also rendered as a clickable copy-paste line
+   *  under the button, regardless of category. Used for account-action mail
+   *  (activation) where a mangled button must have a plain fallback the vendor
+   *  can copy. Outreach mail already shows this via its own category gate. */
+  plainCtaUrl?: boolean;
+  /** When true, skip UTM tagging on the CTA (single-use account links stay
+   *  clean). */
+  noUtm?: boolean;
 }
 
 type Builder<K extends EmailKind> = (payload: KindPayload[K], ctx: BuildContext) => RawTemplate;
@@ -1715,6 +1744,58 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: "Hi there,",
         paragraphs,
         cta: "Open Weddly",
+      },
+    };
+  },
+
+  // Vendor accepted (or activation re-sent). Unlike the outreach decision mail
+  // above, the CTA button IS the single-use activation link (never the
+  // homepage), the URL is also shown as a clickable copy-paste fallback, and
+  // the transactional footer is honest because the recipient now has a
+  // pre-built account waiting. Mirrors `planner_onboarding_invite`.
+  vendor_activation: (p) => {
+    const name = p.businessName.trim();
+    // Accept path: the admin's warm, edited body opens the letter. Resend path:
+    // no admin body, so a clear default welcome + bold activation instruction.
+    const introParas = p.introMessage ? splitParagraphs(p.introMessage) : [];
+    const huParas =
+      introParas.length > 0
+        ? introParas
+        : [
+            "Jó hírünk van: felvettünk titeket a Weddly-n tervező pároknak ajánlott szolgáltatók közé.",
+            '**A szolgáltatói fiókotok aktiválásához kattintsatok a lenti „Fiók aktiválása" gombra.** Nincs szükség bankkártyára. A jelentkezéskor megadott adataitok és képeitek alapján már összeraktuk a profilotokat, belépés után csak átnézitek és élesítitek.',
+          ];
+    const enParas =
+      introParas.length > 0
+        ? introParas
+        : [
+            "Good news: we've added you to the vendors we recommend to couples planning on Weddly.",
+            '**To activate your vendor account, tap the "Activate account" button below.** No card needed. We\'ve already built your profile from the details and photos in your application, so once you sign in you just review it and go live.',
+          ];
+    return {
+      subject:
+        p.subject?.trim() ||
+        "Aktiváld a Weddly szolgáltatói fiókod / Activate your Weddly vendor account",
+      ctaUrl: p.activateUrl,
+      plainCtaUrl: true,
+      noUtm: true,
+      hu: {
+        preheader: "Aktiváld a szolgáltatói fiókod, nincs szükség bankkártyára.",
+        greeting: name ? `Szia ${name}!` : "Szia!",
+        paragraphs: huParas,
+        cta: "Fiók aktiválása",
+        ctaSubtext:
+          "Nincs szükség bankkártyára. A link 30 napig érvényes, és csak egyszer működik.",
+        footnote:
+          "Ha nem te kérted ezt a fiókot, nyugodtan hagyd figyelmen kívül ezt a levelet, aktiválás nélkül a profil nem lép életbe.",
+      },
+      en: {
+        greeting: name ? `Hi ${name},` : "Hi there,",
+        paragraphs: enParas,
+        cta: "Activate account",
+        ctaSubtext: "No card needed. The link is valid for 30 days and works once.",
+        footnote:
+          "If you didn't ask for this account, you can safely ignore this email, without activation the profile never goes live.",
       },
     };
   },

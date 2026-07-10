@@ -197,6 +197,13 @@ const STUBS: KindPayload = {
     body: "Thank you for your patience. We've reviewed your submission and would love to have you on board.\n\nWe'll be in touch within the next few weeks with next steps.",
     outcome: "accepted",
   },
+  vendor_activation: {
+    businessName: "Bloom Studio",
+    activateUrl: `${BASE_URL}/vendor/activate/preview-token`,
+    introMessage:
+      'Szia Bloom Studio!\n\nKöszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára. A csapatunk személyesen átnézte a profilotokat, és szeretnénk szerepeltetni titeket a pároknak ajánlott szolgáltatók között.\n\n**A következő lépés: aktiváljátok a fiókotokat a lenti „Fiók aktiválása" gombbal** (nincs szükség bankkártyára).\n\nÜdv,\nA Wēddly csapata',
+    subject: "Wēddly: szívesen látnánk titeket a katalógusban",
+  },
   planner_waitlist_decision: {
     subject: "Wēddly: jóváhagytuk a szervezői hozzáférésed",
     body: "Szia Anna!\n\nÁtnéztük a profilodat, és aktiváltuk a szervezői hozzáférésed. Lépj be, és a szervezői vezérlőpultból indítsd el az onboardingot.\n\nÜdv,\nA Wēddly csapata",

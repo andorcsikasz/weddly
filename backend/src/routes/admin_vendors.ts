@@ -20,7 +20,7 @@ import {
   getOnboardingById,
   listPendingOnboardings,
 } from "../domain/vendor_onboarding";
-import { sendDecisionEmail } from "../domain/vendor_waitlist_emails";
+import { sendVendorActivationEmail } from "../domain/vendor_waitlist_emails";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 
@@ -151,14 +151,13 @@ async function handleResendActivation(ctx: Ctx): Promise<Response> {
     locale: row.locale,
   });
   const activateUrl = `${CONFIG.frontendBaseUrl}/vendor/activate/${encodeURIComponent(token.token)}`;
-  const body = `Aktiváld a szolgáltatói fiókod (nincs szükség bankkártyára):\n${activateUrl}\n\nActivate your vendor account (no card needed):\n${activateUrl}`;
 
-  await sendDecisionEmail({
+  // The activation link IS the CTA button here (no admin-typed intro on the
+  // resend path — the template's clear default welcome + instruction stands in).
+  await sendVendorActivationEmail({
     to: row.email,
-    subject: "Aktiváld a Weddly szolgáltatói fiókod / Activate your Weddly vendor account",
-    body,
-    outcome: "accepted",
-    full_name: row.business_name,
+    businessName: row.business_name,
+    activateUrl,
   });
 
   addAuditLog({
