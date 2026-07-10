@@ -209,6 +209,12 @@ const SUPPLIERS_PAGE_SIZE = 50;
 // picks backend accepts any non-empty string id (it doesn't validate existence).
 const SELF_ORGANIZED_PICK = "self-organized";
 
+// Sentinel "pick" id recorded on ANY category the couple marks "I don't need
+// this" (e.g. no lighting, no transport). Same mechanism as SELF_ORGANIZED_PICK:
+// a non-empty sentinel that matches no real listing, so the category resolves
+// (its runner segment turns green + counts as done) without highlighting a card.
+const NOT_NEEDED_PICK = "not-needed";
+
 /** True when a selection change to `cat` just completed its whole chain group
  *  (every category in the group now picked) that wasn't complete before — the
  *  "a tab is ready" moment that fires the confetti. */
@@ -709,6 +715,27 @@ export default function SuppliersPage() {
       setActiveCat(null);
     }
   }, [coupleId, selfOrganized, selection, toast, t]);
+
+  // "Nincs rá szükségem" — the couple marks the active sub-category as one they
+  // don't need (no lighting, no transport, ...). Recorded as the NOT_NEEDED_PICK
+  // sentinel on that category so it persists cross-partner and greens the runner
+  // segment via the same pick machinery. Only offered when the category has no
+  // real booking yet (a real pick already resolves it); toggling off clears it.
+  const activeCatPick = activeCat ? (selection[activeCat] ?? null) : null;
+  const activeCatNotNeeded = activeCatPick === NOT_NEEDED_PICK;
+  const activeCatHasRealPick = activeCatPick !== null && activeCatPick !== NOT_NEEDED_PICK;
+  const toggleNotNeeded = useCallback(() => {
+    if (coupleId === null) {
+      toast.info(t("suppliers.save_no_couple"));
+      return;
+    }
+    if (!activeCat) return;
+    const turningOn = !activeCatNotNeeded;
+    const next = setSelection(coupleId, activeCat, turningOn ? NOT_NEEDED_PICK : null);
+    setSelectionState(next);
+    // Confetti only when this flips the whole group green (same beat as a pick).
+    if (turningOn && groupJustCompleted(activeCat, selection, next)) fireConfetti();
+  }, [coupleId, activeCat, activeCatNotNeeded, selection, toast, t]);
 
   // Once we know the couple, default the URL's `guests` filter — preferring
   // the live cost-planning slider value over the static onboarding target.
@@ -1603,6 +1630,38 @@ export default function SuppliersPage() {
                   >
                     <Pencil size={13} aria-hidden />
                     <span className="lowercase">{t("suppliers.diy_button_short")}</span>
+                  </button>
+                )}
+                {/* "Nincs rá szükségem" — tick to mark the active sub-category as
+                    one this couple doesn't need, greening its runner segment.
+                    Only for a concrete sub-category (not the "all" tab, not the
+                    planning step which has its own self-organize toggle) and only
+                    while there's no real booking to overwrite. */}
+                {activeGroup !== "planning" && activeCat && !activeCatHasRealPick && (
+                  <button
+                    type="button"
+                    onClick={toggleNotNeeded}
+                    aria-pressed={activeCatNotNeeded}
+                    title={t("suppliers.not_needed_aria", {
+                      category: t(`suppliers.cat.${activeCat}`),
+                    })}
+                    className={
+                      activeCatNotNeeded
+                        ? "inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-sage-400 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 transition dark:border-sage-400/50 dark:bg-sage-400/15 dark:text-sage-300"
+                        : "inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
+                    }
+                  >
+                    <span
+                      className={
+                        activeCatNotNeeded
+                          ? "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded bg-sage-500 text-paper-50"
+                          : "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-2 border-current text-transparent"
+                      }
+                      aria-hidden
+                    >
+                      <Check size={10} strokeWidth={3} />
+                    </span>
+                    <span className="lowercase">{t("suppliers.not_needed_toggle")}</span>
                   </button>
                 )}
               </div>

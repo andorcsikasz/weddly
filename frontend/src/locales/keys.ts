@@ -4539,6 +4539,10 @@ export interface LocaleMessages {
     diy_pill: string;
     diy_button: string;
     diy_button_short: string;
+    /** Per-category "I don't need this" tick — marks the active sub-category as
+     *  one the couple doesn't need, greening its runner segment. */
+    not_needed_toggle: string;
+    not_needed_aria: string;
     /** Planner self-organize done-toggle (replaces DIY for planners). */
     self_organize_label: string;
     self_organize_hint: string;

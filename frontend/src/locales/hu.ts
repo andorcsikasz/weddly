@@ -4088,6 +4088,8 @@ const hu: LocaleMessages = {
     diy_pill: "Saját",
     diy_button: "Csinálom magam",
     diy_button_short: "Csinálom magam",
+    not_needed_toggle: "Nem kell",
+    not_needed_aria: "A(z) {category} megjelölése: erre nincs szükségünk",
     self_organize_label: "Magam szervezem",
     self_organize_hint: "Nincs szükségem szervezőre — ezt a lépést késznek jelölöm.",
     diy_modal_title: "Saját szervezés",

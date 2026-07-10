@@ -4042,6 +4042,8 @@ const en: LocaleMessages = {
     diy_pill: "Yours",
     diy_button: "I'll do it myself",
     diy_button_short: "Do it myself",
+    not_needed_toggle: "Not needed",
+    not_needed_aria: "Mark {category} as not needed for our wedding",
     self_organize_label: "I'll organize it myself",
     self_organize_hint: "No planner needed — mark this step as done.",
     diy_modal_title: "Your own plan",
