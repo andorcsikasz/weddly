@@ -474,6 +474,39 @@ export function listListingsByVendorAccountId(vendorAccountId: number): Listing[
   return rows.map(toListing);
 }
 
+export interface ShowcaseVendorRow {
+  id: string;
+  name: string;
+  category: SupplierCategory;
+  city: string;
+  hero_image_url: string;
+}
+
+/** Directory listings that have a real hero photo, capped to `perCategory` per
+ *  category — claimed Weddly vendors first, then curated/community, newest
+ *  first. Hidden/deleted curated slugs (tombstoned in
+ *  `curated_supplier_overrides`, which does NOT flip the listing's own status)
+ *  are excluded. Powers the public browse teaser (`/api/public/vendor-showcase`).
+ */
+export function listShowcaseListings(perCategory: number): ShowcaseVendorRow[] {
+  return db
+    .prepare(
+      `SELECT id, name, category, city, hero_image_url FROM (
+         SELECT id, name, category, city, hero_image_url,
+                ROW_NUMBER() OVER (
+                  PARTITION BY category
+                  ORDER BY (source = 'claimed') DESC, created_at DESC
+                ) AS rn
+           FROM listings
+          WHERE hero_image_url IS NOT NULL AND hero_image_url != ''
+            AND status = 'active'
+            AND id NOT IN (SELECT supplier_id FROM curated_supplier_overrides)
+       ) t
+       WHERE rn <= ?`,
+    )
+    .all(perCategory) as ShowcaseVendorRow[];
+}
+
 /** Create a fresh 'claimed' listing for a newly-onboarded vendor — one that
  *  came through the waitlist and so has NO existing directory row to claim.
  *  id = 'v' + accountId per the listings id convention. Seeded with the

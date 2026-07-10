@@ -6,7 +6,10 @@ import type {
   CommentVisibility,
   DirectorySupplier,
   DirectorySupplierBase,
+  PublicShowcaseCategory,
+  PublicShowcaseVendor,
   PublicVendorPageData,
+  PublicVendorShowcase,
   SupplierCategory,
   SupplierDetail,
   SupplierEventInput,
@@ -26,6 +29,7 @@ import {
   listListingPackages,
   listListingPhotos,
   listListingVideos,
+  listShowcaseListings,
 } from "../domain/listings";
 import { getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
 import { countNonDeletedComments, listCommentsForSupplier } from "../domain/supplier_comments";
@@ -407,6 +411,64 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
   return json(payload);
 }
 
+/** GET /api/public/vendor-showcase — the unauthenticated "browse teaser".
+ *  Returns a photos-only sample of the directory, capped per category, so a
+ *  visitor sees real vendors and then registers to unlock the full directory.
+ *  Claimed Weddly vendors lead each category (real signups), then curated
+ *  businesses fill the rest. Distinct path (not `/api/public/vendors/...`) so
+ *  it never collides with the `:supplier_id` param route. Rate-limited per IP.
+ */
+const SHOWCASE_PER_CATEGORY = 6;
+// Lead with the visual, high-intent categories; the rest follow. Only
+// categories with at least one photographed vendor are emitted.
+const SHOWCASE_CATEGORY_ORDER: SupplierCategory[] = [
+  "venue",
+  "photo_video",
+  "decor_floral",
+  "catering",
+  "cake_dessert",
+  "music_dj",
+  "hair_makeup",
+  "attire",
+  "entertainment",
+  "lighting",
+  "bar_drinks",
+  "accommodation",
+  "tent_pavilion",
+  "sound_tech",
+  "nails",
+  "rings",
+  "stationery",
+  "wedding_website",
+  "transport",
+];
+function handlePublicShowcase(ctx: Ctx): Response {
+  rateLimit(ctx.clientIp, "public.showcase", { capacity: 60, refillRate: 1 });
+  const byCat = new Map<SupplierCategory, PublicShowcaseVendor[]>();
+  for (const r of listShowcaseListings(SHOWCASE_PER_CATEGORY)) {
+    const list = byCat.get(r.category) ?? [];
+    list.push({
+      id: r.id,
+      name: r.name,
+      category: r.category,
+      city: r.city,
+      hero_image_url: r.hero_image_url,
+    });
+    byCat.set(r.category, list);
+  }
+
+  const categories: PublicShowcaseCategory[] = [];
+  let total = 0;
+  for (const category of SHOWCASE_CATEGORY_ORDER) {
+    const vendors = byCat.get(category);
+    if (!vendors || vendors.length === 0) continue;
+    categories.push({ category, vendors });
+    total += vendors.length;
+  }
+  const payload: PublicVendorShowcase = { categories, total };
+  return json(payload, { headers: { "Cache-Control": "public, max-age=120" } });
+}
+
 /** GET /r/supplier/:supplier_id — tracked website redirect for unclaimed
  *  curated/community suppliers. Records a `website_click` event so the
  *  vendor-acquisition team can see demand signal without us cold-emailing the
@@ -453,6 +515,8 @@ export function registerSupplierRoutes(router: Router) {
   router.get("/api/suppliers/:supplier_id", handleDetail, true);
   // Public, unauthenticated vendor page payload (the shareable surface).
   router.get("/api/public/vendors/:supplier_id", handlePublicDetail);
+  // Public "browse teaser" — photos-only directory sample, capped per category.
+  router.get("/api/public/vendor-showcase", handlePublicShowcase);
   router.post("/api/suppliers/events", handleRecordEvents);
   router.put("/api/suppliers/:supplier_id/vote", handleVote, true);
   router.get("/r/supplier/:supplier_id", handleRedirect);

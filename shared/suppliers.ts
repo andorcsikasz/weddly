@@ -231,6 +231,30 @@ export interface SupplierAnalytics {
   last_event_at: number | null;
 }
 
+/** One vendor in the public browse teaser (`/vendors/browse`). A deliberately
+ *  thin, unauthenticated subset — just enough to render a photo card that links
+ *  to the public profile. Every entry has a real photo (`hero_image_url`). */
+export interface PublicShowcaseVendor {
+  /** Directory id (curated slug, `c{N}` community, or `v{N}` claimed vendor) —
+   *  routes straight to the public `/vendors/{id}` profile. */
+  id: string;
+  name: string;
+  category: SupplierCategory;
+  city: string;
+  hero_image_url: string;
+}
+export interface PublicShowcaseCategory {
+  category: SupplierCategory;
+  vendors: PublicShowcaseVendor[];
+}
+/** Payload for the limited public browse page: a photos-only sample of the
+ *  directory, capped per category, so couples get a taste and register to see
+ *  the full directory. `total` is how many sample cards are returned. */
+export interface PublicVendorShowcase {
+  categories: PublicShowcaseCategory[];
+  total: number;
+}
+
 /** Admin directory row — curated + community merged into one shape. For
  *  community rows, `id` is the public string id (`c{N}`) and `community_id`
  *  is the numeric DB id (so the admin page can deep-link into the existing

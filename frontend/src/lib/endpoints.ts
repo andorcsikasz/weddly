@@ -153,6 +153,7 @@ import type {
   CreateReviewBody,
   DirectorySupplier,
   PublicVendorPageData,
+  PublicVendorShowcase,
   ReviewListResponse,
   SupplierAvailability,
   SupplierBooking,
@@ -1629,6 +1630,9 @@ export const supplierApi = {
    *  with or without a session token. */
   publicDetail: (supplierId: string) =>
     apiFetch<PublicVendorPageData>("GET", `/api/public/vendors/${encodeURIComponent(supplierId)}`),
+  /** Public "browse teaser" — a photos-only directory sample grouped by
+   *  category (max 6 each) for the unauthenticated `/vendors/browse` page. */
+  publicShowcase: () => apiFetch<PublicVendorShowcase>("GET", "/api/public/vendor-showcase"),
 };
 
 export const reviewApi = {
