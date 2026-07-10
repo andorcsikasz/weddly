@@ -1824,6 +1824,8 @@ export interface LocaleMessages {
     nav_planners: string;
     footer_band_prompt: string;
     footer_band_cta: string;
+    /** Compact guest-chip label for narrow (phone) viewports. */
+    footer_band_cta_short: string;
     footer_band_cta_vendor: string;
     footer_band_cta_planner: string;
     footer_band_cta_couples: string;

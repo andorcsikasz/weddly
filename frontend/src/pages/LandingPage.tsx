@@ -325,7 +325,12 @@ export default function LandingPage() {
                   >
                     <UserCheck size={16} strokeWidth={1.6} aria-hidden />
                     <span className={chipTextWrap("guest")}>
-                      <span className={roleChipText}>{t("landing.footer_band_cta")}</span>
+                      <span className={roleChipText}>
+                        {/* Full label needs room; on phones use the compact one
+                            so the expanded pill fits the viewport. */}
+                        <span className="sm:hidden">{t("landing.footer_band_cta_short")}</span>
+                        <span className="hidden sm:inline">{t("landing.footer_band_cta")}</span>
+                      </span>
                     </span>
                   </button>
                 </div>
