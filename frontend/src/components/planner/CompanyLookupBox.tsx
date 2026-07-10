@@ -71,8 +71,7 @@ export function CompanyLookupBox({ country, onPick }: Props) {
     }
   }
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSearch() {
     const q = query.trim();
     if (!q || searching) return;
     setSearching(true);
@@ -102,23 +101,36 @@ export function CompanyLookupBox({ country, onPick }: Props) {
         </div>
       </div>
 
-      <form onSubmit={(e) => void handleSearch(e)} className="mt-3 flex gap-2">
+      {/* Not a <form>: this box is rendered INSIDE the vendor/planner
+          registration <form>, and a nested form (or a submit button that
+          bubbles to the outer form) makes "Keresés" submit/reload the whole
+          page, wiping the wizard step + any held Google credential. A plain
+          type="button" can never submit a form; Enter in the field searches
+          via onKeyDown (with preventDefault so it doesn't submit the parent). */}
+      <div className="mt-3 flex gap-2">
         <input
           className="input flex-1"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void handleSearch();
+            }
+          }}
           placeholder={kindsLine}
           aria-label={t("company_lookup.title")}
         />
         <button
-          type="submit"
+          type="button"
           className="btn-outline shrink-0"
           disabled={searching || !query.trim()}
+          onClick={() => void handleSearch()}
         >
           <Search size={15} aria-hidden="true" />
           {searching ? t("company_lookup.searching") : t("company_lookup.search_button")}
         </button>
-      </form>
+      </div>
 
       <div aria-live="polite">
         {error && (
