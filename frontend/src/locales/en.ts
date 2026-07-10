@@ -2185,7 +2185,7 @@ const en: LocaleMessages = {
     poc_empty: "No suppliers picked yet, choose them on the Suppliers page.",
     chart_title: "Task timeline",
     no_dates_title: "Tasks without dates",
-    no_dates_empty: "Every task has dates.",
+    no_dates_empty: "Great job! Every task has a date. 🎉",
     no_dates_empty_all: "No tasks yet. Add them on the Planning page.",
     set_dates: "Set dates",
     no_dates_show_all: "Show all ({count})",

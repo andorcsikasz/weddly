@@ -2209,7 +2209,7 @@ const hu: LocaleMessages = {
     poc_empty: "Még nincs kiválasztott szolgáltató, válassz a /app/suppliers oldalon.",
     chart_title: "Feladat-idővonal",
     no_dates_title: "Dátum nélküli feladatok",
-    no_dates_empty: "Minden feladatnak van dátuma.",
+    no_dates_empty: "Szép munka! Minden feladatnak van dátuma. 🎉",
     no_dates_empty_all: "Még nincs feladat. A /app/planning oldalon adhatsz hozzá.",
     set_dates: "Dátumot megadni",
     no_dates_show_all: "Összes mutatása ({count})",
