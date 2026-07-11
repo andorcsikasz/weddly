@@ -2875,6 +2875,7 @@ export interface LocaleMessages {
       fonts: string;
       print: string;
       monogram: string;
+      ornaments: string;
       date: string;
     };
     /** The three numbered studio chapters of the website editor. */
@@ -3107,6 +3108,11 @@ export interface LocaleMessages {
     monogram: {
       enable: string;
       separator_label: string;
+    };
+    /** Intermediate decorative dividers (guest-page ornament seams) on/off. */
+    ornaments: {
+      enable: string;
+      hint: string;
     };
     /** Date-format preset names. */
     date: {

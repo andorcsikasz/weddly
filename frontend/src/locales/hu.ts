@@ -2682,6 +2682,7 @@ const hu: LocaleMessages = {
       fonts: "Betűtípusok",
       print: "Nyomtatási beállítások",
       monogram: "Monogram",
+      ornaments: "Díszítőelemek",
       date: "Dátumformátum",
     },
     group: {
@@ -2871,6 +2872,10 @@ const hu: LocaleMessages = {
     monogram: {
       enable: "Monogram megjelenítése",
       separator_label: "Elválasztó",
+    },
+    ornaments: {
+      enable: "Díszítőelemek megjelenítése",
+      hint: "A szekciók közötti díszítő elválasztók a vendégoldalon.",
     },
     date: {
       numeric_dot: "Számjegyes",

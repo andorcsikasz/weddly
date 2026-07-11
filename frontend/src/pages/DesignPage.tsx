@@ -709,6 +709,10 @@ export default function DesignPage() {
     setStyleSnapshot(null);
     setDesign((d) => ({ ...d, web: { ...d.web, venueMap: on } }));
   }
+  function chooseOrnaments(on: boolean) {
+    setStyleSnapshot(null);
+    setDesign((d) => ({ ...d, web: { ...d.web, ornaments: on } }));
+  }
   function chooseBorderStyle(slug: BorderStyleSlug) {
     // Keep the legacy `print.border` boolean in sync (on/off) so the current
     // PDF path stays consistent until pdf.ts reads the style directly.
@@ -1555,6 +1559,29 @@ export default function DesignPage() {
                           </div>
                         </div>
                       )}
+                    </div>
+                  </section>
+
+                  {/* Ornaments — the intermediate decorative dividers drawn
+                      between guest-page sections. On/off, mirroring the
+                      monogram toggle above. */}
+                  <section>
+                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+                      {t("design.section.ornaments")}
+                    </h2>
+                    <div className="rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
+                      <button
+                        type="button"
+                        onClick={() => chooseOrnaments(!design.web.ornaments)}
+                        aria-pressed={design.web.ornaments}
+                        className={chipCls(design.web.ornaments)}
+                      >
+                        {design.web.ornaments && <Check size={12} strokeWidth={3} aria-hidden />}
+                        {t("design.ornaments.enable")}
+                      </button>
+                      <p className="mt-2 text-xs text-ink-400 dark:text-umber-300">
+                        {t("design.ornaments.hint")}
+                      </p>
                     </div>
                   </section>
 

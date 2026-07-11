@@ -45,6 +45,7 @@ interface CoupleDesign {
     buttonStyle: string;
     hiddenSections: string[];
     imageTreatment: string;
+    ornaments: boolean;
     venueMap: boolean;
   };
 }
@@ -172,6 +173,7 @@ describe("design: default resolution", () => {
         buttonStyle: "outline",
         hiddenSections: [],
         imageTreatment: "none",
+        ornaments: true,
         venueMap: false,
       },
     });
@@ -234,6 +236,52 @@ describe("design: PATCH /api/couples/current", () => {
     expect(r.data.couple.design.print.border).toBe(false);
     // The untouched print toggles keep their default.
     expect(r.data.couple.design.print.qr).toBe(false);
+  });
+
+  test("web.ornaments toggles off, round-trips, and the public payload follows", async () => {
+    wipeAll();
+    const token = await registerVerified("design-ornaments@weddly.test");
+    const { couple } = await onboard(token);
+    // Default is on (mirrors the resolved default assertion above).
+    expect(couple.design.web.ornaments).toBe(true);
+
+    const off = await req<{ couple: { design: CoupleDesign; slug: string | null } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { ornaments: false } } },
+      { token },
+    );
+    expect(off.status).toBe(200);
+    expect(off.data.couple.design.web.ornaments).toBe(false);
+
+    // Round-trips on a fresh GET.
+    const me = await req<{ couple: { design: CoupleDesign } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(me.data.couple.design.web.ornaments).toBe(false);
+
+    // The presentation-only public design mirrors the toggle.
+    const stored = db.prepare("SELECT design_json FROM couples WHERE id = ?").get(couple.id) as {
+      design_json: string | null;
+    };
+    const pub = toPublicDesign(resolveDesign(JSON.parse(stored.design_json ?? "{}")));
+    expect(pub.website_ornaments).toBe(false);
+  });
+
+  test("a non-boolean web.ornaments is rejected with 400", async () => {
+    wipeAll();
+    const token = await registerVerified("design-ornaments-bad@weddly.test");
+    await onboard(token);
+    const r = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { ornaments: "nope" } } },
+      { token },
+    );
+    expect(r.status).toBe(400);
   });
 
   test("an invalid palette slug is rejected with 400 and persists nothing", async () => {
@@ -502,6 +550,7 @@ describe("design: website-only `web` sub-object", () => {
       buttonStyle: "outline",
       hiddenSections: [],
       imageTreatment: "none",
+      ornaments: true,
       venueMap: false,
     });
   });

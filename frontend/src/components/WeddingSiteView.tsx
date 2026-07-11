@@ -618,11 +618,14 @@ export function WeddingSiteView({
   // of seams. Colour comes from the in-scope `--wt-accent` (contrast-aware, so
   // the Midnight gold reads on the dark page too); "none" degrades to a minimal
   // rule, keeping the motif a whisper on every pack. Reused at each seam below.
-  const ornamentSeam = (
+  // Couples can hide these intermediate decorative dividers entirely from the
+  // Design editor (`website_ornaments`), same on/off spirit as the monogram —
+  // then every seam collapses to nothing.
+  const ornamentSeam = view.design.website_ornaments ? (
     <div aria-hidden className="flex w-full justify-center px-6 py-7 sm:px-8 sm:py-9">
       <OrnamentDivider slug={view.design.ornament} style={{ color: "var(--wt-accent)" }} />
     </div>
-  );
+  ) : null;
 
   // Optional fixed-slot photos: full-bleed editorial image bands, honouring the
   // photo treatment (grayscale cross-fades with the cover). Empty slot = no

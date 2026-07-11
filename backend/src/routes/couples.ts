@@ -2320,6 +2320,15 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         }
         next.web.imageTreatment = v as ImageTreatmentSlug;
       }
+      // Intermediate decorative dividers on/off — a plain boolean, mirroring
+      // the monogram toggle. The guest page skips the ornament seams when off.
+      if ("ornaments" in w) {
+        const v = w.ornaments;
+        if (typeof v !== "boolean") {
+          throw new HttpError(400, "design.web.ornaments must be a boolean");
+        }
+        next.web.ornaments = v;
+      }
       // Public venue-map opt-in — a plain boolean (the public-wedding endpoint
       // reads it server-side to decide whether to expose the exact pin).
       if ("venueMap" in w) {
@@ -2348,6 +2357,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.web.shadow !== prev.web.shadow ||
       next.web.buttonStyle !== prev.web.buttonStyle ||
       next.web.imageTreatment !== prev.web.imageTreatment ||
+      next.web.ornaments !== prev.web.ornaments ||
       next.web.venueMap !== prev.web.venueMap ||
       JSON.stringify(next.web.hiddenSections) !== JSON.stringify(prev.web.hiddenSections);
     if (changed) {

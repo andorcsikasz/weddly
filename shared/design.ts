@@ -764,6 +764,10 @@ export interface DesignWebsiteOptions {
   hiddenSections: WebsiteSectionSlug[];
   /** Photo rendering — desaturate cover/venue imagery or leave full colour. */
   imageTreatment: ImageTreatmentSlug;
+  /** Show the pack's intermediate decorative dividers (the ornament "seams"
+   *  drawn between guest-page sections). On by default; couples who want a
+   *  cleaner page can turn them off — same on/off spirit as the monogram. */
+  ornaments: boolean;
   /** Opt-in: show the embedded venue map (exact pin) to EVERYONE, not just
    *  confirmed guests. Off by default — the privacy buffer stays the public
    *  face until the couple explicitly flips this. The public-wedding endpoint
@@ -803,6 +807,7 @@ export const DEFAULT_DESIGN: CoupleDesign = {
     buttonStyle: "outline",
     hiddenSections: [],
     imageTreatment: "none",
+    ornaments: true,
     venueMap: false,
   },
 };
@@ -888,6 +893,8 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
         i.web?.imageTreatment && VALID_IMAGE_TREATMENTS.has(i.web.imageTreatment)
           ? i.web.imageTreatment
           : DEFAULT_DESIGN.web.imageTreatment,
+      ornaments:
+        typeof i.web?.ornaments === "boolean" ? i.web.ornaments : DEFAULT_DESIGN.web.ornaments,
       venueMap: typeof i.web?.venueMap === "boolean" ? i.web.venueMap : DEFAULT_DESIGN.web.venueMap,
     },
   };
@@ -929,6 +936,9 @@ export interface PublicDesign {
   website_hidden_sections: WebsiteSectionSlug[];
   /** Photo rendering on the guest page (full colour or desaturated). */
   website_image_treatment: ImageTreatmentSlug;
+  /** Draw the intermediate ornament dividers between sections, or omit them
+   *  for a cleaner page. */
+  website_ornaments: boolean;
 }
 
 /** Build the public, presentation-only payload from a resolved design. */
@@ -968,6 +978,7 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
     website_button_style: design.web.buttonStyle,
     website_hidden_sections: design.web.hiddenSections,
     website_image_treatment: design.web.imageTreatment,
+    website_ornaments: design.web.ornaments,
   };
 }
 

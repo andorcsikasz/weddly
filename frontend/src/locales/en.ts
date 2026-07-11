@@ -2655,6 +2655,7 @@ const en: LocaleMessages = {
       fonts: "Fonts",
       print: "Print options",
       monogram: "Monogram",
+      ornaments: "Ornaments",
       date: "Date format",
     },
     group: {
@@ -2843,6 +2844,10 @@ const en: LocaleMessages = {
     monogram: {
       enable: "Show monogram",
       separator_label: "Separator",
+    },
+    ornaments: {
+      enable: "Show ornaments",
+      hint: "The decorative dividers between sections on the guest site.",
     },
     date: {
       numeric_dot: "Numeric",
