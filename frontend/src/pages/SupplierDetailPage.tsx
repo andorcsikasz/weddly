@@ -96,14 +96,14 @@ import {
   supplierCommentApi,
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import {
+  readSaved as readSavedStore,
+  setSaved as setSavedStore,
+  subscribeSaved,
+} from "../lib/supplier_saved";
 
 // Lazy so the OpenStreetMap embed modal only loads when the user opens the map.
 const SupplierMapModal = lazyWithReload(() => import("../components/SupplierMapModal"));
-
-/** Same localStorage shape the directory uses, so the heart icon stays in
- *  sync across `/app/suppliers` (the list) and `/app/suppliers/:id` (this
- *  page). Kept in lockstep with `SAVED_LS_KEY` in `pages/SuppliersPage.tsx`. */
-const SAVED_LS_KEY = "weddly.suppliers.saved";
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
@@ -133,27 +133,6 @@ const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
   transport: Bus,
   other: Sparkles,
 };
-
-function readSavedSet(): Set<string> {
-  try {
-    const raw = localStorage.getItem(SAVED_LS_KEY);
-    if (!raw) return new Set();
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed))
-      return new Set(parsed.filter((v): v is string => typeof v === "string"));
-  } catch {
-    // ignore
-  }
-  return new Set();
-}
-
-function writeSavedSet(set: Set<string>): void {
-  try {
-    localStorage.setItem(SAVED_LS_KEY, JSON.stringify(Array.from(set)));
-  } catch {
-    // ignore quota / private mode
-  }
-}
 
 const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_only"];
 
@@ -253,6 +232,9 @@ export default function SupplierDetailPage() {
   // wedding month rather than today. Best-effort: a null (non-couple viewer /
   // failed fetch) just leaves the calendar on the current month.
   const [weddingDate, setWeddingDate] = useState<string | null>(null);
+  // The viewing couple's id — keys the shared server-side shortlist so the
+  // "saved" state matches the directory grid + the partner's device.
+  const [coupleId, setCoupleId] = useState<number | null>(null);
   const [bookings, setBookings] = useState<SupplierBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapOpen, setMapOpen] = useState(false);
@@ -306,13 +288,16 @@ export default function SupplierDetailPage() {
     void refresh();
   }, [refresh]);
 
-  // Wedding date for the busy-calendar default month. Fetched once, best-effort.
+  // Wedding date (busy-calendar default month) + couple id (keys the saved
+  // shortlist). Fetched once, best-effort.
   useEffect(() => {
     let cancelled = false;
     void coupleApi
       .current()
       .then((r) => {
-        if (!cancelled) setWeddingDate(r.couple?.wedding_date ?? null);
+        if (cancelled) return;
+        setWeddingDate(r.couple?.wedding_date ?? null);
+        setCoupleId(r.couple?.id ?? null);
       })
       .catch(() => undefined);
     return () => {
@@ -320,22 +305,26 @@ export default function SupplierDetailPage() {
     };
   }, []);
 
-  // Saved-to-shortlist state. Persisted in localStorage under the same
-  // key the directory page uses, so toggling here flips the heart on the
-  // index card too. Re-hydrated when the supplier id changes.
-  const [savedSet, setSavedSet] = useState<Set<string>>(() => readSavedSet());
-  useEffect(() => setSavedSet(readSavedSet()), [supplierId]);
-  const isSaved = supplierId ? savedSet.has(supplierId) : false;
+  // Saved-to-shortlist state — the SAME per-couple, server-side store the
+  // directory grid uses (`supplier_saved`), so the save state matches the card
+  // and the partner's device. (It used to read a device-local localStorage key
+  // that the directory has since migrated + cleared, which is why "saved" on the
+  // card showed as "not saved" here.)
+  const [savedSet, setSavedSet] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (coupleId === null) return;
+    setSavedSet(readSavedStore(coupleId));
+    return subscribeSaved(coupleId, (next) => setSavedSet(next));
+  }, [coupleId]);
+  // Key the shortlist by the RESOLVED id (`v12` / `aranybastya`), not the route
+  // param — which may be a pretty slug (`magyar-foto-v12`) that wouldn't match
+  // the id the directory saves under.
+  const savedKey = detail?.id ?? null;
+  const isSaved = savedKey !== null && savedSet.has(savedKey);
   const toggleSaved = useCallback(() => {
-    if (!supplierId) return;
-    setSavedSet((cur) => {
-      const next = new Set(cur);
-      if (next.has(supplierId)) next.delete(supplierId);
-      else next.add(supplierId);
-      writeSavedSet(next);
-      return next;
-    });
-  }, [supplierId]);
+    if (coupleId === null || savedKey === null) return;
+    setSavedSet(setSavedStore(coupleId, savedKey, !savedSet.has(savedKey)));
+  }, [coupleId, savedKey, savedSet]);
 
   // Outreach compose modal — opens with the current supplier pre-attached
   // so the user can write a tailored inquiry without re-picking a vendor.
