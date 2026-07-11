@@ -4639,6 +4639,8 @@ const en: LocaleMessages = {
       clients: "{n} / {max} clients",
       onboarding_pending: "Onboarding pending",
       free_until: "Free until {date}",
+      reach_label: "Card reach (views · clicks)",
+      reach_tooltip: "Card reach: {views} views · {clicks} clicks ({connect} were Felkérés)",
       details_toggle: "Details",
       field_company: "Company",
       field_location: "Location",

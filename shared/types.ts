@@ -1918,6 +1918,32 @@ export interface AdminPlannerWaitlistDetail {
   message: string | null;
 }
 
+// ─── Planner directory analytics ────────────────────────────────────────────
+
+/** Couple-side telemetry the admin planner list aggregates. Mirrors the
+ *  supplier model: "was the card seen" (impression), "did they open the
+ *  profile" (profile_click), "did they hit Felkérés" (connect_click), "did
+ *  they click through to the website" (website_click). */
+export type PlannerEventType = "impression" | "profile_click" | "connect_click" | "website_click";
+
+export interface PlannerEventInput {
+  planner_user_id: number;
+  type: PlannerEventType;
+}
+
+/** Per-planner counters surfaced on the admin Szervezők card. `views_total` is
+ *  card impressions; `clicks_total` folds every click type together; the
+ *  30-day windows give a recency read, and `connect_clicks_total` isolates the
+ *  Felkérés conversions. */
+export interface PlannerAnalytics {
+  views_total: number;
+  views_30d: number;
+  clicks_total: number;
+  clicks_30d: number;
+  connect_clicks_total: number;
+  last_event_at: UnixMs | null;
+}
+
 /** A live planner account — a `users` row with user_type='planner'. */
 export interface AdminPlannerAccount {
   state: "active";
@@ -1948,6 +1974,10 @@ export interface AdminPlannerAccount {
    *  account never came through the waitlist (e.g. admin-provisioned). Feeds
    *  the collapsible detail section on the admin card. */
   waitlist: AdminPlannerWaitlistDetail | null;
+  /** Couple-facing directory reach (impressions + click-throughs). Attached by
+   *  the admin list route; optional so `listAdminPlanners` need not compute it
+   *  for callers that don't care. Absent → treat as all-zero. */
+  analytics?: PlannerAnalytics;
 }
 
 /** An accepted planner-waitlist applicant who does NOT yet have a planner

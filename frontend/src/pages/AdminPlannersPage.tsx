@@ -18,9 +18,11 @@ import {
   Check,
   ChevronDown,
   Clock,
+  Eye,
   Handshake,
   Loader2,
   MailPlus,
+  MousePointerClick,
   RotateCcw,
   Send,
   Trash2,
@@ -608,6 +610,25 @@ function PlannerCard({
             </span>
             <span aria-hidden="true">·</span>
             <span>{fmtDate(planner.created_at, locale)}</span>
+            {planner.analytics && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span
+                  className="inline-flex items-center gap-1"
+                  title={t("admin.planners.reach_tooltip", {
+                    views: planner.analytics.views_total,
+                    clicks: planner.analytics.clicks_total,
+                    connect: planner.analytics.connect_clicks_total,
+                  })}
+                >
+                  <Eye size={12} aria-hidden />
+                  <span className="tabular-nums">{planner.analytics.views_total}</span>
+                  <MousePointerClick size={12} aria-hidden className="ml-1.5" />
+                  <span className="tabular-nums">{planner.analytics.clicks_total}</span>
+                  <span className="sr-only">{t("admin.planners.reach_label")}</span>
+                </span>
+              </>
+            )}
             {planner.founding_until && (
               <>
                 <span aria-hidden="true">·</span>

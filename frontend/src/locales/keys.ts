@@ -5229,6 +5229,9 @@ export interface LocaleMessages {
       clients: string;
       onboarding_pending: string;
       free_until: string;
+      /** Couple-facing directory reach shown on the admin card. */
+      reach_label: string;
+      reach_tooltip: string;
       /** Collapsible profile section (company, location, styles, …). */
       details_toggle: string;
       field_company: string;

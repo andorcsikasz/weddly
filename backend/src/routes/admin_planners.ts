@@ -18,6 +18,7 @@ import {
   updatePlannerPlan,
 } from "../domain/planner";
 import { getPlannerSub } from "../domain/planner_billing";
+import { aggregatePlannerAnalytics, emptyPlannerAnalytics } from "../domain/planner_views";
 import { convertUserToPlanner, getWaitlistSeedRowById } from "../domain/planner_conversion";
 import {
   provisionPlanner,
@@ -48,7 +49,16 @@ function requirePlannerUser(userId: number) {
 // first so newly accepted planners surface at the top for the admin to notice.
 function handleList(ctx: Ctx): Response {
   requireAdmin(ctx);
-  return json({ planners: [...listPendingPlannerWaitlist(), ...listAdminPlanners()] });
+  // Attach couple-facing directory reach to each live account. Aggregated once
+  // here (not in listAdminPlanners) so the domain query stays lean and callers
+  // that don't need analytics never pay for the scan. Pending waitlist rows
+  // have no account yet → no analytics.
+  const analytics = aggregatePlannerAnalytics();
+  const active = listAdminPlanners().map((p) => ({
+    ...p,
+    analytics: analytics.get(p.user_id) ?? emptyPlannerAnalytics(),
+  }));
+  return json({ planners: [...listPendingPlannerWaitlist(), ...active] });
 }
 
 /** Trimmed, length-capped required string field, 400 on anything else. */

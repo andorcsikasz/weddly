@@ -75,6 +75,7 @@ import type {
   LinkedPlannerView,
   PlannerDirectoryDetail,
   PlannerDirectoryEntry,
+  PlannerEventInput,
   PlannerInviteView,
   PlannerInvitation,
   PlannerInvitePublic,
@@ -3162,6 +3163,10 @@ export const couplePlannerApi = {
   /** Browsable planner directory for the /app/vendors rail. */
   directory: () =>
     apiFetch<{ planners: PlannerDirectoryEntry[] }>("GET", "/api/couples/planner-directory"),
+  /** Batched directory analytics: card impressions + click-throughs. Fire-and-
+   *  forget from the rail; a failed beacon never disrupts the couple. */
+  recordCardEvents: (events: PlannerEventInput[]) =>
+    apiFetch<{ recorded: number }>("POST", "/api/planners/events", { events }),
   /** Single-planner detail (opened from the card name): bio, references,
    *  availability, website, styles, portfolio + link_status for the CTA. */
   plannerDetail: (plannerUserId: number) =>

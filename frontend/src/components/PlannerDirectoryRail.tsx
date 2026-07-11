@@ -5,7 +5,7 @@
 // so the suppliers page stays undisturbed until there is real supply.
 
 import { countryName } from "@shared/country_list";
-import type { PlannerDirectoryEntry } from "@shared/types";
+import type { PlannerDirectoryEntry, PlannerEventInput } from "@shared/types";
 import { BadgeCheck, Check, Clock, ExternalLink, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,15 @@ import { ApiError } from "../lib/api";
 import { couplePlannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useToast } from "./ui";
+
+/** Fire-and-forget directory analytics beacon (card impressions + click-
+ *  throughs). Best-effort by design: a failed send never disrupts the couple. */
+function trackPlannerEvents(events: PlannerEventInput[]): void {
+  if (events.length === 0) return;
+  void couplePlannerApi.recordCardEvents(events).catch(() => {
+    /* analytics are best-effort */
+  });
+}
 
 /** Ensure a bare reference link (e.g. "instagram.com/x") gets a scheme so the
  *  anchor navigates off-site instead of within the app. */
@@ -93,7 +102,12 @@ export function PlannerCard({
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => navigate(`/app/planners/${planner.planner_user_id}`)}
+              onClick={() => {
+                trackPlannerEvents([
+                  { planner_user_id: planner.planner_user_id, type: "profile_click" },
+                ]);
+                navigate(`/app/planners/${planner.planner_user_id}`);
+              }}
               aria-label={t("planner_directory.view_profile")}
               className="truncate text-left font-semibold text-ink-900 hover:underline focus:outline-none focus-visible:underline dark:text-paper-50"
             >
@@ -113,6 +127,11 @@ export function PlannerCard({
                 href={hrefFor(planner.website)}
                 target="_blank"
                 rel="noreferrer noopener"
+                onClick={() =>
+                  trackPlannerEvents([
+                    { planner_user_id: planner.planner_user_id, type: "website_click" },
+                  ])
+                }
                 aria-label={t("planner_directory.website_aria")}
                 className="shrink-0 text-ink-400 transition hover:text-ink-700 dark:text-umber-400 dark:hover:text-umber-200"
               >
@@ -154,9 +173,15 @@ export function PlannerCard({
             type="button"
             className="btn-outline btn-sm w-full"
             disabled={busy}
-            onClick={() =>
-              void run(() => couplePlannerApi.invitePlannerById(planner.planner_user_id), "invited")
-            }
+            onClick={() => {
+              trackPlannerEvents([
+                { planner_user_id: planner.planner_user_id, type: "connect_click" },
+              ]);
+              void run(
+                () => couplePlannerApi.invitePlannerById(planner.planner_user_id),
+                "invited",
+              );
+            }}
           >
             {busy ? <Loader2 size={13} className="animate-spin" /> : t("planner_directory.connect")}
           </button>
@@ -198,7 +223,15 @@ export function PlannerDirectoryRail() {
     couplePlannerApi
       .directory()
       .then((r) => {
-        if (!cancelled) setPlanners(r.planners);
+        if (cancelled) return;
+        setPlanners(r.planners);
+        // One impression per card actually rendered to this couple.
+        trackPlannerEvents(
+          r.planners.map((p) => ({
+            planner_user_id: p.planner_user_id,
+            type: "impression" as const,
+          })),
+        );
       })
       .catch(() => {
         /* the rail is an extra; a failed load just leaves it hidden */

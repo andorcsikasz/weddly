@@ -818,6 +818,27 @@ CREATE INDEX IF NOT EXISTS idx_supplier_events_supplier
 CREATE INDEX IF NOT EXISTS idx_supplier_events_type
   ON supplier_events(event_type, created_at DESC);
 
+-- Couple-facing planner directory analytics — the planner-side twin of
+-- `supplier_events`. Records card impressions in the /app/vendors rail plus the
+-- click-throughs (open profile, connect/Felkérés, website) so the admin
+-- Szervezők list can show how much reach each planner card is getting.
+-- `planner_user_id` targets the planner's `users` row. `couple_id` is nullable
+-- for symmetry with supplier_events, though the rail is couple-authed today.
+-- Named `planner_card_events` to stay clear of `planner_events` (the planner's
+-- own CALENDAR table — a completely different aggregate).
+CREATE TABLE IF NOT EXISTS planner_card_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL,                                    -- 'impression' | 'profile_click' | 'connect_click' | 'website_click'
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  couple_id INTEGER REFERENCES couples(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_planner_card_events_planner
+  ON planner_card_events(planner_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_planner_card_events_type
+  ON planner_card_events(event_type, created_at DESC);
+
 -- Append-only ledger proving GDPR Art. 7(1) "demonstrable consent". One row
 -- per click-acceptance of a policy document. `subject_user_id` is nullable
 -- because pre-auth surfaces (vendor waitlist, future newsletter) capture
