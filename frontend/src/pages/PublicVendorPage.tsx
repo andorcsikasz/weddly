@@ -92,6 +92,10 @@ export default function PublicVendorPage() {
   const [data, setData] = useState<PublicVendorPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Which gallery image is shown big; null → the hero. Clicking a thumbnail
+  // swaps it in place (a lightbox on the page, no new tab).
+  const [activeImage, setActiveImage] = useState<string | null>(null);
+  useEffect(() => setActiveImage(null), [supplierId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,18 +172,33 @@ export default function PublicVendorPage() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
           {/* ── MAIN ─────────────────────────────────────────────────────── */}
           <main className="min-w-0">
-            <PublicHero detail={detail} t={t} />
+            <PublicHero detail={detail} t={t} src={activeImage ?? detail.hero_image_url} />
             {detail.gallery_urls && detail.gallery_urls.length > 1 && (
               <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {detail.gallery_urls.slice(1).map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt={`${detail.name} ${i + 2}`}
-                    loading="lazy"
-                    className="h-20 w-20 shrink-0 rounded-xl object-cover sm:h-24 sm:w-24"
-                  />
-                ))}
+                {detail.gallery_urls.map((url, i) => {
+                  const shown = (activeImage ?? detail.hero_image_url) === url;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActiveImage(url)}
+                      aria-current={shown ? "true" : undefined}
+                      aria-label={t("suppliers.detail.gallery_show_aria", { n: i + 1 })}
+                      className={`shrink-0 overflow-hidden rounded-xl ring-2 transition ${
+                        shown
+                          ? "ring-ink-800 dark:ring-paper-100"
+                          : "ring-transparent hover:ring-paper-400 dark:hover:ring-umber-500"
+                      }`}
+                    >
+                      <img
+                        src={url}
+                        alt={`${detail.name} ${i + 1}`}
+                        loading="lazy"
+                        className="h-20 w-20 object-cover sm:h-24 sm:w-24"
+                      />
+                    </button>
+                  );
+                })}
               </div>
             )}
 
@@ -366,15 +385,21 @@ export default function PublicVendorPage() {
   );
 }
 
-function PublicHero({ detail, t }: { detail: SupplierDetail; t: (k: string) => string }) {
-  if (detail.hero_image_url) {
+function PublicHero({
+  detail,
+  t,
+  src,
+}: {
+  detail: SupplierDetail;
+  t: (k: string) => string;
+  /** The image to show big — the active thumbnail, or the hero when none is
+   *  picked. Null (no photos) falls through to the placeholder card. */
+  src: string | null;
+}) {
+  if (src) {
     return (
       <div className="overflow-hidden rounded-2xl">
-        <img
-          src={detail.hero_image_url}
-          alt={detail.name}
-          className="aspect-[16/9] w-full object-cover"
-        />
+        <img src={src} alt={detail.name} className="aspect-[16/9] w-full object-cover" />
       </div>
     );
   }

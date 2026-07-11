@@ -580,6 +580,7 @@ const hu: LocaleMessages = {
     gallery_upload_failed: "Nem sikerült feltölteni, JPG, PNG vagy WebP, max 4 MB.",
     gallery_full: "A galéria megtelt ({max} fotó). Törölj egyet, mielőtt újat töltenél fel.",
     gallery_delete_success: "Fotó törölve.",
+    gallery_show_aria: "{n}. fotó megjelenítése",
     gallery_delete_failed: "Nem sikerült törölni, próbáld újra.",
     section_videos: "Videók",
     videos_intro: "Segíts a pároknak mozgóképen megismerni a munkádat.",

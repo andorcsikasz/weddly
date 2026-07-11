@@ -756,6 +756,8 @@ export interface LocaleMessages {
     /** Receives `{max}` cap. */
     gallery_full: string;
     gallery_delete_success: string;
+    /** aria-label on a gallery thumbnail (swaps it into the big view). */
+    gallery_show_aria: string;
     gallery_delete_failed: string;
     section_videos: string;
     videos_intro: string;

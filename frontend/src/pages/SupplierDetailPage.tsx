@@ -256,6 +256,11 @@ export default function SupplierDetailPage() {
   const [bookings, setBookings] = useState<SupplierBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapOpen, setMapOpen] = useState(false);
+  // Which gallery image is shown big. null → the listing's hero. Clicking a
+  // thumbnail swaps it in place (a lightbox on the page, no new tab / scroll).
+  const [activeImage, setActiveImage] = useState<string | null>(null);
+  // Reset to the hero when navigating to a different vendor.
+  useEffect(() => setActiveImage(null), [supplierId]);
   // Report dialog (community listings only). Holds the numeric id + name.
   const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
 
@@ -424,25 +429,33 @@ export default function SupplierDetailPage() {
               the vendor hasn't claimed yet, turning an empty slot into an
               acquisition surface. */}
           <section className="mb-10">
-            <HeroImage detail={detail} t={t} />
+            <HeroImage detail={detail} t={t} src={activeImage ?? detail.hero_image_url} />
             {detail.gallery_urls && detail.gallery_urls.length > 1 && (
               <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {detail.gallery_urls.slice(1).map((url, i) => (
-                  <a
-                    key={i}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0"
-                  >
-                    <img
-                      src={url}
-                      alt={`${detail.name} ${i + 2}`}
-                      loading="lazy"
-                      className="h-20 w-20 rounded-xl object-cover sm:h-24 sm:w-24"
-                    />
-                  </a>
-                ))}
+                {detail.gallery_urls.map((url, i) => {
+                  const shown = (activeImage ?? detail.hero_image_url) === url;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActiveImage(url)}
+                      aria-current={shown ? "true" : undefined}
+                      aria-label={t("suppliers.detail.gallery_show_aria", { n: i + 1 })}
+                      className={`shrink-0 overflow-hidden rounded-xl ring-2 transition ${
+                        shown
+                          ? "ring-ink-800 dark:ring-paper-100"
+                          : "ring-transparent hover:ring-paper-400 dark:hover:ring-umber-500"
+                      }`}
+                    >
+                      <img
+                        src={url}
+                        alt={`${detail.name} ${i + 1}`}
+                        loading="lazy"
+                        className="h-20 w-20 object-cover sm:h-24 sm:w-24"
+                      />
+                    </button>
+                  );
+                })}
               </div>
             )}
             <div className="mt-5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
@@ -1367,19 +1380,18 @@ function SidebarRow({
 function HeroImage({
   detail,
   t,
+  src,
 }: {
   detail: SupplierDetail;
   t: (k: string) => string;
+  /** The image to show big — the active thumbnail, or the hero when none is
+   *  selected. Null (no photos at all) falls through to the monogram card. */
+  src: string | null;
 }) {
-  if (detail.hero_image_url) {
+  if (src) {
     return (
       <div className="overflow-hidden rounded-2xl">
-        <img
-          src={detail.hero_image_url}
-          alt={detail.name}
-          loading="lazy"
-          className="aspect-[16/9] w-full object-cover"
-        />
+        <img src={src} alt={detail.name} className="aspect-[16/9] w-full object-cover" />
       </div>
     );
   }

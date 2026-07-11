@@ -573,6 +573,7 @@ const en: LocaleMessages = {
     gallery_upload_failed: "Upload failed. JPG, PNG or WebP, max 4 MB.",
     gallery_full: "The gallery is full ({max} photos). Delete one before uploading another.",
     gallery_delete_success: "Photo deleted.",
+    gallery_show_aria: "Show photo {n}",
     gallery_delete_failed: "Could not delete, please try again.",
     section_videos: "Videos",
     videos_intro: "Help couples get to know your work through motion.",
