@@ -471,6 +471,9 @@ export default function SupplierDetailPage() {
                 />
               )}
             </h1>
+            {detail.company_name && detail.company_name !== detail.name && (
+              <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{detail.company_name}</p>
+            )}
             {/* Single rating row — the sidebar's duplicate RATING row was
                 removed (it was repeating this exact value two columns
                 away). Source of truth lives here, in the header. */}

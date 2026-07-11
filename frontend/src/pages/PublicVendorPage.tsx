@@ -215,6 +215,9 @@ export default function PublicVendorPage() {
                 />
               )}
             </h1>
+            {detail.company_name && detail.company_name !== detail.name && (
+              <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{detail.company_name}</p>
+            )}
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               {ratingDisplay !== null && ratingAvg !== null ? (

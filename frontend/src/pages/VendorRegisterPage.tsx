@@ -80,6 +80,7 @@ export default function VendorRegisterPage() {
   // the official-registry block the planner flow already collects)
   const [country, setCountry] = useState(locale === "hu" ? "HU" : "");
   const [businessName, setBusinessName] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [category, setCategory] = useState<SupplierCategory | "">("");
   const [customCategory, setCustomCategory] = useState("");
   const [registryNumber, setRegistryNumber] = useState("");
@@ -113,9 +114,17 @@ export default function VendorRegisterPage() {
     if (window.matchMedia("(min-width: 640px)").matches) nameRef.current?.focus();
   }, []);
 
-  /** Auto-fill from an official lookup pick; only returned fields overwrite. */
+  /** Auto-fill from an official lookup pick; only returned fields overwrite.
+   *  The registry returns the LEGAL name, so it fills the company-name field;
+   *  the brand / display name is left to the vendor (prefilled with the legal
+   *  name only when they haven't typed one yet, so the flow still one-clicks
+   *  for vendors who trade under their company name). */
   function applyCompany(r: CompanyLookupResult) {
-    if (r.name) setBusinessName(r.name);
+    if (r.name) {
+      const legalName = r.name;
+      setCompanyName(legalName);
+      setBusinessName((cur) => (cur.trim().length === 0 ? legalName : cur));
+    }
     if (r.registry_number) setRegistryNumber(r.registry_number);
     if (r.vat_number) setVatNumber(r.vat_number);
     if (r.legal_form) setLegalForm(r.legal_form);
@@ -194,6 +203,7 @@ export default function VendorRegisterPage() {
       // only email+password (password path) vs the Google credential differ.
       const businessPayload = {
         business_name: businessName.trim(),
+        company_name: companyName.trim() || undefined,
         category,
         custom_category: category === "other" ? customCategory.trim() : undefined,
         country: country || undefined,
@@ -509,6 +519,22 @@ export default function VendorRegisterPage() {
                   autoComplete="organization"
                   required
                 />
+                <p className="field-help mt-1">{t("vendor_register.business_name_help")}</p>
+              </div>
+              <div>
+                <label htmlFor="vr_company" className="field-label">
+                  {t("vendor_register.company_name_label")}
+                </label>
+                <input
+                  id="vr_company"
+                  type="text"
+                  className="input"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  maxLength={120}
+                  autoComplete="organization"
+                />
+                <p className="field-help mt-1">{t("vendor_register.company_name_help")}</p>
               </div>
               <div>
                 <label htmlFor="vr_category" className="field-label">

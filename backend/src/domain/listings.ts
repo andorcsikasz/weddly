@@ -73,6 +73,7 @@ export interface VendorAccountRow {
   vendor_code: string | null;
   owner_user_id: number;
   display_name: string;
+  company_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   vat_number: string | null;
@@ -144,6 +145,7 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
     vendor_code: row.vendor_code,
     owner_user_id: row.owner_user_id,
     display_name: row.display_name,
+    company_name: row.company_name,
     contact_email: row.contact_email,
     contact_phone: row.contact_phone,
     vat_number: row.vat_number,
@@ -168,9 +170,11 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
 // show up among the vendors" behaviour. Country is taken from the owning
 // vendor account (default HU); suspended owners + demo accounts are dropped.
 
-/** ListingRow joined to its owner's country for the directory card mapper. */
+/** ListingRow joined to its owner's country + legal company name for the
+ *  directory card mapper. */
 interface ClaimedDirectoryRow extends ListingRow {
   owner_country: string | null;
+  owner_company_name: string | null;
 }
 
 const CLAIMED_DIRECTORY_FROM = `
@@ -186,6 +190,7 @@ function claimedListingToDirectoryBase(row: ClaimedDirectoryRow): DirectorySuppl
   return {
     id: row.id,
     name: row.name,
+    company_name: row.owner_company_name,
     category: row.category as SupplierCategory,
     city: row.city,
     country: (row.owner_country ?? "HU").toUpperCase(),
@@ -218,7 +223,7 @@ function claimedListingToDirectoryBase(row: ClaimedDirectoryRow): DirectorySuppl
 export function listActiveClaimedListingsForDirectory(
   category?: SupplierCategory | null,
 ): DirectorySupplierBase[] {
-  const select = `SELECT l.*, va.country AS owner_country ${CLAIMED_DIRECTORY_FROM}`;
+  const select = `SELECT l.*, va.country AS owner_country, va.company_name AS owner_company_name ${CLAIMED_DIRECTORY_FROM}`;
   const rows = (
     category
       ? db.prepare(`${select} AND l.category = ? ORDER BY l.created_at DESC`).all(category)
@@ -232,7 +237,9 @@ export function listActiveClaimedListingsForDirectory(
  *  the id isn't a live claimed listing (or its owner is suspended / demo). */
 export function getClaimedDirectoryBaseById(id: string): DirectorySupplierBase | null {
   const row = db
-    .prepare(`SELECT l.*, va.country AS owner_country ${CLAIMED_DIRECTORY_FROM} AND l.id = ?`)
+    .prepare(
+      `SELECT l.*, va.country AS owner_country, va.company_name AS owner_company_name ${CLAIMED_DIRECTORY_FROM} AND l.id = ?`,
+    )
     .get(id) as ClaimedDirectoryRow | undefined;
   return row ? claimedListingToDirectoryBase(row) : null;
 }

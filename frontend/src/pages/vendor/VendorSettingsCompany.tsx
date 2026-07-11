@@ -21,7 +21,8 @@ type CompanyField = {
   maxLength: number;
 };
 
-// display_name is separate (required); everything below is nullable.
+// display_name + company_name are separate (the two public-facing name fields,
+// rendered at the top); everything below is the private billing/contact block.
 const COMPANY_FIELDS: CompanyField[] = [
   { key: "contact_email", labelKey: "vendor.settings.company_email", maxLength: 120 },
   { key: "contact_phone", labelKey: "vendor.settings.company_phone", maxLength: 40 },
@@ -41,6 +42,7 @@ export default function VendorSettingsCompany() {
 
   // --- Company identity form ---
   const [displayName, setDisplayName] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
   const [savingCompany, setSavingCompany] = useState(false);
   const [companyError, setCompanyError] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export default function VendorSettingsCompany() {
   useEffect(() => {
     if (!view) return;
     setDisplayName(view.account.display_name);
+    setCompanyName(view.account.company_name ?? "");
     const seeded: Record<string, string> = {};
     for (const f of COMPANY_FIELDS) {
       const raw = view.account[f.key as keyof typeof view.account];
@@ -82,7 +85,10 @@ export default function VendorSettingsCompany() {
     }
     setSavingCompany(true);
     setCompanyError(null);
-    const body: VendorAccountEditInput = { display_name: name };
+    const body: VendorAccountEditInput = {
+      display_name: name,
+      company_name: companyName.trim() || null,
+    };
     for (const f of COMPANY_FIELDS) {
       const raw = (fields[f.key] ?? "").trim();
       body[f.key] = (raw.length === 0 ? null : raw) as never;
@@ -129,7 +135,7 @@ export default function VendorSettingsCompany() {
         <form onSubmit={saveCompany} className="mt-4 space-y-3">
           <div>
             <label htmlFor="vendor-company-name" className="field-label">
-              {t("vendor.settings.company_name")}
+              {t("vendor.settings.company_display_name")}
             </label>
             <input
               id="vendor-company-name"
@@ -141,6 +147,22 @@ export default function VendorSettingsCompany() {
               disabled={savingCompany}
               required
             />
+            <p className="field-help mt-1">{t("vendor.settings.company_display_name_help")}</p>
+          </div>
+          <div>
+            <label htmlFor="vendor-company-legal-name" className="field-label">
+              {t("vendor.settings.company_legal_name")}
+            </label>
+            <input
+              id="vendor-company-legal-name"
+              type="text"
+              className="input w-full"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              maxLength={120}
+              disabled={savingCompany}
+            />
+            <p className="field-help mt-1">{t("vendor.settings.company_legal_name_help")}</p>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {COMPANY_FIELDS.map((f) => (

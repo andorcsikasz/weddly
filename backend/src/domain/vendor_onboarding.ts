@@ -99,6 +99,7 @@ export function listPendingOnboardings(): AdminVendorView[] {
     id: row.id,
     vendor_code: null,
     display_name: row.business_name,
+    company_name: null,
     contact_email: row.email,
     contact_phone: null,
     vat_number: null,

@@ -1877,6 +1877,7 @@ export const adminVendorMgmtApi = {
     id: number,
     body: {
       display_name?: string;
+      company_name?: string | null;
       contact_email?: string | null;
       contact_phone?: string | null;
       vat_number?: string | null;
@@ -1974,6 +1975,8 @@ export const vendorAuthApi = {
     password: string;
     full_name: string;
     business_name: string;
+    /** Legal company name shown small under the brand; optional. */
+    company_name?: string;
     category: string;
     /** Required when category === "other": the vendor-written service label. */
     custom_category?: string;
@@ -2003,6 +2006,7 @@ export const vendorAuthApi = {
   registerGoogle: (body: {
     credential: string;
     business_name: string;
+    company_name?: string;
     category: string;
     custom_category?: string;
     country?: string;

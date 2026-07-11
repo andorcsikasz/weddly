@@ -3,6 +3,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import type { AdminVendorView } from "@shared/listings";
 import { db } from "../../src/db";
+import { createVendorListing } from "../../src/domain/listings";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
 import { createOnboardingToken } from "../../src/domain/vendor_onboarding";
@@ -128,6 +129,50 @@ describe("admin vendor management", () => {
       .get(accountId) as { display_name: string; contact_email: string | null };
     expect(row.display_name).toBe("New Name");
     expect(row.contact_email).toBe("hello@newname.test");
+  });
+
+  test("PATCH sets the company name and renames the vendor's own listing (the ad)", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { accountId } = await seedActivatedVendor("branded@weddly.test", "WILD VYBES Kft.");
+    // A live claimed listing (id v{N}) whose name mirrors the old display name —
+    // this is the public ad the vendor wants to show a brand instead.
+    createVendorListing({
+      vendorAccountId: accountId,
+      category: "photo_video",
+      name: "WILD VYBES Kft.",
+      city: "Budapest",
+      contactEmail: "branded@weddly.test",
+    });
+
+    const res = await req(
+      "PATCH",
+      `/api/admin/vendors/${accountId}`,
+      { display_name: "WILD VYBES", company_name: "WILD VYBES Kft." },
+      { token: adminToken },
+    );
+    expect(res.status).toBe(200);
+
+    const acct = db
+      .prepare("SELECT display_name, company_name FROM vendor_accounts WHERE id = ?")
+      .get(accountId) as { display_name: string; company_name: string };
+    expect(acct.display_name).toBe("WILD VYBES");
+    expect(acct.company_name).toBe("WILD VYBES Kft.");
+
+    // the claimed listing (the public ad) now shows the brand, not the legal name
+    const listing = db
+      .prepare("SELECT name FROM listings WHERE vendor_account_id = ? AND source = 'claimed'")
+      .get(accountId) as { name: string };
+    expect(listing.name).toBe("WILD VYBES");
+
+    // …and the full public wire path carries both: brand as `name`, legal name
+    // as the small `company_name` line.
+    const pub = await req<{ detail: { name: string; company_name: string | null } }>(
+      "GET",
+      `/api/public/vendors/v${accountId}`,
+    );
+    expect(pub.status).toBe(200);
+    expect(pub.data.detail.name).toBe("WILD VYBES");
+    expect(pub.data.detail.company_name).toBe("WILD VYBES Kft.");
   });
 
   test("resend re-mints a pending onboarding token", async () => {

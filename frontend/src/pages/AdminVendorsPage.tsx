@@ -222,6 +222,7 @@ function EditModal({
   const { t } = useT();
   const toast = useToast();
   const [displayName, setDisplayName] = useState(vendor.display_name);
+  const [companyName, setCompanyName] = useState(vendor.company_name ?? "");
   const [email, setEmail] = useState(vendor.contact_email ?? "");
   const [phone, setPhone] = useState(vendor.contact_phone ?? "");
   const [vat, setVat] = useState(vendor.vat_number ?? "");
@@ -236,6 +237,7 @@ function EditModal({
     try {
       await adminVendorMgmtApi.update(vendor.id, {
         display_name: displayName.trim(),
+        company_name: companyName.trim() || null,
         contact_email: email.trim() || null,
         contact_phone: phone.trim() || null,
         vat_number: vat.trim() || null,
@@ -270,6 +272,23 @@ function EditModal({
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
+            <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
+              {t("admin.vendors.field_name_help")}
+            </p>
+          </div>
+          <div>
+            <label htmlFor="vendor-company" className={labelClass}>
+              {t("admin.vendors.field_company")}
+            </label>
+            <input
+              id="vendor-company"
+              className={inputClass}
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
+              {t("admin.vendors.field_company_help")}
+            </p>
           </div>
           <div>
             <label htmlFor="vendor-email" className={labelClass}>
@@ -450,6 +469,11 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                 </span>
               )}
             </div>
+            {vendor.company_name && vendor.company_name !== vendor.display_name && (
+              <p className="truncate text-xs text-umber-500 dark:text-umber-400">
+                {vendor.company_name}
+              </p>
+            )}
             {email && (
               <p className="truncate text-sm text-umber-700 dark:text-umber-300">{email}</p>
             )}

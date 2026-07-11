@@ -47,6 +47,7 @@ interface VendorRegisterBody {
   password?: unknown;
   full_name?: unknown;
   business_name?: unknown;
+  company_name?: unknown;
   category?: unknown;
   custom_category?: unknown;
   country?: unknown;
@@ -137,7 +138,10 @@ function parseCustomCategory(raw: unknown, category: SupplierCategory): string |
  *  Google-verified email on the Google path. */
 interface VendorProvisionInput {
   email: string;
+  /** Public brand / display name — becomes the listing name + display_name. */
   businessName: string;
+  /** Legal company name shown small under the brand; optional. */
+  companyName: string | null;
   category: SupplierCategory;
   customCategory: string | null;
   country: string | null;
@@ -158,6 +162,7 @@ function parseBusinessFields(body: VendorRegisterBody, email: string): VendorPro
   return {
     email,
     businessName: parseName(body.business_name, "Business name", 120),
+    companyName: parseOptional(body.company_name, 120),
     category,
     customCategory: parseCustomCategory(body.custom_category, category),
     country: parseCountry(body.country),
@@ -189,6 +194,7 @@ function provisionVendor(
     const account = createVendorAccount({
       ownerUserId: userId,
       displayName: input.businessName,
+      companyName: input.companyName,
       contactEmail: input.email,
       contactPhone: input.contactPhone,
       vatNumber: input.vatNumber,

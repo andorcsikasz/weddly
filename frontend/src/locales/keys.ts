@@ -1079,6 +1079,10 @@ export interface LocaleMessages {
       company_body: string;
       company_name: string;
       company_name_required: string;
+      company_display_name: string;
+      company_display_name_help: string;
+      company_legal_name: string;
+      company_legal_name_help: string;
       company_email: string;
       company_phone: string;
       company_vat: string;
@@ -2111,7 +2115,10 @@ export interface LocaleMessages {
     step_business: string;
     email_required: string;
     business_name_label: string;
+    business_name_help: string;
     business_name_required: string;
+    company_name_label: string;
+    company_name_help: string;
     category_label: string;
     category_placeholder: string;
     category_required: string;
@@ -5177,6 +5184,9 @@ export interface LocaleMessages {
       name_required: string;
       edit_title: string;
       field_name: string;
+      field_name_help: string;
+      field_company: string;
+      field_company_help: string;
       field_email: string;
       field_phone: string;
       field_vat: string;

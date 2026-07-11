@@ -19,6 +19,7 @@ export interface VendorAccountRow {
   vendor_code: string | null;
   owner_user_id: number;
   display_name: string;
+  company_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   vat_number: string | null;
@@ -39,6 +40,7 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
     vendor_code: row.vendor_code,
     owner_user_id: row.owner_user_id,
     display_name: row.display_name,
+    company_name: row.company_name,
     contact_email: row.contact_email,
     contact_phone: row.contact_phone,
     vat_number: row.vat_number,
@@ -57,6 +59,8 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
 export interface CreateVendorAccountInput {
   ownerUserId: number;
   displayName: string;
+  /** Legal company name shown small under the brand; optional at signup. */
+  companyName?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
   vatNumber?: string | null;
@@ -94,15 +98,16 @@ export function createVendorAccount(input: CreateVendorAccountInput): VendorAcco
   const r = db
     .prepare(
       `INSERT INTO vendor_accounts
-         (vendor_code, owner_user_id, display_name, contact_email, contact_phone, vat_number,
+         (vendor_code, owner_user_id, display_name, company_name, contact_email, contact_phone, vat_number,
           country, registry_number, legal_form, address, city, postal_code,
           onboarding_done, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       uniqueVendorCode(),
       input.ownerUserId,
       input.displayName,
+      input.companyName ?? null,
       input.contactEmail ?? null,
       input.contactPhone ?? null,
       input.vatNumber ?? null,
@@ -193,6 +198,7 @@ export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
     id: row.id,
     vendor_code: row.vendor_code,
     display_name: row.display_name,
+    company_name: row.company_name,
     contact_email: row.contact_email,
     contact_phone: row.contact_phone,
     vat_number: row.vat_number,
@@ -249,6 +255,7 @@ export function listAdminVendorAccounts(): AdminVendorView[] {
 
 export interface UpdateVendorAccountInput {
   display_name?: string;
+  company_name?: string | null;
   contact_email?: string | null;
   contact_phone?: string | null;
   vat_number?: string | null;
@@ -272,6 +279,10 @@ export function updateVendorAccount(
   if (input.display_name !== undefined) {
     sets.push("display_name = ?");
     vals.push(input.display_name);
+  }
+  if (input.company_name !== undefined) {
+    sets.push("company_name = ?");
+    vals.push(input.company_name);
   }
   if (input.contact_email !== undefined) {
     sets.push("contact_email = ?");
@@ -310,12 +321,20 @@ export function updateVendorAccount(
     vals.push(input.postal_code);
   }
   if (sets.length > 0) {
+    const ts = now();
     sets.push("updated_at = ?");
-    db.prepare(`UPDATE vendor_accounts SET ${sets.join(", ")} WHERE id = ?`).run(
-      ...vals,
-      now(),
-      id,
-    );
+    db.prepare(`UPDATE vendor_accounts SET ${sets.join(", ")} WHERE id = ?`).run(...vals, ts, id);
+    // The display name IS the public brand name, so a rename must flow to the
+    // vendor's OWN listing (source='claimed', id `v{N}`). Curated/community
+    // mirror rows (source != 'claimed') are deliberately left alone — their
+    // name is code-managed and re-synced from suppliers_data.ts on every boot,
+    // so writing here would just be reverted (and would bypass the
+    // anti-hostile-rename guard on entries a vendor merely claimed).
+    if (input.display_name !== undefined) {
+      db.prepare(
+        "UPDATE listings SET name = ?, updated_at = ? WHERE vendor_account_id = ? AND source = 'claimed'",
+      ).run(input.display_name, ts, id);
+    }
   }
   return getVendorAccountById(id);
 }

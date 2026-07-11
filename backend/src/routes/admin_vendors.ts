@@ -96,6 +96,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 
   const body = await readJson<{
     display_name?: unknown;
+    company_name?: unknown;
     contact_email?: unknown;
     contact_phone?: unknown;
     vat_number?: unknown;
@@ -116,6 +117,9 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     if (trimmed.length > 200) throw new HttpError(400, `\`${field}\` too long`);
     return trimmed.length === 0 ? null : trimmed;
   };
+  // Legal company name — nullable, shown small under the brand on the card.
+  if (body.company_name !== undefined)
+    patch.company_name = optionalStr(body.company_name, "company_name");
   if (body.contact_email !== undefined)
     patch.contact_email = optionalStr(body.contact_email, "contact_email");
   if (body.contact_phone !== undefined)

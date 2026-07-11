@@ -1523,6 +1523,22 @@ addColumnIfMissing("vendor_accounts", "legal_form", "legal_form TEXT");
 addColumnIfMissing("vendor_accounts", "address", "address TEXT");
 addColumnIfMissing("vendor_accounts", "city", "city TEXT");
 addColumnIfMissing("vendor_accounts", "postal_code", "postal_code TEXT");
+// Legal company name, kept DISTINCT from `display_name` (the public brand / ad
+// name shown on the listing). A vendor trades under a brand but invoices under
+// a Kft./Bt./etc.; the public card shows the brand big and the company name
+// small underneath. Nullable — only ever surfaces when it diverges from the
+// display name. One-time backfill seeds it from the current display_name so the
+// admin edit modal opens pre-populated and nothing visually changes until the
+// two are made to differ (guarded so it runs exactly once, like share_nudge).
+const companyNameColExisted = (
+  db.query("PRAGMA table_info(vendor_accounts)").all() as { name: string }[]
+).some((r) => r.name === "company_name");
+addColumnIfMissing("vendor_accounts", "company_name", "company_name TEXT");
+if (!companyNameColExisted) {
+  db.prepare(
+    "UPDATE vendor_accounts SET company_name = display_name WHERE company_name IS NULL",
+  ).run();
+}
 // One-shot stamp for the "share your profile" nudge the email worker fires ~2h
 // after a vendor account is created (domain/emails/worker.ts →
 // sweepVendorProfileShareNudge). NULL = not yet sent; a fresh account inserts

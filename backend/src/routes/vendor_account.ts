@@ -30,6 +30,7 @@ import { getUserById } from "../domain/users";
 
 // Mirrors the listing editor's limits where the same kind of field exists.
 const MAX_DISPLAY_NAME_LEN = 200;
+const MAX_COMPANY_NAME_LEN = 120;
 const MAX_EMAIL_LEN = 120;
 const MAX_PHONE_LEN = 40;
 const MAX_VAT_LEN = 40;
@@ -76,6 +77,8 @@ function buildAccountPatch(body: VendorAccountEditInput): UpdateVendorAccountInp
     }
     patch.display_name = trimmed;
   }
+  const companyName = parseNullableString(body.company_name, "company_name", MAX_COMPANY_NAME_LEN);
+  if (companyName !== undefined) patch.company_name = companyName;
   const contactEmail = parseNullableString(body.contact_email, "contact_email", MAX_EMAIL_LEN);
   if (contactEmail !== undefined) patch.contact_email = contactEmail;
   const contactPhone = parseNullableString(body.contact_phone, "contact_phone", MAX_PHONE_LEN);

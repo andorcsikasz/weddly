@@ -24,6 +24,7 @@ interface RegBody {
   password?: string;
   full_name?: string;
   business_name?: string;
+  company_name?: string;
   category?: string;
   custom_category?: string;
   country?: string;
@@ -194,6 +195,30 @@ describe("vendor self-serve registration", () => {
     expect(listing.address).toBe("Fő utca 1.");
     expect(listing.contact_phone).toBe("+36 30 123 4567");
     expect(listing.website).toBe("https://florea.example");
+  });
+
+  test("keeps the legal company name distinct from the public display name", async () => {
+    wipeAll();
+    const reg = await register({
+      ...baseBody,
+      business_name: "WILD VYBES", // brand / what shows in the ad
+      company_name: "WILD VYBES Kft.", // legal name, shown small
+    });
+    expect(reg.status).toBe(201);
+
+    const account = db
+      .prepare("SELECT display_name, company_name FROM vendor_accounts WHERE owner_user_id = ?")
+      .get(reg.data.user.id) as { display_name: string; company_name: string };
+    expect(account.display_name).toBe("WILD VYBES");
+    expect(account.company_name).toBe("WILD VYBES Kft.");
+
+    // the listing (the public ad) carries the brand, NOT the legal name
+    const listing = db
+      .prepare(
+        "SELECT name FROM listings WHERE vendor_account_id = (SELECT id FROM vendor_accounts WHERE owner_user_id = ?)",
+      )
+      .get(reg.data.user.id) as { name: string };
+    expect(listing.name).toBe("WILD VYBES");
   });
 
   test("category 'other' requires a custom label and stores it on the listing", async () => {

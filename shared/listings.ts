@@ -103,7 +103,13 @@ export interface VendorAccount {
    *  legacy rows until the one-time boot backfill fills them in. */
   vendor_code: string | null;
   owner_user_id: number;
+  /** Public brand / display name — what shows big on the listing card and the
+   *  vendor's own listing name. Set from the "display name" field at signup. */
   display_name: string;
+  /** Legal company name (Kft./Bt./…), shown small under the brand on the public
+   *  card. Kept distinct from `display_name` so a vendor can trade under a brand
+   *  while invoicing under a company. Null when never captured. */
+  company_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   vat_number: string | null;
@@ -137,6 +143,8 @@ export interface AdminVendorView {
   id: number;
   vendor_code: string | null;
   display_name: string;
+  /** Legal company name shown small under the brand; null when unset. */
+  company_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   vat_number: string | null;
@@ -228,11 +236,12 @@ export function priceBandLockedUntil(changedAt: number | null): number | null {
 /** Fields a vendor can self-serve edit on their own `vendor_accounts` row
  *  (the legal payee / company identity, PATCH /api/vendor/account). Same
  *  partial-PATCH semantics as {@link VendorListingEditInput}: only present
- *  keys apply, `null` clears. `display_name` is the account label (header,
- *  emails) — the public listing name stays admin-moderated and is NOT
- *  touched here. */
+ *  keys apply, `null` clears. `display_name` is the public brand / listing
+ *  name (editing it renames the vendor's own claimed listing); `company_name`
+ *  is the legal name shown small beneath it. */
 export interface VendorAccountEditInput {
   display_name?: string;
+  company_name?: string | null;
   contact_email?: string | null;
   contact_phone?: string | null;
   vat_number?: string | null;

@@ -129,6 +129,11 @@ export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
 export interface DirectorySupplierBase {
   id: string;
   name: string;
+  /** Legal company name of a claimed (registered-vendor) listing, shown small
+   *  under the brand `name` on the detail page. Only set when it differs from
+   *  `name` is a frontend decision; the server sends the raw value. Null/absent
+   *  on curated + community entries (no vendor account behind them). */
+  company_name?: string | null;
   category: SupplierCategory;
   city: string;
   /** ISO 3166-1 alpha-2 country the supplier sits in (uppercase). Drives the
