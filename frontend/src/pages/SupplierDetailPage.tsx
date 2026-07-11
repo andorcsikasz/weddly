@@ -1648,7 +1648,7 @@ function BusyCalendarCard({
           <ChevronRight size={14} aria-hidden />
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] text-ink-500 dark:text-umber-400">
+      <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] text-ink-500 dark:text-umber-300">
         {dayLabels.map((l, i) => (
           <div key={i} className="py-1 uppercase">
             {l}
@@ -1671,10 +1671,10 @@ function BusyCalendarCard({
                 !inMonth
                   ? "text-ink-300 dark:text-umber-500"
                   : isBlocked
-                    ? "bg-rose-200/70 font-medium text-rose-800 line-through dark:bg-rose-400/30 dark:text-rose-100"
+                    ? "bg-rose-200/70 font-medium text-rose-800 line-through dark:bg-rose-500/40 dark:text-rose-50"
                     : isPartial
-                      ? "bg-amber-200/60 font-medium text-amber-800 dark:bg-amber-400/25 dark:text-amber-100"
-                      : "text-ink-700 dark:text-umber-200"
+                      ? "bg-amber-200/60 font-medium text-amber-800 dark:bg-amber-500/35 dark:text-amber-50"
+                      : "text-ink-700 dark:text-umber-100"
               } ${isToday && inMonth && !isBlocked && !isPartial ? "ring-1 ring-rose-400" : ""}`}
               title={isBlocked || isPartial ? iso : undefined}
             >
@@ -1686,20 +1686,20 @@ function BusyCalendarCard({
       <div className="mt-3 space-y-1.5 text-[11px] text-ink-500 dark:text-umber-300">
         {!hasAny ? (
           <div className="flex items-center gap-2">
-            <span className="inline-block h-3 w-3 rounded bg-rose-200/70 dark:bg-rose-400/30" />
+            <span className="inline-block h-3 w-3 rounded bg-rose-200/70 dark:bg-rose-500/40" />
             {t("suppliers.detail.busy.empty")}
           </div>
         ) : (
           <>
             {blocked.size > 0 && (
               <div className="flex items-center gap-2">
-                <span className="inline-block h-3 w-3 rounded bg-rose-200/70 dark:bg-rose-400/30" />
+                <span className="inline-block h-3 w-3 rounded bg-rose-200/70 dark:bg-rose-500/40" />
                 {t("suppliers.detail.busy.legendBooked")}
               </div>
             )}
             {partial.size > 0 && (
               <div className="flex items-center gap-2">
-                <span className="inline-block h-3 w-3 rounded bg-amber-200/60 dark:bg-amber-400/25" />
+                <span className="inline-block h-3 w-3 rounded bg-amber-200/60 dark:bg-amber-500/35" />
                 {t("suppliers.detail.busy.legendPartial")}
               </div>
             )}
