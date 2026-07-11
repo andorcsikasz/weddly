@@ -1365,9 +1365,11 @@ function parsePlannerPackageId(ctx: Ctx): number {
 
 /** Required, non-empty, length-capped package name. */
 function requirePackageName(v: unknown): string {
-  if (typeof v !== "string") throw new HttpError(400, "`name` must be a string", { code: "bad_name" });
+  if (typeof v !== "string")
+    throw new HttpError(400, "`name` must be a string", { code: "bad_name" });
   const trimmed = v.trim();
-  if (trimmed.length === 0) throw new HttpError(400, "`name` cannot be empty", { code: "bad_name" });
+  if (trimmed.length === 0)
+    throw new HttpError(400, "`name` cannot be empty", { code: "bad_name" });
   if (trimmed.length > PACKAGE_NAME_MAX) {
     throw new HttpError(400, `name too long (max ${PACKAGE_NAME_MAX})`, { code: "bad_name" });
   }
@@ -1400,7 +1402,8 @@ async function readUploadedPdf(ctx: Ctx): Promise<{ raw: File; filename: string 
     throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
   });
   const raw = form.get("file");
-  if (!(raw instanceof File)) throw new HttpError(400, "`file` field required", { code: "missing_file" });
+  if (!(raw instanceof File))
+    throw new HttpError(400, "`file` field required", { code: "missing_file" });
   if (raw.size <= 0) throw new HttpError(400, "Empty file", { code: "empty_file" });
   if (raw.size > PACKAGE_PDF_MAX_BYTES) {
     throw new HttpError(413, `File too large (max ${PACKAGE_PDF_MAX_BYTES / 1024 / 1024} MB)`, {
@@ -1412,7 +1415,8 @@ async function readUploadedPdf(ctx: Ctx): Promise<{ raw: File; filename: string 
   }
   const head = new Uint8Array(await raw.arrayBuffer()).subarray(0, 5);
   const isPdf = head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46; // %PDF
-  if (!isPdf) throw new HttpError(415, "File contents are not a valid PDF", { code: "unsupported_type" });
+  if (!isPdf)
+    throw new HttpError(415, "File contents are not a valid PDF", { code: "unsupported_type" });
   const base = (raw.name || "arajanlat.pdf").replace(/^.*[\\/]/, "").trim();
   let filename = base.length > 0 ? base : "arajanlat.pdf";
   if (filename.length > MAX_PDF_NAME_LEN) filename = filename.slice(0, MAX_PDF_NAME_LEN);
@@ -1427,7 +1431,9 @@ async function handleAddPlannerPackage(ctx: Ctx): Promise<Response> {
       code: "packages_full",
     });
   }
-  const body = await readJson<{ name?: unknown; price_text?: unknown; description?: unknown }>(ctx.req);
+  const body = await readJson<{ name?: unknown; price_text?: unknown; description?: unknown }>(
+    ctx.req,
+  );
   const name = requirePackageName(body.name);
   const priceText = optionalPackageText(body.price_text, "price_text", PACKAGE_PRICE_MAX);
   const description = optionalPackageText(body.description, "description", PACKAGE_DESCRIPTION_MAX);
@@ -1452,7 +1458,9 @@ async function handleUpdatePlannerPackage(ctx: Ctx): Promise<Response> {
   const packageId = parsePlannerPackageId(ctx);
   const existing = getPlannerPackage(userId, packageId);
   if (!existing) throw new HttpError(404, "Package not found", { code: "package_not_found" });
-  const body = await readJson<{ name?: unknown; price_text?: unknown; description?: unknown }>(ctx.req);
+  const body = await readJson<{ name?: unknown; price_text?: unknown; description?: unknown }>(
+    ctx.req,
+  );
   const patch: { name?: string; price_text?: string | null; description?: string | null } = {};
   if (body.name !== undefined) patch.name = requirePackageName(body.name);
   const priceText = optionalPackageText(body.price_text, "price_text", PACKAGE_PRICE_MAX);
@@ -1933,9 +1941,9 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
 
   // The requesting couple's wedding date lets the busy calendar open on the
   // relevant month (couples care about availability around their date).
-  const coupleRow = db
-    .prepare("SELECT wedding_date FROM couples WHERE id = ?")
-    .get(coupleId) as { wedding_date: string | null } | undefined;
+  const coupleRow = db.prepare("SELECT wedding_date FROM couples WHERE id = ?").get(coupleId) as
+    | { wedding_date: string | null }
+    | undefined;
 
   // Reference links come from the planner's own /planners application (the only
   // place captured today). Read-only, split into a clean list.
@@ -2584,7 +2592,11 @@ export function registerPlannerRoutes(router: Router) {
   router.patch("/api/planner/profile/packages/:package_id", handleUpdatePlannerPackage, true);
   router.delete("/api/planner/profile/packages/:package_id", handleDeletePlannerPackage, true);
   router.post("/api/planner/profile/packages/:package_id/pdf", handleUploadPlannerPackagePdf, true);
-  router.delete("/api/planner/profile/packages/:package_id/pdf", handleDeletePlannerPackagePdf, true);
+  router.delete(
+    "/api/planner/profile/packages/:package_id/pdf",
+    handleDeletePlannerPackagePdf,
+    true,
+  );
   // Planner-side: availability (blocked dates)
   router.get("/api/planner/profile/availability", handleGetPlannerAvailability, true);
   router.post("/api/planner/profile/availability", handleBlockPlannerDate, true);

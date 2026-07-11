@@ -7,7 +7,11 @@ import "../setup";
 
 import { beforeEach, describe, expect, test } from "bun:test";
 import { MAX_LISTING_PACKAGES } from "@shared/listing_packages";
-import type { PlannerAvailabilityView, PlannerDirectoryDetail, PlannerProfile } from "@shared/types";
+import type {
+  PlannerAvailabilityView,
+  PlannerDirectoryDetail,
+  PlannerProfile,
+} from "@shared/types";
 import { db } from "../../src/db";
 import { bootstrapCouple, latestCredentialToken, req, wipeAll } from "../helpers";
 
@@ -31,9 +35,11 @@ async function makePlanner(email: string): Promise<{ token: string; userId: numb
       id: number;
     }
   ).id;
-  db.prepare(
-    "UPDATE users SET business_name = ?, planner_city = ? WHERE id = ?",
-  ).run("Nagy Weddings", "Budapest", userId);
+  db.prepare("UPDATE users SET business_name = ?, planner_city = ? WHERE id = ?").run(
+    "Nagy Weddings",
+    "Budapest",
+    userId,
+  );
   return { token: reg.data.token, userId };
 }
 

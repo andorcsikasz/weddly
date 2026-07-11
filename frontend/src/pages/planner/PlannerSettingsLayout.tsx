@@ -8,6 +8,7 @@ import { PlannerAvatarUpload } from "./PlannerAvatarUpload";
 
 const TABS = [
   { id: "account", path: "account", labelKey: "planner_profile.tab_account" },
+  { id: "offerings", path: "offerings", labelKey: "planner_profile.tab_offerings" },
   { id: "subscription", path: "subscription", labelKey: "planner_profile.tab_subscription" },
   { id: "data", path: "data", labelKey: "planner_profile.tab_data" },
 ] as const;
@@ -100,6 +101,7 @@ export default function PlannerSettingsLayout() {
               {t(
                 tab.labelKey as
                   | "planner_profile.tab_account"
+                  | "planner_profile.tab_offerings"
                   | "planner_profile.tab_subscription"
                   | "planner_profile.tab_data",
               )}

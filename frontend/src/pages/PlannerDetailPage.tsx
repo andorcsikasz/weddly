@@ -9,9 +9,21 @@
 
 import { countryName } from "@shared/country_list";
 import type { PlannerDirectoryDetail, PlannerDirectoryEntry } from "@shared/types";
-import { BadgeCheck, Check, ChevronLeft, Clock, ExternalLink, Loader2 } from "lucide-react";
+import {
+  BadgeCheck,
+  Check,
+  ChevronLeft,
+  Clock,
+  ExternalLink,
+  FileText,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { AvailabilityCalendar } from "../components/AvailabilityCalendar";
 import { hrefFor, plannerInitials, plannerStyleLabel } from "../components/PlannerDirectoryRail";
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -19,6 +31,17 @@ import { couplePlannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 type LinkStatus = PlannerDirectoryEntry["link_status"];
+
+/** Format an ISO 'YYYY-MM-DD' in the reader's locale ("2027. jún. 12."). */
+function formatIsoDate(iso: string, locale: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(d);
+}
 
 export default function PlannerDetailPage() {
   const { plannerUserId } = useParams<{ plannerUserId: string }>();
@@ -260,15 +283,78 @@ export default function PlannerDetailPage() {
             </section>
           ) : null}
 
-          {/* Availability */}
-          {detail.availability && (
+          {/* Pricing packages (árajánlat) — the planner's published price offers,
+              same card grid as the vendor detail page. Renders only when the
+              planner added at least one. */}
+          {detail.packages.length > 0 && (
+            <section className="mb-10">
+              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+                {t("planner_directory.pricing_label")}
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {detail.packages.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex flex-col rounded-xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800"
+                  >
+                    <h3 className="text-base font-semibold text-ink-900 dark:text-cream-50">
+                      {p.name}
+                    </h3>
+                    {p.price_text && (
+                      <p className="mt-1 text-sm font-semibold text-steel-700 dark:text-steel-300">
+                        {p.price_text}
+                      </p>
+                    )}
+                    {p.description && (
+                      <p className="mt-2 whitespace-pre-line text-sm text-ink-600 dark:text-umber-200">
+                        {p.description}
+                      </p>
+                    )}
+                    {p.pdf_url && (
+                      <a
+                        href={p.pdf_url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="mt-3 inline-flex items-center gap-1.5 self-start text-sm text-steel-700 hover:underline dark:text-steel-300"
+                      >
+                        <FileText size={15} aria-hidden />
+                        {p.pdf_name ?? t("planner_directory.package_download")}
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Availability — a read-only busy calendar (opens on the couple's
+              wedding month) when the planner keeps one, plus their free-text
+              note. Hidden entirely when neither is set. */}
+          {(detail.unavailable_dates.length > 0 || detail.availability) && (
             <section className="mb-10">
               <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
                 {t("planner_directory.availability_label")}
               </h2>
-              <p className="leading-relaxed text-ink-700 dark:text-paper-100">
-                {detail.availability}
-              </p>
+              {detail.unavailable_dates.length > 0 && (
+                <div className="max-w-sm rounded-xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800">
+                  <AvailabilityCalendar
+                    blockedDates={detail.unavailable_dates}
+                    initialMonth={detail.wedding_date}
+                  />
+                  {detail.next_available && (
+                    <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
+                      {t("planner_directory.busy_next_free", {
+                        date: formatIsoDate(detail.next_available, locale),
+                      })}
+                    </p>
+                  )}
+                </div>
+              )}
+              {detail.availability && (
+                <p className="mt-3 leading-relaxed text-ink-700 dark:text-paper-100">
+                  {detail.availability}
+                </p>
+              )}
             </section>
           )}
 
@@ -359,6 +445,44 @@ export default function PlannerDetailPage() {
               >
                 <ExternalLink size={13} /> {t("planner_directory.website")}
               </a>
+            )}
+
+            {/* Contact — surfaced only on the auth-gated detail page (the couple
+                is already looking at a single planner they can reach out to). */}
+            {(detail.phone || detail.email || detail.address) && (
+              <dl className="mt-4 space-y-2.5 border-t border-paper-200 pt-4 text-sm dark:border-umber-700">
+                {detail.phone && (
+                  <div className="flex items-start gap-2.5">
+                    <Phone size={14} className="mt-0.5 shrink-0 text-ink-400 dark:text-umber-400" />
+                    <a
+                      href={`tel:${detail.phone.replace(/\s+/g, "")}`}
+                      className="break-all text-ink-700 hover:underline dark:text-paper-200"
+                    >
+                      {detail.phone}
+                    </a>
+                  </div>
+                )}
+                {detail.email && (
+                  <div className="flex items-start gap-2.5">
+                    <Mail size={14} className="mt-0.5 shrink-0 text-ink-400 dark:text-umber-400" />
+                    <a
+                      href={`mailto:${detail.email}`}
+                      className="break-all text-ink-700 hover:underline dark:text-paper-200"
+                    >
+                      {detail.email}
+                    </a>
+                  </div>
+                )}
+                {detail.address && (
+                  <div className="flex items-start gap-2.5">
+                    <MapPin
+                      size={14}
+                      className="mt-0.5 shrink-0 text-ink-400 dark:text-umber-400"
+                    />
+                    <span className="text-ink-700 dark:text-paper-200">{detail.address}</span>
+                  </div>
+                )}
+              </dl>
             )}
 
             <div className="mt-4">{cta(true)}</div>

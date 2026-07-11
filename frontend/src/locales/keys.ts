@@ -8385,6 +8385,7 @@ export interface LocaleMessages {
     save_success: string;
     tabs_aria: string;
     tab_account: string;
+    tab_offerings: string;
     tab_subscription: string;
     tab_data: string;
     subscription_heading: string;
@@ -8488,6 +8489,62 @@ export interface LocaleMessages {
     about_label: string;
     styles_label: string;
     not_found: string;
+    pricing_label: string;
+    contact_label: string;
+    phone_label: string;
+    email_label: string;
+    address_label: string;
+    package_download: string;
+    busy_label: string;
+    /** "Next free date: {date}". */
+    busy_next_free: string;
+  };
+  /** Shared read/edit availability month-grid (AvailabilityCalendar). */
+  availability_calendar: {
+    prev_month: string;
+    next_month: string;
+    legend_booked: string;
+    legend_free_hint: string;
+    empty: string;
+    /** "Mark {date} as booked". */
+    block_aria: string;
+    /** "Mark {date} as free". */
+    unblock_aria: string;
+  };
+  /** Planner "Offerings" settings tab: price packages + availability editor. */
+  planner_offerings: {
+    pricing_title: string;
+    pricing_subtitle: string;
+    add_package: string;
+    packages_full: string;
+    new_package_default: string;
+    package_name_label: string;
+    package_price_label: string;
+    package_price_placeholder: string;
+    package_description_label: string;
+    package_pdf_label: string;
+    package_pdf_upload: string;
+    package_pdf_replace: string;
+    package_pdf_remove: string;
+    package_delete: string;
+    package_delete_confirm: string;
+    package_saved: string;
+    package_deleted: string;
+    pdf_uploaded: string;
+    pdf_removed: string;
+    pdf_too_large: string;
+    pdf_invalid: string;
+    save_error: string;
+    availability_title: string;
+    availability_subtitle: string;
+    /** "Next free date: {date}". */
+    availability_next_free: string;
+    availability_none_free: string;
+    availability_error: string;
+    note_title: string;
+    note_subtitle: string;
+    note_placeholder: string;
+    note_saved: string;
   };
   couple_planners: {
     heading: string;

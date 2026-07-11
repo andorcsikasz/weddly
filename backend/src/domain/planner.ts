@@ -331,7 +331,9 @@ export function addPlannerPackage(
 
 export function getPlannerPackage(userId: number, packageId: number): ListingPackage | null {
   const row = db
-    .prepare(`SELECT ${PLANNER_PACKAGE_COLS} FROM planner_packages WHERE id = ? AND planner_user_id = ?`)
+    .prepare(
+      `SELECT ${PLANNER_PACKAGE_COLS} FROM planner_packages WHERE id = ? AND planner_user_id = ?`,
+    )
     .get(packageId, userId) as PlannerPackageRow | undefined;
   return row ? toPlannerPackage(row) : null;
 }

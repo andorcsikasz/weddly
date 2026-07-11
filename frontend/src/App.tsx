@@ -127,6 +127,9 @@ const PlannerSettingsLayout = lazyWithReload(() => import("./pages/planner/Plann
 const PlannerSettingsAccount = lazyWithReload(
   () => import("./pages/planner/PlannerSettingsAccount"),
 );
+const PlannerSettingsOfferings = lazyWithReload(
+  () => import("./pages/planner/PlannerSettingsOfferings"),
+);
 const PlannerSettingsSubscription = lazyWithReload(
   () => import("./pages/planner/PlannerSettingsSubscription"),
 );
@@ -1300,6 +1303,7 @@ export default function App() {
           <Route path="settings" element={<PlannerSettingsLayout />}>
             <Route index element={<Navigate to="account" replace />} />
             <Route path="account" element={<PlannerSettingsAccount />} />
+            <Route path="offerings" element={<PlannerSettingsOfferings />} />
             <Route path="subscription" element={<PlannerSettingsSubscription />} />
             <Route path="data" element={<PlannerSettingsData />} />
           </Route>
