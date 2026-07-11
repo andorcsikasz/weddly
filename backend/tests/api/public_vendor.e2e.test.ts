@@ -14,6 +14,7 @@ import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
 import { HU_HOST, lookupVendorPageMeta, renderIndexHtml } from "../../src/lib/seo_ssr";
+import { canonicalListingId, slugifyName, vendorPublicId } from "@shared/vendor_slug";
 
 async function registerAdmin(): Promise<string> {
   const reg = await req<{ token: string }>("POST", "/api/auth/register", {
@@ -158,6 +159,34 @@ const TEMPLATE = `<!doctype html>
 <body><div id="root"></div></body>
 </html>`;
 
+/** Seed a claimed vendor (id `v{N}`) with no dedicated hero. Returns its `v{N}`
+ *  id. Module scope so every describe block below can reach it. */
+async function seedClaimedVendorNoHero(email: string, name: string): Promise<string> {
+  const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    email,
+    password: "supersafe123",
+    full_name: "Vendor Owner",
+  });
+  await verifyUserEmail(email);
+  const userId = reg.data.user.id;
+  db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(userId);
+  const account = createVendorAccount({
+    ownerUserId: userId,
+    displayName: name,
+    contactEmail: email,
+    onboardingDone: false,
+  });
+  createVendorListing({
+    vendorAccountId: account.id,
+    category: "photo_video",
+    name,
+    city: "Budapest",
+    contactEmail: email,
+  });
+  initVendorBilling(account.id, "HUF");
+  return `v${account.id}`;
+}
+
 describe("per-vendor SSR og:card meta (/vendors/:id)", () => {
   test("lookupVendorPageMeta resolves a curated id but NOT /vendors or /vendors/signup", () => {
     const sid = curatedSupplierId();
@@ -185,33 +214,6 @@ describe("per-vendor SSR og:card meta (/vendors/:id)", () => {
     expect(html).toContain(`<title>${name} · ${city}</title>`);
     expect(html).toContain(`<meta property="og:title" content="${name} · ${city}" />`);
   });
-
-  // A claimed vendor (id `v{N}`) with no dedicated hero. Returns its `v{N}` id.
-  async function seedClaimedVendorNoHero(email: string, name: string): Promise<string> {
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
-      email,
-      password: "supersafe123",
-      full_name: "Vendor Owner",
-    });
-    await verifyUserEmail(email);
-    const userId = reg.data.user.id;
-    db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(userId);
-    const account = createVendorAccount({
-      ownerUserId: userId,
-      displayName: name,
-      contactEmail: email,
-      onboardingDone: false,
-    });
-    createVendorListing({
-      vendorAccountId: account.id,
-      category: "photo_video",
-      name,
-      city: "Budapest",
-      contactEmail: email,
-    });
-    initVendorBilling(account.id, "HUF");
-    return `v${account.id}`;
-  }
 
   test("og:image falls back to the vendor's first gallery photo when there's no hero", async () => {
     const id = await seedClaimedVendorNoHero("gallery@weddly.test", "Nagy Gergely Videography");
@@ -248,5 +250,62 @@ describe("per-vendor SSR og:card meta (/vendors/:id)", () => {
       acceptLanguage: "en-US,en;q=0.9",
     });
     expect(html).toContain(`<meta property="og:image" content="https://${HU_HOST}/og.png" />`);
+  });
+});
+
+// Pretty, name-based public ids: /vendors/magyar-foto-v12 instead of /vendors/v12.
+describe("vendor pretty public id (name-based slug)", () => {
+  test("slugifyName folds Hungarian accents to a hyphenated ASCII slug", () => {
+    expect(slugifyName("Magyar Fotó")).toBe("magyar-foto");
+    expect(slugifyName("Fodor István Attila E.V.")).toBe("fodor-istvan-attila-e-v");
+    expect(slugifyName("Zene & DJ")).toBe("zene-dj");
+    expect(slugifyName("Őrült Ötletek Kft.")).toBe("orult-otletek-kft");
+    expect(slugifyName("   ")).toBe(""); // nothing alphanumeric survives
+  });
+
+  test("vendorPublicId prefixes v/c ids, leaves curated slugs untouched; canonicalListingId reverses it", () => {
+    expect(vendorPublicId("v12", "Magyar Fotó")).toBe("magyar-foto-v12");
+    expect(vendorPublicId("c5", "Bloom Studio")).toBe("bloom-studio-c5");
+    expect(vendorPublicId("v12", "   ")).toBe("v12"); // empty slug → bare id
+    expect(vendorPublicId("aranybastya", "Aranybástya")).toBe("aranybastya"); // curated unchanged
+
+    expect(canonicalListingId("magyar-foto-v12")).toBe("v12");
+    expect(canonicalListingId("v12")).toBe("v12");
+    expect(canonicalListingId("bloom-studio-c5")).toBe("c5");
+    expect(canonicalListingId("aranybastya")).toBeNull();
+  });
+
+  test("lookupVendorPageMeta resolves BOTH the bare id and the pretty slug to the same vendor", async () => {
+    const id = await seedClaimedVendorNoHero("pretty@weddly.test", "Magyar Fotó");
+    const pretty = vendorPublicId(id, "Magyar Fotó"); // magyar-foto-vN
+
+    const byBare = lookupVendorPageMeta(`/vendors/${id}`);
+    const byPretty = lookupVendorPageMeta(`/vendors/${pretty}`);
+    expect(byBare?.name).toBe("Magyar Fotó");
+    expect(byPretty?.name).toBe("Magyar Fotó");
+    // Both advertise the SAME pretty canonical id.
+    expect(byBare?.publicId).toBe(pretty);
+    expect(byPretty?.publicId).toBe(pretty);
+    // A wrong/stale name in the slug still resolves (the trailing id wins).
+    expect(lookupVendorPageMeta(`/vendors/stale-name-${id}`)?.name).toBe("Magyar Fotó");
+  });
+
+  test("the vendor page canonical is the pretty URL, whether reached bare or pretty", async () => {
+    const id = await seedClaimedVendorNoHero("canon@weddly.test", "Great Tide Kft.");
+    const pretty = vendorPublicId(id, "Great Tide Kft."); // great-tide-kft-vN
+    const expected = `<link rel="canonical" href="https://${HU_HOST}/vendors/${pretty}" />`;
+
+    for (const path of [`/vendors/${id}`, `/vendors/${pretty}`, `/vendors/wrong-${id}`]) {
+      const html = renderIndexHtml(TEMPLATE, {
+        host: HU_HOST,
+        pathname: path,
+        isRsvp: false,
+        acceptLanguage: "en-US,en;q=0.9",
+      });
+      expect(html).toContain(expected);
+      expect(html).toContain(
+        `<meta property="og:url" content="https://${HU_HOST}/vendors/${pretty}" />`,
+      );
+    }
   });
 });

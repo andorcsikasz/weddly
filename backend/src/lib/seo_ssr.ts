@@ -19,6 +19,7 @@
 import type { BlogBlock } from "../../../shared/blog_posts";
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { enPathFor, huPathFor, lookupRouteSeo, type RouteSeo } from "../../../shared/seo_routes";
+import { vendorPublicId } from "../../../shared/vendor_slug";
 import { db } from "../db";
 import { listListingPhotos } from "../domain/listings";
 import { resolveSupplierBase } from "../domain/resolve_supplier";
@@ -731,6 +732,9 @@ export interface VendorPageMeta {
   blurbHu: string;
   blurbEn: string;
   heroImageUrl: string | null;
+  /** Pretty public id (`magyar-foto-v12`) — the canonical `/vendors/:id` slug,
+   *  so a link shared with the bare id or a stale name consolidates onto it. */
+  publicId: string;
 }
 
 const VENDOR_PATH_RE = /^\/vendors\/([^/?#]+)/;
@@ -755,12 +759,14 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
   //   4. null -> buildHeadBlock uses the brand og.png.
   // Blank/whitespace values count as "no image" so we never emit a broken
   // og:image with no fallback behind it.
-  const listing = db.prepare("SELECT hero_image_url FROM listings WHERE id = ?").get(idRaw) as
+  // Use the resolved base's canonical id (`v{N}`) — `idRaw` may be the pretty
+  // `magyar-foto-v12` form, which wouldn't match the listings/photos rows.
+  const listing = db.prepare("SELECT hero_image_url FROM listings WHERE id = ?").get(base.id) as
     | { hero_image_url: string | null }
     | undefined;
   let heroImageUrl = firstNonBlank(listing?.hero_image_url, base.hero_image_url);
   if (!heroImageUrl) {
-    heroImageUrl = firstNonBlank(listListingPhotos(idRaw)[0]?.url);
+    heroImageUrl = firstNonBlank(listListingPhotos(base.id)[0]?.url);
   }
   return {
     name: base.name,
@@ -768,6 +774,7 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
     blurbHu: base.blurb_hu,
     blurbEn: base.blurb_en,
     heroImageUrl,
+    publicId: vendorPublicId(base.id, base.name),
   };
 }
 
@@ -846,13 +853,18 @@ function buildHeadBlock(opts: {
   // for non-paired routes, `huPathFor`/`enPathFor` return `path` itself
   // for anything outside `SLUG_PAIRS`, so /about, /signup, /vendors etc.
   // keep their historical canonical exactly.
-  const canonicalUrl = blogPair
-    ? blogPair.accessedViaEnSlug && finalEnUrl
-      ? finalEnUrl
-      : finalHuUrl
-    : locale === "en" && enUrl
-      ? enUrl
-      : huUrl;
+  // A vendor page's canonical is always its pretty `/vendors/<slug>-v{N}` URL,
+  // regardless of whether it was reached via the bare id or an outdated name —
+  // so search + social consolidate onto one address.
+  const canonicalUrl = opts.vendorMeta
+    ? `https://${canonicalHost}/vendors/${opts.vendorMeta.publicId}`
+    : blogPair
+      ? blogPair.accessedViaEnSlug && finalEnUrl
+        ? finalEnUrl
+        : finalHuUrl
+      : locale === "en" && enUrl
+        ? enUrl
+        : huUrl;
   // Per-post Open Graph image. Priority: couple cover (/w/:slug) → published
   // blog post cover → /og-rsvp.png on RSVP routes → brand /og.png. Giving each
   // blog post its own share card (instead of nine copies of og.png) is the

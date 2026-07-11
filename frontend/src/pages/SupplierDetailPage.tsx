@@ -77,6 +77,7 @@ import {
   REVIEW_BODY_MAX_CHARS,
   reviewTagsForCategory,
 } from "@shared/suppliers";
+import { vendorPublicId } from "@shared/vendor_slug";
 import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { ComposeDialog } from "../components/OutreachInbox";
@@ -343,8 +344,12 @@ export default function SupplierDetailPage() {
   const shareVendor = useCallback(async () => {
     if (!detail) return;
     // Share the PUBLIC vendor page (`/vendors/:id`), not the auth-gated in-app
-    // URL — the whole point is that someone outside Weddly can open it.
-    const url = `${window.location.origin}/vendors/${encodeURIComponent(detail.id)}`;
+    // URL — the whole point is that someone outside Weddly can open it. Use the
+    // pretty, name-based public id (`magyar-foto-v12`) so the shared link reads
+    // as the business, not an opaque `v12`.
+    const url = `${window.location.origin}/vendors/${encodeURIComponent(
+      vendorPublicId(detail.id, detail.name),
+    )}`;
     const shareText = t("suppliers.detail.cta.shareText", { name: detail.name });
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
