@@ -550,10 +550,28 @@ export function seedSupplierTaxonomy(): void {
     const existingCats = db
       .prepare("SELECT slug, sort_order FROM supplier_categories WHERE group_id = ?")
       .all(groupId) as { slug: string; sort_order: number }[];
-    const existingSlugs = new Set(existingCats.map((c) => c.slug));
     let catOrder = existingCats.reduce((m, c) => Math.max(m, c.sort_order), 0) + 10;
     for (const c of g.categories) {
-      if (existingSlugs.has(c.slug)) continue;
+      // `slug` is globally UNIQUE. Look it up across ALL groups, not just this
+      // one, so the v2 restructure (which MOVES some kept-slug categories, e.g.
+      // entertainment/sound_tech, to a new group) can't hit a UNIQUE violation.
+      const existing = db
+        .prepare("SELECT id, group_id FROM supplier_categories WHERE slug = ?")
+        .get(c.slug) as { id: number; group_id: number } | undefined;
+      if (existing) {
+        // A category that moved groups: re-parent it to its v2 group ONCE and
+        // refresh its labels/budget + unhide. After this, group_id matches, so
+        // subsequent boots skip it — admin edits from then on are preserved.
+        if (existing.group_id !== groupId) {
+          db.prepare(
+            `UPDATE supplier_categories
+                SET group_id = ?, label_hu = ?, label_en = ?, budget_category = ?, hidden = 0, updated_at = ?
+              WHERE id = ?`,
+          ).run(groupId, c.label_hu, c.label_en, c.budget, ts, existing.id);
+          catOrder += 10;
+        }
+        continue;
+      }
       db.prepare(
         `INSERT INTO supplier_categories
            (group_id, slug, label_hu, label_en, budget_category, sort_order, created_at, updated_at)

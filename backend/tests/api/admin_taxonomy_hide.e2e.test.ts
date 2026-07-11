@@ -13,7 +13,52 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import type { SupplierTaxonomy } from "@shared/supplier_taxonomy";
 import { db } from "../../src/db";
+import { retireLegacyTaxonomy, seedSupplierTaxonomy } from "../../src/domain/supplier_taxonomy";
 import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+
+// Regression: the v2 taxonomy MOVED some kept-slug categories (e.g. sound_tech,
+// entertainment) to a new group. `supplier_categories.slug` is globally UNIQUE,
+// so a naive re-insert on an existing (pre-v2) DB throws a UNIQUE violation and
+// crashes boot. The suite's wipeAll re-seeds a FRESH taxonomy, so it never
+// exercises the "seed over a legacy DB" path — this test does, directly.
+describe("supplier taxonomy — seeding over a legacy (pre-v2) DB", () => {
+  test("re-parents a moved kept-slug category without a UNIQUE crash", () => {
+    wipeAll();
+    // Simulate a pre-v2 DB: put sound_tech under a legacy 'experience' group
+    // (its v2 home is the 'entertainment' group).
+    const ts = Date.now();
+    db.prepare("UPDATE supplier_groups SET slug = 'experience' WHERE slug = 'entertainment'").run();
+    const legacyGroupId = (
+      db.prepare("SELECT id FROM supplier_groups WHERE slug = 'experience'").get() as { id: number }
+    ).id;
+    db.prepare("UPDATE supplier_categories SET group_id = ? WHERE slug = 'sound_tech'").run(
+      legacyGroupId,
+    );
+
+    // Re-run the boot taxonomy step. Must NOT throw on the UNIQUE(slug).
+    expect(() => {
+      seedSupplierTaxonomy();
+      retireLegacyTaxonomy();
+    }).not.toThrow();
+
+    // sound_tech is now re-parented to the visible 'entertainment' group, and
+    // the legacy 'experience' group is hidden. Exactly one sound_tech row.
+    const rows = db
+      .prepare(
+        `SELECT sg.slug AS group_slug, sc.hidden
+           FROM supplier_categories sc JOIN supplier_groups sg ON sc.group_id = sg.id
+          WHERE sc.slug = 'sound_tech'`,
+      )
+      .all() as { group_slug: string; hidden: number }[];
+    expect(rows.length).toBe(1);
+    expect(rows[0]?.group_slug).toBe("entertainment");
+    expect(rows[0]?.hidden).toBe(0);
+    const exp = db.prepare("SELECT hidden FROM supplier_groups WHERE slug = 'experience'").get() as
+      | { hidden: number }
+      | undefined;
+    expect(exp?.hidden).toBe(1);
+  });
+});
 
 async function registerAdminAndGetToken(): Promise<string> {
   const reg = await req<{ token: string }>("POST", "/api/auth/register", {
