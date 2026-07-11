@@ -4315,6 +4315,7 @@ const en: LocaleMessages = {
       nails: "Nails",
       rings: "Wedding rings",
       stationery: "Stationery",
+      invitation_graphics: "Invitations / wedding graphics",
       wedding_website: "Wedding website",
       transport: "Transport",
       other: "Other",

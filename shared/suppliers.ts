@@ -24,6 +24,7 @@ export type SupplierCategory =
   | "nails"
   | "rings"
   | "stationery"
+  | "invitation_graphics"
   | "wedding_website"
   | "transport"
   | "other";
@@ -105,6 +106,7 @@ export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
   nails: "hair_makeup",
   rings: "rings",
   stationery: "stationery",
+  invitation_graphics: "stationery",
   wedding_website: "stationery",
   transport: "transport",
   other: "other",
@@ -121,7 +123,10 @@ export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
   { id: "atmosphere", categories: ["decor_floral", "lighting"] },
   { id: "experience", categories: ["music_dj", "sound_tech", "photo_video", "entertainment"] },
   { id: "style", categories: ["attire", "hair_makeup", "nails", "rings"] },
-  { id: "details", categories: ["stationery", "wedding_website", "transport", "other"] },
+  {
+    id: "details",
+    categories: ["stationery", "invitation_graphics", "wedding_website", "transport", "other"],
+  },
 ];
 
 /** Shape of a directory entry without the per-request overlay (votes). Used
@@ -402,6 +407,7 @@ export const REVIEW_TAGS_BY_CATEGORY: Record<SupplierCategory, readonly Supplier
   nails: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   rings: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   stationery: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  invitation_graphics: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   wedding_website: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   transport: ["accessible", "kid_friendly", "pet_friendly", ...UNIVERSAL_REVIEW_TAGS],
   other: [...SUPPLIER_REVIEW_TAGS],

@@ -58,6 +58,7 @@ const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
   "nails",
   "rings",
   "stationery",
+  "invitation_graphics",
   "wedding_website",
   "transport",
 ]);
@@ -439,6 +440,7 @@ const SHOWCASE_CATEGORY_ORDER: SupplierCategory[] = [
   "nails",
   "rings",
   "stationery",
+  "invitation_graphics",
   "wedding_website",
   "transport",
 ];

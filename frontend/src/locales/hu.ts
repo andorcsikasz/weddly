@@ -4363,6 +4363,7 @@ const hu: LocaleMessages = {
       nails: "Köröm",
       rings: "Jegygyűrű",
       stationery: "Papír & nyomtatvány",
+      invitation_graphics: "Meghívó / esküvői grafika",
       wedding_website: "Esküvői weboldal",
       transport: "Transzfer",
       other: "Egyéb",

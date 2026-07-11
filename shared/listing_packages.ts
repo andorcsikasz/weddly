@@ -125,6 +125,10 @@ export const PACKAGE_NAME_SUGGESTIONS: Record<SupplierCategory, { hu: string[]; 
     hu: ["Meghívó szett", "Teljes papírdekor", "Egyedi arculat"],
     en: ["Invitation set", "Full paper suite", "Bespoke identity"],
   },
+  invitation_graphics: {
+    hu: ["Meghívó grafika", "Teljes grafikai csomag", "Egyedi esküvői arculat"],
+    en: ["Invitation design", "Full graphics suite", "Bespoke wedding identity"],
+  },
   wedding_website: {
     hu: ["Alap weboldal", "Weboldal + RSVP", "Prémium csomag"],
     en: ["Basic website", "Website + RSVP", "Premium package"],

@@ -44,6 +44,7 @@ const VALID_CATEGORIES: readonly SupplierCategory[] = [
   "nails",
   "rings",
   "stationery",
+  "invitation_graphics",
   "wedding_website",
   "transport",
 ];

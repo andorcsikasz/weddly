@@ -453,6 +453,12 @@ const SEED: SeedGroup[] = [
         budget: "stationery",
       },
       {
+        slug: "invitation_graphics",
+        label_hu: "Meghívó / esküvői grafika",
+        label_en: "Invitations / wedding graphics",
+        budget: "stationery",
+      },
+      {
         slug: "wedding_website",
         label_hu: "Esküvői weboldal",
         label_en: "Wedding website",

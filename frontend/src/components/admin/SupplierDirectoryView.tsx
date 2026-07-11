@@ -41,6 +41,7 @@ const CATEGORIES: SupplierCategory[] = [
   "nails",
   "rings",
   "stationery",
+  "invitation_graphics",
   "wedding_website",
   "transport",
 ];

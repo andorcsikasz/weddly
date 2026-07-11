@@ -4856,6 +4856,7 @@ export interface LocaleMessages {
       nails: string;
       rings: string;
       stationery: string;
+      invitation_graphics: string;
       wedding_website: string;
       transport: string;
       other: string;

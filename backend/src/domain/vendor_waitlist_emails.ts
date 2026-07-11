@@ -38,6 +38,7 @@ const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
   hair_makeup: "Smink & haj",
   nails: "Köröm",
   stationery: "Papír & nyomtatvány",
+  invitation_graphics: "Meghívó / esküvői grafika",
   transport: "Transzfer",
   rings: "Karikagyűrűk",
   tent_pavilion: "Sátor & pavilon",

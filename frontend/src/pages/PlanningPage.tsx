@@ -3192,6 +3192,7 @@ const VALID_CATEGORIES = [
   "nails",
   "rings",
   "stationery",
+  "invitation_graphics",
   "wedding_website",
   "transport",
 ] as const;
