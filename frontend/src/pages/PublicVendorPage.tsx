@@ -192,7 +192,7 @@ export default function PublicVendorPage() {
                 <BadgeCheck
                   size={28}
                   aria-label={t("suppliers.detail.verifiedAria")}
-                  className="shrink-0 fill-steel-600 stroke-white"
+                  className="shrink-0 fill-verified stroke-white"
                 />
               )}
             </h1>
