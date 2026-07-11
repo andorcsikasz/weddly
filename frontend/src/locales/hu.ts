@@ -240,6 +240,11 @@ const hu: LocaleMessages = {
     referral_vendor_body: "Ha a szolgáltató aktiválja a fiókját, 2 hónapot kapsz ingyen.",
     referral_vendor_cta: "Szolgáltató hivatkozás másolása",
     referral_copied: "Hivatkozás másolva!",
+    referral_share: "Megosztás",
+    referral_share_couple_text:
+      "A Weddly-vel tervezzük az esküvőnket, nektek is ajánlom! Regisztráljatok itt:",
+    referral_share_vendor_text:
+      "A Weddly-t ajánlom esküvői szolgáltatóknak, érdemes csatlakozni. Nézd meg itt:",
     referral_stats: "Eddig megszerzett: {months} hónap · {couples} pár · {vendors} szolgáltató",
     referral_stats_none: "Még nincs beváltott meghívód.",
   },

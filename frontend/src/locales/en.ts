@@ -238,6 +238,11 @@ const en: LocaleMessages = {
     referral_vendor_body: "When the vendor activates their account, you get 2 months free.",
     referral_vendor_cta: "Copy vendor link",
     referral_copied: "Link copied!",
+    referral_share: "Share",
+    referral_share_couple_text:
+      "We're planning our wedding with Weddly, I recommend it! Sign up here:",
+    referral_share_vendor_text:
+      "I recommend Weddly for wedding vendors, worth joining. Take a look:",
     referral_stats: "Earned so far: {months} month(s) · {couples} couple(s) · {vendors} vendor(s)",
     referral_stats_none: "No referrals converted yet.",
   },

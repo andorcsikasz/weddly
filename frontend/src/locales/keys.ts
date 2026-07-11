@@ -397,6 +397,11 @@ export interface LocaleMessages {
     referral_vendor_body: string;
     referral_vendor_cta: string;
     referral_copied: string;
+    /** Native-share button (shown only where the Web Share API exists). */
+    referral_share: string;
+    /** Share-sheet message text for each referral link. */
+    referral_share_couple_text: string;
+    referral_share_vendor_text: string;
     /** Placeholders: {months}, {couples}, {vendors} */
     referral_stats: string;
     referral_stats_none: string;

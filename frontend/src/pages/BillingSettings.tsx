@@ -2,7 +2,7 @@
 // state and routes to Stripe-hosted Checkout (subscribe) or the Billing Portal
 // (manage). All payment UI lives on Stripe; we only mint redirect URLs.
 
-import { Check, Copy, CreditCard, ExternalLink, Gift, Sparkles } from "lucide-react";
+import { Check, Copy, CreditCard, ExternalLink, Gift, Share2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { BillingStatusResponse, SubscriptionStatus } from "@shared/billing";
@@ -65,6 +65,23 @@ export default function BillingSettings() {
     setCopiedKey(kind);
     toast.success(t("billing.referral_copied"));
     setTimeout(() => setCopiedKey(null), 2000);
+  }
+
+  // Native share sheet (WhatsApp / Messenger / email / …). Only offered where
+  // the Web Share API exists — mainly mobile; desktop falls back to Copy.
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  async function shareLink(kind: "couple" | "vendor") {
+    const url = kind === "couple" ? referral?.couple_url : referral?.vendor_url;
+    if (!url) return;
+    const text =
+      kind === "couple"
+        ? t("billing.referral_share_couple_text")
+        : t("billing.referral_share_vendor_text");
+    try {
+      await navigator.share({ title: t("billing.referral_title"), text, url });
+    } catch {
+      // User dismissed the share sheet (AbortError) or it failed — no toast.
+    }
   }
 
   async function go(kind: "checkout" | "portal") {
@@ -180,18 +197,30 @@ export default function BillingSettings() {
               <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                 {t("billing.referral_couple_body")}
               </p>
-              <button
-                type="button"
-                onClick={() => copyLink("couple")}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 hover:bg-paper-50 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
-              >
-                {copiedKey === "couple" ? (
-                  <Check size={12} aria-hidden />
-                ) : (
-                  <Copy size={12} aria-hidden />
+              <div className="mt-3 flex flex-wrap gap-2">
+                {canShare && (
+                  <button
+                    type="button"
+                    onClick={() => shareLink("couple")}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-ink-900 px-3 py-1.5 text-xs font-medium text-paper-50 hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
+                  >
+                    <Share2 size={12} aria-hidden />
+                    {t("billing.referral_share")}
+                  </button>
                 )}
-                {t("billing.referral_couple_cta")}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => copyLink("couple")}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 hover:bg-paper-50 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+                >
+                  {copiedKey === "couple" ? (
+                    <Check size={12} aria-hidden />
+                  ) : (
+                    <Copy size={12} aria-hidden />
+                  )}
+                  {t("billing.referral_couple_cta")}
+                </button>
+              </div>
             </div>
 
             {/* Vendor invite */}
@@ -202,18 +231,30 @@ export default function BillingSettings() {
               <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                 {t("billing.referral_vendor_body")}
               </p>
-              <button
-                type="button"
-                onClick={() => copyLink("vendor")}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 hover:bg-paper-50 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
-              >
-                {copiedKey === "vendor" ? (
-                  <Check size={12} aria-hidden />
-                ) : (
-                  <Copy size={12} aria-hidden />
+              <div className="mt-3 flex flex-wrap gap-2">
+                {canShare && (
+                  <button
+                    type="button"
+                    onClick={() => shareLink("vendor")}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-ink-900 px-3 py-1.5 text-xs font-medium text-paper-50 hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
+                  >
+                    <Share2 size={12} aria-hidden />
+                    {t("billing.referral_share")}
+                  </button>
                 )}
-                {t("billing.referral_vendor_cta")}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => copyLink("vendor")}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-paper-300 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 hover:bg-paper-50 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+                >
+                  {copiedKey === "vendor" ? (
+                    <Check size={12} aria-hidden />
+                  ) : (
+                    <Copy size={12} aria-hidden />
+                  )}
+                  {t("billing.referral_vendor_cta")}
+                </button>
+              </div>
             </div>
           </div>
 
