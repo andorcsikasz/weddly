@@ -1648,6 +1648,40 @@ CREATE TABLE IF NOT EXISTS planner_portfolio (
 CREATE INDEX IF NOT EXISTS idx_planner_portfolio_user
   ON planner_portfolio(planner_user_id, sort_order);
 
+-- Planner price packages (árajánlat) — the planner's published price offers,
+-- mirroring listing_packages for vendors. Up to MAX_LISTING_PACKAGES named tiers,
+-- each with an optional free-text price, description and attached price-list PDF
+-- (public /uploads key). Couples see them on the planner detail page. Keyed by
+-- planner_user_id; ordered by id ASC = creation order.
+CREATE TABLE IF NOT EXISTS planner_packages (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name             TEXT    NOT NULL,
+  price_text       TEXT,
+  description      TEXT,
+  pdf_url          TEXT,
+  pdf_name         TEXT,
+  created_at       INTEGER NOT NULL,
+  updated_at       INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_planner_packages_user ON planner_packages(planner_user_id);
+
+-- Planner blocked dates — the days a planner is already booked / unavailable,
+-- mirroring vendor_unavailable_dates. Whole-day only (a planner runs one wedding
+-- a day, so there is no partial-hour concept). Couples see these as booked (red)
+-- on the planner detail busy calendar; the next-free date is recomputed from
+-- them. UNIQUE prevents double-blocking the same day.
+CREATE TABLE IF NOT EXISTS planner_unavailable_dates (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_date     TEXT    NOT NULL,                            -- 'YYYY-MM-DD'
+  reason           TEXT,
+  created_at       INTEGER NOT NULL,
+  UNIQUE(planner_user_id, blocked_date)
+);
+CREATE INDEX IF NOT EXISTS idx_planner_unavailable_dates_user
+  ON planner_unavailable_dates(planner_user_id, blocked_date);
+
 -- Guest broadcasts composed on /app/invites. One row per send (immediate or
 -- scheduled) of one of the three templates: 'invite' | 'major_update' |
 -- 'pre_wedding_info'. Immediate sends are written straight as 'sent';

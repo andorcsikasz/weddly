@@ -70,6 +70,7 @@ import type {
   PlannerThreadPreview,
   PlannerMessage,
   PlannerProfile,
+  PlannerAvailabilityView,
   PlannerPortfolioItem,
   LinkedPlannerView,
   PlannerDirectoryDetail,
@@ -3047,6 +3048,43 @@ export const plannerApi = {
     apiFetch<{ portfolio: PlannerPortfolioItem[] }>(
       "DELETE",
       `/api/planner/profile/portfolio/${id}`,
+    ),
+  /** Price offers / packages (árajánlat). Text fields are plain JSON; the
+   *  optional PDF is a separate multipart call. The server enforces the max-3
+   *  cap (409 `packages_full`) and every mutation returns the refreshed profile
+   *  (with `packages`). Mirrors vendorListingApi.*Package. */
+  addPackage: (body: { name: string; price_text?: string | null; description?: string | null }) =>
+    apiFetch<PlannerProfile>("POST", "/api/planner/profile/packages", body),
+  updatePackage: (
+    packageId: number,
+    body: { name?: string; price_text?: string | null; description?: string | null },
+  ) => apiFetch<PlannerProfile>("PATCH", `/api/planner/profile/packages/${packageId}`, body),
+  deletePackage: (packageId: number) =>
+    apiFetch<PlannerProfile>("DELETE", `/api/planner/profile/packages/${packageId}`),
+  uploadPackagePdf: (packageId: number, file: File): Promise<PlannerProfile> => {
+    const form = new FormData();
+    form.append("file", file);
+    return uploadMultipart<PlannerProfile>(
+      "POST",
+      `/api/planner/profile/packages/${packageId}/pdf`,
+      form,
+    );
+  },
+  deletePackagePdf: (packageId: number) =>
+    apiFetch<PlannerProfile>("DELETE", `/api/planner/profile/packages/${packageId}/pdf`),
+  /** Availability (blocked dates). Whole-day only; every call returns the full
+   *  refreshed view so the calendar re-renders from the server's truth. */
+  getAvailability: () =>
+    apiFetch<PlannerAvailabilityView>("GET", "/api/planner/profile/availability"),
+  blockDate: (date: string, reason?: string) =>
+    apiFetch<PlannerAvailabilityView>("POST", "/api/planner/profile/availability", {
+      date,
+      reason,
+    }),
+  unblockDate: (date: string) =>
+    apiFetch<PlannerAvailabilityView>(
+      "DELETE",
+      `/api/planner/profile/availability?date=${encodeURIComponent(date)}`,
     ),
   listInvites: () => apiFetch<{ invites: PlannerInviteView[] }>("GET", "/api/planner/invites"),
   acceptInvite: (coupleId: number) =>

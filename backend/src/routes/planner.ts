@@ -6,7 +6,24 @@ import { sniffUploadedImage } from "../lib/image_sniff";
 import { keyFromUploadUrl, storage } from "../lib/storage";
 import { getCoupleById, toCouple } from "../domain/couples";
 import { sendKind } from "../domain/emails/send";
-import { isPlannerPlan, plannerPlanMaxClients, waitlistPlanToPlannerPlan } from "../domain/planner";
+import {
+  addPlannerPackage,
+  blockPlannerDate,
+  clearPlannerPackagePdf,
+  countPlannerPackages,
+  deletePlannerPackage,
+  getPlannerPackage,
+  isPlannerPlan,
+  listPlannerBlockedDates,
+  listPlannerPackages,
+  plannerNextAvailable,
+  plannerPlanMaxClients,
+  requireBlockableDate,
+  setPlannerPackagePdf,
+  unblockPlannerDate,
+  updatePlannerPackage,
+  waitlistPlanToPlannerPlan,
+} from "../domain/planner";
 import {
   createPlannerInvitation,
   getPlannerInvitationByToken,
@@ -15,7 +32,15 @@ import {
   toPlannerInvitation,
 } from "../domain/planner_invitations";
 import { COUNTRIES } from "@shared/country_list";
+import {
+  MAX_LISTING_PACKAGES,
+  PACKAGE_DESCRIPTION_MAX,
+  PACKAGE_NAME_MAX,
+  PACKAGE_PDF_MAX_BYTES,
+  PACKAGE_PRICE_MAX,
+} from "@shared/listing_packages";
 import type {
+  PlannerAvailabilityView,
   PlannerDirectoryDetail,
   PlannerDirectoryEntry,
   PlannerEvent,
@@ -1004,6 +1029,7 @@ function toPlannerProfileBase(
     planner_avatar_url: row.planner_avatar_url,
     planner_availability: row.planner_availability,
     portfolio: listPortfolio(userId),
+    packages: listPlannerPackages(userId),
   };
 }
 
@@ -1320,6 +1346,259 @@ async function handleDeletePortfolio(ctx: Ctx): Promise<Response> {
   return json({ portfolio: listPortfolio(userId) });
 }
 
+// ─── Planner price packages (árajánlat) ───────────────────────────────────────
+//
+// Up to MAX_LISTING_PACKAGES named price tiers, each with an optional free-text
+// price, description and attached PDF price list — the planner analogue of the
+// vendor listing packages (routes/vendor_listing.ts). Text fields flow through a
+// JSON body; the PDF is a separate multipart endpoint (size cap + %PDF magic-byte
+// sniff, never trusting the client Content-Type). Every mutation returns the
+// refreshed profile so the settings UI re-renders from the server's truth.
+
+function parsePlannerPackageId(ctx: Ctx): number {
+  const id = Number(ctx.params.package_id);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new HttpError(400, "package_id must be a positive integer");
+  }
+  return id;
+}
+
+/** Required, non-empty, length-capped package name. */
+function requirePackageName(v: unknown): string {
+  if (typeof v !== "string") throw new HttpError(400, "`name` must be a string", { code: "bad_name" });
+  const trimmed = v.trim();
+  if (trimmed.length === 0) throw new HttpError(400, "`name` cannot be empty", { code: "bad_name" });
+  if (trimmed.length > PACKAGE_NAME_MAX) {
+    throw new HttpError(400, `name too long (max ${PACKAGE_NAME_MAX})`, { code: "bad_name" });
+  }
+  return trimmed;
+}
+
+/** Optional text field. `undefined` => key absent (leave alone). `null`/empty
+ *  => clear. A string => trimmed + length-capped. */
+function optionalPackageText(v: unknown, field: string, max: number): string | null | undefined {
+  if (v === undefined) return undefined;
+  if (v === null) return null;
+  if (typeof v !== "string") {
+    throw new HttpError(400, `\`${field}\` must be a string or null`, { code: "bad_field" });
+  }
+  const trimmed = v.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > max) {
+    throw new HttpError(400, `\`${field}\` too long (max ${max})`, { code: "bad_field" });
+  }
+  return trimmed;
+}
+
+const MAX_PDF_NAME_LEN = 120;
+
+/** Pull + validate the `file` field of a package-PDF upload: a non-empty file
+ *  within the size cap whose real magic bytes are `%PDF`. Never trusts the
+ *  client Content-Type. Mirrors readUploadedPdf in routes/vendor_listing.ts. */
+async function readUploadedPdf(ctx: Ctx): Promise<{ raw: File; filename: string }> {
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
+  });
+  const raw = form.get("file");
+  if (!(raw instanceof File)) throw new HttpError(400, "`file` field required", { code: "missing_file" });
+  if (raw.size <= 0) throw new HttpError(400, "Empty file", { code: "empty_file" });
+  if (raw.size > PACKAGE_PDF_MAX_BYTES) {
+    throw new HttpError(413, `File too large (max ${PACKAGE_PDF_MAX_BYTES / 1024 / 1024} MB)`, {
+      code: "file_too_large",
+    });
+  }
+  if (raw.type && raw.type !== "application/pdf") {
+    throw new HttpError(415, `Unsupported type: ${raw.type}`, { code: "unsupported_type" });
+  }
+  const head = new Uint8Array(await raw.arrayBuffer()).subarray(0, 5);
+  const isPdf = head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46; // %PDF
+  if (!isPdf) throw new HttpError(415, "File contents are not a valid PDF", { code: "unsupported_type" });
+  const base = (raw.name || "arajanlat.pdf").replace(/^.*[\\/]/, "").trim();
+  let filename = base.length > 0 ? base : "arajanlat.pdf";
+  if (filename.length > MAX_PDF_NAME_LEN) filename = filename.slice(0, MAX_PDF_NAME_LEN);
+  if (!/\.pdf$/i.test(filename)) filename = `${filename}.pdf`;
+  return { raw, filename };
+}
+
+async function handleAddPlannerPackage(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  if (countPlannerPackages(userId) >= MAX_LISTING_PACKAGES) {
+    throw new HttpError(409, `Packages are full (max ${MAX_LISTING_PACKAGES})`, {
+      code: "packages_full",
+    });
+  }
+  const body = await readJson<{ name?: unknown; price_text?: unknown; description?: unknown }>(ctx.req);
+  const name = requirePackageName(body.name);
+  const priceText = optionalPackageText(body.price_text, "price_text", PACKAGE_PRICE_MAX);
+  const description = optionalPackageText(body.description, "description", PACKAGE_DESCRIPTION_MAX);
+  const pkg = addPlannerPackage(userId, {
+    name,
+    price_text: priceText ?? null,
+    description: description ?? null,
+  });
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: null,
+    action: "planner.package_add",
+    target_kind: "user",
+    target_id: userId,
+    after: { package_id: pkg.id, name },
+  });
+  return json(reloadPlannerProfile(userId), { status: 201 });
+}
+
+async function handleUpdatePlannerPackage(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const packageId = parsePlannerPackageId(ctx);
+  const existing = getPlannerPackage(userId, packageId);
+  if (!existing) throw new HttpError(404, "Package not found", { code: "package_not_found" });
+  const body = await readJson<{ name?: unknown; price_text?: unknown; description?: unknown }>(ctx.req);
+  const patch: { name?: string; price_text?: string | null; description?: string | null } = {};
+  if (body.name !== undefined) patch.name = requirePackageName(body.name);
+  const priceText = optionalPackageText(body.price_text, "price_text", PACKAGE_PRICE_MAX);
+  if (priceText !== undefined) patch.price_text = priceText;
+  const description = optionalPackageText(body.description, "description", PACKAGE_DESCRIPTION_MAX);
+  if (description !== undefined) patch.description = description;
+  updatePlannerPackage(userId, packageId, patch);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: null,
+    action: "planner.package_update",
+    target_kind: "user",
+    target_id: userId,
+    after: { package_id: packageId, keys: Object.keys(patch) },
+  });
+  return json(reloadPlannerProfile(userId));
+}
+
+async function handleDeletePlannerPackage(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const packageId = parsePlannerPackageId(ctx);
+  const existing = getPlannerPackage(userId, packageId);
+  if (existing) {
+    if (existing.pdf_url) {
+      const k = keyFromUploadUrl(existing.pdf_url);
+      if (k) await storage.delete(k);
+    }
+    deletePlannerPackage(userId, packageId);
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: null,
+      action: "planner.package_delete",
+      target_kind: "user",
+      target_id: userId,
+      after: { package_id: packageId, name: existing.name },
+    });
+  }
+  return json(reloadPlannerProfile(userId));
+}
+
+async function handleUploadPlannerPackagePdf(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const packageId = parsePlannerPackageId(ctx);
+  const existing = getPlannerPackage(userId, packageId);
+  if (!existing) throw new HttpError(404, "Package not found", { code: "package_not_found" });
+  const { raw, filename } = await readUploadedPdf(ctx);
+  const key = `planners/${userId}/packages/${packageId}.pdf`;
+  await storage.write(key, raw, "application/pdf");
+  const ts = now();
+  const publicUrl = `/uploads/${key}?v=${ts}`;
+  setPlannerPackagePdf(userId, packageId, publicUrl, filename);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: null,
+    action: "planner.package_pdf_upload",
+    target_kind: "user",
+    target_id: userId,
+    after: { package_id: packageId, pdf_name: filename, bytes: raw.size },
+  });
+  return json(reloadPlannerProfile(userId));
+}
+
+async function handleDeletePlannerPackagePdf(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const packageId = parsePlannerPackageId(ctx);
+  const existing = getPlannerPackage(userId, packageId);
+  if (existing?.pdf_url) {
+    const k = keyFromUploadUrl(existing.pdf_url);
+    if (k) await storage.delete(k);
+    clearPlannerPackagePdf(userId, packageId);
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: null,
+      action: "planner.package_pdf_delete",
+      target_kind: "user",
+      target_id: userId,
+      after: { package_id: packageId, pdf_name: existing.pdf_name },
+    });
+  }
+  return json(reloadPlannerProfile(userId));
+}
+
+// ─── Planner availability (blocked dates) ─────────────────────────────────────
+//
+// The planner marks whole days they're already booked; couples see them on the
+// busy calendar. Mirrors routes/vendor_availability.ts (whole-day only). Every
+// call returns the full refreshed view.
+
+const MAX_BLOCK_REASON_LEN = 200;
+
+function plannerAvailabilityView(userId: number): PlannerAvailabilityView {
+  return {
+    blocked_dates: listPlannerBlockedDates(userId),
+    next_available: plannerNextAvailable(userId),
+  };
+}
+
+async function handleGetPlannerAvailability(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  return json(plannerAvailabilityView(userId));
+}
+
+async function handleBlockPlannerDate(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const body = await readJson<{ date?: unknown; reason?: unknown }>(ctx.req);
+  let date: string;
+  try {
+    date = requireBlockableDate(body.date);
+  } catch (e) {
+    throw new HttpError(400, e instanceof Error ? e.message : "invalid date");
+  }
+  const reason =
+    typeof body.reason === "string" && body.reason.trim()
+      ? body.reason.trim().slice(0, MAX_BLOCK_REASON_LEN)
+      : null;
+  blockPlannerDate(userId, date, reason);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: null,
+    action: "planner.availability_block",
+    target_kind: "user",
+    target_id: userId,
+    after: { blocked_date: date, has_reason: reason !== null },
+  });
+  return json(plannerAvailabilityView(userId), { status: 201 });
+}
+
+async function handleUnblockPlannerDate(ctx: Ctx): Promise<Response> {
+  const userId = requirePlannerAuth(ctx);
+  const date = ctx.url.searchParams.get("date")?.trim() ?? "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new HttpError(400, "date query param must be a valid YYYY-MM-DD");
+  }
+  if (unblockPlannerDate(userId, date)) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: null,
+      action: "planner.availability_unblock",
+      target_kind: "user",
+      target_id: userId,
+      after: { blocked_date: date },
+    });
+  }
+  return json(plannerAvailabilityView(userId));
+}
+
 // ─── M1: Planner invite accept/decline ───────────────────────────────────────
 
 async function handleListInvites(ctx: Ctx): Promise<Response> {
@@ -1607,7 +1886,8 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
   const r = db
     .prepare(
       `SELECT u.id, u.email, u.full_name, u.business_name, u.planner_bio, u.planner_city,
-              u.planner_country, u.planner_website, u.planner_styles, u.planner_km_radius,
+              u.planner_country, u.planner_website, u.planner_phone, u.planner_address,
+              u.planner_styles, u.planner_km_radius,
               u.planner_weddings_per_year, u.planner_avatar_url, u.planner_availability,
               u.planner_verified,
               pc.status AS link_state, pc.initiated_by AS link_initiated_by
@@ -1637,6 +1917,8 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
         planner_city: string | null;
         planner_country: string | null;
         planner_website: string | null;
+        planner_phone: string | null;
+        planner_address: string | null;
         planner_styles: string | null;
         planner_km_radius: number | null;
         planner_weddings_per_year: number | null;
@@ -1648,6 +1930,12 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
       }
     | undefined;
   if (!r) throw new HttpError(404, "planner not found");
+
+  // The requesting couple's wedding date lets the busy calendar open on the
+  // relevant month (couples care about availability around their date).
+  const coupleRow = db
+    .prepare("SELECT wedding_date FROM couples WHERE id = ?")
+    .get(coupleId) as { wedding_date: string | null } | undefined;
 
   // Reference links come from the planner's own /planners application (the only
   // place captured today). Read-only, split into a clean list.
@@ -1678,6 +1966,13 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
     availability: r.planner_availability,
     reference_links: referenceLinks.length ? referenceLinks : null,
     portfolio: listPortfolio(r.id),
+    phone: r.planner_phone,
+    email: r.email,
+    address: r.planner_address,
+    packages: listPlannerPackages(r.id),
+    unavailable_dates: listPlannerBlockedDates(r.id),
+    next_available: plannerNextAvailable(r.id),
+    wedding_date: coupleRow?.wedding_date ?? null,
   };
   return json(detail);
 }
@@ -2284,6 +2579,16 @@ export function registerPlannerRoutes(router: Router) {
   router.delete("/api/planner/profile/avatar", handleDeleteAvatar, true);
   router.post("/api/planner/profile/portfolio", handleAddPortfolio, true);
   router.delete("/api/planner/profile/portfolio/:id", handleDeletePortfolio, true);
+  // Planner-side: price packages (árajánlat) + PDF price lists
+  router.post("/api/planner/profile/packages", handleAddPlannerPackage, true);
+  router.patch("/api/planner/profile/packages/:package_id", handleUpdatePlannerPackage, true);
+  router.delete("/api/planner/profile/packages/:package_id", handleDeletePlannerPackage, true);
+  router.post("/api/planner/profile/packages/:package_id/pdf", handleUploadPlannerPackagePdf, true);
+  router.delete("/api/planner/profile/packages/:package_id/pdf", handleDeletePlannerPackagePdf, true);
+  // Planner-side: availability (blocked dates)
+  router.get("/api/planner/profile/availability", handleGetPlannerAvailability, true);
+  router.post("/api/planner/profile/availability", handleBlockPlannerDate, true);
+  router.delete("/api/planner/profile/availability", handleUnblockPlannerDate, true);
   // Planner-side: couple-initiated invites (M1)
   router.get("/api/planner/invites", handleListInvites, true);
   router.post("/api/planner/invites/:coupleId/accept", handleAcceptInvite, true);

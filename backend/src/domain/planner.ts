@@ -1,5 +1,6 @@
 // Planner-account domain helpers (distinct from couple-side `planning.ts`).
 
+import type { ListingPackage } from "@shared/listing_packages";
 import {
   type AdminPlannerAccount,
   type AdminPlannerPending,
@@ -9,6 +10,7 @@ import {
   type UserStatus,
 } from "@shared/types";
 import { db, now } from "../db";
+import { isIsoDate } from "./supplier_bookings";
 
 /** The public waitlist captures plans as basic/pro/unlimited; the planner
  *  account model uses starter/pro/premium. Map one to the other so a planner's
@@ -259,4 +261,191 @@ export function setPlannerVerified(userId: number, verified: boolean): void {
     now(),
     userId,
   );
+}
+
+// ─── Planner price packages (árajánlat) ───────────────────────────────────────
+//
+// Mirror of listing_packages for vendors (domain/listings.ts): up to
+// MAX_LISTING_PACKAGES named price tiers per planner, each with an optional
+// free-text price, description and attached price-list PDF. Keyed by the
+// planner's user id. Couples read these on the planner detail page.
+
+interface PlannerPackageRow {
+  id: number;
+  name: string;
+  price_text: string | null;
+  description: string | null;
+  pdf_url: string | null;
+  pdf_name: string | null;
+}
+
+function toPlannerPackage(row: PlannerPackageRow): ListingPackage {
+  return {
+    id: row.id,
+    name: row.name,
+    price_text: row.price_text,
+    description: row.description,
+    pdf_url: row.pdf_url,
+    pdf_name: row.pdf_name,
+  };
+}
+
+const PLANNER_PACKAGE_COLS = "id, name, price_text, description, pdf_url, pdf_name";
+
+export function listPlannerPackages(userId: number): ListingPackage[] {
+  const rows = db
+    .prepare(
+      `SELECT ${PLANNER_PACKAGE_COLS} FROM planner_packages WHERE planner_user_id = ? ORDER BY id ASC`,
+    )
+    .all(userId) as PlannerPackageRow[];
+  return rows.map(toPlannerPackage);
+}
+
+export function countPlannerPackages(userId: number): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS n FROM planner_packages WHERE planner_user_id = ?")
+    .get(userId) as { n: number };
+  return row.n;
+}
+
+export function addPlannerPackage(
+  userId: number,
+  input: { name: string; price_text: string | null; description: string | null },
+): ListingPackage {
+  const ts = now();
+  const res = db
+    .prepare(
+      `INSERT INTO planner_packages (planner_user_id, name, price_text, description, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .run(userId, input.name, input.price_text, input.description, ts, ts);
+  return {
+    id: Number(res.lastInsertRowid),
+    name: input.name,
+    price_text: input.price_text,
+    description: input.description,
+    pdf_url: null,
+    pdf_name: null,
+  };
+}
+
+export function getPlannerPackage(userId: number, packageId: number): ListingPackage | null {
+  const row = db
+    .prepare(`SELECT ${PLANNER_PACKAGE_COLS} FROM planner_packages WHERE id = ? AND planner_user_id = ?`)
+    .get(packageId, userId) as PlannerPackageRow | undefined;
+  return row ? toPlannerPackage(row) : null;
+}
+
+/** Partial update of a package's text fields — only present keys are applied,
+ *  scoped by planner_user_id so a stray id from another planner is a no-op. */
+export function updatePlannerPackage(
+  userId: number,
+  packageId: number,
+  patch: { name?: string; price_text?: string | null; description?: string | null },
+): void {
+  const sets: string[] = [];
+  const vals: (string | null)[] = [];
+  if (patch.name !== undefined) {
+    sets.push("name = ?");
+    vals.push(patch.name);
+  }
+  if (patch.price_text !== undefined) {
+    sets.push("price_text = ?");
+    vals.push(patch.price_text);
+  }
+  if (patch.description !== undefined) {
+    sets.push("description = ?");
+    vals.push(patch.description);
+  }
+  if (sets.length === 0) return;
+  sets.push("updated_at = ?");
+  db.prepare(
+    `UPDATE planner_packages SET ${sets.join(", ")} WHERE id = ? AND planner_user_id = ?`,
+  ).run(...vals, now(), packageId, userId);
+}
+
+export function setPlannerPackagePdf(
+  userId: number,
+  packageId: number,
+  pdfUrl: string,
+  pdfName: string,
+): void {
+  db.prepare(
+    "UPDATE planner_packages SET pdf_url = ?, pdf_name = ?, updated_at = ? WHERE id = ? AND planner_user_id = ?",
+  ).run(pdfUrl, pdfName, now(), packageId, userId);
+}
+
+export function clearPlannerPackagePdf(userId: number, packageId: number): void {
+  db.prepare(
+    "UPDATE planner_packages SET pdf_url = NULL, pdf_name = NULL, updated_at = ? WHERE id = ? AND planner_user_id = ?",
+  ).run(now(), packageId, userId);
+}
+
+export function deletePlannerPackage(userId: number, packageId: number): void {
+  db.prepare("DELETE FROM planner_packages WHERE id = ? AND planner_user_id = ?").run(
+    packageId,
+    userId,
+  );
+}
+
+// ─── Planner availability (blocked dates) ─────────────────────────────────────
+//
+// Mirror of vendor_unavailable_dates (domain/supplier_bookings.ts) but whole-day
+// only — a planner runs one wedding a day, so there is no partial-hour concept.
+// Couples see blocked days as booked on the planner detail busy calendar.
+
+/** Every blocked day, sorted ascending. */
+export function listPlannerBlockedDates(userId: number): string[] {
+  const rows = db
+    .prepare(
+      `SELECT blocked_date FROM planner_unavailable_dates
+        WHERE planner_user_id = ?
+        ORDER BY blocked_date ASC`,
+    )
+    .all(userId) as Array<{ blocked_date: string }>;
+  return rows.map((r) => r.blocked_date);
+}
+
+/** Block a whole day. Upserts, so re-blocking an already-blocked day (e.g. to
+ *  refresh the reason) is a no-op success rather than a duplicate-key error. */
+export function blockPlannerDate(userId: number, date: string, reason: string | null): void {
+  db.prepare(
+    `INSERT INTO planner_unavailable_dates (planner_user_id, blocked_date, reason, created_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(planner_user_id, blocked_date) DO UPDATE SET reason = excluded.reason`,
+  ).run(userId, date, reason, now());
+}
+
+/** Unblock a day. Returns true when a row was removed (idempotent otherwise). */
+export function unblockPlannerDate(userId: number, date: string): boolean {
+  const info = db
+    .prepare("DELETE FROM planner_unavailable_dates WHERE planner_user_id = ? AND blocked_date = ?")
+    .run(userId, date);
+  return info.changes > 0;
+}
+
+/** Earliest 'YYYY-MM-DD' (>= today, UTC) with no block. Scans 365 days forward;
+ *  null when the whole window is blocked. Matches nextAvailableDate for vendors. */
+export function plannerNextAvailable(userId: number): string | null {
+  const blocked = new Set(listPlannerBlockedDates(userId));
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() + i);
+    const iso = d.toISOString().slice(0, 10);
+    if (!blocked.has(iso)) return iso;
+  }
+  return null;
+}
+
+/** Validate + normalise an inbound block/unblock date: a real 'YYYY-MM-DD' that
+ *  is not in the past (UTC). Throws a plain Error the route maps to a 400. */
+export function requireBlockableDate(raw: unknown): string {
+  const date = typeof raw === "string" ? raw.trim() : "";
+  if (!isIsoDate(date)) throw new Error("date must be a valid YYYY-MM-DD");
+  const todayUtc = new Date();
+  todayUtc.setUTCHours(0, 0, 0, 0);
+  if (date < todayUtc.toISOString().slice(0, 10)) throw new Error("cannot block a past date");
+  return date;
 }

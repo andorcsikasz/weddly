@@ -286,7 +286,11 @@ describe("planner directory detail", () => {
 
   test("returns the enriched profile: availability, portfolio, reference links, link_status", async () => {
     const { userId } = await makePlanner("detail@weddly.test", {
-      overrides: { planner_availability: "2027 Q3" },
+      overrides: {
+        planner_availability: "2027 Q3",
+        planner_phone: "+36 30 111 2222",
+        planner_address: "Budapest, Fő utca 1.",
+      },
     });
     // A portfolio image (references) + external reference links from the waitlist.
     db.prepare(
@@ -311,8 +315,14 @@ describe("planner directory detail", () => {
     expect(r.data.portfolio.length).toBe(1);
     expect(r.data.portfolio[0]?.title).toBe("Villa wedding");
     expect(r.data.reference_links).toEqual(["instagram.com/nagy", "nagy-weddings.hu"]);
-    // Email must never leak through the detail DTO either.
-    expect(JSON.stringify(r.data)).not.toContain("detail@weddly.test");
+    // Contact details ARE surfaced on the auth-gated single-planner detail page
+    // (unlike the scrapeable directory list): phone, email, address, plus the
+    // empty offerings the planner hasn't filled in yet.
+    expect(r.data.phone).toBe("+36 30 111 2222");
+    expect(r.data.email).toBe("detail@weddly.test");
+    expect(r.data.address).toBe("Budapest, Fő utca 1.");
+    expect(r.data.packages).toEqual([]);
+    expect(r.data.unavailable_dates).toEqual([]);
   });
 
   test("reflects an active link and 404s a non-planner id", async () => {

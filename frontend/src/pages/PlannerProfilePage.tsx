@@ -31,6 +31,7 @@ export default function PlannerProfilePage() {
     planner_avatar_url: null,
     planner_availability: null,
     portfolio: [],
+    packages: [],
     waitlist_prefill: null,
   });
   const [loading, setLoading] = useState(true);

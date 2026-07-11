@@ -3,6 +3,7 @@
 
 import type { CoupleBilling } from "./billing";
 import type { CoupleDesign } from "./design";
+import type { ListingPackage } from "./listing_packages";
 import type { TimelineEmailEscalation } from "./notifications";
 
 export type UnixMs = number;
@@ -181,7 +182,19 @@ export interface PlannerProfile {
   /** Free-text availability shown to couples in the directory (e.g. "2027 Q3"). */
   planner_availability: string | null;
   portfolio: PlannerPortfolioItem[];
+  /** Published price offers (árajánlat), max MAX_LISTING_PACKAGES. */
+  packages: ListingPackage[];
   waitlist_prefill: PlannerWaitlistPrefill | null;
+}
+
+/** The planner's own blocked-dates view (settings editor). Mirrors the vendor
+ *  VendorAvailabilityView but whole-day only. Every mutation returns the full
+ *  refreshed view so the UI re-renders from the server's truth. */
+export interface PlannerAvailabilityView {
+  /** Sorted ascending 'YYYY-MM-DD' days the planner has blocked (fully booked). */
+  blocked_dates: string[];
+  /** Earliest free date from today, or null when the 1-year window is full. */
+  next_available: string | null;
 }
 
 export interface LinkedPlannerView {
@@ -245,6 +258,22 @@ export interface PlannerDirectoryDetail extends PlannerDirectoryEntry {
   reference_links: string[] | null;
   /** Public portfolio gallery the planner uploaded. */
   portfolio: PlannerPortfolioItem[];
+  /** Contact details surfaced on the detail page (the page is auth-gated to the
+   *  requesting couple, so — unlike the scrapeable list — the address is safe to
+   *  show). Any may be null when the planner hasn't filled them in. */
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  /** Published price offers (árajánlat) — same shape as vendor packages. */
+  packages: ListingPackage[];
+  /** Whole-day blocked dates ('YYYY-MM-DD'), shown as booked on the busy
+   *  calendar. Empty when the planner keeps no calendar. */
+  unavailable_dates: string[];
+  /** Earliest free date the planner has, or null. */
+  next_available: string | null;
+  /** The requesting couple's wedding date, so the busy calendar can open on the
+   *  relevant month. Null when the couple hasn't set one. */
+  wedding_date: string | null;
 }
 
 // ─── Admin dashboard (users + couples directory) ─────────────────────────────

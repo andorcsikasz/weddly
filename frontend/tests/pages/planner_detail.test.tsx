@@ -95,6 +95,13 @@ beforeEach(() => {
         created_at: 0,
       },
     ],
+    phone: "+36 30 123 4567",
+    email: "evelin@example.com",
+    address: "Budapest, Fő utca 1.",
+    packages: [],
+    unavailable_dates: [],
+    next_available: null,
+    wedding_date: null,
   };
   installFetch();
 });
