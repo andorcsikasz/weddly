@@ -165,3 +165,37 @@ export function backfillWaitlistPlannerConversions(): number {
   }
   return converted;
 }
+
+/** Boot reconciler: seed the PUBLIC profile of planners who are already
+ *  `user_type='planner'` but whose directory card is still empty (no business
+ *  name or city), from their accepted `/planners` application. Fixes accounts
+ *  that became planners before the profile-seeding was wired up — their
+ *  waitlist data (company, city, styles, website…) was never copied across, so
+ *  their directory card renders blank. `backfillWaitlistPlannerConversions`
+ *  above only touches NON-planner accounts, so these fall through it.
+ *  Idempotent (COALESCE-only fill → once seeded they drop out of the query),
+ *  safe to run every boot. Returns how many were seeded. */
+export function backfillPlannerProfilesFromWaitlist(): number {
+  const candidates = db
+    .prepare(
+      `SELECT u.id AS user_id, u.email
+         FROM users u
+        WHERE u.user_type = 'planner'
+          AND u.status != 'suspended'
+          AND u.email NOT LIKE '%@demo.weddly.local'
+          AND (TRIM(COALESCE(u.business_name, '')) = ''
+               OR TRIM(COALESCE(u.planner_city, '')) = '')
+          AND LOWER(u.email) IN (
+                SELECT LOWER(w.email) FROM planner_waitlist w WHERE w.status = 'accepted')`,
+    )
+    .all() as { user_id: number; email: string }[];
+
+  let seeded = 0;
+  for (const c of candidates) {
+    const row = getLatestAcceptedWaitlistSeedRowByEmail(c.email);
+    if (!row) continue;
+    seedPlannerProfileFromWaitlist(c.user_id, row);
+    seeded++;
+  }
+  return seeded;
+}

@@ -120,7 +120,10 @@ import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
 import { seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
 import { backfillPartnerPropagation } from "./domain/couples";
-import { backfillWaitlistPlannerConversions } from "./domain/planner_conversion";
+import {
+  backfillPlannerProfilesFromWaitlist,
+  backfillWaitlistPlannerConversions,
+} from "./domain/planner_conversion";
 import { registerUserCoupleRoutes } from "./routes/user_couple";
 import { registerUserProfileRoutes } from "./routes/user_profile";
 import { registerReceivedGiftsRoutes } from "./routes/received_gifts";
@@ -152,6 +155,11 @@ seedBlogPostsIfEmpty();
 {
   const converted = backfillWaitlistPlannerConversions();
   log.info("planner.convert_backfill", { converted });
+  // Heal already-planner accounts whose public profile stayed blank (seeded
+  // before profile-seeding existed) so their directory card shows the info they
+  // gave on their application (company, city, styles, website).
+  const seeded = backfillPlannerProfilesFromWaitlist();
+  log.info("planner.profile_backfill", { seeded });
 }
 
 const router = new Router();
