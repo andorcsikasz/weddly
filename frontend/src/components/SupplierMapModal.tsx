@@ -64,17 +64,36 @@ export default function SupplierMapModal({
     setState("loading");
     (async () => {
       try {
+        // The `city` carries a trailing country code for international entries
+        // (e.g. "Venice, IT"). Use that as a country bias, and append only the
+        // settlement NAME to the query — appending the raw ", IT" produced an
+        // ungeocodable "…, Italy, Venice, IT" and the pin failed.
+        const cc = city.match(/,\s*([A-Za-z]{2})\s*$/)?.[1]?.toLowerCase();
+        const cityName = city.replace(/,\s*[A-Za-z]{2}\s*$/, "").trim();
         const alreadyHasCity =
-          address && city && address.toLowerCase().includes(city.toLowerCase());
-        let query: string;
-        if (!address) query = city;
-        else if (!city || alreadyHasCity) query = address;
-        else query = `${address}, ${city}`;
-        const r = await placesApi.search(query);
-        if (cancelled) return;
-        const first = r.places[0];
-        if (first && first.lat !== null && first.lng !== null) {
-          setCoords({ lat: first.lat, lng: first.lng });
+          !!cityName && !!address && address.toLowerCase().includes(cityName.toLowerCase());
+        // Try the most specific query first, then fall back to the settlement
+        // alone (which always geocodes for a real town). A fussy full street
+        // address can miss in Nominatim, so we degrade to pin somewhere
+        // relevant rather than show "couldn't pin".
+        const queries: string[] = [];
+        if (address)
+          queries.push(!cityName || alreadyHasCity ? address : `${address}, ${cityName}`);
+        if (cityName) queries.push(cityName);
+        if (queries.length === 0) queries.push(city);
+
+        let hit: Coords | null = null;
+        for (const query of queries) {
+          const r = await placesApi.search(query, cc);
+          if (cancelled) return;
+          const first = r.places[0];
+          if (first && first.lat !== null && first.lng !== null) {
+            hit = { lat: first.lat, lng: first.lng };
+            break;
+          }
+        }
+        if (hit) {
+          setCoords(hit);
           setState("ready");
         } else {
           setState("not_found");
