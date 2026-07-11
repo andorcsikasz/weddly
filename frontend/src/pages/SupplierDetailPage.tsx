@@ -742,11 +742,7 @@ export default function SupplierDetailPage() {
                 : "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
             }
           >
-            {isSaved ? (
-              <BookmarkCheck size={18} aria-hidden />
-            ) : (
-              <Bookmark size={18} aria-hidden />
-            )}
+            {isSaved ? <BookmarkCheck size={18} aria-hidden /> : <Bookmark size={18} aria-hidden />}
           </button>
           <button
             type="button"
