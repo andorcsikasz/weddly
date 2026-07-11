@@ -527,10 +527,16 @@ export function WeddingSiteView({
     }
     return raw;
   })();
+  // Mobile phones are narrow, so the hero date is sized fluidly (clamp on vw)
+  // and forced onto ONE line (whitespace-nowrap) — a wrapped "2027. szeptember
+  // 10." reads as broken. The clamp caps at the previous fixed sizes and the
+  // sm: classes still take over from ~640px up, so desktop is unchanged. The
+  // widths were checked against the longest HU/EN month names so even the
+  // worst case fits a 320px screen.
   const heroDateSizeClass =
     view.design.date_format === "long"
-      ? "text-3xl tracking-[0.06em] sm:text-5xl"
-      : "text-5xl tracking-[0.18em] sm:text-7xl";
+      ? "whitespace-nowrap text-[clamp(1.5rem,7vw,1.875rem)] tracking-[0.04em] sm:text-5xl sm:tracking-[0.06em]"
+      : "whitespace-nowrap text-[clamp(1.75rem,8vw,3rem)] tracking-[0.08em] sm:text-7xl sm:tracking-[0.18em]";
 
   // Section hiding applies to the LIVE page only — the editor preview keeps
   // every section visible so the couple can still edit hidden ones.
@@ -699,7 +705,7 @@ export function WeddingSiteView({
                 </p>
               )}
               <h1
-                className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
+                className="text-[clamp(1.875rem,8vw,2.25rem)] leading-[1.05] tracking-tight break-words sm:text-6xl"
                 style={{
                   fontFamily: "var(--wt-heading-font)",
                   color: heroTextColor,
@@ -771,7 +777,7 @@ export function WeddingSiteView({
                 </p>
               )}
               <h1
-                className="text-4xl leading-[1.05] tracking-tight sm:text-6xl"
+                className="text-[clamp(1.875rem,8vw,2.25rem)] leading-[1.05] tracking-tight break-words sm:text-6xl"
                 // `color: inherit` so the name takes the theme `--wt-text` (set
                 // on the page root) instead of the global base h1 colour — without
                 // it a dark-background style (Black Tie) renders dark-on-dark.

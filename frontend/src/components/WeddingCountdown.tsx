@@ -159,7 +159,7 @@ export function WeddingCountdown({
   if (band) {
     return (
       <section
-        className="w-full px-6 py-14 text-center sm:px-8 sm:py-20"
+        className="w-full px-4 py-14 text-center sm:px-8 sm:py-20"
         style={{ backgroundColor: "var(--wt-text)", color: "var(--wt-bg)" }}
       >
         <div className="mx-auto max-w-4xl">
@@ -169,7 +169,9 @@ export function WeddingCountdown({
           >
             {t("guest_portal.countdown_title")}
           </p>
-          <div className="mt-6 flex justify-center gap-6 sm:gap-12">
+          {/* gap-3 (not gap-6) + px-4 so all four units clear a 320px phone —
+              at gap-6/px-6 the seconds column overflowed and got clipped. */}
+          <div className="mt-6 flex justify-center gap-3 sm:gap-12">
             {units.map((u) => (
               <div key={u.label} className="flex flex-col items-center">
                 <CountdownNum
