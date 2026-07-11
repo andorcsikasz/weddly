@@ -530,12 +530,12 @@ export default function SupplierDetailPage() {
                 aria-pressed={isSaved}
                 className={
                   isSaved
-                    ? "inline-flex items-center gap-1.5 rounded-full border border-paper-500 bg-paper-100 px-3 py-1.5 text-sm font-medium text-paper-700 transition hover:border-paper-600 dark:border-paper-400 dark:bg-paper-400/15 dark:text-paper-200 dark:hover:border-paper-400"
+                    ? "inline-flex items-center gap-1.5 rounded-full border border-sage-600 bg-sage-600 px-3 py-1.5 text-sm font-medium text-white transition hover:border-sage-700 hover:bg-sage-700 dark:border-sage-600 dark:bg-sage-600 dark:text-white dark:hover:border-sage-500 dark:hover:bg-sage-500"
                     : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
                 }
               >
                 {isSaved ? (
-                  <BookmarkCheck size={14} aria-hidden className="fill-paper-500" />
+                  <BookmarkCheck size={14} aria-hidden />
                 ) : (
                   <Bookmark size={14} aria-hidden />
                 )}
@@ -738,12 +738,12 @@ export default function SupplierDetailPage() {
             aria-label={saveLabel}
             className={
               isSaved
-                ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-500 bg-paper-100 text-paper-700 dark:border-paper-400 dark:bg-paper-400/15 dark:text-paper-200"
+                ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-sage-600 bg-sage-600 text-white dark:border-sage-600 dark:bg-sage-600 dark:text-white"
                 : "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
             }
           >
             {isSaved ? (
-              <BookmarkCheck size={18} aria-hidden className="fill-paper-500" />
+              <BookmarkCheck size={18} aria-hidden />
             ) : (
               <Bookmark size={18} aria-hidden />
             )}
