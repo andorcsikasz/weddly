@@ -64,9 +64,14 @@ describe("planner directory analytics", () => {
       { planner_user_id: plannerId, type: "website_click" },
       { planner_user_id: plannerId, type: "connect_click" },
     ];
-    const rec = await req<{ recorded: number }>("POST", "/api/planners/events", { events }, {
-      token: coupleToken,
-    });
+    const rec = await req<{ recorded: number }>(
+      "POST",
+      "/api/planners/events",
+      { events },
+      {
+        token: coupleToken,
+      },
+    );
     expect(rec.status).toBe(200);
     expect(rec.data.recorded).toBe(5);
 

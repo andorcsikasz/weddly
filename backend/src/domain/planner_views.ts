@@ -19,9 +19,9 @@ const VALID_EVENT_TYPES: ReadonlySet<PlannerEventType> = new Set([
  *  malformed client payload can't poison the table. Recomputed per call; the
  *  planner population is small. */
 function knownPlannerIds(): Set<number> {
-  const rows = db
-    .prepare("SELECT id FROM users WHERE user_type = 'planner'")
-    .all() as { id: number }[];
+  const rows = db.prepare("SELECT id FROM users WHERE user_type = 'planner'").all() as {
+    id: number;
+  }[];
   return new Set(rows.map((r) => r.id));
 }
 
