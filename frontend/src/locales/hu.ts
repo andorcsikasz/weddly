@@ -4048,7 +4048,6 @@ const hu: LocaleMessages = {
     no_email: "Nincs megadva email-cím",
     filter_all: "Mind",
     show_all_in_category: "Összes mutatása: {category}",
-    chain_help: "Foglalás logikus sorrendben, a szervezéstől az utolsó részletekig.",
     community_pill: "Közösségi",
     community_pill_tooltip: "Egy Weddly-t használó pár ajánlotta, közvetlen tapasztalat alapján.",
     self_pill: "Szolgáltató",
@@ -4689,6 +4688,9 @@ const hu: LocaleMessages = {
       clients: "{n} / {max} ügyfél",
       onboarding_pending: "Onboarding folyamatban",
       free_until: "Ingyenes eddig: {date}",
+      reach_label: "Kártyaelérés (megtekintés · kattintás)",
+      reach_tooltip:
+        "Kártyaelérés: {views} megtekintés · {clicks} kattintás (ebből {connect} felkérés)",
       details_toggle: "Részletek",
       field_company: "Cég",
       field_location: "Helyszín",

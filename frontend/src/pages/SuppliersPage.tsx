@@ -1565,9 +1565,6 @@ export default function SuppliersPage() {
               />
             )}
           </div>
-          <p className="mb-3 hidden text-xs text-ink-500 sm:block dark:text-umber-300">
-            {t("suppliers.chain_help")}
-          </p>
 
           {/* Sub-category pills (only when a group is selected). Each pill shows
           the count of suppliers in that category after the non-category

@@ -4002,7 +4002,6 @@ const en: LocaleMessages = {
     no_email: "No email on file",
     filter_all: "All",
     show_all_in_category: "Show all {category}",
-    chain_help: "Book in a logical order, from planning down to the final details.",
     community_pill: "Community",
     community_pill_tooltip: "Recommended by a Weddly couple, from first-hand experience.",
     self_pill: "Supplier",

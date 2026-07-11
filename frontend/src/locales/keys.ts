@@ -4500,7 +4500,6 @@ export interface LocaleMessages {
     no_email: string;
     filter_all: string;
     show_all_in_category: string;
-    chain_help: string;
     community_pill: string;
     community_pill_tooltip: string;
     self_pill: string;
