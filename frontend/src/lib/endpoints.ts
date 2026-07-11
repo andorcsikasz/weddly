@@ -1904,6 +1904,13 @@ export const adminPlannerMgmtApi = {
     apiFetch<{ ok: true; verified: boolean }>("POST", `/api/admin/planners/${id}/verify`, {}),
   unverify: (id: number) =>
     apiFetch<{ ok: true; verified: boolean }>("POST", `/api/admin/planners/${id}/unverify`, {}),
+  /** Email the planner a "finish your profile" reminder (manual, on top of the
+   *  one automatic post-signup nudge). Returns the missing-field breakdown. */
+  remindProfile: (id: number) =>
+    apiFetch<{
+      ok: true;
+      missing: { businessName: boolean; city: boolean; bio: boolean; styles: boolean };
+    }>("POST", `/api/admin/planners/${id}/remind-profile`, {}),
   setPlan: (id: number, plan: PlannerPlan) =>
     apiFetch<{ ok: true; planner_plan: PlannerPlan }>("PATCH", `/api/admin/planners/${id}`, {
       planner_plan: plan,

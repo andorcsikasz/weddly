@@ -21,6 +21,7 @@ import {
   Eye,
   Handshake,
   Loader2,
+  Mail,
   MailPlus,
   MousePointerClick,
   RotateCcw,
@@ -549,6 +550,17 @@ function PlannerCard({
     );
   }
 
+  function handleRemindProfile() {
+    void run(
+      () => adminPlannerMgmtApi.remindProfile(planner.user_id),
+      "admin.planners.remind_success",
+    );
+  }
+
+  // Directory-blocking incompleteness: no business name or no city → the card
+  // can't be listed to couples. Mirrors the auto-nudge sweep's trigger.
+  const profileIncomplete = !planner.business_name?.trim() || !(planner.planner_city ?? "").trim();
+
   function selectPlan(plan: PlannerPlan) {
     setPlanMenuOpen(false);
     if (plan === planner.planner_plan) return;
@@ -713,6 +725,18 @@ function PlannerCard({
               aria-label={t("admin.planners.resend_activation")}
             >
               <Send size={15} />
+            </button>
+          )}
+          {profileIncomplete && !suspended && !planner.pending_activation && (
+            <button
+              type="button"
+              className={`${ICON_BTN} border-blush-300 text-blush-600 hover:border-blush-500 hover:text-blush-700 dark:border-blush-500/40 dark:text-blush-300`}
+              onClick={handleRemindProfile}
+              disabled={busy}
+              title={t("admin.planners.remind")}
+              aria-label={t("admin.planners.remind")}
+            >
+              <Mail size={15} />
             </button>
           )}
           <button

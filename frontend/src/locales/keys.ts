@@ -5266,6 +5266,8 @@ export interface LocaleMessages {
       verified: string;
       verify: string;
       unverify: string;
+      remind: string;
+      remind_success: string;
       verify_success: string;
       unverify_success: string;
       suspend_confirm_title: string;

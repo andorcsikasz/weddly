@@ -211,6 +211,12 @@ const STUBS: KindPayload = {
     reviewsUrl: `${BASE_URL}/vendor/reviews`,
     missing: { photos: true, bio: false, calendar: true, packages: true },
   },
+  planner_profile_incomplete: {
+    fullName: "Rita Kruczli",
+    businessName: null,
+    editUrl: `${BASE_URL}/app/planner/settings/account`,
+    missing: { businessName: true, city: true, bio: true, styles: false },
+  },
   planner_waitlist_decision: {
     subject: "Wēddly: jóváhagytuk a szervezői hozzáférésed",
     body: "Szia Anna!\n\nÁtnéztük a profilodat, és aktiváltuk a szervezői hozzáférésed. Lépj be, és a szervezői vezérlőpultból indítsd el az onboardingot.\n\nÜdv,\nA Wēddly csapata",

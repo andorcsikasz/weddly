@@ -4674,6 +4674,8 @@ const en: LocaleMessages = {
       verified: "Verified",
       verify: "Grant verified badge",
       unverify: "Remove verified badge",
+      remind: "Send reminder (missing info)",
+      remind_success: "Reminder email sent to the planner.",
       verify_success: "Planner verified.",
       unverify_success: "Badge removed.",
       suspend_confirm_title: "Suspend this planner?",

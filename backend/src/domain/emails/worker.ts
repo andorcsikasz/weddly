@@ -17,6 +17,7 @@ import { getCoupleById } from "../couples";
 import { resolveRecipients, sendGuestMessage } from "../guest_messages";
 import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "../listings";
 import { insertCoupleNotification, listActionableTimelineTasks } from "../notifications";
+import { type PlannerProfileRow, sendPlannerProfileReminder } from "../planner_profile";
 import type { EmailKind } from "./kinds";
 import { markDispatched, sendKind } from "./send";
 
@@ -29,6 +30,9 @@ const SENDS_PER_SWEEP_CAP = 8;
 const ONBOARDING_NUDGE_AFTER_MS = 1000 * 60 * 60 * 24; // 24h
 const VENDOR_SHARE_NUDGE_AFTER_MS = 1000 * 60 * 60 * 2; // 2h
 const ONBOARDING_NUDGE_WEEK_AFTER_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+// A planner gets ~3 days to finish their profile on their own before the
+// one-shot "your profile is missing info" nudge fires.
+const PLANNER_PROFILE_NUDGE_AFTER_MS = 1000 * 60 * 60 * 24 * 3; // 3 days
 const INVITE_PARTNER_AUTO_AFTER_MS = 1000 * 60 * 60 * 48; // 48h
 // Solo workspaces are auto-nudged at the first 10:00 UTC at or after the 48h
 // mark ("48h utáni legközelebbi 10:00"). The worker runs hourly, so the real
@@ -60,6 +64,7 @@ export function runEmailSweep(): {
   nudgesWeek: number;
   invitePartnerAuto: number;
   vendorShareNudges: number;
+  plannerProfileNudges: number;
   milestones: number;
   weddings: number;
   rsvpDeadlines: number;
@@ -75,6 +80,7 @@ export function runEmailSweep(): {
   const nudgesWeek = sweepOnboardingNudgesWeek(ts);
   const invitePartnerAuto = sweepInvitePartnerAuto(ts);
   const vendorShareNudges = sweepVendorProfileShareNudge(ts);
+  const plannerProfileNudges = sweepPlannerProfileNudge(ts);
   const milestones = sweepMilestones(ts);
   const weddings = sweepWeddingDay(ts);
   const rsvpDeadlines = sweepRsvpDeadline(ts);
@@ -89,6 +95,7 @@ export function runEmailSweep(): {
     nudgesWeek,
     invitePartnerAuto,
     vendorShareNudges,
+    plannerProfileNudges,
     milestones,
     weddings,
     rsvpDeadlines,
@@ -321,6 +328,45 @@ export function autoInviteDueAt(createdAt: number): number {
     INVITE_PARTNER_SEND_HOUR_UTC,
   );
   return tenAm >= mark ? tenAm : tenAm + 86_400_000;
+}
+
+function sweepPlannerProfileNudge(ts: number): number {
+  // Planners who registered > 3 days ago, are live (active + verified email),
+  // but still can't be listed in the directory because their business name or
+  // city is empty. One-shot via email_dispatches (kind 'planner_profile_incomplete')
+  // so a planner is nudged at most once automatically — the admin can still
+  // re-send by hand. Demo + purged owners excluded.
+  const cutoff = ts - PLANNER_PROFILE_NUDGE_AFTER_MS;
+  const rows = db
+    .prepare(
+      `SELECT u.id, u.email, u.full_name, u.business_name, u.planner_city,
+              u.planner_bio, u.planner_styles
+         FROM users u
+        WHERE u.user_type = 'planner'
+          AND u.status = 'active'
+          AND u.verified_email = 1
+          AND u.created_at <= ?
+          AND u.email NOT LIKE '%@purged.local'
+          AND u.email NOT LIKE '%@demo.weddly.local'
+          AND (TRIM(COALESCE(u.business_name, '')) = ''
+               OR TRIM(COALESCE(u.planner_city, '')) = '')
+          AND NOT EXISTS (
+            SELECT 1 FROM email_dispatches d
+             WHERE d.user_id = u.id AND d.kind = 'planner_profile_incomplete'
+          )`,
+    )
+    .all(cutoff) as PlannerProfileRow[];
+
+  let count = 0;
+  for (const r of rows) {
+    if (!markDispatched({ kind: "planner_profile_incomplete", couple_id: null, user_id: r.id })) {
+      continue;
+    }
+    sendPlannerProfileReminder(r);
+    count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
+  }
+  return count;
 }
 
 function sweepInvitePartnerAuto(ts: number): number {

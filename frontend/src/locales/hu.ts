@@ -4724,6 +4724,8 @@ const hu: LocaleMessages = {
       verified: "Ellenőrzött",
       verify: "Ellenőrzött jelvény megadása",
       unverify: "Ellenőrzött jelvény visszavonása",
+      remind: "Emlékeztető küldése (hiányzó adatok)",
+      remind_success: "Emlékeztető e-mail elküldve a szervezőnek.",
       verify_success: "Szervező ellenőrizve.",
       unverify_success: "Jelvény visszavonva.",
       suspend_confirm_title: "Felfüggeszted ezt a szervezőt?",

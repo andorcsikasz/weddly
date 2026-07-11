@@ -9,7 +9,13 @@
 // activation link (domain/planner_provisioning.ts).
 
 import { CONFIG } from "../config";
+import { db } from "../db";
 import { sendKind } from "../domain/emails";
+import {
+  type PlannerProfileRow,
+  plannerProfileMissing,
+  sendPlannerProfileReminder,
+} from "../domain/planner_profile";
 import {
   isPlannerPlan,
   listAdminPlanners,
@@ -306,6 +312,34 @@ function handleDelete(ctx: Ctx): Response {
   return json({ ok: true });
 }
 
+/** Admin "Send reminder": email the planner a "your profile is missing info"
+ *  nudge on demand. Unlike the automatic sweep this is NOT deduped — the admin
+ *  clicked, so it always sends (a manual follow-up on top of the one auto
+ *  nudge). Returns the missing-field breakdown so the UI can toast specifics. */
+function handleRemindProfile(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const userId = parseId(ctx);
+  const planner = requirePlannerUser(userId);
+  const row = db
+    .prepare(
+      `SELECT id, email, full_name, business_name, planner_city, planner_bio, planner_styles
+         FROM users WHERE id = ?`,
+    )
+    .get(userId) as PlannerProfileRow | undefined;
+  if (!row) throw new HttpError(404, "Planner not found");
+  const missing = plannerProfileMissing(row);
+  sendPlannerProfileReminder(row);
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.planner_profile_reminder",
+    target_kind: "user",
+    target_id: userId,
+    note: planner.email,
+  });
+  return json({ ok: true, missing });
+}
+
 async function handleUpdate(ctx: Ctx): Promise<Response> {
   const admin = requireAdmin(ctx);
   const userId = parseId(ctx);
@@ -337,6 +371,7 @@ export function registerAdminPlannerRoutes(router: Router) {
   router.post("/api/admin/planners/:id/reactivate", handleReactivate, true);
   router.post("/api/admin/planners/:id/verify", handleVerify, true);
   router.post("/api/admin/planners/:id/unverify", handleUnverify, true);
+  router.post("/api/admin/planners/:id/remind-profile", handleRemindProfile, true);
   router.patch("/api/admin/planners/:id", handleUpdate, true);
   router.delete("/api/admin/planners/:id", handleDelete, true);
 }

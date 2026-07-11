@@ -397,6 +397,25 @@ export interface VendorProfileSharePayload {
   };
 }
 
+export interface PlannerProfileIncompletePayload {
+  /** Planner's name, used in the greeting. */
+  fullName: string;
+  /** Business name if set (never shown when it's one of the missing fields);
+   *  kept for potential future use in the greeting. */
+  businessName: string | null;
+  /** In-app profile editor (`/app/planner/settings/account`) — the CTA. */
+  editUrl: string;
+  /** Which public-profile fields are still empty. Only the true ones are named
+   *  in the body. `businessName`/`city` block directory listing; `bio`/`styles`
+   *  make the card convincing. */
+  missing: {
+    businessName: boolean;
+    city: boolean;
+    bio: boolean;
+    styles: boolean;
+  };
+}
+
 export interface PlannerWaitlistDecisionPayload {
   /** Subject line the admin typed in the planner triage modal, used verbatim. */
   subject: string;
@@ -630,6 +649,7 @@ export type KindPayload = {
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   vendor_activation: VendorActivationPayload;
   vendor_profile_share: VendorProfileSharePayload;
+  planner_profile_incomplete: PlannerProfileIncompletePayload;
   planner_waitlist_decision: PlannerWaitlistDecisionPayload;
   planner_provisioned: PlannerProvisionedPayload;
   planner_onboarding_invite: PlannerOnboardingInvitePayload;
@@ -1907,6 +1927,61 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           { label: "Edit profile", url: p.editUrl },
           { label: "Reviews", url: p.reviewsUrl },
         ],
+        footnote: "We only email when there's something useful for your Weddly profile.",
+      },
+    };
+  },
+
+  planner_profile_incomplete: (p) => {
+    const name = p.fullName.trim();
+    // Name the empty fields in the same order in both languages so the two
+    // blocks stay parallel.
+    const huMissing: string[] = [];
+    const enMissing: string[] = [];
+    if (p.missing.businessName) {
+      huMissing.push("a vállalkozásod neve");
+      enMissing.push("your business name");
+    }
+    if (p.missing.city) {
+      huMissing.push("a városod");
+      enMissing.push("your city");
+    }
+    if (p.missing.bio) {
+      huMissing.push("egy rövid bemutatkozó");
+      enMissing.push("a short bio");
+    }
+    if (p.missing.styles) {
+      huMissing.push("a stílusaid");
+      enMissing.push("your styles");
+    }
+
+    const huList = huMissing.length > 0 ? joinNaturalList(huMissing, "és") : "néhány adat";
+    const enList = enMissing.length > 0 ? joinNaturalList(enMissing, "and") : "a few details";
+
+    return {
+      subject: "Fejezd be a Weddly-profilod / Finish your Weddly profile",
+      ctaUrl: p.editUrl,
+      hu: {
+        preheader: "Néhány adat még hiányzik a nyilvános profilodról.",
+        greeting: name ? `Szia ${name}!` : "Szia!",
+        paragraphs: [
+          "Már majdnem kész a szervezői profilod a Weddly-n, de még hiányzik néhány adat ahhoz, hogy a párok megtaláljanak.",
+          `Egészítsd ki ezeket: **${huList}**. Amíg a vállalkozásod neve és a városod nincs kitöltve, a profilod nem jelenik meg a párok szervező-listájában.`,
+          "Néhány perc az egész, és onnantól a most tervező párok is rád találhatnak. A lenti gombbal egyből a szerkesztőhöz jutsz.",
+        ],
+        cta: "Profil kiegészítése",
+        ctaSubtext: "Nyisd meg a profilszerkesztőt, és töltsd ki a hiányzó mezőket.",
+        footnote: "Csak akkor írunk, ha van valami, amivel előrébb léphetsz a Weddly-n.",
+      },
+      en: {
+        greeting: name ? `Hi ${name},` : "Hi there,",
+        paragraphs: [
+          "Your planner profile on Weddly is almost ready, but a few details are still missing before couples can find you.",
+          `Please add: **${enList}**. Until your business name and city are filled in, your profile won't appear in the couples' planner list.`,
+          "It only takes a couple of minutes, and then couples planning right now can discover you. The button below takes you straight to the editor.",
+        ],
+        cta: "Complete my profile",
+        ctaSubtext: "Open the profile editor and fill in the missing fields.",
         footnote: "We only email when there's something useful for your Weddly profile.",
       },
     };

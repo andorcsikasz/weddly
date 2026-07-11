@@ -45,6 +45,7 @@ export type EmailKind =
   | "vendor_waitlist_decision" // admin-edited triage reply (under_review / rejected — accepted goes via vendor_activation)
   | "vendor_activation" // admin accepted/re-sent a vendor: activation link IS the CTA button, pre-filled onboarding inside
   | "vendor_profile_share" // ~2h after a vendor creates their profile: highlight the shareable public link + nudge any empty sections
+  | "planner_profile_incomplete" // planner's public directory profile is still missing key fields (auto nudge after signup + admin "Send reminder")
   | "planner_waitlist_decision" // admin-edited planner triage reply (accepted / under_review / rejected)
   | "planner_provisioned" // admin pre-registered a planner account (2-year comp), activation link inside
   | "planner_onboarding_invite" // admin approved a /planners applicant, activation link + pre-filled onboarding inside
@@ -174,6 +175,9 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // profile, reminding them to share the public link and finish any empty
   // sections. The vendor didn't ask for it, so honour the unsubscribe footer.
   vendor_profile_share: "lifecycle",
+  // Lifecycle: automatic "finish your profile" nudge (and its admin-triggered
+  // twin). The planner didn't ask for it, so it honours the unsubscribe footer.
+  planner_profile_incomplete: "lifecycle",
   // Outreach: admin manually triages a planner's waitlist submission. The
   // planner expects the reply; treated like the vendor decision mail.
   planner_waitlist_decision: "outreach",
