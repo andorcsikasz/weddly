@@ -101,6 +101,39 @@ describe("couple planner directory", () => {
     expect(detail.data.verified).toBe(true);
   });
 
+  test("admin-verified planners are listed even with a thin profile (no business name / city)", async () => {
+    // Verified badge granted, but onboarding not finished: no business_name /
+    // planner_city. The relaxed gate still surfaces them (card falls back to
+    // full_name; city is optional), unlike an unverified thin planner.
+    const { userId } = await makePlanner("thinverified@weddly.test", {
+      listable: false,
+      overrides: { planner_verified: 1 },
+    });
+    const { token: coupleToken } = await bootstrapCouple("thin-couple@weddly.test");
+
+    const r = await directory(coupleToken);
+    expect(r.status).toBe(200);
+    const entry = r.data.planners.find((p) => p.planner_user_id === userId);
+    expect(entry).toBeDefined();
+    expect(entry?.verified).toBe(true);
+    // Unset business name / city come back as empty strings; full_name carries
+    // the display fallback the card renders.
+    expect(entry?.business_name).toBe("");
+    expect(entry?.city).toBe("");
+    expect(entry?.full_name).toBe("Eszter Nagy");
+
+    // The detail endpoint opens too (mirrors the relaxed gate).
+    const detail = await req<PlannerDirectoryDetail>(
+      "GET",
+      `/api/couples/planner-directory/${userId}`,
+      undefined,
+      { token: coupleToken },
+    );
+    expect(detail.status).toBe(200);
+    expect(detail.data.business_name).toBe("");
+    expect(detail.data.full_name).toBe("Eszter Nagy");
+  });
+
   test("excludes planners with no business name / city, unverified, or suspended", async () => {
     await makePlanner("nocity@weddly.test", { listable: false });
     await makePlanner("unverified@weddly.test", { verified: false });

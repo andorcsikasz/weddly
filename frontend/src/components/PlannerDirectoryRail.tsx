@@ -97,7 +97,7 @@ export function PlannerCard({
               aria-label={t("planner_directory.view_profile")}
               className="truncate text-left font-semibold text-ink-900 hover:underline focus:outline-none focus-visible:underline dark:text-paper-50"
             >
-              {planner.business_name}
+              {planner.business_name || planner.full_name}
             </button>
             {planner.verified && (
               <span

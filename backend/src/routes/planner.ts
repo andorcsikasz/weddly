@@ -1501,9 +1501,10 @@ async function handleListLinkedPlanners(ctx: Ctx): Promise<Response> {
 }
 
 /** Couple-facing planner directory: the "wedding planners" rail on
- *  /app/vendors. Lists live, verified planner accounts with a minimally
- *  complete profile (business name + city): that requirement is the carrot for
- *  finishing onboarding, and it keeps half-empty cards out of the rail.
+ *  /app/vendors. Lists live planner accounts. Admin-verified planners always
+ *  show (the card falls back to full_name and city is optional); unverified
+ *  planners still need a minimally complete profile (business name + city),
+ *  which is the carrot for finishing onboarding and keeps half-empty cards out.
  *  Excluded: dormant provisioned accounts (verified_email=0), suspended users,
  *  and demo planners. The email column is never selected; connecting goes by
  *  user id so the directory can't be scraped for addresses. Each row carries
@@ -1524,8 +1525,14 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
           AND u.status = 'active'
           AND u.verified_email = 1
           AND u.email NOT LIKE '%@demo.weddly.local'
-          AND TRIM(COALESCE(u.business_name, '')) != ''
-          AND TRIM(COALESCE(u.planner_city, '')) != ''
+          -- Admin-verified planners are surfaced even with a thin profile (the
+          -- card falls back to full_name and city is optional); everyone else
+          -- still needs a minimally complete profile (business name + city).
+          AND (
+            u.planner_verified = 1
+            OR (TRIM(COALESCE(u.business_name, '')) != ''
+                AND TRIM(COALESCE(u.planner_city, '')) != '')
+          )
         ORDER BY u.planner_verified DESC,
                  (CASE WHEN COALESCE(u.planner_avatar_url, '') != '' THEN 1 ELSE 0 END
                 + CASE WHEN TRIM(COALESCE(u.planner_bio, '')) != '' THEN 1 ELSE 0 END) DESC,
@@ -1535,9 +1542,11 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
     .all(coupleId) as Array<{
     id: number;
     full_name: string;
-    business_name: string;
+    // Nullable now that admin-verified planners can be listed mid-onboarding
+    // (before they set a business name / city).
+    business_name: string | null;
     planner_bio: string | null;
-    planner_city: string;
+    planner_city: string | null;
     planner_country: string | null;
     planner_website: string | null;
     planner_styles: string | null;
@@ -1551,9 +1560,10 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
 
   const planners: PlannerDirectoryEntry[] = rows.map((r) => ({
     planner_user_id: r.id,
-    business_name: r.business_name,
+    // Empty string when unset; the card falls back to full_name for display.
+    business_name: r.business_name ?? "",
     full_name: r.full_name,
-    city: r.planner_city,
+    city: r.planner_city ?? "",
     country: r.planner_country,
     bio: r.planner_bio,
     website: r.planner_website,
@@ -1609,17 +1619,22 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
           AND u.status = 'active'
           AND u.verified_email = 1
           AND u.email NOT LIKE '%@demo.weddly.local'
-          AND TRIM(COALESCE(u.business_name, '')) != ''
-          AND TRIM(COALESCE(u.planner_city, '')) != ''`,
+          -- Mirror the directory list: verified planners open even with a thin
+          -- profile; unverified ones still need business name + city.
+          AND (
+            u.planner_verified = 1
+            OR (TRIM(COALESCE(u.business_name, '')) != ''
+                AND TRIM(COALESCE(u.planner_city, '')) != '')
+          )`,
     )
     .get(coupleId, plannerId) as
     | {
         id: number;
         email: string;
         full_name: string;
-        business_name: string;
+        business_name: string | null;
         planner_bio: string | null;
-        planner_city: string;
+        planner_city: string | null;
         planner_country: string | null;
         planner_website: string | null;
         planner_styles: string | null;
@@ -1648,9 +1663,9 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
 
   const detail: PlannerDirectoryDetail = {
     planner_user_id: r.id,
-    business_name: r.business_name,
+    business_name: r.business_name ?? "",
     full_name: r.full_name,
-    city: r.planner_city,
+    city: r.planner_city ?? "",
     country: r.planner_country,
     bio: r.planner_bio,
     website: r.planner_website,

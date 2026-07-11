@@ -193,7 +193,7 @@ export default function PlannerDetailPage() {
               {meta ? ` · ${meta}` : ""}
             </div>
             <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50 sm:text-4xl">
-              <span>{detail.business_name}</span>
+              <span>{detail.business_name || detail.full_name}</span>
               {detail.verified && (
                 <BadgeCheck
                   size={28}
@@ -342,7 +342,7 @@ export default function PlannerDetailPage() {
               )}
               <div className="min-w-0">
                 <p className="truncate font-semibold text-ink-900 dark:text-paper-50">
-                  {detail.business_name}
+                  {detail.business_name || detail.full_name}
                 </p>
                 {meta && (
                   <p className="truncate text-xs text-ink-500 dark:text-umber-300">{meta}</p>
