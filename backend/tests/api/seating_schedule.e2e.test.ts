@@ -1921,7 +1921,7 @@ describe("schedule: run-sheet fields (responsible + supplier)", () => {
     const sup = await req<{ supplier: { id: string } }>(
       "POST",
       "/api/couple-suppliers",
-      { name: "DJ Marci", category: "music_dj" },
+      { name: "DJ Marci", category: "dj" },
       { token },
     );
     const supplierId = sup.data.supplier.id;

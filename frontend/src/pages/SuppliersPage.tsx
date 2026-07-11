@@ -135,41 +135,7 @@ const SupplierMap = lazyWithReload(() => import("../components/SupplierMap"));
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
-const GROUP_ICON: Record<SupplierGroup, IconCmp> = {
-  planning: ClipboardList,
-  venue_stay: MapPin,
-  food_drink: UtensilsCrossed,
-  atmosphere: Sparkles,
-  experience: PartyPopper,
-  style: Scissors,
-  details: Mail,
-};
-
-const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
-  wedding_planner: ClipboardList,
-  venue: Building2,
-  accommodation: BedDouble,
-  tent_pavilion: Tent,
-  catering: ChefHat,
-  cake_dessert: Cake,
-  bar_drinks: Wine,
-  pizza: Pizza,
-  decor_floral: Flower2,
-  lighting: Lightbulb,
-  music_dj: Disc3,
-  sound_tech: Speaker,
-  photo_video: Camera,
-  entertainment: PartyPopper,
-  attire: Shirt,
-  hair_makeup: Brush,
-  nails: Hand,
-  rings: Gem,
-  stationery: StickyNote,
-  invitation_graphics: PenTool,
-  wedding_website: Globe,
-  transport: Bus,
-  other: Sparkles,
-};
+import { CATEGORY_ICON, GROUP_ICON } from "../lib/category_icons";
 
 /** Categories the cake & drinks calculator is relevant to. The tool estimates
  *  sweets, cake and drink quantities from the guest count, so it surfaces only
@@ -1550,7 +1516,9 @@ export default function SuppliersPage() {
                         // Clicking it (via onClick above) re-opens the step; the
                         // label rides in the tooltip while collapsed.
                         collapsed={
-                          g.id === "planning" && planningResolved && activeGroup !== "planning"
+                          g.id === "planning_rentals" &&
+                          planningResolved &&
+                          activeGroup !== "planning_rentals"
                         }
                         t={t}
                       />
@@ -1648,7 +1616,7 @@ export default function SuppliersPage() {
                     means NOT hiring a planner, so the honest control is the
                     "Magam szervezem" done-toggle rendered in the results area
                     below, not a DIY vendor row. */}
-                {activeGroup !== "planning" && (
+                {activeGroup !== "planning_rentals" && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1666,7 +1634,7 @@ export default function SuppliersPage() {
                     Only for a concrete sub-category (not the "all" tab, not the
                     planning step which has its own self-organize toggle) and only
                     while there's no real booking to overwrite. */}
-                {activeGroup !== "planning" && activeCat && !activeCatHasRealPick && (
+                {activeGroup !== "planning_rentals" && activeCat && !activeCatHasRealPick && (
                   <button
                     type="button"
                     onClick={toggleNotNeeded}
@@ -1806,7 +1774,7 @@ export default function SuppliersPage() {
               curated planner listings that render in the grid below. Search
               filters both (filteredPlanners honours the query). The
               "Magam szervezem" self-organize tile leads the grid. */}
-          {activeGroup === "planning" && viewMode !== "map" && (
+          {activeGroup === "planning_rentals" && viewMode !== "map" && (
             <section aria-label={t("planner_directory.title")} className="mb-5">
               {filteredPlanners.length > 0 && (
                 <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">

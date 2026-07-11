@@ -183,10 +183,10 @@ describe("PATCH /api/admin/supplier-groups/:id — hidden flag", () => {
   test("group hide masks every category underneath in the public taxonomy", async () => {
     wipeAll();
     const adminToken = await registerAdminAndGetToken();
-    const groupId = seededGroupId("style");
+    const groupId = seededGroupId("fashion_beauty");
 
     const before = await req<SupplierTaxonomy>("GET", "/api/supplier-categories");
-    expect(before.data.groups.some((g) => g.slug === "style")).toBe(true);
+    expect(before.data.groups.some((g) => g.slug === "fashion_beauty")).toBe(true);
 
     await req(
       "PATCH",
@@ -197,10 +197,10 @@ describe("PATCH /api/admin/supplier-groups/:id — hidden flag", () => {
 
     const after = await req<SupplierTaxonomy>("GET", "/api/supplier-categories");
     // Group itself disappears, AND so do its children.
-    expect(after.data.groups.some((g) => g.slug === "style")).toBe(false);
-    expect(after.data.groups.flatMap((g) => g.categories).some((c) => c.slug === "attire")).toBe(
-      false,
-    );
+    expect(after.data.groups.some((g) => g.slug === "fashion_beauty")).toBe(false);
+    expect(
+      after.data.groups.flatMap((g) => g.categories).some((c) => c.slug === "bridal_boutique"),
+    ).toBe(false);
 
     // Admin view: group reappears with hidden=true; categories still
     // unhidden individually so an admin who only hid the parent can
@@ -208,9 +208,9 @@ describe("PATCH /api/admin/supplier-groups/:id — hidden flag", () => {
     const admin = await req<SupplierTaxonomy>("GET", "/api/admin/supplier-taxonomy", undefined, {
       token: adminToken,
     });
-    const style = admin.data.groups.find((g) => g.slug === "style");
+    const style = admin.data.groups.find((g) => g.slug === "fashion_beauty");
     expect(style?.hidden).toBe(true);
-    expect(style?.categories.find((c) => c.slug === "attire")?.hidden).toBe(false);
+    expect(style?.categories.find((c) => c.slug === "bridal_boutique")?.hidden).toBe(false);
   });
 });
 

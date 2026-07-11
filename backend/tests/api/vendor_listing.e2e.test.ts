@@ -54,7 +54,7 @@ async function makeApprovedListing(
     "POST",
     "/api/suppliers/community",
     {
-      category: "photo_video",
+      category: "photography",
       submitter_type: "self",
       name,
       city: "Budapest",
@@ -262,7 +262,7 @@ describe("P2.D vendor listing — PATCH /api/vendor/listing/me", () => {
     );
     expect(patch.status).toBe(200);
     expect(patch.data.listing.name).toBe("Immutable Photo Studio");
-    expect(patch.data.listing.category).toBe("photo_video");
+    expect(patch.data.listing.category).toBe("photography");
     expect(patch.data.listing.status).toBe("active");
     expect(patch.data.listing.source).toBe("community");
     expect(patch.data.listing.blurb_hu).toBe("Csak a leírás frissül");

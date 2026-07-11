@@ -76,31 +76,7 @@ import { useDocumentMeta } from "../lib/seo";
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
-const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
-  wedding_planner: ClipboardList,
-  venue: Building2,
-  accommodation: BedDouble,
-  tent_pavilion: Tent,
-  catering: ChefHat,
-  cake_dessert: Cake,
-  bar_drinks: Wine,
-  pizza: Pizza,
-  decor_floral: Flower2,
-  lighting: Lightbulb,
-  music_dj: Disc3,
-  sound_tech: Speaker,
-  photo_video: Camera,
-  entertainment: PartyPopper,
-  attire: Shirt,
-  hair_makeup: Brush,
-  nails: Hand,
-  rings: Gem,
-  stationery: StickyNote,
-  invitation_graphics: PenTool,
-  wedding_website: Globe,
-  transport: Bus,
-  other: Sparkles,
-};
+import { CATEGORY_ICON } from "../lib/category_icons";
 
 /** Lightweight directory-shape for the contact panel. Covers curated +
  *  community (`DirectorySupplier`) plus DIY (`CoupleSupplier`) entries

@@ -134,7 +134,7 @@ afterEach(() => {
 
 describe("<KeyInfoCard>", () => {
   it("shows the picked directory venue richly (coords + phone) when nothing is overridden", async () => {
-    picks = [pick("venue", "v1"), pick("photo_video", "p1"), pick("music_dj", "d1")];
+    picks = [pick("venue", "v1"), pick("photography", "p1"), pick("dj", "d1")];
     suppliers = [
       dir({
         id: "v1",
@@ -149,10 +149,10 @@ describe("<KeyInfoCard>", () => {
       dir({
         id: "p1",
         name: "Foto Studio",
-        category: "photo_video",
+        category: "photography",
         contact_phone: "+36 20 111 2222",
       }),
-      dir({ id: "d1", name: "DJ Max", category: "music_dj", contact_phone: null }),
+      dir({ id: "d1", name: "DJ Max", category: "dj", contact_phone: null }),
     ];
     const { container } = render(
       <Providers>

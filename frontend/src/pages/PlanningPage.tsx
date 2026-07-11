@@ -3174,28 +3174,10 @@ function VendorKanbanCard({
   );
 }
 
-const VALID_CATEGORIES = [
-  "venue",
-  "accommodation",
-  "tent_pavilion",
-  "catering",
-  "cake_dessert",
-  "bar_drinks",
-  "decor_floral",
-  "lighting",
-  "music_dj",
-  "sound_tech",
-  "photo_video",
-  "entertainment",
-  "attire",
-  "hair_makeup",
-  "nails",
-  "rings",
-  "stationery",
-  "invitation_graphics",
-  "wedding_website",
-  "transport",
-] as const;
+import { SUPPLIER_GROUPS } from "@shared/suppliers";
+
+// Derived from the single taxonomy source so the DIY picker can't drift.
+const VALID_CATEGORIES = SUPPLIER_GROUPS.flatMap((g) => g.categories);
 
 function VendorModal({
   vendor,
@@ -3229,7 +3211,9 @@ function VendorModal({
   const isEdit = vendor !== null;
 
   const [name, setName] = useState(vendor?.name ?? "");
-  const [category, setCategory] = useState<string>(vendor?.category ?? VALID_CATEGORIES[0]);
+  const [category, setCategory] = useState<string>(
+    vendor?.category ?? VALID_CATEGORIES[0] ?? "venue",
+  );
   const [nextStep, setNextStep] = useState(vendor?.next_step ?? "");
   const [probability, setProbability] = useState(
     vendor?.probability != null ? String(vendor.probability) : "",

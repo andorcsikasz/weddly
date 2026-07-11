@@ -24,7 +24,7 @@ async function createPricedSupplier(token: string, priceHuf: number): Promise<Co
   const r = await req<SupplierResp>(
     "POST",
     "/api/couple-suppliers",
-    { name: "DJ Marci", category: "music_dj", price_huf: priceHuf, paid: false },
+    { name: "DJ Marci", category: "dj", price_huf: priceHuf, paid: false },
     { token },
   );
   expect(r.status).toBe(201);

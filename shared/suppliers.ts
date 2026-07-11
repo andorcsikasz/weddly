@@ -4,39 +4,61 @@
 import type { ListingPackage } from "./listing_packages";
 import type { ListingVideo } from "./listing_videos";
 
+// v2 taxonomy (July 2026): business types, not micro-services. Grouped below in
+// SUPPLIER_GROUPS. `other` is retired from the UI but kept as a hidden legacy
+// fallback so a stray row with a pre-v2 slug never crashes a category lookup.
 export type SupplierCategory =
+  // Planning & rentals
   | "wedding_planner"
+  | "rental_equipment"
+  // Venue & stay
   | "venue"
   | "accommodation"
   | "tent_pavilion"
+  // Food & drink
   | "catering"
   | "cake_dessert"
   | "bar_drinks"
-  | "pizza"
-  | "decor_floral"
+  | "food_trucks"
+  // Decor & flowers
+  | "wedding_decor"
+  | "florist"
   | "lighting"
-  | "music_dj"
-  | "sound_tech"
-  | "photo_video"
+  // Media
+  | "photography"
+  | "videography"
+  | "content_creator"
+  | "photo_booth"
+  // Entertainment
+  | "dj"
+  | "live_music"
   | "entertainment"
-  | "attire"
+  | "mc_celebrant"
+  | "sound_tech"
+  // Fashion & beauty
+  | "bridal_boutique"
+  | "suit_formal"
   | "hair_makeup"
   | "nails"
-  | "rings"
+  | "wedding_jewelry"
+  // Paper goods & design
   | "stationery"
   | "invitation_graphics"
-  | "wedding_website"
+  // Transport
   | "transport"
+  // Legacy, hidden from the UI
   | "other";
 
 export type SupplierGroup =
-  | "planning"
+  | "planning_rentals"
   | "venue_stay"
   | "food_drink"
-  | "atmosphere"
-  | "experience"
-  | "style"
-  | "details";
+  | "decor_flowers"
+  | "media"
+  | "entertainment"
+  | "fashion_beauty"
+  | "paper_design"
+  | "transport";
 
 /** The character of a venue — what kind of place it is (a castle, a boat, a
  *  restaurant…), independent of its `category` (which is always "venue" for
@@ -86,47 +108,96 @@ export interface SupplierGroupDef {
  *  rather than scattering them under "other". Keep both sides in sync when
  *  adding new categories. */
 export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
-  // Planner fees have no dedicated budget bucket yet — fold into "other".
+  // Planner fees + equipment hire have no dedicated budget bucket — fold into "other".
   wedding_planner: "other",
+  rental_equipment: "other",
   venue: "venue",
   accommodation: "other",
   tent_pavilion: "venue",
   catering: "catering",
   cake_dessert: "cake_dessert",
   bar_drinks: "drinks",
-  pizza: "catering",
-  decor_floral: "decor_floral",
+  food_trucks: "catering",
+  wedding_decor: "decor_floral",
+  florist: "decor_floral",
   lighting: "decor_floral",
-  music_dj: "music_dj",
-  sound_tech: "music_dj",
-  photo_video: "photo_video",
+  photography: "photo_video",
+  videography: "photo_video",
+  content_creator: "photo_video",
+  photo_booth: "photo_video",
+  dj: "music_dj",
+  live_music: "music_dj",
   entertainment: "music_dj",
-  attire: "attire",
+  mc_celebrant: "music_dj",
+  sound_tech: "music_dj",
+  bridal_boutique: "attire",
+  suit_formal: "attire",
   hair_makeup: "hair_makeup",
   nails: "hair_makeup",
-  rings: "rings",
+  wedding_jewelry: "rings",
   stationery: "stationery",
   invitation_graphics: "stationery",
-  wedding_website: "stationery",
   transport: "transport",
   other: "other",
 };
 
+/** Hungarian category labels for backend-only surfaces (transactional emails,
+ *  admin notifications) that can't reach the frontend i18n tree. Keep in sync
+ *  with the `suppliers.cat.*` HU block in frontend/src/locales/hu.ts. */
+export const SUPPLIER_CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
+  wedding_planner: "Esküvőszervező",
+  rental_equipment: "Kölcsönzés & technika",
+  venue: "Esküvői helyszín",
+  accommodation: "Szállás",
+  tent_pavilion: "Sátor & pavilon",
+  catering: "Catering",
+  cake_dessert: "Torta & desszert",
+  bar_drinks: "Bár & koktél",
+  food_trucks: "Food truck",
+  wedding_decor: "Dekoráció",
+  florist: "Virágkötő",
+  lighting: "Világítás",
+  photography: "Fotó",
+  videography: "Videó",
+  content_creator: "Tartalomkészítő",
+  photo_booth: "Fotófülke",
+  dj: "DJ",
+  live_music: "Élőzene",
+  entertainment: "Műsor & animáció",
+  mc_celebrant: "Ceremóniamester",
+  sound_tech: "Hangtechnika",
+  bridal_boutique: "Menyasszonyi ruha",
+  suit_formal: "Öltöny & alkalmi",
+  hair_makeup: "Smink & haj",
+  nails: "Köröm",
+  wedding_jewelry: "Ékszer",
+  stationery: "Meghívó & papíráru",
+  invitation_graphics: "Meghívó & esküvői grafika",
+  transport: "Transzfer",
+  other: "Egyéb",
+};
+
 // Ordered chain — mirrors the recommended booking sequence. Planning &
 // coordination leads: a full-service planner is hired first (they help pick the
-// venue and every vendor after it). Then venue, food, look & feel, experience,
-// personal style, and the remaining details.
+// venue and every vendor after it). Then venue, food, decor, media,
+// entertainment, personal style, paper, and transport. `other` is intentionally
+// NOT in any group — it's a hidden legacy fallback, absent from every picker.
 export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
-  { id: "planning", categories: ["wedding_planner"] },
+  { id: "planning_rentals", categories: ["wedding_planner", "rental_equipment"] },
   { id: "venue_stay", categories: ["venue", "accommodation", "tent_pavilion"] },
-  { id: "food_drink", categories: ["catering", "cake_dessert", "bar_drinks", "pizza"] },
-  { id: "atmosphere", categories: ["decor_floral", "lighting"] },
-  { id: "experience", categories: ["music_dj", "sound_tech", "photo_video", "entertainment"] },
-  { id: "style", categories: ["attire", "hair_makeup", "nails", "rings"] },
+  { id: "food_drink", categories: ["catering", "cake_dessert", "bar_drinks", "food_trucks"] },
+  { id: "decor_flowers", categories: ["wedding_decor", "florist", "lighting"] },
+  { id: "media", categories: ["photography", "videography", "content_creator", "photo_booth"] },
   {
-    id: "details",
-    categories: ["stationery", "invitation_graphics", "wedding_website", "transport", "other"],
+    id: "entertainment",
+    categories: ["dj", "live_music", "entertainment", "mc_celebrant", "sound_tech"],
   },
+  {
+    id: "fashion_beauty",
+    categories: ["bridal_boutique", "suit_formal", "hair_makeup", "nails", "wedding_jewelry"],
+  },
+  { id: "paper_design", categories: ["stationery", "invitation_graphics"] },
+  { id: "transport", categories: ["transport"] },
 ];
 
 /** Shape of a directory entry without the per-request overlay (votes). Used
@@ -395,20 +466,27 @@ export const REVIEW_TAGS_BY_CATEGORY: Record<SupplierCategory, readonly Supplier
   catering: ["vegan_options", "kosher", "halal", "kid_friendly", ...UNIVERSAL_REVIEW_TAGS],
   cake_dessert: ["vegan_options", "kosher", "halal", "creative", ...UNIVERSAL_REVIEW_TAGS],
   bar_drinks: ["vegan_options", "creative", ...UNIVERSAL_REVIEW_TAGS],
-  pizza: ["vegan_options", "kosher", "halal", "kid_friendly", ...UNIVERSAL_REVIEW_TAGS],
-  decor_floral: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  food_trucks: ["vegan_options", "kosher", "halal", "kid_friendly", ...UNIVERSAL_REVIEW_TAGS],
+  wedding_decor: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  florist: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   lighting: ["creative", ...UNIVERSAL_REVIEW_TAGS],
-  music_dj: ["creative", ...UNIVERSAL_REVIEW_TAGS],
-  sound_tech: [...UNIVERSAL_REVIEW_TAGS],
-  photo_video: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  photography: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  videography: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  content_creator: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  photo_booth: ["kid_friendly", "creative", ...UNIVERSAL_REVIEW_TAGS],
+  dj: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  live_music: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   entertainment: ["kid_friendly", "outdoor_space", "creative", ...UNIVERSAL_REVIEW_TAGS],
-  attire: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  mc_celebrant: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  sound_tech: [...UNIVERSAL_REVIEW_TAGS],
+  bridal_boutique: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  suit_formal: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   hair_makeup: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   nails: ["creative", ...UNIVERSAL_REVIEW_TAGS],
-  rings: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  wedding_jewelry: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   stationery: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   invitation_graphics: ["creative", ...UNIVERSAL_REVIEW_TAGS],
-  wedding_website: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  rental_equipment: [...UNIVERSAL_REVIEW_TAGS],
   transport: ["accessible", "kid_friendly", "pet_friendly", ...UNIVERSAL_REVIEW_TAGS],
   other: [...SUPPLIER_REVIEW_TAGS],
 };

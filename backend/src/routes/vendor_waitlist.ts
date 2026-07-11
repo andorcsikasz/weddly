@@ -7,7 +7,11 @@
 
 import { storage } from "../lib/storage";
 import { PRIVACY_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
-import type { SupplierCategory } from "@shared/suppliers";
+import {
+  SUPPLIER_CATEGORY_LABEL_HU as CATEGORY_LABEL_HU,
+  SUPPLIER_GROUPS,
+  type SupplierCategory,
+} from "@shared/suppliers";
 import type { VendorWaitlistOutcome } from "@shared/vendor_waitlist";
 import { CONFIG } from "../config";
 import { db } from "../db";
@@ -39,54 +43,10 @@ const PRICE_LIST_EXTS: Record<string, string> = {
   "image/webp": "webp",
 };
 
-const CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
-  wedding_planner: "Esküvőszervező",
-  venue: "Esküvői helyszín",
-  accommodation: "Szállás",
-  catering: "Catering",
-  cake_dessert: "Torta & desszert",
-  bar_drinks: "Bár & italok",
-  pizza: "Pizza",
-  decor_floral: "Dekoráció & virág",
-  lighting: "Világítás",
-  music_dj: "Zene & DJ",
-  sound_tech: "Hangtechnika",
-  photo_video: "Fotó & videó",
-  entertainment: "Animáció & program",
-  attire: "Ruha",
-  hair_makeup: "Smink & haj",
-  nails: "Köröm",
-  stationery: "Papír & nyomtatvány",
-  invitation_graphics: "Meghívó / esküvői grafika",
-  transport: "Transzfer",
-  rings: "Karikagyűrűk",
-  tent_pavilion: "Sátor & pavilon",
-  wedding_website: "Esküvői honlap",
-  other: "Egyéb",
-};
-
-const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
-  "wedding_planner",
-  "venue",
-  "accommodation",
-  "tent_pavilion",
-  "catering",
-  "cake_dessert",
-  "bar_drinks",
-  "decor_floral",
-  "lighting",
-  "music_dj",
-  "sound_tech",
-  "photo_video",
-  "entertainment",
-  "attire",
-  "hair_makeup",
-  "nails",
-  "rings",
-  "stationery",
-  "wedding_website",
-  "transport",
-]);
+// Derived from the single taxonomy source so it can never drift from the enum.
+const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set(
+  SUPPLIER_GROUPS.flatMap((g) => g.categories),
+);
 
 const VALID_OUTCOMES: ReadonlySet<VendorWaitlistOutcome> = new Set([
   "under_review",

@@ -50,7 +50,7 @@ const baseBody: RegBody = {
   password: "supersafe123",
   full_name: "Anna Photographer",
   business_name: "Florea Studio",
-  category: "photo_video",
+  category: "photography",
   locale: "en",
 };
 
@@ -89,7 +89,7 @@ describe("vendor self-serve registration", () => {
     const listing = db
       .prepare("SELECT category, name, status FROM listings WHERE vendor_account_id = ?")
       .get(account.id) as { category: string; name: string; status: string };
-    expect(listing.category).toBe("photo_video");
+    expect(listing.category).toBe("photography");
     expect(listing.name).toBe("Florea Studio");
     expect(listing.status).toBe("active");
 
@@ -364,7 +364,7 @@ describe("vendor Google registration", () => {
       credential,
       full_name: "ignored — Google name wins",
       business_name: "Google Studio",
-      category: "photo_video",
+      category: "photography",
       locale: "en",
     });
     expect(reg.status).toBe(201);
@@ -413,7 +413,7 @@ describe("vendor Google registration", () => {
     const dup = await registerGoogle({
       credential,
       business_name: "Other",
-      category: "photo_video",
+      category: "photography",
     });
     expect(dup.status).toBe(409);
   });
@@ -422,7 +422,7 @@ describe("vendor Google registration", () => {
     wipeAll();
     const noCred = await req("POST", "/api/vendor/register/google", {
       business_name: "X",
-      category: "photo_video",
+      category: "photography",
     });
     expect(noCred.status).toBe(400);
 

@@ -138,7 +138,7 @@ describe("admin vendor management", () => {
     // this is the public ad the vendor wants to show a brand instead.
     createVendorListing({
       vendorAccountId: accountId,
-      category: "photo_video",
+      category: "photography",
       name: "WILD VYBES Kft.",
       city: "Budapest",
       contactEmail: "branded@weddly.test",
@@ -220,7 +220,7 @@ describe("admin vendor management", () => {
       {
         business_name: "Admin Made Studio",
         email: "admin-made@weddly.test",
-        category: "photo_video",
+        category: "photography",
       },
       { token: adminToken },
     );
@@ -235,7 +235,7 @@ describe("admin vendor management", () => {
       | { business_name: string; category: string; status: string }
       | undefined;
     expect(pending?.business_name).toBe("Admin Made Studio");
-    expect(pending?.category).toBe("photo_video");
+    expect(pending?.category).toBe("photography");
     expect(
       db.prepare("SELECT id FROM users WHERE email = ?").get("admin-made@weddly.test") ?? null,
     ).toBeNull();
@@ -259,7 +259,7 @@ describe("admin vendor management", () => {
     const again = await req(
       "POST",
       "/api/admin/vendors/register",
-      { business_name: "Renamed", email: "admin-made@weddly.test", category: "music_dj" },
+      { business_name: "Renamed", email: "admin-made@weddly.test", category: "dj" },
       { token: adminToken },
     );
     expect(again.status).toBe(201);
@@ -275,7 +275,7 @@ describe("admin vendor management", () => {
     const dup = await req(
       "POST",
       "/api/admin/vendors/register",
-      { business_name: "X", email: "taken@weddly.test", category: "photo_video" },
+      { business_name: "X", email: "taken@weddly.test", category: "photography" },
       { token: adminToken },
     );
     expect(dup.status).toBe(409);
@@ -295,7 +295,7 @@ describe("admin vendor management", () => {
     const res = await req(
       "POST",
       "/api/admin/vendors/register",
-      { business_name: "X", email: "x@weddly.test", category: "photo_video" },
+      { business_name: "X", email: "x@weddly.test", category: "photography" },
       { token },
     );
     expect(res.status).toBe(403);

@@ -82,41 +82,7 @@ type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string 
 
 // Mirrors the icon palette in SuppliersPage so the chip grid + preview card
 // stay visually consistent with the directory cards.
-const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
-  wedding_planner: ClipboardList,
-  venue: Building2,
-  accommodation: BedDouble,
-  tent_pavilion: Tent,
-  catering: ChefHat,
-  cake_dessert: Cake,
-  bar_drinks: Wine,
-  pizza: Pizza,
-  decor_floral: Flower2,
-  lighting: Lightbulb,
-  music_dj: Disc3,
-  sound_tech: Speaker,
-  photo_video: Camera,
-  entertainment: PartyPopper,
-  attire: Shirt,
-  hair_makeup: Brush,
-  nails: Hand,
-  rings: Gem,
-  stationery: StickyNote,
-  invitation_graphics: PenTool,
-  wedding_website: Globe,
-  transport: Bus,
-  other: Sparkles,
-};
-
-const GROUP_ICON: Record<SupplierGroup, IconCmp> = {
-  planning: ClipboardList,
-  venue_stay: MapPin,
-  food_drink: UtensilsCrossed,
-  atmosphere: Sparkle,
-  experience: PartyPopper,
-  style: Scissors,
-  details: Mail,
-};
+import { CATEGORY_ICON, GROUP_ICON } from "../lib/category_icons";
 
 function emptyForm() {
   return {

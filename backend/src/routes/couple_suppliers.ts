@@ -2,35 +2,17 @@
 // for the model. Couple-scoped; every endpoint resolves the couple via the
 // authenticated user. No admin visibility.
 
-import type { SupplierCategory } from "@shared/suppliers";
+import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { getCoupleForUser } from "../domain/couples";
 import * as domain from "../domain/couple_suppliers";
 import * as installments from "../domain/supplier_installments";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
-const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
-  "venue",
-  "accommodation",
-  "tent_pavilion",
-  "catering",
-  "cake_dessert",
-  "bar_drinks",
-  "decor_floral",
-  "lighting",
-  "music_dj",
-  "sound_tech",
-  "photo_video",
-  "entertainment",
-  "attire",
-  "hair_makeup",
-  "nails",
-  "rings",
-  "stationery",
-  "invitation_graphics",
-  "wedding_website",
-  "transport",
-]);
+// Derived from the single taxonomy source so it can never drift from the enum.
+const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set(
+  SUPPLIER_GROUPS.flatMap((g) => g.categories),
+);
 
 interface Body {
   name?: unknown;

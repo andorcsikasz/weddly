@@ -7,7 +7,7 @@ import type {
   PriceBand,
   SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
-import type { SupplierCategory } from "@shared/suppliers";
+import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { CONFIG } from "../config";
 import {
   consumeVerificationToken,
@@ -44,27 +44,10 @@ const VALID_REPORT_REASONS: ReadonlySet<CommunitySupplierReportReason> = new Set
   "other",
 ]);
 
-const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
-  "venue",
-  "accommodation",
-  "tent_pavilion",
-  "catering",
-  "cake_dessert",
-  "bar_drinks",
-  "decor_floral",
-  "lighting",
-  "music_dj",
-  "sound_tech",
-  "photo_video",
-  "entertainment",
-  "attire",
-  "hair_makeup",
-  "nails",
-  "rings",
-  "stationery",
-  "wedding_website",
-  "transport",
-]);
+// Derived from the single taxonomy source so it can never drift from the enum.
+const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set(
+  SUPPLIER_GROUPS.flatMap((g) => g.categories),
+);
 
 interface SubmitBody {
   category?: unknown;

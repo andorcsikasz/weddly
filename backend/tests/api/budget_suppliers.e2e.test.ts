@@ -1615,7 +1615,7 @@ describe("couple_picks: validation + auth", () => {
     const { token } = await bootstrapCouple("pick-order@weddly.test");
     await req("PUT", "/api/picks/venue", { supplier_id: "v1" }, { token });
     await req("PUT", "/api/picks/catering", { supplier_id: "c1" }, { token });
-    await req("PUT", "/api/picks/photo_video", { supplier_id: "p1" }, { token });
+    await req("PUT", "/api/picks/photography", { supplier_id: "p1" }, { token });
     const list = await req<{ picks: { category: string }[] }>("GET", "/api/picks", undefined, {
       token,
     });

@@ -117,7 +117,7 @@ import { registerSupplierBookingRoutes } from "./routes/supplier_bookings";
 import { registerOutreachRoutes } from "./routes/outreach";
 import { registerSupplierRoutes } from "./routes/suppliers";
 import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
-import { seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
+import { retireLegacyTaxonomy, seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
 import { backfillPartnerPropagation } from "./domain/couples";
 import {
@@ -130,6 +130,7 @@ import { registerReceivedGiftsRoutes } from "./routes/received_gifts";
 import { registerWishlistRoutes } from "./routes/wishlist";
 
 seedSupplierTaxonomy();
+retireLegacyTaxonomy();
 // First-boot seed of the public blog. Idempotent — short-circuits when
 // the table already has rows so subsequent reboots don't touch DB state.
 seedBlogPostsIfEmpty();

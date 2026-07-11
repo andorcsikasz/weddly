@@ -1702,3 +1702,43 @@ function backfillReferenceCodes(): void {
     console.log(`[db.backfill] assigned ${spec.column} to ${missing.length} ${spec.table} row(s)`);
   }
 }
+
+// ── v2 taxonomy remap (July 2026) ────────────────────────────────────────────
+// The supplier-category taxonomy was reshaped into business-type buckets. A few
+// slugs were renamed/split/merged; the rest kept their slug. This idempotent
+// boot migration rewrites any stored row still holding a pre-v2 slug so no
+// listing/pick/DIY entry keeps an orphaned value (which would break the category
+// icon + label lookups on read). Free-TEXT columns only; the DB taxonomy table
+// itself is reconciled by seedSupplierTaxonomy + the legacy-hide pass in
+// server.ts. Splits land on their default child (photographers stay photography,
+// DJs stay dj, etc.); the empty spin-offs fill as vendors register.
+const LEGACY_CATEGORY_REMAP: Record<string, string> = {
+  photo_video: "photography",
+  music_dj: "dj",
+  decor_floral: "wedding_decor",
+  attire: "bridal_boutique",
+  rings: "wedding_jewelry",
+  wedding_website: "invitation_graphics",
+  pizza: "food_trucks",
+};
+remapLegacySupplierCategories();
+function remapLegacySupplierCategories(): void {
+  const plainTables = ["listings", "community_suppliers", "couple_suppliers", "vendor_onboarding"];
+  let total = 0;
+  for (const [oldSlug, newSlug] of Object.entries(LEGACY_CATEGORY_REMAP)) {
+    for (const table of plainTables) {
+      total += db
+        .prepare(`UPDATE ${table} SET category = ? WHERE category = ?`)
+        .run(newSlug, oldSlug).changes;
+    }
+    // couple_picks has UNIQUE(couple_id, category): a merge can collide two picks
+    // into one key. Move what can move, then drop any old-slug loser that would
+    // have duplicated an existing pick (the couple keeps their other pick).
+    db.prepare("UPDATE OR IGNORE couple_picks SET category = ? WHERE category = ?").run(
+      newSlug,
+      oldSlug,
+    );
+    total += db.prepare("DELETE FROM couple_picks WHERE category = ?").run(oldSlug).changes;
+  }
+  if (total > 0) console.log(`[db.backfill] remapped ${total} row(s) to the v2 supplier taxonomy`);
+}

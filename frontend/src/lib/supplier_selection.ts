@@ -13,7 +13,7 @@
 // pick mutation in tab A publishes `picks:changed`, tab B refetches and fires
 // its subscribers.
 
-import type { SupplierCategory } from "@shared/suppliers";
+import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { picksApi } from "./endpoints";
 import { publish, subscribe } from "./sync";
 
@@ -25,29 +25,8 @@ function lsKey(coupleId: number): string {
   return `${LS_PREFIX}${coupleId}`;
 }
 
-const VALID_CATEGORIES: readonly SupplierCategory[] = [
-  "wedding_planner",
-  "venue",
-  "accommodation",
-  "tent_pavilion",
-  "catering",
-  "cake_dessert",
-  "bar_drinks",
-  "decor_floral",
-  "lighting",
-  "music_dj",
-  "sound_tech",
-  "photo_video",
-  "entertainment",
-  "attire",
-  "hair_makeup",
-  "nails",
-  "rings",
-  "stationery",
-  "invitation_graphics",
-  "wedding_website",
-  "transport",
-];
+// Derived from the single taxonomy source so it can never drift from the enum.
+const VALID_CATEGORIES: readonly SupplierCategory[] = SUPPLIER_GROUPS.flatMap((g) => g.categories);
 
 function isCategory(s: string): s is SupplierCategory {
   return (VALID_CATEGORIES as readonly string[]).includes(s);

@@ -110,31 +110,7 @@ type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string 
 
 // Per-category glyph for the empty-state hero. Mirrors the mapping in
 // SuppliersPage.tsx so the placeholder reads as "same brand, this category".
-const CATEGORY_ICON: Record<SupplierCategory, IconCmp> = {
-  wedding_planner: ClipboardList,
-  venue: Building2,
-  accommodation: BedDouble,
-  tent_pavilion: Tent,
-  catering: ChefHat,
-  cake_dessert: Cake,
-  bar_drinks: Wine,
-  pizza: Pizza,
-  decor_floral: Flower2,
-  lighting: Lightbulb,
-  music_dj: Disc3,
-  sound_tech: Speaker,
-  photo_video: Camera,
-  entertainment: PartyPopper,
-  attire: Shirt,
-  hair_makeup: Brush,
-  nails: Hand,
-  rings: Gem,
-  stationery: StickyNote,
-  invitation_graphics: PenTool,
-  wedding_website: Globe,
-  transport: Bus,
-  other: Sparkles,
-};
+import { CATEGORY_ICON } from "../lib/category_icons";
 
 const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_only"];
 

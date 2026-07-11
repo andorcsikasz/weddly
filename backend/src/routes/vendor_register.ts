@@ -40,7 +40,13 @@ const ERR_EMAIL_TAKEN = "race:email_taken";
 
 /** Flat set of every valid supplier category, built once from the taxonomy
  *  source of truth so an unknown category is rejected at the boundary. */
-const VALID_CATEGORIES: ReadonlySet<string> = new Set(SUPPLIER_GROUPS.flatMap((g) => g.categories));
+// `other` isn't a browse category (it's absent from SUPPLIER_GROUPS) but stays a
+// valid REGISTRATION choice: a vendor whose trade doesn't fit picks "other" and
+// supplies a free-text custom_category.
+const VALID_CATEGORIES: ReadonlySet<string> = new Set([
+  ...SUPPLIER_GROUPS.flatMap((g) => g.categories),
+  "other",
+]);
 
 interface VendorRegisterBody {
   email?: unknown;

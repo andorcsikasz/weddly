@@ -14,6 +14,7 @@ import type {
   SupplierDetail,
   SupplierEventInput,
 } from "@shared/suppliers";
+import { SUPPLIER_GROUPS } from "@shared/suppliers";
 import {
   listActiveCommunitySuppliers,
   toDirectorySupplierBase,
@@ -40,28 +41,9 @@ import { haversineKm } from "../lib/geo";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
-const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set([
-  "venue",
-  "accommodation",
-  "tent_pavilion",
-  "catering",
-  "cake_dessert",
-  "bar_drinks",
-  "decor_floral",
-  "lighting",
-  "music_dj",
-  "sound_tech",
-  "photo_video",
-  "entertainment",
-  "attire",
-  "hair_makeup",
-  "nails",
-  "rings",
-  "stationery",
-  "invitation_graphics",
-  "wedding_website",
-  "transport",
-]);
+const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set(
+  SUPPLIER_GROUPS.flatMap((g) => g.categories),
+);
 
 function withVotes(
   base: DirectorySupplierBase,
@@ -424,25 +406,34 @@ const SHOWCASE_PER_CATEGORY = 6;
 // categories with at least one photographed vendor are emitted.
 const SHOWCASE_CATEGORY_ORDER: SupplierCategory[] = [
   "venue",
-  "photo_video",
-  "decor_floral",
+  "photography",
+  "videography",
+  "content_creator",
+  "photo_booth",
+  "wedding_decor",
+  "florist",
   "catering",
   "cake_dessert",
-  "music_dj",
+  "food_trucks",
+  "dj",
+  "live_music",
   "hair_makeup",
-  "attire",
+  "bridal_boutique",
+  "suit_formal",
   "entertainment",
+  "mc_celebrant",
   "lighting",
   "bar_drinks",
   "accommodation",
   "tent_pavilion",
   "sound_tech",
   "nails",
-  "rings",
+  "wedding_jewelry",
   "stationery",
   "invitation_graphics",
-  "wedding_website",
+  "rental_equipment",
   "transport",
+  "wedding_planner",
 ];
 function handlePublicShowcase(ctx: Ctx): Response {
   rateLimit(ctx.clientIp, "public.showcase", { capacity: 60, refillRate: 1 });

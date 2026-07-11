@@ -72,7 +72,7 @@ async function makeApprovedListing(
     "POST",
     "/api/suppliers/community",
     {
-      category: "photo_video",
+      category: "photography",
       submitter_type: "self",
       name,
       city: "Budapest",

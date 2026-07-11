@@ -178,7 +178,7 @@ async function seedClaimedVendorNoHero(email: string, name: string): Promise<str
   });
   createVendorListing({
     vendorAccountId: account.id,
-    category: "photo_video",
+    category: "photography",
     name,
     city: "Budapest",
     contactEmail: email,

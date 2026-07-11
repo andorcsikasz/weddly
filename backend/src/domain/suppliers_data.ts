@@ -2256,7 +2256,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "eszter-anna-photography",
     name: "Eszter Anna Photography",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2271,7 +2271,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "gyula-co",
     name: "GYULA CO, Zacsfalvi Gyula",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2286,7 +2286,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "purephoto",
     name: "PurePhoto",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2301,7 +2301,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "the-budapest-photographer",
     name: "The Budapest Photographer",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2316,7 +2316,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "kondella-misi",
     name: "Kondella Misi Photography",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2334,7 +2334,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "closer-wedding",
     name: "CLOSER Wedding",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2351,7 +2351,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "connor-delano-weddings",
     name: "Connor Delano Weddings",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2366,7 +2366,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "alomklip",
     name: "Álomklip",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2381,7 +2381,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "budapest-event-photo-video",
     name: "Budapest Event Photography/Video",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2397,7 +2397,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "budapest-fun-photo-video",
     name: "Budapest Fun Photography/Video",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2583,7 +2583,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "la-mariee-budapest",
     name: "La Mariée Budapest",
-    category: "attire",
+    category: "bridal_boutique",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2598,7 +2598,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "wedding-secret",
     name: "Wedding Secret",
-    category: "attire",
+    category: "bridal_boutique",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2615,7 +2615,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "prive-bridal-boutique",
     name: "Privé Bridal Boutique",
-    category: "attire",
+    category: "bridal_boutique",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2631,7 +2631,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "laura-eskuvoi-ruhaszalon",
     name: "Laura Esküvői Ruhaszalon",
-    category: "attire",
+    category: "bridal_boutique",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2646,7 +2646,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "eskuvopalota",
     name: "Esküvőpalota",
-    category: "attire",
+    category: "bridal_boutique",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2663,7 +2663,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "wedding-dj-hungary",
     name: "Wedding DJ Hungary",
-    category: "music_dj",
+    category: "dj",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2678,7 +2678,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "slager-dj",
     name: "Sláger DJ",
-    category: "music_dj",
+    category: "dj",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2693,7 +2693,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "eskuvore-dj",
     name: "Esküvőre DJ",
-    category: "music_dj",
+    category: "dj",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2710,7 +2710,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "eskuvo-dj",
     name: "Esküvő.DJ",
-    category: "music_dj",
+    category: "dj",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2725,7 +2725,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "budapestdj-hu",
     name: "BudapestDj.hu",
-    category: "music_dj",
+    category: "dj",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2742,7 +2742,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "fleurt",
     name: "FLEURT",
-    category: "decor_floral",
+    category: "wedding_decor",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2757,7 +2757,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "szirom-flowers",
     name: "Szirom Flowers",
-    category: "decor_floral",
+    category: "wedding_decor",
     city: "Budapest",
     address: "1067 Budapest, Podmaniczky utca 39.",
     capacity_min: null,
@@ -2773,7 +2773,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "fiori-damore-wedding",
     name: "Fiori d'Amore Wedding",
-    category: "decor_floral",
+    category: "wedding_decor",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2788,7 +2788,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "budapest-flower",
     name: "Budapest Flower",
-    category: "decor_floral",
+    category: "wedding_decor",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2804,7 +2804,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "dolce-vita-flowers",
     name: "Dolce Vita Flowers",
-    category: "decor_floral",
+    category: "wedding_decor",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2823,7 +2823,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "budapest-showtime",
     name: "Budapest Showtime",
-    category: "music_dj",
+    category: "dj",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2838,7 +2838,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "budapest-show-band",
     name: "Budapest Show Band",
-    category: "music_dj",
+    category: "dj",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2853,7 +2853,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "the-sparkle-band",
     name: "The Sparkle Band",
-    category: "music_dj",
+    category: "dj",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2868,7 +2868,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "budapest-event-band-hire",
     name: "Budapest Event Band Hire",
-    category: "music_dj",
+    category: "dj",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -2883,7 +2883,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "gig-heaven-bands",
     name: "Gig Heaven Wedding Bands Budapest",
-    category: "music_dj",
+    category: "dj",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -3066,7 +3066,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "wezoree-budapest-content",
     name: "Wezoree Content Creator marketplace",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -3081,7 +3081,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "luxwedd-athens-budapest",
     name: "Luxwedd Athens (Budapest via Wezoree)",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -3096,7 +3096,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "hipstudio",
     name: "HIPStudio",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -3111,7 +3111,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "upwork-content-creators-budapest",
     name: "Upwork Content Creators, Budapest",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -3617,7 +3617,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "ekszerpalota-karikagyuru",
     name: "Ékszerpalota (Karikagyuru.hu)",
-    category: "rings",
+    category: "wedding_jewelry",
     city: "Budapest",
     address: "1061 Budapest, Andrássy út 43.",
     capacity_min: null,
@@ -3634,7 +3634,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "feil-karikagyurugyarto",
     name: "FEIL Karikagyűrűgyártó",
-    category: "rings",
+    category: "wedding_jewelry",
     city: "Budapest",
     address: "1089 Budapest, Gaál Mózes utca 5-7. I/104.",
     capacity_min: null,
@@ -3649,7 +3649,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "gyuru-neked",
     name: "Gyűrű Neked",
-    category: "rings",
+    category: "wedding_jewelry",
     city: "Budapest",
     address: "1055 Budapest, Bihari János utca 1.",
     capacity_min: null,
@@ -3666,7 +3666,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "bojti-ekszer",
     name: "BOJTI Ékszermanufaktúra",
-    category: "rings",
+    category: "wedding_jewelry",
     city: "Budapest",
     address: "1054 Budapest, Alkotmány utca 19.",
     capacity_min: null,
@@ -3683,7 +3683,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "jegygyurubolt",
     name: "Jegygyűrűbolt.hu",
-    category: "rings",
+    category: "wedding_jewelry",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -3698,7 +3698,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "gyemantgyuru",
     name: "Gyémántgyűrű (Gyémántgyűrű Kft.)",
-    category: "rings",
+    category: "wedding_jewelry",
     city: "Budapest",
     address: "1061 Budapest, Király utca 8-10.",
     capacity_min: null,
@@ -3713,7 +3713,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "karikagyuru-specialista",
     name: "Karikagyűrű Specialista",
-    category: "rings",
+    category: "wedding_jewelry",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -3728,7 +3728,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "monis-diamond",
     name: "Moni's Diamond (S-Gold Kft.)",
-    category: "rings",
+    category: "wedding_jewelry",
     city: "Budapest",
     address: "1051 Budapest, Október 6. utca 6.",
     capacity_min: null,
@@ -3745,7 +3745,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "schmuck-ekszer",
     name: "Schmuck Ékszer",
-    category: "rings",
+    category: "wedding_jewelry",
     city: "Kecskemét",
     address: "6000 Kecskemét, Korona utca 2., Földszint",
     capacity_min: null,
@@ -3761,7 +3761,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "velekey-ekszervilag",
     name: "Velekey Ékszervilág Kft.",
-    category: "rings",
+    category: "wedding_jewelry",
     city: "Szombathely",
     address: "9700 Szombathely, Fő tér 25.",
     capacity_min: null,
@@ -3953,7 +3953,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "weddingproject",
     name: "WeddingProject (Papp Nikolett EV.)",
-    category: "wedding_website",
+    category: "invitation_graphics",
     city: "Miskolc",
     address: "3535 Miskolc, Csipkevirág utca 13-15.",
     capacity_min: null,
@@ -3970,7 +3970,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "eskuvoi-weboldalam",
     name: "Esküvői Weboldalam (GK Studio)",
-    category: "wedding_website",
+    category: "invitation_graphics",
     city: "Mohács",
     address: null,
     capacity_min: null,
@@ -3987,7 +3987,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "weboldal-eskuvore",
     name: "Weboldal Esküvőre",
-    category: "wedding_website",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4004,7 +4004,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "eskuvoi-weboldal-keszites",
     name: "Esküvő weboldal készítés",
-    category: "wedding_website",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4019,7 +4019,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "webwedding",
     name: "WebWedding.hu",
-    category: "wedding_website",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4035,7 +4035,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "weddingtree",
     name: "WeddingTree.hu",
-    category: "wedding_website",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4051,7 +4051,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "egyedi-eskuvoi-honlapok",
     name: "EgyediEsküvőiHonlapok.hu",
-    category: "wedding_website",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4066,7 +4066,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "eskuvonknapja",
     name: "Esküvőnknapja.hu",
-    category: "wedding_website",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4081,7 +4081,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "nagynapunk",
     name: "NagyNapunk.hu",
-    category: "wedding_website",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,
@@ -4098,7 +4098,7 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "flower-wedding",
     name: "Flower Wedding",
-    category: "wedding_website",
+    category: "invitation_graphics",
     city: "Budapest",
     address: null,
     capacity_min: null,

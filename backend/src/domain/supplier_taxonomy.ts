@@ -338,14 +338,20 @@ interface SeedGroup {
  */
 const SEED: SeedGroup[] = [
   {
-    slug: "planning",
-    label_hu: "Szervezés & koordináció",
-    label_en: "Planning & coordination",
+    slug: "planning_rentals",
+    label_hu: "Szervezés & kölcsönzés",
+    label_en: "Planning & rentals",
     categories: [
       {
         slug: "wedding_planner",
         label_hu: "Esküvőszervező",
         label_en: "Wedding planner",
+        budget: "other",
+      },
+      {
+        slug: "rental_equipment",
+        label_hu: "Kölcsönzés & technika",
+        label_en: "Rental & equipment",
         budget: "other",
       },
     ],
@@ -356,12 +362,7 @@ const SEED: SeedGroup[] = [
     label_en: "Venue & stay",
     categories: [
       { slug: "venue", label_hu: "Esküvői helyszín", label_en: "Wedding venue", budget: "venue" },
-      {
-        slug: "accommodation",
-        label_hu: "Szállás",
-        label_en: "Accommodation",
-        budget: "other",
-      },
+      { slug: "accommodation", label_hu: "Szállás", label_en: "Accommodation", budget: "other" },
       {
         slug: "tent_pavilion",
         label_hu: "Sátor & pavilon",
@@ -379,58 +380,98 @@ const SEED: SeedGroup[] = [
       {
         slug: "cake_dessert",
         label_hu: "Torta & desszert",
-        label_en: "Cake & dessert",
+        label_en: "Cakes & desserts",
         budget: "cake_dessert",
       },
-      { slug: "bar_drinks", label_hu: "Bár & italok", label_en: "Bar & drinks", budget: "drinks" },
+      {
+        slug: "bar_drinks",
+        label_hu: "Bár & koktél",
+        label_en: "Bar & cocktails",
+        budget: "drinks",
+      },
+      { slug: "food_trucks", label_hu: "Food truck", label_en: "Food trucks", budget: "catering" },
     ],
   },
   {
-    slug: "atmosphere",
-    label_hu: "Dekor",
-    label_en: "Decor",
+    slug: "decor_flowers",
+    label_hu: "Dekor & virág",
+    label_en: "Decor & flowers",
     categories: [
       {
-        slug: "decor_floral",
-        label_hu: "Dekoráció & virág",
-        label_en: "Decor & floral",
+        slug: "wedding_decor",
+        label_hu: "Dekoráció",
+        label_en: "Wedding decor",
         budget: "decor_floral",
       },
+      { slug: "florist", label_hu: "Virágkötő", label_en: "Florist", budget: "decor_floral" },
       { slug: "lighting", label_hu: "Világítás", label_en: "Lighting", budget: "decor_floral" },
     ],
   },
   {
-    slug: "experience",
-    label_hu: "Élmény",
-    label_en: "Experience",
+    slug: "media",
+    label_hu: "Média",
+    label_en: "Media",
     categories: [
-      { slug: "music_dj", label_hu: "Zene & DJ", label_en: "Music & DJ", budget: "music_dj" },
+      { slug: "photography", label_hu: "Fotó", label_en: "Photography", budget: "photo_video" },
+      { slug: "videography", label_hu: "Videó", label_en: "Videography", budget: "photo_video" },
+      {
+        slug: "content_creator",
+        label_hu: "Tartalomkészítő",
+        label_en: "Content creator",
+        budget: "photo_video",
+      },
+      {
+        slug: "photo_booth",
+        label_hu: "Fotófülke",
+        label_en: "Photo booth",
+        budget: "photo_video",
+      },
+    ],
+  },
+  {
+    slug: "entertainment",
+    label_hu: "Zene & szórakoztatás",
+    label_en: "Entertainment",
+    categories: [
+      { slug: "dj", label_hu: "DJ", label_en: "DJ", budget: "music_dj" },
+      { slug: "live_music", label_hu: "Élőzene", label_en: "Live music", budget: "music_dj" },
+      {
+        slug: "entertainment",
+        label_hu: "Műsor & animáció",
+        label_en: "Entertainment",
+        budget: "music_dj",
+      },
+      {
+        slug: "mc_celebrant",
+        label_hu: "Ceremóniamester",
+        label_en: "MC & celebrant",
+        budget: "music_dj",
+      },
       {
         slug: "sound_tech",
         label_hu: "Hangtechnika",
         label_en: "Sound & AV tech",
         budget: "music_dj",
       },
-      {
-        slug: "photo_video",
-        label_hu: "Fotó & videó",
-        label_en: "Photo & video",
-        budget: "photo_video",
-      },
-      {
-        slug: "entertainment",
-        label_hu: "Animáció & program",
-        label_en: "Entertainment",
-        budget: "music_dj",
-      },
     ],
   },
   {
-    slug: "style",
-    label_hu: "Stílus",
-    label_en: "Style",
+    slug: "fashion_beauty",
+    label_hu: "Divat & szépség",
+    label_en: "Fashion & beauty",
     categories: [
-      { slug: "attire", label_hu: "Ruha", label_en: "Attire", budget: "attire" },
+      {
+        slug: "bridal_boutique",
+        label_hu: "Menyasszonyi ruha",
+        label_en: "Bridal boutique",
+        budget: "attire",
+      },
+      {
+        slug: "suit_formal",
+        label_hu: "Öltöny & alkalmi",
+        label_en: "Suit & formal wear",
+        budget: "attire",
+      },
       {
         slug: "hair_makeup",
         label_hu: "Smink & haj",
@@ -438,33 +479,44 @@ const SEED: SeedGroup[] = [
         budget: "hair_makeup",
       },
       { slug: "nails", label_hu: "Köröm", label_en: "Nails", budget: "hair_makeup" },
-      { slug: "rings", label_hu: "Jegygyűrű", label_en: "Wedding rings", budget: "rings" },
+      {
+        slug: "wedding_jewelry",
+        label_hu: "Ékszer",
+        label_en: "Wedding jewelry",
+        budget: "rings",
+      },
     ],
   },
   {
-    slug: "details",
-    label_hu: "Részletek",
-    label_en: "Details",
+    slug: "paper_design",
+    label_hu: "Papír & grafika",
+    label_en: "Paper goods & design",
     categories: [
       {
         slug: "stationery",
-        label_hu: "Papír & nyomtatvány",
-        label_en: "Stationery",
+        label_hu: "Meghívó & papíráru",
+        label_en: "Invitations & paper goods",
         budget: "stationery",
       },
       {
         slug: "invitation_graphics",
-        label_hu: "Meghívó / esküvői grafika",
-        label_en: "Invitations / wedding graphics",
+        label_hu: "Meghívó & esküvői grafika",
+        label_en: "Invitation & wedding graphics",
         budget: "stationery",
       },
+    ],
+  },
+  {
+    slug: "transport",
+    label_hu: "Transzfer",
+    label_en: "Transport",
+    categories: [
       {
-        slug: "wedding_website",
-        label_hu: "Esküvői weboldal",
-        label_en: "Wedding website",
-        budget: "stationery",
+        slug: "transport",
+        label_hu: "Transzfer",
+        label_en: "Wedding transport",
+        budget: "transport",
       },
-      { slug: "transport", label_hu: "Transzfer", label_en: "Transport", budget: "transport" },
     ],
   },
 ];
@@ -511,4 +563,34 @@ export function seedSupplierTaxonomy(): void {
     }
   }
   invalidateTaxonomyCache();
+}
+
+/** The v2 taxonomy (July 2026) reshaped the groups. The additive seed above adds
+ *  the new groups/categories but never removes the old ones, so on an existing
+ *  DB the pre-v2 groups (planning, atmosphere, experience, style, details) and
+ *  their categories linger and would show alongside the new structure — some as
+ *  duplicate slugs for categories that moved groups. This idempotent pass
+ *  soft-hides any group not in the current SEED plus every category under it,
+ *  leaving the admin able to un-hide/audit them. Run once per boot after the
+ *  seed. Categories that kept their group (venue, catering, …) are untouched. */
+export function retireLegacyTaxonomy(): void {
+  const validGroups = SEED.map((g) => g.slug);
+  const placeholders = validGroups.map(() => "?").join(",");
+  const ts = now();
+  const hiddenGroups = db
+    .prepare(
+      `UPDATE supplier_groups SET hidden = 1, updated_at = ?
+        WHERE hidden = 0 AND slug NOT IN (${placeholders})`,
+    )
+    .run(ts, ...validGroups).changes;
+  const hiddenCats = db
+    .prepare(
+      `UPDATE supplier_categories SET hidden = 1, updated_at = ?
+        WHERE hidden = 0 AND group_id IN (SELECT id FROM supplier_groups WHERE hidden = 1)`,
+    )
+    .run(ts).changes;
+  if (hiddenGroups > 0 || hiddenCats > 0) {
+    invalidateTaxonomyCache();
+    console.log(`[taxonomy] retired ${hiddenGroups} legacy group(s), ${hiddenCats} category(ies)`);
+  }
 }

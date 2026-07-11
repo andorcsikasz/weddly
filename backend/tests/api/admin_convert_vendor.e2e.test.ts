@@ -34,7 +34,7 @@ describe("admin convert user to vendor", () => {
     const res = await req<{ ok: true; vendor_account_id: number }>(
       "POST",
       `/api/admin/users/${before!.id}/convert-to-vendor`,
-      { business_name: "Gyöngy Photography", category: "photo_video" },
+      { business_name: "Gyöngy Photography", category: "photography" },
       { token: adminToken },
     );
     expect(res.status).toBe(200);
@@ -62,7 +62,7 @@ describe("admin convert user to vendor", () => {
     const listing = db
       .prepare("SELECT category, name, status FROM listings WHERE vendor_account_id = ?")
       .get(accountId) as { category: string; name: string; status: string } | undefined;
-    expect(listing?.category).toBe("photo_video");
+    expect(listing?.category).toBe("photography");
     expect(listing?.name).toBe("Gyöngy Photography");
     expect(listing?.status).toBe("active");
 
@@ -88,7 +88,7 @@ describe("admin convert user to vendor", () => {
     await req(
       "POST",
       `/api/admin/users/${u!.id}/convert-to-vendor`,
-      { business_name: "Mover Studio", category: "music_dj" },
+      { business_name: "Mover Studio", category: "dj" },
       { token: adminToken },
     );
 

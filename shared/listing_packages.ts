@@ -77,37 +77,65 @@ export const PACKAGE_NAME_SUGGESTIONS: Record<SupplierCategory, { hu: string[]; 
     hu: ["Alap italcsomag", "Koktélbár", "Prémium nyitott bár"],
     en: ["Basic drinks", "Cocktail bar", "Premium open bar"],
   },
-  pizza: {
-    hu: ["Pizzakocsi 2 óra", "Korlátlan pizza", "Prémium olasz válogatás"],
-    en: ["Pizza van, 2 hours", "Unlimited pizza", "Premium Italian selection"],
+  food_trucks: {
+    hu: ["2 órás foodtruck", "Korlátlan street food", "Prémium válogatás"],
+    en: ["Food truck, 2 hours", "Unlimited street food", "Premium selection"],
   },
-  decor_floral: {
-    hu: ["Menyasszonyi csokor", "Ceremónia dekor", "Teljes helyszíndekor"],
-    en: ["Bridal bouquet", "Ceremony décor", "Full venue décor"],
+  wedding_decor: {
+    hu: ["Ceremónia dekor", "Fő terem dekor", "Teljes helyszíndekor"],
+    en: ["Ceremony décor", "Reception décor", "Full venue décor"],
+  },
+  florist: {
+    hu: ["Menyasszonyi csokor", "Ceremónia virág", "Teljes virágdekor"],
+    en: ["Bridal bouquet", "Ceremony florals", "Full floral design"],
   },
   lighting: {
     hu: ["Hangulatvilágítás", "Táncparkett + LED", "Teljes fényinstalláció"],
     en: ["Ambient lighting", "Dancefloor + LED", "Full lighting design"],
   },
-  music_dj: {
+  photography: {
+    hu: ["Félnapos csomag", "Egész napos csomag", "Prémium csomag"],
+    en: ["Half-day package", "Full-day package", "Premium package"],
+  },
+  videography: {
+    hu: ["Highlight film", "Egész napos videó", "Fotó + videó prémium"],
+    en: ["Highlight film", "Full-day video", "Photo + video premium"],
+  },
+  content_creator: {
+    hu: ["Napi reels csomag", "Egész napos tartalom", "Fotó + reels prémium"],
+    en: ["Reels package", "Full-day content", "Photo + reels premium"],
+  },
+  photo_booth: {
+    hu: ["2 órás fotófülke", "Egész estés fotófülke", "Prémium fotófülke"],
+    en: ["2-hour booth", "Full-evening booth", "Premium booth"],
+  },
+  dj: {
     hu: ["4 órás DJ", "Egész estés DJ", "DJ + élő zene"],
     en: ["4-hour DJ set", "Full-evening DJ", "DJ + live music"],
   },
-  sound_tech: {
-    hu: ["Ceremónia hangosítás", "Alap hangrendszer", "Teljes színpadtechnika"],
-    en: ["Ceremony sound", "Basic PA system", "Full stage tech"],
-  },
-  photo_video: {
-    hu: ["Félnapos csomag", "Egész napos csomag", "Fotó + videó prémium"],
-    en: ["Half-day package", "Full-day package", "Photo + video premium"],
+  live_music: {
+    hu: ["Ceremónia élőzene", "Vacsorazene", "Esküvői zenekar"],
+    en: ["Ceremony live music", "Dinner music", "Wedding band"],
   },
   entertainment: {
     hu: ["Ceremónia élőzene", "Sztárfellépő", "Interaktív műsor"],
     en: ["Ceremony live act", "Headline act", "Interactive show"],
   },
-  attire: {
+  mc_celebrant: {
+    hu: ["Szertartásvezetés", "Ceremóniamester", "Teljes napi vezetés"],
+    en: ["Ceremony officiant", "Master of ceremonies", "Full-day hosting"],
+  },
+  sound_tech: {
+    hu: ["Ceremónia hangosítás", "Alap hangrendszer", "Teljes színpadtechnika"],
+    en: ["Ceremony sound", "Basic PA system", "Full stage tech"],
+  },
+  bridal_boutique: {
     hu: ["Ruhabérlés", "Egyedi ruha", "Teljes stíluscsomag"],
     en: ["Dress rental", "Bespoke dress", "Full styling package"],
+  },
+  suit_formal: {
+    hu: ["Öltönybérlés", "Egyedi öltöny", "Teljes szett"],
+    en: ["Suit rental", "Bespoke suit", "Full outfit"],
   },
   hair_makeup: {
     hu: ["Menyasszonyi smink", "Haj + smink", "Menyasszony + kíséret"],
@@ -117,21 +145,21 @@ export const PACKAGE_NAME_SUGGESTIONS: Record<SupplierCategory, { hu: string[]; 
     hu: ["Alap manikűr", "Géllakk", "Menyasszonyi körömszett"],
     en: ["Basic manicure", "Gel polish", "Bridal nail set"],
   },
-  rings: {
-    hu: ["Jegygyűrűpár", "Egyedi gyűrű", "Prémium kollekció"],
-    en: ["Wedding band pair", "Bespoke ring", "Premium collection"],
+  wedding_jewelry: {
+    hu: ["Jegygyűrűpár", "Egyedi ékszer", "Prémium kollekció"],
+    en: ["Wedding band pair", "Bespoke jewelry", "Premium collection"],
   },
   stationery: {
     hu: ["Meghívó szett", "Teljes papírdekor", "Egyedi arculat"],
     en: ["Invitation set", "Full paper suite", "Bespoke identity"],
   },
   invitation_graphics: {
-    hu: ["Meghívó grafika", "Teljes grafikai csomag", "Egyedi esküvői arculat"],
-    en: ["Invitation design", "Full graphics suite", "Bespoke wedding identity"],
+    hu: ["Meghívó grafika", "Teljes grafikai csomag", "Grafika + weboldal"],
+    en: ["Invitation design", "Full graphics suite", "Graphics + website"],
   },
-  wedding_website: {
-    hu: ["Alap weboldal", "Weboldal + RSVP", "Prémium csomag"],
-    en: ["Basic website", "Website + RSVP", "Premium package"],
+  rental_equipment: {
+    hu: ["Alap bérlés", "Bútor + dekor bérlés", "Teljes technika"],
+    en: ["Basic hire", "Furniture + décor hire", "Full equipment"],
   },
   transport: {
     hu: ["Menyasszonyi autó", "Vendégbusz", "Teljes flotta"],

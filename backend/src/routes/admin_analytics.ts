@@ -26,7 +26,7 @@ import type {
   WeddingSeason,
 } from "@shared/admin_analytics";
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
-import type { SupplierCategory } from "@shared/suppliers";
+import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { CONFIG } from "../config";
 import { db } from "../db";
 import {
@@ -72,28 +72,9 @@ const BUDGET_CATEGORIES: readonly BudgetCategory[] = [
 // All known SupplierCategory values. Mirrors shared/suppliers.ts; same
 // reasoning as BUDGET_CATEGORIES — the UI needs every row even when picks
 // are empty so the table doesn't develop gaps.
-const SUPPLIER_CATEGORIES: readonly SupplierCategory[] = [
-  "wedding_planner",
-  "venue",
-  "accommodation",
-  "tent_pavilion",
-  "catering",
-  "cake_dessert",
-  "bar_drinks",
-  "decor_floral",
-  "lighting",
-  "music_dj",
-  "sound_tech",
-  "photo_video",
-  "entertainment",
-  "attire",
-  "hair_makeup",
-  "nails",
-  "rings",
-  "stationery",
-  "wedding_website",
-  "transport",
-];
+const SUPPLIER_CATEGORIES: readonly SupplierCategory[] = SUPPLIER_GROUPS.flatMap(
+  (g) => g.categories,
+);
 
 // All known CoupleStatus values. Listed explicitly so the response always
 // surfaces a zero row for statuses the DB hasn't seen yet — the admin UI

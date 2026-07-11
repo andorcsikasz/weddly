@@ -43,17 +43,22 @@ function getShowcase() {
 
 beforeEach(() => {
   wipeAll();
+  // wipeAll intentionally preserves curated listings (re-materialised on boot).
+  // The showcase reads every source, so leaked curated fixtures from earlier
+  // suites would inflate these counts — start each showcase test from a truly
+  // empty listings table and let it insert exactly what it asserts on.
+  db.exec("DELETE FROM listings");
   seq = 0;
 });
 
 describe("public vendor showcase", () => {
   test("returns without auth and only includes vendors that have a photo", async () => {
-    insertListing({ category: "photo_video", name: "With Photo" });
-    insertListing({ category: "photo_video", name: "No Photo", hero: null });
+    insertListing({ category: "photography", name: "With Photo" });
+    insertListing({ category: "photography", name: "No Photo", hero: null });
 
     const r = await getShowcase();
     expect(r.status).toBe(200);
-    const photo = r.data.categories.find((c) => c.category === "photo_video");
+    const photo = r.data.categories.find((c) => c.category === "photography");
     expect(photo?.vendors.map((v) => v.name)).toEqual(["With Photo"]);
     // Every returned vendor carries a non-empty hero image.
     for (const c of r.data.categories) {
@@ -90,12 +95,12 @@ describe("public vendor showcase", () => {
   test("surfaces claimed Weddly vendors ahead of curated ones", async () => {
     // Two curated (older) + one claimed (newest) in the same category; the cap is
     // high enough to include all, but claimed must sort first.
-    insertListing({ id: "cur-1", source: "curated", category: "music_dj", name: "Curated DJ 1" });
-    insertListing({ id: "cur-2", source: "curated", category: "music_dj", name: "Curated DJ 2" });
-    insertListing({ id: "v99", source: "claimed", category: "music_dj", name: "Weddly DJ" });
+    insertListing({ id: "cur-1", source: "curated", category: "dj", name: "Curated DJ 1" });
+    insertListing({ id: "cur-2", source: "curated", category: "dj", name: "Curated DJ 2" });
+    insertListing({ id: "v99", source: "claimed", category: "dj", name: "Weddly DJ" });
 
     const r = await getShowcase();
-    const music = r.data.categories.find((c) => c.category === "music_dj");
+    const music = r.data.categories.find((c) => c.category === "dj");
     expect(music?.vendors[0]?.id).toBe("v99");
   });
 });

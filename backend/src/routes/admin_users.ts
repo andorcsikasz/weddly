@@ -39,7 +39,12 @@ const DEMO_EMAIL_SUFFIX = "@demo.weddly.local";
 /** Flat set of every valid supplier category, built once from the taxonomy
  *  source of truth so the convert-to-vendor endpoint rejects an unknown
  *  category at the boundary (mirrors routes/vendor_register.ts). */
-const VALID_CATEGORIES: ReadonlySet<string> = new Set(SUPPLIER_GROUPS.flatMap((g) => g.categories));
+// `other` isn't a browse category but stays a valid REGISTRATION choice paired
+// with a free-text custom_category (see the "other" branch below).
+const VALID_CATEGORIES: ReadonlySet<string> = new Set([
+  ...SUPPLIER_GROUPS.flatMap((g) => g.categories),
+  "other",
+]);
 
 function toUserFlag(row: UserFlagRow): UserFlag {
   return {

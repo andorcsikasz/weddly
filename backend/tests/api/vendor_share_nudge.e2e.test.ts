@@ -25,7 +25,7 @@ async function registerVendor(email: string, businessName: string, locale = "en"
     password: "supersafe123",
     full_name: "Owner Person",
     business_name: businessName,
-    category: "photo_video",
+    category: "photography",
     locale,
   });
   expect(r.status).toBe(201);

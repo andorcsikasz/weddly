@@ -1,7 +1,8 @@
-import type {
-  AdminDirectoryFilters,
-  SupplierCategory,
-  SupplierDirectoryAdminRow,
+import {
+  type AdminDirectoryFilters,
+  SUPPLIER_GROUPS,
+  type SupplierCategory,
+  type SupplierDirectoryAdminRow,
 } from "@shared/suppliers";
 import {
   Download,
@@ -20,31 +21,9 @@ import { ApiError } from "../../lib/api";
 import { adminSupplierApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 
-/** Categories the directory currently covers. Mirrors the SupplierCategory
- *  union from shared/suppliers.ts — kept inline to avoid a runtime import
- *  cycle through the i18n keys. */
-const CATEGORIES: SupplierCategory[] = [
-  "venue",
-  "accommodation",
-  "tent_pavilion",
-  "catering",
-  "cake_dessert",
-  "bar_drinks",
-  "decor_floral",
-  "lighting",
-  "music_dj",
-  "sound_tech",
-  "photo_video",
-  "entertainment",
-  "attire",
-  "hair_makeup",
-  "nails",
-  "rings",
-  "stationery",
-  "invitation_graphics",
-  "wedding_website",
-  "transport",
-];
+/** Categories the directory covers, derived from the single taxonomy source so
+ *  it can never drift from the enum. */
+const CATEGORIES: SupplierCategory[] = SUPPLIER_GROUPS.flatMap((g) => g.categories);
 
 type SortKey =
   | "name"

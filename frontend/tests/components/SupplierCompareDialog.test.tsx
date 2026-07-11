@@ -15,7 +15,7 @@ function makeSupplier(over: Partial<DirectorySupplier> = {}): DirectorySupplier 
   return {
     id: "s1",
     name: "Foto One",
-    category: "photo_video",
+    category: "photography",
     city: "Budapest",
     country: "HU",
     blurb_hu: "",

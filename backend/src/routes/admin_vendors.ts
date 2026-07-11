@@ -27,7 +27,12 @@ import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 
 /** Every valid supplier category, from the taxonomy source of truth. */
-const VALID_CATEGORIES: ReadonlySet<string> = new Set(SUPPLIER_GROUPS.flatMap((g) => g.categories));
+// `other` isn't a browse category but stays a valid REGISTRATION choice paired
+// with a free-text custom_category (see the "other" branch below).
+const VALID_CATEGORIES: ReadonlySet<string> = new Set([
+  ...SUPPLIER_GROUPS.flatMap((g) => g.categories),
+  "other",
+]);
 
 function parseId(ctx: Ctx): number {
   const id = Number(ctx.params.id);

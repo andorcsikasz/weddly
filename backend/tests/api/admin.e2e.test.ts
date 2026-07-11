@@ -1910,7 +1910,7 @@ describe("admin analytics", () => {
     expect(r.data.total_picks).toBe(0);
     expect(r.data.picks_per_couple.count).toBe(0);
     expect(r.data.top_picks.length).toBe(0);
-    expect(r.data.category_coverage.length).toBe(20);
+    expect(r.data.category_coverage.length).toBe(29);
     expect(r.data.source_breakdown.curated).toBe(0);
     expect(r.data.source_breakdown.community).toBe(0);
     expect(r.data.source_breakdown.diy).toBe(0);
@@ -2140,7 +2140,7 @@ describe("vendor waitlist — public submit", () => {
     const r = await req<{ entry: VendorEntry }>("POST", "/api/vendors/waitlist", {
       business_name: "Floral Studio",
       email: "florist@example.com",
-      category: "decor_floral",
+      category: "wedding_decor",
       location: "Pest, HU",
       website: "https://floral.test",
       message: "We do garden weddings.",
@@ -2212,7 +2212,7 @@ describe("vendor waitlist — admin list/decide/reopen", () => {
     await req("POST", "/api/vendors/waitlist", {
       business_name: "ListMe",
       email: "list@me.com",
-      category: "music_dj",
+      category: "dj",
     });
     const r = await req<{ entries: VendorEntry[] }>(
       "GET",
@@ -2591,11 +2591,11 @@ interface TaxonomyResp {
 }
 
 describe("supplier taxonomy — admin groups CRUD", () => {
-  test("public GET returns the seeded 7 groups", async () => {
+  test("public GET returns the seeded 9 groups", async () => {
     wipeAll();
     const r = await req<TaxonomyResp>("GET", "/api/supplier-categories");
     expect(r.status).toBe(200);
-    expect(r.data.groups.length).toBe(7);
+    expect(r.data.groups.length).toBe(9);
   });
 
   test("admin POST create group — happy path", async () => {

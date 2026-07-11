@@ -40,7 +40,7 @@ async function acceptedWaitlistToken(
   const submit = await req<{ entry: { id: number } }>("POST", "/api/vendors/waitlist", {
     business_name: opts.business,
     email: opts.email,
-    category: opts.category ?? "photo_video",
+    category: opts.category ?? "photography",
     location: opts.location ?? "Budapest",
     website: null,
     message: null,
@@ -128,7 +128,7 @@ describe("vendor onboarding — accept → activate → live", () => {
     const { token } = await acceptedWaitlistToken(admin, {
       email: "founder@weddly.test",
       business: "Founder Films",
-      category: "photo_video",
+      category: "photography",
       location: "Szeged",
     });
 

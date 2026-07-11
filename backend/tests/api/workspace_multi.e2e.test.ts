@@ -712,7 +712,7 @@ describe("workspace_multi: cross-workspace data isolation", () => {
     await spawnEvent(token, "Bravo");
     const p2 = await req(
       "PUT",
-      "/api/picks/photo_video",
+      "/api/picks/photography",
       { supplier_id: "bravo-photographer-xyz" },
       { token },
     );
@@ -725,7 +725,7 @@ describe("workspace_multi: cross-workspace data isolation", () => {
       { token },
     );
     const bCats = bList.data.picks.map((p) => p.category).sort();
-    expect(bCats).toEqual(["photo_video"]);
+    expect(bCats).toEqual(["photography"]);
 
     await req("POST", "/api/users/me/active-couple", { couple_id: alphaId }, { token });
     const aList = await req<{ picks: { category: string; supplier_id: string }[] }>(

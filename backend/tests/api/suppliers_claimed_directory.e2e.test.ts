@@ -71,7 +71,7 @@ describe("registered vendors in the public directory", () => {
     const { accountId, listingId } = await seedRegisteredVendor(
       "studio@weddly.test",
       "Fenyő Fotó",
-      "photo_video",
+      "photography",
     );
 
     const res = await req<{ suppliers: DirectoryItem[] }>("GET", "/api/suppliers");
@@ -86,12 +86,9 @@ describe("registered vendors in the public directory", () => {
 
   test("category filter keeps the registered vendor when it matches", async () => {
     wipeAll();
-    const { listingId } = await seedRegisteredVendor("dj@weddly.test", "DJ Nova", "music_dj");
+    const { listingId } = await seedRegisteredVendor("dj@weddly.test", "DJ Nova", "dj");
 
-    const match = await req<{ suppliers: DirectoryItem[] }>(
-      "GET",
-      "/api/suppliers?category=music_dj",
-    );
+    const match = await req<{ suppliers: DirectoryItem[] }>("GET", "/api/suppliers?category=dj");
     expect(match.data.suppliers.some((s) => s.id === listingId)).toBe(true);
 
     const other = await req<{ suppliers: DirectoryItem[] }>(
@@ -120,7 +117,7 @@ describe("registered vendors in the public directory", () => {
     const { accountId, listingId } = await seedRegisteredVendor(
       "detail@weddly.test",
       "Detail Studio",
-      "decor_floral",
+      "wedding_decor",
     );
 
     const res = await req<{ id: string; vendor_account_id: number | null; source: string }>(
@@ -139,7 +136,7 @@ describe("registered vendors in the public directory", () => {
     wipeAll();
     await bootstrapCouple("realsupplier@weddly.test");
     const user = getUserByEmail("realsupplier@weddly.test");
-    const { vendorAccountId } = convertUserToVendor(user!, { category: "attire" });
+    const { vendorAccountId } = convertUserToVendor(user!, { category: "bridal_boutique" });
 
     const res = await req<{ suppliers: DirectoryItem[] }>("GET", "/api/suppliers");
     const card = res.data.suppliers.find((s) => s.id === `v${vendorAccountId}`);

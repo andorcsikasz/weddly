@@ -116,7 +116,7 @@ describe("P2.A community supplier dual-write", () => {
       "POST",
       "/api/suppliers/community",
       {
-        category: "photo_video",
+        category: "photography",
         submitter_type: "user",
         name: "Test Photo Studio",
         city: "Budapest",
@@ -138,7 +138,7 @@ describe("P2.A community supplier dual-write", () => {
     expect(listing).not.toBeNull();
     expect(listing?.source).toBe("community");
     expect(listing?.status).toBe("pending");
-    expect(listing?.category).toBe("photo_video");
+    expect(listing?.category).toBe("photography");
     expect(listing?.name).toBe("Test Photo Studio");
     expect(listing?.vendor_account_id).toBeNull();
   });
@@ -150,7 +150,7 @@ describe("P2.A community supplier dual-write", () => {
       "POST",
       "/api/suppliers/community",
       {
-        category: "music_dj",
+        category: "dj",
         submitter_type: "self",
         name: "Lifecycle DJ",
         city: "Pécs",

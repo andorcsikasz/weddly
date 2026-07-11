@@ -3700,7 +3700,7 @@ describe("email pipeline", () => {
     await req("POST", "/api/vendors/waitlist", {
       business_name: "Queued",
       email: "queued@example.test",
-      category: "decor_floral",
+      category: "wedding_decor",
       message: "x",
     });
 
@@ -5419,13 +5419,13 @@ describe("supplier taxonomy (admin-editable groups + categories)", () => {
     return r.data.token;
   }
 
-  test("public GET /api/supplier-categories returns the seeded 7 groups / 20 categories", async () => {
+  test("public GET /api/supplier-categories returns the seeded 9 groups / 29 categories", async () => {
     wipeAll();
     const r = await req<TaxonomyResponse>("GET", "/api/supplier-categories");
     expect(r.status).toBe(200);
-    expect(r.data.groups.length).toBe(7);
+    expect(r.data.groups.length).toBe(9);
     const allCats = r.data.groups.flatMap((g) => g.categories);
-    expect(allCats.length).toBe(20);
+    expect(allCats.length).toBe(29);
     const venueGroup = r.data.groups.find((g) => g.slug === "venue_stay");
     expect(venueGroup?.label_hu).toBe("Helyszín & szállás");
     expect(venueGroup?.categories.map((c) => c.slug)).toEqual([
@@ -6828,7 +6828,7 @@ describe("vendor waitlist", () => {
     const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
       business_name: "Florea Studio",
       email: "florea@example.test",
-      category: "decor_floral",
+      category: "wedding_decor",
       location: "Budapest, Hungary",
       message: "Floral, Budapest area.",
     });
@@ -6908,7 +6908,7 @@ describe("vendor waitlist", () => {
     const bare = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
       business_name: "Bare Host Studio",
       email: "bare@example.test",
-      category: "photo_video",
+      category: "photography",
       website: "example.com",
     });
     expect(bare.status).toBe(201);
@@ -6918,7 +6918,7 @@ describe("vendor waitlist", () => {
     const full = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
       business_name: "Full URL Studio",
       email: "full@example.test",
-      category: "photo_video",
+      category: "photography",
       website: "http://portfolio.example/work",
     });
     expect(full.status).toBe(201);
@@ -6928,7 +6928,7 @@ describe("vendor waitlist", () => {
     const empty = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
       business_name: "No Site Studio",
       email: "none@example.test",
-      category: "photo_video",
+      category: "photography",
       website: "",
     });
     expect(empty.status).toBe(201);
@@ -6974,7 +6974,7 @@ describe("vendor waitlist", () => {
     const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
       business_name: "Florea Studio",
       email: "florea@example.test",
-      category: "decor_floral",
+      category: "wedding_decor",
       portfolio_links: [
         "example.com/work",
         "https://instagram.com/p/abc",
@@ -7085,7 +7085,7 @@ describe("vendor waitlist outcomes", () => {
     const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
       business_name: "Bloom Studio",
       email: "bloom@example.test",
-      category: "decor_floral",
+      category: "wedding_decor",
       message: "Florist, Budapest.",
     });
     expect(submit.status).toBe(201);
@@ -7660,7 +7660,7 @@ describe("couple_suppliers (DIY entries + budget mirror)", () => {
     const r = await req<CoupleSupplierResp>(
       "POST",
       "/api/couple-suppliers",
-      { name: "Béla bácsi zenél", category: "music_dj", price_huf: 120_000, paid: true },
+      { name: "Béla bácsi zenél", category: "dj", price_huf: 120_000, paid: true },
       { token },
     );
     expect(r.status).toBe(201);
@@ -7713,7 +7713,7 @@ describe("couple_suppliers (DIY entries + budget mirror)", () => {
     const created = await req<CoupleSupplierResp>(
       "POST",
       "/api/couple-suppliers",
-      { name: "Friend florist", category: "decor_floral", price_huf: 50_000 },
+      { name: "Friend florist", category: "wedding_decor", price_huf: 50_000 },
       { token },
     );
     expect(created.status).toBe(201);
@@ -7742,7 +7742,7 @@ describe("couple_suppliers (DIY entries + budget mirror)", () => {
     const created = await req<CoupleSupplierResp>(
       "POST",
       "/api/couple-suppliers",
-      { name: "Family DJ", category: "music_dj", price_huf: 30_000 },
+      { name: "Family DJ", category: "dj", price_huf: 30_000 },
       { token },
     );
     expect(created.status).toBe(201);
@@ -7874,7 +7874,7 @@ describe("couple_suppliers: paid toggle controls actual_huf", () => {
     const r = await req<SupplierResp>(
       "POST",
       "/api/couple-suppliers",
-      { name: "Friend florist", category: "decor_floral", price_huf: 60_000, paid: false },
+      { name: "Friend florist", category: "wedding_decor", price_huf: 60_000, paid: false },
       { token },
     );
     expect(r.status).toBe(201);
@@ -7894,7 +7894,7 @@ describe("couple_suppliers: paid toggle controls actual_huf", () => {
     const r = await req<SupplierResp>(
       "POST",
       "/api/couple-suppliers",
-      { name: "Cousin DJ", category: "music_dj", price_huf: 120_000, paid: true },
+      { name: "Cousin DJ", category: "dj", price_huf: 120_000, paid: true },
       { token },
     );
     expect(r.status).toBe(201);
@@ -8208,7 +8208,7 @@ describe("budget snapshot restore", () => {
     const sup = await req<SupplierResp>(
       "POST",
       "/api/couple-suppliers",
-      { name: "Still priced", category: "music_dj", price_huf: 45_000 },
+      { name: "Still priced", category: "dj", price_huf: 45_000 },
       { token },
     );
     expect(sup.status).toBe(201);
@@ -10680,7 +10680,7 @@ describe("admin analytics", () => {
     // C: 1 community pick
     db.prepare(
       `INSERT INTO couple_picks (couple_id, category, supplier_id, picked_by_user_id, picked_at) VALUES (?, ?, ?, NULL, ?)`,
-    ).run(cC, "music_dj", "c42", Date.now());
+    ).run(cC, "dj", "c42", Date.now());
 
     const picks = await req<PicksPayload>("GET", "/api/admin/analytics/picks", undefined, {
       token: adminToken,
@@ -10717,7 +10717,7 @@ describe("admin analytics", () => {
     expect(cov?.missing).toBe(1);
     expect(cov?.coverage_pct).toBeCloseTo(2 / 3, 5);
     // A category nobody picked: 0/3.
-    const empty = picks.data.category_coverage.find((c) => c.category === "rings");
+    const empty = picks.data.category_coverage.find((c) => c.category === "wedding_jewelry");
     expect(empty?.picked).toBe(0);
     expect(empty?.missing).toBe(3);
     expect(empty?.coverage_pct).toBe(0);
