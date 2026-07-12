@@ -7818,9 +7818,12 @@ const RAW_DIRECTORY: (Omit<
   // ── Italy (IT) — 40 real luxury wedding venues, verified from official
   //    sources (Jul 2026 import). Country resolves from the `, IT` city
   //    suffix (curatedCountry); gallery_urls hotlink the venue's own site and
-  //    are re-hosted CSP-safe by the boot image/gallery backfill sweeps. Seven
-  //    JS/bot-protected sites (Four Seasons, Rosewood, Anantara, …) ship with
-  //    no gallery — placeholder card until a real image can be sourced.
+  //    are re-hosted CSP-safe by the boot image/gallery backfill sweeps. Villa
+  //    Balbiano, Villa Pliniana, Hotel Eden and San Domenico Palace use verified
+  //    Wikimedia Commons photos of the actual venue; Rosewood uses its own CDN.
+  //    Two JS/bot-protected sites (Anantara Convento di Amalfi, Borgo Santo
+  //    Pietro) ship with no gallery: placeholder card until a real image can be
+  //    sourced.
   {
     id: "villa-deste",
     name: "Villa d’Este",
@@ -7925,6 +7928,10 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "estate",
+    gallery_urls: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Villa_Balbiano_1.jpg/1920px-Villa_Balbiano_1.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Villa_Balbiano_2.jpg/1920px-Villa_Balbiano_2.jpg",
+    ],
   },
   {
     id: "villa-pizzo",
@@ -7973,6 +7980,12 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "estate",
+    gallery_urls: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Villa_Pliniana_-_Torno_-_01.jpg/1920px-Villa_Pliniana_-_Torno_-_01.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Villa_Pliniana_-_Torno_-_02.jpg/1920px-Villa_Pliniana_-_Torno_-_02.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Villa_pliniana.jpg/1920px-Villa_pliniana.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/COMO_UN_QUADRO..._La_Villa_Pliniana_con_la_cascata_intermittente.jpg/1920px-COMO_UN_QUADRO..._La_Villa_Pliniana_con_la_cascata_intermittente.jpg",
+    ],
   },
   {
     id: "mandarin-oriental-lago-di-como",
@@ -8094,6 +8107,9 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "resort",
+    gallery_urls: [
+      "https://images.rosewoodhotels.com/is/image/rwhg/rwcdb-il-borgo-with-pool?wid=1600",
+    ],
   },
   {
     id: "villa-cora",
@@ -8565,6 +8581,10 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "hotel",
+    gallery_urls: [
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Hotel_Eden_-_Dorchester_Collection.jpg/1920px-Hotel_Eden_-_Dorchester_Collection.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Hotel_Eden_-_Dorchester_Collection2.jpg/1920px-Hotel_Eden_-_Dorchester_Collection2.jpg",
+    ],
   },
   {
     id: "la-posta-vecchia-hotel",
@@ -8772,6 +8792,10 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "hotel",
+    gallery_urls: [
+      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Hotel_San_Domenico-Taormina-Sicilia-Italy_-_Creative_Commons_by_gnuckx_%283666625285%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Taormina%2C_view_from_our_balcony_at_San_Domenico_Palace_-_panoramio.jpg/1920px-Taormina%2C_view_from_our_balcony_at_San_Domenico_Palace_-_panoramio.jpg",
+    ],
   },
   {
     id: "grand-hotel-timeo-a-belmond-hotel",
