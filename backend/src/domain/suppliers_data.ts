@@ -8928,6 +8928,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 3,
     venue_style: "hotel",
+    gallery_urls: [
+      "https://media.iceportal.com/106630/photos/74946050_XL.jpg",
+      "https://media.iceportal.com/106630/photos/74946106_XL.jpg",
+      "https://media.iceportal.com/106630/photos/74946656_XL.jpg",
+      "https://media.iceportal.com/106630/photos/74946746_XL.jpg",
+      "https://media.iceportal.com/106630/photos/74946766_XL.jpg",
+      "https://media.iceportal.com/106630/photos/74946878_XL.jpg",
+    ],
   },
   {
     id: "diamma-resort",
@@ -9083,6 +9091,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 3,
     venue_style: "hotel",
+    gallery_urls: [
+      "https://static.wixstatic.com/media/58d3bb_f3b7e45cefca436294a0b3f197dd000d~mv2.jpg/v1/fill/w_1500,h_1000,al_c,q_85/seo-7.jpg",
+      "https://static.wixstatic.com/media/58d3bb_07394e49400343c99ff65c854c5bdf5e~mv2.jpg/v1/fill/w_1200,h_800,al_c,q_85,enc_auto/mk-tirana-15.jpg",
+      "https://static.wixstatic.com/media/58d3bb_4a999c55f0954602a02b3e677670d4d4~mv2.jpg/v1/fill/w_1200,h_800,al_c,q_85,enc_auto/mk-tirana-5.jpg",
+      "https://static.wixstatic.com/media/58d3bb_9e4191fad3744b909a409accc0a7c12a~mv2.jpg/v1/fill/w_1200,h_800,al_c,q_85,enc_auto/mk-tirana-18.jpg",
+      "https://static.wixstatic.com/media/58d3bb_dcfb0e08d0de45e296562e570fec9736~mv2.jpg/v1/fill/w_1200,h_800,al_c,q_85,enc_auto/DSC07236.jpg",
+      "https://static.wixstatic.com/media/58d3bb_c9827daf5b78466f8561ca8546958810~mv2.jpg/v1/fill/w_1200,h_800,al_c,q_85,enc_auto/mk-tirana_1-2.jpg",
+    ],
   },
   {
     id: "grand-vm-conference-spa",
@@ -9132,6 +9148,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 4,
     venue_style: "hotel",
+    gallery_urls: [
+      "https://hotelmix.co.uk/data/Photos/OriginalPhoto/17364/1736402/1736402987/Yacht-Hotel-Vlore-Exterior.JPEG",
+      "https://hotelmix.co.uk/data/Photos/OriginalPhoto/17364/1736403/1736403026/Yacht-Hotel-Vlore-Beach.JPEG",
+      "https://hotelmix.co.uk/data/Photos/OriginalPhoto/17364/1736403/1736403057/Yacht-Hotel-Vlore-Skyline.JPEG",
+      "https://hotelmix.co.uk/data/Photos/OriginalPhoto/17364/1736402/1736402893/Yacht-Hotel-Vlore-Restaurant.JPEG",
+      "https://hotelmix.co.uk/data/Photos/OriginalPhoto/17364/1736403/1736403079/Yacht-Hotel-Vlore-Room.JPEG",
+      "https://hotelmix.co.uk/data/Photos/OriginalPhoto/17364/1736402/1736402881/Yacht-Hotel-Vlore-Facilities.JPEG",
+    ],
   },
   {
     id: "bougainville-bay-hotel",
@@ -9294,6 +9318,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 3,
     venue_style: "hotel",
+    gallery_urls: [
+      "https://reginagroup.al/images/regina-city/home-slider/1740578113663641000_landing-1.webp",
+      "https://reginagroup.al/images/regina-city/home-slider/1741790975629302828_903B4663.jpg",
+      "https://reginagroup.al/images/regina-city/home-slider/1741791001357661531_903B5114.jpg",
+      "https://reginagroup.al/images/regina-city/home-slider/1741791254333793364_2B6A1760.jpg",
+      "https://reginagroup.al/images/regina-city/home-slider/1774004114638369738_WhatsApp_Image_2026-03-13_at_1.51.35_PM_11.jpeg",
+      "https://reginagroup.al/images/regina-city/home-slider/1774003994742201326_WhatsApp_Image_2026-03-19_at_10.48.27_AM_1.jpeg",
+    ],
   },
   {
     id: "arameras-beach-resort",
@@ -9315,6 +9347,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 4,
     venue_style: "resort",
+    gallery_urls: [
+      "https://arameras-resort.al/images/wetransfer_cx4a9408-jpg_2025-07-02_0808%20(1)/DJI_20250624204927_0070_D.jpg",
+      "https://arameras-resort.al/images/wetransfer_cx4a9408-jpg_2025-07-02_0808%20(1)/CX4A9712.jpg",
+      "https://arameras-resort.al/images/wetransfer_cx4a9408-jpg_2025-07-02_0808%20(1)/0S7A0090.jpg",
+      "https://arameras-resort.al/images/wetransfer_cx4a9408-jpg_2025-07-02_0808%20(1)/0S7A0389.jpg",
+      "https://arameras-resort.al/images/wetransfer_cx4a9408-jpg_2025-07-02_0808%20(1)/0S7A0457.jpg",
+      "https://arameras-resort.al/images/wetransfer_cx4a9408-jpg_2025-07-02_0808%20(1)/CX4A9438.jpg",
+    ],
   },
   {
     id: "select-hill-resort",
@@ -9365,6 +9405,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 3,
     venue_style: "hotel",
+    gallery_urls: [
+      "https://arkahotel.al/wp-content/uploads/2023/05/20230427-DJI_0600-HDR-scaled.jpg",
+      "https://arkahotel.al/wp-content/uploads/2023/05/4A3A9125-scaled.jpg",
+      "https://arkahotel.al/wp-content/uploads/2023/05/DSC_9604-2048x1278.jpg",
+      "https://arkahotel.al/wp-content/uploads/2023/05/DSC_9628-scaled.jpg",
+      "https://arkahotel.al/wp-content/uploads/2023/05/Pool-scaled.jpg",
+      "https://arkahotel.al/wp-content/uploads/2023/05/3X2A3515-1024x683.jpg",
+    ],
   },
   {
     id: "villa-pascucci",
@@ -9415,6 +9463,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "resort",
+    gallery_urls: [
+      "https://www.ahstatic.com/photos/b8r9_ho_00_p_2048x1536.jpg",
+      "https://www.ahstatic.com/photos/b8r9_ho_01_p_2048x1536.jpg",
+      "https://www.ahstatic.com/photos/b8r9_ho_02_p_2048x1536.jpg",
+      "https://www.ahstatic.com/photos/b8r9_ho_03_p_2048x1536.jpg",
+      "https://www.ahstatic.com/photos/b8r9_wd_00_p_2048x1536.jpg",
+      "https://www.ahstatic.com/photos/b8r9_sp_00_p_2048x1536.jpg",
+    ],
   },
   {
     id: "kep-merli",
@@ -9614,6 +9670,13 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 4,
     venue_style: "resort",
+    gallery_urls: [
+      "https://cdn.prod.website-files.com/6570658c46b1871f3f9a4d50/679d16595855bf077a9597c4_11111111.jpg",
+      "https://cdn.prod.website-files.com/6570658c46b1871f3f9a4d50/68a70137c553658dc5e071ae_Foto%20OK_Foto_143A54551665386771814-p-2000.jpg",
+      "https://cdn.prod.website-files.com/6570658c46b1871f3f9a4d50/69b92ea4480fca0a9e791156_699121350.jpg",
+      "https://cdn.prod.website-files.com/6570658c46b1871f3f9a4d50/6a2840628d28b8eb786e13cd_Screenshot%202026-06-09%20182935.jpg",
+      "https://cdn.prod.website-files.com/6570658c46b1871f3f9a4d50/6a2841dca38d1b6af09fc7a1_WhatsApp%20Image%202023-01-26%20at%2016.26.26.jpeg",
+    ],
   },
   {
     id: "vila-barbaut",
@@ -9826,6 +9889,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 3,
     venue_style: "estate",
+    gallery_urls: [
+      "https://castle-park.com/wp-content/uploads/2021/10/hotel-castle-park-berat-e1634918150708.jpg",
+      "https://castle-park.com/wp-content/uploads/2022/09/homeslide-show-1-of-5.jpg",
+      "https://castle-park.com/wp-content/uploads/2022/09/Wine-Tasting.jpg",
+      "https://castle-park.com/wp-content/uploads/2022/09/Nature.jpg",
+      "https://castle-park.com/wp-content/uploads/2022/09/Room.jpg",
+      "https://castle-park.com/wp-content/uploads/2022/09/Bar-Restaurant.jpg",
+    ],
   },
   {
     id: "tirana-international-hotel-conference-centre",
@@ -9875,6 +9946,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 3,
     venue_style: "resort",
+    gallery_urls: [
+      "https://klajdiresort.al/wp-content/uploads/2023/05/IMG_6561-2048x1365-1.jpg",
+      "https://klajdiresort.al/wp-content/uploads/2023/05/IMG_6670-2048x1365-1.jpg",
+      "https://klajdiresort.al/wp-content/uploads/2023/05/IMG_6685-1-2048x1365-1.jpg",
+      "https://klajdiresort.al/wp-content/uploads/2023/05/Restorant-1-2048x1365-1.jpg",
+      "https://klajdiresort.al/wp-content/uploads/2023/05/take-some-time-to-relax-2048x1365-1.jpg",
+      "https://klajdiresort.al/wp-content/uploads/2023/05/IMG_6397-2048x1365-1.jpg",
+    ],
   },
   {
     id: "miramare-hotel-vlore",
@@ -9925,6 +10004,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 3,
     venue_style: "resort",
+    gallery_urls: [
+      "https://rapos.al/assets/photos/img1.jpg",
+      "https://rapos.al/assets/photos/img3.jpg",
+      "https://rapos.al/assets/photos/img4.jpg",
+      "https://rapos.al/assets/photos/img5.jpg",
+      "https://rapos.al/assets/photos/rooms/img1.jpg",
+      "https://rapos.al/assets/photos/rooms/img2.jpg",
+    ],
   },
   {
     id: "mrizi-i-zanave-agroturizem",
@@ -10047,6 +10134,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 4,
     venue_style: "waterfront",
+    gallery_urls: [
+      "https://bleevents.gr/wp-content/uploads/2024/07/ble-azure.jpg",
+      "https://bleevents.gr/wp-content/uploads/2024/07/ble-azure-2.jpg",
+      "https://bleevents.gr/wp-content/uploads/2024/07/ble-azure-3.jpg",
+      "https://bleevents.gr/wp-content/uploads/2024/07/ble-azure-7.jpg",
+      "https://bleevents.gr/wp-content/uploads/2024/07/ble-azure-8.jpg",
+      "https://bleevents.gr/wp-content/uploads/2024/07/ble-azure-28.jpg",
+    ],
   },
   {
     id: "hydrea-exclusive-hospitality",
@@ -10096,6 +10191,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 4,
     venue_style: "hotel",
+    gallery_urls: [
+      "https://www.rocabella-hotel-santorini.com/wp-content/uploads/2024/09/exclusive_pool-07.jpg",
+      "https://www.rocabella-hotel-santorini.com/wp-content/uploads/2024/07/exclusive_pool-17.jpg",
+      "https://www.rocabella-hotel-santorini.com/wp-content/uploads/2024/06/restaurant-01-1.jpg",
+      "https://www.rocabella-hotel-santorini.com/wp-content/uploads/2024/06/restaurant-13-1.jpg",
+      "https://www.rocabella-hotel-santorini.com/wp-content/uploads/2024/07/room36-35-1.jpg",
+      "https://www.rocabella-hotel-santorini.com/wp-content/uploads/2024/06/room40-1-3.jpg",
+    ],
   },
   {
     id: "myconian-ambassador",
@@ -10202,6 +10305,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "resort",
+    gallery_urls: [
+      "https://media.ffycdn.net/eu/mandarin-oriental-hotel-group/2A4URrdt9kAXJEYwRuwn.jpg",
+      "https://media.ffycdn.net/eu/mandarin-oriental-hotel-group/LKqz4yvQxx8JZQosgN3N.jpg",
+      "https://media.ffycdn.net/eu/mandarin-oriental-hotel-group/BBAR3LMyyLjrQn2W7D7o.jpg",
+      "https://media.ffycdn.net/eu/mandarin-oriental-hotel-group/Anio4zm6bhXU1s22GnN8.jpg",
+      "https://media.ffycdn.net/eu/mandarin-oriental-hotel-group/8DCizzQSv2FRDcTPyLGk.jpg",
+      "https://media.ffycdn.net/eu/mandarin-oriental-hotel-group/21Yw5V1SFBxEyFUbEBpy.jpg",
+    ],
   },
   {
     id: "amanzoe",
@@ -10251,6 +10362,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 4,
     venue_style: "estate",
+    gallery_urls: [
+      "https://elviento-santorini.com/wp-content/uploads/2022/03/h1-decor01.jpg",
+      "https://elviento-santorini.com/wp-content/uploads/2019/11/Matt.Codi_.Santorini-1427-Custom.jpg",
+      "https://elviento-santorini.com/wp-content/uploads/2019/11/KAPETANAKIS-STUDIOS-1-Custom.jpg",
+      "https://elviento-santorini.com/wp-content/uploads/2019/11/KAPETANAKIS-STUDIOS-61-Custom.jpg",
+      "https://elviento-santorini.com/wp-content/uploads/2019/11/h1-service02.jpg",
+      "https://elviento-santorini.com/wp-content/uploads/2019/11/accomodation-FEAT.jpg",
+    ],
   },
   {
     id: "amirandes-grecotel-resort",
@@ -10328,6 +10447,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "resort",
+    gallery_urls: [
+      "https://web.archive.org/web/20260508120824im_/https://www.fourseasons.com/content/dam/fourseasons/images/web/APL/APL_048_original.jpg",
+      "https://web.archive.org/web/20260508120824im_/https://www.fourseasons.com/content/dam/fourseasons/images/web/APL/APL_070_original.jpg",
+      "https://web.archive.org/web/20260518132535im_/https://www.fourseasons.com/content/dam/fourseasons/images/web/APL/APL_1307_original.jpg",
+      "https://web.archive.org/web/20250819211113im_/https://www.fourseasons.com/content/dam/fourseasons/images/web/APL/APL_1446_original.jpg",
+      "https://web.archive.org/web/20221025204607im_/https://www.fourseasons.com/content/dam/fourseasons/images/web/APL/APL_147_original.jpg",
+      "https://web.archive.org/web/20250418084725im_/https://www.fourseasons.com/content/dam/fourseasons/images/web/APL/APL_1121_1600x2000.jpg",
+    ],
   },
   {
     id: "costa-navarino",
@@ -10465,6 +10592,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "resort",
+    gallery_urls: [
+      "https://dam.kerzner.com/i/kerzner/240305_OOAA_P3_712_Epos_Residence_Pool_Terrace_View-0704_MASTER-jpg?w=1920&fmt=auto",
+      "https://dam.kerzner.com/i/kerzner/240305_OOAA_P3_Minima_Bar_Pool_Vignette-3493_MASTER?w=1920&fmt=auto",
+      "https://dam.kerzner.com/i/kerzner/240317_OOAA_Stories_Captain_Drone-2411_MASTER?w=1920&fmt=auto",
+      "https://dam.kerzner.com/i/kerzner/240317_OOAA_Stories_Sotiris_Destination-0082_MASTER?w=1920&fmt=auto",
+      "https://dam.kerzner.com/i/kerzner/240317_OOAA_Stories_Sotiris_Walk-3097_MASTER?w=1920&fmt=auto",
+      "https://dam.kerzner.com/i/kerzner/ooaa_wedding-7399?w=1920&fmt=auto",
+    ],
   },
   {
     id: "canaves-oia-suites",
@@ -10629,6 +10764,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "hotel",
+    gallery_urls: [
+      "https://dreffui1gbt6t.cloudfront.net/images/gra/gh-hero.jpg",
+      "https://dreffui1gbt6t.cloudfront.net/images/gra/SAN_Exteriors_Pool_lport.jpg",
+      "https://dreffui1gbt6t.cloudfront.net/images/gra/SAN_Accommodations_Villa_2023_TRG_4283-Edit-1.jpg",
+      "https://dreffui1gbt6t.cloudfront.net/images/gra/san-home-elevate-hero4.jpg",
+      "https://dreffui1gbt6t.cloudfront.net/images/gra/SAN_Events_Weddings_Hero-1024x576.jpg",
+      "https://dreffui1gbt6t.cloudfront.net/images/gra/SAN_Dine_Varoulko-Santorini_2024_15.jpg",
+    ],
   },
   {
     id: "kalesma-mykonos",
@@ -10984,6 +11127,14 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: 5,
     venue_style: "manor",
+    gallery_urls: [
+      "https://www.ktima-xatzi.gr/wp-content/uploads/2017/06/SOF_3816.jpg",
+      "https://www.ktima-xatzi.gr/wp-content/uploads/2017/06/jacobo_pachon_photography_greece-41.jpg",
+      "https://www.ktima-xatzi.gr/wp-content/uploads/2017/06/wedding-photoshooting-in-Athens-6.jpg",
+      "https://www.ktima-xatzi.gr/wp-content/uploads/2017/06/wedding-photoshooting-in-Athens-64.jpg",
+      "https://www.ktima-xatzi.gr/wp-content/uploads/2015/03/KtimaXatzi1ffw-final.jpg",
+      "https://www.ktima-xatzi.gr/wp-content/uploads/2015/03/KtimaXatzi2fw.jpg",
+    ],
   },
   {
     id: "nikki-beach-resort-spa-porto-heli",
