@@ -139,6 +139,20 @@ describe("vendor self-serve registration", () => {
     expect(bad.status).toBe(400);
   });
 
+  test("rejects wedding_planner — planners onboard via /planners, not vendor signup", async () => {
+    wipeAll();
+    const bad = await register({ ...baseBody, category: "wedding_planner" });
+    expect(bad.status).toBe(400);
+    expect((bad.data as unknown as { detail?: { code?: string } }).detail?.code).toBe(
+      "planner_use_planner_flow",
+    );
+    // Nothing was created — the whole provisioning transaction never ran.
+    const count = db
+      .prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'vendor'")
+      .get() as { n: number };
+    expect(count.n).toBe(0);
+  });
+
   test("stores the company identity block on the account and seeds the listing from it", async () => {
     wipeAll();
     const reg = await register({

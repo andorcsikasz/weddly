@@ -1850,6 +1850,8 @@ const en: LocaleMessages = {
     category_placeholder: "Pick your main category",
     category_required: "Pick a category.",
     category_other_option: "Other (write your own)",
+    planner_hint: "Are you a wedding planner?",
+    planner_hint_link: "Sign up as a planner here",
     custom_category_label: "What do you do?",
     custom_category_placeholder: "E.g. fireworks, photo booth, wine tasting…",
     custom_category_required: "Tell us what your service is.",
@@ -8038,6 +8040,12 @@ const en: LocaleMessages = {
     convert_sub:
       "This is just a taste. Create a free account to browse every vendor, save favourites and contact them directly by phone, email or Instagram.",
     vendor_prompt: "Are you a vendor? Get listed",
+    planner_badge: "Collaboration",
+    planner_title: "Wedding planners",
+    planner_body:
+      "Planners work differently on Weddly: instead of hiring one from the catalog, you invite them into your own workspace to collaborate on your guest list, seating plan and documents.",
+    planner_cta: "See how it works",
+    planner_featured: "Featured planners",
   },
 };
 

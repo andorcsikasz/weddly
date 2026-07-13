@@ -2124,6 +2124,9 @@ export interface LocaleMessages {
     category_required: string;
     /** The "my service isn't listed" escape hatch in the category select. */
     category_other_option: string;
+    /** Redirect for planners, who onboard via /planners, not the vendor flow. */
+    planner_hint: string;
+    planner_hint_link: string;
     custom_category_label: string;
     custom_category_placeholder: string;
     custom_category_required: string;
@@ -8695,5 +8698,12 @@ export interface LocaleMessages {
     convert_title: string;
     convert_sub: string;
     vendor_prompt: string;
+    /** Distinct planner module: planners are workspace collaborators, invited
+     *  via /planners, not directory contacts. */
+    planner_badge: string;
+    planner_title: string;
+    planner_body: string;
+    planner_cta: string;
+    planner_featured: string;
   };
 }

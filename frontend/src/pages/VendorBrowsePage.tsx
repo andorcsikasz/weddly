@@ -5,7 +5,7 @@
 // then registers to unlock the full directory; a vendor seeing it is nudged to
 // get listed. Data: publicShowcase + the real couples count from publicStats.
 
-import type { PublicShowcaseCategory } from "@shared/suppliers";
+import type { PublicShowcaseCategory, PublicShowcaseVendor } from "@shared/suppliers";
 import { ArrowRight, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -75,6 +75,60 @@ function VendorCard({
   );
 }
 
+// Planners are a different relationship from vendors: a couple invites them into
+// their workspace (via /planners) rather than cold-contacting them from a
+// catalog. So the wedding_planner listings get pulled out of the vendor grid and
+// reframed here — discoverable, but clearly "collaborator", not "directory card".
+function PlannerInviteModule({
+  t,
+  vendors,
+}: {
+  t: (k: string) => string;
+  vendors: PublicShowcaseVendor[];
+}) {
+  return (
+    <section className="rounded-3xl border border-paper-300 bg-paper-100/70 p-6 dark:border-umber-700 dark:bg-umber-800/60 sm:p-8">
+      <div className="sm:flex sm:items-start sm:justify-between sm:gap-8">
+        <div className="max-w-xl">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300">
+            {t("vendorBrowse.planner_badge")}
+          </span>
+          <h2 className="mt-3 font-grotesk text-xl text-ink-900 dark:text-paper-50">
+            {t("vendorBrowse.planner_title")}
+          </h2>
+          <p className="mt-2 text-ink-600 dark:text-umber-200">{t("vendorBrowse.planner_body")}</p>
+          <Link
+            to="/planners"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
+          >
+            {t("vendorBrowse.planner_cta")}
+            <ArrowRight size={15} aria-hidden />
+          </Link>
+        </div>
+        {vendors.length > 0 && (
+          <div className="mt-6 sm:mt-0 sm:max-w-[16rem]">
+            <p className="mb-2 text-xs uppercase tracking-wide text-ink-400 dark:text-umber-400">
+              {t("vendorBrowse.planner_featured")}
+            </p>
+            <ul className="flex flex-wrap gap-2 sm:justify-end">
+              {vendors.map((v) => (
+                <li key={v.id}>
+                  <Link
+                    to={`/vendors/${encodeURIComponent(v.id)}`}
+                    className="inline-block rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 transition hover:border-paper-400 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-200"
+                  >
+                    {v.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function VendorBrowsePage() {
   const { t } = useT();
   useDocumentMeta("vendorBrowse.title", "vendorBrowse.subtitle");
@@ -105,6 +159,9 @@ export default function VendorBrowsePage() {
   }, []);
 
   const showCouples = couples !== null && couples >= MIN_COUPLES_TO_SHOW;
+  // Pull planners out of the vendor grid — they get their own reframed module.
+  const plannerCat = categories?.find((c) => c.category === "wedding_planner") ?? null;
+  const gridCategories = categories?.filter((c) => c.category !== "wedding_planner") ?? [];
 
   return (
     <div className="min-h-screen bg-paper-50 dark:bg-umber-900">
@@ -150,7 +207,7 @@ export default function VendorBrowsePage() {
           </p>
         ) : (
           <div className="space-y-10">
-            {categories.map((c) => (
+            {gridCategories.map((c) => (
               <section key={c.category}>
                 <h2 className="mb-3 font-grotesk text-lg text-ink-900 dark:text-paper-100">
                   {t(`suppliers.cat.${c.category}`)}
@@ -169,6 +226,7 @@ export default function VendorBrowsePage() {
                 </div>
               </section>
             ))}
+            {plannerCat && <PlannerInviteModule t={t} vendors={plannerCat.vendors} />}
           </div>
         )}
 

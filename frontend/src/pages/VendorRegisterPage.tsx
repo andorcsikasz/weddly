@@ -553,18 +553,34 @@ export default function VendorRegisterPage() {
                   <option value="" disabled>
                     {t("vendor_register.category_placeholder")}
                   </option>
-                  {SUPPLIER_GROUPS.map((g) => (
-                    <optgroup key={g.id} label={t(`suppliers.group.${g.id}`)}>
-                      {g.categories.map((c) => (
-                        <option key={c} value={c}>
-                          {c === "other"
-                            ? t("vendor_register.category_other_option")
-                            : t(`suppliers.cat.${c}`)}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
+                  {SUPPLIER_GROUPS.map((g) => {
+                    // Wedding planners are workspace collaborators, not directory
+                    // listings — they onboard through /planners, so the category is
+                    // not self-selectable here (backend rejects it too).
+                    const cats = g.categories.filter((c) => c !== "wedding_planner");
+                    if (cats.length === 0) return null;
+                    return (
+                      <optgroup key={g.id} label={t(`suppliers.group.${g.id}`)}>
+                        {cats.map((c) => (
+                          <option key={c} value={c}>
+                            {c === "other"
+                              ? t("vendor_register.category_other_option")
+                              : t(`suppliers.cat.${c}`)}
+                          </option>
+                        ))}
+                      </optgroup>
+                    );
+                  })}
                 </select>
+                <p className="field-help mt-1.5">
+                  {t("vendor_register.planner_hint")}{" "}
+                  <Link
+                    to="/planners"
+                    className="font-medium text-ink-700 underline underline-offset-2 dark:text-paper-200"
+                  >
+                    {t("vendor_register.planner_hint_link")}
+                  </Link>
+                </p>
               </div>
               {category === "other" && (
                 <div>

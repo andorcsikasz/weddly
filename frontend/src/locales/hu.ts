@@ -1871,6 +1871,8 @@ const hu: LocaleMessages = {
     category_placeholder: "Válaszd ki a fő kategóriád",
     category_required: "Válassz kategóriát.",
     category_other_option: "Egyéb (saját kategória)",
+    planner_hint: "Esküvőszervező vagy?",
+    planner_hint_link: "Itt jelentkezz szervezőként",
     custom_category_label: "Mivel foglalkozol?",
     custom_category_placeholder: "Pl. tűzijáték, fotóautomata, borkóstoló…",
     custom_category_required: "Írd be, mivel foglalkozol.",
@@ -8104,6 +8106,12 @@ const hu: LocaleMessages = {
     convert_sub:
       "Ez csak ízelítő. Hozz létre egy ingyenes fiókot, böngészd az összes szolgáltatót, mentsd a kedvenceket, és keresd őket közvetlenül telefonon, e-mailben vagy Instagramon.",
     vendor_prompt: "Szolgáltató vagy? Kerülj fel a listára",
+    planner_badge: "Együttműködés",
+    planner_title: "Esküvőszervezők",
+    planner_body:
+      "Az esküvőszervezők másképp működnek a Weddlyn: nem a katalógusból bérled fel őket, hanem meghívod őket a saját munkaterületedre, ahol együtt dolgoztok a vendéglistán, az ülésrenden és a dokumentumokon.",
+    planner_cta: "Ismerd meg, hogyan",
+    planner_featured: "Kiemelt szervezők",
   },
 };
 
