@@ -541,6 +541,22 @@ CREATE TABLE IF NOT EXISTS feedback_submissions (
 CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback_submissions(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback_submissions(user_id, created_at DESC);
 
+-- Admin replies sent back to a feedback submitter, over email and/or an in-app
+-- bell notification. Append-only thread (an admin may reply more than once);
+-- rendered read-only in the /app/admin/feedback triage panel. Cascades away
+-- with its parent submission (foreign_keys is ON).
+CREATE TABLE IF NOT EXISTS feedback_replies (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  feedback_id INTEGER NOT NULL REFERENCES feedback_submissions(id) ON DELETE CASCADE,
+  admin_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  message TEXT NOT NULL,
+  channel TEXT NOT NULL,                    -- 'email' | 'notification' | 'both'
+  email_status TEXT,                        -- mailer SendResult status; null when no email leg
+  notified INTEGER NOT NULL DEFAULT 0,      -- 1 when an in-app bell notification was delivered
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_replies_feedback ON feedback_replies(feedback_id, created_at);
+
 -- Admin-editable supplier taxonomy. Seeded once from the legacy
 -- SUPPLIER_GROUPS / SupplierCategory TypeScript literals + the matching
 -- `suppliers.group.*` / `suppliers.cat.*` i18n keys (see seed_supplier_taxonomy).

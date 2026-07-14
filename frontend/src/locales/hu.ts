@@ -5385,6 +5385,23 @@ const hu: LocaleMessages = {
     feedback_triage_status_label: "Állapot",
     feedback_details_show: "Kezelés",
     feedback_details_hide: "Bezár",
+    feedback_reply_label: "Válasz a beküldőnek",
+    feedback_reply_placeholder: "Írd meg a választ a beküldőnek…",
+    feedback_reply_send: "Válasz küldése",
+    feedback_reply_sent: "Válasz elküldve",
+    feedback_reply_channel_email: "E-mail",
+    feedback_reply_channel_notification: "Értesítés az appban",
+    feedback_reply_channel_both: "Mindkettő",
+    feedback_reply_no_recipient:
+      "Ehhez a beküldéshez nincs e-mail cím és fiók, így nem küldhető válasz.",
+    feedback_reply_no_email_hint: "Nincs e-mail cím a beküldőhöz.",
+    feedback_reply_no_workspace_hint:
+      "A beküldőnek nincs Weddly munkaterülete az app-értesítéshez.",
+    feedback_reply_history_label: "Elküldött válaszok",
+    feedback_reply_via_email: "e-mailben",
+    feedback_reply_via_notification: "app-értesítésben",
+    feedback_reply_via_both: "e-mailben és appban",
+    feedback_replied: "Válaszolva",
     analytics_title: "Analitika",
     analytics_sub:
       "Csak olvasható összesítés három metszetben: pénz, aktivitás, szolgáltató-választások.",

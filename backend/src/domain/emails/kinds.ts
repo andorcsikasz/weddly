@@ -66,7 +66,8 @@ export type EmailKind =
   | "planner_waitlist_received" // /planners application confirm, next-step CTA (register / open dashboard)
   | "planner_access_invite" // admin (re)send of the "get into your planner account" CTA to a stuck applicant
   | "planner_invite_outcome" // planner accepted or declined the couple's invite, heads-up to the couple
-  | "newsletter_confirm"; // double opt-in confirm link for the landing/blog newsletter capture
+  | "newsletter_confirm" // double opt-in confirm link for the landing/blog newsletter capture
+  | "admin_feedback_reply"; // admin's free-form reply to an in-product Visszajelzés submission
 
 export type EmailCategory = "transactional" | "lifecycle" | "outreach";
 
@@ -258,4 +259,9 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // ("no account, ignore = nothing happens"), which is literally true: without
   // the confirm click the address never receives another mail.
   newsletter_confirm: "outreach",
+  // Transactional: the recipient explicitly submitted feedback through the
+  // in-product dialog and this is a human reply to it. Whether they have an
+  // account or not, they are waiting on the answer, so it always delivers and
+  // is never opt-out suppressed.
+  admin_feedback_reply: "transactional",
 };

@@ -13,6 +13,36 @@ export type FeedbackStatus = "new" | "reviewed" | "planned" | "fixed" | "rejecte
 /** Triage priority. Null until an admin sets it. */
 export type FeedbackPriority = "low" | "medium" | "high";
 
+/** How an admin's reply to a submitter is delivered. `email` sends a branded
+ *  transactional mail to the submitter's address; `notification` drops a bell
+ *  message into their in-app workspace; `both` does the two. */
+export type FeedbackReplyChannel = "email" | "notification" | "both";
+
+/** One reply an admin sent back to a feedback submitter. Append-only history:
+ *  an admin may reply more than once, so the panel renders a small thread. */
+export interface FeedbackReplyEntry {
+  id: number;
+  message: string;
+  channel: FeedbackReplyChannel;
+  /** Outcome of the email leg when the channel included email: one of the
+   *  mailer's SendResult statuses ("sent" | "failed" | "skipped_no_provider"
+   *  | "skipped_opt_out"). Null when email wasn't part of the channel. */
+  email_status: string | null;
+  /** True when an in-app bell notification was delivered to the submitter's
+   *  workspace (the `notification` / `both` channels). */
+  notified: boolean;
+  /** Email of the admin who sent the reply, for the audit trail. */
+  admin_email: string | null;
+  created_at: number;
+}
+
+/** POST /api/admin/feedback/:id/reply body. */
+export interface SendFeedbackReplyInput {
+  message: string;
+  /** Defaults to "email" server-side. */
+  channel?: FeedbackReplyChannel;
+}
+
 export interface SubmitFeedbackInput {
   /** Where the dialog was opened from. Defaults server-side to "landing"
    *  for backwards compatibility with the public form. */
@@ -67,4 +97,7 @@ export interface FeedbackEntry {
   os: string | null;
   reviewed_at: number | null;
   created_at: number;
+  /** Admin replies sent back to the submitter, oldest-first. Empty until an
+   *  admin uses the "Reply to submitter" composer in the triage panel. */
+  replies: FeedbackReplyEntry[];
 }

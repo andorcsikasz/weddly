@@ -1,6 +1,6 @@
 import "../setup";
 import { describe, expect, test } from "bun:test";
-import { req, wipeAll } from "../helpers";
+import { bootstrapCouple, req, wipeAll } from "../helpers";
 
 /** Feedback triage workflow (see shared/feedback.ts):
  *    - expanded status lifecycle (new/reviewed/planned/fixed/rejected/archived)
@@ -166,6 +166,160 @@ describe("feedback triage workflow", () => {
       "PATCH",
       "/api/admin/feedback/1",
       { priority: "low" },
+      { token: user.data.token },
+    );
+    expect(r.status).toBe(403);
+  });
+
+  interface ReplyResp {
+    entry: {
+      status: string;
+      replies: Array<{ message: string; channel: string; notified: boolean }>;
+    };
+    delivery: { email: string | null; notified: boolean };
+  }
+
+  test("admin can reply by email to an anonymous submission and it advances to reviewed", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+    await req("POST", "/api/feedback", {
+      message: "Love the app, one small bug.",
+      from_email: "guest@example.com",
+    });
+    const id = await firstEntryId(adminToken);
+
+    const r = await req<ReplyResp>(
+      "POST",
+      `/api/admin/feedback/${id}/reply`,
+      { message: "Thanks for flagging it, fixed now!", channel: "email" },
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    // No RESEND key in the test env, so the mailer short-circuits to a logged
+    // "skipped_no_provider" attempt, proof the send path ran end to end.
+    expect(r.data.delivery.email).toBe("skipped_no_provider");
+    expect(r.data.delivery.notified).toBe(false);
+    expect(r.data.entry.replies).toHaveLength(1);
+    expect(r.data.entry.replies[0]!.channel).toBe("email");
+    expect(r.data.entry.replies[0]!.message).toBe("Thanks for flagging it, fixed now!");
+    // A reply nudges a still-new row to reviewed.
+    expect(r.data.entry.status).toBe("reviewed");
+  });
+
+  test("reply via in-app notification lands in the submitter's bell", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+    const couple = await bootstrapCouple("submitter@weddly.test");
+
+    // Authenticated submission, captures user_id so the notification can be
+    // routed to the submitter's workspace.
+    await req(
+      "POST",
+      "/api/feedback",
+      { source: "app", context: "/app/seating", message: "How do I move the chairs?" },
+      { token: couple.token },
+    );
+    const id = await firstEntryId(adminToken);
+
+    const r = await req<ReplyResp>(
+      "POST",
+      `/api/admin/feedback/${id}/reply`,
+      { message: "Edit tables under Terem; seat guests under Ültetés.", channel: "notification" },
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.delivery.notified).toBe(true);
+    expect(r.data.delivery.email).toBe(null);
+    expect(r.data.entry.replies[0]!.channel).toBe("notification");
+
+    const feed = await req<{
+      items: Array<{ kind: string; data: { message?: string } }>;
+    }>("GET", "/api/notifications", undefined, { token: couple.token });
+    const msg = feed.data.items.find((i) => i.kind === "admin_message");
+    expect(msg).toBeDefined();
+    expect(msg!.data.message).toBe("Edit tables under Terem; seat guests under Ültetés.");
+  });
+
+  test("channel 'both' delivers email and a bell notification", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+    const couple = await bootstrapCouple("both@weddly.test");
+    await req(
+      "POST",
+      "/api/feedback",
+      { source: "app", context: "/app/budget", message: "A note." },
+      { token: couple.token },
+    );
+    const id = await firstEntryId(adminToken);
+
+    const r = await req<ReplyResp>(
+      "POST",
+      `/api/admin/feedback/${id}/reply`,
+      { message: "Answered.", channel: "both" },
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.delivery.email).toBe("skipped_no_provider");
+    expect(r.data.delivery.notified).toBe(true);
+    expect(r.data.entry.replies[0]!.channel).toBe("both");
+    expect(r.data.entry.replies[0]!.notified).toBe(true);
+  });
+
+  test("reply requires a non-empty message", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+    await req("POST", "/api/feedback", { message: "x", from_email: "g@example.com" });
+    const id = await firstEntryId(adminToken);
+    const r = await req(
+      "POST",
+      `/api/admin/feedback/${id}/reply`,
+      { message: "   ", channel: "email" },
+      { token: adminToken },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("notification-only reply to an anonymous submission is rejected", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+    await req("POST", "/api/feedback", { message: "Anon note.", from_email: "g@example.com" });
+    const id = await firstEntryId(adminToken);
+    const r = await req(
+      "POST",
+      `/api/admin/feedback/${id}/reply`,
+      { message: "Hello?", channel: "notification" },
+      { token: adminToken },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("email reply to a submission with no address on file is rejected", async () => {
+    wipeAll();
+    const adminToken = await newAdmin();
+    // Rating-only, anonymous, no user_id and no from_email.
+    await req("POST", "/api/feedback", { rating: 8 });
+    const id = await firstEntryId(adminToken);
+    const r = await req(
+      "POST",
+      `/api/admin/feedback/${id}/reply`,
+      { message: "Thanks!", channel: "email" },
+      { token: adminToken },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("reply is admin-gated", async () => {
+    wipeAll();
+    await newAdmin();
+    const user = await req<{ token: string }>("POST", "/api/auth/register", {
+      email: "user2@test.test",
+      password: "supersafe123",
+      full_name: "User",
+    });
+    const r = await req(
+      "POST",
+      "/api/admin/feedback/1/reply",
+      { message: "hi", channel: "email" },
       { token: user.data.token },
     );
     expect(r.status).toBe(403);

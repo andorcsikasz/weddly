@@ -578,6 +578,15 @@ export interface PlannerAccessApprovedPayload {
   coupleName: string;
 }
 
+export interface AdminFeedbackReplyPayload {
+  /** The admin's free-form reply, one paragraph per line (line breaks kept). */
+  replyText: string;
+  /** A short quote of what the submitter originally wrote, so they remember
+   *  the thread. Null when the original submission carried no message (rating-
+   *  or value-only feedback). */
+  originalMessage: string | null;
+}
+
 export interface PlannerClientInvitePayload {
   /** Couple display name ("Mia & Lucas"), bold in the opening line. */
   coupleName: string;
@@ -693,6 +702,7 @@ export type KindPayload = {
   planner_access_invite: PlannerAccessInvitePayload;
   planner_invite_outcome: PlannerInviteOutcomePayload;
   newsletter_confirm: NewsletterConfirmPayload;
+  admin_feedback_reply: AdminFeedbackReplyPayload;
 };
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -2834,6 +2844,38 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       footnote: "The link is valid for 7 days. Every email includes a one-click unsubscribe.",
     },
   }),
+
+  // An admin's free-form reply to an in-product feedback submission. The reply
+  // body is the admin's text verbatim (already written in the submitter's
+  // language); the original message is quoted back so they remember the thread.
+  // Reply-To is support so a further reply lands in a monitored inbox.
+  admin_feedback_reply: (p, ctx) => {
+    const split = splitParagraphs(p.replyText);
+    const paras = split.length > 0 ? split : [p.replyText.trim()];
+    const quote = p.originalMessage
+      ? p.originalMessage.replace(/\s+/g, " ").trim().slice(0, 180)
+      : null;
+    const quoteHu = quote ? `A visszajelzésed: „${quote}”` : null;
+    const quoteEn = quote ? `Your feedback: “${quote}”` : null;
+    return {
+      subject: "Válasz a visszajelzésedre / Reply to your feedback · Weddly",
+      ctaUrl: CONFIG.frontendBaseUrl,
+      replyTo: CONFIG.supportEmail,
+      hu: {
+        preheader: "Reagáltunk a Weddly-nek küldött visszajelzésedre.",
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [...(quoteHu ? [quoteHu] : []), ...paras],
+        cta: "Weddly megnyitása",
+        footnote: "Erre az e-mailre válaszolva a Weddly csapatához jutsz.",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [...(quoteEn ? [quoteEn] : []), ...paras],
+        cta: "Open Weddly",
+        footnote: "You can reply to this email and it reaches the Weddly team.",
+      },
+    };
+  },
 };
 
 function rsvpStatusHu(status: "yes" | "no" | "maybe"): string {

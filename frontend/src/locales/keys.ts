@@ -6001,6 +6001,27 @@ export interface LocaleMessages {
     feedback_triage_status_label: string;
     feedback_details_show: string;
     feedback_details_hide: string;
+    /** Reply-to-submitter composer in the triage panel. */
+    feedback_reply_label: string;
+    feedback_reply_placeholder: string;
+    feedback_reply_send: string;
+    feedback_reply_sent: string;
+    feedback_reply_channel_email: string;
+    feedback_reply_channel_notification: string;
+    feedback_reply_channel_both: string;
+    /** Shown instead of the composer when there is no way to reach the
+     *  submitter (anonymous landing feedback with no email). */
+    feedback_reply_no_recipient: string;
+    /** Disabled-channel hints. */
+    feedback_reply_no_email_hint: string;
+    feedback_reply_no_workspace_hint: string;
+    /** Sent-reply thread. */
+    feedback_reply_history_label: string;
+    feedback_reply_via_email: string;
+    feedback_reply_via_notification: string;
+    feedback_reply_via_both: string;
+    /** Row pill: this entry has at least one reply. */
+    feedback_replied: string;
     /** /app/admin/analytics page — three orthogonal rollups (money,
      *  activity, picks) rendered as KPI tiles + tables + CSS bar charts.
      *  Read-only — no actions, no per-row drilldown. */

@@ -9,18 +9,29 @@
 // Submissions are persisted to `feedback_submissions` — no email is sent
 // any more. The admin UI is the canonical destination.
 
-import type { FeedbackPriority, FeedbackSource, FeedbackStatus } from "@shared/feedback";
+import type {
+  FeedbackPriority,
+  FeedbackReplyChannel,
+  FeedbackSource,
+  FeedbackStatus,
+} from "@shared/feedback";
+import { db } from "../db";
+import { getCoupleForUser } from "../domain/couples";
+import { sendKind } from "../domain/emails/send";
 import {
   deleteFeedback,
   getFeedbackById,
   insertFeedback,
+  insertFeedbackReply,
   listFeedback,
   parseUserAgent,
   setFeedbackStatus,
   setFeedbackTriage,
   toFeedbackEntry,
 } from "../domain/feedback";
+import { insertCoupleNotification } from "../domain/notifications";
 import { requireAdmin } from "../domain/users";
+import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
@@ -86,6 +97,13 @@ function parsePriority(v: unknown): FeedbackPriority | null | undefined {
   if (v === undefined) return undefined; // omitted — leave as-is
   if (v === null || v === "") return null; // explicit clear
   return v === "low" || v === "medium" || v === "high" ? v : undefined;
+}
+
+const REPLY_CHANNELS: ReadonlySet<string> = new Set(["email", "notification", "both"]);
+
+/** Body `channel` → validated union, defaulting to "email" when omitted. */
+function parseReplyChannel(v: unknown): FeedbackReplyChannel {
+  return v === "notification" || v === "both" ? v : "email";
 }
 
 async function handleSubmit(ctx: Ctx): Promise<Response> {
@@ -203,6 +221,114 @@ async function handleAdminTriage(ctx: Ctx): Promise<Response> {
   return json({ entry: toFeedbackEntry(updated) });
 }
 
+/** Send an admin's free-form reply to the submitter via email and/or an in-app
+ *  bell notification, record it on the thread, and nudge a still-new row to
+ *  reviewed. Deliverability is validated up front: a chosen channel that can't
+ *  reach the submitter (no email on file / no workspace for a bell) 400s
+ *  instead of silently dropping. */
+async function handleAdminReply(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const id = Number(ctx.params.id);
+  if (!Number.isFinite(id) || id <= 0) throw new HttpError(400, "Bad id");
+
+  const body = await readJson<{ message?: unknown; channel?: unknown }>(ctx.req);
+  const message = trimStr(body.message, 4000);
+  if (!message) throw new HttpError(400, "message required");
+  if (
+    body.channel !== undefined &&
+    (typeof body.channel !== "string" || !REPLY_CHANNELS.has(body.channel))
+  ) {
+    throw new HttpError(400, "channel must be one of email|notification|both");
+  }
+  const channel = parseReplyChannel(body.channel);
+
+  const entry = getFeedbackById(id);
+  if (!entry) throw new HttpError(404, "Feedback not found");
+
+  const wantEmail = channel === "email" || channel === "both";
+  const wantNotif = channel === "notification" || channel === "both";
+
+  const recipientEmail = entry.user_email ?? entry.from_email;
+  if (wantEmail && !recipientEmail) {
+    throw new HttpError(400, "No email address on file for this submitter");
+  }
+
+  // The submitter's workspace: drives the bell leg and locale-aware email.
+  const couple = entry.user_id ? getCoupleForUser(entry.user_id) : null;
+  if (channel === "notification" && !couple) {
+    throw new HttpError(400, "Submitter has no workspace for an in-app notification");
+  }
+
+  // ── email leg ──
+  let emailStatus: string | null = null;
+  if (wantEmail && recipientEmail) {
+    const recipientUser = entry.user_id
+      ? (db.prepare("SELECT id, email, full_name FROM users WHERE id = ?").get(entry.user_id) as
+          | { id: number; email: string; full_name: string | null }
+          | undefined)
+      : undefined;
+    const result = await sendKind(
+      "admin_feedback_reply",
+      { replyText: message, originalMessage: entry.message },
+      recipientUser
+        ? {
+            user: {
+              id: recipientUser.id,
+              email: recipientUser.email,
+              full_name: recipientUser.full_name ?? "",
+            },
+            couple_id: couple?.id ?? null,
+          }
+        : {
+            user: null,
+            guest: { email: recipientEmail, full_name: entry.user_full_name ?? "" },
+          },
+    );
+    emailStatus = result.status;
+  }
+
+  // ── in-app bell notification leg ──
+  let notified = false;
+  if (wantNotif && couple) {
+    insertCoupleNotification({
+      couple_id: couple.id,
+      kind: "admin_message",
+      actor_user_id: null,
+      data: { message },
+      link: null,
+    });
+    notified = true;
+  }
+
+  insertFeedbackReply({
+    feedback_id: id,
+    admin_user_id: admin.id,
+    message,
+    channel,
+    email_status: emailStatus,
+    notified,
+  });
+
+  // A reply means someone looked at it, so advance a still-new row to reviewed.
+  if (entry.status === "new") setFeedbackStatus(id, "reviewed", admin.id);
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: couple?.id ?? null,
+    action: "admin.feedback_reply",
+    target_kind: "feedback",
+    target_id: id,
+    note: `${channel}: ${message.slice(0, 120)}`,
+  });
+
+  const updated = getFeedbackById(id);
+  if (!updated) throw new HttpError(500, "Failed to reload feedback");
+  return json({
+    entry: toFeedbackEntry(updated),
+    delivery: { email: emailStatus, notified },
+  });
+}
+
 async function handleAdminDelete(ctx: Ctx): Promise<Response> {
   requireAdmin(ctx);
   const id = Number(ctx.params.id);
@@ -216,6 +342,7 @@ export function registerFeedbackRoutes(router: Router) {
   router.post("/api/feedback", handleSubmit);
   router.get("/api/admin/feedback", handleAdminList, true);
   router.patch("/api/admin/feedback/:id/status", handleAdminSetStatus, true);
+  router.post("/api/admin/feedback/:id/reply", handleAdminReply, true);
   router.patch("/api/admin/feedback/:id", handleAdminTriage, true);
   router.delete("/api/admin/feedback/:id", handleAdminDelete, true);
 }

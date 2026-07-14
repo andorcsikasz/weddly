@@ -320,6 +320,11 @@ const STUBS: KindPayload = {
   newsletter_confirm: {
     confirmUrl: `${BASE_URL}/newsletter/confirm/preview-token`,
   },
+  admin_feedback_reply: {
+    replyText:
+      "Köszönjük a visszajelzést! Az asztalok elrendezését a „Terem” elrendezés alatt tudod módosítani, az „Ültetés” pedig a vendégek asztalokhoz rendelésére való.\n\nHa bármi elakad, írj bátran.",
+    originalMessage: "Az ülésrendnél nem találom, hogyan lehet a székeket módosítani.",
+  },
 };
 
 const ALL_KINDS = Object.keys(KIND_CATEGORY) as EmailKind[];

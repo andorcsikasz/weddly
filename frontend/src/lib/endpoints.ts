@@ -122,7 +122,12 @@ import type {
   UpdateInstallmentInput,
 } from "@shared/couple_suppliers";
 import type { CoupleSupplierCost, UpsertCoupleSupplierCostInput } from "@shared/supplier_costs";
-import type { FeedbackEntry, FeedbackPriority, FeedbackStatus } from "@shared/feedback";
+import type {
+  FeedbackEntry,
+  FeedbackPriority,
+  FeedbackReplyChannel,
+  FeedbackStatus,
+} from "@shared/feedback";
 import type {
   DecideVendorWaitlistInput,
   VendorWaitlistAdminView,
@@ -2563,6 +2568,14 @@ export const adminFeedbackApi = {
       admin_notes?: string | null;
     },
   ) => apiFetch<{ entry: FeedbackEntry }>("PATCH", `/api/admin/feedback/${id}`, patch),
+  /** Reply to the submitter via email and/or an in-app bell notification.
+   *  Returns the refreshed entry (with the new reply appended) plus a
+   *  per-channel delivery report. */
+  reply: (id: number, body: { message: string; channel: FeedbackReplyChannel }) =>
+    apiFetch<{
+      entry: FeedbackEntry;
+      delivery: { email: string | null; notified: boolean };
+    }>("POST", `/api/admin/feedback/${id}/reply`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/feedback/${id}`),
 };
 

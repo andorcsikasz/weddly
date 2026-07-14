@@ -7,10 +7,16 @@
 // loading skeleton → list / error inline with retry — so an API outage
 // doesn't disguise itself as an empty inbox.
 
-import type { FeedbackEntry, FeedbackPriority, FeedbackStatus } from "@shared/feedback";
+import type {
+  FeedbackEntry,
+  FeedbackPriority,
+  FeedbackReplyChannel,
+  FeedbackStatus,
+} from "@shared/feedback";
 import {
   Archive,
   Ban,
+  Bell,
   CheckCircle2,
   ChevronDown,
   Clock,
@@ -20,7 +26,9 @@ import {
   ListChecks,
   Mail,
   Monitor,
+  Reply,
   RotateCcw,
+  Send,
   Smartphone,
   Tablet,
   Trash2,
@@ -250,6 +258,25 @@ export default function AdminFeedbackPage() {
     }
   }
 
+  async function sendReply(
+    id: number,
+    message: string,
+    channel: FeedbackReplyChannel,
+  ): Promise<boolean> {
+    setPendingId(id);
+    try {
+      const r = await adminFeedbackApi.reply(id, { message, channel });
+      replaceEntry(r.entry);
+      toast.success(t("admin.feedback_reply_sent"));
+      return true;
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      return false;
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   function toggleExpand(entry: FeedbackEntry) {
     setExpandedId((cur) => {
       if (cur === entry.id) return null;
@@ -457,9 +484,16 @@ export default function AdminFeedbackPage() {
                         {fmtDate(e.created_at)}
                       </td>
                       <td className="py-3 pr-4">
-                        <Pill tone={STATUS_TONES[e.status]} icon={statusIcon(e.status)}>
-                          {t(`admin.feedback_status_${e.status}`)}
-                        </Pill>
+                        <div className="flex flex-col items-start gap-1">
+                          <Pill tone={STATUS_TONES[e.status]} icon={statusIcon(e.status)}>
+                            {t(`admin.feedback_status_${e.status}`)}
+                          </Pill>
+                          {e.replies.length > 0 && (
+                            <Pill tone="sage" icon={<Reply size={11} aria-hidden />}>
+                              {t("admin.feedback_replied")}
+                            </Pill>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 text-right">
                         <div className="inline-flex flex-wrap justify-end gap-1">
@@ -507,6 +541,7 @@ export default function AdminFeedbackPage() {
                             onSetStatus={(s) => setStatus(e.id, s)}
                             onSetPriority={(p) => setPriority(e.id, p)}
                             onSetArea={(a) => setArea(e.id, a)}
+                            onSendReply={(message, channel) => sendReply(e.id, message, channel)}
                           />
                         </td>
                       </tr>
@@ -549,6 +584,7 @@ function TriagePanel({
   onSetStatus,
   onSetPriority,
   onSetArea,
+  onSendReply,
 }: {
   entry: FeedbackEntry;
   t: (k: string, vars?: Record<string, string | number>) => string;
@@ -561,6 +597,8 @@ function TriagePanel({
   onSetStatus: (s: FeedbackStatus) => void;
   onSetPriority: (p: FeedbackPriority | null) => void;
   onSetArea: (a: string | null) => void;
+  /** Resolves true when the reply was sent (clears the composer). */
+  onSendReply: (message: string, channel: FeedbackReplyChannel) => Promise<boolean>;
 }) {
   // Keep any stored area value visible even if it's outside the curated list.
   const areaOptions = useMemo(() => {
@@ -579,169 +617,321 @@ function TriagePanel({
   ];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {/* Left: lifecycle + priority + area */}
-      <div className="space-y-4">
-        <div>
-          <p className="field-label mb-1.5">{t("admin.feedback_triage_status_label")}</p>
-          <div className="flex flex-wrap gap-1.5">
-            {STATUS_ORDER.map((s) => {
-              const active = entry.status === s;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  disabled={busy || active}
-                  onClick={() => onSetStatus(s)}
-                  className={
-                    active
-                      ? "inline-flex items-center gap-1 rounded-full bg-ink-900 px-2.5 py-1 text-xs font-medium text-paper-50 dark:bg-paper-100 dark:text-umber-900"
-                      : "inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white px-2.5 py-1 text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 disabled:opacity-50 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
-                  }
-                >
-                  {statusIcon(s, 12)}
-                  {t(`admin.feedback_status_${s}`)}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-2">
-            <button
-              type="button"
-              className="btn-outline btn-sm"
-              disabled={busy || entry.status === "planned"}
-              onClick={() => onSetStatus("planned")}
-            >
-              <ListChecks size={13} aria-hidden /> {t("admin.feedback_convert_action")}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <p className="field-label mb-1.5">{t("admin.feedback_priority_label")}</p>
-          <div className="flex flex-wrap gap-1.5">
-            {PRIORITY_ORDER.map((p) => {
-              const active = entry.priority === p;
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onSetPriority(active ? null : p)}
-                  className={
-                    active
-                      ? "inline-flex items-center rounded-full bg-ink-900 px-2.5 py-1 text-xs font-medium text-paper-50 dark:bg-paper-100 dark:text-umber-900"
-                      : "inline-flex items-center rounded-full border border-paper-300 bg-white px-2.5 py-1 text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
-                  }
-                >
-                  {t(`admin.feedback_priority_${p}`)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="max-w-xs">
-          <label htmlFor={`fb-area-${entry.id}`} className="field-label mb-1.5 block">
-            {t("admin.feedback_area_label")}
-          </label>
-          <select
-            id={`fb-area-${entry.id}`}
-            className="input"
-            value={entry.feature_area ?? ""}
-            disabled={busy}
-            onChange={(ev) => onSetArea(ev.target.value === "" ? null : ev.target.value)}
-          >
-            <option value="">{t("admin.feedback_area_unset")}</option>
-            {areaOptions.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Right: technical context + internal notes */}
-      <div className="space-y-4">
-        <div>
-          <p className="field-label mb-1.5">{t("admin.feedback_tech_label")}</p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-600 dark:text-umber-200">
-            <span className="inline-flex items-center gap-1">
-              {deviceIcon(entry.device)}
-              {entry.device ?? "-"}
-            </span>
-            {techRows.slice(1).map((r) => (
-              <span key={r.label}>
-                <span className="text-neutral-400 dark:text-umber-400">{r.label}:</span>{" "}
-                {r.value ?? "-"}
-              </span>
-            ))}
-            <span>
-              <span className="text-neutral-400 dark:text-umber-400">
-                {t("admin.feedback_col_source")}:
-              </span>{" "}
-              {sourceLabel}
-            </span>
-          </div>
-          {entry.url && (
-            <a
-              href={entry.url}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-xs text-neutral-500 hover:text-neutral-800 dark:text-umber-300 dark:hover:text-paper-50"
-            >
-              <ExternalLink size={11} aria-hidden className="shrink-0" />
-              <span className="truncate">{entry.url}</span>
-            </a>
-          )}
-          {(entry.rating !== null || (entry.monthly_value_ft ?? 0) > 0) && (
-            <div className="mt-1.5 flex gap-3 text-xs text-neutral-600 dark:text-umber-200">
-              {entry.rating !== null && (
-                <span>
-                  {t("admin.feedback_col_rating")}: {entry.rating}/10
-                </span>
-              )}
-              {(entry.monthly_value_ft ?? 0) > 0 && (
-                <span>
-                  {t("admin.feedback_col_monthly")}: {(() => {
-                    const symbol = entry.locale === "en" ? "€" : "Ft";
-                    const amt = (entry.monthly_value_ft ?? 0).toLocaleString(
-                      locale === "hu" ? "hu-HU" : "en-GB",
-                    );
-                    return entry.locale === "en" ? `${symbol}${amt}` : `${amt} ${symbol}`;
-                  })()}
-                </span>
-              )}
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Left: lifecycle + priority + area */}
+        <div className="space-y-4">
+          <div>
+            <p className="field-label mb-1.5">{t("admin.feedback_triage_status_label")}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {STATUS_ORDER.map((s) => {
+                const active = entry.status === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={busy || active}
+                    onClick={() => onSetStatus(s)}
+                    className={
+                      active
+                        ? "inline-flex items-center gap-1 rounded-full bg-ink-900 px-2.5 py-1 text-xs font-medium text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                        : "inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white px-2.5 py-1 text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 disabled:opacity-50 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                    }
+                  >
+                    {statusIcon(s, 12)}
+                    {t(`admin.feedback_status_${s}`)}
+                  </button>
+                );
+              })}
             </div>
-          )}
+            <div className="mt-2">
+              <button
+                type="button"
+                className="btn-outline btn-sm"
+                disabled={busy || entry.status === "planned"}
+                onClick={() => onSetStatus("planned")}
+              >
+                <ListChecks size={13} aria-hidden /> {t("admin.feedback_convert_action")}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p className="field-label mb-1.5">{t("admin.feedback_priority_label")}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {PRIORITY_ORDER.map((p) => {
+                const active = entry.priority === p;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onSetPriority(active ? null : p)}
+                    className={
+                      active
+                        ? "inline-flex items-center rounded-full bg-ink-900 px-2.5 py-1 text-xs font-medium text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                        : "inline-flex items-center rounded-full border border-paper-300 bg-white px-2.5 py-1 text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                    }
+                  >
+                    {t(`admin.feedback_priority_${p}`)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="max-w-xs">
+            <label htmlFor={`fb-area-${entry.id}`} className="field-label mb-1.5 block">
+              {t("admin.feedback_area_label")}
+            </label>
+            <select
+              id={`fb-area-${entry.id}`}
+              className="input"
+              value={entry.feature_area ?? ""}
+              disabled={busy}
+              onChange={(ev) => onSetArea(ev.target.value === "" ? null : ev.target.value)}
+            >
+              <option value="">{t("admin.feedback_area_unset")}</option>
+              {areaOptions.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div>
-          <label htmlFor={`fb-notes-${entry.id}`} className="field-label mb-1.5 block">
-            {t("admin.feedback_notes_label")}
-          </label>
-          <textarea
-            id={`fb-notes-${entry.id}`}
-            className="input min-h-[5rem] resize-y"
-            value={notesDraft}
-            disabled={busy}
-            placeholder={t("admin.feedback_notes_placeholder")}
-            maxLength={4000}
-            onChange={(ev) => onNotesChange(ev.target.value)}
-          />
-          <div className="mt-2">
-            <button
-              type="button"
-              className="btn-outline btn-sm"
-              disabled={busy || notesDraft === (entry.admin_notes ?? "")}
-              onClick={onSaveNotes}
-            >
-              {t("admin.feedback_notes_save")}
-            </button>
+        {/* Right: technical context + internal notes */}
+        <div className="space-y-4">
+          <div>
+            <p className="field-label mb-1.5">{t("admin.feedback_tech_label")}</p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-600 dark:text-umber-200">
+              <span className="inline-flex items-center gap-1">
+                {deviceIcon(entry.device)}
+                {entry.device ?? "-"}
+              </span>
+              {techRows.slice(1).map((r) => (
+                <span key={r.label}>
+                  <span className="text-neutral-400 dark:text-umber-400">{r.label}:</span>{" "}
+                  {r.value ?? "-"}
+                </span>
+              ))}
+              <span>
+                <span className="text-neutral-400 dark:text-umber-400">
+                  {t("admin.feedback_col_source")}:
+                </span>{" "}
+                {sourceLabel}
+              </span>
+            </div>
+            {entry.url && (
+              <a
+                href={entry.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-xs text-neutral-500 hover:text-neutral-800 dark:text-umber-300 dark:hover:text-paper-50"
+              >
+                <ExternalLink size={11} aria-hidden className="shrink-0" />
+                <span className="truncate">{entry.url}</span>
+              </a>
+            )}
+            {(entry.rating !== null || (entry.monthly_value_ft ?? 0) > 0) && (
+              <div className="mt-1.5 flex gap-3 text-xs text-neutral-600 dark:text-umber-200">
+                {entry.rating !== null && (
+                  <span>
+                    {t("admin.feedback_col_rating")}: {entry.rating}/10
+                  </span>
+                )}
+                {(entry.monthly_value_ft ?? 0) > 0 && (
+                  <span>
+                    {t("admin.feedback_col_monthly")}: {(() => {
+                      const symbol = entry.locale === "en" ? "€" : "Ft";
+                      const amt = (entry.monthly_value_ft ?? 0).toLocaleString(
+                        locale === "hu" ? "hu-HU" : "en-GB",
+                      );
+                      return entry.locale === "en" ? `${symbol}${amt}` : `${amt} ${symbol}`;
+                    })()}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor={`fb-notes-${entry.id}`} className="field-label mb-1.5 block">
+              {t("admin.feedback_notes_label")}
+            </label>
+            <textarea
+              id={`fb-notes-${entry.id}`}
+              className="input min-h-[5rem] resize-y"
+              value={notesDraft}
+              disabled={busy}
+              placeholder={t("admin.feedback_notes_placeholder")}
+              maxLength={4000}
+              onChange={(ev) => onNotesChange(ev.target.value)}
+            />
+            <div className="mt-2">
+              <button
+                type="button"
+                className="btn-outline btn-sm"
+                disabled={busy || notesDraft === (entry.admin_notes ?? "")}
+                onClick={onSaveNotes}
+              >
+                {t("admin.feedback_notes_save")}
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Reply to the submitter over email and/or an in-app bell notification. */}
+      <ReplySection entry={entry} t={t} locale={locale} busy={busy} onSendReply={onSendReply} />
+    </div>
+  );
+}
+
+/** Composer + sent-reply thread for answering a feedback submitter. Channel
+ *  choices are gated by what can actually reach them: email needs an address
+ *  on file, an in-app notification needs the submitter to have a workspace. */
+function ReplySection({
+  entry,
+  t,
+  locale,
+  busy,
+  onSendReply,
+}: {
+  entry: FeedbackEntry;
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  locale: string;
+  busy: boolean;
+  onSendReply: (message: string, channel: FeedbackReplyChannel) => Promise<boolean>;
+}) {
+  const emailPossible = Boolean(entry.user_email ?? entry.from_email);
+  const notifPossible = entry.user_id != null;
+  const [text, setText] = useState("");
+  const [channel, setChannel] = useState<FeedbackReplyChannel>(
+    emailPossible ? "email" : "notification",
+  );
+
+  const channelOptions: FeedbackReplyChannel[] = [];
+  if (emailPossible) channelOptions.push("email");
+  if (notifPossible) channelOptions.push("notification");
+  if (emailPossible && notifPossible) channelOptions.push("both");
+
+  const fmtDateTime = (ts: number) =>
+    new Date(ts).toLocaleString(locale === "hu" ? "hu-HU" : "en-GB", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const viaKey: Record<FeedbackReplyChannel, string> = {
+    email: "admin.feedback_reply_via_email",
+    notification: "admin.feedback_reply_via_notification",
+    both: "admin.feedback_reply_via_both",
+  };
+
+  const canSend = text.trim().length > 0 && channelOptions.length > 0 && !busy;
+
+  async function submit() {
+    if (!canSend) return;
+    const ok = await onSendReply(text.trim(), channel);
+    if (ok) setText("");
+  }
+
+  return (
+    <div className="border-t border-paper-200 pt-4 dark:border-umber-700">
+      <p className="field-label mb-2 flex items-center gap-1.5">
+        <Reply size={13} aria-hidden />
+        {t("admin.feedback_reply_label")}
+      </p>
+
+      {entry.replies.length > 0 && (
+        <ul className="mb-3 space-y-2">
+          {entry.replies.map((r) => (
+            <li
+              key={r.id}
+              className="rounded-md border border-paper-200 bg-white px-3 py-2 dark:border-umber-700 dark:bg-umber-800/60"
+            >
+              <p className="whitespace-pre-wrap text-sm text-neutral-800 dark:text-paper-100">
+                {r.message}
+              </p>
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500 dark:text-umber-300">
+                <span className="inline-flex items-center gap-1">
+                  {r.channel === "notification" ? (
+                    <Bell size={11} aria-hidden />
+                  ) : (
+                    <Mail size={11} aria-hidden />
+                  )}
+                  {t(viaKey[r.channel])}
+                </span>
+                <span aria-hidden>·</span>
+                <span>{fmtDateTime(r.created_at)}</span>
+                {r.admin_email && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>{r.admin_email}</span>
+                  </>
+                )}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {channelOptions.length === 0 ? (
+        <p className="text-xs text-neutral-500 dark:text-umber-300">
+          {t("admin.feedback_reply_no_recipient")}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          <textarea
+            className="input min-h-[5rem] resize-y"
+            value={text}
+            disabled={busy}
+            placeholder={t("admin.feedback_reply_placeholder")}
+            maxLength={4000}
+            onChange={(ev) => setText(ev.target.value)}
+          />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              {channelOptions.map((c) => {
+                const active = channel === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setChannel(c)}
+                    className={
+                      active
+                        ? "inline-flex items-center gap-1 rounded-full bg-ink-900 px-2.5 py-1 text-xs font-medium text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                        : "inline-flex items-center gap-1 rounded-full border border-paper-300 bg-white px-2.5 py-1 text-xs text-ink-700 transition-colors hover:border-ink-500 hover:bg-paper-100 disabled:opacity-50 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                    }
+                  >
+                    {c === "notification" ? (
+                      <Bell size={12} aria-hidden />
+                    ) : c === "both" ? (
+                      <Send size={12} aria-hidden />
+                    ) : (
+                      <Mail size={12} aria-hidden />
+                    )}
+                    {t(`admin.feedback_reply_channel_${c}`)}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="btn-primary btn-sm"
+              disabled={!canSend}
+              onClick={submit}
+            >
+              <Send size={13} aria-hidden /> {t("admin.feedback_reply_send")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

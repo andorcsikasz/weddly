@@ -4,6 +4,8 @@
 import type {
   FeedbackEntry,
   FeedbackPriority,
+  FeedbackReplyChannel,
+  FeedbackReplyEntry,
   FeedbackSource,
   FeedbackStatus,
 } from "@shared/feedback";
@@ -67,6 +69,43 @@ interface JoinedRow extends FeedbackRow {
   user_full_name: string | null;
 }
 
+interface ReplyRow {
+  id: number;
+  message: string;
+  channel: string;
+  email_status: string | null;
+  notified: number;
+  admin_email: string | null;
+  created_at: number;
+}
+
+function toReplyChannel(s: string): FeedbackReplyChannel {
+  return s === "notification" || s === "both" ? s : "email";
+}
+
+/** All admin replies for one submission, oldest-first (thread order). */
+export function loadFeedbackReplies(feedbackId: number): FeedbackReplyEntry[] {
+  const rows = db
+    .prepare(
+      `SELECT r.id, r.message, r.channel, r.email_status, r.notified,
+              u.email AS admin_email, r.created_at
+         FROM feedback_replies r
+    LEFT JOIN users u ON u.id = r.admin_user_id
+        WHERE r.feedback_id = ?
+        ORDER BY r.created_at ASC, r.id ASC`,
+    )
+    .all(feedbackId) as ReplyRow[];
+  return rows.map((r) => ({
+    id: r.id,
+    message: r.message,
+    channel: toReplyChannel(r.channel),
+    email_status: r.email_status,
+    notified: r.notified === 1,
+    admin_email: r.admin_email,
+    created_at: r.created_at,
+  }));
+}
+
 export function toFeedbackEntry(row: JoinedRow): FeedbackEntry {
   return {
     id: row.id,
@@ -90,7 +129,34 @@ export function toFeedbackEntry(row: JoinedRow): FeedbackEntry {
     os: row.os,
     reviewed_at: row.reviewed_at,
     created_at: row.created_at,
+    replies: loadFeedbackReplies(row.id),
   };
+}
+
+/** Record an admin reply on a submission. The delivery itself (email +/or
+ *  bell notification) happens in the route; this just persists the thread row
+ *  with the per-channel outcome so the panel can show what was sent. */
+export function insertFeedbackReply(input: {
+  feedback_id: number;
+  admin_user_id: number;
+  message: string;
+  channel: FeedbackReplyChannel;
+  email_status: string | null;
+  notified: boolean;
+}): void {
+  db.prepare(
+    `INSERT INTO feedback_replies
+       (feedback_id, admin_user_id, message, channel, email_status, notified, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    input.feedback_id,
+    input.admin_user_id,
+    input.message,
+    input.channel,
+    input.email_status,
+    input.notified ? 1 : 0,
+    now(),
+  );
 }
 
 /** Best-effort device/browser/os classification from a User-Agent string.
