@@ -822,9 +822,14 @@ export default function App() {
           path="/onboarding"
           element={
             <Page>
-              <RequireAuth>
+              {/* Couple-only wizard. RequireCoupleAuth (not the role-agnostic
+                  RequireAuth) so a vendor lands on /vendor and a planner on
+                  /app/planner instead of the couple "who's getting married?"
+                  form. The verify-bypass path for a fresh unverified couple is
+                  preserved — RequireCoupleAuth keeps the same verify gate. */}
+              <RequireCoupleAuth>
                 <OnboardingWizard />
-              </RequireAuth>
+              </RequireCoupleAuth>
             </Page>
           }
         />

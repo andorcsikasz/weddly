@@ -193,14 +193,24 @@ function sweepScheduledGuestMessages(ts: number): number {
   return count;
 }
 
+// A "couple-audience" account for the couple onboarding nudges: a real couple
+// user, NOT a vendor listing and NOT a planner. Both flags are NOT NULL DEFAULT
+// (role→'owner', user_type→'couple'), so `!=` is NULL-safe. Vendors keep the
+// default user_type='couple' (only `role` is set to 'vendor'), so filtering on
+// role is what actually excludes them — a vendor with couple_id NULL was
+// otherwise treated as an un-onboarded couple and emailed "finish setting up
+// your wedding" with a /onboarding CTA. Mirrors domain/planner_conversion.ts.
+const COUPLE_AUDIENCE_SQL = "u.role != 'vendor' AND u.user_type != 'planner'";
+
 function sweepOnboardingNudges(ts: number): number {
-  // Users registered > 24h ago, no couple, not suspended, not already nudged.
+  // Couple users registered > 24h ago, no couple, not suspended, not nudged.
   const cutoff = ts - ONBOARDING_NUDGE_AFTER_MS;
   const rows = db
     .prepare(
       `SELECT u.id, u.email, u.full_name, u.couple_id, u.status, u.created_at
          FROM users u
         WHERE u.couple_id IS NULL
+          AND ${COUPLE_AUDIENCE_SQL}
           AND u.status = 'active'
           AND u.created_at <= ?
           AND NOT EXISTS (
@@ -235,6 +245,7 @@ function sweepOnboardingNudgesWeek(ts: number): number {
       `SELECT u.id, u.email, u.full_name, u.couple_id, u.status, u.created_at
          FROM users u
         WHERE u.couple_id IS NULL
+          AND ${COUPLE_AUDIENCE_SQL}
           AND u.status = 'active'
           AND u.created_at <= ?
           AND NOT EXISTS (
