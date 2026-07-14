@@ -3,7 +3,7 @@
 // SVG user units). Callers pass in half-dimensions in their own unit; the
 // returned chair offsets come back in the same unit.
 
-import type { TableShape } from "./types";
+import type { SeatingTable, TableShape } from "./types";
 
 /** Hard ceiling on seats per table, independent of footprint. Mirrors the
  *  backend's 1–40 validation range so both steppers stop where the server
@@ -63,6 +63,44 @@ export function maxSeatsForTable(shape: TableShape, width_mm: number, length_mm:
     return Math.max(1, Math.floor(length_mm / CHAIR_PITCH_MM));
   }
   return Math.max(1, Math.floor((2 * length_mm + 2 * width_mm) / CHAIR_PITCH_MM));
+}
+
+/** Half-dimensions (centre → edge) of a table's UNROTATED body, in mm. THE
+ *  single source of truth shared by the on-screen canvas (SeatingMap), the PDF
+ *  renderer (domain/pdf.ts) and the editor preview (SeatLayoutPreview), so the
+ *  seat→side allocation these three derive via {@link chairOffsets} can never
+ *  diverge. Round → radius on both axes; square → half its larger side on both;
+ *  long/head → `length` is the long (x) side and `width` the short (y) side, so
+ *  they render horizontally. */
+export function tableHalfDims(
+  t: Pick<SeatingTable, "shape" | "width_mm" | "length_mm">,
+): { rx: number; ry: number } {
+  if (t.shape === "round") {
+    const r = t.width_mm / 2;
+    return { rx: r, ry: r };
+  }
+  if (t.shape === "square") {
+    const s = Math.max(t.width_mm, t.length_mm) / 2;
+    return { rx: s, ry: s };
+  }
+  return { rx: t.length_mm / 2, ry: t.width_mm / 2 };
+}
+
+/** Half-dims for the compact editor PREVIEW card. Round/square keep a fixed
+ *  square size; long/head take their REAL proportions ({@link tableHalfDims})
+ *  scaled uniformly so the long half-side maps to `PREVIEW_LONG_HALF`. Uniform
+ *  scaling preserves the true aspect ratio, and because `chairOffsets`' side
+ *  allocation depends only on that ratio, the preview lands every seat index on
+ *  the SAME side as the canvas + PDF. (A previous fork forced a fixed 60:22
+ *  aspect, which silently drifted the seat numbering — the reported bug.) */
+export function previewHalfDims(
+  t: Pick<SeatingTable, "shape" | "width_mm" | "length_mm">,
+): { rx: number; ry: number } {
+  if (t.shape === "round" || t.shape === "square") return { rx: 40, ry: 40 };
+  const PREVIEW_LONG_HALF = 60;
+  const { rx, ry } = tableHalfDims(t);
+  const k = PREVIEW_LONG_HALF / Math.max(rx, ry, 1);
+  return { rx: rx * k, ry: ry * k };
 }
 
 /** Seat-assignment progress snapshot for the seat-mode summary bar. Computed

@@ -24,7 +24,7 @@ import {
   getStylePreset,
 } from "@shared/design";
 import type { ScheduleEvent } from "@shared/schedule";
-import { chairOffsets } from "@shared/seating";
+import { chairOffsets, tableHalfDims } from "@shared/seating";
 import type { Guest, SeatAssignment, SeatingTable } from "@shared/types";
 
 const FONT_DIR = join(import.meta.dir, "pdf_fonts");
@@ -226,20 +226,6 @@ interface LayoutResult {
   tableLayouts: Map<number, TableLayout>;
   /** Null when the renderer fell back to the auto-flow grid path. */
   transform: PlanTransform | null;
-}
-
-function tableHalfDims(t: SeatingTable): { rx: number; ry: number } {
-  if (t.shape === "round") {
-    const r = t.width_mm / 2;
-    return { rx: r, ry: r };
-  }
-  if (t.shape === "square") {
-    const s = Math.max(t.width_mm, t.length_mm) / 2;
-    return { rx: s, ry: s };
-  }
-  // long: width is the shorter side, length is the longer side. We orient
-  // long tables horizontally on the page so the shape reads "long" at a glance.
-  return { rx: t.length_mm / 2, ry: t.width_mm / 2 };
 }
 
 /** Axis-aligned half-extents of a table's ROTATED footprint. The body spans

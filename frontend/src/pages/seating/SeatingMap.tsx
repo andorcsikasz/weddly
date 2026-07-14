@@ -7,7 +7,7 @@
 // but only PATCHes the server on pointer-up — otherwise we'd spam the API.
 
 import type { SeatAssignment, SeatingTable } from "@shared/types";
-import { MAX_TABLE_SEATS, chairOffsets, maxSeatsForTable } from "@shared/seating";
+import { MAX_TABLE_SEATS, chairOffsets, maxSeatsForTable, tableHalfDims } from "@shared/seating";
 import {
   Baby,
   Locate,
@@ -1545,7 +1545,7 @@ function TableShape({
     return () => window.removeEventListener("dragend", onDragEnd);
   }, [dragOverTable]);
   // Half-dimensions used for shape rendering and chair placement.
-  const { rx, ry } = halfDims(table);
+  const { rx, ry } = tableHalfDims(table);
   const chairs = chairOffsets(table.shape, table.seats, rx, ry);
 
   const strokeWidth = isSelected ? 22 : 14;
@@ -1761,6 +1761,14 @@ function TableShape({
           selected-guest=blush-600, drag-hover=blush-400). */}
       {chairs.map((c, i) => {
         const isDisabled = disabledSet.has(i);
+        // A removed (disabled) seat renders NOTHING on the planner canvas — no
+        // chair, no × — so the design view isn't cluttered by seats that aren't
+        // there. The muted chair + × marker lives ONLY in the lower seat-editor
+        // card (SeatLayoutPreview), where it usefully signals "a chair could go
+        // back here". Disabled seats are already non-interactive (every handler
+        // below is gated on !isDisabled) and excluded from firstFreeSeat, so
+        // hiding them changes pixels only — seat indices are untouched.
+        if (isDisabled) return null;
         const isBaby = !isDisabled && (babySet.has(i) || (babySeatedSet?.has(i) ?? false));
         const cosA = Math.cos(c.angle);
         const sinA = Math.sin(c.angle);
@@ -2272,21 +2280,6 @@ function SeatButton({
       </g>
     </g>
   );
-}
-
-function halfDims(t: SeatingTable): { rx: number; ry: number } {
-  if (t.shape === "round") {
-    const r = t.width_mm / 2;
-    return { rx: r, ry: r };
-  }
-  if (t.shape === "square") {
-    const s = Math.max(t.width_mm, t.length_mm) / 2;
-    return { rx: s, ry: s };
-  }
-  // Long and head tables — width is the shorter side (depth), length is the
-  // longer side. Both orient horizontally so chairs sit naturally below /
-  // along them.
-  return { rx: t.length_mm / 2, ry: t.width_mm / 2 };
 }
 
 function clamp(v: number, lo: number, hi: number): number {

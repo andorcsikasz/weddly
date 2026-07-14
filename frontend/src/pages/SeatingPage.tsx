@@ -11,9 +11,11 @@ import {
   MAX_TABLE_SEATS,
   MIN_AISLE_MM,
   TABLE_SIZE_PRESETS,
+  chairOffsets,
   defaultDimsForShape,
   isDefaultTableLabel,
   maxSeatsForTable,
+  previewHalfDims,
   seatingProgress,
 } from "@shared/seating";
 import {
@@ -2868,7 +2870,7 @@ function SeatLayoutPreview({
   xButtonLabel: string;
 }) {
   const { rx, ry } = previewHalfDims(table);
-  const chairs = previewChairOffsets(table.shape, table.seats, rx, ry);
+  const chairs = chairOffsets(table.shape, table.seats, rx, ry);
   const disabled = new Set(table.disabled_seats ?? []);
   const baby = new Set(table.baby_seats ?? []);
   // Auto-fit viewBox with padding for chairs sitting outside the table edge.
@@ -2989,99 +2991,6 @@ function SeatLayoutPreview({
       })}
     </svg>
   );
-}
-
-// Preview-only half-dims and chair offsets. We can't share with SeatingMap
-// because the preview re-normalises long/head tables into a fixed aspect
-// (so the editor card always shows a horizontal banquet, not whatever the
-// user has dragged on the canvas) — keeps the preview consistent shape-to-
-// shape and unaffected by extreme dimensions.
-function previewHalfDims(t: SeatingTable): { rx: number; ry: number } {
-  if (t.shape === "round") return { rx: 40, ry: 40 };
-  if (t.shape === "square") return { rx: 40, ry: 40 };
-  // long / head — fixed 3:1 banquet aspect in the preview.
-  return { rx: 60, ry: 22 };
-}
-
-// Mirrors shared/seating.ts chairOffsets() but operating on the preview
-// coordinate scale (small SVG units rather than mm).
-function previewChairOffsets(
-  shape: TableShape,
-  seats: number,
-  rx: number,
-  ry: number,
-): { dx: number; dy: number; angle: number }[] {
-  if (seats <= 0) return [];
-  if (shape === "round") {
-    const out = [];
-    for (let i = 0; i < seats; i++) {
-      const angle = -Math.PI / 2 + (i / seats) * Math.PI * 2;
-      out.push({ dx: Math.cos(angle) * rx, dy: Math.sin(angle) * rx, angle });
-    }
-    return out;
-  }
-  if (shape === "head") {
-    const out = [];
-    const longSide = rx * 2;
-    for (let i = 0; i < seats; i++) {
-      const t = (i + 0.5) / seats;
-      out.push({ dx: -rx + longSide * t, dy: -ry, angle: -Math.PI / 2 });
-    }
-    return out;
-  }
-  // Rectangle: top / right / bottom / left, proportional to side length.
-  const longSide = rx * 2;
-  const shortSide = ry * 2;
-  const totalPerimeter = (longSide + shortSide) * 2;
-  let top = Math.round((seats * longSide) / totalPerimeter);
-  let bot = top;
-  let left = Math.round((seats * shortSide) / totalPerimeter);
-  let right = left;
-  let total = top + bot + left + right;
-  while (total < seats) {
-    if (longSide >= shortSide) {
-      top++;
-      bot++;
-      total += 2;
-    } else {
-      left++;
-      right++;
-      total += 2;
-    }
-  }
-  while (total > seats) {
-    if (right > 0) {
-      right--;
-      total--;
-    } else if (bot > 0) {
-      bot--;
-      total--;
-    } else if (left > 0) {
-      left--;
-      total--;
-    } else if (top > 0) {
-      top--;
-      total--;
-    } else break;
-  }
-  const out = [];
-  for (let i = 0; i < top; i++) {
-    const t = (i + 0.5) / top;
-    out.push({ dx: -rx + longSide * t, dy: -ry, angle: -Math.PI / 2 });
-  }
-  for (let i = 0; i < right; i++) {
-    const t = (i + 0.5) / right;
-    out.push({ dx: rx, dy: -ry + shortSide * t, angle: 0 });
-  }
-  for (let i = 0; i < bot; i++) {
-    const t = (i + 0.5) / bot;
-    out.push({ dx: rx - longSide * t, dy: ry, angle: Math.PI / 2 });
-  }
-  for (let i = 0; i < left; i++) {
-    const t = (i + 0.5) / left;
-    out.push({ dx: -rx, dy: ry - shortSide * t, angle: Math.PI });
-  }
-  return out;
 }
 
 // Inline-editable heading. Click the title (or the pencil) to edit; commit

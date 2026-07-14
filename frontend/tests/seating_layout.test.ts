@@ -4,7 +4,14 @@
 // `bun test` rather than only in a manual run.
 
 import { describe, expect, test } from "bun:test";
-import { MIN_AISLE_MM, defaultDimsForShape, maxSeatsForTable } from "../../shared/seating";
+import {
+  MIN_AISLE_MM,
+  chairOffsets,
+  defaultDimsForShape,
+  maxSeatsForTable,
+  previewHalfDims,
+  tableHalfDims,
+} from "../../shared/seating";
 import type { SeatingTable, TableShape } from "../../shared/types";
 import { computeSymmetricLayout, tableFootprintMm } from "../src/pages/seating/layout";
 
@@ -178,5 +185,51 @@ describe("computeSymmetricLayout", () => {
     expect(pos?.x_mm).toBe(6000);
     // Top edge of head sits at WALL_MARGIN (1500 mm).
     expect(pos?.y_mm).toBe(1500 + head.width_mm / 2);
+  });
+});
+
+// Which edge of the table a chair sits on, derived from its outward angle:
+//   -π/2 top, 0 right, +π/2 bottom, π left. Encodes "short vs long side".
+function sideOf(c: { angle: number }): "top" | "right" | "bottom" | "left" {
+  const a = ((c.angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  if (Math.abs(Math.sin(a) + 1) < 1e-9) return "top";
+  if (Math.abs(Math.cos(a) - 1) < 1e-9) return "right";
+  if (Math.abs(Math.sin(a) - 1) < 1e-9) return "bottom";
+  return "left";
+}
+
+// Regression guard for the reported bug: the lower editor card (previewHalfDims)
+// and the planner canvas / PDF (tableHalfDims) MUST place every seat index on
+// the same side of the table. They diverged when the preview forked its own
+// geometry at a fixed 60:22 aspect; now both feed the real ratio to the shared
+// chairOffsets, so a given seat index can never land on a different side.
+describe("seat geometry: preview never diverges from the canvas/PDF", () => {
+  const shapes: TableShape[] = ["round", "square", "long", "head"];
+  const seatCounts = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 40];
+  for (const shape of shapes) {
+    for (const seats of seatCounts) {
+      test(`${shape} × ${seats}: identical seat→side allocation`, () => {
+        const t = makeTable(1, shape, { seats });
+        const canvas = tableHalfDims(t);
+        const preview = previewHalfDims(t);
+        // Root cause: the preview must preserve the table's real aspect ratio.
+        expect(preview.rx / preview.ry).toBeCloseTo(canvas.rx / canvas.ry, 9);
+        // Consequence: every seat lands on the same side in both renderers.
+        const canvasSides = chairOffsets(shape, seats, canvas.rx, canvas.ry).map(sideOf);
+        const previewSides = chairOffsets(shape, seats, preview.rx, preview.ry).map(sideOf);
+        expect(previewSides).toEqual(canvasSides);
+      });
+    }
+  }
+
+  test("non-3:1 long tables also agree (the exact user report)", () => {
+    // A near-square long table is where the old fixed 60:22 fork hurt most:
+    // the real ratio wants seats on the short ends, the fork stripped them.
+    const t = makeTable(1, "long", { seats: 12, width_mm: 900, length_mm: 4000 });
+    const canvas = tableHalfDims(t);
+    const preview = previewHalfDims(t);
+    const canvasSides = chairOffsets("long", 12, canvas.rx, canvas.ry).map(sideOf);
+    const previewSides = chairOffsets("long", 12, preview.rx, preview.ry).map(sideOf);
+    expect(previewSides).toEqual(canvasSides);
   });
 });
