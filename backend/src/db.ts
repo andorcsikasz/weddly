@@ -1557,6 +1557,19 @@ if (!shareNudgeColumnExisted) {
     "UPDATE vendor_accounts SET share_nudge_sent_at = created_at WHERE share_nudge_sent_at IS NULL",
   ).run();
 }
+// Recurring "your listing is still incomplete" reminder bookkeeping
+// (sweepVendorProfileIncomplete). `profile_nudge_last_at` = epoch ms of the last
+// incomplete-nudge sent (NULL = never); `profile_nudge_count` = how many have
+// gone out, which both CAPS the series and drives copy-variant rotation. No
+// backfill on purpose: a pre-existing incomplete vendor SHOULD start getting
+// nudged, and the first-send grace is anchored on vendor_accounts.created_at in
+// the worker (so brand-new signups still get their grace window).
+addColumnIfMissing("vendor_accounts", "profile_nudge_last_at", "profile_nudge_last_at INTEGER");
+addColumnIfMissing(
+  "vendor_accounts",
+  "profile_nudge_count",
+  "profile_nudge_count INTEGER NOT NULL DEFAULT 0",
+);
 // Vendor-written label behind category='other' listings: the "my service
 // isn't in the taxonomy yet" escape hatch on the signup form.
 addColumnIfMissing("listings", "custom_category", "custom_category TEXT");

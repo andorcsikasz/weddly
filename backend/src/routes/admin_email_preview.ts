@@ -211,6 +211,12 @@ const STUBS: KindPayload = {
     reviewsUrl: `${BASE_URL}/vendor/reviews`,
     missing: { photos: true, bio: false, calendar: true, packages: true },
   },
+  vendor_profile_incomplete: {
+    businessName: "Bloom Studio",
+    editUrl: `${BASE_URL}/vendor/listing`,
+    missing: { photos: true, bio: true, pricing: false, packages: true, availability: false },
+    variant: 0,
+  },
   planner_profile_incomplete: {
     fullName: "Rita Kruczli",
     businessName: null,

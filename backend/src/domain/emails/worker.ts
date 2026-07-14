@@ -33,6 +33,13 @@ const ONBOARDING_NUDGE_WEEK_AFTER_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 // A planner gets ~3 days to finish their profile on their own before the
 // one-shot "your profile is missing info" nudge fires.
 const PLANNER_PROFILE_NUDGE_AFTER_MS = 1000 * 60 * 60 * 24 * 3; // 3 days
+// Recurring "your listing is still incomplete" reminder. A vendor gets a 2-day
+// grace after signup, then a VARYING 2-4 day gap between reminders (so the
+// series doesn't feel robotic), capped at MAX sends. Copy variant rotates by
+// send count. The gap before the (count+1)-th reminder is indexed by count.
+const VENDOR_INCOMPLETE_GRACE_MS = 1000 * 60 * 60 * 24 * 2; // 2 days after signup
+const VENDOR_INCOMPLETE_MAX_NUDGES = 5;
+const VENDOR_INCOMPLETE_INTERVAL_DAYS = [2, 3, 4, 2, 3];
 const INVITE_PARTNER_AUTO_AFTER_MS = 1000 * 60 * 60 * 48; // 48h
 // Solo workspaces are auto-nudged at the first 10:00 UTC at or after the 48h
 // mark ("48h utáni legközelebbi 10:00"). The worker runs hourly, so the real
@@ -64,6 +71,7 @@ export function runEmailSweep(): {
   nudgesWeek: number;
   invitePartnerAuto: number;
   vendorShareNudges: number;
+  vendorIncompleteNudges: number;
   plannerProfileNudges: number;
   milestones: number;
   weddings: number;
@@ -80,6 +88,7 @@ export function runEmailSweep(): {
   const nudgesWeek = sweepOnboardingNudgesWeek(ts);
   const invitePartnerAuto = sweepInvitePartnerAuto(ts);
   const vendorShareNudges = sweepVendorProfileShareNudge(ts);
+  const vendorIncompleteNudges = sweepVendorProfileIncomplete(ts);
   const plannerProfileNudges = sweepPlannerProfileNudge(ts);
   const milestones = sweepMilestones(ts);
   const weddings = sweepWeddingDay(ts);
@@ -95,6 +104,7 @@ export function runEmailSweep(): {
     nudgesWeek,
     invitePartnerAuto,
     vendorShareNudges,
+    vendorIncompleteNudges,
     plannerProfileNudges,
     milestones,
     weddings,
@@ -299,6 +309,106 @@ function sweepVendorProfileShareNudge(ts: number): number {
         editUrl: `${CONFIG.frontendBaseUrl}/vendor/listing`,
         reviewsUrl: `${CONFIG.frontendBaseUrl}/vendor/reviews`,
         missing,
+      },
+      { user: { id: r.owner_user_id, email: r.email, full_name: r.full_name }, couple_id: null },
+    );
+    count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
+  }
+  return count;
+}
+
+interface VendorIncompleteRow {
+  account_id: number;
+  display_name: string;
+  created_at: number;
+  profile_nudge_last_at: number | null;
+  profile_nudge_count: number;
+  owner_user_id: number;
+  email: string;
+  full_name: string;
+}
+
+function sweepVendorProfileIncomplete(ts: number): number {
+  // Recurring reminder to verified, active vendors whose public listing is still
+  // missing photo / bio / pricing / packages / availability. First send waits a
+  // 2-day grace after signup; later sends wait a VARYING 2-4 day gap keyed on
+  // how many already went out; the whole series is capped at
+  // VENDOR_INCOMPLETE_MAX_NUDGES. Copy variant rotates by send count so no two
+  // reminders read the same. Cadence + count live on vendor_accounts; the
+  // lifecycle opt-out + one-click unsubscribe are honoured by sendKind. Demo +
+  // purged owners excluded. A vendor whose profile is already complete is picked
+  // up by the query but skipped WITHOUT advancing the count, so completing then
+  // re-emptying a section resumes the series where it left off.
+  const rows = db
+    .prepare(
+      `SELECT va.id AS account_id, va.display_name, va.created_at,
+              va.profile_nudge_last_at, va.profile_nudge_count,
+              u.id AS owner_user_id, u.email, u.full_name
+         FROM vendor_accounts va
+         JOIN users u ON u.id = va.owner_user_id
+        WHERE u.status = 'active'
+          AND u.verified_email = 1
+          AND u.email NOT LIKE '%@purged.local'
+          AND u.email NOT LIKE '%@demo.weddly.local'
+          AND va.profile_nudge_count < ?`,
+    )
+    .all(VENDOR_INCOMPLETE_MAX_NUDGES) as VendorIncompleteRow[];
+
+  let count = 0;
+  const stamp = db.prepare(
+    `UPDATE vendor_accounts
+        SET profile_nudge_last_at = ?, profile_nudge_count = profile_nudge_count + 1
+      WHERE id = ?`,
+  );
+  const blockedDates = db.prepare(
+    "SELECT COUNT(*) AS n FROM vendor_unavailable_dates WHERE vendor_account_id = ?",
+  );
+  for (const r of rows) {
+    // Cadence gate: the first send waits out the grace window from signup; every
+    // later send waits a varying 2-4 day gap indexed by the count so far.
+    if (r.profile_nudge_last_at === null) {
+      if (r.created_at > ts - VENDOR_INCOMPLETE_GRACE_MS) continue;
+    } else {
+      const gapDays =
+        VENDOR_INCOMPLETE_INTERVAL_DAYS[
+          r.profile_nudge_count % VENDOR_INCOMPLETE_INTERVAL_DAYS.length
+        ] ?? 3;
+      if (r.profile_nudge_last_at > ts - gapDays * 86_400_000) continue;
+    }
+
+    // Only email if a public-facing section is actually empty.
+    const listingId = `v${r.account_id}`;
+    const listing = getListingByVendorAccountId(r.account_id);
+    const missing = {
+      photos: !listing?.hero_image_url && countListingPhotos(listingId) === 0,
+      bio: !(listing?.blurb_hu || listing?.blurb_en),
+      pricing: listing?.price_band == null,
+      packages: countListingPackages(listingId) === 0,
+      availability: (blockedDates.get(r.account_id) as { n: number }).n === 0,
+    };
+    if (
+      !missing.photos &&
+      !missing.bio &&
+      !missing.pricing &&
+      !missing.packages &&
+      !missing.availability
+    ) {
+      continue; // complete — nothing to nudge, count left untouched
+    }
+
+    // Stamp BEFORE the fire-and-forget send. The count also selects the copy
+    // variant, so a silent mailer hiccup advances the series (and rotates the
+    // wording) rather than re-sending the same text.
+    const variant = r.profile_nudge_count;
+    stamp.run(ts, r.account_id);
+    void sendKind(
+      "vendor_profile_incomplete",
+      {
+        businessName: r.display_name,
+        editUrl: `${CONFIG.frontendBaseUrl}/vendor/listing`,
+        missing,
+        variant,
       },
       { user: { id: r.owner_user_id, email: r.email, full_name: r.full_name }, couple_id: null },
     );
@@ -953,6 +1063,7 @@ export function startEmailWorker(): void {
         r.nudgesWeek +
         r.invitePartnerAuto +
         r.vendorShareNudges +
+        r.vendorIncompleteNudges +
         r.milestones +
         r.weddings +
         r.rsvpDeadlines +

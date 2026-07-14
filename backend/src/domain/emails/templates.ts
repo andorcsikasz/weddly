@@ -397,6 +397,28 @@ export interface VendorProfileSharePayload {
   };
 }
 
+export interface VendorProfileIncompletePayload {
+  /** Vendor business name, used in the greeting. */
+  businessName: string;
+  /** In-app listing editor (`/vendor/listing`) — the CTA where every missing
+   *  section is filled in. */
+  editUrl: string;
+  /** Which public-facing sections are still empty. Only the true ones are named
+   *  in the body. At least one is always true (the sweep only emails incomplete
+   *  listings). */
+  missing: {
+    photos: boolean;
+    bio: boolean;
+    pricing: boolean;
+    packages: boolean;
+    availability: boolean;
+  };
+  /** Rotating copy index (0-based). The builder picks one of N wording variants
+   *  by `variant % N`, so consecutive reminders to the same vendor never read
+   *  the same. Driven by the per-vendor send count in the worker. */
+  variant: number;
+}
+
 export interface PlannerProfileIncompletePayload {
   /** Planner's name, used in the greeting. */
   fullName: string;
@@ -649,6 +671,7 @@ export type KindPayload = {
   vendor_waitlist_decision: VendorWaitlistDecisionPayload;
   vendor_activation: VendorActivationPayload;
   vendor_profile_share: VendorProfileSharePayload;
+  vendor_profile_incomplete: VendorProfileIncompletePayload;
   planner_profile_incomplete: PlannerProfileIncompletePayload;
   planner_waitlist_decision: PlannerWaitlistDecisionPayload;
   planner_provisioned: PlannerProvisionedPayload;
@@ -1927,6 +1950,155 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           { label: "Edit profile", url: p.editUrl },
           { label: "Reviews", url: p.reviewsUrl },
         ],
+        footnote: "We only email when there's something useful for your Weddly profile.",
+      },
+    };
+  },
+
+  vendor_profile_incomplete: (p) => {
+    const name = p.businessName.trim();
+    // Name only the empty sections, in the same order in both languages so the
+    // two blocks stay parallel. At least one is always true here.
+    const huMissing: string[] = [];
+    const enMissing: string[] = [];
+    if (p.missing.photos) {
+      huMissing.push("fotók");
+      enMissing.push("photos");
+    }
+    if (p.missing.bio) {
+      huMissing.push("bemutatkozó szöveg");
+      enMissing.push("a short bio");
+    }
+    if (p.missing.pricing) {
+      huMissing.push("ársáv");
+      enMissing.push("a price range");
+    }
+    if (p.missing.packages) {
+      huMissing.push("árcsomagok");
+      enMissing.push("pricing packages");
+    }
+    if (p.missing.availability) {
+      huMissing.push("foglaltsági naptár");
+      enMissing.push("an availability calendar");
+    }
+    const huList = huMissing.length > 0 ? joinNaturalList(huMissing, "és") : "néhány rész";
+    const enList = enMissing.length > 0 ? joinNaturalList(enMissing, "and") : "a few sections";
+
+    // Five wording variants so consecutive reminders to the same vendor never
+    // read the same. Same ask (finish these sections, here's the editor),
+    // different framing. The worker rotates `variant` by the per-vendor count.
+    const variants = [
+      {
+        subject: "Fejezd be a Weddly-profilod / Finish your Weddly profile",
+        hu: {
+          preheader: "Néhány rész még hiányzik a profilodról.",
+          intro:
+            "A profilod már él a Weddly-n, de még nincs teljesen kész. A hiányzó részek nélkül kevesebb pár kattint rád.",
+          missing: (l: string) => `Ezek még hiányoznak: **${l}**.`,
+          close: "Pár perc kitölteni, és sokkal meggyőzőbb lesz a profilod.",
+          cta: "Profil befejezése",
+        },
+        en: {
+          preheader: "A few sections are still missing from your profile.",
+          intro:
+            "Your profile is live on Weddly, but it isn't finished yet. Without the missing pieces, fewer couples click through.",
+          missing: (l: string) => `Still missing: **${l}**.`,
+          close: "It takes a couple of minutes and makes your profile far more convincing.",
+          cta: "Finish my profile",
+        },
+      },
+      {
+        subject: "A párok téged is néznek a Weddly-n / Couples are browsing you on Weddly",
+        hu: {
+          preheader: "Valódi párok böngésznek, a teljes profil dönt.",
+          intro:
+            "Most is valódi párok keresgélnek szolgáltatókat a Weddly-n. Amikor rád találnak, egy teljes profil sokkal meggyőzőbb.",
+          missing: (l: string) => `Nálad még üresen áll: **${l}**.`,
+          close: "Egészítsd ki, hogy a legjobb formádat lássák.",
+          cta: "Profil kiegészítése",
+        },
+        en: {
+          preheader: "Real couples are browsing, a full profile wins.",
+          intro:
+            "Real couples are browsing vendors on Weddly right now. When they land on you, a complete profile is far more persuasive.",
+          missing: (l: string) => `Yours is still empty here: **${l}**.`,
+          close: "Fill it in so they see you at your best.",
+          cta: "Complete my profile",
+        },
+      },
+      {
+        subject: "Az első benyomás számít / First impressions count",
+        hu: {
+          preheader: "Egy rendezett profil a legtöbbet hozza.",
+          intro:
+            "Egy rendezett, teljes profil az első benyomásnál a legtöbbet hozza. A tiéd már majdnem ott van.",
+          missing: (l: string) => `Még ennyi kell hozzá: **${l}**.`,
+          close: "Told ki gyorsan, és készen állsz a megkeresésekre.",
+          cta: "Befejezem most",
+        },
+        en: {
+          preheader: "A tidy profile makes the difference.",
+          intro:
+            "A tidy, complete profile makes the strongest first impression. Yours is almost there.",
+          missing: (l: string) => `Just this left: **${l}**.`,
+          close: "Wrap it up and you're ready for enquiries.",
+          cta: "Finish it now",
+        },
+      },
+      {
+        subject: "Több megkeresés a teljes profillal / More enquiries with a full profile",
+        hu: {
+          preheader: "A teljes profilok több megkeresést kapnak.",
+          intro:
+            "A teljes profilok érezhetően több megkeresést kapnak. A tiédből még hiányzik pár darab.",
+          missing: (l: string) => `Hiányzó részek: **${l}**.`,
+          close: "Ha kitöltöd, nagyobb eséllyel választanak a párok.",
+          cta: "Kiegészítem",
+        },
+        en: {
+          preheader: "Full profiles get more enquiries.",
+          intro:
+            "Complete profiles get noticeably more enquiries. Yours is still missing a few pieces.",
+          missing: (l: string) => `Missing sections: **${l}**.`,
+          close: "Fill them in and more couples will choose you.",
+          cta: "Complete it",
+        },
+      },
+      {
+        subject: "Egy utolsó lökés a profilodhoz / One last nudge for your profile",
+        hu: {
+          preheader: "Rövid emlékeztető: a profilod még nincs kész.",
+          intro: "Nem húzzuk az időd, csak egy emlékeztető: a profilod még nincs teljesen kész.",
+          missing: (l: string) => `Ennyi van hátra: **${l}**.`,
+          close: "Fejezd be, amikor ráérsz, és utána nem zavarunk ezzel többet.",
+          cta: "Befejezés",
+        },
+        en: {
+          preheader: "Quick reminder: your profile isn't finished.",
+          intro: "We'll keep it short, just a reminder that your profile isn't quite finished.",
+          missing: (l: string) => `This is what's left: **${l}**.`,
+          close: "Finish it whenever suits you, and we'll stop nudging about it.",
+          cta: "Finish up",
+        },
+      },
+    ];
+    const v = variants[p.variant % variants.length] ?? variants[0]!;
+
+    return {
+      subject: v.subject,
+      ctaUrl: p.editUrl,
+      hu: {
+        preheader: v.hu.preheader,
+        greeting: name ? `Szia ${name}!` : "Szia!",
+        paragraphs: [v.hu.intro, v.hu.missing(huList), v.hu.close],
+        cta: v.hu.cta,
+        footnote: "Csak akkor írunk, ha van valami, amivel előrébb léphetsz a Weddly-n.",
+      },
+      en: {
+        preheader: v.en.preheader,
+        greeting: name ? `Hi ${name},` : "Hi there,",
+        paragraphs: [v.en.intro, v.en.missing(enList), v.en.close],
+        cta: v.en.cta,
         footnote: "We only email when there's something useful for your Weddly profile.",
       },
     };
