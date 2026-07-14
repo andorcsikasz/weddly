@@ -65,6 +65,12 @@ function knownSupplierIds(): Set<string> {
   const ids = new Set<string>(DIRECTORY.map((s) => s.id));
   const rows = db.prepare("SELECT id FROM community_suppliers").all() as { id: number }[];
   for (const r of rows) ids.add(`c${r.id}`);
+  // Every row in the unified `listings` table is a real, directory-exposable id
+  // — including self-registered vendors' `v{N}` cards, which are covered by
+  // neither DIRECTORY nor community_suppliers. Without this, vendor views/clicks
+  // were silently dropped (their supplier_id never matched the whitelist).
+  const listingRows = db.prepare("SELECT id FROM listings").all() as { id: string }[];
+  for (const r of listingRows) ids.add(r.id);
   return ids;
 }
 
@@ -113,6 +119,34 @@ function emptyAnalytics(): SupplierAnalytics {
     phone_clicks_total: 0,
     last_event_at: null,
   };
+}
+
+/** Roll several listings' analytics into one combined block. A vendor account
+ *  can own more than one listing (its `v{N}` card plus any curated/community
+ *  listing it has claimed), so the admin vendor row shows their summed reach.
+ *  Returns an all-zero block when none of the ids have events. */
+export function sumAnalytics(
+  ids: Iterable<string>,
+  perListing: Map<string, SupplierAnalytics>,
+): SupplierAnalytics {
+  const acc = emptyAnalytics();
+  for (const id of ids) {
+    const a = perListing.get(id);
+    if (!a) continue;
+    acc.views_total += a.views_total;
+    acc.views_30d += a.views_30d;
+    acc.views_7d += a.views_7d;
+    acc.website_clicks_total += a.website_clicks_total;
+    acc.website_clicks_30d += a.website_clicks_30d;
+    acc.phone_clicks_total += a.phone_clicks_total;
+    if (
+      a.last_event_at !== null &&
+      (acc.last_event_at === null || a.last_event_at > acc.last_event_at)
+    ) {
+      acc.last_event_at = a.last_event_at;
+    }
+  }
+  return acc;
 }
 
 /** Build the full admin directory list: curated entries + every community

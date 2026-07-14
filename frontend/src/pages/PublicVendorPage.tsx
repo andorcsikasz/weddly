@@ -123,6 +123,15 @@ export default function PublicVendorPage() {
     if (data?.detail) document.title = `${data.detail.name} · Weddly`;
   }, [data]);
 
+  // Count a public-profile view once the real vendor payload has loaded. Keyed
+  // on the resolved listing id (v{N}) so a shared link feeds the same reach
+  // number the admin vendor list shows. Fire-and-forget; failures are noise.
+  const detailId = data?.detail?.id;
+  useEffect(() => {
+    if (!detailId) return;
+    supplierApi.recordEvents([{ supplier_id: detailId, type: "view" }]).catch(() => undefined);
+  }, [detailId]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-paper-50 dark:bg-umber-900">
@@ -564,6 +573,11 @@ function PublicContactCard({
       {detail.contact_phone && (
         <a
           href={`tel:${detail.contact_phone}`}
+          onClick={() => {
+            supplierApi
+              .recordEvents([{ supplier_id: detail.id, type: "phone_click" }])
+              .catch(() => undefined);
+          }}
           className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
         >
           <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />

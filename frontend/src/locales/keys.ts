@@ -5183,6 +5183,8 @@ export interface LocaleMessages {
       missing_availability: string;
       reminders_sent: string;
       reminders_last: string;
+      reach_label: string;
+      reach_tooltip: string;
       remind: string;
       remind_success: string;
       subscription: string;

@@ -4600,6 +4600,8 @@ const en: LocaleMessages = {
       missing_availability: "calendar",
       reminders_sent: "{n} reminder(s)",
       reminders_last: "Last: {date}",
+      reach_label: "Reach (views · clicks)",
+      reach_tooltip: "Reach: {views} views · {clicks} clicks",
       remind: "Send reminder",
       remind_success: "Reminder sent.",
       subscription: "Subscription",

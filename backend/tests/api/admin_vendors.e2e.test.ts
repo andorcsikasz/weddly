@@ -4,6 +4,7 @@ import { describe, expect, test } from "bun:test";
 import type { AdminVendorView } from "@shared/listings";
 import { db } from "../../src/db";
 import { createVendorListing } from "../../src/domain/listings";
+import { recordSupplierEvents } from "../../src/domain/supplier_views";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
 import { createOnboardingToken } from "../../src/domain/vendor_onboarding";
@@ -86,6 +87,43 @@ describe("admin vendor management", () => {
       token: adminToken,
     });
     expect(users.data.users.some((u) => u.email === "shopowner@weddly.test")).toBe(false);
+  });
+
+  test("vendor admin row rolls up directory views + outbound clicks", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { accountId } = await seedActivatedVendor("reach@weddly.test", "Reach Studio");
+    createVendorListing({
+      vendorAccountId: accountId,
+      category: "photo_video",
+      name: "Reach Studio",
+      city: "Budapest",
+      contactEmail: "reach@weddly.test",
+    });
+    const listingId = `v${accountId}`;
+
+    // The whitelist fix: a self-registered vendor's `v{N}` events are recorded
+    // now (they used to be silently dropped). 3 views, 1 website, 1 phone click.
+    const written = recordSupplierEvents(
+      [
+        { supplier_id: listingId, type: "view" },
+        { supplier_id: listingId, type: "view" },
+        { supplier_id: listingId, type: "view" },
+        { supplier_id: listingId, type: "website_click" },
+        { supplier_id: listingId, type: "phone_click" },
+      ],
+      null,
+      null,
+    );
+    expect(written).toBe(5);
+
+    const res = await req<{ active: AdminVendorView[] }>("GET", "/api/admin/vendors", undefined, {
+      token: adminToken,
+    });
+    const row = res.data.active.find((v) => v.id === accountId);
+    expect(row?.analytics?.views_total).toBe(3);
+    expect(
+      (row?.analytics?.website_clicks_total ?? 0) + (row?.analytics?.phone_clicks_total ?? 0),
+    ).toBe(2);
   });
 
   test("suspend + reactivate flips the owner's users.status", async () => {
@@ -441,12 +479,9 @@ describe("admin vendor incomplete-listing reminder", () => {
   test("the admin list flags incomplete vendors with their missing sections", async () => {
     const adminToken = await bootstrapAdmin();
     const { accountId } = await seedActivatedVendor("inc3@weddly.test", "Studio Bloom");
-    const res = await req<{ active: AdminVendorView[] }>(
-      "GET",
-      "/api/admin/vendors",
-      undefined,
-      { token: adminToken },
-    );
+    const res = await req<{ active: AdminVendorView[] }>("GET", "/api/admin/vendors", undefined, {
+      token: adminToken,
+    });
     const row = res.data.active.find((v) => v.id === accountId);
     expect(row?.listing_incomplete).toBe(true);
     expect(row?.listing_missing?.photos).toBe(true);

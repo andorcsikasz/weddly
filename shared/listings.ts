@@ -7,7 +7,7 @@
 
 import type { ListingPackage } from "./listing_packages";
 import type { ListingVideo } from "./listing_videos";
-import type { SupplierCategory, VenueStyle } from "./suppliers";
+import type { SupplierAnalytics, SupplierCategory, VenueStyle } from "./suppliers";
 import type { VendorBilling, VendorBillingReason } from "./vendor_billing";
 import type { VendorClientDetail } from "./vendor_clients";
 import type { VendorPlan } from "./vendor_plan";
@@ -209,6 +209,10 @@ export interface AdminVendorView {
   /** Epoch ms of the last incomplete-listing reminder sent, or null. */
   profile_nudge_last_at: number | null;
   created_at: number;
+  /** Directory reach — views + outbound clicks summed across every listing this
+   *  vendor owns (`supplier_events`). Present on active rows (all-zero until the
+   *  first event); absent on pending onboardings. */
+  analytics?: SupplierAnalytics;
 }
 
 /** Fields a vendor can self-serve edit on their claimed listing (P2.D).

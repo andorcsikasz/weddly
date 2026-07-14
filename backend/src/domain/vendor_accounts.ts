@@ -13,6 +13,7 @@ import { computeVendorEntitlement, type VendorSubscriptionStatus } from "@shared
 import { vendorPlanFromEntitlement } from "@shared/vendor_plan";
 import { db, now } from "../db";
 import { generateVendorCode } from "./invite_codes";
+import { aggregateAnalytics, sumAnalytics } from "./supplier_views";
 import { isVendorListingIncomplete, vendorListingMissing } from "./vendor_profile";
 
 export interface VendorAccountRow {
@@ -261,7 +262,26 @@ export function listAdminVendorAccounts(): AdminVendorView[] {
         ORDER BY va.created_at DESC`,
     )
     .all() as AdminVendorRow[];
-  return rows.map(toAdminVendorView);
+  const views = rows.map(toAdminVendorView);
+
+  // Roll directory analytics (supplier_events) into each vendor. A vendor's
+  // reach is the sum across every listing it owns — its `v{N}` card plus any
+  // curated/community listing it has claimed. One events scan + one listings
+  // scan, then an in-memory group-by keyed on vendor_account_id.
+  const perListing = aggregateAnalytics();
+  const idsByVendor = new Map<number, string[]>();
+  const links = db
+    .prepare("SELECT id, vendor_account_id FROM listings WHERE vendor_account_id IS NOT NULL")
+    .all() as { id: string; vendor_account_id: number }[];
+  for (const l of links) {
+    const arr = idsByVendor.get(l.vendor_account_id) ?? [];
+    arr.push(l.id);
+    idsByVendor.set(l.vendor_account_id, arr);
+  }
+  for (const v of views) {
+    v.analytics = sumAnalytics(idsByVendor.get(v.id) ?? [], perListing);
+  }
+  return views;
 }
 
 export interface UpdateVendorAccountInput {

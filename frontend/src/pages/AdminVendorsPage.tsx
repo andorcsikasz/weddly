@@ -23,10 +23,12 @@ import {
   Clock,
   CreditCard,
   DollarSign,
+  Eye,
   Gift,
   Loader2,
   Mail,
   MinusCircle,
+  MousePointerClick,
   Pencil,
   RotateCcw,
   Search,
@@ -531,6 +533,27 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                   <span>{t("admin.vendors.listing_count", { n: vendor.listing_count })}</span>
                 </>
               )}
+              {vendor.analytics && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span
+                    className="inline-flex items-center gap-1"
+                    title={t("admin.vendors.reach_tooltip", {
+                      views: vendor.analytics.views_total,
+                      clicks:
+                        vendor.analytics.website_clicks_total + vendor.analytics.phone_clicks_total,
+                    })}
+                  >
+                    <Eye size={12} aria-hidden />
+                    <span className="tabular-nums">{vendor.analytics.views_total}</span>
+                    <MousePointerClick size={12} aria-hidden className="ml-1.5" />
+                    <span className="tabular-nums">
+                      {vendor.analytics.website_clicks_total + vendor.analytics.phone_clicks_total}
+                    </span>
+                    <span className="sr-only">{t("admin.vendors.reach_label")}</span>
+                  </span>
+                </>
+              )}
               {vendor.state === "active" && vendor.profile_nudge_count > 0 && (
                 <>
                   <span aria-hidden="true">·</span>
@@ -588,11 +611,7 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                     aria-label={t("admin.vendors.remind")}
                     title={t("admin.vendors.remind")}
                   >
-                    {busy ? (
-                      <Loader2 size={15} className="animate-spin" />
-                    ) : (
-                      <BellRing size={15} />
-                    )}
+                    {busy ? <Loader2 size={15} className="animate-spin" /> : <BellRing size={15} />}
                   </button>
                 )}
                 <button

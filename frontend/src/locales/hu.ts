@@ -4648,6 +4648,8 @@ const hu: LocaleMessages = {
       missing_availability: "naptár",
       reminders_sent: "{n} emlékeztető",
       reminders_last: "Utolsó: {date}",
+      reach_label: "Elérés (megtekintés · kattintás)",
+      reach_tooltip: "Elérés: {views} megtekintés · {clicks} kattintás",
       remind: "Emlékeztető küldése",
       remind_success: "Emlékeztető elküldve.",
       subscription: "Előfizetés",
