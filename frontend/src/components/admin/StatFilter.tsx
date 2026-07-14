@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /** Responsive column count that fits ALL tiles on one line at the widest
- *  breakpoint (2-up on phones, then N-up), so a 6- or 7-status bar stops
+ *  breakpoint (2-up on phones, then N-up), so a 7- or 8-status bar stops
  *  wrapping into an orphan second row. Literal class strings so Tailwind's JIT
  *  actually emits them. */
 function gridColsClass(n: number): string {
@@ -18,8 +18,12 @@ function gridColsClass(n: number): string {
       return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5";
     case 6:
       return "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6";
-    default:
+    case 7:
       return "grid-cols-2 sm:grid-cols-4 lg:grid-cols-7";
+    case 8:
+      return "grid-cols-2 sm:grid-cols-4 lg:grid-cols-8";
+    default:
+      return "grid-cols-2 sm:grid-cols-4 lg:grid-cols-8";
   }
 }
 
