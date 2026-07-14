@@ -18,6 +18,11 @@ import { resolveRecipients, sendGuestMessage } from "../guest_messages";
 import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "../listings";
 import { insertCoupleNotification, listActionableTimelineTasks } from "../notifications";
 import { type PlannerProfileRow, sendPlannerProfileReminder } from "../planner_profile";
+import {
+  isVendorListingIncomplete,
+  sendVendorIncompleteReminder,
+  vendorListingMissing,
+} from "../vendor_profile";
 import type { EmailKind } from "./kinds";
 import { markDispatched, sendKind } from "./send";
 
@@ -356,14 +361,6 @@ function sweepVendorProfileIncomplete(ts: number): number {
     .all(VENDOR_INCOMPLETE_MAX_NUDGES) as VendorIncompleteRow[];
 
   let count = 0;
-  const stamp = db.prepare(
-    `UPDATE vendor_accounts
-        SET profile_nudge_last_at = ?, profile_nudge_count = profile_nudge_count + 1
-      WHERE id = ?`,
-  );
-  const blockedDates = db.prepare(
-    "SELECT COUNT(*) AS n FROM vendor_unavailable_dates WHERE vendor_account_id = ?",
-  );
   for (const r of rows) {
     // Cadence gate: the first send waits out the grace window from signup; every
     // later send waits a varying 2-4 day gap indexed by the count so far.
@@ -377,40 +374,22 @@ function sweepVendorProfileIncomplete(ts: number): number {
       if (r.profile_nudge_last_at > ts - gapDays * 86_400_000) continue;
     }
 
-    // Only email if a public-facing section is actually empty.
-    const listingId = `v${r.account_id}`;
-    const listing = getListingByVendorAccountId(r.account_id);
-    const missing = {
-      photos: !listing?.hero_image_url && countListingPhotos(listingId) === 0,
-      bio: !(listing?.blurb_hu || listing?.blurb_en),
-      pricing: listing?.price_band == null,
-      packages: countListingPackages(listingId) === 0,
-      availability: (blockedDates.get(r.account_id) as { n: number }).n === 0,
-    };
-    if (
-      !missing.photos &&
-      !missing.bio &&
-      !missing.pricing &&
-      !missing.packages &&
-      !missing.availability
-    ) {
-      continue; // complete — nothing to nudge, count left untouched
-    }
-
-    // Stamp BEFORE the fire-and-forget send. The count also selects the copy
-    // variant, so a silent mailer hiccup advances the series (and rotates the
-    // wording) rather than re-sending the same text.
-    const variant = r.profile_nudge_count;
-    stamp.run(ts, r.account_id);
-    void sendKind(
-      "vendor_profile_incomplete",
+    // Only email if a public-facing section is actually empty. The completeness
+    // definition + the stamp-then-send live in domain/vendor_profile.ts, shared
+    // with the admin "Send reminder" button so the two can never disagree.
+    const missing = vendorListingMissing(r.account_id);
+    if (!isVendorListingIncomplete(missing)) continue; // complete — count untouched
+    sendVendorIncompleteReminder(
       {
-        businessName: r.display_name,
-        editUrl: `${CONFIG.frontendBaseUrl}/vendor/listing`,
-        missing,
-        variant,
+        id: r.account_id,
+        display_name: r.display_name,
+        owner_user_id: r.owner_user_id,
+        email: r.email,
+        full_name: r.full_name,
+        profile_nudge_count: r.profile_nudge_count,
       },
-      { user: { id: r.owner_user_id, email: r.email, full_name: r.full_name }, couple_id: null },
+      missing,
+      ts,
     );
     count++;
     if (count >= SENDS_PER_SWEEP_CAP) break;

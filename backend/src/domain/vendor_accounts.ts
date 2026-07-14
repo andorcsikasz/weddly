@@ -13,6 +13,7 @@ import { computeVendorEntitlement, type VendorSubscriptionStatus } from "@shared
 import { vendorPlanFromEntitlement } from "@shared/vendor_plan";
 import { db, now } from "../db";
 import { generateVendorCode } from "./invite_codes";
+import { isVendorListingIncomplete, vendorListingMissing } from "./vendor_profile";
 
 export interface VendorAccountRow {
   id: number;
@@ -163,6 +164,9 @@ interface AdminVendorRow extends VendorAccountRow {
   /** Comma-separated distinct listing categories (SQLite GROUP_CONCAT), or null
    *  when the vendor has no listings yet. */
   categories: string | null;
+  /** Recurring incomplete-listing reminder bookkeeping (SELECT va.*). */
+  profile_nudge_count: number;
+  profile_nudge_last_at: number | null;
 }
 
 /** Split the GROUP_CONCAT category blob into a clean SupplierCategory[]. */
@@ -175,6 +179,9 @@ function splitCategories(raw: string | null): SupplierCategory[] {
 }
 
 export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
+  // Listing completeness via the shared helper so the admin badge, the auto
+  // sweep, and the reminder email can never disagree on "what's missing".
+  const missing = vendorListingMissing(row.id);
   // Derive the FREE/PRO tier the same way the vendor's own billing surface
   // does (computeVendorEntitlement) so admin and vendor can never disagree.
   let plan: AdminVendorView["plan"] = null;
@@ -219,6 +226,10 @@ export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
     listing_count: row.listing_count,
     categories: splitCategories(row.categories),
     token_expired: false,
+    listing_missing: missing,
+    listing_incomplete: isVendorListingIncomplete(missing),
+    profile_nudge_count: row.profile_nudge_count ?? 0,
+    profile_nudge_last_at: row.profile_nudge_last_at,
     created_at: row.created_at,
   };
 }

@@ -7,7 +7,13 @@
 
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
 import { CONFIG } from "../config";
+import { db, now } from "../db";
 import { purgeOneUser } from "../domain/purge";
+import {
+  isVendorListingIncomplete,
+  sendVendorIncompleteReminder,
+  vendorListingMissing,
+} from "../domain/vendor_profile";
 import { getUserByEmail, setUserStatus } from "../domain/users";
 import { requireAdmin } from "../domain/users";
 import {
@@ -239,11 +245,67 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   return json({ ok: true, onboarding_id: token.id }, { status: 201 });
 }
 
+/** Admin "Send reminder": email the vendor the "your listing is still
+ *  incomplete" nudge on demand. Unlike the automatic sweep this ignores the
+ *  cadence + cap (the admin explicitly clicked), but it still advances the count
+ *  so the copy variant rotates and the auto-sweep won't immediately double-send.
+ *  400s when the listing is already complete (nothing to nudge). Returns the
+ *  missing-section breakdown so the UI can toast specifics. */
+function handleRemindIncomplete(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+  const row = db
+    .prepare(
+      `SELECT va.id, va.display_name, va.profile_nudge_count,
+              u.id AS owner_user_id, u.email, u.full_name
+         FROM vendor_accounts va
+         JOIN users u ON u.id = va.owner_user_id
+        WHERE va.id = ?`,
+    )
+    .get(id) as
+    | {
+        id: number;
+        display_name: string;
+        profile_nudge_count: number;
+        owner_user_id: number;
+        email: string;
+        full_name: string;
+      }
+    | undefined;
+  if (!row) throw new HttpError(404, "Vendor not found");
+  const missing = vendorListingMissing(row.id);
+  if (!isVendorListingIncomplete(missing)) {
+    throw new HttpError(400, "This vendor's listing is already complete");
+  }
+  sendVendorIncompleteReminder(
+    {
+      id: row.id,
+      display_name: row.display_name,
+      owner_user_id: row.owner_user_id,
+      email: row.email,
+      full_name: row.full_name,
+      profile_nudge_count: row.profile_nudge_count,
+    },
+    missing,
+    now(),
+  );
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.vendor_profile_reminder",
+    target_kind: "vendor_account",
+    target_id: row.id,
+    note: row.email,
+  });
+  return json({ ok: true, missing });
+}
+
 export function registerAdminVendorRoutes(router: Router) {
   router.get("/api/admin/vendors", handleList, true);
   router.post("/api/admin/vendors/register", handleRegister, true);
   router.post("/api/admin/vendors/:id/suspend", handleSuspend, true);
   router.post("/api/admin/vendors/:id/reactivate", handleReactivate, true);
+  router.post("/api/admin/vendors/:id/remind-incomplete", handleRemindIncomplete, true);
   router.patch("/api/admin/vendors/:id", handleUpdate, true);
   router.delete("/api/admin/vendors/:id", handleDelete, true);
   router.post("/api/admin/vendors/onboarding/:id/resend", handleResendActivation, true);

@@ -372,3 +372,97 @@ describe("admin vendor management", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("admin vendor incomplete-listing reminder", () => {
+  function completeListing(accountId: number): void {
+    createVendorListing({
+      vendorAccountId: accountId,
+      category: "photography",
+      name: "Studio Bloom",
+      city: "Budapest",
+      contactEmail: "owner@weddly.test",
+    });
+    const listing = db
+      .prepare("SELECT id FROM listings WHERE vendor_account_id = ?")
+      .get(accountId) as { id: string };
+    const ts = Date.now();
+    db.prepare(
+      "UPDATE listings SET hero_image_url = ?, blurb_hu = ?, price_band = 3 WHERE id = ?",
+    ).run("https://cdn.example/hero.jpg", "Bemutatkozó szöveg.", listing.id);
+    db.prepare(
+      "INSERT INTO listing_packages (listing_id, name, price_text, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+    ).run(listing.id, "Alapcsomag", "150000 Ft", ts, ts);
+    db.prepare(
+      "INSERT INTO vendor_unavailable_dates (vendor_account_id, blocked_date, created_at) VALUES (?, ?, ?)",
+    ).run(accountId, "2030-06-20", ts);
+  }
+
+  test("emails an incomplete vendor on demand and advances the reminder count", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { accountId } = await seedActivatedVendor("inc1@weddly.test", "Studio Bloom");
+    // No listing → every public section missing → incomplete.
+    const res = await req<{ ok: boolean; missing: Record<string, boolean> }>(
+      "POST",
+      `/api/admin/vendors/${accountId}/remind-incomplete`,
+      {},
+      { token: adminToken },
+    );
+    expect(res.status).toBe(200);
+    expect(res.data.ok).toBe(true);
+    expect(res.data.missing.photos).toBe(true);
+
+    const acct = db
+      .prepare("SELECT profile_nudge_count FROM vendor_accounts WHERE id = ?")
+      .get(accountId) as { profile_nudge_count: number };
+    expect(acct.profile_nudge_count).toBe(1);
+    const logged = db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM email_log
+           WHERE kind = 'vendor_profile_incomplete'
+             AND user_id = (SELECT owner_user_id FROM vendor_accounts WHERE id = ?)`,
+      )
+      .get(accountId) as { n: number };
+    expect(logged.n).toBe(1);
+  });
+
+  test("400s when the listing is already complete", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { accountId } = await seedActivatedVendor("inc2@weddly.test", "Studio Bloom");
+    completeListing(accountId);
+    const res = await req(
+      "POST",
+      `/api/admin/vendors/${accountId}/remind-incomplete`,
+      {},
+      { token: adminToken },
+    );
+    expect(res.status).toBe(400);
+  });
+
+  test("the admin list flags incomplete vendors with their missing sections", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { accountId } = await seedActivatedVendor("inc3@weddly.test", "Studio Bloom");
+    const res = await req<{ active: AdminVendorView[] }>(
+      "GET",
+      "/api/admin/vendors",
+      undefined,
+      { token: adminToken },
+    );
+    const row = res.data.active.find((v) => v.id === accountId);
+    expect(row?.listing_incomplete).toBe(true);
+    expect(row?.listing_missing?.photos).toBe(true);
+    expect(row?.profile_nudge_count).toBe(0);
+  });
+
+  test("a non-admin cannot send a reminder", async () => {
+    await bootstrapAdmin();
+    const { accountId } = await seedActivatedVendor("inc4@weddly.test", "Studio Bloom");
+    const { token } = await bootstrapCouple("notadmin2@weddly.test");
+    const res = await req(
+      "POST",
+      `/api/admin/vendors/${accountId}/remind-incomplete`,
+      {},
+      { token },
+    );
+    expect(res.status).toBe(403);
+  });
+});

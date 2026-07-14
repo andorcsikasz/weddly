@@ -5163,6 +5163,7 @@ export interface LocaleMessages {
       filter_paying: string;
       filter_trial: string;
       filter_free: string;
+      filter_incomplete: string;
       filter_pending: string;
       filter_suspended: string;
       search_placeholder: string;
@@ -5173,6 +5174,17 @@ export interface LocaleMessages {
       status_pending: string;
       token_expired: string;
       listing_count: string;
+      incomplete: string;
+      incomplete_tooltip: string;
+      missing_photos: string;
+      missing_bio: string;
+      missing_pricing: string;
+      missing_packages: string;
+      missing_availability: string;
+      reminders_sent: string;
+      reminders_last: string;
+      remind: string;
+      remind_success: string;
       subscription: string;
       plan: string;
       plan_free: string;

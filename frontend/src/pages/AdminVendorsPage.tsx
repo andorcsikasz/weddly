@@ -16,6 +16,7 @@ import type { VendorPlan } from "@shared/vendor_plan";
 import {
   AlertTriangle,
   Ban,
+  BellRing,
   Bird,
   CalendarClock,
   Check,
@@ -44,8 +45,25 @@ import { useT } from "../lib/i18n";
 // Filter buckets double as the "who's an early adopter / who pays" aggregate the
 // flat list never surfaced. Non-exclusive views (a suspended payer counts under
 // both) — counts are a lens, not a partition.
-type Filter = "all" | "founding" | "paying" | "trial" | "free" | "pending" | "suspended";
-const FILTERS: Filter[] = ["all", "founding", "paying", "trial", "free", "pending", "suspended"];
+type Filter =
+  | "all"
+  | "founding"
+  | "paying"
+  | "trial"
+  | "free"
+  | "incomplete"
+  | "pending"
+  | "suspended";
+const FILTERS: Filter[] = [
+  "all",
+  "founding",
+  "paying",
+  "trial",
+  "free",
+  "incomplete",
+  "pending",
+  "suspended",
+];
 
 /** Glyph per filter bucket for the stat-filter tiles. Bird mirrors the
  *  founding-member badge used on the cards; the rest read the billing state. */
@@ -55,6 +73,7 @@ const VENDOR_FILTER_ICON: Record<Filter, ReactNode> = {
   paying: <CreditCard size={16} />,
   trial: <Clock size={16} />,
   free: <Gift size={16} />,
+  incomplete: <AlertTriangle size={16} />,
   pending: <Mail size={16} />,
   suspended: <Ban size={16} />,
 };
@@ -103,6 +122,7 @@ function matchesFilter(v: AdminVendorView, f: Filter): boolean {
   if (f === "pending") return v.state === "pending";
   if (v.state !== "active") return false;
   if (f === "suspended") return v.owner_status === "suspended";
+  if (f === "incomplete") return v.listing_incomplete;
   if (f === "founding") return v.is_founding_member;
   if (f === "paying")
     return v.subscription_status === "active" || v.subscription_status === "past_due";
@@ -388,6 +408,18 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
     void run(() => adminVendorMgmtApi.reactivate(vendor.id), "admin.vendors.reactivate_success");
   }
 
+  function handleRemind() {
+    void run(() => adminVendorMgmtApi.remindIncomplete(vendor.id), "admin.vendors.remind_success");
+  }
+
+  // Localized names of the still-empty listing sections, for the "incomplete"
+  // badge tooltip. Order follows the object key order (photos → availability).
+  const missingLabels = vendor.listing_missing
+    ? (Object.entries(vendor.listing_missing) as [string, boolean][])
+        .filter(([, on]) => on)
+        .map(([k]) => t(`admin.vendors.missing_${k}`))
+    : [];
+
   function handleResend() {
     void run(() => adminVendorMgmtApi.resendActivation(vendor.id), "admin.vendors.resend_success");
   }
@@ -468,6 +500,18 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                   </Pill>
                 </span>
               )}
+              {/* Listing completeness: which public sections are still empty. */}
+              {vendor.state === "active" && vendor.listing_incomplete && (
+                <span
+                  title={t("admin.vendors.incomplete_tooltip", {
+                    sections: missingLabels.join(", "),
+                  })}
+                >
+                  <Pill tone="blush" icon={<AlertTriangle size={11} />}>
+                    {t("admin.vendors.incomplete")}
+                  </Pill>
+                </span>
+              )}
             </div>
             {vendor.company_name && vendor.company_name !== vendor.display_name && (
               <p className="truncate text-xs text-umber-500 dark:text-umber-400">
@@ -485,6 +529,22 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                 <>
                   <span aria-hidden="true">·</span>
                   <span>{t("admin.vendors.listing_count", { n: vendor.listing_count })}</span>
+                </>
+              )}
+              {vendor.state === "active" && vendor.profile_nudge_count > 0 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span
+                    title={
+                      vendor.profile_nudge_last_at
+                        ? t("admin.vendors.reminders_last", {
+                            date: fmtDate(vendor.profile_nudge_last_at, locale),
+                          })
+                        : undefined
+                    }
+                  >
+                    {t("admin.vendors.reminders_sent", { n: vendor.profile_nudge_count })}
+                  </span>
                 </>
               )}
               {vendor.contact_phone && (
@@ -518,6 +578,22 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                   >
                     {t(`admin.vendors.plan_${vendor.plan}`)}
                   </span>
+                )}
+                {bucket === "active" && vendor.listing_incomplete && (
+                  <button
+                    type="button"
+                    className={iconBtnClass}
+                    onClick={handleRemind}
+                    disabled={busy}
+                    aria-label={t("admin.vendors.remind")}
+                    title={t("admin.vendors.remind")}
+                  >
+                    {busy ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                      <BellRing size={15} />
+                    )}
+                  </button>
                 )}
                 <button
                   type="button"
@@ -755,6 +831,7 @@ export default function AdminVendorsPage() {
       paying: 0,
       trial: 0,
       free: 0,
+      incomplete: 0,
       pending: 0,
       suspended: 0,
     };

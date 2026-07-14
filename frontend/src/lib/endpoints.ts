@@ -1875,6 +1875,14 @@ export const adminVendorMgmtApi = {
     apiFetch<{ ok: true; status: string }>("POST", `/api/admin/vendors/${id}/suspend`, {}),
   reactivate: (id: number) =>
     apiFetch<{ ok: true; status: string }>("POST", `/api/admin/vendors/${id}/reactivate`, {}),
+  /** Send the "your listing is still incomplete" reminder to this vendor on
+   *  demand. 400s when the listing is already complete. */
+  remindIncomplete: (id: number) =>
+    apiFetch<{ ok: true; missing: Record<string, boolean> }>(
+      "POST",
+      `/api/admin/vendors/${id}/remind-incomplete`,
+      {},
+    ),
   update: (
     id: number,
     body: {

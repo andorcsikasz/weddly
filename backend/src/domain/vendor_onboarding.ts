@@ -120,6 +120,11 @@ export function listPendingOnboardings(): AdminVendorView[] {
     listing_count: 0,
     categories: row.category ? [row.category as SupplierCategory] : [],
     token_expired: row.expires_at < ts,
+    // Pending rows have no listing/account yet, so nothing to complete or nudge.
+    listing_missing: null,
+    listing_incomplete: false,
+    profile_nudge_count: 0,
+    profile_nudge_last_at: null,
     created_at: row.created_at,
   }));
 }

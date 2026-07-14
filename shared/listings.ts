@@ -192,6 +192,22 @@ export interface AdminVendorView {
   categories: SupplierCategory[];
   /** For pending rows: whether the onboarding token has expired. */
   token_expired: boolean;
+  /** Which public sections of the vendor's primary listing are still empty
+   *  (active rows only; null for pending rows, which have no listing yet).
+   *  Powers the admin "incomplete" badge + the "Send reminder" button. */
+  listing_missing: {
+    photos: boolean;
+    bio: boolean;
+    pricing: boolean;
+    packages: boolean;
+    availability: boolean;
+  } | null;
+  /** True when any `listing_missing` flag is set. False for pending rows. */
+  listing_incomplete: boolean;
+  /** Recurring incomplete-listing reminders sent so far (0 for pending rows). */
+  profile_nudge_count: number;
+  /** Epoch ms of the last incomplete-listing reminder sent, or null. */
+  profile_nudge_last_at: number | null;
   created_at: number;
 }
 
