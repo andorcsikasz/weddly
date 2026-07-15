@@ -145,3 +145,102 @@ describe("registered vendors in the public directory", () => {
     expect(card?.vendor_account_id).toBe(vendorAccountId);
   });
 });
+
+// Regression: PUT /api/suppliers/:id/vote rejected any id that wasn't a curated
+// slug or a "c{N}" community id, so voting on a registered vendor's "v{N}"
+// listing 404'd and the frontend rolled the optimistic tally back to 0.
+describe("voting on a registered vendor's listing", () => {
+  interface VoteCard {
+    id: string;
+    votes_score: number;
+    user_vote: -1 | 0 | 1;
+  }
+
+  test("a couple can upvote a v{N} vendor listing and it persists", async () => {
+    wipeAll();
+    const { listingId } = await seedRegisteredVendor(
+      "vote-vendor@weddly.test",
+      "Gulyás Gabriella",
+      "invitation_graphics",
+    );
+    const couple = await bootstrapCouple("vote-vendor-couple@weddly.test");
+
+    const up = await req<{ votes_score: number; user_vote: number }>(
+      "PUT",
+      `/api/suppliers/${listingId}/vote`,
+      { value: 1 },
+      { token: couple.token },
+    );
+    expect(up.status).toBe(200);
+    expect(up.data.user_vote).toBe(1);
+    expect(up.data.votes_score).toBe(1);
+
+    // The vote persists: the directory list echoes it back to the couple.
+    const list = await req<{ suppliers: VoteCard[] }>(
+      "GET",
+      "/api/suppliers?country=all",
+      undefined,
+      { token: couple.token },
+    );
+    const card = list.data.suppliers.find((s) => s.id === listingId);
+    expect(card).toBeDefined();
+    expect(card!.votes_score).toBe(1);
+    expect(card!.user_vote).toBe(1);
+  });
+
+  test("downvote then clear updates the tally on a vendor listing", async () => {
+    wipeAll();
+    const { listingId } = await seedRegisteredVendor("vote-vendor2@weddly.test", "Down Studio", "dj");
+    const couple = await bootstrapCouple("vote-vendor-couple2@weddly.test");
+
+    const down = await req<{ votes_score: number; user_vote: number }>(
+      "PUT",
+      `/api/suppliers/${listingId}/vote`,
+      { value: -1 },
+      { token: couple.token },
+    );
+    expect(down.status).toBe(200);
+    expect(down.data.user_vote).toBe(-1);
+    expect(down.data.votes_score).toBe(-1);
+
+    const clear = await req<{ votes_score: number; user_vote: number }>(
+      "PUT",
+      `/api/suppliers/${listingId}/vote`,
+      { value: 0 },
+      { token: couple.token },
+    );
+    expect(clear.status).toBe(200);
+    expect(clear.data.user_vote).toBe(0);
+    expect(clear.data.votes_score).toBe(0);
+  });
+
+  test("the owning vendor's own couple can't self-vote their listing", async () => {
+    wipeAll();
+    // A vendor who also runs a couple workspace tries to pad their own listing.
+    const owner = await bootstrapCouple("selfvote-vendor@weddly.test");
+    const ownerUser = getUserByEmail("selfvote-vendor@weddly.test");
+    const account = createVendorAccount({
+      ownerUserId: ownerUser!.id,
+      displayName: "Self Studio",
+      contactEmail: "selfvote-vendor@weddly.test",
+      onboardingDone: false,
+    });
+    createVendorListing({
+      vendorAccountId: account.id,
+      category: "invitation_graphics",
+      name: "Self Studio",
+      city: "Budapest",
+      contactEmail: "selfvote-vendor@weddly.test",
+    });
+    initVendorBilling(account.id, "HUF");
+
+    const r = await req<{ detail?: { code?: string } }>(
+      "PUT",
+      `/api/suppliers/v${account.id}/vote`,
+      { value: 1 },
+      { token: owner.token },
+    );
+    expect(r.status).toBe(403);
+    expect(r.data.detail?.code).toBe("self_vote");
+  });
+});

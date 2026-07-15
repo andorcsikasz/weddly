@@ -26,6 +26,7 @@ import { DIRECTORY } from "../domain/suppliers_data";
 import { getCoupleVotesMap, getScoresMap, setVote, type VoteValue } from "../domain/supplier_votes";
 import { recordSupplierEvents } from "../domain/supplier_views";
 import {
+  getClaimedDirectoryBaseById,
   listActiveClaimedListingsForDirectory,
   listListingPackages,
   listListingPhotos,
@@ -185,30 +186,60 @@ async function handleVote(ctx: Ctx): Promise<Response> {
     });
   }
 
-  // The id must reference something in the public list — either a curated slug
-  // or an active community entry. Without this guard we'd accept votes for
-  // garbage ids that no card ever shows.
+  // The id must reference something in the public list. The directory has THREE
+  // public card sources, so the vote guard has to accept all three or it 404s a
+  // real card (and the frontend rolls the optimistic tally back to 0):
+  //   • curated slug        (e.g. "villa-deste")           via DIRECTORY
+  //   • community entry      (id "c{N}")                    via listActiveCommunitySuppliers
+  //   • registered vendor    (id "v{N}", source='claimed')  via getClaimedDirectoryBaseById
   const isCurated =
     DIRECTORY.some((s) => s.id === supplierId) && isCuratedPubliclyVisible(supplierId);
   if (!isCurated) {
-    if (!supplierId.startsWith("c")) throw new HttpError(404, "Unknown supplier");
-    const community = listActiveCommunitySuppliers();
-    const communityMatch = community.find((c) => `c${c.id}` === supplierId);
-    if (!communityMatch) {
-      throw new HttpError(404, "Unknown supplier");
-    }
-    // Self-vote block: refuse votes on a community supplier whose submitter
-    // is a member of the voting couple (either partner). Without this the
-    // submitter's workspace gets a free +1 the moment they finish the form,
-    // and "Top voted" becomes a self-listing leaderboard.
-    if (communityMatch.submitter_user_id) {
-      const submitter = db
-        .prepare("SELECT couple_id FROM users WHERE id = ?")
-        .get(communityMatch.submitter_user_id) as { couple_id: number | null } | undefined;
-      if (submitter && submitter.couple_id === couple.id) {
-        throw new HttpError(403, "Can't vote on your own submission", {
-          code: "self_vote",
-        });
+    if (supplierId.startsWith("c")) {
+      const community = listActiveCommunitySuppliers();
+      const communityMatch = community.find((c) => `c${c.id}` === supplierId);
+      if (!communityMatch) {
+        throw new HttpError(404, "Unknown supplier");
+      }
+      // Self-vote block: refuse votes on a community supplier whose submitter
+      // is a member of the voting couple (either partner). Without this the
+      // submitter's workspace gets a free +1 the moment they finish the form,
+      // and "Top voted" becomes a self-listing leaderboard.
+      if (communityMatch.submitter_user_id) {
+        const submitter = db
+          .prepare("SELECT couple_id FROM users WHERE id = ?")
+          .get(communityMatch.submitter_user_id) as { couple_id: number | null } | undefined;
+        if (submitter && submitter.couple_id === couple.id) {
+          throw new HttpError(403, "Can't vote on your own submission", {
+            code: "self_vote",
+          });
+        }
+      }
+    } else {
+      // Registered-vendor self-serve listing. getClaimedDirectoryBaseById is
+      // the authoritative "is this a live, publicly-visible claimed listing?"
+      // check (null for anything else, including a hidden curated slug or a
+      // garbage id), so it doubles as the not-found guard.
+      const claimed = getClaimedDirectoryBaseById(supplierId);
+      if (!claimed) {
+        throw new HttpError(404, "Unknown supplier");
+      }
+      // Same self-vote block as community: a vendor whose owner account belongs
+      // to the voting couple can't pad their own listing's score.
+      if (claimed.vendor_account_id) {
+        const owner = db
+          .prepare(
+            `SELECT u.couple_id
+               FROM vendor_accounts va
+               JOIN users u ON u.id = va.owner_user_id
+              WHERE va.id = ?`,
+          )
+          .get(claimed.vendor_account_id) as { couple_id: number | null } | undefined;
+        if (owner && owner.couple_id === couple.id) {
+          throw new HttpError(403, "Can't vote on your own listing", {
+            code: "self_vote",
+          });
+        }
       }
     }
   }
