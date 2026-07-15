@@ -17,6 +17,7 @@ import { db, now } from "../db";
 import { getCoupleForUser } from "../domain/couples";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { keyFromUploadUrl, storage } from "../lib/storage";
 
 const VALID_CATEGORIES: ReadonlySet<BudgetCategory> = new Set([
   "venue",
@@ -46,6 +47,8 @@ interface PaymentRow {
   amount_huf: number;
   paid_at: number;
   note: string | null;
+  pdf_url: string | null;
+  pdf_name: string | null;
   created_at: number;
 }
 
@@ -57,8 +60,28 @@ function toPayment(r: PaymentRow): BudgetPayment {
     amount_huf: r.amount_huf,
     paid_at: r.paid_at,
     note: r.note,
+    pdf_url: r.pdf_url,
+    pdf_name: r.pdf_name,
     created_at: r.created_at,
   };
+}
+
+const MAX_PDF_BYTES = 8 * 1024 * 1024; // 8 MB, matches budget documents
+
+/** Look up a couple-owned payment row or 404. */
+function requirePayment(coupleId: number, id: number): PaymentRow {
+  const row = db
+    .prepare("SELECT * FROM budget_payments WHERE id = ? AND couple_id = ?")
+    .get(id, coupleId) as PaymentRow | undefined;
+  if (!row) throw new HttpError(404, "Payment not found");
+  return row;
+}
+
+/** Delete a payment's attached PDF from storage (best-effort). */
+async function deletePaymentPdf(row: PaymentRow): Promise<void> {
+  if (!row.pdf_url) return;
+  const key = keyFromUploadUrl(row.pdf_url);
+  if (key) await storage.delete(key);
 }
 
 function requireCouple(ctx: Ctx) {
@@ -228,6 +251,8 @@ async function handleDelete(ctx: Ctx): Promise<Response> {
   if (!row) throw new HttpError(404, "Payment not found");
 
   db.prepare("DELETE FROM budget_payments WHERE id = ? AND couple_id = ?").run(id, couple.id);
+  // Drop the attached invoice/receipt too so a deleted payment leaves no orphan.
+  await deletePaymentPdf(row);
 
   addAuditLog({
     actor_user_id: userId,
@@ -241,9 +266,109 @@ async function handleDelete(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+/** Attach (or replace) a PDF invoice/receipt on a single payment. Multipart
+ *  `file`. PDF only, validated by magic bytes — never trust the client type.
+ *  The file is PRIVATE: stored under a `budget-payments` key the public
+ *  /uploads/* handler refuses, readable only through handleDownloadPdf. */
+async function handleUploadPdf(ctx: Ctx): Promise<Response> {
+  const { userId, couple } = requireCouple(ctx);
+  const id = Number(ctx.params.id);
+  if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "Invalid id");
+  const existing = requirePayment(couple.id, id);
+
+  const form = await ctx.req.formData().catch(() => {
+    throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
+  });
+  const file = form.get("file");
+  if (!(file instanceof File)) throw new HttpError(400, "`file` field required", {
+    code: "missing_file",
+  });
+  if (file.size <= 0) throw new HttpError(400, "Empty file", { code: "empty_file" });
+  if (file.size > MAX_PDF_BYTES) {
+    throw new HttpError(413, `File too large (max ${MAX_PDF_BYTES / 1024 / 1024} MB)`, {
+      code: "file_too_large",
+    });
+  }
+  const head = new Uint8Array(await file.arrayBuffer()).subarray(0, 5);
+  const isPdf = head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46; // %PDF
+  if ((file.type && file.type !== "application/pdf") || !isPdf) {
+    throw new HttpError(415, "Only PDF files are allowed", { code: "unsupported_type" });
+  }
+  // Sanitised display name: strip path, cap length, guarantee a .pdf suffix.
+  let name = (file.name || "szamla.pdf").replace(/^.*[\\/]/, "").trim().slice(0, 200);
+  if (name.length === 0) name = "szamla.pdf";
+  if (!/\.pdf$/i.test(name)) name = `${name}.pdf`;
+
+  // Replacing an existing PDF: drop the old object first (same key is reused
+  // but the ?v= cache-buster changes).
+  await deletePaymentPdf(existing);
+
+  const ts = now();
+  const key = `couples/${couple.id}/budget-payments/${id}.pdf`;
+  await storage.write(key, file, "application/pdf");
+  const pdfUrl = `/uploads/couples/${couple.id}/budget-payments/${id}.pdf?v=${ts}`;
+  db.prepare("UPDATE budget_payments SET pdf_url = ?, pdf_name = ? WHERE id = ? AND couple_id = ?").run(
+    pdfUrl,
+    name,
+    id,
+    couple.id,
+  );
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "budget.payment_pdf_upload",
+    target_kind: "budget_payment",
+    target_id: id,
+    after: { pdf_name: name, bytes: file.size },
+  });
+
+  return json({ payment: toPayment(requirePayment(couple.id, id)) });
+}
+
+/** Stream a payment's private PDF. Couple-gated (never the public /uploads/*). */
+async function handleDownloadPdf(ctx: Ctx): Promise<Response> {
+  const { couple } = requireCouple(ctx);
+  const id = Number(ctx.params.id);
+  if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "Invalid id");
+  const row = requirePayment(couple.id, id);
+  const key = row.pdf_url ? keyFromUploadUrl(row.pdf_url) : null;
+  const served = key ? await storage.serve(key) : null;
+  if (!served) throw new HttpError(404, "No PDF on this payment");
+  const safeName = (row.pdf_name ?? "szamla.pdf").replace(/[\r\n"\\]/g, "_").slice(0, 200);
+  const headers = new Headers(served.headers);
+  headers.set("Content-Type", "application/pdf");
+  headers.set("Content-Disposition", `inline; filename="${safeName}"`);
+  return new Response(served.body, { headers });
+}
+
+/** Detach + delete a payment's PDF. */
+async function handleRemovePdf(ctx: Ctx): Promise<Response> {
+  const { userId, couple } = requireCouple(ctx);
+  const id = Number(ctx.params.id);
+  if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "Invalid id");
+  const row = requirePayment(couple.id, id);
+  await deletePaymentPdf(row);
+  db.prepare("UPDATE budget_payments SET pdf_url = NULL, pdf_name = NULL WHERE id = ? AND couple_id = ?").run(
+    id,
+    couple.id,
+  );
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "budget.payment_pdf_remove",
+    target_kind: "budget_payment",
+    target_id: id,
+  });
+  return json({ payment: toPayment(requirePayment(couple.id, id)) });
+}
+
 export function registerBudgetPaymentRoutes(router: Router) {
   router.get("/api/budget/payments", handleList, true);
   router.post("/api/budget/payments", handleCreate, true);
   router.patch("/api/budget/payments/:id", handleUpdate, true);
   router.delete("/api/budget/payments/:id", handleDelete, true);
+  router.post("/api/budget/payments/:id/pdf", handleUploadPdf, true);
+  router.get("/api/budget/payments/:id/download", handleDownloadPdf, true);
+  router.delete("/api/budget/payments/:id/pdf", handleRemovePdf, true);
 }

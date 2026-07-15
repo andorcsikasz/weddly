@@ -255,3 +255,102 @@ describe("budget payments — record, list, edit, delete", () => {
     expect(blocked.status).toBe(402);
   });
 });
+
+const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
+
+/** Minimal valid PDF — the route sniffs the `%PDF` magic bytes. */
+function tinyPdfBlob(): Blob {
+  return new Blob([new TextEncoder().encode("%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF\n")], {
+    type: "application/pdf",
+  });
+}
+/** A tiny PNG — used to prove non-PDF uploads are rejected. */
+function tinyPngBlob(): Blob {
+  return new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], {
+    type: "image/png",
+  });
+}
+
+async function createPayment(token: string, scope = "cat:venue"): Promise<number> {
+  const r = await req<{ payment: BudgetPayment }>(
+    "POST",
+    "/api/budget/payments",
+    { scope, amount_huf: 1000 },
+    { token },
+  );
+  expect(r.status).toBe(201);
+  return r.data.payment.id;
+}
+
+async function uploadPdf(token: string, id: number, blob: Blob, name: string): Promise<Response> {
+  const form = new FormData();
+  form.append("file", blob, name);
+  return await fetch(`${BASE}/api/budget/payments/${id}/pdf`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+}
+
+describe("budget payments — PDF attachment", () => {
+  beforeEach(() => wipeAll());
+  afterEach(() => wipeAll());
+
+  test("attach → view → remove a PDF invoice on a payment", async () => {
+    const { token } = await bootstrapCouple("bp-pdf@weddly.test");
+    const id = await createPayment(token);
+
+    // Attach.
+    const up = await uploadPdf(token, id, tinyPdfBlob(), "szamla.pdf");
+    expect(up.status).toBe(200);
+    const upBody = (await up.json()) as { payment: BudgetPayment };
+    expect(upBody.payment.pdf_name).toBe("szamla.pdf");
+    expect(upBody.payment.pdf_url).toContain(`/budget-payments/${id}.pdf`);
+
+    // It shows up on the list.
+    const listed = await req<{ payments: BudgetPayment[] }>("GET", "/api/budget/payments", undefined, {
+      token,
+    });
+    expect(listed.data.payments.find((p) => p.id === id)?.pdf_name).toBe("szamla.pdf");
+
+    // Gated download streams the PDF.
+    const dl = await fetch(`${BASE}/api/budget/payments/${id}/download`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(dl.status).toBe(200);
+    expect(dl.headers.get("content-type")).toContain("application/pdf");
+    expect((await dl.text()).startsWith("%PDF")).toBe(true);
+
+    // Remove.
+    const rm = await req<{ payment: BudgetPayment }>("DELETE", `/api/budget/payments/${id}/pdf`, undefined, {
+      token,
+    });
+    expect(rm.status).toBe(200);
+    expect(rm.data.payment.pdf_url).toBeNull();
+    expect(rm.data.payment.pdf_name).toBeNull();
+    // Download now 404s.
+    const dl2 = await fetch(`${BASE}/api/budget/payments/${id}/download`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(dl2.status).toBe(404);
+  });
+
+  test("rejects a non-PDF upload (415)", async () => {
+    const { token } = await bootstrapCouple("bp-pdf-bad@weddly.test");
+    const id = await createPayment(token);
+    const res = await uploadPdf(token, id, tinyPngBlob(), "receipt.png");
+    expect(res.status).toBe(415);
+  });
+
+  test("another couple cannot download a payment's PDF", async () => {
+    const a = await bootstrapCouple("bp-pdf-a@weddly.test");
+    const id = await createPayment(a.token);
+    expect((await uploadPdf(a.token, id, tinyPdfBlob(), "a.pdf")).status).toBe(200);
+
+    const b = await bootstrapCouple("bp-pdf-b@weddly.test");
+    const dl = await fetch(`${BASE}/api/budget/payments/${id}/download`, {
+      headers: { Authorization: `Bearer ${b.token}` },
+    });
+    expect(dl.status).toBe(404);
+  });
+});

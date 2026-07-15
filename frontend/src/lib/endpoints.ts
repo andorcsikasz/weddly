@@ -1303,6 +1303,46 @@ export const budgetPaymentApi = {
   update: (id: number, body: { amount_huf?: number; paid_at?: number; note?: string | null }) =>
     apiFetch<{ payment: BudgetPayment }>("PATCH", `/api/budget/payments/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/budget/payments/${id}`),
+  /** Attach a PDF invoice/receipt to one payment. Multipart (apiFetch is
+   *  JSON-only), same auth header. Returns the updated payment. */
+  uploadPdf: async (id: number, file: File): Promise<{ payment: BudgetPayment }> => {
+    const form = new FormData();
+    form.append("file", file);
+    const token = getToken();
+    const res = await fetch(`/api/budget/payments/${id}/pdf`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { code?: string; message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Upload failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as { payment: BudgetPayment };
+  },
+  removePdf: (id: number) =>
+    apiFetch<{ payment: BudgetPayment }>("DELETE", `/api/budget/payments/${id}/pdf`),
+  /** Auth-protected blob fetch for the private PDF — the caller opens it in a
+   *  new tab (mirrors budgetDocApi.fetchBlob). */
+  fetchPdfBlob: async (id: number): Promise<Blob> => {
+    const token = getToken();
+    const res = await fetch(`/api/budget/payments/${id}/download`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) throw new Error(`PDF fetch failed: ${res.status}`);
+    return res.blob();
+  },
 };
 
 export const incomeApi = {

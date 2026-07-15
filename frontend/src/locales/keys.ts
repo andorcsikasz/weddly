@@ -3944,6 +3944,11 @@ export interface LocaleMessages {
     payment_add: string;
     payment_date: string;
     payment_delete: string;
+    payment_pdf_attach: string;
+    payment_pdf_view: string;
+    payment_pdf_remove: string;
+    payment_pdf_attached: string;
+    payment_pdf_failed: string;
     payment_remaining: string;
     payment_settled: string;
     payment_added: string;

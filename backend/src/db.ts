@@ -336,6 +336,14 @@ addColumnIfMissing("budget_lines", "paid_huf", "paid_huf INTEGER NOT NULL DEFAUL
 // NULL for custom rows and any line created before this column existed.
 addColumnIfMissing("budget_lines", "preset_key", "preset_key TEXT");
 
+// Optional PDF invoice/receipt attached to a single recorded payment
+// (budget_payments). Private financial proof: `pdf_url` is an internal
+// `/uploads/couples/<id>/budget-payments/<pid>.pdf` reference served ONLY via
+// the gated /api/budget/payments/:id/download route, never the public
+// /uploads/* handler (which refuses budget-payments keys — see server.ts).
+addColumnIfMissing("budget_payments", "pdf_url", "pdf_url TEXT");
+addColumnIfMissing("budget_payments", "pdf_name", "pdf_name TEXT");
+
 // Per-couple supplier votes — see schema.sql. The legacy `(user_id, supplier_id)`
 // keying let both partners stack two votes on a self-submitted supplier, which
 // brigaded the directory's default sort. Backfill `couple_id` from the voter's

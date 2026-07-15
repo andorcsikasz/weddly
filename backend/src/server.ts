@@ -452,7 +452,8 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
     // photos/moodboard images. They are couple-scoped behind the authenticated
     // /api/budget/documents/:id/download route; refuse them here so an old
     // public URL (or an id-enumeration probe) can't read another couple's files.
-    if (decodedRel.includes("/budget-docs/")) return null;
+    if (decodedRel.includes("/budget-docs/") || decodedRel.includes("/budget-payments/"))
+      return null;
     const key = keyFromUploadUrl(decodedRel);
     if (!key) return null;
     return storage.serve(key);

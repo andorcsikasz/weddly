@@ -1006,6 +1006,14 @@ export interface BudgetPayment {
   paid_at: UnixMs;
   /** Optional free-text note. */
   note: string | null;
+  /** Internal reference to an attached PDF invoice/receipt
+   *  (`/uploads/couples/<id>/budget-payments/<pid>.pdf?v=…`), or null. Served
+   *  ONLY via the gated /api/budget/payments/:id/download route — never public.
+   *  The frontend fetches it as an authed blob; the raw string is not a usable
+   *  public URL. */
+  pdf_url: string | null;
+  /** Original (sanitised) filename of the attached PDF, for display. */
+  pdf_name: string | null;
   created_at: UnixMs;
 }
 

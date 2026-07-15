@@ -21,12 +21,14 @@ import {
   Image as ImageIcon,
   Loader2,
   MoreHorizontal,
+  Paperclip,
   Plus,
   Receipt,
   RotateCcw,
   Save,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 import { type ChangeEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -1811,6 +1813,14 @@ function dateInputToMs(iso: string): number {
   return new Date(`${iso}T12:00:00`).getTime();
 }
 
+/** Epoch ms → `YYYY-MM-DD` for a date input's value (local calendar day). */
+function msToDateInput(ms: number): string {
+  const d = new Date(ms);
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
 /** Modal that records payments against a budget row over time. Each entry is one
  *  payment with its own date ("20% paid today"); the list shows the running
  *  breakdown (e.g. 20% + 80% = 100%). The cumulative total is committed back to
@@ -1926,6 +1936,65 @@ function PaidEntryDialog({
       setBusy(false);
     }
   }
+
+  // Edit an existing payment's date (backend already supports paid_at edits).
+  async function editDate(p: BudgetPayment, iso: string) {
+    if (busy || !iso) return;
+    setBusy(true);
+    try {
+      await budgetPaymentApi.update(p.id, { paid_at: dateInputToMs(iso) });
+      await onPaymentsChanged();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function attachPdf(p: BudgetPayment, file: File) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await budgetPaymentApi.uploadPdf(p.id, file);
+      await onPaymentsChanged();
+      toast.success(t("budget.payment_pdf_attached"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("budget.payment_pdf_failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removePdf(p: BudgetPayment) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await budgetPaymentApi.removePdf(p.id);
+      await onPaymentsChanged();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Private PDF: fetch the authed blob and open it in a new tab (mirrors the
+  // budget-documents viewer — no public URL). Open the tab BEFORE the await so
+  // a popup blocker doesn't kill it.
+  async function viewPdf(p: BudgetPayment) {
+    const win = window.open("about:blank", "_blank");
+    try {
+      const blob = await budgetPaymentApi.fetchPdfBlob(p.id);
+      const url = URL.createObjectURL(blob);
+      if (win) win.location.href = url;
+      else window.location.href = url;
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      win?.close();
+      toast.error(t("common.error_generic"));
+    }
+  }
+
   const groupedDraft = draft.replace(/\B(?=(\d{3})+(?!\d))/g, locale === "hu" ? " " : ",");
   return (
     <Dialog
@@ -1992,20 +2061,74 @@ function PaidEntryDialog({
                     <span className="tabular-nums">
                       {formatMoney(p.amount_huf, currency, locale)}
                     </span>
-                    <span className="truncate text-xs text-ink-400 dark:text-umber-400">
-                      {formatDateMs(p.paid_at, locale)}
-                    </span>
+                    {/* Editable payment date — writes paid_at on change. */}
+                    <input
+                      type="date"
+                      value={msToDateInput(p.paid_at)}
+                      max={todayIso()}
+                      disabled={busy}
+                      onChange={(e) => editDate(p, e.target.value)}
+                      aria-label={t("budget.payment_date")}
+                      title={t("budget.payment_date")}
+                      className="rounded-md border border-transparent bg-transparent px-1 py-0.5 text-xs tabular-nums text-ink-400 outline-none transition hover:border-paper-300 focus:border-umber-500 disabled:opacity-40 dark:text-umber-400 dark:hover:border-umber-600"
+                    />
                   </span>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => deletePayment(p)}
-                    aria-label={t("budget.payment_delete")}
-                    title={t("budget.payment_delete")}
-                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
-                  >
-                    <Trash2 size={14} aria-hidden />
-                  </button>
+                  <span className="flex shrink-0 items-center gap-0.5">
+                    {/* Attached PDF invoice/receipt: view + remove, else attach. */}
+                    {p.pdf_url ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => viewPdf(p)}
+                          aria-label={t("budget.payment_pdf_view")}
+                          title={p.pdf_name ?? t("budget.payment_pdf_view")}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-amber-600 transition hover:bg-amber-50 hover:text-amber-700 disabled:opacity-40 dark:text-amber-400 dark:hover:bg-amber-400/15"
+                        >
+                          <FileText size={14} aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => removePdf(p)}
+                          aria-label={t("budget.payment_pdf_remove")}
+                          title={t("budget.payment_pdf_remove")}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+                        >
+                          <X size={14} aria-hidden />
+                        </button>
+                      </>
+                    ) : (
+                      <label
+                        aria-label={t("budget.payment_pdf_attach")}
+                        title={t("budget.payment_pdf_attach")}
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-400 transition hover:bg-paper-100 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 ${busy ? "pointer-events-none opacity-40" : "cursor-pointer"}`}
+                      >
+                        <Paperclip size={14} aria-hidden />
+                        <input
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          className="hidden"
+                          disabled={busy}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            e.target.value = "";
+                            if (f) void attachPdf(p, f);
+                          }}
+                        />
+                      </label>
+                    )}
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => deletePayment(p)}
+                      aria-label={t("budget.payment_delete")}
+                      title={t("budget.payment_delete")}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+                    >
+                      <Trash2 size={14} aria-hidden />
+                    </button>
+                  </span>
                 </li>
               ))}
             </ul>
