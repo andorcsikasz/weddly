@@ -3334,9 +3334,16 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
   }
 
   const ts = now();
-  const result = db
-    .prepare(
-      `INSERT INTO couples
+  let seedSummary = { households_copied: 0, guests_copied: 0 };
+  // Atomic like the onboarding path (see handleOnboard): a partial failure
+  // between the couples INSERT and the owner couple_members write used to leave
+  // an orphan workspace with no resolvable owner, which surfaces in the admin
+  // list as a blank name/email ("account without email"). Wrapping the whole
+  // write-set means the couple never persists without its owner membership.
+  const createdCoupleId = db.transaction((): number => {
+    const result = db
+      .prepare(
+        `INSERT INTO couples
         (partner_a_id, partner_b_id, display_name, bride_name, groom_name,
          wedding_date, wedding_date_kind, wedding_target_year, wedding_target_month, wedding_target_season,
          target_guest_count, guest_count_kind, target_guest_count_min, target_guest_count_max,
@@ -3349,104 +3356,106 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
                ?, ?, ?, ?,
                NULL, NULL, NULL, ?,
                ?, ?, 'active', ?, ?, ?)`,
-    )
-    .run(
-      userId,
-      displayName,
-      brideName,
-      groomName,
-      dateGoal.exact_date,
-      dateGoal.kind,
-      dateGoal.target_year,
-      dateGoal.target_month,
-      dateGoal.target_season,
-      guestGoal.exact,
-      guestGoal.kind,
-      guestGoal.min,
-      guestGoal.max,
-      budgetGoal.exact_huf,
-      budgetGoal.kind,
-      budgetGoal.min_huf,
-      budgetGoal.max_huf,
-      country,
-      JSON.stringify(styleTags),
-      currency,
-      ts,
-      ts,
-      ts,
-    );
-  const coupleId = Number(result.lastInsertRowid);
-  const slug = uniqueCoupleSlug(deriveSlugBase(brideName, groomName, displayName), coupleId);
-  db.prepare("UPDATE couples SET slug = ?, updated_at = ? WHERE id = ?").run(slug, ts, coupleId);
-  assignOrganiserCode(coupleId, ts);
+      )
+      .run(
+        userId,
+        displayName,
+        brideName,
+        groomName,
+        dateGoal.exact_date,
+        dateGoal.kind,
+        dateGoal.target_year,
+        dateGoal.target_month,
+        dateGoal.target_season,
+        guestGoal.exact,
+        guestGoal.kind,
+        guestGoal.min,
+        guestGoal.max,
+        budgetGoal.exact_huf,
+        budgetGoal.kind,
+        budgetGoal.min_huf,
+        budgetGoal.max_huf,
+        country,
+        JSON.stringify(styleTags),
+        currency,
+        ts,
+        ts,
+        ts,
+      );
+    const coupleId = Number(result.lastInsertRowid);
+    const slug = uniqueCoupleSlug(deriveSlugBase(brideName, groomName, displayName), coupleId);
+    db.prepare("UPDATE couples SET slug = ?, updated_at = ? WHERE id = ?").run(slug, ts, coupleId);
+    assignOrganiserCode(coupleId, ts);
 
-  if (ceremonyKind) {
-    db.prepare("UPDATE couples SET ceremony_kind = ?, updated_at = ? WHERE id = ?").run(
-      ceremonyKind,
-      ts,
+    if (ceremonyKind) {
+      db.prepare("UPDATE couples SET ceremony_kind = ?, updated_at = ? WHERE id = ?").run(
+        ceremonyKind,
+        ts,
+        coupleId,
+      );
+    }
+
+    // Spawn the bride/groom host-guest rows for the new workspace before
+    // seeding others, so the dedicated host household has the lowest ids
+    // (matches Alpha's ordering convention).
+    ensurePartnerGuests({ coupleId, brideName, groomName });
+
+    // Seed budget lines off the new workspace's own goal — Bravo / Charlie
+    // start with a fresh budget that the user can scale independently.
+    const seedHuf = representativeBudgetHuf(budgetGoal);
+    if (seedHuf > 0) seedBudgetLines(coupleId, seedHuf);
+
+    // Apply the optional guest+household import. Skipped silently when the
+    // caller didn't ask for it or selected nothing.
+    if (seedFrom !== null && seedGuestIds.length > 0) {
+      seedSummary = seedCoupleFromCouple(seedFrom, coupleId, seedGuestIds);
+    }
+
+    // Membership + auto-switch. The new workspace becomes the user's active
+    // pointer so the next /api/couples/current resolves there immediately.
+    addCoupleMember(coupleId, userId, "owner");
+    db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(
       coupleId,
+      ts,
+      userId,
     );
-  }
 
-  // Spawn the bride/groom host-guest rows for the new workspace before
-  // seeding others, so the dedicated host household has the lowest ids
-  // (matches Alpha's ordering convention).
-  ensurePartnerGuests({ coupleId, brideName, groomName });
+    // Start the same 14-day trial the onboarding path grants. Without this an
+    // additional workspace is born with subscription_status='none' and goes
+    // read-only ("Csak olvasható") the instant it's created — so a user running
+    // several events (civil ceremony, dinner, the wedding) could only edit the
+    // first. Every workspace a user owns is independently editable on its trial.
+    initBillingAtOnboarding(coupleId, ts);
 
-  // Seed budget lines off the new workspace's own goal — Bravo / Charlie
-  // start with a fresh budget that the user can scale independently.
-  const seedHuf = representativeBudgetHuf(budgetGoal);
-  if (seedHuf > 0) seedBudgetLines(coupleId, seedHuf);
+    // If this owner already invited their partner on an earlier event, the new
+    // workspace is the same couple's — mirror the partner onto it right away
+    // (membership only; the new event still inherits its billing from the owner's
+    // first workspace via billingAnchorRow).
+    propagatePartnerToOwnerWorkspaces(userId, ts);
 
-  // Apply the optional guest+household import. Skipped silently when the
-  // caller didn't ask for it or selected nothing.
-  let seedSummary = { households_copied: 0, guests_copied: 0 };
-  if (seedFrom !== null && seedGuestIds.length > 0) {
-    seedSummary = seedCoupleFromCouple(seedFrom, coupleId, seedGuestIds);
-  }
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: coupleId,
+      action: "couple.create_additional",
+      target_kind: "couple",
+      target_id: coupleId,
+      after: {
+        display_name: displayName,
+        bride_name: brideName,
+        groom_name: groomName,
+        wedding_date_goal: dateGoal,
+        guest_count_goal: guestGoal,
+        budget_goal: budgetGoal,
+        seed_from_couple_id: seedFrom,
+        seed_households_copied: seedSummary.households_copied,
+        seed_guests_copied: seedSummary.guests_copied,
+      },
+    });
 
-  // Membership + auto-switch. The new workspace becomes the user's active
-  // pointer so the next /api/couples/current resolves there immediately.
-  addCoupleMember(coupleId, userId, "owner");
-  db.prepare("UPDATE users SET couple_id = ?, role = 'owner', updated_at = ? WHERE id = ?").run(
-    coupleId,
-    ts,
-    userId,
-  );
+    return coupleId;
+  })();
 
-  // Start the same 14-day trial the onboarding path grants. Without this an
-  // additional workspace is born with subscription_status='none' and goes
-  // read-only ("Csak olvasható") the instant it's created — so a user running
-  // several events (civil ceremony, dinner, the wedding) could only edit the
-  // first. Every workspace a user owns is independently editable on its trial.
-  initBillingAtOnboarding(coupleId, ts);
-
-  // If this owner already invited their partner on an earlier event, the new
-  // workspace is the same couple's — mirror the partner onto it right away
-  // (membership only; the new event still inherits its billing from the owner's
-  // first workspace via billingAnchorRow).
-  propagatePartnerToOwnerWorkspaces(userId, ts);
-
-  addAuditLog({
-    actor_user_id: userId,
-    couple_id: coupleId,
-    action: "couple.create_additional",
-    target_kind: "couple",
-    target_id: coupleId,
-    after: {
-      display_name: displayName,
-      bride_name: brideName,
-      groom_name: groomName,
-      wedding_date_goal: dateGoal,
-      guest_count_goal: guestGoal,
-      budget_goal: budgetGoal,
-      seed_from_couple_id: seedFrom,
-      seed_households_copied: seedSummary.households_copied,
-      seed_guests_copied: seedSummary.guests_copied,
-    },
-  });
-
-  const row = getCoupleById(coupleId);
+  const row = getCoupleById(createdCoupleId);
   if (!row) throw new HttpError(500, "Couple vanished after insert");
   return json(
     {

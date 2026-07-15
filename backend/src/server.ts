@@ -120,6 +120,7 @@ import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
 import { retireLegacyTaxonomy, seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
 import { backfillPartnerPropagation } from "./domain/couples";
+import { reconcileOrphanCouples } from "./domain/orphan_reconcile";
 import {
   backfillPlannerProfilesFromWaitlist,
   backfillWaitlistPlannerConversions,
@@ -148,6 +149,15 @@ seedBlogPostsIfEmpty();
 {
   const owners = backfillPartnerPropagation();
   log.info("partners.backfill", { owners });
+}
+// Reconcile orphaned workspaces: a couple with no member resolvable to a live
+// user (e.g. a hard-deleted owner, or a pre-fix non-atomic create that half-
+// committed) is unrecoverable, so purge it. Runs AFTER partners.backfill so a
+// couple whose owner still exists has its membership healed first and is not
+// mistaken for an orphan.
+{
+  const reconciled = reconcileOrphanCouples();
+  if (reconciled > 0) log.info("couples.orphan_reconcile", { reconciled });
 }
 // Heal accepted planner applicants who landed on a plain couple account instead
 // of a planner (the "Regisztrációra vár" mis-route). Account only, idempotent,

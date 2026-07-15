@@ -8,6 +8,7 @@ import {
   backfillPartnerPropagation,
   propagatePartnerToOwnerWorkspaces,
 } from "../../src/domain/couples";
+import { reconcileOrphanCouples } from "../../src/domain/orphan_reconcile";
 
 // Multi-workspace + couple-member edge-case sweep. Complements the
 // `couples_lifecycle` and root `e2e.test.ts` multi-workspace blocks with
@@ -1063,5 +1064,90 @@ describe("workspace_multi: partner auto-propagation", () => {
     expect(partnerBId(bravoId)).toBe(partnerId);
     // Backfill is billing-neutral: still exactly one founding slot.
     expect(foundingSlotsUsed()).toBe(1);
+  });
+});
+
+// A workspace must always have a resolvable owner. Regression cover for the
+// "account without email" report: an orphan couple (no member joining a live
+// user) rendered as a blank name/email row in the admin overview.
+describe("orphan workspace integrity", () => {
+  /** Insert a couples row directly, bypassing the create path, to simulate a
+   *  workspace whose owner is gone. `partnerAId` points at a user that does
+   *  not exist; no couple_members row is written. */
+  function seedOrphanCouple(displayName: string, opts: { demo?: boolean } = {}): number {
+    const ts = Date.now();
+    const r = db
+      .prepare(
+        `INSERT INTO couples
+           (partner_a_id, display_name, bride_name, groom_name, status, is_demo, created_at, updated_at)
+         VALUES (999999, ?, 'Kylee', 'Marci', 'active', ?, ?, ?)`,
+      )
+      .run(displayName, opts.demo ? 1 : 0, ts, ts);
+    return Number(r.lastInsertRowid);
+  }
+
+  test("creating an additional workspace always writes an owner membership", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("multi-owner@weddly.test");
+    const bravoId = await spawnEvent(token, "Civil ceremony");
+
+    // FIX: the create path is transactional, so the couple can never persist
+    // without its owner couple_members row.
+    const member = db
+      .prepare("SELECT user_id, role FROM couple_members WHERE couple_id = ?")
+      .get(bravoId) as { user_id: number; role: string } | undefined;
+    expect(member).toBeDefined();
+    expect(member!.role).toBe("owner");
+    // …and that owner resolves to a real, non-blank email.
+    const owner = db.prepare("SELECT email FROM users WHERE id = ?").get(member!.user_id) as {
+      email: string;
+    };
+    expect(owner.email).toBe("multi-owner@weddly.test");
+  });
+
+  test("reconcileOrphanCouples purges a workspace with no resolvable owner", async () => {
+    wipeAll();
+    const { coupleId: healthy } = await bootstrapCouple("healthy@weddly.test");
+    const orphanId = seedOrphanCouple("Kylee & Marci");
+
+    expect(reconcileOrphanCouples()).toBe(1);
+
+    // Orphan is tombstoned → the admin UI hides `status='deleting'`, so it no
+    // longer masquerades as a blank "account without email" row.
+    const orphan = db
+      .prepare("SELECT status, display_name FROM couples WHERE id = ?")
+      .get(orphanId) as { status: string; display_name: string };
+    expect(orphan.status).toBe("deleting");
+    expect(orphan.display_name).toBe("Purged workspace");
+
+    // The healthy couple keeps its status AND its owner membership.
+    const ok = db.prepare("SELECT status FROM couples WHERE id = ?").get(healthy) as {
+      status: string;
+    };
+    expect(ok.status).toBe("active");
+    const members = db
+      .prepare("SELECT COUNT(*) AS n FROM couple_members WHERE couple_id = ?")
+      .get(healthy) as { n: number };
+    expect(members.n).toBeGreaterThan(0);
+  });
+
+  test("reconcileOrphanCouples is idempotent and leaves demo orphans alone", async () => {
+    wipeAll();
+    const demoId = seedOrphanCouple("Shrek & Fiona", { demo: true });
+    const orphanId = seedOrphanCouple("Orphan One");
+
+    // Only the real orphan is purged; the demo is left for the demo reaper.
+    expect(reconcileOrphanCouples()).toBe(1);
+    // Idempotent: a second pass finds nothing new (the purged row is 'deleting').
+    expect(reconcileOrphanCouples()).toBe(0);
+
+    const demo = db.prepare("SELECT status FROM couples WHERE id = ?").get(demoId) as {
+      status: string;
+    };
+    expect(demo.status).toBe("active");
+    const orphan = db.prepare("SELECT status FROM couples WHERE id = ?").get(orphanId) as {
+      status: string;
+    };
+    expect(orphan.status).toBe("deleting");
   });
 });
