@@ -271,6 +271,27 @@ describe("admin planner management", () => {
     expect(row?.email.endsWith("@purged.local")).toBe(true);
   });
 
+  test("a purged planner no longer appears in the admin list", async () => {
+    const adminToken = await bootstrapAdmin();
+    const keep = await seedPlanner("planner-keep@weddly.test");
+    const gone = await seedPlanner("planner-gone@weddly.test");
+    // Delete (purge) one — its users row survives as a @purged.local tombstone.
+    const del = await req("DELETE", `/api/admin/planners/${gone}`, undefined, { token: adminToken });
+    expect(del.status).toBe(200);
+
+    const res = await req<{ planners: AdminPlannerView[] }>(
+      "GET",
+      "/api/admin/planners",
+      undefined,
+      { token: adminToken },
+    );
+    const activeIds = res.data.planners
+      .filter((p): p is Extract<AdminPlannerView, { state: "active" }> => p.state === "active")
+      .map((p) => p.user_id);
+    expect(activeIds).toContain(keep);
+    expect(activeIds).not.toContain(gone);
+  });
+
   test("targeting a non-planner user 404s", async () => {
     const adminToken = await bootstrapAdmin();
     const { coupleId } = await bootstrapCouple("regular@weddly.test");

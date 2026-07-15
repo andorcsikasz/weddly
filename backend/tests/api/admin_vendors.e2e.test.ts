@@ -403,6 +403,25 @@ describe("admin vendor management", () => {
     expect(res.data.active.some((v) => v.owner_email?.endsWith("@demo.weddly.local"))).toBe(false);
   });
 
+  test("a purged vendor owner is excluded from the admin vendor list", async () => {
+    const adminToken = await bootstrapAdmin();
+    const keep = await seedActivatedVendor("keep-vendor@weddly.test", "Keep Studio");
+    const gone = await seedActivatedVendor("gone-vendor@weddly.test", "Gone Studio");
+    // Purge tombstone on the second vendor's owner (email → deleted-…@purged.local).
+    db.prepare(
+      "UPDATE users SET email = 'deleted-' || id || '@purged.local', status = 'suspended' WHERE id = ?",
+    ).run(gone.userId);
+
+    const res = await req<{ active: AdminVendorView[] }>("GET", "/api/admin/vendors", undefined, {
+      token: adminToken,
+    });
+    expect(res.status).toBe(200);
+    const ids = res.data.active.map((v) => v.id);
+    expect(ids).toContain(keep.accountId);
+    expect(ids).not.toContain(gone.accountId);
+    expect(res.data.active.some((v) => v.owner_email?.endsWith("@purged.local"))).toBe(false);
+  });
+
   test("non-admin is rejected", async () => {
     await bootstrapAdmin();
     const { token } = await bootstrapCouple("notadmin@weddly.test");

@@ -257,8 +257,10 @@ export function listAdminVendorAccounts(): AdminVendorView[] {
         -- Demo vendors (demo-…@demo.weddly.local owner) are kept out of the
         -- admin vendor list + its filter counts, mirroring how listAdminPlanners
         -- excludes demo planners. They stay visible, distinguished, in the admin
-        -- Users overview's Demo section.
-        WHERE u.email IS NULL OR u.email NOT LIKE '%@demo.weddly.local'
+        -- Users overview's Demo section. Purged owners (deleted-…@purged.local
+        -- tombstones) are dropped entirely — a deleted account must never show.
+        WHERE u.email IS NULL
+           OR (u.email NOT LIKE '%@demo.weddly.local' AND u.email NOT LIKE '%@purged.local')
         ORDER BY va.created_at DESC`,
     )
     .all() as AdminVendorRow[];

@@ -187,6 +187,7 @@ export function listAdminPlanners(): AdminPlannerAccount[] {
          FROM users u
         WHERE u.user_type = 'planner'
           AND u.email NOT LIKE '%@demo.weddly.local'
+          AND u.email NOT LIKE '%@purged.local'
         ORDER BY u.created_at DESC`,
     )
     .all() as AdminPlannerRow[];
