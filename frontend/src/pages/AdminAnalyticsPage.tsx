@@ -478,74 +478,79 @@ function PageHeader({
 
   return (
     <header className="sticky top-14 z-10 -mx-4 mb-6 border-b border-paper-200 bg-paper-100/85 px-4 pb-2.5 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 xl:-mx-10 xl:px-10 dark:border-umber-700 dark:bg-umber-900/85">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className="m-0 shrink-0 text-lg font-semibold tracking-tight text-neutral-900 dark:text-paper-50">
-          {t("admin.analytics_title")}
-        </h1>
-        {/* Subtitle is structurally present for screen readers but hidden
-         *  visually — the page chrome's job is navigation, not exposition. */}
-        <p className="sr-only">{t("admin.analytics_sub")}</p>
+      <div className="flex flex-col gap-2.5">
+        {/* Row 1: title on the left, refresh/timestamp on the right. */}
+        <div className="flex items-center gap-x-3">
+          <h1 className="m-0 shrink-0 text-lg font-semibold tracking-tight text-neutral-900 dark:text-paper-50">
+            {t("admin.analytics_title")}
+          </h1>
+          {/* Subtitle is structurally present for screen readers but hidden
+           *  visually — the page chrome's job is navigation, not exposition. */}
+          <p className="sr-only">{t("admin.analytics_sub")}</p>
 
-        {/* Below sm: collapse the section pills to a native select so the
-         *  header stays single-row. The same scrollTo() handler runs on
-         *  change. */}
-        <label className="flex shrink-0 items-center sm:hidden">
-          <span className="sr-only">{t("admin.analytics_jump_to_section")}</span>
-          <select
-            value={activeId}
-            onChange={(ev) => scrollTo(ev.target.value as SectionId)}
-            aria-label={t("admin.analytics_jump_to_section")}
-            className="btn-lifted rounded-lg bg-paper-50 px-2 py-1 text-xs font-medium text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 dark:bg-umber-800 dark:text-paper-100"
+          <div className="ml-auto flex items-center gap-2">
+            {lastLoadedLabel && (
+              <span className="hidden text-xs text-neutral-500 dark:text-umber-300 sm:inline">
+                {lastLoadedLabel}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={refreshing}
+              aria-label={t("admin.analytics_refresh")}
+              className="btn-lifted inline-flex items-center gap-1.5 rounded-lg bg-paper-50 px-3 py-1.5 text-xs font-medium text-neutral-800 transition-colors duration-150 hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+            >
+              <RefreshIcon spinning={refreshing} />
+              <span>{hasError ? t("admin.analytics_retry") : t("admin.analytics_refresh")}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Row 2: section navigation, starting UNDER the title (not inline). */}
+        <div className="flex items-center">
+          {/* Below sm: collapse the section pills to a native select so the
+           *  row stays compact. The same scrollTo() handler runs on change. */}
+          <label className="flex shrink-0 items-center sm:hidden">
+            <span className="sr-only">{t("admin.analytics_jump_to_section")}</span>
+            <select
+              value={activeId}
+              onChange={(ev) => scrollTo(ev.target.value as SectionId)}
+              aria-label={t("admin.analytics_jump_to_section")}
+              className="btn-lifted rounded-lg bg-paper-50 px-2 py-1 text-xs font-medium text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 dark:bg-umber-800 dark:text-paper-100"
+            >
+              {SECTIONS.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {t(s.labelKey)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <nav
+            aria-label={t("admin.analytics_title")}
+            className="hidden flex-wrap items-center gap-1.5 sm:flex"
           >
-            {SECTIONS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {t(s.labelKey)}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <nav
-          aria-label={t("admin.analytics_title")}
-          className="hidden flex-wrap items-center gap-1.5 sm:flex"
-        >
-          {SECTIONS.map((s) => {
-            const active = activeId === s.id;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => scrollTo(s.id)}
-                aria-current={active ? "true" : undefined}
-                className={
-                  "btn-lifted rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 " +
-                  (active
-                    ? "is-pressed bg-neutral-600 text-white dark:bg-neutral-500"
-                    : "bg-paper-200/70 text-neutral-700 hover:bg-paper-300/80 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700")
-                }
-              >
-                {t(s.labelKey)}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="ml-auto flex items-center gap-2">
-          {lastLoadedLabel && (
-            <span className="hidden text-xs text-neutral-500 dark:text-umber-300 sm:inline">
-              {lastLoadedLabel}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={refreshing}
-            aria-label={t("admin.analytics_refresh")}
-            className="btn-lifted inline-flex items-center gap-1.5 rounded-lg bg-paper-50 px-3 py-1.5 text-xs font-medium text-neutral-800 transition-colors duration-150 hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
-          >
-            <RefreshIcon spinning={refreshing} />
-            <span>{hasError ? t("admin.analytics_retry") : t("admin.analytics_refresh")}</span>
-          </button>
+            {SECTIONS.map((s) => {
+              const active = activeId === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => scrollTo(s.id)}
+                  aria-current={active ? "true" : undefined}
+                  className={
+                    "btn-lifted rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500/40 " +
+                    (active
+                      ? "is-pressed bg-neutral-600 text-white dark:bg-neutral-500"
+                      : "bg-paper-200/70 text-neutral-700 hover:bg-paper-300/80 dark:bg-umber-800 dark:text-paper-200 dark:hover:bg-umber-700")
+                  }
+                >
+                  {t(s.labelKey)}
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </div>
     </header>
