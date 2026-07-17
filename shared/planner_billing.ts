@@ -14,6 +14,7 @@
 //  - Lapse/cancel → hard read-only gate (402), like couples + vendors.
 
 import { type BillingReason, computeEntitlement, type SubscriptionStatus } from "./billing";
+import { type BillingCurrency, toBillingCurrency } from "./currency";
 import type { Currency, PlannerPlan, UnixMs } from "./types";
 
 export { computeEntitlement };
@@ -34,7 +35,7 @@ export const PLANNER_TRIAL_DURATION_MS = 1000 * 60 * 60 * 24 * 3;
 /** Monthly price per tier per display currency (integer, minor-unit-less). HUF
  *  has no minor unit; EUR is shown without cents. Keep in sync with the Stripe
  *  planner Price objects (backend/scripts/stripe_setup_planner.ts). */
-export const PLANNER_TIER_PRICE: Record<PlannerPlan, Record<Currency, number>> = {
+export const PLANNER_TIER_PRICE: Record<PlannerPlan, Record<BillingCurrency, number>> = {
   starter: { HUF: 6900, EUR: 19, USD: 19 },
   pro: { HUF: 11900, EUR: 29, USD: 29 },
   premium: { HUF: 19900, EUR: 49, USD: 49 },
@@ -48,8 +49,7 @@ export function plannerCurrencyForLocale(locale: string | null | undefined): Cur
 
 /** The monthly price for a tier on this currency. */
 export function plannerPrice(tier: PlannerPlan, currency: Currency): number {
-  const perCurrency = PLANNER_TIER_PRICE[tier];
-  return perCurrency[currency] ?? perCurrency.EUR;
+  return PLANNER_TIER_PRICE[tier][toBillingCurrency(currency)];
 }
 
 /** Billing snapshot attached to the planner's billing surface + onboarding. */

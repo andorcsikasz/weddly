@@ -4,7 +4,7 @@
 // re-run it live as the operator drags the assumption sliders.
 
 import type { SubscriptionStatus } from "./billing";
-import type { Currency } from "./types";
+import type { BillingCurrency } from "./currency";
 
 /** Display-only HUF→EUR rate used to combine the two-currency MRR into one
  *  headline figure. Not a live FX feed — it just keeps the dashboard legible.
@@ -26,7 +26,10 @@ export interface FxRates {
 }
 
 export interface CurrencyMrr {
-  currency: Currency;
+  /** The currency we CHARGE in, not the couple's display currency — the two
+   *  diverged when the picker grew past HUF/EUR/USD. Display currencies that
+   *  settle on EUR (PLN, JPY, …) are summed into the EUR row. */
+  currency: BillingCurrency;
   /** Paying subscribers (active + past_due) billed in this currency. */
   subscribers: number;
   /** Monthly recurring revenue in this currency's own units. */

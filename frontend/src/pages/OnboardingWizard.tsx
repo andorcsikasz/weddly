@@ -16,10 +16,11 @@ import type {
   WeddingDateKind,
   WeddingSeason,
 } from "@shared/types";
-import { CURRENCIES } from "@shared/types";
+import { scaleFromEur } from "@shared/currency";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Confetti } from "../components/Confetti";
+import { CurrencySelect } from "../components/CurrencySelect";
 import { CountryCombobox } from "../components/CountryCombobox";
 import { Shell } from "../components/Shell";
 import { Skeleton } from "../components/ui";
@@ -45,11 +46,26 @@ const SEASONS: WeddingSeason[] = ["spring", "summer", "fall", "winter"];
 // Sensible starting range per currency. HUF defaults to a typical Hungarian
 // wedding (4-6M Ft, ~€10-15k); EUR/USD use the rough conversion so switching
 // the unit re-bases the values instead of leaving "6 000 000 €" in the box.
-const BUDGET_DEFAULTS: Record<Currency, { min: string; max: string; placeholder: string }> = {
+// These three are hand-tuned; the rest scale off the EUR row (see
+// `budgetDefaults`) so every currency in the picker re-bases the same way.
+type BudgetDefaults = { min: string; max: string; placeholder: string };
+const TUNED_BUDGET_DEFAULTS: Partial<Record<Currency, BudgetDefaults>> = {
   HUF: { min: "4000000", max: "6000000", placeholder: "5000000" },
   EUR: { min: "10000", max: "15000", placeholder: "12000" },
   USD: { min: "12000", max: "18000", placeholder: "15000" },
 };
+const EUR_BUDGET_DEFAULTS = TUNED_BUDGET_DEFAULTS.EUR!;
+
+function budgetDefaults(currency: Currency): BudgetDefaults {
+  const tuned = TUNED_BUDGET_DEFAULTS[currency];
+  if (tuned) return tuned;
+  const scale = (eur: string) => String(scaleFromEur(Number(eur), currency));
+  return {
+    min: scale(EUR_BUDGET_DEFAULTS.min),
+    max: scale(EUR_BUDGET_DEFAULTS.max),
+    placeholder: scale(EUR_BUDGET_DEFAULTS.placeholder),
+  };
+}
 
 const TODAY = new Date();
 const MIN_YEAR = TODAY.getFullYear();
@@ -97,8 +113,8 @@ const DEFAULT_FORM: FormState = {
   guest_max: "100",
   budget_kind: "range",
   budget_exact: "",
-  budget_min: BUDGET_DEFAULTS.HUF.min,
-  budget_max: BUDGET_DEFAULTS.HUF.max,
+  budget_min: TUNED_BUDGET_DEFAULTS.HUF!.min,
+  budget_max: TUNED_BUDGET_DEFAULTS.HUF!.max,
   currency: "HUF",
   country: "",
 };
@@ -368,13 +384,13 @@ export default function OnboardingWizard() {
    *  values — "6 000 000 €" would carry over from the HUF default otherwise
    *  and looks absurd. `budget_exact` is left alone so a user who typed a
    *  specific number isn't surprised by it changing, but its placeholder
-   *  scales with the unit via BUDGET_DEFAULTS below. */
+   *  scales with the unit via budgetDefaults() above. */
   function setCurrency(c: Currency) {
     setForm((prev) => ({
       ...prev,
       currency: c,
-      budget_min: BUDGET_DEFAULTS[c].min,
-      budget_max: BUDGET_DEFAULTS[c].max,
+      budget_min: budgetDefaults(c).min,
+      budget_max: budgetDefaults(c).max,
     }));
   }
 
@@ -682,31 +698,11 @@ export default function OnboardingWizard() {
                 <span className="text-xs uppercase tracking-wide text-umber-600">
                   {t("onboarding.budget_currency_label")}
                 </span>
-                <div
-                  role="radiogroup"
-                  aria-label={t("onboarding.budget_currency_label")}
-                  className="inline-flex overflow-hidden rounded-full border border-umber-200"
-                >
-                  {CURRENCIES.map((c) => {
-                    const active = c === form.currency;
-                    return (
-                      <button
-                        key={c}
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        onClick={() => setCurrency(c)}
-                        className={`min-h-[44px] px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1 sm:text-xs ${
-                          active
-                            ? "bg-umber-900 text-paper-50"
-                            : "bg-paper-50 text-umber-700 hover:bg-paper-100"
-                        }`}
-                      >
-                        {t(`onboarding.budget_currency_${c.toLowerCase()}`)}
-                      </button>
-                    );
-                  })}
-                </div>
+                <CurrencySelect
+                  value={form.currency}
+                  onChange={setCurrency}
+                  label={t("onboarding.budget_currency_label")}
+                />
               </div>
 
               <p className="mt-4 text-sm text-umber-700">{t("onboarding.budget_kind_question")}</p>
@@ -740,7 +736,7 @@ export default function OnboardingWizard() {
                       value={formatGroupedDigits(form.budget_exact, locale)}
                       onChange={(e) => update("budget_exact", digitsOnly(e.target.value))}
                       placeholder={formatGroupedDigits(
-                        BUDGET_DEFAULTS[form.currency].placeholder,
+                        budgetDefaults(form.currency).placeholder,
                         locale,
                       )}
                     />

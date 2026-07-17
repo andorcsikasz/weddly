@@ -5,7 +5,8 @@
 // mint redirect URLs and react to webhook events. No card data touches us.
 
 import type Stripe from "stripe";
-import { type BillingStatusResponse, FOUNDING_CAP, MONTHLY_PRICE } from "@shared/billing";
+import { type BillingStatusResponse, FOUNDING_CAP, monthlyPrice } from "@shared/billing";
+import { isCurrency } from "@shared/currency";
 import type { Currency } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import {
@@ -32,7 +33,7 @@ import {
 } from "../lib/http";
 
 function normaliseCurrency(raw: string | null): Currency {
-  return raw === "EUR" || raw === "USD" || raw === "HUF" ? raw : "HUF";
+  return isCurrency(raw) ? raw : "HUF";
 }
 
 /** Stripe moved `current_period_end` onto subscription items in recent API
@@ -56,7 +57,7 @@ function handleStatus(ctx: Ctx): Response {
     enabled: STRIPE_ENABLED,
     billing: toCoupleBilling(couple),
     currency,
-    price: MONTHLY_PRICE[currency],
+    price: monthlyPrice(currency),
     founding_spots_left: Math.max(0, FOUNDING_CAP - foundingSlotsUsed()),
     has_partner: couple.partner_b_id != null,
   };

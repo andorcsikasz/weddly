@@ -7,6 +7,7 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { scaleFromEur } from "@shared/currency";
 import type { Currency } from "@shared/types";
 import { formatMoney, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -23,12 +24,28 @@ const DEFAULT_GUESTS_HU = 100;
 // (sub-3M can't cover catering, 12M+ is the long tail). EUR/USD ranges are
 // rough EN-market equivalents — wide enough that any visitor finds their
 // number in the first drag, narrow enough that each tick feels meaningful.
+// These three are hand-tuned to their market; every other currency scales off
+// the EUR row via `scaleFromEur` (see `budgetRange`).
 type BudgetRange = { min: number; max: number; step: number; default: number };
-const BUDGET_RANGES: Record<Currency, BudgetRange> = {
+const TUNED_BUDGET_RANGES: Partial<Record<Currency, BudgetRange>> = {
   HUF: { min: 3_000_000, max: 12_000_000, step: 100_000, default: 7_200_000 },
   EUR: { min: 8_000, max: 60_000, step: 500, default: 25_000 },
   USD: { min: 10_000, max: 80_000, step: 500, default: 30_000 },
 };
+const EUR_BUDGET_RANGE = TUNED_BUDGET_RANGES.EUR!;
+
+function budgetRange(currency: Currency): BudgetRange {
+  const tuned = TUNED_BUDGET_RANGES[currency];
+  if (tuned) return tuned;
+  return {
+    min: scaleFromEur(EUR_BUDGET_RANGE.min, currency),
+    max: scaleFromEur(EUR_BUDGET_RANGE.max, currency),
+    // 1 significant digit: the step is a stride, not a figure anyone reads,
+    // and a "nice" stride keeps every slider stop a round number.
+    step: scaleFromEur(EUR_BUDGET_RANGE.step, currency, 1),
+    default: scaleFromEur(EUR_BUDGET_RANGE.default, currency),
+  };
+}
 
 // Curated breakdown ratios. Order = display order (the reserve bucket lives at
 // the end because it is conceptually a buffer rather than a spend line). Each
@@ -103,7 +120,7 @@ export function InteractiveBudgetDemo() {
   const { t, locale } = useT();
   // Currency follows the UI locale: HU → HUF, everything else → EUR.
   const currency = localeCurrency(locale);
-  const range = BUDGET_RANGES[currency];
+  const range = budgetRange(currency);
   const [guests, setGuests] = useState(locale === "hu" ? DEFAULT_GUESTS_HU : DEFAULT_GUESTS);
   const [budget, setBudget] = useState(range.default);
   // The breakdown is a tall list; on phones it starts collapsed so the demo
@@ -116,7 +133,7 @@ export function InteractiveBudgetDemo() {
   // visitor toggling to Hungarian would keep the euro budget shown as
   // "25 000 Ft" instead of a realistic Ft figure.
   useEffect(() => {
-    setBudget(BUDGET_RANGES[currency].default);
+    setBudget(budgetRange(currency).default);
     setGuests(locale === "hu" ? DEFAULT_GUESTS_HU : DEFAULT_GUESTS);
   }, [currency, locale]);
 

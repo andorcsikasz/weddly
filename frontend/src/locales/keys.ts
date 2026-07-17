@@ -1353,9 +1353,6 @@ export interface LocaleMessages {
     budget_preview_label: string;
     /** Currency picker pinned above the budget inputs in step 4. */
     budget_currency_label: string;
-    budget_currency_huf: string;
-    budget_currency_eur: string;
-    budget_currency_usd: string;
     // ── Ceremony kind — optional radio group on the Couple step ───────
     ceremony_kind_question: string;
     ceremony_kind_civil: string;
@@ -6778,9 +6775,6 @@ export interface LocaleMessages {
     budget_payment_amount_invalid: string;
     /** Currency picker — label + the three pill captions. */
     budget_currency_label: string;
-    budget_currency_huf: string;
-    budget_currency_eur: string;
-    budget_currency_usd: string;
     /** Confirm dialog shown when the user taps a different currency pill —
      *  spells out that we DON'T retro-convert past entries by FX rate. */
     budget_currency_confirm_title: string;

@@ -34,6 +34,7 @@ import type {
   WeddingSeason,
   WeddingStyleTag,
 } from "@shared/types";
+import { isCurrency } from "@shared/currency";
 import { MAX_PHOTOGRAPHER_LINKS } from "@shared/types";
 import { billingEnforcementOn, db, now } from "../db";
 import { generateOrganiserCode } from "./invite_codes";
@@ -354,9 +355,8 @@ const DATE_KINDS: ReadonlySet<WeddingDateKind> = new Set([
 const SEASONS: ReadonlySet<WeddingSeason> = new Set(["spring", "summer", "fall", "winter"]);
 const COUNT_KINDS: ReadonlySet<GuestCountKind> = new Set(["exact", "range", "tbd"]);
 const BUDGET_KINDS: ReadonlySet<BudgetKind> = new Set(["exact", "range", "tbd"]);
-const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
 function rowToCurrency(raw: string | null | undefined): Currency {
-  return raw && VALID_CURRENCIES.has(raw as Currency) ? (raw as Currency) : "HUF";
+  return isCurrency(raw) ? raw : "HUF";
 }
 
 const VALID_BUDGET_CATEGORIES: ReadonlySet<BudgetCategory> = new Set([

@@ -28,6 +28,7 @@ import {
 } from "@shared/vendor_billing";
 import type { VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
 import { vendorFeatureFlags, vendorPlanFromEntitlement } from "@shared/vendor_plan";
+import { isCurrency } from "@shared/currency";
 import type { Currency } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import { claimStripeEvent, stripe } from "../domain/billing";
@@ -49,9 +50,7 @@ import { type Ctx, HttpError, json, type Router } from "../lib/http";
 
 /** The vendor's pinned display currency (fallback: owner locale). */
 function vendorCurrency(sub: VendorSubRow | null, ownerUserId: number): Currency {
-  if (sub?.currency === "HUF" || sub?.currency === "EUR" || sub?.currency === "USD") {
-    return sub.currency;
-  }
+  if (isCurrency(sub?.currency)) return sub.currency;
   return vendorCurrencyForLocale(getUserById(ownerUserId)?.locale);
 }
 

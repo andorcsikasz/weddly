@@ -26,6 +26,7 @@
 // funnel entirely until that year ends.
 
 import { type BillingReason, computeEntitlement, type SubscriptionStatus } from "./billing";
+import { type BillingCurrency, toBillingCurrency } from "./currency";
 import type { Currency, UnixMs } from "./types";
 
 export { computeEntitlement };
@@ -111,7 +112,7 @@ export function computeVendorEntitlement(
  *  no minor unit; EUR is shown without cents. DISTINCT from the couples'
  *  MONTHLY_PRICE — vendors pay a different rate. Keep in sync with the Stripe
  *  vendor Price objects when billing goes live. */
-export const VENDOR_MONTHLY_PRICE: Record<Currency, number> = {
+export const VENDOR_MONTHLY_PRICE: Record<BillingCurrency, number> = {
   HUF: 3490,
   EUR: 10,
   USD: 10,
@@ -125,7 +126,7 @@ export function vendorCurrencyForLocale(locale: string | null | undefined): Curr
 
 /** The monthly price a vendor on this currency pays. */
 export function vendorPrice(currency: Currency): number {
-  return VENDOR_MONTHLY_PRICE[currency] ?? VENDOR_MONTHLY_PRICE.EUR;
+  return VENDOR_MONTHLY_PRICE[toBillingCurrency(currency)];
 }
 
 /** Billing snapshot attached to the vendor's /vendor view + onboarding. */

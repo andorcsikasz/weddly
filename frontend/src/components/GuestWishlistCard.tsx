@@ -11,6 +11,7 @@
 // No money moves in-app: the pledged amount is a non-binding coordination
 // figure the couple sees to gauge how the group gift is filling up.
 
+import { minorUnitFactor } from "@shared/currency";
 import type { Currency } from "@shared/types";
 import type { WishlistContributorsResult, WishlistEntry } from "@shared/wishlist";
 import {
@@ -39,14 +40,8 @@ function requestIconFor(title: string): typeof HandHeart {
 
 type Locale = "hu" | "en";
 
-/** HUF is whole-unit; EUR/USD are cents. Matches `target_amount_minor`. */
-function minorFactor(currency: Currency): number {
-  return currency === "HUF" ? 1 : 100;
-}
-
 function formatAmount(minor: number, currency: Currency, locale: Locale): string {
-  const factor = minorFactor(currency);
-  return formatMoney(minor / factor, currency, locale);
+  return formatMoney(minor / minorUnitFactor(currency), currency, locale);
 }
 
 // ---------------------------------------------------------------------------
@@ -65,7 +60,7 @@ function ProgressBlock({
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const cur = entry.currency ?? currency;
-  const factor = minorFactor(cur);
+  const factor = minorUnitFactor(cur);
   const target = (entry.target_amount_minor ?? 0) / factor;
   const pledged = entry.pledged_amount_minor / factor;
   const pct = target > 0 ? Math.min(100, Math.round((pledged / target) * 100)) : 0;
@@ -189,7 +184,7 @@ export function GuestWishlistCard({
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const cur = entry.currency ?? currency;
-  const factor = minorFactor(cur);
+  const factor = minorUnitFactor(cur);
   const isGift = entry.kind === "gift";
   const interactive = !!onToggleInterest;
   const hasTarget = isGift && entry.target_amount_minor !== null && entry.target_amount_minor > 0;

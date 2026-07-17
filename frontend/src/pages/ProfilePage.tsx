@@ -16,7 +16,6 @@ import type {
   LinkedPlannerView,
   UserRole,
 } from "@shared/types";
-import { CURRENCIES } from "@shared/types";
 import { TIMELINE_EMAIL_ESCALATION_VALUES } from "@shared/notifications";
 import {
   Archive,
@@ -45,6 +44,7 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { CountryCombobox } from "../components/CountryCombobox";
+import { CurrencySelect } from "../components/CurrencySelect";
 import { PauseReasonDialog } from "../components/PauseReasonDialog";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { WorkspacesPanel } from "../components/WorkspacesPanel";
@@ -866,7 +866,12 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
               <Wallet size={18} className="text-ink-400 dark:text-umber-400" aria-hidden />
               {t("profile.budget_title")}
             </h2>
-            <CurrencyPicker currency={currency} onSelect={saveCurrency} t={t} locale={locale} />
+            <CurrencySelect
+              value={currency}
+              onChange={saveCurrency}
+              label={t("profile.budget_currency_label")}
+              size="compact"
+            />
           </div>
 
           {/* Two stat rows on a hairline-divided list. Each row: label +
@@ -1250,95 +1255,6 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
         onSubmit={confirmPause}
       />
     </>
-  );
-}
-
-/** Accessible currency picker — APG-conformant radiogroup. Arrow keys move
- *  selection (with wrap), Home/End jump to ends, roving tabIndex keeps the
- *  whole group as a single tab stop. Mobile sizing bumps each pill above the
- *  iOS 44pt floor; on desktop it stays a compact inline band so the section
- *  header doesn't double-stack. The visible label is the currency symbol
- *  (€, $, Ft, …) but the SR `aria-label` carries the three-letter code so
- *  screen readers say "Euro" / "United States dollar" via Intl, not "Ft". */
-function CurrencyPicker({
-  currency,
-  onSelect,
-  t,
-  locale,
-}: {
-  currency: Currency;
-  onSelect: (next: Currency) => void;
-  t: T;
-  locale: Locale;
-}) {
-  const refs = useRef<Array<HTMLButtonElement | null>>([]);
-  const activeIdx = Math.max(0, CURRENCIES.indexOf(currency));
-  function focusAt(i: number) {
-    const wrapped = (i + CURRENCIES.length) % CURRENCIES.length;
-    const next = CURRENCIES[wrapped];
-    if (next === undefined) return;
-    refs.current[wrapped]?.focus();
-    onSelect(next);
-  }
-  function onKeyDown(ev: ReactKeyboardEvent<HTMLButtonElement>, i: number) {
-    if (ev.key === "ArrowRight" || ev.key === "ArrowDown") {
-      ev.preventDefault();
-      focusAt(i + 1);
-    } else if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") {
-      ev.preventDefault();
-      focusAt(i - 1);
-    } else if (ev.key === "Home") {
-      ev.preventDefault();
-      focusAt(0);
-    } else if (ev.key === "End") {
-      ev.preventDefault();
-      focusAt(CURRENCIES.length - 1);
-    }
-  }
-  return (
-    <div
-      role="radiogroup"
-      aria-label={t("profile.budget_currency_label")}
-      className="inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
-    >
-      {CURRENCIES.map((c, i) => {
-        const active = c === currency;
-        // Intl currency long-name for SR users — fall back to the raw code
-        // if the locale's ICU data doesn't carry the long form.
-        let aria: string = c;
-        try {
-          const dn = new Intl.DisplayNames([locale === "hu" ? "hu" : "en"], { type: "currency" });
-          aria = dn.of(c) ?? c;
-        } catch {
-          /* DisplayNames not supported — keep the 3-char code as label. */
-        }
-        return (
-          <button
-            ref={(el) => {
-              refs.current[i] = el;
-            }}
-            key={c}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={aria}
-            tabIndex={i === activeIdx ? 0 : -1}
-            onClick={() => onSelect(c)}
-            onKeyDown={(ev) => onKeyDown(ev, i)}
-            // Mobile: 44px-tall tap target with comfortable padding. Desktop
-            // (sm+): collapse to the compact pill band the inline header
-            // layout was designed for.
-            className={`min-w-[44px] whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors sm:px-2.5 sm:py-1 sm:text-[11px] ${
-              active
-                ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
-            }`}
-          >
-            {currencySymbol(c, locale)}
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
@@ -2348,7 +2264,7 @@ function PartnerStatusPill({
 }
 
 /** Shorthand for the localized-string function — kept local to this file
- *  so DocumentsPanel / SecuritySection / CurrencyPicker / etc. can take
+ *  so DocumentsPanel / SecuritySection / CurrencySelect / etc. can take
  *  it as a prop without each re-declaring the same signature. */
 type T = (path: string, vars?: Record<string, string | number>) => string;
 

@@ -11,6 +11,7 @@
 // `status` for billing — that field drives the unrelated pause-to-DELETE
 // countdown — so a non-paying couple's data is always preserved.
 
+import { type BillingCurrency, toBillingCurrency } from "./currency";
 import type { Currency, UnixMs } from "./types";
 
 export type SubscriptionStatus =
@@ -64,12 +65,21 @@ export function partnerFreeWindowEnd(weddingMs: number | null, nowMs: number): n
 /** Standard monthly price, in integer minor-less units of each currency
  *  (Forint has no minor unit; EUR shown without cents on the card). These are
  *  the display/forecast figures — the charged amount comes from the Stripe
- *  Price object, which must be kept in sync. */
-export const MONTHLY_PRICE: Record<Currency, number> = {
+ *  Price object, which must be kept in sync.
+ *
+ *  Keyed by BillingCurrency, not the couple's display Currency: a workspace
+ *  budgeting in złoty or yen is charged the EUR price, so there is no PLN/JPY
+ *  row to fill in. `monthlyPrice()` does the narrowing. */
+export const MONTHLY_PRICE: Record<BillingCurrency, number> = {
   HUF: 2490,
   EUR: 7,
   USD: 7,
 };
+
+/** The monthly price shown to a couple on this display currency. */
+export function monthlyPrice(currency: Currency): number {
+  return MONTHLY_PRICE[toBillingCurrency(currency)];
+}
 
 /** Billing snapshot attached to the Couple DTO. */
 export interface CoupleBilling {

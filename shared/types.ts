@@ -482,11 +482,12 @@ export type WeddingDateKind = "exact" | "month" | "season" | "year" | "tbd";
 export type WeddingSeason = "spring" | "summer" | "fall" | "winter";
 export type GuestCountKind = "exact" | "range" | "tbd";
 export type BudgetKind = "exact" | "range" | "tbd";
-/** Display currency for the couple's money fields. Stored amounts are
- *  integers in this currency's base unit — switching the value here does
- *  NOT retro-convert past entries, it only flips the symbol/format. */
-export type Currency = "HUF" | "EUR" | "USD";
-export const CURRENCIES: readonly Currency[] = ["HUF", "EUR", "USD"];
+// The currency model moved to shared/currency.ts when it grew past the three
+// original codes. Re-exported here so the many `from "@shared/types"` imports
+// keep working — new code can import from either path.
+import type { Currency } from "./currency";
+export type { Currency } from "./currency";
+export { CURRENCIES } from "./currency";
 
 export interface WeddingDateGoal {
   kind: WeddingDateKind;

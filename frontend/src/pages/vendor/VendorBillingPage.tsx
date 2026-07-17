@@ -14,7 +14,7 @@
 import { Check, CreditCard, Crown, Lock, Mail, RefreshCw, Sparkles } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { VENDOR_MONTHLY_PRICE, type VendorBilling } from "@shared/vendor_billing";
+import { type VendorBilling, vendorPrice } from "@shared/vendor_billing";
 import type { VendorFeature, VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
 import { Skeleton } from "../../components/ui";
 import { vendorBillingApi } from "../../lib/endpoints";
@@ -118,7 +118,7 @@ export default function VendorBillingPage() {
   const isPro = plan === "pro";
   const status = billing.subscription_status;
   const contactEmail = t("about.paragraph_contact_email");
-  const priceLabel = `${formatMoney(VENDOR_MONTHLY_PRICE[billing.currency], billing.currency, locale)}${t("vendor.billing.per_month")}`;
+  const priceLabel = `${formatMoney(vendorPrice(billing.currency), billing.currency, locale)}${t("vendor.billing.per_month")}`;
 
   // Status date line: show the most specific window the vendor is in.
   let statusDateLine: string | null = null;

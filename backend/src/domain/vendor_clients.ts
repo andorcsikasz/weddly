@@ -17,6 +17,7 @@ import type {
 import type { VendorPlan } from "@shared/vendor_plan";
 import { vendorPlanFromEntitlement } from "@shared/vendor_plan";
 import { VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
+import { isCurrency } from "@shared/currency";
 import type { Currency } from "@shared/types";
 import { db, now } from "../db";
 import { type Ctx, HttpError, requireAuth } from "../lib/http";
@@ -52,10 +53,12 @@ export function vendorPlanForAccount(accountId: number): VendorPlan {
   return vendorPlanFromEntitlement(entitled);
 }
 
-/** The vendor billing currency (HUF | EUR), defaulting to EUR when unset. */
+/** The vendor billing currency, defaulting to EUR when unset or unrecognised.
+ *  Guarded rather than cast: the column is plain TEXT, so a stale or hand-
+ *  edited value would otherwise reach Intl as a bogus currency code. */
 export function vendorCurrencyForAccount(accountId: number): Currency {
   const sub = getVendorSub(accountId);
-  return (sub?.currency as Currency | undefined) ?? "EUR";
+  return isCurrency(sub?.currency) ? sub.currency : "EUR";
 }
 
 /** Throw 403 with a paywall code when the vendor is on the FREE tier. Used by

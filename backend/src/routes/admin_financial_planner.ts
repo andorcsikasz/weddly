@@ -8,7 +8,7 @@ import {
   type StripeHealth,
 } from "@shared/admin_financial_planner";
 import { type SubscriptionStatus, FOUNDING_CAP, MONTHLY_PRICE } from "@shared/billing";
-import type { Currency } from "@shared/types";
+import { type BillingCurrency, isCurrency, toBillingCurrency } from "@shared/currency";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import { billingEnforcementOn, db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
@@ -61,11 +61,18 @@ function overview(): AdminFinancialPlannerOverview {
     )
     .all() as Array<{ currency: string; n: number }>;
 
-  const mrr_by_currency = payRows.map((r) => {
-    const currency: Currency =
-      r.currency === "EUR" || r.currency === "USD" ? (r.currency as Currency) : "HUF";
-    return { currency, subscribers: r.n, mrr: r.n * MONTHLY_PRICE[currency] };
-  });
+  // Group by what we actually CHARGE, not what the couple budgets in: a PLN
+  // or JPY workspace settles on the EUR price, so several display currencies
+  // collapse onto one billing row and the counts must be summed, not mapped.
+  const mrrByBilling = new Map<BillingCurrency, { subscribers: number; mrr: number }>();
+  for (const r of payRows) {
+    const currency = toBillingCurrency(isCurrency(r.currency) ? r.currency : "HUF");
+    const acc = mrrByBilling.get(currency) ?? { subscribers: 0, mrr: 0 };
+    acc.subscribers += r.n;
+    acc.mrr += r.n * MONTHLY_PRICE[currency];
+    mrrByBilling.set(currency, acc);
+  }
+  const mrr_by_currency = [...mrrByBilling].map(([currency, acc]) => ({ currency, ...acc }));
   const paying_subscribers = mrr_by_currency.reduce((a, c) => a + c.subscribers, 0);
   const mrr_eur_total = Math.round(
     mrr_by_currency.reduce((a, c) => a + (c.currency === "HUF" ? c.mrr / HUF_PER_EUR : c.mrr), 0),

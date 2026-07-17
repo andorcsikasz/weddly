@@ -233,8 +233,21 @@ describe("/api/wishlist — boundary validation", () => {
     expect(eur.status).toBe(201);
     expect(eur.data.item.currency).toBe("EUR");
 
-    // Junk currency → 400.
-    const bad = await req("POST", "/api/wishlist", { title: "ok", currency: "GBP" }, { token });
+    // A supported non-couple currency is fine — the override exists precisely
+    // so one gift can be priced in another currency.
+    const gbp = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Priced in London", currency: "GBP" },
+      { token },
+    );
+    expect(gbp.status).toBe(201);
+    expect(gbp.data.item.currency).toBe("GBP");
+
+    // Junk currency → 400. ZWL is a real ISO 4217 code we don't support, so
+    // this stays a guard test rather than a typo test. (It used to pass "GBP",
+    // which the European-currency expansion made valid.)
+    const bad = await req("POST", "/api/wishlist", { title: "ok", currency: "ZWL" }, { token });
     expect(bad.status).toBe(400);
 
     // PATCH currency: null clears the override back to inheriting.

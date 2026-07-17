@@ -9,8 +9,8 @@
 import type Stripe from "stripe";
 import {
   type PlannerBillingStatus,
-  PLANNER_TIER_PRICE,
   plannerCurrencyForLocale,
+  plannerPrice,
 } from "@shared/planner_billing";
 import type { Currency, PlannerPlan } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
@@ -83,9 +83,9 @@ function handleStatus(ctx: Ctx): Response {
   const currency = plannerCurrency(userId);
   const tier = getPlannerTier(userId);
   const prices: Record<PlannerPlan, number> = {
-    starter: PLANNER_TIER_PRICE.starter[currency] ?? PLANNER_TIER_PRICE.starter.EUR,
-    pro: PLANNER_TIER_PRICE.pro[currency] ?? PLANNER_TIER_PRICE.pro.EUR,
-    premium: PLANNER_TIER_PRICE.premium[currency] ?? PLANNER_TIER_PRICE.premium.EUR,
+    starter: plannerPrice("starter", currency),
+    pro: plannerPrice("pro", currency),
+    premium: plannerPrice("premium", currency),
   };
   const body: PlannerBillingStatus = {
     enabled: STRIPE_ENABLED,

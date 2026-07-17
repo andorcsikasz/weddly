@@ -16,6 +16,7 @@ import {
   type ReceivedGift,
   type ReceivedGiftCategory,
 } from "@shared/received_gifts";
+import { minorUnitFactor } from "@shared/currency";
 import type { Couple, Guest, Household } from "@shared/types";
 import { CURRENCIES, type Currency } from "@shared/types";
 import type { UpsertWishlistItemInput, WishlistItem, WishlistKind } from "@shared/wishlist";
@@ -51,17 +52,10 @@ import { currencySymbol, formatMoney, formatNumber } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
-/** Minor-unit multiplier for a currency. HUF is a whole-unit currency (no
- *  cents), EUR/USD use 2 decimal places. Matches the contract's
- *  `target_amount_minor` semantics. */
-function minorFactor(currency: Couple["currency"]): number {
-  return currency === "HUF" ? 1 : 100;
-}
-
 /** Minor units → the whole-unit number the couple typed (and we render via
  *  formatMoney, which expects whole units). */
 function minorToWhole(minor: number, currency: Couple["currency"]): number {
-  return minor / minorFactor(currency);
+  return minor / minorUnitFactor(currency);
 }
 
 /** Square thumbnail for a wishlist row: the link's resolved og:image when we
@@ -978,7 +972,9 @@ function ReceivedGiftsTable({
                         } else {
                           const whole = Number(digits);
                           if (!Number.isNaN(whole) && whole >= 0) {
-                            patchRow(r.key, { amount_minor: Math.round(whole * minorFactor(cur)) });
+                            patchRow(r.key, {
+                              amount_minor: Math.round(whole * minorUnitFactor(cur)),
+                            });
                           }
                         }
                       }}
@@ -1603,7 +1599,7 @@ function WishlistItemDialog({
     if (isGift && trimmedAmount !== "") {
       const parsed = Number(trimmedAmount.replace(/\D/g, ""));
       if (Number.isFinite(parsed) && parsed >= 0) {
-        targetMinor = Math.round(parsed * minorFactor(itemCurrency));
+        targetMinor = Math.round(parsed * minorUnitFactor(itemCurrency));
       }
     }
 

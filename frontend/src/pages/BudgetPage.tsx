@@ -10,7 +10,6 @@ import {
   type BudgetSnapshot,
   type Couple,
   type Currency,
-  CURRENCIES,
 } from "@shared/types";
 import {
   ArrowUpRight,
@@ -39,6 +38,7 @@ import {
   PER_GUEST_CATEGORIES,
   resolveCustomIcon,
 } from "../components/CostPlanningCard";
+import { CurrencySelect } from "../components/CurrencySelect";
 import { IncomeSection } from "../components/IncomeSection";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
@@ -918,31 +918,13 @@ export default function BudgetPage() {
           <h1 className="font-grotesk">{t("budget.title")}</h1>
           <InfoHint text={t("budget.sub")} />
         </div>
-        <div
-          role="radiogroup"
-          aria-label={t("profile.budget_currency_label")}
-          className="inline-flex shrink-0 overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
-        >
-          {CURRENCIES.map((c) => {
-            const active = c === currency;
-            return (
-              <button
-                key={c}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                aria-label={c}
-                onClick={() => saveCurrency(c)}
-                className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                  active
-                    ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                    : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
-                }`}
-              >
-                {currencySymbol(c, locale)}
-              </button>
-            );
-          })}
+        <div className="shrink-0">
+          <CurrencySelect
+            value={currency}
+            onChange={saveCurrency}
+            label={t("profile.budget_currency_label")}
+            size="compact"
+          />
         </div>
       </header>
 

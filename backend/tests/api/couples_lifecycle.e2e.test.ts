@@ -1,6 +1,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
+import { CURRENCIES } from "@shared/currency";
 import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
 import { db } from "../../src/db";
 import { lookupDestinationIata } from "../../src/domain/destination_iata";
@@ -199,17 +200,53 @@ describe("couples_lifecycle: onboarding goal validation", () => {
     wipeAll();
     const { token } = await freshUserNoCouple("bad-currency@weddly.test");
 
+    // ZWL is a real ISO 4217 code we deliberately don't support — a better
+    // guard than an unsupported-but-plausible one. (This test used to pass
+    // "GBP", which the European-currency expansion made valid.)
     const r = await req(
       "POST",
       "/api/couples/onboard",
       {
         bride_name: "Anna",
         groom_name: "Bence",
-        currency: "GBP",
+        currency: "ZWL",
       },
       { token },
     );
     expect(r.status).toBe(400);
+  });
+
+  test("every currency in CURRENCIES round-trips through onboard + PATCH", async () => {
+    // The union, the boundary guard, and the DB column have drifted apart
+    // before (three hand-maintained VALID_CURRENCIES sets). Drive the whole
+    // list rather than a sample, so adding a code to CURRENCY_META without
+    // wiring the guard fails here instead of in production.
+    wipeAll();
+    let i = 0;
+    for (const currency of CURRENCIES) {
+      const email = `currency-${currency.toLowerCase()}@weddly.test`;
+      const { token } = await freshUserNoCouple(email);
+      const onboard = await req<{ couple: { currency: string } }>(
+        "POST",
+        "/api/couples/onboard",
+        { bride_name: "Anna", groom_name: "Bence", currency },
+        { token },
+      );
+      expect(onboard.status).toBe(201);
+      expect(onboard.data.couple.currency).toBe(currency);
+
+      // And it survives a flip afterwards — PATCH runs the same guard.
+      const next = CURRENCIES[(i + 1) % CURRENCIES.length]!;
+      const patched = await req<{ couple: { currency: string } }>(
+        "PATCH",
+        "/api/couples/current",
+        { currency: next },
+        { token },
+      );
+      expect(patched.status).toBe(200);
+      expect(patched.data.couple.currency).toBe(next);
+      i++;
+    }
   });
 
   test("onboard derives currency from owner locale when client omits the picker", async () => {

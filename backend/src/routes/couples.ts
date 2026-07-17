@@ -25,6 +25,7 @@ import {
   type WeddingStyleTag,
 } from "@shared/types";
 import { COUNTRY_CODES } from "@shared/country_list";
+import { CURRENCIES, isCurrency } from "@shared/currency";
 import {
   isNotifEmailCadence,
   isTimelineEmailEscalation,
@@ -252,13 +253,12 @@ interface OnboardBody {
   cover_position_y?: unknown;
 }
 
-const VALID_CURRENCIES: ReadonlySet<Currency> = new Set(["HUF", "EUR", "USD"]);
 function parseCurrency(raw: unknown): Currency | null {
   if (raw === null || raw === undefined || raw === "") return null;
-  if (typeof raw !== "string" || !VALID_CURRENCIES.has(raw as Currency)) {
-    throw new HttpError(400, "currency must be HUF, EUR, or USD");
+  if (!isCurrency(raw)) {
+    throw new HttpError(400, `currency must be one of ${CURRENCIES.join(", ")}`);
   }
-  return raw as Currency;
+  return raw;
 }
 
 /** Parse an ISO 3166-1 alpha-2 country code. Returns null when the caller

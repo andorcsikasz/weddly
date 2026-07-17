@@ -39,9 +39,12 @@ const MONEY = (locale: Locale, currency: Currency) =>
     // hu-HU defaults EUR to the literal "EUR" text — we want the € sign in
     // Hungarian too, matching how en-GB already renders it.
     currencyDisplay: "narrowSymbol",
-    // HUF / EUR / USD are all whole-unit currencies for our purposes — we
-    // store and edit as integers. Drop the trailing .00 so 5 000 € reads
-    // as cleanly as 5 000 Ft.
+    // Every currency is whole-unit FOR OUR PURPOSES — wedding budgets are
+    // planned in round numbers, and we store/edit them as integers. Drop the
+    // trailing .00 so 5 000 € reads as cleanly as 5 000 Ft. This is a display
+    // choice, NOT a claim about the currency's real minor unit: for the
+    // minor-unit storage factor (wishlist `*_amount_minor`) use
+    // `minorUnitFactor()` in shared/currency.ts, which knows JPY has none.
     maximumFractionDigits: 0,
   });
 
@@ -119,6 +122,36 @@ export function currencySymbol(currency: Currency, locale: Locale = "hu"): strin
   }).formatToParts(0);
   const symbol = parts.find((p) => p.type === "currency")?.value;
   return symbol ?? currency;
+}
+
+// Intl.DisplayNames instances are as costly to build as NumberFormat — the
+// currency picker asks for a dozen names per render, so memoise per locale.
+const displayNamesCache = new Map<Locale, Intl.DisplayNames | null>();
+function currencyDisplayNames(locale: Locale): Intl.DisplayNames | null {
+  if (displayNamesCache.has(locale)) return displayNamesCache.get(locale) ?? null;
+  let dn: Intl.DisplayNames | null = null;
+  try {
+    dn = new Intl.DisplayNames([intlLocale(locale)], { type: "currency" });
+  } catch {
+    // No ICU currency data in this runtime — callers fall back to the code.
+  }
+  displayNamesCache.set(locale, dn);
+  return dn;
+}
+
+/** The currency's localised long name ("Euró", "Japán jen", "Hungarian
+ *  forint"). Derived from Intl rather than the locale files: ICU already ships
+ *  every ISO 4217 name in both languages, so adding a currency to CURRENCY_META
+ *  needs no new translation keys. Falls back to the 3-letter code.
+ *
+ *  Capitalised for list/label use. Hungarian writes currency names lowercase
+ *  mid-sentence ("magyar forint") and ICU returns them that way, but a picker
+ *  row is a label, not prose — and the strings this replaced were capitalised
+ *  ("Forint (Ft)"), so lowercase rows would read as a regression. */
+export function currencyName(currency: Currency, locale: Locale = "hu"): string {
+  const raw = currencyDisplayNames(locale)?.of(currency);
+  if (!raw) return currency;
+  return raw.charAt(0).toLocaleUpperCase(intlLocale(locale)) + raw.slice(1);
 }
 
 /** Plain integer with locale grouping (e.g. "1 234" in HU, "1,234" in EN). */
