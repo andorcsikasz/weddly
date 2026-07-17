@@ -1724,7 +1724,6 @@ export interface LocaleMessages {
      *  before the EN parity pass. HU keeps the Budapest reference because
      *  it's accurate for HU readers; EN reads as a neutral product line. */
     brand_tagline_paper: string;
-    demo_eyebrow: string;
     demo_title: string;
     demo_guests_label: string;
     demo_budget_label: string;

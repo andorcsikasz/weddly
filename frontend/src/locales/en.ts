@@ -1464,7 +1464,6 @@ const en: LocaleMessages = {
     wsite_body:
       "Your site builds itself from your plan. Share it with guests; they RSVP, browse the schedule, find the venue, right from there.",
     // ── Interactive "try it" budget demo ──────────────────────────────
-    demo_eyebrow: "Try it, no signup",
     demo_title: "How much will your wedding cost?",
     demo_guests_label: "Guest count",
     demo_budget_label: "Planned budget",

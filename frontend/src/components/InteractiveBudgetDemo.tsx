@@ -145,14 +145,7 @@ export function InteractiveBudgetDemo() {
     <section id="try-it" className="relative overflow-x-clip bg-paper-50 dark:bg-umber-900">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-10 lg:py-12">
         <div className="text-center">
-          {/* Eyebrow + descriptive body stay on tablet+, hidden on phones
-           *  where they were three uppercase lines plus a 3-line paragraph
-           *  before the first slider, pushing the whole demo below the
-           *  fold. The title alone carries the hook on mobile. */}
-          <p className="hidden text-[11px] font-semibold uppercase tracking-[0.32em] text-umber-500 sm:block dark:text-umber-300">
-            {t("landing.demo_eyebrow")}
-          </p>
-          <h2 className="font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 sm:mt-2.5 sm:text-3xl lg:text-4xl dark:text-paper-50">
+          <h2 className="font-grotesk text-xl font-semibold leading-[1.15] tracking-tight text-umber-900 sm:text-3xl lg:text-4xl dark:text-paper-50">
             {t("landing.demo_title")}
           </h2>
         </div>

@@ -1482,7 +1482,6 @@ const hu: LocaleMessages = {
     wsite_body:
       "Az oldalatok automatikusan elkészül a tervetekből. Megoszthatjátok a vendégekkel, ők innen jelzik a részvételt, böngészik a programot.",
     // ── Interaktív "próbáld ki" költségvetés demo ─────────────────────
-    demo_eyebrow: "Próbáld ki regisztráció nélkül",
     demo_title: "Mennyibe kerül a ti esküvőtök?",
     demo_guests_label: "Vendégszám",
     demo_budget_label: "Tervezett keret",
