@@ -4952,8 +4952,17 @@ describe("admin users + couples directory", () => {
       token: adminToken,
     });
     expect(list.data.users.some((u) => u.email === "orphan@weddly.test")).toBe(false);
-    const scrubbed = list.data.users.find((u) => u.id === orphanId);
-    expect(scrubbed?.email.endsWith("@purged.local")).toBe(true);
+    // The tombstone is no longer surfaced to admins: listAllUsers filters
+    // @purged.local out, so a purged user doesn't linger in the no-workspace
+    // list forever. The row itself must still exist and be scrubbed — it stays
+    // as an FK target for audit_log + couples.
+    expect(list.data.users.some((u) => u.id === orphanId)).toBe(false);
+    const scrubbed = db.prepare("SELECT email, status FROM users WHERE id = ?").get(orphanId) as
+      | { email: string; status: string }
+      | undefined;
+    expect(scrubbed).toBeDefined();
+    expect(scrubbed!.email.endsWith("@purged.local")).toBe(true);
+    expect(scrubbed!.status).toBe("suspended");
   });
 
   test("admin delete: orphan user gets an admin-purge email at deletion", async () => {
@@ -5218,12 +5227,19 @@ describe("admin users + couples directory", () => {
     const result = runPurgeSweep();
     expect(result.flagged_purged).toBeGreaterThanOrEqual(1);
 
-    // User's email is now scrubbed.
+    // User's email is now scrubbed. Asserted against the DB rather than the
+    // admin list: purged tombstones are filtered out of listAllUsers, so the
+    // row is deliberately no longer reachable through the API.
+    const scrubbed = db.prepare("SELECT email FROM users WHERE id = ?").get(userId) as
+      | { email: string }
+      | undefined;
+    expect(scrubbed).toBeDefined();
+    expect(scrubbed!.email.endsWith("@purged.local")).toBe(true);
+
     const list = await req<{ users: AdminUser[] }>("GET", "/api/admin/users", undefined, {
       token: adminToken,
     });
-    const scrubbed = list.data.users.find((u) => u.id === userId);
-    expect(scrubbed?.email.endsWith("@purged.local")).toBe(true);
+    expect(list.data.users.some((u) => u.id === userId)).toBe(false);
   });
 
   test("admin flag: non-admin gets 403", async () => {

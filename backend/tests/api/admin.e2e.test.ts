@@ -11,7 +11,7 @@ import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
 import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { autoInviteDueAt, runEmailSweep } from "../../src/domain/emails/worker";
-import { runPurgeSweep } from "../../src/domain/purge";
+import { purgeOneUser, runPurgeSweep } from "../../src/domain/purge";
 
 const HOUR = 1000 * 60 * 60;
 
@@ -2879,6 +2879,66 @@ describe("supplier taxonomy — admin categories CRUD", () => {
     const after = await req<TaxonomyResp>("GET", "/api/supplier-categories");
     expect(after.data.groups.length).toBe(beforeCount + 1);
     expect(after.data.groups.some((g) => g.slug === "publish_test")).toBe(true);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Purged tombstones must never reach the admin user list. A purge scrubs the
+// row but keeps it (FK target for audit_log + couples) and NULLs couple_id, so
+// without an explicit filter every deleted user reappears forever as
+// "Purged user" under "Munkaterület nélküli felhasználók".
+// ────────────────────────────────────────────────────────────────────────────
+describe("admin user list — purged tombstones", () => {
+  test("a purged orphan is hidden from the user list", async () => {
+    const adminToken = await bootstrapAdmin();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "to-purge@weddly.test",
+      password: "supersafe123",
+      full_name: "Doomed",
+    });
+    const userId = reg.data.user.id;
+
+    const before = await req<{ users: { id: number }[] }>("GET", "/api/admin/users", undefined, {
+      token: adminToken,
+    });
+    expect(before.data.users.some((u) => u.id === userId)).toBe(true);
+
+    purgeOneUser(userId);
+
+    const after = await req<{ users: { id: number; email: string }[] }>(
+      "GET",
+      "/api/admin/users",
+      undefined,
+      { token: adminToken },
+    );
+    expect(after.data.users.some((u) => u.id === userId)).toBe(false);
+    expect(after.data.users.some((u) => u.email.endsWith("@purged.local"))).toBe(false);
+    // The admin themselves must survive the filter — proves the new WHERE
+    // clause didn't over-match (the OR-precedence trap).
+    expect(after.data.users.some((u) => u.email === "admin@test.test")).toBe(true);
+  });
+
+  test("resend-verify refuses a purged user", async () => {
+    const adminToken = await bootstrapAdmin();
+    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+      email: "purged-resend@weddly.test",
+      password: "supersafe123",
+      full_name: "Doomed",
+    });
+    const userId = reg.data.user.id;
+    // Purge never resets verified_email, so this row still looks "resendable" —
+    // without the guard we'd mail a fresh link to deleted-N@purged.local.
+    purgeOneUser(userId);
+
+    const r = await req(
+      "POST",
+      `/api/admin/users/${userId}/resend-verify`,
+      {},
+      {
+        token: adminToken,
+      },
+    );
+    expect(r.status).toBe(400);
   });
 });
 

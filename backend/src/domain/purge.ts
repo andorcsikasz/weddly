@@ -413,6 +413,7 @@ export function runPurgeSweep(): {
   demos_purged: number;
   residue_finalised: number;
   ratelimit_buckets_deleted: number;
+  unverified_purged: number;
 } {
   const ts = now();
   const due = db
@@ -492,13 +493,85 @@ export function runPurgeSweep(): {
   } catch (e) {
     log.error("purge.ratelimit_sweep_failed", e);
   }
+
+  let unverifiedPurged = 0;
+  try {
+    unverifiedPurged = purgeStaleUnverifiedSignups();
+  } catch (e) {
+    log.error("purge.unverified_sweep_failed", e);
+  }
+
   return {
     purged: due.length,
     flagged_purged: flaggedPurged,
     demos_purged: demosPurged,
     residue_finalised: residueFinalised,
     ratelimit_buckets_deleted: ratelimitDeleted,
+    unverified_purged: unverifiedPurged,
   };
+}
+
+/** How long a never-verified signup is kept before the sweep reaps it. The
+ *  verification link itself only lives VERIFY_TTL_MS (7 days), so a row older
+ *  than this can't self-rescue — the address is simply held hostage against the
+ *  users.email UNIQUE constraint, blocking the real owner from re-registering. */
+export const UNVERIFIED_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+
+/** Reap abandoned never-verified signups (couples-side password registrations).
+ *
+ *  These scrub rather than hard-delete: audit_log is append-only (and FKs are
+ *  ON), so the row has to survive as an FK target exactly like every other
+ *  purge. The tombstone is invisible to admins — listAllUsers filters
+ *  `@purged.local` out.
+ *
+ *  The exclusions are the whole point of this query; each one is a legitimate
+ *  account class that also carries verified_email = 0:
+ *   - password_set = 0 → admin-provisioned dormant planners (planner_provisioning.ts)
+ *     and OAuth placeholder hashes. Deliberately unverified until activation.
+ *   - user_type/role → planners and vendors live on their own admin pages and
+ *     own separate lifecycles (a vendor may already have a listing/claim).
+ *   - suspended / @purged.local → already-purged rows; purge never resets
+ *     verified_email, so they'd otherwise match forever.
+ *   - couple_members → belt-and-braces against a NULL couple_id that still has
+ *     a real workspace membership (see propagatePartnerToOwnerWorkspaces). */
+export function purgeStaleUnverifiedSignups(): number {
+  const cutoff = now() - UNVERIFIED_TTL_MS;
+  const stale = db
+    .prepare(
+      `SELECT id FROM users
+        WHERE verified_email = 0
+          AND couple_id IS NULL
+          AND password_set = 1
+          AND user_type != 'planner'
+          AND role NOT IN ('vendor', 'admin')
+          AND status != 'suspended'
+          AND email NOT LIKE '%@purged.local'
+          AND created_at < ?
+          AND NOT EXISTS (SELECT 1 FROM couple_members cm WHERE cm.user_id = users.id)`,
+    )
+    .all(cutoff) as { id: number }[];
+
+  let purged = 0;
+  for (const { id } of stale) {
+    try {
+      // adminInitiated stays false: no human actor, and mailing an
+      // "account deleted" notice to an address that never proved it exists
+      // (often a typo — the whole reason it never verified) is pure spam.
+      purgeOneUser(id);
+      addAuditLog({
+        actor_user_id: null,
+        couple_id: null,
+        action: "user.unverified_auto_purge",
+        target_kind: "user",
+        target_id: id,
+        note: "never verified within 30 days of signup",
+      });
+      purged += 1;
+    } catch (e) {
+      log.error("purge.unverified_failed", e, { userId: id });
+    }
+  }
+  return purged;
 }
 
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -509,7 +582,12 @@ export function startPurgeWorker(): void {
   // Run once at boot so a long downtime catches up immediately.
   try {
     const r = runPurgeSweep();
-    if (r.purged > 0 || r.demos_purged > 0 || r.ratelimit_buckets_deleted > 0)
+    if (
+      r.purged > 0 ||
+      r.demos_purged > 0 ||
+      r.ratelimit_buckets_deleted > 0 ||
+      r.unverified_purged > 0
+    )
       log.info("purge.boot_sweep", r);
   } catch (e) {
     log.error("purge.boot_sweep_failed", e);
@@ -522,7 +600,8 @@ export function startPurgeWorker(): void {
           r.purged > 0 ||
           r.demos_purged > 0 ||
           r.residue_finalised > 0 ||
-          r.ratelimit_buckets_deleted > 0
+          r.ratelimit_buckets_deleted > 0 ||
+          r.unverified_purged > 0
         )
           log.info("purge.hourly_sweep", r);
       } catch (e) {

@@ -159,11 +159,19 @@ function listAllUsers(): UserRow[] {
   // vendors/planners (@demo.weddly.local): the dedicated pages exclude demos
   // (see listAdminVendorAccounts / listAdminPlanners), so the admin Users "Demo"
   // section is their only home. So: drop only the REAL ones, keep the demos.
+  //
+  // Purged tombstones are dropped too. A purge scrubs the row but keeps it as an
+  // FK target for audit_log + couples (see purge.ts), which NULLs couple_id — so
+  // without this filter every purged user reappears forever as "Purged user" in
+  // the no-workspace list. Every mutating handler here already refuses them, so
+  // there is nothing an admin could do with one anyway. Matches the filter the
+  // sidebar badge (below) and orphan_reconcile / analytics_audience already use.
   return db
     .prepare(
       `SELECT * FROM users
-        WHERE email LIKE ?
-           OR (role != 'vendor' AND user_type != 'planner')
+        WHERE email NOT LIKE '%@purged.local'
+          AND (email LIKE ?
+               OR (role != 'vendor' AND user_type != 'planner'))
         ORDER BY created_at DESC`,
     )
     .all(`%${DEMO_EMAIL_SUFFIX}`) as UserRow[];
@@ -446,6 +454,13 @@ function handleResendVerify(ctx: Ctx): Response {
     | { id: number; email: string; full_name: string; verified_email: number }
     | undefined;
   if (!user) throw new HttpError(404, "User not found");
+  // A purge scrubs the row but never resets verified_email, so a user purged
+  // while unverified still looks "resendable" — without this guard we'd mint a
+  // token and mail it to deleted-N@purged.local. Same refusal every other
+  // handler here already carries.
+  if (user.email.endsWith("@purged.local")) {
+    throw new HttpError(400, "Cannot resend verification to a purged user");
+  }
   if (user.verified_email) return json({ ok: true, already_verified: true });
 
   const token = createVerificationToken(userId);
