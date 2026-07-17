@@ -13,7 +13,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import { db, now } from "../../src/db";
 import { purgeOneCouple, purgeOneUser } from "../../src/domain/purge";
 
@@ -51,7 +51,7 @@ describe("Next-11 GDPR purge — growth_events / listing_claims / vendor_account
   test("purgeOneUser (orphan) DELETEs listing_claims + vendor_accounts and nulls growth_events.user_id", async () => {
     wipeAll();
     // Create an orphan vendor user (signed up, never onboarded a couple).
-    const reg = await req<{ user: { id: number }; token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "purge-vendor@weddly.test",
       password: "supersafe123",
       full_name: "Vendor",

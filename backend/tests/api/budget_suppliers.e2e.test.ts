@@ -19,22 +19,20 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
-import { db } from "../../src/db";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
+import { db, now } from "../../src/db";
+import { issueSession } from "../../src/auth/session";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 
 // ── small helpers ──────────────────────────────────────────────────────────
 
 async function registerAdminAndGetToken(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  if (reg.status === 201) {
-    await verifyUserEmail("admin@test.test");
-    return reg.data.token;
-  }
+  if (reg.status === 201) return reg.data.token;
   const login = await req<{ token: string }>("POST", "/api/auth/login", {
     email: "admin@test.test",
     password: "supersafe123",
@@ -42,14 +40,23 @@ async function registerAdminAndGetToken(): Promise<string> {
   return login.data.token;
 }
 
-async function registerUnverifiedUserAndGetToken(email: string): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
-    email,
-    password: "supersafe123",
-    full_name: "Unverified",
-  });
-  expect(reg.status).toBe(201);
-  return reg.data.token;
+/** A signed-in user whose email is still unverified.
+ *
+ *  Neither public entry point can produce one now: register parks a pending
+ *  signup and mints nothing, and login refuses an unverified account outright.
+ *  So the row goes in directly and the session is issued in-process — the
+ *  resulting token is exactly what the old register response carried. */
+function unverifiedUserToken(email: string): string {
+  const ts = now();
+  const result = db
+    .prepare(
+      `INSERT INTO users
+         (email, password_hash, full_name, status, role, verified_email,
+          password_set, created_at, updated_at)
+       VALUES (?, '!hash!', 'Unverified', 'active', 'owner', 0, 1, ?, ?)`,
+    )
+    .run(email, ts, ts);
+  return issueSession(Number(result.lastInsertRowid));
 }
 
 interface LineDTO {
@@ -362,7 +369,7 @@ describe("budget lines: auth gates", () => {
     // verification gate isn't load-bearing here. Without a couple, the
     // endpoint returns 400 (no workspace), not 403 (no verified email).
     wipeAll();
-    const tok = await registerUnverifiedUserAndGetToken("unv-budget@weddly.test");
+    const tok = unverifiedUserToken("unv-budget@weddly.test");
     const r = await req<{ detail?: { code?: string } }>(
       "POST",
       "/api/budget/lines",
@@ -653,7 +660,7 @@ describe("suppliers directory: vote validation + auth", () => {
     // different gate, same status code. Previously this returned
     // email_unverified before the no_couple check ever ran.
     wipeAll();
-    const tok = await registerUnverifiedUserAndGetToken("unv-vote@weddly.test");
+    const tok = unverifiedUserToken("unv-vote@weddly.test");
     const r = await req<{ detail?: { code?: string } }>(
       "PUT",
       "/api/suppliers/normafa-rendezvenyhaz/vote",
@@ -666,13 +673,12 @@ describe("suppliers directory: vote validation + auth", () => {
 
   test("PUT /vote without a couple workspace returns 403 no_couple", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "voter-no-couple@weddly.test",
       password: "supersafe123",
       full_name: "No Couple",
     });
     expect(reg.status).toBe(201);
-    await verifyUserEmail("voter-no-couple@weddly.test");
     const r = await req<{ detail: { code?: string } }>(
       "PUT",
       "/api/suppliers/normafa-rendezvenyhaz/vote",
@@ -776,13 +782,12 @@ describe("suppliers directory: vote validation + auth", () => {
   test("vote upsert: both partners voting → one row only, score=1", async () => {
     wipeAll();
     // Bootstrap A, invite B, accept. Then both vote +1 on the same supplier.
-    const a = await req<{ token: string }>("POST", "/api/auth/register", {
+    const a = await registerAndVerify({
       email: "vote-pair-a@weddly.test",
       password: "supersafe123",
       full_name: "A",
     });
     expect(a.status).toBe(201);
-    await verifyUserEmail("vote-pair-a@weddly.test");
     const ob = await req<{ couple: { id: number } }>(
       "POST",
       "/api/couples/onboard",
@@ -796,12 +801,11 @@ describe("suppliers directory: vote validation + auth", () => {
       { invited_email: "vote-pair-b@weddly.test" },
       { token: a.data.token },
     );
-    const b = await req<{ token: string }>("POST", "/api/auth/register", {
+    const b = await registerAndVerify({
       email: "vote-pair-b@weddly.test",
       password: "supersafe123",
       full_name: "B",
     });
-    await verifyUserEmail("vote-pair-b@weddly.test");
     await req("POST", `/api/invites/${inv.data.invite.token}/accept`, {}, { token: b.data.token });
 
     interface VoteResp {

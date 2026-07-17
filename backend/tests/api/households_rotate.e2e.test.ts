@@ -20,7 +20,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { HOUSEHOLD_CODE_ALPHABET, HOUSEHOLD_CODE_LENGTH } from "@shared/types";
 import { db } from "../../src/db";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Whole-string regex for the post-bump Crockford alphabet. Built from the
  *  shared constant so the test stays in lockstep with the generator. */
@@ -32,13 +32,12 @@ const CROCKFORD_RE = new RegExp(`^[${HOUSEHOLD_CODE_ALPHABET}]{${HOUSEHOLD_CODE_
 async function bootstrapSecondCouple(
   email: string,
 ): Promise<{ token: string; coupleId: number; slug: string }> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Other",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const ob = await req<{ couple: { id: number; slug: string | null } }>(
     "POST",
     "/api/couples/onboard",

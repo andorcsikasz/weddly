@@ -1,7 +1,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
+import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
 import { db } from "../../src/db";
 
 // Couple shortlist ("saved" star on /app/suppliers), moved off per-device
@@ -18,13 +18,12 @@ interface SavedRow {
 /** Register + verify partner B and accept the pending invite into A's couple.
  *  Returns B's bearer token. */
 async function registerAndAcceptInvite(email: string, inviteToken: string): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Partner",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const accept = await req(
     "POST",
     `/api/invites/${inviteToken}/accept`,
@@ -120,12 +119,11 @@ describe("saved_suppliers (shared couple shortlist)", () => {
     const a = await bootstrapCouple("saved-iso-a@weddly.test");
     await req("PUT", "/api/saved-suppliers/a-only", undefined, { token: a.token });
 
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "saved-iso-b@weddly.test",
       password: "supersafe123",
       full_name: "B",
     });
-    await verifyUserEmail("saved-iso-b@weddly.test");
     await req(
       "POST",
       "/api/couples/onboard",

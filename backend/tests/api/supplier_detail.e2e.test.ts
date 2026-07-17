@@ -7,20 +7,17 @@
 import "../setup";
 
 import { describe, expect, test, beforeEach } from "bun:test";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
 
 async function registerAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  if (reg.status === 201) {
-    await verifyUserEmail("admin@test.test");
-    return reg.data.token;
-  }
+  if (reg.status === 201) return reg.data.token;
   const login = await req<{ token: string }>("POST", "/api/auth/login", {
     email: "admin@test.test",
     password: "supersafe123",

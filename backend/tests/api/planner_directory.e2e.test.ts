@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { PRIVACY_VERSION } from "@shared/legal";
 import type { PlannerDirectoryDetail, PlannerDirectoryEntry } from "@shared/types";
 import { db } from "../../src/db";
-import { bootstrapCouple, latestCredentialToken, req, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Register + verify + promote to planner, then fill the profile fields the
  *  directory requires (business name + city) unless `listable: false`. */
@@ -18,16 +18,15 @@ async function makePlanner(
   opts: { listable?: boolean; verified?: boolean; overrides?: Record<string, unknown> } = {},
 ): Promise<{ token: string; userId: number }> {
   const { listable = true, verified = true, overrides = {} } = opts;
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  // A password register only mints the user row once the verify link is
+  // clicked, so every planner starts verified; `verified: false` then flips the
+  // flag back off to model an account that never confirmed its address.
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Eszter Nagy",
   });
   expect(reg.status).toBe(201);
-  if (verified) {
-    const t = latestCredentialToken("email_verification_tokens", email);
-    await req("POST", `/api/auth/verify/${t}`, {});
-  }
   db.prepare("UPDATE users SET user_type = 'planner', couple_id = NULL WHERE LOWER(email) = ?").run(
     email.toLowerCase(),
   );
@@ -36,6 +35,9 @@ async function makePlanner(
       id: number;
     }
   ).id;
+  if (!verified) {
+    db.prepare("UPDATE users SET verified_email = 0 WHERE id = ?").run(userId);
+  }
   if (listable) {
     db.prepare(
       "UPDATE users SET business_name = ?, planner_city = ?, planner_bio = ? WHERE id = ?",

@@ -10,7 +10,7 @@ import {
 } from "@shared/legal";
 import type { ReferralStatusResponse } from "../../src/routes/referrals";
 import { db } from "../../src/db";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
@@ -70,13 +70,12 @@ describe("couple referral reward", () => {
       .get(refCoupleId) as { trial_ends_at: number | null };
 
     // Register + onboard referred couple using the referral code.
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "referred@weddly.test",
       password: "supersafe123",
       full_name: "Referred",
     });
     expect(reg.status).toBe(201);
-    await verifyUserEmail("referred@weddly.test");
     const ob = await req<{ couple: { id: number } }>(
       "POST",
       "/api/couples/onboard",
@@ -107,7 +106,7 @@ describe("couple referral reward", () => {
     expect(inviteR.status).toBe(201);
     const inviteToken = inviteR.data.invite.token;
 
-    const regB = await req<{ token: string }>("POST", "/api/auth/register", {
+    const regB = await registerAndVerify({
       email: "partnerb@weddly.test",
       password: "supersafe123",
       full_name: "Partner B",
@@ -206,12 +205,11 @@ describe("vendor referral reward", () => {
     expect(midGrants.n).toBe(0);
 
     // Admin accepts (creates onboarding token).
-    const adminReg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const adminReg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
       full_name: "Admin",
     });
-    await verifyUserEmail("admin@test.test");
 
     const decideR = await req(
       "POST",

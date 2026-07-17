@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import "../setup";
 import type { CompanyLookupAvailability, CompanyLookupResult } from "@shared/company_lookup";
 import { PRIVACY_VERSION } from "@shared/legal";
-import { req, verifyUserEmail, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 // The suite runs with COMPANY_LOOKUP_FAKE=1 (tests/setup.ts): every provider
 // answers from src/lib/company_lookup/fake.ts fixtures, so these tests
@@ -10,13 +10,12 @@ import { req, verifyUserEmail, wipeAll } from "../helpers";
 // touching a real registry.
 
 async function registerVerified(email: string): Promise<{ token: string }> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Lookup Person",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   return { token: reg.data.token };
 }
 

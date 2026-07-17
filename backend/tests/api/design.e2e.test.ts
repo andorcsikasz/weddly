@@ -21,12 +21,7 @@ import {
   toRomanNumeral,
 } from "@shared/design";
 import { db } from "../../src/db";
-import { req, verifyUserEmail, wipeAll } from "../helpers";
-
-interface RegisterResp {
-  token: string;
-  user: { id: number; email: string };
-}
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 interface CoupleDesign {
   style: string;
@@ -51,13 +46,12 @@ interface CoupleDesign {
 }
 
 async function registerVerified(email: string): Promise<string> {
-  const r = await req<RegisterResp>("POST", "/api/auth/register", {
+  const r = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Design Test",
   });
   expect(r.status).toBe(201);
-  await verifyUserEmail(email);
   return r.data.token;
 }
 

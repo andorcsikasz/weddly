@@ -13,19 +13,18 @@ import { type PlannerBillingStatus, PLANNER_FOUNDING_CAP } from "@shared/planner
 import { db, now } from "../../src/db";
 import { setBillingEnforcement } from "../../src/domain/billing";
 import { initPlannerBilling } from "../../src/domain/planner_billing";
-import { req, verifyUserEmail, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Register + verify a user, flip them to a planner, and open their billing
  *  lifecycle (founding grant while slots remain, else a 3-day trial). Returns a
  *  session token + the user id. */
 async function makePlanner(email: string): Promise<{ token: string; userId: number }> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Planner",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const userId = reg.data.user.id;
   db.prepare("UPDATE users SET user_type = 'planner' WHERE id = ?").run(userId);
   initPlannerBilling(userId);

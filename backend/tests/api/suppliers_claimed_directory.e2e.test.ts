@@ -13,7 +13,7 @@ import { getUserByEmail } from "../../src/domain/users";
 import { convertUserToVendor } from "../../src/domain/vendor_conversion";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 interface DirectoryItem {
   id: string;
@@ -30,12 +30,11 @@ async function seedRegisteredVendor(
   businessName: string,
   category: string,
 ): Promise<{ userId: number; accountId: number; listingId: string }> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Vendor Owner",
   });
-  await verifyUserEmail(email);
   const userId = reg.data.user.id;
   db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(userId);
   const account = createVendorAccount({
@@ -56,12 +55,11 @@ async function seedRegisteredVendor(
 }
 
 async function bootstrapAdminToken(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 
@@ -190,7 +188,11 @@ describe("voting on a registered vendor's listing", () => {
 
   test("downvote then clear updates the tally on a vendor listing", async () => {
     wipeAll();
-    const { listingId } = await seedRegisteredVendor("vote-vendor2@weddly.test", "Down Studio", "dj");
+    const { listingId } = await seedRegisteredVendor(
+      "vote-vendor2@weddly.test",
+      "Down Studio",
+      "dj",
+    );
     const couple = await bootstrapCouple("vote-vendor-couple2@weddly.test");
 
     const down = await req<{ votes_score: number; user_vote: number }>(

@@ -1,6 +1,6 @@
 import "../setup";
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Feedback triage workflow (see shared/feedback.ts):
  *    - expanded status lifecycle (new/reviewed/planned/fixed/rejected/archived)
@@ -11,7 +11,7 @@ import { bootstrapCouple, req, wipeAll } from "../helpers";
  */
 describe("feedback triage workflow", () => {
   async function newAdmin(): Promise<string> {
-    const r = await req<{ token: string }>("POST", "/api/auth/register", {
+    const r = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
       full_name: "Admin",
@@ -157,7 +157,7 @@ describe("feedback triage workflow", () => {
   test("triage PATCH is admin-gated", async () => {
     wipeAll();
     await newAdmin();
-    const user = await req<{ token: string }>("POST", "/api/auth/register", {
+    const user = await registerAndVerify({
       email: "user@test.test",
       password: "supersafe123",
       full_name: "User",
@@ -311,7 +311,7 @@ describe("feedback triage workflow", () => {
   test("reply is admin-gated", async () => {
     wipeAll();
     await newAdmin();
-    const user = await req<{ token: string }>("POST", "/api/auth/register", {
+    const user = await registerAndVerify({
       email: "user2@test.test",
       password: "supersafe123",
       full_name: "User",

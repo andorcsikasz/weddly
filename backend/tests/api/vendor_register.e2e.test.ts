@@ -147,9 +147,9 @@ describe("vendor self-serve registration", () => {
       "planner_use_planner_flow",
     );
     // Nothing was created — the whole provisioning transaction never ran.
-    const count = db
-      .prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'vendor'")
-      .get() as { n: number };
+    const count = db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'vendor'").get() as {
+      n: number;
+    };
     expect(count.n).toBe(0);
   });
 

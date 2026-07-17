@@ -2,17 +2,16 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import "../setup";
 import { db, now } from "../../src/db";
 import { markGuestPagePrepaid, setBillingEnforcement } from "../../src/domain/billing";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Register + verify a plain user; returns token + id. */
 async function registerVerified(email: string): Promise<{ token: string; userId: number }> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Person",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   return { token: reg.data.token, userId: reg.data.user.id };
 }
 

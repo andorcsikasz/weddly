@@ -3,16 +3,22 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
 import { purgeOneUser } from "../../src/domain/purge";
-import { req, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 // Signup acquisition capture: country (server-side, IP → ISO, IP discarded),
 // device_type (server-side, from UA), and utm_* (client-threaded, coerced).
 //
+// All three are read off the REGISTER request (that's the one that carries the
+// IP, the UA, and the landing page's utm params) and parked on the pending
+// signup; the verify click replays them onto the users row it mints. So every
+// test here registers AND verifies (`registerAndVerify`) before reading `users`
+// — there is no users row until the link is clicked.
+//
 // IMPORTANT: in the test env there is NO GeoLite2 DB (setup.ts pins
 // MAXMIND_LICENSE_KEY="" and GEOIP_DB_PATH to a guaranteed-absent file), so the
 // country reader is always null. We assert the null-degrade CONTRACT (country
-// null + register still 201), never a specific ISO code — a code assertion
-// would pass on a dev box with the mmdb and fail in CI without it.
+// null + the signup still completes), never a specific ISO code — a code
+// assertion would pass on a dev box with the mmdb and fail in CI without it.
 
 interface AcqRow {
   signup_country: string | null;
@@ -34,11 +40,9 @@ function acqRow(email: string): AcqRow {
 }
 
 describe("signup acquisition — country (null-degrade)", () => {
-  test("register still 201s and stores null country when no GeoLite2 DB is present", async () => {
+  test("signup still completes and stores null country when no GeoLite2 DB is present", async () => {
     wipeAll();
-    const r = await req(
-      "POST",
-      "/api/auth/register",
+    const r = await registerAndVerify(
       { email: "geo@example.com", password: "supersafe123", full_name: "Geo" },
       { clientIp: "8.8.8.8" },
     );
@@ -50,7 +54,7 @@ describe("signup acquisition — country (null-degrade)", () => {
 describe("signup acquisition — UTM passthrough", () => {
   test("stores the canonical utm fields from the register body", async () => {
     wipeAll();
-    const r = await req("POST", "/api/auth/register", {
+    const r = await registerAndVerify({
       email: "utm@example.com",
       password: "supersafe123",
       full_name: "Utm",
@@ -71,7 +75,7 @@ describe("signup acquisition — UTM passthrough", () => {
 
   test("trims, length-caps oversized values, and nulls non-string junk", async () => {
     wipeAll();
-    const r = await req("POST", "/api/auth/register", {
+    const r = await registerAndVerify({
       email: "utm2@example.com",
       password: "supersafe123",
       full_name: "Utm2",
@@ -88,9 +92,9 @@ describe("signup acquisition — UTM passthrough", () => {
     expect(row.utm_term).toBeNull(); // blank-after-trim → null
   });
 
-  test("bare register (no utm) stores all-null utm and still 201s", async () => {
+  test("bare register (no utm) stores all-null utm and still completes", async () => {
     wipeAll();
-    const r = await req("POST", "/api/auth/register", {
+    const r = await registerAndVerify({
       email: "bare@example.com",
       password: "supersafe123",
       full_name: "Bare",
@@ -128,9 +132,7 @@ describe("signup acquisition — device_type from User-Agent", () => {
     test(c.name, async () => {
       wipeAll();
       const email = `dev-${c.expected}@example.com`;
-      const r = await req(
-        "POST",
-        "/api/auth/register",
+      const r = await registerAndVerify(
         { email, password: "supersafe123", full_name: "Dev" },
         c.ua ? { headers: { "user-agent": c.ua } } : {},
       );
@@ -143,7 +145,7 @@ describe("signup acquisition — device_type from User-Agent", () => {
 describe("signup acquisition — GDPR purge", () => {
   test("purgeOneUser nulls every acquisition field", async () => {
     wipeAll();
-    const r = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const r = await registerAndVerify({
       email: "purge-acq@example.com",
       password: "supersafe123",
       full_name: "Purge",

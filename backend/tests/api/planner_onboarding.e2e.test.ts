@@ -3,21 +3,20 @@ import "../setup";
 import { PRIVACY_VERSION } from "@shared/legal";
 import type { PlannerInvitation } from "@shared/types";
 import { db } from "../../src/db";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Register + verify a plain user; returns their token + id + email. */
 async function registerVerified(
   email: string,
   extra: Record<string, unknown> = {},
 ): Promise<{ token: string; userId: number; email: string }> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Test Person",
     ...extra,
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   return { token: reg.data.token, userId: reg.data.user.id, email };
 }
 
@@ -150,14 +149,13 @@ describe("planner email invitations", () => {
     expect(lookup.data.email).toBe("bride@weddly.test");
 
     // 2. The invitee registers (carrying the token) and onboards a workspace.
-    const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "bride@weddly.test",
       password: "supersafe123",
       full_name: "Bride",
       planner_invite: token,
     });
     expect(reg.status).toBe(201);
-    await verifyUserEmail("bride@weddly.test");
     const ob = await req<{ couple: { id: number } }>(
       "POST",
       "/api/couples/onboard",

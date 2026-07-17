@@ -8,17 +8,16 @@ import { recordSupplierEvents } from "../../src/domain/supplier_views";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
 import { createOnboardingToken } from "../../src/domain/vendor_onboarding";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Register the ADMIN_EMAILS allowlist address, verify, return the bearer. */
 async function bootstrapAdmin(): Promise<string> {
   wipeAll();
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 
@@ -28,12 +27,11 @@ async function seedActivatedVendor(
   email: string,
   displayName: string,
 ): Promise<{ userId: number; accountId: number }> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Vendor Owner",
   });
-  await verifyUserEmail(email);
   const userId = reg.data.user.id;
   db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(userId);
   const account = createVendorAccount({ ownerUserId: userId, displayName });

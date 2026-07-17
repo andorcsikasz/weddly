@@ -7,7 +7,7 @@
 import "../setup";
 
 import { describe, expect, test, beforeEach } from "bun:test";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import { addListingPhoto, createVendorListing } from "../../src/domain/listings";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
@@ -17,13 +17,12 @@ import { HU_HOST, lookupVendorPageMeta, renderIndexHtml } from "../../src/lib/se
 import { canonicalListingId, slugifyName, vendorPublicId } from "@shared/vendor_slug";
 
 async function registerAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
   if (reg.status === 201) {
-    await verifyUserEmail("admin@test.test");
     return reg.data.token;
   }
   const login = await req<{ token: string }>("POST", "/api/auth/login", {
@@ -162,12 +161,11 @@ const TEMPLATE = `<!doctype html>
 /** Seed a claimed vendor (id `v{N}`) with no dedicated hero. Returns its `v{N}`
  *  id. Module scope so every describe block below can reach it. */
 async function seedClaimedVendorNoHero(email: string, name: string): Promise<string> {
-  const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Vendor Owner",
   });
-  await verifyUserEmail(email);
   const userId = reg.data.user.id;
   db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(userId);
   const account = createVendorAccount({

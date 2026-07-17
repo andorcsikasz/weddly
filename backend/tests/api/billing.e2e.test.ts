@@ -22,7 +22,7 @@ import {
   setBillingEnforcement,
 } from "../../src/domain/billing";
 import { FOUNDING_CAP } from "@shared/billing";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Seed N placeholder founding-cohort couples (`is_founding_member = 1`) so N
  *  of the FOUNDING_CAP founding slots are consumed — the cap is now counted by
@@ -43,12 +43,12 @@ function seedCouples(n: number): void {
 }
 
 async function addAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
+  expect(reg.status).toBe(201);
   return reg.data.token;
 }
 

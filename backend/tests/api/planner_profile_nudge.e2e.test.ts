@@ -15,18 +15,17 @@ import { describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
 import { buildEmail } from "../../src/domain/emails/templates";
 import { runEmailSweep } from "../../src/domain/emails/worker";
-import { latestCredentialToken, req, verifyUserEmail, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Register + verify a planner. When `complete`, fill the directory-required
  *  business name + city so the profile is listable (and thus not nudged). */
 async function makePlanner(email: string, complete: boolean): Promise<number> {
-  const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Rita Kruczli",
   });
-  const t = latestCredentialToken("email_verification_tokens", email);
-  await req("POST", `/api/auth/verify/${t}`, {});
+  expect(reg.status).toBe(201);
   db.prepare("UPDATE users SET user_type = 'planner', couple_id = NULL WHERE LOWER(email) = ?").run(
     email.toLowerCase(),
   );
@@ -53,12 +52,12 @@ function nudgeCount(userId: number): number {
 }
 
 async function bootstrapAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
+  expect(reg.status).toBe(201);
   return reg.data.token;
 }
 
@@ -114,11 +113,12 @@ describe("planner profile-incomplete nudge", () => {
   test("non-admin cannot trigger the reminder", async () => {
     wipeAll();
     const id = await makePlanner("victim@weddly.test", false);
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "rando@weddly.test",
       password: "supersafe123",
       full_name: "Rando",
     });
+    expect(reg.status).toBe(201);
     const r = await req(
       "POST",
       `/api/admin/planners/${id}/remind-profile`,

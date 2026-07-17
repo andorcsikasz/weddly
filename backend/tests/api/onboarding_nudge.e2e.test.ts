@@ -10,12 +10,12 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { db, now } from "../../src/db";
 import { runEmailSweep } from "../../src/domain/emails/worker";
-import { req, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 const HOUR = 1000 * 60 * 60;
 
 async function register(email: string): Promise<{ id: number; token: string }> {
-  const r = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const r = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Test User",
@@ -29,7 +29,9 @@ function age(userId: number, ms: number): void {
 }
 
 function gotEmail(userId: number, kind: string): boolean {
-  return db.prepare("SELECT 1 FROM email_log WHERE user_id = ? AND kind = ?").get(userId, kind) != null;
+  return (
+    db.prepare("SELECT 1 FROM email_log WHERE user_id = ? AND kind = ?").get(userId, kind) != null
+  );
 }
 
 describe("onboarding nudge is couple-only", () => {
@@ -65,7 +67,9 @@ describe("couple onboarding API rejects non-couple accounts", () => {
     db.prepare("UPDATE users SET role = 'vendor', verified_email = 1 WHERE id = ?").run(vendor.id);
     const res = await req("POST", "/api/couples/onboard", {}, { token: vendor.token });
     expect(res.status).toBe(403);
-    expect((res.data as { detail?: { code?: string } }).detail?.code).toBe("onboarding_not_allowed");
+    expect((res.data as { detail?: { code?: string } }).detail?.code).toBe(
+      "onboarding_not_allowed",
+    );
   });
 
   test("a planner gets 403 onboarding_not_allowed", async () => {
@@ -76,6 +80,8 @@ describe("couple onboarding API rejects non-couple accounts", () => {
     );
     const res = await req("POST", "/api/couples/onboard", {}, { token: planner.token });
     expect(res.status).toBe(403);
-    expect((res.data as { detail?: { code?: string } }).detail?.code).toBe("onboarding_not_allowed");
+    expect((res.data as { detail?: { code?: string } }).detail?.code).toBe(
+      "onboarding_not_allowed",
+    );
   });
 });

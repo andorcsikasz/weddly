@@ -10,7 +10,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import type { AdminTrafficAnalytics } from "@shared/admin_analytics";
 import { assembleTrafficPayload, type TrafficReports } from "../../src/routes/admin_analytics";
 import type { Ga4ReportResponse } from "../../src/lib/ga4";
@@ -32,12 +32,11 @@ function totals(au: number, se: number, pv: number, er: number, asd: number): Ga
 }
 
 async function bootstrapAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import "../setup";
 import type { PlannerClientView, PlannerEvent, PlannerStats } from "@shared/types";
 import { db } from "../../src/db";
-import { bootstrapCouple, latestCredentialToken, req, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 // Promote the most recently registered user to planner type.
 function promoteToPlanner(email: string): void {
@@ -15,16 +15,14 @@ function promoteToPlanner(email: string): void {
 async function bootstrapPlanner(
   email = "planner@weddly.test",
 ): Promise<{ token: string; userId: number }> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  // Register parks a pending signup; clicking the verify link mints the user
+  // row and returns its first session.
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Eszter Nagy",
   });
   expect(reg.status).toBe(201);
-
-  // Verify email via the captured plaintext token (stored hashed now).
-  const verifyToken = latestCredentialToken("email_verification_tokens", email);
-  await req("POST", `/api/auth/verify/${verifyToken}`, {});
 
   promoteToPlanner(email);
 

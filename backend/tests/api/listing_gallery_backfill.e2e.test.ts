@@ -10,7 +10,7 @@
 import "../setup";
 
 import { describe, expect, test, beforeEach } from "bun:test";
-import { bootstrapCouple, req, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import { db, now } from "../../src/db";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { addListingPhoto } from "../../src/domain/listings";
@@ -72,7 +72,7 @@ describe("listing gallery backfill eligibility", () => {
   test("a vendor-claimed listing is excluded", async () => {
     const { id } = TARGET;
     // vendor_account_id is a real FK, so mint an account (user + row) to claim it.
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "vendor-owner@test.test",
       password: "supersafe123",
       full_name: "Vendor",

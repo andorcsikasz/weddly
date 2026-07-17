@@ -1,6 +1,8 @@
 // Admin Acquisition analytics — where signups come from, joined to the
 // onboarding funnel. Built from the users.signup_country / device_type /
-// locale / utm_* columns captured at registration. Country is always null in
+// locale / utm_* columns captured at registration and replayed onto the users
+// row by the verify click (hence `registerAndVerify` for every seeded signup —
+// an unverified signup has no users row to roll up). Country is always null in
 // the suite (no GeoLite2 DB — see signup_acquisition.e2e.test.ts), so this
 // asserts the channel / device / campaign rollups and the admin gate.
 //
@@ -10,15 +12,14 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import type { AdminAcquisitionAnalytics } from "@shared/admin_analytics";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 async function bootstrapAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 
@@ -36,9 +37,7 @@ describe("admin analytics — acquisition", () => {
 
     // Two paid/Google signups (one mobile, one desktop), both on a "spring"
     // campaign; one untagged signup (→ direct channel).
-    await req(
-      "POST",
-      "/api/auth/register",
+    await registerAndVerify(
       {
         email: "paid-mobile@example.com",
         password: "supersafe123",
@@ -49,9 +48,7 @@ describe("admin analytics — acquisition", () => {
       },
       { headers: { "user-agent": iPhone } },
     );
-    await req(
-      "POST",
-      "/api/auth/register",
+    await registerAndVerify(
       {
         email: "paid-desktop@example.com",
         password: "supersafe123",
@@ -62,9 +59,7 @@ describe("admin analytics — acquisition", () => {
       },
       { headers: { "user-agent": desktop } },
     );
-    await req(
-      "POST",
-      "/api/auth/register",
+    await registerAndVerify(
       { email: "organic@example.com", password: "supersafe123", full_name: "Org" },
       { headers: { "user-agent": desktop } },
     );
@@ -115,9 +110,7 @@ describe("admin analytics — acquisition", () => {
     const desktop =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537 Chrome/120 Safari/537";
     for (const email of ["cl-a@example.com", "cl-b@example.com", "cl-c@example.com"]) {
-      await req(
-        "POST",
-        "/api/auth/register",
+      await registerAndVerify(
         { email, password: "supersafe123", full_name: "CL" },
         { headers: { "user-agent": desktop } },
       );

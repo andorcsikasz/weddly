@@ -2,7 +2,8 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import { CURRENCIES } from "@shared/currency";
-import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
+import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
+import { issueSession } from "../../src/auth/session";
 import { db } from "../../src/db";
 import { lookupDestinationIata } from "../../src/domain/destination_iata";
 
@@ -17,35 +18,45 @@ import { lookupDestinationIata } from "../../src/domain/destination_iata";
 
 // ─── Helpers used across this file ────────────────────────────────────────
 
-interface RegisterResp {
-  token: string;
-  user: { id: number; email: string };
-}
-
 /** Register + verify a fresh user and return their bearer token without
  *  onboarding a couple. Use when you need a logged-in user that hasn't yet
  *  created a workspace (eg. to test the "no couple" 400 path). */
 async function freshUserNoCouple(email: string): Promise<{ token: string; userId: number }> {
-  const r = await req<RegisterResp>("POST", "/api/auth/register", {
+  const r = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Test User",
   });
   expect(r.status).toBe(201);
-  await verifyUserEmail(email);
   return { token: r.data.token, userId: r.data.user.id };
+}
+
+/** Mint an UNVERIFIED user + session straight through the DB.
+ *  Register no longer creates a `users` row (it parks a pending signup), so
+ *  the only way to hold a session for an account whose email isn't verified
+ *  is to write the row and issue the session directly. Used by the
+ *  "requires verified email" probes below. */
+function unverifiedUserWithSession(email: string): { token: string; userId: number } {
+  const ts = Date.now();
+  const info = db
+    .prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, password_set, created_at, updated_at)
+       VALUES (?, ?, ?, 'active', 'owner', 0, 1, ?, ?)`,
+    )
+    .run(email.trim().toLowerCase(), "x", "Unverified", ts, ts);
+  const userId = Number(info.lastInsertRowid);
+  return { token: issueSession(userId), userId };
 }
 
 /** Make a fresh registered+verified user, accept the given invite on their
  *  behalf, and return their bearer token. Use for partner-B flows. */
 async function registerAndAcceptInvite(email: string, token: string): Promise<string> {
-  const reg = await req<RegisterResp>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Partner",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const accept = await req("POST", `/api/invites/${token}/accept`, {}, { token: reg.data.token });
   expect(accept.status).toBe(200);
   return reg.data.token;
@@ -256,14 +267,13 @@ describe("couples_lifecycle: onboarding goal validation", () => {
     wipeAll();
 
     // EN user → EUR
-    const enReg = await req<RegisterResp>("POST", "/api/auth/register", {
+    const enReg = await registerAndVerify({
       email: "currency-en@weddly.test",
       password: "supersafe123",
       full_name: "EN User",
       locale: "en",
     });
     expect(enReg.status).toBe(201);
-    await verifyUserEmail("currency-en@weddly.test");
     const enOnboard = await req<{ couple: { currency: string } }>(
       "POST",
       "/api/couples/onboard",
@@ -274,14 +284,13 @@ describe("couples_lifecycle: onboarding goal validation", () => {
     expect(enOnboard.data.couple.currency).toBe("EUR");
 
     // HU user → HUF
-    const huReg = await req<RegisterResp>("POST", "/api/auth/register", {
+    const huReg = await registerAndVerify({
       email: "currency-hu@weddly.test",
       password: "supersafe123",
       full_name: "HU User",
       locale: "hu",
     });
     expect(huReg.status).toBe(201);
-    await verifyUserEmail("currency-hu@weddly.test");
     const huOnboard = await req<{ couple: { currency: string } }>(
       "POST",
       "/api/couples/onboard",
@@ -292,14 +301,13 @@ describe("couples_lifecycle: onboarding goal validation", () => {
     expect(huOnboard.data.couple.currency).toBe("HUF");
 
     // Explicit `currency` in the body still wins over the locale default.
-    const explReg = await req<RegisterResp>("POST", "/api/auth/register", {
+    const explReg = await registerAndVerify({
       email: "currency-explicit@weddly.test",
       password: "supersafe123",
       full_name: "EN User",
       locale: "en",
     });
     expect(explReg.status).toBe(201);
-    await verifyUserEmail("currency-explicit@weddly.test");
     const explOnboard = await req<{ couple: { currency: string } }>(
       "POST",
       "/api/couples/onboard",
@@ -312,13 +320,12 @@ describe("couples_lifecycle: onboarding goal validation", () => {
 
   test("onboard mints a public organiser_code ('O' + 5 digits), stable on re-read", async () => {
     wipeAll();
-    const reg = await req<RegisterResp>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "org-code@weddly.test",
       password: "supersafe123",
       full_name: "Org Code",
     });
     expect(reg.status).toBe(201);
-    await verifyUserEmail("org-code@weddly.test");
 
     const onboard = await req<{ couple: { organiser_code: string | null } }>(
       "POST",
@@ -405,18 +412,13 @@ describe("couples_lifecycle: onboarding goal validation", () => {
 
   test("onboarding requires verified email (403 email_unverified)", async () => {
     wipeAll();
-    const reg = await req<RegisterResp>("POST", "/api/auth/register", {
-      email: "unverif-ob@weddly.test",
-      password: "supersafe123",
-      full_name: "Unverified",
-    });
-    expect(reg.status).toBe(201);
+    const unverified = unverifiedUserWithSession("unverif-ob@weddly.test");
 
     const r = await req<{ detail?: { code?: string } }>(
       "POST",
       "/api/couples/onboard",
       { display_name: "A & B" },
-      { token: reg.data.token },
+      { token: unverified.token },
     );
     expect(r.status).toBe(403);
     expect(r.data.detail?.code).toBe("email_unverified");
@@ -610,7 +612,7 @@ describe("couples_lifecycle: invite lifecycle edge cases", () => {
     db.prepare("UPDATE couple_invites SET expires_at = 1 WHERE token = ?").run(
       inv.data.invite.token,
     );
-    const reg = await req<RegisterResp>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "expired-acc-b@weddly.test",
       password: "supersafe123",
       full_name: "B",
@@ -714,13 +716,9 @@ describe("couples_lifecycle: partner view status transitions", () => {
 
   test("partner endpoint requires verified email", async () => {
     wipeAll();
-    const reg = await req<RegisterResp>("POST", "/api/auth/register", {
-      email: "pv-unverif@weddly.test",
-      password: "supersafe123",
-      full_name: "U",
-    });
+    const unverified = unverifiedUserWithSession("pv-unverif@weddly.test");
     const r = await req<{ detail?: { code?: string } }>("GET", "/api/couples/partner", undefined, {
-      token: reg.data.token,
+      token: unverified.token,
     });
     // GET /api/couples/partner downgraded to requireAuth in the P0-2 backend
     // rollback — read-only on own workspace, no third-party fanout. The
@@ -949,16 +947,12 @@ describe("couples_lifecycle: archive + activity coupling", () => {
     const noAuth = await req("POST", "/api/couples/current/archive", {});
     expect(noAuth.status).toBe(401);
 
-    const reg = await req<RegisterResp>("POST", "/api/auth/register", {
-      email: "arch-unver@weddly.test",
-      password: "supersafe123",
-      full_name: "U",
-    });
+    const unverified = unverifiedUserWithSession("arch-unver@weddly.test");
     const r = await req<{ detail?: { code?: string } }>(
       "POST",
       "/api/couples/current/archive",
       {},
-      { token: reg.data.token },
+      { token: unverified.token },
     );
     expect(r.status).toBe(403);
     expect(r.data.detail?.code).toBe("email_unverified");
@@ -1688,16 +1682,12 @@ describe("couples_lifecycle: places search proxy", () => {
     // verified ones. Without a couple workspace, the endpoint still returns
     // a 200 with whatever Nominatim hands back (or an empty array in test).
     wipeAll();
-    const reg = await req<RegisterResp>("POST", "/api/auth/register", {
-      email: "places-unverif@weddly.test",
-      password: "supersafe123",
-      full_name: "U",
-    });
+    const unverified = unverifiedUserWithSession("places-unverif@weddly.test");
     const r = await req<{ places?: unknown[]; detail?: { code?: string } }>(
       "GET",
       "/api/places/search?q=bali",
       undefined,
-      { token: reg.data.token },
+      { token: unverified.token },
     );
     // Either 200 (search served) or 400 (no couple), but NOT 403 email_unverified.
     expect([200, 400]).toContain(r.status);

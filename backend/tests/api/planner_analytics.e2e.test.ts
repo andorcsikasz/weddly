@@ -7,17 +7,16 @@ import "../setup";
 import { beforeEach, describe, expect, test } from "bun:test";
 import type { AdminPlannerView, PlannerEventInput } from "@shared/types";
 import { db } from "../../src/db";
-import { bootstrapCouple, latestCredentialToken, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Register + verify a planner user, return its id. */
 async function makePlanner(email: string): Promise<number> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Rita Kruczli",
   });
-  const t = latestCredentialToken("email_verification_tokens", email);
-  await req("POST", `/api/auth/verify/${t}`, {});
+  expect(reg.status).toBe(201);
   db.prepare("UPDATE users SET user_type = 'planner', couple_id = NULL WHERE LOWER(email) = ?").run(
     email.toLowerCase(),
   );
@@ -26,12 +25,12 @@ async function makePlanner(email: string): Promise<number> {
 
 /** Register + verify the ADMIN_EMAILS allowlist address; return the bearer. */
 async function bootstrapAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
+  expect(reg.status).toBe(201);
   return reg.data.token;
 }
 

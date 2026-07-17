@@ -7,7 +7,7 @@ import type {
   AdminHoneymoonAnalytics,
   AdminWeddingAnalytics,
 } from "@shared/admin_analytics";
-import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
+import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
 import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { autoInviteDueAt, runEmailSweep } from "../../src/domain/emails/worker";
@@ -24,25 +24,41 @@ const HOUR = 1000 * 60 * 60;
  *  only test admin. Wipes the DB up front so every caller starts clean. */
 async function bootstrapAdmin(): Promise<string> {
   wipeAll();
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 
 /** Variant that doesn't wipe — for tests that already wiped + bootstrapped
  *  a regular user and now need an admin alongside without resetting state. */
 async function addAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
+}
+
+/** Insert a real but UNVERIFIED users row and return its id.
+ *
+ *  Register can't produce one anymore: it parks the signup in `pending_signups`
+ *  and the users row is only minted, already verified, when the link is clicked.
+ *  The unverified-account state still exists for legacy rows (vendor register,
+ *  a resend that was never followed), which is what the admin resend-verify
+ *  surface acts on, so build it directly. */
+function insertUnverifiedUser(email: string, fullName: string): number {
+  const ts = now();
+  const row = db
+    .prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, password_set, created_at, updated_at)
+       VALUES (?, ?, ?, 'active', 'owner', 0, 1, ?, ?) RETURNING id`,
+    )
+    .get(email, "argon2-placeholder", fullName, ts, ts) as { id: number };
+  return row.id;
 }
 
 interface SubmitVendorTipResult {
@@ -485,13 +501,10 @@ describe("admin users — list, engagement, badges", () => {
 describe("admin users — resend-verify, delete, flag/unflag", () => {
   test("resend-verify on unverified user writes an email_log row + audit log", async () => {
     const adminToken = await bootstrapAdmin();
-    // Create an unverified user (skip verifyUserEmail).
-    const newUser = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
-      email: "unverif@weddly.test",
-      password: "supersafe123",
-      full_name: "Unverified",
-    });
-    const targetId = newUser.data.user.id;
+    // Register no longer mints a users row (it parks a pending signup until the
+    // link is clicked), so the only unverified account left is the legacy kind:
+    // a real row whose verify flag was never flipped. Insert one directly.
+    const targetId = insertUnverifiedUser("unverif@weddly.test", "Unverified");
 
     const r = await req<{ ok: boolean; already_verified?: boolean }>(
       "POST",
@@ -571,7 +584,7 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
 
   test("delete user — orphan user is removed from the list", async () => {
     const adminToken = await bootstrapAdmin();
-    const orphan = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const orphan = await registerAndVerify({
       email: "orphan@weddly.test",
       password: "supersafe123",
       full_name: "Orphan",
@@ -594,7 +607,7 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
 
   test("flag user — writes a user_flags row + emits an audit entry", async () => {
     const adminToken = await bootstrapAdmin();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "naughty@weddly.test",
       password: "supersafe123",
       full_name: "Naughty",
@@ -619,7 +632,7 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
 
   test("flag user — reason validation: missing", async () => {
     const adminToken = await bootstrapAdmin();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "n2@weddly.test",
       password: "supersafe123",
       full_name: "N2",
@@ -635,7 +648,7 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
 
   test("flag user — reason validation: too short", async () => {
     const adminToken = await bootstrapAdmin();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "n3@weddly.test",
       password: "supersafe123",
       full_name: "N3",
@@ -665,7 +678,7 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
 
   test("flag user — stacking refused with 409", async () => {
     const adminToken = await bootstrapAdmin();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "stacky@weddly.test",
       password: "supersafe123",
       full_name: "Stacky",
@@ -699,7 +712,7 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
 
   test("unflag user — clears the active flag and returns cleared=true", async () => {
     const adminToken = await bootstrapAdmin();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "clearme@weddly.test",
       password: "supersafe123",
       full_name: "Clear",
@@ -737,7 +750,7 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
 
   test("unflag user — idempotent: returns cleared=false when nothing to clear", async () => {
     const adminToken = await bootstrapAdmin();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "noflag@weddly.test",
       password: "supersafe123",
       full_name: "NoFlag",
@@ -1054,7 +1067,7 @@ describe("admin couples — remind-invite-partner nudge", () => {
     const adminToken = await bootstrapAdmin();
     const { coupleId } = await bootstrapCouple("owner@weddly.test");
     // Forge a partner_b by attaching a second registered user to the row.
-    const partnerB = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const partnerB = await registerAndVerify({
       email: "partner@weddly.test",
       password: "supersafe123",
       full_name: "Partner",
@@ -1167,7 +1180,7 @@ describe("auto invite-partner nudge (worker sweep)", () => {
   test("workspace with two partners → skipped", async () => {
     wipeAll();
     const reg = await bootstrapSoloCouple("auto-pair@weddly.test");
-    const partnerB = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const partnerB = await registerAndVerify({
       email: "auto-pair-b@weddly.test",
       password: "supersafe123",
       full_name: "Partner B",
@@ -2891,7 +2904,7 @@ describe("supplier taxonomy — admin categories CRUD", () => {
 describe("admin user list — purged tombstones", () => {
   test("a purged orphan is hidden from the user list", async () => {
     const adminToken = await bootstrapAdmin();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "to-purge@weddly.test",
       password: "supersafe123",
       full_name: "Doomed",
@@ -2920,7 +2933,7 @@ describe("admin user list — purged tombstones", () => {
 
   test("resend-verify refuses a purged user", async () => {
     const adminToken = await bootstrapAdmin();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "purged-resend@weddly.test",
       password: "supersafe123",
       full_name: "Doomed",

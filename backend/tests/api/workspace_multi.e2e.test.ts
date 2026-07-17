@@ -1,7 +1,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
+import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
 import { db } from "../../src/db";
 import { foundingSlotsUsed } from "../../src/domain/billing";
 import {
@@ -25,11 +25,6 @@ import { reconcileOrphanCouples } from "../../src/domain/orphan_reconcile";
 
 // ─── Helpers used across this file ────────────────────────────────────────
 
-interface RegisterResp {
-  token: string;
-  user: { id: number; email: string };
-}
-
 interface CoupleResp {
   couple: { id: number };
 }
@@ -43,13 +38,12 @@ interface MembershipsResp {
  *  onboarding a couple. Use when the test wants to assert the pre-onboard
  *  state of an authenticated-but-workspace-less user. */
 async function freshUserNoCouple(email: string): Promise<{ token: string; userId: number }> {
-  const r = await req<RegisterResp>("POST", "/api/auth/register", {
+  const r = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Test User",
   });
   expect(r.status).toBe(201);
-  await verifyUserEmail(email);
   return { token: r.data.token, userId: r.data.user.id };
 }
 
@@ -79,13 +73,12 @@ async function spawnEvent(token: string, label: string): Promise<number> {
 /** Register + verify a partner B, accept the pending invite, and return
  *  their bearer token. Mirrors the helper in couples_lifecycle.e2e. */
 async function registerAndAcceptInvite(email: string, inviteToken: string): Promise<string> {
-  const reg = await req<RegisterResp>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Partner",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const accept = await req(
     "POST",
     `/api/invites/${inviteToken}/accept`,

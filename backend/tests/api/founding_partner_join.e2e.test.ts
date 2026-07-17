@@ -2,7 +2,7 @@ import "../setup";
 
 import { beforeEach, describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 // End-to-end coverage for the founding grant fired by the REAL partner-accept
 // HTTP flow (the billing suite only exercises `activatePartnerFreeWindow`
@@ -37,13 +37,12 @@ async function invite(ownerToken: string, email: string): Promise<string> {
 }
 
 async function joinPartner(email: string, inviteToken: string): Promise<void> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Partner B",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const acc = await req(
     "POST",
     `/api/invites/${inviteToken}/accept`,

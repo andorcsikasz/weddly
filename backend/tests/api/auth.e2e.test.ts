@@ -6,9 +6,37 @@ import {
   wipeAll,
   verifyUserEmail,
   bootstrapCouple,
+  latestPendingSignupToken,
   plaintextForStoredToken,
+  registerAndVerify,
 } from "../helpers";
-import { db } from "../../src/db";
+import { hashPassword } from "../../src/auth/password";
+import { issueSession } from "../../src/auth/session";
+import { db, now } from "../../src/db";
+
+/** Mint a genuinely UNVERIFIED `users` row.
+ *
+ *  Register can't produce one any more: it parks the signup in
+ *  `pending_signups` and the account is only minted — already verified — by the
+ *  verify click. The shape is still real, though: vendor register, and every
+ *  account that pre-dates the split, live here. It's the exact cohort the login
+ *  gate and the resend paths exist for, so the tests below build it directly
+ *  rather than through an endpoint that can no longer emit it. */
+async function createUnverifiedUser(
+  email: string,
+  password = "supersafe123",
+  fullName = "Unverified",
+): Promise<number> {
+  const ts = now();
+  const result = db
+    .prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email,
+                          password_set, created_at, updated_at)
+       VALUES (?, ?, ?, 'active', 'owner', 0, 1, ?, ?)`,
+    )
+    .run(email, await hashPassword(password), fullName, ts, ts);
+  return Number(result.lastInsertRowid);
+}
 
 // ─── /api/auth/register ─────────────────────────────────────────────────────
 
@@ -137,7 +165,7 @@ describe("POST /api/auth/register — validation", () => {
 
   test("email is normalized to lowercase + trimmed", async () => {
     wipeAll();
-    const r = await req<{ user: { email: string } }>("POST", "/api/auth/register", {
+    const r = await registerAndVerify({
       email: "  MiXeD@Example.COM  ",
       password: "supersafe123",
       full_name: "Mixed",
@@ -162,7 +190,8 @@ describe("POST /api/auth/register — rate limit (5/min/IP)", () => {
         },
         { clientIp: ip },
       );
-      expect(r.status).toBe(201);
+      // 202, not 201: register parks a pending signup and creates nothing.
+      expect(r.status).toBe(202);
     }
     const sixth = await req(
       "POST",
@@ -219,7 +248,7 @@ describe("POST /api/auth/login — validation + errors", () => {
 
   test("rejects suspended user with 403", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
+    await registerAndVerify({
       email: "suspended@example.com",
       password: "supersafe123",
       full_name: "Suspended",
@@ -254,7 +283,7 @@ describe("POST /api/auth/login — validation + errors", () => {
   test("6th login attempt from same IP hits 429", async () => {
     wipeAll();
     const ip = "10.42.1.10";
-    await req("POST", "/api/auth/register", {
+    await registerAndVerify({
       email: "ratelimit@example.com",
       password: "supersafe123",
       full_name: "RL Login",
@@ -283,11 +312,7 @@ describe("POST /api/auth/login — validation + errors", () => {
 describe("POST /api/auth/login — verified-email gate", () => {
   test("unverified account is blocked with 403 + email_unverified code", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
-      email: "gate-unverified@example.com",
-      password: "supersafe123",
-      full_name: "Gate",
-    });
+    await createUnverifiedUser("gate-unverified@example.com");
     const r = await req<{ detail?: { code?: string } }>("POST", "/api/auth/login", {
       email: "gate-unverified@example.com",
       password: "supersafe123",
@@ -298,11 +323,7 @@ describe("POST /api/auth/login — verified-email gate", () => {
 
   test("blocked login does NOT issue a session token", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
-      email: "gate-notoken@example.com",
-      password: "supersafe123",
-      full_name: "Gate",
-    });
+    await createUnverifiedUser("gate-notoken@example.com");
     const r = await req<{ token?: string }>("POST", "/api/auth/login", {
       email: "gate-notoken@example.com",
       password: "supersafe123",
@@ -313,11 +334,7 @@ describe("POST /api/auth/login — verified-email gate", () => {
 
   test("blocked login auto-sends a fresh verification link", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
-      email: "gate-resend@example.com",
-      password: "supersafe123",
-      full_name: "Gate",
-    });
+    await createUnverifiedUser("gate-resend@example.com");
     const before = db
       .prepare(
         "SELECT COUNT(*) AS n FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
@@ -337,11 +354,7 @@ describe("POST /api/auth/login — verified-email gate", () => {
 
   test("a wrong password on an unverified account still returns 401 (not 403)", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
-      email: "gate-wrongpw@example.com",
-      password: "supersafe123",
-      full_name: "Gate",
-    });
+    await createUnverifiedUser("gate-wrongpw@example.com");
     const r = await req("POST", "/api/auth/login", {
       email: "gate-wrongpw@example.com",
       password: "this-is-wrong",
@@ -353,11 +366,7 @@ describe("POST /api/auth/login — verified-email gate", () => {
 
   test("once verified, the previously-blocked account logs in normally", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
-      email: "gate-then-ok@example.com",
-      password: "supersafe123",
-      full_name: "Gate",
-    });
+    await createUnverifiedUser("gate-then-ok@example.com");
     const blocked = await req("POST", "/api/auth/login", {
       email: "gate-then-ok@example.com",
       password: "supersafe123",
@@ -397,11 +406,7 @@ describe("POST /api/auth/verify/request-public", () => {
 
   test("unverified account gets a brand-new token + verify_resend email", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
-      email: "public-unverified@example.com",
-      password: "supersafe123",
-      full_name: "PU",
-    });
+    await createUnverifiedUser("public-unverified@example.com", "supersafe123", "PU");
     const before = db
       .prepare(
         "SELECT COUNT(*) AS n FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?)",
@@ -421,6 +426,37 @@ describe("POST /api/auth/verify/request-public", () => {
       .prepare("SELECT to_email FROM email_log WHERE kind = 'verify_resend' AND to_email = ?")
       .all("public-unverified@example.com") as { to_email: string }[];
     expect(mail.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test("pending signup (no users row yet) gets a freshly re-issued link", async () => {
+    wipeAll();
+    // The cohort this endpoint now mainly serves: register parked the signup and
+    // the welcome mail held the only copy of the link. There's no users row, so
+    // the branch above can't see them — the token rotates on the pending row.
+    const reg = await req("POST", "/api/auth/register", {
+      email: "public-pending@example.com",
+      password: "supersafe123",
+      full_name: "PP",
+    });
+    expect(reg.status).toBe(202);
+    const before = latestPendingSignupToken("public-pending@example.com");
+
+    const r = await req("POST", "/api/auth/verify/request-public", {
+      email: "public-pending@example.com",
+    });
+    expect(r.status).toBe(200);
+    const mail = db
+      .prepare("SELECT to_email FROM email_log WHERE kind = 'verify_resend' AND to_email = ?")
+      .all("public-pending@example.com") as { to_email: string }[];
+    expect(mail.length).toBeGreaterThanOrEqual(1);
+
+    // The re-issued link is the live one; the superseded token is dead.
+    const after = latestPendingSignupToken("public-pending@example.com");
+    expect(after).not.toBe(before);
+    const stale = await req("POST", `/api/auth/verify/${before}`, {});
+    expect(stale.status).toBe(400);
+    const fresh = await req("POST", `/api/auth/verify/${after}`, {});
+    expect(fresh.status).toBe(201);
   });
 
   test("already-verified account gets no new token (silent 200)", async () => {
@@ -515,7 +551,7 @@ describe("POST /api/auth/logout", () => {
 
   test("logout is idempotent — second call with same token returns 401", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "idem-logout@example.com",
       password: "supersafe123",
       full_name: "IL",
@@ -541,7 +577,7 @@ describe("POST /api/auth/change-password", () => {
 
   test("missing current_password returns 400", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "cp-missing@example.com",
       password: "supersafe123",
       full_name: "CP",
@@ -557,7 +593,7 @@ describe("POST /api/auth/change-password", () => {
 
   test("missing new_password returns 400", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "cp-missing-new@example.com",
       password: "supersafe123",
       full_name: "CP",
@@ -573,7 +609,7 @@ describe("POST /api/auth/change-password", () => {
 
   test("new_password shorter than 8 chars returns 400", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "cp-short@example.com",
       password: "supersafe123",
       full_name: "CP",
@@ -629,7 +665,7 @@ describe("POST /api/auth/change-password", () => {
 
   test("change-password issues a password_changed email", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "cp-mail@example.com",
       password: "supersafe123",
       full_name: "CP",
@@ -651,7 +687,7 @@ describe("POST /api/auth/change-password", () => {
   test("6th change-password attempt from same IP returns 429", async () => {
     wipeAll();
     const ip = "10.42.2.20";
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "cp-rl@example.com",
       password: "supersafe123",
       full_name: "CP",
@@ -698,7 +734,7 @@ describe("GET /api/auth/me", () => {
 
   test("bearer with bad signature returns 401", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "me-sig@example.com",
       password: "supersafe123",
       full_name: "Sig",
@@ -711,7 +747,7 @@ describe("GET /api/auth/me", () => {
 
   test("returns sanitized user payload (no password_hash)", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "me-shape@example.com",
       password: "supersafe123",
       full_name: "Shape",
@@ -727,7 +763,7 @@ describe("GET /api/auth/me", () => {
 
   test("suspended user's bearer stops working immediately", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "me-susp@example.com",
       password: "supersafe123",
       full_name: "Susp",
@@ -744,7 +780,7 @@ describe("GET /api/auth/me", () => {
 
   test("admin allowlisted user has is_admin = true", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
       full_name: "Admin",
@@ -774,52 +810,61 @@ describe("POST /api/auth/verify/:token — consume", () => {
 
   test("expired token (>7 days) returns 400", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
+    const reg = await req("POST", "/api/auth/register", {
       email: "verify-exp@example.com",
       password: "supersafe123",
       full_name: "VE",
     });
-    db.prepare(
-      "UPDATE email_verification_tokens SET expires_at = 1 WHERE user_id = (SELECT id FROM users WHERE email = ?)",
-    ).run("verify-exp@example.com");
-    const row = db
-      .prepare(
-        "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
-      )
-      .get("verify-exp@example.com") as { token: string };
-    const r = await req("POST", `/api/auth/verify/${plaintextForStoredToken(row.token)}`, {});
+    expect(reg.status).toBe(202);
+    // A password signup's link redeems a pending_signups row, so that's the row
+    // whose expiry has to lapse. Same 7-day TTL, same opaque 400.
+    const token = latestPendingSignupToken("verify-exp@example.com");
+    db.prepare("UPDATE pending_signups SET expires_at = 1 WHERE email = ?").run(
+      "verify-exp@example.com",
+    );
+    const r = await req("POST", `/api/auth/verify/${token}`, {});
     expect(r.status).toBe(400);
+    // The dead link minted nothing.
+    expect(
+      db.prepare("SELECT id FROM users WHERE email = ?").get("verify-exp@example.com"),
+    ).toBeNull();
   });
 
   test("already-consumed token returns 400", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
+    const reg = await req("POST", "/api/auth/register", {
       email: "verify-once@example.com",
       password: "supersafe123",
       full_name: "VO",
     });
-    const row = db
-      .prepare(
-        "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
-      )
-      .get("verify-once@example.com") as { token: string };
-    const first = await req("POST", `/api/auth/verify/${plaintextForStoredToken(row.token)}`, {});
-    expect(first.status).toBe(200);
-    const second = await req("POST", `/api/auth/verify/${plaintextForStoredToken(row.token)}`, {});
+    expect(reg.status).toBe(202);
+    const token = latestPendingSignupToken("verify-once@example.com");
+    // The first click mints the account (201) and deletes the pending row it
+    // redeemed, so re-clicking the link can't replay the signup.
+    const first = await req("POST", `/api/auth/verify/${token}`, {});
+    expect(first.status).toBe(201);
+    const second = await req("POST", `/api/auth/verify/${token}`, {});
     expect(second.status).toBe(400);
+    const count = db
+      .prepare("SELECT COUNT(*) AS n FROM users WHERE email = ?")
+      .get("verify-once@example.com") as { n: number };
+    expect(count.n).toBe(1);
   });
 
-  test("consuming verification flips users.verified_email to 1", async () => {
+  test("consuming a signup link mints the account already verified", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
+    const reg = await req("POST", "/api/auth/register", {
       email: "verify-flip2@example.com",
       password: "supersafe123",
       full_name: "VF",
     });
-    const before = db
-      .prepare("SELECT verified_email FROM users WHERE email = ?")
-      .get("verify-flip2@example.com") as { verified_email: number };
-    expect(before.verified_email).toBe(0);
+    expect(reg.status).toBe(202);
+    // No users row can hold verified_email = 0 here any more: register parks the
+    // signup and the click is what creates the account. The old "0 → 1 flip" is
+    // now "nothing → an already-verified row".
+    expect(
+      db.prepare("SELECT id FROM users WHERE email = ?").get("verify-flip2@example.com"),
+    ).toBeNull();
 
     await verifyUserEmail("verify-flip2@example.com");
 
@@ -845,12 +890,11 @@ describe("POST /api/auth/verify/request — resend", () => {
 
   test("resend for an already-verified user short-circuits with already_verified=true", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "verify-already-v@example.com",
       password: "supersafe123",
       full_name: "Already V",
     });
-    await verifyUserEmail("verify-already-v@example.com");
     const r = await req<{ ok: true; already_verified?: boolean }>(
       "POST",
       "/api/auth/verify/request",
@@ -864,7 +908,7 @@ describe("POST /api/auth/verify/request — resend", () => {
   test("6th resend from the same IP returns 429", async () => {
     wipeAll();
     const ip = "10.42.3.30";
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "resend-rl@example.com",
       password: "supersafe123",
       full_name: "RR",
@@ -889,17 +933,20 @@ describe("POST /api/auth/verify/request — resend", () => {
 
   test("each successful resend adds a brand-new token row", async () => {
     wipeAll();
-    const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
-      email: "resend-fresh@example.com",
-      password: "supersafe123",
-      full_name: "RF",
-    });
-    await req("POST", "/api/auth/verify/request", {}, { token: reg.data.token });
-    await req("POST", "/api/auth/verify/request", {}, { token: reg.data.token });
+    // Only an UNVERIFIED account actually resends — a verified one short-circuits
+    // on already_verified. Register can't produce that shape any more, so build
+    // the row directly and hand it the session vendor-register would have issued
+    // (that path, plus pre-split accounts, is who still reaches this endpoint).
+    const userId = await createUnverifiedUser("resend-fresh@example.com", "supersafe123", "RF");
+    const token = issueSession(userId);
+    await req("POST", "/api/auth/verify/request", {}, { token });
+    await req("POST", "/api/auth/verify/request", {}, { token });
     const rows = db
       .prepare("SELECT id FROM email_verification_tokens WHERE user_id = ?")
-      .all(reg.data.user.id) as { id: number }[];
-    expect(rows.length).toBe(3);
+      .all(userId) as { id: number }[];
+    // Two resends, two rows. Register contributes none: a pending signup's link
+    // lives in pending_signups, not here.
+    expect(rows.length).toBe(2);
   });
 });
 
@@ -938,7 +985,7 @@ describe("POST /api/auth/forgot", () => {
 
   test("suspended account doesn't get a reset token (silent 200)", async () => {
     wipeAll();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "susp-reset@example.com",
       password: "supersafe123",
       full_name: "Susp",
@@ -954,7 +1001,7 @@ describe("POST /api/auth/forgot", () => {
 
   test("known email writes a single-use token + sends a password_reset email", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
+    await registerAndVerify({
       email: "forgot-ok@example.com",
       password: "supersafe123",
       full_name: "FO",
@@ -1050,7 +1097,7 @@ describe("POST /api/auth/reset", () => {
 
   test("consumed token cannot be reused (single-use)", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
+    await registerAndVerify({
       email: "reset-once@example.com",
       password: "supersafe123",
       full_name: "RO",
@@ -1075,7 +1122,7 @@ describe("POST /api/auth/reset", () => {
 
   test("successful reset revokes all sessions for the user", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
+    await registerAndVerify({
       email: "reset-rev@example.com",
       password: "supersafe123",
       full_name: "RR",
@@ -1131,7 +1178,7 @@ describe("POST /api/auth/reset", () => {
 
   test("a token issued before suspension can't reset a suspended account", async () => {
     wipeAll();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "reset-susp@example.com",
       password: "supersafe123",
       full_name: "RS",
@@ -1179,7 +1226,7 @@ describe("POST /api/auth/change-email-request", () => {
 
   test("missing new_email returns 400", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-missing@example.com",
       password: "supersafe123",
       full_name: "CE",
@@ -1195,7 +1242,7 @@ describe("POST /api/auth/change-email-request", () => {
 
   test("invalid new_email format returns 400", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-bad@example.com",
       password: "supersafe123",
       full_name: "CE",
@@ -1211,7 +1258,7 @@ describe("POST /api/auth/change-email-request", () => {
 
   test("missing current_password returns 400", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-nopw@example.com",
       password: "supersafe123",
       full_name: "CE",
@@ -1227,7 +1274,7 @@ describe("POST /api/auth/change-email-request", () => {
 
   test("cannot reuse current email (400)", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-same@example.com",
       password: "supersafe123",
       full_name: "CE",
@@ -1243,12 +1290,12 @@ describe("POST /api/auth/change-email-request", () => {
 
   test("cannot collide with another active user (409)", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
+    await registerAndVerify({
       email: "ce-other@example.com",
       password: "supersafe123",
       full_name: "Other",
     });
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-me@example.com",
       password: "supersafe123",
       full_name: "Me",
@@ -1264,14 +1311,14 @@ describe("POST /api/auth/change-email-request", () => {
 
   test("collision with a suspended account is allowed (does NOT 409)", async () => {
     wipeAll();
-    const susp = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+    const susp = await registerAndVerify({
       email: "ce-suspended@example.com",
       password: "supersafe123",
       full_name: "Suspended",
     });
     db.prepare("UPDATE users SET status = 'suspended' WHERE id = ?").run(susp.data.user.id);
 
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-me2@example.com",
       password: "supersafe123",
       full_name: "Me",
@@ -1287,7 +1334,7 @@ describe("POST /api/auth/change-email-request", () => {
 
   test("wrong current_password returns 401", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-wrongpw@example.com",
       password: "supersafe123",
       full_name: "CE",
@@ -1303,7 +1350,7 @@ describe("POST /api/auth/change-email-request", () => {
 
   test("new request supersedes prior pending token (old is deleted)", async () => {
     wipeAll();
-    const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-super@example.com",
       password: "supersafe123",
       full_name: "CE",
@@ -1332,7 +1379,7 @@ describe("POST /api/auth/change-email-request", () => {
   test("6th request from same IP returns 429", async () => {
     wipeAll();
     const ip = "10.42.6.60";
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-rl@example.com",
       password: "supersafe123",
       full_name: "CE",
@@ -1373,7 +1420,7 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
 
   test("expired token (>1h) returns 400", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-exp@example.com",
       password: "supersafe123",
       full_name: "CE",
@@ -1402,7 +1449,7 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
 
   test("already-consumed token returns 400", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-twice@example.com",
       password: "supersafe123",
       full_name: "CE",
@@ -1434,7 +1481,7 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
 
   test("a token issued before suspension can't change a suspended account's email", async () => {
     wipeAll();
-    const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-susp@example.com",
       password: "supersafe123",
       full_name: "CES",
@@ -1472,7 +1519,7 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
 
   test("clash during the request→confirm window returns 409", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-race@example.com",
       password: "supersafe123",
       full_name: "Race",
@@ -1484,7 +1531,7 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
       { token: reg.data.token },
     );
     // Someone else snatches the target email before confirm.
-    await req("POST", "/api/auth/register", {
+    await registerAndVerify({
       email: "race-target@example.com",
       password: "supersafe123",
       full_name: "Snatched",
@@ -1504,7 +1551,7 @@ describe("POST /api/auth/change-email/:token — confirm", () => {
 
   test("confirm flips users.email + verified_email = 1", async () => {
     wipeAll();
-    const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "ce-flip@example.com",
       password: "supersafe123",
       full_name: "Flip",
@@ -1544,7 +1591,7 @@ describe("GET /api/account/email-preferences", () => {
 
   test("returns lifecycle_opt_out + unsubscribe_token", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "prefs-get@example.com",
       password: "supersafe123",
       full_name: "Prefs",
@@ -1562,7 +1609,7 @@ describe("GET /api/account/email-preferences", () => {
 
   test("preferences are stable across calls (token does not rotate)", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "prefs-stable@example.com",
       password: "supersafe123",
       full_name: "Stable",
@@ -1592,7 +1639,7 @@ describe("POST /api/account/email-preferences", () => {
 
   test("missing lifecycle_opt_out returns 400", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "prefs-missing@example.com",
       password: "supersafe123",
       full_name: "Prefs",
@@ -1603,7 +1650,7 @@ describe("POST /api/account/email-preferences", () => {
 
   test("non-boolean lifecycle_opt_out returns 400", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "prefs-bad@example.com",
       password: "supersafe123",
       full_name: "Prefs",
@@ -1619,7 +1666,7 @@ describe("POST /api/account/email-preferences", () => {
 
   test("opt-in → opt-out round-trip persists", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "prefs-rt@example.com",
       password: "supersafe123",
       full_name: "Prefs",
@@ -1651,20 +1698,35 @@ describe("POST /api/account/email-preferences", () => {
 
 // ─── /api/unsubscribe/:token ────────────────────────────────────────────────
 
+/** The unsubscribe token a user's email footer would carry.
+ *
+ *  The preferences row is created lazily on first send (domain/emails/
+ *  preferences.ts), and the welcome mail no longer creates it: at register there
+ *  is no users row to hang it off. So mint it the way the app does — through the
+ *  endpoint, which get-or-creates exactly as the first real lifecycle send will. */
+async function unsubscribeTokenFor(sessionToken: string): Promise<string> {
+  const r = await req<{ unsubscribe_token: string }>(
+    "GET",
+    "/api/account/email-preferences",
+    undefined,
+    { token: sessionToken },
+  );
+  expect(r.status).toBe(200);
+  return r.data.unsubscribe_token;
+}
+
 describe("GET /api/unsubscribe/:token", () => {
   test("valid token returns 200 HTML + flips flag", async () => {
     wipeAll();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "unsub-ok@example.com",
       password: "supersafe123",
       full_name: "Unsub",
     });
-    const prefs = db
-      .prepare("SELECT unsubscribe_token FROM email_preferences WHERE user_id = ?")
-      .get(reg.data.user.id) as { unsubscribe_token: string };
+    const unsubToken = await unsubscribeTokenFor(reg.data.token);
 
     const res = await fetch(
-      `http://localhost:${process.env.PORT ?? "8791"}/api/unsubscribe/${prefs.unsubscribe_token}`,
+      `http://localhost:${process.env.PORT ?? "8791"}/api/unsubscribe/${unsubToken}`,
       { headers: { "x-test-client-ip": "10.99.0.10" } },
     );
     expect(res.status).toBe(200);
@@ -1688,22 +1750,20 @@ describe("GET /api/unsubscribe/:token", () => {
 
   test("re-using the same token still 200s (idempotent)", async () => {
     wipeAll();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "unsub-idem@example.com",
       password: "supersafe123",
       full_name: "Idem",
     });
-    const prefs = db
-      .prepare("SELECT unsubscribe_token FROM email_preferences WHERE user_id = ?")
-      .get(reg.data.user.id) as { unsubscribe_token: string };
+    const unsubToken = await unsubscribeTokenFor(reg.data.token);
 
     const first = await fetch(
-      `http://localhost:${process.env.PORT ?? "8791"}/api/unsubscribe/${prefs.unsubscribe_token}`,
+      `http://localhost:${process.env.PORT ?? "8791"}/api/unsubscribe/${unsubToken}`,
       { headers: { "x-test-client-ip": "10.99.0.12" } },
     );
     expect(first.status).toBe(200);
     const second = await fetch(
-      `http://localhost:${process.env.PORT ?? "8791"}/api/unsubscribe/${prefs.unsubscribe_token}`,
+      `http://localhost:${process.env.PORT ?? "8791"}/api/unsubscribe/${unsubToken}`,
       { headers: { "x-test-client-ip": "10.99.0.13" } },
     );
     expect(second.status).toBe(200);
@@ -1713,15 +1773,13 @@ describe("GET /api/unsubscribe/:token", () => {
 describe("POST /api/unsubscribe/:token — RFC 8058", () => {
   test("valid token returns 204 + flips flag", async () => {
     wipeAll();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "unsub-rfc@example.com",
       password: "supersafe123",
       full_name: "RFC",
     });
-    const prefs = db
-      .prepare("SELECT unsubscribe_token FROM email_preferences WHERE user_id = ?")
-      .get(reg.data.user.id) as { unsubscribe_token: string };
-    const r = await req("POST", `/api/unsubscribe/${prefs.unsubscribe_token}`, {});
+    const unsubToken = await unsubscribeTokenFor(reg.data.token);
+    const r = await req("POST", `/api/unsubscribe/${unsubToken}`, {});
     expect(r.status).toBe(204);
     const after = db
       .prepare("SELECT lifecycle_opt_out FROM email_preferences WHERE user_id = ?")
@@ -1741,17 +1799,15 @@ describe("POST /api/unsubscribe/:token — RFC 8058", () => {
 describe("GET /unsubscribe/:token — non-API alias", () => {
   test("valid token returns 200 HTML + flips flag (matches before SPA fallback)", async () => {
     wipeAll();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "unsub-alias@example.com",
       password: "supersafe123",
       full_name: "Alias",
     });
-    const prefs = db
-      .prepare("SELECT unsubscribe_token FROM email_preferences WHERE user_id = ?")
-      .get(reg.data.user.id) as { unsubscribe_token: string };
+    const unsubToken = await unsubscribeTokenFor(reg.data.token);
 
     const res = await fetch(
-      `http://localhost:${process.env.PORT ?? "8791"}/unsubscribe/${prefs.unsubscribe_token}`,
+      `http://localhost:${process.env.PORT ?? "8791"}/unsubscribe/${unsubToken}`,
       { headers: { "x-test-client-ip": "10.99.0.14" } },
     );
     expect(res.status).toBe(200);
@@ -1765,15 +1821,13 @@ describe("GET /unsubscribe/:token — non-API alias", () => {
 
   test("one-click POST on the alias returns 204", async () => {
     wipeAll();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "unsub-alias-post@example.com",
       password: "supersafe123",
       full_name: "AliasPost",
     });
-    const prefs = db
-      .prepare("SELECT unsubscribe_token FROM email_preferences WHERE user_id = ?")
-      .get(reg.data.user.id) as { unsubscribe_token: string };
-    const r = await req("POST", `/unsubscribe/${prefs.unsubscribe_token}`, {});
+    const unsubToken = await unsubscribeTokenFor(reg.data.token);
+    const r = await req("POST", `/unsubscribe/${unsubToken}`, {});
     expect(r.status).toBe(204);
   });
 });
@@ -1860,13 +1914,11 @@ describe("POST /api/auth/google", () => {
 
   test("links to an existing verified email-only account (no duplicate)", async () => {
     wipeAll();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "g-link@example.com",
       password: "supersafe123",
       full_name: "Link",
     });
-    db.prepare("UPDATE users SET verified_email = 1 WHERE email = ?").run("g-link@example.com");
-
     const { mintTestBearer } = await importMint();
     const credential = mintTestBearer({
       sub: "g-link-001",
@@ -1885,11 +1937,7 @@ describe("POST /api/auth/google", () => {
 
   test("refuses to link onto an unverified password account (409)", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
-      email: "g-unverified@example.com",
-      password: "supersafe123",
-      full_name: "Unverified",
-    });
+    await createUnverifiedUser("g-unverified@example.com");
     const { mintTestBearer } = await importMint();
     const credential = mintTestBearer({
       sub: "g-unv-001",
@@ -1935,12 +1983,12 @@ describe("POST /api/auth/google", () => {
 
   test("rejects suspended email-only account (403, even if Google claim matches)", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
+    await registerAndVerify({
       email: "g-susp-email@example.com",
       password: "supersafe123",
       full_name: "Susp",
     });
-    db.prepare("UPDATE users SET status = 'suspended', verified_email = 1 WHERE email = ?").run(
+    db.prepare("UPDATE users SET status = 'suspended' WHERE email = ?").run(
       "g-susp-email@example.com",
     );
     const { mintTestBearer } = await importMint();
@@ -2104,13 +2152,11 @@ describe("POST /api/auth/apple", () => {
 
   test("links to an existing verified email-only account (no duplicate)", async () => {
     wipeAll();
-    const reg = await req<{ user: { id: number } }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "a-link@example.com",
       password: "supersafe123",
       full_name: "Link",
     });
-    db.prepare("UPDATE users SET verified_email = 1 WHERE email = ?").run("a-link@example.com");
-
     const { mintAppleTestBearer } = await importMint();
     const credential = mintAppleTestBearer({
       sub: "a-link-001",
@@ -2128,11 +2174,7 @@ describe("POST /api/auth/apple", () => {
 
   test("refuses to link onto an unverified password account (409)", async () => {
     wipeAll();
-    await req("POST", "/api/auth/register", {
-      email: "a-unverified@example.com",
-      password: "supersafe123",
-      full_name: "Unverified",
-    });
+    await createUnverifiedUser("a-unverified@example.com");
     const { mintAppleTestBearer } = await importMint();
     const credential = mintAppleTestBearer({
       sub: "a-unv-001",
@@ -2264,7 +2306,7 @@ describe("cross-account isolation: email prefs", () => {
 describe("session sliding refresh", () => {
   test("session within first half of TTL is NOT extended on use", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "slide-fresh@example.com",
       password: "supersafe123",
       full_name: "Slide",
@@ -2287,7 +2329,7 @@ describe("session sliding refresh", () => {
 
   test("session past half-life IS extended on next verified request", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "slide-old@example.com",
       password: "supersafe123",
       full_name: "Slide",
@@ -2324,7 +2366,7 @@ describe("session sliding refresh", () => {
 
   test("expired session is NOT resurrected by sliding refresh", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "slide-dead@example.com",
       password: "supersafe123",
       full_name: "Slide",
@@ -2348,7 +2390,7 @@ describe("POST /api/auth/login — per-account throttle", () => {
   test("locks an account after repeated failures, then 429 regardless of IP", async () => {
     wipeAll();
     const email = "stuffing-target@example.com";
-    await req("POST", "/api/auth/register", {
+    await registerAndVerify({
       email,
       password: "supersafe123",
       full_name: "Target",
@@ -2406,23 +2448,25 @@ describe("credential tokens — hashed at rest", () => {
   test("verification token is stored as a SHA-256 hash, link still works", async () => {
     wipeAll();
     const email = "hash-at-rest@example.com";
-    await req("POST", "/api/auth/register", {
+    const reg = await req("POST", "/api/auth/register", {
       email,
       password: "supersafe123",
       full_name: "Hashed",
     });
-    const stored = db
-      .prepare(
-        "SELECT token FROM email_verification_tokens WHERE user_id = (SELECT id FROM users WHERE email = ?) ORDER BY id DESC LIMIT 1",
-      )
-      .get(email) as { token: string };
+    expect(reg.status).toBe(202);
+    // A password signup's link redeems a pending_signups row, so that's where
+    // the hash-at-rest contract has to hold now.
+    const stored = db.prepare("SELECT token FROM pending_signups WHERE email = ?").get(email) as {
+      token: string;
+    };
     const plaintext = plaintextForStoredToken(stored.token);
     // The DB holds the hash, never the value that was in the emailed link.
     expect(stored.token).not.toBe(plaintext);
     expect(stored.token).toMatch(/^[0-9a-f]{64}$/);
-    // The endpoint still accepts the plaintext (it hashes on lookup).
+    // The endpoint still accepts the plaintext (it hashes on lookup) — and the
+    // click is what mints the account, hence 201.
     const r = await req("POST", `/api/auth/verify/${plaintext}`, {});
-    expect(r.status).toBe(200);
+    expect(r.status).toBe(201);
   });
 });
 

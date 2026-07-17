@@ -49,7 +49,10 @@ function verify(accountId: number): void {
 }
 
 function backdateCreation(accountId: number, ms: number): void {
-  db.prepare("UPDATE vendor_accounts SET created_at = ? WHERE id = ?").run(Date.now() - ms, accountId);
+  db.prepare("UPDATE vendor_accounts SET created_at = ? WHERE id = ?").run(
+    Date.now() - ms,
+    accountId,
+  );
 }
 
 function setNudgeState(accountId: number, count: number, lastAgoMs: number | null): void {

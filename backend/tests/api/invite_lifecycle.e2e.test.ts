@@ -1,7 +1,8 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
+import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
+import { issueSession } from "../../src/auth/session";
 import { db, now } from "../../src/db";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -23,32 +24,32 @@ import { db, now } from "../../src/db";
 //     * /leave-couple when the user has no couple returns 404 "No couple to leave".
 // ────────────────────────────────────────────────────────────────────────────
 
-interface RegisterResp {
-  token: string;
-  user: { id: number; email: string };
-}
-
 /** Register + verify a fresh user, return their bearer + user id, no couple. */
 async function freshUserNoCouple(email: string): Promise<{ token: string; userId: number }> {
-  const r = await req<RegisterResp>("POST", "/api/auth/register", {
+  const r = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Test User",
   });
   expect(r.status).toBe(201);
-  await verifyUserEmail(email);
   return { token: r.data.token, userId: r.data.user.id };
 }
 
-/** Register a fresh user (no verify, no couple). */
-async function freshUserUnverified(email: string): Promise<{ token: string; userId: number }> {
-  const r = await req<RegisterResp>("POST", "/api/auth/register", {
-    email,
-    password: "supersafe123",
-    full_name: "Unverified User",
-  });
-  expect(r.status).toBe(201);
-  return { token: r.data.token, userId: r.data.user.id };
+/** An UNVERIFIED user holding a session, written straight to the DB.
+ *  Register no longer mints a `users` row (it parks a pending signup and the
+ *  verify click creates the account), so a session for an unverified address
+ *  can only be built here. Keeps the "accept doesn't check verified_email"
+ *  assertion below honest. */
+function freshUserUnverified(email: string): { token: string; userId: number } {
+  const ts = now();
+  const info = db
+    .prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, password_set, created_at, updated_at)
+       VALUES (?, ?, ?, 'active', 'owner', 0, 1, ?, ?)`,
+    )
+    .run(email.trim().toLowerCase(), "x", "Unverified User", ts, ts);
+  const userId = Number(info.lastInsertRowid);
+  return { token: issueSession(userId), userId };
 }
 
 /** Convenience: create a partner invite from the owner-A workspace. */
@@ -113,9 +114,10 @@ describe("invite_lifecycle: happy path + email-verify bypass", () => {
     const { token: aToken } = await bootstrapCouple("noverify-a@weddly.test");
     const inviteToken = await createInvite(aToken, "noverify-b@weddly.test");
 
-    // Register but skip email verification — the invite link itself is the
-    // proof of address ownership for partner B.
-    const { token: bToken } = await freshUserUnverified("noverify-b@weddly.test");
+    // An account that exists but never verified its address. The invite link
+    // itself is the proof of address ownership for partner B, so accept must
+    // not gate on verified_email.
+    const { token: bToken } = freshUserUnverified("noverify-b@weddly.test");
     const accept = await req("POST", `/api/invites/${inviteToken}/accept`, {}, { token: bToken });
     expect(accept.status).toBe(200);
   });

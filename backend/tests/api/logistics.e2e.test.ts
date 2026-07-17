@@ -11,7 +11,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 interface GuestRow {
   id: number;
@@ -226,12 +226,12 @@ describe("logistics: accommodation rooms", () => {
       { token: tokenA },
     );
 
-    const regB = await req<{ token: string }>("POST", "/api/auth/register", {
+    const regB = await registerAndVerify({
       email: "rooms-iso-b@weddly.test",
       password: "supersafe123",
       full_name: "B",
     });
-    await verifyUserEmail("rooms-iso-b@weddly.test");
+    expect(regB.status).toBe(201);
     await req(
       "POST",
       "/api/couples/onboard",

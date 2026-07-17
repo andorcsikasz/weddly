@@ -11,10 +11,10 @@ import { PLANNER_FOUNDING_DURATION_MS } from "@shared/planner_billing";
 import type { AdminPlannerView, PlannerActivationView } from "@shared/types";
 import { db, now } from "../../src/db";
 import { plannerFoundingSlotsUsed } from "../../src/domain/planner_billing";
-import { plaintextForStoredToken, req, verifyUserEmail, wipeAll } from "../helpers";
+import { plaintextForStoredToken, registerAndVerify, req, wipeAll } from "../helpers";
 
 async function addAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
@@ -22,7 +22,6 @@ async function addAdmin(): Promise<string> {
     terms_version: TERMS_VERSION,
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 
@@ -121,14 +120,14 @@ describe("admin planner provisioning", () => {
   test("provision requires admin, all four fields, and a free email", async () => {
     const adminToken = await addAdmin();
 
-    const user = await req<{ token: string }>("POST", "/api/auth/register", {
+    const user = await registerAndVerify({
       email: "civilian@weddly.test",
       password: "supersafe123",
       full_name: "Civilian",
       privacy_version: PRIVACY_VERSION,
       terms_version: TERMS_VERSION,
     });
-    await verifyUserEmail("civilian@weddly.test");
+    expect(user.status).toBe(201);
     const denied = await req("POST", "/api/admin/planners/provision", PROVISION_BODY, {
       token: user.data.token,
     });

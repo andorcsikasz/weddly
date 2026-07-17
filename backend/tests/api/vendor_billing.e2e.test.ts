@@ -31,7 +31,7 @@ import type { VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { markVendorCardOnFile } from "../../src/domain/vendor_billing";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 interface BillingResponse {
   billing: VendorBilling;
@@ -40,13 +40,12 @@ interface BillingResponse {
 }
 
 async function registerAdminAndGetToken(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
   if (reg.status === 201) {
-    await verifyUserEmail("admin@test.test");
     return reg.data.token;
   }
   // Already registered this test (makeApprovedListing does it too) → log in.

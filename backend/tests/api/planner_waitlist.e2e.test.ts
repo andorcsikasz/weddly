@@ -4,16 +4,16 @@ import { PRIVACY_VERSION } from "@shared/legal";
 import type { PlannerWaitlistAdminView } from "@shared/planner_waitlist";
 import { describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
-import { req, verifyUserEmail, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 async function bootstrapAdmin(): Promise<string> {
   wipeAll();
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
+  expect(reg.status).toBe(201);
   return reg.data.token;
 }
 

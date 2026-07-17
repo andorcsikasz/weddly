@@ -7,7 +7,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, verifyUserEmail, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import {
   fetchAndStoreListingHero,
@@ -19,12 +19,11 @@ import { imageDimensions } from "../../src/lib/image_dims";
 /** Register + verify the ADMIN_EMAILS allowlist address (admin@test.test, pinned
  *  in setup.ts) and return its bearer. Caller wipes first. */
 async function bootstrapAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 

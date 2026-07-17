@@ -5,7 +5,7 @@ import { promptsForGroup } from "@shared/planning_prompts";
 import { describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
 import { runEmailSweep } from "../../src/domain/emails/worker";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 const DAY_MS = 86_400_000;
 
@@ -42,11 +42,6 @@ function insertTask(
 
 const PAST_DUE = "2020-01-01"; // always overdue relative to "today"
 
-interface RegisterResp {
-  token: string;
-  user: { id: number; email: string };
-}
-
 async function createOverdueTask(token: string, title: string): Promise<void> {
   const r = await req(
     "POST",
@@ -70,13 +65,12 @@ async function addPartnerB(ownerToken: string, email: string): Promise<string> {
     { token: ownerToken },
   );
   expect(inv.status).toBe(201);
-  const reg = await req<RegisterResp>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Partner B",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const accept = await req(
     "POST",
     `/api/invites/${inv.data.invite.token}/accept`,

@@ -19,7 +19,7 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
-import { bootstrapCouple, req, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 const COHORT = 50;
@@ -84,7 +84,7 @@ describe("A. concurrent registration at cohort scale", () => {
       wipeAll();
       const results = await Promise.all(
         Array.from({ length: COHORT }, (_, i) =>
-          req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+          registerAndVerify({
             email: `conc-reg-${i}@weddly.test`,
             password: "supersafe123",
             full_name: `User ${i}`,
@@ -103,7 +103,11 @@ describe("A. concurrent registration at cohort scale", () => {
 
   test("duplicate email registration is rejected (no second account)", async () => {
     wipeAll();
-    const first = await req("POST", "/api/auth/register", {
+    // The first signup must be VERIFIED to be a conflict: only a real account
+    // owns its address. A merely-pending signup is overwritten by the next
+    // register for the same address (it never proved the address, so there's
+    // nothing to protect and nothing to leak).
+    const first = await registerAndVerify({
       email: "dup@weddly.test",
       password: "supersafe123",
       full_name: "First",
@@ -114,7 +118,7 @@ describe("A. concurrent registration at cohort scale", () => {
       password: "supersafe123",
       full_name: "Second",
     });
-    expect(second.status).not.toBe(201);
+    expect(second.status).toBe(409);
     const count = db
       .prepare("SELECT COUNT(*) AS c FROM users WHERE email = ?")
       .get("dup@weddly.test") as {

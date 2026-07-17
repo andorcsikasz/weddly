@@ -16,7 +16,7 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 interface HouseholdLite {
   id: number;
@@ -45,13 +45,12 @@ async function createHousehold(token: string, label: string): Promise<number> {
 
 /** Second couple so cross-tenant cases have a foreign household to point at. */
 async function bootstrapSecondCouple(email: string): Promise<{ token: string }> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Other",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const ob = await req(
     "POST",
     "/api/couples/onboard",

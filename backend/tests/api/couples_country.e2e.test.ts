@@ -7,22 +7,16 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, wipeAll, verifyUserEmail } from "../helpers";
+import { req, wipeAll, registerAndVerify } from "../helpers";
 import { db } from "../../src/db";
 
-interface RegisterResp {
-  token: string;
-  user: { id: number; email: string };
-}
-
 async function registerVerified(email: string): Promise<string> {
-  const r = await req<RegisterResp>("POST", "/api/auth/register", {
+  const r = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Country Test",
   });
   expect(r.status).toBe(201);
-  await verifyUserEmail(email);
   return r.data.token;
 }
 

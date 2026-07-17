@@ -11,7 +11,8 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
+import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
+import { issueSession } from "../../src/auth/session";
 import { db } from "../../src/db";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
@@ -21,13 +22,12 @@ const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 async function bootstrapSecondCouple(
   email: string,
 ): Promise<{ token: string; coupleId: number; slug: string }> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Other",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const ob = await req<{ couple: { id: number; slug: string | null } }>(
     "POST",
     "/api/couples/onboard",
@@ -909,14 +909,18 @@ describe("guests: auth + cross-couple isolation", () => {
 
   test("PATCH /api/guests/:id rejects an unverified user with 403 email_unverified", async () => {
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
-      email: "g-unv@weddly.test",
-      password: "supersafe123",
-      full_name: "Unv",
-    });
-    expect(reg.status).toBe(201);
-    // Note: never verify the email.
-    const r = await req("PATCH", "/api/guests/1", { full_name: "x" }, { token: reg.data.token });
+    // Register no longer mints a `users` row (it parks a pending signup and
+    // the verify click creates the account), so an unverified account with a
+    // session has to be written directly.
+    const ts = Date.now();
+    const info = db
+      .prepare(
+        `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, password_set, created_at, updated_at)
+         VALUES (?, ?, ?, 'active', 'owner', 0, 1, ?, ?)`,
+      )
+      .run("g-unv@weddly.test", "x", "Unv", ts, ts);
+    const unverifiedToken = issueSession(Number(info.lastInsertRowid));
+    const r = await req("PATCH", "/api/guests/1", { full_name: "x" }, { token: unverifiedToken });
     expect(r.status).toBe(403);
     expect((r.data as { detail?: { code?: string } }).detail?.code).toBe("email_unverified");
   });

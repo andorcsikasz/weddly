@@ -3,27 +3,25 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import type { AdminPlannerView } from "@shared/types";
 import { db, now } from "../../src/db";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 async function bootstrapAdmin(): Promise<string> {
   wipeAll();
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 
 /** Seed a planner: a users row flipped to user_type='planner'. Returns userId. */
 async function seedPlanner(email: string): Promise<number> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Planner Person",
   });
-  await verifyUserEmail(email);
   const userId = reg.data.user.id;
   db.prepare("UPDATE users SET user_type = 'planner', couple_id = NULL WHERE id = ?").run(userId);
   return userId;
@@ -276,7 +274,9 @@ describe("admin planner management", () => {
     const keep = await seedPlanner("planner-keep@weddly.test");
     const gone = await seedPlanner("planner-gone@weddly.test");
     // Delete (purge) one — its users row survives as a @purged.local tombstone.
-    const del = await req("DELETE", `/api/admin/planners/${gone}`, undefined, { token: adminToken });
+    const del = await req("DELETE", `/api/admin/planners/${gone}`, undefined, {
+      token: adminToken,
+    });
     expect(del.status).toBe(200);
 
     const res = await req<{ planners: AdminPlannerView[] }>(

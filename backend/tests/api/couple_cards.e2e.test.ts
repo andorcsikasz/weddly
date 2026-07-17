@@ -1,18 +1,18 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, wipeAll, verifyUserEmail } from "../helpers";
+import { req, wipeAll, registerAndVerify } from "../helpers";
 
 /** Bootstrap a user against ADMIN_EMAILS (set in setup.ts) and return the
  *  bearer token. couple_card_feedback admin reads require an admin user. */
 async function bootstrapAdmin(): Promise<string> {
   wipeAll();
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
+  expect(reg.status).toBe(201);
   return reg.data.token;
 }
 

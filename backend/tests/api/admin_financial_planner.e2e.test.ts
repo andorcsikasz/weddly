@@ -12,7 +12,7 @@ import {
 import { MONTHLY_PRICE } from "@shared/billing";
 import { db } from "../../src/db";
 import { recordGrowthEvent } from "../../src/domain/growth_events";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Seed N placeholder non-demo couples (negative ids) so later real couples
  *  land past the founding cap and get the trial instead of founding. */
@@ -28,12 +28,11 @@ function seedCouples(n: number): void {
 }
 
 async function addAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 

@@ -14,6 +14,27 @@ import { req, wipeAll, verifyUserEmail } from "../helpers";
 import { db, now } from "../../src/db";
 import { purgeStaleUnverifiedSignups, UNVERIFIED_TTL_MS } from "../../src/domain/purge";
 
+/** A never-verified signup as a `users` row — the fixture this sweep exists to
+ *  reap.
+ *
+ *  It can't come from POST /api/auth/register anymore: that parks the signup in
+ *  `pending_signups` and mints nothing, so a couples register leaves no
+ *  unverified user behind at all. The row goes in directly instead, in exactly
+ *  the shape a password signup used to leave: verified_email = 0,
+ *  password_set = 1, no workspace. The sweep's own behaviour is unchanged. */
+function seedUnverifiedSignup(email: string): number {
+  const ts = now();
+  const result = db
+    .prepare(
+      `INSERT INTO users
+         (email, password_hash, full_name, status, role, verified_email,
+          password_set, couple_id, created_at, updated_at)
+       VALUES (?, '!hash!', 'Never Verified', 'active', 'owner', 0, 1, NULL, ?, ?)`,
+    )
+    .run(email, ts, ts);
+  return Number(result.lastInsertRowid);
+}
+
 /** Age a user's signup past the reap cutoff. */
 function ageSignup(email: string, ms = UNVERIFIED_TTL_MS + 1000 * 60 * 60): number {
   const row = db.prepare("SELECT id FROM users WHERE email = ?").get(email) as
@@ -30,19 +51,21 @@ function userById(id: number): { email: string; status: string } | undefined {
     | undefined;
 }
 
+/** Park a signup. Register no longer mints a users row, so this returns 202
+ *  and leaves only a pending_signups row until the verify link is clicked. */
 async function register(email: string): Promise<void> {
   const r = await req("POST", "/api/auth/register", {
     email,
     password: "supersafe123",
     full_name: "Never Verified",
   });
-  expect(r.status).toBe(201);
+  expect(r.status).toBe(202);
 }
 
 describe("unverified signup sweep", () => {
   test("reaps a never-verified signup older than 30 days", async () => {
     wipeAll();
-    await register("stale@weddly.test");
+    seedUnverifiedSignup("stale@weddly.test");
     const userId = ageSignup("stale@weddly.test");
 
     expect(purgeStaleUnverifiedSignups()).toBe(1);
@@ -60,7 +83,7 @@ describe("unverified signup sweep", () => {
     wipeAll();
     // The squatted-address bug: a typo'd/abandoned signup blocked the rightful
     // owner from ever registering that address again (409 forever).
-    await register("squatted@weddly.test");
+    seedUnverifiedSignup("squatted@weddly.test");
     const dupe = await req("POST", "/api/auth/register", {
       email: "squatted@weddly.test",
       password: "supersafe123",
@@ -71,17 +94,21 @@ describe("unverified signup sweep", () => {
     ageSignup("squatted@weddly.test");
     expect(purgeStaleUnverifiedSignups()).toBe(1);
 
-    const retry = await req("POST", "/api/auth/register", {
+    // The address is registerable again: the sweep renamed the tombstone, so
+    // register gets past the users.email UNIQUE check and parks the signup.
+    const retry = await req<{ pending: boolean; email: string }>("POST", "/api/auth/register", {
       email: "squatted@weddly.test",
       password: "supersafe123",
       full_name: "Real Owner",
     });
-    expect(retry.status).toBe(201);
+    expect(retry.status).toBe(202);
+    expect(retry.data.pending).toBe(true);
+    expect(retry.data.email).toBe("squatted@weddly.test");
   });
 
   test("spares a recent unverified signup", async () => {
     wipeAll();
-    await register("fresh@weddly.test");
+    seedUnverifiedSignup("fresh@weddly.test");
     // Still inside the verify window — the link works, so the row must live.
     ageSignup("fresh@weddly.test", 1000 * 60 * 60 * 24 * 3);
 
@@ -143,7 +170,7 @@ describe("unverified signup sweep", () => {
 
   test("is idempotent — a purged tombstone is not re-reaped", async () => {
     wipeAll();
-    await register("idem@weddly.test");
+    seedUnverifiedSignup("idem@weddly.test");
     ageSignup("idem@weddly.test");
 
     expect(purgeStaleUnverifiedSignups()).toBe(1);

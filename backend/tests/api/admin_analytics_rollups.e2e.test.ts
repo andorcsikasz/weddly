@@ -15,15 +15,14 @@ import type {
   AdminPicksAnalytics,
   AdminWeddingAnalytics,
 } from "@shared/admin_analytics";
-import { req, verifyUserEmail, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 async function bootstrapAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 
@@ -31,13 +30,12 @@ async function bootstrapAdmin(): Promise<string> {
 // onboarding (it's not in the PATCH allowlist), so bootstrapCouple's empty
 // default can't exercise the style-adoption rollup.
 async function bootstrapCoupleWithStyle(email: string): Promise<{ token: string }> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Owner",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const ob = await req(
     "POST",
     "/api/couples/onboard",

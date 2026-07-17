@@ -1,20 +1,19 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import "../setup";
 import type { TranslateAvailability, TranslateResult } from "@shared/translate";
-import { req, verifyUserEmail, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 // Runs with DEEPL_FAKE=1 + DEEPL_API_KEY pinned (tests/setup.ts): the provider
 // answers from a deterministic stub ("[EN] ..." / "[HU] ...") so these tests
 // exercise the full route -> lib pipeline without ever touching DeepL.
 
 async function registerVerified(email: string): Promise<{ token: string }> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Translate Person",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   return { token: reg.data.token };
 }
 

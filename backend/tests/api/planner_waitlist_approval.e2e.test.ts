@@ -14,18 +14,18 @@ import { db, now } from "../../src/db";
 import {
   bootstrapCouple,
   plaintextForStoredToken,
+  registerAndVerify,
   req,
-  verifyUserEmail,
   wipeAll,
 } from "../helpers";
 
 async function bootstrapAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
+  expect(reg.status).toBe(201);
   return reg.data.token;
 }
 

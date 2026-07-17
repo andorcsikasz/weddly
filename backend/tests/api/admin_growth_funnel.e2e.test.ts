@@ -1,7 +1,10 @@
 // P6b — admin growth-funnel analytics. Verifies:
-//   - GET /api/admin/analytics/growth-funnel returns the 5-step funnel in
-//     order: signup.completed → couple.created → wedding_site.view
-//          → rsvp.page.view → rsvp.submitted
+//   - GET /api/admin/analytics/growth-funnel returns the 6-step funnel in
+//     order: signup.started → signup.completed → couple.created
+//          → wedding_site.view → rsvp.page.view → rsvp.submitted
+//   - signup.started fires at register (user_id NULL — no account exists yet)
+//     and signup.completed at the verify click that mints the account, so
+//     step 1's conversion IS the email-confirm rate
 //   - count_7d / count_24h reflect the rolling windows
 //   - conversion_from_prev is null on step 0, computed as ratio elsewhere,
 //     null when the previous step is 0 (avoids NaN on a fresh deploy)
@@ -16,21 +19,21 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, verifyUserEmail, wipeAll } from "../helpers";
 import { db, now } from "../../src/db";
 import type { AdminGrowthFunnelAnalytics } from "@shared/admin_analytics";
 
-/** Register + verify the admin and immediately wipe the growth_events rows
- *  that registration recorded — every assertion below pins specific event
- *  counts, so we need a clean substrate. wipeAll() runs in the caller
- *  BEFORE we register, so we can't rely on it alone. */
+/** Register + verify the admin and immediately wipe the growth_events rows the
+ *  signup recorded — `signup.started` at register plus `signup.completed` at the
+ *  verify click. Every assertion below pins specific event counts, so we need a
+ *  clean substrate. wipeAll() runs in the caller BEFORE we register, so we can't
+ *  rely on it alone. */
 async function bootstrapAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   db.exec("DELETE FROM growth_events");
   return reg.data.token;
 }
@@ -72,10 +75,16 @@ function ensureCoupleRow(id: number): void {
   ).run(id, id, `Couple-${id}`, ts, ts);
 }
 
+function countKind(kind: string): number {
+  return (
+    db.prepare("SELECT COUNT(*) AS n FROM growth_events WHERE kind = ?").get(kind) as { n: number }
+  ).n;
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 describe("admin analytics — growth funnel", () => {
-  test("empty growth_events returns 5 zero-filled steps + empty referrers/stalled", async () => {
+  test("empty growth_events returns 6 zero-filled steps + empty referrers/stalled", async () => {
     wipeAll();
     const adminToken = await bootstrapAdmin();
 
@@ -87,6 +96,7 @@ describe("admin analytics — growth funnel", () => {
     );
     expect(r.status).toBe(200);
     expect(r.data.steps.map((s) => s.kind)).toEqual([
+      "signup.started",
       "signup.completed",
       "couple.created",
       "wedding_site.view",
@@ -110,8 +120,12 @@ describe("admin analytics — growth funnel", () => {
     const adminToken = await bootstrapAdmin();
 
     const ts = now();
-    // Backdate two of the signups to >24h ago so the 24h window can also be
-    // distinguished from the 7d window in one assertion.
+    // 10 signups start; only 5 ever click the verify link. Backdate some of both
+    // to >24h ago so the 24h window can also be distinguished from the 7d window
+    // in one assertion.
+    for (let i = 0; i < 6; i++) insertGrowth({ kind: "signup.started", createdAt: ts });
+    for (let i = 0; i < 4; i++)
+      insertGrowth({ kind: "signup.started", createdAt: ts - 2 * DAY_MS });
     insertGrowth({ kind: "signup.completed", createdAt: ts });
     insertGrowth({ kind: "signup.completed", createdAt: ts });
     insertGrowth({ kind: "signup.completed", createdAt: ts });
@@ -134,22 +148,79 @@ describe("admin analytics — growth funnel", () => {
       { token: adminToken },
     );
     expect(r.status).toBe(200);
-    const [signups, couples, sites, rsvpViews, rsvpSubs] = r.data.steps;
+    const [started, signups, couples, sites, rsvpViews, rsvpSubs] = r.data.steps;
     // 7d counts catch everything we inserted (all rows are within last 2 days).
+    expect(started?.count_7d).toBe(10);
     expect(signups?.count_7d).toBe(5);
     expect(couples?.count_7d).toBe(4);
     expect(sites?.count_7d).toBe(2);
     expect(rsvpViews?.count_7d).toBe(1);
     expect(rsvpSubs?.count_7d).toBe(1);
-    // 24h counts skip the two backdated signups.
+    // 24h counts skip the backdated rows.
+    expect(started?.count_24h).toBe(6);
     expect(signups?.count_24h).toBe(3);
     expect(couples?.count_24h).toBe(4);
     // Conversion ratios — step 0 null, rest are count / prevCount.
-    expect(signups?.conversion_from_prev).toBeNull();
+    expect(started?.conversion_from_prev).toBeNull();
+    // Step 1 is the verify drop-off: half the signups never confirmed.
+    expect(signups?.conversion_from_prev).toBeCloseTo(5 / 10, 4);
     expect(couples?.conversion_from_prev).toBeCloseTo(4 / 5, 4);
     expect(sites?.conversion_from_prev).toBeCloseTo(2 / 4, 4);
     expect(rsvpViews?.conversion_from_prev).toBeCloseTo(1 / 2, 4);
     expect(rsvpSubs?.conversion_from_prev).toBeCloseTo(1 / 1, 4);
+  });
+
+  test("register fires signup.started (user_id NULL); only the verify click completes", async () => {
+    wipeAll();
+    const adminToken = await bootstrapAdmin();
+
+    // Two signups start...
+    for (const email of ["funnel-a@example.com", "funnel-b@example.com"]) {
+      const reg = await req("POST", "/api/auth/register", {
+        email,
+        password: "supersafe123",
+        full_name: "Funnel",
+      });
+      expect(reg.status).toBe(202);
+    }
+    // ...both as pure intent: no account exists yet, so there is no id to
+    // attribute them to.
+    const started = db
+      .prepare("SELECT user_id FROM growth_events WHERE kind = 'signup.started'")
+      .all() as { user_id: number | null }[];
+    expect(started.length).toBe(2);
+    expect(started.every((e) => e.user_id === null)).toBe(true);
+    expect(countKind("signup.completed")).toBe(0);
+
+    // ...and only one clicks the link. That click is what mints the account, so
+    // signup.completed can finally carry a real user_id.
+    await verifyUserEmail("funnel-a@example.com");
+    const completed = db
+      .prepare("SELECT user_id FROM growth_events WHERE kind = 'signup.completed'")
+      .all() as { user_id: number | null }[];
+    expect(completed.length).toBe(1);
+    const userId = (
+      db.prepare("SELECT id FROM users WHERE email = ?").get("funnel-a@example.com") as {
+        id: number;
+      }
+    ).id;
+    expect(completed[0]?.user_id).toBe(userId);
+    // funnel-b never clicked, so it never became an account — exactly the cohort
+    // the started → completed ratio is there to surface.
+    expect(
+      db.prepare("SELECT id FROM users WHERE email = ?").get("funnel-b@example.com"),
+    ).toBeNull();
+
+    const r = await req<AdminGrowthFunnelAnalytics>(
+      "GET",
+      "/api/admin/analytics/growth-funnel",
+      undefined,
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.steps[0]?.count_7d).toBe(2);
+    expect(r.data.steps[1]?.count_7d).toBe(1);
+    expect(r.data.steps[1]?.conversion_from_prev).toBeCloseTo(0.5, 4);
   });
 
   test("referrers_7d aggregates payload.referrer + ignores rows outside the 7d window", async () => {

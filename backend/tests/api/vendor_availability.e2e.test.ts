@@ -8,7 +8,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import type { VendorAvailabilityView } from "@shared/listings";
@@ -19,13 +19,12 @@ interface ClaimRow {
 }
 
 async function registerAdminAndGetToken(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
   if (reg.status === 201) {
-    await verifyUserEmail("admin@test.test");
     return reg.data.token;
   }
   const login = await req<{ token: string }>("POST", "/api/auth/login", {

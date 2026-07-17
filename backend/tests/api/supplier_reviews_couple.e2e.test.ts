@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import type { ReviewListResponse, SupplierReview } from "@shared/suppliers";
 import { db, now } from "../../src/db";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 const supplierId = (): string => {
   const first = DIRECTORY[0];
@@ -18,12 +18,11 @@ const supplierId = (): string => {
 };
 
 async function registerAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 

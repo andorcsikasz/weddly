@@ -11,7 +11,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, verifyUserEmail, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 interface DirectoryItem {
   id: string;
@@ -34,13 +34,12 @@ const SI_VENUE = "bled-castle";
  *  session token. Mirrors bootstrapCouple but lets the caller pick the
  *  wedding country. */
 async function onboardCoupleInCountry(email: string, country: string): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Owner",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const ob = await req(
     "POST",
     "/api/couples/onboard",

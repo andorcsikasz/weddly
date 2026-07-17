@@ -14,7 +14,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 type MediaLinks = { guests: string | null; photographer: string[]; other: string | null };
 type CoupleResp = { couple: { id: number; media_links: MediaLinks } };
@@ -176,15 +176,13 @@ describe("E. couple-shared visibility", () => {
     });
 
     // Register partner B first (no couple yet), then invite and accept.
-    const regB = await req<{ token: string }>("POST", "/api/auth/register", {
+    const regB = await registerAndVerify({
       email: "photos-e-b@weddly.test",
       password: "supersafe123",
       full_name: "Partner B",
     });
     expect(regB.status).toBe(201);
     const tokenB = regB.data.token;
-    const { verifyUserEmail } = await import("../helpers");
-    await verifyUserEmail("photos-e-b@weddly.test");
 
     const inviteR = await req<{ invite: { token: string } }>(
       "POST",

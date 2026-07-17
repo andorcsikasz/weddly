@@ -1,7 +1,8 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
+import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
+import { issueSession } from "../../src/auth/session";
 import { db } from "../../src/db";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
@@ -315,17 +316,22 @@ describe("seating tables: requireVerifiedAuth", () => {
     // The user still needs a couple workspace, so the 400 here is for the
     // missing couple, not for the email gate.
     wipeAll();
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
-      email: "st-unv@weddly.test",
-      password: "supersafe123",
-      full_name: "Unv",
-    });
-    expect(reg.status).toBe(201);
+    // Register no longer mints a `users` row (it parks a pending signup and
+    // the verify click creates the account), so an unverified account with a
+    // session has to be written directly.
+    const ts = Date.now();
+    const info = db
+      .prepare(
+        `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, password_set, created_at, updated_at)
+         VALUES (?, ?, ?, 'active', 'owner', 0, 1, ?, ?)`,
+      )
+      .run("st-unv@weddly.test", "x", "Unv", ts, ts);
+    const unverifiedToken = issueSession(Number(info.lastInsertRowid));
     const r = await req<{ detail?: { code?: string } }>(
       "POST",
       "/api/seating/tables",
       { label: "T", shape: "round", seats: 4, x_mm: 0, y_mm: 0 },
-      { token: reg.data.token },
+      { token: unverifiedToken },
     );
     // No couple yet → 400 "No couple workspace". Not 403 email_unverified.
     expect(r.status).toBe(400);
@@ -1894,13 +1900,12 @@ describe("print: unknown couple", () => {
   test("verified user without a couple → 400 'No couple workspace yet'", async () => {
     wipeAll();
     const email = "no-couple@weddly.test";
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email,
       password: "supersafe123",
       full_name: "No Couple",
     });
     expect(reg.status).toBe(201);
-    await verifyUserEmail(email);
     const res = await fetch(`${BASE}/api/print/seating/a4`, {
       headers: { Authorization: `Bearer ${reg.data.token}` },
     });

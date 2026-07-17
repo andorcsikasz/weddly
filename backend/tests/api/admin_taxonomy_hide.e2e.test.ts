@@ -14,7 +14,7 @@ import { describe, expect, test } from "bun:test";
 import type { SupplierTaxonomy } from "@shared/supplier_taxonomy";
 import { db } from "../../src/db";
 import { retireLegacyTaxonomy, seedSupplierTaxonomy } from "../../src/domain/supplier_taxonomy";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 // Regression: the v2 taxonomy MOVED some kept-slug categories (e.g. sound_tech,
 // entertainment) to a new group. `supplier_categories.slug` is globally UNIQUE,
@@ -61,13 +61,12 @@ describe("supplier taxonomy — seeding over a legacy (pre-v2) DB", () => {
 });
 
 async function registerAdminAndGetToken(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
   if (reg.status === 201) {
-    await verifyUserEmail("admin@test.test");
     return reg.data.token;
   }
   const login = await req<{ token: string }>("POST", "/api/auth/login", {

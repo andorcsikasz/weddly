@@ -12,7 +12,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, req, verifyUserEmail, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 
@@ -42,13 +42,12 @@ function listGrowth(kind?: string): GrowthRow[] {
 }
 
 async function registerAdminAndGetToken(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
   if (reg.status === 201) {
-    await verifyUserEmail("admin@test.test");
     return reg.data.token;
   }
   const login = await req<{ token: string }>("POST", "/api/auth/login", {
@@ -456,8 +455,10 @@ describe("P2.C vendor claim — error paths", () => {
   test("complete refuses when the email is already taken by a user", async () => {
     wipeAll();
     const conflictingEmail = "conflict@claim.example";
-    // Register an existing user with that email first.
-    const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+    // Register an existing user with that email first. Register alone only parks
+    // a pending signup now, so verify it too — the conflict is against a real
+    // `users` row.
+    const reg = await registerAndVerify({
       email: conflictingEmail,
       password: "supersafe123",
       full_name: "Existing User",

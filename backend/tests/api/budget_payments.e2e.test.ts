@@ -308,9 +308,14 @@ describe("budget payments — PDF attachment", () => {
     expect(upBody.payment.pdf_url).toContain(`/budget-payments/${id}.pdf`);
 
     // It shows up on the list.
-    const listed = await req<{ payments: BudgetPayment[] }>("GET", "/api/budget/payments", undefined, {
-      token,
-    });
+    const listed = await req<{ payments: BudgetPayment[] }>(
+      "GET",
+      "/api/budget/payments",
+      undefined,
+      {
+        token,
+      },
+    );
     expect(listed.data.payments.find((p) => p.id === id)?.pdf_name).toBe("szamla.pdf");
 
     // Gated download streams the PDF.
@@ -322,9 +327,14 @@ describe("budget payments — PDF attachment", () => {
     expect((await dl.text()).startsWith("%PDF")).toBe(true);
 
     // Remove.
-    const rm = await req<{ payment: BudgetPayment }>("DELETE", `/api/budget/payments/${id}/pdf`, undefined, {
-      token,
-    });
+    const rm = await req<{ payment: BudgetPayment }>(
+      "DELETE",
+      `/api/budget/payments/${id}/pdf`,
+      undefined,
+      {
+        token,
+      },
+    );
     expect(rm.status).toBe(200);
     expect(rm.data.payment.pdf_url).toBeNull();
     expect(rm.data.payment.pdf_name).toBeNull();

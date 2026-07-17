@@ -10,6 +10,7 @@
 import { expect } from "bun:test";
 
 import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
+import type { AuthSession } from "@shared/types";
 import { __testPlaintextForHash } from "../src/auth/tokens";
 import { db } from "../src/db";
 import { seedSupplierTaxonomy } from "../src/domain/supplier_taxonomy";
@@ -185,6 +186,10 @@ export function wipeAll(): void {
     "rate_limit_buckets",
     "password_reset_tokens",
     "planner_activation_tokens",
+    // Unclicked signups. A leaked row makes the NEXT test's register for the
+    // same address hit the ON CONFLICT update path and, worse, leaves
+    // `verifyUserEmail` redeeming a stale token minted by the previous test.
+    "pending_signups",
     "email_verification_tokens",
     "email_change_tokens",
     "email_log",
@@ -298,12 +303,76 @@ export function wipeAll(): void {
   __resetGoogleCalendarFake();
 }
 
-/** Mark the most recently-issued verification token for the email as used.
- *  Same code path a real user clicking the welcome-mail link would hit. */
+/** Recover the PLAINTEXT verify-link token for a parked signup — the value the
+ *  welcome mail would carry. A password register no longer creates a `users`
+ *  row, so its token lives in `pending_signups`, not
+ *  `email_verification_tokens` (see domain/pending_signups.ts). */
+export function latestPendingSignupToken(email: string): string {
+  const row = db
+    .prepare("SELECT token FROM pending_signups WHERE email = ?")
+    .get(email.trim().toLowerCase()) as { token: string } | undefined;
+  if (!row) throw new Error(`no pending_signups row for ${email}`);
+  const plaintext = __testPlaintextForHash(row.token);
+  if (!plaintext) throw new Error(`no captured plaintext for pending_signups/${email}`);
+  return plaintext;
+}
+
+/** Click the verify link for an address — whichever kind of link it is.
+ *
+ *  Three cases, because there are three states an address can be in:
+ *   - a parked signup (the password-register path): the click MINTS the
+ *     account and returns its first session;
+ *   - a real but unverified user (vendor register, a resend): flips the flag;
+ *   - already verified: no-op.
+ *
+ *  The last case keeps `register -> verify` call sites working after
+ *  `registerAndVerify` already did the verifying. */
 export async function verifyUserEmail(email: string): Promise<void> {
+  const pending = db
+    .prepare("SELECT id FROM pending_signups WHERE email = ?")
+    .get(email.trim().toLowerCase());
+  if (pending) {
+    const r = await req("POST", `/api/auth/verify/${latestPendingSignupToken(email)}`, {});
+    expect(r.status).toBe(201);
+    return;
+  }
+  const user = db
+    .prepare("SELECT verified_email FROM users WHERE email = ?")
+    .get(email.trim().toLowerCase()) as { verified_email: number } | undefined;
+  if (user?.verified_email) return;
   const token = latestCredentialToken("email_verification_tokens", email);
   const r = await req("POST", `/api/auth/verify/${token}`, {});
   expect(r.status).toBe(200);
+}
+
+/** Register + click the verify link, returning the session the way
+ *  `POST /api/auth/register` used to.
+ *
+ *  Register alone no longer yields a session (it parks a pending signup and
+ *  returns 202) — the account only exists once the link is clicked. Almost
+ *  every test wants "a user that exists and is signed in", so this helper keeps
+ *  the old `{ status: 201, data: { token, user } }` shape and callers can stay
+ *  as they were. Tests probing register itself (409 on a taken address, stale
+ *  consent versions, the 202 body) should call `req` directly. */
+export async function registerAndVerify(
+  body: Record<string, unknown>,
+  opts: ReqOpts = {},
+): Promise<ApiResult<AuthSession>> {
+  const email = String(body.email ?? "");
+  const reg = await req<{ pending: true; email: string }>("POST", "/api/auth/register", body, opts);
+  if (reg.status !== 202) {
+    // Surface the real failure (409 / 400 / 429) instead of dying later on a
+    // missing pending row.
+    return { status: reg.status, data: reg.data as unknown as AuthSession };
+  }
+  const verified = await req<AuthSession>(
+    "POST",
+    `/api/auth/verify/${latestPendingSignupToken(email)}`,
+    {},
+    opts,
+  );
+  expect(verified.status).toBe(201);
+  return verified;
 }
 
 /** Register a fresh user, verify their email, onboard a default couple, and
@@ -313,13 +382,12 @@ export async function verifyUserEmail(email: string): Promise<void> {
 export async function bootstrapCouple(
   email = "couple@weddly.test",
 ): Promise<{ token: string; coupleId: number }> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Owner",
   });
   expect(reg.status).toBe(201);
-  await verifyUserEmail(email);
   const ob = await req<{ couple: { id: number } }>(
     "POST",
     "/api/couples/onboard",

@@ -15,7 +15,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { req, wipeAll, verifyUserEmail, bootstrapCouple } from "../helpers";
+import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
@@ -62,7 +62,7 @@ async function timeIt(
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function bootstrapAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
@@ -91,7 +91,7 @@ describe("perf: auth", () => {
   test("POST /api/auth/login p95 < 300ms (Argon2 verify)", async () => {
     wipeAll();
     // Register a target user once so login has a real password row to verify.
-    const reg = await req("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "perf-login@weddly.test",
       password: "supersafe123",
       full_name: "Login Tester",
@@ -128,7 +128,7 @@ describe("perf: auth", () => {
     wipeAll();
     // Each logout invalidates the token, so we need a fresh token per sample.
     // Register once, then mint sessions via /api/auth/login per call.
-    const reg = await req("POST", "/api/auth/register", {
+    const reg = await registerAndVerify({
       email: "perf-logout@weddly.test",
       password: "supersafe123",
       full_name: "Logout Tester",
@@ -170,12 +170,11 @@ describe("perf: couples", () => {
       async () => {
         counter += 1;
         const email = `perf-ob-${counter}@weddly.test`;
-        const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+        const reg = await registerAndVerify({
           email,
           password: "supersafe123",
           full_name: "OB",
         });
-        await verifyUserEmail(email);
         const t0 = performance.now();
         await req(
           "POST",

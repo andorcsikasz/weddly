@@ -13,20 +13,18 @@ import type {
   PlannerProfile,
 } from "@shared/types";
 import { db } from "../../src/db";
-import { bootstrapCouple, latestCredentialToken, req, wipeAll } from "../helpers";
+import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
 /** Register + verify + promote to a listable planner (business name + city). */
 async function makePlanner(email: string): Promise<{ token: string; userId: number }> {
-  const reg = await req<{ token: string; user: { id: number } }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email,
     password: "supersafe123",
     full_name: "Eszter Nagy",
   });
   expect(reg.status).toBe(201);
-  const vt = latestCredentialToken("email_verification_tokens", email);
-  await req("POST", `/api/auth/verify/${vt}`, {});
   db.prepare("UPDATE users SET user_type = 'planner', couple_id = NULL WHERE LOWER(email) = ?").run(
     email.toLowerCase(),
   );

@@ -18,15 +18,14 @@ import { describe, expect, test } from "bun:test";
 import { VENDOR_FOUNDING_CAP, VENDOR_FOUNDING_DURATION_MS } from "@shared/vendor_billing";
 import { db } from "../../src/db";
 import { buildEmail } from "../../src/domain/emails/templates";
-import { req, verifyUserEmail, wipeAll } from "../helpers";
+import { registerAndVerify, req, wipeAll } from "../helpers";
 
 async function addAdmin(): Promise<string> {
-  const reg = await req<{ token: string }>("POST", "/api/auth/register", {
+  const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
     full_name: "Admin",
   });
-  await verifyUserEmail("admin@test.test");
   return reg.data.token;
 }
 
