@@ -48,6 +48,17 @@ function lookupUserLocale(userId: number): RecipientLocale {
 export interface SendTarget {
   /** The user who owns the inbox. `null` for guest-bound mail (no Weddly account). */
   user: { id: number; email: string; full_name: string } | null;
+  /**
+   * Recipient who filled in the register form but has no `users` row yet — the
+   * signup is parked in `pending_signups` until this very mail's link is
+   * clicked (see domain/pending_signups.ts). Carries its own locale because
+   * there is no `users.locale` to look up.
+   *
+   * Set alongside `user: null`. No opt-out check runs for these: the only mail
+   * on this path is the transactional welcome/verify link, and a pending signup
+   * has no preferences row to consult anyway.
+   */
+  pending?: { email: string; full_name: string; locale: string | null } | null;
   /** Couple this email relates to, used for the email_log row + scoping. */
   couple_id?: number | null;
   /**
@@ -141,7 +152,13 @@ async function sendKindInner<K extends EmailKind>(
   let unsubscribeToken: string | undefined;
   // Guest-bound mail (no user) keeps `null` → bilingual fallback render until
   // we capture a per-guest locale. Lookup happens against `users.locale`.
-  const recipientLocale: RecipientLocale = target.user ? lookupUserLocale(target.user.id) : null;
+  // A pending signup has no users row yet but did tell us its locale on the
+  // register form — use it directly so the welcome mail lands in their language.
+  const recipientLocale: RecipientLocale = target.user
+    ? lookupUserLocale(target.user.id)
+    : target.pending
+      ? normalizeRecipientLocale(target.pending.locale)
+      : null;
   // For guest sends with a known submitter, resolve the submitter's locale
   // and bias the bilingual order toward it. Doesn't replace the bilingual
   // fallback — just reorders.
@@ -310,6 +327,10 @@ function resolveRecipient(target: SendTarget): { email: string; name: string } |
   }
   if (target.user) {
     return { email: target.user.email, name: target.user.full_name || "" };
+  }
+  if (target.pending) {
+    if (!target.pending.email) return null;
+    return { email: target.pending.email, name: target.pending.full_name || "" };
   }
   return null;
 }

@@ -1,14 +1,28 @@
-// Email verification ("soft" — never blocks signup or login). The token is
-// opaque (32 random bytes hex), single-use, 7-day TTL. handleConsume sets
-// users.verified_email = 1; handleResend issues a fresh token for the
-// current authenticated user.
+// Email verification — a HARD gate. An unverified account never gets a session
+// (see the login gate in auth.ts), and for the couples password-register path
+// the account doesn't even exist until the link is clicked: the signup waits in
+// `pending_signups` and handleConsume mints the users row (see
+// domain/pending_signups.ts).
+//
+// The token is opaque (32 random bytes hex), single-use, 7-day TTL.
+// handleConsume promotes a pending signup OR sets users.verified_email = 1 for
+// an account that already exists (vendors, resends, pre-split users);
+// handleResend issues a fresh token for the current authenticated user.
 
+import type { AuthSession } from "@shared/types";
+import { issueSession } from "../auth/session";
 import { hashToken, mintToken } from "../auth/tokens";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { sendKind } from "../domain/emails";
-import { getUserByEmail, getUserById, type UserRow } from "../domain/users";
+import {
+  getPendingSignupByEmail,
+  getPendingSignupByToken,
+  promotePendingSignup,
+  reissuePendingSignupToken,
+} from "../domain/pending_signups";
+import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
@@ -88,8 +102,30 @@ async function handleResendPublic(ctx: Ctx): Promise<Response> {
     const user = getUserByEmail(email);
     if (user && !user.verified_email && user.status !== "suspended") {
       sendVerificationLink(user, "verify_resend");
+    } else if (!user) {
+      // No account — but there may be a pending signup whose welcome mail was
+      // lost. That's the whole cohort this endpoint exists for now: they have
+      // no users row, so the branch above can never see them.
+      const pending = getPendingSignupByEmail(email);
+      if (pending) {
+        const token = reissuePendingSignupToken(pending.id);
+        void sendKind(
+          "verify_resend",
+          { verifyUrl: `${CONFIG.frontendBaseUrl}/verify-email/${token}` },
+          {
+            user: null,
+            pending: {
+              email: pending.email,
+              full_name: pending.full_name,
+              locale: pending.locale,
+            },
+          },
+        );
+      }
     }
   }
+  // Always 200, regardless of which branch ran (or none) — the response must
+  // not reveal whether the address has an account, a pending signup, or nothing.
   return json({ ok: true });
 }
 
@@ -98,6 +134,25 @@ async function handleConsume(ctx: Ctx): Promise<Response> {
   const tokenRaw = ctx.params.token;
   if (typeof tokenRaw !== "string" || tokenRaw.length < 16) {
     throw new HttpError(400, "Invalid token");
+  }
+
+  // Two token shapes land here, and the link looks identical for both:
+  //
+  //  1. A pending signup (the couples password-register path) — no account
+  //     exists yet, so the click MINTS one and returns a session. This is the
+  //     common case.
+  //  2. A legacy email_verification_tokens row — an account that already
+  //     exists but is unverified: vendor register, admin/public resend, and
+  //     every pre-existing unverified user from before this split. Flips
+  //     verified_email and returns { ok: true } with no session, because we
+  //     can't hand a session to a password we never re-checked.
+  const pending = getPendingSignupByToken(tokenRaw);
+  if (pending) {
+    const userRow = promotePendingSignup(pending);
+    const token = issueSession(userRow.id);
+    // 201: the click is what created the account.
+    const session: AuthSession = { token, user: toUser(userRow) };
+    return json(session, { status: 201 });
   }
 
   const row = db

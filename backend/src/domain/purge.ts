@@ -15,6 +15,7 @@ import { sweepStaleRateLimitBuckets } from "../lib/rate_limit";
 import { purgeStaleDemoCouples } from "./demo_seed";
 import { purgeStalePlannerDemos } from "./planner_demo_seed";
 import { purgeStaleVendorDemos } from "./vendor_demo_seed";
+import { purgeExpiredPendingSignups } from "./pending_signups";
 import { sendKind } from "./emails";
 import { listFlagsDueForPurge, markFlagPurged } from "./user_flags";
 
@@ -414,6 +415,7 @@ export function runPurgeSweep(): {
   residue_finalised: number;
   ratelimit_buckets_deleted: number;
   unverified_purged: number;
+  pending_signups_expired: number;
 } {
   const ts = now();
   const due = db
@@ -501,6 +503,16 @@ export function runPurgeSweep(): {
     log.error("purge.unverified_sweep_failed", e);
   }
 
+  // Signups that never clicked their link. Distinct from the sweep above: those
+  // are real (legacy) users rows that must be scrubbed, these were never
+  // accounts at all and can just go.
+  let pendingExpired = 0;
+  try {
+    pendingExpired = purgeExpiredPendingSignups();
+  } catch (e) {
+    log.error("purge.pending_signup_sweep_failed", e);
+  }
+
   return {
     purged: due.length,
     flagged_purged: flaggedPurged,
@@ -508,6 +520,7 @@ export function runPurgeSweep(): {
     residue_finalised: residueFinalised,
     ratelimit_buckets_deleted: ratelimitDeleted,
     unverified_purged: unverifiedPurged,
+    pending_signups_expired: pendingExpired,
   };
 }
 

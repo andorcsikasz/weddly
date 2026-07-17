@@ -253,9 +253,10 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 );
 CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id);
 
--- Email verification tokens. Single-use (consumed_at), 7-day TTL — email
--- verification is "soft" (not required to use the app) so we give users
--- plenty of time to click the link.
+-- Email verification tokens. Single-use (consumed_at), 7-day TTL. Verification
+-- is HARD: an unverified account never gets a session (see auth.ts login gate),
+-- so the generous window is about giving a real user time to find the mail, not
+-- about the check being optional.
 CREATE TABLE IF NOT EXISTS email_verification_tokens (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -1861,3 +1862,55 @@ CREATE TABLE IF NOT EXISTS google_calendar_event_map (
   updated_at      INTEGER NOT NULL,
   PRIMARY KEY (couple_id, source_kind, source_id)
 );
+
+-- Signups that haven't proved their email address yet. A password registration
+-- lands HERE, not in `users` — the users row is only minted when the verify
+-- link is clicked (see routes/email_verify.ts handleConsume).
+--
+-- Why: verification is a hard gate (an unverified account can never get a
+-- session), so a users row for an unverified signup was pure dead weight — it
+-- cluttered the admin list and, worse, held its address hostage against the
+-- users.email UNIQUE constraint, permanently locking the rightful owner of a
+-- typo'd address out with a 409.
+--
+-- Everything `handleRegister` used to do inline against a fresh user_id is
+-- stashed here and replayed at verify-time: acquisition snapshot, the planner
+-- invite to rebind, referrer attribution, and the GDPR consent evidence
+-- (consent_ip / consent_user_agent are captured at REGISTER time — the moment
+-- the box was actually ticked — and must not be re-read from the verify click,
+-- which often arrives from a different device).
+--
+-- OAuth (Google/Apple) never touches this table: those signups are
+-- provider-attested and go straight to `users` with verified_email = 1.
+CREATE TABLE IF NOT EXISTS pending_signups (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  email             TEXT    NOT NULL UNIQUE,
+  password_hash     TEXT    NOT NULL,
+  full_name         TEXT    NOT NULL,
+  locale            TEXT,
+  token             TEXT    NOT NULL UNIQUE,                -- sha256 hash, never plaintext
+  expires_at        INTEGER NOT NULL,
+  -- Acquisition snapshot, replayed onto the users row at verify.
+  signup_country    TEXT,
+  device_type       TEXT,
+  utm_source        TEXT,
+  utm_medium        TEXT,
+  utm_campaign      TEXT,
+  utm_content       TEXT,
+  utm_term          TEXT,
+  -- Deferred side effects.
+  referrer          TEXT,                                   -- allow-listed: 'rsvp' | 'site' | 'share'
+  referer_header    TEXT,                                   -- legacy /rsvp/* attribution fallback
+  planner_invite    TEXT,
+  privacy_version   TEXT    NOT NULL,
+  terms_version     TEXT    NOT NULL,
+  -- The register request's ip + user-agent. Serves two masters: GDPR Art. 7(1)
+  -- consent evidence (the request where the box was ticked) and growth-event
+  -- attribution. Both want the REGISTER click, not the verify click — the latter
+  -- often arrives from a different device hours later.
+  signup_ip         TEXT,
+  signup_user_agent TEXT,
+  created_at        INTEGER NOT NULL,
+  updated_at        INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_pending_signups_expires ON pending_signups(expires_at);

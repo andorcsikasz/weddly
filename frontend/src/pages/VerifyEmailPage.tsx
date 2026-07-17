@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell";
 import { Skeleton } from "../components/ui";
 import { useAuth } from "../lib/auth";
+import { clearDemoSessionFlag } from "../lib/demoSession";
 import { authApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -12,7 +13,8 @@ type State = "loading" | "success" | "invalid";
 export default function VerifyEmailPage() {
   const { token = "" } = useParams<{ token: string }>();
   const { t } = useT();
-  const { user, refresh } = useAuth();
+  const { user, refresh, setSession } = useAuth();
+  const navigate = useNavigate();
   useDocumentMeta("verify.page_title", "verify.banner_body");
   const [state, setState] = useState<State>("loading");
 
@@ -24,8 +26,22 @@ export default function VerifyEmailPage() {
     let cancelled = false;
     authApi
       .verifyEmail(token)
-      .then(async () => {
+      .then(async (res) => {
         if (cancelled) return;
+        if ("token" in res) {
+          // A pending signup: this click just created the account, and the
+          // response is its first session. Sign them in and hand off to
+          // onboarding — for the password-register path this IS the moment the
+          // user becomes real, so there's nothing to go "back" to.
+          clearDemoSessionFlag();
+          setSession(res.token, res.user);
+          setState("success");
+          navigate(res.user.role === "vendor" ? "/vendor" : "/onboarding", { replace: true });
+          return;
+        }
+        // An account that already existed and just got verified (vendor
+        // register, a resend, any pre-pending_signups user). No session comes
+        // back — they sign in normally.
         setState("success");
         // If they're logged in here, refresh so the banner disappears.
         if (user) await refresh();

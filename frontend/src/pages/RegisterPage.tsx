@@ -1,25 +1,21 @@
 import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
-import type { AuthSession, PlannerInvitePublic } from "@shared/types";
+import type { PlannerInvitePublic } from "@shared/types";
 import { Mail } from "lucide-react";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AppleSignInButton } from "../components/AppleSignInButton";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { Shell } from "../components/Shell";
 import { Button, PasswordField, useToast } from "../components/ui";
-import { ApiError, apiFetch } from "../lib/api";
-import { useAuth } from "../lib/auth";
-import { clearDemoSessionFlag } from "../lib/demoSession";
+import { ApiError } from "../lib/api";
 import { authApi, plannerInviteApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 export default function RegisterPage() {
-  const { setSession } = useAuth();
   const { t, locale } = useT();
   const toast = useToast();
   useDocumentMeta("seo.register_title", "seo.register_description");
-  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,10 +23,12 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Holds the freshly-minted session until the user clicks past the
-  // "check your inbox" interstitial. We don't call setSession() until then,
-  // otherwise <RedirectIfAuthed> bounces them straight to /onboarding.
-  const [pendingSession, setPendingSession] = useState<AuthSession | null>(null);
+  // Set once the signup is parked server-side, which switches this page to the
+  // "check your inbox" interstitial. There is no session to hold: register
+  // creates nothing but a pending_signups row, and the account (plus its
+  // session) only comes into being when the emailed link is clicked — see
+  // VerifyEmailPage.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const errorId = useId();
@@ -115,7 +113,7 @@ export default function RegisterPage() {
       // object as JSON. (See report: endpoints.ts can add `planner_invite?:
       // string` to the register signature to type this explicitly.)
       const plannerInviteField = plannerInviteToken ? { planner_invite: plannerInviteToken } : {};
-      const session = await authApi.register({
+      const pending = await authApi.register({
         email: email.trim(),
         password,
         full_name: fullName.trim(),
@@ -138,13 +136,7 @@ export default function RegisterPage() {
       } catch {
         /* non-fatal */
       }
-      // Hold the session in transient state ONLY — we do NOT persist the
-      // token to localStorage yet. If we did, hitting BACK from the
-      // "check inbox" interstitial would let <RedirectIfAuthed> bounce
-      // the user past the coaching screen. Token + user only land in
-      // localStorage when `continueToApp()` runs after the user has read
-      // (or skipped) the inbox instructions.
-      setPendingSession(session);
+      setPendingEmail(pending.email);
     } catch (err) {
       setError(messageFor(err, t));
     } finally {
@@ -153,18 +145,13 @@ export default function RegisterPage() {
   }
 
   async function onResend() {
-    if (!pendingSession) return;
+    if (!pendingEmail) return;
     setResending(true);
     try {
-      // Pass the pending token explicitly — it isn't in localStorage yet
-      // (we only persist on continueToApp) so authApi.requestVerify() would
-      // otherwise be unauthenticated.
-      await apiFetch<{ ok: true; already_verified?: boolean }>(
-        "POST",
-        "/api/auth/verify/request",
-        {},
-        { token: pendingSession.token },
-      );
+      // The public, email-keyed resend: there is no account and no session yet
+      // (the signup is parked in pending_signups until the link is clicked), so
+      // the authenticated /verify/request has nothing to authenticate with.
+      await authApi.requestVerifyPublic(pendingEmail);
       toast.success(t("verify.banner_resent"));
     } catch (err) {
       const msg =
@@ -177,19 +164,7 @@ export default function RegisterPage() {
     }
   }
 
-  function continueToApp() {
-    if (!pendingSession) return;
-    // This is a brand-new real account — make sure no stale demo flag from an
-    // earlier demo launch on this device follows them into onboarding.
-    clearDemoSessionFlag();
-    setSession(pendingSession.token, pendingSession.user);
-    // Vendors never see the couple OnboardingWizard — route them to their own
-    // workspace. Normal sign-ups are couples and go to onboarding.
-    const dest = pendingSession.user.role === "vendor" ? "/vendor" : "/onboarding";
-    navigate(dest, { replace: true });
-  }
-
-  if (pendingSession) {
+  if (pendingEmail) {
     return (
       <Shell>
         <div className="mx-auto max-w-md">
@@ -202,9 +177,12 @@ export default function RegisterPage() {
             </h1>
             <p className="mt-3 text-sm text-umber-800">{t("verify.check_inbox_body")}</p>
             <p className="mt-4 break-all rounded-lg bg-paper-100 px-3 py-2 text-sm font-medium text-umber-900">
-              {pendingSession.user.email}
+              {pendingEmail}
             </p>
             <p className="mt-4 text-xs text-umber-600">{t("verify.check_inbox_spam_hint")}</p>
+            {/* No "skip into the app" affordance any more: the account doesn't
+                exist until the link is clicked, so there is nothing to skip
+                into. Clicking the link is what creates it and signs them in. */}
             <div className="mt-6 flex flex-col gap-3">
               <Button
                 type="button"
@@ -215,9 +193,6 @@ export default function RegisterPage() {
                 onClick={onResend}
               >
                 {t("verify.banner_resend")}
-              </Button>
-              <Button type="button" variant="primary" fullWidth onClick={continueToApp}>
-                {t("verify.check_inbox_skip")}
               </Button>
             </div>
           </div>

@@ -339,7 +339,15 @@ function activityAnalytics(audience: AnalyticsAudience): AdminActivityAnalytics 
     ).n;
 
   const totalSignups = totalCount(REAL);
-  const registered = totalSignups;
+  // Signups that haven't clicked their verify link yet are NOT in `users` —
+  // they wait in `pending_signups` (see domain/pending_signups.ts). Counting
+  // only the users table would pin pct_verified at ~100%, because a couples
+  // account is now born verified: the click is what creates it. Adding the
+  // pending rows back is what keeps "how many actually confirm?" answerable.
+  const pendingSignups = (
+    db.prepare("SELECT COUNT(*) AS n FROM pending_signups").get() as { n: number }
+  ).n;
+  const registered = totalSignups + pendingSignups;
   const verified = verifiedCount(REAL);
   const onboarded = onboardedCount(REAL);
 
@@ -1137,13 +1145,19 @@ function handleEngagement(ctx: Ctx): Response {
 //
 // Read-side consumer for the growth_events table (P6b). Computes the funnel
 // the founder's 60-day commitment metric is built on:
-//   signup.completed → couple.created → wedding_site.view
-//                    → rsvp.page.view → rsvp.submitted
+//   signup.started → signup.completed → couple.created → wedding_site.view
+//                  → rsvp.page.view → rsvp.submitted
 // Plus: top 7d attributed referrers, and the "stalled couple" outreach list
 // (couples that created a workspace but haven't gotten a single site view yet).
+//
+// `signup.started` (register) → `signup.completed` (verify link clicked) is the
+// email-confirmation drop-off. It's the first stage because it's now the widest
+// point of the funnel: since the account is only minted at verify, everyone who
+// never clicks is invisible past this step.
 
 /** Funnel order — keep aligned with the dashboard column layout. */
 const GROWTH_FUNNEL_KINDS = [
+  "signup.started",
   "signup.completed",
   "couple.created",
   "wedding_site.view",

@@ -7,12 +7,9 @@ import { extractToken, issueSession, revokeSession } from "../auth/session";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
-import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails";
 import { recordGrowthEvent } from "../domain/growth_events";
-import { grantPlannerAccount } from "../domain/planner";
-import { initPlannerBilling } from "../domain/planner_billing";
-import { rebindInvitationEmail } from "../domain/planner_invitations";
+import { createPendingSignup } from "../domain/pending_signups";
 import { buildSignupAcquisition } from "../domain/signup_meta";
 import { deviceFingerprint, recordKnownDevice } from "../domain/known_devices";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
@@ -24,7 +21,7 @@ import {
   recordLoginFailure,
 } from "../lib/rate_limit";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
-import { createVerificationToken, sendVerificationLink } from "./email_verify";
+import { sendVerificationLink } from "./email_verify";
 
 interface RegisterBody {
   email?: unknown;
@@ -108,161 +105,78 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Terms version is out of date — please refresh the page");
   }
 
+  // A real, verified account owns its address — that's a genuine conflict.
+  // A merely-pending signup does NOT: createPendingSignup overwrites it, so an
+  // abandoned or typo'd attempt can't squat an address it never proved.
   if (getUserByEmail(email)) throw new HttpError(409, "Email already registered");
 
   const passwordHash = await hashPassword(password);
-  const ts = now();
   // Coerce locale at the boundary — only persist values the frontend +
   // backend i18n actually understand. Anything else stays null.
   const persistedLocale = body.locale === "hu" || body.locale === "en" ? body.locale : null;
   // Acquisition snapshot: country (from IP, IP discarded), device bucket, UTM.
   const acq = buildSignupAcquisition(ctx, body);
-  const result = db
-    .prepare(
-      `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, locale,
-                          signup_country, device_type, utm_source, utm_medium, utm_campaign, utm_content, utm_term,
-                          created_at, updated_at)
-       VALUES (?, ?, ?, 'active', 'owner', 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      email,
-      passwordHash,
-      fullName,
-      persistedLocale,
-      acq.signup_country,
-      acq.device_type,
-      acq.utm_source,
-      acq.utm_medium,
-      acq.utm_campaign,
-      acq.utm_content,
-      acq.utm_term,
-      ts,
-      ts,
-    );
-  const userId = Number(result.lastInsertRowid);
-
-  // Auto-promote to planner if email is on the waitlist. The waitlist is
-  // auto-accept now, so any entry grants the account. The plan/cap stay at the
-  // default until the planner confirms one during onboarding (prefill).
-  const inWaitlist = db
-    .prepare("SELECT id FROM planner_waitlist WHERE LOWER(email) = ?")
-    .get(email.toLowerCase());
-  if (inWaitlist) {
-    grantPlannerAccount(userId);
-    // Open the planner's billing lifecycle (founding grant while slots remain,
-    // else a 3-day trial) the moment the account is granted.
-    initPlannerBilling(userId);
-  }
-
-  // Re-bind a planner email-invitation to the address they actually registered
-  // with, so the onboarding link-up matches even if the invitee signed up under
-  // a different email than the one the planner invited.
-  if (typeof body.planner_invite === "string" && body.planner_invite.trim()) {
-    rebindInvitationEmail(body.planner_invite.trim(), email);
-  }
-
-  const ip = ctx.clientIp;
-  const userAgent = ctx.req.headers.get("user-agent");
-  recordConsent({
-    subjectUserId: userId,
-    subjectKind: "user",
-    subjectRef: null,
-    document: "privacy",
-    version: PRIVACY_VERSION,
-    ip,
-    userAgent,
-  });
-  recordConsent({
-    subjectUserId: userId,
-    subjectKind: "user",
-    subjectRef: null,
-    document: "terms",
-    version: TERMS_VERSION,
-    ip,
-    userAgent,
-  });
-
-  addAuditLog({
-    actor_user_id: userId,
-    couple_id: null,
-    action: "user.register",
-    target_kind: "user",
-    target_id: userId,
-    after: { email },
-  });
 
   // Funnel attribution: prefer the explicit body field over the Referer
   // header, which often points at /register (the page being submitted)
   // rather than the original /rsvp / /w landing. Allow-list keeps
-  // user-controlled strings out of the growth_events column.
+  // user-controlled strings out of the growth_events column. Resolved here,
+  // at register time, because the verify click carries neither.
   const allowedRefs: ReadonlySet<string> = new Set(["rsvp", "site", "share"]);
   const bodyRef = typeof body.referrer === "string" ? body.referrer : null;
   const refSource = bodyRef && allowedRefs.has(bodyRef) ? bodyRef : null;
-  if (refSource) {
-    recordGrowthEvent("signup.from_referrer", {
-      user_id: userId,
-      referrer: refSource,
-      user_agent: ctx.req.headers.get("user-agent"),
-    });
-  } else {
-    // Legacy fallback: Referer-based attribution for the /rsvp/* page that
-    // pre-dates the explicit body field. Drops off as the frontend updates
-    // every public CTA to thread `?ref=` through.
-    const referer = ctx.req.headers.get("referer");
-    if (referer && /\/rsvp\/[^?#]+/.test(referer)) {
-      recordGrowthEvent("signup.from_rsvp_referrer", {
-        user_id: userId,
-        referrer: referer,
-        user_agent: ctx.req.headers.get("user-agent"),
-      });
-    }
-  }
+  const referer = ctx.req.headers.get("referer");
+  const userAgent = ctx.req.headers.get("user-agent");
 
-  // Every successful register fires `signup.completed` — pairs with the
-  // referrer-tagged events above so the dashboard can compute attribution
-  // rate (= signup.from_referrer / signup.completed). Without this base
-  // counter, attribution is just a number with no denominator.
-  recordGrowthEvent("signup.completed", {
-    user_id: userId,
-    user_agent: ctx.req.headers.get("user-agent"),
+  // No users row yet — the signup waits in `pending_signups` until the verify
+  // link proves the address. Everything this handler used to do against a fresh
+  // user_id (consent, audit, growth, planner grants, session) is replayed by
+  // handleConsume once the account actually exists. See domain/pending_signups.
+  const verifyToken = createPendingSignup({
+    email,
+    passwordHash,
+    fullName,
+    locale: persistedLocale,
+    signupCountry: acq.signup_country,
+    deviceType: acq.device_type,
+    utmSource: acq.utm_source,
+    utmMedium: acq.utm_medium,
+    utmCampaign: acq.utm_campaign,
+    utmContent: acq.utm_content,
+    utmTerm: acq.utm_term,
+    referrer: refSource,
+    refererHeader: referer && /\/rsvp\/[^?#]+/.test(referer) ? referer : null,
+    plannerInvite:
+      typeof body.planner_invite === "string" && body.planner_invite.trim()
+        ? body.planner_invite.trim()
+        : null,
+    privacyVersion: PRIVACY_VERSION,
+    termsVersion: TERMS_VERSION,
+    // GDPR Art. 7(1): the consent evidence is the ip/user-agent of the request
+    // where the box was ticked. The verify click can come from another device
+    // hours later, so it must not be the thing we record.
+    signupIp: ctx.clientIp,
+    signupUserAgent: userAgent,
   });
 
-  // Welcome + verification — single email, both purposes. Soft verification:
-  // we never block signup or login on this; the dashboard banner nags until
-  // they click. Fire-and-forget so a mailer outage doesn't fail registration.
-  const verifyToken = createVerificationToken(userId);
+  // Intent counter. user_id is NULL — there is no user to point at yet. Pairs
+  // with `signup.completed` (fired at verify) to read verify drop-off:
+  //   drop-off = 1 - completed / started
+  recordGrowthEvent("signup.started", { user_agent: userAgent });
+
+  // Welcome + verification — single email, both purposes. Fire-and-forget so a
+  // mailer outage doesn't fail the request; the user can always re-register
+  // (the pending row is overwritten) or use the public resend.
   const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-email/${verifyToken}`;
   void sendKind(
     "welcome_verify",
     { verifyUrl },
-    { user: { id: userId, email, full_name: fullName } },
+    { user: null, pending: { email, full_name: fullName, locale: persistedLocale } },
   );
 
-  const token = issueSession(userId);
-  // Skip the re-SELECT — every field is in scope from the INSERT above. The
-  // hard-coded values mirror the DEFAULTs in the INSERT statement.
-  const userRow: UserRow = {
-    id: userId,
-    email,
-    password_hash: passwordHash,
-    full_name: fullName,
-    status: "active",
-    role: "owner",
-    couple_id: null,
-    verified_email: 0,
-    created_at: ts,
-    updated_at: ts,
-    last_seen_at: null,
-    signup_country: acq.signup_country,
-    device_type: acq.device_type,
-    utm_source: acq.utm_source,
-    utm_medium: acq.utm_medium,
-    utm_campaign: acq.utm_campaign,
-    utm_content: acq.utm_content,
-    utm_term: acq.utm_term,
-  };
-  const session: AuthSession = { token, user: toUser(userRow) };
-  return json(session, { status: 201 });
+  // 202, not 201: nothing was created yet. No session — a session implies an
+  // account, and there isn't one until the address is proved.
+  return json({ pending: true, email }, { status: 202 });
 }
 
 async function handleLogin(ctx: Ctx): Promise<Response> {

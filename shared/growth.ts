@@ -33,9 +33,16 @@ export type GrowthEventKind =
    *  param from a public Weddly surface — `rsvp`, `site`, or `share`.
    *  `payload.referrer` holds the allow-listed source, not a raw URL. */
   | "signup.from_referrer"
-  /** Every successful POST /api/auth/register — regardless of referrer.
-   *  Pairs with signup.from_referrer to compute attribution rate:
-   *  attributed / total = % of signups we can source. */
+  /** Every POST /api/auth/register that parked a pending signup — i.e. someone
+   *  filled in the form and we mailed them a link. `user_id` is always NULL:
+   *  no account exists at this point (see domain/pending_signups.ts).
+   *  Pairs with signup.completed to read verify drop-off:
+   *  1 - completed / started = % who never clicked the link. */
+  | "signup.started"
+  /** An account actually came into existence — the verify link was clicked and
+   *  the pending signup was promoted. Fires at VERIFY, not register: before
+   *  that there is no user to attribute. Pairs with signup.from_referrer to
+   *  compute attribution rate: attributed / total = % of signups we can source. */
   | "signup.completed"
   /** Couple workspace created via POST /api/couples/onboard. Distinct
    *  from signup.completed because there's a gap (verify-email, optional

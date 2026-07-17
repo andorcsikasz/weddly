@@ -402,7 +402,11 @@ export const authApi = {
      *  link. Re-binds the pending invitation to this account so the onboarding
      *  hook links the couple to the inviting planner (pending their approval). */
     planner_invite?: string;
-  }) => apiFetch<AuthSession>("POST", "/api/auth/register", body),
+    /** Parks a pending signup and mails a verify link. Deliberately does NOT
+     *  return a session: no account exists until the link is clicked (the
+     *  signup waits in `pending_signups` server-side), and clicking it is what
+     *  mints the user + signs them in. See `consumeVerify`. */
+  }) => apiFetch<{ pending: true; email: string }>("POST", "/api/auth/register", body),
   /** Sign in OR register with a Google Identity Services credential JWT.
    *  Both version stamps are required so the GDPR consent ledger lands when
    *  this call creates a brand-new account; the server ignores them when the
@@ -460,8 +464,20 @@ export const authApi = {
    *  whether the address exists (no account enumeration). */
   requestVerifyPublic: (email: string) =>
     apiFetch<{ ok: true }>("POST", "/api/auth/verify/request-public", { email }),
+  /** Consume a verification link. Two shapes come back, because two kinds of
+   *  link exist:
+   *   - A pending signup (the normal password-register path): the click MINTS
+   *     the account, so the response is a full `AuthSession` — store it and the
+   *     user is signed in.
+   *   - An account that already existed but was unverified (vendor register,
+   *     a resend, any pre-pending_signups user): `{ ok: true }`, no session.
+   *  Discriminate on the presence of `token`. */
   verifyEmail: (token: string) =>
-    apiFetch<{ ok: true }>("POST", `/api/auth/verify/${encodeURIComponent(token)}`, {}),
+    apiFetch<AuthSession | { ok: true }>(
+      "POST",
+      `/api/auth/verify/${encodeURIComponent(token)}`,
+      {},
+    ),
 };
 
 export interface OnboardInput {
