@@ -105,6 +105,7 @@ export const SEED_EN_SLUG_BY_SLUG: Record<string, string> = {
   "eskuvoi-szertartas-menete": "wedding-ceremony-step-by-step",
   "eskuvoszervezesi-checklist-6-honapra": "wedding-planning-checklist-6-months",
   "eskuvoi-ugyintezes-lepesrol-lepesre": "wedding-paperwork-guide",
+  "eskuvo-napi-checklist": "wedding-day-checklist",
 };
 
 export const SEED_BLOG_POSTS: BlogPost[] = [
@@ -4576,6 +4577,707 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
         {
           type: "cta",
           lead: "Found your venue? With Weddly you can run your guest list, seating chart, budget and to-dos in one place.",
+          href: "/signup",
+          label: "Start free",
+        },
+      ],
+    },
+  },
+
+  // ── Esküvő napi checklist: ezeket ne hagyd otthon ──────────────────
+  {
+    slug: "eskuvo-napi-checklist",
+    published_at: "2026-07-17",
+    read_minutes: 9,
+    category: { hu: "Esküvő napja", en: "Wedding day" },
+    hu: {
+      title: "Esküvő napi checklist: ezeket ne hagyd otthon",
+      lead: "A teljes esküvő napi lista, amit érdemes már az előző estén végigpipálni: dokumentumok, gyűrűk, a menyasszony és a vőlegény csomagja, fotós-részletek, SOS táska, szolgáltatók és a helyszín – egy helyen.",
+      seo_title: "Esküvő napi checklist: ezeket ne hagyd otthon · Wēddly",
+      seo_description:
+        "A teljes esküvő napi checklist esküvőszervezőktől és fotósoktól: dokumentumok, gyűrűk, a menyasszony és vőlegény csomagja, SOS táska, szolgáltatók, helyszín. Mentsd el és pipáld végig az előző estén.",
+      body: [
+        {
+          type: "p",
+          text: "Az esküvő napja nem arról szól, hogy a telefonodat keresed, a gyűrűk után rohansz, vagy azon gondolkodsz, vajon a személyi igazolvány bekerült-e a táskába.",
+        },
+        {
+          type: "p",
+          text: "A jól megszervezett esküvők közös jellemzője nem az, hogy minden tökéletesen alakul. Hanem az, hogy a fontos dolgok már előre a helyükön vannak.",
+        },
+        {
+          type: "p",
+          text: "Az alábbi lista olyan pontokat tartalmaz, amelyeket esküvőszervezők, fotósok, ceremóniamesterek és helyszínek is rendszeresen ellenőriznek a nagy nap előtt. Mentsétek el, nyomtassátok ki, vagy pipáljátok végig az esküvő előtti estén.",
+        },
+
+        { type: "h2", text: "A legfontosabb dokumentumok" },
+        {
+          type: "p",
+          text: "Ezek nélkül akár a polgári szertartás is meghiúsulhat, ezért ezt a részt érdemes elsőként bepakolni.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Személyi igazolvány (mindkettőtöknek)",
+            "Lakcímkártya, ha szükséges",
+            "Útlevél külföldi esküvő esetén",
+            "A házasságkötéshez szükséges hivatalos dokumentumok",
+            "Bankkártya",
+            "Készpénz kisebb kiadásokra és borravalóra",
+          ],
+        },
+
+        { type: "h2", text: "A gyűrűk" },
+        {
+          type: "p",
+          text: "A legtöbb esküvőn ez az első dolog, amit mindenki keres. Legyen egy kijelölt személy, aki felel értük a szertartásig.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Jegygyűrűk",
+            "Gyűrűtartó vagy gyűrűdoboz",
+            "Kijelölt személy, akinél a szertartásig lesznek",
+            "A fotós számára előkészítve a részletképekhez",
+          ],
+        },
+
+        { type: "h2", text: "A menyasszony csomagja" },
+        { type: "h3", text: "Ruházat" },
+        {
+          type: "ul",
+          items: [
+            "Menyasszonyi ruha",
+            "Fátyol",
+            "Menyecskeruha és a kiegészítői",
+            "Vállkendő vagy boleró",
+            "Köntös a készülődéshez",
+          ],
+        },
+        { type: "h3", text: "Cipők" },
+        { type: "ul", items: ["Esküvői cipő", "Váltócipő", "Papucs estére"] },
+        { type: "h3", text: "Ékszerek" },
+        { type: "ul", items: ["Fülbevaló", "Nyaklánc", "Karkötő", "Hajdísz"] },
+        { type: "h3", text: "Smink" },
+        { type: "ul", items: ["Rúzs", "Púder", "Sminkjavító", "Sminklemosó", "Kézitükör"] },
+        { type: "h3", text: "Haj" },
+        { type: "ul", items: ["Hajgumi", "Hullámcsat", "Hajlakk", "Fésű"] },
+
+        { type: "h2", text: "A vőlegény csomagja" },
+        { type: "h3", text: "Ruházat" },
+        {
+          type: "ul",
+          items: ["Öltöny", "Ing", "Nyakkendő vagy csokornyakkendő", "Öv", "Zokni", "Cipő"],
+        },
+        { type: "h3", text: "Kiegészítők" },
+        { type: "ul", items: ["Mandzsettagomb", "Zsebkendő", "Kitűző", "Óra"] },
+        { type: "h3", text: "Ápolás" },
+        { type: "ul", items: ["Dezodor", "Parfüm", "Fésű"] },
+
+        { type: "h2", text: "A fotós számára előkészített részletek" },
+        {
+          type: "p",
+          text: "A legtöbb esküvői fotós a nap elején készíti el ezeket a képeket. Érdemes egy dobozba összekészíteni, hogy minden egy helyen legyen.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Meghívó",
+            "Jegygyűrűk és gyűrűdoboz",
+            "Cipők",
+            "Parfüm",
+            "Ékszerek",
+            "Csokor",
+            "Fogadalomfüzet",
+            "Kitűző",
+            "Családi ereklye vagy egyéb személyes tárgyak",
+          ],
+        },
+
+        { type: "h2", text: "Esküvői SOS csomag" },
+        {
+          type: "p",
+          text: "Ez az a táska, amit remélhetőleg nem kell kinyitni. De ha igen, mindenki örülni fog neki.",
+        },
+        { type: "h3", text: "Egészség" },
+        {
+          type: "ul",
+          items: [
+            "Sebtapasz",
+            "Fertőtlenítő",
+            "Fájdalomcsillapító",
+            "Allergiagyógyszer",
+            "Gyomorpanaszra gyógyszer",
+          ],
+        },
+        { type: "h3", text: "Javítások" },
+        {
+          type: "ul",
+          items: [
+            "Mini varrókészlet (fehér és fekete cérnával)",
+            "Biztosítótű",
+            "Kis olló",
+            "Kétoldalas ruharagasztó és textilragasztó",
+            "Átlátszó körömlakk",
+          ],
+        },
+        { type: "h3", text: "Egyéb" },
+        {
+          type: "ul",
+          items: [
+            "Zsebkendő",
+            "Nedves törlőkendő",
+            "Folttisztító kendő",
+            "Szívószál (hogy a rúzs megmaradjon)",
+            "Mini ragasztószalag",
+          ],
+        },
+
+        { type: "h2", text: "Elektronika" },
+        {
+          type: "ul",
+          items: [
+            "Telefon",
+            "Telefontöltő",
+            "Power bank",
+            "Okosóra töltő",
+            "Bluetooth hangszóró, ha szükséges",
+          ],
+        },
+
+        { type: "h2", text: "Amit az autóban érdemes tartani" },
+        {
+          type: "ul",
+          items: [
+            "Palackos víz",
+            "Energiaszelet vagy gyors harapnivaló",
+            "Esernyő",
+            "Naptej",
+            "Papír zsebkendő",
+            "Váltócipő",
+            "Telefontöltő",
+            "Készpénz",
+          ],
+        },
+
+        { type: "h2", text: "Ceremónia kellékek" },
+        {
+          type: "ul",
+          items: [
+            "Házassági anyakönyvi toll",
+            "Gyűrűk",
+            "Gyertyák",
+            "Homok- vagy szalagceremónia kellékei",
+            "Rizs vagy buborékfújó",
+            "Konfetti, ha a helyszín engedi",
+            "Pezsgő és pezsgőspoharak",
+          ],
+        },
+
+        { type: "h2", text: "Ha szabadtéri esküvőtök lesz" },
+        { type: "p", text: "Mindig legyen B terv – az időjárás a legkiszámíthatatlanabb vendég." },
+        {
+          type: "ul",
+          items: [
+            "Esernyők",
+            "Napernyők",
+            "Legyezők a vendégeknek",
+            "Szúnyogriasztó",
+            "Naptej",
+            "Plédek estére",
+            "Elég víz a vendégeknek",
+          ],
+        },
+
+        { type: "h2", text: "Gyerekbarát esküvő esetén" },
+        {
+          type: "ul",
+          items: [
+            "Kifestők és ceruzák",
+            "Buborékfújó",
+            "Társasjáték és apró játékok",
+            "Gyerek snack",
+            "Nedves törlőkendő",
+          ],
+        },
+
+        { type: "h2", text: "Ha kutya is érkezik" },
+        {
+          type: "ul",
+          items: [
+            "Póráz és nyakörv",
+            "Tál és víz",
+            "Jutalomfalat",
+            "Törölköző",
+            "Kakizacskó",
+            "Kijelölt gazdi, aki felel érte",
+          ],
+        },
+
+        { type: "h2", text: "A szolgáltatókkal utoljára ellenőrizendő" },
+        {
+          type: "p",
+          text: "Az esküvő előtti 48 órában minden szolgáltatóval érdemes még egyszer visszaigazolni a részleteket.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Érkezési idő",
+            "Kapcsolattartó neve és telefonszáma",
+            "Parkolás és a kipakolás helye",
+            "Fizetés módja",
+            "Nyitvatartás",
+            "B terv rossz idő esetén",
+          ],
+        },
+
+        { type: "h2", text: "A helyszínnel egyeztetendő" },
+        {
+          type: "ul",
+          items: [
+            "Dekoráció, torta és virágok érkezése",
+            "DJ vagy zenekar érkezése",
+            "Fotós és videós érkezése",
+            "Vendégparkolás",
+            "Szállás átadása",
+            "Éjféli vacsora",
+            "Másnapi bontás",
+          ],
+        },
+
+        { type: "h2", text: "A tanúk feladatai" },
+        { type: "p", text: "A tanúk pontosan tudják, mi a feladatuk a nagy napon?" },
+        {
+          type: "ul",
+          items: [
+            "Gyűrűk és dokumentumok felügyelete",
+            "Vendégek segítése",
+            "Fotózás koordinálása",
+            "A menetrend ismerete",
+            "A ceremóniamester elérhetősége",
+          ],
+        },
+
+        { type: "h2", text: "A másnapi csomag" },
+        {
+          type: "p",
+          text: "Ha szállodában alszotok vagy másnap utaztok tovább, ezt már az előző este készítsétek össze.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Kényelmes ruha és pizsama",
+            "Pipere",
+            "Telefontöltő",
+            "Gyógyszerek",
+            "Kontaktlencse és szemüveg",
+            "Útlevél és a nászúthoz szükséges dokumentumok",
+          ],
+        },
+
+        { type: "h2", text: "Az utolsó esti ellenőrzőlista" },
+        { type: "p", text: "Mielőtt lefekszetek, fussatok végig ezen a néhány ponton:" },
+        {
+          type: "ul",
+          items: [
+            "Minden szolgáltató visszaigazolta az érkezést.",
+            "Megnéztétek az időjárás-előrejelzést.",
+            "Minden telefon és a power bank fel van töltve.",
+            "A gyűrűk a kijelölt személynél vannak.",
+            "Az iratok a táskában vannak.",
+            "A ruhák és a cipők ki vannak készítve.",
+            "A másnapi csomag összepakolva vár.",
+            "Minden fontos telefonszám elérhető.",
+            "Be van állítva az ébresztő.",
+          ],
+        },
+
+        { type: "h2", text: "Néhány tanács, amit a legtöbb pár csak utólag mond el" },
+        { type: "h3", text: "Ne akarjatok mindent ti megoldani" },
+        {
+          type: "p",
+          text: "Az esküvő napján legyen egy kijelölt személy – esküvőszervező, ceremóniamester, tanú vagy családtag –, akihez minden kérdés befuthat. A vendégek tudják, kit keressenek, a szolgáltatók tudják, kit hívjanak, nektek pedig nem kell folyamatosan a telefonotokat figyelni.",
+        },
+        { type: "h3", text: "Hagyjatok időt a csúszásokra" },
+        {
+          type: "p",
+          text: "Egy gratuláció, egy családi fotó vagy egy rövid beszélgetés könnyen eltolhatja a menetrendet. Ha a programban minden esemény között van 10–15 perc tartalék, a nap sokkal nyugodtabban alakul.",
+        },
+        { type: "h3", text: "Egyetek és igyatok" },
+        {
+          type: "p",
+          text: "A párok egyik leggyakoribb visszajelzése, hogy estére jöttek rá: egész nap alig ettek valamit. Kérjétek meg a tanúkat vagy a ceremóniamestert, hogy időnként emlékeztessenek benneteket egy pohár vízre vagy néhány falatra.",
+        },
+        { type: "h3", text: "Szakadjatok ki néhány percre" },
+        {
+          type: "p",
+          text: "A vacsora előtt vagy naplementekor vonuljatok félre tíz percre. Telefon nélkül, vendégek nélkül. Ez gyakran az a néhány perc, amire évekkel később is a legszívesebben emlékeznek a párok.",
+        },
+
+        { type: "h2", text: "Az igazán fontos dolgok nem kerülnek fel egy listára" },
+        {
+          type: "p",
+          text: "Lehet, hogy valaki öt percet késik. Lehet, hogy megérkezik egy nyári zápor. Lehet, hogy egy gomb leesik az öltönyről, vagy a fátylat újra kell igazítani. Ezek nem tesznek tönkre egy esküvőt.",
+        },
+        {
+          type: "p",
+          text: "A vendégek arra fognak emlékezni, milyen volt a hangulat. Arra, hogyan néztetek egymásra a szertartás alatt. Arra, hogy felszabadultan tudtatok nevetni és ünnepelni.",
+        },
+        {
+          type: "p",
+          text: "A legjobb esküvők nem hibátlanok. Hanem olyanok, ahol a szervezés már befejeződött, és végre elkezdődhet az ünneplés.",
+        },
+        {
+          type: "cta",
+          lead: "A Weddly segít, hogy ne külön táblázatokban, jegyzetekben és üzenetekben kelljen keresgélnetek. Egy közös felületen kezelhetitek a vendéglistát, az RSVP-ket, a költségvetést, az ülésrendet, a napi idővonalat, a szolgáltatókat és a feladatokat.",
+          href: "/signup",
+          label: "Kezdés ingyen",
+        },
+      ],
+    },
+    en: {
+      title: "Wedding day checklist: what not to leave at home",
+      lead: "The complete wedding-day list to run through the night before: documents, rings, the bride's and groom's kits, photographer details, an emergency bag, vendors and the venue — all in one place.",
+      seo_title: "Wedding Day Checklist: What Not to Leave at Home · Weddly",
+      seo_description:
+        "The complete wedding-day checklist from planners and photographers: documents, rings, the bride's and groom's kits, an emergency kit, vendors and venue. Save it and tick it off the night before.",
+      body: [
+        {
+          type: "p",
+          text: "Your wedding day isn't about hunting for your phone, chasing the rings, or wondering whether your ID made it into the bag.",
+        },
+        {
+          type: "p",
+          text: "Well-run weddings don't have one thing in common because everything goes perfectly. They have it because the important things are already in place, well in advance.",
+        },
+        {
+          type: "p",
+          text: "The list below covers the points that planners, photographers, celebrants and venues check again and again before the big day. Save it, print it, or tick it off the evening before.",
+        },
+
+        { type: "h2", text: "The most important documents" },
+        {
+          type: "p",
+          text: "Without these, even the civil ceremony can fall through — so pack this section first.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Photo ID (for both of you)",
+            "Proof of address, if required",
+            "Passport for a destination wedding",
+            "The official documents needed for the marriage",
+            "Bank card",
+            "Cash for small costs and tips",
+          ],
+        },
+
+        { type: "h2", text: "The rings" },
+        {
+          type: "p",
+          text: "At most weddings this is the first thing everyone looks for. Assign one person to be responsible for them until the ceremony.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Wedding bands",
+            "Ring holder or ring box",
+            "A designated person who keeps them until the ceremony",
+            "Set aside for the photographer's detail shots",
+          ],
+        },
+
+        { type: "h2", text: "The bride's kit" },
+        { type: "h3", text: "Clothing" },
+        {
+          type: "ul",
+          items: [
+            "Wedding dress",
+            "Veil",
+            "Second (party) dress and its accessories",
+            "Shawl or bolero",
+            "Robe for getting ready",
+          ],
+        },
+        { type: "h3", text: "Shoes" },
+        { type: "ul", items: ["Wedding shoes", "Backup shoes", "Flats for the evening"] },
+        { type: "h3", text: "Jewellery" },
+        { type: "ul", items: ["Earrings", "Necklace", "Bracelet", "Hair accessory"] },
+        { type: "h3", text: "Makeup" },
+        {
+          type: "ul",
+          items: ["Lipstick", "Powder", "Touch-up makeup", "Makeup remover", "Handheld mirror"],
+        },
+        { type: "h3", text: "Hair" },
+        { type: "ul", items: ["Hair ties", "Bobby pins", "Hairspray", "Comb"] },
+
+        { type: "h2", text: "The groom's kit" },
+        { type: "h3", text: "Clothing" },
+        { type: "ul", items: ["Suit", "Shirt", "Tie or bow tie", "Belt", "Socks", "Shoes"] },
+        { type: "h3", text: "Accessories" },
+        { type: "ul", items: ["Cufflinks", "Pocket square", "Boutonnière", "Watch"] },
+        { type: "h3", text: "Grooming" },
+        { type: "ul", items: ["Deodorant", "Cologne", "Comb"] },
+
+        { type: "h2", text: "Details prepped for the photographer" },
+        {
+          type: "p",
+          text: "Most wedding photographers shoot these early in the day. Gather them into one box so everything is in a single place.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Invitation",
+            "Wedding bands and ring box",
+            "Shoes",
+            "Cologne / perfume",
+            "Jewellery",
+            "Bouquet",
+            "Vow booklet",
+            "Boutonnière",
+            "A family heirloom or other personal items",
+          ],
+        },
+
+        { type: "h2", text: "Wedding emergency kit" },
+        {
+          type: "p",
+          text: "This is the bag you hopefully never open. But if you do, everyone will be glad it exists.",
+        },
+        { type: "h3", text: "Health" },
+        {
+          type: "ul",
+          items: [
+            "Plasters",
+            "Antiseptic",
+            "Pain reliever",
+            "Allergy medicine",
+            "Something for an upset stomach",
+          ],
+        },
+        { type: "h3", text: "Quick fixes" },
+        {
+          type: "ul",
+          items: [
+            "Mini sewing kit (white and black thread)",
+            "Safety pins",
+            "Small scissors",
+            "Double-sided fashion tape and fabric glue",
+            "Clear nail polish",
+          ],
+        },
+        { type: "h3", text: "Odds and ends" },
+        {
+          type: "ul",
+          items: [
+            "Tissues",
+            "Wet wipes",
+            "Stain-remover wipe",
+            "A straw (to keep lipstick intact)",
+            "A small roll of tape",
+          ],
+        },
+
+        { type: "h2", text: "Electronics" },
+        {
+          type: "ul",
+          items: [
+            "Phone",
+            "Phone charger",
+            "Power bank",
+            "Smartwatch charger",
+            "Bluetooth speaker, if needed",
+          ],
+        },
+
+        { type: "h2", text: "Keep these in the car" },
+        {
+          type: "ul",
+          items: [
+            "Bottled water",
+            "An energy bar or quick snack",
+            "Umbrella",
+            "Sunscreen",
+            "Tissues",
+            "Backup shoes",
+            "Phone charger",
+            "Cash",
+          ],
+        },
+
+        { type: "h2", text: "Ceremony props" },
+        {
+          type: "ul",
+          items: [
+            "Marriage-register pen",
+            "Rings",
+            "Candles",
+            "Sand- or ribbon-ceremony supplies",
+            "Rice or bubbles",
+            "Confetti, if the venue allows it",
+            "Champagne and glasses",
+          ],
+        },
+
+        { type: "h2", text: "If your wedding is outdoors" },
+        {
+          type: "p",
+          text: "Always have a plan B — the weather is the least predictable guest.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Umbrellas",
+            "Parasols",
+            "Fans for guests",
+            "Insect repellent",
+            "Sunscreen",
+            "Blankets for the evening",
+            "Enough water for guests",
+          ],
+        },
+
+        { type: "h2", text: "For a child-friendly wedding" },
+        {
+          type: "ul",
+          items: [
+            "Colouring books and pencils",
+            "Bubbles",
+            "A board game and small toys",
+            "Kids' snacks",
+            "Wet wipes",
+          ],
+        },
+
+        { type: "h2", text: "If a dog is coming too" },
+        {
+          type: "ul",
+          items: [
+            "Leash and collar",
+            "Bowl and water",
+            "Treats",
+            "Towel",
+            "Waste bags",
+            "A designated handler responsible for the dog",
+          ],
+        },
+
+        { type: "h2", text: "Final check with your vendors" },
+        {
+          type: "p",
+          text: "In the 48 hours before the wedding, reconfirm the details with every vendor one more time.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Arrival time",
+            "Contact name and phone number",
+            "Parking and where to load in",
+            "Payment method",
+            "Opening hours",
+            "Plan B for bad weather",
+          ],
+        },
+
+        { type: "h2", text: "To confirm with the venue" },
+        {
+          type: "ul",
+          items: [
+            "Arrival of the decor, cake and flowers",
+            "Arrival of the DJ or band",
+            "Arrival of the photographer and videographer",
+            "Guest parking",
+            "Room handover",
+            "Midnight supper",
+            "Next-day teardown",
+          ],
+        },
+
+        { type: "h2", text: "The witnesses' tasks" },
+        { type: "p", text: "Do your witnesses know exactly what they're responsible for?" },
+        {
+          type: "ul",
+          items: [
+            "Looking after the rings and documents",
+            "Helping guests",
+            "Coordinating the photos",
+            "Knowing the run of the day",
+            "Having the celebrant's contact details",
+          ],
+        },
+
+        { type: "h2", text: "The next-day bag" },
+        {
+          type: "p",
+          text: "If you're staying in a hotel or travelling on the next day, pack this the evening before.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Comfortable clothes and pyjamas",
+            "Toiletries",
+            "Phone charger",
+            "Medications",
+            "Contact lenses and glasses",
+            "Passport and any documents for the honeymoon",
+          ],
+        },
+
+        { type: "h2", text: "The last-night checklist" },
+        { type: "p", text: "Before you go to sleep, run through these few points:" },
+        {
+          type: "ul",
+          items: [
+            "Every vendor has confirmed their arrival.",
+            "You've checked the weather forecast.",
+            "Every phone and the power bank are charged.",
+            "The rings are with the designated person.",
+            "The documents are in the bag.",
+            "The outfits and shoes are laid out.",
+            "The next-day bag is packed and waiting.",
+            "Every important phone number is to hand.",
+            "The alarm is set.",
+          ],
+        },
+
+        { type: "h2", text: "A few things most couples only mention afterwards" },
+        { type: "h3", text: "Don't try to handle everything yourselves" },
+        {
+          type: "p",
+          text: "On the day, have one designated person — a planner, celebrant, witness or family member — that every question can go to. Guests know who to ask, vendors know who to call, and you don't have to keep watching your phone.",
+        },
+        { type: "h3", text: "Leave room for things to run late" },
+        {
+          type: "p",
+          text: "A round of congratulations, a family photo or a quick chat can easily push the schedule. Build 10–15 minutes of slack between events and the whole day feels calmer.",
+        },
+        { type: "h3", text: "Eat and drink" },
+        {
+          type: "p",
+          text: "One of the most common things couples say afterwards is that by the evening they realised they'd barely eaten all day. Ask your witnesses or celebrant to remind you now and then to have a glass of water or a few bites.",
+        },
+        { type: "h3", text: "Step away for a few minutes" },
+        {
+          type: "p",
+          text: "Before dinner or at sunset, slip away for ten minutes. No phone, no guests. This is often the handful of minutes couples remember most fondly years later.",
+        },
+
+        { type: "h2", text: "The things that matter most never make it onto a list" },
+        {
+          type: "p",
+          text: "Someone might be five minutes late. A summer shower might roll in. A button might come off the suit, or the veil might need fixing. None of these ruin a wedding.",
+        },
+        {
+          type: "p",
+          text: "Guests will remember how it felt. The way you looked at each other during the ceremony. That you could laugh and celebrate freely.",
+        },
+        {
+          type: "p",
+          text: "The best weddings aren't flawless. They're the ones where the planning is done, and the celebration can finally begin.",
+        },
+        {
+          type: "cta",
+          lead: "Weddly means you don't have to dig through separate spreadsheets, notes and messages. Run your guest list, RSVPs, budget, seating chart, day-of timeline, vendors and to-dos in one shared workspace.",
           href: "/signup",
           label: "Start free",
         },
