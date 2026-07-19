@@ -23,7 +23,7 @@ import {
   useState,
 } from "react";
 import { Check, ExternalLink, Lock, Plus, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   MAX_LISTING_PHOTOS,
   priceBandLockedUntil,
@@ -32,7 +32,9 @@ import {
   type VendorListingView,
 } from "@shared/listings";
 import type { VendorBilling } from "@shared/vendor_billing";
+import { listingChecklistFor } from "@shared/vendor_clients";
 import { AddressAutocomplete } from "../../components/AddressAutocomplete";
+import { SetupProgressPanel } from "../../components/VendorSetupProgress";
 import { TranslateButton } from "../../components/TranslateButton";
 import { VendorListingPackages } from "../../components/VendorListingPackages";
 import { VendorListingVideos } from "../../components/VendorListingVideos";
@@ -238,6 +240,19 @@ export default function VendorListingPage() {
   // Always-current form snapshot so an autosave can tell whether the vendor
   // kept typing during its round trip (reference changes on every keystroke).
   const formRef = useRef<FormState | null>(form);
+
+  // Deep links from the setup checklist arrive as `/vendor/listing#vendor-
+  // section-gallery`. The browser can't honour that on a client-side
+  // navigation, because the target section doesn't exist until the listing
+  // fetch resolves — so scroll once `view` lands. Runs on every hash change so
+  // clicking a second checklist row from this same page also moves.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!view || !hash) return;
+    const target = document.getElementById(hash.slice(1));
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [view, hash]);
 
   // Availability: the booked/blocked days. Managed independently of the
   // listing form — each block/unblock hits the server and re-renders from the
@@ -627,6 +642,26 @@ export default function VendorListingPage() {
               <ExternalLink size={14} aria-hidden="true" />
               {t("vendor_home.preview_open")}
             </Link>
+
+            {/* Second surface for the setup progress (the dashboard alert is the
+                first). It sits in the sticky column so the vendor can see how
+                far along they are while scrolling the long form, and each row
+                jumps to its own section. Hidden once the listing is complete —
+                a 100% checklist is just noise. */}
+            <SetupProgressPanel
+              steps={listingChecklistFor({
+                hero_image_url: effectiveHeroUrl || null,
+                blurb_hu: form.blurb_hu || null,
+                blurb_en: form.blurb_en || null,
+                contact_email: form.contact_email || null,
+                contact_phone: form.contact_phone || null,
+                price_band: form.price_band === "" ? null : Number(form.price_band),
+                capacity_min: form.capacity_min === "" ? null : Number(form.capacity_min),
+                capacity_max: form.capacity_max === "" ? null : Number(form.capacity_max),
+                photo_count: view.photos?.length ?? 0,
+                package_count: view.packages?.length ?? 0,
+              })}
+            />
           </aside>
 
           <form onSubmit={onSubmit} className="order-2 space-y-2.5 lg:order-1">
@@ -657,7 +692,11 @@ export default function VendorListingPage() {
               </div>
             </div>
 
-            <fieldset className="card space-y-2.5 p-4" disabled={saving || heroBusy}>
+            <fieldset
+              className="card space-y-2.5 p-4"
+              disabled={saving || heroBusy}
+              id="vendor-section-cover"
+            >
               <legend className="font-semibold">{t("vendor_home.section_hero")}</legend>
               <input
                 ref={heroInputRef}
@@ -744,7 +783,11 @@ export default function VendorListingPage() {
 
             {/* Portfolio gallery — up to MAX_LISTING_PHOTOS beyond the hero;
                 shows on the public detail page's thumbnail strip. */}
-            <fieldset className="card space-y-2.5 p-4" disabled={saving || galleryBusy}>
+            <fieldset
+              className="card space-y-2.5 p-4"
+              disabled={saving || galleryBusy}
+              id="vendor-section-gallery"
+            >
               <legend className="font-semibold">{t("vendor_home.section_gallery")}</legend>
               <p className="text-sm text-ink-600 dark:text-umber-200">
                 {t("vendor_home.gallery_intro")}
@@ -804,13 +847,19 @@ export default function VendorListingPage() {
 
             {/* Price offers / packages (árajánlat) — self-contained, per-action
                 server writes like the reel; category drives the name suggestions. */}
-            <VendorListingPackages
-              packages={view.packages ?? []}
-              category={view.listing.category}
-              onChange={setView}
-            />
+            <div id="vendor-section-packages">
+              <VendorListingPackages
+                packages={view.packages ?? []}
+                category={view.listing.category}
+                onChange={setView}
+              />
+            </div>
 
-            <fieldset className="card space-y-2.5 p-4" disabled={saving}>
+            <fieldset
+              className="card space-y-2.5 p-4"
+              disabled={saving}
+              id="vendor-section-description"
+            >
               <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>
               <label className="block" htmlFor="vendor-blurb-hu">
                 <span className="mb-1 flex items-center justify-between gap-2">
@@ -860,7 +909,11 @@ export default function VendorListingPage() {
               </label>
             </fieldset>
 
-            <fieldset className="card space-y-2.5 p-4" disabled={saving}>
+            <fieldset
+              className="card space-y-2.5 p-4"
+              disabled={saving}
+              id="vendor-section-contact"
+            >
               <legend className="font-semibold">{t("vendor_home.section_contact")}</legend>
               <TextField
                 id="vendor-city"
@@ -909,7 +962,11 @@ export default function VendorListingPage() {
               />
             </fieldset>
 
-            <fieldset className="card space-y-2.5 p-4" disabled={saving}>
+            <fieldset
+              className="card space-y-2.5 p-4"
+              disabled={saving}
+              id="vendor-section-pricing"
+            >
               <legend className="font-semibold">{t("vendor_home.section_pricing")}</legend>
 
               <div>
@@ -978,7 +1035,7 @@ export default function VendorListingPage() {
                 </div>
               </div>
 
-              <div>
+              <div id="vendor-section-capacity">
                 <span className="field-label">{t("vendor_home.capacity_range_label")}</span>
                 <div className="grid grid-cols-2 gap-3">
                   <TextField

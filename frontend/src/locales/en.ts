@@ -672,6 +672,16 @@ const en: LocaleMessages = {
       upcoming_week: "{count} events in the next 7 days",
       new_reviews: "{count} new reviews",
     },
+    setup: {
+      panel_title: "Listing setup · {pct}%",
+      step_cover: "Cover photo",
+      step_gallery: "Gallery",
+      step_description: "Description",
+      step_contact: "Contact details",
+      step_pricing: "Price band",
+      step_capacity: "Capacity",
+      step_packages: "Packages",
+    },
     dashboard: {
       page_title: "Dashboard",
       page_body: "An overview of your inquiries, upcoming events, and listing.",

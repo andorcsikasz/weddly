@@ -24,6 +24,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { Skeleton, SkeletonText } from "../../components/ui";
+import { CompletenessRing, SetupChecklist } from "../../components/VendorSetupProgress";
 import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useAuth } from "../../lib/auth";
@@ -208,6 +209,7 @@ export default function VendorDashboardPage() {
             <p className="text-sm text-ink-600 dark:text-paper-300">
               {t("vendor.dashboard.completeness_alert_body")}
             </p>
+            <SetupChecklist steps={stats.listing_steps} />
             <Link
               to="/vendor/listing"
               className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
@@ -393,54 +395,6 @@ export default function VendorDashboardPage() {
         </section>
       </div>
     </div>
-  );
-}
-
-/** Listing-setup completion ring. Pure tokenised SVG (no chart lib), it
- *  animates as the percent climbs and is shared by the full setup alert and its
- *  collapsed chip so progress reads identically in both states. A small step
- *  toward the fuller onboarding module. */
-function CompletenessRing({
-  pct,
-  size = 20,
-  stroke = 3,
-}: {
-  pct: number;
-  size?: number;
-  stroke?: number;
-}) {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const clamped = Math.max(0, Math.min(100, pct));
-  const offset = circumference * (1 - clamped / 100);
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      aria-hidden="true"
-      className="-rotate-90 shrink-0"
-    >
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        strokeWidth={stroke}
-        className="stroke-steel-200 dark:stroke-steel-600/40"
-      />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        className="stroke-steel-600 transition-[stroke-dashoffset] duration-700 ease-out dark:stroke-steel-300"
-      />
-    </svg>
   );
 }
 

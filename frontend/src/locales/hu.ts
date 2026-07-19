@@ -679,6 +679,16 @@ const hu: LocaleMessages = {
       upcoming_week: "{count} esemény a következő 7 napban",
       new_reviews: "{count} új vélemény",
     },
+    setup: {
+      panel_title: "Hirdetés beállítása · {pct}%",
+      step_cover: "Borítókép",
+      step_gallery: "Galéria",
+      step_description: "Leírás",
+      step_contact: "Elérhetőség",
+      step_pricing: "Árkategória",
+      step_capacity: "Férőhely",
+      step_packages: "Csomagok",
+    },
     dashboard: {
       page_title: "Áttekintés",
       page_body: "Megkereséseid, közelgő eseményeid és a hirdetésed egy helyen.",

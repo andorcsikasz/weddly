@@ -36,12 +36,15 @@ Legend — **Status:** `DONE` (shipped, commit noted) · `PARTIAL` (some shipped
 - **Note:** This is a design decision, not just code — needs a direction call before build.
 
 ### VND-4 · Persistent onboarding checklist with completion ring
-- **Priority:** P1 · **Labels:** onboarding, activation, vendor · **Status:** PARTIAL — persistence + ring `fa7756dd`
+- **Priority:** P1 · **Labels:** onboarding, activation, vendor · **Status:** DONE — persistence + ring `fa7756dd`, checklist + 2nd surface + honest scoring this session
 - **Problem:** A fresh account is a wall of bare zero-states (Áttekintés, Naptár, Statisztika, Vélemények, Teendők). The only onboarding element is one dismissible "20% kész" banner on the overview; once dismissed it can't be recalled, and the percentage isn't reflected anywhere else.
 - **Scope:** Replace the one-shot banner with a persistent, visual checklist (completion ring) listing concrete steps — cover photo, gallery, packages, description, contact info — visible until the profile hits 100%, surfaced in the sidebar and the listing page.
 - **Done (`fa7756dd`):** the banner is persistent and reopenable — a `CompletenessRing` in a full alert plus a collapsed chip, dismissal stored per device in `localStorage` (`VendorDashboardPage.tsx`).
-- **Remaining (OPEN):** (a) it is still one generic "complete now" link, not a per-step checklist deep-linking to each editor; (b) it lives on ONE surface (`VendorDashboardPage`) — nothing in `VendorShell` or `VendorListingPage`; (c) `listingCompleteness()` (`backend/src/domain/vendor_clients.ts`) scores only 5 buckets (blurb, contact, price band, capacity, hero) and ignores gallery and packages, so the ring can read 100% on a listing the ticket would call incomplete.
-- **Acceptance:** Progress is always recallable, reflected in ≥2 places, and each step deep-links to the relevant editor; the ring hits 100% only when the listing is genuinely complete.
+- **Also done (this session):**
+  - **Real per-step checklist.** `VendorStats` gained `listing_steps`; the alert renders one row per step, each deep-linking to `/vendor/listing#vendor-section-<key>` (anchors added to the cover / gallery / description / contact / pricing / capacity / packages sections). Done rows stay visible and struck through — seeing what's finished is half of what makes a checklist feel like progress. The listing editor scrolls to the anchor once its fetch resolves, since a SPA can't honour a hash for a section that doesn't exist yet.
+  - **Second surface.** `frontend/src/components/VendorSetupProgress.tsx` now owns the ring + checklist (extracted from `VendorDashboardPage`, so there is no second copy); `SetupProgressPanel` renders them in the listing editor's sticky column, where it stays visible while the vendor scrolls the long form. It hides itself at 100%.
+  - **Honest scoring.** The rules moved to `listingChecklistFor` in `shared/vendor_clients.ts` and now score 7 steps including gallery and packages, so the ring can no longer read 100% on a listing with no photos beyond the cover and no price offers. `listing_completeness` is DERIVED from the steps on both sides, so ring and checklist cannot drift. The backend passes DB counts, the editor passes the arrays it already holds.
+- **Acceptance:** Progress is always recallable ✓, reflected in ≥2 places ✓, each step deep-links to the relevant editor ✓, and the ring hits 100% only when the listing is genuinely complete ✓.
 
 ### VND-5 · Live-reactive listing preview
 - **Priority:** P1 · **Labels:** vendor, listing-editor · **Status:** PARTIAL — cover done `0ef61b6a`

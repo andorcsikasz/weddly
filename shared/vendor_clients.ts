@@ -62,6 +62,71 @@ export interface VendorClientDetail extends VendorClientView {
   payments: VendorClientPayment[];
 }
 
+/** One step of the vendor's listing-setup checklist. The key doubles as the
+ *  i18n suffix (`vendor.setup.step_<key>`) and as the deep-link anchor on the
+ *  listing editor (`/vendor/listing#vendor-section-<key>`), so adding a step
+ *  means adding a section id and two locale strings — nothing else. */
+export type VendorListingStepKey =
+  | "cover"
+  | "gallery"
+  | "description"
+  | "contact"
+  | "pricing"
+  | "capacity"
+  | "packages";
+
+/** A checklist row: which step, and whether the vendor has done it. */
+export interface VendorListingStep {
+  key: VendorListingStepKey;
+  done: boolean;
+}
+
+/** The listing facts the checklist scores. Deliberately a flat bag rather than
+ *  `Listing`, so the backend can pass DB counts and the frontend can pass the
+ *  arrays it already holds without either side re-deriving the rules. */
+export interface VendorListingChecklistInput {
+  hero_image_url: string | null;
+  blurb_hu: string | null;
+  blurb_en: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  price_band: number | null;
+  capacity_min: number | null;
+  capacity_max: number | null;
+  photo_count: number;
+  package_count: number;
+}
+
+/** The vendor's listing-setup checklist, in the order they should work through
+ *  it: the cover photo first (it's what a couple sees on the card), then the
+ *  rest of the public sections.
+ *
+ *  Gallery and packages are scored even though earlier versions skipped them —
+ *  leaving them out let the ring read 100% on a listing with no photos beyond
+ *  the cover and no price offers, which is exactly the "finished-looking but
+ *  empty" card the nudge exists to prevent.
+ *
+ *  Single-sourced here so the dashboard ring, the listing-editor chip and the
+ *  server's `listing_completeness` can never drift apart. */
+export function listingChecklistFor(input: VendorListingChecklistInput): VendorListingStep[] {
+  return [
+    { key: "cover", done: Boolean(input.hero_image_url) },
+    { key: "gallery", done: input.photo_count > 0 },
+    { key: "description", done: Boolean(input.blurb_hu) || Boolean(input.blurb_en) },
+    { key: "contact", done: Boolean(input.contact_email) || Boolean(input.contact_phone) },
+    { key: "pricing", done: input.price_band != null },
+    { key: "capacity", done: input.capacity_min != null || input.capacity_max != null },
+    { key: "packages", done: input.package_count > 0 },
+  ];
+}
+
+/** Percent (0..100) of the checklist completed. Always derived from the steps,
+ *  never counted separately. */
+export function listingCompletenessFor(steps: VendorListingStep[]): number {
+  if (steps.length === 0) return 0;
+  return Math.round((steps.filter((s) => s.done).length / steps.length) * 100);
+}
+
 /** Vendor dashboard / stats payload. Basic counts are FREE; the advanced
  *  breakdowns are surfaced behind the PRO gate by the frontend. */
 export interface VendorStats {
@@ -80,8 +145,12 @@ export interface VendorStats {
    *  days. Feeds the header bell's "new review" row; the bell's own per-device
    *  seen-watermark decides whether that counts as unread. */
   reviews_recent: number;
-  /** 0..100 — how complete the public listing is. */
+  /** 0..100 — how complete the public listing is. Derived from `listing_steps`,
+   *  so the ring and the checklist can never disagree. */
   listing_completeness: number;
+  /** Per-step setup checklist behind the completeness ring, in the order the
+   *  vendor should work through it. */
+  listing_steps: VendorListingStep[];
   /** Sum of recorded deposits received (money in), integer minor units. */
   revenue_tracked: number;
   /** Vendor billing currency. Superset of the contract's 'HUF'|'EUR' so it

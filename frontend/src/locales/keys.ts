@@ -873,6 +873,20 @@ export interface LocaleMessages {
       /** Published reviews from the last 30 days (VendorStats.reviews_recent). */
       new_reviews: string;
     };
+    /** Listing-setup checklist. Each `step_*` suffix matches a
+     *  `VendorListingStepKey` in shared/vendor_clients.ts AND the
+     *  `#vendor-section-<key>` anchor on the listing editor, so the three stay
+     *  in lockstep by construction. */
+    setup: {
+      panel_title: string;
+      step_cover: string;
+      step_gallery: string;
+      step_description: string;
+      step_contact: string;
+      step_pricing: string;
+      step_capacity: string;
+      step_packages: string;
+    };
     dashboard: {
       page_title: string;
       page_body: string;

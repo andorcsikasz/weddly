@@ -12,8 +12,10 @@ import type {
   VendorClientDetail,
   VendorClientPayment,
   VendorClientView,
+  VendorListingStep,
   VendorStats,
 } from "@shared/vendor_clients";
+import { listingChecklistFor, listingCompletenessFor } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { vendorPlanFromEntitlement } from "@shared/vendor_plan";
 import { VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
@@ -25,7 +27,7 @@ import { getUserById } from "./users";
 import { getVendorAccountByOwnerUserId, type VendorAccountRow } from "./vendor_accounts";
 import { getVendorSub, toVendorBilling } from "./vendor_billing";
 import { getBookingById, type BookingRow } from "./supplier_bookings";
-import { getListingByVendorAccountId } from "./listings";
+import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "./listings";
 import type { Listing } from "@shared/listings";
 
 /** Resolve `requireAuth(ctx)` to the calling vendor's account, or throw the
@@ -315,23 +317,29 @@ export function listVendorClientDetails(accountId: number): VendorClientDetail[]
 const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
 const YEAR_MS = 1000 * 60 * 60 * 24 * 365;
 
-/** Number of key public-listing fields the completeness percentage scores. */
-const LISTING_COMPLETENESS_FIELDS = 5;
+/** The vendor's listing-setup checklist. The RULES live in
+ *  `listingChecklistFor` (shared/), so the dashboard ring, the listing-editor
+ *  chip and this payload can't drift; all this adds is the two DB counts. A
+ *  vendor with no listing yet has every step undone. */
+export function listingChecklist(listing: Listing | null): VendorListingStep[] {
+  return listingChecklistFor({
+    hero_image_url: listing?.hero_image_url ?? null,
+    blurb_hu: listing?.blurb_hu ?? null,
+    blurb_en: listing?.blurb_en ?? null,
+    contact_email: listing?.contact_email ?? null,
+    contact_phone: listing?.contact_phone ?? null,
+    price_band: listing?.price_band ?? null,
+    capacity_min: listing?.capacity_min ?? null,
+    capacity_max: listing?.capacity_max ?? null,
+    photo_count: listing ? countListingPhotos(listing.id) : 0,
+    package_count: listing ? countListingPackages(listing.id) : 0,
+  });
+}
 
-/** Percent (0..100) of the key public-listing fields a vendor has filled in.
- *  Scores five buckets equally — blurb, contact, pricing, capacity, hero —
- *  so the dashboard can nudge the vendor toward a richer card. A vendor with
- *  no listing yet scores 0. */
+/** Percent (0..100) of the checklist a vendor has completed. */
 export function listingCompleteness(listing: Listing | null): number {
   if (!listing) return 0;
-  const filled = [
-    Boolean(listing.blurb_hu) || Boolean(listing.blurb_en),
-    Boolean(listing.contact_email) || Boolean(listing.contact_phone),
-    listing.price_band != null,
-    listing.capacity_min != null || listing.capacity_max != null,
-    Boolean(listing.hero_image_url),
-  ].filter(Boolean).length;
-  return Math.round((filled / LISTING_COMPLETENESS_FIELDS) * 100);
+  return listingCompletenessFor(listingChecklist(listing));
 }
 
 /** Build the vendor dashboard / stats payload. Counts come from the vendor's
@@ -416,6 +424,7 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
     blocked_dates_count: blocked.n,
     reviews_recent: reviewsRecent,
     listing_completeness: listingCompleteness(listing),
+    listing_steps: listingChecklist(listing),
     revenue_tracked: revenue,
     currency: billing.currency,
     billing,

@@ -155,8 +155,23 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     expect(r.data.reviews_recent).toBe(0);
     expect(r.data.revenue_tracked).toBe(0);
     // The bootstrap card has blurb + contact_email + price_band filled, but no
-    // capacity and no hero image: 3 of 5 buckets = 60%.
-    expect(r.data.listing_completeness).toBe(60);
+    // capacity, no hero image, no gallery and no packages: 3 of 7 steps = 43%.
+    expect(r.data.listing_completeness).toBe(43);
+    // The checklist is the source the percent is derived from, so it must agree.
+    expect(r.data.listing_steps.map((s) => s.key)).toEqual([
+      "cover",
+      "gallery",
+      "description",
+      "contact",
+      "pricing",
+      "capacity",
+      "packages",
+    ]);
+    expect(r.data.listing_steps.filter((s) => s.done).map((s) => s.key)).toEqual([
+      "description",
+      "contact",
+      "pricing",
+    ]);
     expect(["HUF", "EUR"]).toContain(r.data.currency);
     expect(r.data.billing).toBeTruthy();
     expect(r.data.currency).toBe(r.data.billing.currency);
@@ -239,8 +254,8 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     const author = db
       .prepare("SELECT id FROM users WHERE email = ?")
       .get("reviewer-stats@weddly.test") as { id: number } | undefined;
-    expect(author).toBeTruthy();
-    const userId = author?.id;
+    if (!author) throw new Error("expected the couple owner to exist");
+    const userId = author.id;
 
     // Reviews are written straight to the table: the public POST path enforces
     // one-per-couple-per-supplier plus moderation, and this test is about the
