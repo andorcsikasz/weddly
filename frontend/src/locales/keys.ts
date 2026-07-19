@@ -888,6 +888,10 @@ export interface LocaleMessages {
       completeness_alert: string;
       completeness_alert_body: string;
       complete_now: string;
+      /** Compact label on the collapsed setup-progress chip. */
+      completeness_chip: string;
+      /** Aria-label for the chip that reopens the full setup guidance. */
+      completeness_expand: string;
       dismiss: string;
       hero_label: string;
       hero_hint: string;

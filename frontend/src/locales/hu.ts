@@ -693,6 +693,8 @@ const hu: LocaleMessages = {
       completeness_alert: "A hirdetésed {pct}%-ban kész",
       completeness_alert_body: "Fejezd be, hogy a párok megtaláljanak és foglalhassanak nálad.",
       complete_now: "Fejezd be most",
+      completeness_chip: "Hirdetés {pct}% kész",
+      completeness_expand: "Beállítási lépések megtekintése",
       dismiss: "Bezárás",
       hero_label: "Megkeresések az elmúlt 30 napban",
       hero_hint: "Új párok, akik a Weddlyn keresztül kerestek meg",

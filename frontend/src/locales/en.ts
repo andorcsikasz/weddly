@@ -686,6 +686,8 @@ const en: LocaleMessages = {
       completeness_alert: "Your listing is {pct}% complete",
       completeness_alert_body: "Finish it so couples can find and book you.",
       complete_now: "Complete now",
+      completeness_chip: "Listing {pct}% complete",
+      completeness_expand: "Show setup steps",
       dismiss: "Dismiss",
       hero_label: "Inquiries in the last 30 days",
       hero_hint: "New couples reaching out through Weddly",

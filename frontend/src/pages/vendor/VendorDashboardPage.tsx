@@ -10,6 +10,7 @@ import {
   CalendarClock,
   CalendarOff,
   CheckCircle2,
+  ChevronDown,
   Image as ImageIcon,
   Inbox,
   RefreshCw,
@@ -118,6 +119,18 @@ export default function VendorDashboardPage() {
     }
   }, []);
 
+  // Reopen the full setup guidance from the collapsed chip. Clearing the stored
+  // percent is what re-shows the alert (and keeps it shown across reloads until
+  // dismissed again).
+  const expandCompleteness = useCallback(() => {
+    setDismissedPct(null);
+    try {
+      window.localStorage.removeItem(COMPLETENESS_DISMISS_KEY);
+    } catch {
+      /* private mode / storage full - the in-memory expand still holds */
+    }
+  }, []);
+
   // Greet the PERSON, not the brand: "Üdv, Mézi" reads right, "Üdv, Mézi
   // Tortaműhely" reads like two names glued together. The business name still
   // owns the shell header + profile chip.
@@ -144,7 +157,11 @@ export default function VendorDashboardPage() {
   const pct = Math.round(stats.listing_completeness);
   const completenessDone = pct >= 100;
   const revenuePositive = stats.revenue_tracked > 0;
-  const showCompletenessAlert = !completenessDone && dismissedPct !== pct;
+  // Dismissing no longer HIDES the setup guidance, it COLLAPSES it to a small
+  // persistent progress chip, so an incomplete listing always keeps a visible,
+  // reopenable prompt (and the % is never lost until the listing is done).
+  const completenessCollapsed = !completenessDone && dismissedPct === pct;
+  const showCompletenessAlert = !completenessDone && !completenessCollapsed;
 
   // Smart action cards derived from the real, fetched data - no invented signals.
   const actions: ActionCardProps[] = [];
@@ -178,15 +195,12 @@ export default function VendorDashboardPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Completeness alert strip - only while the listing is incomplete and the
-          vendor hasn't dismissed this exact percent. */}
+      {/* Completeness alert strip - the full setup prompt, shown while the
+          listing is incomplete and not collapsed. A live progress ring replaces
+          the old static sparkle so the percent reads at a glance. */}
       {showCompletenessAlert && (
         <div className="flex items-start gap-3 rounded-2xl border border-steel-200 bg-steel-50 p-4 dark:border-steel-600/30 dark:bg-steel-600/15">
-          <Sparkles
-            size={18}
-            aria-hidden="true"
-            className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
-          />
+          <CompletenessRing pct={pct} size={36} stroke={4} />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
               {t("vendor.dashboard.completeness_alert", { pct: String(pct) })}
@@ -211,6 +225,24 @@ export default function VendorDashboardPage() {
             <X size={16} aria-hidden="true" />
           </button>
         </div>
+      )}
+
+      {/* Collapsed setup progress: a small, persistent, reopenable chip. Keeps
+          the % visible and one click from the full guidance, instead of the old
+          dismiss-and-it-is-gone behaviour. */}
+      {completenessCollapsed && (
+        <button
+          type="button"
+          onClick={expandCompleteness}
+          aria-label={t("vendor.dashboard.completeness_expand")}
+          className="inline-flex items-center gap-2 self-start rounded-full border border-steel-200 bg-steel-50 py-1.5 pl-2 pr-3.5 text-sm text-ink-700 transition-colors hover:bg-steel-100 dark:border-steel-600/30 dark:bg-steel-600/15 dark:text-paper-200 dark:hover:bg-steel-600/25"
+        >
+          <CompletenessRing pct={pct} />
+          <span className="font-medium">
+            {t("vendor.dashboard.completeness_chip", { pct: String(pct) })}
+          </span>
+          <ChevronDown size={15} aria-hidden="true" className="text-steel-500 dark:text-steel-300" />
+        </button>
       )}
 
       {/* Greeting */}
@@ -357,6 +389,54 @@ export default function VendorDashboardPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+/** Listing-setup completion ring. Pure tokenised SVG (no chart lib), it
+ *  animates as the percent climbs and is shared by the full setup alert and its
+ *  collapsed chip so progress reads identically in both states. A small step
+ *  toward the fuller onboarding module. */
+function CompletenessRing({
+  pct,
+  size = 20,
+  stroke = 3,
+}: {
+  pct: number;
+  size?: number;
+  stroke?: number;
+}) {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.max(0, Math.min(100, pct));
+  const offset = circumference * (1 - clamped / 100);
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      aria-hidden="true"
+      className="-rotate-90 shrink-0"
+    >
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        strokeWidth={stroke}
+        className="stroke-steel-200 dark:stroke-steel-600/40"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        className="stroke-steel-600 transition-[stroke-dashoffset] duration-700 ease-out dark:stroke-steel-300"
+      />
+    </svg>
   );
 }
 
