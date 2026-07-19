@@ -105,7 +105,7 @@ export default function VendorBillingPage() {
 
   if (errored || !billing || !plan || !features) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-700 dark:bg-umber-900">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-600 dark:bg-umber-900">
         <p className="text-sm text-ink-600 dark:text-paper-300">{t("common.error_generic")}</p>
         <button type="button" onClick={() => void load()} className="btn-ghost">
           <RefreshCw size={16} aria-hidden="true" />
@@ -180,7 +180,7 @@ export default function VendorBillingPage() {
       )}
 
       {/* Current plan badge + entitlement window. */}
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900">
         <div className="flex flex-col gap-0.5">
           <span className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
             {t("vendor.billing.current_plan")}
@@ -373,7 +373,7 @@ export default function VendorBillingPage() {
       {/* Manage: everyone on a Stripe record gets the hosted Billing Portal
           (card update, cancel, invoices). */}
       {showPortal && (
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
           <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
             {t("vendor.billing.manage")}
           </p>
@@ -496,7 +496,7 @@ function PlanColumn({
       className={
         accent
           ? "flex flex-col gap-3 rounded-2xl border-2 border-steel-300 bg-paper-50 p-5 dark:border-steel-500/50 dark:bg-umber-900"
-          : "flex flex-col gap-3 rounded-2xl border-2 border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900"
+          : "flex flex-col gap-3 rounded-2xl border-2 border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900"
       }
     >
       <div className="flex items-start justify-between gap-2">

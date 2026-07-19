@@ -690,7 +690,7 @@ export default function VendorListingPage() {
                 className={`relative flex aspect-[3/2] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
                   dragOver
                     ? "border-steel-400 bg-steel-50 dark:border-steel-500 dark:bg-steel-600/15"
-                    : "border-paper-300 bg-paper-50 hover:border-steel-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-steel-500"
+                    : "border-paper-300 bg-paper-50 hover:border-steel-400 dark:border-umber-600 dark:bg-umber-900 dark:hover:border-steel-500"
                 }`}
               >
                 {effectiveHeroUrl ? (

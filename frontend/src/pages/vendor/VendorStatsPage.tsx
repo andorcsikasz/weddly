@@ -78,7 +78,7 @@ export default function VendorStatsPage() {
 
   if (errored || !stats) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-700 dark:bg-umber-900">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-600 dark:bg-umber-900">
         <p className="text-sm text-ink-600 dark:text-paper-300">{t("common.error_generic")}</p>
         <button type="button" onClick={() => void load()} className="btn-ghost">
           <RefreshCw size={16} aria-hidden="true" />
@@ -152,7 +152,7 @@ export default function VendorStatsPage() {
       {advancedUnlocked ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Inquiries over time — range pills + bucketed trend bars. */}
-          <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+          <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
                 {t("vendor.stats.trend_title")}
@@ -183,7 +183,7 @@ export default function VendorStatsPage() {
           </section>
 
           {/* By status - donut + legend */}
-          <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+          <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
             <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
               {t("vendor.stats.by_status")}
             </h2>
@@ -232,7 +232,7 @@ export default function VendorStatsPage() {
 
           {/* Conversion summary — performance context instead of duplicating
               the overview page's upcoming-events list here. */}
-          <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 lg:col-span-2 dark:border-umber-700 dark:bg-umber-900">
+          <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 lg:col-span-2 dark:border-umber-600 dark:bg-umber-900">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
               <TrendingUp
                 size={18}
@@ -241,22 +241,27 @@ export default function VendorStatsPage() {
               />
               <span>{t("vendor.stats.conversion_title")}</span>
             </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <ConversionCell
-                label={t("vendor.stats.inquiries")}
-                value={String(stats.inquiries_total)}
-                to="/vendor/clients"
-              />
-              <ConversionCell
-                label={t("vendor.stats.conversion_confirmed")}
-                value={String(confirmedCount)}
-                to="/vendor/clients?status=confirmed"
-              />
-              <ConversionCell
-                label={t("vendor.stats.conversion_rate")}
-                value={stats.inquiries_total > 0 ? `${conversionRate}%` : "–"}
-              />
-            </div>
+            <ConversionFunnel
+              locale={locale}
+              stages={[
+                {
+                  key: "inquiries",
+                  label: t("vendor.stats.inquiries"),
+                  value: stats.inquiries_total,
+                  pct: 100,
+                  fill: "bg-steel-600 dark:bg-steel-500",
+                  to: "/vendor/clients",
+                },
+                {
+                  key: "confirmed",
+                  label: t("vendor.stats.conversion_confirmed"),
+                  value: confirmedCount,
+                  pct: conversionRate,
+                  fill: "bg-sage-600 dark:bg-sage-500",
+                  to: "/vendor/clients?status=confirmed",
+                },
+              ]}
+            />
           </section>
         </div>
       ) : (
@@ -315,7 +320,7 @@ function StatCard({
     </>
   );
   const frame =
-    "flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-3.5 dark:border-umber-700 dark:bg-umber-900";
+    "flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-3.5 dark:border-umber-600 dark:bg-umber-900";
   if (!to) return <div className={frame}>{body}</div>;
   return (
     <Link
@@ -536,26 +541,83 @@ function TrendChart({
   );
 }
 
-function ConversionCell({ label, value, to }: { label: string; value: string; to?: string }) {
-  const body = (
-    <>
-      <span className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-paper-400">
-        {label}
-      </span>
-      <span className="text-2xl font-semibold text-ink-900 tabular-nums dark:text-paper-50">
-        {value}
-      </span>
-    </>
-  );
-  const frame = "flex flex-col items-center gap-1 rounded-xl bg-paper-100 p-3 dark:bg-umber-800";
-  if (!to) return <div className={frame}>{body}</div>;
+interface FunnelStage {
+  key: string;
+  /** Human stage name (already localized). */
+  label: string;
+  /** Raw count for this stage. */
+  value: number;
+  /** Bar length as a percent of the funnel top (0..100). Stage 1 is 100; later
+   *  stages carry their conversion share, so the bar lengths ARE the funnel. */
+  pct: number;
+  /** Tailwind fill classes (light + dark) for the bar. One hue per stage. */
+  fill: string;
+  /** Optional deep-link into the matching client list. */
+  to?: string;
+}
+
+/** Conversion funnel: inquiries → confirmed bookings. Left-aligned bars whose
+ *  length encodes each stage against the top of the funnel, so the empty
+ *  remainder of a track shows the drop-off at a glance — one shape in place of
+ *  three flat numbers. Magnitude → single hue per stage (not a categorical
+ *  palette): counts live in text tokens, never on the fill, and every row is
+ *  directly labeled so identity is never colour-alone. Rows deep-link like the
+ *  old cells did. */
+function ConversionFunnel({
+  stages,
+  locale,
+}: {
+  stages: FunnelStage[];
+  locale: "hu" | "en";
+}) {
+  const nf = (n: number) => n.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB");
   return (
-    <Link
-      to={to}
-      className={`${frame} transition-colors hover:bg-paper-200 dark:hover:bg-umber-700`}
-    >
-      {body}
-    </Link>
+    <ul className="flex flex-col gap-3">
+      {stages.map((s, i) => {
+        // Keep a sliver visible for a non-zero stage so a tiny count never
+        // collapses to an invisible bar; a genuine zero stays empty.
+        const width = s.value > 0 ? Math.max(s.pct, 4) : 0;
+        const body = (
+          <>
+            <div className="mb-1 flex items-baseline justify-between gap-3">
+              <span className="text-sm font-medium text-ink-700 dark:text-paper-200">
+                {s.label}
+              </span>
+              <span className="flex items-baseline gap-1.5">
+                <span className="text-sm font-semibold text-ink-900 tabular-nums dark:text-paper-50">
+                  {nf(s.value)}
+                </span>
+                {/* Show the conversion share on every stage after the first. */}
+                {i > 0 && (
+                  <span className="text-xs font-medium text-ink-500 tabular-nums dark:text-paper-400">
+                    {s.pct}%
+                  </span>
+                )}
+              </span>
+            </div>
+            <div className="h-8 w-full overflow-hidden rounded-lg bg-paper-200 dark:bg-umber-800">
+              <div
+                className={`h-full rounded-lg ${s.fill} transition-[width] duration-700 ease-out`}
+                style={{ width: `${width}%` }}
+              />
+            </div>
+          </>
+        );
+        if (!s.to) {
+          return <li key={s.key}>{body}</li>;
+        }
+        return (
+          <li key={s.key}>
+            <Link
+              to={s.to}
+              className="block rounded-lg transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-steel-400"
+            >
+              {body}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -601,7 +663,7 @@ function StatsSkeleton({ title }: { title: string }) {
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900"
+            className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900"
           >
             <Skeleton variant="line" height={12} width="55%" />
             <Skeleton height={28} width="70%" rounded="md" />
@@ -609,11 +671,11 @@ function StatsSkeleton({ title }: { title: string }) {
         ))}
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+        <div className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
           <Skeleton variant="line" height={12} width="40%" />
           <SkeletonText lines={2} />
         </div>
-        <div className="flex items-center gap-6 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+        <div className="flex items-center gap-6 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
           <Skeleton variant="circle" width={128} />
           <div className="flex-1">
             <SkeletonText lines={4} />

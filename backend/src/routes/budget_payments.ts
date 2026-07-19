@@ -280,9 +280,10 @@ async function handleUploadPdf(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Multipart form-data required", { code: "bad_multipart" });
   });
   const file = form.get("file");
-  if (!(file instanceof File)) throw new HttpError(400, "`file` field required", {
-    code: "missing_file",
-  });
+  if (!(file instanceof File))
+    throw new HttpError(400, "`file` field required", {
+      code: "missing_file",
+    });
   if (file.size <= 0) throw new HttpError(400, "Empty file", { code: "empty_file" });
   if (file.size > MAX_PDF_BYTES) {
     throw new HttpError(413, `File too large (max ${MAX_PDF_BYTES / 1024 / 1024} MB)`, {
@@ -295,7 +296,10 @@ async function handleUploadPdf(ctx: Ctx): Promise<Response> {
     throw new HttpError(415, "Only PDF files are allowed", { code: "unsupported_type" });
   }
   // Sanitised display name: strip path, cap length, guarantee a .pdf suffix.
-  let name = (file.name || "szamla.pdf").replace(/^.*[\\/]/, "").trim().slice(0, 200);
+  let name = (file.name || "szamla.pdf")
+    .replace(/^.*[\\/]/, "")
+    .trim()
+    .slice(0, 200);
   if (name.length === 0) name = "szamla.pdf";
   if (!/\.pdf$/i.test(name)) name = `${name}.pdf`;
 
@@ -307,12 +311,9 @@ async function handleUploadPdf(ctx: Ctx): Promise<Response> {
   const key = `couples/${couple.id}/budget-payments/${id}.pdf`;
   await storage.write(key, file, "application/pdf");
   const pdfUrl = `/uploads/couples/${couple.id}/budget-payments/${id}.pdf?v=${ts}`;
-  db.prepare("UPDATE budget_payments SET pdf_url = ?, pdf_name = ? WHERE id = ? AND couple_id = ?").run(
-    pdfUrl,
-    name,
-    id,
-    couple.id,
-  );
+  db.prepare(
+    "UPDATE budget_payments SET pdf_url = ?, pdf_name = ? WHERE id = ? AND couple_id = ?",
+  ).run(pdfUrl, name, id, couple.id);
 
   addAuditLog({
     actor_user_id: userId,
@@ -349,10 +350,9 @@ async function handleRemovePdf(ctx: Ctx): Promise<Response> {
   if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "Invalid id");
   const row = requirePayment(couple.id, id);
   await deletePaymentPdf(row);
-  db.prepare("UPDATE budget_payments SET pdf_url = NULL, pdf_name = NULL WHERE id = ? AND couple_id = ?").run(
-    id,
-    couple.id,
-  );
+  db.prepare(
+    "UPDATE budget_payments SET pdf_url = NULL, pdf_name = NULL WHERE id = ? AND couple_id = ?",
+  ).run(id, couple.id);
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,

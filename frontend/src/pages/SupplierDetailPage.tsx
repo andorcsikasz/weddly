@@ -60,6 +60,7 @@ import {
   StickyNote,
   Tent,
   Trash2,
+  Users,
   Wine,
 } from "lucide-react";
 import type {
@@ -470,6 +471,24 @@ export default function SupplierDetailPage() {
                 </span>
               )}
               {detail.price_band !== null && <PriceBandDots band={detail.price_band} t={t} />}
+              {/* Guest capacity + venue style — captured on the listing but
+                  previously only shown on the compact directory card. Surface
+                  them here too so the detail page (and its shared public twin)
+                  carries the same "worth knowing" facts. */}
+              {(detail.capacity_max ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
+                  <Users size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+                  {detail.capacity_min && detail.capacity_max
+                    ? t("suppliers.capacity_range", {
+                        min: detail.capacity_min,
+                        max: detail.capacity_max,
+                      })
+                    : t("suppliers.capacity_max_only", { max: detail.capacity_max ?? 0 })}
+                </span>
+              )}
+              {detail.venue_style && (
+                <Pill tone="muted">{t(`suppliers.venue_style.${detail.venue_style}`)}</Pill>
+              )}
               {/* Verified vendors get the BadgeCheck next to the name (above);
                   unclaimed listings keep a quiet muted pill so the missing
                   state still carries a clear label, not silence. */}
@@ -1280,7 +1299,7 @@ function SidebarCard({
     // page instead of a hard 1px border (dark mode keeps a faint ring since
     // shadows vanish on dark surfaces). Same radius + padding as the package
     // cards so the whole page reads as one system.
-    <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-700/60">
+    <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-600">
       {title && (
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-cream-50">
           {icon}

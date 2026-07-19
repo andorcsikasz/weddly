@@ -12,7 +12,7 @@ import type {
   SupplierDetail,
   SupplierReview,
 } from "@shared/suppliers";
-import { BadgeCheck, ExternalLink, Globe, Mail, MapPin, Phone, Star } from "lucide-react";
+import { BadgeCheck, ExternalLink, Globe, Mail, MapPin, Phone, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
@@ -229,7 +229,7 @@ export default function PublicVendorPage() {
               <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">{detail.company_name}</p>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
               {ratingDisplay !== null && ratingAvg !== null ? (
                 <span className="inline-flex items-center gap-2 text-sm">
                   <StarRow value={Math.round(ratingAvg)} size={16} />
@@ -247,6 +247,27 @@ export default function PublicVendorPage() {
                 </span>
               )}
               {detail.price_band !== null && <PriceBandDots band={detail.price_band} />}
+              {/* Guest capacity — one of the first facts a couple checks on a
+                  venue, and captured on the listing but previously only shown on
+                  the compact directory card, never on this shareable page. */}
+              {(detail.capacity_max ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
+                  <Users size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+                  {detail.capacity_min && detail.capacity_max
+                    ? t("suppliers.capacity_range", {
+                        min: detail.capacity_min,
+                        max: detail.capacity_max,
+                      })
+                    : t("suppliers.capacity_max_only", { max: detail.capacity_max ?? 0 })}
+                </span>
+              )}
+              {/* Venue style (castle, boat, restaurant…) — refines the generic
+                  "venue" category; a quiet chip so it reads as metadata. */}
+              {detail.venue_style && (
+                <span className="inline-flex items-center rounded-full bg-paper-100 px-2.5 py-0.5 text-xs text-ink-700 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-100 dark:ring-umber-600">
+                  {t(`suppliers.venue_style.${detail.venue_style}`)}
+                </span>
+              )}
             </div>
 
             {/* Videos */}
@@ -512,7 +533,7 @@ function PublicContactCard({
   return (
     // Shared card elevation — soft drop shadow, no hard border — matching the
     // in-app detail page's sidebar cards and the package grid.
-    <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-700/60">
+    <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-600">
       <a
         href={mapsUrl}
         target="_blank"

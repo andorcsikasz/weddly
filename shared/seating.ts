@@ -72,9 +72,10 @@ export function maxSeatsForTable(shape: TableShape, width_mm: number, length_mm:
  *  diverge. Round → radius on both axes; square → half its larger side on both;
  *  long/head → `length` is the long (x) side and `width` the short (y) side, so
  *  they render horizontally. */
-export function tableHalfDims(
-  t: Pick<SeatingTable, "shape" | "width_mm" | "length_mm">,
-): { rx: number; ry: number } {
+export function tableHalfDims(t: Pick<SeatingTable, "shape" | "width_mm" | "length_mm">): {
+  rx: number;
+  ry: number;
+} {
   if (t.shape === "round") {
     const r = t.width_mm / 2;
     return { rx: r, ry: r };
@@ -93,9 +94,10 @@ export function tableHalfDims(
  *  allocation depends only on that ratio, the preview lands every seat index on
  *  the SAME side as the canvas + PDF. (A previous fork forced a fixed 60:22
  *  aspect, which silently drifted the seat numbering — the reported bug.) */
-export function previewHalfDims(
-  t: Pick<SeatingTable, "shape" | "width_mm" | "length_mm">,
-): { rx: number; ry: number } {
+export function previewHalfDims(t: Pick<SeatingTable, "shape" | "width_mm" | "length_mm">): {
+  rx: number;
+  ry: number;
+} {
   if (t.shape === "round" || t.shape === "square") return { rx: 40, ry: 40 };
   const PREVIEW_LONG_HALF = 60;
   const { rx, ry } = tableHalfDims(t);

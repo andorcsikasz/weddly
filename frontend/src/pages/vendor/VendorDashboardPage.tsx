@@ -142,7 +142,7 @@ export default function VendorDashboardPage() {
 
   if (errored || !stats) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-700 dark:bg-umber-900">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-600 dark:bg-umber-900">
         <p className="text-sm text-ink-600 dark:text-paper-300">{t("common.error_generic")}</p>
         <button type="button" onClick={() => void load()} className="btn-ghost">
           <RefreshCw size={16} aria-hidden="true" />
@@ -241,7 +241,11 @@ export default function VendorDashboardPage() {
           <span className="font-medium">
             {t("vendor.dashboard.completeness_chip", { pct: String(pct) })}
           </span>
-          <ChevronDown size={15} aria-hidden="true" className="text-steel-500 dark:text-steel-300" />
+          <ChevronDown
+            size={15}
+            aria-hidden="true"
+            className="text-steel-500 dark:text-steel-300"
+          />
         </button>
       )}
 
@@ -278,7 +282,7 @@ export default function VendorDashboardPage() {
       )}
 
       {/* HERO metric - last 30 days of inquiries, the number that matters most. */}
-      <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 dark:border-umber-700 dark:bg-umber-900">
+      <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 dark:border-umber-600 dark:bg-umber-900">
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-steel-600 dark:text-steel-300">
             <TrendingUp size={16} aria-hidden="true" />
@@ -327,7 +331,7 @@ export default function VendorDashboardPage() {
 
       {/* Upcoming events preview + smart action cards */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <section className="lg:col-span-2 flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
+        <section className="lg:col-span-2 flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900">
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
               <CalendarClock
@@ -479,7 +483,7 @@ function KpiCard({
     </>
   );
   const frame =
-    "flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900";
+    "flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900";
   if (!to) return <div className={frame}>{body}</div>;
   return (
     <Link
@@ -507,7 +511,7 @@ function ActionCard({ to, icon, title, body, tone }: ActionCardProps) {
   return (
     <Link
       to={to}
-      className="group flex items-start gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900 dark:hover:bg-umber-800"
+      className="group flex items-start gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 transition-colors hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-900 dark:hover:bg-umber-800"
     >
       <span className={`mt-0.5 shrink-0 ${accent}`}>{icon}</span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -532,7 +536,7 @@ function DashboardSkeleton({ title }: { title: string }) {
         {title}
       </h1>
       {/* Hero metric */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-6 dark:border-umber-700 dark:bg-umber-900">
+      <div className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-6 dark:border-umber-600 dark:bg-umber-900">
         <Skeleton variant="line" width="40%" height={12} />
         <Skeleton width={140} height={48} rounded="lg" />
         <Skeleton variant="line" width="55%" height={12} />
@@ -542,7 +546,7 @@ function DashboardSkeleton({ title }: { title: string }) {
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900"
+            className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900"
           >
             <Skeleton variant="line" width="70%" height={10} />
             <Skeleton width={72} height={24} rounded="md" />
@@ -551,7 +555,7 @@ function DashboardSkeleton({ title }: { title: string }) {
       </div>
       {/* Upcoming + actions */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 lg:col-span-2 dark:border-umber-700 dark:bg-umber-900">
+        <div className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 lg:col-span-2 dark:border-umber-600 dark:bg-umber-900">
           <Skeleton variant="line" width="35%" height={12} />
           <SkeletonText lines={4} />
         </div>
@@ -559,7 +563,7 @@ function DashboardSkeleton({ title }: { title: string }) {
           {[0, 1].map((i) => (
             <div
               key={i}
-              className="flex items-start gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900"
+              className="flex items-start gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900"
             >
               <Skeleton variant="circle" width={36} />
               <div className="flex-1">

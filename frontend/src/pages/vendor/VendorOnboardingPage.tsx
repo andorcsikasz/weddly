@@ -170,7 +170,7 @@ export default function VendorOnboardingPage() {
                           ? "bg-umber-700 text-paper-50 dark:bg-umber-400 dark:text-umber-900"
                           : active
                             ? "border-2 border-umber-700 bg-paper-50 text-umber-900 dark:border-umber-400 dark:bg-umber-900 dark:text-paper-50"
-                            : "border border-paper-300 bg-paper-50 text-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-600"
+                            : "border border-paper-300 bg-paper-50 text-umber-400 dark:border-umber-600 dark:bg-umber-900 dark:text-umber-600"
                       }`}
                     >
                       {done ? <Check size={12} aria-hidden="true" /> : s}
@@ -340,7 +340,7 @@ export default function VendorOnboardingPage() {
                         className={`flex h-11 flex-1 items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${
                           isActive
                             ? "border-umber-800 bg-umber-800 text-paper-50 dark:border-umber-400 dark:bg-umber-400 dark:text-umber-900"
-                            : "border-paper-300 bg-paper-50 text-umber-500 hover:border-umber-400 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-300"
+                            : "border-paper-300 bg-paper-50 text-umber-500 hover:border-umber-400 dark:border-umber-600 dark:bg-umber-900 dark:text-umber-300"
                         }`}
                       >
                         {"€".repeat(b)}

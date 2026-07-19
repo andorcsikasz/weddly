@@ -176,7 +176,7 @@ function EmptyClients() {
     { Icon: UserPlus, label: t("vendor.clients.empty_step_3") },
   ];
   return (
-    <div className="rounded-xl border border-paper-300 bg-paper-50 p-8 text-center dark:border-umber-700 dark:bg-umber-900">
+    <div className="rounded-xl border border-paper-300 bg-paper-50 p-8 text-center dark:border-umber-600 dark:bg-umber-900">
       <p className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
         {t("vendor.clients.empty_title_new")}
       </p>
@@ -314,7 +314,7 @@ export default function VendorClientsPage() {
       {loading ? (
         <GhostTable />
       ) : failed ? (
-        <p className="rounded-xl border border-paper-300 bg-paper-50 p-4 text-sm text-ink-600 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-300">
+        <p className="rounded-xl border border-paper-300 bg-paper-50 p-4 text-sm text-ink-600 dark:border-umber-600 dark:bg-umber-900 dark:text-paper-300">
           {t("vendor.clients.load_failed")}
         </p>
       ) : clients.length === 0 ? (

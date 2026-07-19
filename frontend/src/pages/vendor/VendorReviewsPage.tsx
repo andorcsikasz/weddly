@@ -93,7 +93,7 @@ export default function VendorReviewsPage() {
         <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
           {t("vendor.reviews.page_title")}
         </h1>
-        <div className="rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+        <div className="rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
           <Skeleton variant="line" width="30%" height={14} />
           <div className="mt-3">
             <SkeletonText lines={3} />
@@ -105,7 +105,7 @@ export default function VendorReviewsPage() {
 
   if (errored) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-700 dark:bg-umber-900">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-600 dark:bg-umber-900">
         <p className="text-sm text-ink-600 dark:text-paper-300">{t("common.error_generic")}</p>
         <button type="button" onClick={() => void load()} className="btn-ghost">
           <RefreshCw size={16} aria-hidden="true" />
@@ -127,7 +127,7 @@ export default function VendorReviewsPage() {
       {/* Aggregate header — average only appears past the cold-start gate
           (>= 3 published reviews), matching the public card. */}
       {summary && summary.reviews_count > 0 && (
-        <section className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
+        <section className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
           <div className="flex items-center gap-3">
             <span className="font-grotesk text-4xl font-semibold leading-none text-ink-900 tabular-nums dark:text-paper-50">
               {summary.avg_rating != null ? summary.avg_rating.toFixed(1) : "–"}
@@ -160,7 +160,7 @@ export default function VendorReviewsPage() {
       )}
 
       {items.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-700 dark:bg-umber-900">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-600 dark:bg-umber-900">
           <Star size={24} aria-hidden="true" className="text-paper-300 dark:text-umber-600" />
           <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
             {t("vendor.reviews.empty_title")}
@@ -190,7 +190,7 @@ export default function VendorReviewsPage() {
           {items.map((r) => (
             <li
               key={r.id}
-              className="rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900"
+              className="rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900"
             >
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">

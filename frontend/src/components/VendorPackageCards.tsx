@@ -195,7 +195,7 @@ function PackageCard({
       className={`relative flex h-full flex-col overflow-hidden rounded-2xl bg-white dark:bg-umber-900 ${
         recommended
           ? "shadow-pop ring-1 ring-blush-500/40 dark:ring-blush-400/40"
-          : "shadow-elevated ring-1 ring-black/[0.04] dark:shadow-none dark:ring-umber-700/60"
+          : "shadow-elevated ring-1 ring-black/[0.04] dark:shadow-none dark:ring-umber-600"
       }`}
     >
       {/* Accent top bar + badge single out the recommended tier the way a
