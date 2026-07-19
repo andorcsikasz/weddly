@@ -547,9 +547,15 @@ export default function VendorListingPage() {
                 {t("vendor_home.autosave_saving")}
               </span>
             )}
+            {/* The saved confirmation used to be a bare 14px check + 12px grey
+                text, which was genuinely easy to miss on a page that autosaves
+                silently. It's now a tinted pill, and the check pops in (the
+                shared .check-pop keyframe, which no-ops under
+                prefers-reduced-motion) so the eye catches the state CHANGE
+                rather than having to notice a static glyph. */}
             {autosaveStatus === "saved" && (
-              <span className="inline-flex items-center gap-1.5 text-xs text-sage-700 dark:text-sage-300">
-                <Check aria-hidden="true" size={14} strokeWidth={2.4} />
+              <span className="inline-flex animate-fade-in items-center gap-1.5 rounded-full bg-sage-50 px-2.5 py-1 text-xs font-medium text-sage-700 dark:bg-sage-400/15 dark:text-sage-300">
+                <Check aria-hidden="true" size={14} strokeWidth={2.6} className="check-pop" />
                 {t("vendor_home.autosave_saved")}
               </span>
             )}

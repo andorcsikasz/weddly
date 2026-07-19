@@ -24,6 +24,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { Skeleton, SkeletonText } from "../../components/ui";
+import { AnimatedNumber } from "../../components/AnimatedNumber";
 import { CompletenessRing, SetupChecklist } from "../../components/VendorSetupProgress";
 import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
@@ -195,7 +196,7 @@ export default function VendorDashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-5">
       {/* Completeness alert strip - the full setup prompt, shown while the
           listing is incomplete and not collapsed. A live progress ring replaces
           the old static sparkle so the percent reads at a glance. */}
@@ -291,7 +292,7 @@ export default function VendorDashboardPage() {
             {t("vendor.dashboard.hero_label")}
           </span>
           <span className="font-grotesk text-5xl font-semibold leading-none tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
-            {stats.inquiries_30d}
+            <AnimatedNumber value={stats.inquiries_30d} />
           </span>
           <span className="text-sm text-ink-600 dark:text-paper-300">
             {t("vendor.dashboard.hero_hint")}
@@ -313,20 +314,25 @@ export default function VendorDashboardPage() {
         <KpiCard
           icon={<Inbox size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.inquiries_total")}
-          value={String(stats.inquiries_total)}
+          value={<AnimatedNumber value={stats.inquiries_total} />}
           to="/vendor/clients"
         />
         <KpiCard
           icon={<Wallet size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.revenue_tracked")}
-          value={formatMoney(stats.revenue_tracked, currency, locale)}
+          value={
+            <AnimatedNumber
+              value={stats.revenue_tracked}
+              format={(n) => formatMoney(n, currency, locale)}
+            />
+          }
           tone={revenuePositive ? "sage" : undefined}
           to="/vendor/clients"
         />
         <KpiCard
           icon={<CalendarOff size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.blocked_dates")}
-          value={String(stats.blocked_dates_count)}
+          value={<AnimatedNumber value={stats.blocked_dates_count} />}
           to="/vendor/calendar"
         />
       </div>
@@ -410,7 +416,7 @@ function KpiCard({
 }: {
   icon: ReactNode;
   label: string;
-  value: string;
+  value: ReactNode;
   sub?: string;
   tone?: KpiTone;
   to?: string;

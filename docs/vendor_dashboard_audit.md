@@ -120,10 +120,14 @@ Legend — **Status:** `DONE` (shipped, commit noted) · `PARTIAL` (some shipped
 - **Acceptance:** A vendor can request a rename in-app; it lands in the existing moderation queue; no support email required.
 
 ### VND-16 · Micro-interactions and motion pass
-- **Priority:** P2 · **Labels:** polish, motion · **Status:** OPEN
+- **Priority:** P2 · **Labels:** polish, motion · **Status:** DONE
 - **Problem:** State changes are instant/static — no easing on skeleton→content, no hover/press feedback on cards, no animated counters, and the "Mentve" confirmation is a small, easy-to-miss checkmark.
-- **Scope:** Consistent subtle motion across hover states, transitions, and number animations; a more legible saved-confirmation. Highest-leverage, lowest-cost "well-funded company" signal.
-- **Acceptance:** Cards have hover/press feedback; skeleton→content eases; stat numbers animate; saved state is clearly noticed.
+- **Already present before this pass:** the motion infrastructure (`animate-fade-in`, `animate-fade-in-up`, `animate-shimmer` skeletons, `check-pop`, and a global `prefers-reduced-motion` kill-switch in index.css), plus hover feedback on the dashboard's KPI and action cards.
+- **Fix:**
+  - **Animated counters.** New `frontend/src/components/AnimatedNumber.tsx` (`useCountUp` + `<AnimatedNumber>`) counts a stat from its previous value to the new one, so a number that changes reads as having MOVED. Reduced motion is handled in JS, not CSS — the global rule clamps animation/transition durations but cannot stop a `requestAnimationFrame` loop, so the hook checks the media query itself and jumps to the final value. Applied to the dashboard hero + 3 KPIs and the 4 FREE-tier stat cards; money is animated through a `format` callback so it stays in whole minor units. The end value is always exact; easing only affects intermediate frames.
+  - **Skeleton→content eases.** Both vendor data pages fade their loaded view in instead of popping.
+  - **Legible saved state.** The autosave confirmation became a tinted pill with the check popping in via the shared `.check-pop` keyframe, so the eye catches the state CHANGE rather than having to notice a static 14px glyph.
+- **Acceptance:** Cards have hover/press feedback ✓ (already did); skeleton→content eases ✓; stat numbers animate ✓; saved state is clearly noticed ✓.
 
 ---
 

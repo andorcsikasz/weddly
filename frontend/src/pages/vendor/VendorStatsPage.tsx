@@ -16,6 +16,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorFeatureFlags } from "@shared/vendor_plan";
 import { Skeleton, SkeletonText } from "../../components/ui";
+import { AnimatedNumber } from "../../components/AnimatedNumber";
 import { vendorBillingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useT } from "../../lib/i18n";
@@ -110,7 +111,7 @@ export default function VendorStatsPage() {
     stats.inquiries_total > 0 ? Math.round((confirmedCount / stats.inquiries_total) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-5">
       <header className="flex flex-col gap-1">
         <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
           {t("vendor.stats.page_title")}
@@ -249,26 +250,31 @@ export default function VendorStatsPage() {
             <StatCard
               icon={<Inbox size={18} aria-hidden="true" />}
               label={t("vendor.stats.inquiries")}
-              value={String(stats.inquiries_total)}
+              value={<AnimatedNumber value={stats.inquiries_total} />}
               to="/vendor/clients"
             />
             <StatCard
               icon={<CalendarClock size={18} aria-hidden="true" />}
               label={t("vendor.dashboard.inquiries_30d")}
-              value={String(stats.inquiries_30d)}
+              value={<AnimatedNumber value={stats.inquiries_30d} />}
               sub={t("vendor.stats.unit_inquiries")}
               to="/vendor/clients"
             />
             <StatCard
               icon={<BarChart3 size={18} aria-hidden="true" />}
               label={t("vendor.stats.revenue")}
-              value={formatMoney(stats.revenue_tracked, currency, locale)}
+              value={
+                <AnimatedNumber
+                  value={stats.revenue_tracked}
+                  format={(n) => formatMoney(n, currency, locale)}
+                />
+              }
               help={t("vendor.stats.revenue_help")}
             />
             <StatCard
               icon={<CalendarClock size={18} aria-hidden="true" />}
               label={t("vendor.stats.blocked_dates")}
-              value={String(stats.blocked_dates_count)}
+              value={<AnimatedNumber value={stats.blocked_dates_count} />}
               to="/vendor/calendar"
             />
           </div>
@@ -294,7 +300,7 @@ function StatCard({
 }: {
   icon: ReactNode;
   label: string;
-  value: string;
+  value: ReactNode;
   sub?: string;
   help?: string;
   to?: string;
