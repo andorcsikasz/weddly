@@ -576,9 +576,15 @@ export default function VendorListingPage() {
               />
               {t("vendor_home.visibility_live")}
             </span>
-            {/* The preview card IS the link to the live public page. */}
+            {/* The preview card IS the link to the live public page. It points
+                at the PUBLIC `/vendors/:id` route (not the couple-app-internal
+                `/app/suppliers/:id`, which is behind RequireCoupleAuth and just
+                bounces a vendor back to /vendor). Opens in a new tab so the
+                vendor's in-progress, unsaved editor edits are never blown away. */}
             <Link
-              to={`/app/suppliers/${view.listing.id}`}
+              to={`/vendors/${view.listing.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label={t("vendor_home.preview_open")}
               className="block rounded-2xl transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-steel-400"
             >
@@ -595,7 +601,9 @@ export default function VendorListingPage() {
               />
             </Link>
             <Link
-              to={`/app/suppliers/${view.listing.id}`}
+              to={`/vendors/${view.listing.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
             >
               <ExternalLink size={14} aria-hidden="true" />

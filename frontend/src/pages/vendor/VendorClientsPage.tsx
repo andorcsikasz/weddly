@@ -214,7 +214,11 @@ export default function VendorClientsPage() {
   const { t, locale } = useT();
   useDocumentTitle(t("vendor.clients.page_title"));
   const [clients, setClients] = useState<VendorClientView[]>([]);
-  const [plan, setPlan] = useState<VendorPlan>("free");
+  // `null` = billing not loaded yet (or the billing fetch failed). The paywall
+  // (upgrade nudge + locked CRM columns) is decided ONLY once we positively
+  // know the plan, so a paying vendor never flashes — or gets stranded on — the
+  // free-tier locked view. The server is the real gate on the data itself.
+  const [plan, setPlan] = useState<VendorPlan | null>(null);
   const [currency, setCurrency] = useState<Currency>("HUF");
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -230,12 +234,15 @@ export default function VendorClientsPage() {
     let cancelled = false;
     setLoading(true);
     setFailed(false);
-    Promise.all([vendorClientsApi.list(), vendorBillingApi.get()])
-      .then(([clientsRes, billingRes]) => {
-        if (cancelled) return;
-        setClients(clientsRes.clients);
-        setPlan(billingRes.plan);
-        setCurrency(billingRes.billing.currency);
+    // The clients list and the billing/plan load INDEPENDENTLY: a hiccup on one
+    // must never corrupt the other. (A previous `Promise.all` rejected the whole
+    // pair when the clients call failed, discarding a successful Pro plan and
+    // wrongly locking a paying vendor onto the free-tier view.) `loading` and
+    // `failed` track only the clients list — the primary content of the page.
+    vendorClientsApi
+      .list()
+      .then((res) => {
+        if (!cancelled) setClients(res.clients);
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -243,12 +250,26 @@ export default function VendorClientsPage() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+    vendorBillingApi
+      .get()
+      .then((res) => {
+        if (cancelled) return;
+        setPlan(res.plan);
+        setCurrency(res.billing.currency);
+      })
+      .catch(() => {
+        // Plan stays unknown → no upgrade nudge, no locks. The server still
+        // enforces the real entitlement gate on the underlying data.
+      });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const isPro = isVendorFeatureEnabled(plan, "client_crm_detail");
+  // Lock the PRO-only CRM columns (+ show the upgrade nudge) only once billing
+  // has loaded AND the plan genuinely lacks the feature. While the plan is
+  // unknown, nothing locks — the paywall is never shown on a guess.
+  const crmLocked = plan !== null && !isVendorFeatureEnabled(plan, "client_crm_detail");
 
   // Status pills: "all" plus EVERY canonical status (each with its count), so
   // the filter row always mirrors the status options on the detail form,
@@ -288,7 +309,7 @@ export default function VendorClientsPage() {
         </p>
       </header>
 
-      {!isPro && <UpgradeNudge />}
+      {crmLocked && <UpgradeNudge />}
 
       {loading ? (
         <GhostTable />
@@ -357,12 +378,12 @@ export default function VendorClientsPage() {
                       <StatusBadge status={c.status} />
                     </span>
                     <span className="text-sm text-ink-600 dark:text-paper-300">
-                      <ProCell locked={!isPro}>
+                      <ProCell locked={crmLocked}>
                         {c.stage ? c.stage : <span className="text-ink-400">-</span>}
                       </ProCell>
                     </span>
                     <span className="text-sm tabular-nums text-ink-700 sm:text-right dark:text-paper-200">
-                      <ProCell locked={!isPro}>
+                      <ProCell locked={crmLocked}>
                         {c.balance !== null ? (
                           VOID_STATUSES.has(c.status) ? (
                             <span
