@@ -135,9 +135,13 @@ process.env.ADDRESS_SUGGEST_FAKE = "1";
 process.env.DEEPL_API_KEY = "test-deepl-key";
 process.env.DEEPL_FAKE = "1";
 
-// Wipe the test DB before the server boots — every run starts clean.
+// Wipe the test DB before the server boots — every run starts clean. Target
+// the SAME path the server is about to open (DB_PATH, resolved above), NOT the
+// hardcoded default: a worktree-parallel run overrides it via BUN_TEST_DB_PATH,
+// and wiping the default while the server opens the override left the override
+// DB to accumulate rows across runs (which is what let couple_cards rows leak).
 for (const ext of ["", "-shm", "-wal"]) {
-  const f = `./data/test-weddly.db${ext}`;
+  const f = `${process.env.DB_PATH}${ext}`;
   if (existsSync(f)) rmSync(f, { force: true });
 }
 
