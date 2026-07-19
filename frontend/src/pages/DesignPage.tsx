@@ -2035,7 +2035,8 @@ export default function DesignPage() {
                           type="button"
                           onClick={() => chooseBorderStyle(b.slug)}
                           aria-pressed={active}
-                          aria-label={b.slug}
+                          aria-label={t(b.nameKey)}
+                          title={t(b.nameKey)}
                           className={`flex h-12 items-center justify-center rounded-xl border bg-white p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
                             active
                               ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"

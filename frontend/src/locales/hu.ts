@@ -677,6 +677,7 @@ const hu: LocaleMessages = {
       none: "Nincs új értesítés.",
       new_inquiries: "{count} új megkeresés",
       upcoming_week: "{count} esemény a következő 7 napban",
+      new_reviews: "{count} új vélemény",
     },
     dashboard: {
       page_title: "Áttekintés",
@@ -718,6 +719,9 @@ const hu: LocaleMessages = {
       empty_step_2: "Megkeresést küldenek neked",
       empty_step_3: "Itt jelennek meg nálad",
       empty_cta_listing: "Fejezd be a profilod",
+      search_placeholder: "Keresés név, szakasz vagy dátum szerint",
+      search_clear: "Keresés törlése",
+      search_no_results: "Nincs a keresésnek megfelelő ügyfél.",
       col_couple: "Pár",
       col_event_date: "Esemény dátuma",
       col_status: "Állapot",
@@ -2770,6 +2774,12 @@ const hu: LocaleMessages = {
       heading_label: "Címsor betűtípusa",
       body_label: "Szövegtörzs betűtípusa",
       use_preset: "Preset szerint",
+    },
+    border: {
+      none: "Nincs keret",
+      hairline: "Vékony keret",
+      double: "Dupla keret",
+      thick: "Vastag keret",
     },
     family: {
       cormorant: "Cormorant (serif)",

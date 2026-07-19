@@ -118,37 +118,16 @@ export default function VendorStatsPage() {
         <p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.stats.page_body")}</p>
       </header>
 
-      {/* Summary numbers — always visible, both tiers. Cards deep-link to the
-          surface behind the number. */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard
-          icon={<Inbox size={18} aria-hidden="true" />}
-          label={t("vendor.stats.inquiries")}
-          value={String(stats.inquiries_total)}
-          to="/vendor/clients"
-        />
-        <StatCard
-          icon={<CalendarClock size={18} aria-hidden="true" />}
-          label={t("vendor.dashboard.inquiries_30d")}
-          value={String(stats.inquiries_30d)}
-          sub={t("vendor.stats.unit_inquiries")}
-          to="/vendor/clients"
-        />
-        <StatCard
-          icon={<BarChart3 size={18} aria-hidden="true" />}
-          label={t("vendor.stats.revenue")}
-          value={formatMoney(stats.revenue_tracked, currency, locale)}
-          help={t("vendor.stats.revenue_help")}
-        />
-        <StatCard
-          icon={<CalendarClock size={18} aria-hidden="true" />}
-          label={t("vendor.stats.blocked_dates")}
-          value={String(stats.blocked_dates_count)}
-          to="/vendor/calendar"
-        />
-      </div>
+      {/* Detailed analytics — PRO only. FREE sees the basic counts plus an
+          upgrade prompt.
 
-      {/* Detailed analytics — PRO only. FREE sees an upgrade prompt. */}
+          The summary cards deliberately live ONLY in the FREE branch. The
+          Overview page already owns the glanceable numbers (inquiries_total,
+          revenue_tracked, blocked_dates_count, and inquiries_30d as its hero),
+          so repeating them at the top of this page was a verbatim re-render
+          that pushed the real content — trend, status split, funnel — below the
+          fold. A PRO vendor now lands straight on the analysis; a FREE vendor,
+          who has no analysis to land on, still gets the counts here. */}
       {advancedUnlocked ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Inquiries over time — range pills + bucketed trend bars. */}
@@ -265,12 +244,41 @@ export default function VendorStatsPage() {
           </section>
         </div>
       ) : (
-        <UpgradeAnalyticsCard
-          title={t("vendor.upgrade.title")}
-          locked={t("vendor.upgrade.feature_locked")}
-          body={t("vendor.upgrade.body")}
-          cta={t("vendor.upgrade.cta")}
-        />
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <StatCard
+              icon={<Inbox size={18} aria-hidden="true" />}
+              label={t("vendor.stats.inquiries")}
+              value={String(stats.inquiries_total)}
+              to="/vendor/clients"
+            />
+            <StatCard
+              icon={<CalendarClock size={18} aria-hidden="true" />}
+              label={t("vendor.dashboard.inquiries_30d")}
+              value={String(stats.inquiries_30d)}
+              sub={t("vendor.stats.unit_inquiries")}
+              to="/vendor/clients"
+            />
+            <StatCard
+              icon={<BarChart3 size={18} aria-hidden="true" />}
+              label={t("vendor.stats.revenue")}
+              value={formatMoney(stats.revenue_tracked, currency, locale)}
+              help={t("vendor.stats.revenue_help")}
+            />
+            <StatCard
+              icon={<CalendarClock size={18} aria-hidden="true" />}
+              label={t("vendor.stats.blocked_dates")}
+              value={String(stats.blocked_dates_count)}
+              to="/vendor/calendar"
+            />
+          </div>
+          <UpgradeAnalyticsCard
+            title={t("vendor.upgrade.title")}
+            locked={t("vendor.upgrade.feature_locked")}
+            body={t("vendor.upgrade.body")}
+            cta={t("vendor.upgrade.cta")}
+          />
+        </>
       )}
     </div>
   );

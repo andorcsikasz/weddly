@@ -374,6 +374,22 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
   const blocked = db
     .prepare("SELECT COUNT(*) AS n FROM vendor_unavailable_dates WHERE vendor_account_id = ?")
     .get(accountId) as { n: number };
+  // Reviews land on the LISTING (supplier_reviews.supplier_id is the listing id),
+  // so an account with no listing yet simply has none. Only published,
+  // non-deleted rows count — a vendor should never be pinged about a review a
+  // couple can't see.
+  const listing = getListingByVendorAccountId(accountId);
+  const reviewsRecent = listing
+    ? (
+        db
+          .prepare(
+            `SELECT COUNT(*) AS n FROM supplier_reviews
+              WHERE supplier_id = ? AND published = 1 AND deleted_at IS NULL
+                AND created_at >= ?`,
+          )
+          .get(listing.id, nowMs - THIRTY_DAYS_MS) as { n: number }
+      ).n
+    : 0;
   const sub = getVendorSub(accountId);
   const billing = sub
     ? toVendorBilling(sub)
@@ -398,7 +414,8 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
     upcoming,
     inquiries_by_day: inquiriesByDay,
     blocked_dates_count: blocked.n,
-    listing_completeness: listingCompleteness(getListingByVendorAccountId(accountId)),
+    reviews_recent: reviewsRecent,
+    listing_completeness: listingCompleteness(listing),
     revenue_tracked: revenue,
     currency: billing.currency,
     billing,

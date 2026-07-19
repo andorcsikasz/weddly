@@ -19,6 +19,7 @@ import {
   Search,
   Undo2,
   UserPlus,
+  X,
 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -229,6 +230,10 @@ export default function VendorClientsPage() {
   const setStatusFilter = (s: string) => {
     setSearchParams(s === "all" ? {} : { status: s }, { replace: true });
   };
+  // Free-text search is purely client-side over the already-fetched list, and
+  // deliberately NOT in the URL: the status filter is a shareable/deep-linkable
+  // view, a half-typed query is not.
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -286,10 +291,28 @@ export default function VendorClientsPage() {
     return [...STATUS_ORDER, ...extra];
   }, [statusCounts]);
 
-  const filtered = useMemo(
-    () => (statusFilter === "all" ? clients : clients.filter((c) => c.status === statusFilter)),
-    [clients, statusFilter],
-  );
+  // Status pills and free-text search compose (AND). The searchable haystack
+  // mirrors what the row actually SHOWS: the couple name and the raw event date
+  // always, the PRO stage only when that column isn't locked — otherwise a FREE
+  // vendor could probe hidden CRM values by watching rows appear and disappear.
+  const filtered = useMemo(() => {
+    const byStatus =
+      statusFilter === "all" ? clients : clients.filter((c) => c.status === statusFilter);
+    const q = query.trim().toLowerCase();
+    if (!q) return byStatus;
+    return byStatus.filter((c) => {
+      const haystack = [
+        c.couple_display_name,
+        c.event_date,
+        crmLocked ? null : c.stage,
+        t(`vendor.clients.status_${c.status}`),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [clients, statusFilter, query, crmLocked, t]);
 
   const pillBase =
     "rounded-full border border-paper-300 px-3 py-1 text-xs transition-colors dark:border-umber-700";
@@ -321,6 +344,33 @@ export default function VendorClientsPage() {
         <EmptyClients />
       ) : (
         <>
+          {/* Free-text search over the fetched list */}
+          <div className="relative mb-3">
+            <Search
+              size={16}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 dark:text-umber-300"
+            />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("vendor.clients.search_placeholder")}
+              aria-label={t("vendor.clients.search_placeholder")}
+              className="w-full rounded-xl border border-paper-300 bg-white py-2 pl-9 pr-9 text-sm text-ink-900 placeholder:text-ink-400 focus:border-steel-500 focus:outline-none focus:ring-2 focus:ring-steel-200 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-50 dark:placeholder:text-umber-300 dark:focus:ring-steel-800"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label={t("vendor.clients.search_clear")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-ink-400 transition-colors hover:bg-paper-100 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+              >
+                <X size={15} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
           {/* Status filter */}
           <div className="mb-4 flex flex-wrap gap-2">
             <button
@@ -408,7 +458,9 @@ export default function VendorClientsPage() {
 
           {filtered.length === 0 && (
             <p className="mt-3 text-center text-sm text-ink-500 dark:text-umber-300">
-              {t("vendor.clients.empty_body")}
+              {query.trim()
+                ? t("vendor.clients.search_no_results")
+                : t("vendor.clients.empty_body")}
             </p>
           )}
         </>

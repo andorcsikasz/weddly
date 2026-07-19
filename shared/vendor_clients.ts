@@ -76,6 +76,10 @@ export interface VendorStats {
    *  trend chart + range filter. */
   inquiries_by_day: { date: string; count: number }[];
   blocked_dates_count: number;
+  /** Published, non-deleted reviews on the vendor's listing from the last 30
+   *  days. Feeds the header bell's "new review" row; the bell's own per-device
+   *  seen-watermark decides whether that counts as unread. */
+  reviews_recent: number;
   /** 0..100 — how complete the public listing is. */
   listing_completeness: number;
   /** Sum of recorded deposits received (money in), integer minor units. */

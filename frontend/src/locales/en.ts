@@ -670,6 +670,7 @@ const en: LocaleMessages = {
       none: "No new notifications.",
       new_inquiries: "{count} new inquiries",
       upcoming_week: "{count} events in the next 7 days",
+      new_reviews: "{count} new reviews",
     },
     dashboard: {
       page_title: "Dashboard",
@@ -711,6 +712,9 @@ const en: LocaleMessages = {
       empty_step_2: "They send you an inquiry",
       empty_step_3: "They appear right here",
       empty_cta_listing: "Finish your listing",
+      search_placeholder: "Search by name, stage or date",
+      search_clear: "Clear search",
+      search_no_results: "No clients match your search.",
       col_couple: "Couple",
       col_event_date: "Event date",
       col_status: "Status",
@@ -2743,6 +2747,12 @@ const en: LocaleMessages = {
       heading_label: "Heading font",
       body_label: "Body font",
       use_preset: "Use preset",
+    },
+    border: {
+      none: "No border",
+      hairline: "Hairline border",
+      double: "Double border",
+      thick: "Thick border",
     },
     family: {
       cormorant: "Cormorant (serif)",

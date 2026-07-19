@@ -870,6 +870,8 @@ export interface LocaleMessages {
       new_inquiries: string;
       /** Receives `{count}` (confirmed events in the next 7 days). */
       upcoming_week: string;
+      /** Published reviews from the last 30 days (VendorStats.reviews_recent). */
+      new_reviews: string;
     };
     dashboard: {
       page_title: string;
@@ -917,6 +919,11 @@ export interface LocaleMessages {
       empty_step_2: string;
       empty_step_3: string;
       empty_cta_listing: string;
+      /** Free-text search over the already-fetched client list (client-side;
+       *  composes with the status pills). */
+      search_placeholder: string;
+      search_clear: string;
+      search_no_results: string;
       col_couple: string;
       col_event_date: string;
       col_status: string;
@@ -2991,6 +2998,15 @@ export interface LocaleMessages {
       heading_label: string;
       body_label: string;
       use_preset: string;
+    };
+    /** Frame drawn around the printed cards — matches the `BorderStyleSlug`
+     *  catalog in shared/design.ts (the tiles are visual, so these names carry
+     *  the whole accessible label). */
+    border: {
+      none: string;
+      hairline: string;
+      double: string;
+      thick: string;
     };
     /** Individually-assignable font families (the editable layer). */
     family: {

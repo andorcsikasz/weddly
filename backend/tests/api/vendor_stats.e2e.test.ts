@@ -152,6 +152,7 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     expect(r.data.upcoming).toEqual([]);
     expect(r.data.inquiries_by_day).toEqual([]);
     expect(r.data.blocked_dates_count).toBe(0);
+    expect(r.data.reviews_recent).toBe(0);
     expect(r.data.revenue_tracked).toBe(0);
     // The bootstrap card has blurb + contact_email + price_band filled, but no
     // capacity and no hero image: 3 of 5 buckets = 60%.
@@ -227,6 +228,40 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     });
     expect(r.status).toBe(200);
     expect(r.data.blocked_dates_count).toBe(1);
+  });
+
+  test("reviews_recent counts only published, undeleted reviews from the last 30 days", async () => {
+    wipeAll();
+    const { vendorToken, listingId } = await bootstrapVendor("stats-reviews");
+    await bootstrapCouple("reviewer-stats@weddly.test");
+    // supplier_reviews.author_user_id is a real FK, so grab the couple owner's
+    // row rather than inventing an id.
+    const author = db
+      .prepare("SELECT id FROM users WHERE email = ?")
+      .get("reviewer-stats@weddly.test") as { id: number } | undefined;
+    expect(author).toBeTruthy();
+    const userId = author?.id;
+
+    // Reviews are written straight to the table: the public POST path enforces
+    // one-per-couple-per-supplier plus moderation, and this test is about the
+    // ROLLUP, not that gate. Four rows, only the first of which should count.
+    const nowMs = Date.now();
+    const thirtyOneDaysAgo = nowMs - 31 * 86_400_000;
+    const insert = db.prepare(
+      `INSERT INTO supplier_reviews
+         (supplier_id, author_user_id, couple_id, rating, body, published, created_at, updated_at, deleted_at)
+       VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
+    );
+    insert.run(listingId, userId, 5, "recent + published", 1, nowMs, nowMs, null);
+    insert.run(listingId, userId, 4, "unpublished", 0, nowMs, nowMs, null);
+    insert.run(listingId, userId, 3, "too old", 1, thirtyOneDaysAgo, thirtyOneDaysAgo, null);
+    insert.run(listingId, userId, 2, "soft-deleted", 1, nowMs, nowMs, nowMs);
+
+    const r = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: vendorToken,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.reviews_recent).toBe(1);
   });
 
   test("anon → 401, couple-role → 403", async () => {

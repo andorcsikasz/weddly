@@ -67,19 +67,21 @@ const NAV_COLLAPSED_KEY = "weddly.vendor_nav_collapsed";
 function VendorNotificationBell({
   newInquiries,
   upcomingWeek,
+  newReviews,
   ready,
 }: {
   newInquiries: number;
   upcomingWeek: number;
+  newReviews: number;
   ready: boolean;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const hasNotifications = newInquiries > 0 || upcomingWeek > 0;
+  const hasNotifications = newInquiries > 0 || upcomingWeek > 0 || newReviews > 0;
   const { dot, markSeen } = useNotifSeen(
     "weddly.vendor_notif_seen",
-    { inquiries: newInquiries, upcoming: upcomingWeek },
+    { inquiries: newInquiries, upcoming: upcomingWeek, reviews: newReviews },
     ready,
   );
 
@@ -152,6 +154,17 @@ function VendorNotificationBell({
             <Link to="/vendor" role="menuitem" onClick={() => setOpen(false)} className={rowClass}>
               <CalendarClock size={15} className="shrink-0 text-steel-500" aria-hidden="true" />
               <span>{t("vendor.notif.upcoming_week", { count: String(upcomingWeek) })}</span>
+            </Link>
+          )}
+          {newReviews > 0 && (
+            <Link
+              to="/vendor/reviews"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={rowClass}
+            >
+              <Star size={15} className="shrink-0 text-sage-500" aria-hidden="true" />
+              <span>{t("vendor.notif.new_reviews", { count: String(newReviews) })}</span>
             </Link>
           )}
         </div>
@@ -355,6 +368,8 @@ export function VendorShell({ children }: { children: ReactNode }) {
   const [newInquiries, setNewInquiries] = useState(0);
   // Confirmed events in the next 7 days, for the header bell.
   const [upcomingWeek, setUpcomingWeek] = useState(0);
+  // Published reviews from the last 30 days, also for the bell.
+  const [newReviews, setNewReviews] = useState(0);
   // Stays false until the first stats fetch lands, so the bell's seen-watermark
   // never sees the transient all-zero mount state (and never on fetch failure;
   // the counts are unknown then, not zero).
@@ -368,12 +383,14 @@ export function VendorShell({ children }: { children: ReactNode }) {
         setNewInquiries(stats.by_status.requested ?? 0);
         const weekEnd = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
         setUpcomingWeek(stats.upcoming.filter((u) => u.event_date <= weekEnd).length);
+        setNewReviews(stats.reviews_recent);
         setStatsReady(true);
       })
       .catch(() => {
         if (!cancelled) {
           setNewInquiries(0);
           setUpcomingWeek(0);
+          setNewReviews(0);
         }
       });
     return () => {
@@ -441,6 +458,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
             <VendorNotificationBell
               newInquiries={newInquiries}
               upcomingWeek={upcomingWeek}
+              newReviews={newReviews}
               ready={statsReady}
             />
             <VendorProfileMenu

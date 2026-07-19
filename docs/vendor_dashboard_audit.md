@@ -36,9 +36,11 @@ Legend — **Status:** `DONE` (shipped, commit noted) · `PARTIAL` (some shipped
 - **Note:** This is a design decision, not just code — needs a direction call before build.
 
 ### VND-4 · Persistent onboarding checklist with completion ring
-- **Priority:** P1 · **Labels:** onboarding, activation, vendor · **Status:** OPEN
+- **Priority:** P1 · **Labels:** onboarding, activation, vendor · **Status:** PARTIAL — persistence + ring `fa7756dd`
 - **Problem:** A fresh account is a wall of bare zero-states (Áttekintés, Naptár, Statisztika, Vélemények, Teendők). The only onboarding element is one dismissible "20% kész" banner on the overview; once dismissed it can't be recalled, and the percentage isn't reflected anywhere else.
 - **Scope:** Replace the one-shot banner with a persistent, visual checklist (completion ring) listing concrete steps — cover photo, gallery, packages, description, contact info — visible until the profile hits 100%, surfaced in the sidebar and the listing page.
+- **Done (`fa7756dd`):** the banner is persistent and reopenable — a `CompletenessRing` in a full alert plus a collapsed chip, dismissal stored per device in `localStorage` (`VendorDashboardPage.tsx`).
+- **Remaining (OPEN):** (a) it is still one generic "complete now" link, not a per-step checklist deep-linking to each editor; (b) it lives on ONE surface (`VendorDashboardPage`) — nothing in `VendorShell` or `VendorListingPage`; (c) `listingCompleteness()` (`backend/src/domain/vendor_clients.ts`) scores only 5 buckets (blurb, contact, price band, capacity, hero) and ignores gallery and packages, so the ring can read 100% on a listing the ticket would call incomplete.
 - **Acceptance:** Progress is always recallable, reflected in ≥2 places, and each step deep-links to the relevant editor; the ring hits 100% only when the listing is genuinely complete.
 
 ### VND-5 · Live-reactive listing preview
@@ -65,16 +67,17 @@ Legend — **Status:** `DONE` (shipped, commit noted) · `PARTIAL` (some shipped
 ## P2 — coherence, features, polish
 
 ### VND-8 · Overview and Statisztika duplicate the same stat cards
-- **Priority:** P2 · **Labels:** vendor, redundancy · **Status:** OPEN
-- **Problem:** The Overview and Statisztika pages repeat the same three stat cards almost verbatim.
-- **Scope:** Keep a compact glanceable summary on Overview; make Statisztika the deep view (trends, funnel, breakdowns) rather than a re-render.
-- **Acceptance:** No verbatim duplication; each page earns its screen real estate.
+- **Priority:** P2 · **Labels:** vendor, redundancy · **Status:** DONE
+- **Problem:** The Overview and Statisztika pages repeat the same three stat cards almost verbatim. In fact all four metrics overlapped: Overview's hero is `inquiries_30d` and its KPI row is `inquiries_total` / `revenue_tracked` / `blocked_dates_count`, which is exactly Statisztika's summary row (Statisztika even reused Overview's `vendor.dashboard.inquiries_30d` key).
+- **Fix:** The summary row now renders ONLY in Statisztika's FREE branch. A PRO vendor lands directly on the analysis (trend chart, status donut, conversion funnel) instead of scrolling past a re-render of the page they just left; a FREE vendor, who has no analysis to land on, still gets the counts. Overview is untouched and remains the glanceable surface.
+- **Acceptance:** No verbatim duplication; each page earns its screen real estate. ✓
 
 ### VND-9 · Integrate Naptár and Teendők instead of swapping views
-- **Priority:** P2 · **Labels:** vendor, calendar · **Status:** OPEN
+- **Priority:** P2 · **Labels:** vendor, calendar · **Status:** DONE — verified in code 2026-07-20
 - **Problem:** Switching Naptár ↔ Teendők replaces the whole view, so the two features feel disconnected.
 - **Scope:** Surface tasks as due-date markers on the calendar itself so it reads as one planning tool.
-- **Acceptance:** Dated tasks appear on the calendar; the two are one coherent surface.
+- **Reality:** `VendorCalendarPage.tsx` already pushes every not-done task carrying a `due_date` into the calendar event list as `kind: "task"`, rendered across the month / time-grid / schedule views, and the pills link back to the board. Acceptance is met. Only the mode toggle itself still swaps views, which is a cosmetic preference, not the disconnect the ticket described.
+- **Acceptance:** Dated tasks appear on the calendar; the two are one coherent surface. ✓
 
 ### VND-10 · Replace native date inputs with the custom date picker
 - **Priority:** P2 · **Labels:** vendor, a11y, consistency · **Status:** OPEN
@@ -82,10 +85,12 @@ Legend — **Status:** `DONE` (shipped, commit noted) · `PARTIAL` (some shipped
 - **Acceptance:** Both date entry points use the shared custom picker; visual + keyboard behavior is consistent across browsers.
 
 ### VND-11 · Functional notifications + inquiry alerts
-- **Priority:** P2 · **Labels:** vendor, notifications, growth · **Status:** OPEN
-- **Problem:** The notification bell always shows "Nincs új értesítés" — no functional content. Lead-response speed is one of the biggest marketplace levers.
-- **Scope:** Wire real notifications (new inquiry, new review, booking change) into the bell; add inquiry alerts via push/email.
-- **Acceptance:** The bell shows real events; a new couple inquiry triggers a timely alert.
+- **Priority:** P2 · **Labels:** vendor, notifications, growth · **Status:** PARTIAL
+- **Problem (as reported):** The notification bell always shows "Nincs új értesítés" — no functional content.
+- **Reality:** the bell is NOT a stub. The vendor bell is its own component in `VendorShell.tsx` (not the couple `NotificationBell`) and renders real rows off live stats: new inquiries (→ `/vendor/clients`) and confirmed events inside the next 7 days, with a per-device seen watermark driving the red dot. `vendor.notif.none` shows only when there is genuinely nothing.
+- **Also done:** the new-review kind. `VendorStats` gained `reviews_recent` (published, undeleted reviews on the vendor's listing from the last 30 days; reviews key off the LISTING, so an account without one simply has zero), and the bell renders a third row linking to `/vendor/reviews`. The count joins the existing seen-watermark, so the dot re-arms when it rises. Covered in `backend/tests/api/vendor_stats.e2e.test.ts`.
+- **Remaining (OPEN):** the booking-change kind — deliberately skipped rather than faked, because there is no event source for it today (`supplier_bookings.updated_at` mostly records the vendor's own edits, which would ping them about their own actions); it needs a real status-transition log first. Also open: the push/email inquiry alert (lead-response speed is one of the biggest marketplace levers), and moving the vendor bell onto the real `notificationApi` feed that backs the couple bell.
+- **Acceptance:** The bell shows real events ✓; a new couple inquiry triggers a timely out-of-app alert (still open).
 
 ### VND-12 · "Average response time" metric + SLA-style badges
 - **Priority:** P2 · **Labels:** vendor, growth, marketplace · **Status:** OPEN
@@ -98,8 +103,9 @@ Legend — **Status:** `DONE` (shipped, commit noted) · `PARTIAL` (some shipped
 - **Acceptance:** Vendors and couples can exchange messages in-app tied to an inquiry/client.
 
 ### VND-14 · Search / filter on the client list
-- **Priority:** P2 · **Labels:** vendor, crm · **Status:** OPEN
-- **Acceptance:** The Ügyfelek list supports search and at least status filtering (the status pills exist; add free-text search).
+- **Priority:** P2 · **Labels:** vendor, crm · **Status:** DONE
+- **Fix:** A free-text search box above the status pills, filtering the already-fetched array client-side (no new endpoint) and composing with the status filter. The haystack mirrors what the row actually shows: couple name, event date and localized status always, the PRO `stage` only when that column isn't locked, so a FREE vendor can't probe hidden CRM values by watching rows appear and disappear. The query deliberately stays out of the URL (the status filter is a shareable deep link, a half-typed query is not); zero matches get their own message rather than the "no clients yet" empty state.
+- **Acceptance:** The Ügyfelek list supports search and at least status filtering. ✓
 
 ### VND-15 · Self-serve brand-name rename request
 - **Priority:** P2 · **Labels:** vendor, listing-editor · **Status:** OPEN
