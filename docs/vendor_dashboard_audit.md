@@ -83,9 +83,12 @@ Legend — **Status:** `DONE` (shipped, commit noted) · `PARTIAL` (some shipped
 - **Acceptance:** Dated tasks appear on the calendar; the two are one coherent surface. ✓
 
 ### VND-10 · Replace native date inputs with the custom date picker
-- **Priority:** P2 · **Labels:** vendor, a11y, consistency · **Status:** OPEN
+- **Priority:** P2 · **Labels:** vendor, a11y, consistency · **Status:** DONE
 - **Problem:** Native browser date inputs (calendar day-blocking, to-do due dates) show the raw browser calendar icon and clash with the custom-styled components everywhere else; they also vary across browsers.
-- **Acceptance:** Both date entry points use the shared custom picker; visual + keyboard behavior is consistent across browsers.
+- **Root cause:** the shared `CalendarPicker` is deliberately only a GRID — it renders inside a `position: relative` wrapper and leaves open/close, click-outside and Escape to its parent. So every caller wanting a plain date input had to re-implement that shell, and the vendor surfaces reached for the native control instead. Before this, `CalendarPicker` had exactly two callers, both in the couple app's dashboard, both inside a dialog.
+- **Fix:** new `frontend/src/components/ui/DateField.tsx` supplies the missing shell (labelled trigger showing the locale-formatted date, popover, outside-click + Escape, optional clear) so a date field is now a one-liner. Adopted at all three vendor sites: the to-do due date (`VendorCalendarPage`), availability day-blocking (`VendorListingPage`), and the payment due date (`VendorClientDetailPage`, which the ticket didn't list but had the same problem via `TextField type="date"`). No native `type="date"` remains anywhere under `pages/vendor/`.
+- **Acceptance:** Both date entry points use the shared custom picker; visual + keyboard behavior is consistent across browsers. ✓
+- **Follow-up:** roughly 30 native date inputs remain OUTSIDE the vendor surfaces (couple app, admin). `DateField` is exported from `components/ui`, so migrating them is now mechanical.
 
 ### VND-11 · Functional notifications + inquiry alerts
 - **Priority:** P2 · **Labels:** vendor, notifications, growth · **Status:** PARTIAL

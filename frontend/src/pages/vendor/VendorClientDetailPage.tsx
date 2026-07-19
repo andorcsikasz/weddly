@@ -13,7 +13,7 @@ import { ArrowLeft, CircleCheck, CircleDashed, Lock, Mail, Plus, Trash2 } from "
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Button, Skeleton, TextField, useConfirm, useToast } from "../../components/ui";
+import { Button, DateField, Skeleton, TextField, useConfirm, useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { vendorBillingApi, vendorClientsApi } from "../../lib/endpoints";
 import { formatMoney } from "../../lib/format";
@@ -555,12 +555,13 @@ export default function VendorClientDetailPage() {
               onValueChange={setPayAmount}
               locale={locale}
             />
-            <TextField
+            <DateField
               id="vc-pay-due"
-              type="date"
               label={t("vendor.payments.due_date_field")}
               value={payDueDate}
-              onChange={(e) => setPayDueDate(e.target.value)}
+              onChange={setPayDueDate}
+              locale={locale}
+              clearable
             />
             <Button
               onClick={onAddPayment}

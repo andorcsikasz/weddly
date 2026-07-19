@@ -35,6 +35,7 @@ import type { VendorAvailabilityView, VendorBlockedDay } from "@shared/listings"
 import type { VendorClientView } from "@shared/vendor_clients";
 import type { VendorBoardStatus, VendorTask } from "@shared/vendor_tasks";
 import { useConfirm } from "../../components/ui/ConfirmDialogProvider";
+import { DateField } from "../../components/ui/DateField";
 import { Dialog } from "../../components/ui/Dialog";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { useToast } from "../../components/ui/ToastProvider";
@@ -806,7 +807,7 @@ function TasksBoard({
   onCreate: (title: string, dueDate: string | null) => Promise<boolean>;
   createBusy: boolean;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const [dragOverLane, setDragOverLane] = useState<VendorBoardStatus | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newDue, setNewDue] = useState("");
@@ -838,16 +839,14 @@ function TasksBoard({
             disabled={createBusy}
           />
         </label>
-        <label className="block">
-          <span className="field-label">{t("vendor_calendar.task_due_label")}</span>
-          <input
-            type="date"
-            className="input"
-            value={newDue}
-            onChange={(e) => setNewDue(e.target.value)}
-            disabled={createBusy}
-          />
-        </label>
+        <DateField
+          label={t("vendor_calendar.task_due_label")}
+          value={newDue}
+          onChange={setNewDue}
+          locale={locale}
+          disabled={createBusy}
+          clearable
+        />
         <button
           type="submit"
           className="btn bg-steel-600 text-white hover:bg-steel-700"

@@ -2,6 +2,7 @@ export { AppProviders } from "./AppProviders";
 export { CalendarPicker } from "./CalendarPicker";
 export { Button, type ButtonSize, type ButtonVariant } from "./Button";
 export { ConfirmDialogProvider, useConfirm, type ConfirmOptions } from "./ConfirmDialogProvider";
+export { DateField } from "./DateField";
 export { Dialog } from "./Dialog";
 export { EntryDialogProvider, useEntryPrompt, type EntryOptions } from "./EntryDialogProvider";
 export { FieldError } from "./FieldError";

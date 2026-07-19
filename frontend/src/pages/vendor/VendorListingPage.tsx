@@ -38,6 +38,7 @@ import { SetupProgressPanel } from "../../components/VendorSetupProgress";
 import { TranslateButton } from "../../components/TranslateButton";
 import { VendorListingPackages } from "../../components/VendorListingPackages";
 import { VendorListingVideos } from "../../components/VendorListingVideos";
+import { DateField } from "../../components/ui/DateField";
 import { TextField } from "../../components/ui/TextField";
 import { useToast } from "../../components/ui/ToastProvider";
 import { vendorAvailabilityApi, vendorListingApi } from "../../lib/endpoints";
@@ -1179,18 +1180,18 @@ export default function VendorListingPage() {
           <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
 
           <form onSubmit={onAddBlock} className="flex flex-wrap items-end gap-2">
-            <label className="block" htmlFor="vendor-block-date">
-              <span className="field-label">{t("vendor_home.availability_add_label")}</span>
-              <input
+            <div className="w-56">
+              <DateField
                 id="vendor-block-date"
-                type="date"
-                className="input"
+                label={t("vendor_home.availability_add_label")}
                 value={newDate}
                 min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setNewDate(e.target.value)}
+                onChange={setNewDate}
+                locale={locale}
                 disabled={availBusy}
+                clearable
               />
-            </label>
+            </div>
             <button
               type="submit"
               className="btn bg-steel-600 text-white hover:bg-steel-700"
