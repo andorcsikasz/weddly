@@ -12,9 +12,10 @@ import type {
   SupplierDetail,
   SupplierReview,
 } from "@shared/suppliers";
-import { BadgeCheck, ExternalLink, FileText, Globe, Mail, MapPin, Phone, Star } from "lucide-react";
+import { BadgeCheck, ExternalLink, Globe, Mail, MapPin, Phone, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
@@ -274,45 +275,15 @@ export default function PublicVendorPage() {
               <PublicBlurb detail={detail} locale={locale} t={t} />
             </section>
 
-            {/* Packages */}
+            {/* Packages — same scannable comparison grid as the in-app page
+                (shared component), so the shared public link doesn't read as
+                a lesser version of what the couple sees signed in. */}
             {detail.packages.length > 0 && (
               <section className="mt-10">
-                <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+                <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                   {t("suppliers.detail.packages.title")}
                 </h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {detail.packages.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex flex-col rounded-xl border border-paper-300 bg-white p-4 dark:border-umber-700 dark:bg-umber-800"
-                    >
-                      <h3 className="text-base font-semibold text-ink-900 dark:text-paper-50">
-                        {p.name}
-                      </h3>
-                      {p.price_text && (
-                        <p className="mt-1 text-sm font-semibold text-steel-700 dark:text-steel-300">
-                          {p.price_text}
-                        </p>
-                      )}
-                      {p.description && (
-                        <p className="mt-2 whitespace-pre-line text-sm text-ink-600 dark:text-umber-200">
-                          {p.description}
-                        </p>
-                      )}
-                      {p.pdf_url && (
-                        <a
-                          href={p.pdf_url}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          className="mt-3 inline-flex items-center gap-1.5 self-start text-sm text-steel-700 hover:underline dark:text-steel-300"
-                        >
-                          <FileText size={15} aria-hidden />
-                          {p.pdf_name ?? t("suppliers.detail.packages.download")}
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <VendorPackageGrid packages={detail.packages} t={t} />
               </section>
             )}
 
@@ -539,7 +510,9 @@ function PublicContactCard({
       : null;
 
   return (
-    <div className="rounded-2xl border border-ink-200/60 bg-white p-5 shadow-sm dark:border-umber-700/60 dark:bg-umber-900">
+    // Shared card elevation — soft drop shadow, no hard border — matching the
+    // in-app detail page's sidebar cards and the package grid.
+    <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-700/60">
       <a
         href={mapsUrl}
         target="_blank"

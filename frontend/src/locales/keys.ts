@@ -5102,6 +5102,13 @@ export interface LocaleMessages {
       packages: {
         title: string;
         download: string;
+        /** Badge on the recommended (anchor) package tier. */
+        recommended: string;
+        /** Placeholder when a package has no price, specs or PDF. */
+        detailsOnRequest: string;
+        /** Per-card toggle to reveal specs beyond the default few. */
+        seeFullDetails: string;
+        showLess: string;
       };
     };
     /** Review tag labels shared between the composer (admin selects up to 5)

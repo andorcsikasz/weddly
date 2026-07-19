@@ -4571,6 +4571,10 @@ const hu: LocaleMessages = {
       packages: {
         title: "Árajánlatok",
         download: "Árlista letöltése (PDF)",
+        recommended: "Ajánlott",
+        detailsOnRequest: "Részletek egyeztetés alapján",
+        seeFullDetails: "Teljes részletek",
+        showLess: "Kevesebb",
       },
     },
     reviewTags: {

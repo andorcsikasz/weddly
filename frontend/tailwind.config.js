@@ -303,6 +303,10 @@ export default {
       },
       boxShadow: {
         soft: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 1px 4px 0 rgba(16, 24, 48, 0.06)",
+        // Resting card elevation — a soft drop shadow that lifts a card off the
+        // cream page without a hard 1px border. One notch above `soft` so a row
+        // of cards reads as floating panels, not framed boxes.
+        elevated: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 6px 16px -4px rgba(16, 24, 48, 0.10)",
         pop: "0 10px 25px -8px rgba(16, 24, 48, 0.16), 0 2px 6px -2px rgba(16, 24, 48, 0.10)",
       },
       spacing: {

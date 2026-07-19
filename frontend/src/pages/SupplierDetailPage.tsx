@@ -83,6 +83,7 @@ import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { ComposeDialog } from "../components/OutreachInbox";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
+import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { Wordmark } from "../components/Wordmark";
@@ -477,10 +478,12 @@ export default function SupplierDetailPage() {
               )}
             </div>
 
-            {/* Primary actions. Send inquiry is the conversion target; save
-                is the deferral path. Both render on desktop here AND in
-                the sticky bottom bar on mobile (see end of this file). */}
-            <div className="mt-5 flex flex-wrap items-center gap-2">
+            {/* Primary actions. Send inquiry is the sole conversion target,
+                so it stays the one solid accent-filled button. Save + share
+                are demoted to quiet outline secondaries that don't compete
+                for the eye. All three render on desktop here AND in the
+                sticky bottom bar on mobile (see end of this file). */}
+            <div className="mt-6 flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => setComposeOpen(true)}
@@ -497,8 +500,8 @@ export default function SupplierDetailPage() {
                 aria-pressed={isSaved}
                 className={
                   isSaved
-                    ? "inline-flex items-center gap-1.5 rounded-full border border-sage-600 bg-sage-600 px-3 py-1.5 text-sm font-medium text-white transition hover:border-sage-700 hover:bg-sage-700 dark:border-sage-600 dark:bg-sage-600 dark:text-white dark:hover:border-sage-500 dark:hover:bg-sage-500"
-                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                    ? "inline-flex items-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1.5 text-sm font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
+                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-transparent px-3 py-1.5 text-sm text-ink-600 transition hover:border-ink-300 hover:bg-paper-100/70 hover:text-ink-800 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-800"
                 }
               >
                 {isSaved ? (
@@ -511,10 +514,11 @@ export default function SupplierDetailPage() {
               <button
                 type="button"
                 onClick={shareVendor}
-                className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 text-sm text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                aria-label={shareLabel}
+                title={shareLabel}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-300 bg-transparent text-ink-600 transition hover:border-ink-300 hover:bg-paper-100/70 hover:text-ink-800 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-800"
               >
                 <Share2 size={14} aria-hidden />
-                {shareLabel}
               </button>
             </div>
 
@@ -586,47 +590,16 @@ export default function SupplierDetailPage() {
             )}
           </section>
 
-          {/* Packages (árajánlat) — the vendor's published price offers. Card
-              grid, each with an optional free-text price + optional PDF price
-              list. Renders only when the claimed vendor added at least one. */}
+          {/* Packages (árajánlat) — the vendor's published price offers, as a
+              scannable comparison grid. Card layout, spec parsing, the
+              recommended anchor and the empty-state fallback all live in the
+              shared <VendorPackageGrid> (also used by the public page). */}
           {detail.packages.length > 0 && (
             <section className="mb-10">
-              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+              <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
                 {t("suppliers.detail.packages.title")}
               </h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {detail.packages.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex flex-col rounded-xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800"
-                  >
-                    <h3 className="text-base font-semibold text-ink-900 dark:text-cream-50">
-                      {p.name}
-                    </h3>
-                    {p.price_text && (
-                      <p className="mt-1 text-sm font-semibold text-steel-700 dark:text-steel-300">
-                        {p.price_text}
-                      </p>
-                    )}
-                    {p.description && (
-                      <p className="mt-2 whitespace-pre-line text-sm text-ink-600 dark:text-umber-200">
-                        {p.description}
-                      </p>
-                    )}
-                    {p.pdf_url && (
-                      <a
-                        href={p.pdf_url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="mt-3 inline-flex items-center gap-1.5 self-start text-sm text-steel-700 hover:underline dark:text-steel-300"
-                      >
-                        <FileText size={15} aria-hidden />
-                        {p.pdf_name ?? t("suppliers.detail.packages.download")}
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <VendorPackageGrid packages={detail.packages} t={t} />
             </section>
           )}
 
@@ -1303,7 +1276,11 @@ function SidebarCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-ink-200/60 bg-white p-5 shadow-sm dark:border-umber-700/60 dark:bg-umber-900">
+    // Shared card elevation: a soft drop shadow lifts the card off the cream
+    // page instead of a hard 1px border (dark mode keeps a faint ring since
+    // shadows vanish on dark surfaces). Same radius + padding as the package
+    // cards so the whole page reads as one system.
+    <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-700/60">
       {title && (
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-cream-50">
           {icon}

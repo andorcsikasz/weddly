@@ -4523,6 +4523,10 @@ const en: LocaleMessages = {
       packages: {
         title: "Packages",
         download: "Download price list (PDF)",
+        recommended: "Recommended",
+        detailsOnRequest: "Details available on request",
+        seeFullDetails: "See full details",
+        showLess: "Show less",
       },
     },
     reviewTags: {
