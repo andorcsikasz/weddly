@@ -4,7 +4,7 @@
 // viewer), so there is no vendor-specific backend surface. Responding to
 // reviews is a deliberate non-goal for v1 — this page is about visibility.
 
-import { RefreshCw, Star } from "lucide-react";
+import { ExternalLink, RefreshCw, Star } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { ReviewSummary, SupplierReview } from "@shared/suppliers";
@@ -168,11 +168,19 @@ export default function VendorReviewsPage() {
           <p className="max-w-md text-sm text-ink-600 dark:text-paper-300">
             {t("vendor.reviews.empty_body")}
           </p>
+          {/* Preview the vendor's OWN listing as couples see it. Points at the
+              PUBLIC `/vendors/:id` route, not the couple-app-internal
+              `/app/suppliers/:id` (behind RequireCoupleAuth, which bounces a
+              vendor back to /vendor). Same v{N} id, opened in a new tab. This
+              was the third preview link that b35a24aa's "both links" fix missed. */}
           {listingId && (
             <Link
-              to={`/app/suppliers/${listingId}`}
-              className="mt-1 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+              to={`/vendors/${listingId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
             >
+              <ExternalLink size={14} aria-hidden="true" />
               {t("vendor_home.preview_open")}
             </Link>
           )}
