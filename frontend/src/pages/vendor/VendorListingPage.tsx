@@ -226,6 +226,11 @@ export default function VendorListingPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [heroBusy, setHeroBusy] = useState(false);
+  // Local object-URL of a just-picked cover, shown INSTANTLY in the couple's-eye
+  // preview (and the dropzone) while the upload round-trips. Cleared + revoked
+  // on success (the server URL takes over) or failure (reverts to the saved
+  // hero). Null the rest of the time.
+  const [heroPreview, setHeroPreview] = useState<string | null>(null);
   const [galleryBusy, setGalleryBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const heroInputRef = useRef<HTMLInputElement | null>(null);
@@ -277,6 +282,10 @@ export default function VendorListingPage() {
       toast.error(t("vendor_home.hero_upload_failed"));
       return;
     }
+    // Show the picked file the instant it's chosen, before the upload finishes,
+    // so the preview reacts immediately. Revoked in `finally` either way.
+    const localUrl = URL.createObjectURL(file);
+    setHeroPreview(localUrl);
     setHeroBusy(true);
     try {
       const next = await vendorListingApi.uploadHero(file);
@@ -286,6 +295,10 @@ export default function VendorListingPage() {
       toast.error(t("vendor_home.hero_upload_failed"));
     } finally {
       setHeroBusy(false);
+      // Success → the server URL on `view` takes over; failure → fall back to
+      // the previous saved hero. Either way stop referencing the blob and free it.
+      setHeroPreview(null);
+      URL.revokeObjectURL(localUrl);
     }
   };
 
@@ -478,6 +491,11 @@ export default function VendorListingPage() {
 
   const track = form ? capacityTrack(form) : null;
 
+  // The cover to render right now: the optimistic just-picked file if one is in
+  // flight, otherwise the saved hero. Shared by the couple's-eye preview and the
+  // editor's own dropzone so both react the moment a cover is chosen.
+  const effectiveHeroUrl = heroPreview ?? view?.listing.hero_image_url ?? null;
+
   // Anti-fraud pricing cooldown, mirrored from the server rule
   // (shared/listings.ts): while locked the band buttons are disabled and the
   // unlock date replaces the help line, so the vendor never hits the 409.
@@ -590,7 +608,7 @@ export default function VendorListingPage() {
             >
               <VendorListingPreview
                 name={view.listing.name}
-                heroUrl={view.listing.hero_image_url ?? null}
+                heroUrl={effectiveHeroUrl}
                 city={form.city}
                 priceBand={form.price_band}
                 capacityMin={form.capacity_min}
@@ -675,10 +693,10 @@ export default function VendorListingPage() {
                     : "border-paper-300 bg-paper-50 hover:border-steel-400 dark:border-umber-700 dark:bg-umber-900 dark:hover:border-steel-500"
                 }`}
               >
-                {view.listing.hero_image_url ? (
+                {effectiveHeroUrl ? (
                   <>
                     <img
-                      src={view.listing.hero_image_url}
+                      src={effectiveHeroUrl}
                       alt={t("vendor_home.hero_current_alt")}
                       className="absolute inset-0 h-full w-full object-cover"
                     />
