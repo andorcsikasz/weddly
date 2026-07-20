@@ -22,6 +22,7 @@ import { CLAIM_TOKEN_TTL_MS } from "@shared/vendor_claim";
 import type {
   VendorCampaign,
   VendorCampaignDetail,
+  VendorCampaignSegments,
   VendorCampaignSend,
   VendorCampaignTarget,
 } from "@shared/vendor_campaign";
@@ -276,6 +277,53 @@ describe("vendor claim-invite campaign", () => {
     );
     expect(r.status).toBe(200);
     expect(r.data.targets.map((t) => t.listing_id)).toEqual(["good-one"]);
+  });
+
+  test("segments report the reachable audience per country, campaign-free", async () => {
+    seedListing({ id: "hu-a", name: "HU A", city: "Budapest", contact_email: "a@hu.hu" });
+    seedListing({ id: "hu-b", name: "HU B", city: "Szeged", contact_email: "b@hu.hu" });
+    seedListing({ id: "it-a", name: "IT A", city: "Lake Como, IT", contact_email: "a@it.com" });
+    // Excluded everywhere, so it must not inflate any count.
+    seedListing({
+      id: "muted",
+      name: "Muted",
+      city: "Budapest",
+      contact_email: "quiet@hu.hu",
+    });
+    db.prepare("INSERT INTO email_optouts (email, reason, created_at) VALUES (?, 'manual', ?)").run(
+      "quiet@hu.hu",
+      now(),
+    );
+
+    const r = await req<VendorCampaignSegments>(
+      "GET",
+      "/api/admin/vendor-campaigns/segments",
+      undefined,
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.total).toBe(3);
+    // Biggest segment first, so the picker leads with the useful option.
+    expect(r.data.segments).toEqual([
+      { country: "HU", addresses: 2, locale: "hu" },
+      { country: "IT", addresses: 1, locale: "en" },
+    ]);
+  });
+
+  test("segments ignore what an existing campaign already wrote to", async () => {
+    seedListing({ id: "seg-1", name: "Seg 1", city: "Budapest", contact_email: "s1@hu.hu" });
+    const campaign = await makeCampaign();
+    await sendCampaignBatch(rowOf(campaign), 10);
+
+    // The create form asks "who could a NEW campaign reach?", and a new
+    // campaign is not bound by an older one's history.
+    const r = await req<VendorCampaignSegments>(
+      "GET",
+      "/api/admin/vendor-campaigns/segments",
+      undefined,
+      { token },
+    );
+    expect(r.data.total).toBe(1);
   });
 
   test("one mail per address when two listings share an inbox", async () => {
@@ -598,6 +646,7 @@ describe("vendor claim-invite campaign", () => {
     for (const [method, path] of [
       ["GET", "/api/admin/vendor-campaigns"],
       ["GET", `/api/admin/vendor-campaigns/${campaign.id}`],
+      ["GET", "/api/admin/vendor-campaigns/segments"],
       ["GET", `/api/admin/vendor-campaigns/${campaign.id}/targets`],
       ["GET", `/api/admin/vendor-campaigns/${campaign.id}/sends`],
       ["POST", `/api/admin/vendor-campaigns/${campaign.id}/send-batch`],

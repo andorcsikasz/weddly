@@ -92,6 +92,21 @@ export interface VendorCampaignTarget {
   locale: "hu" | "en";
 }
 
+/** One country's share of the reachable audience, as a brand-new campaign would
+ *  see it. Powers the country picker on the create form so an operator chooses
+ *  from real options with real counts instead of typing an ISO code blind. */
+export interface VendorCampaignSegment {
+  country: string;
+  addresses: number;
+  locale: "hu" | "en";
+}
+
+export interface VendorCampaignSegments {
+  /** Addresses across every country. The "Mind" option. */
+  total: number;
+  segments: VendorCampaignSegment[];
+}
+
 export interface VendorCampaignDetail {
   campaign: VendorCampaign;
   stats: VendorCampaignStats;

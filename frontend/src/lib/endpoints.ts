@@ -186,6 +186,7 @@ import type {
   UpdateVendorCampaignInput,
   VendorCampaign,
   VendorCampaignDetail,
+  VendorCampaignSegments,
   VendorCampaignSend,
   VendorCampaignStats,
   VendorCampaignTarget,
@@ -2075,6 +2076,9 @@ export const adminVendorCampaignApi = {
       "GET",
       `/api/admin/vendor-campaigns/${id}/targets`,
     ),
+  /** Reachable audience per country, as a brand-new campaign would see it.
+   *  Feeds the create form's country picker + its "how many, how long" hint. */
+  segments: () => apiFetch<VendorCampaignSegments>("GET", "/api/admin/vendor-campaigns/segments"),
   sends: (id: number) =>
     apiFetch<{ sends: VendorCampaignSend[] }>("GET", `/api/admin/vendor-campaigns/${id}/sends`),
   sendBatch: (id: number, limit: number) =>

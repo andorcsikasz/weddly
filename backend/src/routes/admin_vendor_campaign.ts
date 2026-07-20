@@ -16,6 +16,7 @@ import {
   getCampaignDetail,
   getCampaignRow,
   listCampaigns,
+  listSegments,
   listSends,
   listTargets,
   sendCampaignBatch,
@@ -78,6 +79,14 @@ function handleTargets(ctx: Ctx): Response {
   requireAdmin(ctx);
   const row = requireCampaign(ctx);
   return json({ targets: listTargets(row, TARGET_PREVIEW_LIMIT), stats: campaignStats(row) });
+}
+
+/** Audience breakdown for the create form. Deliberately campaign-independent:
+ *  it answers "who could a new campaign reach?", which is the question the form
+ *  is asking. */
+function handleSegments(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(listSegments());
 }
 
 function handleSends(ctx: Ctx): Response {
@@ -163,6 +172,7 @@ async function handleRunReminders(ctx: Ctx): Promise<Response> {
 export function registerAdminVendorCampaignRoutes(router: Router) {
   router.get("/api/admin/vendor-campaigns", handleList, true);
   router.post("/api/admin/vendor-campaigns", handleCreate, true);
+  router.get("/api/admin/vendor-campaigns/segments", handleSegments, true);
   router.get("/api/admin/vendor-campaigns/:id", handleDetail, true);
   router.patch("/api/admin/vendor-campaigns/:id", handleUpdate, true);
   router.get("/api/admin/vendor-campaigns/:id/targets", handleTargets, true);

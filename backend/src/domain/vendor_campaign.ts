@@ -32,6 +32,7 @@ import {
   type VendorCampaignSend,
   type VendorCampaignSendStatus,
   type VendorCampaignStats,
+  type VendorCampaignSegments,
   type VendorCampaignStatus,
   type VendorCampaignTarget,
 } from "@shared/vendor_campaign";
@@ -269,7 +270,13 @@ export function updateCampaign(id: number, patch: UpdateVendorCampaignInput): Ve
  *
  *  The country filter is applied in TS rather than SQL because country is
  *  derived from the id + city, not stored on the row. */
-export function listTargets(campaign: CampaignRow, limit: number): VendorCampaignTarget[] {
+function eligibleTargets(opts: {
+  /** Campaign whose already-written addresses to exclude. Null = "what would a
+   *  brand-new campaign see?", which is what the create form previews. */
+  excludeCampaignId: number | null;
+  country: string | null;
+  limit: number;
+}): VendorCampaignTarget[] {
   const rows = db
     .prepare(
       `SELECT l.id, l.source, l.name, l.category, l.city, l.contact_email
@@ -284,19 +291,19 @@ export function listTargets(campaign: CampaignRow, limit: number): VendorCampaig
           AND LOWER(TRIM(l.contact_email)) NOT IN (SELECT LOWER(email) FROM users)
         ORDER BY l.id ASC`,
     )
-    .all(campaign.id) as ListingTargetRow[];
+    .all(opts.excludeCampaignId ?? -1) as ListingTargetRow[];
 
   const out: VendorCampaignTarget[] = [];
   const seen = new Set<string>();
   for (const row of rows) {
-    if (out.length >= limit) break;
+    if (out.length >= opts.limit) break;
     const email = normalizeEmail(row.contact_email);
     // Two listings can share one inbox (a venue group, a studio with a second
     // brand). The UNIQUE index would reject the second insert anyway; skipping
     // here keeps the preview honest about how many mails actually go out.
     if (seen.has(email)) continue;
     const country = resolveListingCountry(row);
-    if (campaign.country != null && country !== campaign.country) continue;
+    if (opts.country != null && country !== opts.country) continue;
     seen.add(email);
     out.push({
       listing_id: row.id,
@@ -309,6 +316,36 @@ export function listTargets(campaign: CampaignRow, limit: number): VendorCampaig
     });
   }
   return out;
+}
+
+export function listTargets(campaign: CampaignRow, limit: number): VendorCampaignTarget[] {
+  return eligibleTargets({
+    excludeCampaignId: campaign.id,
+    country: campaign.country,
+    limit,
+  });
+}
+
+/** Reachable audience broken down by country, for the create form. An operator
+ *  picking a country segment should not have to guess a 2-letter code and hope
+ *  it matches something: this is the actual menu, with the actual counts, as a
+ *  brand-new campaign would see it. */
+export function listSegments(): VendorCampaignSegments {
+  const all = eligibleTargets({
+    excludeCampaignId: null,
+    country: null,
+    limit: Number.MAX_SAFE_INTEGER,
+  });
+  const byCountry = new Map<string, number>();
+  for (const t of all) byCountry.set(t.country, (byCountry.get(t.country) ?? 0) + 1);
+  const segments = [...byCountry.entries()]
+    .map(([country, addresses]) => ({
+      country,
+      addresses,
+      locale: localeForCountry(country),
+    }))
+    .sort((a, b) => b.addresses - a.addresses || a.country.localeCompare(b.country));
+  return { total: all.length, segments };
 }
 
 // ── Stats + listing ─────────────────────────────────────────────────────────
