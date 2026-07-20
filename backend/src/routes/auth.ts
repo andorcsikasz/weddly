@@ -322,6 +322,21 @@ async function handleSetLocale(ctx: Ctx): Promise<Response> {
   return json({ user: toUser(fresh) });
 }
 
+/** Latch the "share Weddly" prompt as shown. Write-once: a second call is a
+ *  no-op rather than a re-stamp, so the timestamp always answers "when did we
+ *  first ask this person" and repeat calls from a racing second tab are
+ *  harmless. Deliberately takes no body — there is nothing to configure, the
+ *  only transition is null → now. */
+function handleSharePromptSeen(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  db.prepare(
+    "UPDATE users SET share_prompt_seen_at = ?, updated_at = ? WHERE id = ? AND share_prompt_seen_at IS NULL",
+  ).run(now(), now(), userId);
+  const fresh = getUserById(userId);
+  if (!fresh) throw new HttpError(404, "User not found");
+  return json({ user: toUser(fresh) });
+}
+
 export function registerAuthRoutes(router: Router) {
   router.post("/api/auth/register", handleRegister);
   router.post("/api/auth/login", handleLogin);
@@ -329,4 +344,5 @@ export function registerAuthRoutes(router: Router) {
   router.post("/api/auth/change-password", handleChangePassword, true);
   router.get("/api/auth/me", handleMe, true);
   router.post("/api/auth/locale", handleSetLocale, true);
+  router.post("/api/auth/share-prompt-seen", handleSharePromptSeen, true);
 }

@@ -10,6 +10,7 @@ import {
   Layers,
   LogOut,
   MessageCircle,
+  Share2,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
@@ -21,8 +22,18 @@ import { useT } from "../lib/i18n";
 
 /** `onOpenFeedback` is supplied by AppShell. The feedback dialog's entry
  *  point lives here in the profile dropdown for every viewport (it used to
- *  be a header icon). Omit on screens that don't host a feedback dialog. */
-export function ProfileMenu({ onOpenFeedback }: { onOpenFeedback?: () => void } = {}) {
+ *  be a header icon). Omit on screens that don't host a feedback dialog.
+ *
+ *  `onOpenShare` is the same arrangement for the share-Weddly prompt. It is
+ *  passed only by the COUPLE shell: the share messages are written in a
+ *  couple's voice ("we're planning our wedding with Weddly"), so putting the
+ *  entry in the vendor or planner dropdown would hand those users a script
+ *  that isn't theirs. Unlike the automatic popup, this entry has no limit —
+ *  it opens the modal however many times it's clicked. */
+export function ProfileMenu({
+  onOpenFeedback,
+  onOpenShare,
+}: { onOpenFeedback?: () => void; onOpenShare?: () => void } = {}) {
   const { user, logout } = useAuth();
   const { t, locale, setLocale } = useT();
   const location = useLocation();
@@ -169,6 +180,25 @@ export function ProfileMenu({ onOpenFeedback }: { onOpenFeedback?: () => void } 
             <Layers size={16} aria-hidden="true" />
             <span>{t("profile.menu_couple_cards")}</span>
           </Link>
+          {/* Divider: everything above is navigation, everything below is an
+           *  action taken from here. */}
+          {(onOpenShare || onOpenFeedback) && (
+            <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
+          )}
+          {onOpenShare && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onOpenShare();
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+            >
+              <Share2 size={16} aria-hidden="true" />
+              <span>{t("share_weddly.menu_label")}</span>
+            </button>
+          )}
           {/* Feedback lives here in the dropdown for every viewport (it was
            *  moved out of the header icon row). The language toggle stays a
            *  mobile-only entry — tablet+ keeps the inline header icon, so it's

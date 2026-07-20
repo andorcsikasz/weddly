@@ -6027,6 +6027,29 @@ const hu: LocaleMessages = {
     tab_billing: "Előfizetés",
     tab_data: "Adatok",
   },
+  share_weddly: {
+    menu_label: "Weddly megosztása",
+    title: "Ti a közös jövőtöket építitek. Mi a Weddlyt.",
+    body: "Ha a Weddly egy kicsit könnyebbé teszi az esküvőszervezést, segítsetek, hogy még több pár megismerhesse.",
+    supporting: "Válasszátok ki a hozzátok legközelebb álló üzenetet.",
+    messages_label: "Megosztandó üzenet",
+    variant_warm: "Kedves",
+    variant_clean: "Letisztult",
+    variant_friendly: "Baráti",
+    message_warm:
+      "Mi a Weddlyvel szervezzük az esküvőnket, és sokkal egyszerűbbé teszi az egész folyamatot. Ha ti is a nagy napotokra készültök, érdemes megnézni: https://tryweddly.com",
+    message_clean:
+      "Mi a Weddlyvel tervezzük az esküvőnket. Minden, amire szükségünk van, átláthatóan, egy helyen: https://tryweddly.com",
+    message_friendly:
+      "Ismertek valakit, aki éppen esküvőt szervez? Mi a Weddlyt használjuk, és nagyon szeretjük, hogy mennyivel egyszerűbbé teszi a tervezést: https://tryweddly.com",
+    share_action: "Megosztás",
+    copy_action: "Másolás",
+    sharing: "Megosztás folyamatban",
+    copied: "Másolva",
+    cancelled: "Megosztás megszakítva",
+    error: "A megosztás nem sikerült. Próbáljátok meg inkább kimásolni az üzenetet.",
+    success: "Köszönjük, hogy segítetek a Weddlynek növekedni.",
+  },
   profile: {
     title: "Profil",
     menu_label: "Profil menü",

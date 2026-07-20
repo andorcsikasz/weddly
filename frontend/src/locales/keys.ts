@@ -6751,6 +6751,40 @@ export interface LocaleMessages {
     tab_billing: string;
     tab_data: string;
   };
+  /** The "share Weddly" referral prompt (components/ShareWeddlyDialog.tsx).
+   *  All three message variants live here, in both trees, so the modal has the
+   *  complete localised set the moment it opens — nothing is translated at
+   *  share time. The experience never mixes languages: it renders whichever
+   *  tree is active, and non-English interfaces resolve to Hungarian (see
+   *  `shareLanguage` in lib/share_weddly.ts). */
+  share_weddly: {
+    /** Profile-dropdown entry. */
+    menu_label: string;
+    title: string;
+    body: string;
+    /** Sits above the message cards. */
+    supporting: string;
+    /** Accessible name for the message radio-group. */
+    messages_label: string;
+    variant_warm: string;
+    variant_clean: string;
+    variant_friendly: string;
+    /** The share text itself. Ends with the URL; `splitShareMessage` lifts the
+     *  URL out for `navigator.share` so it isn't duplicated. */
+    message_warm: string;
+    message_clean: string;
+    message_friendly: string;
+    /** Icon-button tooltips + aria-labels. */
+    share_action: string;
+    copy_action: string;
+    /** Transient states, announced to screen readers. */
+    sharing: string;
+    copied: string;
+    cancelled: string;
+    error: string;
+    /** Shown after a confirmed native share. */
+    success: string;
+  };
   profile: {
     title: string;
     menu_label: string;

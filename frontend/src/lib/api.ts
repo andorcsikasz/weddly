@@ -1,6 +1,8 @@
 // Single typed fetch wrapper. Components never touch fetch directly — they go
 // through `endpoints.ts`, which calls this.
 
+import { noteMeaningfulAction } from "./share_activity";
+
 const TOKEN_KEY = "weddly.token";
 
 /** Stable per-browser device id, sent as `X-Weddly-Device` so the backend can
@@ -249,6 +251,12 @@ export async function apiFetch<T>(
       // 4xx — caller's request was rejected; retry would just re-fail.
       throw new ApiError(res.status, "client_error", msg, errBody.detail);
     }
+
+    // Count real planning edits for the share-prompt trigger. Sits here rather
+    // than at 40-odd call sites because this is the one place that knows a
+    // mutation actually SUCCEEDED. Self-filters by method + path and stops
+    // writing once the threshold is met, so the common case is a no-op.
+    noteMeaningfulAction(method, path);
 
     return data as T;
   }

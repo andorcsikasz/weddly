@@ -58,7 +58,17 @@ export type GrowthEventKind =
    *  minted for them via POST /api/billing/checkout (they're about to be
    *  redirected to Stripe). Top of the paid-conversion funnel: lets the
    *  admin see how many couples reached the pay screen vs. converted. */
-  | "checkout.started";
+  | "checkout.started"
+  /** The "share Weddly" referral prompt — every step of it, from the popup
+   *  being seen through to a confirmed native share. Deliberately ONE kind
+   *  rather than the nine separate ones the funnel distinguishes: they are a
+   *  single dashboard column ("did the referral prompt work?"), and nine kinds
+   *  would be nine columns describing one feature. The step lives in
+   *  `payload.event` (`weddly_share_popup_viewed`, `weddly_share_completed`, …)
+   *  alongside `source`, `language`, `message_variant`, `share_method`,
+   *  `user_session_number` and `meaningful_actions_completed`. No wedding data
+   *  goes in the payload. */
+  | "share.weddly";
 
 export interface GrowthEvent {
   id: number;
@@ -88,7 +98,22 @@ export interface RecordGrowthEventInput {
  *  RSVP-view counts. */
 export const FRONTEND_GROWTH_EVENT_KINDS: ReadonlySet<GrowthEventKind> = new Set([
   "rsvp.share_link.copied",
+  "share.weddly",
 ]);
+
+/** The steps of the share-prompt funnel, carried in `payload.event` of a
+ *  `share.weddly` growth event. Named for the analytics contract, not for the
+ *  code — keep the strings verbatim, dashboards key off them. */
+export type ShareWeddlyAnalyticsEvent =
+  | "weddly_share_popup_viewed"
+  | "weddly_share_popup_closed"
+  | "weddly_share_opened_from_profile"
+  | "weddly_share_message_selected"
+  | "weddly_share_started"
+  | "weddly_share_completed"
+  | "weddly_share_cancelled"
+  | "weddly_share_failed"
+  | "weddly_share_copied";
 
 /** Admin-dashboard aggregate row. Powered by a single GROUP BY query per
  *  kind across (total, last_24h, last_7d) windows. */

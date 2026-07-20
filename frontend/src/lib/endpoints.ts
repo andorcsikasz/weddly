@@ -92,6 +92,7 @@ import type {
   StripeHealth,
 } from "@shared/admin_financial_planner";
 import type { BillingStatusResponse } from "@shared/billing";
+import type { GrowthEventKind } from "@shared/growth";
 import type { CompanyLookupAvailability, CompanyLookupResult } from "@shared/company_lookup";
 import type { TranslateAvailability, TranslateRequest, TranslateResult } from "@shared/translate";
 import type { AddressSuggestion } from "@shared/geo";
@@ -454,6 +455,10 @@ export const authApi = {
    *  survives sign-out and follows the account to fresh devices. */
   setLocale: (locale: "hu" | "en") =>
     apiFetch<{ user: User }>("POST", "/api/auth/locale", { locale }),
+  /** Latch `users.share_prompt_seen_at` so the automatic share prompt never
+   *  fires again for this ACCOUNT, on any device. Write-once server-side; safe
+   *  to call more than once. */
+  markSharePromptSeen: () => apiFetch<{ user: User }>("POST", "/api/auth/share-prompt-seen", {}),
   forgot: (email: string) => apiFetch<{ ok: true }>("POST", "/api/auth/forgot", { email }),
   reset: (token: string, password: string) =>
     apiFetch<{ ok: true }>("POST", "/api/auth/reset", { token, password }),
@@ -3354,4 +3359,17 @@ export const couplePlannerApi = {
 export const plannerInviteApi = {
   lookup: (token: string) =>
     apiFetch<PlannerInvitePublic>("GET", `/api/planner-invites/${encodeURIComponent(token)}`),
+};
+
+/** Browser-only growth signals (POST /api/growth/event). The server rejects any
+ *  kind outside `FRONTEND_GROWTH_EVENT_KINDS`, so this is a narrow door, not a
+ *  general telemetry pipe. */
+export const growthApi = {
+  /** Fire-and-forget: instrumentation must never surface an error to the user
+   *  or block the interaction it is measuring, so the caller gets a promise
+   *  that always resolves. */
+  record: (kind: GrowthEventKind, payload?: Record<string, unknown>): Promise<void> =>
+    apiFetch<{ recorded: number }>("POST", "/api/growth/event", { kind, payload })
+      .then(() => undefined)
+      .catch(() => undefined),
 };

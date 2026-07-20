@@ -1533,6 +1533,13 @@ addColumnIfMissing("users", "planner_address", "planner_address TEXT");
 // Planner opted in to be notified when paid plans launch (1 = notify me).
 addColumnIfMissing("users", "planner_plan_notify", "planner_plan_notify INTEGER DEFAULT 0");
 
+// Unix ms the "share Weddly" prompt was auto-shown to this user. Write-once
+// latch (POST /api/auth/share-prompt-seen) so the automatic popup fires at most
+// once per ACCOUNT rather than once per browser — clearing storage or moving to
+// a second device must not re-ask. Null on every pre-feature row, which is the
+// correct "never shown" reading.
+addColumnIfMissing("users", "share_prompt_seen_at", "share_prompt_seen_at INTEGER");
+
 // Public reference codes for the two principal parties — organisers (couples)
 // get "O" + 5 digits, vendors get "V" + 5 digits. New rows are assigned a code
 // at creation time (routes/couples.ts onboarding, domain/vendor_accounts.create);

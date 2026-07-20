@@ -57,6 +57,10 @@ export interface UserRow {
   business_name?: string | null;
   /** Free-text business category typed by the admin at planner provisioning. */
   planner_category?: string | null;
+  /** Unix ms the "share Weddly" prompt was auto-shown, or null if never.
+   *  Write-once (see routes/auth.ts) — it is the one-shot latch for the
+   *  automatic popup, not a dismissal counter. */
+  share_prompt_seen_at?: number | null;
 }
 
 /** Email-allowlist admin check. Source of truth is the `ADMIN_EMAILS` env var
@@ -83,6 +87,7 @@ export function toUser(row: UserRow): User {
     has_google: Boolean(row.google_sub),
     has_apple: Boolean(row.apple_sub),
     user_type: row.user_type === "planner" ? "planner" : "couple",
+    share_prompt_seen_at: row.share_prompt_seen_at ?? null,
     created_at: row.created_at,
   };
 }

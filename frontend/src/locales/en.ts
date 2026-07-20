@@ -5968,6 +5968,29 @@ const en: LocaleMessages = {
     tab_billing: "Subscription",
     tab_data: "Data",
   },
+  share_weddly: {
+    menu_label: "Share Weddly",
+    title: "You build your marriage. We build Weddly.",
+    body: "If Weddly is making your wedding planning a little easier, help us bring that feeling to more couples.",
+    supporting: "Choose a message that feels like you.",
+    messages_label: "Share message",
+    variant_warm: "Warm",
+    variant_clean: "Clean",
+    variant_friendly: "Friendly",
+    message_warm:
+      "We're planning our wedding with Weddly, and it's making everything feel much easier. If you're planning yours too, take a look: https://tryweddly.com",
+    message_clean:
+      "We're planning our wedding with Weddly. Everything we need, beautifully organized in one place: https://tryweddly.com",
+    message_friendly:
+      "Know someone planning a wedding? We're using Weddly and genuinely love how simple it makes everything. Take a look: https://tryweddly.com",
+    share_action: "Share",
+    copy_action: "Copy",
+    sharing: "Sharing",
+    copied: "Copied",
+    cancelled: "Sharing cancelled",
+    error: "Sharing didn't work. Try copying the message instead.",
+    success: "Thank you for helping Weddly grow.",
+  },
   profile: {
     title: "Profile",
     menu_label: "Profile menu",

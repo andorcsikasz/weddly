@@ -45,6 +45,12 @@ export interface User {
   /** 'couple' (default) or 'planner'. Drives post-login routing — planners
    *  land on /app/planner, couples on /app. */
   user_type: "couple" | "planner";
+  /** When the "share Weddly" prompt was auto-shown to this user, stamped once
+   *  and never cleared. Null means it has never fired. Server-side so the
+   *  one-shot survives a new device / cleared storage; the frontend keeps a
+   *  localStorage mirror for when the write can't land. Only gates the
+   *  AUTOMATIC popup — the profile-menu entry is always available. */
+  share_prompt_seen_at: UnixMs | null;
   created_at: UnixMs;
 }
 

@@ -42,9 +42,18 @@ import { createPortal } from "react-dom";
 import { Link, NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
-import { adminUserApi, plannerApi } from "../lib/endpoints";
+import { isCurrentSessionDemo } from "../lib/demoSession";
+import { adminUserApi, authApi, plannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import {
+  adoptShareUser,
+  markSharePromptSeenLocally,
+  type ShareActivity,
+  shouldAutoOpenShare,
+} from "../lib/share_activity";
+import type { ShareSource } from "../lib/share_weddly";
 import { useTheme } from "../lib/useTheme";
+import { ShareWeddlyDialog } from "./ShareWeddlyDialog";
 import { CoachMarks } from "./CoachMarks";
 import { FeatureTour } from "./FeatureTour";
 import { DemoOverlay } from "./DemoOverlay";
@@ -377,6 +386,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   // view uses the same sheet for its secondary items.
   const [moreOpen, setMoreOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  // Share-Weddly prompt. `shareSource` decides the analytics dimension AND
+  // whether the trigger counters mean anything, so it's state rather than a
+  // constant on the component.
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareSource, setShareSource] = useState<ShareSource>("profile_dropdown");
+  const [shareActivity, setShareActivity] = useState<ShareActivity | null>(null);
   // Auto-close on route change so navigating to a sheet item dismisses it.
   useEffect(() => {
     setMoreOpen(false);
@@ -508,12 +523,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           // MACHINE, not the tenant. Wiping it would mint a fresh id on every
           // sign-out, so signing back in on your own laptop would look like a
           // brand-new device and fire a security mail every single time.
+          // `weddly.share.v1` survives too: it holds nothing but a user id and
+          // two counters, it self-resets when a DIFFERENT account adopts it
+          // (see lib/share_activity.ts), and wiping it would restart the
+          // share-prompt countdown from zero after every sign-out — so a user
+          // who logs out regularly would be walked toward the prompt forever.
           if (
             k &&
             k.startsWith("weddly.") &&
             k !== "weddly.token" &&
             k !== "weddly.locale" &&
-            k !== "weddly.device"
+            k !== "weddly.device" &&
+            k !== "weddly.share.v1"
           ) {
             keys.push(k);
           }
@@ -556,6 +577,49 @@ export function AppShell({ children }: { children: ReactNode }) {
   // admin rail when the user is actually an admin — otherwise a stray
   // /app/admin URL would render the admin chrome around a redirect.
   const inAdminView = user?.is_admin === true && location.pathname.startsWith("/app/admin");
+
+  // ── Share-Weddly prompt: the one automatic showing ───────────────────
+  // Fires at most once per ACCOUNT (`users.share_prompt_seen_at`, mirrored to
+  // localStorage), on the third session or after three planning edits — never
+  // in the first session, so it can't land on a couple who just registered.
+  // Anyone who wants it again finds it in the profile dropdown.
+  //
+  // Deliberate exclusions: the admin view (we're moderating, not planning),
+  // demo sessions (a throwaway workspace has no one to refer), and users
+  // without a workspace yet (mid-onboarding).
+  useEffect(() => {
+    if (!user) {
+      setShareActivity(null);
+      return;
+    }
+    const activity = adoptShareUser(user.id);
+    setShareActivity(activity);
+
+    if (inAdminView) return;
+    if (user.user_type !== "couple" || user.couple_id === null) return;
+    if (isCurrentSessionDemo()) return;
+    if (!shouldAutoOpenShare(activity, user.share_prompt_seen_at !== null)) return;
+
+    // Short delay so the prompt arrives after the workspace has painted rather
+    // than on top of a half-rendered dashboard.
+    const timer = window.setTimeout(() => {
+      setShareSource("automatic_popup");
+      setShareOpen(true);
+      // Latch immediately on SHOW, not on dismiss: whether they share, copy,
+      // close, or navigate away mid-modal, the automatic ask is spent.
+      markSharePromptSeenLocally();
+      void authApi.markSharePromptSeen().catch(() => {
+        // Offline or a failed write — the local mirror still suppresses it on
+        // this device, and /api/auth/me will re-assert the server's null on
+        // the next device. Asking twice is the acceptable failure here;
+        // blocking the UI on an analytics-grade write is not.
+      });
+    }, 1200);
+    return () => window.clearTimeout(timer);
+    // `inAdminView` is derived from the pathname, so this re-checks on
+    // navigation — which is what lets an admin drop back into couple view and
+    // still receive the prompt.
+  }, [user, inAdminView]);
 
   const coupleItems = ITEMS;
   const displayItems = inAdminView ? ADMIN_ITEMS : coupleItems;
@@ -663,7 +727,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Moon size={18} aria-hidden="true" />
               )}
             </button>
-            <ProfileMenu onOpenFeedback={() => setFeedbackOpen(true)} />
+            <ProfileMenu
+              onOpenFeedback={() => setFeedbackOpen(true)}
+              onOpenShare={() => {
+                setShareSource("profile_dropdown");
+                setShareOpen(true);
+              }}
+            />
           </div>
         </div>
       </header>
@@ -917,6 +987,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         context={location.pathname}
       />
       <KeyboardShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      {/* Trigger counters ride along only for the automatic open — on a
+       *  dropdown open they'd describe nothing about why the user is here. */}
+      <ShareWeddlyDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        source={shareSource}
+        {...(shareSource === "automatic_popup" && shareActivity
+          ? {
+              sessionNumber: shareActivity.sessions,
+              meaningfulActions: shareActivity.actions,
+            }
+          : {})}
+      />
       {/* First-run coach-marks. Mounts only on mobile and only when the
        *  user hasn't seen them — the component self-gates on localStorage
        *  + viewport. Admin view skips so admins don't see couple-facing
