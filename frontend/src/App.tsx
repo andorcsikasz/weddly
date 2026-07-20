@@ -749,11 +749,43 @@ export default function App() {
               </Page>
             }
           >
+            {/* Each tab gets its own boundary: without one, a lazy tab chunk
+                suspends against the parent and the whole settings layout (tab
+                strip included) is replaced by the full-screen spinner, so every
+                tab switch reads as a page reload rather than a panel swap. */}
             <Route index element={<Navigate to="account" replace />} />
-            <Route path="account" element={<VendorSettingsPage />} />
-            <Route path="company" element={<VendorSettingsCompany />} />
-            <Route path="billing" element={<VendorBillingPage />} />
-            <Route path="data" element={<VendorSettingsData />} />
+            <Route
+              path="account"
+              element={
+                <Page>
+                  <VendorSettingsPage />
+                </Page>
+              }
+            />
+            <Route
+              path="company"
+              element={
+                <Page>
+                  <VendorSettingsCompany />
+                </Page>
+              }
+            />
+            <Route
+              path="billing"
+              element={
+                <Page>
+                  <VendorBillingPage />
+                </Page>
+              }
+            />
+            <Route
+              path="data"
+              element={
+                <Page>
+                  <VendorSettingsData />
+                </Page>
+              }
+            />
           </Route>
         </Route>
         <Route

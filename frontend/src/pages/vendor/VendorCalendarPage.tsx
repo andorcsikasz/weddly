@@ -35,7 +35,12 @@ import {
 } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import type { VendorAvailabilityView, VendorBlockedDay } from "@shared/listings";
+import {
+  blockedHoursRange,
+  hourLabel,
+  type VendorAvailabilityView,
+  type VendorBlockedDay,
+} from "@shared/listings";
 import type { VendorClientView } from "@shared/vendor_clients";
 import type { VendorBoardStatus, VendorTask } from "@shared/vendor_tasks";
 import { GoogleCalendarConnect } from "../../components/GoogleCalendarConnect";
@@ -103,20 +108,6 @@ function formatDay(iso: string, locale: string): string {
   }).format(d);
 }
 
-/** Contiguous [start, end) the editor produces from a stored hour list — the
- *  editor only ever blocks a single from–to range, so min..max+1 reconstructs
- *  it exactly. `end` is exclusive (24 = midnight). */
-function blockedHoursRange(hours: number[]): { start: number; end: number } {
-  const start = Math.min(...hours);
-  const end = Math.max(...hours) + 1;
-  return { start, end };
-}
-
-/** "09:00" style label for an hour boundary 0-24. */
-function hourLabel(h: number): string {
-  return `${String(h).padStart(2, "0")}:00`;
-}
-
 // ── event pills ──────────────────────────────────────────────────────────────
 
 function pillColor(kind: CalEvent["kind"]): string {
@@ -140,7 +131,7 @@ function isPartialBlock(ev: CalEvent): boolean {
 /** Single source of truth for a category's glyph. Pills, the agenda rows and
  *  the legend all draw from here, so a category can never end up reading one
  *  way on the grid and another way in the list. A whole-day block is a closed
- *  lock, a partial one an hourglass — the two used to differ only by the
+ *  lock, a partial one an hourglass. The two used to differ only by the
  *  opacity of the same lock, which was unreadable at pill size. */
 function EventGlyph({ ev, size = 10 }: { ev: CalEvent; size?: number }) {
   switch (ev.kind) {
@@ -512,7 +503,7 @@ function TimeGridView({
   const { locale } = useT();
 
   // Partial-hour blocks are drawn as real bands on the grid, so the window has
-  // to stretch to whatever is actually blocked in view — a 05:00-06:00 block
+  // to stretch to whatever is actually blocked in view: a 05:00-06:00 block
   // would otherwise be silently clipped out of the 07:00-20:00 default.
   const {
     hours: HOURS,
