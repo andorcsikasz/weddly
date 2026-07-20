@@ -1735,9 +1735,9 @@ export default function DesignPage() {
                       </summary>
                       <div className="mt-3">
                         <div className="mb-2 flex flex-wrap items-center gap-2">
-                          {/* Opens upward: the swatch row sits directly below, so a
-                            downward tooltip would hide the colours being edited. */}
-                          <InfoHint text={t("design.colors.hint")} placement="top" />
+                          {/* No info tooltip here: the disclosure's own label
+                            already says these are custom colours, and the hover
+                            card covered the swatches it was explaining. */}
                           <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-2 py-0.5 text-[11px] font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200">
                             <span
                               className="h-2.5 w-2.5 rounded-full"
