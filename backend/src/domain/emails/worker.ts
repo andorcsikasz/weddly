@@ -61,6 +61,14 @@ const INVITE_PARTNER_SEND_HOUR_UTC = 10;
 const FOUNDING_PUSH_GRACE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days after signup
 const FOUNDING_PUSH_GAP_MS = 1000 * 60 * 60 * 24 * 5; // 5 days between sends
 const FOUNDING_PUSH_MAX_SENDS = 3;
+// Honeymoon-planner nudge window. Upper bound is the "within 90 days" ask;
+// the lower bound keeps us from asking a couple two weeks out whether they've
+// thought about their honeymoon yet.
+const HONEYMOON_NUDGE_MIN_DAYS = 14;
+const HONEYMOON_NUDGE_MAX_DAYS = 90;
+// The exact offsets sweepMilestones owns. The honeymoon nudge yields on these
+// days so a couple never gets two lifecycle mails from us at once.
+const MILESTONE_DAYS: ReadonlySet<number> = new Set([90, 30, 7]);
 
 interface UserRow {
   id: number;
@@ -90,6 +98,7 @@ export function runEmailSweep(): {
   vendorShareNudges: number;
   vendorIncompleteNudges: number;
   plannerProfileNudges: number;
+  honeymoonNudges: number;
   milestones: number;
   weddings: number;
   rsvpDeadlines: number;
@@ -117,6 +126,10 @@ export function runEmailSweep(): {
   const rsvpDigests = sweepRsvpWeeklyDigest(ts);
   const timelineEscalations = sweepTimelineEscalation(ts);
   const scheduledGuestMessages = sweepScheduledGuestMessages(ts);
+  // Deliberately LAST. It is the only sweep that yields to the others: it skips
+  // any couple already written to today, so it has to run once they've all
+  // logged their sends.
+  const honeymoonNudges = sweepHoneymoonNudge(ts);
   return {
     nudges,
     nudgesWeek,
@@ -125,6 +138,7 @@ export function runEmailSweep(): {
     vendorShareNudges,
     vendorIncompleteNudges,
     plannerProfileNudges,
+    honeymoonNudges,
     milestones,
     weddings,
     rsvpDeadlines,
@@ -680,6 +694,117 @@ function foundingPushMailto(inviteUrl: string): string {
     inviteUrl,
   ].join("\n");
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+interface HoneymoonNudgeRow {
+  couple_id: number;
+  display_name: string | null;
+  wedding_date: string;
+  user_id: number;
+  email: string;
+  full_name: string;
+}
+
+function sweepHoneymoonNudge(ts: number): number {
+  // One-shot nudge into /app/honeymoon for couples inside the 90-day window who
+  // have never touched the planner. Adoption is the reason this exists: the
+  // admin dashboard can't even draw its charts yet (they unlock at 10 couples
+  // with a destination).
+  //
+  // Two deliberate boundaries:
+  //   - Days 90, 30 and 7 are skipped. The milestone mails that fire on exactly
+  //     those days promise in their own footnote that we only write at 90/30/7,
+  //     so landing a second lifecycle mail the same day would break that. The
+  //     send is one-shot, not date-pinned, so a couple skipped today simply
+  //     gets it tomorrow.
+  //   - The window bottoms out at HONEYMOON_NUDGE_MIN_DAYS. Closer in, "have
+  //     you planned your honeymoon?" stops being a helpful nudge and starts
+  //     being a source of panic, and the fares it would show are the expensive
+  //     ones.
+  //
+  // "Never touched" is stricter than the dashboard's adoption metric (which
+  // only looks at honeymoon_destination): a couple who priced the trip or ran
+  // the task wand HAS used the feature, and would read this as us not paying
+  // attention.
+  //
+  // The budget check keys on `preset_key`, NOT on the mere existence of a
+  // honeymoon budget line. Onboarding seeds every couple a "Honeymoon" line at
+  // 300k planned, so "has a honeymoon budget row" is true for literally
+  // everyone and would silence the sweep completely. `preset_key` is only set
+  // by the honeymoon page itself, by a cost-preset chip or by saving a flight
+  // offer, so it means a human was actually on that screen.
+  const today = startOfDayUtc(ts);
+  const from = ymd(today + HONEYMOON_NUDGE_MIN_DAYS * 86_400_000);
+  const to = ymd(today + HONEYMOON_NUDGE_MAX_DAYS * 86_400_000);
+
+  const rows = db
+    .prepare(
+      `SELECT c.id AS couple_id, c.display_name, c.wedding_date,
+              u.id AS user_id, u.email, u.full_name
+         FROM couples c
+         JOIN users u ON u.couple_id = c.id
+        WHERE c.status = 'active'
+          AND c.is_demo = 0
+          AND c.wedding_date BETWEEN ? AND ?
+          AND u.status = 'active'
+          AND u.verified_email = 1
+          AND u.email NOT LIKE '%@purged.local'
+          AND u.email NOT LIKE '%@demo.weddly.local'
+          AND ${COUPLE_AUDIENCE_SQL}
+          AND COALESCE(TRIM(c.honeymoon_destination), '') = ''
+          AND COALESCE(TRIM(c.honeymoon_start_date), '') = ''
+          AND COALESCE(TRIM(c.honeymoon_end_date), '') = ''
+          AND COALESCE(TRIM(c.honeymoon_origin_iata), '') = ''
+          AND c.honeymoon_cover_path IS NULL
+          AND NOT EXISTS (
+                SELECT 1 FROM budget_lines bl
+                 WHERE bl.couple_id = c.id AND bl.category = 'honeymoon'
+                   AND bl.preset_key IS NOT NULL)
+          AND NOT EXISTS (
+                SELECT 1 FROM planning_items pi
+                 WHERE pi.couple_id = c.id AND pi.topic = 'honeymoon')`,
+    )
+    .all(from, to) as HoneymoonNudgeRow[];
+
+  // Has this couple already had a lifecycle mail from us in the last 24h? This
+  // nudge is one-shot and not date-critical, so it always yields rather than
+  // arriving as the second marketing email of the day. Transactional mail
+  // (verify, password reset) doesn't count, since that's mail the user asked
+  // for and expects.
+  const wroteToday = db.prepare(
+    `SELECT 1 FROM email_log
+      WHERE couple_id = ? AND category = 'lifecycle' AND created_at > ?
+      LIMIT 1`,
+  );
+
+  let count = 0;
+  for (const r of rows) {
+    const daysUntil = Math.round((Date.parse(`${r.wedding_date}T00:00:00Z`) - today) / 86_400_000);
+    if (!Number.isFinite(daysUntil)) continue;
+    // Kept as an explicit guard on top of the 24h check below: it holds even if
+    // this sweep is ever reordered ahead of sweepMilestones.
+    if (MILESTONE_DAYS.has(daysUntil)) continue;
+    if (wroteToday.get(r.couple_id, ts - 86_400_000)) continue;
+    if (!markDispatched({ kind: "honeymoon_nudge", couple_id: r.couple_id, user_id: r.user_id })) {
+      continue;
+    }
+    void sendKind(
+      "honeymoon_nudge",
+      {
+        honeymoonUrl: `${CONFIG.frontendBaseUrl}/app/honeymoon`,
+        daysUntil,
+        coupleDisplayName:
+          r.display_name && r.display_name !== "Purged workspace" ? r.display_name : undefined,
+      },
+      {
+        user: { id: r.user_id, email: r.email, full_name: r.full_name },
+        couple_id: r.couple_id,
+      },
+    );
+    count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
+  }
+  return count;
 }
 
 function sweepMilestones(ts: number): number {

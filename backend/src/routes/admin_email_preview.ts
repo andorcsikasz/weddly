@@ -134,6 +134,11 @@ const STUBS: KindPayload = {
   },
   onboarding_nudge: { onboardingUrl: `${BASE_URL}/onboarding` },
   onboarding_nudge_week: { onboardingUrl: `${BASE_URL}/onboarding` },
+  honeymoon_nudge: {
+    honeymoonUrl: `${BASE_URL}/app/honeymoon`,
+    daysUntil: 62,
+    coupleDisplayName: "Mia & Lucas",
+  },
   milestone_t90: {
     coupleDisplayName: "Mia & Lucas",
     weddingDate: "2026-09-12",

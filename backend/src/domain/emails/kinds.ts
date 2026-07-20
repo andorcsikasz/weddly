@@ -31,6 +31,7 @@ export type EmailKind =
   | "guest_pre_wedding_info" // couple-composed final info summary, optional per-head envelope cost tip
   | "onboarding_nudge" // 24h after signup if they haven't onboarded a couple
   | "onboarding_nudge_week" // 7 days after signup, still no workspace, second, warmer nudge
+  | "honeymoon_nudge" // one-shot, inside the 90-day window, to couples who haven't touched the honeymoon planner
   | "milestone_t90" // 90 days before the wedding
   | "milestone_t30" // 30 days before
   | "milestone_t7" // 7 days before
@@ -147,6 +148,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   guest_pre_wedding_info: "transactional",
   onboarding_nudge: "lifecycle",
   onboarding_nudge_week: "lifecycle",
+  // Lifecycle: a feature nudge nobody asked for, so it honours the unsubscribe
+  // footer. Deliberately dodges the 90/30/7 milestone days, since those mails
+  // promise in their own footnote that we only write at 90, 30 and 7 days out.
+  honeymoon_nudge: "lifecycle",
   milestone_t90: "lifecycle",
   milestone_t30: "lifecycle",
   milestone_t7: "lifecycle",

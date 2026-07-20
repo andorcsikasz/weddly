@@ -243,6 +243,15 @@ export interface PartnerInviteReminderPayload {
   /** Optional couple display name for a warmer body ("Mia & Lucas"). */
   coupleDisplayName?: string;
 }
+export interface HoneymoonNudgePayload {
+  /** Deep link to /app/honeymoon, the planner this mail exists to drive into. */
+  honeymoonUrl: string;
+  /** Whole days between today and the wedding, 14..90. Drives the opening
+   *  line, so the nudge reads as "you specifically" rather than a blast. */
+  daysUntil: number;
+  /** Optional couple display name for a warmer preheader ("Mia & Lucas"). */
+  coupleDisplayName?: string;
+}
 export interface FoundingPartnerPushPayload {
   /** Deep link to the dashboard's invite-partner anchor. Signing in is the
    *  fastest path for a recipient who is already logged in on this device. */
@@ -707,6 +716,7 @@ export type KindPayload = {
   guest_pre_wedding_info: GuestPreWeddingInfoPayload;
   onboarding_nudge: OnboardingNudgePayload;
   onboarding_nudge_week: OnboardingNudgePayload;
+  honeymoon_nudge: HoneymoonNudgePayload;
   milestone_t90: MilestonePayload;
   milestone_t30: MilestonePayload;
   milestone_t7: MilestonePayload;
@@ -1684,6 +1694,42 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       cta: "Start planning",
     },
   }),
+
+  honeymoon_nudge: (p, ctx) => {
+    // Sent once, inside the 90-day window, only to couples who haven't touched
+    // the honeymoon planner. The pitch is the one thing the page does that
+    // nothing else does: pick a live fare and it lands in the honeymoon budget
+    // with a "buy the ticket" to-do attached. Everything named here is real,
+    // no feature is promised that /app/honeymoon doesn't already ship.
+    const coupleHu = p.coupleDisplayName ? `${p.coupleDisplayName}, ` : "";
+    const coupleEn = p.coupleDisplayName ? `${p.coupleDisplayName}, ` : "";
+    return {
+      subject: "Az esküvő után jön a legjobb rész / The best part comes after the wedding",
+      ctaUrl: p.honeymoonUrl,
+      hu: {
+        preheader: `${coupleHu}${p.daysUntil} nap az esküvőig. A nászútról döntöttetek már?`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `**${p.daysUntil} nap múlva** férj és feleség lesztek. Utána pedig jön az a hét, amikor végre senki nem kérdezi meg tőletek, hogy ki hova ül.`,
+          "Ha még nincs meg, hova mentek: a nászút-tervezőben elég megadni az úti célt és a dátumokat, a többi magától összeáll. Visszaszámláló, fotó a helyről, és valódi oda-vissza repjegyárak a ti indulási reptetekről, a ti dátumaitokra.",
+          "Ha valamelyik ajánlat tetszik, egy kattintás: bekerül a nászút-költségvetésbe, és kaptok mellé egy „Repjegy megvásárlása” teendőt a foglalási linkkel. A többi szokásos tételre pedig ott a teendőcsomag: útlevél, biztosítás, csomagolás.",
+        ],
+        cta: "Nászút tervezése",
+        footnote: "Ezt egyszer küldjük, és csak akkor, ha még nem kezdtétek el.",
+      },
+      en: {
+        preheader: `${coupleEn}${p.daysUntil} days to the wedding. Settled on the honeymoon yet?`,
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `**In ${p.daysUntil} days** you'll be married. And then comes the week where nobody asks you who's sitting where.`,
+          "If you haven't settled on the where yet: give the honeymoon planner a destination and your dates, and the rest assembles itself. A countdown, a photo of the place, and real round-trip fares from your own departure airport on your actual dates.",
+          'Like one of them? One click drops it into your honeymoon budget and creates a "Buy the flight ticket" to-do with the booking link. For the unglamorous rest there\'s a task pack: passport, insurance, packing.',
+        ],
+        cta: "Plan the honeymoon",
+        footnote: "We send this once, and only if you haven't started yet.",
+      },
+    };
+  },
 
   milestone_t90: (p, ctx) => ({
     subject: "3 hónap az esküvőtökig / 3 months to the wedding",
