@@ -1153,15 +1153,20 @@ function DayBlockEditor({
       }
     >
       <div className="space-y-4">
-        <SegmentedControl
-          ariaLabel={t("vendor_calendar.block_mode_label")}
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: "all_day", label: t("vendor_calendar.block_all_day") },
-            { value: "hours", label: t("vendor_calendar.block_certain_hours") },
-          ]}
-        />
+        {/* The control is `inline-flex` (it hugs its labels), so it needs a
+            flex wrapper to sit centred in the dialog rather than at the start
+            of the block flow. */}
+        <div className="flex justify-center">
+          <SegmentedControl
+            ariaLabel={t("vendor_calendar.block_mode_label")}
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: "all_day", label: t("vendor_calendar.block_all_day") },
+              { value: "hours", label: t("vendor_calendar.block_certain_hours") },
+            ]}
+          />
+        </div>
 
         {mode === "all_day" ? (
           <p className="flex items-center gap-2 text-sm text-ink-600 dark:text-umber-200">
