@@ -131,4 +131,18 @@ Legend — **Status:** `DONE` (shipped, commit noted) · `PARTIAL` (some shipped
 
 ---
 
-_Done in the current pass: VND-1, VND-2, VND-5 (cover), VND-6 (conversion funnel), VND-7 (dark-mode card contrast). Everything else is open, roughly in the reporter's suggested order: shared design system → onboarding checklist → fuller live preview → the bigger feature bets._
+## Status roll-up (2026-07-20)
+
+**Done (10):** VND-1, VND-2, VND-4, VND-6, VND-7, VND-8, VND-9, VND-10, VND-14, VND-16.
+
+**Partial (2):**
+- **VND-5** — the preview mirrors every scalar field live (cover included); growing it to reflect packages/gallery/videos is an open product call.
+- **VND-11** — the bell shows real events (inquiries, upcoming, and now reviews); the booking-change kind, the push/email alert, and moving onto the real `notificationApi` feed remain.
+
+**Open (4), all genuinely large or needing a decision first:**
+- **VND-3** shared design system — needs a direction call (how far the vendor portal adopts the couple app's serif/gold vs. keeping its steel identity) before any build.
+- **VND-12** response-time metric + SLA badges — needs a schema change first: `supplier_bookings` has no first-vendor-response timestamp, so there is nothing honest to display yet.
+- **VND-13** in-app messaging — new tables, routes, unread state, two client surfaces, and a moderation/abuse surface.
+- **VND-15** self-serve rename request — needs a submission flow wired into the existing admin moderation queue.
+
+Two corrections came out of verifying this list against the code: VND-9 was already shipped, and the VND-11 bell was never the hardcoded stub the original report described. Statuses here reflect the code, not the original walkthrough.
