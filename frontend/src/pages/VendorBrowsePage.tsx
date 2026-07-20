@@ -6,6 +6,7 @@
 // get listed. Data: publicShowcase + the real couples count from publicStats.
 
 import { countryName } from "@shared/country_list";
+import { CountryPicker } from "../components/CountryPicker";
 import type {
   PublicShowcaseCategory,
   PublicShowcaseVendor,
@@ -97,46 +98,6 @@ function VendorCard({
   );
 }
 
-/** One country chip. Same geometry as the in-app directory's category pills so
- *  the public teaser and the signed-in catalogue read as one product. */
-function CountryChip({
-  label,
-  count,
-  active,
-  onClick,
-}: {
-  label: string;
-  count?: number;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={
-        active
-          ? "inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
-          : "inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-umber-600 bg-paper-50 px-3 py-1 text-xs text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-      }
-    >
-      <span>{label}</span>
-      {count !== undefined && (
-        <span
-          className={
-            active
-              ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
-              : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
-          }
-        >
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
-
 // Planners are a different relationship from vendors: a couple invites them into
 // their workspace (via /planners) rather than cold-contacting them from a
 // catalog. So the wedding_planner listings get pulled out of the vendor grid and
@@ -202,8 +163,9 @@ export default function VendorBrowsePage() {
   // null = every country. The server still ranks the visitor's own country
   // first in that case, so "Mind" isn't a random pile.
   const [country, setCountry] = useState<string | null>(null);
-  // Counted server-side over the whole eligible sample, so the chip row keeps
-  // every country visible once one is selected.
+  // Counted server-side over the whole eligible sample, so the picker keeps
+  // every country listed once one is selected (a client-side count would drop
+  // to just the filtered country and strand the visitor there).
   const [countries, setCountries] = useState<SupplierCountryCount[]>([]);
 
   useEffect(() => {
@@ -265,31 +227,28 @@ export default function VendorBrowsePage() {
             {t("vendorBrowse.couples_stat", { count: String(couples) })}
           </p>
         )}
-      </section>
 
-      {/* Country chips. Only earn their space once the catalogue actually spans
-          more than one country. "Mind" is the default: picking a country
-          filters, picking nothing still leads with the visitor's own. */}
-      {countries.length > 1 && (
-        <div className="mx-auto max-w-6xl px-4 pb-6 sm:px-6 lg:px-8">
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
-            <CountryChip
-              label={t("suppliers.filter_all")}
-              active={country === null}
-              onClick={() => setCountry(null)}
+        {/* One country control, sitting in the hero rather than in its own
+            band, so the vendor photos start a screenful sooner. It only earns
+            its space once the catalogue actually spans more than one country.
+            "Mind" is the default: picking a country filters, picking nothing
+            still leads with the visitor's own. */}
+        {countries.length > 1 && (
+          <div className="mt-6">
+            <CountryPicker
+              value={country}
+              onChange={setCountry}
+              allLabel={t("suppliers.country_filter_all")}
+              ariaLabel={t("suppliers.country_filter_label")}
+              options={countries.map((c) => ({
+                code: c.code,
+                label: countryName(c.code, locale === "hu" ? "hu" : "en"),
+                count: c.count,
+              }))}
             />
-            {countries.map((c) => (
-              <CountryChip
-                key={c.code}
-                label={countryName(c.code, locale === "hu" ? "hu" : "en")}
-                count={c.count}
-                active={country === c.code}
-                onClick={() => setCountry(c.code)}
-              />
-            ))}
           </div>
-        </div>
-      )}
+        )}
+      </section>
 
       {/* Body */}
       <main className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">

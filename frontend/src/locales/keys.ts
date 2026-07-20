@@ -365,8 +365,18 @@ export interface LocaleMessages {
     status_active: string;
     status_past_due: string;
     status_lapsed: string;
+    /** Terse one-liners that sit under the big plan name on the Subscription
+     *  tab. The long `status_*` sentences above still drive the banners. */
+    status_trialing_short: string;
+    status_founding_short: string;
+    status_active_short: string;
+    status_past_due_short: string;
+    status_lapsed_short: string;
     /** "{price} / month" — price already formatted with the currency. */
     price_line: string;
+    /** "/ month" on its own, so the amount can be set big next to a small
+     *  period suffix. */
+    price_period: string;
     /** "{n} founding spots left". */
     founding_spots: string;
     subscribe_cta: string;
@@ -391,20 +401,21 @@ export interface LocaleMessages {
     planner_managed_banner_body: string;
     referral_title: string;
     referral_couple_title: string;
-    referral_couple_body: string;
     referral_couple_cta: string;
     referral_vendor_title: string;
-    referral_vendor_body: string;
     referral_vendor_cta: string;
+    /** The reward each referral pays out, e.g. "1 month free". Carries the
+     *  meaning the longer explanatory body used to. */
+    referral_couple_reward: string;
+    referral_vendor_reward: string;
     referral_copied: string;
     /** Native-share button (shown only where the Web Share API exists). */
     referral_share: string;
     /** Share-sheet message text for each referral link. */
     referral_share_couple_text: string;
     referral_share_vendor_text: string;
-    /** Placeholders: {months}, {couples}, {vendors} */
-    referral_stats: string;
-    referral_stats_none: string;
+    /** "+{months} months" badge — rendered only once something converted. */
+    referral_earned: string;
   };
   /** Public couple-branded landing at `/w/:slug` — first version: names,
    *  date, optional schedule, RSVP CTA. Followed by registry / story /
@@ -6531,6 +6542,11 @@ export interface LocaleMessages {
     /** Receives `{months}`, `{left}`, `{cap}`: the free window the copy promises. */
     campaign_offer: string;
     campaign_offer_none: string;
+    /** Receives `{n}` addresses, `{cap}` a day, `{days}` to drain. */
+    campaign_plan: string;
+    campaign_plan_empty: string;
+    campaign_preview_invite: string;
+    campaign_preview_reminder: string;
     campaign_targets: string;
     campaign_targets_hint: string;
     campaign_targets_empty: string;

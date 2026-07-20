@@ -210,7 +210,13 @@ const hu: LocaleMessages = {
       "Az utolsó fizetés nem ment át. Frissítsétek a kártyát a teljes hozzáférésért.",
     status_lapsed:
       "Az ingyenes időszakotok véget ért, így a munkaterület csak olvasható. Az adataitok biztonságban vannak; egy előfizetéssel bármikor folytathatjátok a szerkesztést.",
+    status_trialing_short: "Próbaidő {date}-ig",
+    status_founding_short: "Ingyenes {date}-ig · kártya nem kell",
+    status_active_short: "Megújul {date}-kor",
+    status_past_due_short: "A kártyátokat elutasították",
+    status_lapsed_short: "Csak olvasható mód",
     price_line: "{price} / hó",
+    price_period: "/ hó",
     founding_spots: "{n} hely maradt a 200-ból",
     subscribe_cta: "Előfizetés",
     manage_cta: "Előfizetés kezelése",
@@ -234,19 +240,18 @@ const hu: LocaleMessages = {
       "Csak olvasható módban vagytok, így mindent láttok, miközben a tervező végzi a szerkesztést.",
     referral_title: "Ajánlj ismerősöket",
     referral_couple_title: "Ajánlj egy párt",
-    referral_couple_body: "Ha mindkét partner regisztrál, 1 hónapot kapsz ingyen.",
     referral_couple_cta: "Pár hivatkozás másolása",
     referral_vendor_title: "Ajánlj egy szolgáltatót",
-    referral_vendor_body: "Ha a szolgáltató aktiválja a fiókját, 2 hónapot kapsz ingyen.",
     referral_vendor_cta: "Szolgáltató hivatkozás másolása",
+    referral_couple_reward: "1 hónap ingyen",
+    referral_vendor_reward: "2 hónap ingyen",
     referral_copied: "Hivatkozás másolva!",
     referral_share: "Megosztás",
     referral_share_couple_text:
       "A Weddly-vel tervezzük az esküvőnket, nektek is ajánlom! Regisztráljatok itt:",
     referral_share_vendor_text:
       "A Weddly-t ajánlom esküvői szolgáltatóknak, érdemes csatlakozni. Nézd meg itt:",
-    referral_stats: "Eddig megszerzett: {months} hónap · {couples} pár · {vendors} szolgáltató",
-    referral_stats_none: "Még nincs beváltott meghívód.",
+    referral_earned: "+{months} hónap",
   },
   wedding_site: {
     page_title: "Esküvői oldal",
@@ -415,10 +420,9 @@ const hu: LocaleMessages = {
     form_intro:
       "Felvettünk a Weddly szolgáltatói közé. Állíts be egy jelszót, és máris a tiéd a hirdetés. Bankkártya nem kell.",
     founding_badge: "Alapító tag · {left}/{cap} hely szabad",
-    founding_note: "Az első 100 szolgáltató egy teljes évet kap tőlünk, bankkártya nélkül.",
+    founding_note: "Az első 100 szolgáltató egy teljes évet kap tőlünk ingyen.",
     early_badge: "Korai hozzáférés · {left}/{cap} hely szabad",
-    early_note:
-      "Az alapító év elfogyott, de a következő 300 szolgáltató 3 hónapot kap tőlünk, bankkártya nélkül.",
+    early_note: "300 szolgáltatónak adunk 3 hónap ingyenes hozzáférést, és még van szabad hely.",
     cohort_full_note:
       "Az ingyenes helyek beteltek. 3 napos próbaidővel indulsz, utána havidíjas (3 490 Ft / hó).",
     form_name_label: "Teljes név",
@@ -5855,6 +5859,10 @@ const hu: LocaleMessages = {
     campaign_stat_today: "{n}/{cap} az elmúlt 24 órában",
     campaign_offer: "A levél {months} hónap ingyenes hozzáférést ígér, {left}/{cap} hely szabad.",
     campaign_offer_none: "Mindkét ingyenes kör betelt, így a levél nem ígér ingyenes időszakot.",
+    campaign_plan: "{n} cím · napi {cap} · kb. {days} nap, míg kimegy.",
+    campaign_plan_empty: "Ebben a szegmensben nincs kinek írni.",
+    campaign_preview_invite: "Meghívó",
+    campaign_preview_reminder: "Emlékeztető",
     campaign_targets: "Kiknek megy ki legközelebb",
     campaign_targets_hint:
       "Élő, még át nem vett hirdetések elérhetőségi címmel, levonva a letiltottakat, a már megkeresetteket és azokat, akiknek már van Weddly fiókjuk.",
