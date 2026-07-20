@@ -4,9 +4,10 @@
 
 import "../setup";
 
-import { beforeEach, describe, expect, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { db, now } from "../../src/db";
 import { syncPlaceRatings } from "../../src/domain/google_places_sync";
+import { backfillListings } from "../../src/domain/listings";
 import { wipeAll } from "../helpers";
 
 function insertListing(id: string, name: string, opts: { status?: string } = {}): void {
@@ -28,7 +29,18 @@ function ratingRow(id: string): { google_rating: number | null; google_synced_at
 
 beforeEach(() => {
   wipeAll();
+  // Emptied so the fixtures below are the only rows the sync can see. wipeAll
+  // deliberately keeps the curated boot snapshot, so this goes further than it.
   db.exec("DELETE FROM listings");
+});
+
+afterAll(() => {
+  // MUST restore the curated directory. `bun test` runs every file in one
+  // process against one DB, and curated rows are materialised ONCE at boot, so
+  // without this the wipe above leaves every LATER file staring at an empty
+  // `listings` table. That is what was breaking outreach_v1, which resolves
+  // hardcoded curated slugs. Idempotent by content_hash.
+  backfillListings();
 });
 
 describe("google places sync", () => {
