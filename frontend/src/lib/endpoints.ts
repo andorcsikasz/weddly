@@ -181,6 +181,15 @@ import type {
   UpdateSupplierCategoryInput,
   UpdateSupplierGroupInput,
 } from "@shared/supplier_taxonomy";
+import type {
+  CreateVendorCampaignInput,
+  UpdateVendorCampaignInput,
+  VendorCampaign,
+  VendorCampaignDetail,
+  VendorCampaignSend,
+  VendorCampaignStats,
+  VendorCampaignTarget,
+} from "@shared/vendor_campaign";
 import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
 import type {
   CompleteVendorOnboardingInput,
@@ -1718,7 +1727,15 @@ export const supplierApi = {
     apiFetch<PublicVendorPageData>("GET", `/api/public/vendors/${encodeURIComponent(supplierId)}`),
   /** Public "browse teaser" — a photos-only directory sample grouped by
    *  category (max 6 each) for the unauthenticated `/vendors/browse` page. */
-  publicShowcase: () => apiFetch<PublicVendorShowcase>("GET", "/api/public/vendor-showcase"),
+  /** `country` scopes the sample to one ISO alpha-2 code (the teaser's chip
+   *  row); omitted means every country, ordered with the visitor's own first. */
+  publicShowcase: (country?: string | null) =>
+    apiFetch<PublicVendorShowcase>(
+      "GET",
+      country
+        ? `/api/public/vendor-showcase?country=${encodeURIComponent(country)}`
+        : "/api/public/vendor-showcase",
+    ),
 };
 
 export const reviewApi = {
@@ -2040,6 +2057,34 @@ export const plannerActivationApi = {
     terms_version: string;
     locale?: string;
   }) => apiFetch<AuthSession>("POST", "/api/planner/activation/complete", body),
+};
+
+/** Admin console for the claim-invite campaign. `targets` is the look-before-
+ *  you-leap view (exactly who the next batch would write to); `sendBatch` is a
+ *  small supervised round, everything beyond that is paced by the worker. */
+export const adminVendorCampaignApi = {
+  list: () => apiFetch<{ campaigns: VendorCampaign[] }>("GET", "/api/admin/vendor-campaigns"),
+  create: (body: CreateVendorCampaignInput) =>
+    apiFetch<{ campaign: VendorCampaign }>("POST", "/api/admin/vendor-campaigns", body),
+  detail: (id: number) =>
+    apiFetch<VendorCampaignDetail>("GET", `/api/admin/vendor-campaigns/${id}`),
+  update: (id: number, body: UpdateVendorCampaignInput) =>
+    apiFetch<{ campaign: VendorCampaign }>("PATCH", `/api/admin/vendor-campaigns/${id}`, body),
+  targets: (id: number) =>
+    apiFetch<{ targets: VendorCampaignTarget[]; stats: VendorCampaignStats }>(
+      "GET",
+      `/api/admin/vendor-campaigns/${id}/targets`,
+    ),
+  sends: (id: number) =>
+    apiFetch<{ sends: VendorCampaignSend[] }>("GET", `/api/admin/vendor-campaigns/${id}/sends`),
+  sendBatch: (id: number, limit: number) =>
+    apiFetch<{ sent: number }>("POST", `/api/admin/vendor-campaigns/${id}/send-batch`, { limit }),
+  runReminders: () =>
+    apiFetch<{ sent: number }>("POST", "/api/admin/vendor-campaigns/reminders", {}),
+  optOut: (email: string) =>
+    apiFetch<{ ok: true; created: boolean }>("POST", "/api/admin/vendor-campaigns/optout", {
+      email,
+    }),
 };
 
 /** Vendor listing-claim flow — P2.C. Three steps:

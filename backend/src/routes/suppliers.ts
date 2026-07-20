@@ -11,6 +11,7 @@ import type {
   PublicVendorPageData,
   PublicVendorShowcase,
   SupplierCategory,
+  SupplierCountryCount,
   SupplierDetail,
   SupplierEventInput,
 } from "@shared/suppliers";
@@ -31,7 +32,7 @@ import {
   listListingPackages,
   listListingPhotos,
   listListingVideos,
-  listShowcaseListings,
+  listShowcaseCandidates,
 } from "../domain/listings";
 import { getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
 import { countNonDeletedComments, listCommentsForSupplier } from "../domain/supplier_comments";
@@ -39,6 +40,7 @@ import { getAvailability } from "../domain/supplier_bookings";
 import { isAdminEmail } from "../domain/users";
 import { db } from "../db";
 import { haversineKm } from "../lib/geo";
+import { lookupCountry } from "../lib/geoip";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
 
@@ -476,15 +478,54 @@ const SHOWCASE_CATEGORY_ORDER: SupplierCategory[] = [
 ];
 function handlePublicShowcase(ctx: Ctx): Response {
   rateLimit(ctx.clientIp, "public.showcase", { capacity: 60, refillRate: 1 });
+  // `?country=XX` scopes the sample to one country (the chip row). Absent or
+  // malformed means the full catalogue — the teaser's default is "everything",
+  // and the visitor's own country only changes the ORDER (below).
+  const countryParam = ctx.url.searchParams.get("country");
+  const requestedCountry =
+    countryParam && /^[A-Za-z]{2}$/.test(countryParam) ? countryParam.toUpperCase() : null;
+  // Null whenever the MaxMind DB isn't present, so the whole feature degrades
+  // to the previous claimed-first ordering rather than erroring.
+  const viewerCountry = lookupCountry(ctx.clientIp);
+  const preferCountry = requestedCountry ?? viewerCountry;
+
+  const candidates = listShowcaseCandidates();
+
+  // Chips are counted over the WHOLE eligible set, before the country filter,
+  // so picking a country never removes the way back to the others.
+  const counts = new Map<string, number>();
+  for (const r of candidates) counts.set(r.country, (counts.get(r.country) ?? 0) + 1);
+  const countries: SupplierCountryCount[] = [...counts]
+    .map(([code, count]) => ({ code, count }))
+    .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
+
+  const pool = requestedCountry
+    ? candidates.filter((r) => r.country === requestedCountry)
+    : candidates;
+  // Rank: the preferred country, then registered Weddly vendors, then newest.
+  // Each tier only breaks ties inside the one above it.
+  const ranked = [...pool].sort((a, b) => {
+    const aHome = preferCountry && a.country === preferCountry ? 1 : 0;
+    const bHome = preferCountry && b.country === preferCountry ? 1 : 0;
+    if (aHome !== bHome) return bHome - aHome;
+    const aClaimed = a.source === "claimed" ? 1 : 0;
+    const bClaimed = b.source === "claimed" ? 1 : 0;
+    if (aClaimed !== bClaimed) return bClaimed - aClaimed;
+    return b.created_at - a.created_at;
+  });
+
   const byCat = new Map<SupplierCategory, PublicShowcaseVendor[]>();
-  for (const r of listShowcaseListings(SHOWCASE_PER_CATEGORY)) {
+  for (const r of ranked) {
     const list = byCat.get(r.category) ?? [];
+    if (list.length >= SHOWCASE_PER_CATEGORY) continue;
     list.push({
       id: r.id,
       name: r.name,
       category: r.category,
       city: r.city,
       hero_image_url: r.hero_image_url,
+      country: r.country,
+      verified: r.source === "claimed",
     });
     byCat.set(r.category, list);
   }
@@ -497,8 +538,15 @@ function handlePublicShowcase(ctx: Ctx): Response {
     categories.push({ category, vendors });
     total += vendors.length;
   }
-  const payload: PublicVendorShowcase = { categories, total };
-  return json(payload, { headers: { "Cache-Control": "public, max-age=120" } });
+  const payload: PublicVendorShowcase = {
+    categories,
+    total,
+    countries,
+    viewer_country: viewerCountry,
+  };
+  // Private: the body now varies by the caller's IP country, so a shared cache
+  // could serve one visitor's ordering to another country's visitor.
+  return json(payload, { headers: { "Cache-Control": "private, max-age=120" } });
 }
 
 /** GET /r/supplier/:supplier_id — tracked website redirect for unclaimed

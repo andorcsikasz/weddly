@@ -5,8 +5,13 @@
 // then registers to unlock the full directory; a vendor seeing it is nudged to
 // get listed. Data: publicShowcase + the real couples count from publicStats.
 
-import type { PublicShowcaseCategory, PublicShowcaseVendor } from "@shared/suppliers";
-import { ArrowRight } from "lucide-react";
+import { countryName } from "@shared/country_list";
+import type {
+  PublicShowcaseCategory,
+  PublicShowcaseVendor,
+  SupplierCountryCount,
+} from "@shared/suppliers";
+import { ArrowRight, BadgeCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Wordmark } from "../components/Wordmark";
@@ -47,12 +52,17 @@ function VendorCard({
   city,
   categoryLabel,
   hero,
+  verified,
+  verifiedLabel,
 }: {
   id: string;
   name: string;
   city: string;
   categoryLabel: string;
   hero: string;
+  /** Registered Weddly vendor — same blue check as the in-app directory. */
+  verified: boolean;
+  verifiedLabel: string;
 }) {
   return (
     <Link
@@ -68,13 +78,62 @@ function VendorCard({
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
         />
       </div>
-      <p className="mt-2 truncate text-sm font-medium text-ink-900 dark:text-paper-100">{name}</p>
+      <p className="mt-2 flex items-center gap-1 text-sm font-medium text-ink-900 dark:text-paper-100">
+        <span className="truncate">{name}</span>
+        {verified && (
+          <BadgeCheck
+            size={14}
+            aria-label={verifiedLabel}
+            className="shrink-0 fill-verified stroke-white"
+          />
+        )}
+      </p>
       {/* One muted line, no pin icon: the city and category are the only two
           facts worth carrying at this size. */}
       <p className="truncate text-xs text-ink-500 dark:text-umber-300">
         {city ? `${city} · ${categoryLabel}` : categoryLabel}
       </p>
     </Link>
+  );
+}
+
+/** One country chip. Same geometry as the in-app directory's category pills so
+ *  the public teaser and the signed-in catalogue read as one product. */
+function CountryChip({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  count?: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={
+        active
+          ? "inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
+          : "inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-umber-600 bg-paper-50 px-3 py-1 text-xs text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+      }
+    >
+      <span>{label}</span>
+      {count !== undefined && (
+        <span
+          className={
+            active
+              ? "rounded-full bg-paper-100/20 px-1.5 text-[10px] font-medium tabular-nums"
+              : "text-[10px] font-medium tabular-nums text-ink-400 dark:text-umber-300"
+          }
+        >
+          {count}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -136,21 +195,37 @@ function PlannerInviteModule({
 }
 
 export default function VendorBrowsePage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   useDocumentMeta("vendorBrowse.title", "vendorBrowse.subtitle");
   const [categories, setCategories] = useState<PublicShowcaseCategory[] | null>(null);
   const [couples, setCouples] = useState<number | null>(null);
+  // null = every country. The server still ranks the visitor's own country
+  // first in that case, so "Mind" isn't a random pile.
+  const [country, setCountry] = useState<string | null>(null);
+  // Counted server-side over the whole eligible sample, so the chip row keeps
+  // every country visible once one is selected.
+  const [countries, setCountries] = useState<SupplierCountryCount[]>([]);
 
   useEffect(() => {
     let cancelled = false;
+    setCategories(null);
     supplierApi
-      .publicShowcase()
+      .publicShowcase(country)
       .then((r) => {
-        if (!cancelled) setCategories(r.categories);
+        if (cancelled) return;
+        setCategories(r.categories);
+        if (r.countries.length > 0) setCountries(r.countries);
       })
       .catch(() => {
         if (!cancelled) setCategories([]);
       });
+    return () => {
+      cancelled = true;
+    };
+  }, [country]);
+
+  useEffect(() => {
+    let cancelled = false;
     publicStatsApi
       .get()
       .then((r) => {
@@ -191,6 +266,30 @@ export default function VendorBrowsePage() {
           </p>
         )}
       </section>
+
+      {/* Country chips. Only earn their space once the catalogue actually spans
+          more than one country. "Mind" is the default: picking a country
+          filters, picking nothing still leads with the visitor's own. */}
+      {countries.length > 1 && (
+        <div className="mx-auto max-w-6xl px-4 pb-6 sm:px-6 lg:px-8">
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
+            <CountryChip
+              label={t("suppliers.filter_all")}
+              active={country === null}
+              onClick={() => setCountry(null)}
+            />
+            {countries.map((c) => (
+              <CountryChip
+                key={c.code}
+                label={countryName(c.code, locale === "hu" ? "hu" : "en")}
+                count={c.count}
+                active={country === c.code}
+                onClick={() => setCountry(c.code)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Body */}
       <main className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
@@ -235,6 +334,8 @@ export default function VendorBrowsePage() {
                         city={v.city}
                         categoryLabel={t(`suppliers.cat.${v.category}`)}
                         hero={v.hero_image_url}
+                        verified={v.verified}
+                        verifiedLabel={t("suppliers.verified_vendor")}
                       />
                     </div>
                   ))}

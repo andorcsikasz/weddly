@@ -141,9 +141,9 @@ export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
   other: "other",
 };
 
-/** Hungarian category labels for backend-only surfaces (transactional emails,
+/** Category labels for backend-only surfaces (transactional + outreach emails,
  *  admin notifications) that can't reach the frontend i18n tree. Keep in sync
- *  with the `suppliers.cat.*` HU block in frontend/src/locales/hu.ts. */
+ *  with the `suppliers.cat.*` blocks in frontend/src/locales/{hu,en}.ts. */
 export const SUPPLIER_CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
   wedding_planner: "Esküvőszervező",
   rental_equipment: "Kölcsönzés & technika",
@@ -176,6 +176,49 @@ export const SUPPLIER_CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
   transport: "Transzfer",
   other: "Egyéb",
 };
+
+/** English twin of SUPPLIER_CATEGORY_LABEL_HU. Needed the moment a backend
+ *  surface addresses a vendor outside Hungary, e.g. the claim-invite campaign,
+ *  which picks its language from the listing's country. */
+export const SUPPLIER_CATEGORY_LABEL_EN: Record<SupplierCategory, string> = {
+  wedding_planner: "Wedding planner",
+  rental_equipment: "Rental & equipment",
+  venue: "Wedding venue",
+  accommodation: "Accommodation",
+  tent_pavilion: "Tent & pavilion",
+  catering: "Catering",
+  cake_dessert: "Cakes & desserts",
+  bar_drinks: "Bar & cocktails",
+  food_trucks: "Food trucks",
+  wedding_decor: "Wedding decor",
+  florist: "Florist",
+  lighting: "Lighting",
+  photography: "Photography",
+  videography: "Videography",
+  content_creator: "Content creator",
+  photo_booth: "Photo booth",
+  dj: "DJ",
+  live_music: "Live music",
+  entertainment: "Entertainment",
+  mc_celebrant: "MC & celebrant",
+  sound_tech: "Sound & AV tech",
+  bridal_boutique: "Bridal boutique",
+  suit_formal: "Suit & formal wear",
+  hair_makeup: "Hair & makeup",
+  nails: "Nails",
+  wedding_jewelry: "Wedding jewelry",
+  stationery: "Invitations & paper goods",
+  invitation_graphics: "Invitation & wedding graphics",
+  transport: "Wedding transport",
+  other: "Other",
+};
+
+/** Category label in the recipient's language, falling back to the raw key for
+ *  a custom/unknown category so a label never renders as "undefined". */
+export function supplierCategoryLabel(category: string, locale: "hu" | "en"): string {
+  const table = locale === "hu" ? SUPPLIER_CATEGORY_LABEL_HU : SUPPLIER_CATEGORY_LABEL_EN;
+  return table[category as SupplierCategory] ?? category;
+}
 
 // Ordered chain — mirrors the recommended booking sequence. Planning &
 // coordination leads: a full-service planner is hired first (they help pick the
@@ -415,6 +458,11 @@ export interface PublicShowcaseVendor {
   category: SupplierCategory;
   city: string;
   hero_image_url: string;
+  /** ISO 3166-1 alpha-2, uppercase. Drives the teaser's country chips. */
+  country: string;
+  /** Registered Weddly vendor (`source === "claimed"`) — the same blue-check
+   *  rule the in-app directory uses, so the badge means one thing everywhere. */
+  verified: boolean;
 }
 export interface PublicShowcaseCategory {
   category: SupplierCategory;
@@ -426,6 +474,14 @@ export interface PublicShowcaseCategory {
 export interface PublicVendorShowcase {
   categories: PublicShowcaseCategory[];
   total: number;
+  /** Every country present in the eligible sample, with its listing count,
+   *  busiest first. Independent of the active `?country=` filter, so the chip
+   *  row doesn't collapse to one chip once a country is picked. */
+  countries: SupplierCountryCount[];
+  /** The visitor's country from IP geo, or null when the lookup is unavailable
+   *  (no MaxMind DB) or misses. Vendors here are ranked ahead of the rest;
+   *  nothing is hidden because of it. */
+  viewer_country: string | null;
 }
 
 /** Admin directory row — curated + community merged into one shape. For

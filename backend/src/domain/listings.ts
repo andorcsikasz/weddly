@@ -20,7 +20,7 @@
 
 import { createHash } from "node:crypto";
 import { db, now } from "../db";
-import { DIRECTORY } from "./suppliers_data";
+import { DIRECTORY, curatedCountry } from "./suppliers_data";
 import type { CommunitySupplierRow } from "./community_suppliers";
 import type {
   Listing,
@@ -487,31 +487,43 @@ export interface ShowcaseVendorRow {
   category: SupplierCategory;
   city: string;
   hero_image_url: string;
+  /** 'curated' | 'community' | 'claimed'. `claimed` is the directory's
+   *  verified-vendor signal (the business itself is on Weddly). */
+  source: string;
+  /** ISO 3166-1 alpha-2, uppercase. Derived, not stored — see below. */
+  country: string;
+  created_at: number;
 }
 
-/** Directory listings that have a real hero photo, capped to `perCategory` per
- *  category — claimed Weddly vendors first, then curated/community, newest
- *  first. Hidden/deleted curated slugs (tombstoned in
- *  `curated_supplier_overrides`, which does NOT flip the listing's own status)
- *  are excluded. Powers the public browse teaser (`/api/public/vendor-showcase`).
- */
-export function listShowcaseListings(perCategory: number): ShowcaseVendorRow[] {
-  return db
+/** Every directory listing eligible for the public browse teaser: a real hero
+ *  photo, active, and not tombstoned in `curated_supplier_overrides` (which
+ *  does NOT flip the listing's own status). Ordering, the per-category cap and
+ *  the country filter live in the route — the set is small enough to shape in
+ *  memory, and `country` isn't a column here (see below), so sorting on it in
+ *  SQL would mean duplicating the derivation in two languages.
+ *
+ *  Country derivation mirrors the directory mappers: a claimed listing inherits
+ *  its vendor account's country, everything else reads the ", XX" suffix the
+ *  curated batches carry on `city` (defaulting to HU). */
+export function listShowcaseCandidates(): ShowcaseVendorRow[] {
+  const rows = db
     .prepare(
-      `SELECT id, name, category, city, hero_image_url FROM (
-         SELECT id, name, category, city, hero_image_url,
-                ROW_NUMBER() OVER (
-                  PARTITION BY category
-                  ORDER BY (source = 'claimed') DESC, created_at DESC
-                ) AS rn
-           FROM listings
-          WHERE hero_image_url IS NOT NULL AND hero_image_url != ''
-            AND status = 'active'
-            AND id NOT IN (SELECT supplier_id FROM curated_supplier_overrides)
-       ) t
-       WHERE rn <= ?`,
+      `SELECT l.id, l.name, l.category, l.city, l.hero_image_url, l.source, l.created_at,
+              va.country AS owner_country
+         FROM listings l
+         LEFT JOIN vendor_accounts va ON va.id = l.vendor_account_id
+        WHERE l.hero_image_url IS NOT NULL AND l.hero_image_url != ''
+          AND l.status = 'active'
+          AND l.id NOT IN (SELECT supplier_id FROM curated_supplier_overrides)`,
     )
-    .all(perCategory) as ShowcaseVendorRow[];
+    .all() as (Omit<ShowcaseVendorRow, "country"> & { owner_country: string | null })[];
+  return rows.map(({ owner_country, ...r }) => ({
+    ...r,
+    country:
+      r.source === "claimed" && owner_country
+        ? owner_country.toUpperCase()
+        : curatedCountry(r.id, r.city),
+  }));
 }
 
 /** Create a fresh 'claimed' listing for a newly-onboarded vendor — one that
