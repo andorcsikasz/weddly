@@ -422,6 +422,9 @@ export default function SupplierDetailPage() {
                         alt={`${detail.name} ${i + 1}`}
                         loading="lazy"
                         className="h-20 w-20 object-cover sm:h-24 sm:w-24"
+                        style={{
+                          objectPosition: `50% ${detail.gallery_positions_y?.[url] ?? 50}%`,
+                        }}
                       />
                     </button>
                   );
@@ -1354,7 +1357,14 @@ function HeroImage({
   if (src) {
     return (
       <div className="overflow-hidden rounded-2xl">
-        <img src={src} alt={detail.name} className="aspect-[16/9] w-full object-cover" />
+        {/* 16/9 crops harder than the thumbnail strip does, so the vendor's
+            chosen band matters most here. Unframed photos stay centred. */}
+        <img
+          src={src}
+          alt={detail.name}
+          className="aspect-[16/9] w-full object-cover"
+          style={{ objectPosition: `50% ${detail.gallery_positions_y?.[src] ?? 50}%` }}
+        />
       </div>
     );
   }

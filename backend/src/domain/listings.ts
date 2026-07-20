@@ -647,7 +647,9 @@ export function listListingsByCategory(category: SupplierCategory | null): Listi
 
 export function listListingPhotos(listingId: string): ListingPhoto[] {
   return db
-    .prepare("SELECT id, url, created_at FROM listing_photos WHERE listing_id = ? ORDER BY id ASC")
+    .prepare(
+      "SELECT id, url, position_y, created_at FROM listing_photos WHERE listing_id = ? ORDER BY id ASC",
+    )
     .all(listingId) as ListingPhoto[];
 }
 
@@ -663,14 +665,31 @@ export function addListingPhoto(listingId: string, url: string): ListingPhoto {
   const res = db
     .prepare("INSERT INTO listing_photos (listing_id, url, created_at) VALUES (?, ?, ?)")
     .run(listingId, url, ts);
-  return { id: Number(res.lastInsertRowid), url, created_at: ts };
+  return { id: Number(res.lastInsertRowid), url, position_y: 50, created_at: ts };
 }
 
 export function getListingPhoto(listingId: string, photoId: number): ListingPhoto | null {
   const row = db
-    .prepare("SELECT id, url, created_at FROM listing_photos WHERE id = ? AND listing_id = ?")
+    .prepare(
+      "SELECT id, url, position_y, created_at FROM listing_photos WHERE id = ? AND listing_id = ?",
+    )
     .get(photoId, listingId) as ListingPhoto | undefined;
   return row ?? null;
+}
+
+/** Move a gallery photo's vertical focal point. Callers clamp to 0..100 at the
+ *  route boundary; this just writes. Scoped by listing so a foreign photo id
+ *  is a no-op rather than a cross-tenant write. */
+export function setListingPhotoPositionY(
+  listingId: string,
+  photoId: number,
+  positionY: number,
+): void {
+  db.prepare("UPDATE listing_photos SET position_y = ? WHERE id = ? AND listing_id = ?").run(
+    positionY,
+    photoId,
+    listingId,
+  );
 }
 
 export function deleteListingPhoto(listingId: string, photoId: number): void {

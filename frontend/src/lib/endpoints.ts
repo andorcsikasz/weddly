@@ -2206,6 +2206,13 @@ export const vendorListingApi = {
     form.append("file", file);
     return uploadMultipart<VendorListingView>("POST", "/api/vendor/listing/me/photos", form);
   },
+  /** Vertical focal point for one gallery photo (object-position %, 0..100).
+   *  Fires on drag release in the editor; the server clamps, so an over-drag
+   *  is fine. Returns the refreshed view like every other gallery call. */
+  updatePhotoPosition: (photoId: number, positionY: number) =>
+    apiFetch<VendorListingView>("PATCH", `/api/vendor/listing/me/photos/${photoId}`, {
+      position_y: positionY,
+    }),
   deletePhoto: (photoId: number) =>
     apiFetch<VendorListingView>("DELETE", `/api/vendor/listing/me/photos/${photoId}`),
   /** Video reel — pasted links, not uploads, so these are plain JSON calls.

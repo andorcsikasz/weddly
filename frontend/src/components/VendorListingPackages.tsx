@@ -78,7 +78,6 @@ export function VendorListingPackages({
   return (
     <fieldset className="card space-y-3 p-4">
       <legend className="font-semibold">{t("vendor_home.section_packages")}</legend>
-      <p className="text-sm text-ink-600 dark:text-umber-200">{t("vendor_home.packages_intro")}</p>
 
       {packages.length > 0 && (
         <ul className="space-y-3">

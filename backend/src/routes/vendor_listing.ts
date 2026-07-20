@@ -62,6 +62,7 @@ import {
   patchListing,
   reorderListingVideos,
   setListingPackagePdf,
+  setListingPhotoPositionY,
   toVendorAccount,
   updateListingPackage,
   updateListingVideo,
@@ -420,6 +421,34 @@ async function handleUploadPhoto(ctx: Ctx): Promise<Response> {
   });
 
   return json(listingViewWithMedia(listing, account), { status: 201 });
+}
+
+/** Move one gallery photo's vertical focal point. The tile in the editor crops
+ *  to a fixed aspect, so the vendor drags it and this records which band to
+ *  keep. Deliberately NOT part of the bulk listing PATCH: it fires per drag
+ *  release, and folding it into the big save would re-validate (and re-audit)
+ *  the whole listing on every nudge. No audit row for the same reason — a
+ *  focal point is a display preference, not a claim about the business. */
+async function handlePatchPhoto(ctx: Ctx): Promise<Response> {
+  const { listing, account } = resolveVendorListing(ctx);
+  const photoId = Number(ctx.params.photo_id);
+  if (!Number.isInteger(photoId) || photoId <= 0) {
+    throw new HttpError(400, "photo_id must be a positive integer");
+  }
+  const body = await readJson<{ position_y?: unknown }>(ctx.req);
+  const raw = body.position_y;
+  if (typeof raw !== "number" || !Number.isFinite(raw)) {
+    throw new HttpError(400, "position_y must be a number between 0 and 100");
+  }
+  // Clamp rather than reject: the client derives this from a pointer delta, so
+  // an over-drag is a normal gesture, not a malformed request.
+  const positionY = Math.max(0, Math.min(100, Math.round(raw)));
+  // Scoped lookup — a photo id from another listing reads as absent.
+  if (!getListingPhoto(listing.id, photoId)) {
+    throw new HttpError(404, "Photo not found", { code: "photo_not_found" });
+  }
+  setListingPhotoPositionY(listing.id, photoId, positionY);
+  return json(listingViewWithMedia(listing, account));
 }
 
 async function handleDeletePhoto(ctx: Ctx): Promise<Response> {
@@ -938,6 +967,7 @@ export function registerVendorListingRoutes(router: Router) {
   router.post("/api/vendor/listing/me/hero", handleUploadHero);
   router.delete("/api/vendor/listing/me/hero", handleDeleteHero);
   router.post("/api/vendor/listing/me/photos", handleUploadPhoto);
+  router.patch("/api/vendor/listing/me/photos/:photo_id", handlePatchPhoto);
   router.delete("/api/vendor/listing/me/photos/:photo_id", handleDeletePhoto);
   router.post("/api/vendor/listing/me/videos", handleAddVideo);
   // Literal "reorder" registered BEFORE the `:video_id` PATCH so the router

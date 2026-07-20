@@ -330,6 +330,14 @@ function buildSupplierDetail(
     ...(base.hero_image_url ? [base.hero_image_url] : []),
     ...uploadedPhotos.map((p) => p.url),
   ];
+  // Carry the vendor's chosen framing to the public page. Only non-centred
+  // photos ride along, so a gallery nobody has dragged adds nothing to the
+  // payload and renders exactly as it did before.
+  const positions: Record<string, number> = {};
+  for (const p of uploadedPhotos) {
+    if (p.position_y !== 50) positions[p.url] = p.position_y;
+  }
+  if (Object.keys(positions).length > 0) base.gallery_positions_y = positions;
 
   // Vote overlay so the detail page can keep the up/down hint above the
   // stars during the migration window (v1 retains both surfaces).

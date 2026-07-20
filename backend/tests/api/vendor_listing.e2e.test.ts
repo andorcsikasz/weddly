@@ -936,6 +936,122 @@ describe("vendor listing — portfolio gallery (/api/vendor/listing/me/photos)",
     expect(body.detail?.code).toBe("gallery_full");
   });
 
+  test("vertical focal point: defaults centred, clamps, reaches the public detail", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-galpos@weddly.test",
+      "vendor-galpos@weddly.test",
+      "Gallery Position Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-galpos@weddly.test",
+      "Vendor Owner",
+    );
+
+    const up = await uploadPhoto(vendorToken, tinyPngBlob());
+    expect(up.status).toBe(201);
+    const photo = ((await up.json()) as VendorListingView).photos?.[0];
+    expect(photo).toBeTruthy();
+    // A fresh upload is centred, i.e. exactly how it rendered before the
+    // control existed.
+    expect(photo?.position_y).toBe(50);
+
+    // Centred photos are absent from the public map — nothing to say.
+    const before = await req<{ gallery_positions_y?: Record<string, number> }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(listingId)}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(before.status).toBe(200);
+    expect(before.data.gallery_positions_y).toBeUndefined();
+
+    const moved = await req<VendorListingView>(
+      "PATCH",
+      `/api/vendor/listing/me/photos/${photo?.id}`,
+      { position_y: 18 },
+      { token: vendorToken },
+    );
+    expect(moved.status).toBe(200);
+    expect(moved.data.photos?.[0]?.position_y).toBe(18);
+
+    // The vendor's framing reaches couples, keyed by the URL the page renders.
+    const after = await req<{ gallery_positions_y?: Record<string, number> }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(listingId)}`,
+      undefined,
+      { token: vendorToken },
+    );
+    expect(after.status).toBe(200);
+    expect(after.data.gallery_positions_y?.[photo?.url ?? ""]).toBe(18);
+
+    // An over-drag clamps rather than 400s — the client derives this from a
+    // pointer delta, so out-of-range is a normal gesture.
+    const over = await req<VendorListingView>(
+      "PATCH",
+      `/api/vendor/listing/me/photos/${photo?.id}`,
+      { position_y: 240 },
+      { token: vendorToken },
+    );
+    expect(over.status).toBe(200);
+    expect(over.data.photos?.[0]?.position_y).toBe(100);
+
+    const under = await req<VendorListingView>(
+      "PATCH",
+      `/api/vendor/listing/me/photos/${photo?.id}`,
+      { position_y: -12 },
+      { token: vendorToken },
+    );
+    expect(under.status).toBe(200);
+    expect(under.data.photos?.[0]?.position_y).toBe(0);
+
+    // A non-numeric body is still a client error.
+    const bad = await req<unknown>(
+      "PATCH",
+      `/api/vendor/listing/me/photos/${photo?.id}`,
+      { position_y: "middle" },
+      { token: vendorToken },
+    );
+    expect(bad.status).toBe(400);
+  });
+
+  test("positioning a photo owned by another listing → 404", async () => {
+    wipeAll();
+    const a = await makeApprovedListing(
+      "owner-galx1@weddly.test",
+      "vendor-galx1@weddly.test",
+      "Gallery Tenant One",
+    );
+    const b = await makeApprovedListing(
+      "owner-galx2@weddly.test",
+      "vendor-galx2@weddly.test",
+      "Gallery Tenant Two",
+    );
+    const one = await claimListing(a.listingId, "vendor-galx1@weddly.test", "Owner One");
+    const two = await claimListing(b.listingId, "vendor-galx2@weddly.test", "Owner Two");
+
+    const up = await uploadPhoto(one.vendorToken, tinyPngBlob());
+    expect(up.status).toBe(201);
+    const victim = ((await up.json()) as VendorListingView).photos?.[0];
+    expect(victim).toBeTruthy();
+
+    // Vendor two aims at vendor one's photo id: scoped lookup reads it as
+    // absent, so there is no cross-tenant write.
+    const cross = await req<unknown>(
+      "PATCH",
+      `/api/vendor/listing/me/photos/${victim?.id}`,
+      { position_y: 90 },
+      { token: two.vendorToken },
+    );
+    expect(cross.status).toBe(404);
+
+    const untouched = await req<VendorListingView>("GET", "/api/vendor/listing/me", undefined, {
+      token: one.vendorToken,
+    });
+    expect(untouched.data.photos?.[0]?.position_y).toBe(50);
+  });
+
   test("anon → 401, couple-role → 403", async () => {
     wipeAll();
     const anonForm = new FormData();

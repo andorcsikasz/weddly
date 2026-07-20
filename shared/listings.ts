@@ -301,6 +301,12 @@ export interface VendorDataExport {
 export interface ListingPhoto {
   id: number;
   url: string;
+  /** Vertical focal point as an object-position percentage (0..100, 50 =
+   *  centred). Gallery slots crop to a fixed aspect, so a tall photo would
+   *  otherwise lose whatever the vendor cared about; dragging the tile in the
+   *  editor picks which band survives the crop. Horizontal stays centred —
+   *  the crop is vertical, so an x control would be a knob with no effect. */
+  position_y: number;
   created_at: number;
 }
 
@@ -336,6 +342,28 @@ export interface VendorBlockedDay {
   date: string;
   /** null = whole day; else sorted blocked hour-starts (0-23). */
   hours: number[] | null;
+}
+
+/** Contiguous [start, end) a stored hour list represents. The editor only ever
+ *  blocks a single from-to range, so min..max+1 reconstructs it exactly. `end`
+ *  is exclusive (24 = midnight). Single-sourced here because every surface that
+ *  shows a block (calendar grid, agenda, listing-editor chips) has to agree on
+ *  the hours it covers; a local copy per page is how the listing editor ended up
+ *  rendering partial blocks as if they were whole-day ones. */
+export function blockedHoursRange(hours: number[]): { start: number; end: number } {
+  return { start: Math.min(...hours), end: Math.max(...hours) + 1 };
+}
+
+/** "09:00" style label for an hour boundary 0-24. */
+export function hourLabel(h: number): string {
+  return `${String(h).padStart(2, "0")}:00`;
+}
+
+/** "09:00-13:00" for a partial block, or null for a whole-day one. */
+export function blockedHoursLabel(hours: number[] | null): string | null {
+  if (!hours || hours.length === 0) return null;
+  const { start, end } = blockedHoursRange(hours);
+  return `${hourLabel(start)}-${hourLabel(end)}`;
 }
 
 /** Vendor self-serve availability (the dates a claimed vendor marks as taken).

@@ -177,7 +177,6 @@ export function VendorListingVideos({
   return (
     <fieldset className="card space-y-2.5 p-4" disabled={busy}>
       <legend className="font-semibold">{t("vendor_home.section_videos")}</legend>
-      <p className="text-sm text-ink-600 dark:text-umber-200">{t("vendor_home.videos_intro")}</p>
 
       {items.length > 0 && (
         <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -310,7 +309,6 @@ export function VendorListingVideos({
       {/* Add row — hidden at the cap. Doubles as the empty-state CTA. */}
       {!atCap && editingId === null && (
         <div className="space-y-1.5">
-          <p className="text-sm text-ink-500 dark:text-umber-300">{t("vendor_home.videos_hint")}</p>
           <div className="flex flex-wrap items-start gap-2">
             <div className="min-w-0 flex-1">
               <input

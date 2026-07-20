@@ -206,6 +206,9 @@ export default function PublicVendorPage() {
                         alt={`${detail.name} ${i + 1}`}
                         loading="lazy"
                         className="h-20 w-20 object-cover sm:h-24 sm:w-24"
+                        style={{
+                          objectPosition: `50% ${detail.gallery_positions_y?.[url] ?? 50}%`,
+                        }}
                       />
                     </button>
                   );
@@ -406,7 +409,12 @@ function PublicHero({
   if (src) {
     return (
       <div className="overflow-hidden rounded-2xl">
-        <img src={src} alt={detail.name} className="aspect-[16/9] w-full object-cover" />
+        <img
+          src={src}
+          alt={detail.name}
+          className="aspect-[16/9] w-full object-cover"
+          style={{ objectPosition: `50% ${detail.gallery_positions_y?.[src] ?? 50}%` }}
+        />
       </div>
     );
   }

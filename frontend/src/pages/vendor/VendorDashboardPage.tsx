@@ -25,7 +25,11 @@ import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { AnimatedNumber } from "../../components/AnimatedNumber";
-import { CompletenessRing, SetupChecklist } from "../../components/VendorSetupProgress";
+import {
+  CompletenessRing,
+  SetupChecklist,
+  SetupLinger,
+} from "../../components/VendorSetupProgress";
 import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useAuth } from "../../lib/auth";
@@ -163,7 +167,6 @@ export default function VendorDashboardPage() {
   // persistent progress chip, so an incomplete listing always keeps a visible,
   // reopenable prompt (and the % is never lost until the listing is done).
   const completenessCollapsed = !completenessDone && dismissedPct === pct;
-  const showCompletenessAlert = !completenessDone && !completenessCollapsed;
 
   // Smart action cards derived from the real, fetched data - no invented signals.
   const actions: ActionCardProps[] = [];
@@ -199,35 +202,39 @@ export default function VendorDashboardPage() {
     <div className="flex animate-fade-in flex-col gap-5">
       {/* Completeness alert strip - the full setup prompt, shown while the
           listing is incomplete and not collapsed. A live progress ring replaces
-          the old static sparkle so the percent reads at a glance. */}
-      {showCompletenessAlert && (
-        <div className="flex items-start gap-3 rounded-2xl border border-steel-200 bg-steel-50 p-4 dark:border-steel-600/30 dark:bg-steel-600/15">
-          <CompletenessRing pct={pct} size={36} stroke={4} />
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
-              {t("vendor.dashboard.completeness_alert", { pct: String(pct) })}
-            </p>
-            <p className="text-sm text-ink-600 dark:text-paper-300">
-              {t("vendor.dashboard.completeness_alert_body")}
-            </p>
-            <SetupChecklist steps={stats.listing_steps} />
-            <Link
-              to="/vendor/listing"
-              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+          the old static sparkle so the percent reads at a glance. SetupLinger
+          keeps it up for the last step's tick-strike-fade + confetti instead of
+          yanking the strip away the instant the listing hits 100%. */}
+      {!completenessCollapsed && (
+        <SetupLinger complete={completenessDone}>
+          <div className="flex items-start gap-3 rounded-2xl border border-steel-200 bg-steel-50 p-4 dark:border-steel-600/30 dark:bg-steel-600/15">
+            <CompletenessRing pct={pct} size={36} stroke={4} />
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                {t("vendor.dashboard.completeness_alert", { pct: String(pct) })}
+              </p>
+              <p className="text-sm text-ink-600 dark:text-paper-300">
+                {t("vendor.dashboard.completeness_alert_body")}
+              </p>
+              <SetupChecklist steps={stats.listing_steps} />
+              <Link
+                to="/vendor/listing"
+                className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+              >
+                <span>{t("vendor.dashboard.complete_now")}</span>
+                <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+            </div>
+            <button
+              type="button"
+              onClick={() => dismissCompleteness(pct)}
+              aria-label={t("vendor.dashboard.dismiss")}
+              className="-m-1 shrink-0 rounded-lg p-1 text-ink-500 transition-colors hover:bg-steel-100 hover:text-ink-900 dark:text-paper-400 dark:hover:bg-steel-600/20 dark:hover:text-paper-50"
             >
-              <span>{t("vendor.dashboard.complete_now")}</span>
-              <ArrowRight size={15} aria-hidden="true" />
-            </Link>
+              <X size={16} aria-hidden="true" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => dismissCompleteness(pct)}
-            aria-label={t("vendor.dashboard.dismiss")}
-            className="-m-1 shrink-0 rounded-lg p-1 text-ink-500 transition-colors hover:bg-steel-100 hover:text-ink-900 dark:text-paper-400 dark:hover:bg-steel-600/20 dark:hover:text-paper-50"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        </div>
+        </SetupLinger>
       )}
 
       {/* Collapsed setup progress: a small, persistent, reopenable chip. Keeps

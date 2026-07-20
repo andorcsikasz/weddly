@@ -335,6 +335,10 @@ export default {
         // left-to-right across a placeholder block to signal "loading".
         // 1.6s feels lively without being hectic; longer reads as stalled.
         shimmer: "shimmer 1.6s ease-in-out infinite",
+        // Checklist tick: the circle becomes a check and punches in. A single
+        // small overshoot (1.25) is what sells "done" in one glance; the
+        // vendor setup list plays it once per finished step.
+        "tick-pop": "tickPop 260ms cubic-bezier(0.34, 1.56, 0.64, 1)",
       },
       keyframes: {
         fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
@@ -353,6 +357,11 @@ export default {
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
+        },
+        tickPop: {
+          "0%": { opacity: "0", transform: "scale(0.4)" },
+          "60%": { opacity: "1", transform: "scale(1.25)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
         },
       },
     },

@@ -728,11 +728,6 @@ export interface LocaleMessages {
     price_band_level_3_name: string;
     price_band_level_4_name: string;
     price_band_level_5_name: string;
-    price_band_level_1_desc: string;
-    price_band_level_2_desc: string;
-    price_band_level_3_desc: string;
-    price_band_level_4_desc: string;
-    price_band_level_5_desc: string;
     capacity_range_label: string;
     /** Capacity heading for a category that HAS a room: "Befogadóképesség". */
     capacity_seating_label: string;
@@ -766,6 +761,7 @@ export interface LocaleMessages {
     /** aria-label on a gallery thumbnail (swaps it into the big view). */
     gallery_show_aria: string;
     gallery_delete_failed: string;
+    gallery_position_hint: string;
     section_videos: string;
     videos_add: string;
     videos_url_label: string;

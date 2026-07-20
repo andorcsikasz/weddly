@@ -1585,6 +1585,12 @@ addColumnIfMissing("listings", "custom_category", "custom_category TEXT");
 // price_band change (see PRICE_BAND_COOLDOWN_DAYS in shared/listings.ts).
 // NULL = the published band was never changed, so the next change is free.
 addColumnIfMissing("listings", "price_band_changed_at", "price_band_changed_at INTEGER");
+// Per-photo vertical focal point (object-position %, 0..100, 50 = centred).
+// Every gallery slot crops to a fixed aspect, so a portrait shot loses its
+// subject to the crop; the vendor drags the tile in the listing editor to say
+// which band matters. Only Y — the crop is vertical, so an X knob would do
+// nothing. Legacy rows default to centred, i.e. exactly today's rendering.
+addColumnIfMissing("listing_photos", "position_y", "position_y INTEGER NOT NULL DEFAULT 50");
 // Uniqueness indexes live here (not schema.sql) per the May 2026 ordering rule —
 // the column must exist before the index that references it. Partial so the
 // pre-backfill NULLs don't collide with each other.
@@ -1619,6 +1625,21 @@ addColumnIfMissing("vendor_subscriptions", "billing_starts_at", "billing_starts_
 // original behaviour, so every pre-existing row stays a full-day block and the
 // couple-facing busy calendar / next-free logic is unchanged for them).
 addColumnIfMissing("vendor_unavailable_dates", "blocked_hours", "blocked_hours TEXT");
+
+// Availability EXCEPTIONS gained a direction. With the weekly pattern in
+// `vendor_availability_settings`, a per-date row can now also mean the OPPOSITE
+// of a block: is_available = 1 marks a day the vendor exceptionally works even
+// though the pattern excludes that weekday. Defaults to 0, so every pre-existing
+// row keeps meaning exactly what it did — a block.
+//
+// (The table name is now a slight misnomer: it holds both directions. Renaming
+// is off the table under the additive-only rule, so the semantics live in the
+// schema comment and in shared/vendor_availability.ts.)
+addColumnIfMissing(
+  "vendor_unavailable_dates",
+  "is_available",
+  "is_available INTEGER NOT NULL DEFAULT 0",
+);
 
 // One-time grandfather: every vendor account that existed BEFORE the vendor
 // freemium launch is an early adopter: grant the founding year (free, no

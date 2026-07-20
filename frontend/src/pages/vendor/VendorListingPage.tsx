@@ -22,15 +22,18 @@ import {
   useRef,
   useState,
 } from "react";
-import { Check, ExternalLink, Lock, Plus, X } from "lucide-react";
+import { Check, ExternalLink, Hourglass, Lock, MoveVertical, Plus, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
+  blockedHoursLabel,
+  type ListingPhoto,
   MAX_LISTING_PHOTOS,
   priceBandLockedUntil,
   type VendorAvailabilityView,
   type VendorListingEditInput,
   type VendorListingView,
 } from "@shared/listings";
+import { capacityKindFor } from "@shared/suppliers";
 import type { VendorBilling } from "@shared/vendor_billing";
 import { listingChecklistFor } from "@shared/vendor_clients";
 import { AddressAutocomplete } from "../../components/AddressAutocomplete";
@@ -191,9 +194,15 @@ function formToPatch(form: FormState, baseline: VendorListingView): VendorListin
 }
 
 /** Client-side guard mirrored from the autosave/save gate: a saveable form
- *  needs a non-empty city and, when BOTH capacity bounds are set, min ≤ max. */
-function isFormSaveable(form: FormState): boolean {
+ *  needs a non-empty city and, when BOTH capacity bounds are set, min ≤ max.
+ *
+ *  The capacity check is skipped when the category doesn't show the fields.
+ *  Legacy values survive in the DB behind the hidden section, and a stale
+ *  min > max there would otherwise wedge autosave on a pair of inputs the
+ *  vendor can't see, let alone fix. */
+function isFormSaveable(form: FormState, capacityShown: boolean): boolean {
   if (form.city.trim().length === 0) return false;
+  if (!capacityShown) return true;
   const min = form.capacity_min.trim();
   const max = form.capacity_max.trim();
   if (min.length > 0 && max.length > 0 && Number(min) > Number(max)) return false;
@@ -436,16 +445,24 @@ export default function VendorListingPage() {
     }
   };
 
+  // Does a guest count mean anything for this vendor's category, and if so,
+  // is it a room's capacity or a service's throughput? Null hides the whole
+  // capacity block: a photographer has no guest capacity, and asking for one
+  // was both noise on the form and a checklist step they could never finish.
+  // Category is admin-curated and not editable here, so this is stable for the
+  // lifetime of the page.
+  const capacityKind = capacityKindFor(view?.listing.category);
+
   // Dirty = the form diverges from the last-loaded view. Saveable = passes the
   // client guard. Autosave fires only when BOTH hold; the explicit Save button
   // shares the same routine as a manual fallback.
   const dirty = form && view ? Object.keys(formToPatch(form, view)).length > 0 : false;
-  const saveable = form ? isFormSaveable(form) : false;
+  const saveable = form ? isFormSaveable(form, capacityKind != null) : false;
 
   const runSave = useCallback(
     async (mode: "auto" | "manual") => {
       if (!form || !view || saving) return;
-      if (!isFormSaveable(form)) return;
+      if (!isFormSaveable(form, capacityKind != null)) return;
       if (Object.keys(formToPatch(form, view)).length === 0) return;
       setSaving(true);
       try {
@@ -468,7 +485,7 @@ export default function VendorListingPage() {
         setSaving(false);
       }
     },
-    [form, view, saving, t, toast],
+    [form, view, saving, capacityKind, t, toast],
   );
 
   // Debounced autosave: ~1s after the last edit, persist a valid dirty form.
@@ -505,7 +522,7 @@ export default function VendorListingPage() {
     ? supportEmailRaw.trim()
     : "hello@tryweddly.com";
 
-  const track = form ? capacityTrack(form) : null;
+  const track = form && capacityKind ? capacityTrack(form) : null;
 
   // The cover to render right now: the optimistic just-picked file if one is in
   // flight, otherwise the saved hero. Shared by the couple's-eye preview and the
@@ -633,8 +650,8 @@ export default function VendorListingPage() {
                 heroUrl={effectiveHeroUrl}
                 city={form.city}
                 priceBand={form.price_band}
-                capacityMin={form.capacity_min}
-                capacityMax={form.capacity_max}
+                capacityMin={capacityKind ? form.capacity_min : ""}
+                capacityMax={capacityKind ? form.capacity_max : ""}
                 blurb={
                   locale === "hu" ? form.blurb_hu || form.blurb_en : form.blurb_en || form.blurb_hu
                 }
@@ -811,21 +828,18 @@ export default function VendorListingPage() {
               />
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {(view.photos ?? []).map((p) => (
-                  <div
+                  <GalleryTile
                     key={p.id}
-                    className="group relative aspect-[3/2] overflow-hidden rounded-lg bg-paper-100 dark:bg-umber-800"
-                  >
-                    <img src={p.url} alt="" loading="lazy" className="h-full w-full object-cover" />
-                    <button
-                      type="button"
-                      aria-label={t("vendor_home.gallery_delete")}
-                      onClick={() => void onGalleryDelete(p.id)}
-                      disabled={galleryBusy}
-                      className="absolute right-1 top-1 rounded-full bg-ink-900/60 p-1 text-white opacity-0 transition-opacity hover:bg-ink-900/85 focus-visible:opacity-100 group-hover:opacity-100"
-                    >
-                      <X size={14} aria-hidden="true" />
-                    </button>
-                  </div>
+                    photo={p}
+                    busy={galleryBusy}
+                    onDelete={() => void onGalleryDelete(p.id)}
+                    onCommit={(y) => {
+                      void vendorListingApi
+                        .updatePhotoPosition(p.id, y)
+                        .then(setView)
+                        .catch(() => undefined);
+                    }}
+                  />
                 ))}
                 {(view.photos?.length ?? 0) < MAX_LISTING_PHOTOS && (
                   <button
@@ -976,7 +990,11 @@ export default function VendorListingPage() {
               disabled={saving}
               id="vendor-section-pricing"
             >
-              <legend className="font-semibold">{t("vendor_home.section_pricing")}</legend>
+              <legend className="font-semibold">
+                {capacityKind
+                  ? t("vendor_home.section_pricing")
+                  : t("vendor_home.section_pricing_only")}
+              </legend>
 
               <div>
                 <span className="field-label">{t("vendor_home.label_price_band")}</span>
@@ -998,9 +1016,15 @@ export default function VendorListingPage() {
                         key={lvl}
                         type="button"
                         aria-pressed={active}
+                        // The glyph row IS the label — five € read as a price
+                        // band faster than "Ultra-luxus / A piac csúcsa" does.
+                        // The words survive as the accessible name + the hover
+                        // title, so nothing is lost to a screen reader.
+                        aria-label={t(`vendor_home.price_band_level_${lvl}_name`)}
+                        title={t(`vendor_home.price_band_level_${lvl}_name`)}
                         onClick={() => setPriceBand(lvl)}
                         disabled={priceLocked}
-                        className={`flex flex-col items-start gap-0.5 rounded-xl border p-2.5 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                        className={`flex items-center justify-center rounded-xl border px-2.5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60 ${
                           active
                             ? "border-steel-600 bg-steel-600 text-white"
                             : "border-steel-200 bg-paper-50 text-ink-600 hover:border-steel-400 dark:border-steel-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-steel-500"
@@ -1013,30 +1037,16 @@ export default function VendorListingPage() {
                               className={
                                 g <= lvl
                                   ? active
-                                    ? "text-xs font-semibold text-white"
-                                    : "text-xs font-semibold text-steel-600 dark:text-steel-300"
+                                    ? "text-sm font-semibold text-white"
+                                    : "text-sm font-semibold text-steel-600 dark:text-steel-300"
                                   : active
-                                    ? "text-xs font-semibold text-white/40"
-                                    : "text-xs font-semibold text-paper-300 dark:text-umber-700"
+                                    ? "text-sm font-semibold text-white/40"
+                                    : "text-sm font-semibold text-paper-300 dark:text-umber-700"
                               }
                             >
                               €
                             </span>
                           ))}
-                        </span>
-                        <span
-                          className={`text-sm font-medium ${
-                            active ? "text-white" : "text-ink-800 dark:text-paper-100"
-                          }`}
-                        >
-                          {t(`vendor_home.price_band_level_${lvl}_name`)}
-                        </span>
-                        <span
-                          className={`text-[11px] leading-snug ${
-                            active ? "text-white/80" : "text-ink-500 dark:text-umber-300"
-                          }`}
-                        >
-                          {t(`vendor_home.price_band_level_${lvl}_desc`)}
                         </span>
                       </button>
                     );
@@ -1044,52 +1054,62 @@ export default function VendorListingPage() {
                 </div>
               </div>
 
-              <div id="vendor-section-capacity">
-                <span className="field-label">{t("vendor_home.capacity_range_label")}</span>
-                <div className="grid grid-cols-2 gap-3">
-                  <TextField
-                    id="vendor-capacity-min"
-                    label={t("vendor_home.capacity_min_label")}
-                    value={form.capacity_min}
-                    onChange={onChange("capacity_min")}
-                    type="number"
-                    min={0}
-                    max={5000}
-                  />
-                  <TextField
-                    id="vendor-capacity-max"
-                    label={t("vendor_home.capacity_max_label")}
-                    value={form.capacity_max}
-                    onChange={onChange("capacity_max")}
-                    type="number"
-                    min={0}
-                    max={5000}
-                  />
-                </div>
-                {track && (
-                  <div
-                    className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-paper-100 dark:bg-umber-800"
-                    aria-hidden="true"
-                  >
-                    <div
-                      className={`h-full rounded-full ${
-                        track.invalid
-                          ? "bg-blush-400 dark:bg-blush-400"
-                          : "bg-steel-400 dark:bg-steel-500"
-                      }`}
-                      style={{
-                        marginLeft: `${track.left}%`,
-                        width: `${Math.max(0, track.right - track.left)}%`,
-                      }}
+              {/* Capacity, only where a guest count exists. A venue reports the
+                  room it can seat; a caterer or a rental stock reports what it
+                  can serve, which is a different promise and gets its own
+                  label. Everyone else never sees this block. */}
+              {capacityKind && (
+                <div id="vendor-section-capacity">
+                  <span className="field-label">
+                    {capacityKind === "seating"
+                      ? t("vendor_home.capacity_seating_label")
+                      : t("vendor_home.capacity_service_label")}
+                  </span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <TextField
+                      id="vendor-capacity-min"
+                      label={t("vendor_home.capacity_min_label")}
+                      value={form.capacity_min}
+                      onChange={onChange("capacity_min")}
+                      type="number"
+                      min={0}
+                      max={5000}
+                    />
+                    <TextField
+                      id="vendor-capacity-max"
+                      label={t("vendor_home.capacity_max_label")}
+                      value={form.capacity_max}
+                      onChange={onChange("capacity_max")}
+                      type="number"
+                      min={0}
+                      max={5000}
                     />
                   </div>
-                )}
-                {track?.invalid && (
-                  <p className="mt-1 text-xs text-blush-600 dark:text-blush-300">
-                    {t("vendor_home.capacity_invalid")}
-                  </p>
-                )}
-              </div>
+                  {track && (
+                    <div
+                      className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-paper-100 dark:bg-umber-800"
+                      aria-hidden="true"
+                    >
+                      <div
+                        className={`h-full rounded-full ${
+                          track.invalid
+                            ? "bg-blush-400 dark:bg-blush-400"
+                            : "bg-steel-400 dark:bg-steel-500"
+                        }`}
+                        style={{
+                          marginLeft: `${track.left}%`,
+                          width: `${Math.max(0, track.right - track.left)}%`,
+                        }}
+                      />
+                    </div>
+                  )}
+                  {track?.invalid && (
+                    <p className="mt-1 text-xs text-blush-600 dark:text-blush-300">
+                      {t("vendor_home.capacity_invalid")}
+                    </p>
+                  )}
+                </div>
+              )}
             </fieldset>
 
             <div className="flex items-center justify-between gap-3 pt-1">
@@ -1209,34 +1229,55 @@ export default function VendorListingPage() {
             </button>
           </form>
 
-          {availability.blocked_dates.length === 0 ? (
+          {availability.blocked_days.length === 0 ? (
             <p className="text-sm text-ink-500 dark:text-umber-300">
               {t("vendor_home.availability_empty")}
             </p>
           ) : (
+            /* Chips carry the hour detail, not just the date: the × removes the
+               WHOLE day's block, so a chip that looked identical for a
+               14:00-18:00 block and a full one made that destructive without
+               warning. Hour-level edits stay on /vendor/calendar. */
             <ul className="flex flex-wrap gap-2">
-              {availability.blocked_dates.map((d) => (
-                <li
-                  key={d}
-                  className="inline-flex items-center gap-2 rounded-full bg-paper-100 py-1 pl-3 pr-1 text-sm text-ink-800 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-100 dark:ring-umber-700"
-                >
-                  <span>{formatBlockedDate(d, locale)}</span>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveBlock(d)}
-                    disabled={availBusy}
-                    aria-label={t("vendor_home.availability_remove", {
-                      date: formatBlockedDate(d, locale),
-                    })}
-                    title={t("vendor_home.availability_remove", {
-                      date: formatBlockedDate(d, locale),
-                    })}
-                    className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-300 hover:text-ink-800 disabled:opacity-50 dark:text-umber-300 dark:hover:bg-umber-700"
+              {availability.blocked_days.map((bd) => {
+                const hours = blockedHoursLabel(bd.hours);
+                const label = hours
+                  ? `${formatBlockedDate(bd.date, locale)} · ${hours}`
+                  : formatBlockedDate(bd.date, locale);
+                return (
+                  <li
+                    key={bd.date}
+                    className="inline-flex items-center gap-2 rounded-full bg-paper-100 py-1 pl-3 pr-1 text-sm text-ink-800 ring-1 ring-paper-300 dark:bg-umber-800 dark:text-umber-100 dark:ring-umber-700"
                   >
-                    ×
-                  </button>
-                </li>
-              ))}
+                    <span className="inline-flex items-center gap-1.5">
+                      {hours ? (
+                        <Hourglass
+                          size={12}
+                          aria-hidden="true"
+                          className="shrink-0 text-ink-500 dark:text-umber-300"
+                        />
+                      ) : (
+                        <Lock
+                          size={12}
+                          aria-hidden="true"
+                          className="shrink-0 text-ink-500 dark:text-umber-300"
+                        />
+                      )}
+                      <span className="tabular-nums">{label}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveBlock(bd.date)}
+                      disabled={availBusy}
+                      aria-label={t("vendor_home.availability_remove", { date: label })}
+                      title={t("vendor_home.availability_remove", { date: label })}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-300 hover:text-ink-800 disabled:opacity-50 dark:text-umber-300 dark:hover:bg-umber-700"
+                    >
+                      ×
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
 
@@ -1249,6 +1290,108 @@ export default function VendorListingPage() {
           </p>
         </section>
       )}
+    </div>
+  );
+}
+
+/** One gallery tile: the photo, a delete affordance, and drag-to-reframe.
+ *  The slot crops to 3/2, so a portrait shot arrives with its subject sliced
+ *  off; dragging the photo up or down inside the slot picks which band
+ *  survives, exactly like the couples' cover positioner. Vertical only —
+ *  `object-cover` on a wide slot has no horizontal slack to give.
+ *
+ *  `pos` is local so the crop tracks the finger at 60fps without a round trip;
+ *  release commits once and the parent swaps in the server's copy. Dragging
+ *  DOWN reveals the top of the photo (object-position-y falls), which is the
+ *  "I'm moving the picture, not the window" feel. */
+function GalleryTile({
+  photo,
+  busy,
+  onDelete,
+  onCommit,
+}: {
+  photo: ListingPhoto;
+  busy: boolean;
+  onDelete: () => void;
+  onCommit: (positionY: number) => void;
+}) {
+  const { t } = useT();
+  const ref = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ sy: number; py: number } | null>(null);
+  const [pos, setPos] = useState(photo.position_y);
+  const [dragging, setDragging] = useState(false);
+
+  // Re-sync when the server's value lands (or the row is replaced by a
+  // sibling's refresh); skipped mid-drag so an in-flight save can't yank the
+  // photo out from under the finger.
+  useEffect(() => {
+    if (!drag.current) setPos(photo.position_y);
+  }, [photo.position_y]);
+
+  function nextFrom(clientY: number): number | null {
+    const el = ref.current;
+    const d = drag.current;
+    if (!el || !d) return null;
+    const rect = el.getBoundingClientRect();
+    if (rect.height === 0) return null;
+    const dyPct = ((clientY - d.sy) / rect.height) * 100;
+    return Math.max(0, Math.min(100, Math.round(d.py - dyPct)));
+  }
+
+  return (
+    <div
+      ref={ref}
+      className={`group relative aspect-[3/2] touch-none select-none overflow-hidden rounded-lg bg-paper-100 dark:bg-umber-800 ${
+        dragging ? "cursor-grabbing" : "cursor-grab"
+      }`}
+      onPointerDown={(e) => {
+        // The delete button sits inside this box; let its own click through.
+        if ((e.target as HTMLElement).closest("button")) return;
+        ref.current?.setPointerCapture(e.pointerId);
+        drag.current = { sy: e.clientY, py: pos };
+        setDragging(true);
+      }}
+      onPointerMove={(e) => {
+        if (!drag.current) return;
+        const n = nextFrom(e.clientY);
+        if (n !== null) setPos(n);
+      }}
+      onPointerUp={(e) => {
+        if (!drag.current) return;
+        const n = nextFrom(e.clientY);
+        const before = drag.current.py;
+        ref.current?.releasePointerCapture(e.pointerId);
+        drag.current = null;
+        setDragging(false);
+        if (n === null) return;
+        setPos(n);
+        // A plain click (or a drag that landed where it started) is not an
+        // edit — don't spend a request on it.
+        if (n !== before) onCommit(n);
+      }}
+    >
+      <img
+        src={photo.url}
+        alt=""
+        loading="lazy"
+        draggable={false}
+        className="pointer-events-none h-full w-full object-cover"
+        style={{ objectPosition: `50% ${pos}%` }}
+      />
+      {/* Reframe hint — hover/focus only, so a settled gallery stays clean. */}
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/55 to-transparent px-1 py-1 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+        <MoveVertical size={11} aria-hidden="true" />
+        {t("vendor_home.gallery_position_hint")}
+      </span>
+      <button
+        type="button"
+        aria-label={t("vendor_home.gallery_delete")}
+        onClick={onDelete}
+        disabled={busy}
+        className="absolute right-1 top-1 rounded-full bg-ink-900/60 p-1 text-white opacity-0 transition-opacity hover:bg-ink-900/85 focus-visible:opacity-100 group-hover:opacity-100"
+      >
+        <X size={14} aria-hidden="true" />
+      </button>
     </div>
   );
 }
