@@ -2675,6 +2675,16 @@ const en: LocaleMessages = {
   design: {
     title: "Design",
     hint: "Pick a style, palette and font. It drives your guest page and printable cards.",
+    // The Sample Table: four finished looks on the couple's own names.
+    choose: "Choose a look",
+    look: { change: "Change" },
+    // The Look Bar stamp always shows the surface you are NOT editing.
+    stamp: { to_print: "Open printed cards", to_site: "Open guest site" },
+    style_switch_confirm: {
+      title: "Change the look?",
+      body: "Your custom colours and fonts go back to this look's own set.",
+      confirm: "Change it",
+    },
     section: {
       style: "Wedding style",
       palette: "Color palette",

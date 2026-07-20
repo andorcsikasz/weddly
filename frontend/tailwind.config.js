@@ -308,6 +308,10 @@ export default {
         // of cards reads as floating panels, not framed boxes.
         elevated: "0 1px 2px 0 rgba(16, 24, 48, 0.04), 0 6px 16px -4px rgba(16, 24, 48, 0.10)",
         pop: "0 10px 25px -8px rgba(16, 24, 48, 0.16), 0 2px 6px -2px rgba(16, 24, 48, 0.10)",
+        // Warm counterpart to `elevated`. Every other shadow here is cold navy
+        // rgba(16,24,48,..), which reads blue when it falls on the warm
+        // .stationery surfaces under a design proof card. umber-800 based.
+        warm: "0 1px 2px 0 rgba(37, 28, 20, 0.05), 0 8px 20px -6px rgba(37, 28, 20, 0.18)",
       },
       spacing: {
         // 44px — minimum interactive tap target (WCAG / iOS HIG).

@@ -617,6 +617,32 @@ export function getStylePreset(slug: StylePresetSlug): StylePreset {
   return STYLE_PRESETS.find((s) => s.slug === slug) ?? STYLE_PRESETS[0]!;
 }
 
+/** Commit a style pack onto a design. A pack is a FULL reset, not a tint: it
+ *  re-seeds the palette + font pairing, drops every per-role colour and
+ *  font-family override, and seeds the pack's signature date format, card frame
+ *  and website chrome (button style, corners, shadow, photo treatment).
+ *
+ *  This lives here rather than in the editor page because it defines what a
+ *  pack MEANS. The design page needs it twice - once to commit the tap, once to
+ *  render each Sample Table tile - and those two must agree exactly, or a tile
+ *  would advertise a look the tap doesn't produce. */
+export function applyStylePreset(design: CoupleDesign, slug: StylePresetSlug): CoupleDesign {
+  const preset = STYLE_PRESETS.find((s) => s.slug === slug);
+  if (!preset) return design;
+  return {
+    ...design,
+    style: slug,
+    palette: preset.defaultPalette,
+    fonts: preset.defaultFonts,
+    colors: {},
+    headingFont: null,
+    bodyFont: null,
+    dateFormat: preset.defaultDateFormat,
+    borderStyle: preset.defaultBorderStyle,
+    web: { ...design.web, ...(preset.defaultWeb ?? {}) },
+  };
+}
+
 /** Monogram separators. The glyph for `and` is locale-aware, so it carries no
  *  static glyph here - {@link monogramSeparatorGlyph} resolves it. */
 export const MONOGRAM_SEPARATORS: readonly { slug: MonogramSeparatorSlug; glyph: string }[] = [
@@ -815,8 +841,20 @@ export const DEFAULT_DESIGN: CoupleDesign = {
 /** Look up a palette by slug; never throws — an unknown slug falls back to the
  *  default palette so a stale slug can't blank out the guest page. */
 export function getPalette(slug: PaletteSlug): Palette {
-  return PALETTES.find((p) => p.slug === slug) ?? PALETTES[1]!;
+  return PALETTES.find((p) => p.slug === slug) ?? PALETTES[0]!;
 }
+
+/** Relative ink coverage of each colour role on the guest page, used to draw a
+ *  palette as ONE weighted bar instead of four equal dots. These numbers
+ *  describe the page TEMPLATE (how much of a rendered guest page is background
+ *  vs body text vs headings vs accent), not any individual palette, so they are
+ *  constant across palettes by construction. Sums to 100. */
+export const PALETTE_ROLE_WEIGHTS: Record<ColorRole, number> = {
+  background: 62,
+  text: 20,
+  primary: 12,
+  accent: 6,
+};
 
 /** Look up a font preset by slug; never throws (falls back to classic serif). */
 export function getFontPreset(slug: FontPresetSlug): FontPreset {

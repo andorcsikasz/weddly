@@ -2703,6 +2703,16 @@ const hu: LocaleMessages = {
   design: {
     title: "Arculat",
     hint: "Válassz egy stílust, színpalettát és betűtípust. Ez jelenik meg a vendégoldalon és a nyomtatható kártyákon.",
+    // A mintaasztal: négy kész stílus, a pár saját nevével.
+    choose: "Válassz stílust",
+    look: { change: "Csere" },
+    // A bélyeg mindig azt a felületet mutatja, amelyiket éppen nem szerkeszted.
+    stamp: { to_print: "Nyomtatványok megnyitása", to_site: "Vendégoldal megnyitása" },
+    style_switch_confirm: {
+      title: "Lecseréled a stílust?",
+      body: "Az egyedi színeid és betűtípusaid visszaállnak az új stílus saját készletére.",
+      confirm: "Csere",
+    },
     section: {
       style: "Esküvői stílus",
       palette: "Színpaletta",
