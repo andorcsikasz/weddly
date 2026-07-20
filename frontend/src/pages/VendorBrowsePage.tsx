@@ -6,7 +6,7 @@
 // get listed. Data: publicShowcase + the real couples count from publicStats.
 
 import type { PublicShowcaseCategory, PublicShowcaseVendor } from "@shared/suppliers";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Wordmark } from "../components/Wordmark";
@@ -37,6 +37,10 @@ function TopBar({ t }: { t: (k: string) => string }) {
   );
 }
 
+// Frameless by design: the photo IS the card. A border + surface + shadow
+// around every tile turned 90 vendors into 90 boxes; dropping the chrome lets
+// the photography carry the page and the caption sit on the page background,
+// the way a marketplace feed reads.
 function VendorCard({
   id,
   name,
@@ -53,24 +57,23 @@ function VendorCard({
   return (
     <Link
       to={`/vendors/${encodeURIComponent(id)}`}
-      className="group block overflow-hidden rounded-2xl border border-paper-200 bg-paper-50 transition hover:border-paper-300 hover:shadow-sm dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
+      className="group block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
     >
-      <div className="aspect-[4/3] w-full overflow-hidden bg-paper-200 dark:bg-umber-700">
+      <div className="aspect-[3/2] w-full overflow-hidden rounded-2xl bg-paper-200 dark:bg-umber-700">
         {/* Endpoint only returns entries with a hero photo, so src is always set. */}
         <img
           src={hero}
           alt={name}
           loading="lazy"
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
         />
       </div>
-      <div className="p-3">
-        <p className="truncate font-medium text-ink-900 dark:text-paper-100">{name}</p>
-        <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-ink-500 dark:text-umber-300">
-          <MapPin size={11} aria-hidden />
-          <span className="truncate">{city ? `${city} · ${categoryLabel}` : categoryLabel}</span>
-        </p>
-      </div>
+      <p className="mt-2 truncate text-sm font-medium text-ink-900 dark:text-paper-100">{name}</p>
+      {/* One muted line, no pin icon: the city and category are the only two
+          facts worth carrying at this size. */}
+      <p className="truncate text-xs text-ink-500 dark:text-umber-300">
+        {city ? `${city} · ${categoryLabel}` : categoryLabel}
+      </p>
     </Link>
   );
 }
@@ -87,19 +90,22 @@ function PlannerInviteModule({
   vendors: PublicShowcaseVendor[];
 }) {
   return (
-    <section className="rounded-3xl border border-paper-300 bg-paper-100/70 p-6 dark:border-umber-700 dark:bg-umber-800/60 sm:p-8">
+    // A hairline and air instead of a tinted box: this is a different KIND of
+    // relationship, not a promo panel, and the surrounding page is already all
+    // photography — one more filled container just added weight.
+    <section className="border-t border-paper-200 pt-8 dark:border-umber-700">
       <div className="sm:flex sm:items-start sm:justify-between sm:gap-8">
         <div className="max-w-xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300">
+          <span className="text-xs font-medium uppercase tracking-widest text-ink-400 dark:text-umber-400">
             {t("vendorBrowse.planner_badge")}
           </span>
-          <h2 className="mt-3 font-grotesk text-xl text-ink-900 dark:text-paper-50">
+          <h2 className="mt-2 font-grotesk text-2xl text-ink-900 dark:text-paper-50">
             {t("vendorBrowse.planner_title")}
           </h2>
           <p className="mt-2 text-ink-600 dark:text-umber-200">{t("vendorBrowse.planner_body")}</p>
           <Link
             to="/planners"
-            className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-900 underline-offset-4 hover:underline dark:text-paper-100"
           >
             {t("vendorBrowse.planner_cta")}
             <ArrowRight size={15} aria-hidden />
@@ -107,7 +113,7 @@ function PlannerInviteModule({
         </div>
         {vendors.length > 0 && (
           <div className="mt-6 sm:mt-0 sm:max-w-[16rem]">
-            <p className="mb-2 text-xs uppercase tracking-wide text-ink-400 dark:text-umber-400">
+            <p className="mb-2 text-xs uppercase tracking-widest text-ink-400 dark:text-umber-400">
               {t("vendorBrowse.planner_featured")}
             </p>
             <ul className="flex flex-wrap gap-2 sm:justify-end">
@@ -168,15 +174,18 @@ export default function VendorBrowsePage() {
       <TopBar t={t} />
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pb-6 pt-10 sm:px-6 lg:px-8">
-        <h1 className="max-w-2xl font-grotesk text-3xl text-ink-900 sm:text-4xl dark:text-paper-50">
+      <section className="mx-auto max-w-6xl px-4 pb-8 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+        <h1 className="max-w-3xl font-grotesk text-4xl tracking-tight text-ink-900 sm:text-5xl dark:text-paper-50">
           {t("vendorBrowse.title")}
         </h1>
-        <p className="mt-3 max-w-2xl text-ink-600 dark:text-umber-200">
+        <p className="mt-4 max-w-xl text-ink-600 dark:text-umber-200">
           {t("vendorBrowse.subtitle")}
         </p>
+        {/* The live-couples number is proof, not a badge. A pill with its own
+            border and tint competed with the headline; a plain line with one
+            dot says the same thing and lets the photos start sooner. */}
         {showCouples && (
-          <p className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1 text-sm text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300">
+          <p className="mt-4 flex items-center gap-2 text-sm text-ink-500 dark:text-umber-300">
             <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden />
             {t("vendorBrowse.couples_stat", { count: String(couples) })}
           </p>
@@ -194,7 +203,7 @@ export default function VendorBrowsePage() {
                   {[0, 1, 2, 3, 4, 5].map((j) => (
                     <div
                       key={j}
-                      className="aspect-[4/3] animate-pulse rounded-2xl bg-paper-200 dark:bg-umber-800"
+                      className="aspect-[3/2] animate-pulse rounded-2xl bg-paper-200 dark:bg-umber-800"
                     />
                   ))}
                 </div>
@@ -209,19 +218,25 @@ export default function VendorBrowsePage() {
           <div className="space-y-10">
             {gridCategories.map((c) => (
               <section key={c.category}>
-                <h2 className="mb-3 font-grotesk text-lg text-ink-900 dark:text-paper-100">
+                <h2 className="mb-3 font-grotesk text-base font-semibold text-ink-900 dark:text-paper-100">
                   {t(`suppliers.cat.${c.category}`)}
                 </h2>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                {/* Phone: one swipeable row per category, snapping card by card.
+                    Fifteen categories × three rows of a 2-col grid was a page
+                    you scrolled for a minute; a row you flick through is both
+                    shorter and closer to how a marketplace feed behaves.
+                    sm+ keeps the grid, where the horizontal space is real. */}
+                <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-6">
                   {c.vendors.map((v) => (
-                    <VendorCard
-                      key={v.id}
-                      id={v.id}
-                      name={v.name}
-                      city={v.city}
-                      categoryLabel={t(`suppliers.cat.${v.category}`)}
-                      hero={v.hero_image_url}
-                    />
+                    <div key={v.id} className="w-[46vw] shrink-0 snap-start sm:w-auto">
+                      <VendorCard
+                        id={v.id}
+                        name={v.name}
+                        city={v.city}
+                        categoryLabel={t(`suppliers.cat.${v.category}`)}
+                        hero={v.hero_image_url}
+                      />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -230,25 +245,26 @@ export default function VendorBrowsePage() {
           </div>
         )}
 
-        {/* Conversion band: couples primary, vendors secondary (audit item 6). */}
-        <div className="mt-14 rounded-3xl border border-paper-200 bg-paper-100/70 p-8 text-center dark:border-umber-700 dark:bg-umber-800/60">
-          <h2 className="font-grotesk text-2xl text-ink-900 dark:text-paper-50">
+        {/* Conversion band: couples primary, vendors secondary (audit item 6).
+            Solid ink rather than another tinted paper box — after a page of
+            light photo rows the dark block is the one thing that stops the
+            scroll, and it needs no border to do it. */}
+        <div className="mt-16 rounded-3xl bg-ink-900 px-6 py-12 text-center dark:bg-umber-800">
+          <h2 className="font-grotesk text-3xl tracking-tight text-paper-50">
             {t("vendorBrowse.convert_title")}
           </h2>
-          <p className="mx-auto mt-2 max-w-xl text-ink-600 dark:text-umber-200">
-            {t("vendorBrowse.convert_sub")}
-          </p>
-          <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <p className="mx-auto mt-3 max-w-lg text-paper-200/80">{t("vendorBrowse.convert_sub")}</p>
+          <div className="mt-7 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               to="/signup"
-              className="inline-flex items-center gap-1.5 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
+              className="inline-flex items-center gap-1.5 rounded-full bg-paper-50 px-6 py-3 text-sm font-medium text-ink-900 transition hover:bg-white"
             >
               {t("vendorBrowse.cta_couple")}
               <ArrowRight size={15} aria-hidden />
             </Link>
             <Link
               to="/vendors/signup"
-              className="text-sm font-medium text-ink-700 underline-offset-4 hover:underline dark:text-paper-200"
+              className="text-sm font-medium text-paper-200/80 underline-offset-4 transition hover:text-paper-50 hover:underline"
             >
               {t("vendorBrowse.vendor_prompt")}
             </Link>
