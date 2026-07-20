@@ -21,8 +21,7 @@ import { issueSession } from "../auth/session";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { recordConsent } from "../domain/consents";
-import { sendKind } from "../domain/emails";
-import { deviceFingerprint, recordKnownDevice } from "../domain/known_devices";
+import { alertOnNewDevice } from "../domain/known_devices";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
 import { CONFIG } from "../config";
@@ -245,22 +244,7 @@ function signInExisting(ctx: Ctx, row: UserRow, auditAction: string): Response {
   // Same device-alert path as password login. Google's own "new sign-in"
   // mails cover the Google account side; this one covers Weddly specifically
   // so the user has full visibility regardless of provider.
-  const fp = deviceFingerprint(ctx.req.headers.get("user-agent"), ctx.clientIp);
-  const result = recordKnownDevice(row.id, fp);
-  if (result.kind === "new") {
-    const signedInAt = new Date(now()).toLocaleString("hu-HU", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    void sendKind(
-      "new_device_signin",
-      { signedInAt, forgotUrl: `${CONFIG.frontendBaseUrl}/forgot-password` },
-      { user: { id: row.id, email: row.email, full_name: row.full_name } },
-    );
-  }
+  alertOnNewDevice(ctx, row);
 
   const session: AuthSession = { token, user: toUser(row) };
   ctx.log.info(auditAction, { user_id: row.id });

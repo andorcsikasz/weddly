@@ -3,6 +3,32 @@
 
 const TOKEN_KEY = "weddly.token";
 
+/** Stable per-browser device id, sent as `X-Weddly-Device` so the backend can
+ *  tell "my own laptop again" from "somebody else's machine" without guessing
+ *  from the IP address. It is a device property, not tenant data, so it must
+ *  SURVIVE sign-out, see the wipe exemption in AppShell. Regenerating it (new
+ *  browser, cleared storage, private window) costs at most one security mail,
+ *  which is the honest answer there anyway. */
+const DEVICE_KEY = "weddly.device";
+
+/** Read the device id, minting one on first use. Returns null when storage is
+ *  unavailable (embeds, hardened privacy modes); the backend then falls back to
+ *  a User-Agent fingerprint rather than failing the request. */
+export function getDeviceId(): string | null {
+  try {
+    const existing = localStorage.getItem(DEVICE_KEY);
+    if (existing) return existing;
+    const minted =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `d${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+    localStorage.setItem(DEVICE_KEY, minted);
+    return minted;
+  } catch {
+    return null;
+  }
+}
+
 /** Default request timeout in ms — slow networks fail loudly here rather
  *  than leaving a spinner up forever. */
 const DEFAULT_TIMEOUT_MS = 20_000;
@@ -96,6 +122,8 @@ export async function apiFetch<T>(
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const token = opts.token ?? getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
+  const deviceId = getDeviceId();
+  if (deviceId) headers["X-Weddly-Device"] = deviceId;
   if (opts.headers) {
     for (const [k, v] of Object.entries(opts.headers)) headers[k] = v;
   }

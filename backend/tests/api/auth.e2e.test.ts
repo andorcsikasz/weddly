@@ -2514,3 +2514,136 @@ describe("POST /api/auth/locale", () => {
     expect(back.data.user.locale).toBe("en");
   });
 });
+
+/** The security mail must fire for a genuinely unfamiliar machine and stay
+ *  silent for the user's own one. The fingerprint deliberately ignores the
+ *  client IP: keying on it meant a dynamic-IP re-lease, a Wi-Fi/mobile switch
+ *  or a VPN toggle mailed the user about the laptop they were already sitting
+ *  at, which is the "this is spam" complaint that drove the rewrite. */
+describe("new device sign-in", () => {
+  const EMAIL = "device@weddly.test";
+  const PASSWORD = "supersafe123";
+
+  async function login(deviceId: string | null, clientIp: string) {
+    return req(
+      "POST",
+      "/api/auth/login",
+      { email: EMAIL, password: PASSWORD },
+      { clientIp, headers: deviceId ? { "X-Weddly-Device": deviceId } : {} },
+    );
+  }
+
+  function alertCount(): number {
+    const row = db
+      .prepare("SELECT COUNT(*) AS n FROM email_log WHERE kind = 'new_device_signin'")
+      .get() as { n: number };
+    return row.n;
+  }
+
+  async function seedUser() {
+    wipeAll();
+    await registerAndVerify({ email: EMAIL, password: PASSWORD, full_name: "Device" });
+  }
+
+  test("same device keeps quiet however much the IP moves", async () => {
+    await seedUser();
+
+    // First sign-in registers the device silently, otherwise every new user
+    // would be mailed about themselves.
+    expect((await login("device-aaa", "192.168.1.10")).status).toBe(200);
+    expect(alertCount()).toBe(0);
+
+    // Same browser, completely different networks: a different /16, then a
+    // different address family entirely. Every one of these used to alert.
+    expect((await login("device-aaa", "203.0.113.5")).status).toBe(200);
+    expect((await login("device-aaa", "2001:db8::1")).status).toBe(200);
+    expect((await login("device-aaa", "10.44.7.2")).status).toBe(200);
+    expect(alertCount()).toBe(0);
+  });
+
+  test("an unfamiliar device alerts exactly once, then the cooldown holds", async () => {
+    await seedUser();
+    expect((await login("device-aaa", "192.168.1.10")).status).toBe(200);
+    expect(alertCount()).toBe(0);
+
+    // Different machine on the SAME network. The old IP-only fingerprint
+    // treated this as known and never alerted. It must alert.
+    expect((await login("device-bbb", "192.168.1.10")).status).toBe(200);
+    expect(alertCount()).toBe(1);
+    const alert = db
+      .prepare(
+        "SELECT to_email FROM email_log WHERE kind = 'new_device_signin' ORDER BY id DESC LIMIT 1",
+      )
+      .get() as { to_email: string } | undefined;
+    expect(alert?.to_email).toBe(EMAIL);
+
+    // A third unknown device inside the cooldown window is suppressed, so a
+    // client that cannot persist its id can't mint one mail per sign-in.
+    expect((await login("device-ccc", "192.168.1.10")).status).toBe(200);
+    expect(alertCount()).toBe(1);
+
+    // Re-signing in on the already-known first device stays silent regardless.
+    expect((await login("device-aaa", "198.51.100.7")).status).toBe(200);
+    expect(alertCount()).toBe(1);
+
+    // Once the window has passed, a genuinely new device alerts again.
+    db.prepare("UPDATE users SET new_device_alert_at = ? WHERE email = ?").run(
+      now() - 25 * 60 * 60 * 1000,
+      EMAIL,
+    );
+    expect((await login("device-ddd", "192.168.1.10")).status).toBe(200);
+    expect(alertCount()).toBe(2);
+  });
+
+  test("devices recorded under the old fingerprint format migrate silently", async () => {
+    await seedUser();
+    // Shape written by the previous IP-based implementation: no `v` field. It
+    // can never match the new hash, so without the version check every single
+    // existing user would be mailed once purely because we changed the formula.
+    db.prepare("UPDATE users SET known_devices_json = ? WHERE email = ?").run(
+      JSON.stringify([
+        { fp: "0123456789abcdef", last_seen_at: now() - 1000 },
+        { fp: "fedcba9876543210", last_seen_at: now() - 2000 },
+      ]),
+      EMAIL,
+    );
+
+    expect((await login("device-aaa", "192.168.1.10")).status).toBe(200);
+    expect(alertCount()).toBe(0);
+
+    // ...and the list is now re-seeded in the current format, so the NEXT
+    // unfamiliar device is detected normally.
+    expect((await login("device-bbb", "192.168.1.10")).status).toBe(200);
+    expect(alertCount()).toBe(1);
+  });
+
+  test("a client that sends no device id falls back to the user agent", async () => {
+    await seedUser();
+
+    const chrome =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+    const firefox =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:127.0) Gecko/20100101 Firefox/127.0";
+
+    const uaLogin = (ua: string, clientIp: string) =>
+      req(
+        "POST",
+        "/api/auth/login",
+        { email: EMAIL, password: PASSWORD },
+        { clientIp, headers: { "User-Agent": ua } },
+      );
+
+    expect((await uaLogin(chrome, "192.168.1.10")).status).toBe(200);
+    expect(alertCount()).toBe(0);
+
+    // Same browser family, roaming networks: still the same machine.
+    expect((await uaLogin(chrome, "203.0.113.5")).status).toBe(200);
+    expect(alertCount()).toBe(0);
+
+    // A different browser is a different device under the fallback. Every
+    // mainstream UA used to collapse to the literal token "Mozilla", so this
+    // distinction did not exist at all before.
+    expect((await uaLogin(firefox, "192.168.1.10")).status).toBe(200);
+    expect(alertCount()).toBe(1);
+  });
+});

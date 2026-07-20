@@ -496,7 +496,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         const keys: string[] = [];
         for (let i = 0; i < localStorage.length; i += 1) {
           const k = localStorage.key(i);
-          if (k && k.startsWith("weddly.") && k !== "weddly.token" && k !== "weddly.locale") {
+          // `weddly.device` survives alongside the locale: it identifies the
+          // MACHINE, not the tenant. Wiping it would mint a fresh id on every
+          // sign-out, so signing back in on your own laptop would look like a
+          // brand-new device and fire a security mail every single time.
+          if (
+            k &&
+            k.startsWith("weddly.") &&
+            k !== "weddly.token" &&
+            k !== "weddly.locale" &&
+            k !== "weddly.device"
+          ) {
             keys.push(k);
           }
         }

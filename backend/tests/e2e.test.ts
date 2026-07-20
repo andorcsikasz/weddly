@@ -291,58 +291,8 @@ describe("auth", () => {
     expect(r.status).toBe(401);
   });
 
-  test("new device sign-in: first device silent, second device alerts", async () => {
-    wipeAll();
-    await registerAndVerify({
-      email: "device@weddly.test",
-      password: "supersafe123",
-      full_name: "Device",
-    });
-
-    // First login from a fixed IP — registers the device silently (otherwise
-    // every new user would get a "new device" mail about themselves).
-    const login1 = await req(
-      "POST",
-      "/api/auth/login",
-      { email: "device@weddly.test", password: "supersafe123" },
-      { clientIp: "192.168.1.10" },
-    );
-    expect(login1.status).toBe(200);
-
-    const after1 = db
-      .prepare("SELECT COUNT(*) AS n FROM email_log WHERE kind = 'new_device_signin'")
-      .get() as { n: number };
-    expect(after1.n).toBe(0);
-
-    // Second login from a different /16 subnet fires the alert.
-    const login2 = await req(
-      "POST",
-      "/api/auth/login",
-      { email: "device@weddly.test", password: "supersafe123" },
-      { clientIp: "203.0.113.5" },
-    );
-    expect(login2.status).toBe(200);
-
-    const alert = db
-      .prepare(
-        "SELECT to_email FROM email_log WHERE kind = 'new_device_signin' ORDER BY id DESC LIMIT 1",
-      )
-      .get() as { to_email: string } | undefined;
-    expect(alert?.to_email).toBe("device@weddly.test");
-
-    // Re-login from the SAME first /16 — already known, no second alert.
-    const login3 = await req(
-      "POST",
-      "/api/auth/login",
-      { email: "device@weddly.test", password: "supersafe123" },
-      { clientIp: "192.168.1.99" },
-    );
-    expect(login3.status).toBe(200);
-    const total = db
-      .prepare("SELECT COUNT(*) AS n FROM email_log WHERE kind = 'new_device_signin'")
-      .get() as { n: number };
-    expect(total.n).toBe(1);
-  });
+  // New-device alerting moved to tests/api/auth.e2e.test.ts ("new device
+  // sign-in") when the fingerprint stopped keying on the client IP.
 
   test("change-password: verifies current, revokes old sessions, emails confirmation", async () => {
     wipeAll();

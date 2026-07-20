@@ -548,14 +548,21 @@ addColumnIfMissing("users", "password_set", "password_set INTEGER NOT NULL DEFAU
 addColumnIfMissing("users", "locale", "locale TEXT");
 
 // Inline known-device list for the "new device sign-in" security alert.
-// Stored as a JSON array of `{fp: string, last_seen_at: number}` records,
-// capped to the most recent ~10 devices. The fingerprint is a SHA-256 of
-// `user-agent-family + ip-first-two-octets`, truncated to 16 hex chars —
-// irreversible, /16 IP prefix (~city-level), no raw PII. First sign-in is
-// silently registered without emailing (otherwise every new user gets an
-// alert about themselves). Subsequent unrecognised fingerprints trigger a
-// `new_device_signin` mail.
+// Stored as a JSON array of `{v: number, fp: string, last_seen_at: number}`
+// records. The fingerprint is a SHA-256 (16 hex chars) of the browser's own
+// persisted device id, falling back to browser-family + OS-family from the
+// User-Agent: irreversible, no raw PII, and deliberately free of any IP
+// component so a dynamic-IP re-lease or a Wi-Fi/mobile switch is NOT read as a
+// new machine. `v` is the format version: entries written under an older
+// formula are discarded on read, which makes the next sign-in register
+// silently instead of mailing every existing user about a hash change.
+// First sign-in is likewise silent. See domain/known_devices.ts.
 addColumnIfMissing("users", "known_devices_json", "known_devices_json TEXT NOT NULL DEFAULT '[]'");
+
+// Cooldown clock for the alert above: at most one new-device mail per user per
+// 24h, so a client that cannot persist its device id (private window, storage
+// blocked) can't mint one mail per sign-in. Null = never alerted.
+addColumnIfMissing("users", "new_device_alert_at", "new_device_alert_at INTEGER");
 
 // Beta-tester marker — admin-set label that buckets an account (and its whole
 // workspace) into the "Beta testers" group in the admin directory so the team's
