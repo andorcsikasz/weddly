@@ -82,7 +82,7 @@ describe("planCategoryPaid", () => {
   });
 
   it("skips DIY-supplier-owned rows", () => {
-    const diy = { ...line(1, "venue", 300_000, 300_000), couple_supplier_id: 9 };
+    const diy = { ...line(1, "venue", 300_000, 300_000), couple_supplier_id: "9" };
     expect(planCategoryPaid("venue", 100_000, [diy]).updates).toHaveLength(0);
   });
 });
@@ -92,7 +92,10 @@ describe("mergeLines", () => {
     const prev = [line(1, "venue", 300_000), line(2, "catering", 900_000)];
     // Row 2 was edited elsewhere while row 1's save was in flight — merging
     // row 1's response must not drag row 2 back to its old amount.
-    const withEdit = [prev[0] as BudgetLine, { ...(prev[1] as BudgetLine), planned_huf: 1_200_000 }];
+    const withEdit = [
+      prev[0] as BudgetLine,
+      { ...(prev[1] as BudgetLine), planned_huf: 1_200_000 },
+    ];
     const merged = mergeLines(withEdit, [{ ...(prev[0] as BudgetLine), planned_huf: 500_000 }]);
     expect(merged.find((l) => l.id === 1)?.planned_huf).toBe(500_000);
     expect(merged.find((l) => l.id === 2)?.planned_huf).toBe(1_200_000);

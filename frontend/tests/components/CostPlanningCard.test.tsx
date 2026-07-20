@@ -135,7 +135,8 @@ const wait = (ms: number) => act(() => new Promise<void>((r) => setTimeout(r, ms
 
 describe("<CostPlanningCard> slider commits", () => {
   it("saves a drag that never gets a pointerup on the track", async () => {
-    const onEditPlanned = mock(async () => {});
+    // Typed params so `.mock.calls[0]` keeps the real tuple shape asserted below.
+    const onEditPlanned = mock(async (_cat: BudgetCategory, _planned: number) => {});
     setup({ lines: [line(1, "venue", 300_000)], onEditPlanned });
 
     // No pointerup/keyup: the gesture ended off the slider, which used to
