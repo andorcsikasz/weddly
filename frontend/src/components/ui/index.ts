@@ -9,6 +9,7 @@ export { FieldError } from "./FieldError";
 export { HelperText } from "./HelperText";
 export { PasswordField } from "./PasswordField";
 export { SegmentedControl, type SegmentedOption } from "./SegmentedControl";
+export { Sheet } from "./Sheet";
 export { Skeleton, SkeletonText } from "./Skeleton";
 export { Switch } from "./Switch";
 export { TagChip } from "./TagChip";

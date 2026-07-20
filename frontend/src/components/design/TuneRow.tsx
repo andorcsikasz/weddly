@@ -20,7 +20,8 @@ import type { CoupleDesign } from "@shared/design";
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { type Locale, useT } from "../../lib/i18n";
-import { Switch } from "../ui";
+import { useMediaQuery } from "../../lib/useMediaQuery";
+import { Sheet, Switch } from "../ui";
 import { ProofCard } from "./ProofCard";
 
 export type TuneRowId =
@@ -65,6 +66,56 @@ export function TuneRow({
   const { t } = useT();
   const bodyId = `tune-body-${id}`;
   const changed = before !== null && JSON.stringify(before) !== JSON.stringify(now);
+  // At lg+ the body drops in place, under a row that stays on screen next to a
+  // live preview. Below lg there is no preview column and the page is long, so
+  // the same body rises as a sheet: the before/now pair lands right above the
+  // rail your thumb is already on, instead of somewhere up the page.
+  const inlineBody = useMediaQuery("(min-width: 1024px)");
+
+  const body = (
+    <div className="space-y-4">
+      {before && (
+        <div className="flex animate-fade-in-up items-end gap-4">
+          {(
+            [
+              ["before", before],
+              ["after", now],
+            ] as const
+          ).map(([which, d]) => (
+            <div key={which} className="flex flex-col gap-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-400 dark:text-umber-300">
+                {t(`design.swap.${which}`)}
+              </span>
+              <span className="block w-24 overflow-hidden rounded-lg ring-1 ring-black/10 dark:ring-white/15">
+                <ProofCard
+                  design={d}
+                  size="pair"
+                  brideName={couple.bride_name}
+                  groomName={couple.groom_name}
+                  weddingDate={couple.wedding_date}
+                  locale={locale}
+                  fallbackName={fallbackName}
+                />
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {children}
+
+      <div className="flex items-center justify-end gap-2 pt-1">
+        {changed && (
+          <button type="button" onClick={onRevert} className="btn btn-ghost btn-sm">
+            {t("design.swap.revert")}
+          </button>
+        )}
+        <button type="button" onClick={onToggle} className="btn btn-primary btn-sm">
+          {t("design.swap.done")}
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="scroll-mt-24" id={`tune-${id}`}>
@@ -88,53 +139,18 @@ export function TuneRow({
         />
       </button>
 
-      {open && (
-        <div
-          id={bodyId}
-          className="animate-fade-in space-y-4 bg-paper-50 px-4 py-4 dark:bg-umber-900/40"
-        >
-          {before && (
-            <div className="flex animate-fade-in-up items-end gap-4">
-              {(
-                [
-                  ["before", before],
-                  ["after", now],
-                ] as const
-              ).map(([which, d]) => (
-                <div key={which} className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-400 dark:text-umber-300">
-                    {t(`design.swap.${which}`)}
-                  </span>
-                  <span className="block w-24 overflow-hidden rounded-lg ring-1 ring-black/10 dark:ring-white/15">
-                    <ProofCard
-                      design={d}
-                      size="pair"
-                      brideName={couple.bride_name}
-                      groomName={couple.groom_name}
-                      weddingDate={couple.wedding_date}
-                      locale={locale}
-                      fallbackName={fallbackName}
-                    />
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {children}
-
-          <div className="flex items-center justify-end gap-2 pt-1">
-            {changed && (
-              <button type="button" onClick={onRevert} className="btn btn-ghost btn-sm">
-                {t("design.swap.revert")}
-              </button>
-            )}
-            <button type="button" onClick={onToggle} className="btn btn-primary btn-sm">
-              {t("design.swap.done")}
-            </button>
+      {open &&
+        (inlineBody ? (
+          <div id={bodyId} className="animate-fade-in bg-paper-50 px-4 py-4 dark:bg-umber-900/40">
+            {body}
           </div>
-        </div>
-      )}
+        ) : (
+          <Sheet open onClose={onToggle} title={label}>
+            <div id={bodyId} className="px-4 pb-4 pt-1">
+              {body}
+            </div>
+          </Sheet>
+        ))}
     </div>
   );
 }

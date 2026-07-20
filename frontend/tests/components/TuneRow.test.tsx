@@ -85,6 +85,35 @@ describe("TuneRow", () => {
     expect(onRevert).toHaveBeenCalled();
   });
 
+  it("expands inline at lg, where a preview column sits beside it", () => {
+    // happy-dom reports a 1024px viewport, so this is the desktop path.
+    renderRow(true, GARDEN);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByText("body-slot")).toBeTruthy();
+  });
+
+  it("opens as a modal sheet below lg, so the swap lands under the thumb", () => {
+    // Phones have no preview column and a long page, so the same body has to
+    // come up as a real modal instead of expanding somewhere off screen.
+    const real = window.matchMedia;
+    window.matchMedia = ((q: string) => ({
+      matches: false,
+      media: q,
+      addEventListener() {},
+      removeEventListener() {},
+    })) as unknown as typeof window.matchMedia;
+    try {
+      renderRow(true, GARDEN);
+      const sheet = screen.getByRole("dialog");
+      expect(sheet.getAttribute("aria-modal")).toBe("true");
+      expect(sheet.getAttribute("aria-label")).toBe("Colours");
+      // The body really is inside the sheet, not left behind in the row.
+      expect(sheet.textContent).toContain("body-slot");
+    } finally {
+      window.matchMedia = real;
+    }
+  });
+
   it("renders a before/now pair from the two designs, not from one", () => {
     renderRow(true, GARDEN);
     // Garden is long-form, Noir is Roman numerals. Seeing both proves the pair

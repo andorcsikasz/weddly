@@ -1681,6 +1681,20 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   animation: confetti-sway var(--cf-sway-duration, 1.8s) ease-in-out var(--cf-delay, 0s) infinite
     alternate;
 }
+/* Bottom sheet rise. A sheet that appears without travelling reads as a layout
+   jump; the short slide is what tells you it came from the bottom edge and can
+   go back there. Ease-out-quint, no overshoot: this is a surface arriving, not
+   a thing bouncing. Zeroed by the global prefers-reduced-motion rule. */
+@keyframes sheetUp {
+  from {
+    transform: translateY(12%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 /* Success check "pop" — a spring-ish scale + settle so the green tick lands
    with a beat when the success card first mounts. Pairs with the confetti. */
 @keyframes check-pop {

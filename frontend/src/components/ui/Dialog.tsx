@@ -1,32 +1,8 @@
 import { X } from "lucide-react";
-import { type ReactNode, useEffect, useId, useRef } from "react";
+import { type ReactNode, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "../../lib/i18n";
-
-/** Selector for elements that should participate in the focus trap.
- *  Broadened beyond the basics to include role="button" widgets we build by
- *  hand, native media controls (audio/video[controls]), and <summary> tags. */
-const FOCUSABLE_SELECTOR = [
-  "a[href]",
-  "button:not([disabled])",
-  "input:not([disabled])",
-  "select:not([disabled])",
-  "textarea:not([disabled])",
-  '[tabindex]:not([tabindex="-1"])',
-  '[role="button"][tabindex]:not([tabindex="-1"])',
-  "audio[controls]",
-  "video[controls]",
-  "summary",
-].join(",");
-
-function collectFocusables(node: HTMLElement): HTMLElement[] {
-  return Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((el) => {
-    if (el.hasAttribute("disabled")) return false;
-    if (el.getAttribute("aria-hidden") === "true") return false;
-    // Filter to elements that are actually rendered.
-    return el.getClientRects().length > 0;
-  });
-}
+import { useModalShell } from "./modal_shell";
 
 type DialogProps = {
   open: boolean;
@@ -46,6 +22,11 @@ type DialogProps = {
    * embedded previews like PDFs; "xl" (max-w-5xl) makes room for wide
    * grids like supplier comparisons. */
   size?: "sm" | "lg" | "xl";
+  /** Override the heading's typography when the title IS the content — a
+   *  prompt whose headline carries the whole message needs more weight than
+   *  the `text-xl` label that suits a form dialog. Replaces the size class
+   *  only; the h2's family/colour still come from the global heading rules. */
+  titleClassName?: string;
 };
 
 /** Portal-mounted accessible dialog. Manages ESC, focus restore, and scroll
@@ -60,81 +41,13 @@ export function Dialog({
   role = "alertdialog",
   closeOnBackdrop = false,
   size = "sm",
+  titleClassName = "text-xl",
 }: DialogProps) {
   const { t } = useT();
   const titleId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    triggerRef.current = (document.activeElement as HTMLElement) ?? null;
-    document.body.style.overflow = "hidden";
-    // Mark every direct child of <body> as `inert` so VoiceOver's rotor /
-    // tab order can't reach background content while the dialog is open.
-    // The portal node itself (where the dialog mounts) is skipped. We
-    // remember which nodes we actually toggled so we don't accidentally
-    // strip `inert` from siblings that were inert before the dialog opened.
-    const toggled: HTMLElement[] = [];
-    // Snapshot active element so we can find its portal root after render.
-    const container = containerRef.current;
-    for (const child of Array.from(document.body.children)) {
-      if (!(child instanceof HTMLElement)) continue;
-      if (container && child.contains(container)) continue;
-      if (child.hasAttribute("inert")) continue;
-      child.setAttribute("inert", "");
-      toggled.push(child);
-    }
-    return () => {
-      document.body.style.overflow = "";
-      for (const el of toggled) el.removeAttribute("inert");
-      // Restore focus to whatever opened the dialog (asynchronously so React
-      // finishes unmounting the portal before we touch the DOM).
-      const trigger = triggerRef.current;
-      queueMicrotask(() => trigger?.focus?.());
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-      // Trap Tab within the dialog so focus can't escape to the
-      // background page while the modal is open. Without this, screen
-      // reader + keyboard users can lose context.
-      if (e.key === "Tab") {
-        const node = containerRef.current;
-        if (!node) return;
-        const focusables = collectFocusables(node);
-        if (focusables.length === 0) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (!first || !last) return;
-        const active = document.activeElement as HTMLElement | null;
-        if (e.shiftKey && active === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && active === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  useEffect(() => {
-    if (!open) return;
-    const node = containerRef.current;
-    if (!node) return;
-    const [first] = collectFocusables(node);
-    first?.focus();
-  }, [open]);
+  useModalShell(open, onClose, containerRef);
 
   if (!open) return null;
 
@@ -164,7 +77,7 @@ export function Dialog({
         className={`card relative flex max-h-[100dvh] w-full flex-col ${size === "xl" ? "sm:max-w-5xl" : size === "lg" ? "sm:max-w-3xl" : "sm:max-w-md"} rounded-b-none rounded-t-2xl p-0 shadow-pop sm:max-h-[90vh] sm:rounded-2xl dark:bg-umber-800 dark:border-umber-700 dark:text-paper-100`}
       >
         <div className="flex shrink-0 items-start gap-3 px-4 pt-4 sm:px-6 sm:pt-6">
-          <h2 id={titleId} className="flex-1 pt-1 text-xl">
+          <h2 id={titleId} className={`flex-1 pt-1 ${titleClassName}`}>
             {title}
           </h2>
           <button
