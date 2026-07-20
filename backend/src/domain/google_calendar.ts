@@ -16,11 +16,9 @@ import {
   createCalendar,
   decryptToken,
   deleteCalendar,
-  deleteEvent,
   encryptToken,
   type GoogleEventBody,
-  insertEvent,
-  patchEvent,
+  reconcileCalendarEvents,
   refreshAccessToken,
   revokeToken,
 } from "../lib/google_calendar";
@@ -310,28 +308,16 @@ export async function syncCoupleCalendar(coupleId: number): Promise<void> {
       ).run(calendarId, now(), coupleId);
     }
 
-    const desired = buildDesiredEvents(coupleId, conn.time_zone);
-    const existing = listEventMap(coupleId);
-    const desiredKeys = new Set(desired.map((d) => `${d.sourceKind}:${d.sourceId}`));
-
-    for (const d of desired) {
-      const key = `${d.sourceKind}:${d.sourceId}`;
-      const prev = existing.get(key);
-      if (!prev) {
-        const evtId = await insertEvent(accessToken, calendarId, d.body);
-        upsertEventMap(coupleId, d.sourceKind, d.sourceId, evtId, d.hash);
-      } else if (prev.content_hash !== d.hash) {
-        await patchEvent(accessToken, calendarId, prev.google_event_id, d.body);
-        upsertEventMap(coupleId, d.sourceKind, d.sourceId, prev.google_event_id, d.hash);
-      }
-    }
-
-    for (const [key, prev] of existing) {
-      if (!desiredKeys.has(key)) {
-        await deleteEvent(accessToken, calendarId, prev.google_event_id);
-        deleteEventMapRow(coupleId, prev.source_kind, prev.source_id);
-      }
-    }
+    await reconcileCalendarEvents({
+      accessToken,
+      calendarId,
+      desired: buildDesiredEvents(coupleId, conn.time_zone),
+      store: {
+        list: () => listEventMap(coupleId),
+        upsert: (kind, id, eventId, hash) => upsertEventMap(coupleId, kind, id, eventId, hash),
+        remove: (kind, id) => deleteEventMapRow(coupleId, kind, id),
+      },
+    });
 
     db.prepare(
       "UPDATE google_calendar_connections SET sync_state = 'idle', last_synced_at = ?, last_error = NULL, updated_at = ? WHERE couple_id = ?",

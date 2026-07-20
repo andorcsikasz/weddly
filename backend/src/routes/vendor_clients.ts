@@ -13,6 +13,7 @@ import type { VendorClientDetail, VendorClientPayment } from "@shared/vendor_cli
 import { addAuditLog } from "../lib/audit";
 import type { BookingRow } from "../domain/supplier_bookings";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
 import {
   createPayment,
   deletePayment,
@@ -113,6 +114,7 @@ async function handlePatchClient(ctx: Ctx): Promise<Response> {
     depositPaid: parseOptionalInt(body.deposit_paid, "deposit_paid"),
   };
   updateVendorClientFields(bookingId, patch);
+  markVendorCalendarDirty(account.id);
   const refreshed = getOwnedBooking(account.id, bookingId);
   addAuditLog({
     actor_user_id: account.owner_user_id,

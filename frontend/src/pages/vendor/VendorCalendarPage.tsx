@@ -8,8 +8,11 @@
 // and open task deadlines from the board. CALENDAR mode is also the blocking
 // editor: clicking any editable day (in the grid or its pill in any view) opens
 // a small modal to block the whole day or only a from-to hour range. A
-// whole-day block shows a bare lock ("zero text"), a partial one a lock + the
-// blocked-hour count; the auto-updating next-free date sits below. Couples see
+// whole-day block shows a bare lock ("zero text"), a partial one an hourglass +
+// the blocked-hour count, and on the day/week hour grid a partial block is also
+// painted as a band over the hours it covers (the grid widens past its
+// 07:00-20:00 default if a block falls outside it, so nothing is ever clipped
+// out of view). The auto-updating next-free date sits below. Couples see
 // whole-day blocks as booked and partial blocks as a distinct "partly booked"
 // marker on the public busy calendar. Blocking is a PRO feature; a FREE vendor
 // gets the read-only calendar plus the upgrade prompt.
@@ -24,6 +27,7 @@ import {
   ChevronRight,
   Clock,
   Heart,
+  Hourglass,
   ListChecks,
   Lock,
   SquareKanban,
@@ -34,6 +38,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import type { VendorAvailabilityView, VendorBlockedDay } from "@shared/listings";
 import type { VendorClientView } from "@shared/vendor_clients";
 import type { VendorBoardStatus, VendorTask } from "@shared/vendor_tasks";
+import { GoogleCalendarConnect } from "../../components/GoogleCalendarConnect";
 import { useConfirm } from "../../components/ui/ConfirmDialogProvider";
 import { DateField } from "../../components/ui/DateField";
 import { Dialog } from "../../components/ui/Dialog";
@@ -43,6 +48,7 @@ import {
   vendorAvailabilityApi,
   vendorBillingApi,
   vendorClientsApi,
+  vendorGoogleCalendarApi,
   vendorTaskApi,
 } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
@@ -126,29 +132,53 @@ function pillColor(kind: CalEvent["kind"]): string {
   }
 }
 
+/** True for a block that covers only part of the day. */
+function isPartialBlock(ev: CalEvent): boolean {
+  return ev.kind === "blocked" && Array.isArray(ev.hours) && ev.hours.length > 0;
+}
+
+/** Single source of truth for a category's glyph. Pills, the agenda rows and
+ *  the legend all draw from here, so a category can never end up reading one
+ *  way on the grid and another way in the list. A whole-day block is a closed
+ *  lock, a partial one an hourglass — the two used to differ only by the
+ *  opacity of the same lock, which was unreadable at pill size. */
+function EventGlyph({ ev, size = 10 }: { ev: CalEvent; size?: number }) {
+  switch (ev.kind) {
+    case "booked":
+      return <Heart size={size} className="shrink-0" aria-hidden="true" />;
+    case "pending":
+      return <Clock size={size} className="shrink-0" aria-hidden="true" />;
+    case "blocked":
+      return isPartialBlock(ev) ? (
+        <Hourglass size={size} className="shrink-0" aria-hidden="true" />
+      ) : (
+        <Lock size={size} className="shrink-0" aria-hidden="true" />
+      );
+    case "task":
+      return (
+        <span
+          className="shrink-0 rounded-full bg-current opacity-70"
+          style={{ width: size * 0.6, height: size * 0.6 }}
+          aria-hidden="true"
+        />
+      );
+  }
+}
+
 function PillBody({ ev }: { ev: CalEvent }) {
   // Blocked pills are icon-first with no day label: a whole-day block is a bare
   // lock ("zero text"), a partial block adds the blocked-hour count ("4 ó").
   if (ev.kind === "blocked") {
     return (
       <>
-        <Lock size={10} className="shrink-0" aria-hidden="true" />
+        <EventGlyph ev={ev} />
         {ev.hoursBadge ? <span className="truncate tabular-nums">{ev.hoursBadge}</span> : null}
       </>
     );
   }
   return (
     <>
-      {ev.kind === "booked" ? (
-        <Heart size={10} className="shrink-0" aria-hidden="true" />
-      ) : ev.kind === "pending" ? (
-        <Clock size={10} className="shrink-0" aria-hidden="true" />
-      ) : (
-        <span
-          className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-70"
-          aria-hidden="true"
-        />
-      )}
+      <EventGlyph ev={ev} />
       <span className="truncate">{ev.label}</span>
     </>
   );
@@ -409,7 +439,60 @@ function MonthView({
 
 // ── Time-grid view (day / 4day / week) ───────────────────────────────────────
 
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 07:00 - 20:00
+const DAY_START = 7; // default visible window: 07:00 - 20:00
+const DAY_END = 21; // exclusive
+
+/** A partial-hour block drawn over the hour grid at its true position.
+ *  Clicking it opens the same day editor the pill does. */
+function HourBand({
+  ev,
+  start,
+  end,
+  windowStart,
+  span,
+  onOpenDay,
+  openTitle,
+}: {
+  ev: CalEvent;
+  start: number;
+  end: number;
+  windowStart: number;
+  span: number;
+  onOpenDay?: (iso: string) => void;
+  openTitle: string;
+}) {
+  const top = ((start - windowStart) / span) * 100;
+  const height = ((end - start) / span) * 100;
+  const shared =
+    "absolute inset-x-0.5 z-[5] overflow-hidden rounded-md border border-blush-300 bg-blush-100/85 px-1 py-0.5 text-left text-[10px] leading-tight text-blush-900 dark:border-blush-700 dark:bg-blush-900/50 dark:text-blush-100";
+  const body = (
+    <>
+      <span className="flex items-center gap-1 font-medium tabular-nums">
+        <EventGlyph ev={ev} />
+        {`${hourLabel(start)}-${hourLabel(end)}`}
+      </span>
+    </>
+  );
+  const style = { top: `${top}%`, height: `${height}%` };
+  if (!onOpenDay) {
+    return (
+      <div className={shared} style={style} title={ev.label}>
+        {body}
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenDay(ev.date)}
+      title={openTitle}
+      className={`${shared} cursor-pointer transition-colors hover:bg-blush-200/90 dark:hover:bg-blush-900/70`}
+      style={style}
+    >
+      {body}
+    </button>
+  );
+}
 
 function TimeGridView({
   days,
@@ -427,11 +510,35 @@ function TimeGridView({
   openTitleFor: (iso: string) => string;
 }) {
   const { locale } = useT();
+
+  // Partial-hour blocks are drawn as real bands on the grid, so the window has
+  // to stretch to whatever is actually blocked in view — a 05:00-06:00 block
+  // would otherwise be silently clipped out of the 07:00-20:00 default.
+  const {
+    hours: HOURS,
+    windowStart,
+    windowEnd,
+  } = useMemo(() => {
+    let lo = DAY_START;
+    let hi = DAY_END;
+    for (const d of days) {
+      for (const ev of eventsByDate.get(ymd(d)) ?? []) {
+        if (!isPartialBlock(ev) || !ev.hours) continue;
+        const { start, end } = blockedHoursRange(ev.hours);
+        lo = Math.min(lo, start);
+        hi = Math.max(hi, end);
+      }
+    }
+    return {
+      hours: Array.from({ length: hi - lo }, (_, i) => i + lo),
+      windowStart: lo,
+      windowEnd: hi,
+    };
+  }, [days, eventsByDate]);
+
+  const span = windowEnd - windowStart;
   const now = new Date();
-  const nowTop =
-    HOURS[0] !== undefined
-      ? ((now.getHours() + now.getMinutes() / 60 - HOURS[0]) / HOURS.length) * 100
-      : 0;
+  const nowTop = ((now.getHours() + now.getMinutes() / 60 - windowStart) / span) * 100;
   const showNow = days.some((d) => ymd(d) === todayStr) && nowTop >= 0 && nowTop <= 100;
   const wd = (d: Date) =>
     new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", { weekday: "short" }).format(d);
@@ -465,8 +572,10 @@ function TimeGridView({
         })}
       </div>
 
-      {/* All-day band: bookings, inquiries, blocked days and task deadlines
-          are all date-only, so everything the vendor tracks lives here. */}
+      {/* All-day band: bookings, inquiries, whole-day blocks and task deadlines
+          are date-only, so they live here. Partial-hour blocks are the one
+          exception - they are drawn on the hour grid below at their real
+          position, so repeating them here would double-count the day. */}
       <div
         className="grid border-b border-paper-200 dark:border-umber-800"
         style={{ gridTemplateColumns: `3.5rem repeat(${days.length}, minmax(0,1fr))` }}
@@ -475,7 +584,7 @@ function TimeGridView({
           {allDayLabel}
         </div>
         {days.map((d) => {
-          const evs = eventsByDate.get(ymd(d)) ?? [];
+          const evs = (eventsByDate.get(ymd(d)) ?? []).filter((ev) => !isPartialBlock(ev));
           return (
             <div
               key={ymd(d)}
@@ -494,7 +603,9 @@ function TimeGridView({
         })}
       </div>
 
-      {/* Hour grid (kept for planner parity; vendor events are date-only) */}
+      {/* Hour grid. Partial-hour blocks are painted here as bands spanning the
+          hours they actually cover, so the vendor can read their booked hours
+          off the grid instead of having to open every day. */}
       <div className="relative max-h-[60vh] overflow-y-auto">
         <div
           className="relative grid"
@@ -515,6 +626,23 @@ function TimeGridView({
               {HOURS.map((h) => (
                 <div key={h} className="h-12 border-b border-paper-100 dark:border-umber-800/60" />
               ))}
+              {(eventsByDate.get(ymd(d)) ?? [])
+                .filter((ev) => isPartialBlock(ev) && ev.hours)
+                .map((ev) => {
+                  const { start, end } = blockedHoursRange(ev.hours as number[]);
+                  return (
+                    <HourBand
+                      key={`${ev.date}-${start}-${end}`}
+                      ev={ev}
+                      start={start}
+                      end={end}
+                      windowStart={windowStart}
+                      span={span}
+                      onOpenDay={onOpenDay}
+                      openTitle={openTitleFor(ev.date)}
+                    />
+                  );
+                })}
               {showNow && ymd(d) === todayStr && (
                 <div
                   className="pointer-events-none absolute left-0 right-0 z-10 flex items-center"
@@ -561,14 +689,17 @@ function ScheduleView({
       day: "numeric",
       weekday: "short",
     }).format(parseYmd(s));
-  const dot = (kind: CalEvent["kind"]) =>
+  // Same glyph vocabulary as the grid pills and the legend: an agenda row has
+  // to be readable as "manual block" vs "real booking" without parsing its
+  // text, which a bare colour dot never allowed.
+  const glyphColor = (kind: CalEvent["kind"]) =>
     kind === "booked"
-      ? "bg-steel-500"
+      ? "text-steel-600 dark:text-steel-300"
       : kind === "pending"
-        ? "bg-amber-500"
+        ? "text-amber-500"
         : kind === "blocked"
-          ? "bg-blush-500"
-          : "bg-moss-500";
+          ? "text-blush-500"
+          : "text-moss-500";
   const rowClass =
     "flex w-full items-center gap-4 border-b border-paper-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-steel-50 dark:border-umber-800 dark:hover:bg-steel-900/20";
   return (
@@ -579,10 +710,9 @@ function ScheduleView({
             <span className="w-28 shrink-0 text-sm text-umber-500 dark:text-umber-400">
               {fmt(ev.date)}
             </span>
-            <span
-              className={`h-2.5 w-2.5 shrink-0 rounded-full ${dot(ev.kind)}`}
-              aria-hidden="true"
-            />
+            <span className={`flex w-4 shrink-0 justify-center ${glyphColor(ev.kind)}`}>
+              <EventGlyph ev={ev} size={14} />
+            </span>
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-umber-900 dark:text-paper-50">
               {ev.label}
             </span>
@@ -951,8 +1081,16 @@ function DayBlockEditor({
 }) {
   const { t, locale } = useT();
   const alreadyBlocked = current !== undefined;
+  // A day already blocked whole seeds the hour range as the FULL day, not the
+  // 09:00-17:00 default a fresh day gets. Otherwise merely tabbing over to
+  // "certain hours" and saving would quietly shrink a full block to 8 hours and
+  // reopen the rest of the day for booking.
   const initialRange =
-    current && current.length > 0 ? blockedHoursRange(current) : { start: 9, end: 17 };
+    current && current.length > 0
+      ? blockedHoursRange(current)
+      : current === null
+        ? { start: 0, end: 24 }
+        : { start: 9, end: 17 };
   const [mode, setMode] = useState<BlockMode>(current && current.length > 0 ? "hours" : "all_day");
   const [start, setStart] = useState(initialRange.start);
   const [end, setEnd] = useState(initialRange.end);
@@ -966,6 +1104,13 @@ function DayBlockEditor({
       return;
     }
     if (!validRange) return;
+    // A 00:00-24:00 "range" IS a whole-day block, and it has to be stored as
+    // one: the public busy calendar treats a partial block as a day that is
+    // still available, so persisting 24 hours would leave the day bookable.
+    if (start === 0 && end === 24) {
+      onSave(null);
+      return;
+    }
     onSave(Array.from({ length: end - start }, (_, i) => start + i));
   }
 
@@ -1413,6 +1558,13 @@ export default function VendorCalendarPage() {
         </h1>
 
         <div className="ml-auto flex items-center gap-2.5">
+          {/* Optional Google Calendar push-sync. Renders nothing until the
+              operator has configured the integration, so an unconfigured deploy
+              shows no dead affordance. Calendar mode only — it syncs the
+              calendar, not the task board. */}
+          {mode === "calendar" && (
+            <GoogleCalendarConnect api={vendorGoogleCalendarApi} keyPrefix="vendor_calendar" />
+          )}
           {mode === "calendar" && <ViewDropdown view={view} onChange={changeView} />}
 
           <div className="inline-flex rounded-full border border-paper-300 p-0.5 dark:border-umber-700">
@@ -1524,7 +1676,7 @@ export default function VendorCalendarPage() {
               {t("vendor_calendar.legend_blocked")}
             </span>
             <span className="flex items-center gap-1.5">
-              <Lock size={12} className="text-blush-400/70" aria-hidden="true" />
+              <Hourglass size={12} className="text-blush-500" aria-hidden="true" />
               {t("vendor_calendar.legend_blocked_partial")}
             </span>
             <span className="flex items-center gap-1.5">

@@ -26,6 +26,7 @@ import {
 import { requireAdmin } from "../domain/users";
 import { ensureVendorScheduledSubscription } from "./vendor_billing";
 import { db } from "../db";
+import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
 
 const VALID_STATUSES = new Set<BookingStatus>([
   "requested",
@@ -112,6 +113,10 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       target_id: booking.id,
       after: { supplier_id: supplierId, event_date: body.event_date },
     });
+    // A new inquiry is a pending event on the VENDOR's calendar, and this
+    // request is the couple's (or an admin's), so the owner comes off the
+    // booking rather than the session.
+    markVendorCalendarDirty(booking.vendor_account_id);
     // Freemium: when this inquiry spent the vendor's last free lead credit the
     // first payment is now scheduled: create the Stripe subscription in the
     // background (idempotent; also retried from the vendor billing status read).
@@ -145,6 +150,9 @@ async function handleStatusPatch(ctx: Ctx): Promise<Response> {
   }
   const updated = updateBookingStatus(id, body.status as BookingStatus);
   if (!updated) throw new HttpError(404, "Booking not found");
+  // Admin-driven, so it changes a calendar the acting user doesn't own —
+  // resolve the owning vendor from the booking rather than the session.
+  markVendorCalendarDirty(existing.vendor_account_id);
   addAuditLog({
     actor_user_id: admin.id,
     couple_id: existing.couple_id,

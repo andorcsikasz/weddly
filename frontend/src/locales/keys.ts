@@ -760,8 +760,6 @@ export interface LocaleMessages {
     gallery_show_aria: string;
     gallery_delete_failed: string;
     section_videos: string;
-    videos_intro: string;
-    videos_hint: string;
     videos_add: string;
     videos_url_label: string;
     videos_url_placeholder: string;
@@ -785,7 +783,6 @@ export interface LocaleMessages {
     videos_move_down: string;
     videos_drag: string;
     section_packages: string;
-    packages_intro: string;
     packages_add: string;
     packages_default_name: string;
     /** Receives `{n}` and `{max}`. */
@@ -1145,6 +1142,24 @@ export interface LocaleMessages {
    *  schedule) over bookings + inquiries + blocked days + task deadlines;
    *  the tasks mode is the Trello-style board (todo / doing / done). */
   vendor_calendar: {
+    /** Optional Google Calendar push-sync. Same key names as `timeline.gcal_*`
+     *  (the UI component is shared and takes the namespace as a prefix), but the
+     *  copy speaks about bookings rather than the wedding timeline. */
+    gcal_connect: string;
+    gcal_connecting: string;
+    gcal_connected_label: string;
+    gcal_sync_now: string;
+    gcal_syncing: string;
+    gcal_disconnect: string;
+    gcal_disconnect_title: string;
+    gcal_disconnect_body: string;
+    gcal_disconnect_confirm: string;
+    gcal_menu_aria: string;
+    gcal_toast_connected: string;
+    gcal_toast_synced: string;
+    gcal_toast_disconnected: string;
+    gcal_toast_error: string;
+    gcal_toast_denied: string;
     page_title: string;
     mode_calendar: string;
     mode_tasks: string;

@@ -1863,6 +1863,45 @@ CREATE TABLE IF NOT EXISTS google_calendar_event_map (
   PRIMARY KEY (couple_id, source_kind, source_id)
 );
 
+-- Vendor-side Google Calendar push-sync. A PARALLEL aggregate to the couple
+-- tables above, not a widening of them: `google_calendar_connections.couple_id`
+-- is both the primary key AND the foreign key, so there is no additive way to
+-- give those tables a second owner type (the repo never DROPs or RENAMEs). Same
+-- reason `vendor_subscriptions` sits beside the couples billing columns.
+--
+-- One connection per vendor ACCOUNT (not per user — vendor_accounts.owner_user_id
+-- is UNIQUE, so they're 1:1 today, but the account is the thing that owns the
+-- bookings and blocked dates). Weddly creates a dedicated secondary calendar in
+-- the vendor's Google account and one-way pushes confirmed weddings, pending
+-- inquiries, blocked days and task deadlines into it. Google is never read back:
+-- nothing in the vendor's Google account can change Weddly availability.
+CREATE TABLE IF NOT EXISTS vendor_google_calendar_connections (
+  vendor_account_id INTEGER PRIMARY KEY REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  connected_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  google_email      TEXT    NOT NULL,
+  calendar_id       TEXT,                                   -- Google secondary calendar id, set after creation
+  time_zone         TEXT    NOT NULL DEFAULT 'Europe/Budapest',
+  access_token_enc  TEXT,                                   -- AES-256-GCM(iv:tag:ct)
+  refresh_token_enc TEXT,                                   -- AES-256-GCM(iv:tag:ct)
+  token_expiry      INTEGER,                                -- unix ms; refresh before this
+  sync_state        TEXT    NOT NULL DEFAULT 'dirty',       -- 'idle' | 'dirty'
+  last_synced_at    INTEGER,
+  last_error        TEXT,
+  created_at        INTEGER NOT NULL,
+  updated_at        INTEGER NOT NULL
+);
+
+-- Same insert/patch/delete diffing as the couple event map, keyed by vendor.
+CREATE TABLE IF NOT EXISTS vendor_google_calendar_event_map (
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  source_kind       TEXT    NOT NULL,                       -- 'booking' | 'inquiry' | 'blocked' | 'task'
+  source_id         TEXT    NOT NULL,                       -- supplier_bookings.id / blocked_date / vendor_tasks.id
+  google_event_id   TEXT    NOT NULL,
+  content_hash      TEXT    NOT NULL,
+  updated_at        INTEGER NOT NULL,
+  PRIMARY KEY (vendor_account_id, source_kind, source_id)
+);
+
 -- Signups that haven't proved their email address yet. A password registration
 -- lands HERE, not in `users` — the users row is only minted when the verify
 -- link is clicked (see routes/email_verify.ts handleConsume).

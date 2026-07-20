@@ -459,8 +459,7 @@ const en: LocaleMessages = {
     welcome: "Welcome, {name}!",
     intro:
       "You've successfully claimed your listing. The fields below are what couples see, keep them sharp.",
-    billing_founding:
-      "Founding member · yours until {date}. No card needed, we'll remind you first.",
+    billing_founding: "Founding member · yours until {date}",
     billing_trial: "Tryout · everything is on through {date}.",
     billing_lead_window:
       "Pro is on us until your first {total} direct inquiries arrive ({used} of {total} so far).",
@@ -576,9 +575,6 @@ const en: LocaleMessages = {
     gallery_show_aria: "Show photo {n}",
     gallery_delete_failed: "Could not delete, please try again.",
     section_videos: "Videos",
-    videos_intro: "Help couples get to know your work through motion.",
-    videos_hint:
-      "Paste a YouTube link to showcase highlights, ceremonies, speeches, or cinematic films.",
     videos_add: "Add YouTube video",
     videos_url_label: "YouTube video link",
     videos_url_placeholder: "Paste a YouTube link",
@@ -600,8 +596,6 @@ const en: LocaleMessages = {
     videos_move_down: "Move video later",
     videos_drag: "Drag to reorder",
     section_packages: "Packages",
-    packages_intro:
-      "Add up to 3 packages with prices so couples know what to expect. You can also attach a PDF price list.",
     packages_add: "Add package",
     packages_default_name: "Package",
     packages_count: "{n} / {max} packages",
@@ -932,6 +926,23 @@ const en: LocaleMessages = {
     },
   },
   vendor_calendar: {
+    // Optional Google Calendar push-sync (see components/GoogleCalendarConnect).
+    gcal_connect: "Connect Google Calendar",
+    gcal_connecting: "Connecting…",
+    gcal_connected_label: "Google Calendar",
+    gcal_sync_now: "Sync now",
+    gcal_syncing: "Syncing…",
+    gcal_disconnect: "Disconnect",
+    gcal_disconnect_title: "Disconnect Google Calendar?",
+    gcal_disconnect_body:
+      "We'll delete the Weddly calendar from your Google account and stop syncing. Your bookings and blocked dates stay in Weddly.",
+    gcal_disconnect_confirm: "Disconnect",
+    gcal_menu_aria: "Google Calendar options",
+    gcal_toast_connected: "Google Calendar connected. Your bookings are syncing.",
+    gcal_toast_synced: "Synced to Google Calendar.",
+    gcal_toast_disconnected: "Google Calendar disconnected.",
+    gcal_toast_error: "Couldn't connect Google Calendar. Please try again.",
+    gcal_toast_denied: "Google Calendar connection was cancelled.",
     page_title: "Calendar",
     mode_calendar: "Calendar",
     mode_tasks: "Tasks",

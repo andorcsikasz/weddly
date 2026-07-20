@@ -275,6 +275,77 @@ export async function deleteEvent(
   }
 }
 
+// ─── Idempotent event reconcile ──────────────────────────────────────────────
+// The insert / patch-if-changed / delete-orphans diff, shared by every aggregate
+// that pushes a calendar (couples and vendors today). Kept here rather than
+// duplicated per domain because it is the part with real logic; the caller
+// supplies WHAT it wants on the calendar and how to persist the source→event
+// mapping, and this owns the "make Google match that, changing as little as
+// possible" algorithm.
+//
+// Still app-agnostic: it never learns what a couple or a vendor is — the store
+// is injected, so lib/ keeps its no-imports-from-domain rule.
+
+/** One event the caller wants to exist, keyed by a stable source identity. */
+export interface DesiredCalendarEvent {
+  sourceKind: string;
+  sourceId: string;
+  /** Hash of `body`. An unchanged hash skips the API call entirely. */
+  hash: string;
+  body: GoogleEventBody;
+}
+
+/** A row of the caller's source→Google-event mapping table. */
+export interface CalendarEventMapRow {
+  source_kind: string;
+  source_id: string;
+  google_event_id: string;
+  content_hash: string;
+}
+
+/** Persistence hooks for the mapping table, keyed `"${kind}:${id}"`. */
+export interface CalendarEventStore {
+  list(): Map<string, CalendarEventMapRow>;
+  upsert(kind: string, id: string, googleEventId: string, hash: string): void;
+  remove(kind: string, id: string): void;
+}
+
+/** Make `calendarId` match `desired`, touching only what changed: insert events
+ *  with no mapping, patch those whose content hash moved (reusing the existing
+ *  Google event id so a re-sync never duplicates), and delete mapped events that
+ *  are no longer desired. Throws on the first Google failure — callers are
+ *  expected to leave their connection dirty and retry, which is safe because
+ *  every write here is idempotent and the next pass re-diffs. */
+export async function reconcileCalendarEvents(input: {
+  accessToken: string;
+  calendarId: string;
+  desired: readonly DesiredCalendarEvent[];
+  store: CalendarEventStore;
+}): Promise<void> {
+  const { accessToken, calendarId, desired, store } = input;
+  const existing = store.list();
+  const desiredKeys = new Set(desired.map((d) => `${d.sourceKind}:${d.sourceId}`));
+
+  for (const d of desired) {
+    const key = `${d.sourceKind}:${d.sourceId}`;
+    const prev = existing.get(key);
+    if (!prev) {
+      const evtId = await insertEvent(accessToken, calendarId, d.body);
+      store.upsert(d.sourceKind, d.sourceId, evtId, d.hash);
+    } else if (prev.content_hash !== d.hash) {
+      await patchEvent(accessToken, calendarId, prev.google_event_id, d.body);
+      store.upsert(d.sourceKind, d.sourceId, prev.google_event_id, d.hash);
+    }
+  }
+
+  for (const [key, prev] of existing) {
+    if (!desiredKeys.has(key)) {
+      await deleteEvent(accessToken, calendarId, prev.google_event_id);
+      store.remove(prev.source_kind, prev.source_id);
+    }
+  }
+}
+
 // ─── Country → IANA timezone (for the dedicated calendar + timed run-sheet) ───
 // Weddly's markets, mapped to a representative zone. Unknown/absent country
 // falls back to Europe/Budapest (the launch market).

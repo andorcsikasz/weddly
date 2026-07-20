@@ -263,6 +263,9 @@ export function wipeAll(): void {
     // bleed into the next test's status assertions.
     "google_calendar_event_map",
     "google_calendar_connections",
+    // Same for the vendor-side push-sync (parallel aggregate, own tables).
+    "vendor_google_calendar_event_map",
+    "vendor_google_calendar_connections",
     // Couple-card deck feedback + the 26th-card suggestions. Anonymous, keyed by
     // deck_id string (no FK to anything we wipe), so nothing forces the order —
     // but they MUST be listed or rows accumulate across runs and inflate the

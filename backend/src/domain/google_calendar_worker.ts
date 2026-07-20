@@ -8,6 +8,7 @@
 import { GOOGLE_CALENDAR_ENABLED } from "../config";
 import { log } from "../lib/logger";
 import { listDirtyConnectionCoupleIds, syncCoupleCalendar } from "./google_calendar";
+import { listDirtyVendorAccountIds, syncVendorCalendar } from "./vendor_google_calendar";
 
 /** How often to drain the dirty queue. ~30s keeps "instant" feeling instant
  *  without hammering the Google API when nothing changed (idle couples cost a
@@ -27,6 +28,16 @@ async function drain(): Promise<void> {
       // guard anyway so one couple can't wedge the loop.
       await syncCoupleCalendar(coupleId).catch((e) =>
         log.error("gcal.worker_couple_failed", { coupleId, err: String(e) }),
+      );
+    }
+    // Vendors drain on the SAME timer rather than a second interval: both queues
+    // are one indexed query when idle, and sharing the tick keeps the "never
+    // overlap" guarantee across both aggregates instead of two loops racing for
+    // the Google API quota.
+    const vendorIds = listDirtyVendorAccountIds();
+    for (const vendorAccountId of vendorIds) {
+      await syncVendorCalendar(vendorAccountId).catch((e) =>
+        log.error("gcal.worker_vendor_failed", { vendorAccountId, err: String(e) }),
       );
     }
   } finally {

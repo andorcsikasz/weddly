@@ -13,6 +13,7 @@
 import type { VendorAvailabilityView } from "@shared/listings";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
 import {
   blockDate,
   isIsoDate,
@@ -78,6 +79,7 @@ async function handleBlock(ctx: Ctx): Promise<Response> {
       : null;
 
   blockDate(account.id, date, hours, reason);
+  markVendorCalendarDirty(account.id);
   addAuditLog({
     actor_user_id: account.owner_user_id,
     couple_id: null,
@@ -97,6 +99,7 @@ async function handleUnblock(ctx: Ctx): Promise<Response> {
   // Idempotent: unblocking a date that isn't blocked is a no-op success, so a
   // double-click or retry after a network blip doesn't surface an error.
   const removed = unblockDate(account.id, date);
+  if (removed) markVendorCalendarDirty(account.id);
   if (removed) {
     addAuditLog({
       actor_user_id: account.owner_user_id,

@@ -468,7 +468,7 @@ const hu: LocaleMessages = {
     page_body: "Szerkeszd, ahogy a párok látnak a Weddly katalógusban.",
     welcome: "Üdv, {name}!",
     intro: "Sikeresen átvetted a hirdetésedet. Az alábbi mezőket a párok is látják, tartsd élesen.",
-    billing_founding: "Alapító tag · érvényes eddig: {date} · bankkártya nem kell, előtte szólunk.",
+    billing_founding: "Alapító tag · érvényes eddig: {date}",
     billing_trial: "Próbaidő · minden funkció aktív eddig: {date}",
     billing_lead_window:
       "A Pro-t mi álljuk az első {total} közvetlen megkeresésedig ({used} / {total} eddig).",
@@ -583,9 +583,6 @@ const hu: LocaleMessages = {
     gallery_show_aria: "{n}. fotó megjelenítése",
     gallery_delete_failed: "Nem sikerült törölni, próbáld újra.",
     section_videos: "Videók",
-    videos_intro: "Segíts a pároknak mozgóképen megismerni a munkádat.",
-    videos_hint:
-      "Illessz be egy YouTube-linket, hogy megmutasd a legjobb pillanatokat, a szertartást, a köszöntőket vagy egy filmes összeállítást.",
     videos_add: "YouTube-videó hozzáadása",
     videos_url_label: "YouTube-videó linkje",
     videos_url_placeholder: "Illeszd be a YouTube-linket",
@@ -608,8 +605,6 @@ const hu: LocaleMessages = {
     videos_move_down: "Videó hátrébb",
     videos_drag: "Húzd az átrendezéshez",
     section_packages: "Árajánlatok",
-    packages_intro:
-      "Adj meg akár 3 csomagot árral, hogy a párok lássák, mire számíthatnak. Feltölthetsz PDF árlistát is.",
     packages_add: "Csomag hozzáadása",
     packages_default_name: "Csomag",
     packages_count: "{n} / {max} csomag",
@@ -944,6 +939,23 @@ const hu: LocaleMessages = {
     },
   },
   vendor_calendar: {
+    // Opcionalis Google Calendar szinkron (lasd components/GoogleCalendarConnect).
+    gcal_connect: "Google Naptár összekapcsolása",
+    gcal_connecting: "Kapcsolódás…",
+    gcal_connected_label: "Google Naptár",
+    gcal_sync_now: "Szinkronizálás most",
+    gcal_syncing: "Szinkronizálás…",
+    gcal_disconnect: "Szétkapcsolás",
+    gcal_disconnect_title: "Leválasztod a Google Naptárat?",
+    gcal_disconnect_body:
+      "Töröljük a Weddly naptárat a Google-fiókodból, és leáll a szinkron. A foglalásaid és a blokkolt napjaid megmaradnak a Weddlyben.",
+    gcal_disconnect_confirm: "Szétkapcsolás",
+    gcal_menu_aria: "Google Naptár beállításai",
+    gcal_toast_connected: "Google Naptár összekapcsolva. A foglalásaid szinkronizálódnak.",
+    gcal_toast_synced: "Szinkronizálva a Google Naptárba.",
+    gcal_toast_disconnected: "Google Naptár leválasztva.",
+    gcal_toast_error: "Nem sikerült összekapcsolni a Google Naptárat. Próbáld újra.",
+    gcal_toast_denied: "A Google Naptár összekapcsolása megszakadt.",
     page_title: "Naptár",
     mode_calendar: "Naptár",
     mode_tasks: "Teendők",

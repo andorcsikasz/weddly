@@ -8,7 +8,6 @@
 // exactly like the Google-sign-in / Stripe "configured?" pattern: unconfigured =
 // status.configured:false and /connect 503s, app unaffected.
 
-import { createHmac, timingSafeEqual } from "node:crypto";
 import type { GoogleCalendarStatus } from "@shared/types";
 import { CONFIG, GOOGLE_CALENDAR_ENABLED } from "../config";
 import { getCoupleForUser } from "../domain/couples";
@@ -19,38 +18,10 @@ import {
   syncCoupleCalendar,
   timeZoneForCouple,
 } from "../domain/google_calendar";
-import { now } from "../db";
 import { buildAuthUrl, exchangeCode } from "../lib/google_calendar";
 import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
-
-const STATE_TTL_MS = 10 * 60 * 1000;
-
-// ─── Signed OAuth `state` (CSRF + binds the flow to the initiating user) ──────
-// Format: base64url(`${userId}.${exp}`).sig, HMAC-SHA256 with JWT_SECRET. The
-// callback is public (a top-level browser redirect can't carry the session
-// bearer), so the state is what authenticates it.
-
-function signState(userId: number): string {
-  const payload = Buffer.from(`${userId}.${now() + STATE_TTL_MS}`).toString("base64url");
-  const sig = createHmac("sha256", CONFIG.jwtSecret).update(payload).digest("base64url");
-  return `${payload}.${sig}`;
-}
-
-function verifyState(state: string): number | null {
-  const dot = state.lastIndexOf(".");
-  if (dot < 0) return null;
-  const payload = state.slice(0, dot);
-  const sig = state.slice(dot + 1);
-  const expected = createHmac("sha256", CONFIG.jwtSecret).update(payload).digest("base64url");
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  const [uidStr, expStr] = Buffer.from(payload, "base64url").toString("utf8").split(".");
-  const uid = Number(uidStr);
-  const exp = Number(expStr);
-  if (!Number.isInteger(uid) || !Number.isFinite(exp) || exp < now()) return null;
-  return uid;
-}
+import { signOAuthState, verifyOAuthState } from "../lib/oauth_state";
+import { handleVendorCalendarCallback } from "./vendor_google_calendar";
 
 function statusFor(coupleId: number): GoogleCalendarStatus {
   const conn = getConnectionRow(coupleId);
@@ -83,7 +54,7 @@ function handleConnect(ctx: Ctx): Response {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   if (!GOOGLE_CALENDAR_ENABLED) throw new HttpError(503, "Google Calendar is not configured");
-  return json({ url: buildAuthUrl(signState(userId)) });
+  return json({ url: buildAuthUrl(signOAuthState("couple", userId)) });
 }
 
 function redirect(pathAndQuery: string): Response {
@@ -94,18 +65,28 @@ function redirect(pathAndQuery: string): Response {
 }
 
 /** Google redirects the browser here after consent. Public — authenticated by
- *  the signed `state`, not the session bearer. Exchanges the code, stores the
- *  (encrypted) tokens, and kicks off the initial sync, then bounces back to the
- *  timeline with a status flag the page turns into a toast. */
+ *  the signed `state`, not the session bearer.
+ *
+ *  ONE callback serves both the couple and the vendor consent flows, so enabling
+ *  the vendor side needed no new redirect URI in the Google Cloud Console. The
+ *  flow is read from the SIGNED `kind` in the state (see lib/oauth_state.ts), so
+ *  a state minted by one flow cannot be replayed against the other. */
 async function handleCallback(ctx: Ctx): Promise<Response> {
   const params = ctx.url.searchParams;
+  const state = params.get("state");
+  // The landing page depends on which flow this was, and we only know that once
+  // the state verifies. An unverifiable state falls back to the couple timeline.
+  const decoded = state ? verifyOAuthState(state) : null;
+  if (decoded?.kind === "vendor") {
+    return handleVendorCalendarCallback(ctx, decoded.userId, redirect);
+  }
+
   if (params.get("error")) return redirect("/app/timeline?gcal=denied");
   const code = params.get("code");
-  const state = params.get("state");
   if (!code || !state) return redirect("/app/timeline?gcal=error");
 
-  const userId = verifyState(state);
-  if (userId === null) return redirect("/app/timeline?gcal=error");
+  if (decoded === null) return redirect("/app/timeline?gcal=error");
+  const userId = decoded.userId;
   const couple = getCoupleForUser(userId);
   if (!couple) return redirect("/app/timeline?gcal=error");
 

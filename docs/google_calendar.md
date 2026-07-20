@@ -57,6 +57,44 @@ reports `configured: true`, and the button appears on `/app/timeline`.
 - **Disconnect** deletes the whole dedicated calendar from Google and revokes the
   token. The couple's data stays untouched in Weddly.
 
+## Vendors (the same integration, second aggregate)
+
+Vendors get the identical opt-in flow on `/vendor/calendar`, pushing their Weddly
+calendar into a `Weddly – {business name}` calendar in their Google account.
+
+**No extra operator setup.** Same OAuth client, same scope, and crucially the
+**same redirect URI** — both flows share `/api/google-calendar/callback`, which
+dispatches on a `kind` baked into the *signed* OAuth state. Nothing to add in the
+Google Cloud Console beyond what the couple flow already needed.
+
+What gets pushed, and how it reads in Google:
+
+| Weddly                        | Google event                        |
+| ----------------------------- | ----------------------------------- |
+| Confirmed wedding             | all-day, **busy**                   |
+| Pending inquiry               | all-day, **free** (not a commitment)|
+| Blocked day (whole)           | all-day, **busy**                   |
+| Blocked day (partial hours)   | **timed** event over the range, busy|
+| Open task with a due date     | all-day, **free**                   |
+
+Two deliberate choices worth knowing:
+
+- **A partial block becomes a timed event**, not an all-day one, because a
+  partial block leaves the day bookable in Weddly — an all-day event would
+  misrepresent the vendor's availability to anyone reading their free/busy.
+- **Pending inquiries are transparent.** A request is not a booking, so it must
+  not make the vendor look busy.
+
+**PRO-gated.** The availability calendar is itself a PRO feature, so `/connect`
+403s for a FREE vendor. If a connected vendor later lapses, nothing is destroyed:
+the connection and the Google calendar survive, sync just parks with
+`last_error='pro_required'` until they upgrade.
+
+**Strictly one-way.** Google is never read back, so nothing in a vendor's personal
+calendar can change the availability couples see. A pull direction was considered
+and rejected: it needs incremental-sync/`syncToken` machinery that doesn't exist
+here, and a dentist appointment would otherwise mark a wedding date unavailable.
+
 ## Env reference
 
 | Var                    | Required | Notes                                                        |
@@ -66,4 +104,5 @@ reports `configured: true`, and the button appears on `/app/timeline`.
 | `FRONTEND_BASE_URL`    | yes      | Used to build the redirect URI.                              |
 | `GOOGLE_CALENDAR_FAKE` | no       | `1` in tests only — answers OAuth/API from an in-memory fake. Never set in prod. |
 
-Covered by `backend/tests/api/google_calendar.e2e.test.ts` (runs on the fake).
+Covered by `backend/tests/api/google_calendar.e2e.test.ts` (couples) and
+`backend/tests/api/vendor_google_calendar.e2e.test.ts` (vendors), both on the fake.

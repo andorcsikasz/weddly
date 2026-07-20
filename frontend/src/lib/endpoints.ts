@@ -1007,6 +1007,29 @@ export const googleCalendarApi = {
     ),
 };
 
+/** Vendor calendar -> Google Calendar push-sync. Same four endpoints and the
+ *  same status shape as the couple flow, against the vendor aggregate; PRO-gated
+ *  server-side because the availability calendar itself is. There is no
+ *  `callback` here: both flows share one browser-only OAuth callback. */
+export const vendorGoogleCalendarApi = {
+  status: () =>
+    apiFetch<import("@shared/types").GoogleCalendarStatus>(
+      "GET",
+      "/api/vendor/google-calendar/status",
+    ),
+  connect: () => apiFetch<{ url: string }>("GET", "/api/vendor/google-calendar/connect"),
+  sync: () =>
+    apiFetch<import("@shared/types").GoogleCalendarStatus>(
+      "POST",
+      "/api/vendor/google-calendar/sync",
+    ),
+  disconnect: () =>
+    apiFetch<import("@shared/types").GoogleCalendarStatus>(
+      "POST",
+      "/api/vendor/google-calendar/disconnect",
+    ),
+};
+
 /** Couple-curated wishlist / gift registry. Mirrors `scheduleApi`: list +
  *  CRUD with an optional optimistic-concurrency guard on update. No money
  *  moves in-app — `target_amount_minor` is informational only. Guests see a

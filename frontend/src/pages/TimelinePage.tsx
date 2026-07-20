@@ -77,6 +77,7 @@ import { useDocumentMeta } from "../lib/seo";
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
 import { CATEGORY_ICON } from "../lib/category_icons";
+import { GoogleCalendarConnect } from "../components/GoogleCalendarConnect";
 
 /** Lightweight directory-shape for the contact panel. Covers curated +
  *  community (`DirectorySupplier`) plus DIY (`CoupleSupplier`) entries
@@ -335,7 +336,7 @@ export default function TimelinePage() {
               </Link>
             </div>
             <div className="flex items-center gap-3">
-              <GoogleCalendarConnect />
+              <GoogleCalendarConnect api={googleCalendarApi} keyPrefix="timeline" />
               <CountdownChip weddingDate={weddingDate} />
             </div>
           </div>
@@ -427,163 +428,6 @@ function CountdownChip({ weddingDate }: { weddingDate: Date | null }) {
  *  Google OAuth consent flow. Connected → a pill with a menu (Sync now /
  *  Disconnect). Also turns the `?gcal=…` flag from the OAuth redirect into a
  *  toast. */
-function GoogleCalendarConnect() {
-  const { t } = useT();
-  const toast = useToast();
-  const confirm = useConfirm();
-  const [status, setStatus] = useState<GoogleCalendarStatus | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const refresh = useCallback(() => {
-    googleCalendarApi
-      .status()
-      .then(setStatus)
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  // Turn the OAuth redirect result (?gcal=connected|denied|error) into a toast,
-  // then strip the param so a reload doesn't re-fire it. One-shot on mount.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const flag = params.get("gcal");
-    if (!flag) return;
-    if (flag === "connected") toast.success(t("timeline.gcal_toast_connected"));
-    else if (flag === "denied") toast.error(t("timeline.gcal_toast_denied"));
-    else toast.error(t("timeline.gcal_toast_error"));
-    params.delete("gcal");
-    const qs = params.toString();
-    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
-    refresh();
-  }, []);
-
-  if (!status || !status.configured) return null;
-
-  async function onConnect() {
-    setBusy(true);
-    try {
-      const { url } = await googleCalendarApi.connect();
-      window.location.href = url;
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-      setBusy(false);
-    }
-  }
-
-  async function onSync() {
-    setMenuOpen(false);
-    setBusy(true);
-    try {
-      setStatus(await googleCalendarApi.sync());
-      toast.success(t("timeline.gcal_toast_synced"));
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onDisconnect() {
-    setMenuOpen(false);
-    const ok = await confirm({
-      title: t("timeline.gcal_disconnect_title"),
-      body: t("timeline.gcal_disconnect_body"),
-      confirmLabel: t("timeline.gcal_disconnect_confirm"),
-      cancelLabel: t("common.cancel"),
-      destructive: true,
-    });
-    if (!ok) return;
-    setBusy(true);
-    try {
-      setStatus(await googleCalendarApi.disconnect());
-      toast.success(t("timeline.gcal_toast_disconnected"));
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const pillBase =
-    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 disabled:opacity-60 dark:focus-visible:ring-paper-100";
-
-  if (!status.connected) {
-    return (
-      <button
-        type="button"
-        onClick={onConnect}
-        disabled={busy}
-        className={`${pillBase} bg-paper-100 text-ink-700 hover:bg-paper-200 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700`}
-      >
-        <CalendarPlus size={15} aria-hidden="true" />
-        {busy ? t("timeline.gcal_connecting") : t("timeline.gcal_connect")}
-      </button>
-    );
-  }
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setMenuOpen((o) => !o)}
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        aria-label={t("timeline.gcal_menu_aria")}
-        className={`${pillBase} bg-sage-100 text-sage-800 hover:bg-sage-200 dark:bg-sage-900/40 dark:text-sage-200 dark:hover:bg-sage-900/60`}
-      >
-        <CalendarCheck2 size={15} aria-hidden="true" />
-        <span>{t("timeline.gcal_connected_label")}</span>
-        <ChevronDown size={14} aria-hidden="true" />
-      </button>
-      {menuOpen && (
-        <>
-          <button
-            type="button"
-            aria-hidden="true"
-            tabIndex={-1}
-            className="fixed inset-0 z-10 cursor-default"
-            onClick={() => setMenuOpen(false)}
-          />
-          <div
-            role="menu"
-            className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-paper-200 bg-white py-1 shadow-lg dark:border-umber-700 dark:bg-umber-900"
-          >
-            {status.email && (
-              <p className="truncate px-3 py-1.5 text-xs text-ink-500 dark:text-umber-300">
-                {status.email}
-              </p>
-            )}
-            <button
-              type="button"
-              role="menuitem"
-              onClick={onSync}
-              disabled={busy}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-paper-100 disabled:opacity-60 dark:text-paper-100 dark:hover:bg-umber-800"
-            >
-              <RefreshCw size={14} aria-hidden="true" />
-              {busy ? t("timeline.gcal_syncing") : t("timeline.gcal_sync_now")}
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={onDisconnect}
-              disabled={busy}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/40"
-            >
-              <Unlink size={14} aria-hidden="true" />
-              {t("timeline.gcal_disconnect")}
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
 function PocCard({
   items,
   loading,

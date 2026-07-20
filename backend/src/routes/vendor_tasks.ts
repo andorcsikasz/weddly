@@ -17,6 +17,7 @@ import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { isIsoDate } from "../domain/supplier_bookings";
 import { resolveVendorAccount } from "../domain/vendor_clients";
+import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
 import {
   countVendorTasks,
   createVendorTask,
@@ -90,6 +91,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   }
 
   const task = createVendorTask(account.id, { title, due_date, board_status });
+  markVendorCalendarDirty(account.id);
   addAuditLog({
     actor_user_id: account.owner_user_id,
     couple_id: null,
@@ -114,6 +116,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   if (body.board_status !== undefined) patch.board_status = parseBoardStatus(body.board_status);
 
   const task = updateVendorTask(before.id, patch);
+  markVendorCalendarDirty(account.id);
   if (patch.board_status !== undefined && patch.board_status !== before.board_status) {
     addAuditLog({
       actor_user_id: account.owner_user_id,
@@ -132,6 +135,7 @@ async function handleDelete(ctx: Ctx): Promise<Response> {
   const account = resolveVendorAccount(ctx);
   const task = requireOwnTask(account.id, taskIdParam(ctx));
   deleteVendorTask(task.id);
+  markVendorCalendarDirty(account.id);
   addAuditLog({
     actor_user_id: account.owner_user_id,
     couple_id: null,
