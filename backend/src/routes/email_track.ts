@@ -71,9 +71,19 @@ function pixelResponse(): Response {
 }
 
 // ── Claim-invite campaign ───────────────────────────────────────────────────
-// The click redirect is what the campaign actually optimises for: a hit here is
-// a real human (the pixel is not, see the caveats above), so it is both the
-// engagement metric and the gate on whether a reminder goes out.
+// The click redirect is a far better engagement signal than the pixel above, so
+// it is both the campaign's metric and the gate on whether a reminder goes out.
+//
+// It is not perfect, and the failure mode is worth knowing: corporate link
+// scanners (Microsoft Defender Safe Links, Mimecast, Barracuda) fetch every URL
+// in an inbound message, so a recipient on such a tenant can be stamped as
+// "clicked" without ever seeing the mail, and loses their reminder. That is
+// still strictly better than gating on opens, where Apple Mail Privacy
+// Protection inflates a much larger share of consumer traffic. The cost of a
+// false positive is one un-sent nudge, so it is not worth UA-sniffing for;
+// if it ever needs tightening, the honest signal is the SPA's own
+// `POST /api/vendor/claim/verify/:token`, which a scanner following a 302
+// does not reach.
 
 function handleInviteRedirect(ctx: Ctx): Response {
   const token = (ctx.params as { token?: string }).token ?? "";
