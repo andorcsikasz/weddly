@@ -2579,8 +2579,11 @@ function TableEditor({
   // honest (it hides itself the moment no extra chairs fit).
   const fitExtra = showFitPrompt ? seatCap - table.seats : 0;
 
+  // Every control carries its own unit (cm, °, /cap) or is a picture, so the
+  // uppercase section captions were pure vertical cost — the panel is a dense
+  // instrument now, one glance from label to value.
   return (
-    <div className="card space-y-4 p-4">
+    <div className="card space-y-2.5 p-3">
       <EditableHeading
         value={table.label}
         onCommit={(label) => onPatch({ label })}
@@ -2606,28 +2609,28 @@ function TableEditor({
         </p>
       )}
 
-      <Section label={t("seating.shape_label")}>
-        <ShapePicker
-          value={table.shape}
-          // Snap width/length to the new shape's standard defaults too —
-          // a round 1500×1500 doesn't make sense as a long banquet, the
-          // user would just have to immediately resize otherwise.
-          onChange={(v) => {
-            if (v === table.shape) return;
-            const dims = defaultDimsForShape(v);
-            onPatch({ shape: v, width_mm: dims.width_mm, length_mm: dims.length_mm });
-          }}
-          ariaLabel={t("seating.shape_label")}
-          labels={{
-            round: t("seating.shape_round"),
-            long: t("seating.shape_long"),
-            square: t("seating.shape_square"),
-            head: t("seating.shape_head"),
-          }}
-        />
-      </Section>
+      <ShapePicker
+        value={table.shape}
+        // Snap width/length to the new shape's standard defaults too —
+        // a round 1500×1500 doesn't make sense as a long banquet, the
+        // user would just have to immediately resize otherwise.
+        onChange={(v) => {
+          if (v === table.shape) return;
+          const dims = defaultDimsForShape(v);
+          onPatch({ shape: v, width_mm: dims.width_mm, length_mm: dims.length_mm });
+        }}
+        ariaLabel={t("seating.shape_label")}
+        labels={{
+          round: t("seating.shape_round"),
+          long: t("seating.shape_long"),
+          square: t("seating.shape_square"),
+          head: t("seating.shape_head"),
+        }}
+      />
 
-      <Section label={t("seating.seats_label")}>
+      {/* Seats on the left, rotation on the right: the two dials you nudge
+          most, side by side and reachable without scrolling. */}
+      <div className="grid grid-cols-2 items-start gap-2">
         <SeatsStepper
           value={table.seats}
           max={seatCap}
@@ -2645,37 +2648,60 @@ function TableEditor({
           addLabel={t("seating.add_seat")}
           removeLabel={t("seating.remove_seat")}
         />
-        {fitExtra > 0 && (
-          <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-sage-300 bg-sage-50 px-2 py-1.5 dark:border-sage-500/40 dark:bg-sage-500/10">
-            <p className="flex-1 text-[11px] leading-snug text-sage-700 dark:text-sage-300">
-              {t("seating.seats_fit_more_prompt").replace("{n}", String(fitExtra))}
-            </p>
-            <button
-              type="button"
-              className="shrink-0 rounded-md bg-sage-600 px-2 py-1 text-[11px] font-semibold text-paper-50 transition-colors hover:bg-sage-700"
-              onClick={() => onAcceptFit?.(table.seats + fitExtra)}
-            >
-              {t("seating.seats_fit_more_action").replace("{n}", String(fitExtra))}
-            </button>
-            <button
-              type="button"
-              className="shrink-0 rounded p-0.5 text-sage-600 hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-500/20"
-              onClick={onDismissFit}
-              aria-label={t("common.cancel")}
-            >
-              <X size={12} aria-hidden />
-            </button>
+        <div
+          className="flex items-center gap-1"
+          title={table.shape === "round" ? t("seating.rotation_round_hint") : undefined}
+        >
+          <div className="min-w-0 flex-1">
+            <SuffixedInput
+              suffix="°"
+              min={0}
+              max={359}
+              step={5}
+              ariaLabel={t("seating.rotation_label")}
+              defaultValue={table.rotation_deg}
+              inputKey={`${table.id}-${table.rotation_deg}-rot`}
+              onCommit={(deg) => {
+                const norm = ((Math.round(deg) % 360) + 360) % 360;
+                if (norm !== table.rotation_deg) onPatch({ rotation_deg: norm });
+              }}
+            />
           </div>
-        )}
-      </Section>
+          <button
+            type="button"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-paper-200 bg-paper-50 text-ink-700 transition-colors hover:bg-paper-100 md:h-8 md:w-8 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+            onClick={onRotate}
+            aria-label={t("seating.rotate_table")}
+            title={t("seating.rotate_table")}
+          >
+            <RotateCw size={13} aria-hidden />
+          </button>
+        </div>
+      </div>
+      {fitExtra > 0 && (
+        <div className="flex items-center gap-1.5 rounded-lg border border-sage-300 bg-sage-50 px-2 py-1.5 dark:border-sage-500/40 dark:bg-sage-500/10">
+          <p className="flex-1 text-[11px] leading-snug text-sage-700 dark:text-sage-300">
+            {t("seating.seats_fit_more_prompt").replace("{n}", String(fitExtra))}
+          </p>
+          <button
+            type="button"
+            className="shrink-0 rounded-md bg-sage-600 px-2 py-1 text-[11px] font-semibold text-paper-50 transition-colors hover:bg-sage-700"
+            onClick={() => onAcceptFit?.(table.seats + fitExtra)}
+          >
+            {t("seating.seats_fit_more_action").replace("{n}", String(fitExtra))}
+          </button>
+          <button
+            type="button"
+            className="shrink-0 rounded p-0.5 text-sage-600 hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-500/20"
+            onClick={onDismissFit}
+            aria-label={t("common.cancel")}
+          >
+            <X size={12} aria-hidden />
+          </button>
+        </div>
+      )}
 
-      <Section
-        label={
-          hasTwoDims
-            ? `${t("seating.length_mm_label")} × ${t("seating.width_mm_label")}`
-            : t("seating.size_mm_label")
-        }
-      >
+      <div>
         <div className={hasTwoDims ? "grid grid-cols-2 gap-2" : ""}>
           <SuffixedInput
             suffix="cm"
@@ -2754,77 +2780,44 @@ function TableEditor({
             );
           })}
         </div>
-      </Section>
+      </div>
 
-      <Section label={t("seating.rotation_label")}>
-        <div className="flex items-center gap-2">
-          <div className="w-24">
-            <SuffixedInput
-              suffix="°"
-              min={0}
-              max={359}
-              step={5}
-              ariaLabel={t("seating.rotation_label")}
-              defaultValue={table.rotation_deg}
-              inputKey={`${table.id}-${table.rotation_deg}-rot`}
-              onCommit={(deg) => {
-                const norm = ((Math.round(deg) % 360) + 360) % 360;
-                if (norm !== table.rotation_deg) onPatch({ rotation_deg: norm });
-              }}
-            />
-          </div>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1.5 text-xs text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
-            onClick={onRotate}
-            aria-label={t("seating.rotate_table")}
-            title={t("seating.rotate_table")}
-          >
-            <RotateCw size={12} aria-hidden />
-            <span>+45°</span>
-          </button>
-        </div>
-        {table.shape === "round" && (
-          <p className="mt-1 text-[10px] text-ink-400 dark:text-umber-300">
-            {t("seating.rotation_round_hint")}
-          </p>
-        )}
-      </Section>
-
-      <div className="flex flex-wrap items-center gap-1.5 border-t border-paper-200 pt-3 dark:border-umber-700">
+      {/* Row actions live as icons with tooltips; the position readout rides
+          along on the same line instead of claiming one of its own. */}
+      <div className="flex items-center gap-1 border-t border-paper-200 pt-2 dark:border-umber-700">
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-lg border border-paper-200 bg-paper-50 px-2 py-1 text-[10px] lowercase text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700"
+          className="grid h-9 w-9 place-items-center rounded-lg text-ink-600 transition-colors hover:bg-paper-100 md:h-7 md:w-7 dark:text-paper-100 dark:hover:bg-umber-700"
           onClick={onDuplicate}
           aria-label={t("seating.duplicate_table")}
           title={t("seating.duplicate_table")}
         >
-          <Copy size={12} aria-hidden />
-          <span>{t("seating.duplicate_table")}</span>
+          <Copy size={13} aria-hidden />
         </button>
         <button
           type="button"
-          className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] lowercase text-blush-700 transition-colors hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+          className="grid h-9 w-9 place-items-center rounded-lg text-blush-700 transition-colors hover:bg-blush-50 md:h-7 md:w-7 dark:text-blush-300 dark:hover:bg-blush-400/15"
           onClick={onDelete}
           aria-label={t("seating.delete_table")}
+          title={t("seating.delete_table")}
         >
-          <Trash2 size={12} aria-hidden />
-          <span>{t("seating.delete_table")}</span>
+          <Trash2 size={13} aria-hidden />
         </button>
+        <span className="ml-auto truncate text-[10px] lowercase tabular-nums text-ink-400 dark:text-umber-300">
+          {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
+        </span>
       </div>
-      <p className="text-[10px] lowercase text-ink-400 dark:text-umber-300">
-        {t("seating.position_label_full").replace("{x}", xMeters).replace("{y}", yMeters)}
-      </p>
 
       {/* Seat-layout preview — click cycles a chair through:
           normal → baby (icon, still seatable) → disabled (×, blocked) →
           normal. Two independent sets on the wire (`disabled_seats`,
           `baby_seats`) keep the model simple. */}
-      <Section
-        label={`${t("seating.layout_label")} · ${t("seating.layout_enabled_of_total")
-          .replace("{enabled}", String(table.seats - (table.disabled_seats?.length ?? 0)))
-          .replace("{total}", String(table.seats))}`}
-      >
+      <div>
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-ink-400 dark:text-umber-300">
+          {t("seating.layout_enabled_of_total")
+            .replace("{enabled}", String(table.seats - (table.disabled_seats?.length ?? 0)))
+            .replace("{total}", String(table.seats))}
+        </p>
         <SeatLayoutPreview
           table={table}
           onCycleSeat={(seatIndex) => {
@@ -2849,7 +2842,7 @@ function TableEditor({
           ariaLabel={t("seating.layout_label")}
           xButtonLabel={t("seating.toggle_seat")}
         />
-      </Section>
+      </div>
     </div>
   );
 }
@@ -3055,31 +3048,17 @@ function EditableHeading({
         >
           {/* Dotted underline + always-visible pencil so the name reads as
               editable without hunting for a hover state. */}
-          <h3 className="flex-1 truncate font-grotesk text-xl text-ink-900 underline decoration-paper-400 decoration-dotted underline-offset-4 dark:text-paper-50 dark:decoration-umber-500">
+          <h3 className="flex-1 truncate font-grotesk text-lg leading-tight text-ink-900 underline decoration-paper-400 decoration-dotted underline-offset-4 dark:text-paper-50 dark:decoration-umber-500">
             {value}
           </h3>
           <Pencil
-            size={14}
+            size={13}
             aria-hidden
             className="text-ink-300 opacity-50 transition-opacity group-hover:opacity-100 dark:text-umber-300"
           />
         </button>
       )}
-      <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">{subtitle}</p>
-    </div>
-  );
-}
-
-// Section header + body. Replaces the verbose <Field label> wrapper inside
-// the table editor with a slightly larger, more "card section" feel — uppercase
-// label, tighter spacing.
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-400 dark:text-umber-300">
-        {label}
-      </p>
-      {children}
+      <p className="text-[11px] text-ink-500 dark:text-umber-300">{subtitle}</p>
     </div>
   );
 }
@@ -3135,43 +3114,47 @@ function SeatsStepper({
   const decDisabled = value <= 1;
   return (
     <div className="block">
-      <div className="inline-flex items-center gap-2 rounded-xl border border-paper-200 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800">
+      {/* Fills its grid cell so it lines up with the size/rotation fields next
+          to it — the -/+ pair sits at the edges, the count in the middle. */}
+      <div className="flex h-11 w-full items-center justify-between rounded-lg border border-paper-200 bg-paper-50 px-0.5 md:h-8 dark:border-umber-700 dark:bg-umber-800">
         <button
           type="button"
           onClick={dec}
           disabled={decDisabled}
-          className="grid h-10 w-10 place-items-center rounded-lg text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent md:h-8 md:w-8 dark:text-paper-100 dark:hover:bg-umber-700 dark:disabled:text-umber-300"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-ink-700 transition-colors hover:bg-paper-100 disabled:cursor-not-allowed md:h-7 md:w-7 disabled:text-ink-300 disabled:hover:bg-transparent dark:text-paper-100 dark:hover:bg-umber-700 dark:disabled:text-umber-300"
           aria-label={removeLabel ?? "−"}
           title={removeLabel}
         >
-          <Minus size={16} aria-hidden />
+          <Minus size={14} aria-hidden />
         </button>
-        <span className="min-w-[2ch] text-center text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+        <span className="text-sm font-semibold tabular-nums text-ink-900 dark:text-paper-50">
           {value}
         </span>
-        <button
-          type="button"
-          onClick={inc}
-          aria-disabled={atMax || undefined}
-          className={`grid h-10 w-10 place-items-center rounded-lg transition-colors md:h-8 md:w-8 ${
-            atMax
-              ? "text-ink-300 hover:bg-blush-50 dark:text-umber-300 dark:hover:bg-blush-400/15"
-              : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
-          }`}
-          aria-label={addLabel ?? "+"}
-          title={addLabel}
-        >
-          <Plus size={16} aria-hidden />
-        </button>
-        {/* The cap is real information ("this is all that physically fits"),
-            not decoration — expose it to AT and explain it on hover. */}
-        <span
-          className="cursor-help px-1 text-xs tabular-nums text-ink-400 underline decoration-dotted underline-offset-2 dark:text-umber-300"
-          title={capTooltip}
-          aria-label={capTooltip}
-        >
-          /{upper}
-        </span>
+        <div className="flex shrink-0 items-center">
+          <button
+            type="button"
+            onClick={inc}
+            aria-disabled={atMax || undefined}
+            className={`grid h-9 w-9 place-items-center rounded-md transition-colors md:h-7 md:w-7 ${
+              atMax
+                ? "text-ink-300 hover:bg-blush-50 dark:text-umber-300 dark:hover:bg-blush-400/15"
+                : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
+            }`}
+            aria-label={addLabel ?? "+"}
+            title={addLabel}
+          >
+            <Plus size={14} aria-hidden />
+          </button>
+          {/* The cap is real information ("this is all that physically fits"),
+              not decoration — expose it to AT and explain it on hover. */}
+          <span
+            className="cursor-help pr-1.5 text-[11px] tabular-nums text-ink-400 underline decoration-dotted underline-offset-2 dark:text-umber-300"
+            title={capTooltip}
+            aria-label={capTooltip}
+          >
+            /{upper}
+          </span>
+        </div>
       </div>
       {atMax && showAtCapHint && atCapHint && (
         <p className="mt-1.5 text-[11px] text-blush-700 dark:text-blush-300" role="status">
@@ -3212,7 +3195,9 @@ function SuffixedInput({
         max={max}
         step={step}
         aria-label={ariaLabel}
-        className="input py-1.5 pr-9 text-base sm:text-sm"
+        /* h-10/md:h-8 matches the seats stepper and the rotate button so the
+           whole instrument row reads as one band. */
+        className="input h-11 min-h-0 py-0 pr-8 text-base md:h-8 md:text-sm"
         defaultValue={defaultValue}
         key={inputKey}
         onBlur={(e) => {
@@ -3228,26 +3213,6 @@ function SuffixedInput({
         {suffix}
       </span>
     </div>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block text-xs">
-      <span className="mb-1 flex items-center justify-between text-ink-500 dark:text-umber-300">
-        <span>{label}</span>
-        {hint && <span className="text-ink-300 dark:text-umber-300">{hint}</span>}
-      </span>
-      {children}
-    </label>
   );
 }
 
@@ -3325,14 +3290,14 @@ function ShapePicker({
             aria-label={labels[s]}
             title={labels[s]}
             className={[
-              "flex items-center justify-center rounded-xl border py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ink-700",
+              "flex h-11 items-center justify-center rounded-lg border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ink-700 md:h-9",
               active
                 ? "border-umber-400 bg-umber-50 dark:border-umber-400 dark:bg-umber-700/40"
                 : "border-paper-200 bg-paper-50 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:hover:bg-umber-700",
             ].join(" ")}
           >
             <Icon
-              size={22}
+              size={18}
               className={
                 active ? "text-umber-600 dark:text-umber-300" : "text-ink-500 dark:text-umber-300"
               }
