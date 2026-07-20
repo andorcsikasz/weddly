@@ -399,10 +399,10 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
   const shownContacts = contacts.slice(0, MAX_CONTACTS);
 
   return (
-    <section className="card mb-8 p-0" data-tour-target="dashboard-keyinfo">
-      <header className="flex items-center justify-between gap-2 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
-        <h2 className="flex items-center gap-2.5 font-grotesk text-lg text-ink-900 dark:text-paper-50">
-          <span className="inline-block h-5 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
+    <section className="card mb-6 p-0" data-tour-target="dashboard-keyinfo">
+      <header className="flex items-center justify-between gap-2 border-b border-paper-200 px-5 py-2.5 dark:border-umber-700">
+        <h2 className="flex items-center gap-2.5 font-grotesk text-base text-ink-900 dark:text-paper-50">
+          <span className="inline-block h-4 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
           {t("dashboard.keyinfo_title")}
         </h2>
         {/* Edit lives on the venue row (with the map/call actions), not up here. */}
@@ -411,10 +411,10 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={t("dashboard.keyinfo_title")}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+          className="-my-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
         >
           <ChevronDown
-            size={18}
+            size={16}
             aria-hidden="true"
             className={`transition-transform ${open ? "" : "-rotate-90"}`}
           />
@@ -422,17 +422,17 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
       </header>
 
       {open && (
-        <div className="px-5 py-4">
+        <div className="px-5 py-3">
           {loading ? (
-            <div className="space-y-4" aria-hidden="true">
+            <div className="space-y-3" aria-hidden="true">
               <div className="flex items-center gap-3">
-                <Skeleton variant="circle" width={40} />
+                <Skeleton variant="circle" width={36} />
                 <div className="flex-1 space-y-1.5">
                   <Skeleton variant="block" width="45%" height={14} rounded="md" />
                   <Skeleton variant="block" width="65%" height={11} rounded="md" />
                 </div>
               </div>
-              <Skeleton variant="block" width="100%" height={44} rounded="lg" />
+              <Skeleton variant="block" width="100%" height={36} rounded="lg" />
             </div>
           ) : (
             <>
@@ -443,18 +443,18 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                     to={venueLinkTo}
                     className="group flex min-w-0 items-start gap-3 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
                   >
-                    <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
-                      <MapPin size={18} aria-hidden="true" />
+                    <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
+                      <MapPin size={16} aria-hidden="true" />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                      <p className="text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
                         {t("dashboard.keyinfo_venue_label")}
                       </p>
-                      <p className="truncate text-sm font-semibold text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
+                      <p className="truncate text-sm font-semibold leading-tight text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
                         {venue.name}
                       </p>
                       {venue.detail && (
-                        <p className="truncate text-xs text-ink-600 dark:text-umber-200">
+                        <p className="truncate text-xs leading-tight text-ink-600 dark:text-umber-200">
                           {venue.detail}
                         </p>
                       )}
@@ -466,7 +466,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                       onClick={() => setMapOpen(true)}
                       aria-label={t("dashboard.keyinfo_map")}
                       title={t("dashboard.keyinfo_map")}
-                      className="btn-outline btn-sm inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[38px]"
+                      className="btn-outline btn-sm inline-flex min-h-[38px] items-center gap-1.5 sm:min-h-[34px]"
                     >
                       <MapPin size={15} aria-hidden="true" />
                       <span className="hidden sm:inline">{t("dashboard.keyinfo_map")}</span>
@@ -476,7 +476,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                         href={`tel:${venue.phone.replace(/\s+/g, "")}`}
                         title={venue.phone}
                         aria-label={`${t("dashboard.keyinfo_call")} ${venue.phone}`}
-                        className="btn-primary btn-sm inline-flex min-h-[44px] items-center gap-1.5 sm:min-h-[38px]"
+                        className="btn-primary btn-sm inline-flex min-h-[38px] items-center gap-1.5 sm:min-h-[34px]"
                       >
                         <Phone size={15} aria-hidden="true" />
                         <span className="hidden sm:inline">{t("dashboard.keyinfo_call")}</span>
@@ -489,10 +489,10 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                 <div className="flex items-center gap-2">
                   <Link
                     to="/app/guest-page"
-                    className="flex flex-1 items-center gap-3 rounded-2xl border border-dashed border-paper-300 px-4 py-3 text-sm text-ink-600 transition-colors hover:border-blush-300 hover:bg-paper-100/50 dark:border-umber-700 dark:text-umber-200 dark:hover:bg-umber-900/40"
+                    className="flex flex-1 items-center gap-3 rounded-2xl border border-dashed border-paper-300 px-4 py-2 text-sm text-ink-600 transition-colors hover:border-blush-300 hover:bg-paper-100/50 dark:border-umber-700 dark:text-umber-200 dark:hover:bg-umber-900/40"
                   >
-                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-umber-200">
-                      <MapPin size={18} aria-hidden="true" />
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-umber-200">
+                      <MapPin size={16} aria-hidden="true" />
                     </span>
                     <span className="flex-1 font-medium text-ink-800 dark:text-paper-100">
                       {t("dashboard.keyinfo_no_venue")}
@@ -505,7 +505,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
 
               {/* ── Day-of contacts (coordinator + emergency) ─────────── */}
               {(hasCoordinator || hasEmergency) && (
-                <div className="mt-4 space-y-2 border-t border-paper-200 pt-4 dark:border-umber-700">
+                <div className="mt-3 space-y-1.5 border-t border-paper-200 pt-3 dark:border-umber-700">
                   {hasCoordinator && (
                     <PersonRow
                       Icon={UserRound}
@@ -526,8 +526,8 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
               )}
 
               {/* ── Suppliers ─────────────────────────────────────────── */}
-              <div className="mt-4 border-t border-paper-200 pt-4 dark:border-umber-700">
-                <div className="mb-2 flex items-center justify-between">
+              <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-700">
+                <div className="mb-1 flex items-center justify-between">
                   <p className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
                     {t("dashboard.keyinfo_suppliers")}
                   </p>
@@ -561,19 +561,19 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                         ? `/app/suppliers/${encodeURIComponent(c.id)}`
                         : "/app/vendors";
                       return (
-                        <li key={c.key} className="flex items-center gap-3 py-2">
+                        <li key={c.key} className="flex items-center gap-3 py-1.5">
                           <Link
                             to={to}
                             className="group flex min-w-0 flex-1 items-center gap-3 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
                           >
-                            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
-                              <Icon size={15} aria-hidden="true" />
+                            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
+                              <Icon size={14} aria-hidden="true" />
                             </span>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
+                              <p className="truncate text-sm font-medium leading-tight text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
                                 {c.name}
                               </p>
-                              <p className="truncate text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                              <p className="truncate text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
                                 {t(`suppliers.cat.${c.category}`)}
                               </p>
                             </div>
@@ -583,7 +583,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                               href={`tel:${c.phone.replace(/\s+/g, "")}`}
                               title={c.phone}
                               aria-label={`${t("dashboard.keyinfo_call")} ${c.phone}`}
-                              className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-paper-100 px-3 text-xs font-medium text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 sm:min-h-[36px] dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
+                              className="inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full bg-paper-100 px-3 text-xs font-medium text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 sm:min-h-[32px] dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
                             >
                               <Phone size={13} aria-hidden="true" />
                               <span>{t("dashboard.keyinfo_call")}</span>
@@ -732,14 +732,14 @@ function PersonRow({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
-        <Icon size={15} aria-hidden="true" />
+      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
+        <Icon size={14} aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
+        <p className="text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
           {label}
         </p>
-        <p className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+        <p className="truncate text-sm font-medium leading-tight text-ink-900 dark:text-paper-50">
           {name || phone}
         </p>
       </div>
@@ -757,7 +757,7 @@ function EditButton({ label, onClick }: { label: string; onClick: () => void }) 
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-9 sm:w-9 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-8 sm:w-8 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
     >
       <Pencil size={16} aria-hidden="true" />
     </button>
@@ -772,7 +772,7 @@ function CallPill({ phone }: { phone: string }) {
       href={`tel:${phone.replace(/\s+/g, "")}`}
       title={phone}
       aria-label={`${t("dashboard.keyinfo_call")} ${phone}`}
-      className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-paper-100 px-3 text-xs font-medium text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 sm:min-h-[36px] dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
+      className="inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full bg-paper-100 px-3 text-xs font-medium text-ink-800 transition-colors hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 sm:min-h-[32px] dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
     >
       <Phone size={13} aria-hidden="true" />
       <span>{t("dashboard.keyinfo_call")}</span>
