@@ -2,6 +2,7 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import { renderIndexHtml } from "../../src/lib/seo_ssr";
+import { TOOL_FAQ } from "@shared/tool_faq";
 
 // JSON-LD coverage for the GEO/rich-result schema added after the May 2026
 // audit: Article + BreadcrumbList on blog posts, WebApplication +
@@ -116,6 +117,35 @@ describe("seo json-ld: tool page", () => {
     const blocks = render("/tools/wedding-budget-calculator", "en-US");
     const app = byType(blocks, "WebApplication");
     expect((app?.offers as Record<string, unknown>)?.priceCurrency).toBe("EUR");
+  });
+
+  test("emits a per-tool FAQPage matching shared/tool_faq.ts verbatim", () => {
+    const blocks = render(TOOL_PATH, "hu");
+    const faq = byType(blocks, "FAQPage");
+    expect(faq).toBeDefined();
+    const questions = faq?.mainEntity as Record<string, unknown>[] | undefined;
+    // The budget calculator has four Q/A pairs.
+    expect(questions?.length).toBe(4);
+    // The JSON-LD must be the SAME strings the visible <details> cards render —
+    // a divergence here is what Google treats as cloaking, which is the whole
+    // reason this copy lives in shared/ rather than the frontend locale tree.
+    const expected = TOOL_FAQ.hu.budget_calculator;
+    expect(questions?.map((q) => q.name)).toEqual(expected.map((e) => e.q));
+    expect(questions?.map((q) => (q.acceptedAnswer as Record<string, unknown>)?.text)).toEqual(
+      expected.map((e) => e.a),
+    );
+  });
+
+  test("the EN tool path emits the EN FAQ", () => {
+    const blocks = render("/tools/wedding-budget-calculator", "en-US");
+    const faq = byType(blocks, "FAQPage");
+    const questions = faq?.mainEntity as Record<string, unknown>[] | undefined;
+    expect(questions?.map((q) => q.name)).toEqual(TOOL_FAQ.en.budget_calculator.map((e) => e.q));
+  });
+
+  test("a non-tool public page emits no FAQPage", () => {
+    // Guards the branch: only the tool paths and the landing get one.
+    expect(byType(render("/about", "hu"), "FAQPage")).toBeUndefined();
   });
 });
 

@@ -6,6 +6,7 @@
 // deep-linkable and crawlers can index it as a discrete resource.
 
 import { Link } from "react-router-dom";
+import { TOOL_FAQ } from "@shared/tool_faq";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -13,7 +14,7 @@ import { useDocumentMeta } from "../lib/seo";
 const CSV_HREF = "/weddly-vendeglista-sablon.csv";
 
 export default function GuestListTemplatePage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   useDocumentMeta("tools.guest_list_template.page_h1", "tools.guest_list_template.page_intro");
 
   const columns = [
@@ -216,20 +217,7 @@ export default function GuestListTemplatePage() {
             {t("tools.guest_list_template.faq_h2")}
           </h2>
           <div className="mt-8 space-y-3">
-            {[
-              {
-                q: t("tools.guest_list_template.faq_q1"),
-                a: t("tools.guest_list_template.faq_a1"),
-              },
-              {
-                q: t("tools.guest_list_template.faq_q2"),
-                a: t("tools.guest_list_template.faq_a2"),
-              },
-              {
-                q: t("tools.guest_list_template.faq_q3"),
-                a: t("tools.guest_list_template.faq_a3"),
-              },
-            ].map((entry) => (
+            {TOOL_FAQ[locale].guest_list_template.map((entry) => (
               <details
                 key={entry.q}
                 className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"

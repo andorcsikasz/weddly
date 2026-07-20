@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { TOOL_FAQ } from "@shared/tool_faq";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import {
@@ -477,11 +478,7 @@ export default function CoupleCardsPage() {
               {t("tools.couple_cards.faq_h2")}
             </h2>
             <div className="mt-8 space-y-3">
-              {[
-                { q: t("tools.couple_cards.faq_q1"), a: t("tools.couple_cards.faq_a1") },
-                { q: t("tools.couple_cards.faq_q2"), a: t("tools.couple_cards.faq_a2") },
-                { q: t("tools.couple_cards.faq_q3"), a: t("tools.couple_cards.faq_a3") },
-              ].map((entry) => (
+              {TOOL_FAQ[locale].couple_cards.map((entry) => (
                 <details
                   key={entry.q}
                   className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"

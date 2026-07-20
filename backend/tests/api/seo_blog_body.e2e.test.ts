@@ -2,6 +2,7 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import { renderIndexHtml } from "../../src/lib/seo_ssr";
+import { TOOL_FAQ } from "@shared/tool_faq";
 
 // The audit's "621% rendered content" flag came from sub-pages baking only an
 // h1 + lead into the SSR HTML while the full text rendered in JS only. Blog
@@ -103,9 +104,33 @@ describe("seo: venue posts bake inline <img> blocks into SSR HTML", () => {
   });
 });
 
-describe("seo: tool pages stay lean (no DB body to bake)", () => {
-  test("tool route does not emit an <article> body", () => {
+describe("seo: tool pages bake their FAQ prose", () => {
+  // This suite used to assert the OPPOSITE — that a tool route emitted no
+  // <article> — because the tool copy lived in the frontend locale tree, out of
+  // the backend's reach. The FAQ moved to shared/tool_faq.ts (so the FAQPage
+  // JSON-LD couldn't drift from the visible cards), which made the richest
+  // block of unique prose on each tool page bakeable.
+  test("tool route emits its FAQ as an <article> body", () => {
     const body = render(TOOL_PATH, "hu").split("<!-- SEO_BODY_START -->")[1] ?? "";
+    expect(body).toContain("<h1>");
+    expect(body).toContain("<article>");
+    // Every question and answer is present, verbatim.
+    for (const entry of TOOL_FAQ.hu.budget_calculator) {
+      expect(body).toContain(entry.q);
+      expect(body).toContain(entry.a);
+    }
+  });
+
+  test("the EN tool path bakes the EN FAQ", () => {
+    const body =
+      render("/tools/wedding-budget-calculator", "en-US").split("<!-- SEO_BODY_START -->")[1] ?? "";
+    const first = TOOL_FAQ.en.budget_calculator[0];
+    expect(first).toBeDefined();
+    if (first) expect(body).toContain(first.q);
+  });
+
+  test("a non-tool static route still stays lean", () => {
+    const body = render("/about", "hu").split("<!-- SEO_BODY_START -->")[1] ?? "";
     expect(body).toContain("<h1>");
     expect(body).not.toContain("<article>");
   });

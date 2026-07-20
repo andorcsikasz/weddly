@@ -43,16 +43,40 @@ repeat them.
 - Cloudflare R2 backup bucket: section C.
 - Cookie-banner decision (Plausible is cookieless): section on analytics.
 
-## Deferred code work (blocked on the frontend build)
+## Deferred code work — DONE (2026-07-20)
 
-These are real GEO wins but need the frontend to build again first (a concurrent
-currency-preference feature currently breaks `bun run build`):
+The old blocker (a concurrent currency-preference feature breaking `bun run
+build`) is long gone; the build is green. Both items shipped:
 
-- **Bake `/tools/*` page bodies into SSR.** Blog bodies are baked; tool pages
-  still ship only h1 + intro server-side. Clean fix: lift the per-tool copy out
-  of the frontend `tools.*` locale tree into `shared/`, then render it in
-  `renderRouteBody` (like the blog) and have the React tool pages read the same
-  source. Avoids importing frontend types into backend `tsc`.
-- **Per-tool FAQPage JSON-LD.** Same blocker: the tool FAQ text lives in the
-  frontend locale tree. Do it together with the tool-body baking once the build
-  is green.
+- **Per-tool FAQPage JSON-LD. DONE.** The 19 Q/A pairs per locale moved out of
+  the frontend `tools.*` locale tree into **`shared/tool_faq.ts`**, mirroring
+  the `shared/seo_faq.ts` pattern exactly: `seo_ssr.ts` emits them as the
+  `FAQPage` block in the `isToolPath` branch, and the six React tool pages
+  render the same array into their visible `<details>` cards. The keys were
+  DELETED from `hu.ts`/`en.ts`/`keys.ts` rather than duplicated, so the
+  structured data and the visible prose cannot drift — which is the whole point,
+  since a divergence there is what Google treats as cloaking.
+- **Bake `/tools/*` bodies into SSR. DONE (the prose that matters).** Because
+  the FAQ now lives in `shared/`, `renderRouteBody` bakes it into an
+  `<article>` on every tool path, in the same q→`h2` / a→`p` shape the visible
+  cards use. Tool pages previously shipped only h1 + intro server-side; they now
+  carry their full FAQ prose too.
+  - **Deliberately NOT lifted:** the rest of `tools.*` is interactive
+    calculator/generator microcopy (labels, placeholders, plurals, interpolated
+    strings like `"{n} / {total}"`), not prose. Moving it out of the locale tree
+    would drag it away from the `t()` plural/interpolation machinery to bake
+    text nobody searches for. `CoupleCardsPage` is the clearest case: its real
+    substance is the 100 questions in `frontend/src/lib/couple_cards.ts`, behind
+    an interactive draw/flip UI.
+
+### One correction worth recording
+
+The scoping pass flagged a blocker that turns out not to exist: an SSR-vs-React
+locale divergence that would have made baked bodies read as cloaking. In
+production it can't happen. `server.ts` calls `localeForHost(host, null)` — it
+passes `null` for `Accept-Language` — so **production SSR is always EN**, and
+`detectInitial()` in `frontend/src/lib/i18n.tsx` also defaults to EN unless
+localStorage says otherwise. The HU branch of `localeForHost` only fires for
+tests and internal renders. Note this makes the i18n section of `CLAUDE.md`
+stale, which describes both an Accept-Language SSR branch and a
+`navigator.language` frontend branch that no longer decide anything.

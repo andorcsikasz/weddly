@@ -6950,18 +6950,6 @@ const en: LocaleMessages = {
         "The calculator's numbers carry into your workspace, per-category editing, real-time sync with your partner, full audit log of every change. Free throughout the open beta.",
       cta_button: "Open your workspace",
       faq_h2: "Calculator questions",
-      faq_q1: "How much does an average wedding cost?",
-      faq_a1:
-        "An 80–100 guest wedding follows the same proportional split regardless of country, catering and venue dominate, with 20–25% of the remaining budget covering attire, music, ceremony and stationery. The calculator lets you see how the budget splits for any guest count + total in your own currency.",
-      faq_q2: "How much per guest?",
-      faq_a2:
-        "Catering, drinks, decor and the guest-share of the venue typically run together as the largest per-guest cost. The calculator computes the exact per-guest figure for the total you set, work backwards from the per-guest you can afford if that frames the budget better for you.",
-      faq_q3: "How is a wedding budget broken down by category?",
-      faq_a3:
-        "Hungarian-typical split: ~35% catering and drinks, ~18% venue, ~13% photo / video, ~9% decor and flowers, ~8% attire and beauty, ~7% music / DJ, ~5% ceremony, ~2% stationery, ~3% contingency. The calculator visualises this live against your numbers.",
-      faq_q4: "Are the numbers saved after signup?",
-      faq_a4:
-        "Yes. The “Continue in Weddly” button carries the guest count + total into your workspace draft; onboarding picks up with those numbers pre-filled. From there it's per-category editable and you can pause the workspace any time.",
     },
     countdown: {
       page_eyebrow: "Tools · Wedding countdown",
@@ -6995,15 +6983,6 @@ const en: LocaleMessages = {
         "A countdown is a start; a 12-month checklist works best in a shared workspace. Weddly tailors every milestone to your date and pings you when it's time to act.",
       cta_button: "Open your workspace",
       faq_h2: "Common questions",
-      faq_q1: "How early should we start wedding planning?",
-      faq_a1:
-        "Typical: 12–18 months out. Venue and photographer book earliest, for popular dates, 18 months is already tight in Hungary.",
-      faq_q2: "How long before the wedding should invitations go out?",
-      faq_a2:
-        "Classic: 8–12 weeks before the wedding, with an RSVP deadline ~4 weeks out. For out-of-town guests, send save-the-dates 4–6 weeks earlier.",
-      faq_q3: "What is a save-the-date and when should we send it?",
-      faq_a3:
-        "A save-the-date is a short heads-up about the date and venue region so guests can block calendars. Ideal: 6–9 months out, especially if many guests are travelling.",
     },
     guest_list_template: {
       page_eyebrow: "Tools · Guest list template",
@@ -7038,15 +7017,6 @@ const en: LocaleMessages = {
         "Weddly imports the CSV, auto-builds households out of it, and gives every guest a unique RSVP link. Guests answer on their phone; you watch the status list update.",
       cta_button: "Open your workspace",
       faq_h2: "Guest list questions",
-      faq_q1: "How many guests should we invite?",
-      faq_a1:
-        "Hungarian typical: 80–120 guests. Headcount drives venue, catering and ~55% of the total budget, pin the guest count before pinning the budget. The Weddly budget calculator shows the impact live.",
-      faq_q2: "Who NOT to invite?",
-      faq_a2:
-        "No mandatory column. A simple rule: if you haven't seen them in 2+ years and don't actively want them on the big day, skip. Obligation invites are the most common source of stress.",
-      faq_q3: "What columns should a wedding guest list spreadsheet have?",
-      faq_a3:
-        "Minimum: first name, last name, contact (email or phone), household, RSVP status. Useful extras: diet, plus-one, relationship (family / friends / work / uni). The Weddly template covers all of these.",
     },
     seating_chart: {
       page_eyebrow: "Tools · Seating chart maker",
@@ -7079,15 +7049,6 @@ const en: LocaleMessages = {
         "The full seating canvas lives in your workspace. After signup you can import your guest list with a click and start planning, both of you see the same canvas, in real time.",
       cta_button: "Open your workspace",
       faq_h2: "Seating chart questions",
-      faq_q1: "How many guests per table?",
-      faq_a1:
-        "Round: 8–10 ideal, max 12. Rectangular (banquet): 6–8 per side, so 12–16 per table. Above 10 conversation breaks; Weddly warns if you over-pack a table.",
-      faq_q2: "When should we make the seating chart?",
-      faq_a2:
-        "After the RSVP deadline (~4 weeks out). Draft modes are fine before then; finalize once headcount is locked. Weddly has draft + final modes so you don't lose the in-between work.",
-      faq_q3: "How do we handle awkward guests?",
-      faq_a3:
-        "Safest move: separate tables, at least 2 tables apart. Add the conflict to your notes and Weddly will flag if you accidentally drag them next to each other.",
     },
     rsvp_generator: {
       page_eyebrow: "Tools · RSVP wording generator",
@@ -7115,15 +7076,6 @@ const en: LocaleMessages = {
         "Static wording is a good start, but Weddly gives every guest their own RSVP link with name pre-filled, dietary options, plus-one and allergy fields. Guests reply on their phone in a minute; you watch the list fill in.",
       cta_button: "Open your workspace",
       faq_h2: "RSVP questions",
-      faq_q1: "What does RSVP mean?",
-      faq_a1:
-        "RSVP comes from the French “Répondez s'il vous plaît”, “please respond”. In a wedding context: please let us know whether you can attend. Classic: collect RSVPs 3–4 weeks before the wedding.",
-      faq_q2: "When should we send the RSVP request?",
-      faq_a2:
-        "The RSVP request goes with the invitation, typically 8–12 weeks out. RSVP deadline: ~4 weeks before the wedding so you can lock final headcount with the venue and caterer.",
-      faq_q3: "What should the RSVP wording include?",
-      faq_a3:
-        "Minimum: your names, the wedding date, venue, RSVP deadline, and one contact channel (email / phone / link). Helpful extras: a dietary question, a plus-one field, an allergy line. Weddly's RSVP page covers all of these via a single link.",
     },
     couple_cards: {
       page_eyebrow: "Tools · 100 Questions Before You Say Yes",
@@ -7180,15 +7132,6 @@ const en: LocaleMessages = {
         "After the hard conversations come the practical decisions. Weddly keeps your budget, guest list, RSVP and seating in one shared workspace, so the real work doesn't fall back into PDFs and text threads.",
       cta_button: "Open your workspace",
       faq_h2: "Common questions",
-      faq_q1: "What's the point of these 100 questions?",
-      faq_a1:
-        "Conversation starters. Long-term relationships research keeps pointing to the same thing: couples who can talk openly about money, family, desire and death tend to last. The four decks are organised around those topics, so the hard ones don't stay under the rug.",
-      faq_q2: "Do we have to answer all 100?",
-      faq_a2:
-        "No. One card is one conversation. Pull one, talk it through, put the deck down. Your browser remembers where you are in each deck, so the next visit picks up from there.",
-      faq_q3: "Why these four decks specifically?",
-      faq_a3:
-        "We took the synthesis of ten different perspectives (a couples therapist, a long-married couple, an intimacy coach, a financial planner, a philosopher) and the themes that surfaced in all of them: family inheritance, money and the everyday, body and desire, and the death–crisis–meaning cluster. That's how we landed on four.",
     },
   },
   planners: {

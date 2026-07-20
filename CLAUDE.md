@@ -93,7 +93,7 @@ A "milestone" is a logical unit of work (Claude's judgment call), not every edit
 
 ## i18n
 
-- **EN is the default for non-HU clients.** Frontend detection: `localStorage["weddly.locale"]` → host match against `VITE_EN_CANONICAL_HOST` → `navigator.language` starts with "hu" → HU; else EN. SSR detection: backend reads the request `Accept-Language` header, branches HU vs EN per first preference, and serves the matching pre-rendered HTML body (`index.html` vs `index.en.html`) — Googlebot (which sends `en-US`) indexes the EN landing.
+- **EN is the default EVERYWHERE, on both sides.** Frontend: `detectInitial()` in `lib/i18n.tsx` reads `localStorage["weddly.locale"]` and otherwise returns `"en"` — HU navigators no longer auto-flip, so `navigator.language` decides nothing. SSR: `server.ts` calls `localeForHost(host, null)`, deliberately passing `null` for `Accept-Language`, so a production render is always EN too. `localeForHost` keeps an `Accept-Language` branch, but only tests and internal renders pass one. **The two sides agree by construction, which is what makes it safe to bake body copy into the SSR HTML** — a mismatch between crawled and rendered text reads as cloaking. A user gets HU by picking it in the locale switcher, which persists to localStorage.
 - All literals go through `t("path.key")`. No inline strings.
 - **Currency follows the user's locale at couple creation** — HU users get HUF, EN users get EUR (overridable in onboarding and via PATCH `/api/couples/current`). Format display amounts with `Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US", { style: "currency", currency: couple.currency, maximumFractionDigits: 0 })`.
 - Drift detection (`warnDrift()`) on init `console.warn`s missing keys.

@@ -7684,14 +7684,6 @@ export interface LocaleMessages {
       cta_body: string;
       cta_button: string;
       faq_h2: string;
-      faq_q1: string;
-      faq_a1: string;
-      faq_q2: string;
-      faq_a2: string;
-      faq_q3: string;
-      faq_a3: string;
-      faq_q4: string;
-      faq_a4: string;
     };
     countdown: {
       page_eyebrow: string;
@@ -7717,12 +7709,6 @@ export interface LocaleMessages {
       cta_body: string;
       cta_button: string;
       faq_h2: string;
-      faq_q1: string;
-      faq_a1: string;
-      faq_q2: string;
-      faq_a2: string;
-      faq_q3: string;
-      faq_a3: string;
     };
     guest_list_template: {
       page_eyebrow: string;
@@ -7750,12 +7736,6 @@ export interface LocaleMessages {
       cta_body: string;
       cta_button: string;
       faq_h2: string;
-      faq_q1: string;
-      faq_a1: string;
-      faq_q2: string;
-      faq_a2: string;
-      faq_q3: string;
-      faq_a3: string;
     };
     seating_chart: {
       page_eyebrow: string;
@@ -7777,12 +7757,6 @@ export interface LocaleMessages {
       cta_body: string;
       cta_button: string;
       faq_h2: string;
-      faq_q1: string;
-      faq_a1: string;
-      faq_q2: string;
-      faq_a2: string;
-      faq_q3: string;
-      faq_a3: string;
     };
     rsvp_generator: {
       page_eyebrow: string;
@@ -7808,12 +7782,6 @@ export interface LocaleMessages {
       cta_body: string;
       cta_button: string;
       faq_h2: string;
-      faq_q1: string;
-      faq_a1: string;
-      faq_q2: string;
-      faq_a2: string;
-      faq_q3: string;
-      faq_a3: string;
     };
     couple_cards: {
       page_eyebrow: string;
@@ -7862,12 +7830,6 @@ export interface LocaleMessages {
       cta_body: string;
       cta_button: string;
       faq_h2: string;
-      faq_q1: string;
-      faq_a1: string;
-      faq_q2: string;
-      faq_a2: string;
-      faq_q3: string;
-      faq_a3: string;
     };
   };
   planners: {

@@ -8,13 +8,14 @@
 // links to signup.
 
 import { Link } from "react-router-dom";
+import { TOOL_FAQ } from "@shared/tool_faq";
 import { SeatingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 export default function SeatingChartPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   useDocumentMeta("tools.seating_chart.page_h1", "tools.seating_chart.page_intro");
 
   return (
@@ -104,11 +105,7 @@ export default function SeatingChartPage() {
             {t("tools.seating_chart.faq_h2")}
           </h2>
           <div className="mt-8 space-y-3">
-            {[
-              { q: t("tools.seating_chart.faq_q1"), a: t("tools.seating_chart.faq_a1") },
-              { q: t("tools.seating_chart.faq_q2"), a: t("tools.seating_chart.faq_a2") },
-              { q: t("tools.seating_chart.faq_q3"), a: t("tools.seating_chart.faq_a3") },
-            ].map((entry) => (
+            {TOOL_FAQ[locale].seating_chart.map((entry) => (
               <details
                 key={entry.q}
                 className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"

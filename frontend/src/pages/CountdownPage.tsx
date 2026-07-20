@@ -9,6 +9,7 @@
 
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { TOOL_FAQ } from "@shared/tool_faq";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -56,7 +57,7 @@ function breakdown(totalDays: number): Breakdown {
 }
 
 export default function CountdownPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   useDocumentMeta("tools.countdown.page_h1", "tools.countdown.page_intro");
 
   const [iso, setIso] = useState("");
@@ -163,11 +164,7 @@ export default function CountdownPage() {
             {t("tools.countdown.faq_h2")}
           </h2>
           <div className="mt-8 space-y-3">
-            {[
-              { q: t("tools.countdown.faq_q1"), a: t("tools.countdown.faq_a1") },
-              { q: t("tools.countdown.faq_q2"), a: t("tools.countdown.faq_a2") },
-              { q: t("tools.countdown.faq_q3"), a: t("tools.countdown.faq_a3") },
-            ].map((entry) => (
+            {TOOL_FAQ[locale].countdown.map((entry) => (
               <details
                 key={entry.q}
                 className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"

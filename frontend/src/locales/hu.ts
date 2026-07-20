@@ -7016,18 +7016,6 @@ const hu: LocaleMessages = {
         "A kalkulátor számai bekerülnek a saját workspace-etekbe: ott már kategóriánként szerkesztheted őket, valós időben hozzáférhetsz a partnereddel, és minden változás bekerül az auditnaplóba. A nyílt béta alatt ingyen használhatjátok.",
       cta_button: "Indítsátok el a workspace-eteket",
       faq_h2: "Gyakori kérdések a kalkulátorról",
-      faq_q1: "Mennyibe kerül átlagosan egy esküvő Magyarországon?",
-      faq_a1:
-        "Egy 80–100 fős esküvő mediánja 5–8 millió forint 2026-ban, a vidéki és fővárosi árkülönbségtől függően. A kalkulátorban kicsi és nagy létszámra is megnézheted, hogyan oszlik el a keret kategóriák szerint.",
-      faq_q2: "Mennyit költsünk egy vendégre?",
-      faq_a2:
-        "Egy vendégre átlagosan 50 000–80 000 Ft jut a teljes keretből, ami magába foglalja a cateringet, italokat, dekort és a vendégekre eső helyszín-arányt. A Wēddly kalkulátora pontosan kiszámolja a vendégszám és a keret alapján a per-fő költést.",
-      faq_q3: "Hogyan oszlik meg az esküvői keret kategóriák között?",
-      faq_a3:
-        "Ajánlott bontás: ~35% catering és italok, ~18% helyszín, ~13% fotó-videó, ~9% dekor és virág, ~8% öltözet és szépség, ~7% zene/DJ, ~5% ceremónia, ~2% papírárú, és ~3% biztonsági tartalék. A kalkulátorban élőben látjátok az aktuális számokra vetítve.",
-      faq_q4: "Megőrizhetők a számok regisztráció után?",
-      faq_a4:
-        "Igen. A „Folytasd a Wēddly-ben” gombbal a vendégszám és a teljes keret bekerül a saját workspace-etek vázlatába; a regisztráció utáni onboardingnál ezekkel a számokkal indul a tervezés. Onnantól kategóriánként szerkeszthetitek és bármikor szüneteltethetitek a workspace-et.",
     },
     countdown: {
       page_eyebrow: "Eszközök · Esküvő visszaszámláló",
@@ -7061,15 +7049,6 @@ const hu: LocaleMessages = {
         "A visszaszámláló jó indító, de a 12 hónapos teendőlistát egy közös workspace-en érdemes követni. A Wēddly minden mérföldkövet a saját dátumotokra szab, és értesít, mikor érdemes lépni.",
       cta_button: "Workspace indítása",
       faq_h2: "Gyakori kérdések",
-      faq_q1: "Mikor érdemes kezdeni az esküvőtervezést?",
-      faq_a1:
-        "Magyar átlag: 12–18 hónappal az esküvő előtt. A helyszín és a fotós a két leghamarabb foglalandó tétel, népszerű időpontokra 18 hónappal előtte már nehéz lehet jó helyszínt találni.",
-      faq_q2: "Hány nappal előtte küldjük ki a meghívókat?",
-      faq_a2:
-        "Klasszikusan 8–12 héttel az esküvő előtt érdemes a meghívókat kiküldeni, RSVP-határidővel ~4 héttel az esküvő előtt. Külföldről érkező vendégeknek érdemes 4–6 héttel hamarabb save-the-date-et küldeni.",
-      faq_q3: "Mi az a save-the-date és mikor küldjük?",
-      faq_a3:
-        "A save-the-date egy rövid előzetes értesítés a dátumról és a helyszín-régióról, hogy a vendégek be tudják iktatni a naptárukba. Ideális kiküldési idő: 6–9 hónappal az esküvő előtt, főleg ha sok vidéki vagy külföldi vendég lesz.",
     },
     guest_list_template: {
       page_eyebrow: "Eszközök · Vendéglista sablon",
@@ -7104,15 +7083,6 @@ const hu: LocaleMessages = {
         "A Wēddly importálja a CSV-t, automatikusan háztartásokat épít belőle, és minden vendégnek egyedi RSVP linket generál. A vendégek telefonon válaszolnak, ti egy listán látjátok az állapotot.",
       cta_button: "Workspace indítása",
       faq_h2: "Gyakori kérdések a vendéglistáról",
-      faq_q1: "Hány vendéget hívjunk az esküvőre?",
-      faq_a1:
-        "Magyar átlag: 80–120 fő. A létszám közvetlenül befolyásolja a helyszínt, cateringet és a teljes keret 55%-át, érdemes a vendégszámot előbb tisztázni, mint a keretet. A Wēddly költségvetés-kalkulátora élőben mutatja a hatást.",
-      faq_q2: "Kiket NEM kell hívni az esküvőre?",
-      faq_a2:
-        "Nincs kötelező mező. Egy érvényes elv: ha az utolsó találkozás óta több mint 2 év telt el, vagy nem érdekel hogy ott legyenek-e a nagy napon, akkor inkább ne. A „kötelességből” meghívott vendégek a leggyakoribb feszültségforrás.",
-      faq_q3: "Mit írjak a vendéglista Excel/Google Sheets fájlomban?",
-      faq_a3:
-        "Minimum: keresztnév, vezetéknév, kapcsolattartó (e-mail vagy telefon), háztartás, RSVP-státusz. Hasznos extra oszlopok: étrend, kísérő, kapcsolat típusa (család / barát / munka / egyetem). A Wēddly-sablon mindezt tartalmazza.",
     },
     seating_chart: {
       page_eyebrow: "Eszközök · Ültetési rend készítő",
@@ -7145,15 +7115,6 @@ const hu: LocaleMessages = {
         "A teljes ültetési vászon a workspace-etekben él. Regisztráció után pár kattintással behúzhatod a vendéglistádat és kezdődhet az ültetés-tervezés, mindkettőtök ugyanazt a vásznat látja, valós időben.",
       cta_button: "Workspace indítása",
       faq_h2: "Gyakori kérdések az ültetési rendről",
-      faq_q1: "Hányan üljenek egy asztalnál?",
-      faq_a1:
-        "Kerek asztal: 8–10 fő ideális, max 12. Szögletes (banketts): 6–8 fő egy oldalon, vagyis 12–16 egy asztalon. 10 fő felett a beszélgetés szétfeslik, vendégek nem hallják egymást, a Wēddly figyelmeztet, ha túl sokat raksz egy asztalra.",
-      faq_q2: "Mikor készítsem el az ültetési rendet?",
-      faq_a2:
-        "Az RSVP-határidő (~4 héttel az esküvő előtt) után érdemes kezdeni. A végleges létszámmal lehet pontosan tervezni; addig vázlat-szinten elég. A Wēddly-ben kétféle nézet van: tervezett és végleges, így átmehetsz vázlat-módból véglegesbe.",
-      faq_q3: "Hogyan oldjam meg a kínos vendégeket?",
-      faq_a3:
-        "A legbiztosabb módszer: külön asztal és minimum 2 asztalnyi távolság. A vendéglistádba felviszed a konfliktust mint jegyzet, a Wēddly pedig jelez, ha véletlenül egymás mellé húzod őket.",
     },
     rsvp_generator: {
       page_eyebrow: "Eszközök · RSVP szöveg generátor",
@@ -7181,15 +7142,6 @@ const hu: LocaleMessages = {
         "A statikus RSVP-szöveg jó kezdés, de a Wēddly minden vendégnek saját RSVP-linket generál (név előre kitöltve, étrend, kísérő, allergia). A vendégek telefonon válaszolnak egy perc alatt; ti egy listán látjátok az állapotot.",
       cta_button: "Workspace indítása",
       faq_h2: "Gyakori kérdések az RSVP-ről",
-      faq_q1: "Mit jelent az RSVP?",
-      faq_a1:
-        "Az RSVP a francia „Répondez s'il vous plaît” rövidítése, „kérjük, válaszoljon”. Esküvős kontextusban annyit jelent: kérjük, jelezze, hogy jön-e az esküvőre. A magyar esküvőkön klasszikusan 3–4 héttel az esküvő előtt szokás összegyűjteni.",
-      faq_q2: "Mikor küldjem ki az RSVP-kérést?",
-      faq_a2:
-        "Az RSVP-kérés a meghívóval együtt megy, magyar átlag: 8–12 héttel az esküvő előtt. RSVP-határidő: ~4 héttel az esküvő előtt, hogy a catering-nek és helyszínnek időben tudjátok jelezni a végleges létszámot.",
-      faq_q3: "Mit írjak az RSVP-szövegbe?",
-      faq_a3:
-        "Minimum: párotok neve, az esküvő dátuma, helyszín, RSVP-határidő és egy elérhetőség (e-mail vagy telefon, vagy egy link). Hasznos extra: étrend kérdés, kísérő-mező, allergia. A Wēddly RSVP-oldala ezeket egy linken keresztül oldja meg.",
     },
     couple_cards: {
       page_eyebrow: "Eszközök · 100 kérdés az esküvő előtt",
@@ -7244,15 +7196,6 @@ const hu: LocaleMessages = {
         "A nehéz beszélgetések után jöhetnek a praktikus döntések. A Wēddly egy közös felületen tartja a költségvetést, vendéglistát, RSVP-t és az ültetést, hogy az igazi munka után se kelljen PDF-eket osztogatni.",
       cta_button: "Workspace indítása",
       faq_h2: "Gyakori kérdések",
-      faq_q1: "Mire való ez a 100 kérdés?",
-      faq_a1:
-        "Beszélgetésindító. A kutatások szerint a tartós kapcsolatokban az számít, hogy a pár képes-e nyitottan beszélni a pénzről, a családról, a vágyról és a halálról is. A négy paklit ezek köré rendeztük, hogy a nehéz témák ne maradjanak a szőnyeg alatt.",
-      faq_q2: "Kötelező mind a 100-at megválaszolni?",
-      faq_a2:
-        "Nem. Egy kártya egy beszélgetés. Húzzatok egyet, beszéljétek meg, és tegyétek vissza a paklit. A böngészőtök megjegyzi, melyik kártyáknál tartotok, és a következő látogatáskor onnan folytatjátok.",
-      faq_q3: "Miért pont ez a négy pakli?",
-      faq_a3:
-        "Tíz külső szakértő (párterapeuta, pénzügyi tervező, hosszan házas párok, intimitás-coach, filozófus) szemszögéből szűrtük le a témákat. Ami mindenkinél visszatért: a család öröksége, a pénz és a hétköznapok, a test és a vágy, és a halál–krízis–értelem hármasa. Innen jött a négy pakli.",
     },
   },
   planners: {

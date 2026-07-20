@@ -19,6 +19,7 @@
 import type { BlogBlock } from "../../../shared/blog_posts";
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { enPathFor, huPathFor, lookupRouteSeo, type RouteSeo } from "../../../shared/seo_routes";
+import { toolFaqForPath } from "../../../shared/tool_faq";
 import { vendorPublicId } from "../../../shared/vendor_slug";
 import { db } from "../db";
 import { listListingPhotos } from "../domain/listings";
@@ -652,6 +653,22 @@ function buildJsonLd(opts: {
             { "@type": "ListItem", position: 2, name: entry.h1, item: `${origin}${path}` },
           ],
         });
+        // Per-tool FAQPage, same treatment the landing gets. The copy comes
+        // from shared/tool_faq.ts, which the React tool pages ALSO render, so
+        // the structured data and the visible <details> cards are guaranteed to
+        // be the same strings — a mismatch here reads as cloaking.
+        const toolFaq = toolFaqForPath(path, opts.locale);
+        if (toolFaq && toolFaq.length > 0) {
+          blocks.push({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: toolFaq.map((faq) => ({
+              "@type": "Question",
+              name: faq.q,
+              acceptedAnswer: { "@type": "Answer", text: faq.a },
+            })),
+          });
+        }
       }
     }
   }
@@ -1023,12 +1040,31 @@ function renderRouteBody(pathname: string, locale: SeoLocale): string | null {
         };
   // Blog posts bake their full body (every paragraph, heading, list and
   // quote) so the SSR HTML carries the whole 7-9 minute read, not just the
-  // lead. Tool/static routes keep the lean h1 + intro (their unique copy
-  // lives in React components, not in shared data).
+  // lead.
   const blogBlocks = lookupBlogPostBody(pathname, locale);
-  const articleHtml = blogBlocks
+  let articleHtml = blogBlocks
     ? `<article>\n        ${renderBlogBlocks(blogBlocks)}\n      </article>`
     : null;
+
+  // Tool pages used to stop at the h1 + intro, because their copy lived in the
+  // frontend locale tree where the backend can't reach it. Their FAQ now lives
+  // in shared/tool_faq.ts (so the FAQPage JSON-LD can't drift from the visible
+  // cards), which means the single richest block of unique prose on each tool
+  // page is finally bakeable. Rendered as the same q→h2 / a→p shape the visible
+  // <details> cards use, so the crawled text matches what a reader sees.
+  //
+  // The rest of each tool page (the interactive calculator/generator copy) is
+  // still React-only: it's UI microcopy with interpolation and plurals, not
+  // prose, so lifting it out of the locale tree would cost more than it earns.
+  if (!articleHtml) {
+    const toolFaq = toolFaqForPath(pathname, locale);
+    if (toolFaq && toolFaq.length > 0) {
+      const faqHtml = toolFaq
+        .map((f) => `<h2>${escapeText(f.q)}</h2>\n        <p>${escapeText(f.a)}</p>`)
+        .join("\n        ");
+      articleHtml = `<article>\n        ${faqHtml}\n      </article>`;
+    }
+  }
 
   return [
     `<header>`,
