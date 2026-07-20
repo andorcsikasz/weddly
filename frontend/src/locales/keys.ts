@@ -3484,6 +3484,12 @@ export interface LocaleMessages {
     todo_item_schedule: string;
     todo_item_venue: string;
     venue_saved_prefix: string;
+    venue_map_label: string;
+    venue_map_hint: string;
+    venue_map_needs_location: string;
+    venue_map_confirm_title: string;
+    venue_map_confirm_body: string;
+    venue_map_confirm_cta: string;
     preview_divider_label: string;
     /** Divider label marking the start of the editor, below the guest view. */
     editor_divider_label: string;

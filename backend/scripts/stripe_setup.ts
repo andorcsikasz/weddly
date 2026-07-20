@@ -11,7 +11,11 @@
 // Currency note: Stripe expects the amount in each currency's minor unit.
 //   EUR 5.00 -> 500 (cents)
 //   HUF      -> Stripe treats HUF with 2 decimals BUT requires whole-forint
-//               amounts, so 1 990 Ft -> 199000 (must be divisible by 100).
+//               amounts, so 2 490 Ft -> 249000 (must be divisible by 100).
+//
+// To CHANGE an existing live price (Stripe Prices are immutable), don't re-run
+// this — it mints a whole new product. Use backend/scripts/stripe_reprice.ts,
+// which adds a new price to the existing product and repoints one env var.
 
 import Stripe from "stripe";
 import { MONTHLY_PRICE } from "../../shared/billing";

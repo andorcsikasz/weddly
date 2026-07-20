@@ -509,9 +509,6 @@ export default function DesignPage() {
   function chooseMonogram(patch: Partial<CoupleDesign["monogram"]>) {
     setDesign((d) => ({ ...d, monogram: { ...d.monogram, ...patch } }));
   }
-  function chooseVenueMap(on: boolean) {
-    setDesign((d) => ({ ...d, web: { ...d.web, venueMap: on } }));
-  }
   // One switch, both surfaces. These were two separate controls on two separate
   // tabs writing the same idea ("draw the decorative dividers"), and nobody
   // wants ornaments on the invitation but not the website.
@@ -654,7 +651,6 @@ export default function DesignPage() {
       setPhotoBusy(null);
     }
   }
-  const hasVenueCoords = couple?.location_lat != null && couple?.location_lng != null;
 
   // Copy the live guest-page URL (finish card, public sites only).
   async function copyGuestLink() {
@@ -1370,33 +1366,7 @@ export default function DesignPage() {
                                 </li>
                               );
                             })}
-                            {/* TODO(milestone 5): the public venue map is a
-                                server-enforced privacy gate, not a design
-                                choice. It belongs on the guest-page editor next
-                                to the other visibility settings. */}
-                            <li className="flex min-h-tap items-center justify-between gap-3 px-3 py-1.5">
-                              <span
-                                className={`text-sm ${
-                                  design.web.venueMap
-                                    ? "text-ink-900 dark:text-paper-50"
-                                    : "text-ink-400 dark:text-umber-400"
-                                }`}
-                              >
-                                {t("design.web.venue_map_label")}
-                              </span>
-                              <Switch
-                                checked={design.web.venueMap}
-                                onChange={chooseVenueMap}
-                                disabled={!hasVenueCoords}
-                                label={t("design.web.venue_map_label")}
-                              />
-                            </li>
                           </ul>
-                          {!hasVenueCoords && (
-                            <p className="text-xs text-ink-400 dark:text-umber-300">
-                              {t("design.web.venue_map_needs_location")}
-                            </p>
-                          )}
                         </TuneRow>
                       </div>
                     </div>

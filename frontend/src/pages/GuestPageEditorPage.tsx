@@ -46,7 +46,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { InfoHint } from "../components/InfoHint";
-import { Dialog, useConfirm, useToast } from "../components/ui";
+import { Dialog, Switch, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
   billingApi,
@@ -451,6 +451,13 @@ export default function GuestPageEditorPage() {
   const [addonBusy, setAddonBusy] = useState(false);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [isPublic, setIsPublic] = useState(false);
+  // Reveal the exact venue pin (and the embedded map) to everyone, not just
+  // confirmed guests. This is a `design.web.venueMap` flag, but it is a privacy
+  // gate rather than a look, so it lives here beside publish, not on the design
+  // page. Kept in its own state (patched immediately, not through the text
+  // debounce) since a single boolean does not belong in the field auto-save.
+  const [venueMap, setVenueMap] = useState(false);
+  const [venueMapBusy, setVenueMapBusy] = useState(false);
   const [venueName, setVenueName] = useState("");
   const [venueCity, setVenueCity] = useState("");
   // Exact wedding date (ISO YYYY-MM-DD, or "" for none/fuzzy). Editable here
@@ -534,6 +541,7 @@ export default function GuestPageEditorPage() {
         if (cR.couple) {
           setCouple(cR.couple);
           setIsPublic(cR.couple.is_public);
+          setVenueMap(cR.couple.design.web.venueMap);
           setVenueName(cR.couple.venue_name ?? "");
           setVenueCity(cR.couple.venue_city ?? "");
           setWeddingDate(cR.couple.wedding_date ?? "");
@@ -984,6 +992,40 @@ export default function GuestPageEditorPage() {
     setIsPublic(turningOn);
   }
 
+  const hasVenueCoords = couple?.location_lat != null && couple?.location_lng != null;
+
+  // Reveal / hide the exact venue location on the public page. Confirmed on
+  // turn-on only: showing a private address to anyone with the link is the
+  // privacy expansion, hiding it again is always safe. Writes design straight
+  // through rather than the debounce, and rolls back on failure.
+  async function onToggleVenueMap() {
+    if (!couple || venueMapBusy) return;
+    const turningOn = !venueMap;
+    if (turningOn) {
+      const ok = await confirm({
+        title: t("guest_page_editor.venue_map_confirm_title"),
+        body: t("guest_page_editor.venue_map_confirm_body"),
+        confirmLabel: t("guest_page_editor.venue_map_confirm_cta"),
+        cancelLabel: t("common.cancel"),
+      });
+      if (!ok) return;
+    }
+    setVenueMap(turningOn);
+    setVenueMapBusy(true);
+    try {
+      const r = await coupleApi.update({
+        design: { ...couple.design, web: { ...couple.design.web, venueMap: turningOn } },
+      });
+      setCouple(r.couple);
+      setVenueMap(r.couple.design.web.venueMap);
+    } catch (err) {
+      setVenueMap(!turningOn);
+      setError(err instanceof ApiError ? err.message : t("wedding_site_editor.save_error_generic"));
+    } finally {
+      setVenueMapBusy(false);
+    }
+  }
+
   return (
     <>
       {/* Title bar — carries the live autosave status next to the title so the
@@ -1380,6 +1422,29 @@ export default function GuestPageEditorPage() {
                       : t("wedding_site_editor.publish_label_off")}
                   </span>
                 </label>
+              </div>
+
+              {/* Exact-location reveal. A privacy switch, so it sits inside the
+                  publish card next to the other "who can see this" control, not
+                  on the design page. Disabled until the couple has set a venue
+                  location; the reveal is server-gated regardless. */}
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-paper-200 pt-4 dark:border-umber-700">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-medium text-ink-900 dark:text-paper-50">
+                    {t("guest_page_editor.venue_map_label")}
+                  </h3>
+                  <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">
+                    {hasVenueCoords
+                      ? t("guest_page_editor.venue_map_hint")
+                      : t("guest_page_editor.venue_map_needs_location")}
+                  </p>
+                </div>
+                <Switch
+                  checked={venueMap}
+                  onChange={() => void onToggleVenueMap()}
+                  disabled={!hasVenueCoords || venueMapBusy}
+                  label={t("guest_page_editor.venue_map_label")}
+                />
               </div>
             </section>
 
