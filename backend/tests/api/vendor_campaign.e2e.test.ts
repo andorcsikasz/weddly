@@ -17,7 +17,7 @@
 
 import "../setup";
 
-import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { CLAIM_TOKEN_TTL_MS } from "@shared/vendor_claim";
 import type {
   VendorCampaign,
@@ -28,6 +28,7 @@ import type {
 import { VENDOR_CAMPAIGN_REMINDER_AFTER_MS } from "@shared/vendor_campaign";
 import { db, now } from "../../src/db";
 import { runCampaignSweep } from "../../src/domain/emails/worker";
+import { backfillListings } from "../../src/domain/listings";
 import {
   getCampaignRow,
   isOptedOut,
@@ -208,12 +209,20 @@ describe("vendor claim-invite campaign", () => {
     await bootstrapCouple(EXISTING_USER_EMAIL);
   });
 
+  afterAll(() => {
+    // MUST restore the curated directory. `bun test` runs every file in one
+    // process against one DB, and the curated rows are materialised ONCE at
+    // boot — so without this, the `beforeEach` wipe below leaves every later
+    // test file staring at an empty `listings` table.
+    backfillListings();
+  });
+
   beforeEach(() => {
     // Deliberately NOT wipeAll(): it drops `users` and `sessions`, which would
     // invalidate the shared admin token and force a 2s re-registration per
     // test. Clear only what this suite writes. Listings go too, including the
-    // curated boot snapshot, so the targeting assertions aren't swamped by the
-    // ~500 real directory rows.
+    // curated boot snapshot (restored in afterAll), so the targeting
+    // assertions aren't swamped by the ~500 real directory rows.
     db.exec("DELETE FROM vendor_claim_campaign_sends");
     db.exec("DELETE FROM vendor_claim_campaigns");
     db.exec("DELETE FROM email_optouts");
