@@ -657,9 +657,11 @@ export default function VendorListingPage() {
                 a 100% checklist is just noise. */}
             <SetupProgressPanel
               steps={listingChecklistFor({
+                category: view.listing.category,
                 hero_image_url: effectiveHeroUrl || null,
                 blurb_hu: form.blurb_hu || null,
                 blurb_en: form.blurb_en || null,
+                city: form.city || null,
                 contact_email: form.contact_email || null,
                 contact_phone: form.contact_phone || null,
                 price_band: form.price_band === "" ? null : Number(form.price_band),
