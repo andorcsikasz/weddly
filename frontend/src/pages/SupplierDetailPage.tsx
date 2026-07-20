@@ -78,6 +78,7 @@ import {
   MAX_REVIEW_TAGS,
   REVIEW_BODY_MAX_CHARS,
   reviewTagsForCategory,
+  showsCapacity,
 } from "@shared/suppliers";
 import { vendorPublicId } from "@shared/vendor_slug";
 import { Pill } from "../components/admin";
@@ -475,7 +476,7 @@ export default function SupplierDetailPage() {
                   previously only shown on the compact directory card. Surface
                   them here too so the detail page (and its shared public twin)
                   carries the same "worth knowing" facts. */}
-              {(detail.capacity_max ?? 0) > 0 && (
+              {showsCapacity(detail) && (
                 <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
                   <Users size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
                   {detail.capacity_min && detail.capacity_max

@@ -14,7 +14,7 @@ import type {
   SupplierCountryCount,
   SupplierGroup,
 } from "@shared/suppliers";
-import { SUPPLIER_GROUPS } from "@shared/suppliers";
+import { SUPPLIER_GROUPS, showsCapacity } from "@shared/suppliers";
 import {
   BedDouble,
   Brush,
@@ -2116,7 +2116,7 @@ export default function SuppliersPage() {
                                 </span>
                               </>
                             )}
-                            {(s.capacity_max ?? 0) > 0 && (
+                            {showsCapacity(s) && (
                               <>
                                 <span aria-hidden className="text-paper-400 dark:text-umber-300">
                                   ·
@@ -2315,7 +2315,7 @@ export default function SuppliersPage() {
                             lat={s.lat}
                             lng={s.lng}
                           />
-                          {(s.capacity_max ?? 0) > 0 && (
+                          {showsCapacity(s) && (
                             <span
                               className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-ink-600 dark:text-umber-200"
                               aria-label={t("suppliers.capacity_label")}

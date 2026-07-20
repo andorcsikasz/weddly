@@ -12,6 +12,7 @@ import type {
   SupplierDetail,
   SupplierReview,
 } from "@shared/suppliers";
+import { showsCapacity } from "@shared/suppliers";
 import { BadgeCheck, ExternalLink, Globe, Mail, MapPin, Phone, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -249,8 +250,10 @@ export default function PublicVendorPage() {
               {detail.price_band !== null && <PriceBandDots band={detail.price_band} />}
               {/* Guest capacity — one of the first facts a couple checks on a
                   venue, and captured on the listing but previously only shown on
-                  the compact directory card, never on this shareable page. */}
-              {(detail.capacity_max ?? 0) > 0 && (
+                  the compact directory card, never on this shareable page.
+                  Gated on the category too: only venues, stays and the
+                  serve-N-guests trades have one at all. */}
+              {showsCapacity(detail) && (
                 <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
                   <Users size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
                   {detail.capacity_min && detail.capacity_max

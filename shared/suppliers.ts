@@ -200,6 +200,91 @@ export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
   { id: "transport", categories: ["transport"] },
 ];
 
+/** What a guest-count range MEANS for a category, or null when the question is
+ *  meaningless there.
+ *
+ *  - `seating`: the physical room. "How many people fit?" A venue, a block of
+ *    rooms, a marquee. This is a hard ceiling a couple filters on.
+ *  - `service`: throughput. "How many people can you serve?" A caterer, a bar,
+ *    a rental stock of 200 chairs. Soft, and about the vendor's operation
+ *    rather than a place, which is why it gets its own label.
+ *
+ *  Everyone else is null. A photographer, a florist, a jeweller and a celebrant
+ *  have no guest capacity, so asking them for one is noise on the form and a
+ *  step they can never honestly complete on the setup checklist. */
+export type SupplierCapacityKind = "seating" | "service";
+
+/** Per-category capacity rule. Exhaustive over `SupplierCategory` on purpose:
+ *  adding a category to the union without deciding this is a compile error,
+ *  which is the whole point of keeping the rule here instead of in a DB table.
+ *  Prefer null when unsure. A missing field is invisible; a meaningless
+ *  required one is not. */
+export const SUPPLIER_CAPACITY_KIND: Record<SupplierCategory, SupplierCapacityKind | null> = {
+  // Planning & rentals: a planner's headcount is the couple's, not theirs.
+  // Rental stock, though, genuinely runs out at N guests.
+  wedding_planner: null,
+  rental_equipment: "service",
+  // Venue & stay: the original and most literal case.
+  venue: "seating",
+  accommodation: "seating",
+  tent_pavilion: "seating",
+  // Food & drink: throughput, not floor area. Cake is deliberately null:
+  // portions scale with the order, so a "max guests" there means nothing.
+  catering: "service",
+  cake_dessert: null,
+  bar_drinks: "service",
+  food_trucks: "service",
+  // Decor, media, entertainment, fashion, paper, transport: no guest capacity.
+  // A DJ's rig has an acoustic limit, but it isn't a number couples filter on
+  // and it isn't what this field has ever meant, so it stays out.
+  wedding_decor: null,
+  florist: null,
+  lighting: null,
+  photography: null,
+  videography: null,
+  content_creator: null,
+  photo_booth: null,
+  dj: null,
+  live_music: null,
+  entertainment: null,
+  mc_celebrant: null,
+  sound_tech: null,
+  bridal_boutique: null,
+  suit_formal: null,
+  hair_makeup: null,
+  nails: null,
+  wedding_jewelry: null,
+  stationery: null,
+  invitation_graphics: null,
+  transport: null,
+  other: null,
+};
+
+/** Capacity rule for a category slug, tolerant of the untyped strings that
+ *  reach the UI (listing rows, the admin-editable DB taxonomy, legacy pre-v2
+ *  slugs). An unknown slug resolves to null, so a category an admin adds in the
+ *  taxonomy screen starts without the field rather than inheriting a guest
+ *  count nobody chose for it. Give it one here when it earns one. */
+export function capacityKindFor(category: string | null | undefined): SupplierCapacityKind | null {
+  if (!category) return null;
+  return SUPPLIER_CAPACITY_KIND[category as SupplierCategory] ?? null;
+}
+
+/** Should a public surface print this listing's guest capacity? Both halves in
+ *  one place because every surface needs both: the category has to be one that
+ *  HAS a capacity, and the listing has to have filled it in.
+ *
+ *  The category half is what makes hiding the editor field safe as a soft hide.
+ *  Legacy rows kept their numbers, so without this a photographer who typed a
+ *  guest count last month would keep publishing it with no way to take it
+ *  down. */
+export function showsCapacity(s: {
+  category?: string | null;
+  capacity_max?: number | null;
+}): boolean {
+  return capacityKindFor(s.category) != null && (s.capacity_max ?? 0) > 0;
+}
+
 /** Shape of a directory entry without the per-request overlay (votes). Used
  *  by the static curated list in `suppliers_data.ts` and by community mappers. */
 export interface DirectorySupplierBase {
@@ -266,6 +351,13 @@ export interface DirectorySupplierBase {
    *  entries with no photo batch. hero_image_url is derived from [0] in the
    *  DIRECTORY map. */
   gallery_urls: string[] | null;
+  /** Per-photo vertical focal point (object-position %, 0..100), keyed by the
+   *  URL as it appears in `gallery_urls`. Only vendor-uploaded photos the
+   *  vendor has actually dragged appear here; anything missing renders centred,
+   *  which is what every image did before the control existed. Keyed by URL
+   *  rather than index because the detail page tracks the enlarged photo by
+   *  `src`, so the big slot and its thumbnail can share one lookup. */
+  gallery_positions_y?: Record<string, number>;
 }
 
 /** Wire shape returned by `/api/suppliers`. Adds per-request vote info on top

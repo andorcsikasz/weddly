@@ -40,13 +40,14 @@ async function makeApprovedListing(
   ownerEmail: string,
   contactEmail: string,
   name: string,
+  category = "photography",
 ): Promise<{ listingId: string }> {
   const { token } = await bootstrapCouple(ownerEmail);
   const submit = await req<{ supplier: { id: string } }>(
     "POST",
     "/api/suppliers/community",
     {
-      category: "photography",
+      category,
       submitter_type: "self",
       name,
       city: "Budapest",
@@ -109,12 +110,18 @@ async function claimListing(
   return { vendorToken: complete.data.token, listingId };
 }
 
-/** Bootstrap a claimed vendor and return their session token + listing id. */
-async function bootstrapVendor(slug: string): Promise<{ vendorToken: string; listingId: string }> {
+/** Bootstrap a claimed vendor and return their session token + listing id.
+ *  Defaults to a photography listing; pass a category to exercise the
+ *  category-dependent parts of the payload (the capacity checklist step). */
+async function bootstrapVendor(
+  slug: string,
+  category = "photography",
+): Promise<{ vendorToken: string; listingId: string }> {
   const { listingId } = await makeApprovedListing(
     `owner-${slug}@weddly.test`,
     `vendor-${slug}@weddly.test`,
     `${slug} Studio`,
+    category,
   );
   return claimListing(listingId, `vendor-${slug}@weddly.test`, `Vendor ${slug}`);
 }
@@ -155,8 +162,10 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     expect(r.data.reviews_recent).toBe(0);
     expect(r.data.revenue_tracked).toBe(0);
     // The bootstrap card has blurb + contact_email + price_band filled, but no
-    // capacity, no hero image, no gallery and no packages: 3 of 7 steps = 43%.
-    expect(r.data.listing_completeness).toBe(43);
+    // hero image, no gallery and no packages. This is a PHOTOGRAPHY listing, so
+    // the capacity step is dropped entirely (a photographer has no guest
+    // capacity) and the denominator is 6, not 7: 3 of 6 steps = 50%.
+    expect(r.data.listing_completeness).toBe(50);
     // The checklist is the source the percent is derived from, so it must agree.
     expect(r.data.listing_steps.map((s) => s.key)).toEqual([
       "cover",
@@ -164,7 +173,6 @@ describe("vendor stats — GET /api/vendor/stats", () => {
       "description",
       "contact",
       "pricing",
-      "capacity",
       "packages",
     ]);
     expect(r.data.listing_steps.filter((s) => s.done).map((s) => s.key)).toEqual([
@@ -175,6 +183,37 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     expect(["HUF", "EUR"]).toContain(r.data.currency);
     expect(r.data.billing).toBeTruthy();
     expect(r.data.currency).toBe(r.data.billing.currency);
+  });
+
+  test("capacity is a checklist step only for categories that have a guest count", async () => {
+    wipeAll();
+    const venue = await bootstrapVendor("stats-venue", "venue");
+    const venueStats = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: venue.vendorToken,
+    });
+    expect(venueStats.status).toBe(200);
+    // Same filled fields as the photographer above, but a venue DOES have a
+    // capacity, so the step is present and unfinished: 3 of 7 = 43%.
+    expect(venueStats.data.listing_steps.map((s) => s.key)).toContain("capacity");
+    expect(venueStats.data.listing_steps).toHaveLength(7);
+    expect(venueStats.data.listing_completeness).toBe(43);
+
+    // A caterer serves N guests, so it keeps the step too.
+    wipeAll();
+    const caterer = await bootstrapVendor("stats-catering", "catering");
+    const catererStats = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: caterer.vendorToken,
+    });
+    expect(catererStats.data.listing_steps.map((s) => s.key)).toContain("capacity");
+
+    // A florist does not, and must be able to reach 100% without it.
+    wipeAll();
+    const florist = await bootstrapVendor("stats-florist", "florist");
+    const floristStats = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: florist.vendorToken,
+    });
+    expect(floristStats.data.listing_steps.map((s) => s.key)).not.toContain("capacity");
+    expect(floristStats.data.listing_steps).toHaveLength(6);
   });
 
   test("bookings roll up into counts, status breakdown, upcoming, and tracked revenue", async () => {

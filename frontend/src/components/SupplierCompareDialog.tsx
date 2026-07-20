@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
 import type { DirectorySupplier } from "@shared/suppliers";
-import { SUPPLIER_TO_BUDGET } from "@shared/suppliers";
+import { SUPPLIER_TO_BUDGET, capacityKindFor } from "@shared/suppliers";
 import type { BudgetCategory, BudgetLine, Currency } from "@shared/types";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { supplierApi } from "../lib/endpoints";
@@ -85,6 +85,13 @@ function capacityCell(
   target: number | null,
   t: Props["t"],
 ): { icon: "ok" | "warn" | "info" | "none"; line: string; range: string | null } {
+  // Categories with no guest capacity get a neutral "not relevant" rather than
+  // the "unknown" line below: a photographer hasn't forgotten to fill this in,
+  // the question just doesn't apply, and reading it as missing data would push
+  // the couple to discount them against a vendor who did answer.
+  if (capacityKindFor(supplier.category) == null) {
+    return { icon: "none", line: t("suppliers.compare.capacity_not_relevant"), range: null };
+  }
   const min = supplier.capacity_min;
   const max = supplier.capacity_max;
   const hasRange = min !== null || max !== null;

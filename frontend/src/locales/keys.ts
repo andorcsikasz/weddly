@@ -657,6 +657,8 @@ export interface LocaleMessages {
     section_marketing: string;
     section_contact: string;
     section_pricing: string;
+    /** Same fieldset, for the categories where the capacity block is hidden. */
+    section_pricing_only: string;
     label_blurb_hu: string;
     label_blurb_en: string;
     label_blurb_hint: string;
@@ -732,6 +734,11 @@ export interface LocaleMessages {
     price_band_level_4_desc: string;
     price_band_level_5_desc: string;
     capacity_range_label: string;
+    /** Capacity heading for a category that HAS a room: "Befogadóképesség". */
+    capacity_seating_label: string;
+    /** Capacity heading for a category that SERVES guests rather than seating
+     *  them (catering, bar, rentals): "Kiszolgálható vendégszám". */
+    capacity_service_label: string;
     capacity_min_label: string;
     capacity_max_label: string;
     capacity_invalid: string;
@@ -4979,6 +4986,10 @@ export interface LocaleMessages {
       capacity_too_small: string;
       capacity_too_large: string;
       capacity_unknown: string;
+      /** Capacity row verdict for a category that has no guest capacity at
+       *  all, kept distinct from "not declared" so it doesn't read as a gap
+       *  in the vendor's listing. */
+      capacity_not_relevant: string;
       capacity_no_target: string;
       same_city: string;
       different_city: string;

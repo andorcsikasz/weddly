@@ -323,9 +323,11 @@ const YEAR_MS = 1000 * 60 * 60 * 24 * 365;
  *  vendor with no listing yet has every step undone. */
 export function listingChecklist(listing: Listing | null): VendorListingStep[] {
   return listingChecklistFor({
+    category: listing?.category ?? null,
     hero_image_url: listing?.hero_image_url ?? null,
     blurb_hu: listing?.blurb_hu ?? null,
     blurb_en: listing?.blurb_en ?? null,
+    city: listing?.city ?? null,
     contact_email: listing?.contact_email ?? null,
     contact_phone: listing?.contact_phone ?? null,
     price_band: listing?.price_band ?? null,

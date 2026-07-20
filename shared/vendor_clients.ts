@@ -13,6 +13,7 @@
 // labelled installments (due_date + paid flag). Money is integer minor units;
 // the currency comes from the vendor's subscription (HUF | EUR).
 
+import { capacityKindFor } from "./suppliers";
 import type { Currency, UnixMs } from "./types";
 import type { VendorBilling } from "./vendor_billing";
 
@@ -85,9 +86,18 @@ export interface VendorListingStep {
  *  `Listing`, so the backend can pass DB counts and the frontend can pass the
  *  arrays it already holds without either side re-deriving the rules. */
 export interface VendorListingChecklistInput {
+  /** Drives whether the `capacity` step applies at all. See
+   *  `capacityKindFor`: a photographer has no guest capacity, so scoring one
+   *  left 23 of the 30 categories structurally stuck at 86%. */
+  category: string | null;
   hero_image_url: string | null;
   blurb_hu: string | null;
   blurb_en: string | null;
+  /** City is the only asterisked field in the editor, so it has to score:
+   *  without it the `contact` step read 100% on a listing with an empty
+   *  mandatory Város, telling the vendor they were done while the listing was
+   *  still short a required field. */
+  city: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   price_band: number | null;
@@ -106,18 +116,30 @@ export interface VendorListingChecklistInput {
  *  the cover and no price offers, which is exactly the "finished-looking but
  *  empty" card the nudge exists to prevent.
  *
+ *  `capacity` is the one conditional step: it is dropped entirely for the
+ *  categories where a guest count is meaningless, so the denominator shrinks
+ *  to 6 and a florist can actually reach 100%. Dropping rather than
+ *  auto-completing it keeps the ring honest: a step nobody can see shouldn't
+ *  read as work the vendor did.
+ *
  *  Single-sourced here so the dashboard ring, the listing-editor chip and the
  *  server's `listing_completeness` can never drift apart. */
 export function listingChecklistFor(input: VendorListingChecklistInput): VendorListingStep[] {
-  return [
+  const steps: VendorListingStep[] = [
     { key: "cover", done: Boolean(input.hero_image_url) },
     { key: "gallery", done: input.photo_count > 0 },
     { key: "description", done: Boolean(input.blurb_hu) || Boolean(input.blurb_en) },
-    { key: "contact", done: Boolean(input.contact_email) || Boolean(input.contact_phone) },
+    {
+      key: "contact",
+      done: Boolean(input.city) && (Boolean(input.contact_email) || Boolean(input.contact_phone)),
+    },
     { key: "pricing", done: input.price_band != null },
-    { key: "capacity", done: input.capacity_min != null || input.capacity_max != null },
-    { key: "packages", done: input.package_count > 0 },
   ];
+  if (capacityKindFor(input.category) != null) {
+    steps.push({ key: "capacity", done: input.capacity_min != null || input.capacity_max != null });
+  }
+  steps.push({ key: "packages", done: input.package_count > 0 });
+  return steps;
 }
 
 /** Percent (0..100) of the checklist completed. Always derived from the steps,
