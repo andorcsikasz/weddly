@@ -55,6 +55,22 @@ function saveSettings(s: UpcomingSettings) {
 
 const MS_PER_DAY = 86_400_000;
 
+/** The upcoming list is a short scroll window, not a growing column: the card sits
+ *  above the fold and must keep its height no matter how many tasks are dated. It
+ *  glides back to the top after this much idle time so the panel always returns to
+ *  the highest-priority rows instead of getting parked deep in the list. */
+const IDLE_SCROLL_RESET_MS = 4000;
+
+/** How many dated tasks the scroll window holds. The `count` setting sizes the
+ *  visible window; this is how deep you can reach by scrolling before the card
+ *  hands you off to /app/planning. */
+const UPCOMING_POOL = 25;
+
+/** One row (text-sm line + py-1) plus the flex gap, in px. */
+const ROW_H = 32;
+/** Extra sliver of the next row left visible, so the window reads as scrollable. */
+const ROW_PEEK = 14;
+
 /** Whole days from today to an ISO due date (negative = overdue). Both sides are
  *  parsed at UTC midnight so DST and local offset never shift the count. */
 function daysUntil(dueIso: string, today: string): number {
@@ -64,7 +80,8 @@ function daysUntil(dueIso: string, today: string): number {
   return Math.round((due - now) / MS_PER_DAY);
 }
 
-/** A dated, undone task filtered + sorted by settings, capped, ready to render. */
+/** Dated, undone tasks filtered + sorted by settings, capped to the scroll pool.
+ *  `settings.count` no longer truncates the data, it sizes the visible window. */
 function selectUpcoming(items: PlanningItem[], settings: UpcomingSettings): PlanningItem[] {
   return items
     .filter((it) => {
@@ -80,7 +97,7 @@ function selectUpcoming(items: PlanningItem[], settings: UpcomingSettings): Plan
       if (a.priority !== b.priority) return b.priority - a.priority;
       return a.id - b.id;
     })
-    .slice(0, settings.count);
+    .slice(0, UPCOMING_POOL);
 }
 
 /** When nothing is dated yet, fall back to the most recently added undone tasks
@@ -120,6 +137,8 @@ export function UpcomingTasksCard({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
   const settingsPanelRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,6 +170,23 @@ export function UpcomingTasksCard({
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [settingsOpen]);
+
+  useEffect(
+    () => () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+    },
+    [],
+  );
+
+  /** Every scroll restarts the idle countdown; when it finally elapses the window
+   *  glides back to the top rows. */
+  function onListScroll() {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    if (!listRef.current || listRef.current.scrollTop === 0) return;
+    idleTimer.current = setTimeout(() => {
+      listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }, IDLE_SCROLL_RESET_MS);
+  }
 
   function updateSettings(patch: Partial<UpcomingSettings>) {
     const next = { ...settings, ...patch };
@@ -379,45 +415,62 @@ export function UpcomingTasksCard({
             )}
             {upcoming.length > 0 && (
               <>
-                <ul className="flex flex-col gap-1">
-                  {upcoming.map((item) => {
-                    const chip = dueChip(item.due_date as string);
-                    return (
-                      <li
-                        key={item.id}
-                        className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-umber-900 transition hover:bg-paper-100 dark:text-paper-50 dark:hover:bg-umber-700"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleDone(item)}
-                          aria-label={t("common.done")}
-                          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-paper-400 bg-white transition hover:border-blush-500 dark:border-umber-600 dark:bg-umber-800"
-                        />
-                        <Link to="/app/planning" className="flex min-w-0 flex-1 items-center gap-2">
-                          <span className="min-w-0 flex-1 truncate">{item.title}</span>
-                          {item.priority === 2 && (
-                            <span
-                              className="shrink-0 font-bold text-blush-700 dark:text-blush-300"
-                              aria-hidden="true"
-                            >
-                              !!
-                            </span>
-                          )}
-                          {item.assignee && (
-                            <span className="shrink-0 truncate text-xs text-umber-500 dark:text-umber-300">
-                              {item.assignee}
-                            </span>
-                          )}
-                          <span
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${chip.tone}`}
+                {/* Scroll window sized to the `count` setting, drifting back to the
+                    top priorities after IDLE_SCROLL_RESET_MS of no scrolling. */}
+                <div
+                  ref={listRef}
+                  onScroll={onListScroll}
+                  style={{
+                    maxHeight:
+                      upcoming.length > settings.count
+                        ? settings.count * ROW_H + ROW_PEEK
+                        : undefined,
+                  }}
+                  className="overflow-y-auto overscroll-contain"
+                >
+                  <ul className="flex flex-col gap-1">
+                    {upcoming.map((item) => {
+                      const chip = dueChip(item.due_date as string);
+                      return (
+                        <li
+                          key={item.id}
+                          className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-umber-900 transition hover:bg-paper-100 dark:text-paper-50 dark:hover:bg-umber-700"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleDone(item)}
+                            aria-label={t("common.done")}
+                            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-paper-400 bg-white transition hover:border-blush-500 dark:border-umber-600 dark:bg-umber-800"
+                          />
+                          <Link
+                            to="/app/planning"
+                            className="flex min-w-0 flex-1 items-center gap-2"
                           >
-                            {chip.label}
-                          </span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+                            <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                            {item.priority === 2 && (
+                              <span
+                                className="shrink-0 font-bold text-blush-700 dark:text-blush-300"
+                                aria-hidden="true"
+                              >
+                                !!
+                              </span>
+                            )}
+                            {item.assignee && (
+                              <span className="shrink-0 truncate text-xs text-umber-500 dark:text-umber-300">
+                                {item.assignee}
+                              </span>
+                            )}
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${chip.tone}`}
+                            >
+                              {chip.label}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
                 <Link
                   to="/app/planning"
                   className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blush-700 hover:underline dark:text-blush-300"
