@@ -13,6 +13,11 @@
 // switch alerted on your own daily driver, while a different browser on the
 // same subnet was silently accepted as "known" and never alerted at all.
 //
+// Both fingerprints are computed on every sign-in, because a browser MIGRATES
+// between them: it is known by its UA hash until it loads a build that mints
+// the id, and by the id afterwards. `recordKnownDevice` treats that handover as
+// the same device, or the switch-over itself would mail every existing user.
+//
 // We never store the raw id, UA or IP - those are PII under GDPR. Each device
 // is a SHA-256 truncated to 16 hex chars. Storage is an inline JSON array on
 // `users.known_devices_json`, capped to KNOWN_DEVICE_CAP entries and evicted
@@ -94,24 +99,37 @@ function normaliseDeviceId(raw: string | null): string | null {
   return trimmed;
 }
 
-/** Privacy-preserving device fingerprint.
+function hash(material: string): string {
+  return createHash("sha256").update(material).digest("hex").slice(0, 16);
+}
+
+/** Privacy-preserving device fingerprints, BOTH of them.
  *
  *  A client-supplied device id wins outright: it is the only input that is
- *  genuinely per-machine and stable across networks. The UA fallback keeps
- *  headless/legacy clients working, at the cost of not distinguishing two
+ *  genuinely per-machine and stable across networks. The UA fingerprint is the
+ *  fallback for headless/legacy clients, at the cost of not distinguishing two
  *  identical browser+OS combinations.
+ *
+ *  We compute both on every sign-in, not just the winner, because the same
+ *  physical browser moves between the two: it is recorded under `ua` while it
+ *  runs a build that has no device id, then starts sending `did` the moment it
+ *  picks the new bundle up. See `recordKnownDevice` for how that handover is
+ *  absorbed instead of being mailed about.
  *
  *  Note there is no security downside to trusting the client id here: it can
  *  only ever SUPPRESS an alert, and only when it matches an id this user has
  *  signed in with before. An attacker on a stolen password does not know the
  *  victim's device id, so their random (or absent) id fails to match and the
  *  alert fires. */
-export function deviceFingerprint(deviceId: string | null, userAgent: string | null): string {
-  const did = normaliseDeviceId(deviceId);
-  const material = did
-    ? `did|${did}`
-    : `ua|${browserFamily(userAgent ?? "")}|${osFamily(userAgent ?? "")}`;
-  return createHash("sha256").update(material).digest("hex").slice(0, 16);
+export function deviceFingerprints(
+  deviceId: string | null,
+  userAgent: string | null,
+): { did: string | null; ua: string } {
+  const raw = normaliseDeviceId(deviceId);
+  return {
+    did: raw ? hash(`did|${raw}`) : null,
+    ua: hash(`ua|${browserFamily(userAgent ?? "")}|${osFamily(userAgent ?? "")}`),
+  };
 }
 
 /** Check (and update) the known-device list for a user. Returns:
@@ -121,7 +139,10 @@ export function deviceFingerprint(deviceId: string | null, userAgent: string | n
  *  - `existing` when the fingerprint is already known; `last_seen_at` is bumped.
  *  - `new` when the user has prior devices but not this one.
  */
-export function recordKnownDevice(userId: number, fingerprint: string): DeviceCheckResult {
+export function recordKnownDevice(
+  userId: number,
+  fps: { did: string | null; ua: string },
+): DeviceCheckResult {
   const row = db.prepare("SELECT known_devices_json FROM users WHERE id = ?").get(userId) as
     | UserRow
     | undefined;
@@ -129,12 +150,34 @@ export function recordKnownDevice(userId: number, fingerprint: string): DeviceCh
 
   const devices = parseDevices(row.known_devices_json);
   const ts = now();
+  const fingerprint = fps.did ?? fps.ua;
   const idx = devices.findIndex((d) => d.fp === fingerprint);
 
   if (idx >= 0) {
     devices[idx]!.last_seen_at = ts;
     persistDevices(userId, devices);
     return { kind: "existing" };
+  }
+
+  // IDENTITY HANDOVER. The browser is only now sending a device id, and this
+  // user already has an entry under the UA fingerprint that same request still
+  // produces. That is one machine changing how it names itself, not a second
+  // machine: alerting here mails the user about the laptop they are sitting at,
+  // which is exactly what every user hits the first time they load a build that
+  // mints the id. Adopt the id ON the existing entry rather than adding one.
+  //
+  // Replacing (not keeping both) is what bounds the leniency: the UA hash stops
+  // being a valid key for this device the moment the handover completes, so it
+  // cannot go on silently admitting anyone who happens to share the victim's
+  // browser and OS family. The window is one sign-in wide and self-closing, and
+  // only exists for accounts that ever signed in from a client without an id.
+  if (fps.did) {
+    const uaIdx = devices.findIndex((d) => d.fp === fps.ua);
+    if (uaIdx >= 0) {
+      devices[uaIdx] = { v: DEVICE_FORMAT_VERSION, fp: fps.did, last_seen_at: ts };
+      persistDevices(userId, devices);
+      return { kind: "existing" };
+    }
   }
 
   const firstSeen = devices.length === 0;
@@ -210,11 +253,11 @@ export function alertOnNewDevice(
   ctx: Ctx,
   user: { id: number; email: string; full_name: string },
 ): void {
-  const fp = deviceFingerprint(
+  const fps = deviceFingerprints(
     ctx.req.headers.get("x-weddly-device"),
     ctx.req.headers.get("user-agent"),
   );
-  const result = recordKnownDevice(user.id, fp);
+  const result = recordKnownDevice(user.id, fps);
   if (result.kind !== "new") return;
   if (!claimAlertSlot(user.id)) return;
   void sendKind(

@@ -2646,4 +2646,52 @@ describe("new device sign-in", () => {
     expect((await uaLogin(firefox, "192.168.1.10")).status).toBe(200);
     expect(alertCount()).toBe(1);
   });
+
+  /** The regression behind the "why does it keep mailing me, it is the same
+   *  laptop" report. A browser known by its UA hash starts sending a device id
+   *  the moment it loads the build that mints one. Nothing about the machine
+   *  changed, so the handover must not alert. */
+  test("a browser that starts sending a device id is not a new device", async () => {
+    await seedUser();
+
+    const chrome =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+    const login2 = (deviceId: string | null, ua: string) =>
+      req(
+        "POST",
+        "/api/auth/login",
+        { email: EMAIL, password: PASSWORD },
+        {
+          clientIp: "192.168.1.10",
+          headers: deviceId
+            ? { "User-Agent": ua, "X-Weddly-Device": deviceId }
+            : { "User-Agent": ua },
+        },
+      );
+
+    // Yesterday's build: no device id, so the browser is filed under its UA.
+    expect((await login2(null, chrome)).status).toBe(200);
+    expect(alertCount()).toBe(0);
+
+    // Today's build in the SAME browser: the id appears for the first time.
+    expect((await login2("device-aaa", chrome)).status).toBe(200);
+    expect(alertCount()).toBe(0);
+
+    // The handover consumed the UA entry rather than adding a second one, so
+    // the stored list still describes exactly one machine.
+    const stored = db
+      .prepare("SELECT known_devices_json AS j FROM users WHERE email = ?")
+      .get(EMAIL) as { j: string };
+    expect(JSON.parse(stored.j)).toHaveLength(1);
+
+    // The id is now the identity, so further sign-ins stay quiet...
+    expect((await login2("device-aaa", chrome)).status).toBe(200);
+    expect(alertCount()).toBe(0);
+
+    // ...while a genuinely different machine still alerts. This is the half the
+    // leniency must not swallow: same browser and OS family, different device
+    // id, and the UA entry is gone so nothing suppresses it.
+    expect((await login2("device-bbb", chrome)).status).toBe(200);
+    expect(alertCount()).toBe(1);
+  });
 });
