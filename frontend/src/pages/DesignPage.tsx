@@ -9,12 +9,11 @@
 import {
   applyStylePreset,
   BORDER_STYLES,
+  CARD_FEELS,
+  type CardFeelSlug,
+  getCardFeel,
   type BorderStyleSlug,
   buildMonogram,
-  BUTTON_STYLES,
-  type ButtonStyleSlug,
-  CARD_RADII,
-  type CardRadiusSlug,
   getBorderCss,
   COLOR_ROLES,
   type ColorRole,
@@ -34,8 +33,6 @@ import {
   PALETTES,
   type PaletteSlug,
   resolveDesign,
-  SHADOWS,
-  type ShadowSlug,
   STYLE_PRESETS,
   type StylePresetSlug,
   toPublicDesign,
@@ -67,13 +64,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { InfoHint } from "../components/InfoHint";
 import { LookBar } from "../components/design/LookBar";
-import { roleColors } from "../components/design/PaletteBar";
+import { PhotoDock } from "../components/design/PhotoDock";
+import { ProofCard } from "../components/design/ProofCard";
+import { TuneRail, TuneRow, type TuneRowId, TuneSwitchRow } from "../components/design/TuneRow";
+import { PaletteBar, roleColors } from "../components/design/PaletteBar";
 import { SampleTable } from "../components/design/SampleTable";
-import { headingTreatmentCss } from "../components/ornaments";
+import { headingTreatmentCss, OrnamentDivider } from "../components/ornaments";
 import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
 import { WeddingSiteView } from "../components/WeddingSiteView";
-import { Link, useLocation } from "react-router-dom";
-import { useConfirm, useToast } from "../components/ui";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Switch, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
   coupleApi,
@@ -89,66 +89,6 @@ import {
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
-/** A selectable preset tile — large, calm card with a check badge when active.
- *  Used by all three picker sections so they read as one coherent system. */
-function PresetTile({
-  active,
-  onSelect,
-  label,
-  ariaLabel,
-  children,
-  compact = false,
-}: {
-  active: boolean;
-  onSelect: () => void;
-  /** Visible caption under the preview. Omit for swatch-only tiles where the
-   *  preview speaks for itself — the name stays in the tooltip + aria-label. */
-  label?: string;
-  ariaLabel: string;
-  children: React.ReactNode;
-  /** Tighter padding + a smaller check badge, for short single-line previews
-   *  (date formats) where the full tile padding wastes space and crowds the
-   *  text against the badge. */
-  compact?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={active}
-      aria-label={ariaLabel}
-      title={label ? undefined : ariaLabel}
-      className={`group relative flex flex-col text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
-        compact ? "gap-2 rounded-xl border bg-white p-2" : "gap-3 rounded-2xl border bg-white p-3"
-      } ${
-        active
-          ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
-          : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
-      }`}
-    >
-      {active && (
-        <span
-          className={`absolute inline-flex items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900 ${
-            compact ? "right-1.5 top-1.5 h-4 w-4" : "right-2 top-2 h-5 w-5"
-          }`}
-          aria-hidden
-        >
-          <Check size={compact ? 10 : 12} strokeWidth={3} />
-        </span>
-      )}
-      {children}
-      {label && (
-        <span className="truncate text-sm font-medium text-ink-900 dark:text-paper-50">
-          {label}
-        </span>
-      )}
-    </button>
-  );
-}
-
-/** A selectable font chip that renders its own label in the font it represents,
- *  so the couple previews the typeface before choosing. `fontFamily` omitted =
- *  the "Use preset" chip (rendered in the UI font). */
 /** A font chip that PREVIEWS the typeface: it shows a large "Aa" rendered in
  *  the font it represents (no name text). `label` is the accessible name (the
  *  family name / "use preset") since the visible "Aa" carries no meaning to a
@@ -204,56 +144,6 @@ function FontChip({
   );
 }
 
-/** One numbered "studio chapter" of the website editor: a native <details>
- *  disclosure styled as an editorial worksheet. The summary row always shows a
- *  live readout of the chapter's current choice (pack name + colour dots,
- *  family names, hidden-section count) so a collapsed chapter still
- *  communicates. Native details/summary keeps keyboard + AT semantics free;
- *  the open state is mirrored into React via onToggle so re-renders don't
- *  fight the user's toggle. */
-function Chapter({
-  num,
-  title,
-  readout,
-  defaultOpen,
-  children,
-}: {
-  num: string;
-  title: string;
-  readout?: React.ReactNode;
-  defaultOpen: boolean;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <details
-      open={open}
-      onToggle={(ev) => setOpen(ev.currentTarget.open)}
-      className="group rounded-2xl border border-paper-200 bg-paper-50/60 dark:border-umber-700 dark:bg-umber-900/40"
-    >
-      <summary className="flex cursor-pointer select-none list-none items-center justify-between gap-3 rounded-2xl px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 [&::-webkit-details-marker]:hidden dark:focus-visible:ring-paper-100">
-        <span className="flex min-w-0 flex-col">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-400 dark:text-umber-300">
-            {num}
-          </span>
-          <span className="font-serif text-xl italic tracking-tight text-ink-900 dark:text-paper-50">
-            {title}
-          </span>
-        </span>
-        <span className="flex shrink-0 items-center gap-2">
-          {readout}
-          <ChevronDown
-            size={16}
-            className="text-ink-400 transition-transform group-open:rotate-180 dark:text-umber-300"
-            aria-hidden
-          />
-        </span>
-      </summary>
-      <div className="space-y-6 px-4 pb-5 pt-1">{children}</div>
-    </details>
-  );
-}
-
 export default function DesignPage() {
   const { t, locale } = useT();
   const toast = useToast();
@@ -273,7 +163,8 @@ export default function DesignPage() {
   // printables download hub. Both share the same persisted design blob.
   // Which surface this is editing is driven by the URL: /app/design/website vs
   // /app/design/print are two sub-pages over the same shared state + auto-save.
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
+  const navigate = useNavigate();
   const tab: "website" | "print" = pathname.endsWith("/print") ? "print" : "website";
   // Which printable the live print preview shows (Print tab only).
   const [printTemplate, setPrintTemplate] = useState<PrintTemplate>("place_card");
@@ -301,6 +192,13 @@ export default function DesignPage() {
   // never committed a look, so a returning couple lands on their own identity
   // rather than on the picker they already used.
   const [styleTableOpen, setStyleTableOpen] = useState(false);
+  // Exactly one fine-tune row is open at a time. Mirrored into location.hash so
+  // "/app/design/website#sections" is a valid answer to a support question and
+  // the back button closes a swap.
+  const [openRow, setOpenRow] = useState<TuneRowId | null>(null);
+  // The design as it was when the current row opened, so the row can show a
+  // truthful before/now pair and offer a one-tap revert.
+  const [rowBefore, setRowBefore] = useState<CoupleDesign | null>(null);
   // Truthful preview data: the couple's real schedule + wishlist so the dark
   // schedule band and the themed cards actually render while styling. Empty
   // until fetched; the preview falls back to labelled sample beats.
@@ -454,6 +352,24 @@ export default function DesignPage() {
     };
   }, []);
 
+  // Deep link: a hash names an open fine-tune row. Landing on
+  // /app/design/website#sections opens that row and scrolls to it, and the
+  // browser back button closes an open swap.
+  useEffect(() => {
+    const id = hash.replace("#", "") as TuneRowId | "";
+    if (!id) {
+      setOpenRow(null);
+      return;
+    }
+    setOpenRow((prev) => {
+      if (prev === id) return prev;
+      setRowBefore(designRef.current);
+      return id;
+    });
+    // Scroll only when the hash brought us here, not on every re-render.
+    document.getElementById(`tune-${id}`)?.scrollIntoView({ block: "center" });
+  }, [hash]);
+
   // Focus + scroll management for the full-page preview overlay: it's a real
   // modal (portal below), so trap Tab inside, focus the close button on open,
   // lock body scroll, and restore focus on close. Escape still dismisses.
@@ -512,6 +428,7 @@ export default function DesignPage() {
         title: t("design.style_switch_confirm.title"),
         body: t("design.style_switch_confirm.body"),
         confirmLabel: t("design.style_switch_confirm.confirm"),
+        cancelLabel: t("common.cancel"),
       });
       if (!ok) return;
     }
@@ -521,6 +438,23 @@ export default function DesignPage() {
     setStyleSnapshot(designRef.current);
     setDesign((prev) => applyStylePreset(prev, slug));
     setStyleTableOpen(false);
+  }
+  // Opening a row snapshots the design so the body can show a truthful
+  // before/now pair, and pushes the row id into the hash so the swap is
+  // linkable and the back button closes it.
+  function toggleRow(id: TuneRowId) {
+    const opening = openRow !== id;
+    setRowBefore(opening ? designRef.current : null);
+    setOpenRow(opening ? id : null);
+    navigate({ hash: opening ? `#${id}` : "" }, { replace: !opening });
+  }
+  function revertRow() {
+    if (!rowBefore) return;
+    // Deliberately a plain setDesign, not draft state: the autosave effect is
+    // guarded on `saving`, so a revert landing inside an in-flight PATCH is
+    // simply scheduled after it resolves. The couple sees one extra save, not
+    // a lost edit.
+    setDesign(rowBefore);
   }
   function undoStyle() {
     if (!styleSnapshot) return;
@@ -549,23 +483,23 @@ export default function DesignPage() {
   function chooseHeadingFont(slug: FontFamilySlug | null) {
     setDesign((d) => ({ ...d, headingFont: slug }));
   }
-  function chooseBodyFont(slug: FontFamilySlug | null) {
-    setDesign((d) => ({ ...d, bodyFont: slug }));
-  }
   function togglePrint(key: "border" | "ornament" | "qr") {
     setDesign((d) => ({ ...d, print: { ...d.print, [key]: !d.print[key] } }));
-  }
-  function chooseButtonStyle(slug: ButtonStyleSlug) {
-    setDesign((d) => ({ ...d, web: { ...d.web, buttonStyle: slug } }));
   }
   function chooseImageTreatment(slug: ImageTreatmentSlug) {
     setDesign((d) => ({ ...d, web: { ...d.web, imageTreatment: slug } }));
   }
-  function chooseCardRadius(slug: CardRadiusSlug) {
-    setDesign((d) => ({ ...d, web: { ...d.web, cardRadius: slug } }));
-  }
-  function chooseShadow(slug: ShadowSlug) {
-    setDesign((d) => ({ ...d, web: { ...d.web, shadow: slug } }));
+  // Corners and shadow used to be two independent three-way controls: nine
+  // combinations, of which the four looks use exactly three, and eight of which
+  // nobody could describe the difference between. One choice now, named after
+  // what it feels like, seeded straight from the pack.
+  function chooseCardFeel(slug: CardFeelSlug) {
+    const feel = CARD_FEELS.find((f) => f.slug === slug);
+    if (!feel) return;
+    setDesign((d) => ({
+      ...d,
+      web: { ...d.web, cardRadius: feel.radius, shadow: feel.shadow },
+    }));
   }
   function toggleSection(slug: WebsiteSectionSlug) {
     setDesign((d) => {
@@ -581,8 +515,15 @@ export default function DesignPage() {
   function chooseVenueMap(on: boolean) {
     setDesign((d) => ({ ...d, web: { ...d.web, venueMap: on } }));
   }
+  // One switch, both surfaces. These were two separate controls on two separate
+  // tabs writing the same idea ("draw the decorative dividers"), and nobody
+  // wants ornaments on the invitation but not the website.
   function chooseOrnaments(on: boolean) {
-    setDesign((d) => ({ ...d, web: { ...d.web, ornaments: on } }));
+    setDesign((d) => ({
+      ...d,
+      web: { ...d.web, ornaments: on },
+      print: { ...d.print, ornament: on },
+    }));
   }
   function chooseBorderStyle(slug: BorderStyleSlug) {
     // Keep the legacy `print.border` boolean in sync (on/off) so the current
@@ -657,54 +598,35 @@ export default function DesignPage() {
     getContrastRatio(resolvedColors.text, resolvedColors.background) < 4.5 ||
     getContrastRatio(resolvedColors.accent_text, resolvedColors.background) < 3;
 
-  // Chapter-summary readouts + shared control helpers (website tab).
+  // Readouts + shared control helpers for the fine-tune list.
   const activeFontPreset = getFontPreset(design.fonts);
   const effectiveHeadingFamily = design.headingFont ?? activeFontPreset.headingFamily;
-  const effectiveBodyFamily = design.bodyFont ?? activeFontPreset.bodyFamily;
-  const familyLabel = (slug: FontFamilySlug) =>
-    t(FONT_FAMILIES.find((f) => f.slug === slug)?.nameKey ?? "design.family.cormorant");
-  const roleHex: Record<ColorRole, string> = {
-    primary: resolvedColors.primary,
-    background: resolvedColors.background,
-    accent: resolvedColors.accent,
-    text: resolvedColors.text,
+  const paletteRoleColors = roleColors(resolvedColors);
+  const overriddenRoles: Partial<Record<ColorRole, boolean>> = {
+    primary: design.colors.primary !== undefined,
+    background: design.colors.background !== undefined,
+    accent: design.colors.accent !== undefined,
+    text: design.colors.text !== undefined,
   };
+  const customColorCount = Object.keys(design.colors).length;
+  // Null when a stored blob carries a corner/shadow combination the editor no
+  // longer offers, so no tile shows a selection ring it hasn't earned.
+  const activeCardFeel = getCardFeel(design.web);
   const hiddenCount = design.web.hiddenSections.length;
   // The monogram chips preview the couple's REAL initials; a sample "A & B"
   // covers the not-yet-named case so the chips never render empty.
   const monogramSpecimen = (slug: (typeof MONOGRAM_SEPARATORS)[number]["slug"]) =>
     buildMonogram(couple?.bride_name, couple?.groom_name, slug, locale) ||
     buildMonogram("A", "B", slug, locale);
-  // Shared selectable-control classes so the chapters' chips + tiles read as
-  // one system (mirrors PresetTile's ring-active state).
-  const chipCls = (active: boolean) =>
-    `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-      active
-        ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-        : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-    }`;
+  // Selection is always a ring plus a badge, never an inverted fill: every
+  // selectable thing on this page is a specimen, and a fill would recolour the
+  // very thing being judged.
   const specimenTileCls = (active: boolean) =>
     `flex items-center justify-center rounded-xl border bg-white px-2 py-2.5 text-ink-900 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:text-paper-50 dark:focus-visible:ring-paper-100 ${
       active
         ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
         : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
     }`;
-  // The RSVP-button sample chips + mini wells render inside a `.wedding-theme`
-  // scope fed the SAME resolved values the guest page gets, so the previews
-  // are truthful (btn classes + fonts resolve exactly as on /w/:slug).
-  const themedWellStyle = {
-    "--wt-primary": resolvedColors.primary,
-    "--wt-accent": resolvedColors.accent,
-    "--wt-accent-text": resolvedColors.accent_text,
-    "--wt-bg": resolvedColors.background,
-    "--wt-text": resolvedColors.text,
-    "--wt-heading-font": resolvedColors.heading_font,
-    "--wt-body-font": resolvedColors.body_font,
-    backgroundColor: resolvedColors.background,
-  } as React.CSSProperties;
-  const rsvpSampleClass = (slug: ButtonStyleSlug) =>
-    slug === "outline" ? "btn-outline" : slug === "flat" ? "btn-primary" : "btn-primary btn-lifted";
-
   // Upload / clear one of the two optional fixed-slot site photos. The server
   // returns the refreshed couple, so the live preview updates immediately.
   async function uploadSitePhotoSlot(slot: 1 | 2, file: File) {
@@ -872,6 +794,14 @@ export default function DesignPage() {
     couple?.bride_name && couple?.groom_name
       ? `${[...couple.bride_name][0] ?? ""} & ${[...couple.groom_name][0] ?? ""}`
       : "A & B";
+  // The three identity bits every ProofCard on the page needs, bundled so the
+  // seven rows don't each thread four props through.
+  const sampleCoupleName = t("design.print_preview.sample_couple");
+  const previewCouple = {
+    bride_name: couple?.bride_name ?? null,
+    groom_name: couple?.groom_name ?? null,
+    wedding_date: couple?.wedding_date ?? null,
+  };
 
   // The printables hub: one tile per PDF template. Each downloads via the
   // shared `fetchPdfBlob` blob pattern.
@@ -1112,763 +1042,524 @@ export default function DesignPage() {
 
               {tab === "website" && (
                 <>
-                  {/* ── Chapter 01 — Colour. The style packs moved up into the
-                    Sample Table (they are the page's one bold decision and
-                    can't sit inside an accordion beside a shadow toggle); the
-                    palette stays here as the first real adjustment. ──────── */}
-                  <Chapter
-                    num="01"
-                    title={t("design.section.palette")}
-                    defaultOpen={true}
-                    readout={
-                      <span className="flex gap-1" aria-hidden>
-                        {COLOR_ROLES.map((role) => (
-                          <span
-                            key={role}
-                            className="h-3 w-3 rounded-full ring-1 ring-black/10 dark:ring-white/20"
-                            style={{ backgroundColor: roleHex[role] }}
-                          />
-                        ))}
-                      </span>
-                    }
-                  >
-                    {/* Colour palette — every curated palette, the four pack
-                      palettes first, the legacy catalog behind a divider. A
-                      palette re-tints every role the couple hasn't pinned. */}
-                    <section>
-                      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                        {t("design.section.palette")}
-                      </h2>
-                      {/* Swatch-only tiles: the colours ARE the label (name in
-                        tooltip + aria-label), so 4-up / 5-up grids stay calm.
-                        TODO(milestone 2): these two tiers collapse into one
-                        rail of 15 under the "Colours" fine-tune row, killing
-                        the PALETTES.slice(0,4) positional coupling. */}
-                      <div className="grid grid-cols-4 gap-2">
-                        {PALETTES.slice(0, 4).map((p) => (
-                          <PresetTile
-                            key={p.slug}
-                            compact
-                            active={design.palette === p.slug}
-                            onSelect={() => choosePalette(p.slug)}
-                            ariaLabel={t(p.nameKey)}
-                          >
-                            <span
-                              className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-black/5 dark:border-white/10"
-                              style={{ backgroundColor: p.background.hex }}
-                              aria-hidden
-                            >
-                              <span
-                                className="h-4 w-4 rounded-full"
-                                style={{ backgroundColor: p.primary.hex }}
-                              />
-                              <span
-                                className="h-2.5 w-2.5 rounded-full"
-                                style={{ backgroundColor: p.accent.hex }}
-                              />
-                              <span
-                                className="h-2.5 w-2.5 rounded-full"
-                                style={{ backgroundColor: p.text.hex }}
-                              />
-                            </span>
-                          </PresetTile>
-                        ))}
-                      </div>
-                      <p className="mb-2 mt-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-400 dark:text-umber-300">
-                        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-                        {t("design.section.palette_more")}
-                        <span className="h-px flex-1 bg-paper-300 dark:bg-umber-700" aria-hidden />
-                      </p>
-                      <div className="grid grid-cols-5 gap-1.5">
-                        {PALETTES.slice(4).map((p) => (
-                          <PresetTile
-                            key={p.slug}
-                            compact
-                            active={design.palette === p.slug}
-                            onSelect={() => choosePalette(p.slug)}
-                            ariaLabel={t(p.nameKey)}
-                          >
-                            <span
-                              className="flex h-10 w-full items-center justify-center gap-1 rounded-lg border border-black/5 dark:border-white/10"
-                              style={{ backgroundColor: p.background.hex }}
-                              aria-hidden
-                            >
-                              <span
-                                className="h-3.5 w-3.5 rounded-full"
-                                style={{ backgroundColor: p.primary.hex }}
-                              />
-                              <span
-                                className="h-2 w-2 rounded-full"
-                                style={{ backgroundColor: p.accent.hex }}
-                              />
-                              <span
-                                className="h-2 w-2 rounded-full"
-                                style={{ backgroundColor: p.text.hex }}
-                              />
-                            </span>
-                          </PresetTile>
-                        ))}
-                      </div>
-                    </section>
-                  </Chapter>
+                  <PhotoDock
+                    slot1Url={couple?.site_image_1_url}
+                    slot2Url={couple?.site_image_2_url}
+                    coverUrl={couple?.cover_image_url}
+                    treatment={design.web.imageTreatment}
+                    onTreatment={chooseImageTreatment}
+                    onUpload={(slot, file) => void uploadSitePhotoSlot(slot, file)}
+                    onRemove={(slot) => void removeSitePhoto(slot)}
+                    busySlot={photoBusy}
+                    readOnly={readOnly}
+                  />
 
-                  {/* ── Chapter 02 — Typography: presets, families, date. ──── */}
-                  <Chapter
-                    num="02"
-                    title={t("design.group.typography")}
-                    defaultOpen={lgUp}
-                    readout={
-                      <span className="hidden max-w-40 truncate text-xs text-ink-500 sm:inline dark:text-umber-300">
-                        {familyLabel(effectiveHeadingFamily)} · {familyLabel(effectiveBodyFamily)}
-                      </span>
-                    }
-                  >
-                    {/* Fonts */}
-                    <section>
-                      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                        {t("design.section.fonts")}
-                      </h2>
-                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                        {FONT_PRESETS.map((f) => (
-                          <PresetTile
-                            key={f.slug}
-                            active={design.fonts === f.slug}
-                            onSelect={() => chooseFonts(f.slug)}
-                            ariaLabel={t(f.nameKey)}
-                          >
-                            <span
-                              className="block truncate text-2xl leading-tight text-ink-900 dark:text-paper-50"
-                              style={{ fontFamily: f.headingStack }}
-                              aria-hidden
-                            >
-                              {sampleInitials}
-                            </span>
-                          </PresetTile>
-                        ))}
-                      </div>
-
-                      {/* Independent heading / body family overrides on top of the
-                  preset, united in one card (a thin divider between the two
-                  rows) so the typeface controls read as a single block. Each
-                  chip renders its own name in its actual font; only bundled
-                  families are offered. The active chip is the EFFECTIVE
-                  typeface — the explicit override, or the family the chosen
-                  preset resolves to while no override is set — so switching the
-                  preset above always re-highlights the right family here.
-                  Picking the preset's own family re-links to it (null override),
-                  so a later preset change keeps following. */}
-                      <div className="mt-3 divide-y divide-paper-200 rounded-2xl border border-paper-300 bg-white p-3 dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
-                        {(
-                          [
-                            [
-                              "heading",
-                              design.headingFont,
-                              chooseHeadingFont,
-                              getFontPreset(design.fonts).headingFamily,
-                            ] as const,
-                            [
-                              "body",
-                              design.bodyFont,
-                              chooseBodyFont,
-                              getFontPreset(design.fonts).bodyFamily,
-                            ] as const,
-                          ] as const
-                        ).map(([which, current, setter, presetFamily]) => {
-                          const effective = current ?? presetFamily;
-                          return (
-                            <div key={which} className="py-2 first:pt-0 last:pb-0">
-                              <span className="mb-1.5 block text-xs font-medium text-ink-600 dark:text-umber-200">
-                                {t(`design.font.${which}_label`)}
-                              </span>
-                              {/* Six-up so all twelve families fit in two rows per
-                              category (heading + body), cutting the picker's
-                              height roughly in half — the "Aa" itself is the
-                              preview; the full family name lives in the tooltip
-                              + aria-label since it would truncate at this width. */}
-                              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
-                                {FONT_FAMILIES.map((fam) => (
-                                  <FontChip
-                                    key={fam.slug}
-                                    active={effective === fam.slug}
-                                    // Re-selecting the preset's family clears the override
-                                    // (null) so it keeps tracking later preset changes.
-                                    onClick={() =>
-                                      setter(fam.slug === presetFamily ? null : fam.slug)
-                                    }
-                                    fontFamily={fam.stack}
-                                    label={t(fam.nameKey)}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-
-                    {/* Date format — a 2×2 grid so every option gets equal weight
-                     *  (the old 3-up grid orphaned the 4th tile on its own row). Each
-                     *  tile leads with the formatted sample date and captions it with
-                     *  the format's name, so the choices read as one unified set. */}
-                    <section>
-                      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                        {t("design.section.date")}
-                      </h2>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {DATE_FORMATS.map((df) => {
-                          const active = design.dateFormat === df.slug;
-                          return (
-                            <button
-                              key={df.slug}
-                              type="button"
-                              onClick={() => chooseDateFormat(df.slug)}
-                              aria-pressed={active}
-                              aria-label={t(df.nameKey)}
-                              className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-white px-3 py-4 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
-                                active
-                                  ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
-                                  : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
-                              }`}
-                            >
-                              {active && (
-                                <span
-                                  className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
-                                  aria-hidden
+                  {/* ── The fine-tune list. Seven rows, each showing its own
+                      answer as a rendering rather than a word, one open at a
+                      time. This replaced three accordion "chapters" holding
+                      fourteen labelled option grids. ─────────────────────── */}
+                  <section>
+                    <p className="eyebrow mb-2">{t("design.tune.heading")}</p>
+                    <div className="overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft dark:border-umber-600 dark:bg-umber-800 dark:shadow-none">
+                      <div className="divide-y divide-paper-200 dark:divide-umber-700">
+                        {/* Colours. One rail of every palette: the old 4 + 11
+                            tier split implied the first four were better, when
+                            they were only the ones the packs happened to seed. */}
+                        <TuneRow
+                          id="colors"
+                          label={t("design.tune.colors")}
+                          value={
+                            <PaletteBar
+                              colors={paletteRoleColors}
+                              overridden={overriddenRoles}
+                              className="max-w-40"
+                            />
+                          }
+                          open={openRow === "colors"}
+                          onToggle={() => toggleRow("colors")}
+                          before={rowBefore}
+                          now={design}
+                          onRevert={revertRow}
+                          couple={previewCouple}
+                          locale={locale}
+                          fallbackName={sampleCoupleName}
+                        >
+                          <TuneRail>
+                            {PALETTES.map((p) => {
+                              const active = design.palette === p.slug;
+                              return (
+                                <button
+                                  key={p.slug}
+                                  type="button"
+                                  onClick={() => choosePalette(p.slug)}
+                                  aria-pressed={active}
+                                  aria-label={t(p.nameKey)}
+                                  title={t(p.nameKey)}
+                                  className={`relative shrink-0 snap-start rounded-lg border p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                                    active
+                                      ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+                                      : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
+                                  }`}
                                 >
-                                  <Check size={10} strokeWidth={3} />
+                                  <PaletteBar
+                                    colors={{
+                                      primary: p.primary.hex,
+                                      background: p.background.hex,
+                                      accent: p.accent.hex,
+                                      text: p.text.hex,
+                                    }}
+                                    className="!h-8 w-20 !rounded"
+                                  />
+                                </button>
+                              );
+                            })}
+                          </TuneRail>
+
+                          {/* Raw hex is the escape hatch, not the path. */}
+                          <details className="rounded-xl border border-paper-300 bg-white px-3 py-2 dark:border-umber-700 dark:bg-umber-800">
+                            <summary className="flex cursor-pointer items-center justify-between gap-2 text-sm font-medium text-ink-700 dark:text-paper-100">
+                              {t("design.colors_custom.open")}
+                              {customColorCount > 0 && (
+                                <span className="badge badge-paper">
+                                  {t("design.colors_custom.count", { n: customColorCount })}
                                 </span>
                               )}
-                              {/* The sample date renders in the couple's RESOLVED
-                              heading font + pack treatment (not a hardcoded
-                              italic serif) so a Monochrome couple isn't picking
-                              between four alien italic dates. */}
-                              <span
-                                className="w-full whitespace-nowrap text-base leading-tight tracking-tight text-ink-900 dark:text-paper-50"
-                                style={{
-                                  fontFamily: resolvedColors.heading_font,
-                                  ...headingTreatmentCss(resolvedColors.heading_style),
-                                }}
-                                aria-hidden
-                              >
-                                {formatWeddingDate(sampleDateIso, df.slug, locale)}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  </Chapter>
-
-                  {/* ── Chapter 03 — Details: monogram, chrome, sections, and
-                    the demoted freeform colour overrides. ─────────────────── */}
-                  <Chapter
-                    num="03"
-                    title={t("design.group.details")}
-                    defaultOpen={lgUp}
-                    readout={
-                      hiddenCount > 0 ? (
-                        <span className="rounded-full bg-paper-200 px-2 py-0.5 text-[11px] font-medium text-ink-600 dark:bg-umber-800 dark:text-umber-200">
-                          {hiddenCount}
-                        </span>
-                      ) : undefined
-                    }
-                  >
-                    {/* Monogram — the chips ARE the specimen: the couple's real
-                      initials in the resolved heading font, per separator. */}
-                    <section>
-                      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                        {t("design.section.monogram")}
-                      </h2>
-                      <div className="rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
-                        <button
-                          type="button"
-                          onClick={() => chooseMonogram({ enabled: !design.monogram.enabled })}
-                          aria-pressed={design.monogram.enabled}
-                          className={chipCls(design.monogram.enabled)}
-                        >
-                          {design.monogram.enabled && (
-                            <Check size={12} strokeWidth={3} aria-hidden />
-                          )}
-                          {t("design.monogram.enable")}
-                        </button>
-                        {design.monogram.enabled && (
-                          <div className="mt-3">
-                            <div className="grid grid-cols-4 gap-1.5">
-                              {MONOGRAM_SEPARATORS.map((sep) => {
-                                const active = design.monogram.separator === sep.slug;
+                            </summary>
+                            <div className="mt-3 flex flex-wrap gap-4">
+                              {COLOR_ROLES.map((role) => {
+                                const resolved = design.colors[role] ?? activePalette[role].hex;
+                                const overridden = design.colors[role] !== undefined;
                                 return (
-                                  <button
-                                    key={sep.slug}
-                                    type="button"
-                                    onClick={() => chooseMonogram({ separator: sep.slug })}
-                                    aria-pressed={active}
-                                    aria-label={monogramSpecimen(sep.slug)}
-                                    className={specimenTileCls(active)}
-                                  >
-                                    <span
-                                      className="whitespace-nowrap text-lg leading-none"
-                                      style={{ fontFamily: resolvedColors.heading_font }}
-                                      aria-hidden
+                                  <div key={role} className="flex flex-col items-center gap-1">
+                                    <label
+                                      className="relative block h-12 w-12 cursor-pointer rounded-xl border border-paper-300 shadow-soft focus-within:ring-2 focus-within:ring-ink-300 dark:border-umber-700 dark:focus-within:ring-paper-100"
+                                      style={{ backgroundColor: resolved }}
                                     >
-                                      {monogramSpecimen(sep.slug)}
+                                      <input
+                                        type="color"
+                                        value={resolved}
+                                        onChange={(ev) => chooseColor(role, ev.target.value)}
+                                        aria-label={t(`design.colors.${role}`)}
+                                        className="sr-only"
+                                      />
+                                      <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
+                                        <Pencil size={11} aria-hidden />
+                                      </span>
+                                    </label>
+                                    <span className="text-[11px] text-ink-600 dark:text-umber-200">
+                                      {t(`design.colors.${role}`)}
                                     </span>
-                                  </button>
+                                    {/* Fixed height so toggling an override
+                                        never shifts the row. */}
+                                    <span className="flex h-6 items-center gap-1">
+                                      {overridden && (
+                                        <button
+                                          type="button"
+                                          onClick={() => clearColor(role)}
+                                          className="px-1 py-0.5 text-[10px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+                                        >
+                                          {t("design.colors.reset")}
+                                        </button>
+                                      )}
+                                    </span>
+                                  </div>
                                 );
                               })}
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    </section>
-
-                    {/* Ornaments — the intermediate decorative dividers drawn
-                      between guest-page sections. On/off, mirroring the
-                      monogram toggle above. */}
-                    <section>
-                      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                        {t("design.section.ornaments")}
-                      </h2>
-                      <div className="rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
-                        <button
-                          type="button"
-                          onClick={() => chooseOrnaments(!design.web.ornaments)}
-                          aria-pressed={design.web.ornaments}
-                          className={chipCls(design.web.ornaments)}
-                        >
-                          {design.web.ornaments && <Check size={12} strokeWidth={3} aria-hidden />}
-                          {t("design.ornaments.enable")}
-                        </button>
-                        <p className="mt-2 text-xs text-ink-400 dark:text-umber-300">
-                          {t("design.ornaments.hint")}
-                        </p>
-                      </div>
-                    </section>
-
-                    {/* RSVP button look — each tile is the ACTUAL button class on
-                      a mini well painted with the resolved palette. */}
-                    <section>
-                      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                        {t("design.web.button_style_label")}
-                      </h2>
-                      <div className="grid grid-cols-3 gap-2">
-                        {BUTTON_STYLES.map((b) => {
-                          const active = design.web.buttonStyle === b.slug;
-                          return (
-                            <PresetTile
-                              key={b.slug}
-                              compact
-                              active={active}
-                              onSelect={() => chooseButtonStyle(b.slug)}
-                              ariaLabel={t(b.nameKey)}
-                              label={t(b.nameKey)}
-                            >
-                              <span
-                                className="wedding-theme pointer-events-none flex h-12 w-full items-center justify-center overflow-hidden rounded-lg border border-black/5 dark:border-white/10"
-                                style={themedWellStyle}
-                                aria-hidden
+                            {lowContrast && (
+                              <p
+                                role="status"
+                                className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-blush-700 dark:text-blush-300"
                               >
-                                <span
-                                  className={`${rsvpSampleClass(b.slug)} scale-[0.72] whitespace-nowrap`}
-                                >
-                                  {t("wedding_site.rsvp_cta")}
-                                </span>
-                              </span>
-                            </PresetTile>
-                          );
-                        })}
-                      </div>
-                    </section>
-
-                    {/* Photo treatment — the couple's real cover (or a palette
-                      swatch) shown in colour vs desaturated, so the tiles show
-                      the treatment instead of naming it. */}
-                    <section>
-                      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                        {t("design.web.image_treatment_label")}
-                      </h2>
-                      <div className="grid grid-cols-2 gap-2">
-                        {IMAGE_TREATMENTS.map((it) => {
-                          const active = design.web.imageTreatment === it.slug;
-                          const filter = it.slug === "grayscale" ? "grayscale(1)" : "none";
-                          return (
-                            <PresetTile
-                              key={it.slug}
-                              compact
-                              active={active}
-                              onSelect={() => chooseImageTreatment(it.slug)}
-                              ariaLabel={t(it.nameKey)}
-                              label={t(it.nameKey)}
-                            >
-                              {couple?.cover_image_url ? (
-                                <img
-                                  src={couple.cover_image_url}
-                                  alt=""
-                                  className="h-14 w-full rounded-lg object-cover"
-                                  style={{ filter }}
-                                  aria-hidden
-                                />
-                              ) : (
-                                <span
-                                  className="h-14 w-full rounded-lg"
-                                  style={{
-                                    background: `linear-gradient(135deg, ${resolvedColors.primary}, ${resolvedColors.accent})`,
-                                    filter,
-                                  }}
-                                  aria-hidden
-                                />
-                              )}
-                            </PresetTile>
-                          );
-                        })}
-                      </div>
-                      {/* Two OPTIONAL fixed-slot photos: slot 1 lands after the
-                        welcome band, slot 2 before the RSVP ask. Upload swaps
-                        the tile to the image with a remove badge. */}
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        {([1, 2] as const).map((slot) => {
-                          const url =
-                            slot === 1 ? couple?.site_image_1_url : couple?.site_image_2_url;
-                          const busy = photoBusy === slot;
-                          return (
-                            <div key={slot} className="relative">
-                              {url ? (
-                                <>
-                                  <img
-                                    src={url}
-                                    alt={t("design.web.photo_slot", { n: slot })}
-                                    className="h-20 w-full rounded-xl border border-paper-300 object-cover dark:border-umber-700"
-                                  />
+                                <AlertTriangle size={12} aria-hidden />
+                                {t("design.colors.low_contrast")}
+                                {customColorCount > 0 && (
                                   <button
                                     type="button"
-                                    onClick={() => void removeSitePhoto(slot)}
-                                    disabled={busy}
-                                    aria-label={t("design.web.photo_remove")}
-                                    className="absolute -right-1.5 -top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft transition hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:focus-visible:ring-paper-100"
+                                    onClick={() => setDesign((d) => ({ ...d, colors: {} }))}
+                                    className="font-medium underline underline-offset-2"
                                   >
-                                    {busy ? (
-                                      <Loader2 size={12} className="animate-spin" aria-hidden />
-                                    ) : (
-                                      <X size={12} aria-hidden />
-                                    )}
+                                    {t("design.colors.fix_contrast")}
                                   </button>
-                                </>
-                              ) : (
-                                <label
-                                  className={`flex h-20 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-paper-400 text-ink-400 transition focus-within:ring-2 focus-within:ring-ink-300 hover:border-ink-400 hover:text-ink-600 dark:border-umber-600 dark:text-umber-300 dark:focus-within:ring-paper-100 dark:hover:text-umber-100 ${
-                                    busy || readOnly ? "cursor-default opacity-60" : ""
+                                )}
+                              </p>
+                            )}
+                          </details>
+                        </TuneRow>
+
+                        {/* Fonts. The value is the couple's names in the live
+                            heading face, so the row IS the specimen. */}
+                        <TuneRow
+                          id="fonts"
+                          label={t("design.tune.fonts")}
+                          value={
+                            <span
+                              className="truncate text-sm text-ink-500 dark:text-umber-300"
+                              style={{ fontFamily: resolvedColors.heading_font }}
+                            >
+                              {sampleInitials}
+                            </span>
+                          }
+                          open={openRow === "fonts"}
+                          onToggle={() => toggleRow("fonts")}
+                          before={rowBefore}
+                          now={design}
+                          onRevert={revertRow}
+                          couple={previewCouple}
+                          locale={locale}
+                          fallbackName={sampleCoupleName}
+                        >
+                          <TuneRail>
+                            {FONT_PRESETS.map((f) => {
+                              const active = design.fonts === f.slug;
+                              return (
+                                <button
+                                  key={f.slug}
+                                  type="button"
+                                  onClick={() => chooseFonts(f.slug)}
+                                  aria-pressed={active}
+                                  aria-label={t(f.nameKey)}
+                                  title={t(f.nameKey)}
+                                  className={`flex h-14 w-24 shrink-0 snap-start items-center justify-center rounded-lg border bg-white px-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
+                                    active
+                                      ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+                                      : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
                                   }`}
                                 >
-                                  {busy ? (
-                                    <Loader2 size={16} className="animate-spin" aria-hidden />
-                                  ) : (
-                                    <ImagePlus size={16} aria-hidden />
-                                  )}
-                                  <span className="text-[10px] font-medium">
-                                    {t("design.web.photo_slot", { n: slot })}
+                                  <span
+                                    className="truncate text-xl leading-tight text-ink-900 dark:text-paper-50"
+                                    style={{ fontFamily: f.headingStack }}
+                                    aria-hidden
+                                  >
+                                    {sampleInitials}
                                   </span>
-                                  <input
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp"
-                                    className="sr-only"
-                                    disabled={busy || readOnly}
-                                    onChange={(ev) => {
-                                      const f = ev.target.files?.[0];
-                                      if (f) void uploadSitePhotoSlot(slot, f);
-                                      ev.target.value = "";
-                                    }}
-                                  />
-                                </label>
-                              )}
+                                </button>
+                              );
+                            })}
+                          </TuneRail>
+
+                          {/* The heading face can be swapped independently of
+                              the pairing. The body face cannot any more: it is
+                              the half of a type pairing that a couple has no
+                              way to judge in isolation, and every override we
+                              saw broke the pairing it was overriding. */}
+                          <details className="rounded-xl border border-paper-300 bg-white px-3 py-2 dark:border-umber-700 dark:bg-umber-800">
+                            <summary className="cursor-pointer text-sm font-medium text-ink-700 dark:text-paper-100">
+                              {t("design.font.heading_label")}
+                            </summary>
+                            <div className="mt-3 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+                              {FONT_FAMILIES.map((fam) => (
+                                <FontChip
+                                  key={fam.slug}
+                                  active={effectiveHeadingFamily === fam.slug}
+                                  // Re-picking the pairing's own family clears
+                                  // the override, so it keeps tracking later
+                                  // pack changes instead of freezing.
+                                  onClick={() =>
+                                    chooseHeadingFont(
+                                      fam.slug === activeFontPreset.headingFamily ? null : fam.slug,
+                                    )
+                                  }
+                                  fontFamily={fam.stack}
+                                  label={t(fam.nameKey)}
+                                />
+                              ))}
                             </div>
-                          );
-                        })}
-                      </div>
-                    </section>
+                          </details>
+                        </TuneRow>
 
-                    {/* Card rounding — true mini-card shapes in the palette. */}
-                    <section>
-                      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                        {t("design.web.card_radius_label")}
-                      </h2>
-                      <div className="grid grid-cols-3 gap-2">
-                        {CARD_RADII.map((r) => {
-                          const active = design.web.cardRadius === r.slug;
-                          return (
-                            <PresetTile
-                              key={r.slug}
-                              compact
-                              active={active}
-                              onSelect={() => chooseCardRadius(r.slug)}
-                              ariaLabel={t(r.nameKey)}
-                              label={t(r.nameKey)}
+                        {/* Date. Every option renders the couple's real date. */}
+                        <TuneRow
+                          id="date"
+                          label={t("design.tune.date")}
+                          value={
+                            <span
+                              className="truncate text-sm text-ink-500 dark:text-umber-300"
+                              style={{
+                                fontFamily: resolvedColors.heading_font,
+                                ...headingTreatmentCss(resolvedColors.heading_style),
+                              }}
                             >
+                              {formatWeddingDate(sampleDateIso, design.dateFormat, locale)}
+                            </span>
+                          }
+                          open={openRow === "date"}
+                          onToggle={() => toggleRow("date")}
+                          before={rowBefore}
+                          now={design}
+                          onRevert={revertRow}
+                          couple={previewCouple}
+                          locale={locale}
+                          fallbackName={sampleCoupleName}
+                        >
+                          <TuneRail>
+                            {DATE_FORMATS.map((df) => {
+                              const active = design.dateFormat === df.slug;
+                              return (
+                                <button
+                                  key={df.slug}
+                                  type="button"
+                                  onClick={() => chooseDateFormat(df.slug)}
+                                  aria-pressed={active}
+                                  aria-label={t(df.nameKey)}
+                                  title={t(df.nameKey)}
+                                  className={`flex h-14 shrink-0 snap-start items-center justify-center whitespace-nowrap rounded-lg border bg-white px-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
+                                    active
+                                      ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+                                      : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
+                                  }`}
+                                >
+                                  <span
+                                    className="text-base leading-tight text-ink-900 dark:text-paper-50"
+                                    style={{
+                                      fontFamily: resolvedColors.heading_font,
+                                      ...headingTreatmentCss(resolvedColors.heading_style),
+                                    }}
+                                    aria-hidden
+                                  >
+                                    {formatWeddingDate(sampleDateIso, df.slug, locale)}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </TuneRail>
+                        </TuneRow>
+
+                        {/* Monogram. The row value is the live monogram, and
+                            the separators appear in place once it is on. */}
+                        <TuneSwitchRow
+                          label={t("design.tune.monogram")}
+                          checked={design.monogram.enabled}
+                          onChange={(on) => chooseMonogram({ enabled: on })}
+                          value={
+                            design.monogram.enabled ? (
                               <span
-                                className="flex h-12 w-full items-center justify-center rounded-lg bg-paper-100 dark:bg-umber-900"
-                                aria-hidden
+                                className="truncate text-sm text-ink-500 dark:text-umber-300"
+                                style={{ fontFamily: resolvedColors.heading_font }}
                               >
-                                <span
-                                  className="h-8 w-16 border bg-white dark:bg-umber-800"
-                                  style={{
-                                    borderRadius: r.css,
-                                    borderColor: resolvedColors.accent,
-                                  }}
-                                />
+                                {monogramSpecimen(design.monogram.separator)}
                               </span>
-                            </PresetTile>
-                          );
-                        })}
-                      </div>
-                    </section>
+                            ) : undefined
+                          }
+                        >
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {MONOGRAM_SEPARATORS.map((sep) => {
+                              const active = design.monogram.separator === sep.slug;
+                              return (
+                                <button
+                                  key={sep.slug}
+                                  type="button"
+                                  onClick={() => chooseMonogram({ separator: sep.slug })}
+                                  aria-pressed={active}
+                                  aria-label={monogramSpecimen(sep.slug)}
+                                  className={specimenTileCls(active)}
+                                >
+                                  <span
+                                    className="whitespace-nowrap text-lg leading-none"
+                                    style={{ fontFamily: resolvedColors.heading_font }}
+                                    aria-hidden
+                                  >
+                                    {monogramSpecimen(sep.slug)}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </TuneSwitchRow>
 
-                    {/* Card shadow — the actual box-shadow on a mini card. */}
-                    <section>
-                      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                        {t("design.web.shadow_label")}
-                      </h2>
-                      <div className="grid grid-cols-3 gap-2">
-                        {SHADOWS.map((s) => {
-                          const active = design.web.shadow === s.slug;
-                          return (
-                            <PresetTile
-                              key={s.slug}
-                              compact
-                              active={active}
-                              onSelect={() => chooseShadow(s.slug)}
-                              ariaLabel={t(s.nameKey)}
-                              label={t(s.nameKey)}
-                            >
-                              <span
-                                className="flex h-12 w-full items-center justify-center rounded-lg bg-paper-100 dark:bg-umber-900"
-                                aria-hidden
-                              >
-                                <span
-                                  className="h-8 w-16 rounded-lg border border-paper-200 bg-white dark:border-umber-700 dark:bg-umber-800"
-                                  style={{ boxShadow: s.css }}
-                                />
-                              </span>
-                            </PresetTile>
-                          );
-                        })}
-                      </div>
-                    </section>
+                        {/* Dividers. One switch now drives BOTH the guest page
+                            and the printed cards: they were two controls on two
+                            tabs writing the same idea. Hidden entirely for a
+                            pack with no ornament language, where it does
+                            nothing at all. */}
+                        {getStylePreset(design.style).ornament !== "none" && (
+                          <TuneSwitchRow
+                            label={t("design.tune.dividers")}
+                            checked={design.web.ornaments}
+                            onChange={chooseOrnaments}
+                            value={
+                              <OrnamentDivider
+                                slug={getStylePreset(design.style).ornament}
+                                className="h-3 w-16 text-ink-400 dark:text-umber-300"
+                              />
+                            }
+                          />
+                        )}
 
-                    {/* Visible sections — hide/show the optional guest-page
-                      blocks. Hiding is real and immediate in the preview. */}
-                    <section>
-                      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                        {t("design.web.sections_label")}
-                      </h2>
-                      <ul className="divide-y divide-paper-200 rounded-2xl border border-paper-300 bg-white dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
-                        {WEBSITE_SECTIONS.map((s) => {
-                          const hidden = design.web.hiddenSections.includes(s.slug);
-                          return (
-                            <li
-                              key={s.slug}
-                              className="flex items-center justify-between gap-3 px-3 py-1.5"
-                            >
+                        {/* Cards: corners and shadow as one named feel. */}
+                        <TuneRow
+                          id="cards"
+                          label={t("design.tune.cards")}
+                          value={
+                            <span className="truncate text-sm text-ink-500 dark:text-umber-300">
+                              {activeCardFeel ? t(`design.card_feel.${activeCardFeel}`) : ""}
+                            </span>
+                          }
+                          open={openRow === "cards"}
+                          onToggle={() => toggleRow("cards")}
+                          before={rowBefore}
+                          now={design}
+                          onRevert={revertRow}
+                          couple={previewCouple}
+                          locale={locale}
+                          fallbackName={sampleCoupleName}
+                        >
+                          <TuneRail>
+                            {CARD_FEELS.map((feel) => {
+                              const active = activeCardFeel === feel.slug;
+                              return (
+                                <button
+                                  key={feel.slug}
+                                  type="button"
+                                  onClick={() => chooseCardFeel(feel.slug)}
+                                  aria-pressed={active}
+                                  aria-label={t(feel.nameKey)}
+                                  title={t(feel.nameKey)}
+                                  className={`shrink-0 snap-start rounded-lg border p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                                    active
+                                      ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+                                      : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
+                                  }`}
+                                >
+                                  <span className="block w-20 overflow-hidden rounded">
+                                    <ProofCard
+                                      design={{
+                                        ...design,
+                                        web: {
+                                          ...design.web,
+                                          cardRadius: feel.radius,
+                                          shadow: feel.shadow,
+                                        },
+                                      }}
+                                      size="chip"
+                                      surface="site"
+                                      brideName={couple?.bride_name}
+                                      groomName={couple?.groom_name}
+                                      weddingDate={couple?.wedding_date}
+                                      locale={locale}
+                                      fallbackName={sampleCoupleName}
+                                    />
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </TuneRail>
+                        </TuneRow>
+
+                        {/* Sections. The only row with no picture to show, so
+                            it is the only one whose value is a number. */}
+                        <TuneRow
+                          id="sections"
+                          label={t("design.tune.sections")}
+                          value={
+                            <span className="text-sm tabular-nums text-ink-500 dark:text-umber-300">
+                              {WEBSITE_SECTIONS.length - hiddenCount} / {WEBSITE_SECTIONS.length}
+                            </span>
+                          }
+                          open={openRow === "sections"}
+                          onToggle={() => toggleRow("sections")}
+                          before={rowBefore}
+                          now={design}
+                          onRevert={revertRow}
+                          couple={previewCouple}
+                          locale={locale}
+                          fallbackName={sampleCoupleName}
+                        >
+                          <ul className="divide-y divide-paper-200 overflow-hidden rounded-xl border border-paper-300 bg-white dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
+                            {WEBSITE_SECTIONS.map((sec) => {
+                              const hidden = design.web.hiddenSections.includes(sec.slug);
+                              return (
+                                <li
+                                  key={sec.slug}
+                                  className="flex min-h-tap items-center justify-between gap-3 px-3 py-1.5"
+                                >
+                                  <span
+                                    className={`text-sm ${
+                                      hidden
+                                        ? "text-ink-400 line-through decoration-ink-300 dark:text-umber-400 dark:decoration-umber-600"
+                                        : "text-ink-900 dark:text-paper-50"
+                                    }`}
+                                  >
+                                    {t(sec.nameKey)}
+                                  </span>
+                                  <Switch
+                                    checked={!hidden}
+                                    onChange={() => toggleSection(sec.slug)}
+                                    label={t(sec.nameKey)}
+                                  />
+                                </li>
+                              );
+                            })}
+                            {/* TODO(milestone 5): the public venue map is a
+                                server-enforced privacy gate, not a design
+                                choice. It belongs on the guest-page editor next
+                                to the other visibility settings. */}
+                            <li className="flex min-h-tap items-center justify-between gap-3 px-3 py-1.5">
                               <span
                                 className={`text-sm ${
-                                  hidden
-                                    ? "text-ink-400 line-through decoration-ink-300 dark:text-umber-400 dark:decoration-umber-600"
-                                    : "text-ink-900 dark:text-paper-50"
+                                  design.web.venueMap
+                                    ? "text-ink-900 dark:text-paper-50"
+                                    : "text-ink-400 dark:text-umber-400"
                                 }`}
                               >
-                                {t(s.nameKey)}
+                                {t("design.web.venue_map_label")}
                               </span>
-                              <button
-                                type="button"
-                                onClick={() => toggleSection(s.slug)}
-                                aria-pressed={!hidden}
-                                aria-label={t(s.nameKey)}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:text-umber-200 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
-                              >
-                                {hidden ? (
-                                  <EyeOff size={16} aria-hidden />
-                                ) : (
-                                  <Eye size={16} aria-hidden />
-                                )}
-                              </button>
+                              <Switch
+                                checked={design.web.venueMap}
+                                onChange={chooseVenueMap}
+                                disabled={!hasVenueCoords}
+                                label={t("design.web.venue_map_label")}
+                              />
                             </li>
-                          );
-                        })}
-                        {/* Public venue map opt-in: reveals the exact pin (and
-                          the embedded map) to everyone, not just confirmed
-                          guests. Disabled until the couple has set a venue
-                          location; the reveal is server-gated. */}
-                        <li className="flex items-center justify-between gap-3 px-3 py-1.5">
-                          <span
-                            className={`text-sm ${
-                              design.web.venueMap
-                                ? "text-ink-900 dark:text-paper-50"
-                                : "text-ink-400 dark:text-umber-400"
-                            }`}
-                          >
-                            {t("design.web.venue_map_label")}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => chooseVenueMap(!design.web.venueMap)}
-                            disabled={!hasVenueCoords}
-                            aria-pressed={design.web.venueMap}
-                            aria-label={t("design.web.venue_map_label")}
-                            title={
-                              hasVenueCoords ? undefined : t("design.web.venue_map_needs_location")
-                            }
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-600 transition hover:bg-paper-100 disabled:cursor-default disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:text-umber-200 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
-                          >
-                            {design.web.venueMap ? (
-                              <Eye size={16} aria-hidden />
-                            ) : (
-                              <EyeOff size={16} aria-hidden />
-                            )}
-                          </button>
-                        </li>
-                      </ul>
-                    </section>
-
-                    {/* Advanced: freeform per-role colour overrides, demoted to a
-                      collapsed disclosure. The palette picker above is the
-                      curated colour path; raw hex is the escape hatch. */}
-                    <details className="rounded-2xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
-                      <summary className="cursor-pointer text-sm font-medium text-ink-700 dark:text-paper-100">
-                        {t("design.colors.advanced_label")}
-                      </summary>
-                      <div className="mt-3">
-                        <div className="mb-2 flex flex-wrap items-center gap-2">
-                          {/* No info tooltip here: the disclosure's own label
-                            already says these are custom colours, and the hover
-                            card covered the swatches it was explaining. */}
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-2 py-0.5 text-[11px] font-medium text-ink-600 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200">
-                            <span
-                              className="h-2.5 w-2.5 rounded-full"
-                              style={{ backgroundColor: activePalette.accent.hex }}
-                              aria-hidden
-                            />
-                            {t("design.colors.base_label")} {t(activePalette.nameKey)}
-                          </span>
-                        </div>
-                        {/* Swatch row: each role is a colour block with a pencil
-                          badge; clicking opens the native colour editor (the
-                          swatch IS the input label, with a focus-within ring
-                          for keyboard users). */}
-                        <div className="flex flex-wrap gap-4">
-                          {COLOR_ROLES.map((role) => {
-                            const resolved = design.colors[role] ?? activePalette[role].hex;
-                            const overridden = design.colors[role] !== undefined;
-                            return (
-                              <div key={role} className="flex flex-col items-center gap-1">
-                                {/* No native `title` here — the role name is already
-                                  the visible caption below, and a title tooltip
-                                  would pop up over the swatch, hiding its colour. */}
-                                <label
-                                  className="relative block h-12 w-12 cursor-pointer rounded-xl border border-paper-300 shadow-soft focus-within:ring-2 focus-within:ring-ink-300 dark:border-umber-700 dark:focus-within:ring-paper-100"
-                                  style={{ backgroundColor: resolved }}
-                                >
-                                  <input
-                                    type="color"
-                                    value={resolved}
-                                    onChange={(ev) => chooseColor(role, ev.target.value)}
-                                    aria-label={t(`design.colors.${role}`)}
-                                    className="sr-only"
-                                  />
-                                  <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100">
-                                    <Pencil size={11} aria-hidden />
-                                  </span>
-                                </label>
-                                <span className="text-[11px] text-ink-600 dark:text-umber-200">
-                                  {t(`design.colors.${role}`)}
-                                </span>
-                                {/* Fixed-height reset row so toggling an override
-                                  never shifts the grid. */}
-                                <span className="flex h-6 items-center gap-1">
-                                  {overridden && (
-                                    <>
-                                      <span
-                                        className="h-3 w-3 rounded-full border border-paper-300 dark:border-umber-700"
-                                        style={{ backgroundColor: activePalette[role].hex }}
-                                        title={`${t("design.colors.original")}: ${activePalette[role].hex}`}
-                                        aria-hidden
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={() => clearColor(role)}
-                                        className="px-1 py-0.5 text-[10px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
-                                      >
-                                        {t("design.colors.reset")}
-                                      </button>
-                                    </>
-                                  )}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {lowContrast && (
-                          <p
-                            role="status"
-                            className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400"
-                          >
-                            <AlertTriangle size={12} aria-hidden />
-                            {t("design.colors.low_contrast")}
-                            {Object.keys(design.colors).length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => setDesign((d) => ({ ...d, colors: {} }))}
-                                className="font-medium underline underline-offset-2"
-                              >
-                                {t("design.colors.fix_contrast")}
-                              </button>
-                            )}
-                          </p>
-                        )}
+                          </ul>
+                          {!hasVenueCoords && (
+                            <p className="text-xs text-ink-400 dark:text-umber-300">
+                              {t("design.web.venue_map_needs_location")}
+                            </p>
+                          )}
+                        </TuneRow>
                       </div>
-                    </details>
-                  </Chapter>
-
-                  {/* ── Finish line — see it big, then publish / share it. ──── */}
-                  <div className="rounded-2xl border border-paper-300 bg-white p-4 dark:border-umber-700 dark:bg-umber-800">
-                    <h2 className="font-serif text-xl italic tracking-tight text-ink-900 dark:text-paper-50">
-                      {t("design.finish.title")}
-                    </h2>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setFullPreview(true)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 px-4 py-2 text-sm font-medium text-ink-700 transition hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
-                      >
-                        <Maximize2 size={14} aria-hidden />
-                        {t("design.full_preview")}
-                      </button>
-                      {couple?.slug && couple.is_public === false && (
-                        <Link
-                          to="/app/guest-page"
-                          className="inline-flex items-center justify-center gap-1.5 rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
-                        >
-                          {t("design.publish_cta_button")}
-                        </Link>
-                      )}
-                      {couple?.slug && couple.is_public && (
-                        <>
-                          <a
-                            href={`/w/${couple.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
-                          >
-                            <ExternalLink size={14} aria-hidden />
-                            {t("design.finish.view_live")}
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => void copyGuestLink()}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 px-4 py-2 text-sm font-medium text-ink-700 transition hover:border-paper-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
-                          >
-                            <Copy size={14} aria-hidden />
-                            {t("design.finish.copy_link")}
-                          </button>
-                        </>
-                      )}
                     </div>
+                  </section>
+
+                  {/* Publish / share. The old "Happy with the look?" card asked
+                      a question nobody answers; these are just the two things
+                      you do once the look is right. */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFullPreview(true)}
+                      className="btn btn-outline btn-sm"
+                    >
+                      <Maximize2 size={14} aria-hidden />
+                      {t("design.full_preview")}
+                    </button>
+                    {couple?.slug && couple.is_public === false && (
+                      <Link to="/app/guest-page" className="btn btn-primary btn-sm">
+                        {t("design.publish_cta_button")}
+                      </Link>
+                    )}
+                    {couple?.slug && couple.is_public && (
+                      <>
+                        <a
+                          href={`/w/${couple.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-primary btn-sm"
+                        >
+                          <ExternalLink size={14} aria-hidden />
+                          {t("design.finish.view_live")}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => void copyGuestLink()}
+                          className="btn btn-outline btn-sm"
+                        >
+                          <Copy size={14} aria-hidden />
+                          {t("design.finish.copy_link")}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </>
               )}

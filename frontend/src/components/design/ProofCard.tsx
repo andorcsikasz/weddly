@@ -18,6 +18,7 @@
 // four tiles stop being comparable.
 
 import { type CoupleDesign, formatWeddingDate, toPublicDesign } from "@shared/design";
+import type { Locale } from "@/lib/i18n";
 import { headingTreatmentCss, OrnamentDivider, OrnamentFrame } from "../ornaments";
 
 /** How big a rendering is asked for. Each size pins its own type sizes so a
@@ -67,7 +68,7 @@ export function ProofCard({
   groomName: string | null | undefined;
   /** ISO date. Null falls back to a representative date so the card is never blank. */
   weddingDate: string | null | undefined;
-  locale: string;
+  locale: Locale;
   /** Shown when the couple hasn't named themselves yet (a translated sample). */
   fallbackName: string;
   className?: string;

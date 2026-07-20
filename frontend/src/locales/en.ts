@@ -2685,12 +2685,30 @@ const en: LocaleMessages = {
       body: "Your custom colours and fonts go back to this look's own set.",
       confirm: "Change it",
     },
+    // The fine-tune list. Every label names a thing, never an attribute of one.
+    tune: {
+      heading: "Fine tune",
+      colors: "Colours",
+      fonts: "Fonts",
+      date: "Date",
+      monogram: "Monogram",
+      dividers: "Dividers",
+      cards: "Cards",
+      sections: "Sections",
+      border: "Border",
+    },
+    swap: { before: "Before", after: "Now", revert: "Revert", done: "Done" },
+    // Corners and shadow were two independent 3-way controls, nine
+    // combinations, of which the four looks use exactly three. Now one choice.
+    card_feel: { sharp: "Sharp", soft: "Soft", round: "Round" },
+    colors_custom: { open: "Custom colours", count: "{n} custom" },
     section: {
       style: "Wedding style",
       palette: "Color palette",
       palette_more: "More palettes",
       fonts: "Fonts",
       print: "Print options",
+      photos: "Photos",
       monogram: "Monogram",
       ornaments: "Ornaments",
       date: "Date format",

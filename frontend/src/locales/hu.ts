@@ -2713,12 +2713,30 @@ const hu: LocaleMessages = {
       body: "Az egyedi színeid és betűtípusaid visszaállnak az új stílus saját készletére.",
       confirm: "Csere",
     },
+    // A finomhangoló lista. Minden címke dolgot nevez meg, nem tulajdonságot.
+    tune: {
+      heading: "Finomhangolás",
+      colors: "Színek",
+      fonts: "Betűk",
+      date: "Dátum",
+      monogram: "Monogram",
+      dividers: "Elválasztók",
+      cards: "Kártyák",
+      sections: "Szakaszok",
+      border: "Keret",
+    },
+    swap: { before: "Előtte", after: "Most", revert: "Vissza", done: "Kész" },
+    // A lekerekítés és az árnyék két külön hármas választó volt, kilenc
+    // kombináció, amiből a négy stílus pontosan hármat használ. Most egy döntés.
+    card_feel: { sharp: "Éles", soft: "Lágy", round: "Kerek" },
+    colors_custom: { open: "Egyedi színek", count: "{n} egyedi" },
     section: {
       style: "Esküvői stílus",
       palette: "Színpaletta",
       palette_more: "További paletták",
       fonts: "Betűtípusok",
       print: "Nyomtatási beállítások",
+      photos: "Fotók",
       monogram: "Monogram",
       ornaments: "Díszítőelemek",
       date: "Dátumformátum",

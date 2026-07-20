@@ -2911,6 +2911,31 @@ export interface LocaleMessages {
     title: string;
     /** InfoHint next to the title. */
     hint: string;
+    /** The Sample Table: four finished looks on the couple's own names. */
+    choose: string;
+    look: { change: string };
+    /** The Look Bar stamp always names the surface you are NOT editing. */
+    stamp: { to_print: string; to_site: string };
+    /** Picking a style discards hand-set colours and fonts, so it asks first. */
+    style_switch_confirm: { title: string; body: string; confirm: string };
+    /** The fine-tune list. Every label names a thing, never an attribute. */
+    tune: {
+      heading: string;
+      colors: string;
+      fonts: string;
+      date: string;
+      monogram: string;
+      dividers: string;
+      cards: string;
+      sections: string;
+      border: string;
+    };
+    /** Before/after comparison of a style swap. */
+    swap: { before: string; after: string; revert: string; done: string };
+    /** Corners + shadow collapsed into one three-way card-feel choice. */
+    card_feel: { sharp: string; soft: string; round: string };
+    /** Custom-colour drawer opener plus its "{n} custom" counter. */
+    colors_custom: { open: string; count: string };
     /** Section headings for the three pickers + print toggles. */
     section: {
       style: string;
@@ -2919,6 +2944,7 @@ export interface LocaleMessages {
       palette_more: string;
       fonts: string;
       print: string;
+      photos: string;
       monogram: string;
       ornaments: string;
       date: string;

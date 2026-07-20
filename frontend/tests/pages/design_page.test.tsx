@@ -1,14 +1,19 @@
-// Smoke coverage for /app/design/website (the studio-chapters editor):
-// mounts the page end to end under happy-dom with the API mocked, and asserts
-// the three chapters + every newly-exposed catalog control render, the preview
-// falls back to labelled sample content, and the monogram reaches the hero.
+// Smoke coverage for /app/design/website. Mounts the page end to end under
+// happy-dom with the API mocked and asserts the redesigned shape: the committed
+// look sits in the Look Bar, the fine-tune list carries its seven rows, and the
+// preview still falls back to labelled sample content.
+//
+// This test used to assert "all three chapters" and every catalog control being
+// on screen at once. That is exactly the page the redesign removed: fifteen
+// sibling control groups of equal weight. What it asserts now is the opposite
+// property, that most of those controls are NOT on screen until asked for.
 
 import { afterEach, beforeAll, describe, expect, it, mock } from "bun:test";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { DEFAULT_DESIGN } from "@shared/design";
 import { _preloadHuForTests, I18nProvider } from "@/lib/i18n";
-import { ToastProvider } from "@/components/ui";
+import { ConfirmDialogProvider, ToastProvider } from "@/components/ui";
 import DesignPage from "@/pages/DesignPage";
 
 beforeAll(async () => {
@@ -44,56 +49,101 @@ function jsonResponse(body: unknown) {
   });
 }
 
-describe("<DesignPage> smoke (/app/design/website)", () => {
-  it("mounts, loads the couple, and renders all three chapters + new controls", async () => {
-    globalThis.fetch = mock((input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes("/api/couples/current")) return Promise.resolve(jsonResponse({ couple }));
-      if (url.includes("/api/schedule")) return Promise.resolve(jsonResponse({ events: [] }));
-      if (url.includes("/api/wishlist")) return Promise.resolve(jsonResponse({ items: [] }));
-      return Promise.resolve(jsonResponse({}));
-    }) as unknown as typeof fetch;
+function mountPage() {
+  globalThis.fetch = mock((input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.includes("/api/couples/current")) return Promise.resolve(jsonResponse({ couple }));
+    if (url.includes("/api/schedule")) return Promise.resolve(jsonResponse({ events: [] }));
+    if (url.includes("/api/wishlist")) return Promise.resolve(jsonResponse({ items: [] }));
+    return Promise.resolve(jsonResponse({}));
+  }) as unknown as typeof fetch;
 
-    render(
-      <I18nProvider>
-        <ToastProvider>
+  return render(
+    <I18nProvider>
+      <ToastProvider>
+        <ConfirmDialogProvider>
           <MemoryRouter initialEntries={["/app/design/website"]}>
             <DesignPage />
           </MemoryRouter>
-        </ToastProvider>
-      </I18nProvider>,
-    );
+        </ConfirmDialogProvider>
+      </ToastProvider>
+    </I18nProvider>,
+  );
+}
 
-    // Couple loaded → the editor grid replaces the loading line.
+describe("<DesignPage> smoke (/app/design/website)", () => {
+  it("opens on the committed look and the seven fine-tune rows", async () => {
+    mountPage();
+
+    // Couple loaded. This couple is still on the untouched default, so they
+    // have never made the one decision this page is about: the Sample Table
+    // opens for them, and "Garden" appears twice (the Look Bar's committed
+    // name, plus its tile on the table).
     await waitFor(() => {
-      expect(screen.getByText("Esküvői stílus")).toBeInTheDocument();
+      expect(screen.getAllByText("Garden").length).toBe(2);
     });
+    expect(screen.getByText("Válassz stílust")).toBeInTheDocument();
+    // All four looks are on the table, each a full card, not a swatch.
+    for (const look of ["Editorial", "Blush", "Noir"]) {
+      expect(screen.getByText(look)).toBeInTheDocument();
+    }
 
-    // The three studio chapters.
-    expect(screen.getByText("Stílus")).toBeInTheDocument();
-    expect(screen.getByText("Tipográfia")).toBeInTheDocument();
-    expect(screen.getByText("Részletek")).toBeInTheDocument();
-
-    // New controls: palette picker (a legacy palette by name), monogram block,
-    // rounding + shadow + sections labels, demoted custom colors, finish card.
-    expect(screen.getByRole("button", { name: "Pezsgő" })).toBeInTheDocument();
-    expect(screen.getByText("Monogram megjelenítése")).toBeInTheDocument();
-    expect(screen.getByText("Kártya lekerekítés")).toBeInTheDocument();
-    expect(screen.getByText("Kártya árnyék")).toBeInTheDocument();
-    expect(screen.getByText("Látható szakaszok")).toBeInTheDocument();
-    expect(screen.getByText("Térkép a helyszínnél")).toBeInTheDocument();
+    // The fine-tune list: every row present and labelled, nothing expanded.
+    expect(screen.getByText("Finomhangolás")).toBeInTheDocument();
+    for (const row of ["Színek", "Betűk", "Dátum", "Monogram", "Kártyák", "Szakaszok"]) {
+      expect(screen.getByText(row)).toBeInTheDocument();
+    }
+    // Photos are promoted out of the accordion into their own block.
+    expect(screen.getByText("Fotók")).toBeInTheDocument();
     expect(screen.getByText("1. kép")).toBeInTheDocument();
-    expect(screen.getByText("2. kép")).toBeInTheDocument();
-    expect(screen.getByText("Haladó: egyedi színek")).toBeInTheDocument();
-    expect(screen.getByText("Tetszik az összkép?")).toBeInTheDocument();
 
-    // Sample-content chip (no real schedule/wishlist in the mocks) + the
-    // guest-page preview rendering the sample schedule beat.
+    // Sample-content chip (no real schedule/wishlist in the mocks) and the
+    // preview rendering the sample schedule beat.
     expect(screen.getByText("Mintatartalom")).toBeInTheDocument();
     expect(screen.getByText("Szertartás")).toBeInTheDocument();
+  });
 
-    // The monogram renders twice: the separator chip specimen in chapter 03
-    // AND the hero eyebrow inside the live preview (enabled by default).
+  it("keeps the catalog closed until a row is opened", async () => {
+    mountPage();
+    await waitFor(() => {
+      expect(screen.getByText("Színek")).toBeInTheDocument();
+    });
+
+    // The point of the redesign: a legacy palette deep in the catalog is NOT
+    // on screen at rest. It used to be, alongside fourteen other grids.
+    expect(screen.queryByRole("button", { name: "Pezsgő" })).toBeNull();
+
+    fireEvent.click(screen.getByText("Színek"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Pezsgő" })).toBeInTheDocument();
+    });
+    // Opening a swap shows the before/now comparison.
+    expect(screen.getByText("Előtte")).toBeInTheDocument();
+    expect(screen.getByText("Most")).toBeInTheDocument();
+  });
+
+  it("shows only one row's body at a time", async () => {
+    mountPage();
+    await waitFor(() => expect(screen.getByText("Színek")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Színek"));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Pezsgő" })).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByText("Dátum"));
+    await waitFor(() => {
+      // The colour rail is gone; opening Date closed Colours.
+      expect(screen.queryByRole("button", { name: "Pezsgő" })).toBeNull();
+    });
+  });
+
+  it("puts the monogram in the row readout and in the live preview", async () => {
+    mountPage();
+    await waitFor(() => expect(screen.getByText("Monogram")).toBeInTheDocument());
+    // The Monogram row renders the couple's real monogram as its value, and the
+    // hero eyebrow inside the preview renders it too (enabled by default).
     expect(screen.getAllByText("M & L").length).toBeGreaterThanOrEqual(2);
   });
 });

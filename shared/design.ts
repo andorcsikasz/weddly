@@ -768,6 +768,36 @@ export const IMAGE_TREATMENTS: readonly { slug: ImageTreatmentSlug; nameKey: str
   { slug: "grayscale", nameKey: "design.web.image_treatment.grayscale" },
 ];
 
+/** The three corner + shadow pairings the four style packs actually use.
+ *
+ *  `cardRadius` and `shadow` are stored separately and stay separate, because
+ *  old blobs carry combinations that are no longer offered and we never rewrite
+ *  a couple's stored value. But they are not two independent questions: nine
+ *  combinations exist, the packs use three, and nobody can describe the
+ *  difference between "sharp corners with a strong shadow" and "sharp corners
+ *  with a soft shadow" without looking. So the editor offers these three, named
+ *  after how the card feels, and a stored off-pairing simply matches none of
+ *  them until the couple picks one. */
+export type CardFeelSlug = "sharp" | "soft" | "round";
+export const CARD_FEELS: readonly {
+  slug: CardFeelSlug;
+  nameKey: string;
+  radius: CardRadiusSlug;
+  shadow: ShadowSlug;
+}[] = [
+  { slug: "sharp", nameKey: "design.card_feel.sharp", radius: "sharp", shadow: "none" },
+  { slug: "soft", nameKey: "design.card_feel.soft", radius: "soft", shadow: "soft" },
+  { slug: "round", nameKey: "design.card_feel.round", radius: "full", shadow: "soft" },
+];
+
+/** Which pairing a design currently sits on, or null for a stored combination
+ *  the editor no longer offers (so no tile shows a false selection ring). */
+export function getCardFeel(web: DesignWebsiteOptions): CardFeelSlug | null {
+  return (
+    CARD_FEELS.find((f) => f.radius === web.cardRadius && f.shadow === web.shadow)?.slug ?? null
+  );
+}
+
 export const VALID_CARD_RADII: ReadonlySet<CardRadiusSlug> = new Set(CARD_RADII.map((r) => r.slug));
 export const VALID_SHADOWS: ReadonlySet<ShadowSlug> = new Set(SHADOWS.map((s) => s.slug));
 export const VALID_BUTTON_STYLES: ReadonlySet<ButtonStyleSlug> = new Set(
