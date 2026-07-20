@@ -14,6 +14,7 @@ export type EmailKind =
   | "partner_invite_accepted" // inviter gets a heads-up that partner B joined the workspace
   | "partner_invite_declined" // invitee clicked "no thanks", inviter heads-up so they can re-send to a new address
   | "partner_invite_reminder" // admin-triggered nudge to a solo couple to invite their partner
+  | "founding_partner_push" // recurring (3x, 5 days apart) founding-cohort nudge: the free-until-your-wedding-day plan needs BOTH partners on the workspace
   | "partner_left_workspace" // partner B left the workspace, owner heads-up
   | "couple_paused" // workspace paused → 30-day delete countdown started
   | "couple_pause_cancelled" // either partner cancelled the pause; both get a heads-up
@@ -108,6 +109,12 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Lifecycle: admin manually nudges a solo couple to invite their partner —
   // the user didn't ask for this so honour the unsubscribe footer.
   partner_invite_reminder: "lifecycle",
+  // Lifecycle: a REPEATING marketing nudge (3 sends, 5 days apart) about the
+  // founding cohort, so it MUST honour the unsubscribe footer. The sweep also
+  // stops itself once the FOUNDING_CAP slots are gone — the offer it pitches
+  // is the one activatePartnerFreeWindow actually grants, and that grant is
+  // refused once the cohort is full.
+  founding_partner_push: "lifecycle",
   // Transactional: the owner had a partner in the workspace; that partner
   // self-unlinked via /api/users/me/leave-couple. Owner deserves to know.
   partner_left_workspace: "transactional",

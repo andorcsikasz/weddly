@@ -243,6 +243,26 @@ export interface PartnerInviteReminderPayload {
   /** Optional couple display name for a warmer body ("Mia & Lucas"). */
   coupleDisplayName?: string;
 }
+export interface FoundingPartnerPushPayload {
+  /** Deep link to the dashboard's invite-partner anchor. Signing in is the
+   *  fastest path for a recipient who is already logged in on this device. */
+  invitePartnerUrl: string;
+  /** The real, live `/invite/{token}` link. Rendered as plain copyable text
+   *  under the button so the recipient can paste it into whatever channel
+   *  they actually talk to their partner in. */
+  inviteUrl: string;
+  /** Prefilled `mailto:` carrying the same invite link, for the one-click
+   *  "just send it for me" path. */
+  shareMailtoUrl: string;
+  /** Founding slots still unclaimed at send time. Read live off
+   *  `FOUNDING_CAP - foundingSlotsUsed()` so the number is never a fiction. */
+  spotsLeft: number;
+  /** Optional couple display name for a warmer body ("Mia & Lucas"). */
+  coupleDisplayName?: string;
+  /** 0-based send index. Selects the copy variant so three reminders about
+   *  the same thing never read identically. */
+  variant: number;
+}
 export interface RsvpWeeklyDigestForCouplePayload {
   /** Couple's friendly display name, "Mia & Lucas". */
   coupleDisplayName: string;
@@ -670,6 +690,7 @@ export type KindPayload = {
   partner_invite_accepted: PartnerInviteAcceptedPayload;
   partner_invite_declined: PartnerInviteDeclinedPayload;
   partner_invite_reminder: PartnerInviteReminderPayload;
+  founding_partner_push: FoundingPartnerPushPayload;
   partner_left_workspace: PartnerLeftWorkspacePayload;
   couple_paused: CouplePausedPayload;
   couple_pause_cancelled: CouplePauseCancelledPayload;
@@ -779,25 +800,33 @@ type Builder<K extends EmailKind> = (payload: KindPayload[K], ctx: BuildContext)
 /** Free-window closer for the claim-invite copy. Returns "" once both free
  *  cohorts are full, and the caller filters the empty paragraph out: silence
  *  is the honest option there, since the claim would only grant a 3-day trial
- *  and promising anything else would be a bait. The scarcity is stated as a
- *  fact about the cohort, not as a countdown, because the exact number moves
- *  between the send and the click. */
+ *  and promising anything else would be a bait.
+ *
+ *  Two rules the copy must keep:
+ *    - State the offer that IS on the table, never the one that ran out. The
+ *      three-month tier used to open with "the founding year is gone, but…",
+ *      which spends the first half of the sentence on a loss.
+ *    - Never mention cards, not even to say none is needed. Raising the word at
+ *      all plants the idea that a card might be involved somewhere.
+ *
+ *  Scarcity stays qualitative ("still spots open") rather than a live count,
+ *  because the exact number moves between the send and the click. */
 function offerSentenceHu(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "Az első 100 szolgáltatónak egy teljes év ingyenes nálunk, bankkártya nélkül. Ebbe a körbe még belefértek.";
+    return "Az első 100 szolgáltató egy teljes évet kap tőlünk ingyen, és még van szabad hely.";
   }
   if (freeMonths > 0) {
-    return `Az alapító helyek elfogytak, de a következő 300 szolgáltató ${freeMonths} hónapot kap tőlünk, bankkártya nélkül.`;
+    return `300 szolgáltatónak adunk ${freeMonths} hónap ingyenes hozzáférést, és még van szabad hely.`;
   }
   return "";
 }
 
 function offerSentenceEn(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "The first 100 vendors get a full year with us for free, no card required. There is still room in that group.";
+    return "The first 100 vendors get a full year with us for free, and there are still spots open.";
   }
   if (freeMonths > 0) {
-    return `The founding year is gone, but the next 300 vendors get ${freeMonths} months on us, no card required.`;
+    return `We're giving 300 vendors ${freeMonths} months of free access, and there are still spots open.`;
   }
   return "";
 }
@@ -1120,6 +1149,102 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           "The button below takes you straight to the invite form on your dashboard.",
         ],
         cta: "Invite my partner",
+      },
+    };
+  },
+
+  founding_partner_push: (p, ctx) => {
+    // Three sends, five days apart, about one fact: the founding plan is
+    // granted per COUPLE, and activatePartnerFreeWindow refuses while
+    // partner_b_id is NULL. So the copy never asks for a purchase, it asks
+    // for the second person. `spotsLeft` is the live remaining count, not a
+    // decorative scarcity number, and the last variant promises the series
+    // ends, which the sweep's 3-send cap actually honours.
+    const n = Math.max(0, p.spotsLeft);
+    const coupleHu = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
+    const coupleEn = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
+    const variants = [
+      {
+        subject: `A 200 ingyenes helyből még ${n} szabad / ${n} of the 200 free places are open`,
+        hu: {
+          preheader: "Az esküvőtök napjáig ingyen, ha mindketten fent vagytok.",
+          paragraphs: [
+            `Az első 200 pár, aki **ketten** költözik be a Weddly-re, az esküvője napjáig ingyen tervez nálunk. A 200 helyből most **${n} szabad**.`,
+            `Nálatok egyetlen feltétel hiányzik: a munkaterületen${coupleHu} egyelőre csak te vagy fent. Amint a párod is regisztrál és belép, a hely a tiétek, és az előfizetés nálatok ki sem nyílik.`,
+            "A lenti gombbal beléphetsz és elküldheted neki a meghívót. Vagy másold ki a gomb alatti linket, és küldd el neki ott, ahol amúgy is beszéltek.",
+          ],
+          cta: "Belépés és meghívás",
+        },
+        en: {
+          paragraphs: [
+            `The first 200 couples who move in **together** plan on Weddly free until their wedding day. **${n}** of those 200 places are still open.`,
+            `You're one step short: right now you're the only one on the workspace${coupleEn}. The moment your partner registers and signs in, the place is yours, and the subscription never starts for you.`,
+            "The button below signs you in and takes you to the invite form. Or copy the link underneath it and send it wherever the two of you actually talk.",
+          ],
+          cta: "Sign in and invite",
+        },
+      },
+      {
+        subject: "Az alapító helyetekhez a párod is kell / Your founding place needs both of you",
+        hu: {
+          preheader: `A 200 helyből ${n} maradt, és csak a teljes párok kapják meg.`,
+          paragraphs: [
+            `Emlékeztető: a 200 alapító helyből **${n}** még szabad, de csak azok a párok kapják meg, akik **ketten** vannak fent a munkaterületen.`,
+            "Nálatok ez annyit jelent, hogy a vőlegényednek vagy a menyasszonyodnak is regisztrálnia kell. Utána az esküvőtök napjáig nem fizettek semmit, akármeddig húzódik a tervezés.",
+            "Ez amúgy sem csak a számláról szól: a vendéglista, az ülésrend és a költségvetés akkor működik jól, ha mindketten ugyanazt az egy verziót szerkesztitek.",
+          ],
+          cta: "Meghívom a páromat",
+        },
+        en: {
+          paragraphs: [
+            `A reminder: **${n}** of the 200 founding places are still open, but they only go to couples with **both** partners on the workspace.`,
+            "For you that means your fiancé needs to register too. After that you pay nothing until your wedding day, however long the planning runs.",
+            "And it was never really about the invoice: the guest list, the seating and the budget only work properly when you're both editing the same single version.",
+          ],
+          cta: "Invite my partner",
+        },
+      },
+      {
+        subject: "Utolsó emlékeztető az alapító helyetekről / Last note about your founding place",
+        hu: {
+          preheader: "Több levelet nem küldünk erről.",
+          paragraphs: [
+            `Ez az utolsó emlékeztetőnk az alapító helyetekről. A 200-ból **${n}** maradt.`,
+            "Ha a párod is regisztrál a munkaterületre, az esküvőtök napjáig ingyen tervezhettek. Ha nem, az is teljesen rendben van: a terveződ marad, minden adatoddal együtt, csak a szokásos előfizetéssel.",
+            "Több levelet erről nem küldünk.",
+          ],
+          cta: "Meghívó küldése",
+        },
+        en: {
+          paragraphs: [
+            `This is our last reminder about your founding place. **${n}** of the 200 are left.`,
+            "If your partner registers on the workspace, the two of you plan free until your wedding day. If not, that's genuinely fine: your planner stays exactly as it is, just on the normal subscription.",
+            "We won't email you about this again.",
+          ],
+          cta: "Send the invite",
+        },
+      },
+    ];
+    const v = variants[p.variant % variants.length] ?? variants[0]!;
+    return {
+      subject: v.subject,
+      ctaUrl: p.invitePartnerUrl,
+      hu: {
+        preheader: v.hu.preheader,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: v.hu.paragraphs,
+        cta: v.hu.cta,
+        ctaSubtext: `Meghívó link a párodnak: ${p.inviteUrl}`,
+        secondaryLinks: [{ label: "Küldés emailben", url: p.shareMailtoUrl }],
+        footnote: "Ha a párod időközben regisztrált, hagyd figyelmen kívül ezt a levelet.",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: v.en.paragraphs,
+        cta: v.en.cta,
+        ctaSubtext: `Invite link for your partner: ${p.inviteUrl}`,
+        secondaryLinks: [{ label: "Send it by email", url: p.shareMailtoUrl }],
+        footnote: "If your partner has joined in the meantime, please ignore this note.",
       },
     };
   },

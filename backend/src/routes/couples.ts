@@ -816,15 +816,48 @@ async function handleCreateInvite(ctx: Ctx): Promise<Response> {
   const ts0 = now();
   const pending = db
     .prepare(
-      `SELECT id FROM couple_invites
+      `SELECT id, invited_email, source FROM couple_invites
         WHERE couple_id = ? AND consumed_at IS NULL AND expires_at > ?
-        LIMIT 1`,
+        ORDER BY id DESC LIMIT 1`,
     )
-    .get(couple.id, ts0) as { id: number } | undefined;
-  if (pending) {
+    .get(couple.id, ts0) as
+    | { id: number; invited_email: string | null; source: string | null }
+    | undefined;
+  // Only an invite that was already MAILED to an address is a real conflict.
+  // A link-only invite (the "Get link" button, or a campaign-minted token) is
+  // adopted below instead: the couple still has exactly one live token, and
+  // this is what stops "Get link, then email it" from failing with a 409 the
+  // user can't act on, since nothing in the UI told them an invite existed.
+  if (pending?.invited_email) {
     throw new HttpError(409, "An invite is already pending — cancel it before sending another", {
       code: "invite_already_pending",
     });
+  }
+  if (pending) {
+    const tsAdopt = now();
+    // Adopt: keep the token (any copy already in the wild stays valid), attach
+    // the address, clear the campaign marker so the invite becomes visible to
+    // the dashboard, and restart the TTL so the emailed link gets a full week.
+    db.prepare(
+      "UPDATE couple_invites SET invited_email = ?, source = NULL, expires_at = ? WHERE id = ?",
+    ).run(invitedEmail, tsAdopt + INVITE_TTL_MS, pending.id);
+    const adopted = db.prepare("SELECT * FROM couple_invites WHERE id = ?").get(pending.id) as
+      | InviteRow
+      | undefined;
+    if (!adopted) throw new HttpError(500, "Invite vanished after adoption");
+    // Audit unconditionally, like the fresh-insert path below: the interesting
+    // event is the couple taking ownership of the token, not whether a mail
+    // happened to go with it.
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "invite.create",
+      target_kind: "couple_invite",
+      target_id: adopted.id,
+      after: { invited_email: invitedEmail, adopted_from: pending.source ?? "link" },
+    });
+    if (invitedEmail) sendPartnerInvite(couple, userId, invitedEmail, adopted.token);
+    return json({ invite: toInvite(adopted) }, { status: 201 });
   }
 
   const token = generateInviteToken();
@@ -855,28 +888,39 @@ async function handleCreateInvite(ctx: Ctx): Promise<Response> {
   // Fire-and-forget invite email. If invited_email is missing, the inviter
   // shares the link manually (the dashboard already shows a copy-link button).
   if (invitedEmail) {
-    const inviter = getUserById(userId);
-    const inviteUrl = `${CONFIG.frontendBaseUrl}/invite/${token}`;
-    const inviterName = inviter?.full_name ?? "Your partner";
-    // Pass the couple's display name only when it's a real one — empty / the
-    // post-purge "Purged workspace" sentinel would just look weird in the body.
-    const coupleDisplayName =
-      couple.display_name && couple.display_name !== "Purged workspace"
-        ? couple.display_name
-        : undefined;
-    void sendKind(
-      "partner_invite",
-      { inviterName, inviteUrl, coupleDisplayName },
-      {
-        // Partner B has no Weddly account yet — treat as a guest recipient.
-        user: null,
-        guest: { email: invitedEmail, full_name: "" },
-        couple_id: couple.id,
-      },
-    );
+    sendPartnerInvite(couple, userId, invitedEmail, token);
   }
 
   return json({ invite: toInvite(row) }, { status: 201 });
+}
+
+/** Fire-and-forget the partner-B invite mail. Shared by the fresh-insert and
+ *  the adopt-a-link-only-invite branches so the two can't drift. */
+function sendPartnerInvite(
+  couple: CoupleRow,
+  inviterUserId: number,
+  invitedEmail: string,
+  token: string,
+): void {
+  const inviter = getUserById(inviterUserId);
+  const inviteUrl = `${CONFIG.frontendBaseUrl}/invite/${token}`;
+  const inviterName = inviter?.full_name ?? "Your partner";
+  // Pass the couple's display name only when it's a real one — empty / the
+  // post-purge "Purged workspace" sentinel would just look weird in the body.
+  const coupleDisplayName =
+    couple.display_name && couple.display_name !== "Purged workspace"
+      ? couple.display_name
+      : undefined;
+  void sendKind(
+    "partner_invite",
+    { inviterName, inviteUrl, coupleDisplayName },
+    {
+      // Partner B has no Weddly account yet — treat as a guest recipient.
+      user: null,
+      guest: { email: invitedEmail, full_name: "" },
+      couple_id: couple.id,
+    },
+  );
 }
 
 /** Revoke any pending invite this couple has open. We don't DELETE — schema
@@ -894,11 +938,16 @@ function handleGetCurrentInvite(ctx: Ctx): Response {
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
   const ts = now();
+  // `source IS NULL` deliberately hides campaign-minted tokens (see the
+  // couple_invites.source note in db.ts). The founding-push email mints one
+  // only so the mail can carry a real link; surfacing it here would collapse
+  // the dashboard's invite card and tick the "invite your partner" checklist
+  // for something the couple never did.
   const row = db
     .prepare(
       `SELECT id, couple_id, token, invited_email, invited_by_user_id, consumed_at, expires_at, created_at
          FROM couple_invites
-         WHERE couple_id = ? AND consumed_at IS NULL AND expires_at > ?
+         WHERE couple_id = ? AND consumed_at IS NULL AND expires_at > ? AND source IS NULL
          ORDER BY id DESC LIMIT 1`,
     )
     .get(couple.id, ts) as InviteRow | undefined;

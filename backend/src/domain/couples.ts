@@ -330,6 +330,11 @@ export interface CoupleRow {
    *  icon on the admin workspace list. NULL = never reminded. Used to
    *  enforce a one-shot send so the lone partner isn't pestered. */
   invite_partner_reminded_at: number | null;
+  /** How many founding-cohort pushes ('founding_partner_push') have gone out
+   *  to this workspace, and when the last one did. Capped at
+   *  FOUNDING_PUSH_MAX_SENDS by the email worker. */
+  founding_push_count: number;
+  founding_push_last_at: number | null;
   /** Subscription state machine — see shared/billing.ts. */
   subscription_status: string;
   trial_ends_at: number | null;

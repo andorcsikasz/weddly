@@ -55,6 +55,15 @@ const STUBS: KindPayload = {
     invitePartnerUrl: `${BASE_URL}/app#invite-partner`,
     coupleDisplayName: "Mia & Lucas",
   },
+  // variant 0 of 3 — the preview always renders the first send of the series.
+  founding_partner_push: {
+    invitePartnerUrl: `${BASE_URL}/app#invite-partner`,
+    inviteUrl: `${BASE_URL}/invite/preview-token`,
+    shareMailtoUrl: "mailto:?subject=Join%20our%20wedding%20planner",
+    spotsLeft: 47,
+    coupleDisplayName: "Mia & Lucas",
+    variant: 0,
+  },
   partner_left_workspace: {
     partnerName: "Lucas",
     coupleDisplayName: "Mia & Lucas",

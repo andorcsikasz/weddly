@@ -8,12 +8,16 @@
 // `email_dispatches(couple_id, user_id, kind)` — `markDispatched()` returns
 // false on duplicate, in which case we skip.
 
+import { FOUNDING_CAP } from "@shared/billing";
 import { toIsoDate } from "@shared/planning_timeline";
+import { INVITE_TTL_MS } from "@shared/types";
 import { CONFIG } from "../../config";
 import { db, now } from "../../db";
 import { log } from "../../lib/logger";
 import { reportError } from "../../lib/observability";
-import { getCoupleById } from "../couples";
+import { foundingSlotsUsed, isFoundingEligible } from "../billing";
+import { getCoupleById, isBillingAnchor } from "../couples";
+import { generateInviteToken } from "../invite_codes";
 import { resolveRecipients, sendGuestMessage } from "../guest_messages";
 import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "../listings";
 import { insertCoupleNotification, listActionableTimelineTasks } from "../notifications";
@@ -51,6 +55,12 @@ const INVITE_PARTNER_AUTO_AFTER_MS = 1000 * 60 * 60 * 48; // 48h
 // mark ("48h utáni legközelebbi 10:00"). The worker runs hourly, so the real
 // send lands on the first sweep at/after that boundary, within the hour.
 const INVITE_PARTNER_SEND_HOUR_UTC = 10;
+// Founding-cohort push. Picks up 5 days AFTER the one-shot invite reminder
+// above (which itself fires at ~48h), so the couple sees a clean 5-day rhythm
+// at roughly day 7 / 12 / 17 rather than two invite mails in the same week.
+const FOUNDING_PUSH_GRACE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days after signup
+const FOUNDING_PUSH_GAP_MS = 1000 * 60 * 60 * 24 * 5; // 5 days between sends
+const FOUNDING_PUSH_MAX_SENDS = 3;
 
 interface UserRow {
   id: number;
@@ -76,6 +86,7 @@ export function runEmailSweep(): {
   nudges: number;
   nudgesWeek: number;
   invitePartnerAuto: number;
+  foundingPushes: number;
   vendorShareNudges: number;
   vendorIncompleteNudges: number;
   plannerProfileNudges: number;
@@ -93,6 +104,7 @@ export function runEmailSweep(): {
   const nudges = sweepOnboardingNudges(ts);
   const nudgesWeek = sweepOnboardingNudgesWeek(ts);
   const invitePartnerAuto = sweepInvitePartnerAuto(ts);
+  const foundingPushes = sweepFoundingPartnerPush(ts);
   const vendorShareNudges = sweepVendorProfileShareNudge(ts);
   const vendorIncompleteNudges = sweepVendorProfileIncomplete(ts);
   const plannerProfileNudges = sweepPlannerProfileNudge(ts);
@@ -109,6 +121,7 @@ export function runEmailSweep(): {
     nudges,
     nudgesWeek,
     invitePartnerAuto,
+    foundingPushes,
     vendorShareNudges,
     vendorIncompleteNudges,
     plannerProfileNudges,
@@ -520,6 +533,153 @@ function sweepInvitePartnerAuto(ts: number): number {
     if (count >= SENDS_PER_SWEEP_CAP) break;
   }
   return count;
+}
+
+interface FoundingPushRow {
+  couple_id: number;
+  display_name: string | null;
+  created_at: number;
+  founding_push_count: number;
+  founding_push_last_at: number | null;
+  user_id: number;
+  email: string;
+  full_name: string;
+}
+
+/** The live `/invite/{token}` link for a couple, so the founding-push mail can
+ *  carry something the recipient can actually copy and send. Reuses any
+ *  unconsumed, unexpired invite (including one the couple made themselves)
+ *  and only mints when there is none, which preserves the "max one outstanding
+ *  invite per couple" invariant that handleCreateInvite enforces. A minted row
+ *  is marked `source='founding_push'` so it stays invisible to the dashboard
+ *  and gets adopted rather than 409'd if the couple later invites by email. */
+function foundingPushInviteToken(coupleId: number, inviterUserId: number, ts: number): string {
+  const live = db
+    .prepare(
+      `SELECT token FROM couple_invites
+        WHERE couple_id = ? AND consumed_at IS NULL AND expires_at > ?
+        ORDER BY id DESC LIMIT 1`,
+    )
+    .get(coupleId, ts) as { token: string } | undefined;
+  if (live) return live.token;
+
+  const token = generateInviteToken();
+  db.prepare(
+    `INSERT INTO couple_invites
+      (couple_id, token, invited_email, invited_by_user_id, consumed_at, expires_at, created_at, source)
+     VALUES (?, ?, NULL, ?, NULL, ?, ?, 'founding_push')`,
+  ).run(coupleId, token, inviterUserId, ts + INVITE_TTL_MS, ts);
+  return token;
+}
+
+function sweepFoundingPartnerPush(ts: number): number {
+  // Recurring push (FOUNDING_PUSH_MAX_SENDS sends, 5 days apart, rotating copy)
+  // telling a solo workspace that the free-until-your-wedding-day founding plan
+  // needs BOTH partners on board.
+  //
+  // The audience is deliberately narrow, because every exclusion here mirrors a
+  // refusal inside activatePartnerFreeWindow — we never pitch an offer the
+  // grant would decline:
+  //   - founding slots exhausted     → isFoundingEligible() gates the whole sweep
+  //   - already founding/active/past_due → the grant refuses, so the promise is void
+  //   - not the billing anchor       → founding is a per-owner grant earned once
+  //                                    on the oldest workspace, so a secondary
+  //                                    event must not be pitched at all
+  // Demo workspaces, purged users, vendors and planners are excluded as usual.
+  if (!isFoundingEligible()) return 0;
+  const spotsLeft = Math.max(0, FOUNDING_CAP - foundingSlotsUsed());
+
+  const rows = db
+    .prepare(
+      `SELECT c.id AS couple_id, c.display_name, c.created_at,
+              c.founding_push_count, c.founding_push_last_at,
+              u.id AS user_id, u.email, u.full_name
+         FROM couples c
+         JOIN users u ON u.couple_id = c.id
+        WHERE c.status = 'active'
+          AND c.is_demo = 0
+          AND c.partner_b_id IS NULL
+          AND c.founding_push_count < ?
+          AND c.subscription_status NOT IN ('founding', 'active', 'past_due')
+          AND u.status = 'active'
+          AND u.verified_email = 1
+          AND u.email NOT LIKE '%@purged.local'
+          AND u.email NOT LIKE '%@demo.weddly.local'
+          AND ${COUPLE_AUDIENCE_SQL}
+          AND (SELECT COUNT(*) FROM couple_members cm
+                 JOIN users mu ON mu.id = cm.user_id
+                WHERE cm.couple_id = c.id AND mu.status = 'active') = 1`,
+    )
+    .all(FOUNDING_PUSH_MAX_SENDS) as FoundingPushRow[];
+
+  let count = 0;
+  const stamp = db.prepare(
+    `UPDATE couples
+        SET founding_push_last_at = ?, founding_push_count = founding_push_count + 1
+      WHERE id = ?`,
+  );
+  for (const r of rows) {
+    // Cadence gate: the first push waits out the grace window from signup, then
+    // every later one waits a fixed 5 days from the previous send.
+    if (r.founding_push_last_at === null) {
+      if (r.created_at > ts - FOUNDING_PUSH_GRACE_MS) continue;
+    } else if (r.founding_push_last_at > ts - FOUNDING_PUSH_GAP_MS) {
+      continue;
+    }
+
+    // Founding is earned once per owner on their oldest workspace, so a
+    // secondary event workspace can never be granted it (isBillingAnchor
+    // guards activatePartnerFreeWindow). Pitching it there would be a lie.
+    const couple = getCoupleById(r.couple_id);
+    if (!couple || !isBillingAnchor(couple)) continue;
+
+    const token = foundingPushInviteToken(r.couple_id, r.user_id, ts);
+    const inviteUrl = `${CONFIG.frontendBaseUrl}/invite/${token}`;
+    const coupleDisplayName =
+      r.display_name && r.display_name !== "Purged workspace" ? r.display_name : undefined;
+
+    // Stamp BEFORE the fire-and-forget send: a silent mailer hiccup should skip
+    // this couple, not re-send to them on the next hourly sweep.
+    stamp.run(ts, r.couple_id);
+    void sendKind(
+      "founding_partner_push",
+      {
+        invitePartnerUrl: `${CONFIG.frontendBaseUrl}/app#invite-partner`,
+        inviteUrl,
+        shareMailtoUrl: foundingPushMailto(inviteUrl),
+        spotsLeft,
+        coupleDisplayName,
+        variant: r.founding_push_count,
+      },
+      {
+        user: { id: r.user_id, email: r.email, full_name: r.full_name },
+        couple_id: r.couple_id,
+      },
+    );
+    count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
+  }
+  return count;
+}
+
+/** Prefilled hand-off mail, partner A → partner B. Bilingual on purpose: the
+ *  sender's locale is known but the partner's isn't, and this body is what
+ *  lands in a stranger's inbox. No couple display name in the copy: it reads
+ *  as a label ("planning Mia & Lucas wedding") in at least one of the two
+ *  languages no matter how it's phrased, and "our wedding" is what a person
+ *  writing to their fiancé would actually say. */
+function foundingPushMailto(inviteUrl: string): string {
+  const subject = "Csatlakozol az esküvőnk tervezéséhez? / Join our wedding planner";
+  const body = [
+    "Szia! Elkezdtem az esküvőnk tervezését a Weddly-n, és szeretnélek téged is ott tudni.",
+    "Ezen a linken tudsz csatlakozni:",
+    inviteUrl,
+    "",
+    "Hi! I've started planning our wedding on Weddly and I'd like you on it with me.",
+    "You can join here:",
+    inviteUrl,
+  ].join("\n");
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 function sweepMilestones(ts: number): number {
@@ -1043,6 +1203,15 @@ function ymd(ts: number): string {
 
 let timer: ReturnType<typeof setInterval> | null = null;
 
+/** Total sends across every sweep, used only to decide whether a run is worth
+ *  a log line. Summed over the values rather than a hand-written chain: the
+ *  chain was maintained by hand and had already drifted (vendorIncompleteNudges
+ *  and plannerProfileNudges were missing from one or both call sites), so a new
+ *  sweep silently failed to count. Every field of the return type is a count. */
+function sweepTotal(r: Record<string, number>): number {
+  return Object.values(r).reduce((sum, n) => sum + n, 0);
+}
+
 /** Start the hourly sweep. Idempotent. */
 // ── Vendor claim-invite campaign ────────────────────────────────────────────
 // Kept OUT of `runEmailSweep` and awaited separately: every other sweep fires
@@ -1091,23 +1260,7 @@ export function startEmailWorker(): void {
   // Fire once on boot so a long downtime catches up immediately.
   try {
     const r = runEmailSweep();
-    if (
-      r.nudges +
-        r.nudgesWeek +
-        r.invitePartnerAuto +
-        r.vendorShareNudges +
-        r.vendorIncompleteNudges +
-        r.milestones +
-        r.weddings +
-        r.rsvpDeadlines +
-        r.weddingFollowups +
-        r.mealFollowups +
-        r.adminDigests +
-        r.rsvpDigests +
-        r.timelineEscalations +
-        r.scheduledGuestMessages >
-      0
-    ) {
+    if (sweepTotal(r) > 0) {
       log.info("emails.boot_sweep", r);
     }
   } catch (e) {
@@ -1118,22 +1271,7 @@ export function startEmailWorker(): void {
     () => {
       try {
         const r = runEmailSweep();
-        if (
-          r.nudges +
-            r.nudgesWeek +
-            r.invitePartnerAuto +
-            r.vendorShareNudges +
-            r.milestones +
-            r.weddings +
-            r.rsvpDeadlines +
-            r.weddingFollowups +
-            r.mealFollowups +
-            r.adminDigests +
-            r.rsvpDigests +
-            r.timelineEscalations +
-            r.scheduledGuestMessages >
-          0
-        ) {
+        if (sweepTotal(r) > 0) {
           log.info("emails.hourly_sweep", r);
         }
       } catch (e) {

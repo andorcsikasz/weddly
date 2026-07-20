@@ -1027,6 +1027,28 @@ addColumnIfMissing(
 // so the lone partner doesn't get pestered. NULL = never reminded.
 addColumnIfMissing("couples", "invite_partner_reminded_at", "invite_partner_reminded_at INTEGER");
 
+// Cadence for the founding-cohort push (kind 'founding_partner_push'), the
+// recurring follow-up to the one-shot stamp above. Deliberately SEPARATE
+// columns: reusing invite_partner_reminded_at would break both the admin
+// "already reminded" icon and the auto-sweep's one-shot guarantee, and
+// email_dispatches can only express once-forever, not "3 times, 5 days
+// apart". Count is capped in the worker, not here.
+addColumnIfMissing(
+  "couples",
+  "founding_push_count",
+  "founding_push_count INTEGER NOT NULL DEFAULT 0",
+);
+addColumnIfMissing("couples", "founding_push_last_at", "founding_push_last_at INTEGER");
+
+// Provenance for couple_invites. NULL = a human created it from the dashboard
+// or profile card. 'founding_push' = the email worker minted it purely so the
+// founding-cohort mail could carry a real shareable link. Campaign-minted rows
+// are hidden from GET /api/couples/invites/current (so they never tick the
+// "invite your partner" checklist or collapse the dashboard card) and are
+// ADOPTED rather than 409'd by handleCreateInvite, which keeps the "max one
+// outstanding invite per couple" invariant intact.
+addColumnIfMissing("couple_invites", "source", "source TEXT");
+
 // ── Subscription / billing (Stripe) ──────────────────────────────────────
 // State machine: see shared/billing.ts. `subscription_status` is the stored
 // state; entitlement (edit access) is COMPUTED from it + the timestamps at
