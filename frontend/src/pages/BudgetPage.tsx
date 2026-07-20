@@ -61,6 +61,7 @@ import {
   subscribeCostPlanningCount,
   writeCostPlanningCount,
 } from "../lib/cost_planning";
+import { fireConfetti } from "../lib/confetti";
 import {
   budgetApi,
   budgetDocApi,
@@ -1880,10 +1881,14 @@ function PaidEntryDialog({
 }) {
   const { t } = useT();
   const toast = useToast();
-  const [mode, setMode] = useState<"pct" | "amount">("pct");
+  // Percent only means something against an agreed amount; without one the
+  // dialog opens straight on the currency side.
+  const [mode, setMode] = useState<"pct" | "amount">(actual > 0 ? "pct" : "amount");
   const [draft, setDraft] = useState<string>("");
   const [date, setDate] = useState<string>(() => todayIso());
   const [busy, setBusy] = useState(false);
+
+  const totalCardRef = useRef<HTMLDivElement>(null);
 
   const ledgerSum = payments.reduce((s, p) => s + p.amount_huf, 0);
   // Captured once at mount: any paid amount that predates the ledger (legacy
@@ -1895,7 +1900,12 @@ function PaidEntryDialog({
   const total = opening + ledgerSum;
   const share = (amt: number) => (actual > 0 ? Math.round((amt / actual) * 100) : 0);
   const totalPct = actual > 0 ? Math.round((Math.min(total, actual) / actual) * 100) : 0;
-  const remaining = Math.max(0, actual - total);
+  // With no agreed amount there is nothing to be "fully paid" against, so the
+  // outstanding balance is unbounded and the entry stays open (capping it at 0
+  // would make such a row impossible to pay).
+  const hasActual = actual > 0;
+  const remaining = hasActual ? Math.max(0, actual - total) : Number.POSITIVE_INFINITY;
+  const settled = hasActual && remaining === 0;
 
   const num = Number(draft.replace(/[^\d]/g, ""));
   const safeNum = Number.isFinite(num) ? num : 0;
@@ -1908,7 +1918,7 @@ function PaidEntryDialog({
   const increment = Math.min(rawIncrement, remaining);
   const incrementPct = actual > 0 ? Math.round((increment / actual) * 100) : 0;
   // Largest whole-percent the user can still add — gates the quick-pick chips.
-  const remainingPct = actual > 0 ? Math.floor((remaining / actual) * 100) : 0;
+  const remainingPct = hasActual ? Math.floor((remaining / actual) * 100) : 0;
   const sym = currencySymbol(currency, locale);
 
   // Clamp typed input to the outstanding balance so the big number itself never
@@ -1943,7 +1953,13 @@ function PaidEntryDialog({
       onCommitTotal(total + increment);
       await onPaymentsChanged();
       setDraft("");
-      toast.success(t("budget.payment_added"));
+      // The payment that closes the balance is the only one worth celebrating.
+      if (hasActual && total + increment >= actual) {
+        const box = totalCardRef.current?.getBoundingClientRect();
+        fireConfetti(box ? { x: box.left + box.width / 2, y: box.bottom } : undefined);
+      } else {
+        toast.success(t("budget.payment_added"));
+      }
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     } finally {
@@ -2031,26 +2047,35 @@ function PaidEntryDialog({
       closeOnBackdrop
       title={t("budget.paid_record")}
       onClose={onClose}
-      footer={
-        <button type="button" className="btn-primary" onClick={onClose}>
-          {t("common.done")}
-        </button>
-      }
     >
       <div className="space-y-5">
-        {/* Running total: the "20% + 80% = 100%" the user asked for. */}
-        <div className="rounded-xl border border-paper-200 bg-paper-50 px-4 py-3 text-center dark:border-umber-700 dark:bg-umber-800/50">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-            {t("budget.payment_total")}
+        {/* Running total: the "20% + 80% = 100%" the user asked for. Flips to
+            green the moment the balance closes — the card IS the status, so no
+            separate "settled" label is needed. */}
+        <div
+          ref={totalCardRef}
+          className={`rounded-xl border px-4 py-3 text-center transition-colors ${settled ? "border-emerald-300 bg-emerald-50 dark:border-emerald-500/40 dark:bg-emerald-500/10" : "border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800/50"}`}
+        >
+          <p
+            className={`text-[11px] font-semibold uppercase tracking-wide ${settled ? "text-emerald-700 dark:text-emerald-300" : "text-ink-500 dark:text-umber-300"}`}
+          >
+            {settled ? t("budget.payment_settled") : t("budget.payment_total")}
           </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+          <p
+            className={`mt-1 flex items-center justify-center gap-2 text-lg font-semibold tabular-nums ${settled ? "text-emerald-700 dark:text-emerald-300" : "text-ink-900 dark:text-paper-50"}`}
+          >
+            {settled && <CircleCheck size={18} aria-hidden />}
             {formatMoney(total, currency, locale)}
-            <span className="ml-2 text-sm font-medium text-amber-600 dark:text-amber-400">
+            <span
+              className={`text-sm font-medium ${settled ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}
+            >
               {totalPct}%
             </span>
           </p>
           {breakdown.length > 1 && (
-            <p className="mt-0.5 text-xs tabular-nums text-ink-500 dark:text-umber-300">
+            <p
+              className={`mt-0.5 text-xs tabular-nums ${settled ? "text-emerald-600/80 dark:text-emerald-300/80" : "text-ink-500 dark:text-umber-300"}`}
+            >
               {breakdown.join(" + ")} = {totalPct}%
             </p>
           )}
@@ -2167,132 +2192,130 @@ function PaidEntryDialog({
             % on the left, the currency on the right. Tapping a side makes it the
             active input — bigger and bolder — while the other shows the live
             conversion. */}
-        <div className="space-y-3 rounded-xl border border-paper-200 p-3 dark:border-umber-700">
-          <div className="flex items-center justify-end">
-            <label className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
-              {t("budget.payment_date")}
-              <input
-                type="date"
-                value={date}
-                max={todayIso()}
-                onChange={(e) => setDate(e.target.value)}
-                className="rounded-lg border border-paper-300 bg-white px-2 py-1 text-sm tabular-nums text-ink-900 outline-none focus:border-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
-                aria-label={t("budget.payment_date")}
-              />
-            </label>
-          </div>
-          <div className="flex items-stretch overflow-hidden rounded-xl border border-paper-300 dark:border-umber-600">
-            {/* Percent side (left) */}
-            {mode === "pct" ? (
-              <div className="flex flex-1 flex-col items-center justify-center bg-paper-50 px-3 py-3 dark:bg-umber-800/60">
-                {/* biome-ignore lint/a11y/noAutofocus: focusing the active unit in a deliberately-opened entry dialog is expected. */}
+        {!settled && (
+          <div className="space-y-3 rounded-xl border border-paper-200 p-3 dark:border-umber-700">
+            <div className="flex items-center justify-end">
+              <label className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+                {t("budget.payment_date")}
                 <input
-                  type="text"
-                  inputMode="numeric"
-                  autoFocus
-                  value={groupedDraft}
-                  placeholder="0"
-                  onChange={(e) => setDraftClamped(e.target.value)}
-                  className="w-full bg-transparent text-center text-4xl font-bold tabular-nums text-ink-900 outline-none dark:text-paper-50"
-                  aria-label={t("budget.paid_unit_pct")}
+                  type="date"
+                  value={date}
+                  max={todayIso()}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="rounded-lg border border-paper-300 bg-white px-2 py-1 text-sm tabular-nums text-ink-900 outline-none focus:border-umber-500 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100"
+                  aria-label={t("budget.payment_date")}
                 />
-                <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-umber-600 dark:text-umber-300">
-                  %
-                </span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => switchMode("pct")}
-                className="flex flex-1 flex-col items-center justify-center px-3 py-3 transition hover:bg-paper-50 dark:hover:bg-umber-800/40"
-              >
-                <span className="text-lg font-medium tabular-nums text-ink-400 dark:text-umber-400">
-                  {incrementPct}
-                </span>
-                <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-umber-400">
-                  %
-                </span>
-              </button>
-            )}
-            <div className="w-px bg-paper-200 dark:bg-umber-600" aria-hidden />
-            {/* Currency side (right) */}
-            {mode === "amount" ? (
-              <div className="flex flex-1 flex-col items-center justify-center bg-paper-50 px-3 py-3 dark:bg-umber-800/60">
-                {/* biome-ignore lint/a11y/noAutofocus: focusing the active unit in a deliberately-opened entry dialog is expected. */}
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  autoFocus
-                  value={groupedDraft}
-                  placeholder="0"
-                  onChange={(e) => setDraftClamped(e.target.value)}
-                  className="w-full bg-transparent text-center text-4xl font-bold tabular-nums text-ink-900 outline-none dark:text-paper-50"
-                  aria-label={t("budget.paid_unit_amount")}
-                />
-                <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-umber-600 dark:text-umber-300">
-                  {sym}
-                </span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => switchMode("amount")}
-                className="flex flex-1 flex-col items-center justify-center px-3 py-3 transition hover:bg-paper-50 dark:hover:bg-umber-800/40"
-              >
-                <span className="text-lg font-medium tabular-nums text-ink-400 dark:text-umber-400">
-                  {formatNumber(increment, locale)}
-                </span>
-                <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-umber-400">
-                  {sym}
-                </span>
-              </button>
-            )}
-          </div>
-          {remaining > 0 ? (
-            <div className="flex flex-wrap justify-center gap-2">
-              {[25, 50, 75, 100].map((p) => {
-                const over = p > remainingPct;
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    disabled={over}
-                    onClick={() => {
-                      setMode("pct");
-                      setDraftClamped(String(p));
-                    }}
-                    className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-umber-400 hover:text-umber-800 disabled:cursor-not-allowed disabled:opacity-30 dark:border-umber-600 dark:text-umber-200 dark:hover:border-umber-400 dark:hover:text-paper-50"
-                  >
-                    {p}%
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("amount");
-                  setDraft(String(remaining));
-                }}
-                className="rounded-full border border-umber-300 bg-umber-50 px-3 py-1.5 text-xs font-medium text-umber-800 transition hover:border-umber-400 dark:border-umber-500 dark:bg-umber-700/40 dark:text-umber-100"
-              >
-                {t("budget.payment_remaining")}
-              </button>
+              </label>
             </div>
-          ) : (
-            <p className="text-center text-sm font-medium text-emerald-600 dark:text-emerald-400">
-              {t("budget.payment_settled")}
-            </p>
-          )}
-          <button
-            type="button"
-            className="btn-primary w-full justify-center"
-            disabled={busy || increment <= 0}
-            onClick={addPayment}
-          >
-            <Plus size={16} aria-hidden />
-            {t("budget.payment_add")}
-          </button>
-        </div>
+            <div className="flex items-stretch overflow-hidden rounded-xl border border-paper-300 dark:border-umber-600">
+              {/* Percent side (left) */}
+              {mode === "pct" ? (
+                <div className="flex flex-1 flex-col items-center justify-center bg-paper-50 px-3 py-3 dark:bg-umber-800/60">
+                  {/* biome-ignore lint/a11y/noAutofocus: focusing the active unit in a deliberately-opened entry dialog is expected. */}
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoFocus
+                    value={groupedDraft}
+                    placeholder="0"
+                    onChange={(e) => setDraftClamped(e.target.value)}
+                    className="w-full bg-transparent text-center text-4xl font-bold tabular-nums text-ink-900 outline-none dark:text-paper-50"
+                    aria-label={t("budget.paid_unit_pct")}
+                  />
+                  <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-umber-600 dark:text-umber-300">
+                    %
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => switchMode("pct")}
+                  className="flex flex-1 flex-col items-center justify-center px-3 py-3 transition hover:bg-paper-50 dark:hover:bg-umber-800/40"
+                >
+                  <span className="text-lg font-medium tabular-nums text-ink-400 dark:text-umber-400">
+                    {incrementPct}
+                  </span>
+                  <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-umber-400">
+                    %
+                  </span>
+                </button>
+              )}
+              <div className="w-px bg-paper-200 dark:bg-umber-600" aria-hidden />
+              {/* Currency side (right) */}
+              {mode === "amount" ? (
+                <div className="flex flex-1 flex-col items-center justify-center bg-paper-50 px-3 py-3 dark:bg-umber-800/60">
+                  {/* biome-ignore lint/a11y/noAutofocus: focusing the active unit in a deliberately-opened entry dialog is expected. */}
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoFocus
+                    value={groupedDraft}
+                    placeholder="0"
+                    onChange={(e) => setDraftClamped(e.target.value)}
+                    className="w-full bg-transparent text-center text-4xl font-bold tabular-nums text-ink-900 outline-none dark:text-paper-50"
+                    aria-label={t("budget.paid_unit_amount")}
+                  />
+                  <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-umber-600 dark:text-umber-300">
+                    {sym}
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => switchMode("amount")}
+                  className="flex flex-1 flex-col items-center justify-center px-3 py-3 transition hover:bg-paper-50 dark:hover:bg-umber-800/40"
+                >
+                  <span className="text-lg font-medium tabular-nums text-ink-400 dark:text-umber-400">
+                    {formatNumber(increment, locale)}
+                  </span>
+                  <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-umber-400">
+                    {sym}
+                  </span>
+                </button>
+              )}
+            </div>
+            {hasActual && (
+              <div className="flex flex-wrap justify-center gap-2">
+                {[25, 50, 75, 100].map((p) => {
+                  const over = p > remainingPct;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      disabled={over}
+                      onClick={() => {
+                        setMode("pct");
+                        setDraftClamped(String(p));
+                      }}
+                      className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-umber-400 hover:text-umber-800 disabled:cursor-not-allowed disabled:opacity-30 dark:border-umber-600 dark:text-umber-200 dark:hover:border-umber-400 dark:hover:text-paper-50"
+                    >
+                      {p}%
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("amount");
+                    setDraft(String(remaining));
+                  }}
+                  className="rounded-full border border-umber-300 bg-umber-50 px-3 py-1.5 text-xs font-medium text-umber-800 transition hover:border-umber-400 dark:border-umber-500 dark:bg-umber-700/40 dark:text-umber-100"
+                >
+                  {t("budget.payment_remaining")}
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              className="btn-primary w-full justify-center"
+              disabled={busy || increment <= 0}
+              onClick={addPayment}
+            >
+              <Plus size={16} aria-hidden />
+              {t("budget.payment_add")}
+            </button>
+          </div>
+        )}
       </div>
     </Dialog>
   );

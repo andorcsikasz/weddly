@@ -33,7 +33,9 @@ type DialogProps = {
   title: string;
   describedById?: string;
   children: ReactNode;
-  footer: ReactNode;
+  /** Omit for dialogs whose body already carries the primary action — the
+   *  footer strip (and its top border) disappears rather than sitting empty. */
+  footer?: ReactNode;
   onClose: () => void;
   /** Defaults to "alertdialog" — use "dialog" for non-blocking entry prompts. */
   role?: "alertdialog" | "dialog";
@@ -190,13 +192,17 @@ export function Dialog({
               target.scrollIntoView({ block: "center", behavior: "smooth" });
             }
           }}
-          className="mt-3 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 text-sm text-ink-700 sm:px-6 dark:text-paper-100"
+          className={`mt-3 flex-1 overflow-y-auto overscroll-contain px-4 text-sm text-ink-700 sm:px-6 dark:text-paper-100 ${footer ? "pb-2" : "pb-4 sm:pb-6"}`}
         >
           {children}
         </div>
-        <div className="safe-bottom flex shrink-0 flex-col-reverse gap-2 border-t border-paper-200 px-4 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-umber-700">
-          {footer}
-        </div>
+        {footer ? (
+          <div className="safe-bottom flex shrink-0 flex-col-reverse gap-2 border-t border-paper-200 px-4 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-umber-700">
+            {footer}
+          </div>
+        ) : (
+          <div className="safe-bottom shrink-0" aria-hidden />
+        )}
       </div>
     </div>,
     document.body,
