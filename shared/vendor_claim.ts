@@ -3,6 +3,8 @@
 // only consumer of the P2.A `vendor_accounts` + `listings.vendor_account_id`
 // schema in this milestone — see [[feedback_multi_agent_debate]] (path E).
 
+import type { VendorOffer } from "./vendor_billing";
+
 export type ListingClaimStatus = "pending" | "verified" | "expired" | "cancelled";
 
 export interface ListingClaim {
@@ -35,8 +37,17 @@ export interface ClaimVerifyView {
   /** Echoed back so the page can show "we verified your access to
    *  studio@example.com" without leaking the address again via email. */
   email: string;
+  /** Directory category of the listing being claimed. The page repeats it back
+   *  ("Fotós · Budapest") so the vendor recognises their own entry before
+   *  handing over a password. */
+  category: string;
+  city: string;
   status: ListingClaimStatus;
   expires_at: number;
+  /** Free window this claim would grant on completion, resolved at read time.
+   *  Lets the page make the same promise the invite email made instead of
+   *  hardcoding "one year" after the founding cohort has filled up. */
+  offer: VendorOffer;
 }
 
 /** POST /api/vendor/claim/start — anonymous, body shape. */

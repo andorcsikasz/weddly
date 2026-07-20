@@ -15,12 +15,13 @@ import {
   computeVendorEntitlement,
   startOfNextUtcMonth,
   type SubscriptionStatus,
+  VENDOR_EARLY_CAP,
   VENDOR_FOUNDING_CAP,
-  VENDOR_FOUNDING_DURATION_MS,
   VENDOR_FREE_LEAD_CREDITS,
-  VENDOR_TRIAL_DURATION_MS,
   type VendorBilling,
   type VendorBillingReason,
+  type VendorOffer,
+  vendorOfferForSlots,
   type VendorSubscriptionStatus,
 } from "@shared/vendor_billing";
 import type { Currency } from "@shared/types";
@@ -33,6 +34,7 @@ export interface VendorSubRow {
   trial_ends_at: number | null;
   founding_until: number | null;
   is_founding_member: number;
+  is_early_member: number;
   current_period_end: number | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
@@ -53,7 +55,7 @@ export function getVendorSub(vendorAccountId: number): VendorSubRow | null {
   );
 }
 
-// ── Founding-cohort eligibility ─────────────────────────────────────────────
+// ── Free-cohort eligibility ─────────────────────────────────────────────────
 /** Granted founding badges so far. A slot is spent permanently when granted, so
  *  an expired year never frees it back up (mirrors couples' foundingSlotsUsed). */
 export function vendorFoundingSlotsUsed(): number {
@@ -63,9 +65,29 @@ export function vendorFoundingSlotsUsed(): number {
   return row.n;
 }
 
+/** Granted early-cohort badges so far. Same spent-permanently rule. */
+export function vendorEarlySlotsUsed(): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS n FROM vendor_subscriptions WHERE is_early_member = 1")
+    .get() as { n: number };
+  return row.n;
+}
+
 /** Remaining founding slots, clamped to >= 0 — the public "N of 100 left" line. */
 export function vendorFoundingSpotsLeft(): number {
   return Math.max(0, VENDOR_FOUNDING_CAP - vendorFoundingSlotsUsed());
+}
+
+/** Remaining early-cohort slots, clamped to >= 0, for the "N of 300 left" line. */
+export function vendorEarlySpotsLeft(): number {
+  return Math.max(0, VENDOR_EARLY_CAP - vendorEarlySlotsUsed());
+}
+
+/** The free window a vendor activating right now would receive. One read of
+ *  each counter, then the shared pure tier resolution, so the grant, the
+ *  billing surface and the campaign email always quote the same offer. */
+export function currentVendorOffer(): VendorOffer {
+  return vendorOfferForSlots(vendorFoundingSlotsUsed(), vendorEarlySlotsUsed());
 }
 
 /** True while founding slots remain. Whether a SPECIFIC vendor gets one is
@@ -76,11 +98,13 @@ export function isVendorFoundingEligible(): boolean {
 
 // ── Activation grant ────────────────────────────────────────────────────────
 /** Create the vendor's subscription row at activation. The eligibility check +
- *  the grant must be indivisible so the founding cohort can never overshoot the
- *  cap, so they run in one transaction (mirrors activatePartnerFreeWindow). The
- *  first VENDOR_FOUNDING_CAP vendors get a free founding year (no card); once
- *  the cohort is full, new vendors land on a short trial → paid. Idempotent: a
- *  vendor that already has a sub keeps it untouched. Returns the row. */
+ *  the grant must be indivisible so neither free cohort can overshoot its cap,
+ *  so they run in one transaction (mirrors activatePartnerFreeWindow). The
+ *  ladder: first VENDOR_FOUNDING_CAP vendors get a free year, the next
+ *  VENDOR_EARLY_CAP get three months, everyone after lands on the short trial →
+ *  paid. Both free tiers ride status='founding' + founding_until and differ only
+ *  in which badge column is stamped. Idempotent: a vendor that already has a sub
+ *  keeps it untouched. Returns the row. */
 export function initVendorBilling(
   vendorAccountId: number,
   currency: Currency,
@@ -90,21 +114,24 @@ export function initVendorBilling(
   if (existing) return existing;
 
   const grant = db.transaction((): VendorSubRow => {
-    const founding = isVendorFoundingEligible();
-    const status: SubscriptionStatus = founding ? "founding" : "trialing";
-    const foundingUntil = founding ? nowMs + VENDOR_FOUNDING_DURATION_MS : null;
-    const trialEnds = founding ? null : nowMs + VENDOR_TRIAL_DURATION_MS;
+    // Re-resolved INSIDE the tx: the counters it reads are the same rows this
+    // statement is about to add to, so reading them outside would let two
+    // concurrent activations both see the last free slot.
+    const offer = currentVendorOffer();
+    const free = offer.tier !== "trial";
+    const status: SubscriptionStatus = free ? "founding" : "trialing";
     db.prepare(
       `INSERT INTO vendor_subscriptions
          (vendor_account_id, subscription_status, trial_ends_at, founding_until,
-          is_founding_member, currency, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          is_founding_member, is_early_member, currency, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       vendorAccountId,
       status,
-      trialEnds,
-      foundingUntil,
-      founding ? 1 : 0,
+      free ? null : nowMs + offer.duration_ms,
+      free ? nowMs + offer.duration_ms : null,
+      offer.tier === "founding" ? 1 : 0,
+      offer.tier === "early" ? 1 : 0,
       currency,
       nowMs,
       nowMs,
@@ -131,6 +158,7 @@ export function toVendorBilling(row: VendorSubRow, nowMs: number = Date.now()): 
     trial_ends_at: row.trial_ends_at,
     founding_until: row.founding_until,
     is_founding_member: row.is_founding_member === 1,
+    is_early_member: row.is_early_member === 1,
     current_period_end: row.current_period_end,
     card_on_file: row.card_on_file === 1,
     lead_credits_used: row.lead_credits_used,

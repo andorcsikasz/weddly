@@ -40,7 +40,9 @@ import {
   getVendorSub,
   markVendorCardOnFile,
   setVendorStripeCustomerId,
+  currentVendorOffer,
   toVendorBilling,
+  vendorEarlySpotsLeft,
   vendorFoundingSpotsLeft,
   type VendorSubRow,
 } from "../domain/vendor_billing";
@@ -143,6 +145,7 @@ function noSubBilling(currency: Currency): VendorBilling {
     trial_ends_at: null,
     founding_until: null,
     is_founding_member: false,
+    is_early_member: false,
     current_period_end: null,
     card_on_file: false,
     lead_credits_used: 0,
@@ -169,6 +172,8 @@ async function handleGetBilling(ctx: Ctx): Promise<Response> {
     currency,
     price: vendorPrice(currency),
     founding_spots_left: vendorFoundingSpotsLeft(),
+    early_spots_left: vendorEarlySpotsLeft(),
+    offer: currentVendorOffer(),
     plan,
     features,
   };

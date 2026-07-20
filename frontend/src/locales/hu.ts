@@ -416,8 +416,11 @@ const hu: LocaleMessages = {
       "Felvettünk a Weddly szolgáltatói közé. Állíts be egy jelszót, és máris a tiéd a hirdetés. Bankkártya nem kell.",
     founding_badge: "Alapító tag · {left}/{cap} hely szabad",
     founding_note: "Az első 100 szolgáltató egy teljes évet kap tőlünk, bankkártya nélkül.",
+    early_badge: "Korai hozzáférés · {left}/{cap} hely szabad",
+    early_note:
+      "Az alapító év elfogyott, de a következő 300 szolgáltató 3 hónapot kap tőlünk, bankkártya nélkül.",
     cohort_full_note:
-      "Az alapító helyek beteltek. 14 napos próbaidővel indulsz, utána havidíjas (3 490 Ft / hó).",
+      "Az ingyenes helyek beteltek. 3 napos próbaidővel indulsz, utána havidíjas (3 490 Ft / hó).",
     form_name_label: "Teljes név",
     form_password_label: "Jelszó",
     form_password_hint: "Min. 8 karakter.",

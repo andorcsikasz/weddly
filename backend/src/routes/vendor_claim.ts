@@ -29,7 +29,7 @@ import {
 import { getListingById } from "../domain/listings";
 import { vendorCurrencyForLocale } from "@shared/vendor_billing";
 import { createVendorAccount } from "../domain/vendor_accounts";
-import { initVendorBilling } from "../domain/vendor_billing";
+import { currentVendorOffer, initVendorBilling } from "../domain/vendor_billing";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
@@ -213,8 +213,11 @@ function handleVerify(ctx: Ctx): Response {
     listing_id: claim.listing_id,
     listing_name: listing.name,
     email: claim.email_sent_to,
+    category: listing.category,
+    city: listing.city,
     status: (claim.status as ClaimVerifyView["status"]) ?? "pending",
     expires_at: claim.expires_at,
+    offer: currentVendorOffer(),
   };
   return json({ claim: view });
 }

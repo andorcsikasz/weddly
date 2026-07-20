@@ -411,7 +411,10 @@ const en: LocaleMessages = {
       "We've accepted you onto Weddly. Set a password and your listing is live. No card needed.",
     founding_badge: "Founding member · {left}/{cap} spots left",
     founding_note: "The first 100 vendors get a full year on us, no card required.",
-    cohort_full_note: "Founding spots are full. You start with a 14-day trial, then €10/month.",
+    early_badge: "Early access · {left}/{cap} spots left",
+    early_note:
+      "The founding year is gone, but the next 300 vendors get three months on us, no card required.",
+    cohort_full_note: "The free spots are gone. You start with a 3-day trial, then €10/month.",
     form_name_label: "Full name",
     form_password_label: "Password",
     form_password_hint: "At least 8 characters.",

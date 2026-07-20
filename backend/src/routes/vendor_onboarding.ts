@@ -17,7 +17,11 @@ import type { AuthSession } from "@shared/types";
 import { hashPassword } from "../auth/password";
 import { issueSession } from "../auth/session";
 import { db, now } from "../db";
-import { initVendorBilling, vendorFoundingSpotsLeft } from "../domain/vendor_billing";
+import {
+  currentVendorOffer,
+  initVendorBilling,
+  vendorFoundingSpotsLeft,
+} from "../domain/vendor_billing";
 import { createVendorAccount } from "../domain/vendor_accounts";
 import { createVendorListing } from "../domain/listings";
 import { getVendorWaitlistById } from "../domain/vendor_waitlist";
@@ -72,6 +76,7 @@ function handleVerify(ctx: Ctx): Response {
     expires_at: row.expires_at,
     founding_spots_left: vendorFoundingSpotsLeft(),
     founding_cap: VENDOR_FOUNDING_CAP,
+    offer: currentVendorOffer(),
   };
   return json({ onboarding: view });
 }

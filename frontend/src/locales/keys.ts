@@ -595,6 +595,9 @@ export interface LocaleMessages {
     /** Receives `{left}` + `{cap}` — founding spots remaining / total. */
     founding_badge: string;
     founding_note: string;
+    /** Second free cohort (three months). Same `{left}` + `{cap}` shape. */
+    early_badge: string;
+    early_note: string;
     cohort_full_note: string;
     form_name_label: string;
     form_password_label: string;

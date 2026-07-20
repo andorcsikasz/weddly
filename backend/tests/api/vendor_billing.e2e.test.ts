@@ -20,17 +20,28 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import type { VendorBilling } from "@shared/vendor_billing";
+import type { VendorBilling, VendorOffer } from "@shared/vendor_billing";
 import {
   startOfNextUtcMonth,
+  VENDOR_EARLY_CAP,
+  VENDOR_EARLY_DURATION_MS,
+  VENDOR_FOUNDING_CAP,
   VENDOR_FOUNDING_DURATION_MS,
   VENDOR_FREE_LEAD_CREDITS,
   VENDOR_TRIAL_DURATION_MS,
+  vendorOfferForSlots,
 } from "@shared/vendor_billing";
 import type { VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
-import { markVendorCardOnFile } from "../../src/domain/vendor_billing";
+import {
+  currentVendorOffer,
+  initVendorBilling,
+  markVendorCardOnFile,
+  toVendorBilling,
+  vendorEarlySpotsLeft,
+  vendorFoundingSpotsLeft,
+} from "../../src/domain/vendor_billing";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 interface BillingResponse {
@@ -603,5 +614,193 @@ describe("vendor billing: freemium feature gates", () => {
       { token: vendorToken },
     );
     expect(edit.status).toBe(200);
+  });
+});
+
+// ── Free-cohort ladder ──────────────────────────────────────────────────────
+// The grant at activation walks three tiers: founding 100 (one year) → early
+// 300 (three months) → 3-day trial. Both free tiers ride status='founding' +
+// founding_until and are told apart ONLY by which badge column is stamped, so
+// these tests assert the badges, not just the status.
+
+/** Seed `n` vendor accounts that already hold a cohort badge, cheaply. Goes
+ *  straight to SQL rather than through the claim flow: the caps are 100 and 300
+ *  and walking the HTTP flow that many times would dominate the suite runtime.
+ *  Both FK parents (users → vendor_accounts) are inserted for real, because
+ *  foreign keys are ON. */
+function seedCohort(n: number, badge: "founding" | "early", tag: string): void {
+  const ts = Date.now();
+  const insertUser = db.prepare(
+    `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+     VALUES (?, 'x', ?, 'active', 'vendor', 1, ?, ?)`,
+  );
+  const insertAccount = db.prepare(
+    `INSERT INTO vendor_accounts (owner_user_id, display_name, created_at, updated_at)
+     VALUES (?, ?, ?, ?)`,
+  );
+  const insertSub = db.prepare(
+    `INSERT INTO vendor_subscriptions
+       (vendor_account_id, subscription_status, trial_ends_at, founding_until,
+        is_founding_member, is_early_member, currency, created_at, updated_at)
+     VALUES (?, 'founding', NULL, ?, ?, ?, 'EUR', ?, ?)`,
+  );
+  db.transaction(() => {
+    for (let i = 0; i < n; i++) {
+      const uid = Number(
+        insertUser.run(`${tag}-${i}@cohort.test`, `${tag} ${i}`, ts, ts).lastInsertRowid,
+      );
+      const aid = Number(insertAccount.run(uid, `${tag} ${i}`, ts, ts).lastInsertRowid);
+      insertSub.run(
+        aid,
+        ts + VENDOR_FOUNDING_DURATION_MS,
+        badge === "founding" ? 1 : 0,
+        badge === "early" ? 1 : 0,
+        ts,
+        ts,
+      );
+    }
+  })();
+}
+
+/** A bare vendor account with no subscription row, ready for initVendorBilling. */
+function makeUngrantedAccount(tag: string): number {
+  const ts = Date.now();
+  const uid = Number(
+    db
+      .prepare(
+        `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+         VALUES (?, 'x', ?, 'active', 'vendor', 1, ?, ?)`,
+      )
+      .run(`${tag}@ungranted.test`, tag, ts, ts).lastInsertRowid,
+  );
+  return Number(
+    db
+      .prepare(
+        `INSERT INTO vendor_accounts (owner_user_id, display_name, created_at, updated_at)
+         VALUES (?, ?, ?, ?)`,
+      )
+      .run(uid, tag, ts, ts).lastInsertRowid,
+  );
+}
+
+describe("vendor free-cohort ladder", () => {
+  test("vendorOfferForSlots walks founding → early → trial", () => {
+    expect(vendorOfferForSlots(0, 0)).toEqual({
+      tier: "founding",
+      duration_ms: VENDOR_FOUNDING_DURATION_MS,
+      spots_left: VENDOR_FOUNDING_CAP,
+      cap: VENDOR_FOUNDING_CAP,
+    });
+    // Last founding slot is still founding; the one after it flips tiers.
+    expect(vendorOfferForSlots(VENDOR_FOUNDING_CAP - 1, 0).tier).toBe("founding");
+    expect(vendorOfferForSlots(VENDOR_FOUNDING_CAP - 1, 0).spots_left).toBe(1);
+    expect(vendorOfferForSlots(VENDOR_FOUNDING_CAP, 0)).toEqual({
+      tier: "early",
+      duration_ms: VENDOR_EARLY_DURATION_MS,
+      spots_left: VENDOR_EARLY_CAP,
+      cap: VENDOR_EARLY_CAP,
+    });
+    expect(vendorOfferForSlots(VENDOR_FOUNDING_CAP, VENDOR_EARLY_CAP - 1).spots_left).toBe(1);
+    expect(vendorOfferForSlots(VENDOR_FOUNDING_CAP, VENDOR_EARLY_CAP)).toEqual({
+      tier: "trial",
+      duration_ms: VENDOR_TRIAL_DURATION_MS,
+      spots_left: 0,
+      cap: 0,
+    });
+  });
+
+  test("founding slots remaining → one free year, founding badge only", () => {
+    wipeAll();
+    const accountId = makeUngrantedAccount("first-vendor");
+    const nowMs = Date.now();
+    const row = initVendorBilling(accountId, "EUR", nowMs);
+
+    expect(row.subscription_status).toBe("founding");
+    expect(row.founding_until).toBe(nowMs + VENDOR_FOUNDING_DURATION_MS);
+    expect(row.trial_ends_at).toBeNull();
+    expect(row.is_founding_member).toBe(1);
+    expect(row.is_early_member).toBe(0);
+    expect(vendorFoundingSpotsLeft()).toBe(VENDOR_FOUNDING_CAP - 1);
+    // An early slot is NOT consumed while the founding cohort is still open.
+    expect(vendorEarlySpotsLeft()).toBe(VENDOR_EARLY_CAP);
+  });
+
+  test("founding cohort full → three months free on the early badge", () => {
+    wipeAll();
+    seedCohort(VENDOR_FOUNDING_CAP, "founding", "f");
+    expect(vendorFoundingSpotsLeft()).toBe(0);
+    expect(currentVendorOffer().tier).toBe("early");
+
+    const accountId = makeUngrantedAccount("vendor-101");
+    const nowMs = Date.now();
+    const row = initVendorBilling(accountId, "EUR", nowMs);
+
+    // Still 'founding' status, which is what carries the free window through
+    // computeEntitlement, but the badge (and therefore the cap it counts
+    // against) is the early one.
+    expect(row.subscription_status).toBe("founding");
+    expect(row.founding_until).toBe(nowMs + VENDOR_EARLY_DURATION_MS);
+    expect(row.trial_ends_at).toBeNull();
+    expect(row.is_founding_member).toBe(0);
+    expect(row.is_early_member).toBe(1);
+    expect(vendorFoundingSpotsLeft()).toBe(0);
+    expect(vendorEarlySpotsLeft()).toBe(VENDOR_EARLY_CAP - 1);
+    expect(toVendorBilling(row, nowMs).entitled).toBe(true);
+  });
+
+  test("both cohorts full → the 3-day trial, no badge", () => {
+    wipeAll();
+    seedCohort(VENDOR_FOUNDING_CAP, "founding", "f");
+    seedCohort(VENDOR_EARLY_CAP, "early", "e");
+    expect(currentVendorOffer()).toEqual({
+      tier: "trial",
+      duration_ms: VENDOR_TRIAL_DURATION_MS,
+      spots_left: 0,
+      cap: 0,
+    });
+
+    const accountId = makeUngrantedAccount("vendor-401");
+    const nowMs = Date.now();
+    const row = initVendorBilling(accountId, "EUR", nowMs);
+
+    expect(row.subscription_status).toBe("trialing");
+    expect(row.trial_ends_at).toBe(nowMs + VENDOR_TRIAL_DURATION_MS);
+    expect(row.founding_until).toBeNull();
+    expect(row.is_founding_member).toBe(0);
+    expect(row.is_early_member).toBe(0);
+  });
+
+  test("an expired free window never frees its slot back up", () => {
+    wipeAll();
+    const accountId = makeUngrantedAccount("long-ago");
+    const longAgo = Date.now() - VENDOR_FOUNDING_DURATION_MS * 2;
+    const row = initVendorBilling(accountId, "EUR", longAgo);
+
+    expect(toVendorBilling(row).entitled).toBe(false);
+    // Badge is permanent, so the cohort counter does not rewind.
+    expect(vendorFoundingSpotsLeft()).toBe(VENDOR_FOUNDING_CAP - 1);
+  });
+
+  test("GET /api/vendor/billing reports the live offer", async () => {
+    wipeAll();
+    const listingId = await makeApprovedListing(
+      "owner-offer@weddly.test",
+      "vendor-offer@weddly.test",
+      "Offer Co",
+    );
+    const { vendorToken } = await claimVendor(listingId, "vendor-offer@weddly.test");
+
+    const r = await req<BillingResponse & { offer: VendorOffer; early_spots_left: number }>(
+      "GET",
+      "/api/vendor/billing",
+      undefined,
+      { token: vendorToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.offer.tier).toBe("founding");
+    // The claim itself just spent a slot, so the offer counts one fewer.
+    expect(r.data.offer.spots_left).toBe(VENDOR_FOUNDING_CAP - 1);
+    expect(r.data.early_spots_left).toBe(VENDOR_EARLY_CAP);
+    expect(r.data.billing.is_early_member).toBe(false);
   });
 });

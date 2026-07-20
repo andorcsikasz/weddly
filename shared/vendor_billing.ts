@@ -21,9 +21,16 @@
 // inquiries from couples, the availability calendar, the client CRM) switch
 // off (see shared/vendor_plan.ts).
 //
-// Founding offer: the first VENDOR_FOUNDING_CAP vendors to activate get the
-// platform free for one year, no card on file, so they skip the freemium
-// funnel entirely until that year ends.
+// Free-window ladder at activation (see `vendorOfferForSlots`):
+//
+//   vendors     1..100   founding cohort → 1 year free, founding badge
+//   vendors  101..400    early cohort    → 3 months free, no badge
+//   vendors    401+      3-day trial → the freemium funnel above
+//
+// Both cohorts ride `subscription_status='founding'` + `founding_until`, so the
+// entitlement math is untouched; the two are told apart by which badge column
+// the grant stamps (is_founding_member vs is_early_member), which is also what
+// each cap counts.
 
 import { type BillingReason, computeEntitlement, type SubscriptionStatus } from "./billing";
 import { type BillingCurrency, toBillingCurrency } from "./currency";
@@ -57,9 +64,54 @@ export const VENDOR_FOUNDING_CAP = 100;
 /** Founding free window length: one year from activation. */
 export const VENDOR_FOUNDING_DURATION_MS = 1000 * 60 * 60 * 24 * 365;
 
-/** Trial length for vendor 101+ (cohort full): a short no-card tryout before
+/** Second free cohort: the next N vendors after the founding 100 get three
+ *  months free instead of the 3-day trial. Counted by its own badge column
+ *  (is_early_member = 1) on the same permanently-spent-on-grant rule, so the
+ *  two cohorts never contend for the same slots. */
+export const VENDOR_EARLY_CAP = 300;
+
+/** Early-cohort free window length: three months from activation. */
+export const VENDOR_EARLY_DURATION_MS = 1000 * 60 * 60 * 24 * 90;
+
+/** Trial length once BOTH free cohorts are full: a short no-card tryout before
  *  the card wall. Full PRO access while it runs. */
 export const VENDOR_TRIAL_DURATION_MS = 1000 * 60 * 60 * 24 * 3;
+
+/** Which free window a vendor activating right now would receive. `trial` is
+ *  the terminal tier: both cohorts full, everyone lands on the 3-day tryout.
+ *  `spots_left` / `cap` are 0 there because a trial isn't a limited offer. */
+export interface VendorOffer {
+  tier: "founding" | "early" | "trial";
+  /** Length of the free window the grant would stamp. */
+  duration_ms: number;
+  /** Slots still open in this tier. Drives the "N of 300 left" scarcity line. */
+  spots_left: number;
+  cap: number;
+}
+
+/** Pure tier resolution: given how many slots each cohort has already spent,
+ *  which offer is live? Shared so the activation grant, the vendor billing
+ *  surface, the claim-campaign email copy and the admin console can never
+ *  disagree about what is currently being offered. */
+export function vendorOfferForSlots(foundingUsed: number, earlyUsed: number): VendorOffer {
+  if (foundingUsed < VENDOR_FOUNDING_CAP) {
+    return {
+      tier: "founding",
+      duration_ms: VENDOR_FOUNDING_DURATION_MS,
+      spots_left: VENDOR_FOUNDING_CAP - foundingUsed,
+      cap: VENDOR_FOUNDING_CAP,
+    };
+  }
+  if (earlyUsed < VENDOR_EARLY_CAP) {
+    return {
+      tier: "early",
+      duration_ms: VENDOR_EARLY_DURATION_MS,
+      spots_left: VENDOR_EARLY_CAP - earlyUsed,
+      cap: VENDOR_EARLY_CAP,
+    };
+  }
+  return { tier: "trial", duration_ms: VENDOR_TRIAL_DURATION_MS, spots_left: 0, cap: 0 };
+}
 
 /** Free direct inquiries a card-on-file vendor gets before billing starts.
  *  Each couple inquiry delivered while in the lead window spends one credit;
@@ -138,6 +190,9 @@ export interface VendorBilling {
   founding_until: UnixMs | null;
   /** Among the first VENDOR_FOUNDING_CAP vendors → holds the founding badge. */
   is_founding_member: boolean;
+  /** In the second free cohort (three months free). Never true at the same
+   *  time as `is_founding_member`, a grant stamps exactly one badge. */
+  is_early_member: boolean;
   /** Epoch ms — paid period end from Stripe. Null when not a paying sub. */
   current_period_end: UnixMs | null;
   /** A payment card is saved with Stripe (checkout setup completed). */
@@ -169,4 +224,10 @@ export interface VendorBillingStatus {
   /** Remaining founding slots (CAP − granted badges), clamped >= 0. Drives the
    *  public "N of 100 spots left" line. */
   founding_spots_left: number;
+  /** Remaining second-cohort slots, same shape. Only meaningful once the
+   *  founding 100 are gone; before that it is still the full VENDOR_EARLY_CAP. */
+  early_spots_left: number;
+  /** The free window a vendor activating right now would get. Prefer this over
+   *  reading the two counters, it already encodes which tier is live. */
+  offer: VendorOffer;
 }

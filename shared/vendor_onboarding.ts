@@ -3,7 +3,10 @@
 // the accept email carries /vendor/activate/:token. The vendor clicks, sets a
 // password, and the token is consumed to create the account + a session
 // (mirrors the listing-claim flow, but a waitlist vendor has no listing to
-// claim). No card is asked — the founding 100 are free for a year.
+// claim). No card is asked: the founding 100 are free for a year, and the next
+// 300 get three months (see `vendorOfferForSlots`).
+
+import type { VendorOffer } from "./vendor_billing";
 
 export type VendorOnboardingStatus = "pending" | "completed" | "expired" | "cancelled";
 
@@ -23,6 +26,10 @@ export interface VendorOnboardingVerifyView {
   /** Remaining founding slots, for the honest "N of 100 spots left" line. */
   founding_spots_left: number;
   founding_cap: number;
+  /** The free window this activation would actually grant. Once the founding
+   *  100 are gone `founding_spots_left` is 0 but the offer is still real (the
+   *  three-month early cohort), so the page reads THIS, not the counter. */
+  offer: VendorOffer;
 }
 
 /** Body of POST /api/vendor/onboard/complete — set the password + name and (on

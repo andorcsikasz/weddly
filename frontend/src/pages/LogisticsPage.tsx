@@ -30,9 +30,11 @@ import type {
   UpsertTransferInput,
 } from "@shared/types";
 import {
+  ArrowLeftRight,
   Banknote,
   Bed,
   Bus,
+  CalendarClock,
   Crown,
   DoorOpen,
   ExternalLink,
@@ -1906,6 +1908,21 @@ function formatDepartAt(value: string): string {
   return value.replace("T", " ");
 }
 
+/** "YYYY-MM-DDTHH:MM" → "júl. 2. 00:58" / "Jul 2, 00:58". The year is dropped
+ *  deliberately: every transfer sits within days of the wedding, so it carries
+ *  no information, and the full localised datetime overflowed the editor's
+ *  half-width field. Falls back to the raw value if the string isn't parseable. */
+function formatDepartShort(value: string, locale: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(parsed);
+}
+
 /** Canonical transfer directions. Stored verbatim in `Transfer.direction`.
  *  Legacy free-text values (anything that isn't one of these or the HU words
  *  "oda"/"vissza") are left untouched and just render as-is. */
@@ -2287,7 +2304,7 @@ function TransferDialog({
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const [label, setLabel] = useState(initial?.label ?? "");
   const [direction, setDirection] = useState<TransferDirection>(
@@ -2361,7 +2378,7 @@ function TransferDialog({
       }
     >
       <form onSubmit={onSubmit} className="space-y-3">
-        <Field label={t("logistics.transfer_label")}>
+        <Field label={t("logistics.transfer_label")} icon={Bus}>
           <input
             type="text"
             className="input"
@@ -2371,7 +2388,7 @@ function TransferDialog({
             autoFocus
           />
         </Field>
-        <Field label={t("logistics.transfer_direction")}>
+        <Field label={t("logistics.transfer_direction")} icon={ArrowLeftRight}>
           <div className="flex rounded-lg border border-paper-400 bg-paper-100 p-0.5 dark:border-umber-600 dark:bg-umber-900">
             <DirectionButton
               active={direction === "outbound"}
@@ -2386,18 +2403,42 @@ function TransferDialog({
           </div>
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={t("logistics.transfer_depart_at")}>
-            <input
-              type="datetime-local"
-              className="input"
-              value={departAt}
-              onChange={(e) => {
-                setDepartAt(e.target.value);
-                setDepartTouched(true);
-              }}
-            />
+          <Field label={t("logistics.transfer_depart_at")} icon={CalendarClock}>
+            {/* The native control paints the full localised datetime
+                ("2026. 07. 02., 00:58"), which clips in this half-width field.
+                So the real input stays (picker, keyboard entry, validation) but
+                renders transparently over our own short month/day/time label.
+                A click opens the picker outright instead of dropping the caret
+                into whichever segment happened to be under the cursor. */}
+            <div className="input relative flex items-center gap-2 focus-within:border-ink-600 focus-within:ring-2 focus-within:ring-ink-100 dark:focus-within:border-blush-400 dark:focus-within:ring-blush-400/20">
+              <span
+                className={
+                  departAt
+                    ? "flex-1 truncate tabular-nums"
+                    : "flex-1 truncate text-ink-400 dark:text-umber-300"
+                }
+              >
+                {departAt ? formatDepartShort(departAt, locale) : "-"}
+              </span>
+              <CalendarClock
+                size={15}
+                aria-hidden
+                className="shrink-0 text-ink-400 dark:text-umber-300"
+              />
+              <input
+                type="datetime-local"
+                aria-label={t("logistics.transfer_depart_at")}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                value={departAt}
+                onClick={(e) => e.currentTarget.showPicker?.()}
+                onChange={(e) => {
+                  setDepartAt(e.target.value);
+                  setDepartTouched(true);
+                }}
+              />
+            </div>
           </Field>
-          <Field label={t("logistics.transfer_capacity")}>
+          <Field label={t("logistics.transfer_capacity")} icon={Users}>
             <input
               type="number"
               min={1}

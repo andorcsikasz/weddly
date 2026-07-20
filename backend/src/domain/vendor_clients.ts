@@ -408,6 +408,7 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
         trial_ends_at: null,
         founding_until: null,
         is_founding_member: false,
+        is_early_member: false,
         current_period_end: null,
         card_on_file: false,
         lead_credits_used: 0,

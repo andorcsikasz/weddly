@@ -1626,6 +1626,24 @@ addColumnIfMissing(
 );
 addColumnIfMissing("vendor_subscriptions", "billing_starts_at", "billing_starts_at INTEGER");
 
+// Second free cohort (VENDOR_EARLY_CAP = 300 × three months), handed out once
+// the founding 100 are gone. It rides the same status='founding' +
+// founding_until pair as the founding year, so this badge column is the ONLY
+// thing that tells the two apart, and it is what `vendorEarlySlotsUsed()`
+// counts. Default 0 means every pre-existing row stays in whichever cohort it
+// was already in.
+addColumnIfMissing(
+  "vendor_subscriptions",
+  "is_early_member",
+  "is_early_member INTEGER NOT NULL DEFAULT 0",
+);
+// Mirrors idx_vendor_subs_founding for the other cohort counter. Lives HERE and
+// not in schema.sql because the column it indexes is added above at boot:
+// schema.sql runs first and would reference a column that doesn't exist yet.
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_vendor_subs_early ON vendor_subscriptions(is_early_member)",
+);
+
 // Partial-day availability: a vendor can block only certain hours of a day
 // instead of the whole day. blocked_hours holds a JSON array of blocked
 // hour-starts (integers 0-23, sorted); NULL = the whole day is blocked (the

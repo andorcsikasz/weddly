@@ -122,7 +122,12 @@ export default function VendorActivatePage() {
   }
 
   const view = state.kind === "form" || state.kind === "completing" ? state.view : null;
-  const hasFoundingSpots = view != null && view.founding_spots_left > 0;
+  // Drive the scarcity block off the OFFER, not the founding counter: once the
+  // founding 100 are gone `founding_spots_left` is 0 but there is still a real
+  // free window on the table (the three-month early cohort), and showing "spots
+  // are full" there would undersell the very thing we're offering.
+  const offer = view?.offer ?? null;
+  const freeOffer = offer != null && offer.tier !== "trial" ? offer : null;
 
   const completing = state.kind === "completing";
 
@@ -174,13 +179,15 @@ export default function VendorActivatePage() {
       <div className="mx-auto max-w-md">
         <div className="card overflow-hidden p-0 shadow-pop">
           <div className="bg-neutral-900 px-6 py-7 dark:bg-paper-100">
-            {hasFoundingSpots ? (
+            {freeOffer ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-paper-50 dark:bg-umber-900/10 dark:text-umber-900">
                 <Sparkles size={13} aria-hidden />
-                {t("vendor_activate.founding_badge", {
-                  left: view.founding_spots_left,
-                  cap: view.founding_cap,
-                })}
+                {t(
+                  freeOffer.tier === "founding"
+                    ? "vendor_activate.founding_badge"
+                    : "vendor_activate.early_badge",
+                  { left: freeOffer.spots_left, cap: freeOffer.cap },
+                )}
               </span>
             ) : null}
             <h1 className="mt-3 font-grotesk text-2xl font-semibold leading-tight text-paper-50 dark:text-umber-900">
@@ -189,18 +196,22 @@ export default function VendorActivatePage() {
           </div>
 
           <div className="p-6">
-            {hasFoundingSpots ? (
+            {freeOffer ? (
               <div className="mb-5 rounded-2xl bg-sage-50 p-4 ring-1 ring-sage-100 dark:bg-sage-400/10 dark:ring-sage-400/20">
                 <div className="flex items-baseline gap-1.5">
                   <span className="font-grotesk text-4xl font-semibold leading-none tabular-nums text-sage-700 dark:text-sage-300">
-                    {view.founding_spots_left}
+                    {freeOffer.spots_left}
                   </span>
                   <span className="font-grotesk text-lg font-medium tabular-nums text-sage-600/70 dark:text-sage-300/70">
-                    / {view.founding_cap}
+                    / {freeOffer.cap}
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">
-                  {t("vendor_activate.founding_note")}
+                  {t(
+                    freeOffer.tier === "founding"
+                      ? "vendor_activate.founding_note"
+                      : "vendor_activate.early_note",
+                  )}
                 </p>
               </div>
             ) : (

@@ -15,7 +15,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import type { AuthSession } from "@shared/types";
 import type { VendorListingView } from "@shared/listings";
-import { VENDOR_FOUNDING_CAP } from "@shared/vendor_billing";
+import { VENDOR_EARLY_CAP, VENDOR_FOUNDING_CAP } from "@shared/vendor_billing";
 import { db } from "../../src/db";
 import { req, wipeAll } from "../helpers";
 
@@ -289,10 +289,10 @@ describe("vendor self-serve registration", () => {
     expect(Array.isArray(search.data.results)).toBe(true);
   });
 
-  test("hands the next vendor a trial once the founding cohort is full", async () => {
-    wipeAll();
-    // Exhaust the founding cohort by seeding CAP granted badges. FK constraints
-    // mean each sub needs a real account, and each account a real owner user.
+  /** Seed `n` vendor_subscriptions rows already holding a cohort badge, so the
+   *  next real registration lands on the tier below. FK constraints mean each
+   *  sub needs a real account, and each account a real owner user. */
+  function exhaustCohort(n: number, badge: "founding" | "early", tag: string): void {
     const insUser = db.prepare(
       `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
        VALUES (?, 'x', 'Seed', 'active', 'vendor', 1, 0, 0)`,
@@ -303,27 +303,67 @@ describe("vendor self-serve registration", () => {
     );
     const insSub = db.prepare(
       `INSERT INTO vendor_subscriptions
-         (vendor_account_id, subscription_status, is_founding_member, currency, created_at, updated_at)
-       VALUES (?, 'founding', 1, 'EUR', 0, 0)`,
+         (vendor_account_id, subscription_status, is_founding_member, is_early_member, currency, created_at, updated_at)
+       VALUES (?, 'founding', ?, ?, 'EUR', 0, 0)`,
     );
-    for (let i = 1; i <= VENDOR_FOUNDING_CAP; i++) {
-      const u = insUser.run(`seed${i}@test.test`);
-      const a = insAcct.run(Number(u.lastInsertRowid));
-      insSub.run(Number(a.lastInsertRowid));
-    }
+    db.transaction(() => {
+      for (let i = 1; i <= n; i++) {
+        const u = insUser.run(`${tag}${i}@test.test`);
+        const a = insAcct.run(Number(u.lastInsertRowid));
+        insSub.run(
+          Number(a.lastInsertRowid),
+          badge === "founding" ? 1 : 0,
+          badge === "early" ? 1 : 0,
+        );
+      }
+    })();
+  }
+
+  function subOf(userId: number): {
+    subscription_status: string;
+    is_founding_member: number;
+    is_early_member: number;
+  } {
+    const account = db
+      .prepare("SELECT id FROM vendor_accounts WHERE owner_user_id = ?")
+      .get(userId) as { id: number };
+    return db
+      .prepare(
+        `SELECT subscription_status, is_founding_member, is_early_member
+           FROM vendor_subscriptions WHERE vendor_account_id = ?`,
+      )
+      .get(account.id) as {
+      subscription_status: string;
+      is_founding_member: number;
+      is_early_member: number;
+    };
+  }
+
+  test("hands the next vendor the early cohort once the founding one is full", async () => {
+    wipeAll();
+    exhaustCohort(VENDOR_FOUNDING_CAP, "founding", "seed");
 
     const reg = await register(baseBody);
     expect(reg.status).toBe(201);
-    const account = db
-      .prepare("SELECT id FROM vendor_accounts WHERE owner_user_id = ?")
-      .get(reg.data.user.id) as { id: number };
-    const sub = db
-      .prepare(
-        "SELECT subscription_status, is_founding_member FROM vendor_subscriptions WHERE vendor_account_id = ?",
-      )
-      .get(account.id) as { subscription_status: string; is_founding_member: number };
+    const sub = subOf(reg.data.user.id);
+    // Second free tier: three months, still free (status 'founding' carries the
+    // window), but on the early badge so it counts against the OTHER cap.
+    expect(sub.subscription_status).toBe("founding");
+    expect(sub.is_founding_member).toBe(0);
+    expect(sub.is_early_member).toBe(1);
+  });
+
+  test("hands the next vendor a trial once BOTH free cohorts are full", async () => {
+    wipeAll();
+    exhaustCohort(VENDOR_FOUNDING_CAP, "founding", "seedf");
+    exhaustCohort(VENDOR_EARLY_CAP, "early", "seede");
+
+    const reg = await register(baseBody);
+    expect(reg.status).toBe(201);
+    const sub = subOf(reg.data.user.id);
     expect(sub.subscription_status).toBe("trialing");
     expect(sub.is_founding_member).toBe(0);
+    expect(sub.is_early_member).toBe(0);
   });
 
   test("onboarding/complete flips the flag and is idempotent", async () => {
