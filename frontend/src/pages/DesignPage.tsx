@@ -51,7 +51,6 @@ import {
   Download,
   ExternalLink,
   Eye,
-  EyeOff,
   ImagePlus,
   Loader2,
   Maximize2,
@@ -65,6 +64,7 @@ import { createPortal } from "react-dom";
 import { InfoHint } from "../components/InfoHint";
 import { LookBar } from "../components/design/LookBar";
 import { PhotoDock } from "../components/design/PhotoDock";
+import { PrintShelf } from "../components/design/PrintShelf";
 import { ProofCard } from "../components/design/ProofCard";
 import { TuneRail, TuneRow, type TuneRowId, TuneSwitchRow } from "../components/design/TuneRow";
 import { PaletteBar, roleColors } from "../components/design/PaletteBar";
@@ -483,9 +483,6 @@ export default function DesignPage() {
   function chooseHeadingFont(slug: FontFamilySlug | null) {
     setDesign((d) => ({ ...d, headingFont: slug }));
   }
-  function togglePrint(key: "border" | "ornament" | "qr") {
-    setDesign((d) => ({ ...d, print: { ...d.print, [key]: !d.print[key] } }));
-  }
   function chooseImageTreatment(slug: ImageTreatmentSlug) {
     setDesign((d) => ({ ...d, web: { ...d.web, imageTreatment: slug } }));
   }
@@ -803,66 +800,6 @@ export default function DesignPage() {
     wedding_date: couple?.wedding_date ?? null,
   };
 
-  // The printables hub: one tile per PDF template. Each downloads via the
-  // shared `fetchPdfBlob` blob pattern.
-  const printables: {
-    slug: string;
-    name: string;
-    desc: string;
-    path: string;
-    filename: string;
-  }[] = [
-    {
-      slug: "place_cards",
-      name: t("design.cards.place_cards_name"),
-      desc: t("design.cards.place_cards_desc"),
-      path: placeCardsUrl(),
-      filename: "weddly-place-cards.pdf",
-    },
-    {
-      slug: "table_numbers",
-      name: t("design.cards.table_numbers_name"),
-      desc: t("design.cards.table_numbers_desc"),
-      path: tableNumbersPdfUrl,
-      filename: "weddly-table-numbers.pdf",
-    },
-    {
-      slug: "menu",
-      name: t("design.cards.menu_name"),
-      desc: t("design.cards.menu_desc"),
-      path: menuPdfUrl,
-      filename: "weddly-menu.pdf",
-    },
-    {
-      slug: "invitation",
-      name: t("design.cards.invitation_name"),
-      desc: t("design.cards.invitation_desc"),
-      path: invitationPdfUrl,
-      filename: "weddly-invitation.pdf",
-    },
-    {
-      slug: "thank_you",
-      name: t("design.cards.thank_you_name"),
-      desc: t("design.cards.thank_you_desc"),
-      path: thankYouPdfUrl,
-      filename: "weddly-thank-you.pdf",
-    },
-    {
-      slug: "seating_chart",
-      name: t("design.cards.seating_chart_name"),
-      desc: t("design.cards.seating_chart_desc"),
-      path: "/api/print/seating/a4",
-      filename: "weddly-seating-chart.pdf",
-    },
-    {
-      slug: "schedule",
-      name: t("design.cards.schedule_name"),
-      desc: t("design.cards.schedule_desc"),
-      path: schedulePdfUrl,
-      filename: "weddly-schedule.pdf",
-    },
-  ];
-
   // Surface sub-page links — each is its own URL so the two design surfaces are
   // genuinely separate pages (back/forward, deep-link), sharing this state.
   // Real navigation semantics: these are URL sub-pages, not ARIA tabs, so the
@@ -968,76 +905,19 @@ export default function DesignPage() {
                 designing, then the card-specific controls. The big live canvas
                 lives in the right column. ───────────────────────────────── */}
             <div className="space-y-6">
-              {/* Per-surface heading. In print mode it names the SELECTED card
-                ("Asztalszám tervezése") so the editor reads as a card editor,
-                not a generic brand panel. */}
-              {tab === "print" ? (
-                <div>
-                  <h2 className="font-grotesk text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
-                    {t("design.print_preview.editing_title", {
-                      name: t(`design.print_preview.tpl.${printTemplate}`),
-                    })}
-                  </h2>
-                  <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
-                    {t("design.print_preview.editing_helper")}
-                  </p>
-                  <p className="mt-2 text-sm text-ink-500 dark:text-umber-300">
-                    {t("design.print_preview.content_hint")}{" "}
-                    <Link
-                      to="/app/guest-page"
-                      className="font-medium text-ink-700 underline-offset-2 hover:text-ink-900 hover:underline dark:text-paper-100 dark:hover:text-paper-50"
-                    >
-                      {t("design.print_preview.content_change")}
-                    </Link>
-                  </p>
-                </div>
-              ) : null}
-
-              {/* Print mode: WHICH card am I designing? This is the first and most
-                important choice, so it sits above the shared identity. Real
-                card types only (each maps to a live preview + a PDF endpoint). */}
               {tab === "print" && (
-                <section>
-                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                    {t("design.print_preview.template_label")}
-                  </h2>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(
-                      [
-                        "place_card",
-                        "table_number",
-                        "menu",
-                        "invitation",
-                        "thank_you",
-                        "schedule",
-                      ] as const
-                    ).map((tpl) => {
-                      const active = printTemplate === tpl;
-                      return (
-                        <button
-                          key={tpl}
-                          type="button"
-                          onClick={() => {
-                            setPrintTemplate(tpl);
-                            setPdfPreviewUrl((p) => {
-                              if (p) URL.revokeObjectURL(p);
-                              return null;
-                            });
-                          }}
-                          aria-pressed={active}
-                          className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                            active
-                              ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                              : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-                          }`}
-                        >
-                          {active && <Check size={12} strokeWidth={3} aria-hidden />}
-                          {t(`design.print_preview.tpl.${tpl}`)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
+                <PrintShelf
+                  design={design}
+                  selected={printTemplate}
+                  onSelect={(tpl) => {
+                    setPrintTemplate(tpl);
+                    setPdfPreviewUrl((p) => {
+                      if (p) URL.revokeObjectURL(p);
+                      return null;
+                    });
+                  }}
+                  brideName={couple?.bride_name ?? null}
+                />
               )}
 
               {tab === "website" && (
@@ -1564,120 +1444,104 @@ export default function DesignPage() {
                 </>
               )}
 
-              {tab === "website" ? null : (
-                <div className="space-y-6">
-                  {/* The card-type picker moved to the top of the panel (above the
-                    shared identity); the print branch now starts with the
-                    card-specific look controls. */}
-                  {/* Border style — 4 selectable looks for the card frame
-                    (supersedes the old on/off border toggle). Visual tiles: the
-                    box shows the actual border in the resolved accent colour. */}
+              {tab === "print" && (
+                <>
+                  {/* Same fine-tune vocabulary as the guest tab, so the two
+                      surfaces read as one tool. Dividers is literally the same
+                      switch: it writes both surfaces. */}
                   <section>
-                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                      {t("design.print.border")}
-                    </h2>
-                    <div className="grid grid-cols-4 gap-2">
-                      {BORDER_STYLES.map((b) => {
-                        const active = design.borderStyle === b.slug;
-                        return (
-                          <button
-                            key={b.slug}
-                            type="button"
-                            onClick={() => chooseBorderStyle(b.slug)}
-                            aria-pressed={active}
-                            aria-label={t(b.nameKey)}
-                            title={t(b.nameKey)}
-                            className={`flex h-12 items-center justify-center rounded-xl border bg-white p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
-                              active
-                                ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
-                                : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
-                            }`}
-                          >
+                    <p className="eyebrow mb-2">{t("design.tune.heading")}</p>
+                    <div className="overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft dark:border-umber-600 dark:bg-umber-800 dark:shadow-none">
+                      <div className="divide-y divide-paper-200 dark:divide-umber-700">
+                        <TuneRow
+                          id="border"
+                          label={t("design.tune.border")}
+                          value={
                             <span
-                              className="h-7 w-full rounded"
-                              style={{ border: getBorderCss(b.slug, resolvedColors.accent) }}
+                              className="h-4 w-16 rounded"
+                              style={{
+                                border: getBorderCss(design.borderStyle, resolvedColors.accent),
+                              }}
                               aria-hidden
                             />
-                          </button>
-                        );
-                      })}
+                          }
+                          open={openRow === "border"}
+                          onToggle={() => toggleRow("border")}
+                          before={rowBefore}
+                          now={design}
+                          onRevert={revertRow}
+                          couple={previewCouple}
+                          locale={locale}
+                          fallbackName={sampleCoupleName}
+                        >
+                          <TuneRail>
+                            {BORDER_STYLES.map((b) => {
+                              const active = design.borderStyle === b.slug;
+                              return (
+                                <button
+                                  key={b.slug}
+                                  type="button"
+                                  onClick={() => chooseBorderStyle(b.slug)}
+                                  aria-pressed={active}
+                                  aria-label={t(b.nameKey)}
+                                  title={t(b.nameKey)}
+                                  className={`flex h-14 w-24 shrink-0 snap-start items-center justify-center rounded-lg border bg-white p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:bg-umber-800 dark:focus-visible:ring-paper-100 ${
+                                    active
+                                      ? "border-ink-900 ring-1 ring-ink-900 dark:border-paper-100 dark:ring-paper-100"
+                                      : "border-paper-300 hover:border-paper-400 dark:border-umber-700 dark:hover:border-umber-600"
+                                  }`}
+                                >
+                                  <span
+                                    className="h-8 w-full rounded"
+                                    style={{ border: getBorderCss(b.slug, resolvedColors.accent) }}
+                                    aria-hidden
+                                  />
+                                </button>
+                              );
+                            })}
+                          </TuneRail>
+                        </TuneRow>
+
+                        {getStylePreset(design.style).ornament !== "none" && (
+                          <TuneSwitchRow
+                            label={t("design.tune.dividers")}
+                            checked={design.web.ornaments}
+                            onChange={chooseOrnaments}
+                            value={
+                              <OrnamentDivider
+                                slug={getStylePreset(design.style).ornament}
+                                className="h-3 w-16 text-ink-400 dark:text-umber-300"
+                              />
+                            }
+                          />
+                        )}
+                      </div>
                     </div>
                   </section>
 
-                  {/* Remaining print options. */}
-                  <section>
-                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                      {t("design.section.print")}
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                      {(["ornament", "qr"] as const).map((key) => {
-                        const on = design.print[key];
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => togglePrint(key)}
-                            aria-pressed={on}
-                            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
-                              on
-                                ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                                : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-                            }`}
-                          >
-                            {on && <Check size={12} strokeWidth={3} aria-hidden />}
-                            {t(`design.print.${key}`)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
+                  {/* The seating chart is produced by the seating editor, not
+                      designed here, so it stays a plain download rather than a
+                      shelf tile that pretends to be styleable. */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      downloadCard(
+                        "seating_chart",
+                        "/api/print/seating/a4",
+                        "weddly-seating-chart.pdf",
+                      )
+                    }
+                    disabled={downloading !== null}
+                    className="btn btn-outline btn-sm"
+                  >
+                    {downloading === "seating_chart" ? (
+                      <Loader2 size={14} className="animate-spin" aria-hidden />
+                    ) : (
+                      <Download size={14} aria-hidden />
+                    )}
+                    {t("design.cards.seating_chart_name")}
+                  </button>
 
-                  {/* Downloadable PDFs (the instant preview is the right column;
-                    these render the exact print-ready files on demand). */}
-                  <section>
-                    <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                      {t("design.cards.downloads_heading")}
-                    </h2>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {printables.map((card) => {
-                        const busy = downloading === card.slug;
-                        return (
-                          <div
-                            key={card.slug}
-                            className="flex flex-col gap-2 rounded-2xl border border-paper-300 bg-white p-3 dark:border-umber-700 dark:bg-umber-800"
-                          >
-                            <h3 className="text-sm font-medium text-ink-900 dark:text-paper-50">
-                              {card.name}
-                            </h3>
-                            <p className="flex-1 text-xs text-ink-500 dark:text-umber-300">
-                              {card.desc}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => downloadCard(card.slug, card.path, card.filename)}
-                              disabled={busy || downloading !== null}
-                              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-ink-900 px-3 py-1.5 text-xs font-medium text-ink-900 transition hover:bg-ink-900 hover:text-paper-50 disabled:cursor-default disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-paper-100 dark:text-paper-50 dark:hover:bg-paper-100 dark:hover:text-umber-900"
-                            >
-                              {busy ? (
-                                <>
-                                  <Loader2 size={14} className="animate-spin" aria-hidden />
-                                  {t("design.cards.downloading")}
-                                </>
-                              ) : (
-                                <>
-                                  <Download size={14} aria-hidden />
-                                  {t("design.cards.action_download")}
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-
-                  {/* Print tips: a collapsible note so a couple can hand the PDF
-                    to a printer without guessing bleed / size / stock (audit #15). */}
                   <details className="rounded-2xl border border-paper-200 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-900">
                     <summary className="cursor-pointer text-sm font-medium text-ink-700 dark:text-paper-100">
                       {t("design.cards.print_tips_title")}
@@ -1688,7 +1552,7 @@ export default function DesignPage() {
                       <li>{t("design.cards.print_tips_stock")}</li>
                     </ul>
                   </details>
-                </div>
+                </>
               )}
             </div>
 
@@ -1706,34 +1570,65 @@ export default function DesignPage() {
             >
               {tab === "print" ? (
                 <div className="space-y-3">
-                  {/* Canvas toolbar: label on the left, exact-PDF toggle on the
-                    right (the live card already updates instantly). */}
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-500 dark:text-umber-200">
-                      {t("design.preview_label")}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => void previewExactPdf()}
-                      disabled={pdfPreviewBusy}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-paper-400 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600 dark:focus-visible:ring-paper-100"
-                    >
-                      {pdfPreviewBusy ? (
-                        <Loader2 size={14} className="animate-spin" aria-hidden />
-                      ) : (
-                        <Eye size={14} aria-hidden />
-                      )}
-                      {t("design.print_preview.preview_exact_pdf")}
-                    </button>
-                  </div>
+                  <p className="eyebrow">{t(`design.print_preview.tpl.${printTemplate}`)}</p>
                   {/* The desk: a warm, large backdrop that frames the single card
-                    so it reads as a physical object, not a thumbnail. */}
-                  <div className="grid min-h-[30rem] place-items-center rounded-2xl border border-paper-200 bg-paper-100 p-8 dark:border-umber-700 dark:bg-umber-900">
-                    <PrintCardPreview
-                      design={design}
-                      template={printTemplate}
-                      brideName={couple?.bride_name ?? null}
-                    />
+                      so it reads as a physical object, not a thumbnail. The two
+                      actions live ON the desk, next to the card they act on,
+                      rather than in a downloads grid halfway down the page. */}
+                  <div className="rounded-2xl border border-paper-200 bg-paper-100 p-6 dark:border-umber-700 dark:bg-umber-900">
+                    <div className="grid min-h-[24rem] place-items-center">
+                      <span className="block w-full max-w-[26rem] shadow-warm dark:shadow-none">
+                        <PrintCardPreview
+                          design={design}
+                          template={printTemplate}
+                          brideName={couple?.bride_name ?? null}
+                        />
+                      </span>
+                    </div>
+                    <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadCard(
+                            printTemplate,
+                            exactPdfPath[printTemplate],
+                            `weddly-${printTemplate.replace("_", "-")}.pdf`,
+                          )
+                        }
+                        disabled={downloading !== null}
+                        className="btn btn-primary btn-sm"
+                      >
+                        {downloading === printTemplate ? (
+                          <Loader2 size={14} className="animate-spin" aria-hidden />
+                        ) : (
+                          <Download size={14} aria-hidden />
+                        )}
+                        {t("design.cards.action_download")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void previewExactPdf()}
+                        disabled={pdfPreviewBusy}
+                        className="btn btn-outline btn-sm"
+                      >
+                        {pdfPreviewBusy ? (
+                          <Loader2 size={14} className="animate-spin" aria-hidden />
+                        ) : (
+                          <Eye size={14} aria-hidden />
+                        )}
+                        {t("design.print_preview.preview_exact_pdf")}
+                      </button>
+                    </div>
+                    {/* The card's TEXT is content, edited elsewhere. One link,
+                        replacing three helper paragraphs that said so. */}
+                    <p className="mt-3 text-center text-xs text-ink-500 dark:text-umber-300">
+                      <Link
+                        to="/app/guest-page"
+                        className="underline-offset-2 hover:text-ink-900 hover:underline dark:hover:text-paper-50"
+                      >
+                        {t("design.print_preview.content_change")}
+                      </Link>
+                    </p>
                   </div>
                   {pdfPreviewUrl && (
                     <iframe

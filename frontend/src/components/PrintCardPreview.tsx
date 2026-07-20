@@ -275,28 +275,13 @@ export function PrintCardPreview({
             </>
           )}
 
-          {/* QR placeholder when the toggle is on (place cards only support it). */}
-          {design.print.qr && template === "place_card" && (
-            <span
-              className="absolute bottom-2 right-2 grid h-7 w-7 grid-cols-3 grid-rows-3 gap-px rounded-sm p-0.5"
-              style={{ backgroundColor: d.accent }}
-              aria-hidden
-            >
-              {Array.from({ length: 9 }).map((_, i) => (
-                <span
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static decorative grid
-                  key={i}
-                  style={{ backgroundColor: i % 2 === 0 ? d.text : "transparent" }}
-                />
-              ))}
-            </span>
-          )}
+          {/* There used to be a decorative QR placeholder here, drawn when
+              `design.print.qr` was on. No PDF renderer ever emitted a QR code,
+              so the toggle and this block promised the couple something the
+              printed card never delivered. Both are gone. The field stays in
+              the model, unwritten, for old blobs. */}
         </div>
       </div>
-
-      <p className="text-center text-[11px] text-ink-500 dark:text-umber-300">
-        {t("design.print_preview.caption")}
-      </p>
     </div>
   );
 }

@@ -2945,6 +2945,7 @@ export interface LocaleMessages {
       fonts: string;
       print: string;
       photos: string;
+      cards: string;
       monogram: string;
       ornaments: string;
       date: string;

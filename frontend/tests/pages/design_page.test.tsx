@@ -49,7 +49,7 @@ function jsonResponse(body: unknown) {
   });
 }
 
-function mountPage() {
+function mountPage(path = "/app/design/website") {
   globalThis.fetch = mock((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes("/api/couples/current")) return Promise.resolve(jsonResponse({ couple }));
@@ -62,7 +62,7 @@ function mountPage() {
     <I18nProvider>
       <ToastProvider>
         <ConfirmDialogProvider>
-          <MemoryRouter initialEntries={["/app/design/website"]}>
+          <MemoryRouter initialEntries={[path]}>
             <DesignPage />
           </MemoryRouter>
         </ConfirmDialogProvider>
@@ -145,5 +145,32 @@ describe("<DesignPage> smoke (/app/design/website)", () => {
     // The Monogram row renders the couple's real monogram as its value, and the
     // hero eyebrow inside the preview renders it too (enabled by default).
     expect(screen.getAllByText("M & L").length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("<DesignPage> smoke (/app/design/print)", () => {
+  it("shows one shelf of real cards and shares the committed look", async () => {
+    mountPage("/app/design/print");
+
+    // The shelf: every printable, named. These used to exist twice, as a grid
+    // of text chips up top and a grid of description cards further down.
+    await waitFor(() => {
+      expect(screen.getByText("Kártyák", { selector: "p" })).toBeInTheDocument();
+    });
+    for (const card of ["Ültetőkártya", "Asztalszám", "Menü"]) {
+      expect(screen.getAllByText(card).length).toBeGreaterThanOrEqual(1);
+    }
+
+    // The identity is shared across both surfaces, so the same Look Bar and
+    // the same Sample Table serve the print tab. The old read-only "inherited
+    // identity" recap card, which repeated the look in a third way, is gone.
+    expect(screen.getAllByText("Garden").length).toBe(2);
+    expect(screen.queryByText("Közös arculat")).toBeNull();
+
+    // The QR toggle is gone: no PDF renderer ever emitted a QR code.
+    expect(screen.queryByText("QR-kód")).toBeNull();
+
+    // Print-side fine tune uses the same row vocabulary as the guest tab.
+    expect(screen.getByText("Keret")).toBeInTheDocument();
   });
 });
