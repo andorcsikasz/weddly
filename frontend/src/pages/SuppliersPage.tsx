@@ -142,6 +142,21 @@ import { CATEGORY_ICON, GROUP_ICON } from "../lib/category_icons";
  *  when one of these food/drink categories is the active filter. */
 const CALC_CATEGORIES = new Set<SupplierCategory>(["cake_dessert", "bar_drinks", "catering"]);
 
+/** The sub-category row's right-hand action chips ("már foglaltam", "csinálom
+ *  magam", "nem kell", plus the calculator). One shared shape so the three ways
+ *  of settling a category read as peers on a single line, instead of a chip, a
+ *  chip and a full-width card. Same geometry as the category pills to their
+ *  left — only the fill differs. */
+const ACTION_CHIP =
+  "inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-medium transition";
+const ACTION_CHIP_IDLE =
+  "border-ink-700 bg-transparent text-ink-700 hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50";
+/** Open/expanded chip — mirrors the selected category pill. */
+const ACTION_CHIP_ON = "border-transparent stationery-coffee text-paper-50";
+/** "Handled" chip, matching the sage the not-needed runner segment turns. */
+const ACTION_CHIP_SAGE =
+  "border-sage-400 bg-sage-50 text-sage-700 dark:border-sage-400/50 dark:bg-sage-400/15 dark:text-sage-300";
+
 /** Flat category list + its parent-group index, derived once from the group
  *  table — powers the search typeahead's category suggestions and lets a
  *  picked category jump straight to the right chain step. */
@@ -282,6 +297,12 @@ export default function SuppliersPage() {
   const [calcOpen, setCalcOpen] = useState(false);
   const [diyOpen, setDiyOpen] = useState(false);
   const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
+  // "Már foglaltam" is a peer of "csinálom magam" / "nem kell" in the category
+  // row's action group, so its disclosure lives here rather than inside the
+  // card — the chip is the affordance, the card is just the body it reveals.
+  const [bookedOpen, setBookedOpen] = useState(false);
+  // The form is scoped to one sub-category, so moving to another collapses it.
+  useEffect(() => setBookedOpen(false), [activeCat]);
   // Report dialog state. `reporting` holds the numeric id + name; null when closed.
   const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
   const { user } = useAuth();
@@ -1606,10 +1627,28 @@ export default function SuppliersPage() {
                     onClick={() => setCalcOpen(true)}
                     aria-label={t("suppliers.calc.open_aria")}
                     title={t("suppliers.calc.open_aria")}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
+                    className={`${ACTION_CHIP} ${ACTION_CHIP_IDLE}`}
                   >
                     <Calculator size={13} aria-hidden />
-                    <span>{t("suppliers.calc.open")}</span>
+                    <span className="lowercase">{t("suppliers.calc.open")}</span>
+                  </button>
+                )}
+                {/* "Már foglaltam" — same weight as its two neighbours: the
+                    couple is choosing between three ways to settle a category
+                    (booked it elsewhere / doing it ourselves / don't need it),
+                    so all three are one row of peer chips. The chip toggles the
+                    form panel that used to carry its own card header. */}
+                {activeCat && (
+                  <button
+                    type="button"
+                    onClick={() => setBookedOpen((v) => !v)}
+                    aria-expanded={bookedOpen}
+                    aria-controls="booked-supplier-panel"
+                    title={t("suppliers.bookedCard.title")}
+                    className={`${ACTION_CHIP} ${bookedOpen ? ACTION_CHIP_ON : ACTION_CHIP_IDLE}`}
+                  >
+                    <Bookmark size={13} aria-hidden />
+                    <span className="lowercase">{t("suppliers.bookedCard.title")}</span>
                   </button>
                 )}
                 {/* No "csinálom magam" DIY entry for planners — self-organizing
@@ -1623,7 +1662,7 @@ export default function SuppliersPage() {
                       setDiyEditing(null);
                       setDiyOpen(true);
                     }}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
+                    className={`${ACTION_CHIP} ${ACTION_CHIP_IDLE}`}
                   >
                     <Pencil size={13} aria-hidden />
                     <span className="lowercase">{t("suppliers.diy_button_short")}</span>
@@ -1642,22 +1681,14 @@ export default function SuppliersPage() {
                     title={t("suppliers.not_needed_aria", {
                       category: t(`suppliers.cat.${activeCat}`),
                     })}
-                    className={
-                      activeCatNotNeeded
-                        ? "inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-sage-400 bg-sage-50 px-3 py-1 text-xs font-medium text-sage-700 transition dark:border-sage-400/50 dark:bg-sage-400/15 dark:text-sage-300"
-                        : "inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-700 bg-transparent px-3 py-1 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50"
-                    }
+                    className={`${ACTION_CHIP} ${
+                      activeCatNotNeeded ? ACTION_CHIP_SAGE : ACTION_CHIP_IDLE
+                    }`}
                   >
-                    <span
-                      className={
-                        activeCatNotNeeded
-                          ? "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded bg-sage-500 text-paper-50"
-                          : "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-2 border-ink-400 text-transparent dark:border-umber-400"
-                      }
-                      aria-hidden
-                    >
-                      <Check size={10} strokeWidth={3} />
-                    </span>
+                    {/* The checkbox square made this read a level below its
+                        neighbours; the chip's own fill carries the on-state
+                        now, with aria-pressed doing the semantic work. */}
+                    <Check size={13} strokeWidth={activeCatNotNeeded ? 3 : 2} aria-hidden />
                     <span className="lowercase">{t("suppliers.not_needed_toggle")}</span>
                   </button>
                 )}
@@ -1855,14 +1886,15 @@ export default function SuppliersPage() {
             </div>
           ) : (
             <>
-              {/* "Már foglaltam" card. Only appears once the couple has narrowed
+              {/* "Már foglaltam" form. Revealed by the peer chip in the
+              sub-category row, so it only exists once the couple has narrowed
               down to a specific sub-category (activeGroup AND activeCat both
               set) — without that context the autocomplete + admin-queue
               category pinning have nothing to anchor to. Rendered above the
               grid (full-width either way) so the `auto-rows-fr` grid below
               keeps every directory card the same height without this taller
               form inflating the card rows. */}
-              {activeGroup && activeCat && (
+              {activeGroup && activeCat && bookedOpen && (
                 <div className="mb-3">
                   <BookedSupplierCard
                     coupleId={coupleId}
@@ -1870,6 +1902,7 @@ export default function SuppliersPage() {
                     categoryLabel={t(`suppliers.cat.${activeCat}`)}
                     items={items}
                     pickedId={selection[activeCat] ?? null}
+                    onClose={() => setBookedOpen(false)}
                     onPickExisting={(supplier) => {
                       // Mirror the new pick into local state so the matching
                       // directory card flips to its "isPicked" treatment without

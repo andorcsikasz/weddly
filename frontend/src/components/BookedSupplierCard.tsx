@@ -18,13 +18,13 @@
 //     they've already booked. Defaults: price_band=3 (mid), blurb=""
 //     so admin can fill those in during review.
 //
-// The card is invisible until activeGroup && activeCat both flip on; the
-// SuppliersPage wraps the render in a guard so the directory grid stays
-// uncluttered until the couple narrows in on a sub-category.
+// The card carries no header of its own: SuppliersPage reveals it from the
+// "már foglaltam" chip that sits with "csinálom magam" and "nem kell" in the
+// sub-category row, and only mounts it once activeGroup && activeCat are both
+// set, so the directory grid stays uncluttered until the couple narrows in.
 
 import type { SubmitCommunitySupplierInput } from "@shared/community_suppliers";
 import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
-import { Bookmark, ChevronDown } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
 import { supplierApi } from "../lib/endpoints";
@@ -49,6 +49,7 @@ export function BookedSupplierCard({
   items,
   pickedId,
   onPickExisting,
+  onClose,
   onSubmitted,
 }: {
   /** Couple workspace this card writes picks against. Null when the couple
@@ -69,6 +70,9 @@ export function BookedSupplierCard({
   /** Notify the parent that the user adopted an existing directory entry
    *  so it can update its local `selection` state for instant feedback. */
   onPickExisting: (supplier: DirectorySupplier) => void;
+  /** Collapse the panel from the parent's chip — called once the couple has
+   *  adopted an existing directory entry, since the job is done at that point. */
+  onClose?: () => void;
   /** Notify the parent that a brand-new community submission landed.
    *  Today the parent ignores it (admin gate keeps it out of the public
    *  list anyway); kept as a hook for future optimistic UI. */
@@ -83,10 +87,9 @@ export function BookedSupplierCard({
   const [website, setWebsite] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  // Collapsed by default — most couples book inside the directory, so the
-  // form sits behind a disclosure and only opens when they actually want to
-  // record a vendor they arranged elsewhere.
-  const [formOpen, setFormOpen] = useState(false);
+  // Disclosure lives on the parent's "már foglaltam" chip (a peer of "csinálom
+  // magam" / "nem kell"), so this component renders body-only and is simply not
+  // mounted while collapsed.
   const nameRef = useRef<HTMLInputElement | null>(null);
 
   // Filter the directory by the active category + the typed text. Empty
@@ -116,6 +119,7 @@ export function BookedSupplierCard({
     onPickExisting(s);
     toast.success(t("suppliers.bookedCard.toast_added", { name: s.name }));
     clearForm();
+    onClose?.();
   };
 
   const submitNew = async () => {
@@ -170,183 +174,151 @@ export function BookedSupplierCard({
       className="card !px-4 !py-3 relative flex flex-col"
       aria-label={t("suppliers.bookedCard.title")}
     >
-      <button
-        type="button"
-        onClick={() => setFormOpen((v) => !v)}
-        aria-expanded={formOpen}
-        aria-controls="booked-supplier-body"
-        className="flex w-full items-center gap-2 text-left"
-      >
-        <span
-          aria-hidden
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-paper-200 text-ink-700 dark:bg-umber-700 dark:text-paper-100"
-        >
-          <Bookmark size={14} />
-        </span>
-        <h3 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-          {t("suppliers.bookedCard.title")}
-        </h3>
-        <span className="sr-only">
-          {formOpen ? t("suppliers.bookedCard.collapse") : t("suppliers.bookedCard.expand")}
-        </span>
-        <ChevronDown
-          size={16}
-          aria-hidden
-          className={`ml-auto shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${
-            formOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
+      <p className="text-xs text-ink-500 dark:text-umber-300">
+        {t("suppliers.bookedCard.subtitle", { category: categoryLabel })}
+      </p>
 
-      {formOpen && (
-        <>
-          <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
-            {t("suppliers.bookedCard.subtitle", { category: categoryLabel })}
-          </p>
-
-          <div id="booked-supplier-body" className="mt-3 space-y-2">
-            <div className="relative">
-              <label className="sr-only" htmlFor="booked-supplier-name">
-                {t("suppliers.bookedCard.input_label")}
-              </label>
-              <input
-                ref={nameRef}
-                id="booked-supplier-name"
-                type="text"
-                autoComplete="off"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setPickerOpen(true);
-                }}
-                onFocus={() => setPickerOpen(true)}
-                // Delay the close so a mousedown on a suggestion lands before
-                // the dropdown unmounts.
-                onBlur={() => window.setTimeout(() => setPickerOpen(false), 120)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && matches.length > 0) {
-                    e.preventDefault();
-                    adoptExisting(matches[0]!);
-                  } else if (e.key === "Escape") {
-                    setPickerOpen(false);
-                  }
-                }}
-                disabled={disabled}
-                placeholder={t("suppliers.bookedCard.placeholder")}
-                className="input w-full disabled:cursor-not-allowed disabled:opacity-60"
-              />
-              {pickerOpen && queryNorm && !disabled && matches.length > 0 && (
-                <div
-                  role="listbox"
-                  className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-auto rounded-xl border border-paper-300 bg-white py-1 shadow-lg dark:border-umber-700 dark:bg-umber-800"
-                >
-                  {matches.map((s) => {
-                    const alreadyPicked = pickedId === s.id;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        role="option"
-                        aria-selected={alreadyPicked}
-                        // mousedown fires before the input's blur → click would
-                        // race the dropdown's unmount. mousedown wins cleanly.
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          adoptExisting(s);
-                        }}
-                        className="flex w-full items-baseline justify-between gap-3 px-3 py-1.5 text-left text-sm transition hover:bg-paper-100 dark:hover:bg-umber-700"
-                      >
-                        <span className="truncate font-medium text-ink-800 dark:text-paper-100">
-                          {s.name}
-                        </span>
-                        <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
-                          {alreadyPicked ? t("suppliers.bookedCard.match_already_picked") : s.city}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+      <div id="booked-supplier-panel" className="mt-2 space-y-2">
+        <div className="relative">
+          <label className="sr-only" htmlFor="booked-supplier-name">
+            {t("suppliers.bookedCard.input_label")}
+          </label>
+          <input
+            ref={nameRef}
+            id="booked-supplier-name"
+            type="text"
+            autoComplete="off"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setPickerOpen(true);
+            }}
+            onFocus={() => setPickerOpen(true)}
+            // Delay the close so a mousedown on a suggestion lands before
+            // the dropdown unmounts.
+            onBlur={() => window.setTimeout(() => setPickerOpen(false), 120)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && matches.length > 0) {
+                e.preventDefault();
+                adoptExisting(matches[0]!);
+              } else if (e.key === "Escape") {
+                setPickerOpen(false);
+              }
+            }}
+            disabled={disabled}
+            placeholder={t("suppliers.bookedCard.placeholder")}
+            className="input w-full disabled:cursor-not-allowed disabled:opacity-60"
+          />
+          {pickerOpen && queryNorm && !disabled && matches.length > 0 && (
+            <div
+              role="listbox"
+              className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-auto rounded-xl border border-paper-300 bg-white py-1 shadow-lg dark:border-umber-700 dark:bg-umber-800"
+            >
+              {matches.map((s) => {
+                const alreadyPicked = pickedId === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    role="option"
+                    aria-selected={alreadyPicked}
+                    // mousedown fires before the input's blur → click would
+                    // race the dropdown's unmount. mousedown wins cleanly.
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      adoptExisting(s);
+                    }}
+                    className="flex w-full items-baseline justify-between gap-3 px-3 py-1.5 text-left text-sm transition hover:bg-paper-100 dark:hover:bg-umber-700"
+                  >
+                    <span className="truncate font-medium text-ink-800 dark:text-paper-100">
+                      {s.name}
+                    </span>
+                    <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
+                      {alreadyPicked ? t("suppliers.bookedCard.match_already_picked") : s.city}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
+          )}
+        </div>
 
-            <label className="sr-only" htmlFor="booked-supplier-address">
-              {t("suppliers.bookedCard.address_label")}
+        <label className="sr-only" htmlFor="booked-supplier-address">
+          {t("suppliers.bookedCard.address_label")}
+        </label>
+        <input
+          id="booked-supplier-address"
+          type="text"
+          autoComplete="off"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          disabled={disabled}
+          placeholder={t("suppliers.bookedCard.address_placeholder")}
+          className="input w-full disabled:cursor-not-allowed disabled:opacity-60"
+        />
+
+        <label className="sr-only" htmlFor="booked-supplier-phone">
+          {t("suppliers.bookedCard.phone_label")}
+        </label>
+        <input
+          id="booked-supplier-phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="off"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          disabled={disabled}
+          placeholder={t("suppliers.bookedCard.phone_placeholder")}
+          className="input w-full disabled:cursor-not-allowed disabled:opacity-60"
+        />
+
+        {expanded && (
+          <>
+            <label className="sr-only" htmlFor="booked-supplier-email">
+              {t("suppliers.bookedCard.email_label")}
             </label>
             <input
-              id="booked-supplier-address"
-              type="text"
+              id="booked-supplier-email"
+              type="email"
+              inputMode="email"
               autoComplete="off"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               disabled={disabled}
-              placeholder={t("suppliers.bookedCard.address_placeholder")}
+              placeholder={t("suppliers.bookedCard.email_placeholder")}
               className="input w-full disabled:cursor-not-allowed disabled:opacity-60"
             />
-
-            <label className="sr-only" htmlFor="booked-supplier-phone">
-              {t("suppliers.bookedCard.phone_label")}
+            <label className="sr-only" htmlFor="booked-supplier-website">
+              {t("suppliers.bookedCard.website_label")}
             </label>
             <input
-              id="booked-supplier-phone"
-              type="tel"
-              inputMode="tel"
+              id="booked-supplier-website"
+              type="url"
+              inputMode="url"
               autoComplete="off"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
               disabled={disabled}
-              placeholder={t("suppliers.bookedCard.phone_placeholder")}
+              placeholder={t("suppliers.bookedCard.website_placeholder")}
               className="input w-full disabled:cursor-not-allowed disabled:opacity-60"
             />
+          </>
+        )}
+      </div>
 
-            {expanded && (
-              <>
-                <label className="sr-only" htmlFor="booked-supplier-email">
-                  {t("suppliers.bookedCard.email_label")}
-                </label>
-                <input
-                  id="booked-supplier-email"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="off"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={disabled}
-                  placeholder={t("suppliers.bookedCard.email_placeholder")}
-                  className="input w-full disabled:cursor-not-allowed disabled:opacity-60"
-                />
-                <label className="sr-only" htmlFor="booked-supplier-website">
-                  {t("suppliers.bookedCard.website_label")}
-                </label>
-                <input
-                  id="booked-supplier-website"
-                  type="url"
-                  inputMode="url"
-                  autoComplete="off"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  disabled={disabled}
-                  placeholder={t("suppliers.bookedCard.website_placeholder")}
-                  className="input w-full disabled:cursor-not-allowed disabled:opacity-60"
-                />
-              </>
-            )}
-          </div>
-
-          {/* mt-auto pins the primary action to the bottom regardless of how
+      {/* mt-auto pins the primary action to the bottom regardless of how
           many fields are expanded, so the card's outer footprint stays
           steady inside the equal-height grid. */}
-          <div className="mt-auto pt-3">
-            <button
-              type="button"
-              onClick={submitNew}
-              disabled={disabled || !name.trim() || submitting}
-              className="inline-flex items-center gap-1.5 rounded-full border border-paper-400 bg-paper-100 px-4 py-1.5 text-xs font-semibold text-ink-800 transition hover:border-ink-500 hover:bg-paper-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-umber-600 dark:bg-umber-700 dark:text-paper-50 dark:hover:border-umber-500 dark:hover:bg-umber-600"
-            >
-              {submitting ? t("suppliers.bookedCard.submitting") : t("suppliers.bookedCard.add")}
-            </button>
-          </div>
-        </>
-      )}
+      <div className="mt-auto pt-3">
+        <button
+          type="button"
+          onClick={submitNew}
+          disabled={disabled || !name.trim() || submitting}
+          className="inline-flex items-center gap-1.5 rounded-full border border-paper-400 bg-paper-100 px-4 py-1.5 text-xs font-semibold text-ink-800 transition hover:border-ink-500 hover:bg-paper-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-umber-600 dark:bg-umber-700 dark:text-paper-50 dark:hover:border-umber-500 dark:hover:bg-umber-600"
+        >
+          {submitting ? t("suppliers.bookedCard.submitting") : t("suppliers.bookedCard.add")}
+        </button>
+      </div>
     </article>
   );
 }
