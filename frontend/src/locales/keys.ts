@@ -5318,6 +5318,7 @@ export interface LocaleMessages {
       field_phone: string;
       field_vat: string;
       suspend_confirm_title: string;
+      reactivate_confirm_title: string;
       suspend_success: string;
       reactivate_success: string;
       resend_success: string;
@@ -5399,6 +5400,7 @@ export interface LocaleMessages {
       verify_success: string;
       unverify_success: string;
       suspend_confirm_title: string;
+      reactivate_confirm_title: string;
       suspend_success: string;
       reactivate_success: string;
       plan_success: string;

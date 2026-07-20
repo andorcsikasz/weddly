@@ -406,7 +406,18 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
     void run(() => adminVendorMgmtApi.suspend(vendor.id), "admin.vendors.suspend_success");
   }
 
-  function handleReactivate() {
+  // Lifting a suspension confirms too. Suspending was already guarded, but the
+  // undo sat one icon away and fired on a single click, so a mis-tap silently
+  // put a vendor the team had suspended back in front of couples. Both
+  // directions of the same switch, both asked.
+  async function handleReactivate() {
+    const ok = await confirm({
+      title: t("admin.vendors.reactivate_confirm_title"),
+      body: vendor.display_name,
+      confirmLabel: t("admin.vendors.reactivate"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
     void run(() => adminVendorMgmtApi.reactivate(vendor.id), "admin.vendors.reactivate_success");
   }
 

@@ -508,7 +508,16 @@ function PlannerCard({
     void run(() => adminPlannerMgmtApi.suspend(planner.user_id), "admin.planners.suspend_success");
   }
 
-  function handleReactivate() {
+  // Lifting a suspension confirms too, same as suspending. See the note on the
+  // vendor page: the undo sat one icon away and fired on a single click.
+  async function handleReactivate() {
+    const ok = await confirm({
+      title: t("admin.planners.reactivate_confirm_title"),
+      body: planner.email,
+      confirmLabel: t("admin.planners.reactivate"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
     void run(
       () => adminPlannerMgmtApi.reactivate(planner.user_id),
       "admin.planners.reactivate_success",
