@@ -81,6 +81,27 @@ export interface SendTarget {
    * `guests.invitation_opened_at` when the image loads.
    */
   guestId?: number;
+  /**
+   * Language for a `guest` send whose recipient we DO know the language of even
+   * though they have no `users` row, e.g. the claim-invite campaign, which
+   * resolves it from the listing's country. Without this a guest send falls
+   * back to the bilingual HU+EN stack, which reads as spam to a vendor in
+   * Portugal. Ignored when `user`/`pending` is set (their own locale wins).
+   */
+  guestLocale?: string | null;
+  /**
+   * Explicit tracking-pixel URL, for campaigns that own their own open-tracking
+   * table. Takes precedence over the `guestId` + `couple_id` pixel above; the
+   * caller is responsible for signing whatever token it embeds.
+   */
+  trackingPixelUrl?: string;
+  /**
+   * RFC 8058 one-click unsubscribe target for mail that is NOT lifecycle and
+   * therefore has no `email_preferences` token, i.e. cold outreach to an
+   * address with no account. Gmail's bulk-sender rules want the header on any
+   * high-volume send regardless of our internal category.
+   */
+  listUnsubscribeUrl?: string;
 }
 
 interface SendResult {
@@ -158,7 +179,9 @@ async function sendKindInner<K extends EmailKind>(
     ? lookupUserLocale(target.user.id)
     : target.pending
       ? normalizeRecipientLocale(target.pending.locale)
-      : null;
+      : target.guestLocale != null
+        ? normalizeRecipientLocale(target.guestLocale)
+        : null;
   // For guest sends with a known submitter, resolve the submitter's locale
   // and bias the bilingual order toward it. Doesn't replace the bilingual
   // fallback — just reorders.
@@ -190,9 +213,10 @@ async function sendKindInner<K extends EmailKind>(
   }
 
   const trackingPixelUrl =
-    target.guestId != null && target.couple_id != null
+    target.trackingPixelUrl ??
+    (target.guestId != null && target.couple_id != null
       ? `${CONFIG.frontendBaseUrl}/api/emails/track/open?t=${makeOpenTrackingToken(target.guestId, target.couple_id)}`
-      : undefined;
+      : undefined);
 
   const built = buildEmail(kind, payload, {
     recipientName: recipient.name,
@@ -214,6 +238,11 @@ async function sendKindInner<K extends EmailKind>(
   if (category === "lifecycle" && unsubscribeToken) {
     extraHeaders["List-Unsubscribe"] =
       `<${CONFIG.frontendBaseUrl}/api/unsubscribe/${unsubscribeToken}>`;
+    extraHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
+  } else if (target.listUnsubscribeUrl) {
+    // Cold outreach: the recipient has no preferences row to hold a token, so
+    // the caller supplies its own suppression endpoint.
+    extraHeaders["List-Unsubscribe"] = `<${target.listUnsubscribeUrl}>`;
     extraHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
   }
   if (built.replyTo) {

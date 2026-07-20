@@ -11215,7 +11215,7 @@ const AUSTRIAN_VENUE_IDS: ReadonlySet<string> = new Set([
 /** Resolve a curated entry's ISO alpha-2 country. Reads a ", XX" suffix off
  *  `city` first (the HR/RO/SI batches), then the id-anchored Slovak/Austrian
  *  sets, else "HU". */
-function curatedCountry(id: string, city: string): string {
+export function curatedCountry(id: string, city: string): string {
   const suffix = city.match(/,\s*([A-Z]{2})$/);
   if (suffix?.[1]) return suffix[1];
   if (SLOVAK_VENUE_IDS.has(id)) return "SK";

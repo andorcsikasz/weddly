@@ -176,6 +176,13 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       for (const p of block.paragraphs) lines.push(stripBold(p));
       lines.push("");
       lines.push(`${block.cta}: ${ctaUrl}`);
+      // Secondary links used to be HTML-only. For outreach mail one of them is
+      // the opt-out, and a cold recipient reading in text mode has to be able
+      // to act on it, so they belong in both renderings.
+      if (block.secondaryLinks && block.secondaryLinks.length > 0) {
+        lines.push("");
+        for (const link of block.secondaryLinks) lines.push(`${link.label}: ${link.url}`);
+      }
       if (block.footnote) {
         lines.push("");
         lines.push(block.footnote);

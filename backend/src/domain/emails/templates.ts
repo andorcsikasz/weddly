@@ -512,6 +512,27 @@ export interface VendorClaimVerifyPayload {
   verifyUrl: string;
 }
 
+/** Shared by the claim-invite campaign and its 2-day reminder. `locale` is on
+ *  the payload because the SUBJECT is a single string per kind, and a cold mail
+ *  to a vendor in Portugal must not carry a Hungarian subject line the way the
+ *  bilingual transactional kinds do. */
+export interface VendorClaimCampaignPayload {
+  listingName: string;
+  /** Already translated into `locale` by the caller (shared/suppliers.ts). */
+  categoryLabel: string;
+  city: string;
+  /** Tracked redirect that lands on the claim form in one click. */
+  inviteUrl: string;
+  /** Address-level suppression link, rendered as a secondary link. */
+  optOutUrl: string;
+  monthlyVisitors: number;
+  /** Free months the live offer grants, 12 or 3. 0 when both cohorts are full,
+   *  in which case the copy drops the free-window sentence entirely rather than
+   *  promising something the claim would not honour. */
+  freeMonths: number;
+  locale: "hu" | "en";
+}
+
 export interface VendorClaimAdminAlertPayload {
   /** Listing name the claimer wants to take over. */
   listingName: string;
@@ -689,6 +710,8 @@ export type KindPayload = {
   community_supplier_published: CommunitySupplierPublishedPayload;
   community_supplier_rejected: CommunitySupplierRejectedPayload;
   community_supplier_reported: CommunitySupplierReportedPayload;
+  vendor_claim_campaign: VendorClaimCampaignPayload;
+  vendor_claim_campaign_reminder: VendorClaimCampaignPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_admin_alert: VendorClaimAdminAlertPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
@@ -752,6 +775,32 @@ interface RawTemplate {
 }
 
 type Builder<K extends EmailKind> = (payload: KindPayload[K], ctx: BuildContext) => RawTemplate;
+
+/** Free-window closer for the claim-invite copy. Returns "" once both free
+ *  cohorts are full, and the caller filters the empty paragraph out: silence
+ *  is the honest option there, since the claim would only grant a 3-day trial
+ *  and promising anything else would be a bait. The scarcity is stated as a
+ *  fact about the cohort, not as a countdown, because the exact number moves
+ *  between the send and the click. */
+function offerSentenceHu(freeMonths: number): string {
+  if (freeMonths >= 12) {
+    return "Az első 100 szolgáltatónak egy teljes év ingyenes nálunk, bankkártya nélkül. Ebbe a körbe még belefértek.";
+  }
+  if (freeMonths > 0) {
+    return `Az alapító helyek elfogytak, de a következő 300 szolgáltató ${freeMonths} hónapot kap tőlünk, bankkártya nélkül.`;
+  }
+  return "";
+}
+
+function offerSentenceEn(freeMonths: number): string {
+  if (freeMonths >= 12) {
+    return "The first 100 vendors get a full year with us for free, no card required. There is still room in that group.";
+  }
+  if (freeMonths > 0) {
+    return `The founding year is gone, but the next 300 vendors get ${freeMonths} months on us, no card required.`;
+  }
+  return "";
+}
 
 const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   welcome_verify: (p, ctx) => ({
@@ -2328,6 +2377,90 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       cta: "Claim your listing",
       ctaSubtext: "Link expires in 7 days.",
       secondaryLinks: [{ label: "What is Weddly?", url: CONFIG.frontendBaseUrl }],
+    },
+  }),
+  // Claim-invite campaign. Cold, so the copy has to earn the click in the first
+  // two lines: WHY this arrived (a user put them on the site), WHAT already
+  // exists (their category + town, proof we mean their actual business), and
+  // what is wrong with it (we wrote it from public data, so the things that
+  // actually sell are missing). The free window is the closer, not the hook,
+  // an offer-first cold mail reads as an ad.
+  //
+  // Rendered single-language: `locale` comes off the payload because the
+  // subject is one string per kind, and a Hungarian subject on a mail to a
+  // venue in Puglia is the fastest way into a spam folder.
+  vendor_claim_campaign: (p) => ({
+    subject:
+      p.locale === "hu"
+        ? `${p.listingName} már fent van a Weddly-n`
+        : `${p.listingName} is already listed on Weddly`,
+    ctaUrl: p.inviteUrl,
+    hu: {
+      preheader: `${p.categoryLabel} · ${p.city}. Vedd át a profilt, és innentől te szerkeszted.`,
+      greeting: "Szia!",
+      paragraphs: [
+        `Egy felhasználónk ajánlására felvettük a(z) ${p.listingName} vállalkozást a Weddly esküvői katalógusába, ${p.categoryLabel} kategóriában, ${p.city} környékén. A profil már él, a párok látják.`,
+        `Havonta több ezren terveznek nálunk esküvőt. A profilt viszont mi állítottuk össze nyilvános adatokból, így pont az hiányzik róla, ami valóban eladna: a saját fotóitok, a csomagok és árak, a szabad időpontok.`,
+        offerSentenceHu(p.freeMonths),
+      ].filter((s) => s.length > 0),
+      cta: "Profil átvétele",
+      ctaSubtext: "Egy kattintás, és egy jelszó. Regisztrálni nem kell.",
+      footnote:
+        "Ha nem te kezeled a vállalkozást, add tovább a kollégának. Ha egyáltalán nem kéritek a profilt, hagyd figyelmen kívül ezt a levelet, és levesszük.",
+      secondaryLinks: [
+        { label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl },
+        { label: "Ne írjatok többet", url: p.optOutUrl },
+      ],
+    },
+    en: {
+      preheader: `${p.categoryLabel} · ${p.city}. Take the profile over and edit it yourself.`,
+      greeting: "Hi there,",
+      paragraphs: [
+        `A user suggested you, so we added ${p.listingName} to the Weddly wedding directory under ${p.categoryLabel}, around ${p.city}. The profile is already live and couples can see it.`,
+        `Several thousand couples plan their wedding with us every month. But we built this profile from public information, so the things that actually win bookings are missing: your own photos, your packages and prices, the dates you are free.`,
+        offerSentenceEn(p.freeMonths),
+      ].filter((s) => s.length > 0),
+      cta: "Take over your profile",
+      ctaSubtext: "One click and a password. No sign-up form.",
+      footnote:
+        "Not the right person? Pass it to whoever runs the diary. If you would rather not be listed at all, ignore this email and we will take it down.",
+      secondaryLinks: [
+        { label: "What is Weddly?", url: CONFIG.frontendBaseUrl },
+        { label: "Don't email me again", url: p.optOutUrl },
+      ],
+    },
+  }),
+  // The single 2-day nudge. Shorter on purpose: they have the context from the
+  // first mail, so this one is a reminder of the ask, not a re-pitch.
+  vendor_claim_campaign_reminder: (p) => ({
+    subject:
+      p.locale === "hu"
+        ? `Még szerkesztheted: ${p.listingName}`
+        : `Still yours to edit: ${p.listingName}`,
+    ctaUrl: p.inviteUrl,
+    hu: {
+      preheader: `A(z) ${p.listingName} profilját még mindig mi kezeljük helyettetek.`,
+      greeting: "Szia!",
+      paragraphs: [
+        `Pár napja írtunk, hogy a(z) ${p.listingName} fent van a Weddly katalógusában ${p.categoryLabel} kategóriában. A profil még mindig azokkal az adatokkal fut, amiket mi állítottunk össze róla.`,
+        `Pár perc átvenni, utána a fotók, az árak és a szabad időpontok is a tiétek.`,
+        offerSentenceHu(p.freeMonths),
+      ].filter((s) => s.length > 0),
+      cta: "Profil átvétele",
+      ctaSubtext: "Ez az utolsó levelünk az ügyben.",
+      secondaryLinks: [{ label: "Ne írjatok többet", url: p.optOutUrl }],
+    },
+    en: {
+      preheader: `${p.listingName} is still running on the details we put together.`,
+      greeting: "Hi there,",
+      paragraphs: [
+        `We wrote a couple of days ago about ${p.listingName} being listed on Weddly under ${p.categoryLabel}. The profile is still running on the details we put together ourselves.`,
+        `It takes a couple of minutes to take over. After that the photos, the prices and the free dates are yours to set.`,
+        offerSentenceEn(p.freeMonths),
+      ].filter((s) => s.length > 0),
+      cta: "Take over your profile",
+      ctaSubtext: "This is the last email we'll send about it.",
+      secondaryLinks: [{ label: "Don't email me again", url: p.optOutUrl }],
     },
   }),
   // P2.C, vendor claim verify mail. Categorised as `outreach`: anyone (no

@@ -216,6 +216,14 @@ export function wipeAll(): void {
     // the community/claimed rows and trust the boot snapshot for curated.
     "growth_events",
     "listing_claims",
+    // Claim-invite campaign: sends cascade off campaigns, but delete both (and
+    // in child-before-parent order) so a leaked send row can't make the next
+    // test's targeting query skip an address it should have picked up.
+    "vendor_claim_campaign_sends",
+    "vendor_claim_campaigns",
+    // Address-level suppression is a permanent tombstone in prod, which is
+    // exactly why a leaked row would silently mute a later test's outreach.
+    "email_optouts",
     // vendor billing/onboarding — subs cascade off vendor_accounts, but delete
     // explicitly (and before vendor_accounts) so a leaked founding badge can't
     // bleed the cohort count into the next test.

@@ -43,6 +43,7 @@ import { registerAdminFinancialPlannerRoutes } from "./routes/admin_financial_pl
 import { registerAdminPlannerRoutes } from "./routes/admin_planners";
 import { registerAdminSupplierRoutes } from "./routes/admin_suppliers";
 import { registerAdminUserRoutes } from "./routes/admin_users";
+import { registerAdminVendorCampaignRoutes } from "./routes/admin_vendor_campaign";
 import { registerAdminVendorRoutes } from "./routes/admin_vendors";
 import { registerVendorWaitlistRoutes } from "./routes/vendor_waitlist";
 import { registerPlannerWaitlistRoutes } from "./routes/planner_waitlist";
@@ -232,6 +233,7 @@ registerOutreachRoutes(router);
 registerAdminSupplierRoutes(router);
 registerAdminUserRoutes(router);
 registerAdminVendorRoutes(router);
+registerAdminVendorCampaignRoutes(router);
 registerAdminPlannerRoutes(router);
 registerAdminAnalyticsRoutes(router);
 registerAdminEmailListRoutes(router);

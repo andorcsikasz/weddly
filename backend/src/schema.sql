@@ -1974,3 +1974,69 @@ CREATE TABLE IF NOT EXISTS pending_signups (
   updated_at        INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_pending_signups_expires ON pending_signups(expires_at);
+
+-- ── Vendor claim-invite campaign ────────────────────────────────────────────
+--
+-- Cold outreach to the UNCLAIMED half of the directory: listings that couples
+-- (or our own curation) put on the site, whose owner has never taken over the
+-- profile. One mail per business, carrying a pre-minted listing_claims token so
+-- the CTA is a genuine one-click into the claim flow, no "enter your email and
+-- wait for a second mail" hop.
+--
+-- Two tables because a campaign is a long-lived operator object (paced out over
+-- days, pausable) while a send is per-recipient state. Sends are what the
+-- reminder sweep and the funnel stats read.
+CREATE TABLE IF NOT EXISTS vendor_claim_campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL UNIQUE,                                   -- operator-facing handle, e.g. 'claim-invite-2026-07'
+  status TEXT NOT NULL DEFAULT 'paused',                       -- 'paused' | 'running' | 'done'
+  -- Rolling-24h send ceiling. Cold volume is a deliverability risk to the whole
+  -- domain (verify + RSVP mail shares the reputation), so the worker paces
+  -- rather than blasting. 0 would stall the campaign, so it is rejected on write.
+  daily_cap INTEGER NOT NULL DEFAULT 50,
+  country TEXT,                                                -- ISO alpha-2 segment filter; NULL = every country
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+-- One row per recipient ADDRESS per campaign (not per listing): a vendor with
+-- three listings in the directory gets one invite, not three. The winning
+-- listing is whichever the target query picked first.
+CREATE TABLE IF NOT EXISTS vendor_claim_campaign_sends (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id INTEGER NOT NULL REFERENCES vendor_claim_campaigns(id) ON DELETE CASCADE,
+  listing_id TEXT NOT NULL,                                    -- targets listings.id; documented invariant, no FK (mirrors listing_claims)
+  email TEXT NOT NULL,                                         -- lowercased contact_email as of send time
+  locale TEXT NOT NULL,                                        -- 'hu' | 'en'; resolved from the listing's country
+  country TEXT,                                                -- resolved at send time, for the admin breakdown
+  category TEXT NOT NULL,                                      -- listing category as of send time (named in the copy)
+  -- The listing_claims token this invite carries. Also the lookup key for the
+  -- click-tracking redirect, so it stays stable even after the claim it points
+  -- at expires and the redirect mints a fresh one.
+  claim_token TEXT,
+  status TEXT NOT NULL DEFAULT 'queued',                       -- 'queued' | 'sent' | 'failed' | 'skipped'
+  error TEXT,                                                  -- failure reason when status='failed'
+  sent_at INTEGER,
+  opened_at INTEGER,                                           -- tracking pixel; unreliable upward (Apple MPP prefetch)
+  clicked_at INTEGER,                                          -- redirect hit; the trustworthy engagement signal
+  reminder_sent_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vccs_campaign_email ON vendor_claim_campaign_sends(campaign_id, email);
+CREATE INDEX IF NOT EXISTS idx_vccs_campaign_status ON vendor_claim_campaign_sends(campaign_id, status);
+CREATE INDEX IF NOT EXISTS idx_vccs_listing ON vendor_claim_campaign_sends(listing_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vccs_claim_token ON vendor_claim_campaign_sends(claim_token) WHERE claim_token IS NOT NULL;
+-- Drives both the pacing query (sends in the last 24h) and the reminder sweep.
+CREATE INDEX IF NOT EXISTS idx_vccs_sent_at ON vendor_claim_campaign_sends(sent_at);
+
+-- Address-level suppression for mail we send to people who never signed up.
+-- `email_preferences.lifecycle_opt_out` cannot serve this: it is keyed by
+-- users.id, and the whole point of this cohort is that they have no users row.
+-- Rows are permanent tombstones, never deleted, so a re-run of any campaign
+-- cannot resurrect a suppressed address.
+CREATE TABLE IF NOT EXISTS email_optouts (
+  email TEXT PRIMARY KEY,                                      -- lowercased, trimmed
+  reason TEXT NOT NULL,                                        -- 'vendor_claim_campaign' | 'manual'
+  created_at INTEGER NOT NULL
+);

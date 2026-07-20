@@ -29,6 +29,7 @@ import {
   MoreHorizontal,
   Palette,
   Plane,
+  Send,
   ShieldCheck,
   Store,
   Sun,
@@ -309,6 +310,13 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   },
   // ── Manage ────────────────────────────────────────────────────────
   // Taxonomy + content + email config. Stable surfaces, edited as needed.
+  {
+    to: "/app/admin/vendor-campaign",
+    labelKey: "admin.nav_vendor_campaign",
+    // no tabKey, goes to the phone More sheet
+    icon: <Send size={18} />,
+    group: "manage",
+  },
   {
     to: "/app/admin/categories",
     labelKey: "admin.nav_taxonomy",

@@ -54,6 +54,8 @@ export type EmailKind =
   | "community_supplier_published" // admin approved the listing, it's now live
   | "community_supplier_rejected" // admin rejected a pending listing during moderation
   | "community_supplier_reported" // first user report on a live listing, heads-up to the contact
+  | "vendor_claim_campaign" // admin-run invite to an unclaimed listing's contact_email: "take over your profile"
+  | "vendor_claim_campaign_reminder" // one nudge 2 days later to invites nobody clicked
   | "vendor_claim_verify" // P2.C, sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
@@ -216,6 +218,13 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Send only on the FIRST report (cooldown built in via reportCount === 1)
   // so a single bad-faith reporter can't spam the inbox.
   community_supplier_reported: "outreach",
+  // Outreach: the purest case in the catalogue. WE initiate, the recipient has
+  // no Weddly account, and they never asked for anything. Carries its own
+  // address-level opt-out (email_optouts) since there is no user row to hold a
+  // preferences token, plus the List-Unsubscribe headers Gmail's bulk-sender
+  // rules expect.
+  vendor_claim_campaign: "outreach",
+  vendor_claim_campaign_reminder: "outreach",
   // Outreach: anyone (no auth required) can hit /api/vendor/claim/start with a
   // listing id, and the listing's contact_email gets the mail, the recipient
   // didn't necessarily start the flow themselves.

@@ -5230,6 +5230,7 @@ export interface LocaleMessages {
     nav_suppliers: string;
     nav_users: string;
     nav_vendors: string;
+    nav_vendor_campaign: string;
     nav_planners: string;
     nav_waitlist: string;
     nav_planner_waitlist: string;
@@ -6492,6 +6493,65 @@ export interface LocaleMessages {
     analytics_demo_top_features_empty: string;
     analytics_demo_feature_demos_one: string;
     analytics_demo_feature_demos_other: string;
+    /** /app/admin/vendor-campaign, the claim-invite campaign console. */
+    campaign_title: string;
+    campaign_subtitle: string;
+    campaign_new: string;
+    campaign_slug: string;
+    campaign_country: string;
+    campaign_country_all: string;
+    campaign_daily_cap: string;
+    campaign_create: string;
+    campaign_created: string;
+    campaign_empty: string;
+    campaign_status_paused: string;
+    campaign_status_running: string;
+    campaign_status_done: string;
+    campaign_start: string;
+    campaign_pause: string;
+    /** Receives `{n}`, the batch size. */
+    campaign_send_batch: string;
+    campaign_run_reminders: string;
+    /** Receives `{n}`, how many reminders actually went out. */
+    campaign_reminders_sent: string;
+    /** Receives `{n}`, how many invites actually went out. */
+    campaign_batch_sent: string;
+    campaign_stat_remaining: string;
+    campaign_stat_sent: string;
+    campaign_stat_opened: string;
+    campaign_stat_clicked: string;
+    campaign_stat_reminded: string;
+    campaign_stat_claimed: string;
+    campaign_stat_failed: string;
+    /** Receives `{n}` + `{cap}`: sent in the last 24h against the daily cap. */
+    campaign_stat_today: string;
+    /** Receives `{months}`, `{left}`, `{cap}`: the free window the copy promises. */
+    campaign_offer: string;
+    campaign_offer_none: string;
+    campaign_targets: string;
+    campaign_targets_hint: string;
+    campaign_targets_empty: string;
+    campaign_sends: string;
+    campaign_send_sent: string;
+    campaign_send_clicked: string;
+    campaign_send_reminded: string;
+    campaign_send_claimed: string;
+    campaign_send_failed: string;
+    campaign_optout: string;
+    campaign_optout_hint: string;
+    campaign_optout_email: string;
+    campaign_optout_add: string;
+    campaign_optout_added: string;
+    campaign_start_confirm_title: string;
+    /** Receives `{n}` addresses queued, and `{cap}`, the daily ceiling. */
+    campaign_start_confirm_body: string;
+    campaign_start_confirm_cta: string;
+    campaign_batch_confirm_title: string;
+    /** Receives `{n}`, the batch size. */
+    campaign_batch_confirm_body: string;
+    campaign_batch_confirm_cta: string;
+    campaign_err_cap: string;
+    campaign_err_email: string;
     /** /app/admin/email-list — collected emails from all sources. */
     email_list_title: string;
     email_list_subtitle: string;

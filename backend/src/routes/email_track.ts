@@ -19,7 +19,15 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
-import type { Router } from "../lib/http";
+import {
+  addOptOut,
+  getSendById,
+  markCampaignOpened,
+  resolveInviteClaimToken,
+  verifyCampaignOptOutToken,
+  verifyCampaignPixelToken,
+} from "../domain/vendor_campaign";
+import { type Ctx, HttpError, type Router } from "../lib/http";
 
 // 1×1 transparent GIF (43 bytes, canonical minimum).
 const PIXEL = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
@@ -51,6 +59,85 @@ function verifyOpenTrackingToken(token: string): { guestId: number; coupleId: nu
   return { guestId, coupleId };
 }
 
+function pixelResponse(): Response {
+  return new Response(PIXEL, {
+    status: 200,
+    headers: {
+      "Content-Type": "image/gif",
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      Pragma: "no-cache",
+    },
+  });
+}
+
+// ── Claim-invite campaign ───────────────────────────────────────────────────
+// The click redirect is what the campaign actually optimises for: a hit here is
+// a real human (the pixel is not, see the caveats above), so it is both the
+// engagement metric and the gate on whether a reminder goes out.
+
+function handleInviteRedirect(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  if (!token || token.length < 16 || token.length > 128) {
+    return Response.redirect(`${CONFIG.frontendBaseUrl}/vendors`, 302);
+  }
+  const live = resolveInviteClaimToken(token);
+  // No live claim means the listing was claimed already (or is gone). Send them
+  // to sign-in rather than a dead-end error: the most likely reader of a
+  // second click is the vendor who just finished claiming.
+  const dest = live
+    ? `${CONFIG.frontendBaseUrl}/vendor/claim/verify/${encodeURIComponent(live)}`
+    : `${CONFIG.frontendBaseUrl}/login`;
+  return Response.redirect(dest, 302);
+}
+
+/** Address-level opt-out. Mirrors `email_prefs.ts`: the GET is one-click and
+ *  renders a confirmation, the POST exists for the RFC 8058 bot and answers
+ *  204 even on a bad token (never feed the bot a 4xx). */
+function optOutEmailFromToken(token: string): string | null {
+  const sendId = verifyCampaignOptOutToken(token);
+  if (sendId == null) return null;
+  return getSendById(sendId)?.email ?? null;
+}
+
+function handleCampaignOptOut(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const email = optOutEmailFromToken(token);
+  if (email) addOptOut(email, "vendor_claim_campaign");
+  return new Response(optOutHtml(email != null), {
+    status: email ? 200 : 404,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+function handleCampaignOptOutPost(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const email = optOutEmailFromToken(token);
+  if (email) addOptOut(email, "vendor_claim_campaign");
+  return new Response(null, { status: 204 });
+}
+
+/** Static HTML, deliberately bilingual: this page is reached from a cold mail
+ *  in either language and costs nothing to render both ways. No user input is
+ *  interpolated, so there is nothing to escape. */
+function optOutHtml(success: boolean): string {
+  const title = success ? "Rendben / Done" : "Érvénytelen link / Invalid link";
+  const body = success
+    ? `<p>Nem írunk többet erre a címre. A hirdetés fent marad, de ha szeretnéd levetetni, válaszolj erre az emailre.</p>
+       <p style="color:#7a7065;">We won't email this address again. Your listing stays up; reply to the email if you'd like it removed entirely.</p>`
+    : `<p>Ez a link nem érvényes.</p>
+       <p style="color:#7a7065;">This link is no longer valid. Reply to the email and a human will sort it out.</p>`;
+  return `<!doctype html>
+<html lang="hu"><head><meta charset="utf-8" /><title>${title}</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  body{margin:0;padding:32px 16px;background:#f4efe7;color:#1c1714;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+  .card{max-width:560px;margin:0 auto;background:#fff;border:1px solid #eae4dc;border-radius:14px;padding:32px;}
+  h1{font-family:Georgia,'Times New Roman',serif;font-size:22px;margin:0 0 18px 0;}
+  p{font-size:15px;line-height:1.55;margin:0 0 12px 0;}
+</style>
+</head><body><div class="card"><h1>${title}</h1>${body}<p style="margin-top:24px;font-size:13px;color:#7a7065;">Weddly</p></div></body></html>`;
+}
+
 export function registerEmailTrackRoutes(router: Router): void {
   router.get("/api/emails/track/open", (ctx) => {
     const t = ctx.url.searchParams.get("t") ?? "";
@@ -63,13 +150,24 @@ export function registerEmailTrackRoutes(router: Router): void {
           WHERE id = ? AND couple_id = ? AND invited_at IS NOT NULL`,
       ).run(now(), guestId, coupleId);
     }
-    return new Response(PIXEL, {
-      status: 200,
-      headers: {
-        "Content-Type": "image/gif",
-        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-        Pragma: "no-cache",
-      },
-    });
+    return pixelResponse();
   });
+
+  router.get("/api/emails/track/campaign", (ctx) => {
+    const sendId = verifyCampaignPixelToken(ctx.url.searchParams.get("t") ?? "");
+    if (sendId != null) markCampaignOpened(sendId);
+    return pixelResponse();
+  });
+
+  // Tracked one-click entry into the claim flow. `/r/` matches the existing
+  // tracked-redirect convention (see the supplier website redirect).
+  router.get("/r/vendor-invite/:token", handleInviteRedirect);
+
+  router.get("/api/emails/optout/:token", handleCampaignOptOut);
+  router.post("/api/emails/optout/:token", handleCampaignOptOutPost);
+  // Pretty alias for the visible footer link, same reasoning as
+  // /unsubscribe/:token: the router matches before the SPA fallback, so the
+  // recipient gets the confirmation instead of the React 404.
+  router.get("/email-optout/:token", handleCampaignOptOut);
+  router.post("/email-optout/:token", handleCampaignOptOutPost);
 }

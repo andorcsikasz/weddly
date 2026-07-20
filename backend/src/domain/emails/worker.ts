@@ -18,6 +18,7 @@ import { resolveRecipients, sendGuestMessage } from "../guest_messages";
 import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "../listings";
 import { insertCoupleNotification, listActionableTimelineTasks } from "../notifications";
 import { type PlannerProfileRow, sendPlannerProfileReminder } from "../planner_profile";
+import { getCampaignRow, sendCampaignBatch, sendCampaignReminders } from "../vendor_campaign";
 import {
   isVendorListingIncomplete,
   sendVendorIncompleteReminder,
@@ -1043,6 +1044,48 @@ function ymd(ts: number): string {
 let timer: ReturnType<typeof setInterval> | null = null;
 
 /** Start the hourly sweep. Idempotent. */
+// ── Vendor claim-invite campaign ────────────────────────────────────────────
+// Kept OUT of `runEmailSweep` and awaited separately: every other sweep fires
+// `void sendKind(...)` and counts what it queued, but a campaign send has to
+// await its own result to record delivered-vs-failed per recipient. Making the
+// whole sweep async for one caller would be the wrong trade.
+
+/** Per-sweep slice of a campaign's daily budget. The worker ticks hourly, so
+ *  ceil(cap/24) spreads the day's volume evenly instead of firing the whole
+ *  allowance in the first hour: a smooth trickle is what keeps a cold campaign
+ *  out of spam folders. Never exceeds the general per-sweep burst cap. */
+function campaignSlicePerSweep(dailyCap: number): number {
+  return Math.max(1, Math.min(SENDS_PER_SWEEP_CAP, Math.ceil(dailyCap / 24)));
+}
+
+/** Pace out every running claim-invite campaign, then fire the one-shot 2-day
+ *  reminders. Returns counts so tests can assert without wall-clock waits. */
+export async function runCampaignSweep(
+  ts: number = now(),
+): Promise<{ invites: number; reminders: number }> {
+  let invites = 0;
+  const running = db
+    .prepare("SELECT * FROM vendor_claim_campaigns WHERE status = 'running' ORDER BY id ASC")
+    .all() as Array<{ id: number; daily_cap: number; country: string | null; status: string }>;
+  for (const row of running) {
+    const campaign = getCampaignRow(row.id);
+    if (!campaign) continue;
+    invites += await sendCampaignBatch(campaign, campaignSlicePerSweep(campaign.daily_cap), ts);
+  }
+  const reminders = await sendCampaignReminders(SENDS_PER_SWEEP_CAP, ts);
+  return { invites, reminders };
+}
+
+function kickCampaignSweep(label: string): void {
+  // Fire-and-forget at the timer boundary: the interval callback is sync, and a
+  // campaign batch can take seconds. Failures are reported, never thrown.
+  void runCampaignSweep()
+    .then((r) => {
+      if (r.invites + r.reminders > 0) log.info(label, r);
+    })
+    .catch((e) => reportError("emails.campaign_sweep_failed", e));
+}
+
 export function startEmailWorker(): void {
   if (timer) return;
   // Fire once on boot so a long downtime catches up immediately.
@@ -1070,6 +1113,7 @@ export function startEmailWorker(): void {
   } catch (e) {
     reportError("emails.boot_sweep_failed", e);
   }
+  kickCampaignSweep("emails.boot_campaign_sweep");
   timer = setInterval(
     () => {
       try {
@@ -1095,6 +1139,7 @@ export function startEmailWorker(): void {
       } catch (e) {
         reportError("emails.hourly_sweep_failed", e);
       }
+      kickCampaignSweep("emails.hourly_campaign_sweep");
     },
     1000 * 60 * 60,
   );
