@@ -1267,6 +1267,27 @@ CREATE TABLE IF NOT EXISTS vendor_unavailable_dates (
 CREATE INDEX IF NOT EXISTS idx_vendor_unavailable_dates_vendor
   ON vendor_unavailable_dates(vendor_account_id, blocked_date);
 
+-- Vendor availability SETTINGS — the recurring layer under the per-date rows
+-- above. `weekdays` is the general pattern: which weekdays the vendor works at
+-- all (JSON array of ISO weekday numbers, 1 = Monday … 7 = Sunday). NULL means
+-- "every day", which is exactly the behaviour before this table existed, so
+-- every pre-existing vendor keeps working with no migration.
+--
+-- `vendor_unavailable_dates` becomes the EXCEPTION layer on top: a row there
+-- either blocks a day the pattern allows, or (with is_available = 1) opens a
+-- day the pattern excludes. Resolution order lives in shared/vendor_availability.ts.
+--
+-- Its own table rather than columns on `vendor_accounts` because this is where
+-- the rest of the scheduling controls belong as they land (minimum notice,
+-- booking horizon, buffers, holiday auto-block) — one row of availability
+-- policy per vendor, instead of steadily widening the account table.
+CREATE TABLE IF NOT EXISTS vendor_availability_settings (
+  vendor_account_id INTEGER PRIMARY KEY REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  weekdays          TEXT,                                      -- JSON [1..7]; NULL = every day
+  created_at        INTEGER NOT NULL,
+  updated_at        INTEGER NOT NULL
+);
+
 -- Vendor "payments" — lightweight, in-app-only money tracking per Weddly-sourced
 -- client (booking). NO real money movement / Stripe Connect: each row is one
 -- labelled installment in the vendor's payment schedule for a booking. Amount is

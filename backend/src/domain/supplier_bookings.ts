@@ -14,8 +14,14 @@
 
 import type { VendorBlockedDay } from "@shared/listings";
 import type { BookingStatus, SupplierBooking, SupplierAvailability } from "@shared/suppliers";
+import {
+  type AvailabilityException,
+  isBookableDay,
+  resolveDayAvailability,
+} from "@shared/vendor_availability";
 import { db, now } from "../db";
 import { isVendorEntitled, recordVendorLeadCredit } from "./vendor_billing";
+import { getVendorWeekdays } from "./vendor_availability_settings";
 
 const VALID_STATUSES: ReadonlySet<BookingStatus> = new Set([
   "requested",
@@ -99,7 +105,7 @@ export function listBlockedDates(vendorAccountId: number): string[] {
   const rows = db
     .prepare(
       `SELECT blocked_date FROM vendor_unavailable_dates
-        WHERE vendor_account_id = ?
+        WHERE vendor_account_id = ? AND is_available = 0
         ORDER BY blocked_date ASC`,
     )
     .all(vendorAccountId) as Array<{ blocked_date: string }>;
@@ -111,7 +117,7 @@ export function listBlockedDays(vendorAccountId: number): VendorBlockedDay[] {
   const rows = db
     .prepare(
       `SELECT blocked_date, blocked_hours FROM vendor_unavailable_dates
-        WHERE vendor_account_id = ?
+        WHERE vendor_account_id = ? AND is_available = 0
         ORDER BY blocked_date ASC`,
     )
     .all(vendorAccountId) as Array<{ blocked_date: string; blocked_hours: string | null }>;
@@ -124,7 +130,7 @@ export function listFullyBlockedDates(vendorAccountId: number): string[] {
   const rows = db
     .prepare(
       `SELECT blocked_date FROM vendor_unavailable_dates
-        WHERE vendor_account_id = ? AND blocked_hours IS NULL
+        WHERE vendor_account_id = ? AND blocked_hours IS NULL AND is_available = 0
         ORDER BY blocked_date ASC`,
     )
     .all(vendorAccountId) as Array<{ blocked_date: string }>;
@@ -137,31 +143,64 @@ export function listPartialBlockedDates(vendorAccountId: number): string[] {
   const rows = db
     .prepare(
       `SELECT blocked_date FROM vendor_unavailable_dates
-        WHERE vendor_account_id = ? AND blocked_hours IS NOT NULL
+        WHERE vendor_account_id = ? AND blocked_hours IS NOT NULL AND is_available = 0
         ORDER BY blocked_date ASC`,
     )
     .all(vendorAccountId) as Array<{ blocked_date: string }>;
   return rows.map((r) => r.blocked_date);
 }
 
+/** Every per-date EXCEPTION, in both directions, keyed by date. A row is either
+ *  a block (`available: false`, whole-day or partial hours) or an "exceptionally
+ *  working" override (`available: true`) on a day the weekly pattern excludes. */
+export function listAvailabilityExceptions(
+  vendorAccountId: number,
+): Map<string, AvailabilityException> {
+  const rows = db
+    .prepare(
+      `SELECT blocked_date, blocked_hours, is_available FROM vendor_unavailable_dates
+        WHERE vendor_account_id = ?`,
+    )
+    .all(vendorAccountId) as Array<{
+    blocked_date: string;
+    blocked_hours: string | null;
+    is_available: number;
+  }>;
+  const out = new Map<string, AvailabilityException>();
+  for (const r of rows) {
+    out.set(r.blocked_date, {
+      available: r.is_available === 1,
+      hours: parseBlockedHours(r.blocked_hours),
+    });
+  }
+  return out;
+}
+
 /** Block a day. `hours === null` blocks the whole day; a non-empty sorted hour
  *  list blocks only those hours. Upserts, so re-blocking a day switches it
- *  between full/partial (or updates the hour set) instead of being ignored. */
+ *  between full/partial (or updates the hour set) instead of being ignored.
+ *
+ *  `available: true` flips the row's meaning to the other direction: the vendor
+ *  exceptionally WORKS this day even though the weekly pattern excludes that
+ *  weekday. Hours are meaningless there and are stored as null. */
 export function blockDate(
   vendorAccountId: number,
   date: string,
   hours: number[] | null,
   reason: string | null,
+  available = false,
 ): void {
   const ts = now();
-  const hoursJson = hours && hours.length > 0 ? JSON.stringify(hours) : null;
+  const hoursJson = available || !hours || hours.length === 0 ? null : JSON.stringify(hours);
   db.prepare(
     `INSERT INTO vendor_unavailable_dates
-       (vendor_account_id, blocked_date, blocked_hours, reason, created_at)
-     VALUES (?, ?, ?, ?, ?)
+       (vendor_account_id, blocked_date, blocked_hours, reason, is_available, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(vendor_account_id, blocked_date)
-       DO UPDATE SET blocked_hours = excluded.blocked_hours, reason = excluded.reason`,
-  ).run(vendorAccountId, date, hoursJson, reason, ts);
+       DO UPDATE SET blocked_hours = excluded.blocked_hours,
+                     reason        = excluded.reason,
+                     is_available  = excluded.is_available`,
+  ).run(vendorAccountId, date, hoursJson, reason, available ? 1 : 0, ts);
 }
 
 export function unblockDate(vendorAccountId: number, date: string): boolean {
@@ -177,16 +216,22 @@ export function unblockDate(vendorAccountId: number, date: string): boolean {
  *  for this vendor. Scans up to 365 days forward; returns null when nothing
  *  in the window is free (or the vendor doesn't exist). */
 export function nextAvailableDate(vendorAccountId: number): string | null {
-  // Only whole-day blocks (and confirmed bookings) make a day unavailable; a
-  // partial-hour block still leaves the day open for a booking.
-  const blocked = new Set(listFullyBlockedDates(vendorAccountId));
-  const confirmedRows = db
-    .prepare(
-      `SELECT event_date FROM supplier_bookings
-        WHERE vendor_account_id = ? AND status = 'confirmed'`,
-    )
-    .all(vendorAccountId) as Array<{ event_date: string }>;
-  for (const r of confirmedRows) blocked.add(r.event_date);
+  // Resolution (weekly pattern + per-date exceptions + confirmed bookings) is
+  // shared with the frontend so the vendor calendar, the public busy calendar
+  // and this can't disagree about what "free" means. A partial-hour block still
+  // leaves the day open for a booking.
+  const weekdays = getVendorWeekdays(vendorAccountId);
+  const exceptions = listAvailabilityExceptions(vendorAccountId);
+  const confirmed = new Set(
+    (
+      db
+        .prepare(
+          `SELECT event_date FROM supplier_bookings
+            WHERE vendor_account_id = ? AND status = 'confirmed'`,
+        )
+        .all(vendorAccountId) as Array<{ event_date: string }>
+    ).map((r) => r.event_date),
+  );
 
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
@@ -194,7 +239,13 @@ export function nextAvailableDate(vendorAccountId: number): string | null {
     const d = new Date(today);
     d.setUTCDate(d.getUTCDate() + i);
     const iso = d.toISOString().slice(0, 10);
-    if (!blocked.has(iso)) return iso;
+    const state = resolveDayAvailability({
+      hasConfirmedBooking: confirmed.has(iso),
+      exception: exceptions.get(iso) ?? null,
+      weekdays,
+      date: iso,
+    });
+    if (isBookableDay(state)) return iso;
   }
   return null;
 }
@@ -202,14 +253,26 @@ export function nextAvailableDate(vendorAccountId: number): string | null {
 export function getAvailability(supplierId: string): SupplierAvailability {
   const listing = getListingFor(supplierId);
   if (!listing || listing.vendor_account_id === null) {
-    return { unavailable_dates: [], partial_dates: [], next_available: null, bookable: false };
+    return {
+      unavailable_dates: [],
+      partial_dates: [],
+      next_available: null,
+      bookable: false,
+      available_weekdays: null,
+    };
   }
   // Direct inquiries + the busy calendar are PRO features (freemium): a
   // claimed listing whose vendor is on the FREE plan stays visible but is not
   // bookable, and the frontend falls back to the tracked website redirect, same
   // as an unclaimed listing.
   if (!isVendorEntitled(listing.vendor_account_id)) {
-    return { unavailable_dates: [], partial_dates: [], next_available: null, bookable: false };
+    return {
+      unavailable_dates: [],
+      partial_dates: [],
+      next_available: null,
+      bookable: false,
+      available_weekdays: null,
+    };
   }
   return {
     // Only whole-day blocks read as "fully booked"; partial-hour blocks surface
@@ -218,6 +281,9 @@ export function getAvailability(supplierId: string): SupplierAvailability {
     partial_dates: listPartialBlockedDates(listing.vendor_account_id),
     next_available: nextAvailableDate(listing.vendor_account_id),
     bookable: true,
+    // The recurring layer. Couples' calendars grey out the weekdays this vendor
+    // doesn't work, without us enumerating an unbounded date set.
+    available_weekdays: getVendorWeekdays(listing.vendor_account_id),
   };
 }
 

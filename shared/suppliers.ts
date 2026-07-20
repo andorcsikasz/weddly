@@ -719,6 +719,15 @@ export interface SupplierAvailability {
   /** True when the supplier is claimed by a vendor and therefore accepts
    *  booking inquiries. v1 rejects inquiries on unclaimed listings. */
   bookable: boolean;
+  /** The vendor's recurring weekly working pattern as ISO weekday numbers
+   *  (1 = Monday … 7 = Sunday), or null for "works any day".
+   *
+   *  Sent as the PATTERN rather than as enumerated dates because it describes an
+   *  unbounded set — a vendor who only works weekends would otherwise need every
+   *  weekday from here to forever listed in `unavailable_dates`. The client
+   *  resolves a given day with `resolveDayAvailability` in
+   *  shared/vendor_availability.ts, the same function the server uses. */
+  available_weekdays: number[] | null;
 }
 
 /** Returned by `GET /api/suppliers/:id`. Wraps the standard DirectorySupplier

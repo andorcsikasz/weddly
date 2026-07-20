@@ -299,9 +299,17 @@ export function buildVendorDesiredEvents(
     out.push({ sourceKind, sourceId: String(b.id), hash: hashBody(body), body });
   }
 
+  // `is_available = 0` only: a row with is_available = 1 is the OPPOSITE of a
+  // block (an "exceptionally working" day), so pushing it as ⛔ would tell the
+  // vendor's Google calendar the exact inverse of the truth.
+  //
+  // Note what is deliberately NOT pushed: days the vendor is unavailable purely
+  // because of their weekly pattern. A vendor who only works weekends would
+  // otherwise get four all-day "Unavailable" events every week, forever. The
+  // pattern is a standing rule, not an event.
   const blocked = db
     .prepare(
-      "SELECT blocked_date, blocked_hours, reason FROM vendor_unavailable_dates WHERE vendor_account_id = ?",
+      "SELECT blocked_date, blocked_hours, reason FROM vendor_unavailable_dates WHERE vendor_account_id = ? AND is_available = 0",
     )
     .all(vendorAccountId) as BlockedSourceRow[];
 

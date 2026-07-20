@@ -14,6 +14,8 @@ import type { VendorAvailabilityView } from "@shared/listings";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
+import { coerceWeekdays, type VendorAvailabilitySettings } from "@shared/vendor_availability";
+import { getVendorWeekdays, setVendorWeekdays } from "../domain/vendor_availability_settings";
 import {
   blockDate,
   isIsoDate,
@@ -68,17 +70,25 @@ async function handleGet(ctx: Ctx): Promise<Response> {
 
 async function handleBlock(ctx: Ctx): Promise<Response> {
   const { account } = resolveVendorListing(ctx);
-  const body = await readJson<{ date?: unknown; hours?: unknown; reason?: unknown }>(ctx.req);
+  const body = await readJson<{
+    date?: unknown;
+    hours?: unknown;
+    reason?: unknown;
+    available?: unknown;
+  }>(ctx.req);
   const date = typeof body.date === "string" ? body.date.trim() : "";
   if (!isIsoDate(date)) throw new HttpError(400, "date must be a valid YYYY-MM-DD");
   if (date < todayIso()) throw new HttpError(400, "cannot block a past date");
-  const hours = parseHoursInput(body.hours);
+  // `available: true` flips the row to the other direction: the vendor
+  // exceptionally WORKS this day even though the weekly pattern excludes it.
+  const available = body.available === true;
+  const hours = available ? null : parseHoursInput(body.hours);
   const reason =
     typeof body.reason === "string" && body.reason.trim()
       ? body.reason.trim().slice(0, MAX_REASON_LEN)
       : null;
 
-  blockDate(account.id, date, hours, reason);
+  blockDate(account.id, date, hours, reason, available);
   markVendorCalendarDirty(account.id);
   addAuditLog({
     actor_user_id: account.owner_user_id,
@@ -86,7 +96,12 @@ async function handleBlock(ctx: Ctx): Promise<Response> {
     action: "vendor.availability_block",
     target_kind: "vendor_account",
     target_id: account.id,
-    after: { blocked_date: date, hours: hours ?? "all_day", has_reason: reason !== null },
+    after: {
+      blocked_date: date,
+      hours: hours ?? "all_day",
+      has_reason: reason !== null,
+      available,
+    },
   });
   return json(buildView(account.id), { status: 201 });
 }
@@ -113,8 +128,40 @@ async function handleUnblock(ctx: Ctx): Promise<Response> {
   return json(buildView(account.id));
 }
 
+/** The recurring weekly pattern — which weekdays this vendor generally works.
+ *  Its own resource because it is settings rather than dated data. */
+async function handleGetPattern(ctx: Ctx): Promise<Response> {
+  const { account } = resolveVendorListing(ctx);
+  const settings: VendorAvailabilitySettings = { weekdays: getVendorWeekdays(account.id) };
+  return json(settings);
+}
+
+async function handlePutPattern(ctx: Ctx): Promise<Response> {
+  const { account } = resolveVendorListing(ctx);
+  const body = await readJson<{ weekdays?: unknown }>(ctx.req);
+  // Anything that isn't a usable partial set (absent, empty, or all seven)
+  // resolves to null = "available every day", so there is exactly one
+  // representation of the unrestricted case and a vendor can never accidentally
+  // store "never available" and vanish from every search.
+  const weekdays = coerceWeekdays(body.weekdays);
+  setVendorWeekdays(account.id, weekdays);
+  markVendorCalendarDirty(account.id);
+  addAuditLog({
+    actor_user_id: account.owner_user_id,
+    couple_id: null,
+    action: "vendor.availability_pattern",
+    target_kind: "vendor_account",
+    target_id: account.id,
+    after: { weekdays: weekdays ?? "every_day" },
+  });
+  const settings: VendorAvailabilitySettings = { weekdays };
+  return json(settings);
+}
+
 export function registerVendorAvailabilityRoutes(router: Router) {
   router.get("/api/vendor/availability/me", handleGet);
   router.post("/api/vendor/availability/me", handleBlock);
   router.delete("/api/vendor/availability/me", handleUnblock);
+  router.get("/api/vendor/availability/me/pattern", handleGetPattern);
+  router.put("/api/vendor/availability/me/pattern", handlePutPattern);
 }
