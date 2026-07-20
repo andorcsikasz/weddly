@@ -492,6 +492,10 @@ export interface ShowcaseVendorRow {
   source: string;
   /** ISO 3166-1 alpha-2, uppercase. Derived, not stored — see below. */
   country: string;
+  /** Google Places average, or null when never resolved (no API key, a miss,
+   *  or an unrated place). Ranking input only; never rendered, which keeps us
+   *  clear of Google's attribution requirements for displayed ratings. */
+  google_rating: number | null;
   created_at: number;
 }
 
@@ -509,7 +513,7 @@ export function listShowcaseCandidates(): ShowcaseVendorRow[] {
   const rows = db
     .prepare(
       `SELECT l.id, l.name, l.category, l.city, l.hero_image_url, l.source, l.created_at,
-              va.country AS owner_country
+              l.google_rating, va.country AS owner_country
          FROM listings l
          LEFT JOIN vendor_accounts va ON va.id = l.vendor_account_id
         WHERE l.hero_image_url IS NOT NULL AND l.hero_image_url != ''

@@ -502,8 +502,9 @@ function handlePublicShowcase(ctx: Ctx): Response {
   const pool = requestedCountry
     ? candidates.filter((r) => r.country === requestedCountry)
     : candidates;
-  // Rank: the preferred country, then registered Weddly vendors, then newest.
-  // Each tier only breaks ties inside the one above it.
+  // Rank: the preferred country, then registered Weddly vendors, then how the
+  // outside world rates them (Google Places, null = unrated and sorted last),
+  // then newest. Each tier only breaks ties inside the one above it.
   const ranked = [...pool].sort((a, b) => {
     const aHome = preferCountry && a.country === preferCountry ? 1 : 0;
     const bHome = preferCountry && b.country === preferCountry ? 1 : 0;
@@ -511,6 +512,9 @@ function handlePublicShowcase(ctx: Ctx): Response {
     const aClaimed = a.source === "claimed" ? 1 : 0;
     const bClaimed = b.source === "claimed" ? 1 : 0;
     if (aClaimed !== bClaimed) return bClaimed - aClaimed;
+    const aRated = a.google_rating ?? -1;
+    const bRated = b.google_rating ?? -1;
+    if (aRated !== bRated) return bRated - aRated;
     return b.created_at - a.created_at;
   });
 

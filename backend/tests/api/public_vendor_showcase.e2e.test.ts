@@ -183,6 +183,33 @@ describe("public vendor showcase", () => {
     expect(r.data.total).toBe(1);
   });
 
+  test("orders by Google rating inside a tier, unrated last", async () => {
+    // Same source and same category, so the rating is the only thing left to
+    // sort on. Inserted worst-first to prove the order isn't just insertion.
+    insertListing({ id: "cur-a", source: "curated", category: "nails", name: "Three Star" });
+    insertListing({ id: "cur-b", source: "curated", category: "nails", name: "Unrated" });
+    insertListing({ id: "cur-c", source: "curated", category: "nails", name: "Four Nine" });
+    db.prepare("UPDATE listings SET google_rating = 3.0 WHERE id = 'cur-a'").run();
+    db.prepare("UPDATE listings SET google_rating = 4.9 WHERE id = 'cur-c'").run();
+
+    const r = await getShowcase();
+    const nails = r.data.categories.find((c) => c.category === "nails")?.vendors ?? [];
+    expect(nails.map((v) => v.id)).toEqual(["cur-c", "cur-a", "cur-b"]);
+  });
+
+  test("a registered vendor outranks a better-rated curated entry", async () => {
+    // Rating breaks ties WITHIN a tier; it never promotes a curated listing
+    // above a business that actually signed up.
+    insertListing({ id: "cur-top", source: "curated", category: "lighting", name: "Curated 5.0" });
+    insertListing({ id: "v77", source: "claimed", category: "lighting", name: "Weddly Lighting" });
+    db.prepare("UPDATE listings SET google_rating = 5.0 WHERE id = 'cur-top'").run();
+    db.prepare("UPDATE listings SET google_rating = 3.1 WHERE id = 'v77'").run();
+
+    const r = await getShowcase();
+    const lighting = r.data.categories.find((c) => c.category === "lighting")?.vendors ?? [];
+    expect(lighting.map((v) => v.id)).toEqual(["v77", "cur-top"]);
+  });
+
   test("viewer_country is null when IP geo is unavailable", async () => {
     insertListing({ category: "venue", name: "HU Venue" });
 

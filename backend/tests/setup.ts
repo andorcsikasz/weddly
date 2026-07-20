@@ -135,6 +135,12 @@ process.env.ADDRESS_SUGGEST_FAKE = "1";
 process.env.DEEPL_API_KEY = "test-deepl-key";
 process.env.DEEPL_FAKE = "1";
 
+// Google Places ratings (browse-teaser ranking input): key pinned NON-empty so
+// placesConfigured() is true, GOOGLE_PLACES_FAKE=1 so the stub answers instead
+// of the billed API. Same shape as the DeepL gate above.
+process.env.GOOGLE_PLACES_API_KEY = "test-places-key";
+process.env.GOOGLE_PLACES_FAKE = "1";
+
 // Wipe the test DB before the server boots — every run starts clean. Target
 // the SAME path the server is about to open (DB_PATH, resolved above), NOT the
 // hardcoded default: a worktree-parallel run overrides it via BUN_TEST_DB_PATH,
