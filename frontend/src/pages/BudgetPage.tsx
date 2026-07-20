@@ -44,11 +44,16 @@ import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
-  applyCategoryActual,
-  applyCategoryPaid,
-  applyCategoryPlanned,
+  amountBody,
+  commitLinePlan,
+  createBudgetWriteQueue,
   guestCountBaseline,
   guestCountBounds,
+  isNoopPlan,
+  mergeLines,
+  planCategoryActual,
+  planCategoryPaid,
+  planCategoryPlanned,
 } from "../lib/budget";
 import {
   hydrateCostPlanningCount,
@@ -157,6 +162,31 @@ export default function BudgetPage() {
   /** Snapshot id currently being restored — disables both action buttons on
    *  the affected card and shows an inline spinner. Null when idle. */
   const [restoringId, setRestoringId] = useState<number | null>(null);
+
+  /** Serialises writes per row/category. Without it, two quick drags on the
+   *  same slider PATCH concurrently and the server keeps whichever response
+   *  happens to land last; it also tells us when a slow response has been
+   *  superseded so it can't overwrite a newer optimistic value. */
+  const writes = useRef(createBudgetWriteQueue()).current;
+  /** Freshest `updated_at` per line, stamped synchronously as each response
+   *  lands. `lines` state can't serve as the If-Match source: a queued
+   *  follow-up write starts as soon as the previous response resolves, which
+   *  is before React has re-rendered with it — reading the version off state
+   *  would send the pre-edit value and 409 the user against their own edit. */
+  const versionsRef = useRef(new Map<number, number>());
+  function stampVersions(rows: BudgetLine[]) {
+    for (const row of rows) versionsRef.current.set(row.id, row.updated_at);
+  }
+  /** Adopt server rows: record their version, and unless this response has
+   *  already been superseded, merge them into `lines` by id. Merging by id
+   *  (never a wholesale array replace built from a stale snapshot) is what
+   *  stops one row's save from reverting another row's in-flight edit. */
+  function adoptRows(rows: BudgetLine[], latest: boolean) {
+    stampVersions(rows);
+    if (latest) setLines((prev) => mergeLines(prev, rows));
+  }
+  const ifMatchFor = (line: BudgetLine) => versionsRef.current.get(line.id) ?? line.updated_at;
+
   async function refresh() {
     const [linesR, snapsR, coupleR, suppliersR, docsR, paymentsR] = await Promise.all([
       budgetApi.listLines(),
@@ -167,6 +197,7 @@ export default function BudgetPage() {
       budgetPaymentApi.list(),
     ]);
     setLines(linesR.lines);
+    stampVersions(linesR.lines);
     setSnapshots(snapsR.snapshots);
     setCouple(coupleR.couple);
     setCoupleSuppliers(suppliersR.suppliers ?? []);
@@ -327,16 +358,16 @@ export default function BudgetPage() {
     // setCustomRowPlanned) still see the latest lines.
     setLines((prev) => prev.map((l) => (l.id === line.id ? { ...l, [key]: val } : l)));
     try {
-      const r = await budgetApi.updateLine(
-        line.id,
-        { ...line, [key]: val },
-        { ifMatch: line.updated_at },
+      // Only the changed field goes over the wire. A full-row body also
+      // carries `label`, and the backend clears `preset_key` whenever a label
+      // is present — so every amount edit used to drop the row's preset name.
+      // The If-Match version is read at send time (see `versionsRef`), which
+      // is what stops a quick second edit on the same line from tripping the
+      // OCC guard with a phantom "valaki más is szerkesztette" on solo edits.
+      const { result, latest } = await writes.run(`line:${line.id}`, () =>
+        budgetApi.updateLine(line.id, amountBody(key, val), { ifMatch: ifMatchFor(line) }),
       );
-      // Adopt the server's fresh row (most importantly updated_at) so a
-      // quick second edit on the same line doesn't PATCH with a now-stale
-      // version and trip the OCC guard with a phantom "valaki más is
-      // szerkesztette" toast on solo edits.
-      setLines((prev) => prev.map((l) => (l.id === r.line.id ? r.line : l)));
+      adoptRows([result.line], latest);
       publish("budget:changed");
     } catch (e) {
       handleSaveError(e, () => save(line, key, val));
@@ -349,12 +380,10 @@ export default function BudgetPage() {
     if (nextNotes === line.notes) return;
     setLines((prev) => prev.map((l) => (l.id === line.id ? { ...l, notes: nextNotes } : l)));
     try {
-      const r = await budgetApi.updateLine(
-        line.id,
-        { ...line, notes: nextNotes },
-        { ifMatch: line.updated_at },
+      const { result, latest } = await writes.run(`line:${line.id}`, () =>
+        budgetApi.updateLine(line.id, { notes: nextNotes }, { ifMatch: ifMatchFor(line) }),
       );
-      setLines((prev) => prev.map((l) => (l.id === r.line.id ? r.line : l)));
+      adoptRows([result.line], latest);
       publish("budget:changed");
     } catch (e) {
       handleSaveError(e, () => saveNotes(line, notes));
@@ -370,7 +399,7 @@ export default function BudgetPage() {
         planned_huf: 0,
         actual_huf: 0,
       });
-      setLines((prev) => [...prev, r.line]);
+      adoptRows([r.line], true);
       publish("budget:changed");
     } catch (e) {
       handleSaveError(e, () => addLineForCategory(category));
@@ -391,7 +420,7 @@ export default function BudgetPage() {
         per_guest: options?.perGuest ?? false,
         icon: options?.icon ?? null,
       });
-      setLines((prev) => [...prev, r.line]);
+      adoptRows([r.line], true);
       publish("budget:changed");
     } catch (e) {
       handleSaveError(e, () => addCustomRow(label, plannedHuf, options));
@@ -419,64 +448,80 @@ export default function BudgetPage() {
    *  here so the two views stay in lockstep. */
   const isDefaultOtherLine = (line: BudgetLine) => line.label === "Egyéb" || line.label === "Other";
 
-  // Wrapped in useCallback so React.memo on the CostPlanningCard rows can
-  // skip re-renders when only the headcount slider moves. `lines` and `t`
-  // are stable during a drag (only `count` changes), so the callback
-  // identity holds for the duration of the drag.
+  /** Plan the write, land it locally, THEN send it. The old order (await the
+   *  PATCH, then replace the whole `lines` array) is what made the panel feel
+   *  slow and jumpy: until the response came back the new amount lived only
+   *  in the panel's transient drag preview, so touching another row wiped it;
+   *  and the replacement array was built from a snapshot captured before any
+   *  concurrent edit, so a slow save could silently revert a fast one.
+   *  Reads `linesRef` rather than `lines` so the callback identity survives a
+   *  headcount drag and React.memo on the rows keeps working. */
+  const commitCategoryPlan = useCallback(async function commitCategoryPlan(
+    category: BudgetCategory,
+    plan: ReturnType<typeof planCategoryPlanned>,
+    retry: () => void,
+  ) {
+    if (isNoopPlan(plan)) return;
+    setLines((prev) => mergeLines(prev, plan.updates));
+    try {
+      const { result, latest } = await writes.run(`cat:${category}:${plan.field}`, () =>
+        commitLinePlan(plan),
+      );
+      adoptRows(result, latest);
+      publish("budget:changed");
+    } catch (e) {
+      handleSaveError(e, retry);
+    }
+  }, []);
+
   const setAggregatedPlanned = useCallback(
     async function setAggregatedPlanned(category: BudgetCategory, newTotal: number) {
-      try {
-        const next = await applyCategoryPlanned(
+      await commitCategoryPlan(
+        category,
+        planCategoryPlanned(
           category,
           newTotal,
-          lines,
+          linesRef.current,
           t(`budget.cat.${category}`),
           category === "other" ? isDefaultOtherLine : undefined,
-        );
-        setLines(next);
-        publish("budget:changed");
-      } catch (e) {
-        handleSaveError(e, () => setAggregatedPlanned(category, newTotal));
-      }
+        ),
+        () => setAggregatedPlanned(category, newTotal),
+      );
     },
-    [lines, t],
+    [t, commitCategoryPlan],
   );
 
   const setAggregatedActual = useCallback(
     async function setAggregatedActual(category: BudgetCategory, newTotal: number) {
-      try {
-        const next = await applyCategoryActual(
+      await commitCategoryPlan(
+        category,
+        planCategoryActual(
           category,
           newTotal,
-          lines,
+          linesRef.current,
           t(`budget.cat.${category}`),
           category === "other" ? isDefaultOtherLine : undefined,
-        );
-        setLines(next);
-        publish("budget:changed");
-      } catch (e) {
-        handleSaveError(e, () => setAggregatedActual(category, newTotal));
-      }
+        ),
+        () => setAggregatedActual(category, newTotal),
+      );
     },
-    [lines, t],
+    [t, commitCategoryPlan],
   );
 
   const setAggregatedPaid = useCallback(
     async function setAggregatedPaid(category: BudgetCategory, newTotal: number) {
-      try {
-        const next = await applyCategoryPaid(
+      await commitCategoryPlan(
+        category,
+        planCategoryPaid(
           category,
           newTotal,
-          lines,
+          linesRef.current,
           category === "other" ? isDefaultOtherLine : undefined,
-        );
-        setLines(next);
-        publish("budget:changed");
-      } catch (e) {
-        handleSaveError(e, () => setAggregatedPaid(category, newTotal));
-      }
+        ),
+        () => setAggregatedPaid(category, newTotal),
+      );
     },
-    [lines],
+    [commitCategoryPlan],
   );
 
   async function removeAllInCategory(category: BudgetCategory) {
@@ -503,6 +548,7 @@ export default function BudgetPage() {
     } catch {
       const r = await budgetApi.listLines();
       setLines(r.lines);
+      stampVersions(r.lines);
     }
   }
 
@@ -578,13 +624,13 @@ export default function BudgetPage() {
         if (willFreeze && rewriteLines) {
           const displayed = Math.round(sumFor(lines) * factor);
           if (displayed > 0) {
-            const upd = await applyCategoryPlanned(
+            const plan = planCategoryPlanned(
               category,
               displayed,
               lines,
               t(`budget.cat.${category}`),
             );
-            setLines(upd);
+            if (!isNoopPlan(plan)) adoptRows(await commitLinePlan(plan), true);
           }
         }
         const r = await coupleApi.update({ frozen_categories: next });
@@ -597,13 +643,13 @@ export default function BudgetPage() {
           const cur = sumFor(linesRef.current);
           if (cur > 0) {
             const perBaseline = Math.round(cur / factor);
-            const upd = await applyCategoryPlanned(
+            const plan = planCategoryPlanned(
               category,
               perBaseline,
               linesRef.current,
               t(`budget.cat.${category}`),
             );
-            setLines(upd);
+            if (!isNoopPlan(plan)) adoptRows(await commitLinePlan(plan), true);
           }
         }
         publish("budget:changed");

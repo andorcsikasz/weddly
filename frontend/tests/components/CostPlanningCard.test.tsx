@@ -4,11 +4,16 @@
 //     out of sync with the per-row displays while the user is sliding.
 //   * stale row-level drag state used to leak past commits and contradict
 //     the source-of-truth `lines`. Lifting the drag map up to the card and
-//     clearing it whenever `lines` rehydrates is what we're guarding here.
+//     retiring each entry when its own commit lands is what we're guarding.
+//   * a released slider has to SAVE. It used to commit only on mouseup over
+//     the track, so releasing outside it (or a cancelled touch) dropped the
+//     edit entirely while the preview still showed the new amount — the
+//     "it looked saved, then jumped back" report.
+//   * one row's pending edit must survive another row's drag.
 
 import type { BudgetCategory, BudgetLine } from "@shared/types";
 import { describe, expect, it, mock } from "bun:test";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { CostPlanningCard } from "@/components/CostPlanningCard";
 import { I18nProvider } from "@/lib/i18n";
@@ -117,5 +122,70 @@ describe("<CostPlanningCard> live total", () => {
       </MemoryRouter>,
     );
     expect(totalDigits()).toContain("400000");
+  });
+});
+
+/** Slightly longer than the panel's COMMIT_DELAY_MS so a scheduled save has
+ *  definitely fired. Kept as a literal rather than importing the constant —
+ *  the point of the test is the observable behaviour, not the exact delay. */
+const AFTER_DEBOUNCE_MS = 500;
+// Wrapped in act() because the timer that fires inside the window settles the
+// row's drag preview, i.e. it updates state outside an event handler.
+const wait = (ms: number) => act(() => new Promise<void>((r) => setTimeout(r, ms)));
+
+describe("<CostPlanningCard> slider commits", () => {
+  it("saves a drag that never gets a pointerup on the track", async () => {
+    const onEditPlanned = mock(async () => {});
+    setup({ lines: [line(1, "venue", 300_000)], onEditPlanned });
+
+    // No pointerup/keyup: the gesture ended off the slider, which used to
+    // mean the amount was never persisted at all.
+    fireEvent.change(screen.getByRole("slider", { name: /venue/i }), {
+      target: { value: 500_000 },
+    });
+    expect(onEditPlanned).not.toHaveBeenCalled();
+
+    await wait(AFTER_DEBOUNCE_MS);
+    expect(onEditPlanned).toHaveBeenCalledTimes(1);
+    expect(onEditPlanned.mock.calls[0]).toEqual(["venue", 500_000]);
+  });
+
+  it("flushes on pointerup instead of waiting out the debounce", async () => {
+    const onEditPlanned = mock(async () => {});
+    setup({ lines: [line(1, "venue", 300_000)], onEditPlanned });
+
+    const slider = screen.getByRole("slider", { name: /venue/i });
+    fireEvent.change(slider, { target: { value: 500_000 } });
+    fireEvent.pointerUp(slider);
+    expect(onEditPlanned).toHaveBeenCalledTimes(1);
+
+    // The flush cancels the pending timer — no duplicate PATCH afterwards.
+    await wait(AFTER_DEBOUNCE_MS);
+    expect(onEditPlanned).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores a pointerup that follows no change", () => {
+    const onEditPlanned = mock(async () => {});
+    setup({ lines: [line(1, "venue", 300_000)], onEditPlanned });
+    fireEvent.pointerUp(screen.getByRole("slider", { name: /venue/i }));
+    expect(onEditPlanned).not.toHaveBeenCalled();
+  });
+
+  it("keeps a pending row's amount when another row's drag starts", () => {
+    // The regression: drag state was a single {category, value} slot, so
+    // touching a second slider erased the first row's uncommitted value and
+    // it snapped back to `lines` — visibly "jumping back" mid-edit.
+    const lines = [line(1, "venue", 300_000), line(2, "photo_video", 400_000)];
+    setup({ lines, count: 100, baseline: 100 });
+
+    const venue = screen.getByRole("slider", { name: /venue/i }) as HTMLInputElement;
+    const photo = screen.getByRole("slider", { name: /photo/i }) as HTMLInputElement;
+    fireEvent.change(venue, { target: { value: 1_000_000 } });
+    fireEvent.change(photo, { target: { value: 600_000 } });
+
+    expect(venue.value).toBe("1000000");
+    expect(photo.value).toBe("600000");
+    // …and the card total reflects both, not one of them reverted.
+    expect(totalDigits()).toContain("1600000");
   });
 });

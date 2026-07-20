@@ -40,6 +40,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { Link } from "react-router-dom";
@@ -79,6 +80,18 @@ function rangeFillStyle(
 
 // (Visual constants previously lived here — per-row tuning is now derived
 //  from `widthAnchor` directly so every row shares the same denominator.)
+
+/** How long a slider sits still before its value is persisted.
+ *
+ *  A range input only fires pointerup/keyup when the gesture ends ON the
+ *  track. Release outside it — or let the browser cancel the touch, or spin
+ *  the wheel over a focused slider — and the old commit-on-release wiring
+ *  never saved at all, while the preview kept showing the new amount until
+ *  something else cleared it. That's the "it looked saved, then jumped back"
+ *  report. Persisting a beat after the last move means every gesture lands;
+ *  pointerup/keyup just flush it early. It also collapses a run of arrow-key
+ *  steps into a single PATCH instead of one per keypress. */
+const COMMIT_DELAY_MS = 350;
 
 /** Categories whose planned cost scales with headcount. Everything else is
  *  treated as a fixed cost (venue rental, photographer day rate, rings, …). */
@@ -310,36 +323,48 @@ export function CostPlanningCard({
   const [showActualOverlay, setShowActualOverlay] = useState(false);
   const factor = baseline > 0 ? count / baseline : 1;
 
-  // In-progress drag for ONE slider at a time. The user can only physically
-  // drag a single slider at once, so a single {key, value} slot is enough —
-  // and it sidesteps the Map allocation that the previous design did on every
-  // pointer-move event. Lifted out of the row components because:
-  //   1. The summary total at the bottom of the card needs to reflect the
-  //      drag live — otherwise totalPlanned lags behind the row slider.
-  //   2. Row-local state could get stranded when the browser drops a mouseup
-  //      outside the slider element; centralising lets us clear stale entries
-  //      whenever `lines` rehydrates from the server.
-  const [categoryDrag, setCategoryDrag] = useState<{
-    category: BudgetCategory;
-    value: number;
-  } | null>(null);
-  const [customDrag, setCustomDrag] = useState<{ lineId: number; value: number } | null>(null);
-  // Wipe stale drag state whenever the source-of-truth lines change. Any
-  // committed save (own or partner-via-`budget:changed`) propagates a fresh
-  // `lines` array — at that point the parent's view IS the truth and any
-  // lingering drag baseline would only confuse the total.
-  useEffect(() => {
-    setCategoryDrag(null);
-    setCustomDrag(null);
-  }, [lines]);
+  // In-progress drags, ONE ENTRY PER ROW. Lifted out of the row components
+  // because the summary total at the bottom of the card has to reflect the
+  // drag live — otherwise totalPlanned lags behind the row slider.
+  //
+  // This used to be a single {key, value} slot, on the reasoning that only one
+  // slider can physically be dragged at a time. True, but the slot doubled as
+  // the *only* place a released-but-not-yet-saved amount lived: grab a second
+  // row before the first row's PATCH came back and the first row visibly
+  // snapped to its pre-edit value. Keeping one entry per row means an
+  // unrelated drag can never erase a pending one. (The parent now also lands
+  // the new amount in `lines` optimistically, so the two layers agree; these
+  // entries only cover the window before that happens.)
+  const [categoryDrags, setCategoryDrags] = useState<Partial<Record<BudgetCategory, number>>>({});
+  const [customDrags, setCustomDrags] = useState<Record<number, number>>({});
   // Stable callbacks the row components call on each pointer-move. Stable
   // identity is what lets React.memo on CategoryRow / CustomRow actually
   // skip re-renders for siblings whose values didn't change.
   const handleCategoryDrag = useCallback((category: BudgetCategory, value: number) => {
-    setCategoryDrag({ category, value });
+    setCategoryDrags((cur) => (cur[category] === value ? cur : { ...cur, [category]: value }));
   }, []);
   const handleCustomDrag = useCallback((lineId: number, value: number) => {
-    setCustomDrag({ lineId, value });
+    setCustomDrags((cur) => (cur[lineId] === value ? cur : { ...cur, [lineId]: value }));
+  }, []);
+  // Drop a row's preview once its own commit lands — by then `lines` carries
+  // the same amount, so the entry is redundant. Skipped when the user has
+  // dragged further in the meantime: that value has a newer commit on the way
+  // and clearing it would yank the thumb backwards mid-gesture.
+  const settleCategoryDrag = useCallback((category: BudgetCategory, value: number) => {
+    setCategoryDrags((cur) => {
+      if (cur[category] !== value) return cur;
+      const next = { ...cur };
+      delete next[category];
+      return next;
+    });
+  }, []);
+  const settleCustomDrag = useCallback((lineId: number, value: number) => {
+    setCustomDrags((cur) => {
+      if (cur[lineId] !== value) return cur;
+      const next = { ...cur };
+      delete next[lineId];
+      return next;
+    });
   }, []);
 
   // Custom rows: `category="other"` lines whose label diverges from the
@@ -379,9 +404,8 @@ export function CostPlanningCard({
       // a real-world quote and doesn't want it sliding around with the count.
       const scales = isPerGuest && !frozen;
       // Active drag (if any) overrides the committed baseline — that's how
-      // totalPlanned tracks the slider live.
-      const liveBaseline =
-        categoryDrag !== null && categoryDrag.category === cat ? categoryDrag.value : v.planned;
+      // totalPlanned tracks the slider live. `??` not `||`: 0 is a real value.
+      const liveBaseline = categoryDrags[cat] ?? v.planned;
       return {
         category: cat,
         actual: v.actual,
@@ -392,7 +416,7 @@ export function CostPlanningCard({
         frozen,
       };
     });
-  }, [aggregatableLines, factor, frozenCategories, categoryDrag]);
+  }, [aggregatableLines, factor, frozenCategories, categoryDrags]);
 
   // Live custom-row totals — same drag-aware pattern as `buckets` so the
   // panel's grand total tracks slider movement, not just commits. Per-guest
@@ -402,8 +426,7 @@ export function CostPlanningCard({
   const customDisplays = useMemo(
     () =>
       customRows.map((l) => {
-        const liveBaseline =
-          customDrag !== null && customDrag.lineId === l.id ? customDrag.value : l.planned_huf;
+        const liveBaseline = customDrags[l.id] ?? l.planned_huf;
         const scales = l.per_guest;
         return {
           line: l,
@@ -413,7 +436,7 @@ export function CostPlanningCard({
           scales,
         };
       }),
-    [customRows, customDrag, factor],
+    [customRows, customDrags, factor],
   );
 
   const totalPlanned =
@@ -692,6 +715,7 @@ export function CostPlanningCard({
             onEditPlanned={onEditPlanned}
             onToggleFreeze={onToggleFreeze}
             onDrag={handleCategoryDrag}
+            onSettle={settleCategoryDrag}
             amountLinkTo={amountLinkTo}
             showActualOverlay={showActualOverlay && hasAnyActual}
             linkTo={b.category === "honeymoon" ? "/app/honeymoon" : undefined}
@@ -712,6 +736,7 @@ export function CostPlanningCard({
             onEditPlanned={onEditCustomRowPlanned}
             onRemove={onRemoveCustomRow}
             onDrag={handleCustomDrag}
+            onSettle={settleCustomDrag}
             showActualOverlay={showActualOverlay && hasAnyActual}
           />
         ))}
@@ -780,6 +805,7 @@ function CategoryRowInner({
   onEditPlanned,
   onToggleFreeze,
   onDrag,
+  onSettle,
   amountLinkTo,
   showActualOverlay = false,
   linkTo,
@@ -811,6 +837,9 @@ function CategoryRowInner({
    *  the new *baseline* value. Identity-stable in the parent so React.memo
    *  on this component can skip re-renders for sibling rows. */
   onDrag?: (category: BudgetCategory, baselineValue: number) => void;
+  /** Fires once this row's own commit has landed, with the baseline value
+   *  that was saved, so the parent can retire the row's drag preview. */
+  onSettle?: (category: BudgetCategory, baselineValue: number) => void;
   /** When set, the per-row amount is rendered as a Link to
    *  `${amountLinkTo}#cat-${category}` so a tap routes the user to the budget
    *  table for precise entry. Used on the dashboard. */
@@ -826,10 +855,6 @@ function CategoryRowInner({
   linkTo?: string;
 }) {
   const { t, locale } = useT();
-  // `saving` blocks the slider while a commit is in flight so a chatty drag
-  // can't queue duplicate PATCHes. Drag state itself lives in the parent —
-  // see the `drags` map in CostPlanningCard.
-  const [saving, setSaving] = useState(false);
   // Hover preview — when the user mouses over the left tile of an unfrozen
   // row, swap the category icon to Lock so the freeze affordance is
   // discoverable without a click. Click is what actually freezes.
@@ -868,27 +893,58 @@ function CategoryRowInner({
   // "no plan yet". Once the row has a value the hint becomes useful again.
   const perGuest = scales && count > 0 && liveDisplay > 0 ? Math.round(liveDisplay / count) : null;
 
-  // Drag input is in display units. Convert back to baseline before pushing
-  // up to the parent's drag map, so the saved planned amount is normalised
-  // to the couple's baseline guest count regardless of where the headcount
-  // slider currently sits.
-  function applyScaledDrag(scaledNew: number) {
-    const baselineNew = scaleFactor > 0 ? Math.round(scaledNew / scaleFactor) : scaledNew;
-    onDrag?.(category, baselineNew);
+  // Drag input is in display units. Convert back to baseline immediately —
+  // both the parent's preview and the pending commit are stored in baseline
+  // units, so the saved amount stays normalised to the couple's baseline
+  // guest count no matter where the headcount slider moves in between.
+  function toBaseline(scaledNew: number): number {
+    return scaleFactor > 0 ? Math.round(scaledNew / scaleFactor) : scaledNew;
   }
 
-  async function commit(scaledNext: number) {
+  // Debounced persistence — see COMMIT_DELAY_MS. `pending` holds the value
+  // waiting to be written (null = nothing to save), so a stray pointerup with
+  // no preceding change can't fire a redundant PATCH.
+  const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pending = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (commitTimer.current !== null) clearTimeout(commitTimer.current);
+    },
+    [],
+  );
+
+  async function commit(baselineNext: number) {
+    pending.current = null;
     if (!onEditPlanned) return;
-    const baselineNext = scaleFactor > 0 ? Math.round(scaledNext / scaleFactor) : scaledNext;
-    // Parent will rehydrate `lines` after the PATCH and the drag clears via
-    // the useEffect on `lines` in CostPlanningCard; nothing to do here when
-    // the slider released on the same value it started on.
-    setSaving(true);
+    // The parent applies the amount to `lines` before the round trip, so the
+    // row keeps its value throughout; `onSettle` just retires the preview.
+    // Both parents surface their own save errors (toast + reconcile), so the
+    // catch here only stops a fire-and-forget commit from raising an
+    // unhandled rejection and stranding the preview.
     try {
       await onEditPlanned(category, baselineNext);
+    } catch {
+      /* handled upstream */
     } finally {
-      setSaving(false);
+      onSettle?.(category, baselineNext);
     }
+  }
+
+  function scheduleCommit(baselineNext: number) {
+    pending.current = baselineNext;
+    if (commitTimer.current !== null) clearTimeout(commitTimer.current);
+    commitTimer.current = setTimeout(() => {
+      commitTimer.current = null;
+      if (pending.current !== null) void commit(pending.current);
+    }, COMMIT_DELAY_MS);
+  }
+
+  function flushCommit() {
+    if (commitTimer.current !== null) {
+      clearTimeout(commitTimer.current);
+      commitTimer.current = null;
+    }
+    if (pending.current !== null) void commit(pending.current);
   }
 
   // Track gradient + dimensions are computed identically in both modes so
@@ -907,7 +963,11 @@ function CategoryRowInner({
 
   const categoryLabel = t(`budget.cat.${category}`);
   const canToggleFreeze = !!onToggleFreeze && !linkTo;
-  const sliderDisabled = !editable || saving || frozen;
+  // NOT disabled while a save is in flight: toggling `disabled` mid-gesture
+  // kills the native drag and locks the user out for a whole round trip,
+  // which is most of what "the budget saves slowly" felt like. Ordering is
+  // handled by the parent's per-row write queue instead.
+  const sliderDisabled = !editable || frozen;
 
   // Left tile — icon + name. Doubles as the freeze toggle on non-link rows
   // (honeymoon routes the whole row through to /app/honeymoon, so its left
@@ -1029,10 +1089,15 @@ function CategoryRowInner({
       step={step}
       value={liveDisplay}
       disabled={sliderDisabled}
-      onChange={(e) => applyScaledDrag(Number(e.target.value))}
-      onMouseUp={(e) => commit(Number(e.currentTarget.value))}
-      onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
-      onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+      onChange={(e) => {
+        const baselineNext = toBaseline(Number(e.target.value));
+        onDrag?.(category, baselineNext);
+        scheduleCommit(baselineNext);
+      }}
+      onPointerUp={flushCommit}
+      onTouchEnd={flushCommit}
+      onKeyUp={flushCommit}
+      onBlur={flushCommit}
       className={`range-fill range-fill-thin block ${frozen ? "range-fill-frozen" : ""}`}
       style={trackStyle}
       aria-label={t("budget.edit_planned_aria", { category: categoryLabel })}
@@ -1126,6 +1191,7 @@ function CustomRowInner({
   onEditPlanned,
   onRemove,
   onDrag,
+  onSettle,
   showActualOverlay,
 }: {
   line: BudgetLine;
@@ -1144,10 +1210,11 @@ function CustomRowInner({
    *  the parent so memo on this component skips re-renders for siblings that
    *  didn't move. */
   onDrag?: (lineId: number, baselineValue: number) => void;
+  /** Fires once this row's own commit has landed — see CategoryRow. */
+  onSettle?: (lineId: number, baselineValue: number) => void;
   showActualOverlay?: boolean;
 }) {
   const { t, locale } = useT();
-  const [saving, setSaving] = useState(false);
 
   const rowMax = widthAnchor;
   const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
@@ -1180,14 +1247,44 @@ function CustomRowInner({
     return scaleFactor > 0 ? Math.round(scaledNew / scaleFactor) : scaledNew;
   }
 
-  async function commit(scaledNext: number) {
+  // Same debounced-commit wiring as CategoryRow — see COMMIT_DELAY_MS.
+  const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pending = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (commitTimer.current !== null) clearTimeout(commitTimer.current);
+    },
+    [],
+  );
+
+  async function commit(baselineNext: number) {
+    pending.current = null;
     if (!onEditPlanned) return;
-    setSaving(true);
+    // Same error contract as CategoryRow.commit — see the comment there.
     try {
-      await onEditPlanned(line.id, toBaseline(scaledNext));
+      await onEditPlanned(line.id, baselineNext);
+    } catch {
+      /* handled upstream */
     } finally {
-      setSaving(false);
+      onSettle?.(line.id, baselineNext);
     }
+  }
+
+  function scheduleCommit(baselineNext: number) {
+    pending.current = baselineNext;
+    if (commitTimer.current !== null) clearTimeout(commitTimer.current);
+    commitTimer.current = setTimeout(() => {
+      commitTimer.current = null;
+      if (pending.current !== null) void commit(pending.current);
+    }, COMMIT_DELAY_MS);
+  }
+
+  function flushCommit() {
+    if (commitTimer.current !== null) {
+      clearTimeout(commitTimer.current);
+      commitTimer.current = null;
+    }
+    if (pending.current !== null) void commit(pending.current);
   }
 
   return (
@@ -1223,11 +1320,16 @@ function CustomRowInner({
           max={rowMax}
           step={step}
           value={liveDisplay}
-          disabled={!onEditPlanned || saving}
-          onChange={(e) => onDrag?.(line.id, toBaseline(Number(e.target.value)))}
-          onMouseUp={(e) => commit(Number(e.currentTarget.value))}
-          onTouchEnd={(e) => commit(Number(e.currentTarget.value))}
-          onKeyUp={(e) => commit(Number(e.currentTarget.value))}
+          disabled={!onEditPlanned}
+          onChange={(e) => {
+            const baselineNext = toBaseline(Number(e.target.value));
+            onDrag?.(line.id, baselineNext);
+            scheduleCommit(baselineNext);
+          }}
+          onPointerUp={flushCommit}
+          onTouchEnd={flushCommit}
+          onKeyUp={flushCommit}
+          onBlur={flushCommit}
           className="range-fill range-fill-thin block"
           style={trackStyle}
           aria-label={t("budget.custom_row_edit_aria", { label: line.label })}

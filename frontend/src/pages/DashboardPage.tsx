@@ -58,7 +58,16 @@ import { UpcomingTasksCard } from "../components/UpcomingTasksCard";
 import { CalendarPicker, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { applyCategoryPlanned, guestCountBaseline, guestCountBounds } from "../lib/budget";
+import {
+  applyCategoryPlanned,
+  commitLinePlan,
+  createBudgetWriteQueue,
+  guestCountBaseline,
+  guestCountBounds,
+  isNoopPlan,
+  mergeLines,
+  planCategoryPlanned,
+} from "../lib/budget";
 import {
   hydrateCostPlanningCount,
   readCostPlanningCount,
@@ -222,6 +231,10 @@ export default function DashboardPage() {
    *  debate. The Dashboard is the natural home for "what just changed"
    *  context; under Profile (a settings page) it was invisible. */
   const [activity, setActivity] = useState<CoupleActivityEntry[]>([]);
+  /** Serialises budget writes per row/category so two quick slider drags
+   *  can't PATCH concurrently, and so a slow response that has already been
+   *  superseded doesn't overwrite the newer value. */
+  const budgetWrites = useRef(createBudgetWriteQueue()).current;
 
   useEffect(() => {
     (async () => {
@@ -441,20 +454,32 @@ export default function DashboardPage() {
     .sort((a, b) => b[1].planned - a[1].planned)
     .slice(0, 3);
 
+  /** Merge rows into `data.lines` by id, functionally. Never rebuild the array
+   *  from a captured `data` — a slow save would then revert whatever landed in
+   *  the meantime (including the rest of `data`, not just the lines). */
+  function mergeIntoData(rows: BudgetLine[]) {
+    setData((cur) =>
+      cur && cur !== "loading" ? { ...cur, lines: mergeLines(cur.lines, rows) } : cur,
+    );
+  }
+
   async function setCategoryPlanned(category: BudgetCategory, newTotal: number) {
     if (data === "loading" || data === null) return;
+    const plan = planCategoryPlanned(category, newTotal, lines, t(`budget.cat.${category}`));
+    if (isNoopPlan(plan)) return;
+    // Land the amount locally before the round trip — the panel's drag
+    // preview is transient, so without this the row snapped back to its
+    // pre-edit value as soon as the user grabbed another slider.
+    mergeIntoData(plan.updates);
     try {
-      const next = await applyCategoryPlanned(
-        category,
-        newTotal,
-        lines,
-        t(`budget.cat.${category}`),
+      const { result, latest } = await budgetWrites.run(`cat:${category}`, () =>
+        commitLinePlan(plan),
       );
-      setData({ ...data, lines: next });
+      if (latest) mergeIntoData(result);
     } catch {
       // Refetch lines on failure.
       const r = await budgetApi.listLines();
-      setData({ ...data, lines: r.lines });
+      setData((cur) => (cur && cur !== "loading" ? { ...cur, lines: r.lines } : cur));
     }
   }
 
@@ -473,25 +498,28 @@ export default function DashboardPage() {
         per_guest: options?.perGuest ?? false,
         icon: options?.icon ?? null,
       });
-      setData({ ...data, lines: [...lines, r.line] });
+      mergeIntoData([r.line]);
     } catch {
       const r = await budgetApi.listLines();
-      setData({ ...data, lines: r.lines });
+      setData((cur) => (cur && cur !== "loading" ? { ...cur, lines: r.lines } : cur));
     }
   }
 
   async function setCustomRowPlanned(lineId: number, plannedHuf: number) {
     if (data === "loading" || data === null) return;
     const line = lines.find((l) => l.id === lineId);
-    if (!line) return;
-    const updated = { ...line, planned_huf: plannedHuf };
-    setData({ ...data, lines: lines.map((l) => (l.id === lineId ? updated : l)) });
+    if (!line || line.planned_huf === plannedHuf) return;
+    mergeIntoData([{ ...line, planned_huf: plannedHuf }]);
     try {
-      const r = await budgetApi.updateLine(line.id, updated, { ifMatch: line.updated_at });
-      setData((cur) => {
-        if (!cur || cur === "loading") return cur;
-        return { ...cur, lines: cur.lines.map((l) => (l.id === r.line.id ? r.line : l)) };
-      });
+      // No If-Match: the slider is a "drag it to this total" gesture where
+      // last write wins, and a queued second drag would otherwise send the
+      // pre-edit version and 409 the user against their own first drag.
+      // Only the changed field goes over the wire — a full-row body carries
+      // `label`, which makes the backend clear the row's `preset_key`.
+      const { result, latest } = await budgetWrites.run(`line:${lineId}`, () =>
+        budgetApi.updateLine(lineId, { planned_huf: plannedHuf }),
+      );
+      if (latest) mergeIntoData([result.line]);
     } catch {
       const r = await budgetApi.listLines();
       setData((cur) => (cur && cur !== "loading" ? { ...cur, lines: r.lines } : cur));
@@ -510,7 +538,11 @@ export default function DashboardPage() {
     if (!ok) return;
     try {
       await budgetApi.removeLine(lineId);
-      setData({ ...data, lines: lines.filter((l) => l.id !== lineId) });
+      setData((cur) =>
+        cur && cur !== "loading"
+          ? { ...cur, lines: cur.lines.filter((l) => l.id !== lineId) }
+          : cur,
+      );
     } catch {
       const r = await budgetApi.listLines();
       setData((cur) => (cur && cur !== "loading" ? { ...cur, lines: r.lines } : cur));
