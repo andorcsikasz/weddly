@@ -3232,6 +3232,12 @@ const hu: LocaleMessages = {
     venue_map_confirm_body:
       "A link birtokában bárki látja a pontos helyszín címét és a térképet, nem csak a visszaigazolt vendégek.",
     venue_map_confirm_cta: "Megmutatom",
+    venue_pin_title: "Helyszín a térképen",
+    venue_pin_hint: "Húzd a tűt a pontos helyre. A vendégeid ezt a pontot látják majd a térképen.",
+    venue_pin_locating: "Helyszín keresése a cím alapján…",
+    venue_pin_set_cta: "Térkép tű beállítása",
+    venue_pin_move_cta: "Tű áthelyezése",
+    venue_pin_saved: "A helyszín tűje elmentve.",
     preview_divider_label: "Innen a vendégoldal",
     editor_divider_label: "Oldal szerkesztése",
     preview_title: "Élő előnézet",

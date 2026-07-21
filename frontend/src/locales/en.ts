@@ -3202,6 +3202,12 @@ const en: LocaleMessages = {
     venue_map_confirm_body:
       "Anyone with your page link will see the precise venue address and a map, not just confirmed guests.",
     venue_map_confirm_cta: "Show it",
+    venue_pin_title: "Venue on the map",
+    venue_pin_hint: "Drag the pin to the exact spot. This is the point your guests see on the map.",
+    venue_pin_locating: "Finding the location from the address…",
+    venue_pin_set_cta: "Set the map pin",
+    venue_pin_move_cta: "Move the pin",
+    venue_pin_saved: "Venue pin saved.",
     preview_divider_label: "Guest view below",
     editor_divider_label: "Edit your page",
     preview_title: "Live preview",

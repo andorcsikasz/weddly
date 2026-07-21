@@ -55,6 +55,7 @@ import {
   coupleSupplierApi,
   householdApi,
   picksApi,
+  placesApi,
   scheduleApi,
   supplierApi,
   wishlistApi,
@@ -589,17 +590,57 @@ export default function GuestPageEditorPage() {
     "cover" | "useful" | "date" | "schedule" | "venue" | null
   >(null);
 
-  // Deep-link `?edit=venue` (the design page's "add venue location" prompt links
-  // here since the map pin is set by a map-picked address in the venue panel).
-  // Open the panel once, then strip the param so a refresh/back doesn't re-pop it.
+  // The venue map pin. `pinDraft` non-null = the pin editor dialog is open. It
+  // edits the couple's own location_lat/lng (what the public map reads) through a
+  // draggable Leaflet pin, seeded from any stored coords or, failing that, a
+  // best-effort forward-geocode of the venue text so the couple only nudges it.
+  const [pinDraft, setPinDraft] = useState<VenueLocationValue | null>(null);
+  const [pinBusy, setPinBusy] = useState(false);
+  const [pinSeeding, setPinSeeding] = useState(false);
+  const openVenuePin = useCallback(async () => {
+    if (!couple) return;
+    const base: VenueLocationValue = {
+      address: couple.venue_address ?? "",
+      city: couple.venue_city ?? "",
+      lat: couple.location_lat ?? null,
+      lng: couple.location_lng ?? null,
+    };
+    setPinDraft(base);
+    if (base.lat != null && base.lng != null) return; // already pinned — just move it
+    const query = (
+      couple.venue_address ||
+      [couple.venue_name, couple.venue_city].filter(Boolean).join(", ") ||
+      couple.venue_name ||
+      couple.venue_city ||
+      ""
+    ).trim();
+    if (!query) return;
+    setPinSeeding(true);
+    try {
+      const r = await placesApi.search(query);
+      const hit = r.places.find((p) => p.lat != null && p.lng != null);
+      if (hit && hit.lat != null && hit.lng != null) {
+        const { lat, lng, locality } = hit;
+        setPinDraft((d) => (d ? { ...d, lat, lng, city: d.city || locality || "" } : d));
+      }
+    } catch {
+      /* best-effort seed — the couple can search the address or tap the map */
+    } finally {
+      setPinSeeding(false);
+    }
+  }, [couple]);
+
+  // Deep-link `?edit=venue` (the design page's "add venue location" prompt) opens
+  // the pin editor once the couple has loaded, then strips the param so a refresh
+  // or back-nav doesn't re-pop the dialog.
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
-    if (searchParams.get("edit") !== "venue") return;
-    setEditPanel("venue");
+    if (searchParams.get("edit") !== "venue" || !couple) return;
+    void openVenuePin();
     const next = new URLSearchParams(searchParams);
     next.delete("edit");
     setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, couple, openVenuePin, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1164,6 +1205,36 @@ export default function GuestPageEditorPage() {
     }
   }
 
+  // Persist the dragged pin. Only the coordinates are written (that is all the
+  // map needs); a blank venue_address/city is filled from the picker's resolved
+  // text, but an address the couple already set is never overwritten by a
+  // reverse-geocode. Leaves the venue-map toggle untouched — enabling it stays a
+  // deliberate, separately-confirmed privacy step.
+  async function saveVenuePin() {
+    if (!couple || pinBusy) return;
+    const draft = pinDraft;
+    if (!draft || draft.lat == null || draft.lng == null) return;
+    setPinBusy(true);
+    try {
+      const patch: Parameters<typeof coupleApi.update>[0] = {
+        location_lat: draft.lat,
+        location_lng: draft.lng,
+      };
+      if (!couple.venue_address && draft.address.trim()) patch.venue_address = draft.address.trim();
+      if (!couple.venue_city && draft.city.trim()) patch.venue_city = draft.city.trim();
+      const r = await coupleApi.update(patch);
+      setCouple(r.couple);
+      setPinDraft(null);
+      toast.success(t("guest_page_editor.venue_pin_saved"));
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : t("wedding_site_editor.save_error_generic"),
+      );
+    } finally {
+      setPinBusy(false);
+    }
+  }
+
   return (
     <>
       {/* Title bar — carries the live autosave status next to the title so the
@@ -1576,6 +1647,16 @@ export default function GuestPageEditorPage() {
                       ? t("guest_page_editor.venue_map_hint")
                       : t("guest_page_editor.venue_map_needs_location")}
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => void openVenuePin()}
+                    className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-blush-700 underline-offset-2 transition-colors hover:underline dark:text-blush-300"
+                  >
+                    <MapPin size={14} aria-hidden />
+                    {hasVenueCoords
+                      ? t("guest_page_editor.venue_pin_move_cta")
+                      : t("guest_page_editor.venue_pin_set_cta")}
+                  </button>
                 </div>
                 <Switch
                   checked={venueMap}
@@ -1863,6 +1944,58 @@ export default function GuestPageEditorPage() {
             onCreated={handleVenueCreated}
           />
         )}
+      </Dialog>
+
+      {/* Venue map pin editor — a draggable Leaflet pin over the couple's own
+          location_lat/lng (what the public map reads). Seeded from stored coords
+          or a forward-geocode of the venue text, then nudged by hand. */}
+      <Dialog
+        open={pinDraft !== null}
+        role="dialog"
+        closeOnBackdrop={!pinBusy}
+        title={t("guest_page_editor.venue_pin_title")}
+        onClose={() => {
+          if (!pinBusy) setPinDraft(null);
+        }}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn-outline"
+              disabled={pinBusy}
+              onClick={() => setPinDraft(null)}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={pinBusy || pinDraft?.lat == null || pinDraft?.lng == null}
+              onClick={() => void saveVenuePin()}
+            >
+              {pinBusy ? t("common.saving") : t("common.save")}
+            </button>
+          </>
+        }
+      >
+        <p className="mb-3 text-sm text-ink-600 dark:text-umber-200">
+          {t("guest_page_editor.venue_pin_hint")}
+        </p>
+        {pinSeeding && (
+          <p className="mb-2 inline-flex items-center gap-1.5 text-xs text-ink-400 dark:text-umber-300">
+            <Loader2 size={13} className="animate-spin" aria-hidden />
+            {t("guest_page_editor.venue_pin_locating")}
+          </p>
+        )}
+        <Suspense
+          fallback={
+            <div className="flex h-[320px] items-center justify-center rounded-2xl border border-paper-300 dark:border-umber-700">
+              <Loader2 size={20} className="animate-spin text-ink-400" aria-hidden />
+            </div>
+          }
+        >
+          {pinDraft && <VenueLocationPicker value={pinDraft} onChange={setPinDraft} />}
+        </Suspense>
       </Dialog>
     </>
   );

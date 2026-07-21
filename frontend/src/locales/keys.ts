@@ -3538,6 +3538,12 @@ export interface LocaleMessages {
     venue_map_confirm_title: string;
     venue_map_confirm_body: string;
     venue_map_confirm_cta: string;
+    venue_pin_title: string;
+    venue_pin_hint: string;
+    venue_pin_locating: string;
+    venue_pin_set_cta: string;
+    venue_pin_move_cta: string;
+    venue_pin_saved: string;
     preview_divider_label: string;
     /** Divider label marking the start of the editor, below the guest view. */
     editor_divider_label: string;
