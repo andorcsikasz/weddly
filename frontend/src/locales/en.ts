@@ -1102,6 +1102,8 @@ const en: LocaleMessages = {
     step5_short: "Country",
     bride_name_label: "Bride",
     groom_name_label: "Groom",
+    bride_name_placeholder: "Allie",
+    groom_name_placeholder: "Noah",
     partner_one_label: "Partner 1",
     partner_two_label: "Partner 2",
     step2_title: "When's the wedding?",

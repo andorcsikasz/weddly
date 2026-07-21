@@ -1115,6 +1115,8 @@ const hu: LocaleMessages = {
     step5_short: "Ország",
     bride_name_label: "Menyasszony",
     groom_name_label: "Vőlegény",
+    bride_name_placeholder: "Allie",
+    groom_name_placeholder: "Noah",
     partner_one_label: "Társ 1",
     partner_two_label: "Társ 2",
     step2_title: "Mikor lesz az esküvő?",

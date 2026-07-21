@@ -99,6 +99,14 @@ interface FormState {
 
 const TOTAL_STEPS = 5;
 
+// One oversized, tightly-tracked headline for every step. General Sans is
+// self-hosted at 600 max (no 700 woff2), so "bold" here is size + tight
+// tracking, not weight — a heavier request would render as faux-bold. The
+// question carries the step; the sub-questions that used to sit beneath it
+// are gone (the segmented control answers them).
+const STEP_TITLE =
+  "font-grotesk text-[2rem] leading-[1.05] tracking-tight sm:text-[2.75rem] sm:leading-[1.03] text-umber-900 dark:text-paper-50";
+
 const DEFAULT_FORM: FormState = {
   bride_name: "",
   groom_name: "",
@@ -461,25 +469,22 @@ export default function OnboardingWizard() {
     <Shell>
       <form className="mx-auto max-w-xl" onSubmit={onSubmit}>
         <div className="mb-6">
-          <p className="text-xs uppercase tracking-wider text-umber-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-umber-600">
             {step + 1} / {TOTAL_STEPS} · {t(`onboarding.step${step + 1}_short`)}
           </p>
-          <div className="mt-2 h-1 w-full rounded-full bg-paper-300">
+          <div className="mt-2 h-1.5 w-full rounded-full bg-paper-300">
             <div
-              className="h-1 rounded-full bg-umber-800 transition-all"
+              className="h-1.5 rounded-full bg-umber-900 transition-all"
               style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }}
             />
           </div>
         </div>
 
-        <div className="card animate-fade-in-up">
+        <div className="card animate-fade-in-up sm:p-8">
           {step === 0 && (
             <>
-              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">
-                {t("onboarding.step1_title")}
-              </h1>
-              <p className="mt-2 text-sm text-umber-700">{t("onboarding.step1_help")}</p>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <h1 className={STEP_TITLE}>{t("onboarding.step1_title")}</h1>
+              <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="bride_name" className="field-label">
                     {t("onboarding.bride_name_label")}
@@ -489,6 +494,7 @@ export default function OnboardingWizard() {
                     className="input"
                     value={form.bride_name}
                     onChange={(e) => update("bride_name", e.target.value)}
+                    placeholder={t("onboarding.bride_name_placeholder")}
                   />
                 </div>
                 <div>
@@ -500,6 +506,7 @@ export default function OnboardingWizard() {
                     className="input"
                     value={form.groom_name}
                     onChange={(e) => update("groom_name", e.target.value)}
+                    placeholder={t("onboarding.groom_name_placeholder")}
                   />
                 </div>
               </div>
@@ -508,12 +515,9 @@ export default function OnboardingWizard() {
 
           {step === 1 && (
             <>
-              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">
-                {t("onboarding.step2_title")}
-              </h1>
-              <p className="mt-2 text-sm text-umber-700">{t("onboarding.date_kind_question")}</p>
+              <h1 className={STEP_TITLE}>{t("onboarding.step2_title")}</h1>
               <div
-                className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5"
+                className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-5"
                 role="group"
                 aria-label={t("onboarding.date_kind_question")}
               >
@@ -599,12 +603,9 @@ export default function OnboardingWizard() {
 
           {step === 2 && (
             <>
-              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">
-                {t("onboarding.step3_title")}
-              </h1>
-              <p className="mt-2 text-sm text-umber-700">{t("onboarding.guest_kind_question")}</p>
+              <h1 className={STEP_TITLE}>{t("onboarding.step3_title")}</h1>
               <div
-                className="mt-4 grid grid-cols-3 gap-2"
+                className="mt-8 grid grid-cols-3 gap-2"
                 role="group"
                 aria-label={t("onboarding.guest_kind_question")}
               >
@@ -687,15 +688,12 @@ export default function OnboardingWizard() {
 
           {step === 3 && (
             <>
-              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">
-                {t("onboarding.step4_title")}
-              </h1>
-              <p className="mt-2 text-sm text-umber-700">{t("onboarding.budget_help")}</p>
+              <h1 className={STEP_TITLE}>{t("onboarding.step4_title")}</h1>
               {/* Currency picker — pinned above the budget inputs so the user
                *  picks the unit before typing an amount. Defaults to HUF; flips
                *  the preview formatting (and every money field after onboarding). */}
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="text-xs uppercase tracking-wide text-umber-600">
+              <div className="mt-8 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium uppercase tracking-wide text-umber-600">
                   {t("onboarding.budget_currency_label")}
                 </span>
                 <CurrencySelect
@@ -705,9 +703,8 @@ export default function OnboardingWizard() {
                 />
               </div>
 
-              <p className="mt-4 text-sm text-umber-700">{t("onboarding.budget_kind_question")}</p>
               <div
-                className="mt-3 grid grid-cols-3 gap-2"
+                className="mt-5 grid grid-cols-3 gap-2"
                 role="group"
                 aria-label={t("onboarding.budget_kind_question")}
               >
@@ -818,11 +815,8 @@ export default function OnboardingWizard() {
 
           {step === 4 && (
             <>
-              <h1 className="font-grotesk text-umber-900 dark:text-paper-50">
-                {t("onboarding.step5_title")}
-              </h1>
-              <p className="mt-2 text-sm text-umber-700">{t("onboarding.country_helper")}</p>
-              <div className="mt-6">
+              <h1 className={STEP_TITLE}>{t("onboarding.step5_title")}</h1>
+              <div className="mt-8">
                 <CountryCombobox
                   value={form.country}
                   onChange={(code) => update("country", code)}
@@ -1139,10 +1133,10 @@ function KindButton({
       type="button"
       onClick={onClick}
       className={[
-        "min-h-tap rounded-lg border px-3 py-2 text-sm transition",
+        "min-h-tap rounded-xl border px-4 py-3 text-sm font-semibold transition",
         active
-          ? "border-umber-800 bg-umber-800 text-paper-100"
-          : "border-paper-400 bg-paper-100 text-umber-800 hover:border-umber-600",
+          ? "border-umber-900 bg-umber-900 text-paper-50 shadow-soft"
+          : "border-paper-300 bg-paper-100 text-umber-800 hover:border-umber-500 hover:bg-paper-200 dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100 dark:hover:border-umber-500",
       ].join(" ")}
       aria-pressed={active}
     >

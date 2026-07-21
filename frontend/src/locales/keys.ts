@@ -1348,6 +1348,8 @@ export interface LocaleMessages {
     step5_short: string;
     bride_name_label: string;
     groom_name_label: string;
+    bride_name_placeholder: string;
+    groom_name_placeholder: string;
     partner_one_label: string;
     partner_two_label: string;
     step2_title: string;
