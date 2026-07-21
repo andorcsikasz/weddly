@@ -2054,27 +2054,27 @@ function PaidEntryDialog({
             separate "settled" label is needed. */}
         <div
           ref={totalCardRef}
-          className={`rounded-xl border px-4 py-3 text-center transition-colors ${settled ? "border-emerald-300 bg-emerald-50 dark:border-emerald-500/40 dark:bg-emerald-500/10" : "border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800/50"}`}
+          className={`rounded-2xl border px-4 py-3.5 text-center transition-colors ${settled ? "border-sage-300 bg-sage-50 dark:border-sage-500/40 dark:bg-sage-500/10" : "border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800/50"}`}
         >
           <p
-            className={`text-[11px] font-semibold uppercase tracking-wide ${settled ? "text-emerald-700 dark:text-emerald-300" : "text-ink-500 dark:text-umber-300"}`}
+            className={`text-[11px] font-semibold uppercase tracking-[0.1em] ${settled ? "text-sage-700 dark:text-sage-300" : "text-umber-500 dark:text-umber-300"}`}
           >
             {settled ? t("budget.payment_settled") : t("budget.payment_total")}
           </p>
           <p
-            className={`mt-1 flex items-center justify-center gap-2 text-lg font-semibold tabular-nums ${settled ? "text-emerald-700 dark:text-emerald-300" : "text-ink-900 dark:text-paper-50"}`}
+            className={`mt-1 flex items-center justify-center gap-2 text-xl font-semibold tabular-nums ${settled ? "text-sage-700 dark:text-sage-300" : "text-ink-900 dark:text-paper-50"}`}
           >
             {settled && <CircleCheck size={18} aria-hidden />}
             {formatMoney(total, currency, locale)}
             <span
-              className={`text-sm font-medium ${settled ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}
+              className={`text-sm font-semibold ${settled ? "text-sage-600 dark:text-sage-400" : "text-amber-600 dark:text-amber-400"}`}
             >
               {totalPct}%
             </span>
           </p>
           {breakdown.length > 1 && (
             <p
-              className={`mt-0.5 text-xs tabular-nums ${settled ? "text-emerald-600/80 dark:text-emerald-300/80" : "text-ink-500 dark:text-umber-300"}`}
+              className={`mt-1 text-xs tabular-nums ${settled ? "text-sage-600/80 dark:text-sage-300/80" : "text-umber-500 dark:text-umber-300"}`}
             >
               {breakdown.join(" + ")} = {totalPct}%
             </p>
@@ -2083,32 +2083,32 @@ function PaidEntryDialog({
 
         {/* Payment history */}
         <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-umber-500 dark:text-umber-300">
             {t("budget.payment_history")}
           </p>
           {opening === 0 && payments.length === 0 ? (
-            <p className="py-2 text-center text-sm text-ink-400 dark:text-umber-400">
+            <p className="py-2 text-center text-sm text-umber-400 dark:text-umber-400">
               {t("budget.payment_empty")}
             </p>
           ) : (
             <ul className="divide-y divide-paper-200 dark:divide-umber-700">
               {opening > 0 && (
                 <li className="flex items-center justify-between gap-2 py-1.5 text-sm">
-                  <span className="flex items-center gap-2 text-ink-700 dark:text-paper-200">
-                    <span className="inline-flex h-6 min-w-[2.75rem] items-center justify-center rounded-full bg-ink-100 px-2 text-xs font-semibold tabular-nums text-ink-600 dark:bg-umber-700 dark:text-umber-100">
+                  <span className="flex items-center gap-2 text-ink-800 dark:text-paper-200">
+                    <span className="inline-flex h-6 min-w-[2.75rem] items-center justify-center rounded-full bg-paper-200 px-2 text-xs font-semibold tabular-nums text-umber-700 dark:bg-umber-700 dark:text-umber-100">
                       {share(opening)}%
                     </span>
                     <span className="tabular-nums">{formatMoney(opening, currency, locale)}</span>
                   </span>
-                  <span className="text-xs text-ink-400 dark:text-umber-400">
+                  <span className="text-xs text-umber-400 dark:text-umber-400">
                     {t("budget.payment_opening")}
                   </span>
                 </li>
               )}
               {payments.map((p) => (
                 <li key={p.id} className="flex items-center justify-between gap-2 py-1.5 text-sm">
-                  <span className="flex min-w-0 items-center gap-2 text-ink-700 dark:text-paper-200">
-                    <span className="inline-flex h-6 min-w-[2.75rem] items-center justify-center rounded-full bg-amber-100 px-2 text-xs font-semibold tabular-nums text-amber-700 dark:bg-amber-400/15 dark:text-amber-300">
+                  <span className="flex min-w-0 items-center gap-2 text-ink-800 dark:text-paper-200">
+                    <span className="inline-flex h-6 min-w-[2.75rem] items-center justify-center rounded-full bg-amber-50 px-2 text-xs font-semibold tabular-nums text-amber-700 ring-1 ring-inset ring-amber-600/15 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-0">
                       {share(p.amount_huf)}%
                     </span>
                     <span className="tabular-nums">
@@ -2123,7 +2123,7 @@ function PaidEntryDialog({
                       onChange={(e) => editDate(p, e.target.value)}
                       aria-label={t("budget.payment_date")}
                       title={t("budget.payment_date")}
-                      className="rounded-md border border-transparent bg-transparent px-1 py-0.5 text-xs tabular-nums text-ink-400 outline-none transition hover:border-paper-300 focus:border-umber-500 disabled:opacity-40 dark:text-umber-400 dark:hover:border-umber-600"
+                      className="rounded-md border border-transparent bg-transparent px-1 py-0.5 text-xs tabular-nums text-umber-500 outline-none transition hover:border-umber-300 focus:border-umber-500 disabled:opacity-40 dark:text-umber-400 dark:hover:border-umber-600"
                     />
                   </span>
                   <span className="flex shrink-0 items-center gap-0.5">
@@ -2146,7 +2146,7 @@ function PaidEntryDialog({
                           onClick={() => removePdf(p)}
                           aria-label={t("budget.payment_pdf_remove")}
                           title={t("budget.payment_pdf_remove")}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-umber-400 transition hover:bg-blush-50 hover:text-blush-700 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
                         >
                           <X size={14} aria-hidden />
                         </button>
@@ -2155,7 +2155,7 @@ function PaidEntryDialog({
                       <label
                         aria-label={t("budget.payment_pdf_attach")}
                         title={t("budget.payment_pdf_attach")}
-                        className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-400 transition hover:bg-paper-100 hover:text-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 ${busy ? "pointer-events-none opacity-40" : "cursor-pointer"}`}
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-umber-400 transition hover:bg-paper-100 hover:text-umber-700 dark:text-umber-300 dark:hover:bg-umber-700 ${busy ? "pointer-events-none opacity-40" : "cursor-pointer"}`}
                       >
                         <Paperclip size={14} aria-hidden />
                         <input
@@ -2177,7 +2177,7 @@ function PaidEntryDialog({
                       onClick={() => deletePayment(p)}
                       aria-label={t("budget.payment_delete")}
                       title={t("budget.payment_delete")}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-umber-400 transition hover:bg-blush-50 hover:text-blush-700 disabled:opacity-40 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
                     >
                       <Trash2 size={14} aria-hidden />
                     </button>
@@ -2193,9 +2193,9 @@ function PaidEntryDialog({
             active input — bigger and bolder — while the other shows the live
             conversion. */}
         {!settled && (
-          <div className="space-y-3 rounded-xl border border-paper-200 p-3 dark:border-umber-700">
+          <div className="space-y-3 rounded-2xl border border-paper-200 p-3.5 dark:border-umber-700">
             <div className="flex items-center justify-end">
-              <label className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
+              <label className="flex items-center gap-1.5 text-xs text-umber-500 dark:text-umber-300">
                 {t("budget.payment_date")}
                 <input
                   type="date"
@@ -2207,7 +2207,7 @@ function PaidEntryDialog({
                 />
               </label>
             </div>
-            <div className="flex items-stretch overflow-hidden rounded-xl border border-paper-300 dark:border-umber-600">
+            <div className="flex items-stretch overflow-hidden rounded-2xl border border-paper-300 dark:border-umber-600">
               {/* Percent side (left) */}
               {mode === "pct" ? (
                 <div className="flex flex-1 flex-col items-center justify-center bg-paper-50 px-3 py-3 dark:bg-umber-800/60">
@@ -2232,10 +2232,10 @@ function PaidEntryDialog({
                   onClick={() => switchMode("pct")}
                   className="flex flex-1 flex-col items-center justify-center px-3 py-3 transition hover:bg-paper-50 dark:hover:bg-umber-800/40"
                 >
-                  <span className="text-lg font-medium tabular-nums text-ink-400 dark:text-umber-400">
+                  <span className="text-lg font-medium tabular-nums text-umber-500 dark:text-umber-400">
                     {incrementPct}
                   </span>
-                  <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-umber-400">
+                  <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-umber-500 dark:text-umber-400">
                     %
                   </span>
                 </button>
@@ -2265,10 +2265,10 @@ function PaidEntryDialog({
                   onClick={() => switchMode("amount")}
                   className="flex flex-1 flex-col items-center justify-center px-3 py-3 transition hover:bg-paper-50 dark:hover:bg-umber-800/40"
                 >
-                  <span className="text-lg font-medium tabular-nums text-ink-400 dark:text-umber-400">
+                  <span className="text-lg font-medium tabular-nums text-umber-500 dark:text-umber-400">
                     {formatNumber(increment, locale)}
                   </span>
-                  <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-umber-400">
+                  <span className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-umber-500 dark:text-umber-400">
                     {sym}
                   </span>
                 </button>
@@ -2287,7 +2287,7 @@ function PaidEntryDialog({
                         setMode("pct");
                         setDraftClamped(String(p));
                       }}
-                      className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-umber-400 hover:text-umber-800 disabled:cursor-not-allowed disabled:opacity-30 dark:border-umber-600 dark:text-umber-200 dark:hover:border-umber-400 dark:hover:text-paper-50"
+                      className="rounded-full border border-paper-300 px-3 py-1.5 text-xs font-medium text-ink-700 transition hover:border-amber-400 hover:bg-amber-50 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-30 dark:border-umber-600 dark:text-umber-200 dark:hover:border-amber-400/50 dark:hover:bg-amber-400/10 dark:hover:text-amber-200"
                     >
                       {p}%
                     </button>
@@ -2299,7 +2299,7 @@ function PaidEntryDialog({
                     setMode("amount");
                     setDraft(String(remaining));
                   }}
-                  className="rounded-full border border-umber-300 bg-umber-50 px-3 py-1.5 text-xs font-medium text-umber-800 transition hover:border-umber-400 dark:border-umber-500 dark:bg-umber-700/40 dark:text-umber-100"
+                  className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-400 hover:bg-amber-100/70 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/20"
                 >
                   {t("budget.payment_remaining")}
                 </button>
