@@ -8,6 +8,7 @@ import { dirname } from "node:path";
 import { PAID_LAUNCH_DATE, partnerFreeWindowEnd, TRIAL_DURATION_MS } from "@shared/billing";
 import { CONFIG } from "./config";
 import { generateOrganiserCode, generateVendorCode } from "./domain/invite_codes";
+import { verifyExistingUnverifiedAccounts } from "./domain/verify_backfill";
 
 try {
   mkdirSync(dirname(CONFIG.dbPath), { recursive: true });
@@ -1846,4 +1847,19 @@ function remapLegacySupplierCategories(): void {
     total += db.prepare("DELETE FROM couple_picks WHERE category = ?").run(oldSlug).changes;
   }
   if (total > 0) console.log(`[db.backfill] remapped ${total} row(s) to the v2 supplier taxonomy`);
+}
+
+// One-time: every account that exists today must carry a verified email. Legacy
+// couples predate the pending_signups gate (a couple can no longer be born
+// unverified), so they are the stragglers this clears, along with any vendor
+// that registered but never clicked. Bounded to accounts created before the
+// cutoff so future registrations still verify the normal way; skips dormant
+// provisioned planners (password_set=0) and @purged.local tombstones. See
+// domain/verify_backfill.ts for the full rationale. Idempotent.
+const VERIFY_BACKFILL_CUTOFF_MS = 1_784_678_400_000; // 2026-07-22T00:00:00Z
+{
+  const verified = verifyExistingUnverifiedAccounts(VERIFY_BACKFILL_CUTOFF_MS);
+  if (verified > 0) {
+    console.log(`[db.backfill] marked ${verified} pre-existing account(s) email-verified`);
+  }
 }
