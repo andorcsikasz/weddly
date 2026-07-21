@@ -527,11 +527,8 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
 
               {/* ── Suppliers ─────────────────────────────────────────── */}
               <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-700">
-                <div className="mb-1 flex items-center justify-between">
-                  <p className="text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                    {t("dashboard.keyinfo_suppliers")}
-                  </p>
-                  {contacts.length > 0 && (
+                {contacts.length > 0 && (
+                  <div className="mb-1 flex items-center justify-end">
                     <Link
                       to="/app/vendors"
                       className="inline-flex items-center gap-1 text-xs font-medium text-ink-600 transition-colors hover:text-blush-700 dark:text-umber-200 dark:hover:text-blush-300"
@@ -539,8 +536,8 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                       <span>{t("dashboard.keyinfo_all_suppliers")}</span>
                       <ChevronRight size={14} aria-hidden="true" />
                     </Link>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {shownContacts.length === 0 ? (
                   <Link
