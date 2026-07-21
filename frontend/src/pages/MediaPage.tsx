@@ -1532,18 +1532,16 @@ export default function MediaPage() {
                 style={{ filter: "blur(2px)" }}
               />
               <div className="absolute inset-0" style={{ background: "rgba(15,10,7,0.5)" }} />
+              <span className="absolute right-3 top-3 z-10 rounded-full border border-paper-50/25 bg-ink-900/40 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-paper-200 backdrop-blur">
+                {t("media.dev_badge")}
+              </span>
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-umber-700 bg-umber-900">
                   <Film size={22} className="text-umber-400" aria-hidden="true" />
                 </div>
-                <div>
-                  <h1 className="font-grotesk text-2xl font-semibold text-paper-50 sm:text-3xl">
-                    {t("media.film_empty_title")}
-                  </h1>
-                  <p className="mx-auto mt-2 max-w-xs text-sm text-paper-400">
-                    {t("media.film_no_app_hint")}
-                  </p>
-                </div>
+                <h1 className="font-grotesk text-2xl font-semibold text-paper-50 sm:text-3xl">
+                  {t("media.film_empty_title")}
+                </h1>
                 <button
                   type="button"
                   onClick={() => setShowFilmModal(true)}
