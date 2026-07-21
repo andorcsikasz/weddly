@@ -36,9 +36,9 @@ export const PLANNER_TRIAL_DURATION_MS = 1000 * 60 * 60 * 24 * 3;
  *  has no minor unit; EUR is shown without cents. Keep in sync with the Stripe
  *  planner Price objects (backend/scripts/stripe_setup_planner.ts). */
 export const PLANNER_TIER_PRICE: Record<PlannerPlan, Record<BillingCurrency, number>> = {
-  starter: { HUF: 6900, EUR: 19, USD: 19 },
-  pro: { HUF: 11900, EUR: 29, USD: 29 },
-  premium: { HUF: 19900, EUR: 49, USD: 49 },
+  starter: { HUF: 7900, EUR: 19, USD: 19 },
+  pro: { HUF: 12900, EUR: 29, USD: 29 },
+  premium: { HUF: 18900, EUR: 49, USD: 49 },
 };
 
 /** HU planners are billed in HUF, everyone else in EUR — mirrors the couple
