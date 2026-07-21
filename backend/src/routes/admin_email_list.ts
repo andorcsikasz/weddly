@@ -2,6 +2,11 @@
 // Entries are never deletable from this surface -- the raw source rows (users,
 // guests, vendor_waitlist, planner_waitlist, vendor_accounts) have their own
 // lifecycle, but the list itself is append-only from the admin's perspective.
+//
+// Demo accounts are excluded. Every demo owner/vendor/planner is seeded under
+// the `%@demo.weddly.local` address (see demo_seed.ts), which is the same
+// marker the analytics and directory queries already filter on, so a throwaway
+// "Try the demo" seed can never leak into a real outreach export.
 
 import type { AdminEmailEntry, AdminEmailListResponse, AdminEmailSourceType } from "@shared/types";
 import { db } from "../db";
@@ -35,6 +40,7 @@ function collectEmails(): EmailRow[] {
       `SELECT email, full_name, created_at, role
        FROM users
        WHERE status != 'suspended'
+         AND email NOT LIKE '%@demo.weddly.local'
        ORDER BY created_at DESC`,
     )
     .all();
@@ -58,6 +64,8 @@ function collectEmails(): EmailRow[] {
        FROM guests g
        LEFT JOIN couples c ON c.id = g.couple_id
        WHERE g.email IS NOT NULL AND g.email != ''
+         AND g.email NOT LIKE '%@demo.weddly.local'
+         AND COALESCE(c.is_demo, 0) = 0
        ORDER BY g.created_at DESC`,
     )
     .all();
@@ -76,6 +84,7 @@ function collectEmails(): EmailRow[] {
     .query<{ email: string; business_name: string; created_at: number; category: string }, []>(
       `SELECT email, business_name, created_at, category
        FROM vendor_waitlist
+       WHERE email NOT LIKE '%@demo.weddly.local'
        ORDER BY created_at DESC`,
     )
     .all();
@@ -94,6 +103,7 @@ function collectEmails(): EmailRow[] {
     .query<{ email: string; full_name: string; created_at: number; city: string | null }, []>(
       `SELECT email, full_name, created_at, city
        FROM planner_waitlist
+       WHERE email NOT LIKE '%@demo.weddly.local'
        ORDER BY created_at DESC`,
     )
     .all();
