@@ -3150,6 +3150,12 @@ export interface LocaleMessages {
       button_style: { lifted: string; flat: string; outline: string };
       section: { intro: string; schedule: string; useful_info: string; wishlist: string };
       image_treatment: { none: string; grayscale: string };
+      /** The venue-map opt-in, surfaced in the sections list. */
+      map_label: string;
+      map_needs_location: string;
+      map_confirm_title: string;
+      map_confirm_body: string;
+      map_confirm_cta: string;
     };
     /** Instant print-card preview (right column on the Print tab). */
     print_preview: {

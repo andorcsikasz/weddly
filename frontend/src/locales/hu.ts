@@ -2897,6 +2897,12 @@ const hu: LocaleMessages = {
         wishlist: "Kívánságlista",
       },
       image_treatment: { none: "Színes", grayscale: "Fekete-fehér" },
+      map_label: "Helyszín térkép",
+      map_needs_location: "Előbb add meg a helyszín címét, hogy bekapcsolhasd.",
+      map_confirm_title: "Megmutatod a pontos helyszínt?",
+      map_confirm_body:
+        "A pontos helyszín térképen bárkinek látszik, akinek megvan az oldal linkje, nem csak a visszajelzett vendégeknek.",
+      map_confirm_cta: "Megmutatom",
     },
     print_preview: {
       sample_name: "Vendég neve",

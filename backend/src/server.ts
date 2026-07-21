@@ -299,6 +299,9 @@ const CSP = [
   "style-src 'self' 'unsafe-inline' https://rsms.me https://fonts.googleapis.com https://accounts.google.com https://appleid.cdn-apple.com",
   // Tile servers for the supplier map (Leaflet on /app/suppliers). The
   // tile.openstreetmap.org subdomain pool serves the raster tiles.
+  // *.basemaps.cartocdn.com serves the CARTO Voyager basemap used by the guest
+  // page's venue map (components/VenueMap.tsx): a softer, warmer style than
+  // raw OSM, keyless, free at this volume.
   // *.pinimg.com hosts the Pinterest pin thumbnails rendered by /app/moodboard —
   // the URLs come from the backend's RSS proxy, so only image origins need
   // whitelisting (no Pinterest script/iframe).
@@ -315,7 +318,7 @@ const CSP = [
   // img.youtube.com + i.ytimg.com host the vendor video-reel poster thumbnails
   // (hqdefault.jpg) shown before the click-to-play iframe on supplier detail
   // pages; img.youtube.com 302s to i.ytimg.com, so both origins are needed.
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com https://imgsct.cookiebot.com https://*.clarity.ms https://c.bing.com https://*.usercentrics.eu https://img.youtube.com https://i.ytimg.com",
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.pinimg.com https://*.googleusercontent.com https://www.googletagmanager.com https://*.google-analytics.com https://commons.wikimedia.org https://upload.wikimedia.org https://images.unsplash.com https://imgsct.cookiebot.com https://*.clarity.ms https://c.bing.com https://*.usercentrics.eu https://img.youtube.com https://i.ytimg.com",
   "font-src 'self' data: https://rsms.me https://fonts.gstatic.com",
   // GA4 sends its `collect` hits via fetch/sendBeacon to *.google-analytics.com
   // (incl. region1.google-analytics.com) and *.analytics.google.com; gtm.js may

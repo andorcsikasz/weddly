@@ -506,6 +506,31 @@ export default function DesignPage() {
       return { ...d, web: { ...d.web, hiddenSections } };
     });
   }
+  // The venue map is opt-IN (not a hideable section): turning it on reveals the
+  // exact venue to ANYONE with the page link, not just confirmed guests, so
+  // enabling needs the couple's venue coords and an explicit confirm. Disabling
+  // is safe and immediate. Same field + trust boundary as the guest-page
+  // editor's privacy toggle (design.web.venueMap, server-gated in
+  // routes/public_wedding.ts): this just surfaces it where sections are chosen.
+  const hasVenueCoords = couple?.location_lat != null && couple?.location_lng != null;
+  async function toggleVenueMap() {
+    if (design.web.venueMap) {
+      setDesign((d) => ({ ...d, web: { ...d.web, venueMap: false } }));
+      return;
+    }
+    if (!hasVenueCoords) {
+      toast.error(t("design.web.map_needs_location"));
+      return;
+    }
+    const ok = await confirm({
+      title: t("design.web.map_confirm_title"),
+      body: t("design.web.map_confirm_body"),
+      confirmLabel: t("design.web.map_confirm_cta"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    setDesign((d) => ({ ...d, web: { ...d.web, venueMap: true } }));
+  }
   function chooseMonogram(patch: Partial<CoupleDesign["monogram"]>) {
     setDesign((d) => ({ ...d, monogram: { ...d.monogram, ...patch } }));
   }
@@ -1366,6 +1391,33 @@ export default function DesignPage() {
                                 </li>
                               );
                             })}
+                            {/* Venue map: an opt-in, not a hideable section, so
+                                it sits below a heavier divider with a one-line
+                                caption about the privacy trade. */}
+                            <li className="flex min-h-tap items-center justify-between gap-3 border-t-2 border-paper-200 px-3 py-2 dark:border-umber-700">
+                              <span className="min-w-0">
+                                <span
+                                  className={`block text-sm ${
+                                    design.web.venueMap
+                                      ? "text-ink-900 dark:text-paper-50"
+                                      : "text-ink-500 dark:text-umber-300"
+                                  }`}
+                                >
+                                  {t("design.web.map_label")}
+                                </span>
+                                <span className="mt-0.5 block text-xs text-ink-400 dark:text-umber-400">
+                                  {hasVenueCoords
+                                    ? t("design.web.map_confirm_body")
+                                    : t("design.web.map_needs_location")}
+                                </span>
+                              </span>
+                              <Switch
+                                checked={design.web.venueMap}
+                                onChange={() => void toggleVenueMap()}
+                                disabled={!hasVenueCoords && !design.web.venueMap}
+                                label={t("design.web.map_label")}
+                              />
+                            </li>
                           </ul>
                         </TuneRow>
                       </div>

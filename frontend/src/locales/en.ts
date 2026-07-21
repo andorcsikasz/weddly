@@ -2869,6 +2869,12 @@ const en: LocaleMessages = {
         wishlist: "Wishlist",
       },
       image_treatment: { none: "Colour", grayscale: "Black & white" },
+      map_label: "Venue map",
+      map_needs_location: "Add the venue location first to turn this on.",
+      map_confirm_title: "Show the exact location?",
+      map_confirm_body:
+        "Anyone with your page link will see the precise venue on a map, not just confirmed guests.",
+      map_confirm_cta: "Show it",
     },
     print_preview: {
       sample_name: "Guest name",
