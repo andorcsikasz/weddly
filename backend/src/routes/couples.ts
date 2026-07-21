@@ -1581,6 +1581,12 @@ const GUEST_PAGE_ADDON_FIELDS: ReadonlySet<string> = new Set([
   "wishlist_published",
   "venue_name",
   "venue_city",
+  // The guest-page venue picker fills these from the chosen venue vendor —
+  // address/phone drive the Kulcsinfó card, the coordinates the site map pin.
+  "venue_address",
+  "venue_phone",
+  "location_lat",
+  "location_lng",
   "cover_image_url",
   "cover_position_x",
   "cover_position_y",
@@ -2079,6 +2085,31 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.venue_contact_update",
         before: { [f.key]: prev },
         after: { [f.key]: next },
+      });
+    }
+  }
+
+  // Venue map pin — coordinates move as a pair (both numbers to set, both
+  // null/"" to clear). Set when the couple pins a venue on the map from the
+  // guest-page venue picker; drives the public-site map reveal (the
+  // `design.web.venueMap` flag is inert without these). Onboarding also writes
+  // them, but PATCH ignored them until this block existed.
+  if (body.location_lat !== undefined || body.location_lng !== undefined) {
+    if (body.location_lat === undefined || body.location_lng === undefined) {
+      throw new HttpError(400, "location_lat and location_lng must be sent together");
+    }
+    const nextLat = parseOptionalFloat(body.location_lat, "location_lat", -90, 90);
+    const nextLng = parseOptionalFloat(body.location_lng, "location_lng", -180, 180);
+    if ((nextLat === null) !== (nextLng === null)) {
+      throw new HttpError(400, "location_lat and location_lng must be set together");
+    }
+    if (nextLat !== couple.location_lat || nextLng !== couple.location_lng) {
+      updates.push({ col: "location_lat", val: nextLat });
+      updates.push({ col: "location_lng", val: nextLng });
+      auditEntries.push({
+        action: "couple.venue_contact_update",
+        before: { location_lat: couple.location_lat, location_lng: couple.location_lng },
+        after: { location_lat: nextLat, location_lng: nextLng },
       });
     }
   }

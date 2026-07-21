@@ -135,7 +135,7 @@ interface NominatimResponse {
  *  website extras. Honours Nominatim's 1 req/sec policy by being called at
  *  most once per resolver invocation; the route's per-user rate-limit covers
  *  the broader pattern. */
-async function reverseGeocode(
+export async function reverseGeocode(
   lat: number,
   lng: number,
 ): Promise<{

@@ -473,6 +473,19 @@ addColumnIfMissing("couple_suppliers", "paid", "paid INTEGER NOT NULL DEFAULT 0"
 addColumnIfMissing("couple_suppliers", "probability", "probability INTEGER");
 addColumnIfMissing("couple_suppliers", "next_step", "next_step TEXT");
 
+// Location + contact for DIY entries — added so a couple can capture a real
+// VENUE they picked on the map (name + address + coordinates + phone/email)
+// straight from the guest-page venue picker, and have it double as a reusable
+// venue vendor (its coords also drive the guest-page map pin via
+// couples.location_lat/lng once selected). All nullable: the vast majority of
+// DIY rows (mum's cooking, friend DJ) never set these.
+addColumnIfMissing("couple_suppliers", "city", "city TEXT");
+addColumnIfMissing("couple_suppliers", "address", "address TEXT");
+addColumnIfMissing("couple_suppliers", "lat", "lat REAL");
+addColumnIfMissing("couple_suppliers", "lng", "lng REAL");
+addColumnIfMissing("couple_suppliers", "contact_email", "contact_email TEXT");
+addColumnIfMissing("couple_suppliers", "contact_phone", "contact_phone TEXT");
+
 // Admin-only freeform notes on community-submitted suppliers. Turns the
 // admin moderation page into a real CRM — moderators can jot triage notes
 // ("emailed the venue, awaiting reply", "looks like dupe of Crystal Hall")

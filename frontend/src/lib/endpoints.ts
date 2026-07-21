@@ -672,6 +672,10 @@ export const coupleApi = {
     coordinator_phone?: string | null;
     emergency_name?: string | null;
     emergency_phone?: string | null;
+    /** Exact venue coordinates for the site map pin. Sent as a pair (both
+     *  numbers to set, both null to clear) by the guest-page venue picker. */
+    location_lat?: number | null;
+    location_lng?: number | null;
     /** http(s) URL the couple pastes for the wedding site's hero image. */
     cover_image_url?: string | null;
     /** Cover-photo focal point as object-position percentages (0..100). */
@@ -3156,6 +3160,13 @@ export const geoApi = {
     apiFetch<{ suggestions: AddressSuggestion[] }>(
       "GET",
       `/api/geo/address-suggest?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}`,
+    ),
+  /** Reverse geocode a pin drop → { address, city } (either may be null). Used
+   *  by the venue map picker to fill the address when the couple taps the map. */
+  reverse: (lat: number, lng: number) =>
+    apiFetch<{ address: string | null; city: string | null }>(
+      "GET",
+      `/api/geo/reverse?lat=${lat}&lng=${lng}`,
     ),
 };
 

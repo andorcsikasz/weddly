@@ -6,6 +6,7 @@
 // Anonymous-allowed like company_lookup: the vendor signup form runs
 // pre-account. Signed-in callers get a roomier bucket via ctx.userId.
 
+import { reverseGeocode } from "../domain/maps_resolver";
 import { suggestAddresses } from "../lib/address_suggest";
 import { type Ctx, HttpError, json, type Router } from "../lib/http";
 import { ADDRESS_SUGGEST_ANON_BUCKET, ADDRESS_SUGGEST_BUCKET, rateLimit } from "../lib/rate_limit";
@@ -34,6 +35,29 @@ async function handleAddressSuggest(ctx: Ctx): Promise<Response> {
   return json({ suggestions });
 }
 
+/** Reverse geocode: lat/lng → { address, city }. Powers the "tap the map to
+ *  place your venue" flow in the guest-page venue picker — the pin drops, this
+ *  fills the address line. Best-effort: an upstream miss returns nulls (the
+ *  caller keeps whatever address it already had) rather than erroring. Same
+ *  Photon/Nominatim family and rate-limit family as address-suggest. */
+async function handleReverse(ctx: Ctx): Promise<Response> {
+  if (ctx.userId) {
+    rateLimit(ctx.clientIp, "geo_reverse", ADDRESS_SUGGEST_BUCKET);
+  } else {
+    rateLimit(ctx.clientIp, "geo_reverse:anon", ADDRESS_SUGGEST_ANON_BUCKET);
+  }
+  const params = new URL(ctx.req.url).searchParams;
+  const lat = Number(params.get("lat"));
+  const lng = Number(params.get("lng"));
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90) throw new HttpError(400, "lat out of range");
+  if (!Number.isFinite(lng) || lng < -180 || lng > 180)
+    throw new HttpError(400, "lng out of range");
+
+  const r = await reverseGeocode(lat, lng);
+  return json({ address: r.address, city: r.city });
+}
+
 export function registerGeoRoutes(router: Router) {
   router.get("/api/geo/address-suggest", handleAddressSuggest);
+  router.get("/api/geo/reverse", handleReverse);
 }

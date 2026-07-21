@@ -35,6 +35,17 @@ export interface CoupleSupplier {
   next_step: string | null;
   /** 0–100 likelihood estimate used on the Kanban board to sort/colour cards. */
   probability: number | null;
+  /** Location + contact, populated when this DIY entry is a real place the
+   *  couple pinned on the map (chiefly a `category:"venue"` added from the
+   *  guest-page venue picker). All null for the ordinary "mum's cooking" rows.
+   *  `lat`/`lng` are set together; selecting such a venue copies them onto
+   *  `couples.location_lat/lng` so the guest-page map pin can show. */
+  city: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  contact_email: string | null;
+  contact_phone: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -70,7 +81,18 @@ export interface UpdateInstallmentInput {
   paid?: boolean;
 }
 
-export interface CreateCoupleSupplierInput {
+/** Location + contact a caller may set on a DIY entry (a mapped venue). `lat`
+ *  and `lng` must be sent together; a string field sent as `""` clears it. */
+export interface CoupleSupplierPlaceInput {
+  city?: string | null;
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+}
+
+export interface CreateCoupleSupplierInput extends CoupleSupplierPlaceInput {
   name: string;
   category: SupplierCategory;
   notes?: string | null;
@@ -81,7 +103,7 @@ export interface CreateCoupleSupplierInput {
   next_step?: string | null;
 }
 
-export interface UpdateCoupleSupplierInput {
+export interface UpdateCoupleSupplierInput extends CoupleSupplierPlaceInput {
   name?: string;
   category?: SupplierCategory;
   notes?: string | null;

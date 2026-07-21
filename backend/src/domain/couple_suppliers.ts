@@ -30,6 +30,12 @@ interface Row {
   budget_line_id: number | null;
   next_step: string | null;
   probability: number | null;
+  city: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  contact_email: string | null;
+  contact_phone: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -47,9 +53,26 @@ function toDto(r: Row): CoupleSupplier {
     installments: listForSupplier(r.id),
     next_step: r.next_step,
     probability: r.probability,
+    city: r.city,
+    address: r.address,
+    lat: r.lat,
+    lng: r.lng,
+    contact_email: r.contact_email,
+    contact_phone: r.contact_phone,
     created_at: r.created_at,
     updated_at: r.updated_at,
   };
+}
+
+/** The location + contact slots a mapped venue can carry. Kept as one bag so
+ *  insert/update thread them identically; every field independently nullable. */
+interface PlaceFields {
+  city: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  contact_email: string | null;
+  contact_phone: string | null;
 }
 
 export function listByCoupleId(coupleId: number): CoupleSupplier[] {
@@ -120,7 +143,7 @@ function deleteBudgetLine(lineId: number, coupleId: number): void {
   db.prepare("DELETE FROM budget_lines WHERE id = ? AND couple_id = ?").run(lineId, coupleId);
 }
 
-interface InsertInput {
+interface InsertInput extends PlaceFields {
   name: string;
   category: SupplierCategory;
   notes: string | null;
@@ -152,8 +175,9 @@ export function insert(coupleId: number, input: InsertInput): CoupleSupplier {
 
     db.prepare(
       `INSERT INTO couple_suppliers
-       (id, couple_id, name, category, notes, price_huf, paid, budget_line_id, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, couple_id, name, category, notes, price_huf, paid, budget_line_id,
+        city, address, lat, lng, contact_email, contact_phone, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       coupleId,
@@ -163,6 +187,12 @@ export function insert(coupleId: number, input: InsertInput): CoupleSupplier {
       input.price_huf,
       input.paid ? 1 : 0,
       budgetLineId,
+      input.city,
+      input.address,
+      input.lat,
+      input.lng,
+      input.contact_email,
+      input.contact_phone,
       ts,
       ts,
     );
@@ -179,6 +209,12 @@ interface UpdateInput {
   notes?: string | null;
   price_huf?: number | null;
   paid?: boolean;
+  city?: string | null;
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
 }
 
 export function update(id: string, coupleId: number, input: UpdateInput): CoupleSupplier | null {
@@ -193,6 +229,16 @@ export function update(id: string, coupleId: number, input: UpdateInput): Couple
   const newNotes = input.notes !== undefined ? input.notes : existing.notes;
   const newPrice = input.price_huf !== undefined ? input.price_huf : existing.price_huf;
   const newPaid = input.paid !== undefined ? input.paid : existing.paid === 1;
+  // Place/contact fields: each is replaced only when the caller sent it, so a
+  // partial PATCH (e.g. flipping `paid`) never wipes a venue's coordinates.
+  const keep = <K extends keyof PlaceFields>(k: K, cur: PlaceFields[K]): PlaceFields[K] =>
+    input[k] !== undefined ? (input[k] as PlaceFields[K]) : cur;
+  const newCity = keep("city", existing.city);
+  const newAddress = keep("address", existing.address);
+  const newLat = keep("lat", existing.lat);
+  const newLng = keep("lng", existing.lng);
+  const newEmail = keep("contact_email", existing.contact_email);
+  const newPhone = keep("contact_phone", existing.contact_phone);
 
   // Mirror + source-of-truth commit together (see insert()).
   db.transaction(() => {
@@ -219,7 +265,9 @@ export function update(id: string, coupleId: number, input: UpdateInput): Couple
 
     db.prepare(
       `UPDATE couple_suppliers
-        SET name = ?, category = ?, notes = ?, price_huf = ?, paid = ?, budget_line_id = ?, updated_at = ?
+        SET name = ?, category = ?, notes = ?, price_huf = ?, paid = ?, budget_line_id = ?,
+            city = ?, address = ?, lat = ?, lng = ?, contact_email = ?, contact_phone = ?,
+            updated_at = ?
       WHERE id = ? AND couple_id = ?`,
     ).run(
       newName,
@@ -228,6 +276,12 @@ export function update(id: string, coupleId: number, input: UpdateInput): Couple
       newPrice,
       newPaid ? 1 : 0,
       newBudgetLineId,
+      newCity,
+      newAddress,
+      newLat,
+      newLng,
+      newEmail,
+      newPhone,
       ts,
       id,
       coupleId,

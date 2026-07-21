@@ -306,6 +306,18 @@ const hu: LocaleMessages = {
       locked_eyebrow: "A vendégek visszajelzése után jelenik meg",
     },
   },
+  venue_picker: {
+    empty: "Még nincs helyszín a szolgáltatóitok között. Add hozzá lent a helyszínt.",
+    legacy_hint: "A jelenlegi helyszínetek — add hozzá lent, hogy a térképen is megjelenjen.",
+    add_cta: "Helyszín hozzáadása",
+    add_title: "Helyszín hozzáadása",
+    name_label: "Helyszín neve",
+    address_label: "Cím",
+    map_hint: "Keress rá a címre, vagy koppints a térképre a jelölő elhelyezéséhez.",
+    email_label: "Kapcsolattartó e-mail (nem kötelező)",
+    phone_label: "Kapcsolattartó telefon (nem kötelező)",
+    save_cta: "Helyszín mentése",
+  },
   wedding_site_editor: {
     page_title: "Esküvői weboldal",
     intro:
@@ -2654,8 +2666,7 @@ const hu: LocaleMessages = {
     participant_remove_with_photos: "A képeit is rejtsd el",
     participant_remove_confirm: "Eltávolítás",
     gallery_link_note: "Bármilyen link: Pixieset, Google Drive, Dropbox, saját galéria.",
-    shared_gallery_teaser:
-      "A vendégfotók és a profi galéria egy helyen, automatikusan rendezve.",
+    shared_gallery_teaser: "A vendégfotók és a profi galéria egy helyen, automatikusan rendezve.",
   },
   photos: {
     loading: "Betöltés…",
@@ -3214,7 +3225,8 @@ const hu: LocaleMessages = {
     venue_map_hint: "A link birtokában bárki látja a pontos helyet.",
     venue_map_needs_location: "Előbb add meg a helyszín címét a bekapcsoláshoz.",
     venue_map_confirm_title: "Megmutatod a pontos helyet?",
-    venue_map_confirm_body: "A link birtokában bárki látja a pontos helyszín címét és a térképet, nem csak a visszaigazolt vendégek.",
+    venue_map_confirm_body:
+      "A link birtokában bárki látja a pontos helyszín címét és a térképet, nem csak a visszaigazolt vendégek.",
     venue_map_confirm_cta: "Megmutatom",
     preview_divider_label: "Innen a vendégoldal",
     editor_divider_label: "Oldal szerkesztése",

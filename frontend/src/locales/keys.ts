@@ -484,6 +484,20 @@ export interface LocaleMessages {
       locked_eyebrow: string;
     };
   };
+  /** Guest-page venue picker: choose a venue from the couple's own vendors, or
+   *  add one on the map (name + address required, optional contact). */
+  venue_picker: {
+    empty: string;
+    legacy_hint: string;
+    add_cta: string;
+    add_title: string;
+    name_label: string;
+    address_label: string;
+    map_hint: string;
+    email_label: string;
+    phone_label: string;
+    save_cta: string;
+  };
   /** Couple-facing editor for the public wedding-website at /w/:slug — flips
    *  the publish toggle and edits venue name + hero image. Reachable at
    *  /app/wedding-site from the sidebar's "For guests" group. */

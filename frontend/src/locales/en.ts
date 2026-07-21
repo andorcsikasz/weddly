@@ -303,6 +303,18 @@ const en: LocaleMessages = {
       locked_eyebrow: "Unlocks after guests RSVP",
     },
   },
+  venue_picker: {
+    empty: "No venue among your vendors yet. Add the place below.",
+    legacy_hint: "Your current venue — add it below to place it on the map.",
+    add_cta: "Add a venue",
+    add_title: "Add a venue",
+    name_label: "Venue name",
+    address_label: "Address",
+    map_hint: "Search the address, or tap the map to drop the pin.",
+    email_label: "Contact email (optional)",
+    phone_label: "Contact phone (optional)",
+    save_cta: "Save venue",
+  },
   wedding_site_editor: {
     page_title: "Wedding website",
     intro:
@@ -2628,8 +2640,7 @@ const en: LocaleMessages = {
     participant_remove_with_photos: "Also hide their photos",
     participant_remove_confirm: "Remove",
     gallery_link_note: "Any link: Pixieset, Google Drive, Dropbox, your own site.",
-    shared_gallery_teaser:
-      "Guest photos and your pro gallery in one place, sorted automatically.",
+    shared_gallery_teaser: "Guest photos and your pro gallery in one place, sorted automatically.",
   },
   photos: {
     loading: "Loading…",
@@ -3184,7 +3195,8 @@ const en: LocaleMessages = {
     venue_map_hint: "Anyone with the link sees the exact location.",
     venue_map_needs_location: "Add the venue address first to turn this on.",
     venue_map_confirm_title: "Show the exact location?",
-    venue_map_confirm_body: "Anyone with your page link will see the precise venue address and a map, not just confirmed guests.",
+    venue_map_confirm_body:
+      "Anyone with your page link will see the precise venue address and a map, not just confirmed guests.",
     venue_map_confirm_cta: "Show it",
     preview_divider_label: "Guest view below",
     editor_divider_label: "Edit your page",

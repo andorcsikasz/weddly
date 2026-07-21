@@ -20,6 +20,12 @@ interface Body {
   notes?: unknown;
   price_huf?: unknown;
   paid?: unknown;
+  city?: unknown;
+  address?: unknown;
+  lat?: unknown;
+  lng?: unknown;
+  contact_email?: unknown;
+  contact_phone?: unknown;
 }
 
 interface ParsedFields {
@@ -28,6 +34,22 @@ interface ParsedFields {
   notes?: string | null;
   price_huf?: number | null;
   paid?: boolean;
+  city?: string | null;
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+}
+
+/** Trimmed nullable string with a max length. `null` and `""` both clear the
+ *  field; anything non-string is a 400. */
+function parseNullableStr(v: unknown, field: string, max: number): string | null {
+  if (v === null) return null;
+  if (typeof v !== "string") throw new HttpError(400, `${field} must be a string or null`);
+  const trimmed = v.trim();
+  if (trimmed.length > max) throw new HttpError(400, `${field} too long (max ${max})`);
+  return trimmed || null;
 }
 
 function parseBody(body: Body, partial: boolean): ParsedFields {
@@ -83,6 +105,48 @@ function parseBody(body: Body, partial: boolean): ParsedFields {
     out.paid = body.paid;
   }
 
+  if (body.city !== undefined) out.city = parseNullableStr(body.city, "city", 120);
+  if (body.address !== undefined) out.address = parseNullableStr(body.address, "address", 300);
+  if (body.contact_phone !== undefined) {
+    out.contact_phone = parseNullableStr(body.contact_phone, "contact_phone", 40);
+  }
+  if (body.contact_email !== undefined) {
+    const email = parseNullableStr(body.contact_email, "contact_email", 200);
+    // A deliberately loose shape check — the user/geocoder supplies these and we
+    // never send to them, so we only guard against obvious garbage.
+    if (email !== null && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new HttpError(400, "contact_email is not a valid email");
+    }
+    out.contact_email = email;
+  }
+
+  // Coordinates move as a pair: send both (numbers to set, null/"" to clear) or
+  // neither. A lone lat or lng — or a number paired with a null — is rejected so
+  // a venue pin can't end up half-defined.
+  if (body.lat !== undefined || body.lng !== undefined) {
+    if (body.lat === undefined || body.lng === undefined) {
+      throw new HttpError(400, "lat and lng must be sent together");
+    }
+    const latNull = body.lat === null || body.lat === "";
+    const lngNull = body.lng === null || body.lng === "";
+    if (latNull !== lngNull) throw new HttpError(400, "lat and lng must be set together");
+    if (latNull) {
+      out.lat = null;
+      out.lng = null;
+    } else {
+      const lat = Number(body.lat);
+      const lng = Number(body.lng);
+      if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+        throw new HttpError(400, "lat out of range");
+      }
+      if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+        throw new HttpError(400, "lng out of range");
+      }
+      out.lat = lat;
+      out.lng = lng;
+    }
+  }
+
   return out;
 }
 
@@ -110,6 +174,12 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     notes: parsed.notes ?? null,
     price_huf: parsed.price_huf ?? null,
     paid: parsed.paid ?? false,
+    city: parsed.city ?? null,
+    address: parsed.address ?? null,
+    lat: parsed.lat ?? null,
+    lng: parsed.lng ?? null,
+    contact_email: parsed.contact_email ?? null,
+    contact_phone: parsed.contact_phone ?? null,
   });
 
   addAuditLog({

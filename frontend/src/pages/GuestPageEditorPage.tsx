@@ -6,7 +6,7 @@
 // link) and a deeper post-RSVP-yes block that unlocks for confirmed guests.
 
 import type { CoupleBilling } from "@shared/billing";
-import type { Couple, Household, PlaceSuggestion } from "@shared/types";
+import type { Couple, Household } from "@shared/types";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { CouplePick } from "@shared/picks";
 import type { DirectorySupplier } from "@shared/suppliers";
@@ -37,7 +37,7 @@ import {
   type ChangeEvent,
   type DragEvent,
   type FormEvent,
-  type KeyboardEvent,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -47,6 +47,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, Switch, useConfirm, useToast } from "../components/ui";
+import type { VenueLocationValue } from "../components/VenueLocationPicker";
 import { ApiError } from "../lib/api";
 import {
   billingApi,
@@ -54,13 +55,18 @@ import {
   coupleSupplierApi,
   householdApi,
   picksApi,
-  placesApi,
   scheduleApi,
   supplierApi,
   wishlistApi,
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { lazyWithReload } from "../lib/lazy_reload";
+import { setSelection } from "../lib/supplier_selection";
 import { useDocumentMeta } from "../lib/seo";
+
+// Leaflet map picker (~150KB) — lazy so it never ships to happy-dom and only
+// loads when the couple opens "Add a venue".
+const VenueLocationPicker = lazyWithReload(() => import("../components/VenueLocationPicker"));
 
 /** Pre-made "Good to know" rows. They serialize back into the single
  *  `useful_info` text column as "Label: value" lines — ONLY the filled ones —
@@ -144,210 +150,278 @@ function serializeUsefulInfo(
   return lines.join("\n");
 }
 
-/** Venue-name input with two assists:
- *  - a debounced Nominatim-backed autocomplete (the /api/places/search proxy
- *    the honeymoon picker uses, in `kind="venue"` mode) so typing "Sári"
- *    surfaces real venue names rather than the settlements they sit in;
- *  - quick-fill chips for venues the couple already saved among their
- *    suppliers (a picked directory venue or a DIY "venue" entry).
- *  We commit the venue NAME plus its town ("Sári Csárda, Dunakiliti"), not the
- *  full street address — the precise address lives on the invitation /
- *  post-RSVP block. */
-function VenueNameField({
-  value,
-  onChange,
-  onPickCity,
-  savedVenues,
-  country,
+/** One venue the couple can choose from — either a directory venue they picked
+ *  or a DIY "venue" entry they added. Carries the details a selection copies
+ *  onto the couple row (name/city/address/phone + map coordinates). */
+type VenueVendor = {
+  id: string;
+  name: string;
+  city: string;
+  address: string;
+  phone: string;
+  email: string;
+  lat: number | null;
+  lng: number | null;
+  source: "self" | "directory";
+};
+
+/** Map a freshly-created DIY venue supplier to the picker's row shape. */
+function coupleSupplierToVenueVendor(s: CoupleSupplier): VenueVendor {
+  return {
+    id: s.id,
+    name: s.name,
+    city: s.city ?? "",
+    address: s.address ?? "",
+    phone: s.contact_phone ?? "",
+    email: s.contact_email ?? "",
+    lat: s.lat,
+    lng: s.lng,
+    source: "self",
+  };
+}
+
+/** The venue picker: the couple chooses their wedding venue from the venues
+ *  among their OWN vendors (their picked venue + any DIY "venue" entries) — no
+ *  free-typing. When the one they want isn't listed, "Add a venue" opens the
+ *  map-backed add form. A free-typed legacy `currentName` (a venue set before
+ *  this picker existed) shows as a read-only "current" row so nothing is lost. */
+function VenuePicker({
+  vendors,
+  selectedId,
+  currentName,
+  busy,
+  onSelect,
+  onAdd,
 }: {
-  value: string;
-  onChange: (v: string) => void;
-  /** Called when a place is picked from the autocomplete so the parent can
-   *  auto-fill the separate City field from the result's settlement. */
-  onPickCity?: (city: string) => void;
-  savedVenues: { id: string; name: string }[];
-  /** ISO 3166-1 alpha-2 — scopes the autocomplete to the couple's country so
-   *  a HU couple isn't offered cross-border (e.g. Austrian) venues. */
-  country: string;
+  vendors: VenueVendor[];
+  selectedId: string | null;
+  currentName: string;
+  busy: boolean;
+  onSelect: (v: VenueVendor) => void;
+  onAdd: () => void;
 }) {
   const { t } = useT();
-  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
-  const [highlight, setHighlight] = useState(-1);
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const requestId = useRef(0);
-  // After picking a suggestion / chip we write the committed name back into
-  // `value`, which would otherwise retrigger the debounced search and reopen
-  // the dropdown. This one-shot flag swallows that next run.
-  const skipNextSearch = useRef(false);
-
-  useEffect(() => {
-    if (skipNextSearch.current) {
-      skipNextSearch.current = false;
-      setSuggestions([]);
-      setOpen(false);
-      return;
-    }
-    const q = value.trim();
-    if (q.length < 2) {
-      setSuggestions([]);
-      setOpen(false);
-      return;
-    }
-    const myId = ++requestId.current;
-    const handle = setTimeout(async () => {
-      try {
-        const r = await placesApi.search(q, country, "venue");
-        // Discard stale responses — only the latest typed query wins.
-        if (myId !== requestId.current) return;
-        setSuggestions(r.places);
-        setHighlight(-1);
-        setOpen(r.places.length > 0);
-      } catch {
-        if (myId !== requestId.current) return;
-        setSuggestions([]);
-      }
-    }, 300);
-    return () => clearTimeout(handle);
-  }, [value, country]);
-
-  // Click-outside just closes the dropdown — the field is already controlled,
-  // so there's nothing to commit (unlike the honeymoon tile).
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  function pick(name: string) {
-    skipNextSearch.current = true;
-    requestId.current++; // invalidate any in-flight search
-    setOpen(false);
-    setSuggestions([]);
-    onChange(name);
-  }
-
-  /** Commit a Nominatim suggestion: the POI name ("Sári Csárda") goes in the
-   *  venue field, and the settlement ("Dunakiliti") auto-fills the separate
-   *  City field. We skip the city when the name already IS the settlement (a
-   *  plain town search) or already contains it, to avoid "Dunakiliti" twice. */
-  function pickSuggestion(s: PlaceSuggestion) {
-    const name = s.primary.trim();
-    const loc = s.locality?.trim();
-    const nameLc = name.toLowerCase();
-    const locLc = loc?.toLowerCase();
-    pick(name);
-    if (onPickCity) {
-      const distinct = loc && locLc && nameLc !== locLc && !nameLc.includes(locLc);
-      onPickCity(distinct ? (loc as string) : "");
-    }
-  }
-
-  function onKey(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (suggestions.length === 0) return;
-      setOpen(true);
-      setHighlight((h) => (h + 1) % suggestions.length);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      if (suggestions.length === 0) return;
-      setOpen(true);
-      setHighlight((h) => (h <= 0 ? suggestions.length - 1 : h - 1));
-    } else if (e.key === "Enter") {
-      const sel = highlight >= 0 ? suggestions[highlight] : undefined;
-      if (open && sel) {
-        e.preventDefault();
-        pickSuggestion(sel);
-      }
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    }
-  }
-
-  // "Option B" — saved venues the couple can drop in with one click, minus the
-  // one already in the field so we don't offer a no-op chip.
-  const chips = savedVenues.filter((v) => v.name.trim() && v.name.trim() !== value.trim());
+  // A free-text venue with no matching vendor row — surfaced so an existing
+  // couple keeps their venue and can upgrade it to a mapped one via "Add".
+  const legacyName =
+    currentName.trim() && !vendors.some((v) => v.name.trim() === currentName.trim())
+      ? currentName.trim()
+      : "";
 
   return (
-    <div ref={wrapperRef} className="relative">
-      <input
-        id="guest-page-venue"
-        type="text"
-        className="input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => suggestions.length > 0 && setOpen(true)}
-        onKeyDown={onKey}
-        placeholder={t("wedding_site_editor.venue_placeholder")}
-        maxLength={200}
-        autoComplete="off"
-        aria-autocomplete="list"
-        aria-expanded={open}
-      />
-      {open && suggestions.length > 0 && (
-        <ul
-          role="listbox"
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-80 overflow-y-auto rounded-xl border border-paper-300 bg-white py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
-        >
-          {suggestions.map((s, i) => (
-            <li key={`${s.primary}-${i}`}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={i === highlight}
-                onMouseDown={(e) => {
-                  // mousedown fires before the input blurs, so the pick lands.
-                  e.preventDefault();
-                  pickSuggestion(s);
-                }}
-                onMouseEnter={() => setHighlight(i)}
-                className={`flex w-full items-start gap-2 px-3 py-2 text-left ${
-                  i === highlight
-                    ? "bg-blush-50 dark:bg-blush-400/15"
-                    : "hover:bg-paper-50 dark:hover:bg-umber-700"
-                }`}
-              >
+    <div className="flex flex-col gap-3">
+      {vendors.length === 0 && !legacyName && (
+        <p className="text-sm text-ink-500 dark:text-umber-300">{t("venue_picker.empty")}</p>
+      )}
+
+      {(legacyName || vendors.length > 0) && (
+        <ul className="flex flex-col gap-2" aria-label={t("wedding_site_editor.venue_label")}>
+          {legacyName && (
+            <li>
+              <span className="flex items-center gap-2.5 rounded-xl border border-paper-300 bg-paper-50 px-3.5 py-3 text-left dark:border-umber-700 dark:bg-umber-800/50">
                 <MapPin
-                  size={14}
-                  className="mt-0.5 shrink-0 text-blush-700 dark:text-blush-300"
+                  size={16}
+                  className="shrink-0 text-ink-400 dark:text-umber-300"
                   aria-hidden
                 />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-ink-900 dark:text-paper-50">
-                    {s.primary}
+                    {legacyName}
                   </span>
-                  {s.secondary && s.secondary !== s.primary && (
-                    <span className="block truncate text-[11px] text-ink-500 dark:text-umber-300">
-                      {s.secondary}
+                  <span className="block text-[11px] text-ink-500 dark:text-umber-300">
+                    {t("venue_picker.legacy_hint")}
+                  </span>
+                </span>
+              </span>
+            </li>
+          )}
+          {vendors.map((v) => {
+            const selected = v.id === selectedId;
+            const detail = v.address || v.city;
+            return (
+              <li key={v.id}>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onSelect(v)}
+                  aria-pressed={selected}
+                  className={`flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 disabled:opacity-60 dark:focus-visible:ring-paper-100 ${
+                    selected
+                      ? "border-ink-900 bg-paper-100 dark:border-paper-200/70 dark:bg-umber-700"
+                      : "border-paper-300 bg-white hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-umber-600"
+                  }`}
+                >
+                  <MapPin
+                    size={16}
+                    className="shrink-0 text-blush-700 dark:text-blush-300"
+                    aria-hidden
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-ink-900 dark:text-paper-50">
+                      {v.name}
+                    </span>
+                    {detail && (
+                      <span className="block truncate text-[11px] text-ink-500 dark:text-umber-300">
+                        {detail}
+                      </span>
+                    )}
+                  </span>
+                  {selected && (
+                    <span
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                      aria-hidden
+                    >
+                      <Check size={13} strokeWidth={3} />
                     </span>
                   )}
-                </span>
-              </button>
-            </li>
-          ))}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
-      {chips.length > 0 && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-ink-500 dark:text-umber-300">
-            {t("guest_page_editor.venue_saved_prefix")}
-          </span>
-          {chips.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => pick(v.name)}
-              className="inline-flex items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2.5 py-0.5 text-xs font-medium text-sage-800 hover:bg-sage-100 dark:border-sage-700 dark:bg-sage-900/30 dark:text-sage-200 dark:hover:bg-sage-900/50"
-            >
-              <MapPin size={11} aria-hidden />
-              {v.name}
-            </button>
-          ))}
+
+      <button
+        type="button"
+        onClick={onAdd}
+        className="inline-flex items-center gap-1.5 self-start rounded-full border border-dashed border-paper-400 px-3.5 py-2 text-sm font-medium text-ink-700 transition-colors hover:border-blush-300 hover:bg-paper-100/60 dark:border-umber-600 dark:text-paper-100 dark:hover:bg-umber-700/50"
+      >
+        <Plus size={15} aria-hidden />
+        {t("venue_picker.add_cta")}
+      </button>
+    </div>
+  );
+}
+
+/** Add-a-venue form (rendered inside the venue dialog when "Add" is chosen):
+ *  name + a map-picked address (both required) + optional contact email/phone.
+ *  Creates a DIY "venue" couple-supplier and hands it back so the parent can
+ *  select it. The Leaflet map picker is lazy so its bundle only loads here. */
+function AddVenueForm({
+  initialName,
+  onCancel,
+  onCreated,
+}: {
+  initialName: string;
+  onCancel: () => void;
+  onCreated: (v: VenueVendor) => void;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loc, setLoc] = useState<VenueLocationValue>({
+    address: "",
+    city: "",
+    lat: null,
+    lng: null,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const canSave =
+    name.trim().length > 0 &&
+    loc.address.trim().length > 0 &&
+    loc.lat !== null &&
+    loc.lng !== null &&
+    !saving;
+
+  async function submit() {
+    if (!canSave) return;
+    setSaving(true);
+    try {
+      const r = await coupleSupplierApi.create({
+        name: name.trim(),
+        category: "venue",
+        city: loc.city.trim() || null,
+        address: loc.address.trim() || null,
+        lat: loc.lat,
+        lng: loc.lng,
+        contact_email: email.trim() || null,
+        contact_phone: phone.trim() || null,
+      });
+      onCreated(coupleSupplierToVenueVendor(r.supplier));
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : t("wedding_site_editor.save_error_generic"),
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <label htmlFor="add-venue-name" className="field-label">
+          {t("venue_picker.name_label")}
+        </label>
+        <input
+          id="add-venue-name"
+          type="text"
+          className="input"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t("wedding_site_editor.venue_placeholder")}
+          maxLength={120}
+          autoComplete="off"
+        />
+      </div>
+
+      <Suspense
+        fallback={
+          <div className="flex h-[320px] items-center justify-center rounded-2xl border border-paper-300 dark:border-umber-700">
+            <Loader2 size={20} className="animate-spin text-ink-400" aria-hidden />
+          </div>
+        }
+      >
+        <VenueLocationPicker value={loc} onChange={setLoc} />
+      </Suspense>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div>
+          <label htmlFor="add-venue-email" className="field-label">
+            {t("venue_picker.email_label")}
+          </label>
+          <input
+            id="add-venue-email"
+            type="email"
+            className="input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            maxLength={200}
+            autoComplete="off"
+          />
         </div>
-      )}
+        <div>
+          <label htmlFor="add-venue-phone" className="field-label">
+            {t("venue_picker.phone_label")}
+          </label>
+          <input
+            id="add-venue-phone"
+            type="tel"
+            className="input"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            maxLength={40}
+            autoComplete="off"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-1">
+        <button type="button" className="btn-ghost" onClick={onCancel} disabled={saving}>
+          {t("common.cancel")}
+        </button>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={() => void submit()}
+          disabled={!canSave}
+        >
+          {saving ? t("wedding_site_editor.save_saving") : t("venue_picker.save_cta")}
+        </button>
+      </div>
     </div>
   );
 }
@@ -490,12 +564,17 @@ export default function GuestPageEditorPage() {
   // code, and we patch the local row rather than round-tripping the whole list.
   const [households, setHouseholds] = useState<Household[]>([]);
   const [rotatingId, setRotatingId] = useState<number | null>(null);
-  // Venues the couple already saved among their suppliers — surfaced as
-  // one-click quick-fill chips under the venue-name field ("Option B"). We
-  // resolve a picked "venue" category to its name (directory or DIY) and add
-  // any DIY "venue" suppliers. Loaded in its own effect so a supplier-API
+  // The venues among the couple's OWN vendors, offered by the guest-page venue
+  // picker: the picked directory venue (if any) + every DIY "venue" entry, each
+  // carrying its address/coords/contact. `venuePickId` is the currently chosen
+  // one (the `venue`-category pick). Loaded in its own effect so a supplier-API
   // hiccup never blocks the main couple/schedule/household load.
-  const [savedVenues, setSavedVenues] = useState<{ id: string; name: string }[]>([]);
+  const [venueVendors, setVenueVendors] = useState<VenueVendor[]>([]);
+  const [venuePickId, setVenuePickId] = useState<string | null>(null);
+  // List ↔ add-a-venue mode inside the venue dialog, and a busy flag while a
+  // selection is being persisted.
+  const [venueMode, setVenueMode] = useState<"list" | "add">("list");
+  const [venueBusy, setVenueBusy] = useState(false);
   // Cover-image upload — the server persists the file and the new URL into
   // the couples row in the same transaction, so the upload bypasses the
   // dirty/save flow. We track only the in-flight bit + hidden file input
@@ -575,8 +654,8 @@ export default function GuestPageEditorPage() {
     };
   }, []);
 
-  // Resolve the couple's saved venues for the quick-fill chips. Each call is
-  // wrapped so a single failure degrades to "no chips" rather than throwing.
+  // Resolve the couple's own venue vendors for the picker. Each call is wrapped
+  // so a single failure degrades to "no options" rather than throwing.
   useEffect(() => {
     let cancelled = false;
     Promise.all([
@@ -585,30 +664,38 @@ export default function GuestPageEditorPage() {
       supplierApi.list("venue").catch(() => ({ suppliers: [] as DirectorySupplier[] })),
     ]).then(([pR, csR, dR]) => {
       if (cancelled) return;
-      // Public supplier id → display name, across directory + DIY entries.
-      const nameById = new Map<string, string>();
-      for (const s of dR.suppliers) nameById.set(s.id, s.name);
-      for (const s of csR.suppliers) nameById.set(s.id, s.name);
-      const out: { id: string; name: string }[] = [];
+      const out: VenueVendor[] = [];
       const seen = new Set<string>();
-      const add = (id: string, name: string) => {
-        const trimmed = name.trim();
-        const key = trimmed.toLowerCase();
-        if (!trimmed || seen.has(key)) return;
-        seen.add(key);
-        out.push({ id, name: trimmed });
+      const push = (v: VenueVendor) => {
+        if (!v.name.trim() || seen.has(v.id)) return;
+        seen.add(v.id);
+        out.push(v);
       };
-      // The explicit "this is our venue" pick leads.
+      // The explicit "this is our venue" pick leads — include it when it points
+      // at a directory listing (a real venue vendor the couple chose).
       const venuePick = pR.picks.find((p) => p.category === "venue");
       if (venuePick) {
-        const name = nameById.get(venuePick.supplier_id);
-        if (name) add(venuePick.supplier_id, name);
+        const d = dR.suppliers.find((s) => s.id === venuePick.supplier_id);
+        if (d) {
+          push({
+            id: d.id,
+            name: d.name,
+            city: d.city ?? "",
+            address: d.address ?? "",
+            phone: d.contact_phone ?? "",
+            email: d.contact_email ?? "",
+            lat: d.lat,
+            lng: d.lng,
+            source: "directory",
+          });
+        }
       }
-      // Then any DIY venue entries the couple typed in themselves.
+      // Then any DIY "venue" entries the couple added themselves.
       for (const s of csR.suppliers) {
-        if (s.category === "venue") add(s.id, s.name);
+        if (s.category === "venue") push(coupleSupplierToVenueVendor(s));
       }
-      setSavedVenues(out);
+      setVenueVendors(out);
+      setVenuePickId(venuePick?.supplier_id ?? null);
     });
     return () => {
       cancelled = true;
@@ -741,6 +828,45 @@ export default function GuestPageEditorPage() {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     void save();
+  }
+
+  // Adopt a venue vendor as the couple's venue: write the "our venue" pick and
+  // copy the vendor's canonical details (name/city/address/phone + map coords)
+  // onto the couple row so the guest page, its map pin, and the Kulcsinfó card
+  // all agree. Persists immediately (mirrors KeyInfoCard's save), independent of
+  // the debounced auto-save. Syncing venue_name/city keeps the auto-save's dirty
+  // check from re-sending them.
+  async function applyVenue(v: VenueVendor) {
+    if (!couple || venueBusy) return;
+    setVenueBusy(true);
+    setError(null);
+    setVenuePickId(v.id);
+    setSelection(couple.id, "venue", v.id);
+    try {
+      const r = await coupleApi.update({
+        venue_name: v.name.trim() || null,
+        venue_city: v.city.trim() || null,
+        venue_address: v.address.trim() || null,
+        venue_phone: v.phone.trim() || null,
+        location_lat: v.lat,
+        location_lng: v.lng,
+      });
+      setCouple(r.couple);
+      setVenueName(r.couple.venue_name ?? "");
+      setVenueCity(r.couple.venue_city ?? "");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("wedding_site_editor.save_error_generic"));
+    } finally {
+      setVenueBusy(false);
+    }
+  }
+
+  // A freshly-added venue: drop it into the list, select it, and return to the
+  // list view.
+  function handleVenueCreated(v: VenueVendor) {
+    setVenueVendors((prev) => (prev.some((x) => x.id === v.id) ? prev : [...prev, v]));
+    setVenueMode("list");
+    void applyVenue(v);
   }
 
   // Debounced auto-save: ~900ms after the last edit, persist. Keyed on the
@@ -1679,48 +1805,52 @@ export default function GuestPageEditorPage() {
         )}
       </Dialog>
 
-      {/* Venue editor — clicking the location band opens it here. Kept as a
-          dialog (not inline prose) because the name field carries the Nominatim
-          autocomplete + saved-venue quick-fill chips. */}
+      {/* Venue editor — clicking the location band opens it here. Two modes in
+          one dialog: pick from the couple's venue vendors, or add a new one on
+          the map. Selecting persists immediately (applyVenue), so the only
+          footer is a Done button in list mode; the add form carries its own. */}
       <Dialog
         open={editPanel === "venue"}
         role="dialog"
-        closeOnBackdrop
-        title={t("wedding_site_editor.venue_label")}
-        onClose={() => setEditPanel(null)}
+        closeOnBackdrop={!venueBusy}
+        title={
+          venueMode === "add" ? t("venue_picker.add_title") : t("wedding_site_editor.venue_label")
+        }
+        onClose={() => {
+          setEditPanel(null);
+          setVenueMode("list");
+        }}
         footer={
-          <button type="button" className="btn-primary" onClick={() => setEditPanel(null)}>
-            {t("common.done")}
-          </button>
+          venueMode === "list" ? (
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={venueBusy}
+              onClick={() => setEditPanel(null)}
+            >
+              {t("common.done")}
+            </button>
+          ) : undefined
         }
       >
-        <div className="flex flex-col gap-3">
-          <div>
-            <label htmlFor="guest-page-venue" className="field-label">
-              {t("wedding_site_editor.venue_label")}
-            </label>
-            <VenueNameField
-              value={venueName}
-              onChange={setVenueName}
-              onPickCity={setVenueCity}
-              savedVenues={savedVenues}
-              country={couple?.country ?? "HU"}
-            />
-          </div>
-          <div>
-            <label htmlFor="guest-page-venue-city" className="field-label">
-              {t("wedding_site_editor.venue_city_label")}
-            </label>
-            <input
-              id="guest-page-venue-city"
-              className="input"
-              type="text"
-              value={venueCity}
-              onChange={(e) => setVenueCity(e.target.value)}
-              placeholder={t("wedding_site_editor.venue_city_placeholder")}
-            />
-          </div>
-        </div>
+        {venueMode === "list" ? (
+          <VenuePicker
+            vendors={venueVendors}
+            selectedId={venuePickId}
+            currentName={venueName}
+            busy={venueBusy}
+            onSelect={(v) => void applyVenue(v)}
+            onAdd={() => setVenueMode("add")}
+          />
+        ) : (
+          <AddVenueForm
+            // Prefill the name only when there are no vendors yet AND the couple
+            // has a free-typed venue to carry forward (the legacy-row case).
+            initialName={venueVendors.length === 0 ? venueName.trim() : ""}
+            onCancel={() => setVenueMode("list")}
+            onCreated={handleVenueCreated}
+          />
+        )}
       </Dialog>
     </>
   );
