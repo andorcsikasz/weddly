@@ -678,13 +678,17 @@ describe("onboarding + invites", () => {
     expect(onboard.status).toBe(201);
     expect(onboard.data.couple.display_name).toBe("Mia & Lucas");
 
-    // Budget lines are seeded from DEFAULT_BUDGET_SPLIT.
+    // A fresh workspace starts with an EMPTY budget — no line items are
+    // prefilled from the onboarding goal (the goal is stored as the ceiling).
     const lines = db
       .prepare("SELECT category, planned_huf FROM budget_lines WHERE couple_id = ?")
       .all(onboard.data.couple.id) as { category: string; planned_huf: number }[];
-    expect(lines.length).toBeGreaterThan(0);
-    const venueLine = lines.find((l) => l.category === "venue");
-    expect(venueLine?.planned_huf).toBe(1_250_000); // 25% of 5M
+    expect(lines.length).toBe(0);
+    // The goal is still recorded as the couple's budget ceiling.
+    const ceiling = db
+      .prepare("SELECT budget_ceiling_huf FROM couples WHERE id = ?")
+      .get(onboard.data.couple.id) as { budget_ceiling_huf: number | null };
+    expect(ceiling.budget_ceiling_huf).toBe(5_000_000);
 
     // Audit log has the onboarding event.
     const audit = db
@@ -1104,7 +1108,7 @@ describe("onboarding + invites", () => {
     expect(r.data.couple).toBeNull();
   });
 
-  test("structured-goal onboarding: season + range + range, with seeded budget at midpoint", async () => {
+  test("structured-goal onboarding: season + range + range, budget goal stored but not prefilled", async () => {
     wipeAll();
     const u = await registerAndVerify({
       email: "fuzzy@weddly.test",
@@ -1156,11 +1160,12 @@ describe("onboarding + invites", () => {
     expect(ob.data.couple.budget_goal.min_huf).toBe(4_000_000);
     expect(ob.data.couple.budget_goal.max_huf).toBe(6_000_000);
 
-    // Budget seeding picks the midpoint (5M HUF) so venue (25%) lands at 1.25M.
-    const venueLine = db
-      .prepare("SELECT planned_huf FROM budget_lines WHERE couple_id = ? AND category = 'venue'")
-      .get(ob.data.couple.id) as { planned_huf: number } | undefined;
-    expect(venueLine?.planned_huf).toBe(1_250_000);
+    // The budget goal is recorded (range, above) but NO line items are
+    // prefilled — a fresh workspace opens with an empty budget.
+    const linesCount = db
+      .prepare("SELECT count(*) as c FROM budget_lines WHERE couple_id = ?")
+      .get(ob.data.couple.id) as { c: number };
+    expect(linesCount.c).toBe(0);
   });
 
   test("structured-goal onboarding: TBD across the board seeds no budget lines", async () => {
@@ -1607,19 +1612,28 @@ describe("guests", () => {
 });
 
 describe("budget", () => {
-  test("seeded lines + add/update/snapshot", async () => {
+  test("empty on create, then add/update/snapshot", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("budget@weddly.test");
 
+    // A fresh workspace opens with an EMPTY budget — nothing is prefilled.
     const list = await req<{ lines: { id: number; category: string; planned_huf: number }[] }>(
       "GET",
       "/api/budget/lines",
       undefined,
       { token },
     );
-    expect(list.data.lines.length).toBeGreaterThan(0);
-    const venue = list.data.lines.find((l) => l.category === "venue");
-    expect(venue?.planned_huf).toBe(1_250_000);
+    expect(list.data.lines.length).toBe(0);
+
+    // The couple builds their own budget line by line.
+    const venue = await req<{ line: { id: number; category: string; planned_huf: number } }>(
+      "POST",
+      "/api/budget/lines",
+      { category: "venue", label: "Helyszín", planned_huf: 1_250_000, actual_huf: 0 },
+      { token },
+    );
+    expect(venue.status).toBe(201);
+    expect(venue.data.line.planned_huf).toBe(1_250_000);
 
     const add = await req<{ line: { id: number } }>(
       "POST",
@@ -1652,6 +1666,16 @@ describe("budget", () => {
     wipeAll();
     const { token } = await bootstrapCouple("frozen@weddly.test");
 
+    // The budget starts empty, so create a venue line to freeze (while the
+    // category is still unfrozen).
+    const created = await req<{ line: { id: number; planned_huf: number } }>(
+      "POST",
+      "/api/budget/lines",
+      { category: "venue", label: "Helyszín", planned_huf: 1_250_000, actual_huf: 0 },
+      { token },
+    );
+    expect(created.status).toBe(201);
+
     // Pin venue. Couple endpoint should accept the field and persist it.
     const upd = await req<{ couple: { frozen_categories: string[] } }>(
       "PATCH",
@@ -1662,7 +1686,7 @@ describe("budget", () => {
     expect(upd.status).toBe(200);
     expect(upd.data.couple.frozen_categories).toEqual(["venue"]);
 
-    // Find the seeded venue line.
+    // Find the venue line we just created.
     const list = await req<{ lines: { id: number; category: string; planned_huf: number }[] }>(
       "GET",
       "/api/budget/lines",
@@ -3294,6 +3318,14 @@ describe("data export (GDPR Article 20)", () => {
     wipeAll();
     const { token, coupleId } = await bootstrapCouple("export@weddly.test");
     await req("POST", "/api/guests", { full_name: "Export Guest" }, { token });
+    // Budget no longer prefills on onboarding, so add a line to prove the
+    // export carries budget rows.
+    await req(
+      "POST",
+      "/api/budget/lines",
+      { category: "venue", label: "Helyszín", planned_huf: 1_250_000, actual_huf: 0 },
+      { token },
+    );
 
     const r = await req<{
       schema_version: number;
@@ -6174,6 +6206,14 @@ describe("round-2: budget + seating concurrency", () => {
   test("budget PATCH 409s when If-Match is stale; clean PATCH updates partial fields", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("budget409@weddly.test");
+
+    // Budget no longer prefills — create a line to exercise the concurrency guard.
+    await req(
+      "POST",
+      "/api/budget/lines",
+      { category: "venue", label: "Helyszín", planned_huf: 1_250_000, actual_huf: 0 },
+      { token },
+    );
 
     const lines = await req<{ lines: { id: number; updated_at: number; planned_huf: number }[] }>(
       "GET",

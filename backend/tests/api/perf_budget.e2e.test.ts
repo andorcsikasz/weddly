@@ -472,6 +472,13 @@ describe("perf: budget", () => {
   test("PATCH /api/budget/lines/:id p95 < 50ms", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("perf-bd-patch@weddly.test");
+    // Budget no longer prefills on onboarding — create a line to patch.
+    await req(
+      "POST",
+      "/api/budget/lines",
+      { category: "venue", label: "Helyszín", planned_huf: 1_250_000, actual_huf: 0 },
+      { token },
+    );
     const list = await req<{ lines: Array<{ id: number; category: string; label: string }> }>(
       "GET",
       "/api/budget/lines",
@@ -479,7 +486,7 @@ describe("perf: budget", () => {
       { token },
     );
     const target = list.data.lines[0];
-    if (!target) throw new Error("expected default budget lines to exist");
+    if (!target) throw new Error("expected the created budget line to exist");
     let counter = 0;
     const { p95 } = await timeIt("budget.patch", () => {
       counter += 1;

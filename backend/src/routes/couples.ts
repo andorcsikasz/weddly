@@ -13,7 +13,6 @@ import {
   type CoupleInvite,
   type CouplePartnerView,
   type Currency,
-  DEFAULT_BUDGET_SPLIT,
   type GuestCountGoal,
   type GuestCountKind,
   INVITE_TTL_MS,
@@ -533,15 +532,6 @@ function parseBudgetGoal(body: OnboardBody): BudgetGoal {
   return { kind, exact_huf: null, min_huf: min, max_huf: max };
 }
 
-/** Pick a representative HUF amount from a goal — used to seed budget lines. */
-function representativeBudgetHuf(goal: BudgetGoal): number {
-  if (goal.kind === "exact") return goal.exact_huf ?? 0;
-  if (goal.kind === "range" && goal.min_huf !== null && goal.max_huf !== null) {
-    return Math.round((goal.min_huf + goal.max_huf) / 2);
-  }
-  return 0;
-}
-
 function parseOptionalInt(
   raw: unknown,
   field: string,
@@ -559,27 +549,6 @@ function parseOptionalFloat(raw: unknown, field: string, min: number, max: numbe
   const n = typeof raw === "number" ? raw : Number(raw);
   if (!Number.isFinite(n) || n < min || n > max) throw new HttpError(400, `${field} out of range`);
   return n;
-}
-
-function seedBudgetLines(coupleId: number, ceilingHuf: number) {
-  const ts = now();
-  const insert = db.prepare(
-    `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, supplier_id, notes, created_at, updated_at)
-     VALUES (?, ?, ?, ?, 0, NULL, NULL, ?, ?)`,
-  );
-  for (const [category, share] of Object.entries(DEFAULT_BUDGET_SPLIT)) {
-    if (share <= 0) continue;
-    const planned = Math.round(ceilingHuf * share);
-    insert.run(coupleId, category, prettyCategoryLabel(category), planned, ts, ts);
-  }
-}
-
-function prettyCategoryLabel(category: string): string {
-  // Backend gives a stable English fallback; the frontend translates via i18n.
-  return category
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
 }
 
 async function handleOnboard(ctx: Ctx): Promise<Response> {
@@ -736,9 +705,9 @@ async function handleOnboard(ctx: Ctx): Promise<Response> {
     // it (in the Planners panel) before the planner gains edit access.
     linkPlannerInvitationsForCouple(userId, newCoupleId, onboardingUser?.email ?? "");
 
-    // Range budgets seed lines off the midpoint; TBD seeds nothing.
-    const seedHuf = representativeBudgetHuf(budgetGoal);
-    if (seedHuf > 0) seedBudgetLines(newCoupleId, seedHuf);
+    // A fresh workspace starts with an empty budget — the onboarding goal is
+    // recorded as the ceiling (columns above), but no line items are prefilled.
+    // Couples build their own budget rather than inheriting a canned split.
 
     addAuditLog({
       actor_user_id: userId,
@@ -3499,10 +3468,8 @@ async function handleCreateAdditionalCouple(ctx: Ctx): Promise<Response> {
     // (matches Alpha's ordering convention).
     ensurePartnerGuests({ coupleId, brideName, groomName });
 
-    // Seed budget lines off the new workspace's own goal — Bravo / Charlie
-    // start with a fresh budget that the user can scale independently.
-    const seedHuf = representativeBudgetHuf(budgetGoal);
-    if (seedHuf > 0) seedBudgetLines(coupleId, seedHuf);
+    // An additional workspace also starts with an empty budget (its own goal
+    // is stored as the ceiling); no canned line split is prefilled.
 
     // Apply the optional guest+household import. Skipped silently when the
     // caller didn't ask for it or selected nothing.
