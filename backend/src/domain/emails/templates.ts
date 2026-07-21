@@ -2578,10 +2578,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ctaSubtext: "Egy kattintás, és egy jelszó. Regisztrálni nem kell.",
       footnote:
         "Ha nem te kezeled a vállalkozást, add tovább a kollégának. Ha egyáltalán nem kéritek a profilt, hagyd figyelmen kívül ezt a levelet, és levesszük.",
-      secondaryLinks: [
-        { label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl },
-        { label: "Ne írjatok többet", url: p.optOutUrl },
-      ],
+      secondaryLinks: [{ label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl }],
     },
     en: {
       preheader: `${p.categoryLabel} · ${p.city}. Take the profile over and edit it yourself.`,
@@ -2595,10 +2592,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ctaSubtext: "One click and a password. No sign-up form.",
       footnote:
         "Not the right person? Pass it to whoever runs the diary. If you would rather not be listed at all, ignore this email and we will take it down.",
-      secondaryLinks: [
-        { label: "What is Weddly?", url: CONFIG.frontendBaseUrl },
-        { label: "Don't email me again", url: p.optOutUrl },
-      ],
+      secondaryLinks: [{ label: "What is Weddly?", url: CONFIG.frontendBaseUrl }],
     },
   }),
   // The single 2-day nudge. Shorter on purpose: they have the context from the
