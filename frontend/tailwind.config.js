@@ -156,6 +156,14 @@ export default {
         // account), per user direction 2026-07-09. Single value; reads on both
         // light paper and dark umber backgrounds.
         verified: "#1fa6e1",
+        // Share-blue — the bright royal blue for the "Share Weddly" referral
+        // modal (the sent-message bubble + its tail, the active pagination dot,
+        // the primary share button), per user direction 2026-07-21. One hue in
+        // both themes; white text sits on it. `hover` is the darker press state.
+        share: {
+          DEFAULT: "#3578F7",
+          hover: "#2A63D6",
+        },
         // Star — the gold used for rating stars (review picker + rating rows),
         // per user direction 2026-07-09. A truer gold than the oat paper-500 the
         // stars used before. Single value; reads on light paper + dark umber.

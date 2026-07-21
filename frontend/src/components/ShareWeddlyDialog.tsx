@@ -339,7 +339,7 @@ export function ShareWeddlyDialog({
                 <div
                   className={`relative max-w-[90%] rounded-[1.4rem] px-4 py-3 transition-colors duration-300 ${
                     selected
-                      ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                      ? "bg-share text-paper-50"
                       : "bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-paper-200"
                   }`}
                 >
@@ -347,7 +347,7 @@ export function ShareWeddlyDialog({
                   <span
                     aria-hidden="true"
                     className={`absolute -right-1 bottom-1.5 h-3 w-3 rotate-45 rounded-[3px] ${
-                      selected ? "bg-ink-900 dark:bg-paper-100" : "bg-paper-100 dark:bg-umber-700"
+                      selected ? "bg-share" : "bg-paper-100 dark:bg-umber-700"
                     }`}
                   />
                 </div>
@@ -371,7 +371,7 @@ export function ShareWeddlyDialog({
                 aria-current={selected}
                 className={`h-1.5 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 ${
                   selected
-                    ? "w-5 bg-ink-900 dark:bg-paper-100"
+                    ? "w-5 bg-share"
                     : "w-1.5 bg-paper-300 hover:bg-paper-400 dark:bg-umber-600 dark:hover:bg-umber-500"
                 }`}
               />
@@ -391,7 +391,7 @@ export function ShareWeddlyDialog({
             disabled={phase === "sharing"}
             title={shareLabel}
             aria-label={shareLabel}
-            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-ink-900 text-paper-50 transition-colors hover:bg-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 disabled:opacity-70 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-share text-paper-50 transition-colors hover:bg-share-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-share focus-visible:ring-offset-2 disabled:opacity-70 dark:focus-visible:ring-share"
           >
             {phase === "sharing" ? (
               <span
