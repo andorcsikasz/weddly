@@ -907,13 +907,16 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
   const continueRef = useRef(onContinue);
   continueRef.current = onContinue;
 
-  // Auto-redirect after 7s; cancelled the moment the user engages with extras.
+  // Auto-redirect after 20s; cancelled the moment the user engages with extras.
+  // Long enough to read the celebration and decide whether to add another
+  // event — 7s fired before the user could take it in and dumped them on the
+  // dashboard skeleton mid-thought.
   const timerRef = useRef<number | null>(null);
   const timerCancelledRef = useRef(false);
   useEffect(() => {
     timerRef.current = window.setTimeout(() => {
       if (!timerCancelledRef.current) continueRef.current();
-    }, 7000);
+    }, 20000);
     return () => {
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     };
@@ -996,84 +999,12 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
   return (
     <Shell>
       <div className="mx-auto max-w-xl">
-        <div className="rounded-xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-900">
-          <p className="text-sm font-semibold text-umber-800 dark:text-paper-100">
-            {t("onboarding.extra_events_heading")}
-          </p>
-          <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
-            {t("onboarding.extra_events_body")}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {EXTRA_PRESET_IDS.map((id) => (
-              <KindButton
-                key={id}
-                active={selected.has(id)}
-                onClick={() => togglePreset(id)}
-                label={
-                  id === "civil"
-                    ? t("onboarding.extra_preset_civil")
-                    : id === "abroad"
-                      ? t("onboarding.extra_preset_abroad")
-                      : t("onboarding.extra_preset_custom")
-                }
-              />
-            ))}
-          </div>
-          {hasExtras && (
-            <div className="mt-4 flex flex-col gap-3">
-              {selectedList.map((id) => {
-                const draft = drafts[id]!;
-                return (
-                  <div key={id} className="flex flex-col gap-2">
-                    <div className="flex gap-2">
-                      <input
-                        className="input flex-1"
-                        value={draft.name}
-                        onChange={(e) => updateDraft(id, "name", e.target.value)}
-                        placeholder={t("onboarding.extra_event_name_placeholder")}
-                        aria-label={t("onboarding.extra_event_name_placeholder")}
-                      />
-                      <input
-                        type="date"
-                        className="input w-40"
-                        value={draft.date}
-                        onChange={(e) => updateDraft(id, "date", e.target.value)}
-                        aria-label={t("onboarding.extra_event_date_label")}
-                        title={t("onboarding.extra_event_date_label")}
-                      />
-                    </div>
-                    {id === "abroad" && (
-                      <CountryCombobox
-                        value={draft.country}
-                        onChange={(code) => updateDraft(id, "country", code)}
-                        label={t("onboarding.country_label")}
-                        placeholder={t("onboarding.country_placeholder")}
-                        required
-                      />
-                    )}
-                  </div>
-                );
-              })}
-              {extrasError !== null && (
-                <p className="text-sm text-red-600 dark:text-red-400">{extrasError}</p>
-              )}
-              <button
-                type="button"
-                className="btn-accent btn-lg w-full"
-                disabled={!canSubmit || creating}
-                onClick={handleCreateExtras}
-              >
-                {creating ? t("onboarding.extra_entering") : t("onboarding.extra_enter_cta")}
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="card animate-fade-in-up relative mt-5 overflow-hidden text-center">
+        <div className="card animate-fade-in-up relative overflow-hidden text-center">
           <Confetti />
-          <div className="relative z-10">
+          <div className="relative z-10 flex flex-col items-center">
+            {/* ── Celebration hero ─────────────────────────────────────── */}
             <div
-              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-sage-100 ring-2 ring-sage-400 dark:bg-sage-900 dark:ring-sage-600"
+              className="flex h-20 w-20 items-center justify-center rounded-full bg-sage-100 ring-2 ring-sage-400 dark:bg-sage-900 dark:ring-sage-600"
               aria-hidden="true"
             >
               <svg
@@ -1088,17 +1019,94 @@ function AllSet({ onContinue }: { onContinue: () => void }) {
                 <path d="M20 6 9 17l-5-5" />
               </svg>
             </div>
-            <h1 className="mt-6 font-grotesk text-umber-900 dark:text-paper-50">
-              {t("onboarding.all_set_title")}
-            </h1>
+            <h1 className={`mt-6 ${STEP_TITLE}`}>{t("onboarding.all_set_title")}</h1>
+
+            {/* ── Add another event? (optional, centered) ──────────────── */}
+            <div className="mt-8 w-full border-t border-paper-300 pt-7 dark:border-umber-700">
+              <p className="text-sm font-semibold text-umber-800 dark:text-paper-100">
+                {t("onboarding.extra_events_heading")}
+              </p>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-umber-600 dark:text-umber-300">
+                {t("onboarding.extra_events_body")}
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {EXTRA_PRESET_IDS.map((id) => (
+                  <KindButton
+                    key={id}
+                    active={selected.has(id)}
+                    onClick={() => togglePreset(id)}
+                    label={
+                      id === "civil"
+                        ? t("onboarding.extra_preset_civil")
+                        : id === "abroad"
+                          ? t("onboarding.extra_preset_abroad")
+                          : t("onboarding.extra_preset_custom")
+                    }
+                  />
+                ))}
+              </div>
+
+              {hasExtras && (
+                <div className="mt-5 flex flex-col gap-3 text-left">
+                  {selectedList.map((id) => {
+                    const draft = drafts[id]!;
+                    return (
+                      <div key={id} className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                          <input
+                            className="input flex-1"
+                            value={draft.name}
+                            onChange={(e) => updateDraft(id, "name", e.target.value)}
+                            placeholder={t("onboarding.extra_event_name_placeholder")}
+                            aria-label={t("onboarding.extra_event_name_placeholder")}
+                          />
+                          <input
+                            type="date"
+                            className="input w-40"
+                            value={draft.date}
+                            onChange={(e) => updateDraft(id, "date", e.target.value)}
+                            aria-label={t("onboarding.extra_event_date_label")}
+                            title={t("onboarding.extra_event_date_label")}
+                          />
+                        </div>
+                        {id === "abroad" && (
+                          <CountryCombobox
+                            value={draft.country}
+                            onChange={(code) => updateDraft(id, "country", code)}
+                            label={t("onboarding.country_label")}
+                            placeholder={t("onboarding.country_placeholder")}
+                            required
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                  {extrasError !== null && (
+                    <p className="text-sm text-red-600 dark:text-red-400">{extrasError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Primary action ───────────────────────────────────────── */}
             {hasExtras ? (
-              <button
-                type="button"
-                className="mt-8 w-full text-sm text-umber-500 transition hover:text-umber-700 dark:text-umber-400 dark:hover:text-umber-200"
-                onClick={onContinue}
-              >
-                {t("onboarding.extra_skip")}
-              </button>
+              <div className="mt-8 w-full">
+                <button
+                  type="button"
+                  className="btn-accent btn-lg w-full"
+                  disabled={!canSubmit || creating}
+                  onClick={handleCreateExtras}
+                >
+                  {creating ? t("onboarding.extra_entering") : t("onboarding.extra_enter_cta")}
+                </button>
+                <button
+                  type="button"
+                  className="mt-3 w-full text-sm text-umber-500 transition hover:text-umber-700 dark:text-umber-400 dark:hover:text-umber-200"
+                  onClick={onContinue}
+                >
+                  {t("onboarding.extra_skip")}
+                </button>
+              </div>
             ) : (
               <button
                 type="button"
