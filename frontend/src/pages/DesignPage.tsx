@@ -89,6 +89,15 @@ import {
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
+/** Share/publish actions render icon-first and stay collapsed to just the
+ *  glyph; the label slides open inline when you hover or keyboard-focus the
+ *  button (the pill itself widens — no floating tooltip). `!gap-0` kills the
+ *  base `.btn` gap so the collapsed state hugs the icon; the label carries its
+ *  own left margin only once expanded. */
+const expandBtn = "group !gap-0";
+const expandLabel =
+  "max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:ml-2 group-hover:max-w-[12rem] group-hover:opacity-100 group-focus-visible:ml-2 group-focus-visible:max-w-[12rem] group-focus-visible:opacity-100";
+
 /** A font chip that PREVIEWS the typeface: it shows a large "Aa" rendered in
  *  the font it represents (no name text). `label` is the accessible name (the
  *  family name / "use preset") since the visible "Aa" carries no meaning to a
@@ -1448,10 +1457,10 @@ export default function DesignPage() {
                     <button
                       type="button"
                       onClick={() => setFullPreview(true)}
-                      className="btn btn-outline btn-sm"
+                      className={`btn btn-outline btn-sm ${expandBtn}`}
                     >
                       <Maximize2 size={14} aria-hidden />
-                      {t("design.full_preview")}
+                      <span className={expandLabel}>{t("design.full_preview")}</span>
                     </button>
                     {couple?.slug && couple.is_public === false && (
                       <Link to="/app/guest-page" className="btn btn-primary btn-sm">
@@ -1464,18 +1473,22 @@ export default function DesignPage() {
                           href={`/w/${couple.slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="btn btn-primary btn-sm"
+                          className={`btn btn-primary btn-sm ${expandBtn}`}
                         >
                           <ExternalLink size={14} aria-hidden />
-                          {t("design.finish.view_live")}
+                          <span className={expandLabel}>
+                            {t("design.finish.view_live")}
+                          </span>
                         </a>
                         <button
                           type="button"
                           onClick={() => void copyGuestLink()}
-                          className="btn btn-outline btn-sm"
+                          className={`btn btn-outline btn-sm ${expandBtn}`}
                         >
                           <Copy size={14} aria-hidden />
-                          {t("design.finish.copy_link")}
+                          <span className={expandLabel}>
+                            {t("design.finish.copy_link")}
+                          </span>
                         </button>
                       </>
                     )}

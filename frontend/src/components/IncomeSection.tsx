@@ -214,7 +214,7 @@ export function IncomeSection({
       <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">{t("income.sub")}</p>
 
       {/* Summary - one warm number, no leaderboard. */}
-      <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 rounded-2xl border border-paper-300 bg-paper-50 px-4 py-3 dark:border-umber-700 dark:bg-ink-800 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 rounded-2xl border border-umber-800 bg-paper-50 px-4 py-3 dark:border-umber-700 dark:bg-ink-800 sm:grid-cols-3">
         <Stat label={t("income.received")} value={formatMoney(received, currency, loc)} />
         <Stat label={t("income.spent")} value={formatMoney(totalSpentHuf, currency, loc)} />
         <Stat
