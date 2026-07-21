@@ -354,6 +354,9 @@ const STUBS: KindPayload = {
   newsletter_confirm: {
     confirmUrl: `${BASE_URL}/newsletter/confirm/preview-token`,
   },
+  visitor_verify: {
+    verifyUrl: `${BASE_URL}/visitor/verify/preview-token`,
+  },
   admin_feedback_reply: {
     replyText:
       "Köszönjük a visszajelzést! Az asztalok elrendezését a „Terem” elrendezés alatt tudod módosítani, az „Ültetés” pedig a vendégek asztalokhoz rendelésére való.\n\nHa bármi elakad, írj bátran.",

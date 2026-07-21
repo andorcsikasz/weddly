@@ -48,7 +48,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
     "Access-Control-Allow-Headers":
-      "Authorization, Content-Type, x-test-client-ip, X-Weddly-Device",
+      "Authorization, Content-Type, x-test-client-ip, X-Weddly-Device, X-Visitor-Token",
     Vary: "Origin",
   };
 }

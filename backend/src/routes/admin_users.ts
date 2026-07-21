@@ -11,7 +11,7 @@ import type {
   UserFlag,
 } from "@shared/types";
 import { CONFIG } from "../config";
-import { db } from "../db";
+import { db, VISITOR_SYSTEM_USER_EMAIL } from "../db";
 import { grantFreeAccess, revokeFreeAccess } from "../domain/billing";
 import { sendKind } from "../domain/emails";
 import { purgeOneUser } from "../domain/purge";
@@ -166,15 +166,19 @@ function listAllUsers(): UserRow[] {
   // the no-workspace list. Every mutating handler here already refuses them, so
   // there is nothing an admin could do with one anyway. Matches the filter the
   // sidebar badge (below) and orphan_reconcile / analytics_audience already use.
+  // The reserved verified-visitor system user (db.ts) anchors visitor-authored
+  // content's NOT-NULL author FK; it's plumbing, never a real account, so it's
+  // dropped here alongside purged tombstones.
   return db
     .prepare(
       `SELECT * FROM users
         WHERE email NOT LIKE '%@purged.local'
+          AND email != ?
           AND (email LIKE ?
                OR (role != 'vendor' AND user_type != 'planner'))
         ORDER BY created_at DESC`,
     )
-    .all(`%${DEMO_EMAIL_SUFFIX}`) as UserRow[];
+    .all(VISITOR_SYSTEM_USER_EMAIL, `%${DEMO_EMAIL_SUFFIX}`) as UserRow[];
 }
 
 function listAllCouples(): CoupleRow[] {
@@ -862,6 +866,7 @@ function handleSidebarBadges(ctx: Ctx): Response {
            LEFT JOIN couples c ON c.id = u.couple_id
           WHERE u.created_at > ?
             AND u.email NOT LIKE '%@purged.local'
+            AND u.email != '${VISITOR_SYSTEM_USER_EMAIL}'
             AND u.email NOT LIKE '%${DEMO_EMAIL_SUFFIX}'
             AND COALESCE(c.is_demo, 0) = 0
             -- Real vendors/planners live on their own FIÓKOK pages and are

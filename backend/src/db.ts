@@ -1876,3 +1876,62 @@ const VERIFY_BACKFILL_CUTOFF_MS = 1_784_678_400_000; // 2026-07-22T00:00:00Z
     console.log(`[db.backfill] marked ${verified} pre-existing account(s) email-verified`);
   }
 }
+
+// ── Verified-visitor content anchoring ───────────────────────────────────────
+// community_suppliers.submitter_user_id and supplier_reviews.author_user_id are
+// NOT-NULL FKs to users(id). A verified visitor is NOT a user, and the schema is
+// additive-only (no table rebuild to relax the constraint). So visitor-authored
+// rows point that FK at ONE reserved system user (below) and record the REAL
+// author in these additive columns; every display path reads the visitor column
+// first. ON DELETE SET NULL so deleting a visitor de-attributes rather than
+// cascading a whole listing/review away.
+addColumnIfMissing(
+  "community_suppliers",
+  "submitter_visitor_id",
+  "submitter_visitor_id INTEGER REFERENCES verified_visitors(id) ON DELETE SET NULL",
+);
+addColumnIfMissing(
+  "supplier_reviews",
+  "author_visitor_id",
+  "author_visitor_id INTEGER REFERENCES verified_visitors(id) ON DELETE SET NULL",
+);
+// Indexes AFTER the column calls (May 2026 ordering rule). The unique index is
+// the visitor mirror of idx_supplier_reviews_couple_unique: one review per
+// visitor per supplier, partial so pre-visitor NULL rows don't collide.
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_community_suppliers_visitor ON community_suppliers(submitter_visitor_id)",
+);
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_reviews_visitor_unique " +
+    "ON supplier_reviews(supplier_id, author_visitor_id) WHERE author_visitor_id IS NOT NULL",
+);
+
+// Reserved system user that anchors the NOT-NULL author FK for verified-visitor
+// content (see above). Login-disabled (status='suspended' and password_hash that
+// can never verify); verified_email=1 + password_set=0 so no unverified-account
+// sweep touches it. It is filtered out of the admin user list. NEVER delete it —
+// ON DELETE CASCADE on those FKs would take every visitor-authored row with it.
+export const VISITOR_SYSTEM_USER_EMAIL = "community-visitor@weddly.internal";
+let visitorSystemUserId: number | null = null;
+export function getVisitorSystemUserId(): number {
+  if (visitorSystemUserId !== null) return visitorSystemUserId;
+  const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(VISITOR_SYSTEM_USER_EMAIL) as
+    | { id: number }
+    | undefined;
+  if (existing) {
+    visitorSystemUserId = existing.id;
+    return existing.id;
+  }
+  const ts = now();
+  const info = db
+    .prepare(
+      `INSERT INTO users
+         (email, password_hash, full_name, status, role, verified_email, password_set, created_at, updated_at)
+       VALUES (?, '!', 'Community submissions', 'suspended', 'owner', 1, 0, ?, ?)`,
+    )
+    .run(VISITOR_SYSTEM_USER_EMAIL, ts, ts);
+  visitorSystemUserId = Number(info.lastInsertRowid);
+  return visitorSystemUserId;
+}
+// Materialize at boot so the row exists before any request references it.
+getVisitorSystemUserId();

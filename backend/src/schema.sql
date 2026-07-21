@@ -400,6 +400,42 @@ CREATE INDEX IF NOT EXISTS idx_community_reports_supplier
 CREATE INDEX IF NOT EXISTS idx_community_reports_open
   ON community_supplier_reports(status, created_at DESC);
 
+-- Verified visitors: an email-verified party with NO login/session. They can
+-- suggest suppliers and write supplier reviews without a Weddly account. Double
+-- opt-in like newsletter_subscribers (own email-keyed row, single-use hashed
+-- verify token, 7-day TTL) but verifying NEVER creates a `users` row or a
+-- session. Their authored content (community_suppliers, supplier_reviews) anchors
+-- the existing NOT-NULL author FK to a reserved system user (db.ts) and records
+-- the REAL author in the additive *_visitor_id columns. See shared/verified_visitors.ts.
+CREATE TABLE IF NOT EXISTS verified_visitors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL UNIQUE,
+  full_name TEXT,                                             -- optional display name
+  locale TEXT NOT NULL DEFAULT 'en',                          -- confirmation-email language
+  status TEXT NOT NULL DEFAULT 'pending',                     -- 'pending' | 'verified'
+  verify_token_hash TEXT,                                     -- sha256 of the emailed link token; NULL once consumed
+  verify_token_created_at INTEGER,
+  verified_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_verified_visitors_token
+  ON verified_visitors(verify_token_hash);
+
+-- Per-device auth tokens for a verified visitor ("verify once per device").
+-- Mirrors the `sessions` table shape but for the session-less visitor principal:
+-- the emailed link, when clicked, mints one of these; the browser stores the
+-- plaintext and replays it on X-Visitor-Token. Only the sha256 hash is stored.
+CREATE TABLE IF NOT EXISTS verified_visitor_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  visitor_id INTEGER NOT NULL REFERENCES verified_visitors(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,                            -- sha256 of the device token
+  created_at INTEGER NOT NULL,
+  last_seen_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_visitor_sessions_visitor
+  ON verified_visitor_sessions(visitor_id);
+
 -- Up/down vote on each directory supplier, one row per (couple, supplier_id).
 -- `supplier_id` is the public string id (curated slug or "c{N}"), same as
 -- couple_supplier_costs — no FK because curated suppliers live in code.

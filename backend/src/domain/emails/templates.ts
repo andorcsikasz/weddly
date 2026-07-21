@@ -687,6 +687,12 @@ export interface NewsletterConfirmPayload {
   confirmUrl: string;
 }
 
+export interface VisitorVerifyPayload {
+  /** Confirm link ({FRONTEND_BASE_URL}/visitor/verify/…) that verifies the
+   *  visitor's email and, once clicked, lets them suggest suppliers + review. */
+  verifyUrl: string;
+}
+
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
   verify_resend: VerifyResendPayload;
@@ -756,6 +762,7 @@ export type KindPayload = {
   planner_access_invite: PlannerAccessInvitePayload;
   planner_invite_outcome: PlannerInviteOutcomePayload;
   newsletter_confirm: NewsletterConfirmPayload;
+  visitor_verify: VisitorVerifyPayload;
   admin_feedback_reply: AdminFeedbackReplyPayload;
 };
 
@@ -3136,6 +3143,34 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Confirm subscription",
       footnote: "The link is valid for 7 days. Every email includes a one-click unsubscribe.",
+    },
+  }),
+
+  // Confirm-your-email for a verified visitor: someone who wants to suggest a
+  // supplier or leave a review without opening a Weddly account. One click and
+  // they can contribute; the copy says exactly that. Same 7-day link posture as
+  // the couples welcome verify.
+  visitor_verify: (p) => ({
+    subject: "Erősítsd meg az e-mail-címed / Confirm your email · Weddly",
+    ctaUrl: p.verifyUrl,
+    hu: {
+      preheader: "Egy kattintás, és javasolhatsz szolgáltatót vagy írhatsz értékelést.",
+      greeting: "Szia!",
+      paragraphs: [
+        "Valaki, reméljük, te, ezzel a címmel szeretne szolgáltatót ajánlani vagy értékelést írni a Weddly-n, fiók nélkül.",
+        "Ha te voltál, erősítsd meg az alábbi gombbal, és már küldheted is. Ha nem, nincs teendőd: e nélkül a kattintás nélkül nem történik semmi.",
+      ],
+      cta: "E-mail-cím megerősítése",
+      footnote: "A link 7 napig érvényes. Nem hozunk létre fiókot, és jelszó sem kell.",
+    },
+    en: {
+      greeting: "Hi there,",
+      paragraphs: [
+        "Someone, hopefully you, wants to suggest a supplier or write a review on Weddly with this address, without an account.",
+        "If that was you, confirm below and you're set to contribute. If not, do nothing: without this click nothing happens.",
+      ],
+      cta: "Confirm your email",
+      footnote: "The link is valid for 7 days. No account is created and no password is needed.",
     },
   }),
 
