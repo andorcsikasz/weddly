@@ -53,6 +53,7 @@ import {
   Eye,
   ImagePlus,
   Loader2,
+  MapPin,
   Maximize2,
   Monitor,
   Pencil,
@@ -1466,11 +1467,23 @@ export default function DesignPage() {
                                 >
                                   {t("design.web.map_label")}
                                 </span>
-                                <span className="mt-0.5 block text-xs text-ink-400 dark:text-umber-400">
-                                  {hasVenueCoords
-                                    ? t("design.web.map_confirm_body")
-                                    : t("design.web.map_needs_location")}
-                                </span>
+                                {hasVenueCoords ? (
+                                  <span className="mt-0.5 block text-xs text-ink-400 dark:text-umber-400">
+                                    {t("design.web.map_confirm_body")}
+                                  </span>
+                                ) : (
+                                  // No coords yet: the venue location lives on the
+                                  // guest-page editor (a map-picked address sets the
+                                  // pin), so make the hint a shortcut straight into
+                                  // that editor's venue panel.
+                                  <Link
+                                    to="/app/guest-page?edit=venue"
+                                    className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-500 underline decoration-dotted underline-offset-2 transition-colors hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+                                  >
+                                    <MapPin size={11} aria-hidden />
+                                    {t("design.web.map_needs_location")}
+                                  </Link>
+                                )}
                               </span>
                               <Switch
                                 checked={design.web.venueMap}

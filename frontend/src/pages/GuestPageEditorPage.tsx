@@ -43,7 +43,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, Switch, useConfirm, useToast } from "../components/ui";
@@ -588,6 +588,18 @@ export default function GuestPageEditorPage() {
   const [editPanel, setEditPanel] = useState<
     "cover" | "useful" | "date" | "schedule" | "venue" | null
   >(null);
+
+  // Deep-link `?edit=venue` (the design page's "add venue location" prompt links
+  // here since the map pin is set by a map-picked address in the venue panel).
+  // Open the panel once, then strip the param so a refresh/back doesn't re-pop it.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("edit") !== "venue") return;
+    setEditPanel("venue");
+    const next = new URLSearchParams(searchParams);
+    next.delete("edit");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
