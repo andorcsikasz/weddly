@@ -8319,6 +8319,7 @@ const hu: LocaleMessages = {
       "Ízelítő a Weddly szolgáltatóiból. Regisztrálj ingyen, és látod a teljes katalógust, elmentheted a kedvenceket, és közvetlenül felveheted velük a kapcsolatot.",
     couples_stat: "Jelenleg {count} pár tervezi az esküvőjét a Weddly-n",
     cta_couple: "Regisztrálj, és látod az összeset",
+    cta_vendor: "Szolgáltatóként",
     empty: "A katalógus épp töltődik fel, nézz vissza hamarosan.",
     convert_title: "Nézd meg a teljes katalógust",
     convert_sub:

@@ -28,16 +28,27 @@ const MIN_COUPLES_TO_SHOW = 15;
 function TopBar({ t }: { t: (k: string) => string }) {
   return (
     <header className="sticky top-0 z-20 border-b border-paper-200 bg-paper-50/90 backdrop-blur dark:border-umber-700 dark:bg-umber-900/90">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <Link to="/" aria-label="Weddly" className="inline-flex items-center">
           <Wordmark size="sm" className="text-ink-900 dark:text-paper-50" />
         </Link>
-        <Link
-          to="/signup"
-          className="rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
-        >
-          {t("vendorBrowse.cta_couple")}
-        </Link>
+        {/* Two CTAs share the right cluster: couples sign up (primary dark
+            pill), vendors get listed (secondary outline). The vendor button is
+            sm+ only so the phone header keeps a single action. */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            to="/vendors/signup"
+            className="hidden rounded-full border border-ink-300 px-4 py-2 text-sm font-medium text-ink-800 transition hover:border-ink-900 hover:text-ink-900 sm:inline-flex dark:border-umber-600 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50"
+          >
+            {t("vendorBrowse.cta_vendor")}
+          </Link>
+          <Link
+            to="/signup"
+            className="rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
+          >
+            {t("vendorBrowse.cta_couple")}
+          </Link>
+        </div>
       </div>
     </header>
   );
@@ -211,7 +222,7 @@ export default function VendorBrowsePage() {
       <TopBar t={t} />
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pb-8 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+      <section className="mx-auto max-w-6xl px-4 pb-8 pt-8 sm:px-6 sm:pt-10 lg:px-8">
         <h1 className="max-w-3xl font-grotesk text-4xl tracking-tight text-ink-900 sm:text-5xl dark:text-paper-50">
           {t("vendorBrowse.title")}
         </h1>

@@ -8963,6 +8963,7 @@ export interface LocaleMessages {
     subtitle: string;
     couples_stat: string;
     cta_couple: string;
+    cta_vendor: string;
     empty: string;
     convert_title: string;
     convert_sub: string;

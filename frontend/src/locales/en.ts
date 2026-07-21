@@ -8253,6 +8253,7 @@ const en: LocaleMessages = {
       "A preview of the vendors on Weddly. Sign up free to see the full directory, save your favourites and reach out directly.",
     couples_stat: "{count} couples are planning their wedding on Weddly right now",
     cta_couple: "Sign up to see all",
+    cta_vendor: "Join as vendor",
     empty: "The directory is filling up, check back soon.",
     convert_title: "See the full directory",
     convert_sub:
