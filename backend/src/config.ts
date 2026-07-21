@@ -127,12 +127,13 @@ export const CONFIG = {
    *  them in the Stripe dashboard (or via scripts/stripe_setup.ts). */
   stripePriceEur: process.env.STRIPE_PRICE_EUR ?? "",
   stripePriceHuf: process.env.STRIPE_PRICE_HUF ?? "",
-  /** Price id for the planner-managed couple's guest-page (vendégoldal) edit
-   *  add-on, sold at the 70%-off rate (the couple pays ~30%). One price covers
-   *  both currencies for now. When unset the add-on checkout returns 503, so it
-   *  never blocks boot. Create it in the Stripe dashboard at the discounted
-   *  amount. See docs / CLAUDE.md billing notes. */
-  stripeGuestPageAddonPrice: process.env.STRIPE_GUEST_PAGE_ADDON_PRICE ?? "",
+  /** One-time Price ids for the planner-managed couple's guest-page (vendégoldal)
+   *  edit add-on, sold at ~30% of one month (0.3 × the monthly couple price). One
+   *  per currency, matched to the couple's `currency` like the subscription price.
+   *  When unset the add-on checkout returns 503, so it never blocks boot. Create
+   *  them in the Stripe dashboard at the discounted amount. */
+  stripeGuestPageAddonPriceEur: process.env.STRIPE_GUEST_PAGE_ADDON_PRICE_EUR ?? "",
+  stripeGuestPageAddonPriceHuf: process.env.STRIPE_GUEST_PAGE_ADDON_PRICE_HUF ?? "",
   /** Recurring Price ids for the planner subscription, one per tier per currency.
    *  A planner is sent to Checkout with the Price matching their chosen tier +
    *  currency. Create them with backend/scripts/stripe_setup_planner.ts. When

@@ -14,6 +14,7 @@ import {
   claimStripeEvent,
   foundingSlotsUsed,
   getCoupleByStripeCustomer,
+  guestPageAddonPriceId,
   markGuestPagePrepaid,
   priceIdForCurrency,
   setStripeCustomerId,
@@ -115,12 +116,8 @@ async function handleGuestPageAddonCheckout(ctx: Ctx): Promise<Response> {
   const userId = requireVerifiedAuth(ctx, getUserById);
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
-  const priceId = CONFIG.stripeGuestPageAddonPrice;
-  if (!priceId) {
-    throw new HttpError(503, "Guest-page add-on is not configured", {
-      code: "addon_price_missing",
-    });
-  }
+  const currency = normaliseCurrency(couple.currency);
+  const priceId = guestPageAddonPriceId(currency);
   const user = getUserById(userId);
   let customerId = couple.stripe_customer_id;
   if (!customerId) {

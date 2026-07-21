@@ -130,7 +130,8 @@ describe("planner-managed billing + guest-page add-on", () => {
   test("guest-page add-on checkout is 503 when no add-on price is configured", async () => {
     const { token } = await bootstrapCouple("nostripe@weddly.test");
     const r = await req("POST", "/api/billing/guest-page-addon/checkout", {}, { token });
-    // Stripe disabled in tests → 503 (billing not configured) before price check.
+    // Both add-on price vars are pinned empty in tests → 503 addon_price_missing,
+    // regardless of the couple's currency.
     expect(r.status).toBe(503);
   });
 

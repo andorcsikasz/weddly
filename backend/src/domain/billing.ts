@@ -53,6 +53,19 @@ export function priceIdForCurrency(currency: Currency): string {
   return id;
 }
 
+/** The one-time Price id for the guest-page edit add-on, picked by the couple's
+ *  currency (USD → EUR, like the subscription price). */
+export function guestPageAddonPriceId(currency: Currency): string {
+  const id =
+    currency === "HUF" ? CONFIG.stripeGuestPageAddonPriceHuf : CONFIG.stripeGuestPageAddonPriceEur;
+  if (!id) {
+    throw new HttpError(503, "Guest-page add-on is not configured", {
+      code: "addon_price_missing",
+    });
+  }
+  return id;
+}
+
 // ── Founding-member eligibility ─────────────────────────────────────────────
 /** Founding-cohort badges granted so far. The first-FOUNDING_CAP cap is filled
  *  in partner-join order: a couple consumes a slot only once BOTH partners have
