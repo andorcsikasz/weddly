@@ -6816,8 +6816,6 @@ export interface LocaleMessages {
     menu_label: string;
     title: string;
     body: string;
-    /** Sits above the message cards. */
-    supporting: string;
     /** Accessible name for the message rail + its pagination dots. */
     messages_label: string;
     /** The share text itself. Ends with the URL; `splitShareMessage` lifts the

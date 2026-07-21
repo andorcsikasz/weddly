@@ -6078,7 +6078,6 @@ const hu: LocaleMessages = {
     menu_label: "Weddly megosztása",
     title: "Osszátok meg a Weddly-t, hogy több párhoz eljussunk.",
     body: "Segítsetek, hogy más pároknak is segíthessünk.",
-    supporting: "Húzzátok oldalra, és válasszátok a hozzátok illő üzenetet.",
     messages_label: "Megosztandó üzenet",
     message_warm:
       "Mi a Weddlyvel szervezzük az esküvőnket, és sokkal egyszerűbbé teszi az egész folyamatot. Ha ti is a nagy napotokra készültök, érdemes megnézni: https://tryweddly.com",

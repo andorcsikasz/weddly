@@ -295,10 +295,6 @@ export function ShareWeddlyDialog({
           {t("share_weddly.body")}
         </p>
 
-        <p className="mt-5 text-[0.8125rem] text-ink-500 dark:text-umber-300">
-          {t("share_weddly.supporting")}
-        </p>
-
         {/* A horizontal scroll-snap rail: one message centred, its neighbours
          *  peeking, dragged sideways on touch. Left/right arrows and the dots
          *  step through it; whichever card settles at centre is the pick. The
@@ -319,7 +315,7 @@ export function ShareWeddlyDialog({
               goTo(Math.max(active - 1, 0));
             }
           }}
-          className="-mx-1 mt-2.5 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-1 pb-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="-mx-1 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-1 pb-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {messages.map((m, i) => {
             const selected = i === active;

@@ -6019,7 +6019,6 @@ const en: LocaleMessages = {
     menu_label: "Share Weddly",
     title: "Share Weddly to reach more couples.",
     body: "Help us to help other couples, too.",
-    supporting: "Swipe to pick the message that feels like you.",
     messages_label: "Share message",
     message_warm:
       "We're planning our wedding with Weddly, and it's making everything feel much easier. If you're planning yours too, take a look: https://tryweddly.com",
