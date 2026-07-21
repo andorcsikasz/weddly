@@ -2572,13 +2572,17 @@ function ChainStep({
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const allDone = progress !== undefined && progress.done > 0 && progress.done >= progress.total;
-  if (collapsed) {
+  // A green (fully resolved) step collapses to an icon-only pill to reclaim
+  // chain space — the label + count ride in the tooltip. The active step stays
+  // expanded (it renders in coffee, not green) so its sub-categories read.
+  if (collapsed || (allDone && !active)) {
+    const collapsedLabel = count !== undefined ? `${label} (${count})` : label;
     return (
       <button
         type="button"
         onClick={onClick}
-        title={label}
-        aria-label={label}
+        title={collapsedLabel}
+        aria-label={collapsedLabel}
         className="group relative flex items-center justify-center rounded-lg border border-sage-600 bg-sage-600 px-2.5 py-2 text-white transition-colors duration-300 ease-out hover:border-sage-700 hover:bg-sage-700 dark:border-sage-600 dark:bg-sage-600 dark:text-white dark:hover:border-sage-700 dark:hover:bg-sage-700"
       >
         <span className="flex h-5 items-center leading-none" aria-hidden>
