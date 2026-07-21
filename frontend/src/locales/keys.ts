@@ -3176,16 +3176,16 @@ export interface LocaleMessages {
       cover_replace: string;
       cover_remove: string;
       photo_art: {
-        dawn: string;
+        reception_pergola: string;
+        reception_candlelit: string;
+        place_setting: string;
+        greenery_arch: string;
+        draped_arch: string;
+        pampas_candles: string;
+        candle_still: string;
+        dried_flowers: string;
         eucalyptus: string;
-        arches: string;
-        terrazzo: string;
-        silk: string;
-        halftone: string;
-        dunes: string;
-        marble: string;
-        wildflowers: string;
-        boho_sun: string;
+        eucalyptus_light: string;
       };
       card_radius: { sharp: string; soft: string; full: string };
       shadow: { none: string; soft: string; pop: string };

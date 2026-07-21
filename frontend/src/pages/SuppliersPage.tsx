@@ -1080,6 +1080,10 @@ export default function SuppliersPage() {
           if (aHas !== bHas) return bHas - aHas;
           if (ad != null && bd != null && ad !== bd) return ad - bd;
           if (b.votes_score !== a.votes_score) return b.votes_score - a.votes_score;
+          // Equal net votes: the photographed vendor leads the imageless one.
+          const aImg = a.hero_image_url ? 1 : 0;
+          const bImg = b.hero_image_url ? 1 : 0;
+          if (aImg !== bImg) return bImg - aImg;
           if (a.source !== b.source) return a.source === "curated" ? -1 : 1;
         }
         return collator(a, b);
@@ -1104,6 +1108,11 @@ export default function SuppliersPage() {
         if (aSelf !== bSelf) return bSelf - aSelf;
         if (a.source !== "self" && b.source !== "self") {
           if (b.votes_score !== a.votes_score) return b.votes_score - a.votes_score;
+          // Equal net votes: a real uploaded hero photo makes the card far more
+          // clickable, so the photographed vendor leads the imageless one.
+          const aImg = a.hero_image_url ? 1 : 0;
+          const bImg = b.hero_image_url ? 1 : 0;
+          if (aImg !== bImg) return bImg - aImg;
           if (a.source !== b.source) return a.source === "curated" ? -1 : 1;
         }
         return collator(a, b);

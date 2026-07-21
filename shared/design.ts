@@ -768,42 +768,70 @@ export const IMAGE_TREATMENTS: readonly { slug: ImageTreatmentSlug; nameKey: str
   { slug: "grayscale", nameKey: "design.web.image_treatment.grayscale" },
 ];
 
-/** Curated, people-free background art a couple can drop into a guest-page
- *  photo slot instead of uploading their own. Each entry is a static SVG served
+/** Curated, people-free background photos a couple can drop into a guest-page
+ *  photo slot instead of uploading their own. Each entry is a static JPEG served
  *  from `frontend/public/design-photos/<file>` (reachable at `/design-photos/…`
  *  in every build). The `file` is the whole contract shared across the fence:
  *  the backend whitelists these slugs and writes `curatedPhotoUrl(slug)` into
  *  the same `site_image_N_url` TEXT column an upload uses, so the guest page
  *  renders one identically to the other and the grayscale treatment applies to
  *  both. Additive-only: never rename or drop a `file`, or a couple who picked it
- *  loses their image. Add new art by appending a row and dropping the SVG in. */
+ *  loses their image. Add new art by appending a row and dropping the photo in. */
 export type CuratedPhotoSlug =
-  | "dawn"
+  | "reception_pergola"
+  | "reception_candlelit"
+  | "place_setting"
+  | "greenery_arch"
+  | "draped_arch"
+  | "pampas_candles"
+  | "candle_still"
+  | "dried_flowers"
   | "eucalyptus"
-  | "arches"
-  | "terrazzo"
-  | "silk"
-  | "halftone"
-  | "dunes"
-  | "marble"
-  | "wildflowers"
-  | "boho_sun";
+  | "eucalyptus_light";
 
 export const CURATED_SITE_PHOTOS: readonly {
   slug: CuratedPhotoSlug;
   file: string;
   nameKey: string;
 }[] = [
-  { slug: "dawn", file: "01-dawn.svg", nameKey: "design.web.photo_art.dawn" },
-  { slug: "eucalyptus", file: "02-eucalyptus.svg", nameKey: "design.web.photo_art.eucalyptus" },
-  { slug: "arches", file: "03-arches.svg", nameKey: "design.web.photo_art.arches" },
-  { slug: "terrazzo", file: "04-terrazzo.svg", nameKey: "design.web.photo_art.terrazzo" },
-  { slug: "silk", file: "05-silk.svg", nameKey: "design.web.photo_art.silk" },
-  { slug: "halftone", file: "06-halftone.svg", nameKey: "design.web.photo_art.halftone" },
-  { slug: "dunes", file: "07-dunes.svg", nameKey: "design.web.photo_art.dunes" },
-  { slug: "marble", file: "08-marble.svg", nameKey: "design.web.photo_art.marble" },
-  { slug: "wildflowers", file: "09-wildflowers.svg", nameKey: "design.web.photo_art.wildflowers" },
-  { slug: "boho_sun", file: "10-boho-sun.svg", nameKey: "design.web.photo_art.boho_sun" },
+  {
+    slug: "reception_pergola",
+    file: "01-reception-pergola.jpg",
+    nameKey: "design.web.photo_art.reception_pergola",
+  },
+  {
+    slug: "reception_candlelit",
+    file: "02-reception-candlelit.jpg",
+    nameKey: "design.web.photo_art.reception_candlelit",
+  },
+  {
+    slug: "place_setting",
+    file: "03-place-setting.jpg",
+    nameKey: "design.web.photo_art.place_setting",
+  },
+  {
+    slug: "greenery_arch",
+    file: "04-greenery-arch.jpg",
+    nameKey: "design.web.photo_art.greenery_arch",
+  },
+  { slug: "draped_arch", file: "05-draped-arch.jpg", nameKey: "design.web.photo_art.draped_arch" },
+  {
+    slug: "pampas_candles",
+    file: "06-pampas-candles.jpg",
+    nameKey: "design.web.photo_art.pampas_candles",
+  },
+  { slug: "candle_still", file: "07-candle.jpg", nameKey: "design.web.photo_art.candle_still" },
+  {
+    slug: "dried_flowers",
+    file: "08-dried-flowers.jpg",
+    nameKey: "design.web.photo_art.dried_flowers",
+  },
+  { slug: "eucalyptus", file: "09-eucalyptus.jpg", nameKey: "design.web.photo_art.eucalyptus" },
+  {
+    slug: "eucalyptus_light",
+    file: "10-eucalyptus-light.jpg",
+    nameKey: "design.web.photo_art.eucalyptus_light",
+  },
 ];
 
 export const VALID_CURATED_PHOTO_SLUGS: ReadonlySet<CuratedPhotoSlug> = new Set(
