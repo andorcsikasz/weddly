@@ -286,7 +286,7 @@ export function ShareWeddlyDialog({
       open={open}
       role="dialog"
       title={t("share_weddly.title")}
-      titleClassName="text-2xl leading-[1.15] sm:text-[1.75rem]"
+      titleClassName="text-balance text-[1.375rem] leading-[1.15] sm:text-[1.625rem]"
       onClose={handleClose}
       closeOnBackdrop={phase !== "sharing"}
     >
