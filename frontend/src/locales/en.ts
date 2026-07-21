@@ -6013,8 +6013,8 @@ const en: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Share Weddly",
-    title: "Sharing is caring.",
-    body: "Help us reach more and more couples.",
+    title: "Share Weddly to reach more couples.",
+    body: "Help us to help other couples, too.",
     supporting: "Swipe to pick the message that feels like you.",
     messages_label: "Share message",
     message_warm:

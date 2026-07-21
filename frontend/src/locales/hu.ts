@@ -6072,8 +6072,8 @@ const hu: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Weddly megosztása",
-    title: "A megosztás törődés.",
-    body: "Segítsetek, hogy még több párhoz eljussunk.",
+    title: "Osszátok meg a Weddly-t, hogy több párhoz eljussunk.",
+    body: "Segítsetek, hogy más pároknak is segíthessünk.",
     supporting: "Húzzátok oldalra, és válasszátok a hozzátok illő üzenetet.",
     messages_label: "Megosztandó üzenet",
     message_warm:
