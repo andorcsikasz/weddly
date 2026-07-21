@@ -5,15 +5,15 @@
 // optional PDF — vendors quote in wildly different shapes, so there is no
 // structured spec schema to render (see shared/listing_packages.ts). This
 // component turns that free text into a scannable card: a headline zone
-// (name + a large, dominant price), a divider, and a specs zone where each
+// (name + a compact price), a divider, and a specs zone where each
 // "Label: value" line of the description becomes an icon + fact row. Icons
 // are picked by keyword so the eye scans glyphs instead of reading
 // sentences; anything unrecognised falls back to a neutral check.
 //
 // Only the 5 most decision-relevant specs show by default; the rest sit
-// behind a per-card "See full details" toggle. One card in the row is
-// flagged the recommended anchor (accent top bar + badge + a stronger
-// lift), the way a pricing page highlights its default tier.
+// behind a per-card "See full details" toggle. Every card is uniform — a
+// flat white face with a crisp dark hairline outline, Uber-style — with no
+// singled-out "recommended" tier.
 
 import type { ListingPackage } from "@shared/listing_packages";
 import {
@@ -177,11 +177,9 @@ function SpecRow({ spec }: { spec: Spec }) {
 
 function PackageCard({
   pkg,
-  recommended,
   t,
 }: {
   pkg: ListingPackage;
-  recommended: boolean;
   t: T;
 }) {
   const specs = parseSpecs(pkg.description);
@@ -191,33 +189,15 @@ function PackageCard({
   const isEmpty = !pkg.price_text && specs.length === 0 && !pkg.pdf_url;
 
   return (
-    <div
-      className={`relative flex h-full flex-col overflow-hidden rounded-2xl bg-white dark:bg-umber-900 ${
-        recommended
-          ? "shadow-pop ring-1 ring-blush-500/40 dark:ring-blush-400/40"
-          : "shadow-elevated ring-1 ring-black/[0.04] dark:shadow-none dark:ring-umber-600"
-      }`}
-    >
-      {/* Accent top bar + badge single out the recommended tier the way a
-          pricing page highlights its default choice. This is one of the few
-          places the accent colour is allowed to appear. */}
-      {recommended && (
-        <>
-          <span aria-hidden className="block h-1 w-full bg-blush-500 dark:bg-blush-400" />
-          <span className="absolute right-4 top-4 inline-flex items-center rounded-full bg-blush-500 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white dark:bg-blush-400 dark:text-umber-900">
-            {t("suppliers.detail.packages.recommended")}
-          </span>
-        </>
-      )}
-
-      {/* Headline zone — name + a large, dominant price. Fixed min-height so
-          the dividers line up across all three columns. */}
+    <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-ink-900 dark:bg-umber-900 dark:ring-umber-600">
+      {/* Headline zone — name + a compact price. Fixed min-height so the
+          dividers line up across all three columns. */}
       <div className="flex min-h-[5.5rem] flex-col justify-start gap-1.5 px-5 pb-4 pt-5">
-        <h3 className="pr-20 text-base font-semibold leading-snug text-ink-900 dark:text-cream-50">
+        <h3 className="text-base font-semibold leading-snug text-ink-900 dark:text-cream-50">
           {pkg.name}
         </h3>
         {pkg.price_text ? (
-          <p className="text-2xl font-bold leading-none tracking-tight text-ink-900 dark:text-cream-50">
+          <p className="text-lg font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50">
             {pkg.price_text}
           </p>
         ) : isEmpty ? (
@@ -277,24 +257,13 @@ function PackageCard({
   );
 }
 
-/** The recommended anchor: the middle tier when a vendor published three
- *  (the classic good/better/best anchor position), the last when they
- *  published two, none for a single package. Positional, not booking-driven —
- *  there is no per-package booking signal to rank on yet. */
-function recommendedIndex(count: number): number {
-  if (count >= 3) return 1;
-  if (count === 2) return 1;
-  return -1;
-}
-
 /** Responsive comparison grid of package cards. `items-stretch` (grid default)
  *  keeps every card in a row the same height so spec rows align across columns. */
 export function VendorPackageGrid({ packages, t }: { packages: ListingPackage[]; t: T }) {
-  const recIndex = recommendedIndex(packages.length);
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {packages.map((pkg, i) => (
-        <PackageCard key={pkg.id} pkg={pkg} recommended={i === recIndex} t={t} />
+      {packages.map((pkg) => (
+        <PackageCard key={pkg.id} pkg={pkg} t={t} />
       ))}
     </div>
   );
