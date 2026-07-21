@@ -6798,11 +6798,8 @@ export interface LocaleMessages {
     body: string;
     /** Sits above the message cards. */
     supporting: string;
-    /** Accessible name for the message radio-group. */
+    /** Accessible name for the message rail + its pagination dots. */
     messages_label: string;
-    variant_warm: string;
-    variant_clean: string;
-    variant_friendly: string;
     /** The share text itself. Ends with the URL; `splitShareMessage` lifts the
      *  URL out for `navigator.share` so it isn't duplicated. */
     message_warm: string;

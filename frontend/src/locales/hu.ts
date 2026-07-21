@@ -6058,13 +6058,10 @@ const hu: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Weddly megosztása",
-    title: "Ti a közös jövőtöket építitek. Mi a Weddlyt.",
-    body: "Ha a Weddly egy kicsit könnyebbé teszi az esküvőszervezést, segítsetek, hogy még több pár megismerhesse.",
-    supporting: "Válasszátok ki a hozzátok legközelebb álló üzenetet.",
+    title: "A megosztás törődés.",
+    body: "Segítsetek, hogy még több párhoz eljussunk.",
+    supporting: "Húzzátok oldalra, és válasszátok a hozzátok illő üzenetet.",
     messages_label: "Megosztandó üzenet",
-    variant_warm: "Kedves",
-    variant_clean: "Letisztult",
-    variant_friendly: "Baráti",
     message_warm:
       "Mi a Weddlyvel szervezzük az esküvőnket, és sokkal egyszerűbbé teszi az egész folyamatot. Ha ti is a nagy napotokra készültök, érdemes megnézni: https://tryweddly.com",
     message_clean:

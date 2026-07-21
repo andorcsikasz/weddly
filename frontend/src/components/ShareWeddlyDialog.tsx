@@ -1,11 +1,14 @@
-// The "share Weddly" referral prompt. Two icon-led actions (share, copy) over
-// three selectable message variants, in one language — whichever the interface
+// The "share Weddly" referral prompt. Two icon-led actions (share, copy) over a
+// swipeable rail of message variants, in one language — whichever the interface
 // is speaking. Opened automatically once per account (AppShell) and on demand
 // from the profile dropdown, forever.
 //
-// Copy and message variants come from the locale tree, so the complete
-// localised set is in hand the moment the modal renders; nothing is translated
-// at share time. See lib/share_weddly.ts for the language rule and the funnel.
+// The variants live side by side in a horizontal scroll-snap rail: one card at a
+// time with a peek of its neighbours, dragged sideways on touch or jumped with
+// the dots. No variant labels — the message itself is the choice. Copy and
+// message variants come from the locale tree, so the complete localised set is
+// in hand the moment the modal renders; nothing is translated at share time.
+// See lib/share_weddly.ts for the language rule and the funnel.
 
 import { Check, Copy, Share2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -21,7 +24,6 @@ import {
   shareLanguage,
   splitShareMessage,
   trackShare,
-  variantLabelKey,
   variantMessageKey,
 } from "../lib/share_weddly";
 import { Dialog } from "./ui";
@@ -53,13 +55,20 @@ export function ShareWeddlyDialog({
 }: ShareWeddlyDialogProps) {
   const { t, locale } = useT();
   const language = shareLanguage(locale);
-  const [variant, setVariant] = useState<ShareVariant>("warm");
+  const [active, setActive] = useState(0);
+  const variant: ShareVariant = SHARE_VARIANTS[active] ?? "warm";
   const [phase, setPhase] = useState<Phase>("idle");
   /** Non-blocking status line, mirrored into an aria-live region so copied /
    *  sharing / success / cancelled / error all reach a screen reader. */
   const [status, setStatus] = useState<string>("");
   const shareBtnRef = useRef<HTMLButtonElement>(null);
+  const railRef = useRef<HTMLDivElement>(null);
   const copiedTimer = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
+  /** Mirror of `active` readable inside the rAF scroll handler without a stale
+   *  closure, and the guard that stops the settle-driven selection event from
+   *  firing on the reset back to card 0. */
+  const activeRef = useRef(0);
 
   const analytics = useCallback(
     (extra?: Partial<ShareAnalyticsContext>): ShareAnalyticsContext => ({
@@ -75,14 +84,9 @@ export function ShareWeddlyDialog({
     [source, language, variant, sessionNumber, meaningfulActions],
   );
 
-  // The three cards, resolved in the ACTIVE language when the modal opens.
+  // The variants, resolved in the ACTIVE language when the modal opens.
   const messages = useMemo(
-    () =>
-      SHARE_VARIANTS.map((v) => ({
-        variant: v,
-        label: t(variantLabelKey(v)),
-        message: t(variantMessageKey(v)),
-      })),
+    () => SHARE_VARIANTS.map((v) => ({ variant: v, message: t(variantMessageKey(v)) })),
     [t],
   );
 
@@ -93,7 +97,9 @@ export function ShareWeddlyDialog({
   // previous session's pick. `weddly_share_popup_viewed` fires here, once.
   useEffect(() => {
     if (!open) return;
-    setVariant("warm");
+    setActive(0);
+    activeRef.current = 0;
+    railRef.current?.scrollTo({ left: 0 });
     setPhase("idle");
     setStatus("");
     trackShare("weddly_share_popup_viewed", {
@@ -113,6 +119,7 @@ export function ShareWeddlyDialog({
   useEffect(
     () => () => {
       if (copiedTimer.current !== null) window.clearTimeout(copiedTimer.current);
+      if (rafRef.current !== null) window.cancelAnimationFrame(rafRef.current);
     },
     [],
   );
@@ -154,18 +161,50 @@ export function ShareWeddlyDialog({
     }
   }, []);
 
-  const handleSelect = useCallback(
-    (next: ShareVariant) => {
-      if (next === variant) return;
-      setVariant(next);
-      trackShare("weddly_share_message_selected", {
-        source,
-        language,
-        message_variant: next,
-      });
-    },
-    [variant, source, language],
-  );
+  /** Whichever card sits nearest the rail's centre is the selection. Called
+   *  from a rAF-throttled scroll handler, so a drag settles onto exactly one
+   *  variant and the funnel records the switch once per card crossed. */
+  const settleActive = useCallback(() => {
+    const el = railRef.current;
+    if (!el) return;
+    const centre = el.scrollLeft + el.clientWidth / 2;
+    let best = 0;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < el.children.length; i++) {
+      const child = el.children[i] as HTMLElement;
+      const childCentre = child.offsetLeft + child.offsetWidth / 2;
+      const dist = Math.abs(childCentre - centre);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = i;
+      }
+    }
+    if (best === activeRef.current) return;
+    activeRef.current = best;
+    setActive(best);
+    const v = SHARE_VARIANTS[best];
+    if (v) {
+      trackShare("weddly_share_message_selected", { source, language, message_variant: v });
+    }
+  }, [source, language]);
+
+  const handleScroll = useCallback(() => {
+    if (rafRef.current !== null) return;
+    rafRef.current = window.requestAnimationFrame(() => {
+      rafRef.current = null;
+      settleActive();
+    });
+  }, [settleActive]);
+
+  /** Jump the rail to a card, centred. Drives the dots and keyboard arrows;
+   *  the ensuing scroll settles `active` through `handleScroll`. */
+  const goTo = useCallback((index: number) => {
+    const el = railRef.current;
+    const child = el?.children[index] as HTMLElement | undefined;
+    if (!el || !child) return;
+    const left = child.offsetLeft - (el.clientWidth - child.offsetWidth) / 2;
+    el.scrollTo({ left, behavior: "smooth" });
+  }, []);
 
   const handleCopy = useCallback(async () => {
     const text = clipboardMessage(selectedMessage);
@@ -256,74 +295,72 @@ export function ShareWeddlyDialog({
           {t("share_weddly.body")}
         </p>
 
-        <p className="mt-7 text-sm font-medium text-ink-900 dark:text-paper-50">
+        <p className="mt-5 text-[0.8125rem] text-ink-500 dark:text-umber-300">
           {t("share_weddly.supporting")}
         </p>
 
-        {/* Radio-group rather than a listbox: three mutually exclusive options,
-         *  arrow keys move between them, the whole card is the control. */}
+        {/* A horizontal scroll-snap rail: one message centred, its neighbours
+         *  peeking, dragged sideways on touch. Left/right arrows and the dots
+         *  step through it; whichever card settles at centre is the pick. The
+         *  rail is one tab stop, the dots move within it. */}
         <div
-          role="radiogroup"
+          ref={railRef}
+          onScroll={handleScroll}
+          role="group"
+          aria-roledescription="carousel"
           aria-label={t("share_weddly.messages_label")}
-          className="mt-3 flex flex-col gap-2"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight") {
+              e.preventDefault();
+              goTo(Math.min(active + 1, messages.length - 1));
+            } else if (e.key === "ArrowLeft") {
+              e.preventDefault();
+              goTo(Math.max(active - 1, 0));
+            }
+          }}
+          className="-mx-1 mt-2.5 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-1 pb-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {messages.map((m) => {
-            const selected = m.variant === variant;
+          {messages.map((m, i) => {
+            const selected = i === active;
+            return (
+              <div
+                key={m.variant}
+                aria-roledescription="slide"
+                aria-hidden={!selected}
+                className={`flex min-h-[7.5rem] shrink-0 basis-[86%] snap-center items-center rounded-2xl border p-5 transition-all duration-300 ${
+                  selected
+                    ? "border-ink-900 bg-paper-100 opacity-100 dark:border-paper-200/70 dark:bg-umber-700"
+                    : "scale-[0.96] border-paper-300 bg-white opacity-55 dark:border-umber-600 dark:bg-umber-800"
+                }`}
+              >
+                <span className="block text-[0.9375rem] leading-relaxed text-ink-800 dark:text-paper-100">
+                  {m.message}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Pagination dots. The active one stretches into a pill so position is
+         *  legible at a glance; each is a real button so the rail is navigable
+         *  without a drag. */}
+        <div className="mt-3.5 flex justify-center gap-1.5">
+          {messages.map((m, i) => {
+            const selected = i === active;
             return (
               <button
                 key={m.variant}
                 type="button"
-                role="radio"
-                aria-checked={selected}
-                // Roving tabindex — the group is one tab stop, arrows move
-                // within it, which is the expected radio-group behaviour.
-                tabIndex={selected ? 0 : -1}
-                onClick={() => handleSelect(m.variant)}
-                onKeyDown={(e) => {
-                  if (
-                    e.key !== "ArrowDown" &&
-                    e.key !== "ArrowRight" &&
-                    e.key !== "ArrowUp" &&
-                    e.key !== "ArrowLeft"
-                  ) {
-                    return;
-                  }
-                  e.preventDefault();
-                  const idx = SHARE_VARIANTS.indexOf(m.variant);
-                  const step = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1;
-                  const next =
-                    SHARE_VARIANTS[(idx + step + SHARE_VARIANTS.length) % SHARE_VARIANTS.length];
-                  if (!next) return;
-                  handleSelect(next);
-                  // Move focus with the selection so the arrow keys keep working.
-                  const group = e.currentTarget.parentElement;
-                  const target =
-                    group?.querySelectorAll<HTMLElement>('[role="radio"]')[
-                      (idx + step + SHARE_VARIANTS.length) % SHARE_VARIANTS.length
-                    ];
-                  target?.focus();
-                }}
-                className={`relative w-full rounded-lg border p-4 pr-11 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 ${
+                onClick={() => goTo(i)}
+                aria-label={`${t("share_weddly.messages_label")} ${i + 1}`}
+                aria-current={selected}
+                className={`h-1.5 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 ${
                   selected
-                    ? "border-ink-900 bg-paper-100 dark:border-paper-100 dark:bg-umber-700"
-                    : "border-paper-300 bg-white hover:border-paper-400 dark:border-umber-600 dark:bg-umber-800 dark:hover:border-umber-500"
+                    ? "w-5 bg-ink-900 dark:bg-paper-100"
+                    : "w-1.5 bg-paper-300 hover:bg-paper-400 dark:bg-umber-600 dark:hover:bg-umber-500"
                 }`}
-              >
-                <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-                  {m.label}
-                </span>
-                <span className="mt-1.5 block text-sm leading-relaxed text-ink-800 dark:text-paper-100">
-                  {m.message}
-                </span>
-                {selected && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute right-3 top-4 flex h-5 w-5 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
-                  >
-                    <Check size={13} strokeWidth={3} />
-                  </span>
-                )}
-              </button>
+              />
             );
           })}
         </div>
@@ -331,7 +368,7 @@ export function ShareWeddlyDialog({
         {/* Two icon-only actions. Share stays visually primary; copy is the
          *  quiet secondary. Both are 44×44 minimum and carry a native tooltip
          *  plus an aria-label, so the icon is never the only affordance. */}
-        <div className="mt-7 flex items-center gap-3">
+        <div className="mt-6 flex items-center gap-3">
           <button
             ref={shareBtnRef}
             type="button"

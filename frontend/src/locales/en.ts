@@ -5999,13 +5999,10 @@ const en: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Share Weddly",
-    title: "You build your marriage. We build Weddly.",
-    body: "If Weddly is making your wedding planning a little easier, help us bring that feeling to more couples.",
-    supporting: "Choose a message that feels like you.",
+    title: "Sharing is caring.",
+    body: "Help us reach more and more couples.",
+    supporting: "Swipe to pick the message that feels like you.",
     messages_label: "Share message",
-    variant_warm: "Warm",
-    variant_clean: "Clean",
-    variant_friendly: "Friendly",
     message_warm:
       "We're planning our wedding with Weddly, and it's making everything feel much easier. If you're planning yours too, take a look: https://tryweddly.com",
     message_clean:

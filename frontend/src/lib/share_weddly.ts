@@ -42,11 +42,6 @@ export function variantMessageKey(variant: ShareVariant): string {
   return `share_weddly.message_${variant}`;
 }
 
-/** i18n key for a variant's short label ("Warm" / "Kedves"). */
-export function variantLabelKey(variant: ShareVariant): string {
-  return `share_weddly.variant_${variant}`;
-}
-
 /** `navigator.share` availability. Checked at call time rather than cached:
  *  the answer is stable per browser, but an SSR/happy-dom render must not bake
  *  in `false` for a real browser that hydrates later. */
