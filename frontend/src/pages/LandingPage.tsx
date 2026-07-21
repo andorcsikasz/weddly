@@ -545,7 +545,7 @@ export default function LandingPage() {
       {/* ════════════════════════ 10 · Pricing — STATIONERY ANCHOR ════════════════════════
           Stationery-textured background; price card floats with deep
           shadow. Leads with the founding offer (free for the first 200
-          couples), with the standard 5 €/mo as the muted after-price. */}
+          couples), with the standard 7 €/mo as the muted after-price. */}
       <section className="relative stationery">
         <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-20">
           {/* The lift shadow lives on the wrapper as a drop-shadow filter, not
