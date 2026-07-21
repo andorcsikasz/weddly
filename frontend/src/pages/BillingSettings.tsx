@@ -138,20 +138,20 @@ export default function BillingSettings() {
 
   return (
     <div className="mt-6 space-y-4">
-      <section className="card p-6 sm:p-8">
+      <section className="card p-5 sm:p-6">
         <p className="eyebrow">{t("billing.plan_label")}</p>
-        <h2 className="mt-2 text-3xl sm:text-4xl">{t(PLAN_LABEL_KEY[status])}</h2>
-        <p className="mt-2 text-base text-ink-600 dark:text-umber-200">{statusLine}</p>
+        <h2 className="mt-1 text-2xl sm:text-3xl">{t(PLAN_LABEL_KEY[status])}</h2>
+        <p className="mt-1 text-base text-ink-600 dark:text-umber-200">{statusLine}</p>
         {showSpots && (
-          <p className="badge-blush mt-4">
+          <p className="badge-blush mt-3">
             <Sparkles size={13} aria-hidden />
             {t("billing.founding_spots", { n: data.founding_spots_left })}
           </p>
         )}
 
-        <div className="mt-7 flex flex-wrap items-center gap-4 border-t border-paper-200 pt-6 dark:border-umber-700">
+        <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-paper-200 pt-4 dark:border-umber-700">
           <p className="flex items-baseline gap-1.5">
-            <span className="stat-num text-3xl font-semibold text-ink-900 dark:text-paper-50">
+            <span className="stat-num text-2xl font-semibold text-ink-900 dark:text-paper-50 sm:text-3xl">
               {priceStr}
             </span>
             <span className="text-sm text-ink-500 dark:text-umber-300">

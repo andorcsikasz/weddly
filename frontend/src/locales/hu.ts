@@ -211,7 +211,7 @@ const hu: LocaleMessages = {
     status_lapsed:
       "Az ingyenes időszakotok véget ért, így a munkaterület csak olvasható. Az adataitok biztonságban vannak; egy előfizetéssel bármikor folytathatjátok a szerkesztést.",
     status_trialing_short: "Próbaidő {date}-ig",
-    status_founding_short: "Ingyenes {date}-ig · kártya nem kell",
+    status_founding_short: "Ingyenes {date}-ig",
     status_active_short: "Megújul {date}-kor",
     status_past_due_short: "A kártyátokat elutasították",
     status_lapsed_short: "Csak olvasható mód",

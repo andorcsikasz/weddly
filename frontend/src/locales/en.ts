@@ -210,7 +210,7 @@ const en: LocaleMessages = {
     status_lapsed:
       "Your free period has ended, so the workspace is read-only. Your data is safe, and a subscription brings editing right back.",
     status_trialing_short: "Trial until {date}",
-    status_founding_short: "Free until {date} · no card needed",
+    status_founding_short: "Free until {date}",
     status_active_short: "Renews {date}",
     status_past_due_short: "Your card was declined",
     status_lapsed_short: "Read-only mode",
