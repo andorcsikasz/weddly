@@ -207,11 +207,13 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         ? "Don't want updates? Unsubscribe"
         : "Nem kérsz emlékeztetőket? Leiratkozás";
     const out: string[] = ["---", why];
+    out.push("Weddly · tryweddly.com");
+    out.push(SOCIAL.map((s) => `${s.name}: ${s.href}`).join(" · "));
+    // Last line, to mirror the HTML footer: present and functional, just not
+    // the second thing the reader's eye lands on.
     if (category === "lifecycle" && unsubscribeToken) {
       out.push(`${unsubLabel}: ${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`);
     }
-    out.push("Weddly · tryweddly.com");
-    out.push(SOCIAL.map((s) => `${s.name}: ${s.href}`).join(" · "));
     return out.join("\n");
   }
 
@@ -425,17 +427,27 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       : onlyEn
         ? "Email preferences"
         : "Preferenciák";
+    // Unsubscribe line, deliberately de-emphasized: it sits at the very BOTTOM
+    // of the footer (see the return below), one notch smaller than the body
+    // copy, so a casual reader scanning the footer doesn't land on it, but
+    // anyone who wants out finds it exactly where every email keeps it. This is
+    // as quiet as it may go and stay compliant: it must remain present, a
+    // legible link, and a real colour against the card, never hidden, shrunk to
+    // nothing, or blended into the background. The one-click List-Unsubscribe
+    // header is untouched, so Gmail's native unsubscribe still works regardless.
+    // Preferences leads the pair, since dialling reminders down is the softer
+    // choice we'd rather a hesitant reader make than opt out of everything.
     const unsubLine =
       category === "lifecycle" && unsubscribeToken
-        ? `<p style="margin:8px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">
-            <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`)}"
-               style="color:${COLOR.muted};text-decoration:underline;">
-              ${unsubLabel}
-            </a>
-            &nbsp;·&nbsp;
+        ? `<p style="margin:18px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;">
             <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/app/settings/account#email-preferences`)}"
                style="color:${COLOR.muted};text-decoration:underline;">
               ${prefsLabel}
+            </a>
+            &nbsp;·&nbsp;
+            <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`)}"
+               style="color:${COLOR.muted};text-decoration:underline;">
+              ${unsubLabel}
             </a>
           </p>`
         : "";
@@ -449,7 +461,6 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     const helpLabel = bilingual ? "Kérdés? / Questions?" : onlyEn ? "Questions?" : "Kérdés?";
     return `
       <p style="margin:0 0 6px 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">${why}</p>
-      ${unsubLine}
       <p style="margin:8px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">
         ${helpLabel} <a href="mailto:${escapeAttr(CONFIG.supportEmail)}" style="color:${COLOR.muted};text-decoration:underline;">${escapeHtml(CONFIG.supportEmail)}</a>
       </p>
@@ -467,6 +478,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       <p style="margin:16px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;letter-spacing:0.04em;">
         <span style="font-family:'General Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:600;letter-spacing:0.22em;color:${COLOR.enInk};">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">tryweddly.com</a>
       </p>
+      ${unsubLine}
     `;
   }
 }
