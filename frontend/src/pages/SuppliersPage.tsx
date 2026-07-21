@@ -200,6 +200,15 @@ const SELF_ORGANIZED_PICK = "self-organized";
 // (its runner segment turns green + counts as done) without highlighting a card.
 const NOT_NEEDED_PICK = "not-needed";
 
+/** Count of categories the couple actually chose a vendor for — the number
+ *  behind the "választottak" (picked) filter/badge. A "nem kell" (not-needed)
+ *  mark resolves a category but is a declined choice, not a chosen vendor, so
+ *  it must NOT inflate this total. (Self-organized planner and DIY entries are
+ *  genuine decisions and stay counted.) */
+function countRealPicks(selection: SelectionMap): number {
+  return Object.values(selection).filter((v) => v !== NOT_NEEDED_PICK).length;
+}
+
 /** True when a selection change to `cat` just completed its whole chain group
  *  (every category in the group now picked) that wasn't complete before — the
  *  "a tab is ready" moment that fires the confetti. */
@@ -1176,6 +1185,10 @@ export default function SuppliersPage() {
     return { byGroup: map, all: { done: allDone, total: allTotal } };
   }, [selection]);
 
+  // The "választottak" (picked) filter badge counts chosen vendors only — a
+  // "nem kell" mark resolves its category but is not a pick, so it's excluded.
+  const pickedCount = useMemo(() => countRealPicks(selection), [selection]);
+
   const subCategories = activeGroup
     ? (SUPPLIER_GROUPS.find((g) => g.id === activeGroup)?.categories ?? [])
     : [];
@@ -1336,21 +1349,21 @@ export default function SuppliersPage() {
             <button
               type="button"
               onClick={togglePickedFilter}
-              disabled={Object.keys(selection).length === 0 && !showPickedOnly}
+              disabled={pickedCount === 0 && !showPickedOnly}
               aria-pressed={showPickedOnly}
               aria-label={t(
                 showPickedOnly ? "suppliers.picked_filter_active" : "suppliers.picked_filter_idle",
-                { n: Object.keys(selection).length },
+                { n: pickedCount },
               )}
               title={t(
                 showPickedOnly ? "suppliers.picked_filter_active" : "suppliers.picked_filter_idle",
-                { n: Object.keys(selection).length },
+                { n: pickedCount },
               )}
               className={
                 showPickedOnly
                   ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-sage-600 px-3 text-sm font-medium text-sage-700 dark:border-sage-300 dark:text-sage-300"
                   : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
-                      Object.keys(selection).length > 0
+                      pickedCount > 0
                         ? "border-sage-400 text-sage-700 hover:border-sage-500 dark:border-sage-400/40 dark:text-sage-300"
                         : "border-umber-600 text-ink-500 dark:border-umber-700 dark:text-umber-300"
                     }`
@@ -1358,12 +1371,10 @@ export default function SuppliersPage() {
             >
               <BookmarkCheck
                 size={14}
-                className={
-                  showPickedOnly || Object.keys(selection).length > 0 ? "fill-sage-200" : ""
-                }
+                className={showPickedOnly || pickedCount > 0 ? "fill-sage-200" : ""}
                 aria-hidden
               />
-              <span className="tabular-nums">{Object.keys(selection).length}</span>
+              <span className="tabular-nums">{pickedCount}</span>
             </button>
             <label className="flex items-center gap-2">
               <span className="sr-only">{t("suppliers.sort_label")}</span>
