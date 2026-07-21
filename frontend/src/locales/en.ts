@@ -2877,6 +2877,10 @@ const en: LocaleMessages = {
       photo_gallery_cta: "Choose a design",
       photo_upload_own: "or upload your own",
       photo_gallery_title: "Choose a background",
+      cover_label: "Cover photo",
+      cover_upload_cta: "Add a cover photo",
+      cover_replace: "Replace",
+      cover_remove: "Remove cover",
       photo_art: {
         dawn: "Dawn wash",
         eucalyptus: "Eucalyptus",

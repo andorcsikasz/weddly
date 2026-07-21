@@ -2905,6 +2905,10 @@ const hu: LocaleMessages = {
       photo_gallery_cta: "Válassz képet",
       photo_upload_own: "vagy tölts fel sajátot",
       photo_gallery_title: "Válassz hátteret",
+      cover_label: "Borítókép",
+      cover_upload_cta: "Borítókép hozzáadása",
+      cover_replace: "Csere",
+      cover_remove: "Borító eltávolítása",
       photo_art: {
         dawn: "Hajnali derengés",
         eucalyptus: "Eukaliptusz",

@@ -215,6 +215,7 @@ export default function DesignPage() {
   const [previewWishlist, setPreviewWishlist] = useState<WishlistEntry[]>([]);
   // Which photo slot has an upload/delete in flight (1 | 2 | null).
   const [photoBusy, setPhotoBusy] = useState<1 | 2 | null>(null);
+  const [coverBusy, setCoverBusy] = useState(false);
   // Below lg only chapter 01 starts open (small screens scroll past the whole
   // editor); at lg+ all chapters start open. Read once at mount.
   const [lgUp] = useState(
@@ -702,6 +703,37 @@ export default function DesignPage() {
     }
   }
 
+  // The cover (hero) image. Same server-returns-the-couple contract as the site
+  // photos, so the live preview updates in place. Removal PATCHes the field null.
+  async function uploadCoverImage(file: File) {
+    if (coverBusy) return;
+    setCoverBusy(true);
+    try {
+      const r = await coupleApi.uploadCover(file);
+      setCouple(r.couple);
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError && err.status === 402
+          ? t("design.save_blocked")
+          : t("design.web.photo_upload_error"),
+      );
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+  async function removeCoverImage() {
+    if (coverBusy) return;
+    setCoverBusy(true);
+    try {
+      const r = await coupleApi.update({ cover_image_url: null });
+      setCouple(r.couple);
+    } catch {
+      toast.error(t("design.save_error"));
+    } finally {
+      setCoverBusy(false);
+    }
+  }
+
   // Copy the live guest-page URL (finish card, public sites only).
   async function copyGuestLink() {
     if (!couple?.slug) return;
@@ -977,6 +1009,9 @@ export default function DesignPage() {
                     onUpload={(slot, file) => void uploadSitePhotoSlot(slot, file)}
                     onChoosePreset={(slot, slug) => void chooseSitePhotoPreset(slot, slug)}
                     onRemove={(slot) => void removeSitePhoto(slot)}
+                    onCoverUpload={(file) => void uploadCoverImage(file)}
+                    onCoverRemove={() => void removeCoverImage()}
+                    coverBusy={coverBusy}
                     busySlot={photoBusy}
                     readOnly={readOnly}
                   />
@@ -1035,7 +1070,7 @@ export default function DesignPage() {
                                       accent: p.accent.hex,
                                       text: p.text.hex,
                                     }}
-                                    className="!h-8 w-20 !rounded"
+                                    className="!h-8 !w-20 !rounded"
                                   />
                                 </button>
                               );

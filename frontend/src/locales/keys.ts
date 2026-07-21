@@ -3171,6 +3171,10 @@ export interface LocaleMessages {
       photo_gallery_cta: string;
       photo_upload_own: string;
       photo_gallery_title: string;
+      cover_label: string;
+      cover_upload_cta: string;
+      cover_replace: string;
+      cover_remove: string;
       photo_art: {
         dawn: string;
         eucalyptus: string;

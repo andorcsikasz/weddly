@@ -33,6 +33,9 @@ export function PhotoDock({
   onUpload,
   onChoosePreset,
   onRemove,
+  onCoverUpload,
+  onCoverRemove,
+  coverBusy,
   busySlot,
   readOnly,
 }: {
@@ -44,6 +47,9 @@ export function PhotoDock({
   onUpload: (slot: 1 | 2, file: File) => void;
   onChoosePreset: (slot: 1 | 2, slug: string) => void;
   onRemove: (slot: 1 | 2) => void;
+  onCoverUpload: (file: File) => void;
+  onCoverRemove: () => void;
+  coverBusy: boolean;
   busySlot: 1 | 2 | null;
   readOnly: boolean;
 }) {
@@ -83,6 +89,83 @@ export function PhotoDock({
               );
             })}
           </div>
+        )}
+      </div>
+
+      {/* The cover: the hero image that leads the guest page (the big photo in
+          the preview above). It lives elsewhere too (the guest-page editor, with
+          a focal-point positioner), but a couple styling their page shouldn't
+          have to leave to swap it, so upload / replace / remove sit right here. */}
+      <div className="mb-3">
+        {coverUrl ? (
+          <div className="relative">
+            <img
+              src={coverUrl}
+              alt={t("design.web.cover_label")}
+              className="aspect-[21/9] w-full rounded-xl border border-paper-300 object-cover dark:border-umber-700"
+              style={{ filter }}
+            />
+            <label
+              className={`absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 rounded-b-xl border-t border-white/20 bg-black/45 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition hover:bg-black/60 focus-within:ring-2 focus-within:ring-inset focus-within:ring-white/70 ${
+                coverBusy || readOnly ? "cursor-default opacity-60" : "cursor-pointer"
+              }`}
+            >
+              {coverBusy ? (
+                <Loader2 size={13} className="animate-spin" aria-hidden />
+              ) : (
+                <ImagePlus size={13} aria-hidden />
+              )}
+              <span>{t("design.web.cover_replace")}</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                disabled={coverBusy || readOnly}
+                onChange={(ev) => {
+                  const f = ev.target.files?.[0];
+                  if (f) onCoverUpload(f);
+                  ev.target.value = "";
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={onCoverRemove}
+              disabled={coverBusy || readOnly}
+              aria-label={t("design.web.cover_remove")}
+              className="absolute -right-1.5 -top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft transition hover:text-ink-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:focus-visible:ring-paper-100"
+            >
+              {coverBusy ? (
+                <Loader2 size={12} className="animate-spin" aria-hidden />
+              ) : (
+                <X size={12} aria-hidden />
+              )}
+            </button>
+          </div>
+        ) : (
+          <label
+            className={`flex aspect-[21/9] w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-paper-400 text-ink-500 transition hover:text-ink-800 focus-within:ring-2 focus-within:ring-inset focus-within:ring-ink-300 dark:border-umber-600 dark:text-umber-200 dark:hover:text-paper-50 dark:focus-within:ring-paper-100 ${
+              coverBusy || readOnly ? "cursor-default opacity-60" : "cursor-pointer"
+            }`}
+          >
+            {coverBusy ? (
+              <Loader2 size={18} className="animate-spin" aria-hidden />
+            ) : (
+              <ImagePlus size={18} aria-hidden />
+            )}
+            <span className="text-[11px] font-medium">{t("design.web.cover_upload_cta")}</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              disabled={coverBusy || readOnly}
+              onChange={(ev) => {
+                const f = ev.target.files?.[0];
+                if (f) onCoverUpload(f);
+                ev.target.value = "";
+              }}
+            />
+          </label>
         )}
       </div>
 
