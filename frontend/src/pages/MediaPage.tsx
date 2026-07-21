@@ -18,6 +18,7 @@ import {
   MessageCircle,
   MessageSquare,
   Pencil,
+  Plus,
   QrCode,
   Share2,
   Trash2,
@@ -26,9 +27,7 @@ import {
 } from "lucide-react";
 import React, { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ComingSoon } from "../components/ComingSoon";
 import { Dialog, useConfirm, useToast } from "../components/ui";
-import { useAuth } from "../lib/auth";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
@@ -634,11 +633,8 @@ function FilmModal({
 // --- page -------------------------------------------------------------------
 
 export default function MediaPage() {
-  const { user } = useAuth();
   const { t } = useT();
   const toast = useToast();
-
-  if (!user?.is_admin) return <ComingSoon />;
   const location = useLocation();
 
   const [couple, setCouple] = useState<Couple | null>(null);
@@ -945,28 +941,35 @@ export default function MediaPage() {
           <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-400">
             {t("media.photographer_title")}
           </p>
-          {/* Saved gallery links (up to MAX_PHOTOGRAPHER_LINKS). */}
+
+          {/* Saved gallery links (up to MAX_PHOTOGRAPHER_LINKS). Each is a
+              settings-style row: hostname as the confident title, the full URL
+              muted beneath, open + remove as quiet round icon buttons. */}
           {photographerUrls.length > 0 && (
-            <ul className="px-5 pt-1">
+            <ul>
               {photographerUrls.map((url) => (
-                <li key={url} className="flex items-center gap-3 py-1.5">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
-                    <Camera size={17} aria-hidden="true" />
+                <li key={url} className="flex items-center gap-4 px-5 py-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
+                    <Camera size={18} aria-hidden="true" />
                   </span>
-                  <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-umber-700">
-                    <Link2 size={13} aria-hidden="true" className="shrink-0 text-umber-400" />
-                    <span className="truncate">
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-[15px] font-medium text-umber-900">
                       {url.replace(/^https?:\/\//, "").split("/")[0]}
+                    </span>
+                    <span className="flex items-center gap-1 text-[12px] text-umber-400">
+                      <Link2 size={11} aria-hidden="true" className="shrink-0" />
+                      <span className="truncate">{url.replace(/^https?:\/\//, "")}</span>
                     </span>
                   </span>
                   <a
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs font-medium text-umber-500 transition-colors hover:text-umber-900"
+                    aria-label={t("media.photographer_open")}
+                    title={t("media.photographer_open")}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-umber-500 transition-colors hover:bg-paper-100 hover:text-umber-900"
                   >
-                    <ExternalLink size={12} aria-hidden="true" />
-                    {t("media.photographer_open")}
+                    <ExternalLink size={15} aria-hidden="true" />
                   </a>
                   <button
                     type="button"
@@ -974,19 +977,19 @@ export default function MediaPage() {
                     disabled={saving}
                     aria-label={t("media.collect_delete")}
                     title={t("media.collect_delete")}
-                    className="text-umber-400 transition-colors hover:text-red-500 disabled:opacity-50"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-umber-400 transition-colors hover:bg-paper-100 hover:text-red-500 disabled:opacity-50"
                   >
-                    <Trash2 size={13} aria-hidden="true" />
+                    <Trash2 size={15} aria-hidden="true" />
                   </button>
                 </li>
               ))}
             </ul>
           )}
 
-          {/* Add-a-link input. */}
+          {/* Add-a-link input — solid dark Save for a confident primary. */}
           {editing && (
             <form
-              className="px-5 pb-3 pt-2"
+              className="px-5 pb-4 pt-1"
               onSubmit={(e) => {
                 e.preventDefault();
                 addPhotographerLink(draft);
@@ -996,7 +999,7 @@ export default function MediaPage() {
               <div className="flex items-center gap-2">
                 <input
                   type="url"
-                  className="flex-1 rounded-xl border border-paper-300 bg-white px-3 py-2.5 text-sm text-umber-900 placeholder-umber-400 outline-none focus:border-umber-500"
+                  className="flex-1 rounded-2xl border border-paper-300 bg-white px-4 py-3 text-sm text-umber-900 placeholder-umber-400 outline-none transition-colors focus:border-umber-900"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder={t("media.collect_placeholder")}
@@ -1007,7 +1010,7 @@ export default function MediaPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-xl bg-paper-50 px-4 py-2.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-paper-100 disabled:opacity-50"
+                  className="shrink-0 rounded-2xl bg-umber-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-umber-800 disabled:opacity-50"
                 >
                   {saving ? t("common.saving") : t("common.save")}
                 </button>
@@ -1015,7 +1018,7 @@ export default function MediaPage() {
                   type="button"
                   onClick={cancelEdit}
                   disabled={saving}
-                  className="px-2 text-sm text-umber-400 hover:text-umber-700"
+                  className="shrink-0 px-2 text-sm text-umber-400 hover:text-umber-700"
                 >
                   {t("common.cancel")}
                 </button>
@@ -1028,56 +1031,63 @@ export default function MediaPage() {
             </form>
           )}
 
-          {/* Empty-state CTA (no links) or "add another" affordance, hidden at
-              the cap and while the input is open. */}
+          {/* One confident, full-width tap target. Empty state carries a solid
+              icon chip + service examples as the subtitle; once a link exists it
+              becomes a quiet dashed "add another" row. Hidden at the cap and
+              while the input is open. */}
           {!editing && photographerUrls.length < MAX_PHOTOGRAPHER_LINKS && (
-            <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
+            <button
+              type="button"
+              onClick={startEdit}
+              className="group flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-paper-50"
+            >
               {photographerUrls.length === 0 ? (
                 <>
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
-                    <Camera size={17} aria-hidden="true" />
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-umber-900 text-white transition-transform group-hover:scale-105">
+                    <Camera size={18} aria-hidden="true" />
                   </span>
-                  <span className="flex-1 text-sm text-umber-500">
-                    {t("media.photographer_cta")}
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-[15px] font-semibold text-umber-900">
+                      {t("media.photographer_cta")}
+                    </span>
+                    <span className="truncate text-[13px] text-umber-400">
+                      {t("media.photographer_services")}
+                    </span>
                   </span>
-                  <button
-                    type="button"
-                    onClick={startEdit}
-                    className="flex items-center gap-1 text-xs font-medium text-umber-500 transition-colors hover:text-umber-900"
-                  >
-                    <Link2 size={12} aria-hidden="true" />
-                    {t("media.collect_add")}
-                  </button>
                 </>
               ) : (
-                <button
-                  type="button"
-                  onClick={startEdit}
-                  className="flex items-center gap-1 text-xs font-medium text-umber-500 transition-colors hover:text-umber-900"
-                >
-                  <Link2 size={12} aria-hidden="true" />
-                  {t("media.collect_add")}
-                </button>
+                <>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-dashed border-umber-300 text-umber-500 transition-colors group-hover:border-umber-900 group-hover:text-umber-900">
+                    <Plus size={18} aria-hidden="true" />
+                  </span>
+                  <span className="flex-1 text-[15px] font-medium text-umber-700 transition-colors group-hover:text-umber-900">
+                    {t("media.photographer_add_another")}
+                  </span>
+                </>
               )}
-            </div>
+              <ChevronRight
+                size={18}
+                aria-hidden="true"
+                className="shrink-0 text-umber-300 transition-all group-hover:translate-x-0.5 group-hover:text-umber-500"
+              />
+            </button>
           )}
-          <p className="px-5 pb-3.5 text-[11px] leading-snug text-umber-400">
-            {t("media.gallery_link_note")}
-          </p>
         </div>
 
         {/* ── Reveal gallery teaser (coming soon) ───────────────────── */}
-        <div className="pointer-events-none flex cursor-default select-none items-center gap-3 border-t border-paper-200 px-5 py-3.5 opacity-40">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-umber-900 text-umber-900">
-            <Share2 size={17} aria-hidden="true" />
+        <div className="pointer-events-none flex cursor-default select-none items-center gap-4 border-t border-paper-200 px-5 py-4 opacity-50">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-umber-300 text-umber-400">
+            <Share2 size={18} aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
-            <span className="text-sm font-medium text-umber-900">{t("media.to_guests_title")}</span>
-            <p className="mt-0.5 text-xs leading-snug text-umber-500">
+            <span className="text-[15px] font-medium text-umber-700">
+              {t("media.to_guests_title")}
+            </span>
+            <p className="mt-0.5 text-[13px] leading-snug text-umber-400">
               {t("media.shared_gallery_teaser")}
             </p>
           </div>
-          <span className="shrink-0 self-start rounded-full border border-paper-300 px-2.5 py-0.5 text-[10px] font-medium text-umber-500">
+          <span className="shrink-0 self-center rounded-full border border-paper-300 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-umber-400">
             {t("media.coming_soon_title")}
           </span>
         </div>

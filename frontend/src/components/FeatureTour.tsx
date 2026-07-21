@@ -137,6 +137,11 @@ const STEPS: TourStep[] = [
     titleKey: "tour.timeline_title",
     bodyKey: "tour.timeline_body",
     icon: <GanttChartSquare size={20} />,
+    pageSteps: [
+      { titleKey: "tour.timeline_p1_title", bodyKey: "tour.timeline_p1_body" },
+      { titleKey: "tour.timeline_p2_title", bodyKey: "tour.timeline_p2_body" },
+      { titleKey: "tour.timeline_p3_title", bodyKey: "tour.timeline_p3_body" },
+    ],
   },
   {
     href: "/app/schedule",
@@ -194,12 +199,22 @@ const STEPS: TourStep[] = [
     titleKey: "tour.logistics_title",
     bodyKey: "tour.logistics_body",
     icon: <Bed size={20} />,
+    pageSteps: [
+      { titleKey: "tour.logistics_p1_title", bodyKey: "tour.logistics_p1_body" },
+      { titleKey: "tour.logistics_p2_title", bodyKey: "tour.logistics_p2_body" },
+      { titleKey: "tour.logistics_p3_title", bodyKey: "tour.logistics_p3_body" },
+    ],
   },
   {
     href: "/app/moodboard",
     titleKey: "tour.moodboard_title",
     bodyKey: "tour.moodboard_body",
     icon: <ImageIcon size={20} />,
+    pageSteps: [
+      { titleKey: "tour.moodboard_p1_title", bodyKey: "tour.moodboard_p1_body" },
+      { titleKey: "tour.moodboard_p2_title", bodyKey: "tour.moodboard_p2_body" },
+      { titleKey: "tour.moodboard_p3_title", bodyKey: "tour.moodboard_p3_body" },
+    ],
   },
   {
     href: "/app/design",
@@ -217,18 +232,45 @@ const STEPS: TourStep[] = [
     titleKey: "tour.honeymoon_title",
     bodyKey: "tour.honeymoon_body",
     icon: <Plane size={20} />,
+    pageSteps: [
+      {
+        titleKey: "tour.honeymoon_p1_title",
+        bodyKey: "tour.honeymoon_p1_body",
+        target: "honeymoon-tiles",
+      },
+      {
+        titleKey: "tour.honeymoon_p2_title",
+        bodyKey: "tour.honeymoon_p2_body",
+        target: "honeymoon-costs",
+      },
+      {
+        titleKey: "tour.honeymoon_p3_title",
+        bodyKey: "tour.honeymoon_p3_body",
+        target: "honeymoon-todos",
+      },
+    ],
   },
   {
     href: "/app/media",
     titleKey: "tour.media_title",
     bodyKey: "tour.media_body",
     icon: <Camera size={20} />,
+    pageSteps: [
+      { titleKey: "tour.media_p1_title", bodyKey: "tour.media_p1_body" },
+      { titleKey: "tour.media_p2_title", bodyKey: "tour.media_p2_body" },
+      { titleKey: "tour.media_p3_title", bodyKey: "tour.media_p3_body" },
+    ],
   },
   {
     href: "/app/wishlist",
     titleKey: "tour.wishlist_title",
     bodyKey: "tour.wishlist_body",
     icon: <Gift size={20} />,
+    pageSteps: [
+      { titleKey: "tour.wishlist_p1_title", bodyKey: "tour.wishlist_p1_body" },
+      { titleKey: "tour.wishlist_p2_title", bodyKey: "tour.wishlist_p2_body" },
+      { titleKey: "tour.wishlist_p3_title", bodyKey: "tour.wishlist_p3_body" },
+    ],
   },
   {
     href: "/app/guest-page",

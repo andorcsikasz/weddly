@@ -2501,6 +2501,8 @@ const en: LocaleMessages = {
     photographer_desc:
       "Save your photographer's gallery link, delivery notes, or download instructions.",
     photographer_cta: "Add photographer gallery",
+    photographer_services: "Pixieset · Google Drive · Dropbox · your own site",
+    photographer_add_another: "Add another gallery",
     photographer_open: "Open gallery",
     create_modal_title: "Set up your guest photo album",
     create_modal_desc:
@@ -2625,7 +2627,7 @@ const en: LocaleMessages = {
     participant_remove_confirm: "Remove",
     gallery_link_note: "Any link: Pixieset, Google Drive, Dropbox, your own site.",
     shared_gallery_teaser:
-      "Guest photos and your pro gallery in one place, sorted automatically. Coming soon.",
+      "Guest photos and your pro gallery in one place, sorted automatically.",
   },
   photos: {
     loading: "Loading…",
@@ -2859,6 +2861,21 @@ const en: LocaleMessages = {
       photo_slot: "Photo {n}",
       photo_remove: "Remove photo",
       photo_upload_error: "Couldn't upload the photo.",
+      photo_gallery_cta: "Choose a design",
+      photo_upload_own: "or upload your own",
+      photo_gallery_title: "Choose a background",
+      photo_art: {
+        dawn: "Dawn wash",
+        eucalyptus: "Eucalyptus",
+        arches: "Terracotta arches",
+        terrazzo: "Terrazzo",
+        silk: "Silk waves",
+        halftone: "Ochre dots",
+        dunes: "Sunset dunes",
+        marble: "Warm marble",
+        wildflowers: "Wildflowers",
+        boho_sun: "Boho sun",
+      },
       card_radius: { sharp: "Sharp", soft: "Soft", full: "Round" },
       shadow: { none: "None", soft: "Soft", pop: "Pop" },
       button_style: { lifted: "Lifted", flat: "Flat", outline: "Outline" },
@@ -7002,18 +7019,77 @@ const en: LocaleMessages = {
     design_p3_body:
       "Invitations, place cards and seating charts all download in your chosen look, with no separate formatting.",
     timeline_title: "Timeline",
-    timeline_body: "Work in progress, a Gantt-style booking timeline is on its way.",
+    timeline_body:
+      "See every dated task as a bar on a Gantt-style timeline, with your booked suppliers' phone numbers one click away.",
+    timeline_p1_title: "Your plan on one timeline",
+    timeline_p1_body:
+      "Tasks with a start and due date show as bars across the months, so you can see what overlaps and what is coming up next.",
+    timeline_p2_title: "Contacts on hand",
+    timeline_p2_body:
+      "The side panel lists your picked suppliers with their phone numbers, so an urgent task has the right person one tap away.",
+    timeline_p3_title: "Adjust in place",
+    timeline_p3_body:
+      "Click a bar to open its date drawer and shift the schedule. It stays in sync with your planning tasks.",
     logistics_title: "Logistics",
     logistics_body:
-      "Work in progress, accommodation and transfer assignment for your guests is coming soon.",
+      "Sort out where out-of-town guests sleep and how they get there, assigning guests to accommodations and transfers by dragging them in.",
+    logistics_p1_title: "Accommodation",
+    logistics_p1_body:
+      "Add each hotel or house with its address, capacity, price and contact, then drag guests from the sidebar to fill the rooms.",
+    logistics_p2_title: "Transfers",
+    logistics_p2_body:
+      "Plan shuttles and rides in an editable table and assign guests to each trip. Seats are capped so you never overbook.",
+    logistics_p3_title: "Nobody left behind",
+    logistics_p3_body:
+      "The sidebar keeps every unassigned guest in view, grouping households so you can place a whole family in one drag.",
     moodboard_title: "Moodboard",
-    moodboard_body: "Work in progress, a visual inspiration board is on its way.",
+    moodboard_body:
+      "Gather your visual inspiration in one board, from a curated preset, your own Pinterest board, or images you upload.",
+    moodboard_p1_title: "Start with a preset",
+    moodboard_p1_body:
+      "The page opens on a curated board so it is never blank. Browse it for ideas straight away.",
+    moodboard_p2_title: "Bring your own",
+    moodboard_p2_body:
+      "Paste a link to your public Pinterest board, or upload images from your device. Both partners see the same board on every device.",
+    moodboard_p3_title: "Feeds your design",
+    moodboard_p3_body:
+      "Your moodboard sits right before the Design page, so the inspiration you gather here flows into your palette and stationery.",
     honeymoon_title: "Honeymoon",
-    honeymoon_body: "Work in progress, honeymoon planning tools are coming soon.",
+    honeymoon_body:
+      "Plan the trip: set your dates and destination, look up flight prices, and tick off passports, insurance and packing.",
+    honeymoon_p1_title: "Dates, destination, budget",
+    honeymoon_p1_body:
+      "Set your travel dates for a live countdown, pick a destination with a map and auto cover photo, and see the trip budget at a glance.",
+    honeymoon_p2_title: "Cost planner",
+    honeymoon_p2_body:
+      "Add travel, stay, food, activities and insurance lines, then drag the sliders to plan each. Every change syncs with your main budget.",
+    honeymoon_p3_title: "To-dos and travel safety",
+    honeymoon_p3_body:
+      "Drop the honeymoon task pack, passports, flights, packing, onto your list, and get a consular checklist for your destination.",
     media_title: "Photos",
-    media_body: "Work in progress, a shared photo gallery for after the big day is on its way.",
+    media_body:
+      "Collect the photos and film from your big day. Save your photographer's gallery links and share your wedding film in one place.",
+    media_p1_title: "Photographer galleries",
+    media_p1_body:
+      "Save links to your photographer's online galleries, so every set of photos lives in one spot you can find later.",
+    media_p2_title: "Your wedding film",
+    media_p2_body:
+      "Add your wedding film with its own cover, and set optional reveal timing so it unlocks when you want it seen.",
+    media_p3_title: "Shared guest gallery",
+    media_p3_body:
+      "A shared gallery where guests drop their own photos from the day is on the way, so nothing gets lost in group chats.",
     wishlist_title: "Wishlist",
-    wishlist_body: "Work in progress, a curated gift wishlist for your guests is coming soon.",
+    wishlist_body:
+      "Curate a gift wishlist and registry that confirmed guests see on your wedding page, with no money moving in-app.",
+    wishlist_p1_title: "Add what you'd love",
+    wishlist_p1_body:
+      "List gifts, experiences or a honeymoon fund. Each item can carry a photo, a link and a rough price so guests know what it is.",
+    wishlist_p2_title: "Guests can see it",
+    wishlist_p2_body:
+      "Confirmed guests get a read-only wishlist on your guest page after they RSVP yes, so they know exactly what would delight you.",
+    wishlist_p3_title: "Track what arrives",
+    wishlist_p3_body:
+      "Log received gifts and thank-you notes here too, keeping the whole registry in one place.",
     guest_page_title: "Guest page",
     guest_page_body:
       "Your public wedding page with the date, venue and RSVP link, share it with everyone.",

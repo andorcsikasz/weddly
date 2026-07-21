@@ -2754,6 +2754,12 @@ export interface LocaleMessages {
     photographer_title: string;
     photographer_desc: string;
     photographer_cta: string;
+    /** Terse, middot-separated service examples shown as the CTA row's
+     *  subtitle (replaces the old prose "Any link: …" helper). */
+    photographer_services: string;
+    /** Pressable "add another gallery" row, shown once at least one link is
+     *  saved and below the cap. */
+    photographer_add_another: string;
     photographer_open: string;
     create_modal_title: string;
     create_modal_desc: string;
@@ -3145,6 +3151,22 @@ export interface LocaleMessages {
       photo_slot: string;
       photo_remove: string;
       photo_upload_error: string;
+      /** Curated background-art gallery (pick instead of uploading). */
+      photo_gallery_cta: string;
+      photo_upload_own: string;
+      photo_gallery_title: string;
+      photo_art: {
+        dawn: string;
+        eucalyptus: string;
+        arches: string;
+        terrazzo: string;
+        silk: string;
+        halftone: string;
+        dunes: string;
+        marble: string;
+        wildflowers: string;
+        boho_sun: string;
+      };
       card_radius: { sharp: string; soft: string; full: string };
       shadow: { none: string; soft: string; pop: string };
       button_style: { lifted: string; flat: string; outline: string };
@@ -7777,16 +7799,52 @@ export interface LocaleMessages {
     design_p3_body: string;
     timeline_title: string;
     timeline_body: string;
+    timeline_p1_title: string;
+    timeline_p1_body: string;
+    timeline_p2_title: string;
+    timeline_p2_body: string;
+    timeline_p3_title: string;
+    timeline_p3_body: string;
     logistics_title: string;
     logistics_body: string;
+    logistics_p1_title: string;
+    logistics_p1_body: string;
+    logistics_p2_title: string;
+    logistics_p2_body: string;
+    logistics_p3_title: string;
+    logistics_p3_body: string;
     moodboard_title: string;
     moodboard_body: string;
+    moodboard_p1_title: string;
+    moodboard_p1_body: string;
+    moodboard_p2_title: string;
+    moodboard_p2_body: string;
+    moodboard_p3_title: string;
+    moodboard_p3_body: string;
     honeymoon_title: string;
     honeymoon_body: string;
+    honeymoon_p1_title: string;
+    honeymoon_p1_body: string;
+    honeymoon_p2_title: string;
+    honeymoon_p2_body: string;
+    honeymoon_p3_title: string;
+    honeymoon_p3_body: string;
     media_title: string;
     media_body: string;
+    media_p1_title: string;
+    media_p1_body: string;
+    media_p2_title: string;
+    media_p2_body: string;
+    media_p3_title: string;
+    media_p3_body: string;
     wishlist_title: string;
     wishlist_body: string;
+    wishlist_p1_title: string;
+    wishlist_p1_body: string;
+    wishlist_p2_title: string;
+    wishlist_p2_body: string;
+    wishlist_p3_title: string;
+    wishlist_p3_body: string;
     guest_page_title: string;
     guest_page_body: string;
     guest_page_p1_title: string;

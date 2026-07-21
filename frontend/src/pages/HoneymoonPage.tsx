@@ -651,7 +651,7 @@ export default function HoneymoonPage() {
           then Destination + Budget share row 2 in a 2-col grid. On sm+
           the three tiles become equal peers. Saves ~120px of vertical
           chrome vs the prior single-column stack. */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <section data-tour-target="honeymoon-tiles" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="col-span-2 flex sm:col-span-1">
           <DaysTile
             start={couple?.honeymoon_start_date ?? null}
@@ -752,7 +752,7 @@ export default function HoneymoonPage() {
           </section>
         ))}
 
-      <section className="mt-12">
+      <section data-tour-target="honeymoon-costs" className="mt-12">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-grotesk">{t("honeymoon.costs_title")}</h2>
@@ -818,12 +818,14 @@ export default function HoneymoonPage() {
         )}
       </section>
 
-      <HoneymoonTodoSection
-        items={honeymoonTasks}
-        onToggle={toggleTaskDone}
-        onAdd={addHoneymoonTask}
-        onDelete={deleteHoneymoonTask}
-      />
+      <div data-tour-target="honeymoon-todos">
+        <HoneymoonTodoSection
+          items={honeymoonTasks}
+          onToggle={toggleTaskDone}
+          onAdd={addHoneymoonTask}
+          onDelete={deleteHoneymoonTask}
+        />
+      </div>
 
       {/* Hungarian consular info is only relevant when the couple is getting
        *  married in Hungary (i.e. they're Hungarian travellers abroad). */}

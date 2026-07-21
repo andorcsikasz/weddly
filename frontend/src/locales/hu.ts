@@ -2527,6 +2527,8 @@ const hu: LocaleMessages = {
     photographer_desc:
       "Mentsd el a fotóstól érkező galéria linket, leadási határidőt vagy letöltési utasítást.",
     photographer_cta: "Fotósgaléria hozzáadása",
+    photographer_services: "Pixieset · Google Drive · Dropbox · saját oldal",
+    photographer_add_another: "Másik galéria hozzáadása",
     photographer_open: "Galéria megnyitása",
     create_modal_title: "Vendég fotóalbum beállítása",
     create_modal_desc:
@@ -2651,7 +2653,7 @@ const hu: LocaleMessages = {
     participant_remove_confirm: "Eltávolítás",
     gallery_link_note: "Bármilyen link: Pixieset, Google Drive, Dropbox, saját galéria.",
     shared_gallery_teaser:
-      "A vendégfotók és a profi galéria egy helyen, automatikusan rendezve. Hamarosan.",
+      "A vendégfotók és a profi galéria egy helyen, automatikusan rendezve.",
   },
   photos: {
     loading: "Betöltés…",
@@ -2887,6 +2889,21 @@ const hu: LocaleMessages = {
       photo_slot: "{n}. kép",
       photo_remove: "Kép törlése",
       photo_upload_error: "A kép feltöltése nem sikerült.",
+      photo_gallery_cta: "Válassz képet",
+      photo_upload_own: "vagy tölts fel sajátot",
+      photo_gallery_title: "Válassz hátteret",
+      photo_art: {
+        dawn: "Hajnali derengés",
+        eucalyptus: "Eukaliptusz",
+        arches: "Terrakotta ívek",
+        terrazzo: "Terrazzo",
+        silk: "Selyemhullámok",
+        halftone: "Okker pöttyök",
+        dunes: "Naplemente dűnék",
+        marble: "Meleg márvány",
+        wildflowers: "Vadvirágok",
+        boho_sun: "Boho nap",
+      },
       card_radius: { sharp: "Éles", soft: "Lágy", full: "Erős" },
       shadow: { none: "Nincs", soft: "Lágy", pop: "Erős" },
       button_style: { lifted: "Kiemelt", flat: "Lapos", outline: "Körvonal" },
@@ -7067,18 +7084,77 @@ const hu: LocaleMessages = {
     design_p3_body:
       "A meghívók, ültetőkártyák és ültetési tervek mind a választott stílusban töltődnek le, külön formázás nélkül.",
     timeline_title: "Idővonal",
-    timeline_body: "Fejlesztés alatt, a Gantt-nézetes foglalási idővonal hamarosan érkezik.",
+    timeline_body:
+      "Minden határidős feladat egy sávként jelenik meg a Gantt-nézetes idővonalon, a lefoglalt szolgáltatóid telefonszáma pedig egy kattintásra van.",
+    timeline_p1_title: "A terved egy idővonalon",
+    timeline_p1_body:
+      "A kezdő- és határidővel bíró feladatok sávokként húzódnak végig a hónapokon, így látod, mi fedi egymást és mi jön legközelebb.",
+    timeline_p2_title: "Kéznél a kapcsolattartók",
+    timeline_p2_body:
+      "Az oldalsó panel felsorolja a kiválasztott szolgáltatóidat a telefonszámukkal, így egy sürgős feladatnál a megfelelő ember egy koppintásra van.",
+    timeline_p3_title: "Módosítás helyben",
+    timeline_p3_body:
+      "Kattints egy sávra a dátumpanel megnyitásához, és told át az ütemezést. Szinkronban marad a tervezési feladataiddal.",
     logistics_title: "Logisztika",
     logistics_body:
-      "Fejlesztés alatt, szállás- és transzferszervezés vendégekhez hamarosan elérhető.",
+      "Szervezd meg, hol alszanak a vidéki vendégek és hogyan jutnak oda: húzd rá a vendégeket a szállásokra és a transzferekre.",
+    logistics_p1_title: "Szállás",
+    logistics_p1_body:
+      "Vedd fel minden hotelt vagy házat a címével, kapacitásával, árával és kapcsolattartójával, majd húzd rá a vendégeket az oldalsávból a szobák feltöltéséhez.",
+    logistics_p2_title: "Transzferek",
+    logistics_p2_body:
+      "Tervezd a shuttle-öket és fuvarokat egy szerkeszthető táblázatban, és rendelj vendégeket minden úthoz. A helyek korlátozottak, így sosem foglalsz túl.",
+    logistics_p3_title: "Senki sem marad ki",
+    logistics_p3_body:
+      "Az oldalsáv szem előtt tartja minden még be nem osztott vendéget, háztartásonként csoportosítva, így egy húzással elhelyezhetsz egy egész családot.",
     moodboard_title: "Moodboard",
-    moodboard_body: "Fejlesztés alatt, vizuális inspirációs tábla hamarosan elérhető.",
+    moodboard_body:
+      "Gyűjtsd egy táblára a vizuális inspirációt: kurált előnézetből, a saját Pinterest-tábládból vagy feltöltött képekből.",
+    moodboard_p1_title: "Indíts egy előnézettel",
+    moodboard_p1_body:
+      "Az oldal egy kurált táblával nyílik meg, így sosem üres. Böngészd rögtön ötletekért.",
+    moodboard_p2_title: "Hozd a sajátodat",
+    moodboard_p2_body:
+      "Illeszd be a nyilvános Pinterest-tábládra mutató linket, vagy tölts fel képeket az eszközödről. Mindkét partner ugyanazt a táblát látja minden eszközön.",
+    moodboard_p3_title: "A dizájnodat táplálja",
+    moodboard_p3_body:
+      "A moodboard közvetlenül a Dizájn oldal előtt van, így az itt gyűjtött inspiráció átfolyik a palettádba és a papírtermékeidbe.",
     honeymoon_title: "Nászút",
-    honeymoon_body: "Fejlesztés alatt, nászút-tervező eszközök hamarosan érkeznek.",
+    honeymoon_body:
+      "Tervezd meg az utat: állítsd be a dátumokat és az úti célt, nézd meg a repülőjegy-árakat, és pipáld ki az útlevelet, biztosítást, csomagolást.",
+    honeymoon_p1_title: "Dátumok, úti cél, keret",
+    honeymoon_p1_body:
+      "Állítsd be az utazás dátumait az élő visszaszámláláshoz, válassz úti célt térképpel és automatikus borítóképpel, és lásd egy pillantással az út keretét.",
+    honeymoon_p2_title: "Költségtervező",
+    honeymoon_p2_body:
+      "Vegyél fel utazás, szállás, étkezés, programok és biztosítás sorokat, majd húzd a csúszkákat a tervezéshez. Minden változás szinkronban a fő költségvetéseddel.",
+    honeymoon_p3_title: "Teendők és utazásbiztonság",
+    honeymoon_p3_body:
+      "Dobd a listádra a nászút-feladatcsomagot, útlevél, repjegy, csomagolás, és kapj konzuli ellenőrzőlistát az úti célodhoz.",
     media_title: "Fotók",
-    media_body: "Fejlesztés alatt, megosztott fotógaléria az esküvő után hamarosan elérhető.",
+    media_body:
+      "Gyűjtsd össze a nagy nap fotóit és filmjét. Mentsd el a fotósod galérialinkjeit és oszd meg az esküvői filmet egy helyen.",
+    media_p1_title: "Fotós galériák",
+    media_p1_body:
+      "Mentsd el a fotósod online galériáira mutató linkeket, így minden fotósorozat egy helyen van, amit később is megtalálsz.",
+    media_p2_title: "Az esküvői filmed",
+    media_p2_body:
+      "Add hozzá az esküvői filmedet saját borítóval, és állíts be opcionális megjelenítési időzítést, hogy akkor váljon elérhetővé, amikor szeretnéd.",
+    media_p3_title: "Megosztott vendéggaléria",
+    media_p3_body:
+      "Hamarosan jön egy megosztott galéria, ahová a vendégek feltölthetik a saját fotóikat a napról, így semmi nem vész el a csoportos csevegésekben.",
     wishlist_title: "Kívánságlista",
-    wishlist_body: "Fejlesztés alatt, ajándék-kívánságlista vendégeknek hamarosan elérhető.",
+    wishlist_body:
+      "Állíts össze egy ajándék-kívánságlistát, amit a megerősített vendégek látnak az esküvői oldaladon, pénzmozgás nélkül az appban.",
+    wishlist_p1_title: "Vedd fel, aminek örülnél",
+    wishlist_p1_body:
+      "Sorolj fel ajándékokat, élményeket vagy egy nászútkasszát. Minden tétel kaphat képet, linket és becsült árat, hogy a vendégek tudják, mi az.",
+    wishlist_p2_title: "A vendégek látják",
+    wishlist_p2_body:
+      "A megerősített vendégek egy csak-olvasható kívánságlistát kapnak az esküvői oldaladon, miután igennel válaszoltak, így pontosan tudják, minek örülnél.",
+    wishlist_p3_title: "Kövesd, mi érkezik",
+    wishlist_p3_body:
+      "Itt naplózhatod a kapott ajándékokat és a köszönőkártyákat is, egy helyen tartva az egész listát.",
     guest_page_title: "Vendégoldal",
     guest_page_body:
       "A nyilvános esküvői oldalad: dátum, helyszín, RSVP-link, oszd meg mindenkivel.",

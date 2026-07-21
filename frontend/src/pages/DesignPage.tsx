@@ -676,6 +676,22 @@ export default function DesignPage() {
       setPhotoBusy(null);
     }
   }
+  async function chooseSitePhotoPreset(slot: 1 | 2, slug: string) {
+    if (photoBusy) return;
+    setPhotoBusy(slot);
+    try {
+      const r = await coupleApi.chooseSitePhotoPreset(slot, slug);
+      setCouple(r.couple);
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError && err.status === 402
+          ? t("design.save_blocked")
+          : t("design.web.photo_upload_error"),
+      );
+    } finally {
+      setPhotoBusy(null);
+    }
+  }
 
   // Copy the live guest-page URL (finish card, public sites only).
   async function copyGuestLink() {
@@ -950,6 +966,7 @@ export default function DesignPage() {
                     treatment={design.web.imageTreatment}
                     onTreatment={chooseImageTreatment}
                     onUpload={(slot, file) => void uploadSitePhotoSlot(slot, file)}
+                    onChoosePreset={(slot, slug) => void chooseSitePhotoPreset(slot, slug)}
                     onRemove={(slot) => void removeSitePhoto(slot)}
                     busySlot={photoBusy}
                     readOnly={readOnly}
