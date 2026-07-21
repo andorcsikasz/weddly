@@ -575,20 +575,29 @@ function PublicContactCard({
           {detail.contact_email}
         </a>
       )}
-      {detail.contact_phone && (
-        <a
-          href={`tel:${detail.contact_phone}`}
-          onClick={() => {
-            supplierApi
-              .recordEvents([{ supplier_id: detail.id, type: "phone_click" }])
-              .catch(() => undefined);
-          }}
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
-        >
-          <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-          {detail.contact_phone}
-        </a>
-      )}
+      {detail.contact_phone &&
+        // A masked number (first five digits, rest `*`) is served to anonymous
+        // visitors — registration reveals the rest. Render it as plain text, not
+        // a tel: link that would dial a broken number.
+        (detail.contact_phone.includes("*") ? (
+          <div className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 dark:text-umber-100">
+            <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+            <span className="tabular-nums">{detail.contact_phone}</span>
+          </div>
+        ) : (
+          <a
+            href={`tel:${detail.contact_phone}`}
+            onClick={() => {
+              supplierApi
+                .recordEvents([{ supplier_id: detail.id, type: "phone_click" }])
+                .catch(() => undefined);
+            }}
+            className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
+          >
+            <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+            {detail.contact_phone}
+          </a>
+        ))}
       {nextAvailable && (
         <p className="mt-3 border-t border-paper-200 px-2 pt-3 text-xs text-ink-500 dark:border-umber-700 dark:text-umber-300">
           {t("publicVendor.nextAvailable", { date: nextAvailable })}

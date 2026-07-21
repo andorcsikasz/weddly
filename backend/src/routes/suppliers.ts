@@ -21,6 +21,7 @@ import {
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
 import { getCoupleForUser } from "../domain/couples";
+import { maskPhoneForAnonymous } from "../domain/phone_mask";
 import { curatedOverrideMap, isCuratedPubliclyVisible } from "../domain/curated_overrides";
 import { resolveSupplierBase } from "../domain/resolve_supplier";
 import { DIRECTORY } from "../domain/suppliers_data";
@@ -413,6 +414,14 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
     includeCommentsCount: false,
   });
   if (!detail) throw new HttpError(404, "Unknown supplier");
+
+  // Gate the phone number behind registration: anonymous visitors see only the
+  // first five digits (ctx.userId is populated whenever a valid session token
+  // rides along, even on this public route). Masked server-side so the hidden
+  // digits never leave the server; a logged-in viewer gets the full number.
+  if (ctx.userId === null && detail.contact_phone) {
+    detail.contact_phone = maskPhoneForAnonymous(detail.contact_phone);
+  }
 
   const reviews = listReviewsForSupplier(supplierId, {
     limit: 50,

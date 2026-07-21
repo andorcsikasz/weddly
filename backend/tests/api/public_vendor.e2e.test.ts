@@ -13,6 +13,7 @@ import { addListingPhoto, createVendorListing } from "../../src/domain/listings"
 import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
+import { maskPhoneForAnonymous } from "../../src/domain/phone_mask";
 import { HU_HOST, lookupVendorPageMeta, renderIndexHtml } from "../../src/lib/seo_ssr";
 import { canonicalListingId, slugifyName, vendorPublicId } from "@shared/vendor_slug";
 
@@ -143,6 +144,74 @@ describe("GET /api/public/vendors/:id — no auth", () => {
     );
     expect(r.status).toBe(200);
     expect(r.data.detail.comments_count).toBeUndefined();
+  });
+});
+
+/** Seed a claimed vendor carrying a phone number, so the public detail has a
+ *  `contact_phone` to gate. Returns its `v{N}` id. */
+async function seedVendorWithPhone(email: string, name: string, phone: string): Promise<string> {
+  const reg = await registerAndVerify({ email, password: "supersafe123", full_name: "Vendor Owner" });
+  const userId = reg.data.user.id;
+  db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(userId);
+  const account = createVendorAccount({
+    ownerUserId: userId,
+    displayName: name,
+    contactEmail: email,
+    onboardingDone: false,
+  });
+  createVendorListing({
+    vendorAccountId: account.id,
+    category: "photography",
+    name,
+    city: "Budapest",
+    contactEmail: email,
+    contactPhone: phone,
+  });
+  initVendorBilling(account.id, "HUF");
+  return `v${account.id}`;
+}
+
+describe("public vendor phone is gated behind registration", () => {
+  const PHONE = "06706361792";
+
+  test("an anonymous visitor gets only the first five digits", async () => {
+    const id = await seedVendorWithPhone("phone-anon@weddly.test", "Great Tide", PHONE);
+    const r = await req<{ detail: { contact_phone: string | null } }>(
+      "GET",
+      `/api/public/vendors/${encodeURIComponent(id)}`,
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.detail.contact_phone).toBe("06706******");
+    // The hidden digits never leave the server.
+    expect(r.data.detail.contact_phone).not.toContain("361792");
+  });
+
+  test("a signed-in user gets the full number (token reveals it)", async () => {
+    const id = await seedVendorWithPhone("phone-auth@weddly.test", "Great Tide", PHONE);
+    const { token } = await bootstrapCouple("phone-couple@test.test");
+    const r = await req<{ detail: { contact_phone: string | null } }>(
+      "GET",
+      `/api/public/vendors/${encodeURIComponent(id)}`,
+      undefined,
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.detail.contact_phone).toBe(PHONE);
+  });
+});
+
+describe("maskPhoneForAnonymous", () => {
+  test("keeps the first five digits, masks the rest", () => {
+    expect(maskPhoneForAnonymous("06706361792")).toBe("06706******");
+  });
+
+  test("counts digits not characters, preserving separators", () => {
+    expect(maskPhoneForAnonymous("+36 70 636 1792")).toBe("+36 70 6** ****");
+  });
+
+  test("a number with five or fewer digits is left whole", () => {
+    expect(maskPhoneForAnonymous("12345")).toBe("12345");
+    expect(maskPhoneForAnonymous("112")).toBe("112");
   });
 });
 
