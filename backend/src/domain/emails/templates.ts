@@ -2612,8 +2612,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         offerSentenceHu(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Profil átvétele",
-      ctaSubtext: "Ez az utolsó levelünk az ügyben.",
-      secondaryLinks: [{ label: "Ne írjatok többet", url: p.optOutUrl }],
     },
     en: {
       preheader: `${p.listingName} is still running on the details we put together.`,
@@ -2624,8 +2622,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
-      ctaSubtext: "This is the last email we'll send about it.",
-      secondaryLinks: [{ label: "Don't email me again", url: p.optOutUrl }],
     },
   }),
   // P2.C, vendor claim verify mail. Categorised as `outreach`: anyone (no
