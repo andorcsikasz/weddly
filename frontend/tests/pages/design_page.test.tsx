@@ -128,9 +128,7 @@ describe("<DesignPage> smoke (/app/design/website)", () => {
     await waitFor(() => expect(screen.getByText("Színek")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Színek"));
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Pezsgő" })).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByRole("button", { name: "Pezsgő" })).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Dátum"));
     await waitFor(() => {
