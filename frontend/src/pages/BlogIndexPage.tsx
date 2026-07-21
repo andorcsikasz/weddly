@@ -40,10 +40,7 @@ export default function BlogIndexPage() {
     <PublicShell>
       <article className="mx-auto max-w-6xl px-5 py-12 sm:px-6 sm:py-20">
         <header className="border-b border-paper-300 dark:border-umber-700 pb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
-            {t("blog.eyebrow")}
-          </p>
-          <h1 className="mt-3 font-grotesk text-4xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
+          <h1 className="font-grotesk text-4xl leading-[1.05] text-ink-900 dark:text-paper-50 sm:text-5xl lg:text-6xl">
             {t("blog.index_title")}
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-ink-600 dark:text-umber-200 sm:text-lg">
