@@ -335,21 +335,16 @@ export function ShareWeddlyDialog({
                 {/* Each variant is previewed as an outgoing chat bubble — this is
                  *  exactly how the message lands when they send it. The selected
                  *  card is the filled "sent" bubble; peeking neighbours are quiet.
-                 *  The rotated diamond is the bubble tail. */}
+                 *  Three soft corners and one tightened bottom-right corner read
+                 *  as a "sent" bubble without a fussy protruding tail. */}
                 <div
-                  className={`relative max-w-[90%] rounded-[1.4rem] px-4 py-3 transition-colors duration-300 ${
+                  className={`max-w-[90%] rounded-[1.4rem] rounded-br-md px-4 py-3 transition-colors duration-300 ${
                     selected
                       ? "bg-share text-paper-50"
                       : "bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-paper-200"
                   }`}
                 >
                   <span className="block text-[0.9375rem] leading-relaxed">{m.message}</span>
-                  <span
-                    aria-hidden="true"
-                    className={`absolute -right-1 bottom-1.5 h-3 w-3 rotate-45 rounded-[3px] ${
-                      selected ? "bg-share" : "bg-paper-100 dark:bg-umber-700"
-                    }`}
-                  />
                 </div>
               </div>
             );
