@@ -47,7 +47,10 @@ export interface SubmitCommunitySupplierInput {
   contact_email: string | null;
   contact_phone: string | null;
   blurb: string;
-  price_band: PriceBand;
+  /** Optional. Null when the submitter didn't specify a price tier — stored as a
+   *  sentinel 0 in the NOT-NULL DB column and normalized back to null on read,
+   *  so the card renders "unpriced" rather than a misleading "$". */
+  price_band: PriceBand | null;
 }
 
 /** Admin-only view: includes hidden rows + submitter info for moderation. */
@@ -62,10 +65,14 @@ export interface CommunitySupplierAdminView {
   contact_email: string | null;
   contact_phone: string | null;
   blurb: string;
-  price_band: PriceBand;
+  price_band: PriceBand | null;
   status: CommunitySupplierStatus;
   submitter_email: string;
   submitter_user_id: number;
+  /** When the submission came from a verified VISITOR (no Weddly account), this
+   *  is their real email; `submitter_user_id` then points at the reserved system
+   *  user. Null for the normal logged-in-couple path. */
+  submitter_visitor_email: string | null;
   created_at: number;
   /** Last-edit timestamp on the supplier row itself. Tracks DB writes
    *  (admin notes, hide/unhide, enrich) — not the submitter's last edit

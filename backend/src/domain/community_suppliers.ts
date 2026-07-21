@@ -29,6 +29,9 @@ export const REPORT_AUTOHIDE_THRESHOLD = 3;
 export interface CommunitySupplierRow {
   id: number;
   submitter_user_id: number;
+  /** Set when a verified VISITOR (no account) submitted this; submitter_user_id
+   *  then points at the reserved system user. Null for logged-in-couple rows. */
+  submitter_visitor_id: number | null;
   submitter_type: string;
   category: string;
   name: string;
@@ -57,14 +60,20 @@ function toSubmitterType(raw: string): CommunitySubmitterType {
 
 export interface CommunitySupplierRowWithEmail extends CommunitySupplierRow {
   submitter_email: string;
+  /** Real email of the verified visitor who submitted (LEFT JOIN), or null when
+   *  the submitter was a logged-in couple. */
+  submitter_visitor_email?: string | null;
   /** Last time the submitter's account was seen active (users.last_seen_at),
    *  stamped throttled on session verify. Null if they've never been stamped. */
   submitter_last_seen_at: number | null;
 }
 
-function clampPriceBand(v: number): PriceBand {
+// Non-1..5 → null ("unpriced"). The DB column is NOT NULL, so an omitted price
+// is stored as the sentinel 0 and normalized back to null here — the card then
+// shows no price rather than a misleading "$".
+function clampPriceBand(v: number): PriceBand | null {
   if (v === 1 || v === 2 || v === 3 || v === 4 || v === 5) return v;
-  return 1;
+  return null;
 }
 
 // id is `c${row.id}` so community ids cannot collide with curated string slugs.
@@ -131,6 +140,7 @@ export function toAdminView(
     status: row.status as CommunitySupplierStatus,
     submitter_email: row.submitter_email,
     submitter_user_id: row.submitter_user_id,
+    submitter_visitor_email: row.submitter_visitor_email ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     hidden_at: row.hidden_at,
@@ -171,9 +181,11 @@ export function listActiveCommunitySuppliers(
 export function listAllForAdmin(): CommunitySupplierRowWithEmail[] {
   return db
     .prepare(
-      `SELECT cs.*, u.email AS submitter_email, u.last_seen_at AS submitter_last_seen_at
+      `SELECT cs.*, u.email AS submitter_email, u.last_seen_at AS submitter_last_seen_at,
+              vv.email AS submitter_visitor_email
        FROM community_suppliers cs
        JOIN users u ON u.id = cs.submitter_user_id
+       LEFT JOIN verified_visitors vv ON vv.id = cs.submitter_visitor_id
        ORDER BY cs.created_at DESC`,
     )
     .all() as CommunitySupplierRowWithEmail[];
@@ -239,18 +251,23 @@ export function getCommunitySupplierWithEmail(id: number): CommunitySupplierRowW
 export function insertCommunitySupplier(
   submitterUserId: number,
   input: SubmitCommunitySupplierInput,
+  submitterVisitorId: number | null = null,
 ): number {
   const ts = now();
   const submitterType: CommunitySubmitterType = input.submitter_type === "self" ? "self" : "user";
+  // NOT-NULL column: an omitted price is stored as the sentinel 0, which
+  // clampPriceBand normalizes back to null on read (→ "unpriced" card).
+  const priceBand = input.price_band ?? 0;
   const result = db
     .prepare(
       `INSERT INTO community_suppliers
-        (submitter_user_id, submitter_type, category, name, city, address, website, contact_email,
-         contact_phone, blurb, price_band, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+        (submitter_user_id, submitter_visitor_id, submitter_type, category, name, city, address,
+         website, contact_email, contact_phone, blurb, price_band, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
     )
     .run(
       submitterUserId,
+      submitterVisitorId,
       submitterType,
       input.category,
       input.name,
@@ -260,7 +277,7 @@ export function insertCommunitySupplier(
       input.contact_email,
       input.contact_phone,
       input.blurb,
-      input.price_band,
+      priceBand,
       ts,
       ts,
     );

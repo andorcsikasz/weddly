@@ -360,7 +360,10 @@ export function syncListingFromCommunityRow(row: CommunitySupplierRow): void {
     $contact_phone: row.contact_phone,
     $blurb_hu: row.blurb,
     $blurb_en: row.blurb,
-    $price_band: row.price_band,
+    // community_suppliers.price_band is NOT NULL and uses 0 as "unpriced"; the
+    // listings mirror is nullable, so normalize the sentinel (and any junk) to
+    // null — the public card then shows no price instead of a phantom "$".
+    $price_band: row.price_band >= 1 && row.price_band <= 5 ? row.price_band : null,
     $capacity_min: null,
     $capacity_max: null,
     $venue_style: null,
@@ -951,4 +954,83 @@ export function deleteListingPackage(listingId: string, packageId: number): void
     packageId,
     listingId,
   );
+}
+
+export interface DirectoryMatch {
+  id: string;
+  name: string;
+  city: string | null;
+  source: string;
+}
+
+// Shared platforms where the hostname is NOT a unique business identifier — a
+// vendor's "website" is often just their social page. Matching on these hosts
+// would flag two different vendors (facebook.com/A vs /B) as the same listing,
+// so we skip the hostname match for them and fall back to name+city.
+const GENERIC_WEB_HOSTS = new Set([
+  "facebook.com",
+  "instagram.com",
+  "tiktok.com",
+  "youtube.com",
+  "google.com",
+  "maps.google.com",
+  "goo.gl",
+  "linktr.ee",
+  "linktree.com",
+  "wa.me",
+  "wixsite.com",
+  "business.site",
+  "sites.google.com",
+  "pinterest.com",
+]);
+
+function hostnameOf(website: string): string | null {
+  const w = website.trim();
+  if (!w) return null;
+  try {
+    const h = new URL(w).hostname.replace(/^www\./, "").replace(/^m\./, "").toLowerCase();
+    if (!h || GENERIC_WEB_HOSTS.has(h)) return null;
+    return h;
+  } catch {
+    return null;
+  }
+}
+
+/** Is this supplier ALREADY live in the public directory? Lets a submission warn
+ *  the submitter that their suggestion duplicates an existing listing — curated,
+ *  claimed, or an already-approved community entry — so we point them to it
+ *  instead of queuing a dupe. Website hostname is the strong signal (prefer a
+ *  claimed/curated hit); an exact name+city match is the fallback. Only 'active'
+ *  (publicly visible) rows count — a pending entry isn't "on the site" yet. */
+export function findVisibleDirectoryMatch(opts: {
+  website: string;
+  name: string;
+  city: string;
+}): DirectoryMatch | null {
+  const host = hostnameOf(opts.website);
+  if (host) {
+    const byWebsite = db
+      .prepare(
+        `SELECT id, name, city, source FROM listings
+          WHERE status = 'active' AND website IS NOT NULL AND website != ''
+            AND LOWER(website) LIKE ?
+          ORDER BY (source = 'claimed') DESC, (source = 'curated') DESC
+          LIMIT 1`,
+      )
+      .get(`%${host}%`) as DirectoryMatch | undefined;
+    if (byWebsite) return byWebsite;
+  }
+  const name = opts.name.trim();
+  const city = opts.city.trim();
+  if (name && city) {
+    const byNameCity = db
+      .prepare(
+        `SELECT id, name, city, source FROM listings
+          WHERE status = 'active' AND LOWER(name) = LOWER(?) AND LOWER(city) = LOWER(?)
+          LIMIT 1`,
+      )
+      .get(name, city) as DirectoryMatch | undefined;
+    if (byNameCity) return byNameCity;
+  }
+  return null;
 }

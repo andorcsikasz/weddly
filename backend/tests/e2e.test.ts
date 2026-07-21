@@ -159,6 +159,8 @@ function wipeAll() {
     "couple_supplier_costs",
     "couple_picks",
     "supplier_votes",
+    "verified_visitor_sessions",
+    "verified_visitors",
     "vendor_waitlist",
     "feedback_submissions",
     "demo_usage",
@@ -173,6 +175,16 @@ function wipeAll() {
     } catch {
       // table may not exist yet
     }
+  }
+  // Clear the community/claimed mirror in `listings` but KEEP curated rows
+  // (seeded at boot, expected by the public-directory tests). Without this the
+  // approved-active listing from one test lingers and the directory-wide
+  // "already listed" dedup (findVisibleDirectoryMatch) flags the next test's
+  // identical fixture submission.
+  try {
+    db.exec("DELETE FROM listings WHERE source != 'curated'");
+  } catch {
+    // table may not exist yet
   }
   // Re-seed the supplier taxonomy after wiping — the public directory and
   // every admin-taxonomy test expects the 6 default groups / 14 categories

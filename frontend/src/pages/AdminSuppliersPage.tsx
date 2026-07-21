@@ -829,7 +829,7 @@ function SupplierCard({
               <dl className="m-0 grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-xs">
                 <DefRow
                   label={t("admin.suppliers_card_field_price_band")}
-                  value={<PriceBandPill band={s.price_band} />}
+                  value={s.price_band ? <PriceBandPill band={s.price_band} /> : "—"}
                 />
                 <DefRow
                   label={t("admin.suppliers_card_field_blurb")}

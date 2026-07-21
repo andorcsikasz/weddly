@@ -9,6 +9,7 @@ import type {
 } from "@shared/community_suppliers";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { CONFIG } from "../config";
+import { getVisitorSystemUserId } from "../db";
 import {
   consumeVerificationToken,
   findActiveByContactEmail,
@@ -18,6 +19,8 @@ import {
   insertReport,
   toDirectorySupplierBase,
 } from "../domain/community_suppliers";
+import { findVisibleDirectoryMatch } from "../domain/listings";
+import { requireVerifiedVisitor } from "../domain/verified_visitors";
 import { sendKind } from "../domain/emails/send";
 import { isGoogleMapsUrl, resolveGoogleMapsUrl } from "../domain/maps_resolver";
 import { enrichSupplier } from "../domain/supplier_enrich";
@@ -144,12 +147,16 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
     }
   }
 
-  const pbRaw = body.price_band;
-  const pbNum = typeof pbRaw === "number" ? pbRaw : Number(pbRaw);
-  if (!Number.isInteger(pbNum) || pbNum < 1 || pbNum > 5) {
-    throw new HttpError(400, "price_band must be an integer 1..5");
+  // Price is OPTIONAL. Omit / null / "" means "unpriced" (stored as sentinel 0,
+  // normalized to null on read). When present it must be an integer 1..5.
+  let price_band: PriceBand | null = null;
+  if (body.price_band != null && body.price_band !== "") {
+    const pbNum = typeof body.price_band === "number" ? body.price_band : Number(body.price_band);
+    if (!Number.isInteger(pbNum) || pbNum < 1 || pbNum > 5) {
+      throw new HttpError(400, "price_band must be an integer 1..5");
+    }
+    price_band = pbNum as PriceBand;
   }
-  const price_band = pbNum as PriceBand;
 
   // Default to 'user' for back-compat with legacy clients that don't send it.
   // Anything other than the literal "self" / "user" is rejected so a typo
@@ -187,16 +194,52 @@ function shouldCheckDuplicate(website: string): boolean {
 // by submitting them to the catalogue.
 
 async function handleSubmit(ctx: Ctx): Promise<Response> {
-  const userId = requireVerifiedAuth(ctx, getUserById);
-  // Per-IP guard runs before validation to throttle floods of garbage. Per-user
-  // limit runs after validation so a submitter fixing typos doesn't burn their
-  // hourly quota on validation errors.
+  // Per-IP guard runs first to throttle floods of garbage. Per-principal limit
+  // runs after validation so a submitter fixing typos doesn't burn their hourly
+  // quota on validation errors.
   rateLimit(ctx.clientIp, "supplier_submit", { capacity: 5, refillRate: 1 / 600 });
+
+  // Principal: a logged-in verified couple OR a verified visitor (no account).
+  // Visitor submissions anchor the NOT-NULL author FK to the reserved system
+  // user and record the real submitter in submitter_visitor_id. A bearer token
+  // (ctx.userId set) always takes the couple path; otherwise we require a
+  // verified visitor via the X-Visitor-Token header.
+  let submitterUserId: number;
+  let submitterVisitorId: number | null = null;
+  if (ctx.userId) {
+    submitterUserId = requireVerifiedAuth(ctx, getUserById);
+  } else {
+    const visitor = requireVerifiedVisitor(ctx);
+    submitterUserId = getVisitorSystemUserId();
+    submitterVisitorId = visitor.id;
+  }
 
   const body = await readJson<SubmitBody>(ctx.req);
   const input = parseSubmitBody(body);
 
-  rateLimit(`user:${userId}`, "supplier_submit_user", { capacity: 5, refillRate: 1 / 3600 });
+  const principalKey = submitterVisitorId
+    ? `visitor:${submitterVisitorId}`
+    : `user:${submitterUserId}`;
+  rateLimit(principalKey, "supplier_submit_user", { capacity: 5, refillRate: 1 / 3600 });
+
+  // Already on the site? Warn the submitter and point them to the live listing
+  // (curated / claimed / already-approved community) rather than queuing a
+  // duplicate. `existing` lets the client link straight to it.
+  const alreadyListed = findVisibleDirectoryMatch({
+    website: input.website,
+    name: input.name,
+    city: input.city,
+  });
+  if (alreadyListed) {
+    throw new HttpError(409, `Already on Weddly: ${alreadyListed.name}`, {
+      code: "already_listed",
+      existing: {
+        id: alreadyListed.id,
+        name: alreadyListed.name,
+        city: alreadyListed.city,
+      },
+    });
+  }
 
   // Dedupe by contact email first: a vendor who already submitted (and is
   // sitting in the verify / admin-review queue) shouldn't be able to pile up
@@ -219,7 +262,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
     }
   }
 
-  const id = insertCommunitySupplier(userId, input);
+  const id = insertCommunitySupplier(submitterUserId, input, submitterVisitorId);
   const row = getCommunitySupplierById(id);
   if (!row) throw new HttpError(500, "Failed to read inserted supplier");
 
@@ -254,7 +297,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   // must explicitly click "Send verify" in /app/admin/suppliers to release
   // the mail (handleSendVerify below).
   addAuditLog({
-    actor_user_id: userId,
+    actor_user_id: submitterVisitorId ? null : submitterUserId,
     couple_id: null,
     action: "supplier.community.create",
     target_kind: "community_supplier",
@@ -266,6 +309,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
       price_band: input.price_band,
       website: input.website,
       status: "pending",
+      submitter_visitor_id: submitterVisitorId,
     },
   });
 
@@ -429,7 +473,10 @@ async function handleReport(ctx: Ctx): Promise<Response> {
 }
 
 export function registerCommunitySupplierRoutes(router: Router) {
-  router.post("/api/suppliers/community", handleSubmit, true);
+  // Public: the handler accepts EITHER a logged-in verified couple OR a verified
+  // visitor (X-Visitor-Token). It must not be router-gated on a bearer token, or
+  // account-less visitors could never reach the visitor branch.
+  router.post("/api/suppliers/community", handleSubmit, false);
   router.post("/api/suppliers/community/:id/report", handleReport, true);
   router.post("/api/suppliers/resolve-maps-url", handleResolveMapsUrl, true);
   // Public — the link comes from an email and the recipient is the listing's
