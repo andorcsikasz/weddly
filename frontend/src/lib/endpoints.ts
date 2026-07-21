@@ -763,6 +763,13 @@ export const coupleApi = {
   /** Clear a fixed-slot site photo (deletes the stored file too). */
   deleteSitePhoto: (slot: 1 | 2) =>
     apiFetch<{ couple: Couple }>("DELETE", `/api/couples/current/site-photo/${slot}`),
+  /** Drop a curated design background into a slot instead of uploading. `slug`
+   *  is one of shared/design.ts CURATED_SITE_PHOTOS; the server whitelists it
+   *  and stores the matching `/design-photos/...` asset path. */
+  chooseSitePhotoPreset: (slot: 1 | 2, slug: string) =>
+    apiFetch<{ couple: Couple }>("POST", `/api/couples/current/site-photo/${slot}/preset`, {
+      slug,
+    }),
   /** Archive the workspace — flips status to `archived` and triggers a
    *  final-bundle export (seating PDF + guests CSV + JSON snapshot). */
   archive: () => apiFetch<{ couple: Couple }>("POST", "/api/couples/current/archive", {}),

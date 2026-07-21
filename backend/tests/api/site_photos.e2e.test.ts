@@ -4,11 +4,18 @@
 // wedding view at every tier (they're presentation content like the cover).
 
 import "../setup";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { CURATED_SITE_PHOTOS } from "@shared/design";
 import { db } from "../../src/db";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
+const UPLOADS_DIR = process.env.UPLOADS_DIR ?? "./data/test-uploads";
+// The shipped curated art lives in the frontend public tree; the preset picker
+// only ever stores paths into it, so the files must actually exist there.
+const DESIGN_PHOTOS_DIR = join(import.meta.dir, "../../../frontend/public/design-photos");
 
 /** 67-byte 1x1 transparent PNG — same fixture as the cover-upload suite. */
 function tinyPngBlob(): Blob {
@@ -126,5 +133,104 @@ describe("site photo slots — upload / clear / public exposure", () => {
     expect(r.status).toBe(200);
     expect(r.data.wedding.site_image_1_url).toMatch(/site-photo-1\.png/);
     expect(r.data.wedding.site_image_2_url).toMatch(/site-photo-2\.png/);
+  });
+});
+
+describe("site photo slots — curated preset picker", () => {
+  beforeEach(() => {
+    wipeAll();
+  });
+  afterEach(() => {
+    wipeAll();
+  });
+
+  function choosePreset(token: string | null, slot: number | string, slug: unknown) {
+    return req<CoupleEnvelope>(
+      "POST",
+      `/api/couples/current/site-photo/${slot}/preset`,
+      { slug },
+      token ? { token } : {},
+    );
+  }
+
+  test("a valid slug stores the matching /design-photos asset path", async () => {
+    const { token } = await bootstrapCouple("preset-ok@weddly.test");
+    const first = CURATED_SITE_PHOTOS[0];
+    if (!first) throw new Error("no curated photos defined");
+
+    const r = await choosePreset(token, 1, first.slug);
+    expect(r.status).toBe(200);
+    expect(r.data.couple.site_image_1_url).toBe(`/design-photos/${first.file}`);
+    expect(r.data.couple.site_image_2_url).toBeNull();
+    // Every advertised slug must resolve to a real, shipped file — otherwise a
+    // couple picks a background that 404s on their live page.
+    for (const p of CURATED_SITE_PHOTOS) {
+      expect(existsSync(join(DESIGN_PHOTOS_DIR, p.file))).toBe(true);
+    }
+  });
+
+  test("an unknown slug is refused, column untouched", async () => {
+    const { token } = await bootstrapCouple("preset-bad-slug@weddly.test");
+    const r = await choosePreset(token, 1, "not-a-real-slug");
+    expect(r.status).toBe(400);
+    const check = await req<CoupleEnvelope>("GET", "/api/couples/current", undefined, { token });
+    expect(check.data.couple.site_image_1_url).toBeNull();
+  });
+
+  test("a non-string slug is refused", async () => {
+    const { token } = await bootstrapCouple("preset-nonstring@weddly.test");
+    const r = await choosePreset(token, 1, 42);
+    expect(r.status).toBe(400);
+  });
+
+  test("slot outside 1|2 → 400", async () => {
+    const { token } = await bootstrapCouple("preset-slot@weddly.test");
+    const first = CURATED_SITE_PHOTOS[0];
+    const r = await choosePreset(token, 3, first?.slug);
+    expect(r.status).toBe(400);
+  });
+
+  test("anon → 401", async () => {
+    const first = CURATED_SITE_PHOTOS[0];
+    const r = await choosePreset(null, 1, first?.slug);
+    expect(r.status).toBe(401);
+  });
+
+  test("a preset can replace an uploaded photo and vice versa", async () => {
+    const { token, coupleId } = await bootstrapCouple("preset-swap@weddly.test");
+    const art = CURATED_SITE_PHOTOS[1];
+    if (!art) throw new Error("need two curated photos for this test");
+
+    // upload → preset: the /uploads file is cleaned up, column now the asset path.
+    const up = await uploadSitePhoto(token, 1, tinyPngBlob());
+    const uploadedUrl = ((await up.json()) as CoupleEnvelope).couple.site_image_1_url;
+    expect(uploadedUrl).toMatch(/^\/uploads\//);
+    const uploadedKey = (uploadedUrl ?? "").split("?")[0]?.replace("/uploads/", "") ?? "";
+    expect(existsSync(join(UPLOADS_DIR, uploadedKey))).toBe(true);
+
+    const toPreset = await choosePreset(token, 1, art.slug);
+    expect(toPreset.data.couple.site_image_1_url).toBe(`/design-photos/${art.file}`);
+    expect(existsSync(join(UPLOADS_DIR, uploadedKey))).toBe(false); // old file gone
+
+    // preset → upload: the column flips back to an /uploads path.
+    const up2 = await uploadSitePhoto(token, 1, tinyPngBlob());
+    expect(((await up2.json()) as CoupleEnvelope).couple.site_image_1_url).toMatch(
+      new RegExp(`^/uploads/couples/${coupleId}/site-photo-1\\.png`),
+    );
+  });
+
+  test("a chosen preset shows on the public wedding view", async () => {
+    const { token, coupleId } = await bootstrapCouple("preset-public@weddly.test");
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    const art = CURATED_SITE_PHOTOS[2];
+    if (!art) throw new Error("need a curated photo");
+    await choosePreset(token, 2, art.slug);
+
+    const r = await req<{ wedding: { site_image_2_url: string | null } }>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(coupleSlug(coupleId))}`,
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.wedding.site_image_2_url).toBe(`/design-photos/${art.file}`);
   });
 });

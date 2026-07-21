@@ -37,6 +37,8 @@ import {
   type ButtonStyleSlug,
   type CardRadiusSlug,
   COLOR_ROLES,
+  curatedPhotoUrl,
+  type CuratedPhotoSlug,
   type ColorRole,
   type CoupleDesign,
   type DateFormatSlug,
@@ -51,6 +53,7 @@ import {
   VALID_BORDER_STYLES,
   VALID_BUTTON_STYLES,
   VALID_CARD_RADII,
+  VALID_CURATED_PHOTO_SLUGS,
   VALID_DATE_FORMATS,
   VALID_FONT_FAMILIES,
   VALID_FONTS,
@@ -2673,6 +2676,53 @@ async function handleDeleteSitePhoto(ctx: Ctx): Promise<Response> {
   return json({ couple: toCouple(refreshed) });
 }
 
+/** Drop a curated background into a photo slot instead of uploading. The chosen
+ *  art is a whitelisted static asset, so this writes `/design-photos/<file>`
+ *  straight into the same `site_image_N_url` column an upload uses (no storage
+ *  write — the file already ships with the app). The whitelist check means the
+ *  column can only ever hold one of our own slugs, never an attacker-supplied
+ *  path or off-site URL. Central billing gate covers 402 (path is under
+ *  /api/couples/current), same as the upload sibling. */
+async function handleChooseSitePhotoPreset(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(404, "No couple to update");
+  const slot = parseSitePhotoSlot(ctx);
+
+  const body = await readJson<{ slug?: unknown }>(ctx.req);
+  const slug = typeof body.slug === "string" ? body.slug : "";
+  if (!VALID_CURATED_PHOTO_SLUGS.has(slug as CuratedPhotoSlug)) {
+    throw new HttpError(400, "Unknown photo", { code: "bad_photo_slug" });
+  }
+  const url = curatedPhotoUrl(slug);
+  if (!url) throw new HttpError(400, "Unknown photo", { code: "bad_photo_slug" });
+
+  const col = slot === 1 ? "site_image_1_url" : "site_image_2_url";
+  const previousUrl = slot === 1 ? couple.site_image_1_url : couple.site_image_2_url;
+
+  // If the slot currently holds an UPLOADED file, delete it so we don't orphan
+  // storage. A previous curated value lives under /design-photos (a shared asset,
+  // not this couple's file), so keyFromUploadUrl returns null and it's left be.
+  const prevKey = previousUrl ? keyFromUploadUrl(previousUrl) : null;
+  if (prevKey) await storage.delete(prevKey);
+
+  const ts = now();
+  db.prepare(`UPDATE couples SET ${col} = ?, updated_at = ? WHERE id = ?`).run(url, ts, couple.id);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "couple.site_photo_preset",
+    target_kind: "couple",
+    target_id: couple.id,
+    before: { slot, url: previousUrl },
+    after: { slot, url },
+  });
+
+  const refreshed = getCoupleById(couple.id);
+  if (!refreshed) throw new HttpError(500, "Couple vanished mid-update");
+  return json({ couple: toCouple(refreshed) });
+}
+
 // ─── Archive ───────────────────────────────────────────────────────────────
 //
 // `POST /api/couples/current/archive` flips `couples.status` to `archived`
@@ -3589,6 +3639,7 @@ export function registerCoupleRoutes(router: Router) {
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
   router.post("/api/couples/current/cover", handleUploadCover, true);
   router.post("/api/couples/current/site-photo/:slot", handleUploadSitePhoto, true);
+  router.post("/api/couples/current/site-photo/:slot/preset", handleChooseSitePhotoPreset, true);
   router.delete("/api/couples/current/site-photo/:slot", handleDeleteSitePhoto, true);
   router.patch("/api/couples/slug", handleUpdateSlug, true);
   router.get("/api/users/me/couples", handleListMyCouples, true);

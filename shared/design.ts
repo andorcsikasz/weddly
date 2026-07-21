@@ -768,6 +768,56 @@ export const IMAGE_TREATMENTS: readonly { slug: ImageTreatmentSlug; nameKey: str
   { slug: "grayscale", nameKey: "design.web.image_treatment.grayscale" },
 ];
 
+/** Curated, people-free background art a couple can drop into a guest-page
+ *  photo slot instead of uploading their own. Each entry is a static SVG served
+ *  from `frontend/public/design-photos/<file>` (reachable at `/design-photos/…`
+ *  in every build). The `file` is the whole contract shared across the fence:
+ *  the backend whitelists these slugs and writes `curatedPhotoUrl(slug)` into
+ *  the same `site_image_N_url` TEXT column an upload uses, so the guest page
+ *  renders one identically to the other and the grayscale treatment applies to
+ *  both. Additive-only: never rename or drop a `file`, or a couple who picked it
+ *  loses their image. Add new art by appending a row and dropping the SVG in. */
+export type CuratedPhotoSlug =
+  | "dawn"
+  | "eucalyptus"
+  | "arches"
+  | "terrazzo"
+  | "silk"
+  | "halftone"
+  | "dunes"
+  | "marble"
+  | "wildflowers"
+  | "boho_sun";
+
+export const CURATED_SITE_PHOTOS: readonly {
+  slug: CuratedPhotoSlug;
+  file: string;
+  nameKey: string;
+}[] = [
+  { slug: "dawn", file: "01-dawn.svg", nameKey: "design.web.photo_art.dawn" },
+  { slug: "eucalyptus", file: "02-eucalyptus.svg", nameKey: "design.web.photo_art.eucalyptus" },
+  { slug: "arches", file: "03-arches.svg", nameKey: "design.web.photo_art.arches" },
+  { slug: "terrazzo", file: "04-terrazzo.svg", nameKey: "design.web.photo_art.terrazzo" },
+  { slug: "silk", file: "05-silk.svg", nameKey: "design.web.photo_art.silk" },
+  { slug: "halftone", file: "06-halftone.svg", nameKey: "design.web.photo_art.halftone" },
+  { slug: "dunes", file: "07-dunes.svg", nameKey: "design.web.photo_art.dunes" },
+  { slug: "marble", file: "08-marble.svg", nameKey: "design.web.photo_art.marble" },
+  { slug: "wildflowers", file: "09-wildflowers.svg", nameKey: "design.web.photo_art.wildflowers" },
+  { slug: "boho_sun", file: "10-boho-sun.svg", nameKey: "design.web.photo_art.boho_sun" },
+];
+
+export const VALID_CURATED_PHOTO_SLUGS: ReadonlySet<CuratedPhotoSlug> = new Set(
+  CURATED_SITE_PHOTOS.map((p) => p.slug),
+);
+
+/** The public URL a curated slug resolves to, single-sourced so the frontend
+ *  thumbnail and the value the backend stores can never drift. Returns null for
+ *  an unknown slug so callers fail closed rather than build a dead path. */
+export function curatedPhotoUrl(slug: string): string | null {
+  const found = CURATED_SITE_PHOTOS.find((p) => p.slug === slug);
+  return found ? `/design-photos/${found.file}` : null;
+}
+
 /** The three corner + shadow pairings the four style packs actually use.
  *
  *  `cardRadius` and `shadow` are stored separately and stay separate, because

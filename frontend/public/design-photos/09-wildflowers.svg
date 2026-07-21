@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" role="img" aria-label="Delicate wildflower stems">
+  <rect width="1200" height="800" fill="#F1E9DC"/>
+  <g fill="none" stroke="#8B9A7C" stroke-width="2.6" stroke-linecap="round">
+    <path d="M250 800 C 240 620, 270 520, 250 380"/>
+    <path d="M250 520 C 210 500, 190 470, 196 440"/>
+    <path d="M250 470 C 292 452, 314 424, 310 396"/>
+    <path d="M470 800 C 480 640, 452 540, 476 420"/>
+    <path d="M476 540 C 520 520, 542 492, 536 462"/>
+    <path d="M950 800 C 960 620, 930 520, 952 372"/>
+    <path d="M952 500 C 912 482, 892 452, 898 424"/>
+    <path d="M720 800 C 712 660, 736 560, 720 470"/>
+  </g>
+  <g fill="#C98A6B">
+    <circle cx="250" cy="368" r="20"/>
+    <circle cx="476" cy="408" r="17"/>
+    <circle cx="720" cy="458" r="15"/>
+  </g>
+  <g fill="#E0B36A">
+    <circle cx="250" cy="368" r="8"/>
+    <circle cx="476" cy="408" r="7"/>
+    <circle cx="720" cy="458" r="6"/>
+    <circle cx="952" cy="360" r="7"/>
+  </g>
+  <g fill="#B26F52">
+    <circle cx="952" cy="360" r="18"/>
+  </g>
+  <g fill="#A6B29A">
+    <ellipse cx="310" cy="392" rx="18" ry="10" transform="rotate(-30 310 392)"/>
+    <ellipse cx="536" cy="458" rx="18" ry="10" transform="rotate(-30 536 458)"/>
+    <ellipse cx="196" cy="436" rx="16" ry="9" transform="rotate(28 196 436)"/>
+    <ellipse cx="898" cy="420" rx="16" ry="9" transform="rotate(28 898 420)"/>
+  </g>
+</svg>

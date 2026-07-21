@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" role="img" aria-label="Warm marble veining">
+  <defs>
+    <linearGradient id="marbleBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F6F1E9"/>
+      <stop offset="1" stop-color="#EBE1D2"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#marbleBg)"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M-40 240 C 260 180, 420 360, 700 300 C 900 258, 1040 380, 1240 330" stroke="#C9B79B" stroke-width="3" opacity="0.7"/>
+    <path d="M-40 300 C 220 270, 460 420, 720 350 C 940 292, 1060 430, 1240 400" stroke="#B49B78" stroke-width="1.6" opacity="0.55"/>
+    <path d="M-40 560 C 300 500, 500 640, 780 580 C 980 538, 1080 640, 1240 600" stroke="#C9B79B" stroke-width="2.6" opacity="0.6"/>
+    <path d="M-40 610 C 260 580, 520 700, 760 640 C 980 586, 1100 690, 1240 660" stroke="#B49B78" stroke-width="1.4" opacity="0.5"/>
+    <path d="M120 -20 C 200 160, 120 360, 260 520 C 360 636, 300 720, 380 820" stroke="#CDBB9E" stroke-width="1.6" opacity="0.45"/>
+    <path d="M980 -20 C 900 180, 1000 360, 900 540 C 840 648, 920 740, 860 820" stroke="#CDBB9E" stroke-width="1.6" opacity="0.45"/>
+  </g>
+</svg>

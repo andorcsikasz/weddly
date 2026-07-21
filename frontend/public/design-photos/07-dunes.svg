@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" role="img" aria-label="Layered sunset dunes">
+  <defs>
+    <linearGradient id="duneSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F5EDE1"/>
+      <stop offset="1" stop-color="#EFD3B8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#duneSky)"/>
+  <circle cx="850" cy="250" r="86" fill="#E7B98C" opacity="0.85"/>
+  <path d="M0 520 C 260 452, 520 500, 760 470 C 960 445, 1080 470, 1200 452 V 800 H 0 Z" fill="#E4C7A2"/>
+  <path d="M0 600 C 300 540, 560 588, 820 556 C 1000 534, 1100 560, 1200 544 V 800 H 0 Z" fill="#CE9E74"/>
+  <path d="M0 680 C 280 628, 600 672, 900 644 C 1050 630, 1130 650, 1200 640 V 800 H 0 Z" fill="#A9552F"/>
+  <path d="M0 748 C 320 712, 640 744, 940 726 C 1080 718, 1140 732, 1200 726 V 800 H 0 Z" fill="#7E4B33"/>
+</svg>

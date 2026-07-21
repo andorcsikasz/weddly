@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" role="img" aria-label="Boho sun over sand">
+  <defs>
+    <linearGradient id="bohoSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4ECDD"/>
+      <stop offset="1" stop-color="#EAD9C0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bohoSky)"/>
+  <g stroke="#B26F52" stroke-width="6" stroke-linecap="round" opacity="0.85">
+    <line x1="600" y1="150" x2="600" y2="250"/>
+    <line x1="450" y1="185" x2="500" y2="270"/>
+    <line x1="750" y1="185" x2="700" y2="270"/>
+    <line x1="335" y1="280" x2="410" y2="335"/>
+    <line x1="865" y1="280" x2="790" y2="335"/>
+    <line x1="280" y1="410" x2="372" y2="410"/>
+    <line x1="920" y1="410" x2="828" y2="410"/>
+  </g>
+  <circle cx="600" cy="410" r="118" fill="#C8794F"/>
+  <circle cx="600" cy="410" r="118" fill="none" stroke="#EAD9C0" stroke-width="10" opacity="0.5"/>
+  <path d="M0 560 C 260 520, 520 560, 760 536 C 960 516, 1080 540, 1200 524 V 800 H 0 Z" fill="#D8B98F"/>
+  <path d="M0 660 C 300 622, 560 662, 820 640 C 1000 624, 1100 646, 1200 632 V 800 H 0 Z" fill="#B98E63"/>
+</svg>
