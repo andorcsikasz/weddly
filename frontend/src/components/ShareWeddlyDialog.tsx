@@ -328,15 +328,29 @@ export function ShareWeddlyDialog({
                 key={m.variant}
                 aria-roledescription="slide"
                 aria-hidden={!selected}
-                className={`flex min-h-[7.5rem] shrink-0 basis-[86%] snap-center items-center rounded-2xl border p-5 transition-all duration-300 ${
-                  selected
-                    ? "border-ink-900 bg-paper-100 opacity-100 dark:border-paper-200/70 dark:bg-umber-700"
-                    : "scale-[0.96] border-paper-300 bg-white opacity-55 dark:border-umber-600 dark:bg-umber-800"
+                className={`flex min-h-[7.5rem] shrink-0 basis-[86%] snap-center items-end justify-end pr-1.5 transition-all duration-300 ${
+                  selected ? "opacity-100" : "scale-[0.96] opacity-60"
                 }`}
               >
-                <span className="block text-[0.9375rem] leading-relaxed text-ink-800 dark:text-paper-100">
-                  {m.message}
-                </span>
+                {/* Each variant is previewed as an outgoing chat bubble — this is
+                 *  exactly how the message lands when they send it. The selected
+                 *  card is the filled "sent" bubble; peeking neighbours are quiet.
+                 *  The rotated diamond is the bubble tail. */}
+                <div
+                  className={`relative max-w-[90%] rounded-[1.4rem] px-4 py-3 transition-colors duration-300 ${
+                    selected
+                      ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                      : "bg-paper-100 text-ink-600 dark:bg-umber-700 dark:text-paper-200"
+                  }`}
+                >
+                  <span className="block text-[0.9375rem] leading-relaxed">{m.message}</span>
+                  <span
+                    aria-hidden="true"
+                    className={`absolute -right-1 bottom-1.5 h-3 w-3 rotate-45 rounded-[3px] ${
+                      selected ? "bg-ink-900 dark:bg-paper-100" : "bg-paper-100 dark:bg-umber-700"
+                    }`}
+                  />
+                </div>
               </div>
             );
           })}
@@ -365,10 +379,11 @@ export function ShareWeddlyDialog({
           })}
         </div>
 
-        {/* Two icon-only actions. Share stays visually primary; copy is the
-         *  quiet secondary. Both are 44×44 minimum and carry a native tooltip
-         *  plus an aria-label, so the icon is never the only affordance. */}
-        <div className="mt-6 flex items-center gap-3">
+        {/* Two icon-only actions, centred under the bubble like a chat
+         *  composer. Share stays visually primary; copy is the quiet
+         *  secondary. Both are 44×44 minimum and carry a native tooltip plus
+         *  an aria-label, so the icon is never the only affordance. */}
+        <div className="mt-6 flex items-center justify-center gap-3">
           <button
             ref={shareBtnRef}
             type="button"
@@ -376,7 +391,7 @@ export function ShareWeddlyDialog({
             disabled={phase === "sharing"}
             title={shareLabel}
             aria-label={shareLabel}
-            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-ink-900 text-paper-50 transition-colors hover:bg-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 disabled:opacity-70 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-ink-900 text-paper-50 transition-colors hover:bg-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 disabled:opacity-70 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100"
           >
             {phase === "sharing" ? (
               <span
@@ -392,7 +407,7 @@ export function ShareWeddlyDialog({
             onClick={() => void handleCopy()}
             title={copyLabel}
             aria-label={copyLabel}
-            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-paper-300 text-ink-700 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:border-umber-600 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-paper-300 text-ink-700 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:border-umber-600 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100"
           >
             {phase === "copied" ? (
               <Check size={18} aria-hidden="true" />
@@ -400,16 +415,16 @@ export function ShareWeddlyDialog({
               <Copy size={18} aria-hidden="true" />
             )}
           </button>
-
-          {/* The success line earns its space only after a confirmed share;
-           *  every other state speaks through the live region alone rather
-           *  than parking instructional text under the buttons. */}
-          {phase === "shared" && (
-            <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
-              {t("share_weddly.success")}
-            </p>
-          )}
         </div>
+
+        {/* The success line earns its space only after a confirmed share;
+         *  every other state speaks through the live region alone rather than
+         *  parking instructional text under the buttons. Centred to match. */}
+        {phase === "shared" && (
+          <p className="mt-3 text-center text-sm font-medium text-ink-900 dark:text-paper-50">
+            {t("share_weddly.success")}
+          </p>
+        )}
 
         <p aria-live="polite" className="sr-only">
           {status}
