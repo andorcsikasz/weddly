@@ -128,10 +128,11 @@ export const CONFIG = {
   stripePriceEur: process.env.STRIPE_PRICE_EUR ?? "",
   stripePriceHuf: process.env.STRIPE_PRICE_HUF ?? "",
   /** One-time Price ids for the planner-managed couple's guest-page (vendégoldal)
-   *  edit add-on, sold at ~30% of one month (0.3 × the monthly couple price). One
-   *  per currency, matched to the couple's `currency` like the subscription price.
-   *  When unset the add-on checkout returns 503, so it never blocks boot. Create
-   *  them in the Stripe dashboard at the discounted amount. */
+   *  edit add-on, sold at roughly 30% of one month, rounded to a clean amount per
+   *  currency (currently EUR 2.15, Ft 750). One per currency, matched to the
+   *  couple's `currency` like the subscription price. When unset the add-on
+   *  checkout returns 503, so it never blocks boot. Create them in the Stripe
+   *  dashboard at the discounted amount. */
   stripeGuestPageAddonPriceEur: process.env.STRIPE_GUEST_PAGE_ADDON_PRICE_EUR ?? "",
   stripeGuestPageAddonPriceHuf: process.env.STRIPE_GUEST_PAGE_ADDON_PRICE_HUF ?? "",
   /** Recurring Price ids for the planner subscription, one per tier per currency.
