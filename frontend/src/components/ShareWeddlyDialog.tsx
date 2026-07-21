@@ -62,6 +62,7 @@ export function ShareWeddlyDialog({
    *  sharing / success / cancelled / error all reach a screen reader. */
   const [status, setStatus] = useState<string>("");
   const shareBtnRef = useRef<HTMLButtonElement>(null);
+  const copyBtnRef = useRef<HTMLButtonElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const copiedTimer = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -212,6 +213,12 @@ export function ShareWeddlyDialog({
     if (ok) {
       flashCopied(t("share_weddly.copied"));
       trackShare("weddly_share_copied", analytics({ share_method: "copy_button" }));
+      // Copying is a completed share too — celebrate it exactly like the native
+      // sheet, with the burst anchored to the copy button. fireConfetti is a
+      // no-op under prefers-reduced-motion.
+      const rect = copyBtnRef.current?.getBoundingClientRect();
+      if (rect) fireConfetti({ x: rect.left + rect.width / 2, y: rect.top });
+      else fireConfetti();
       return;
     }
     // A clipboard failure is recoverable — the message is still on screen and
@@ -230,6 +237,9 @@ export function ShareWeddlyDialog({
       if (ok) {
         flashCopied(t("share_weddly.copied"));
         trackShare("weddly_share_copied", analytics({ share_method: "clipboard_fallback" }));
+        const rect = shareBtnRef.current?.getBoundingClientRect();
+        if (rect) fireConfetti({ x: rect.left + rect.width / 2, y: rect.top });
+        else fireConfetti();
       } else {
         setStatus(t("share_weddly.error"));
         trackShare("weddly_share_failed", analytics({ share_method: "clipboard_fallback" }));
@@ -394,6 +404,7 @@ export function ShareWeddlyDialog({
             )}
           </button>
           <button
+            ref={copyBtnRef}
             type="button"
             onClick={() => void handleCopy()}
             title={copyLabel}
