@@ -1843,6 +1843,13 @@ const hu: LocaleMessages = {
       "Egyelőre nem onboardolunk szolgáltatókat. Töltsétek ki a lenti űrlapot, és visszaigazoló e-mailt küldünk a megadott címre. Amikor megnyitunk a kategóriátokban, elsőként ti hallotok rólunk.",
     contact_cta: "Csatlakozz a várólistára",
     contact_subject: "Szolgáltatói várólista",
+    recommend_title: "Ismersz jó szolgáltatót?",
+    recommend_body:
+      "Van olyan szolgáltató, akit jó szívvel ajánlanál? Oszd meg ezt a linket, hogy még többekhez eljusson, és több pár rátaláljon.",
+    recommend_share_cta: "Megosztom",
+    recommend_share_message:
+      "Van olyan szolgáltató, akit jó szívvel ajánlanál? Itt megteheted, hogy még többekhez eljusson:",
+    recommend_copied: "Link a vágólapra másolva",
     back_to_landing: "Vissza a főoldalra",
     beta_notice_title: "Béta alatt nem számlázunk, semmi rejtett költség",
     beta_notice_body:
@@ -4614,6 +4621,10 @@ const hu: LocaleMessages = {
         eligibilityHint:
           "Értékelést az a pár írhat, aki tényleg dolgozott a szolgáltatóval: vedd fel a költségtervedbe vagy jelöld ki a kategóriád választásának, és máris értékelhetsz.",
         alreadyReviewedNote: "Már értékeltétek ezt a szolgáltatót, köszönjük!",
+        visitorComposerTitle: "Írj értékelést",
+        visitorPrompt:
+          "Az értékeléshez erősítsd meg az e-mailed Google-lal. Nem kell fiók.",
+        visitorSubmitted: "Köszönjük! Az értékelésed megjelent.",
       },
       comments: {
         title: "Kérdések és válaszok",
@@ -5440,6 +5451,19 @@ const hu: LocaleMessages = {
     directory_purge_submitter_confirm: "Fiók végleges törlése",
     directory_purge_submitter_done: "A beküldő fiókja törölve.",
     nav_feedback: "Visszajelzések",
+    nav_reviews: "Jelölt értékelések",
+    reviews: {
+      title: "Jelölt értékelések",
+      description:
+        "Az alacsony (1-2 csillagos) nyitott értékelések megjelennek, de moderálásra jelölve. Meghagyod (feloldod a jelölést) vagy törlöd.",
+      empty: "Nincs jelölt értékelés. Minden rendben.",
+      loadError: "Nem sikerült betölteni a jelölt értékeléseket.",
+      unflag: "Meghagyás",
+      unflagged: "Meghagyva",
+      deleted: "Értékelés törölve",
+      deleteConfirmTitle: "Törlöd ezt az értékelést?",
+      deleteConfirmBody: "Soft delete, a sor megmarad, csak elrejtjük.",
+    },
     nav_couple_cards: "100 kérdés",
     feedback_title: "Beérkezett visszajelzések",
     feedback_sub: "A landingről és az appból érkező Visszajelzés űrlap beadásai.",

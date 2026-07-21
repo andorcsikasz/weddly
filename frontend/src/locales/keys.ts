@@ -2113,6 +2113,15 @@ export interface LocaleMessages {
     step_next: string;
     step_back: string;
     contact_subject: string;
+    /** Recommend-a-supplier share prompt on the vendor site: a shareable link
+     *  so word-of-mouth supplier recommendations reach more couples. */
+    recommend_title: string;
+    recommend_body: string;
+    recommend_share_cta: string;
+    /** Text put on the clipboard / into the native share sheet (the URL is
+     *  appended in code). */
+    recommend_share_message: string;
+    recommend_copied: string;
     back_to_landing: string;
     /** Beta + future-monetization notice shown above the waitlist form so
      *  vendors understand the directory is free during the beta and that a
@@ -5176,6 +5185,10 @@ export interface LocaleMessages {
         eligibilityHint: string;
         /** Shown instead of the composer when the couple already reviewed. */
         alreadyReviewedNote: string;
+        /** Public-page composer for an outside-Weddly visitor (Google verify). */
+        visitorComposerTitle: string;
+        visitorPrompt: string;
+        visitorSubmitted: string;
       };
       comments: {
         title: string;
@@ -6092,6 +6105,20 @@ export interface LocaleMessages {
     directory_purge_submitter_done: string;
     /** /app/admin/feedback page — triage of Visszajelzés submissions. */
     nav_feedback: string;
+    /** /app/admin/reviews page — moderation queue of flagged reviews. */
+    nav_reviews: string;
+    /** Flagged-review moderation queue. */
+    reviews: {
+      title: string;
+      description: string;
+      empty: string;
+      loadError: string;
+      unflag: string;
+      unflagged: string;
+      deleted: string;
+      deleteConfirmTitle: string;
+      deleteConfirmBody: string;
+    };
     /** /app/admin/couple-cards page — triage of 100-questions card ratings. */
     nav_couple_cards: string;
     feedback_title: string;

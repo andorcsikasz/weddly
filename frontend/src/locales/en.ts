@@ -1821,6 +1821,13 @@ const en: LocaleMessages = {
       "Fill in the form below and we'll send a confirmation to the email you provide. When we open in your category, you'll be the first to hear from us.",
     contact_cta: "Join the waitlist",
     contact_subject: "Vendor waitlist",
+    recommend_title: "Know a great supplier?",
+    recommend_body:
+      "Is there a supplier you'd wholeheartedly recommend? Share this link so it reaches more people and more couples find them.",
+    recommend_share_cta: "Share",
+    recommend_share_message:
+      "Is there a supplier you'd wholeheartedly recommend? Here's where you can pass it on so it reaches more people:",
+    recommend_copied: "Link copied to clipboard",
     back_to_landing: "Back to homepage",
     beta_notice_title: "No invoices during beta, no hidden costs",
     beta_notice_body:
@@ -4566,6 +4573,9 @@ const en: LocaleMessages = {
         eligibilityHint:
           "Reviews are open to couples who actually worked with this supplier: add it to your cost plan or make it your category pick, and you can rate it right away.",
         alreadyReviewedNote: "You've already reviewed this supplier, thank you!",
+        visitorComposerTitle: "Write a review",
+        visitorPrompt: "Confirm your email with Google to leave a review. No account needed.",
+        visitorSubmitted: "Thanks! Your review is live.",
       },
       comments: {
         title: "Questions & answers",
@@ -5385,6 +5395,19 @@ const en: LocaleMessages = {
     directory_purge_submitter_confirm: "Permanently delete account",
     directory_purge_submitter_done: "Submitter account deleted.",
     nav_feedback: "Feedback",
+    nav_reviews: "Flagged reviews",
+    reviews: {
+      title: "Flagged reviews",
+      description:
+        "Low-rating open reviews (1-2 stars) are published but flagged for a look. Keep one (unflag) or remove it.",
+      empty: "Nothing flagged. All caught up.",
+      loadError: "Couldn't load flagged reviews.",
+      unflag: "Keep",
+      unflagged: "Kept",
+      deleted: "Review deleted",
+      deleteConfirmTitle: "Delete this review?",
+      deleteConfirmBody: "Soft delete, the row stays, just hidden.",
+    },
     nav_couple_cards: "100 questions",
     feedback_title: "Inbound feedback",
     feedback_sub: "Submissions from the Feedback dialog on the landing and in-app surfaces.",

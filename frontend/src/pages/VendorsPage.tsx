@@ -3,18 +3,44 @@
 // (admin-accept → emailed token activation) is retired — vendors now create an
 // account directly and run the in-app onboarding wizard.
 
-import { ArrowLeft, Gem, MapPinned, PhoneCall } from "lucide-react";
+import { ArrowLeft, Gem, MapPinned, PhoneCall, Share2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { VendorDemoLaunchButton } from "../components/VendorDemoLaunchButton";
+import { useToast } from "../components/ui";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 export default function VendorsPage() {
   const { t } = useT();
+  const toast = useToast();
   useDocumentMeta("vendors.seo_title", "vendors.seo_description");
+
+  // Growth loop: anyone on the vendor site can pass a link on so their friends
+  // come recommend a supplier they trust. Native share sheet on mobile, with a
+  // copy-to-clipboard fallback everywhere else. The link points at the vendor
+  // site itself, where the "suggest a supplier" entry lives.
+  async function shareRecommendPrompt() {
+    const url = `${window.location.origin}/vendors`;
+    const message = t("vendors.recommend_share_message");
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: t("vendors.recommend_title"), text: message, url });
+        return;
+      } catch {
+        // User dismissed the sheet, or share failed — fall back to clipboard.
+      }
+    }
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("no_clipboard");
+      await navigator.clipboard.writeText(`${message} ${url}`);
+      toast.success(t("vendors.recommend_copied"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    }
+  }
 
   return (
     <PublicShell>
@@ -76,6 +102,29 @@ export default function VendorsPage() {
               body={t("vendors.benefit_2_body")}
             />
           </div>
+        </div>
+      </section>
+
+      {/* Recommend-a-supplier share prompt — a shareable link so word-of-mouth
+          recommendations reach more couples. */}
+      <section className="mx-auto max-w-3xl px-4 pb-12 sm:px-6">
+        <div className="card flex flex-col items-start gap-4 !p-6 sm:flex-row sm:items-center sm:justify-between sm:!p-8">
+          <div className="min-w-0">
+            <h2 className="font-grotesk text-xl text-ink-900 sm:text-2xl dark:text-paper-50">
+              {t("vendors.recommend_title")}
+            </h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+              {t("vendors.recommend_body")}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={shareRecommendPrompt}
+            className="btn-primary inline-flex shrink-0 items-center gap-2 whitespace-nowrap"
+          >
+            <Share2 size={16} aria-hidden />
+            {t("vendors.recommend_share_cta")}
+          </button>
         </div>
       </section>
 
