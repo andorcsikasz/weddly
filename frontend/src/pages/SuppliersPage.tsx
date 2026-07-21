@@ -153,9 +153,11 @@ const ACTION_CHIP_IDLE =
   "border-ink-700 bg-transparent text-ink-700 hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50";
 /** Open/expanded chip — mirrors the selected category pill. */
 const ACTION_CHIP_ON = "border-transparent stationery-coffee text-paper-50";
-/** "Handled" chip, matching the sage the not-needed runner segment turns. */
+/** "Handled" chip — a solid dark-green fill with white text once the couple
+ *  ticks the sub-category as not needed, so the on-state reads a clear step
+ *  above the outlined idle chips (the check inherits the white currentColor). */
 const ACTION_CHIP_SAGE =
-  "border-sage-400 bg-sage-50 text-sage-700 dark:border-sage-400/50 dark:bg-sage-400/15 dark:text-sage-300";
+  "border-transparent bg-sage-600 text-paper-50 hover:bg-sage-700 dark:bg-sage-600 dark:text-paper-50 dark:hover:bg-sage-700";
 
 /** Flat category list + its parent-group index, derived once from the group
  *  table — powers the search typeahead's category suggestions and lets a
