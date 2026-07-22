@@ -24,6 +24,7 @@
 
 import type { AnalyticsAudience } from "@shared/admin_analytics";
 import { CONFIG } from "../config";
+import { VISITOR_SYSTEM_USER_EMAIL } from "../db";
 
 export type { AnalyticsAudience };
 
@@ -95,7 +96,13 @@ export function coupleAudienceSql(alias: string, f: AnalyticsAudience): string {
  *  always excluded. Returns a parameter-free SQL boolean string. */
 export function userAudienceSql(alias: string, f: AnalyticsAudience): string {
   const A = alias;
-  const clauses: string[] = [`${A}.email NOT LIKE '%@purged.local'`];
+  // Always excluded, like purged tombstones: the reserved verified-visitor
+  // system user (anchors visitor-authored content's NOT-NULL author FK) is not
+  // a real signup and must never inflate any user rollup, regardless of toggle.
+  const clauses: string[] = [
+    `${A}.email NOT LIKE '%@purged.local'`,
+    `${A}.email <> ${sqlQuote(VISITOR_SYSTEM_USER_EMAIL)}`,
+  ];
   if (!f.includeAdmins) {
     const list = adminEmailList();
     if (list) clauses.push(`lower(${A}.email) NOT IN (${list})`);

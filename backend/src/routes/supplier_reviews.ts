@@ -12,7 +12,7 @@ import { REVIEW_BODY_MAX_CHARS, SUPPLIER_REVIEW_TAGS } from "@shared/suppliers";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
-import { db } from "../db";
+import { db, getVisitorSystemUserId } from "../db";
 import { getCoupleForUser } from "../domain/couples";
 import {
   createReview,
@@ -20,10 +20,12 @@ import {
   listReviewsForSupplier,
   getReviewSummary,
   normaliseTags,
+  type ReviewAuthorKind,
   softDeleteReview,
   updateReview,
 } from "../domain/reviews";
-import { viewerIsAdmin } from "../domain/users";
+import { getUserByEmail, getUserById, viewerIsAdmin } from "../domain/users";
+import { requireVerifiedVisitor } from "../domain/verified_visitors";
 
 /** Engagement proof: the couple actually worked with (or committed to) this
  *  supplier — it's in their cost plan or is their category pick. This is the
@@ -50,6 +52,22 @@ function coupleAlreadyReviewed(coupleId: number, supplierId: string): boolean {
        ) AS ok`,
     )
     .get(coupleId, supplierId) as { ok: number };
+  return row.ok === 1;
+}
+
+/** A logged-in user (couple or no-couple) already has a live review here. Keys
+ *  on author_user_id, so it catches both the couple path and the no-couple
+ *  `user` path (which dedup on the same column via idx_supplier_reviews_user_unique). */
+function userAlreadyReviewed(userId: number, supplierId: string): boolean {
+  const row = db
+    .prepare(
+      `SELECT EXISTS(
+         SELECT 1 FROM supplier_reviews
+          WHERE author_user_id = ? AND supplier_id = ?
+            AND author_kind IN ('user', 'couple') AND deleted_at IS NULL
+       ) AS ok`,
+    )
+    .get(userId, supplierId) as { ok: number };
   return row.ok === 1;
 }
 
@@ -106,11 +124,15 @@ async function handleList(ctx: Ctx): Promise<Response> {
   });
   const summary = getReviewSummary(supplierId);
 
-  // Composer eligibility for the viewer's couple — drives whether the detail
-  // page shows the review form ("verified reviews": engagement proof only).
+  // Composer eligibility: reviews are open to any logged-in user with a verified
+  // email who hasn't already reviewed this supplier (as a couple or as
+  // themselves). Admins always may. Engagement proof is no longer required.
   const couple = getCoupleForUser(userId);
-  const already = couple ? coupleAlreadyReviewed(couple.id, supplierId) : false;
-  const can_review = isAdmin || (!!couple && !already && hasEngagementProof(couple.id, supplierId));
+  const already =
+    (couple ? coupleAlreadyReviewed(couple.id, supplierId) : false) ||
+    userAlreadyReviewed(userId, supplierId);
+  const user = getUserById(userId);
+  const can_review = isAdmin || (!!user && Boolean(user.verified_email) && !already);
 
   return json({
     items: page.items,
@@ -138,26 +160,42 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const tags = parseTags(body.tags);
 
   let coupleId: number | null;
+  let authorKind: ReviewAuthorKind;
   let published: boolean;
+  let verified: boolean;
+  let flagged: boolean;
   if (isAdmin) {
     // Editorial voice: couple_id stays null ("Weddly editors"), draft/publish
-    // is the admin's call.
+    // is the admin's call. Never verified-badged, never auto-flagged.
     coupleId = null;
+    authorKind = "admin";
     published = typeof body.published === "boolean" ? body.published : false;
+    verified = false;
+    flagged = false;
   } else {
-    // Couple author: verified-review gate. Only a couple that actually worked
-    // with this supplier (cost plan row or category pick) may rate it, and
-    // the review goes live immediately — the gate IS the moderation.
-    const couple = getCoupleForUser(userId);
-    if (!couple) throw new HttpError(403, "Create a wedding workspace first");
-    if (!hasEngagementProof(couple.id, supplierId)) {
-      throw new HttpError(
-        403,
-        "Reviews are open to couples who worked with this supplier (add it to your cost plan or pick it first)",
-        { code: "not_engaged" },
-      );
+    // Open reviews: any logged-in user with a verified email may rate. A couple
+    // that actually worked with this supplier (cost plan / category pick) still
+    // earns the "Verified" badge; everyone else posts an unverified community
+    // review that goes live immediately but is flagged for moderation when it's
+    // a low (1-2 star) rating.
+    const user = getUserById(userId);
+    if (!user || !user.verified_email) {
+      throw new HttpError(403, "Verify your email before writing a review", {
+        code: "email_unverified",
+      });
     }
-    coupleId = couple.id;
+    const couple = getCoupleForUser(userId);
+    if (couple) {
+      coupleId = couple.id;
+      authorKind = "couple";
+      verified = hasEngagementProof(couple.id, supplierId);
+      flagged = !verified && rating <= 2;
+    } else {
+      coupleId = null;
+      authorKind = "user";
+      verified = false;
+      flagged = rating <= 2;
+    }
     published = true;
   }
 
@@ -167,10 +205,14 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       supplierId,
       authorUserId: userId,
       coupleId,
+      authorKind,
+      visitorId: null,
       rating,
       body: reviewBody,
       tags,
       published,
+      verified,
+      flagged,
     });
   } catch (e: unknown) {
     // Partial unique-index violation on (supplier_id, couple_id) → the
@@ -191,7 +233,77 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     action: "supplier_review.created",
     target_kind: "supplier_review",
     target_id: review.id,
-    after: { supplier_id: supplierId, rating, published, tag_count: tags.length },
+    after: {
+      supplier_id: supplierId,
+      rating,
+      published,
+      verified,
+      flagged,
+      author_kind: authorKind,
+    },
+  });
+  return json(review, { status: 201 });
+}
+
+/** Public composer for an email-verified visitor (no account). The visitor
+ *  proves their email once (Google or the email link, domain/verified_visitors)
+ *  and replays the device token on X-Visitor-Token. Review goes live
+ *  immediately; a 1-2 star rating is flagged for admin moderation. Deduped to
+ *  one review per visitor per supplier by idx_supplier_reviews_visitor_unique. */
+async function handleVisitorCreate(ctx: Ctx): Promise<Response> {
+  const visitor = requireVerifiedVisitor(ctx);
+  // Anonymous principal — rate-limit both the IP and the attested identity
+  // (the stronger key; shared NAT weakens IP-only limits).
+  rateLimit(ctx.clientIp, "visitor_review.create.ip", { capacity: 5, refillRate: 1 / 60 });
+  rateLimit(`visitor:${visitor.id}`, "visitor_review.create", { capacity: 5, refillRate: 1 / 300 });
+
+  const supplierId = ctx.params.supplier_id?.trim();
+  if (!supplierId) throw new HttpError(400, "supplier_id required");
+  if (supplierId.length > 80) throw new HttpError(400, "supplier_id too long");
+
+  const body = await readJson<Partial<CreateReviewBody>>(ctx.req);
+  const rating = parseRating(body.rating);
+  const reviewBody = parseBody(body.body);
+  const tags = parseTags(body.tags);
+
+  // Same-person guard: if a Weddly account with this exact email already
+  // reviewed this supplier, don't let the visitor path post a second one.
+  const account = getUserByEmail(visitor.email);
+  if (account && userAlreadyReviewed(account.id, supplierId)) {
+    throw new HttpError(409, "Already reviewed this supplier", { code: "already_reviewed" });
+  }
+
+  const flagged = rating <= 2;
+  let review: SupplierReview;
+  try {
+    review = createReview({
+      supplierId,
+      authorUserId: getVisitorSystemUserId(),
+      coupleId: null,
+      authorKind: "visitor",
+      visitorId: visitor.id,
+      rating,
+      body: reviewBody,
+      tags,
+      published: true,
+      verified: false,
+      flagged,
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.toLowerCase().includes("unique")) {
+      throw new HttpError(409, "Already reviewed this supplier", { code: "already_reviewed" });
+    }
+    throw e;
+  }
+
+  addAuditLog({
+    actor_user_id: null,
+    couple_id: null,
+    action: "supplier_review.created_visitor",
+    target_kind: "supplier_review",
+    target_id: review.id,
+    after: { supplier_id: supplierId, rating, flagged, visitor_id: visitor.id },
   });
   return json(review, { status: 201 });
 }
@@ -256,6 +368,9 @@ async function handleDelete(ctx: Ctx): Promise<Response> {
 export function registerSupplierReviewRoutes(router: Router) {
   router.get("/api/suppliers/:supplier_id/reviews", handleList, true);
   router.post("/api/suppliers/:supplier_id/reviews", handleCreate, true);
+  // Public: verified visitors compose here (auth is the X-Visitor-Token device
+  // token, resolved inside via requireVerifiedVisitor — NOT a session).
+  router.post("/api/public/suppliers/:supplier_id/reviews", handleVisitorCreate);
   router.patch("/api/reviews/:review_id", handleUpdate, true);
   router.delete("/api/reviews/:review_id", handleDelete, true);
 }

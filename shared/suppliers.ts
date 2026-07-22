@@ -667,11 +667,14 @@ export interface SupplierReview {
   body: string | null;
   tags: SupplierReviewTag[];
   published: boolean;
-  /** True when the row's `couple_id` is null — i.e. authored by an admin under
-   *  the "Weddly editors" voice. Drives the badge on the card. A non-editorial
-   *  review is always VERIFIED: the create gate requires engagement proof
-   *  (cost-plan row or category pick), so couple reviews carry that badge. */
+  /** True when the review is authored by an admin under the "Weddly editors"
+   *  voice (couple_id null, author_kind 'admin'). Drives the editorial badge. */
   editorial: boolean;
+  /** True when the author had engagement proof at write time (a couple with a
+   *  cost-plan row or category pick for this supplier). Drives the "Verified"
+   *  badge. Since reviews opened to any verified email, `!editorial` no longer
+   *  implies verified — an open community/visitor review has verified=false. */
+  verified: boolean;
   /** True when the requesting viewer authored this review — drives the
    *  couple-side edit/delete affordance. Optional: absent on write responses. */
   own?: boolean;
@@ -693,12 +696,31 @@ export interface ReviewListResponse {
   items: SupplierReview[];
   nextCursor: string | null;
   summary: ReviewSummary;
-  /** Viewer may open the composer: admin, or a couple with engagement proof
-   *  (supplier in couple_supplier_costs / couple_picks) that hasn't reviewed
-   *  this supplier yet. */
+  /** Viewer may open the composer: an admin, or any logged-in user with a
+   *  verified email who hasn't already reviewed this supplier. */
   can_review: boolean;
-  /** Viewer's couple already has a (non-deleted) review here. */
+  /** Viewer (their couple, or themselves) already has a non-deleted review here. */
   already_reviewed: boolean;
+}
+
+/** Admin moderation view of a flagged review (a low-rating open review, still
+ *  publicly visible). Carries the fields the moderation queue renders. */
+export interface AdminFlaggedReview {
+  id: number;
+  supplier_id: string;
+  /** Best-effort listing name; null for curated code-only suppliers (show id). */
+  supplier_name: string | null;
+  rating: 1 | 2 | 3 | 4 | 5;
+  body: string | null;
+  tags: SupplierReviewTag[];
+  author_display_name: string;
+  author_kind: "admin" | "couple" | "user" | "visitor";
+  created_at: number;
+}
+
+export interface AdminFlaggedReviewsResponse {
+  items: AdminFlaggedReview[];
+  nextCursor: string | null;
 }
 
 /** Card- and detail-page-friendly rollup. Stays null until the supplier has

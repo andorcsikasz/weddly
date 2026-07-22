@@ -155,6 +155,7 @@ import type {
 } from "@shared/admin_analytics";
 import type {
   AdminDirectoryFilters,
+  AdminFlaggedReviewsResponse,
   CommentListResponse,
   CreateBookingBody,
   CreateCommentBody,
@@ -173,6 +174,7 @@ import type {
   SupplierEventInput,
   SupplierReview,
 } from "@shared/suppliers";
+import type { VisitorSession } from "@shared/verified_visitors";
 import type {
   AdminSupplierCategory,
   AdminSupplierGroup,
@@ -1774,6 +1776,63 @@ export const reviewApi = {
     ),
   update: (reviewId: number, body: Partial<CreateReviewBody>) =>
     apiFetch<SupplierReview>("PATCH", `/api/reviews/${reviewId}`, body),
+  remove: (reviewId: number) => apiFetch<{ ok: true }>("DELETE", `/api/reviews/${reviewId}`),
+};
+
+// Verified-visitor device token — an email-verified party with NO Weddly login.
+// Stored under a DISTINCT key from the session token (weddly.token) so the app
+// never mistakes a visitor for a signed-in user.
+const VISITOR_TOKEN_KEY = "weddly.visitor";
+
+export function getVisitorToken(): string | null {
+  try {
+    return localStorage.getItem(VISITOR_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+export function setVisitorToken(token: string | null) {
+  try {
+    if (token) localStorage.setItem(VISITOR_TOKEN_KEY, token);
+    else localStorage.removeItem(VISITOR_TOKEN_KEY);
+  } catch {
+    // localStorage blocked (embeds / hardened privacy) — fail soft.
+  }
+}
+
+/** Actions for an email-verified visitor with no account. googleVerify mints
+ *  (and stores) the device token; createReview replays it on X-Visitor-Token. */
+export const visitorApi = {
+  googleVerify: async (credential: string, locale?: "hu" | "en"): Promise<VisitorSession> => {
+    const session = await apiFetch<VisitorSession>("POST", "/api/visitors/verify/google", {
+      credential,
+      locale,
+    });
+    setVisitorToken(session.token);
+    return session;
+  },
+  createReview: (supplierId: string, body: CreateReviewBody, visitorToken?: string) => {
+    const token = visitorToken ?? getVisitorToken();
+    return apiFetch<SupplierReview>(
+      "POST",
+      `/api/public/suppliers/${encodeURIComponent(supplierId)}/reviews`,
+      body,
+      { headers: token ? { "X-Visitor-Token": token } : {} },
+    );
+  },
+};
+
+/** Admin review moderation — the flagged (low-rating open) review queue. */
+export const adminReviewApi = {
+  listFlagged: (opts?: { cursor?: string | null; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (opts?.cursor) qs.set("cursor", opts.cursor);
+    if (opts?.limit) qs.set("limit", String(opts.limit));
+    const tail = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch<AdminFlaggedReviewsResponse>("GET", `/api/admin/reviews/flagged${tail}`);
+  },
+  unflag: (reviewId: number) =>
+    apiFetch<{ ok: true }>("POST", `/api/admin/reviews/${reviewId}/unflag`),
   remove: (reviewId: number) => apiFetch<{ ok: true }>("DELETE", `/api/reviews/${reviewId}`),
 };
 

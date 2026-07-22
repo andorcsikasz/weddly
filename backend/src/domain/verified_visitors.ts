@@ -30,6 +30,21 @@ export interface VerifiedVisitorRow {
   updated_at: number;
 }
 
+/** Privacy-preserving display form for a review author: first name + last
+ *  initial ("Anna Kovács" → "Anna K."). A single token stays whole ("Anna");
+ *  an empty name returns "" so the caller can substitute a generic fallback.
+ *  Array.from keeps multi-byte initials intact (e.g. "Ádám Á."). */
+export function shortenName(name: string | null | undefined): string {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return "";
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return (parts[0] ?? "").slice(0, 60);
+  const first = parts[0] ?? "";
+  const last = parts[parts.length - 1] ?? "";
+  const initial = Array.from(last)[0] ?? "";
+  return `${first} ${initial}.`.slice(0, 60);
+}
+
 export function toVerifiedVisitor(row: VerifiedVisitorRow): VerifiedVisitor {
   return {
     id: row.id,
@@ -94,6 +109,54 @@ export function requestVisitorVerify(input: {
   const row = byEmail(input.email);
   if (!row) throw new Error("verified_visitor row vanished mid-upsert");
   return { row, token };
+}
+
+/** Google-attested verification: no email round-trip. The verified Google ID
+ *  token already proves the address (the route rejects `email_verified=false`),
+ *  so we mark the visitor 'verified' immediately and mint a per-device token —
+ *  the same success shape as consumeVisitorVerify. A supplied name only fills a
+ *  blank (never renames an existing visitor). Idempotent per email. */
+export function verifyVisitorViaGoogle(input: {
+  email: string;
+  full_name: string | null;
+  locale: "hu" | "en";
+}): { visitor: VerifiedVisitorRow; deviceToken: string } {
+  const ts = now();
+  const deviceToken = mintToken();
+  const visitorId = db.transaction(() => {
+    const existing = byEmail(input.email);
+    let id: number;
+    if (existing) {
+      db.prepare(
+        `UPDATE verified_visitors
+           SET status = 'verified',
+               verified_at = COALESCE(verified_at, ?),
+               full_name = COALESCE(full_name, ?),
+               locale = ?,
+               verify_token_hash = NULL, verify_token_created_at = NULL,
+               updated_at = ?
+         WHERE id = ?`,
+      ).run(ts, input.full_name, input.locale, ts, existing.id);
+      id = existing.id;
+    } else {
+      const info = db
+        .prepare(
+          `INSERT INTO verified_visitors
+             (email, full_name, locale, status, verified_at, created_at, updated_at)
+           VALUES (?, ?, ?, 'verified', ?, ?, ?)`,
+        )
+        .run(input.email, input.full_name, input.locale, ts, ts, ts);
+      id = Number(info.lastInsertRowid);
+    }
+    db.prepare(
+      `INSERT INTO verified_visitor_sessions (visitor_id, token_hash, created_at, last_seen_at)
+       VALUES (?, ?, ?, ?)`,
+    ).run(id, hashToken(deviceToken), ts, ts);
+    return id;
+  })();
+  const visitor = getVisitorById(visitorId);
+  if (!visitor) throw new Error("verified_visitor row vanished after google-verify");
+  return { visitor, deviceToken };
 }
 
 export type ConsumeVisitorResult =

@@ -4619,11 +4619,10 @@ const hu: LocaleMessages = {
         deleteConfirmBody: "Soft delete, a sor megmarad, csak elrejtjük.",
         verifiedBadge: "Igazolt pár",
         eligibilityHint:
-          "Értékelést az a pár írhat, aki tényleg dolgozott a szolgáltatóval: vedd fel a költségtervedbe vagy jelöld ki a kategóriád választásának, és máris értékelhetsz.",
+          "Erősítsd meg az e-mail címed az értékeléshez. Aki tényleg dolgozott a szolgáltatóval (költségtervben vagy kategóriaválasztásként), az Igazolt jelvényt is kap.",
         alreadyReviewedNote: "Már értékeltétek ezt a szolgáltatót, köszönjük!",
         visitorComposerTitle: "Írj értékelést",
-        visitorPrompt:
-          "Az értékeléshez erősítsd meg az e-mailed Google-lal. Nem kell fiók.",
+        visitorPrompt: "Az értékeléshez erősítsd meg az e-mailed Google-lal. Nem kell fiók.",
         visitorSubmitted: "Köszönjük! Az értékelésed megjelent.",
       },
       comments: {

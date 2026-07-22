@@ -7,9 +7,26 @@
 // every other supplier-keyed table — no FK because curated suppliers live in
 // code, not the DB.
 
-import type { ReviewSummary, SupplierReview, SupplierReviewTag } from "@shared/suppliers";
+import type {
+  AdminFlaggedReview,
+  ReviewSummary,
+  SupplierReview,
+  SupplierReviewTag,
+} from "@shared/suppliers";
 import { MAX_REVIEW_TAGS, SUPPLIER_REVIEW_TAGS } from "@shared/suppliers";
 import { db, now } from "../db";
+import { shortenName } from "./verified_visitors";
+
+/** How a review's author is attributed. `admin` = editorial ("Weddly editors",
+ *  couple_id NULL); `couple` = a couple workspace; `user` = a logged-in user
+ *  with no couple; `visitor` = an email-verified visitor with no account
+ *  (author_user_id points at the reserved system user, real identity in
+ *  visitor_id). Legacy rows (author_kind NULL) fall back to the couple_id shape. */
+export type ReviewAuthorKind = "admin" | "couple" | "user" | "visitor";
+
+/** Shown when a visitor/user review has no usable name. Matches the hardcoded
+ *  EN author labels already in this mapper ("Weddly editors" / "Weddly couple"). */
+const VISITOR_FALLBACK_NAME = "Verified visitor";
 
 const VALID_TAGS: ReadonlySet<string> = new Set(SUPPLIER_REVIEW_TAGS);
 
@@ -22,9 +39,17 @@ export interface ReviewRow {
   supplier_id: string;
   author_user_id: number;
   couple_id: number | null;
+  /** null on legacy rows (pre-open-reviews); resolve via authorKindOf(). */
+  author_kind: string | null;
+  /** Real author for a visitor review (verified-visitor infra owns the column). */
+  author_visitor_id: number | null;
   rating: number;
   body: string | null;
   published: number;
+  /** 1 = engagement-proof-verified couple review (drives the "Verified" badge). */
+  verified: number;
+  /** 1 = low-rating open review awaiting admin moderation (still visible). */
+  flagged: number;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
@@ -35,6 +60,14 @@ export interface ReviewWithAuthorRow extends ReviewRow {
   author_email: string | null;
   author_full_name: string | null;
   couple_display_name: string | null;
+  visitor_name: string | null;
+}
+
+/** Effective author kind, tolerating legacy rows where the column is NULL. */
+function authorKindOf(row: ReviewRow): ReviewAuthorKind {
+  if (row.author_kind === "admin" || row.author_kind === "couple") return row.author_kind;
+  if (row.author_kind === "user" || row.author_kind === "visitor") return row.author_kind;
+  return row.couple_id === null ? "admin" : "couple";
 }
 
 export function normaliseTags(raw: unknown): SupplierReviewTag[] {
@@ -53,14 +86,20 @@ export function normaliseTags(raw: unknown): SupplierReviewTag[] {
 }
 
 function authorDisplayName(row: ReviewWithAuthorRow): string {
-  if (row.couple_id === null) return "Weddly editors";
-  if (row.couple_display_name && row.couple_display_name.trim()) {
-    return row.couple_display_name.trim();
+  switch (authorKindOf(row)) {
+    case "admin":
+      return "Weddly editors";
+    case "couple":
+      if (row.couple_display_name?.trim()) return row.couple_display_name.trim();
+      if (row.author_full_name?.trim()) return row.author_full_name.trim();
+      return "Weddly couple";
+    case "user":
+      // A logged-in user with no couple workspace — same privacy form as a
+      // visitor (first name + last initial), never their full name.
+      return shortenName(row.author_full_name) || VISITOR_FALLBACK_NAME;
+    case "visitor":
+      return shortenName(row.visitor_name) || VISITOR_FALLBACK_NAME;
   }
-  if (row.author_full_name && row.author_full_name.trim()) {
-    return row.author_full_name.trim();
-  }
-  return "Weddly couple";
 }
 
 export function toReview(
@@ -68,6 +107,7 @@ export function toReview(
   tags: SupplierReviewTag[],
   viewerUserId?: number,
 ): SupplierReview {
+  const kind = authorKindOf(row);
   return {
     id: row.id,
     supplier_id: row.supplier_id,
@@ -75,8 +115,11 @@ export function toReview(
     body: row.body,
     tags,
     published: Boolean(row.published),
-    editorial: row.couple_id === null,
-    own: viewerUserId !== undefined && row.author_user_id === viewerUserId,
+    editorial: kind === "admin",
+    verified: Boolean(row.verified),
+    // The reserved system user owns every visitor row's author_user_id, so guard
+    // against a real viewer ever "owning" a visitor review by coincidence.
+    own: viewerUserId !== undefined && kind !== "visitor" && row.author_user_id === viewerUserId,
     author: { display_name: authorDisplayName(row) },
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -103,10 +146,12 @@ const REVIEW_BASE_SELECT = `
   SELECT r.*,
          u.email AS author_email,
          u.full_name AS author_full_name,
-         c.display_name AS couple_display_name
+         c.display_name AS couple_display_name,
+         vv.full_name AS visitor_name
     FROM supplier_reviews r
     LEFT JOIN users u ON u.id = r.author_user_id
     LEFT JOIN couples c ON c.id = r.couple_id
+    LEFT JOIN verified_visitors vv ON vv.id = r.author_visitor_id
 `;
 
 export function listReviewsForSupplier(
@@ -144,6 +189,57 @@ export function listReviewsForSupplier(
   return { items, nextCursor };
 }
 
+/** Admin moderation queue: flagged (low-rating open) reviews, newest first,
+ *  across all suppliers. Best-effort supplier name via the listings join. */
+export function listFlaggedReviews(opts: {
+  limit: number;
+  cursor: number | null;
+}): { items: AdminFlaggedReview[]; nextCursor: string | null } {
+  const limit = Math.max(1, Math.min(50, opts.limit));
+  const params: (string | number)[] = [];
+  let cursorClause = "";
+  if (opts.cursor !== null) {
+    cursorClause = " AND r.id < ?";
+    params.push(opts.cursor);
+  }
+  const sql = `
+    SELECT r.*,
+           u.email AS author_email,
+           u.full_name AS author_full_name,
+           c.display_name AS couple_display_name,
+           vv.full_name AS visitor_name,
+           l.name AS supplier_name
+      FROM supplier_reviews r
+      LEFT JOIN users u ON u.id = r.author_user_id
+      LEFT JOIN couples c ON c.id = r.couple_id
+      LEFT JOIN verified_visitors vv ON vv.id = r.author_visitor_id
+      LEFT JOIN listings l ON l.id = r.supplier_id
+     WHERE r.flagged = 1
+       AND r.deleted_at IS NULL${cursorClause}
+     ORDER BY r.id DESC
+     LIMIT ?`;
+  params.push(limit + 1);
+  const rows = db.prepare(sql).all(...params) as Array<
+    ReviewWithAuthorRow & { supplier_name: string | null }
+  >;
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const tags = loadTagsForReviews(page.map((r) => r.id));
+  const items: AdminFlaggedReview[] = page.map((r) => ({
+    id: r.id,
+    supplier_id: r.supplier_id,
+    supplier_name: r.supplier_name,
+    rating: Math.max(1, Math.min(5, Math.trunc(r.rating))) as 1 | 2 | 3 | 4 | 5,
+    body: r.body,
+    tags: tags.get(r.id) ?? [],
+    author_display_name: authorDisplayName(r),
+    author_kind: authorKindOf(r),
+    created_at: r.created_at,
+  }));
+  const nextCursor = hasMore && page.length > 0 ? String(page[page.length - 1]?.id) : null;
+  return { items, nextCursor };
+}
+
 export function getReviewById(id: number): ReviewWithAuthorRow | null {
   const row = db.prepare(`${REVIEW_BASE_SELECT} WHERE r.id = ? AND r.deleted_at IS NULL`).get(id) as
     | ReviewWithAuthorRow
@@ -162,10 +258,17 @@ export interface CreateReviewArgs {
   supplierId: string;
   authorUserId: number;
   coupleId: number | null;
+  authorKind: ReviewAuthorKind;
+  /** Real author id for a visitor review; null for every other kind. */
+  visitorId: number | null;
   rating: 1 | 2 | 3 | 4 | 5;
   body: string | null;
   tags: SupplierReviewTag[];
   published: boolean;
+  /** Engagement-proof "Verified" badge — only true for engaged couples. */
+  verified: boolean;
+  /** Low-rating open review awaiting admin moderation (still published). */
+  flagged: boolean;
 }
 
 export function createReview(args: CreateReviewArgs): SupplierReview {
@@ -174,16 +277,21 @@ export function createReview(args: CreateReviewArgs): SupplierReview {
     const info = db
       .prepare(
         `INSERT INTO supplier_reviews
-           (supplier_id, author_user_id, couple_id, rating, body, published, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           (supplier_id, author_user_id, couple_id, author_kind, author_visitor_id,
+            rating, body, published, verified, flagged, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         args.supplierId,
         args.authorUserId,
         args.coupleId,
+        args.authorKind,
+        args.visitorId,
         args.rating,
         args.body,
         args.published ? 1 : 0,
+        args.verified ? 1 : 0,
+        args.flagged ? 1 : 0,
         ts,
         ts,
       );
@@ -206,6 +314,7 @@ export interface UpdateReviewArgs {
   body?: string | null;
   tags?: SupplierReviewTag[];
   published?: boolean;
+  flagged?: boolean;
 }
 
 export function updateReview(
@@ -227,6 +336,10 @@ export function updateReview(
   if (args.published !== undefined) {
     sets.push("published = ?");
     params.push(args.published ? 1 : 0);
+  }
+  if (args.flagged !== undefined) {
+    sets.push("flagged = ?");
+    params.push(args.flagged ? 1 : 0);
   }
   if (sets.length > 0) {
     sets.push("updated_at = ?");

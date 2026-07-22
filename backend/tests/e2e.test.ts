@@ -2,7 +2,7 @@ import "./setup";
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
-import { db, now } from "../src/db";
+import { db, now, VISITOR_SYSTEM_USER_EMAIL } from "../src/db";
 import { createVerificationToken } from "../src/domain/community_suppliers";
 import { runEmailSweep } from "../src/domain/emails/worker";
 import { runPurgeSweep } from "../src/domain/purge";
@@ -171,7 +171,15 @@ function wipeAll() {
   ];
   for (const t of tables) {
     try {
-      db.exec(`DELETE FROM ${t}`);
+      if (t === "users") {
+        // Preserve the reserved verified-visitor system user — db.ts seeds it
+        // once at boot and getVisitorSystemUserId() caches its id, so deleting
+        // the row would leave a stale cached id that FK-fails the next
+        // visitor-authored insert (and drops it from later suites in the run).
+        db.prepare("DELETE FROM users WHERE email != ?").run(VISITOR_SYSTEM_USER_EMAIL);
+      } else {
+        db.exec(`DELETE FROM ${t}`);
+      }
     } catch {
       // table may not exist yet
     }

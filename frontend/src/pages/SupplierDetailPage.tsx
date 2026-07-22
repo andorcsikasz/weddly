@@ -906,9 +906,9 @@ function ReviewsSection({
         )}
       </div>
 
-      {/* Composer opens for admins (editorial voice) and for couples the
-          backend verified: engagement proof (cost-plan row / category pick)
-          and no prior review. Everyone else gets a hint line instead. */}
+      {/* Composer opens for admins (editorial voice) and for any verified user
+          who hasn't already reviewed this supplier. Engaged couples additionally
+          earn the "Verified" badge; everyone else posts an unbadged review. */}
       {!isAdmin && !canReview && (
         <p className="mb-6 text-sm italic text-ink-500 dark:text-umber-300">
           {alreadyReviewed
@@ -1002,7 +1002,10 @@ function ReviewsSection({
                     {r.author.display_name}
                   </span>
                   {r.editorial && <Pill tone="violet">Editorial</Pill>}
-                  {!r.editorial && (
+                  {/* "Verified" is now the engagement-proof badge only — an open
+                      community/visitor review (verified=false) wears no badge,
+                      so the label keeps meaning "actually worked with them". */}
+                  {!r.editorial && r.verified && (
                     <Pill tone="sage">{t("suppliers.detail.reviews.verifiedBadge")}</Pill>
                   )}
                   {!r.published && <Pill tone="blush">Draft</Pill>}

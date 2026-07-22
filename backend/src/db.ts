@@ -1877,6 +1877,38 @@ const VERIFY_BACKFILL_CUTOFF_MS = 1_784_678_400_000; // 2026-07-22T00:00:00Z
   }
 }
 
+// ── Open reviews: additive author-kind + moderation columns ─────────────────
+// The verified-visitor identity, the reserved system user (VISITOR_SYSTEM_USER_EMAIL
+// / getVisitorSystemUserId) and supplier_reviews.author_visitor_id are all owned
+// by the verified-visitor block below. This block adds ONLY what the open-reviews
+// feature needs on top: author_kind (admin/couple/user/visitor), the
+// engagement-proof `verified` badge (decoupled from editorial), and the `flagged`
+// moderation flag for low-rating open reviews. Columns + backfill + indexes live
+// here (not schema.sql) per the additive-ordering rule.
+addColumnIfMissing("supplier_reviews", "author_kind", "author_kind TEXT");
+addColumnIfMissing("supplier_reviews", "verified", "verified INTEGER NOT NULL DEFAULT 0");
+addColumnIfMissing("supplier_reviews", "flagged", "flagged INTEGER NOT NULL DEFAULT 0");
+// Backfill the discriminator + verified badge from the legacy couple_id shape:
+// admin rows left couple_id NULL, couple rows populated it, and every legacy
+// couple review passed the old engagement-proof gate (so it was verified).
+db.exec(
+  "UPDATE supplier_reviews SET author_kind = 'admin' WHERE author_kind IS NULL AND couple_id IS NULL",
+);
+db.exec(
+  "UPDATE supplier_reviews SET author_kind = 'couple' WHERE author_kind IS NULL AND couple_id IS NOT NULL",
+);
+db.exec("UPDATE supplier_reviews SET verified = 1 WHERE couple_id IS NOT NULL AND verified = 0");
+// One review per no-couple `user` per supplier. Visitor dedup is the
+// author_visitor_id unique index in the verified-visitor block; couple dedup is
+// the existing idx_supplier_reviews_couple_unique; admin editorial rows are exempt.
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_reviews_user_unique " +
+    "ON supplier_reviews(supplier_id, author_user_id) WHERE author_kind = 'user'",
+);
+db.exec(
+  "CREATE INDEX IF NOT EXISTS idx_supplier_reviews_flagged ON supplier_reviews(flagged) WHERE flagged = 1",
+);
+
 // ── Verified-visitor content anchoring ───────────────────────────────────────
 // community_suppliers.submitter_user_id and supplier_reviews.author_user_id are
 // NOT-NULL FKs to users(id). A verified visitor is NOT a user, and the schema is
@@ -1915,9 +1947,9 @@ export const VISITOR_SYSTEM_USER_EMAIL = "community-visitor@weddly.internal";
 let visitorSystemUserId: number | null = null;
 export function getVisitorSystemUserId(): number {
   if (visitorSystemUserId !== null) return visitorSystemUserId;
-  const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(VISITOR_SYSTEM_USER_EMAIL) as
-    | { id: number }
-    | undefined;
+  const existing = db
+    .prepare("SELECT id FROM users WHERE email = ?")
+    .get(VISITOR_SYSTEM_USER_EMAIL) as { id: number } | undefined;
   if (existing) {
     visitorSystemUserId = existing.id;
     return existing.id;

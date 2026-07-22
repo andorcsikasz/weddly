@@ -1,7 +1,9 @@
-// Phase 3 verified reviews: couples with engagement proof (cost-plan row or
-// category pick) can post a live review; couples without proof stay locked
-// out, own-review edit/delete works, and the moderation lever (published)
-// remains admin-only.
+// Phase 3 verified reviews: a couple with engagement proof (cost-plan row or
+// category pick) earns the "Verified" badge. Since reviews opened to any
+// verified email, a couple WITHOUT proof can still post — the review just
+// goes live unbadged. Own-review edit/delete works, and the moderation lever
+// (published) remains admin-only. (The open community/visitor paths — flagging,
+// visitor tokens — are covered in supplier_reviews_open.e2e.test.ts.)
 
 import "../setup";
 
@@ -50,17 +52,21 @@ beforeEach(() => {
 });
 
 describe("verified couple reviews (Phase 3)", () => {
-  test("no engagement proof → 403 with not_engaged; can_review stays false", async () => {
+  test("no engagement proof → open review allowed but unverified (no badge)", async () => {
     const { token } = await bootstrapCouple("noproof@test.test");
     const sid = supplierId();
 
     const list = await req<ReviewListResponse>("GET", reviewsUrl(sid), undefined, { token });
     expect(list.status).toBe(200);
-    expect(list.data.can_review).toBe(false);
+    // Reviews are open to any verified user now — the composer opens even
+    // without engagement proof; the review just won't carry the Verified badge.
+    expect(list.data.can_review).toBe(true);
     expect(list.data.already_reviewed).toBe(false);
 
-    const r = await req("POST", reviewsUrl(sid), { rating: 5 }, { token });
-    expect(r.status).toBe(403);
+    const r = await req<SupplierReview>("POST", reviewsUrl(sid), { rating: 5 }, { token });
+    expect(r.status).toBe(201);
+    expect(r.data.editorial).toBe(false);
+    expect(r.data.verified).toBe(false);
   });
 
   test("cost-plan row unlocks a live, non-editorial review", async () => {

@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Coins,
   Compass,
+  Flag,
   GanttChartSquare,
   Gift,
   Globe,
@@ -284,6 +285,13 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     tabKey: "admin.tab_feedback",
     icon: <MessageCircle size={18} />,
     badgeKey: "feedback",
+    group: "inbox",
+  },
+  {
+    to: "/app/admin/reviews",
+    labelKey: "admin.nav_reviews",
+    // no tabKey — goes to the phone More sheet
+    icon: <Flag size={18} />,
     group: "inbox",
   },
   {

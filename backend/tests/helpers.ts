@@ -12,7 +12,7 @@ import { expect } from "bun:test";
 import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import type { AuthSession } from "@shared/types";
 import { __testPlaintextForHash } from "../src/auth/tokens";
-import { db } from "../src/db";
+import { db, VISITOR_SYSTEM_USER_EMAIL } from "../src/db";
 import { seedSupplierTaxonomy } from "../src/domain/supplier_taxonomy";
 import { __resetGoogleCalendarFake } from "../src/lib/google_calendar";
 
@@ -245,6 +245,12 @@ export function wipeAll(): void {
     "supplier_bookings",
     "vendor_unavailable_dates",
     "supplier_aggregates",
+    // Verified-visitor identity + device sessions (email-verified parties with
+    // no account). Sessions cascade off verified_visitors, but wipe explicitly
+    // (child first). supplier_reviews.author_visitor_id and community_suppliers.
+    // submitter_visitor_id are ON DELETE SET NULL, so ordering vs those is free.
+    "verified_visitor_sessions",
+    "verified_visitors",
     // Wipe the taxonomy AFTER the community/couple supplier tables that
     // reference it (FK on category slug) — then seedSupplierTaxonomy at the
     // bottom of this function repopulates the 6 default groups / 14
@@ -289,7 +295,15 @@ export function wipeAll(): void {
   ];
   for (const t of tables) {
     try {
-      db.exec(`DELETE FROM ${t}`);
+      if (t === "users") {
+        // Preserve the reserved verified-visitor system user — db.ts seeds it
+        // once and getVisitorSystemUserId() caches its id, so deleting the row
+        // would leave a stale cached id that FK-fails the next visitor-authored
+        // insert (review / community supplier).
+        db.prepare("DELETE FROM users WHERE email != ?").run(VISITOR_SYSTEM_USER_EMAIL);
+      } else {
+        db.exec(`DELETE FROM ${t}`);
+      }
     } catch {
       // Table may not yet exist on a fresh boot; ignore.
     }

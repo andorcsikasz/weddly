@@ -38,15 +38,22 @@ const curatedSupplierId = (): string => {
 };
 
 describe("supplier reviews (admin v1)", () => {
-  test("non-admin gets 403 on review write", async () => {
+  test("a non-admin verified user can post a (non-editorial, unverified) review", async () => {
+    // Reviews opened to any verified email: a couple with no engagement proof
+    // posting a 5-star review goes live immediately, but wears no "Verified"
+    // badge and isn't editorial. (The `published: true` in the body is ignored
+    // for non-admins — they can't set the moderation lever.)
     const { token } = await bootstrapCouple("couple@test.test");
-    const r = await req(
+    const r = await req<{ editorial: boolean; verified: boolean; published: boolean }>(
       "POST",
       `/api/suppliers/${encodeURIComponent(curatedSupplierId())}/reviews`,
       { rating: 5, body: null, tags: [], published: true },
       { token },
     );
-    expect(r.status).toBe(403);
+    expect(r.status).toBe(201);
+    expect(r.data.editorial).toBe(false);
+    expect(r.data.verified).toBe(false);
+    expect(r.data.published).toBe(true);
   });
 
   test("admin can create a published review with tags", async () => {

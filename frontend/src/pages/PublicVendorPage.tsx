@@ -8,19 +8,27 @@
 
 import type {
   PublicVendorPageData,
+  SupplierCategory,
   SupplierComment,
   SupplierDetail,
   SupplierReview,
+  SupplierReviewTag,
 } from "@shared/suppliers";
-import { showsCapacity } from "@shared/suppliers";
+import {
+  MAX_REVIEW_TAGS,
+  REVIEW_BODY_MAX_CHARS,
+  reviewTagsForCategory,
+  showsCapacity,
+} from "@shared/suppliers";
 import { BadgeCheck, ExternalLink, Globe, Mail, MapPin, Phone, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
-import { supplierApi } from "../lib/endpoints";
+import { getVisitorToken, setVisitorToken, supplierApi, visitorApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 function StarRow({ value, size = 14 }: { value: number; size?: number }) {
@@ -36,6 +44,194 @@ function StarRow({ value, size = 14 }: { value: number; size?: number }) {
         />
       ))}
     </span>
+  );
+}
+
+/** Interactive rating picker for the public composer. 0 = nothing chosen yet
+ *  (submit stays disabled) so we never seed a default 5-star. */
+function StarPicker({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: 1 | 2 | 3 | 4 | 5) => void;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      {([1, 2, 3, 4, 5] as const).map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(n)}
+          aria-label={String(n)}
+          className="p-0.5"
+        >
+          <Star
+            size={22}
+            className={
+              n <= value ? "fill-star stroke-star" : "stroke-paper-300 dark:stroke-umber-500"
+            }
+          />
+        </button>
+      ))}
+    </span>
+  );
+}
+
+/** Public review composer for an OUTSIDE-Weddly visitor. They confirm their
+ *  email once via Google (mints a device token, stored client-side), then the
+ *  star/tags/body form opens. Submits to the public visitor-review endpoint;
+ *  the review is live immediately (a low rating is flagged for moderation). */
+function PublicReviewComposer({
+  supplierId,
+  category,
+  locale,
+  t,
+  onSubmitted,
+}: {
+  supplierId: string;
+  category: SupplierCategory;
+  locale: "hu" | "en";
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  onSubmitted: () => void;
+}) {
+  const [verified, setVerified] = useState<boolean>(() => Boolean(getVisitorToken()));
+  const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [body, setBody] = useState("");
+  const [tags, setTags] = useState<SupplierReviewTag[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const tagOptions = reviewTagsForCategory(category);
+  const toggleTag = (tag: SupplierReviewTag) => {
+    setTags((prev) =>
+      prev.includes(tag)
+        ? prev.filter((x) => x !== tag)
+        : prev.length >= MAX_REVIEW_TAGS
+          ? prev
+          : [...prev, tag],
+    );
+  };
+
+  const onGoogle = async (credential: string) => {
+    setError(null);
+    try {
+      await visitorApi.googleVerify(credential, locale);
+      setVerified(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Verify failed");
+    }
+  };
+
+  const submit = async () => {
+    if (rating === 0) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await visitorApi.createReview(supplierId, {
+        rating,
+        body: body.trim() || null,
+        tags,
+      });
+      setDone(true);
+      onSubmitted();
+    } catch (e) {
+      const code = e instanceof ApiError ? (e.detail as { code?: string } | undefined)?.code : null;
+      if (e instanceof ApiError && e.status === 401) {
+        // Device token expired/unknown — drop it and re-prompt verification.
+        setVisitorToken(null);
+        setVerified(false);
+        setError(t("suppliers.detail.reviews.visitorPrompt"));
+      } else if (code === "already_reviewed") {
+        setError(t("suppliers.detail.reviews.alreadyReviewed"));
+      } else {
+        setError(e instanceof Error ? e.message : "Submit failed");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <div className="mt-6 rounded-xl border border-sage-300/60 bg-sage-50 p-4 text-sm text-sage-800 dark:border-sage-700/50 dark:bg-sage-900/30 dark:text-sage-100">
+        {t("suppliers.detail.reviews.visitorSubmitted")}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 rounded-xl border border-ink-200/60 bg-white p-5 dark:border-umber-700/60 dark:bg-umber-900">
+      <h3 className="mb-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
+        {t("suppliers.detail.reviews.visitorComposerTitle")}
+      </h3>
+      {!verified ? (
+        <div>
+          <p className="mb-3 text-sm text-ink-600 dark:text-umber-200">
+            {t("suppliers.detail.reviews.visitorPrompt")}
+          </p>
+          <GoogleSignInButton mode="signin" onCredential={onGoogle} />
+          {error && <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">{error}</p>}
+        </div>
+      ) : (
+        <div>
+          <div className="mb-3 flex items-center gap-3">
+            <span className="text-sm text-ink-600 dark:text-umber-200">
+              {t("suppliers.detail.reviews.yourRating")}:
+            </span>
+            <StarPicker value={rating} onChange={setRating} />
+          </div>
+          <textarea
+            className="mb-3 w-full rounded-md border border-ink-200 bg-white p-3 text-sm dark:border-umber-700 dark:bg-umber-900"
+            placeholder={t("suppliers.detail.reviews.bodyPlaceholder")}
+            maxLength={REVIEW_BODY_MAX_CHARS}
+            rows={4}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+          />
+          <div className="mb-3">
+            <div className="mb-1.5 text-xs text-ink-500 dark:text-umber-300">
+              {t("suppliers.detail.reviews.tagsLabel", { max: MAX_REVIEW_TAGS })}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {tagOptions.map((tag) => {
+                const on = tags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`rounded-full px-2.5 py-1 text-xs transition ${
+                      on
+                        ? "bg-rose-500 text-white"
+                        : "bg-white text-ink-700 ring-1 ring-ink-200 hover:bg-ink-50 dark:bg-umber-700/60 dark:text-umber-100 dark:ring-umber-600"
+                    }`}
+                  >
+                    {t(`suppliers.reviewTags.${tag}`)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            {error ? (
+              <span className="text-xs text-rose-600 dark:text-rose-300">{error}</span>
+            ) : (
+              <span />
+            )}
+            <button
+              type="button"
+              disabled={submitting || rating === 0}
+              onClick={submit}
+              className="rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-paper-50 transition hover:bg-ink-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-paper-100 dark:text-ink-900"
+            >
+              {submitting ? "…" : t("suppliers.detail.reviews.submit")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -166,6 +362,14 @@ export default function PublicVendorPage() {
   }
 
   const { detail, reviews, comments, availability } = data;
+  // Re-pull the public payload after a visitor posts a review so their (now
+  // live) review appears without a full page reload.
+  const reloadDetail = () => {
+    supplierApi
+      .publicDetail(supplierId)
+      .then((r) => setData(r))
+      .catch(() => undefined);
+  };
   const ratingAvg = detail.reviews_summary.avg_rating;
   const ratingCount = detail.reviews_summary.reviews_count;
   const ratingDisplay =
@@ -338,6 +542,13 @@ export default function PublicVendorPage() {
                   ))}
                 </ul>
               )}
+              <PublicReviewComposer
+                supplierId={supplierId}
+                category={detail.category}
+                locale={locale === "hu" ? "hu" : "en"}
+                t={t}
+                onSubmitted={reloadDetail}
+              />
             </section>
 
             {/* Public Q&A (read-only) — only when there is public content */}

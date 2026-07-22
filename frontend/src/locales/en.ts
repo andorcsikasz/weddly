@@ -4571,7 +4571,7 @@ const en: LocaleMessages = {
         deleteConfirmBody: "Soft delete, the row stays, just hidden.",
         verifiedBadge: "Verified couple",
         eligibilityHint:
-          "Reviews are open to couples who actually worked with this supplier: add it to your cost plan or make it your category pick, and you can rate it right away.",
+          "Confirm your email to leave a review. Couples who worked with this supplier (in your cost plan or as a category pick) also earn the Verified badge.",
         alreadyReviewedNote: "You've already reviewed this supplier, thank you!",
         visitorComposerTitle: "Write a review",
         visitorPrompt: "Confirm your email with Google to leave a review. No account needed.",
