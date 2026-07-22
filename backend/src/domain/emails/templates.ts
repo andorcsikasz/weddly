@@ -1199,28 +1199,32 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     // Three sends, five days apart, about one fact: the founding plan is
     // granted per COUPLE, and activatePartnerFreeWindow refuses while
     // partner_b_id is NULL. So the copy never asks for a purchase, it asks
-    // for the second person. `spotsLeft` is the live remaining count, not a
-    // decorative scarcity number, and the last variant promises the series
+    // for the second person. The copy says "some places left" instead of a
+    // live count (`spotsLeft`): an exact number dates fast and reads as either
+    // too many (no urgency) or suspiciously precise, and phase 2 with paid
+    // accounts is the real deadline now. The last variant promises the series
     // ends, which the sweep's 3-send cap actually honours.
-    const n = Math.max(0, p.spotsLeft);
     const coupleHu = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
     const coupleEn = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
     const variants = [
       {
-        subject: `A 200 ingyenes helyből még ${n} szabad / ${n} of the 200 free places are open`,
+        subject:
+          "A 200 ingyenes helyből még van néhány szabad / A few of the 200 free places are open",
         hu: {
           preheader: "Az esküvőtök napjáig ingyen, ha mindketten fent vagytok.",
           paragraphs: [
-            `Az első 200 pár, aki **ketten** költözik be a Weddly-re, az esküvője napjáig ingyen tervez nálunk. A 200 helyből most **${n} szabad**.`,
+            "Az első 200 pár, aki **ketten** költözik be a Weddly-re, az esküvője napjáig ingyen tervez nálunk. A 200 helyből még **van néhány szabad**.",
             `Nálatok egyetlen feltétel hiányzik: a munkaterületen${coupleHu} egyelőre csak te vagy fent. Amint a párod is regisztrál és belép, a hely a tiétek, és az előfizetés nálatok ki sem nyílik.`,
+            "Hamarosan indul a 2. fázis a fizetős csomagokkal, úgyhogy ne maradjatok le: foglaljátok le most az alapító helyeteket, és az esküvőtök napjáig ingyen tervezhettek, akár 18 hónapon át.",
             "A lenti gombbal beléphetsz és elküldheted neki a meghívót. Vagy másold ki a gomb alatti linket, és küldd el neki ott, ahol amúgy is beszéltek.",
           ],
           cta: "Belépés és meghívás",
         },
         en: {
           paragraphs: [
-            `The first 200 couples who move in **together** plan on Weddly free until their wedding day. **${n}** of those 200 places are still open.`,
+            "The first 200 couples who move in **together** plan on Weddly free until their wedding day. **Some** of those 200 places are still open.",
             `You're one step short: right now you're the only one on the workspace${coupleEn}. The moment your partner registers and signs in, the place is yours, and the subscription never starts for you.`,
+            "We're about to start phase 2 with paid accounts, so don't miss this: claim your founding place now and the two of you plan free until your wedding day, up to 18 months.",
             "The button below signs you in and takes you to the invite form. Or copy the link underneath it and send it wherever the two of you actually talk.",
           ],
           cta: "Sign in and invite",
@@ -1229,9 +1233,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       {
         subject: "Az alapító helyetekhez a párod is kell / Your founding place needs both of you",
         hu: {
-          preheader: `A 200 helyből ${n} maradt, és csak a teljes párok kapják meg.`,
+          preheader: "A 200 helyből még van szabad, és csak a teljes párok kapják meg.",
           paragraphs: [
-            `Emlékeztető: a 200 alapító helyből **${n}** még szabad, de csak azok a párok kapják meg, akik **ketten** vannak fent a munkaterületen.`,
+            "Emlékeztető: a 200 alapító helyből **még van szabad**, de csak azok a párok kapják meg, akik **ketten** vannak fent a munkaterületen.",
             "Nálatok ez annyit jelent, hogy a vőlegényednek vagy a menyasszonyodnak is regisztrálnia kell. Utána az esküvőtök napjáig nem fizettek semmit, akármeddig húzódik a tervezés.",
             "Ez amúgy sem csak a számláról szól: a vendéglista, az ülésrend és a költségvetés akkor működik jól, ha mindketten ugyanazt az egy verziót szerkesztitek.",
           ],
@@ -1239,7 +1243,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         },
         en: {
           paragraphs: [
-            `A reminder: **${n}** of the 200 founding places are still open, but they only go to couples with **both** partners on the workspace.`,
+            "A reminder: **some** of the 200 founding places are still open, but they only go to couples with **both** partners on the workspace.",
             "For you that means your fiancé needs to register too. After that you pay nothing until your wedding day, however long the planning runs.",
             "And it was never really about the invoice: the guest list, the seating and the budget only work properly when you're both editing the same single version.",
           ],
@@ -1251,7 +1255,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         hu: {
           preheader: "Több levelet nem küldünk erről.",
           paragraphs: [
-            `Ez az utolsó emlékeztetőnk az alapító helyetekről. A 200-ból **${n}** maradt.`,
+            "Ez az utolsó emlékeztetőnk az alapító helyetekről. A 200-ból **még van szabad**.",
             "Ha a párod is regisztrál a munkaterületre, az esküvőtök napjáig ingyen tervezhettek. Ha nem, az is teljesen rendben van: a terveződ marad, minden adatoddal együtt, csak a szokásos előfizetéssel.",
             "Több levelet erről nem küldünk.",
           ],
@@ -1259,7 +1263,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         },
         en: {
           paragraphs: [
-            `This is our last reminder about your founding place. **${n}** of the 200 are left.`,
+            "This is our last reminder about your founding place. **Some** of the 200 are still left.",
             "If your partner registers on the workspace, the two of you plan free until your wedding day. If not, that's genuinely fine: your planner stays exactly as it is, just on the normal subscription.",
             "We won't email you about this again.",
           ],
