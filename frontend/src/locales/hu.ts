@@ -509,6 +509,9 @@ const hu: LocaleMessages = {
     label_contact_email: "Nyilvános kapcsolati e-mail",
     label_contact_email_hint: "Erre a címre írnak a párok a hirdetésedről.",
     label_contact_phone: "Nyilvános telefonszám",
+    label_hide_contact: "Elérhetőség elrejtése a látogatók elől",
+    label_hide_contact_hint:
+      "A kijelentkezett látogatók részben elrejtett címet és e-mailt látnak (pl. Attila út •••, in•••@…); a párok bejelentkezve a teljes adatokat kapják. A telefonszám bejelentkezésig mindig részben rejtve marad.",
     label_price_band: "Árkategória",
     label_price_band_help: "1 = legolcsóbb, 5 = prémium. Üresen hagyva nem jelenik meg.",
     price_band_locked_until:
@@ -4611,6 +4614,8 @@ const hu: LocaleMessages = {
         publishedLabel: "Publikus értékelés",
         submit: "Beküldés",
         submitted: "Értékelés mentve",
+        customTagPlaceholder: "Saját címke",
+        customTagAdd: "Hozzáad",
         pickStarFirst: "Válassz csillagot",
         empty: "Még nincs értékelés.",
         alreadyReviewed: "Erre a szolgáltatóra már írtatok értékelést.",

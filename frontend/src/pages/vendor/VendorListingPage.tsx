@@ -42,6 +42,7 @@ import { TranslateButton } from "../../components/TranslateButton";
 import { VendorListingPackages } from "../../components/VendorListingPackages";
 import { VendorListingVideos } from "../../components/VendorListingVideos";
 import { DateField } from "../../components/ui/DateField";
+import { Switch } from "../../components/ui/Switch";
 import { TextField } from "../../components/ui/TextField";
 import { useToast } from "../../components/ui/ToastProvider";
 import { vendorAvailabilityApi, vendorListingApi } from "../../lib/endpoints";
@@ -68,7 +69,17 @@ interface FormState {
   price_band: string;
   capacity_min: string;
   capacity_max: string;
+  /** Hide the address + email tail from anonymous visitors on the public page.
+   *  The one non-string field — handled on its own path in formToPatch. */
+  hide_contact_public: boolean;
 }
+
+/** The string-valued FormState keys — everything the `onChange`/`setNullable`
+ *  string helpers touch. Excludes the lone boolean (`hide_contact_public`),
+ *  which has its own handler and diff. */
+type StringFormKey = {
+  [K in keyof FormState]: FormState[K] extends string ? K : never;
+}[keyof FormState];
 
 /** Render an ISO 'YYYY-MM-DD' block date in the vendor's locale. Parsed as
  *  UTC midnight so the displayed day never shifts under a timezone offset. */
@@ -151,6 +162,7 @@ function viewToForm(view: VendorListingView): FormState {
     price_band: l.price_band == null ? "" : String(l.price_band),
     capacity_min: l.capacity_min == null ? "" : String(l.capacity_min),
     capacity_max: l.capacity_max == null ? "" : String(l.capacity_max),
+    hide_contact_public: l.hide_contact_public,
   };
 }
 
@@ -161,7 +173,7 @@ function viewToForm(view: VendorListingView): FormState {
 function formToPatch(form: FormState, baseline: VendorListingView): VendorListingEditInput {
   const patch: VendorListingEditInput = {};
   const baseStr = viewToForm(baseline);
-  const setNullable = (key: keyof FormState & keyof VendorListingEditInput): void => {
+  const setNullable = (key: StringFormKey & keyof VendorListingEditInput): void => {
     if (form[key] === baseStr[key]) return;
     const trimmed = form[key].trim();
     (patch as Record<string, unknown>)[key] = trimmed.length === 0 ? null : trimmed;
@@ -189,6 +201,9 @@ function formToPatch(form: FormState, baseline: VendorListingView): VendorListin
     const n = Number(form.capacity_max);
     patch.capacity_max =
       form.capacity_max.trim().length === 0 || !Number.isFinite(n) ? null : Math.round(n);
+  }
+  if (form.hide_contact_public !== baseStr.hide_contact_public) {
+    patch.hide_contact_public = form.hide_contact_public;
   }
   return patch;
 }
@@ -297,7 +312,7 @@ export default function VendorListingPage() {
     formRef.current = form;
   }, [form]);
 
-  const onChange = (key: keyof FormState) => (e: { target: { value: string } }) => {
+  const onChange = (key: StringFormKey) => (e: { target: { value: string } }) => {
     setForm((prev) => (prev ? { ...prev, [key]: e.target.value } : prev));
   };
 
@@ -983,6 +998,28 @@ export default function VendorListingPage() {
                 type="tel"
                 maxLength={40}
               />
+              <div className="flex items-start justify-between gap-3 rounded-lg border border-paper-200 px-3 py-2.5 dark:border-umber-700">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink-900 dark:text-paper-100">
+                    {t("vendor_home.label_hide_contact")}
+                  </p>
+                  <p
+                    id="vendor-hide-contact-hint"
+                    className="mt-0.5 text-xs text-ink-500 dark:text-umber-300"
+                  >
+                    {t("vendor_home.label_hide_contact_hint")}
+                  </p>
+                </div>
+                <Switch
+                  checked={form.hide_contact_public}
+                  onChange={(next) =>
+                    setForm((prev) => (prev ? { ...prev, hide_contact_public: next } : prev))
+                  }
+                  disabled={saving}
+                  label={t("vendor_home.label_hide_contact")}
+                  describedBy="vendor-hide-contact-hint"
+                />
+              </div>
             </fieldset>
 
             <fieldset

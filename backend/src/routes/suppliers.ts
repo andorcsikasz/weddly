@@ -30,11 +30,13 @@ import { recordSupplierEvents } from "../domain/supplier_views";
 import {
   getClaimedDirectoryBaseById,
   listActiveClaimedListingsForDirectory,
+  listingContactHidden,
   listListingPackages,
   listListingPhotos,
   listListingVideos,
   listShowcaseCandidates,
 } from "../domain/listings";
+import { maskAddressForPublic, maskEmailForPublic } from "../domain/contact_mask";
 import { getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
 import { countNonDeletedComments, listCommentsForSupplier } from "../domain/supplier_comments";
 import { getAvailability } from "../domain/supplier_bookings";
@@ -415,12 +417,23 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
   });
   if (!detail) throw new HttpError(404, "Unknown supplier");
 
-  // Gate the phone number behind registration: anonymous visitors see only the
-  // first five digits (ctx.userId is populated whenever a valid session token
-  // rides along, even on this public route). Masked server-side so the hidden
-  // digits never leave the server; a logged-in viewer gets the full number.
-  if (ctx.userId === null && detail.contact_phone) {
-    detail.contact_phone = maskPhoneForAnonymous(detail.contact_phone);
+  // Gate contact details behind registration for anonymous visitors (ctx.userId
+  // is populated whenever a valid session token rides along, even on this public
+  // route). Masked server-side so the hidden characters never leave the server;
+  // a logged-in viewer gets everything in full.
+  //
+  //  - Phone is ALWAYS masked for anonymous visitors (first five digits kept).
+  //  - Address + email tails are masked only when the vendor opted in
+  //    (`hide_contact_public` on their claimed listing). Website is left as-is —
+  //    its raw URL is already hidden behind the tracked /r/supplier redirect.
+  if (ctx.userId === null) {
+    if (detail.contact_phone) {
+      detail.contact_phone = maskPhoneForAnonymous(detail.contact_phone);
+    }
+    if (listingContactHidden(detail.id)) {
+      if (detail.contact_email) detail.contact_email = maskEmailForPublic(detail.contact_email);
+      if (detail.address) detail.address = maskAddressForPublic(detail.address);
+    }
   }
 
   const reviews = listReviewsForSupplier(supplierId, {

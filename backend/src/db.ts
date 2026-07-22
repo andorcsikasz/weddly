@@ -1644,6 +1644,15 @@ addColumnIfMissing("listings", "google_place_id", "google_place_id TEXT");
 addColumnIfMissing("listings", "google_rating", "google_rating REAL");
 addColumnIfMissing("listings", "google_ratings_count", "google_ratings_count INTEGER");
 addColumnIfMissing("listings", "google_synced_at", "google_synced_at INTEGER");
+// Vendor opt-in: hide the tail of the public-page address + contact email from
+// anonymous visitors (a reason to register — same gate as the always-on phone
+// mask). Off by default, so existing listings show full contact exactly as
+// before. Only vendor-owned (claimed) listings expose the toggle.
+addColumnIfMissing(
+  "listings",
+  "hide_contact_public",
+  "hide_contact_public INTEGER NOT NULL DEFAULT 0",
+);
 // Per-photo vertical focal point (object-position %, 0..100, 50 = centred).
 // Every gallery slot crops to a fixed aspect, so a portrait shot loses its
 // subject to the crop; the vendor drags the tile in the listing editor to say

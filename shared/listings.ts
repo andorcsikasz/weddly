@@ -83,6 +83,12 @@ export interface Listing {
    *  monogram avatar. Only vendors who own the listing can write this field;
    *  the file lives under `CONFIG.uploadsDir` on the persistent volume. */
   hero_image_url: string | null;
+  /** Vendor opt-in: on the public page, hide the tail of the street address and
+   *  the contact email from anonymous (logged-out) visitors — a reason to
+   *  register, mirroring the always-on phone mask. False by default. Only the
+   *  owning vendor can flip it; the phone is masked for anonymous visitors
+   *  regardless. Logged-in couples always see the full details. */
+  hide_contact_public: boolean;
   created_at: number;
   updated_at: number;
 }
@@ -235,6 +241,9 @@ export interface VendorListingEditInput {
   price_band?: 1 | 2 | 3 | 4 | 5 | null;
   capacity_min?: number | null;
   capacity_max?: number | null;
+  /** Toggle the public-page contact masking (address + email tail) for
+   *  anonymous visitors. See {@link Listing.hide_contact_public}. */
+  hide_contact_public?: boolean;
 }
 
 /** Anti-fraud pricing cooldown: once a vendor changes (or withdraws) their

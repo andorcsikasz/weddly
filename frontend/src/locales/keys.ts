@@ -696,6 +696,8 @@ export interface LocaleMessages {
     label_contact_email: string;
     label_contact_email_hint: string;
     label_contact_phone: string;
+    label_hide_contact: string;
+    label_hide_contact_hint: string;
     label_price_band: string;
     label_price_band_help: string;
     /** Anti-fraud cooldown (shared/listings.ts PRICE_BAND_COOLDOWN_DAYS):
@@ -5169,6 +5171,10 @@ export interface LocaleMessages {
         publishedLabel: string;
         submit: string;
         submitted: string;
+        /** Placeholder in the composer's free-text ("+1") tag input. */
+        customTagPlaceholder: string;
+        /** Label on the button that commits the typed free-text tag. */
+        customTagAdd: string;
         /** Tooltip shown on the disabled Beküldés button when the rater
          *  hasn't picked a star yet. */
         pickStarFirst: string;

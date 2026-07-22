@@ -200,6 +200,12 @@ function buildPatch(body: VendorListingEditInput): ListingPatch {
   if (capMin !== undefined) patch.capacity_min = capMin;
   const capMax = parseCapacity(body.capacity_max, "capacity_max");
   if (capMax !== undefined) patch.capacity_max = capMax;
+  if (body.hide_contact_public !== undefined) {
+    if (typeof body.hide_contact_public !== "boolean") {
+      throw new HttpError(400, "hide_contact_public must be a boolean");
+    }
+    patch.hide_contact_public = body.hide_contact_public;
+  }
   // Cross-field: when both sides are set in the patch, min ≤ max. We only
   // check what the request supplied (not what's already in the DB) so a
   // partial update can't accidentally fail because of an existing skew.

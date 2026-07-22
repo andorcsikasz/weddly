@@ -14,6 +14,7 @@ import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
 import { maskPhoneForAnonymous } from "../../src/domain/phone_mask";
+import { maskAddressForPublic, maskEmailForPublic } from "../../src/domain/contact_mask";
 import { HU_HOST, lookupVendorPageMeta, renderIndexHtml } from "../../src/lib/seo_ssr";
 import { canonicalListingId, slugifyName, vendorPublicId } from "@shared/vendor_slug";
 
@@ -150,7 +151,11 @@ describe("GET /api/public/vendors/:id — no auth", () => {
 /** Seed a claimed vendor carrying a phone number, so the public detail has a
  *  `contact_phone` to gate. Returns its `v{N}` id. */
 async function seedVendorWithPhone(email: string, name: string, phone: string): Promise<string> {
-  const reg = await registerAndVerify({ email, password: "supersafe123", full_name: "Vendor Owner" });
+  const reg = await registerAndVerify({
+    email,
+    password: "supersafe123",
+    full_name: "Vendor Owner",
+  });
   const userId = reg.data.user.id;
   db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(userId);
   const account = createVendorAccount({
@@ -212,6 +217,176 @@ describe("maskPhoneForAnonymous", () => {
   test("a number with five or fewer digits is left whole", () => {
     expect(maskPhoneForAnonymous("12345")).toBe("12345");
     expect(maskPhoneForAnonymous("112")).toBe("112");
+  });
+});
+
+/** Seed a claimed vendor carrying a full address + contact email + phone, so
+ *  the public detail has every gated field. Returns its `v{N}` id and the
+ *  owner's session token (the toggle is edited through /api/vendor/listing/me).
+ *  The public contact email is set independently of the login email so the
+ *  masking assertion reads a predictable value. */
+async function seedVendorWithContact(opts: {
+  loginEmail: string;
+  name: string;
+  contactEmail: string;
+  address: string;
+  phone: string;
+}): Promise<{ id: string; token: string }> {
+  const reg = await registerAndVerify({
+    email: opts.loginEmail,
+    password: "supersafe123",
+    full_name: "Vendor Owner",
+  });
+  const userId = reg.data.user.id;
+  db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(userId);
+  const account = createVendorAccount({
+    ownerUserId: userId,
+    displayName: opts.name,
+    contactEmail: opts.contactEmail,
+    onboardingDone: false,
+  });
+  createVendorListing({
+    vendorAccountId: account.id,
+    category: "photography",
+    name: opts.name,
+    city: "Budapest",
+    contactEmail: opts.contactEmail,
+    address: opts.address,
+    contactPhone: opts.phone,
+  });
+  initVendorBilling(account.id, "HUF");
+  return { id: `v${account.id}`, token: reg.data.token };
+}
+
+interface ContactDetail {
+  detail: { address: string | null; contact_email: string | null; contact_phone: string | null };
+}
+
+describe("vendor opt-in: hide address + email tail from the public", () => {
+  const CONTACT_EMAIL = "info@greattide.hu";
+  const ADDRESS = "Attila út 35";
+  const PHONE = "06706361792";
+
+  test("PATCH /api/vendor/listing/me toggles hide_contact_public", async () => {
+    const { token } = await seedVendorWithContact({
+      loginEmail: "hide-toggle@weddly.test",
+      name: "Great Tide",
+      contactEmail: CONTACT_EMAIL,
+      address: ADDRESS,
+      phone: PHONE,
+    });
+    const before = await req<{ listing: { hide_contact_public: boolean } }>(
+      "GET",
+      "/api/vendor/listing/me",
+      undefined,
+      { token },
+    );
+    expect(before.data.listing.hide_contact_public).toBe(false);
+
+    const patched = await req<{ listing: { hide_contact_public: boolean } }>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { hide_contact_public: true },
+      { token },
+    );
+    expect(patched.status).toBe(200);
+    expect(patched.data.listing.hide_contact_public).toBe(true);
+  });
+
+  test("a non-boolean hide_contact_public is rejected", async () => {
+    const { token } = await seedVendorWithContact({
+      loginEmail: "hide-bad@weddly.test",
+      name: "Great Tide",
+      contactEmail: CONTACT_EMAIL,
+      address: ADDRESS,
+      phone: PHONE,
+    });
+    const r = await req(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { hide_contact_public: "yes" },
+      { token },
+    );
+    expect(r.status).toBe(400);
+  });
+
+  test("off by default: anonymous visitor still gets the full address + email", async () => {
+    const { id } = await seedVendorWithContact({
+      loginEmail: "hide-off@weddly.test",
+      name: "Great Tide",
+      contactEmail: CONTACT_EMAIL,
+      address: ADDRESS,
+      phone: PHONE,
+    });
+    const r = await req<ContactDetail>("GET", `/api/public/vendors/${encodeURIComponent(id)}`);
+    expect(r.status).toBe(200);
+    expect(r.data.detail.address).toBe(ADDRESS);
+    expect(r.data.detail.contact_email).toBe(CONTACT_EMAIL);
+    // Phone is masked regardless of the toggle.
+    expect(r.data.detail.contact_phone).toBe("06706******");
+  });
+
+  test("enabled: anonymous visitor gets the address + email tail masked", async () => {
+    const { id, token } = await seedVendorWithContact({
+      loginEmail: "hide-on@weddly.test",
+      name: "Great Tide",
+      contactEmail: CONTACT_EMAIL,
+      address: ADDRESS,
+      phone: PHONE,
+    });
+    await req("PATCH", "/api/vendor/listing/me", { hide_contact_public: true }, { token });
+
+    const r = await req<ContactDetail>("GET", `/api/public/vendors/${encodeURIComponent(id)}`);
+    expect(r.status).toBe(200);
+    expect(r.data.detail.address).toBe("Attila út •••");
+    expect(r.data.detail.contact_email).toBe("in•••@greattide.hu");
+    expect(r.data.detail.contact_phone).toBe("06706******");
+    // The hidden characters never leave the server.
+    expect(r.data.detail.address).not.toContain("35");
+    expect(r.data.detail.contact_email).not.toContain("fo@");
+  });
+
+  test("enabled: a signed-in couple still gets the full address + email + phone", async () => {
+    const { id, token } = await seedVendorWithContact({
+      loginEmail: "hide-reveal@weddly.test",
+      name: "Great Tide",
+      contactEmail: CONTACT_EMAIL,
+      address: ADDRESS,
+      phone: PHONE,
+    });
+    await req("PATCH", "/api/vendor/listing/me", { hide_contact_public: true }, { token });
+    const { token: coupleToken } = await bootstrapCouple("hide-couple@test.test");
+
+    const r = await req<ContactDetail>(
+      "GET",
+      `/api/public/vendors/${encodeURIComponent(id)}`,
+      undefined,
+      { token: coupleToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.detail.address).toBe(ADDRESS);
+    expect(r.data.detail.contact_email).toBe(CONTACT_EMAIL);
+    expect(r.data.detail.contact_phone).toBe(PHONE);
+  });
+});
+
+describe("contact_mask helpers", () => {
+  test("maskEmailForPublic keeps two local chars + the whole domain", () => {
+    expect(maskEmailForPublic("info@greattide.hu")).toBe("in•••@greattide.hu");
+    expect(maskEmailForPublic("jane.smith@example.com")).toBe("ja•••@example.com");
+  });
+
+  test("maskEmailForPublic tail-masks a value with no usable @", () => {
+    expect(maskEmailForPublic("notanemail")).toBe("no•••");
+  });
+
+  test("maskAddressForPublic hides the last token, keeping the street", () => {
+    expect(maskAddressForPublic("Attila út 35")).toBe("Attila út •••");
+    expect(maskAddressForPublic("Váci utca 12/B")).toBe("Váci utca •••");
+  });
+
+  test("maskAddressForPublic tail-masks a single-token address", () => {
+    expect(maskAddressForPublic("Főutca")).toBe("Fő•••");
   });
 });
 

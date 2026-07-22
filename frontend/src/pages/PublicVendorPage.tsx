@@ -739,6 +739,12 @@ function PublicContactCard({
   locale: string;
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
+  // A vendor can hide the tail of their address + email from anonymous
+  // visitors; the server masks with `•`, which is our "is this masked?" test.
+  // A masked value renders as plain text — the maps/mailto link it would feed is
+  // broken, and dropping it doubles as the "register to see more" nudge.
+  const addressMasked = detail.address?.includes("•") ?? false;
+  const emailMasked = detail.contact_email?.includes("•") ?? false;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     detail.address ? `${detail.name}, ${detail.address}` : `${detail.name}, ${detail.city}`,
   )}`;
@@ -756,15 +762,22 @@ function PublicContactCard({
     // Shared card elevation — soft drop shadow, no hard border — matching the
     // in-app detail page's sidebar cards and the package grid.
     <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-600">
-      <a
-        href={mapsUrl}
-        target="_blank"
-        rel="noreferrer noopener"
-        className="flex items-start gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
-      >
-        <MapPin size={14} aria-hidden className="mt-0.5 text-ink-500 dark:text-umber-400" />
-        <span>{addressLine}</span>
-      </a>
+      {addressMasked ? (
+        <div className="flex items-start gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 dark:text-umber-100">
+          <MapPin size={14} aria-hidden className="mt-0.5 text-ink-500 dark:text-umber-400" />
+          <span>{addressLine}</span>
+        </div>
+      ) : (
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="flex items-start gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
+        >
+          <MapPin size={14} aria-hidden className="mt-0.5 text-ink-500 dark:text-umber-400" />
+          <span>{addressLine}</span>
+        </a>
+      )}
       {detail.website && (
         <a
           href={`/r/supplier/${encodeURIComponent(detail.id)}`}
@@ -777,15 +790,21 @@ function PublicContactCard({
           <ExternalLink size={12} aria-hidden className="text-ink-400 dark:text-umber-400" />
         </a>
       )}
-      {detail.contact_email && (
-        <a
-          href={`mailto:${detail.contact_email}`}
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
-        >
-          <Mail size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-          {detail.contact_email}
-        </a>
-      )}
+      {detail.contact_email &&
+        (emailMasked ? (
+          <div className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 dark:text-umber-100">
+            <Mail size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+            {detail.contact_email}
+          </div>
+        ) : (
+          <a
+            href={`mailto:${detail.contact_email}`}
+            className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
+          >
+            <Mail size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+            {detail.contact_email}
+          </a>
+        ))}
       {detail.contact_phone &&
         // A masked number (first five digits, rest `*`) is served to anonymous
         // visitors — registration reveals the rest. Render it as plain text, not
