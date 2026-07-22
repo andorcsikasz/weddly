@@ -10,10 +10,11 @@
 // are picked by keyword so the eye scans glyphs instead of reading
 // sentences; anything unrecognised falls back to a neutral check.
 //
-// Only the 5 most decision-relevant specs show by default; the rest sit
-// behind a per-card "See full details" toggle. Every card is uniform — a
-// flat white face with a crisp dark hairline outline, Uber-style — with no
-// singled-out "recommended" tier.
+// The default card shows only its headline (name + price); the subtitle,
+// blurb and every spec row sit behind a per-card "See full details" toggle,
+// so a grid of packages reads as a clean price list first and opens on
+// demand. Every card is uniform: a flat white face with a crisp dark hairline
+// outline, Uber-style, with no singled-out "recommended" tier.
 
 import type { ListingPackage } from "@shared/listing_packages";
 import {
@@ -145,10 +146,6 @@ function parseSpecs(description: string | null): Spec[] {
     });
 }
 
-/** How many specs show before the "See full details" toggle. Keeps the default
- *  view to the handful of facts that actually drive a booking decision. */
-const VISIBLE_SPECS = 5;
-
 type T = (k: string, vars?: Record<string, string | number>) => string;
 
 function SpecRow({ spec }: { spec: Spec }) {
@@ -184,16 +181,15 @@ function PackageCard({
 }) {
   const specs = parseSpecs(pkg.description);
   const [expanded, setExpanded] = useState(false);
-  const hasMore = specs.length > VISIBLE_SPECS;
-  const shown = expanded ? specs : specs.slice(0, VISIBLE_SPECS);
   const isEmpty = !pkg.price_text && specs.length === 0 && !pkg.pdf_url;
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-ink-900 dark:bg-umber-900 dark:ring-umber-600">
-      {/* Headline zone — name + a compact price. Fixed min-height so the
-          dividers line up across all three columns. */}
-      <div className="flex min-h-[5.5rem] flex-col justify-start gap-1.5 px-5 pb-4 pt-5">
-        <h3 className="text-base font-semibold leading-snug text-ink-900 dark:text-cream-50">
+      {/* Headline zone — the only thing shown by default: name + a compact
+          price. The name reserves two lines (min-h) so the divider below it
+          lands in the same band across every card, whatever the name length. */}
+      <div className="flex flex-col gap-1.5 px-5 pb-4 pt-5">
+        <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-semibold leading-snug text-ink-900 dark:text-cream-50">
           {pkg.name}
         </h3>
         {pkg.price_text ? (
@@ -207,37 +203,38 @@ function PackageCard({
         ) : null}
       </div>
 
-      {/* Specs zone — flex-1 so the footer pins to the bottom and cards in a
-          row stay equal height. */}
+      {/* Everything else (subtitle, blurb, every spec row) collapses behind one
+          toggle so the default card is just name + price. flex-1 keeps the
+          footer pinned and equal-height cards aligned in a row. */}
       {specs.length > 0 && (
         <div className="flex flex-1 flex-col border-t border-paper-200 px-5 py-2 dark:border-umber-700/70">
-          <ul className="divide-y divide-paper-100 dark:divide-umber-800">
-            {shown.map((spec, i) => (
-              <SpecRow key={i} spec={spec} />
-            ))}
-          </ul>
-          {hasMore && (
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              aria-expanded={expanded}
-              className="mt-2 inline-flex items-center gap-1 self-start rounded-md py-1 text-sm font-medium text-ink-600 transition hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-umber-200 dark:hover:text-cream-50"
-            >
-              {expanded
-                ? t("suppliers.detail.packages.showLess")
-                : t("suppliers.detail.packages.seeFullDetails")}
-              <ChevronDown
-                size={14}
-                aria-hidden
-                className={`transition-transform ${expanded ? "rotate-180" : ""}`}
-              />
-            </button>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            className="flex w-full items-center justify-between gap-1 py-1.5 text-sm font-medium text-ink-600 transition hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-umber-200 dark:hover:text-cream-50"
+          >
+            {expanded
+              ? t("suppliers.detail.packages.showLess")
+              : t("suppliers.detail.packages.seeFullDetails")}
+            <ChevronDown
+              size={14}
+              aria-hidden
+              className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+            />
+          </button>
+          {expanded && (
+            <ul className="mt-1 divide-y divide-paper-100 border-t border-paper-100 pt-1 dark:divide-umber-800 dark:border-umber-800">
+              {specs.map((spec, i) => (
+                <SpecRow key={i} spec={spec} />
+              ))}
+            </ul>
           )}
         </div>
       )}
 
-      {/* When there are no parsed specs, the specs zone above is skipped —
-          spacer keeps the footer at the bottom so mixed cards stay aligned. */}
+      {/* No parsed specs, so the collapsible zone is skipped: this spacer keeps
+          the footer pinned so mixed cards stay aligned. */}
       {specs.length === 0 && <div className="flex-1" />}
 
       {pkg.pdf_url && (
