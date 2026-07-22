@@ -163,20 +163,30 @@ describe("honeymoon nudge", () => {
     expect(sends(tasks.coupleId)).toBe(0);
   });
 
-  test("the budget line onboarding seeds for EVERYONE does not silence the sweep", async () => {
-    // Regression guard for the bug this sweep shipped with: onboarding creates
-    // a "Honeymoon" budget line at 300k for every couple, so keying on the mere
-    // existence of a honeymoon budget row matched all of them and sent nothing.
+  test("a honeymoon budget line with no preset_key does not silence the sweep", async () => {
+    // Regression guard for the bug this sweep shipped with: onboarding used to
+    // seed a "Honeymoon" budget line at 300k for EVERY couple, so keying on the
+    // mere existence of a honeymoon row matched all of them and sent nothing.
+    // Onboarding no longer prefills a budget (feat 15f5f77e), but the guard
+    // stands: a honeymoon line WITHOUT a preset_key (a stray/legacy row, or a
+    // hand-typed category) must not read as "used the planner" — only a
+    // preset_key line (a real honeymoon-page cost/flight) silences the nudge.
     wipeAll();
     const { coupleId } = await bootstrapCouple("hm-seeded@weddly.test");
     setWedding(coupleId, 60);
+
+    const ts = now();
+    db.prepare(
+      `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, preset_key, created_at, updated_at)
+       VALUES (?, 'honeymoon', 'Nászút', 300000, 0, NULL, ?, ?)`,
+    ).run(coupleId, ts, ts);
 
     const seeded = db
       .prepare(
         "SELECT COUNT(*) AS n FROM budget_lines WHERE couple_id = ? AND category = 'honeymoon' AND preset_key IS NULL",
       )
       .get(coupleId) as { n: number };
-    expect(seeded.n).toBeGreaterThan(0); // the seed is really there
+    expect(seeded.n).toBeGreaterThan(0); // the no-preset line is really there
 
     expect(runEmailSweep().honeymoonNudges).toBe(1);
     expect(sends(coupleId)).toBe(1);

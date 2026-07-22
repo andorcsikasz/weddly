@@ -67,7 +67,7 @@ async function registerAndAcceptInvite(email: string, token: string): Promise<st
 // ════════════════════════════════════════════════════════════════════════════
 
 describe("couples_lifecycle: onboarding goal validation", () => {
-  test("structured season + range goals seed budget at the midpoint", async () => {
+  test("a range budget goal is recorded as the ceiling but seeds no budget lines", async () => {
     wipeAll();
     const { token } = await freshUserNoCouple("season-mid@weddly.test");
 
@@ -84,18 +84,24 @@ describe("couples_lifecycle: onboarding goal validation", () => {
       { token },
     );
     expect(ob.status).toBe(201);
+    expect(ob.data.couple.budget_goal.kind).toBe("range");
 
-    // Midpoint of 4–6M HUF = 5M HUF; venue is 20% of the split by default in
-    // DEFAULT_BUDGET_SPLIT (see shared/types). Just assert SOME lines exist
-    // with planned_huf > 0 so we don't couple the test to the exact split.
+    // New-workspace policy (feat 15f5f77e: empty budget, no prefill): onboarding
+    // records the goal as the ceiling range but seeds NO budget lines — couples
+    // build their own budget rather than inheriting a canned split.
     const lines = db
-      .prepare("SELECT planned_huf FROM budget_lines WHERE couple_id = ?")
-      .all(ob.data.couple.id) as { planned_huf: number }[];
-    expect(lines.length).toBeGreaterThan(0);
-    const totalPlanned = lines.reduce((acc, r) => acc + r.planned_huf, 0);
-    // Sum should approximately equal the midpoint (5_000_000) — within ±50k
-    // to allow for rounding inside individual line `round(seed * share)`.
-    expect(Math.abs(totalPlanned - 5_000_000)).toBeLessThan(50_000);
+      .prepare("SELECT COUNT(*) AS n FROM budget_lines WHERE couple_id = ?")
+      .get(ob.data.couple.id) as { n: number };
+    expect(lines.n).toBe(0);
+
+    const row = db
+      .prepare(
+        "SELECT budget_kind, budget_ceiling_min_huf AS mn, budget_ceiling_max_huf AS mx FROM couples WHERE id = ?",
+      )
+      .get(ob.data.couple.id) as { budget_kind: string; mn: number; mx: number };
+    expect(row.budget_kind).toBe("range");
+    expect(row.mn).toBe(4_000_000);
+    expect(row.mx).toBe(6_000_000);
   });
 
   test("TBD goals across the board seed no budget lines", async () => {

@@ -1794,13 +1794,25 @@ describe("admin analytics", () => {
 
   test("money — cost_histogram bins couples by total planned cost", async () => {
     const adminToken = await bootstrapAdmin();
-    await bootstrapCouple("withcost@weddly.test");
+    const { coupleId } = await bootstrapCouple("withcost@weddly.test");
+    // New workspaces start with an empty budget (feat 15f5f77e — no per-category
+    // prefill), so build the couple's planned cost explicitly: two lines summing
+    // to the 5M ceiling. cost_histogram bins that SUM, landing it in the 5M
+    // bucket, same as its budget_ceiling_huf does for budget_histogram.
+    const ts = now();
+    for (const [category, planned] of [
+      ["venue", 3_000_000],
+      ["catering", 2_000_000],
+    ] as const) {
+      db.prepare(
+        `INSERT INTO budget_lines (couple_id, category, label, planned_huf, actual_huf, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 0, ?, ?)`,
+      ).run(coupleId, category, category, planned, ts, ts);
+    }
     const r = await req<{
       budget_histogram: Array<{ bucket_max_huf: number; count: number }>;
       cost_histogram: Array<{ bucket_max_huf: number; count: number }>;
     }>("GET", "/api/admin/analytics/money", undefined, { token: adminToken });
-    // Onboarding seeds per-category budget lines that sum to the 5M ceiling, so
-    // the couple's TOTAL planned cost lands in the same 5M bucket as its ceiling.
     expect(r.data.cost_histogram.length).toBe(7);
     const five = r.data.cost_histogram.find((b) => b.bucket_max_huf === 5_000_000);
     expect(five?.count).toBe(1);
