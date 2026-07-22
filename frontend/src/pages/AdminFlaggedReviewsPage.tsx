@@ -12,6 +12,7 @@ import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminReviewApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { reviewTagLabel } from "../lib/reviewTags";
 import { useDocumentMeta } from "../lib/seo";
 
 type Loadable<T> = { status: "loading" } | { status: "ok"; data: T } | { status: "error" };
@@ -155,7 +156,7 @@ export default function AdminFlaggedReviewsPage() {
                       key={tag}
                       className="rounded-full bg-cream-100 px-2 py-0.5 text-xs text-ink-700 dark:bg-umber-700/40 dark:text-umber-100"
                     >
-                      {t(`suppliers.reviewTags.${tag}`)}
+                      {reviewTagLabel(tag, t)}
                     </span>
                   ))}
                 </div>

@@ -9,6 +9,7 @@ import "../setup";
 
 import { beforeEach, describe, expect, test } from "bun:test";
 import type { ReviewListResponse, SupplierReview } from "@shared/suppliers";
+import { CUSTOM_REVIEW_TAG_MAX_CHARS, MAX_REVIEW_TAGS } from "@shared/suppliers";
 import { db, now } from "../../src/db";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
@@ -208,5 +209,80 @@ describe("verified couple reviews (Phase 3)", () => {
       token: adminToken,
     });
     expect(delForeign.status).toBe(200);
+  });
+});
+
+describe("free-text review tags (+1)", () => {
+  // Reads come back sorted by tag (the (review_id, tag) primary key), so these
+  // assert set membership, not order.
+  test("accepts a mix of controlled and free-text tags, stored verbatim", async () => {
+    const { token } = await bootstrapCouple("customtag@test.test");
+    const sid = supplierId();
+    const create = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 5, tags: ["professional", "great with pets", "budget-friendly"] },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    expect([...create.data.tags].sort()).toEqual(
+      ["budget-friendly", "great with pets", "professional"].sort(),
+    );
+
+    // Round-trips through the read path (loadTagsForReviews keeps free text).
+    const list = await req<ReviewListResponse>("GET", reviewsUrl(sid), undefined, { token });
+    const roundTripped = list.data.items.find((i) => i.id === create.data.id)?.tags ?? [];
+    expect([...roundTripped].sort()).toEqual(
+      ["budget-friendly", "great with pets", "professional"].sort(),
+    );
+  });
+
+  test("free text matching the vocabulary folds onto the controlled tag (dedup)", async () => {
+    const { token } = await bootstrapCouple("foldtag@test.test");
+    const sid = supplierId();
+    const create = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 4, tags: ["professional", "Professional", "english speaking"] },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    expect([...create.data.tags].sort()).toEqual(["english_speaking", "professional"]);
+  });
+
+  test("rejects a malformed free-text tag with 400", async () => {
+    const { token } = await bootstrapCouple("badtag@test.test");
+    const sid = supplierId();
+    const badChars = await req(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 3, tags: ["<script>"] },
+      { token },
+    );
+    expect(badChars.status).toBe(400);
+    const tooLong = await req(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 3, tags: ["x".repeat(CUSTOM_REVIEW_TAG_MAX_CHARS + 1)] },
+      { token },
+    );
+    expect(tooLong.status).toBe(400);
+  });
+
+  test("total tags (controlled + free-text) capped at MAX_REVIEW_TAGS", async () => {
+    const { token } = await bootstrapCouple("captag@test.test");
+    const sid = supplierId();
+    const create = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      {
+        rating: 5,
+        tags: ["professional", "friendly", "reliable", "punctual", "creative", "one extra"],
+      },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    expect(create.data.tags).toHaveLength(MAX_REVIEW_TAGS);
+    expect(create.data.tags).not.toContain("one extra");
   });
 });

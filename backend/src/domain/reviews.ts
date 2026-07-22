@@ -13,7 +13,11 @@ import type {
   SupplierReview,
   SupplierReviewTag,
 } from "@shared/suppliers";
-import { MAX_REVIEW_TAGS, SUPPLIER_REVIEW_TAGS } from "@shared/suppliers";
+import {
+  isKnownReviewTag,
+  normaliseCustomReviewTag,
+  SUPPLIER_REVIEW_TAGS,
+} from "@shared/suppliers";
 import { db, now } from "../db";
 import { shortenName } from "./verified_visitors";
 
@@ -70,21 +74,6 @@ function authorKindOf(row: ReviewRow): ReviewAuthorKind {
   return row.couple_id === null ? "admin" : "couple";
 }
 
-export function normaliseTags(raw: unknown): SupplierReviewTag[] {
-  if (!Array.isArray(raw)) return [];
-  const out: SupplierReviewTag[] = [];
-  const seen = new Set<string>();
-  for (const r of raw) {
-    if (typeof r !== "string") continue;
-    if (!VALID_TAGS.has(r)) continue;
-    if (seen.has(r)) continue;
-    seen.add(r);
-    out.push(r as SupplierReviewTag);
-    if (out.length >= MAX_REVIEW_TAGS) break;
-  }
-  return out;
-}
-
 function authorDisplayName(row: ReviewWithAuthorRow): string {
   switch (authorKindOf(row)) {
     case "admin":
@@ -104,7 +93,7 @@ function authorDisplayName(row: ReviewWithAuthorRow): string {
 
 export function toReview(
   row: ReviewWithAuthorRow,
-  tags: SupplierReviewTag[],
+  tags: string[],
   viewerUserId?: number,
 ): SupplierReview {
   const kind = authorKindOf(row);
@@ -126,17 +115,20 @@ export function toReview(
   };
 }
 
-function loadTagsForReviews(reviewIds: number[]): Map<number, SupplierReviewTag[]> {
-  const map = new Map<number, SupplierReviewTag[]>();
+function loadTagsForReviews(reviewIds: number[]): Map<number, string[]> {
+  const map = new Map<number, string[]>();
   if (reviewIds.length === 0) return map;
   const placeholders = reviewIds.map(() => "?").join(",");
   const rows = db
     .prepare(`SELECT review_id, tag FROM supplier_review_tags WHERE review_id IN (${placeholders})`)
     .all(...reviewIds) as Array<{ review_id: number; tag: string }>;
   for (const r of rows) {
-    if (!VALID_TAGS.has(r.tag)) continue;
+    // Keep controlled tags plus any free-text tag that still passes the shape
+    // guard (defensive — the write path already validated). Anything malformed
+    // is dropped rather than surfaced.
+    if (!isKnownReviewTag(r.tag) && normaliseCustomReviewTag(r.tag) === null) continue;
     const list = map.get(r.review_id) ?? [];
-    list.push(r.tag as SupplierReviewTag);
+    list.push(r.tag);
     map.set(r.review_id, list);
   }
   return map;
@@ -263,7 +255,7 @@ export interface CreateReviewArgs {
   visitorId: number | null;
   rating: 1 | 2 | 3 | 4 | 5;
   body: string | null;
-  tags: SupplierReviewTag[];
+  tags: string[];
   published: boolean;
   /** Engagement-proof "Verified" badge — only true for engaged couples. */
   verified: boolean;
@@ -312,7 +304,7 @@ export function createReview(args: CreateReviewArgs): SupplierReview {
 export interface UpdateReviewArgs {
   rating?: 1 | 2 | 3 | 4 | 5;
   body?: string | null;
-  tags?: SupplierReviewTag[];
+  tags?: string[];
   published?: boolean;
   flagged?: boolean;
 }

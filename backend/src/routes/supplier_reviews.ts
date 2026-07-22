@@ -7,8 +7,8 @@
 // row). The partial unique index on (supplier_id, couple_id) WHERE couple_id
 // IS NOT NULL enforces "one review per couple per supplier".
 
-import type { CreateReviewBody, SupplierReview, SupplierReviewTag } from "@shared/suppliers";
-import { REVIEW_BODY_MAX_CHARS, SUPPLIER_REVIEW_TAGS } from "@shared/suppliers";
+import type { CreateReviewBody, SupplierReview } from "@shared/suppliers";
+import { normaliseReviewTags, REVIEW_BODY_MAX_CHARS } from "@shared/suppliers";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
@@ -19,7 +19,6 @@ import {
   getReviewById,
   listReviewsForSupplier,
   getReviewSummary,
-  normaliseTags,
   type ReviewAuthorKind,
   softDeleteReview,
   updateReview,
@@ -71,8 +70,6 @@ function userAlreadyReviewed(userId: number, supplierId: string): boolean {
   return row.ok === 1;
 }
 
-const VALID_TAG_SET: ReadonlySet<string> = new Set(SUPPLIER_REVIEW_TAGS);
-
 function parseRating(raw: unknown): 1 | 2 | 3 | 4 | 5 {
   const n = typeof raw === "number" ? raw : Number(raw);
   if (!Number.isInteger(n) || n < 1 || n > 5) {
@@ -92,15 +89,14 @@ function parseBody(raw: unknown): string | null {
   return trimmed;
 }
 
-function parseTags(raw: unknown): SupplierReviewTag[] {
+function parseTags(raw: unknown): string[] {
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) throw new HttpError(400, "tags must be an array");
-  for (const t of raw) {
-    if (typeof t !== "string" || !VALID_TAG_SET.has(t)) {
-      throw new HttpError(400, `unknown tag: ${String(t)}`);
-    }
-  }
-  return normaliseTags(raw);
+  // Known vocabulary passes through; a free-text ("+1") tag is accepted when it
+  // clears the shape guard, else 400 so the composer can flag it. Dedups + caps.
+  return normaliseReviewTags(raw, (entry) => {
+    throw new HttpError(400, `invalid tag: ${String(entry)}`);
+  });
 }
 
 async function handleList(ctx: Ctx): Promise<Response> {

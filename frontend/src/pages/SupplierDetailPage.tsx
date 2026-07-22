@@ -71,20 +71,15 @@ import type {
   SupplierComment,
   SupplierDetail,
   SupplierReview,
-  SupplierReviewTag,
 } from "@shared/suppliers";
-import {
-  COMMENT_BODY_MAX_CHARS,
-  MAX_REVIEW_TAGS,
-  REVIEW_BODY_MAX_CHARS,
-  reviewTagsForCategory,
-  showsCapacity,
-} from "@shared/suppliers";
+import { COMMENT_BODY_MAX_CHARS, REVIEW_BODY_MAX_CHARS, showsCapacity } from "@shared/suppliers";
 import { vendorPublicId } from "@shared/vendor_slug";
 import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { ComposeDialog } from "../components/OutreachInbox";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
+import { ReviewTagPicker } from "../components/ReviewTagPicker";
+import { reviewTagLabel } from "../lib/reviewTags";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
@@ -822,25 +817,14 @@ function ReviewsSection({
   category: SupplierCategory;
 }) {
   const { supplierId, onChange, toast, confirm, locale, isAdmin, t } = ctx;
-  // Suggest only the review tags that fit this vendor's category (venue →
-  // parking/garden, caterer → vegan/kosher, …) instead of one generic list.
-  const tagOptions = reviewTagsForCategory(category);
   // Default 0 = no rating picked yet. Stars render as hollow glyphs and the
   // Beküldés button stays disabled until the user actually clicks one.
   // Avoids the "everyone defaults to 5 stars" trap that inflates aggregates.
   const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [body, setBody] = useState("");
-  const [tags, setTags] = useState<SupplierReviewTag[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [published, setPublished] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  const toggleTag = (tag: SupplierReviewTag) => {
-    setTags((prev) => {
-      if (prev.includes(tag)) return prev.filter((x) => x !== tag);
-      if (prev.length >= MAX_REVIEW_TAGS) return prev;
-      return [...prev, tag];
-    });
-  };
 
   const submit = async () => {
     if (rating === 0) return; // guard: button is also disabled but be defensive
@@ -932,30 +916,7 @@ function ReviewsSection({
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
-          <div className="mb-3">
-            <div className="mb-1.5 text-xs text-ink-500 dark:text-umber-300">
-              {t("suppliers.detail.reviews.tagsLabel", { max: MAX_REVIEW_TAGS })}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {tagOptions.map((tag) => {
-                const on = tags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => toggleTag(tag)}
-                    className={`rounded-full px-2.5 py-1 text-xs transition ${
-                      on
-                        ? "bg-rose-500 text-white"
-                        : "bg-white text-ink-700 ring-1 ring-ink-200 hover:bg-ink-50 dark:bg-umber-700/60 dark:text-umber-100 dark:ring-umber-600"
-                    }`}
-                  >
-                    {t(`suppliers.reviewTags.${tag}`)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
           <div className="flex items-center justify-between">
             {/* Draft/publish is an editorial (admin) lever; couple reviews go
                 live immediately, so they get no checkbox to wonder about. */}
@@ -1039,7 +1000,7 @@ function ReviewsSection({
                       key={tag}
                       className="rounded-full bg-cream-100 px-2 py-0.5 text-xs text-ink-700 dark:bg-umber-700/40 dark:text-umber-100"
                     >
-                      {t(`suppliers.reviewTags.${tag}`)}
+                      {reviewTagLabel(tag, t)}
                     </span>
                   ))}
                 </div>

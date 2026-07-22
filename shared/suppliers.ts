@@ -569,6 +569,70 @@ export const SUPPLIER_REVIEW_TAGS = [
 export type SupplierReviewTag = (typeof SUPPLIER_REVIEW_TAGS)[number];
 export const MAX_REVIEW_TAGS = 5;
 
+/** Length bounds for a couple's free-text ("+1") review tag. Short by design —
+ *  a tag is a chip, not a sentence; the review body is where prose goes. */
+export const CUSTOM_REVIEW_TAG_MIN_CHARS = 2;
+export const CUSTOM_REVIEW_TAG_MAX_CHARS = 24;
+
+const KNOWN_REVIEW_TAG_SET: ReadonlySet<string> = new Set(SUPPLIER_REVIEW_TAGS);
+
+/** True when `tag` is a member of the controlled vocabulary (so it has an i18n
+ *  label and may feed the aggregate top-tags). A free-text tag is anything else. */
+export function isKnownReviewTag(tag: string): tag is SupplierReviewTag {
+  return KNOWN_REVIEW_TAG_SET.has(tag);
+}
+
+/** Validate + canonicalise a free-text review tag. Returns the cleaned tag, or
+ *  null when it fails the shape rules (too short/long, or characters we don't
+ *  allow in a chip). Trims, collapses inner whitespace, and folds onto the
+ *  controlled vocabulary when the typed text is really the same word — so a
+ *  typed "Professional" or "english speaking" dedups against the existing chip
+ *  instead of living as a look-alike custom tag. The returned value is either a
+ *  SupplierReviewTag (folded) or arbitrary user text; callers must render it via
+ *  reviewTagLabel, never straight through i18n. */
+export function normaliseCustomReviewTag(raw: string): string | null {
+  if (typeof raw !== "string") return null;
+  const cleaned = raw.replace(/\s+/gu, " ").trim();
+  if (cleaned.length < CUSTOM_REVIEW_TAG_MIN_CHARS) return null;
+  if (cleaned.length > CUSTOM_REVIEW_TAG_MAX_CHARS) return null;
+  // Letters (any script, so HU accents pass), digits, spaces, and a small set of
+  // in-word separators only. Keeps out newlines, angle brackets, emoji spam.
+  if (!/^[\p{L}\p{N} '&/-]+$/u.test(cleaned)) return null;
+  const canonical = cleaned.toLowerCase().replace(/[\s-]+/gu, "_");
+  return isKnownReviewTag(canonical) ? canonical : cleaned;
+}
+
+/** Validate a whole tag payload (known + free-text mixed), deduped
+ *  case-insensitively and capped at MAX_REVIEW_TAGS. Returns the canonical list,
+ *  or throws the offending entry via `onInvalid` (the write path 400s; a lenient
+ *  read path passes a no-op that drops it). Shared by backend route + domain. */
+export function normaliseReviewTags(
+  raw: unknown,
+  onInvalid: (entry: unknown) => void = () => {},
+): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of raw) {
+    const tag =
+      typeof entry === "string"
+        ? isKnownReviewTag(entry)
+          ? entry
+          : normaliseCustomReviewTag(entry)
+        : null;
+    if (tag === null) {
+      onInvalid(entry);
+      continue;
+    }
+    const key = tag.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(tag);
+    if (out.length >= MAX_REVIEW_TAGS) break;
+  }
+  return out;
+}
+
 /** Service-quality tags relevant to EVERY vendor, whatever they sell: how they
  *  are to work with. Appended after each category's specific tags. Ten of them,
  *  so even a category with no specific tags still offers ≥10 suggestions while
@@ -665,7 +729,10 @@ export interface SupplierReview {
   supplier_id: string;
   rating: 1 | 2 | 3 | 4 | 5;
   body: string | null;
-  tags: SupplierReviewTag[];
+  /** Controlled-vocabulary tags AND couples' free-text ("+1") tags, mixed. A
+   *  known member has an i18n label; a free-text entry renders verbatim. Always
+   *  render via `reviewTagLabel`, never `t("suppliers.reviewTags.<tag>")`. */
+  tags: string[];
   published: boolean;
   /** True when the review is authored by an admin under the "Weddly editors"
    *  voice (couple_id null, author_kind 'admin'). Drives the editorial badge. */
@@ -712,7 +779,8 @@ export interface AdminFlaggedReview {
   supplier_name: string | null;
   rating: 1 | 2 | 3 | 4 | 5;
   body: string | null;
-  tags: SupplierReviewTag[];
+  /** Mixed controlled + free-text tags — see SupplierReview.tags. */
+  tags: string[];
   author_display_name: string;
   author_kind: "admin" | "couple" | "user" | "visitor";
   created_at: number;
