@@ -74,18 +74,19 @@ describe("verified visitor suggests a supplier", () => {
     expect(row?.price_band).toBe(0); // sentinel for "unpriced"
 
     // The mirrored listing shows the price as null (not a misleading "$").
-    const listing = db
-      .prepare("SELECT price_band FROM listings WHERE id = ?")
-      .get(`c${row?.id}`) as { price_band: number | null } | undefined;
+    const listing = db.prepare("SELECT price_band FROM listings WHERE id = ?").get(`c${row?.id}`) as
+      | { price_band: number | null }
+      | undefined;
     expect(listing?.price_band).toBeNull();
   });
 
   test("an unverified visitor (no token) is refused", async () => {
-    const res = await req(
-      "POST",
-      "/api/suppliers/community",
-      { category: "photography", name: "VVSup Nope", address: "x", contact_email: "n@vv.example.com" },
-    );
+    const res = await req("POST", "/api/suppliers/community", {
+      category: "photography",
+      name: "VVSup Nope",
+      address: "x",
+      contact_email: "n@vv.example.com",
+    });
     expect(res.status).toBe(401);
     expect((res.data as { detail?: { code?: string } }).detail?.code).toBe("visitor_unverified");
   });

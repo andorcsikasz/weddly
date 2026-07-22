@@ -84,9 +84,9 @@ describe("verified visitor email confirmation", () => {
     expect(sessionCount(row?.id ?? -1)).toBe(1);
 
     // Verifying never creates a real account for the address.
-    const asUser = db
-      .prepare("SELECT id FROM users WHERE email = ?")
-      .get("vv2@example.com") as { id: number } | null;
+    const asUser = db.prepare("SELECT id FROM users WHERE email = ?").get("vv2@example.com") as {
+      id: number;
+    } | null;
     expect(asUser).toBeNull();
   });
 
