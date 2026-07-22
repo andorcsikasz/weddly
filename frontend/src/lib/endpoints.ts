@@ -2080,6 +2080,8 @@ export const adminVendorMgmtApi = {
       contact_email?: string | null;
       contact_phone?: string | null;
       vat_number?: string | null;
+      /** Supplier category — written to the vendor's listing, not the account. */
+      category?: string;
     },
   ) => apiFetch<{ ok: true }>("PATCH", `/api/admin/vendors/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/vendors/${id}`),

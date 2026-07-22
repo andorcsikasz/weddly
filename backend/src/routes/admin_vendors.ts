@@ -9,6 +9,7 @@ import { SUPPLIER_GROUPS } from "@shared/suppliers";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { purgeOneUser } from "../domain/purge";
+import { setVendorListingCategory } from "../domain/listings";
 import {
   isVendorListingIncomplete,
   sendVendorIncompleteReminder,
@@ -111,6 +112,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     contact_email?: unknown;
     contact_phone?: unknown;
     vat_number?: unknown;
+    category?: unknown;
   }>(ctx.req);
 
   const patch: Parameters<typeof updateVendorAccount>[1] = {};
@@ -138,6 +140,17 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   if (body.vat_number !== undefined) patch.vat_number = optionalStr(body.vat_number, "vat_number");
 
   updateVendorAccount(id, patch);
+
+  // Category lives on the vendor's LISTING, not the account, so it takes a
+  // separate write. Validated against the taxonomy the same way registration is.
+  let categoryChanged: string | null = null;
+  if (body.category !== undefined) {
+    const category = typeof body.category === "string" ? body.category : "";
+    if (!VALID_CATEGORIES.has(category)) throw new HttpError(400, "Pick a valid category");
+    setVendorListingCategory(account.id, category);
+    categoryChanged = category;
+  }
+
   addAuditLog({
     actor_user_id: admin.id,
     couple_id: null,
@@ -145,6 +158,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     target_kind: "user",
     target_id: account.owner_user_id,
     note: `vendor #${account.id}`,
+    ...(categoryChanged ? { after: { category: categoryChanged } } : {}),
   });
   return json({ ok: true });
 }

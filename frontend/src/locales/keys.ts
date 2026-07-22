@@ -5333,6 +5333,8 @@ export interface LocaleMessages {
     nav_vendors: string;
     nav_vendor_campaign: string;
     nav_vendor_review_campaign: string;
+    /** Merged sidebar entry that hosts both campaign consoles as tabs. */
+    nav_campaigns: string;
     nav_planners: string;
     nav_waitlist: string;
     nav_planner_waitlist: string;
@@ -5413,6 +5415,7 @@ export interface LocaleMessages {
       edit_title: string;
       field_name: string;
       field_name_help: string;
+      field_category: string;
       field_company: string;
       field_company_help: string;
       field_email: string;

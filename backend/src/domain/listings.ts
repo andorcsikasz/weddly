@@ -609,6 +609,19 @@ export function createVendorListing(input: {
   return row;
 }
 
+/** Admin override of a vendor's listing category. Applies to every listing the
+ *  vendor owns (a claimed vendor has exactly one, `v{accountId}`). `other` keeps
+ *  the free-text `custom_category`; any real category clears it. Returns how
+ *  many listing rows were touched (0 when the vendor has no listing yet). */
+export function setVendorListingCategory(vendorAccountId: number, category: string): number {
+  const ts = now();
+  const sql =
+    category === "other"
+      ? "UPDATE listings SET category = ?, updated_at = ? WHERE vendor_account_id = ?"
+      : "UPDATE listings SET category = ?, custom_category = NULL, updated_at = ? WHERE vendor_account_id = ?";
+  return db.prepare(sql).run(category, ts, vendorAccountId).changes;
+}
+
 /** Patch the editable fields on a listing. Caller is responsible for the
  *  authorisation check (P2.D: vendor must own the listing via
  *  `vendor_account_id`); this helper just runs the UPDATE. Returns the

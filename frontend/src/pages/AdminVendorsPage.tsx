@@ -248,6 +248,10 @@ function EditModal({
   const [email, setEmail] = useState(vendor.contact_email ?? "");
   const [phone, setPhone] = useState(vendor.contact_phone ?? "");
   const [vat, setVat] = useState(vendor.vat_number ?? "");
+  // Category lives on the listing; a claimed vendor has one, so seed from the
+  // first of the (usually single-element) categories array.
+  const initialCategory = vendor.categories[0] ?? "";
+  const [category, setCategory] = useState<SupplierCategory | "">(initialCategory);
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -263,6 +267,8 @@ function EditModal({
         contact_email: email.trim() || null,
         contact_phone: phone.trim() || null,
         vat_number: vat.trim() || null,
+        // Only send the category when it's set and actually changed.
+        ...(category && category !== initialCategory ? { category } : {}),
       });
       onSaved();
       onClose();
@@ -297,6 +303,32 @@ function EditModal({
             <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
               {t("admin.vendors.field_name_help")}
             </p>
+          </div>
+          <div>
+            <label htmlFor="vendor-category" className={labelClass}>
+              {t("admin.vendors.field_category")}
+            </label>
+            <select
+              id="vendor-category"
+              className={inputClass}
+              value={category}
+              onChange={(e) => setCategory(e.target.value as SupplierCategory | "")}
+            >
+              <option value="" disabled>
+                {t("vendor_register.category_placeholder")}
+              </option>
+              {SUPPLIER_GROUPS.map((g) => (
+                <optgroup key={g.id} label={t(`suppliers.group.${g.id}`)}>
+                  {g.categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c === "other"
+                        ? t("vendor_register.category_other_option")
+                        : t(`suppliers.cat.${c}`)}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
           <div>
             <label htmlFor="vendor-company" className={labelClass}>

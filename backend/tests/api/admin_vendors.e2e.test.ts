@@ -211,6 +211,50 @@ describe("admin vendor management", () => {
     expect(pub.data.detail.company_name).toBe("WILD VYBES Kft.");
   });
 
+  test("PATCH updates the vendor's listing category, and rejects a bogus one", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { accountId } = await seedActivatedVendor("cat@weddly.test", "Cat Vendor");
+    createVendorListing({
+      vendorAccountId: accountId,
+      category: "photography",
+      name: "Cat Vendor",
+      city: "Budapest",
+      contactEmail: "cat@weddly.test",
+    });
+
+    const res = await req(
+      "PATCH",
+      `/api/admin/vendors/${accountId}`,
+      { category: "catering" },
+      { token: adminToken },
+    );
+    expect(res.status).toBe(200);
+
+    // The public ad now lives under the new category…
+    const listing = db
+      .prepare("SELECT category FROM listings WHERE vendor_account_id = ? AND source = 'claimed'")
+      .get(accountId) as { category: string };
+    expect(listing.category).toBe("catering");
+
+    // …and the admin row reflects it.
+    const list = await req<{ active: { id: number; categories: string[] }[] }>(
+      "GET",
+      "/api/admin/vendors",
+      undefined,
+      { token: adminToken },
+    );
+    expect(list.data.active.find((v) => v.id === accountId)?.categories).toContain("catering");
+
+    // A category outside the taxonomy is a 400.
+    const bad = await req(
+      "PATCH",
+      `/api/admin/vendors/${accountId}`,
+      { category: "not_a_real_category" },
+      { token: adminToken },
+    );
+    expect(bad.status).toBe(400);
+  });
+
   test("resend re-mints a pending onboarding token", async () => {
     const adminToken = await bootstrapAdmin();
     const first = createOnboardingToken({
