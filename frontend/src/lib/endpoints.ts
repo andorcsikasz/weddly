@@ -1206,9 +1206,11 @@ export const notificationApi = {
    *  count + the overdue / due-soon rollup the dashboard card headlines. */
   list: () =>
     apiFetch<import("@shared/notifications").NotificationFeed>("GET", "/api/notifications"),
-  /** Stamp the read watermark ("I opened the bell"). Per-user, so it never
-   *  clears the partner's badge. */
+  /** Stamp the read watermark ("I opened the bell"). Clears the badge only; it
+   *  does NOT move unclicked items into history. Per-user. */
   markSeen: () => apiFetch<{ seen_at: number | null }>("POST", "/api/notifications/seen", {}),
+  /** Mark ONE feed item read ("I clicked it") so it moves to history. */
+  markRead: (id: string) => apiFetch<{ ok: true }>("POST", "/api/notifications/read", { id }),
   /** Dismiss the one-time feedback survey prompt — sets survey_prompted_at
    *  so the virtual bell item never reappears for this user. */
   surveyDismiss: () => apiFetch<{ ok: true }>("POST", "/api/notifications/survey/dismiss", {}),

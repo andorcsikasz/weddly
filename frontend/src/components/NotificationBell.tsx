@@ -341,9 +341,11 @@ export function NotificationBell() {
       setShowSettings(false);
       setShowHistory(false);
     }
+    // Opening clears the BADGE (we've acknowledged there's something), but must
+    // NOT mark the items read — an unclicked notification stays in the "new"
+    // list until the user actually clicks it. Only markSeen (the watermark).
     if (next && unread > 0) {
       setUnread(0);
-      setItems((cur) => cur.map((i) => ({ ...i, read: true })));
       void notificationApi.markSeen().catch(() => {
         /* non-critical */
       });
@@ -356,6 +358,15 @@ export function NotificationBell() {
       setShowSettings(false);
       setSurveyOpen(true);
       return;
+    }
+    // Clicking a notification is what moves it to history — mark just this one
+    // read (optimistic + persist), never the whole list.
+    if (!item.read) {
+      setItems((cur) => cur.map((i) => (i.id === item.id ? { ...i, read: true } : i)));
+      setUnread((u) => Math.max(0, u - 1));
+      void notificationApi.markRead(item.id).catch(() => {
+        /* non-critical */
+      });
     }
     setOpen(false);
     setShowSettings(false);

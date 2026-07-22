@@ -95,7 +95,9 @@ function getSeenAt(userId: number, coupleId: number): number | null {
 }
 
 /** Advance the caller's read watermark to now — the "I opened the bell" action.
- *  Per (user,couple), so it never touches the partner's unread state. */
+ *  Per (user,couple), so it never touches the partner's unread state. This
+ *  clears the BADGE only; it deliberately does NOT move unclicked items into
+ *  history (that is per-item, see markNotificationItemRead). */
 export function markNotificationsSeen(userId: number, coupleId: number): number {
   const ts = now();
   db.prepare(
@@ -104,6 +106,25 @@ export function markNotificationsSeen(userId: number, coupleId: number): number 
      ON CONFLICT(user_id, couple_id) DO UPDATE SET seen_at = excluded.seen_at`,
   ).run(userId, coupleId, ts);
   return ts;
+}
+
+/** The set of feed-item ids this user has clicked. Drives the new-vs-history
+ *  split so an item stays "new" until the user actually opens it. */
+function getReadItemIds(userId: number): Set<string> {
+  const rows = db
+    .prepare("SELECT item_id FROM notification_reads WHERE user_id = ?")
+    .all(userId) as { item_id: string }[];
+  return new Set(rows.map((r) => r.item_id));
+}
+
+/** Mark ONE feed item read — the "I clicked this notification" action. Moves it
+ *  to history without touching anything the user hasn't clicked. Idempotent. */
+export function markNotificationItemRead(userId: number, itemId: string): void {
+  db.prepare(
+    `INSERT INTO notification_reads (user_id, item_id, read_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(user_id, item_id) DO NOTHING`,
+  ).run(userId, itemId, now());
 }
 
 /** ISO date minus N days, at local midnight. Used to place a due-soon item at
@@ -133,6 +154,10 @@ export function getNotificationFeed(userId: number): NotificationFeed {
   if (!couple) return { items: [], unread: 0, overdue: 0, due_soon: 0 };
 
   const seenAt = getSeenAt(userId, couple.id);
+  // Per-item read (clicked) drives the new-vs-history split; the seen watermark
+  // above drives only the badge. So opening the bell zeroes the badge without
+  // burying an unclicked item in "Korábbi értesítések".
+  const readIds = getReadItemIds(userId);
   const todayIso = toIsoDate(new Date());
   const tasks = loadTasks(couple.id);
   const items: NotificationItem[] = [];
@@ -150,7 +175,7 @@ export function getNotificationFeed(userId: number): NotificationFeed {
       data: { taskTitle: t.title },
       link: "/app/timeline",
       created_at: createdAt,
-      read: seenAt != null && createdAt <= seenAt,
+      read: readIds.has(`tl:${t.id}`),
     });
   }
 
@@ -180,8 +205,9 @@ export function getNotificationFeed(userId: number): NotificationFeed {
       data,
       link: e.link,
       created_at: e.created_at,
-      // Own-action rows are always pre-read (history, not fresh notifications).
-      read: isOwnAction || (seenAt != null && e.created_at <= seenAt),
+      // Own-action rows are always pre-read (history, not fresh notifications);
+      // otherwise it stays new until the recipient clicks it.
+      read: isOwnAction || readIds.has(`evt:${e.id}`),
       is_own_action: isOwnAction || undefined,
     });
   }
@@ -228,7 +254,7 @@ export function getNotificationFeed(userId: number): NotificationFeed {
       data: { taskTitle: t.title },
       link: "/app/planning",
       created_at: crossed,
-      read: seenAt != null && crossed <= seenAt,
+      read: readIds.has(`stale:${t.id}`),
     });
   }
 
@@ -261,13 +287,18 @@ export function getNotificationFeed(userId: number): NotificationFeed {
       data: { count: agg.count, group },
       link: "/app/planning",
       created_at: crossed,
-      read: seenAt != null && crossed <= seenAt,
+      read: readIds.has(`decstale:${group}`),
     });
   }
 
   items.sort((a, b) => b.created_at - a.created_at);
   const capped = items.slice(0, FEED_TOTAL_CAP);
-  const unread = capped.filter((i) => !i.read).length;
+  // Badge = fresh since the last bell-open (created after the seen watermark)
+  // AND not yet clicked AND not the user's own action. Opening the bell advances
+  // the watermark and clears this; clicking an item drops it from `read` above.
+  const unread = capped.filter(
+    (i) => !i.is_own_action && !readIds.has(i.id) && (seenAt == null || i.created_at > seenAt),
+  ).length;
   const rollup = summarizeTimeline(
     tasks.map((t) => ({ due_date: t.due_date, done: Boolean(t.done) })),
     todayIso,

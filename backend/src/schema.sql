@@ -1571,6 +1571,19 @@ CREATE TABLE IF NOT EXISTS notification_seen (
   PRIMARY KEY (user_id, couple_id)
 );
 
+-- Per-item read state: which specific feed items a user has CLICKED (acted on),
+-- keyed by the item's stable string id (tl:… / evt:… / stale:… / decstale:… /
+-- survey:…). This is DISTINCT from notification_seen, the badge watermark:
+-- opening the bell clears the badge but must NOT bury an unclicked item in
+-- history. A notification only moves to "Korábbi értesítések" once its row lands
+-- here, i.e. once the user actually clicks it.
+CREATE TABLE IF NOT EXISTS notification_reads (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  item_id TEXT NOT NULL,
+  read_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, item_id)
+);
+
 -- Stripe webhook idempotency ledger. Stripe delivers events at-least-once and
 -- its dashboard "resend" button + automatic retries WILL redeliver — so the
 -- webhook handler must dedup by event id, otherwise a replayed

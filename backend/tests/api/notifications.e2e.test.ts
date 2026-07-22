@@ -128,8 +128,8 @@ describe("notifications: computed timeline half", () => {
   });
 });
 
-describe("notifications: read watermark", () => {
-  test("opening the bell zeroes unread but keeps the items visible", async () => {
+describe("notifications: badge vs history split", () => {
+  test("opening the bell zeroes the badge but keeps an unclicked item in the new list", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("notif-seen@weddly.test");
     await createOverdueTask(token, "Tortát megrendelni");
@@ -141,10 +141,52 @@ describe("notifications: read watermark", () => {
     expect(seen.status).toBe(200);
 
     const after = await feed(token);
+    // Badge cleared…
     expect(after.data.unread).toBe(0);
-    // Items stay visible (still actionable), just marked read.
     expect(after.data.items.length).toBe(before.data.items.length);
-    expect(after.data.items.every((i) => i.read)).toBe(true);
+    // …but the unclicked item is NOT read: it stays in the "new" list until the
+    // user actually clicks it (the whole point of the fix).
+    const tl = after.data.items.find((i) => i.kind === "timeline_overdue");
+    expect(tl?.read).toBe(false);
+  });
+
+  test("clicking one item marks only that one read; the rest stay new", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("notif-read@weddly.test");
+    await createOverdueTask(token, "Tortát megrendelni");
+    await createOverdueTask(token, "Fotóst lefoglalni");
+
+    const before = await feed(token);
+    const overdue = before.data.items.filter((i) => i.kind === "timeline_overdue");
+    expect(overdue.length).toBe(2);
+    const target = overdue[0];
+
+    const mark = await req("POST", "/api/notifications/read", { id: target?.id }, { token });
+    expect(mark.status).toBe(200);
+
+    const after = await feed(token);
+    // The clicked one moved to history…
+    expect(after.data.items.find((i) => i.id === target?.id)?.read).toBe(true);
+    // …the other overdue item is untouched.
+    const others = after.data.items.filter(
+      (i) => i.kind === "timeline_overdue" && i.id !== target?.id,
+    );
+    expect(others.length).toBe(1);
+    expect(others.every((i) => !i.read)).toBe(true);
+  });
+
+  test("markRead is idempotent and rejects an empty id", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("notif-read-bad@weddly.test");
+    await createOverdueTask(token, "Tortát megrendelni");
+    const before = await feed(token);
+    const id = before.data.items.find((i) => i.kind === "timeline_overdue")?.id;
+
+    // Twice is fine (ON CONFLICT DO NOTHING).
+    expect((await req("POST", "/api/notifications/read", { id }, { token })).status).toBe(200);
+    expect((await req("POST", "/api/notifications/read", { id }, { token })).status).toBe(200);
+    // Empty id is a 400.
+    expect((await req("POST", "/api/notifications/read", { id: "" }, { token })).status).toBe(400);
   });
 });
 
