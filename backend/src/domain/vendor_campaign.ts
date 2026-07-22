@@ -152,6 +152,8 @@ interface CampaignRow {
   created_by: number | null;
   created_at: number;
   updated_at: number;
+  started_at: number | null;
+  ended_at: number | null;
 }
 
 function toCampaignStatus(raw: string): VendorCampaignStatus {
@@ -168,6 +170,8 @@ function toCampaign(row: CampaignRow): VendorCampaign {
     country: row.country,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    started_at: row.started_at,
+    ended_at: row.ended_at,
   };
 }
 
@@ -245,12 +249,19 @@ export function updateCampaign(id: number, patch: UpdateVendorCampaignInput): Ve
             throw new HttpError(400, "status must be running, paused or done");
           })();
   const dailyCap = patch.daily_cap == null ? row.daily_cap : parseDailyCap(patch.daily_cap);
+  const ts = now();
+  // Launch is the first time it runs (never re-stamped); a re-launch clears the
+  // end mark, and going Done stamps the end.
+  const startedAt = status === "running" && row.started_at == null ? ts : row.started_at;
+  const endedAt =
+    status === "done" ? (row.ended_at ?? ts) : status === "running" ? null : row.ended_at;
   const updated = db
     .prepare(
-      `UPDATE vendor_claim_campaigns SET status = ?, daily_cap = ?, updated_at = ?
+      `UPDATE vendor_claim_campaigns
+          SET status = ?, daily_cap = ?, updated_at = ?, started_at = ?, ended_at = ?
         WHERE id = ? RETURNING *`,
     )
-    .get(status, dailyCap, now(), id) as CampaignRow;
+    .get(status, dailyCap, ts, startedAt, endedAt, id) as CampaignRow;
   return toCampaign(updated);
 }
 
@@ -563,10 +574,10 @@ export async function sendCampaignBatch(
   const targets = listTargets(campaign, budget);
   if (targets.length === 0) {
     // Nothing left to write to: retire the campaign so the worker stops
-    // re-querying it every hour forever.
+    // re-querying it every hour forever, and stamp when it ended.
     db.prepare(
-      "UPDATE vendor_claim_campaigns SET status = 'done', updated_at = ? WHERE id = ?",
-    ).run(ts, campaign.id);
+      "UPDATE vendor_claim_campaigns SET status = 'done', ended_at = COALESCE(ended_at, ?), updated_at = ? WHERE id = ?",
+    ).run(ts, ts, campaign.id);
     return 0;
   }
   let sent = 0;

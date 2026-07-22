@@ -248,9 +248,11 @@ describe("vendor review-invite campaign", () => {
   test("a vendor who muted product mail is not targeted", async () => {
     const wanted = seedClaimedVendor({ name: "Reachable" });
     const muted = seedClaimedVendor({ name: "Muted" });
-    const uid = (db.prepare("SELECT id FROM users WHERE email = ?").get(muted.email) as {
-      id: number;
-    }).id;
+    const uid = (
+      db.prepare("SELECT id FROM users WHERE email = ?").get(muted.email) as {
+        id: number;
+      }
+    ).id;
     db.prepare(
       `INSERT INTO email_preferences (user_id, unsubscribe_token, lifecycle_opt_out, created_at, updated_at)
        VALUES (?, ?, 1, ?, ?)`,
@@ -278,6 +280,36 @@ describe("vendor review-invite campaign", () => {
       { token },
     );
     expect(r.status).toBe(409);
+  });
+
+  test("stamps launched on first run, keeps it across re-launch, ends on Done", async () => {
+    const c = await makeCampaign();
+    expect(c.started_at).toBeNull();
+    expect(c.ended_at).toBeNull();
+
+    const patch = (status: string) =>
+      req<{ campaign: VendorReviewCampaign }>(
+        "PATCH",
+        `/api/admin/vendor-review-campaigns/${c.id}`,
+        { status },
+        { token },
+      );
+
+    // Launch → started_at set, still no end.
+    const running = await patch("running");
+    const launchedAt = running.data.campaign.started_at;
+    expect(launchedAt).not.toBeNull();
+    expect(running.data.campaign.ended_at).toBeNull();
+
+    // Pause then re-launch must NOT move the original launch stamp.
+    await patch("paused");
+    const relaunched = await patch("running");
+    expect(relaunched.data.campaign.started_at).toBe(launchedAt);
+    expect(relaunched.data.campaign.ended_at).toBeNull();
+
+    // Explicit Done stamps the end.
+    const done = await patch("done");
+    expect(done.data.campaign.ended_at).not.toBeNull();
   });
 
   test("segments break the audience down by country", async () => {
@@ -461,11 +493,13 @@ describe("vendor review-invite campaign", () => {
     expect(firstSend().status).toBe("sent");
   });
 
-  test("a campaign with nobody left retires itself to done", async () => {
+  test("a campaign with nobody left retires itself to done and stamps the end", async () => {
     const campaign = await makeCampaign();
     const sent = await sendCampaignBatch(rowOf(campaign), 10);
     expect(sent).toBe(0);
-    expect(getCampaignRow(campaign.id)?.status).toBe("done");
+    const row = getCampaignRow(campaign.id);
+    expect(row?.status).toBe("done");
+    expect(row?.ended_at).not.toBeNull();
   });
 
   test("every admin endpoint is admin-only", async () => {

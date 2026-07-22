@@ -1959,6 +1959,16 @@ db.exec(
     "ON supplier_reviews(supplier_id, author_visitor_id) WHERE author_visitor_id IS NOT NULL",
 );
 
+// ── Campaign launch/end timestamps ───────────────────────────────────────────
+// `updated_at` moves on every pause / daily-cap edit, so it can't answer "when
+// did this launch?". `started_at` is stamped the first time a campaign goes
+// Running (never overwritten on a re-launch); `ended_at` when it retires to
+// Done. Applies to both the claim-invite and review-invite campaigns.
+addColumnIfMissing("vendor_claim_campaigns", "started_at", "started_at INTEGER");
+addColumnIfMissing("vendor_claim_campaigns", "ended_at", "ended_at INTEGER");
+addColumnIfMissing("vendor_review_campaigns", "started_at", "started_at INTEGER");
+addColumnIfMissing("vendor_review_campaigns", "ended_at", "ended_at INTEGER");
+
 // Reserved system user that anchors the NOT-NULL author FK for verified-visitor
 // content (see above). Login-disabled (status='suspended' and password_hash that
 // can never verify); verified_email=1 + password_set=0 so no unverified-account

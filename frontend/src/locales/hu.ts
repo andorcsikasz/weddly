@@ -5979,6 +5979,10 @@ const hu: LocaleMessages = {
     campaign_batch_confirm_cta: "Kiküldés",
     campaign_err_cap: "A napi limit pozitív egész szám legyen.",
     campaign_err_email: "Adj meg egy érvényes email címet.",
+    campaign_launched: "Indítva: {date}",
+    campaign_not_launched: "Még nincs elindítva",
+    campaign_ended: "Befejezve: {date}",
+    campaign_ends_est: "Vége: ~{date}",
     // Vélemény kampány (a legtöbb campaign_* kulcsot újrahasználja).
     review_campaign_title: "Vélemény kampány",
     review_campaign_subtitle:

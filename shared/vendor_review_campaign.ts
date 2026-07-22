@@ -39,6 +39,11 @@ export interface VendorReviewCampaign {
   country: string | null;
   created_at: number;
   updated_at: number;
+  /** When the campaign first went Running (the launch). Null until launched;
+   *  never overwritten on a later re-launch. */
+  started_at: number | null;
+  /** When the campaign retired to Done. Null while it can still send. */
+  ended_at: number | null;
 }
 
 /** Per-recipient row. `collected` is COMPUTED at read time from whether the

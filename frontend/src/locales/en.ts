@@ -5921,6 +5921,10 @@ const en: LocaleMessages = {
     campaign_batch_confirm_cta: "Send",
     campaign_err_cap: "The daily cap must be a positive whole number.",
     campaign_err_email: "Enter a valid email address.",
+    campaign_launched: "Launched {date}",
+    campaign_not_launched: "Not launched yet",
+    campaign_ended: "Ended {date}",
+    campaign_ends_est: "Ends ~{date}",
     // Review-invite campaign (reuses most campaign_* strings above).
     review_campaign_title: "Review campaign",
     review_campaign_subtitle:

@@ -6675,6 +6675,13 @@ export interface LocaleMessages {
     campaign_batch_confirm_cta: string;
     campaign_err_cap: string;
     campaign_err_email: string;
+    /** Receives `{date}` — when the campaign first went Running. */
+    campaign_launched: string;
+    campaign_not_launched: string;
+    /** Receives `{date}` — when the campaign retired to Done. */
+    campaign_ended: string;
+    /** Receives `{date}` — projected finish (remaining ÷ daily cap). */
+    campaign_ends_est: string;
     /** Review-invite campaign console (reuses the campaign_* strings above). */
     review_campaign_title: string;
     review_campaign_subtitle: string;

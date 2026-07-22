@@ -36,6 +36,19 @@ function daysToSend(n: number, cap: number): number {
   return Math.ceil(n / cap);
 }
 
+const DAY_MS = 86_400_000;
+
+/** Short launched/ended stamp. `withTime` for the exact launch moment, date-only
+ *  for the (approximate) projected finish. */
+function fmtStamp(ms: number, locale: string, withTime: boolean): string {
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+  }).format(new Date(ms));
+}
+
 function Stat({ value, label, muted }: { value: number; label: string; muted?: boolean }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -108,7 +121,7 @@ function EmailPreview({ kind, locale }: { kind: string; locale: "hu" | "en" }) {
 }
 
 export default function AdminVendorReviewCampaignPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -382,6 +395,28 @@ export default function AdminVendorReviewCampaignPage() {
                   </div>
                 )}
               </div>
+
+              {/* When it launched, and when it ends (actual once Done, else a
+                  projection from remaining ÷ daily cap). */}
+              <p className="text-xs text-neutral-500 dark:text-umber-300">
+                {selected.started_at
+                  ? t("admin.campaign_launched", {
+                      date: fmtStamp(selected.started_at, locale, true),
+                    })
+                  : t("admin.campaign_not_launched")}
+                {" · "}
+                {selected.ended_at
+                  ? ` · ${t("admin.campaign_ended", { date: fmtStamp(selected.ended_at, locale, true) })}`
+                  : selected.status === "running" && stats != null && stats.remaining > 0
+                    ? ` · ${t("admin.campaign_ends_est", {
+                        date: fmtStamp(
+                          Date.now() + daysToSend(stats.remaining, selected.daily_cap) * DAY_MS,
+                          locale,
+                          false,
+                        ),
+                      })}`
+                    : ""}
+              </p>
 
               {stats == null ? (
                 <Skeleton variant="block" height={44} rounded="md" />
