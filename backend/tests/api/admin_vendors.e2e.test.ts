@@ -292,6 +292,63 @@ describe("admin vendor management", () => {
     expect(logged?.category).toBe("transactional");
   });
 
+  test("PATCH onboarding edits a pending row's category (rejects bogus + non-pending)", async () => {
+    const adminToken = await bootstrapAdmin();
+    const onb = createOnboardingToken({
+      waitlistId: null,
+      businessName: "Pending Cat",
+      email: "pendingcat@weddly.test",
+      category: "photography",
+      locale: null,
+    });
+
+    const res = await req(
+      "PATCH",
+      `/api/admin/vendors/onboarding/${onb.id}`,
+      { category: "catering" },
+      { token: adminToken },
+    );
+    expect(res.status).toBe(200);
+    const row = db.prepare("SELECT category FROM vendor_onboarding WHERE id = ?").get(onb.id) as {
+      category: string;
+    };
+    expect(row.category).toBe("catering");
+
+    // The admin list's pending bucket reflects the new category.
+    const list = await req<{ pending: { id: number; categories: string[] }[] }>(
+      "GET",
+      "/api/admin/vendors",
+      undefined,
+      { token: adminToken },
+    );
+    expect(list.data.pending.find((v) => v.id === onb.id)?.categories).toContain("catering");
+
+    // A category outside the taxonomy is a 400.
+    expect(
+      (
+        await req(
+          "PATCH",
+          `/api/admin/vendors/onboarding/${onb.id}`,
+          { category: "nope" },
+          { token: adminToken },
+        )
+      ).status,
+    ).toBe(400);
+
+    // Once it's no longer pending, editing is refused.
+    db.prepare("UPDATE vendor_onboarding SET status = 'cancelled' WHERE id = ?").run(onb.id);
+    expect(
+      (
+        await req(
+          "PATCH",
+          `/api/admin/vendors/onboarding/${onb.id}`,
+          { category: "photography" },
+          { token: adminToken },
+        )
+      ).status,
+    ).toBe(400);
+  });
+
   test("admin register mints a pending onboarding + activation email", async () => {
     const adminToken = await bootstrapAdmin();
     const res = await req<{ ok: true; onboarding_id: number }>(

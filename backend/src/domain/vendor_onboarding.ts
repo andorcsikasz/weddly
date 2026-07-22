@@ -149,6 +149,15 @@ export function cancelPendingOnboardingsByEmail(email: string): void {
   ).run(email.trim().toLowerCase());
 }
 
+/** Admin edit of a pending onboarding's category — the category the vendor's
+ *  listing will be created under when they activate. Only touches pending rows.
+ *  Returns rows changed (0 when the row isn't pending). */
+export function updateOnboardingCategory(id: number, category: string): number {
+  return db
+    .prepare("UPDATE vendor_onboarding SET category = ? WHERE id = ? AND status = 'pending'")
+    .run(category, id).changes;
+}
+
 export function getOnboardingById(id: number): VendorOnboardingRow | null {
   return (
     (db.prepare("SELECT * FROM vendor_onboarding WHERE id = ?").get(id) as

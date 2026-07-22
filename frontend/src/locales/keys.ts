@@ -5408,10 +5408,12 @@ export interface LocaleMessages {
       pay_none: string;
       resend: string;
       edit: string;
+      edit_category: string;
       suspend: string;
       reactivate: string;
       delete: string;
       name_required: string;
+      category_required: string;
       edit_title: string;
       field_name: string;
       field_name_help: string;

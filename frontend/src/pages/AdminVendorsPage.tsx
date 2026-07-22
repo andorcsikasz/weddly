@@ -249,13 +249,34 @@ function EditModal({
   const [email, setEmail] = useState(vendor.contact_email ?? "");
   const [phone, setPhone] = useState(vendor.contact_phone ?? "");
   const [vat, setVat] = useState(vendor.vat_number ?? "");
-  // Category lives on the listing; a claimed vendor has one, so seed from the
-  // first of the (usually single-element) categories array.
+  // Category lives on the listing (active) or the onboarding row (pending); a
+  // claimed vendor has one listing, so seed from the first category.
   const initialCategory = vendor.categories[0] ?? "";
   const [category, setCategory] = useState<SupplierCategory | "">(initialCategory);
   const [saving, setSaving] = useState(false);
 
+  // A pending row has no account yet — only its onboarding category is editable
+  // (the category the vendor's listing will be created under on activation).
+  const isPending = vendor.state === "pending";
+
   async function handleSave() {
+    if (isPending) {
+      if (!category) {
+        toast.error(t("admin.vendors.category_required"));
+        return;
+      }
+      setSaving(true);
+      try {
+        await adminVendorMgmtApi.updateOnboarding(vendor.id, { category });
+        onSaved();
+        onClose();
+      } catch (e) {
+        toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
     if (displayName.trim().length === 0) {
       toast.error(t("admin.vendors.name_required"));
       return;
@@ -291,20 +312,28 @@ function EditModal({
           {t("admin.vendors.edit_title")}
         </h2>
         <div className="space-y-4">
-          <div>
-            <label htmlFor="vendor-name" className={labelClass}>
-              {t("admin.vendors.field_name")}
-            </label>
-            <input
-              id="vendor-name"
-              className={inputClass}
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-            />
-            <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
-              {t("admin.vendors.field_name_help")}
+          {isPending ? (
+            // No account yet — just show who we're editing, then the category.
+            <p className="text-sm text-umber-600 dark:text-umber-300">
+              {vendor.display_name}
+              {vendor.contact_email ? ` · ${vendor.contact_email}` : ""}
             </p>
-          </div>
+          ) : (
+            <div>
+              <label htmlFor="vendor-name" className={labelClass}>
+                {t("admin.vendors.field_name")}
+              </label>
+              <input
+                id="vendor-name"
+                className={inputClass}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+              <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
+                {t("admin.vendors.field_name_help")}
+              </p>
+            </div>
+          )}
           <div>
             <label htmlFor="vendor-category" className={labelClass}>
               {t("admin.vendors.field_category")}
@@ -331,53 +360,57 @@ function EditModal({
               ))}
             </select>
           </div>
-          <div>
-            <label htmlFor="vendor-company" className={labelClass}>
-              {t("admin.vendors.field_company")}
-            </label>
-            <input
-              id="vendor-company"
-              className={inputClass}
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-            />
-            <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
-              {t("admin.vendors.field_company_help")}
-            </p>
-          </div>
-          <div>
-            <label htmlFor="vendor-email" className={labelClass}>
-              {t("admin.vendors.field_email")}
-            </label>
-            <input
-              id="vendor-email"
-              className={inputClass}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="vendor-phone" className={labelClass}>
-              {t("admin.vendors.field_phone")}
-            </label>
-            <input
-              id="vendor-phone"
-              className={inputClass}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="vendor-vat" className={labelClass}>
-              {t("admin.vendors.field_vat")}
-            </label>
-            <input
-              id="vendor-vat"
-              className={inputClass}
-              value={vat}
-              onChange={(e) => setVat(e.target.value)}
-            />
-          </div>
+          {!isPending && (
+            <>
+              <div>
+                <label htmlFor="vendor-company" className={labelClass}>
+                  {t("admin.vendors.field_company")}
+                </label>
+                <input
+                  id="vendor-company"
+                  className={inputClass}
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                />
+                <p className="mt-1 text-xs text-umber-500 dark:text-umber-400">
+                  {t("admin.vendors.field_company_help")}
+                </p>
+              </div>
+              <div>
+                <label htmlFor="vendor-email" className={labelClass}>
+                  {t("admin.vendors.field_email")}
+                </label>
+                <input
+                  id="vendor-email"
+                  className={inputClass}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="vendor-phone" className={labelClass}>
+                  {t("admin.vendors.field_phone")}
+                </label>
+                <input
+                  id="vendor-phone"
+                  className={inputClass}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="vendor-vat" className={labelClass}>
+                  {t("admin.vendors.field_vat")}
+                </label>
+                <input
+                  id="vendor-vat"
+                  className={inputClass}
+                  value={vat}
+                  onChange={(e) => setVat(e.target.value)}
+                />
+              </div>
+            </>
+          )}
         </div>
         <div className="mt-5 flex gap-3">
           <Button variant="outline" className="flex-1" onClick={onClose} disabled={saving}>
@@ -626,15 +659,27 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
           {/* Plan + actions */}
           <div className="flex shrink-0 items-center gap-2">
             {vendor.state === "pending" ? (
-              <Button size="sm" onClick={handleResend} disabled={busy}>
-                {busy ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <>
-                    <Mail size={13} /> {t("admin.vendors.resend")}
-                  </>
-                )}
-              </Button>
+              <>
+                <button
+                  type="button"
+                  className={iconBtnClass}
+                  onClick={() => setEditing(true)}
+                  disabled={busy}
+                  aria-label={t("admin.vendors.edit_category")}
+                  title={t("admin.vendors.edit_category")}
+                >
+                  <Pencil size={15} />
+                </button>
+                <Button size="sm" onClick={handleResend} disabled={busy}>
+                  {busy ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <>
+                      <Mail size={13} /> {t("admin.vendors.resend")}
+                    </>
+                  )}
+                </Button>
+              </>
             ) : (
               <>
                 {vendor.plan && (

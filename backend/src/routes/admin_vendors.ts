@@ -28,6 +28,7 @@ import {
   createOnboardingToken,
   getOnboardingById,
   listPendingOnboardings,
+  updateOnboardingCategory,
 } from "../domain/vendor_onboarding";
 import { sendVendorActivationEmail } from "../domain/vendor_waitlist_emails";
 import { addAuditLog } from "../lib/audit";
@@ -159,6 +160,32 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     target_id: account.owner_user_id,
     note: `vendor #${account.id}`,
     ...(categoryChanged ? { after: { category: categoryChanged } } : {}),
+  });
+  return json({ ok: true });
+}
+
+/** Edit a still-pending onboarding's category — the category the vendor's
+ *  listing will inherit on activation. The `:id` here is the vendor_onboarding
+ *  row id, not a vendor_accounts id. */
+async function handleUpdateOnboarding(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+  const row = getOnboardingById(id);
+  if (!row) throw new HttpError(404, "Onboarding not found");
+  if (row.status !== "pending") throw new HttpError(400, "Onboarding is no longer pending");
+
+  const body = await readJson<{ category?: unknown }>(ctx.req);
+  const category = typeof body.category === "string" ? body.category : "";
+  if (!VALID_CATEGORIES.has(category)) throw new HttpError(400, "Pick a valid category");
+
+  updateOnboardingCategory(id, category);
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.vendor_onboarding_update",
+    target_kind: "vendor_onboarding",
+    target_id: id,
+    after: { category },
   });
   return json({ ok: true });
 }
@@ -322,5 +349,6 @@ export function registerAdminVendorRoutes(router: Router) {
   router.post("/api/admin/vendors/:id/remind-incomplete", handleRemindIncomplete, true);
   router.patch("/api/admin/vendors/:id", handleUpdate, true);
   router.delete("/api/admin/vendors/:id", handleDelete, true);
+  router.patch("/api/admin/vendors/onboarding/:id", handleUpdateOnboarding, true);
   router.post("/api/admin/vendors/onboarding/:id/resend", handleResendActivation, true);
 }

@@ -2089,6 +2089,10 @@ export const adminVendorMgmtApi = {
    *  the vendor_onboarding row id, not a vendor_accounts id). */
   resendActivation: (onboardingId: number) =>
     apiFetch<{ ok: true }>("POST", `/api/admin/vendors/onboarding/${onboardingId}/resend`, {}),
+  /** Edit a pending onboarding's category before the vendor activates (id is the
+   *  vendor_onboarding row id). */
+  updateOnboarding: (onboardingId: number, body: { category: string }) =>
+    apiFetch<{ ok: true }>("PATCH", `/api/admin/vendors/onboarding/${onboardingId}`, body),
 };
 
 /** Admin planner management (KEZELÉS → Szervezők). A planner is a user with
