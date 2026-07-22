@@ -366,6 +366,10 @@ export default function PublicVendorPage() {
               <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {detail.gallery_urls.map((url, i) => {
                   const shown = (activeImage ?? detail.hero_image_url) === url;
+                  // Flush inset border (not a floating ring): with overflow-hidden
+                  // it wraps the clipped photo as an even frame that hugs the
+                  // rounded corners. Every thumbnail is framed subtly; the active
+                  // one gets the strong frame.
                   return (
                     <button
                       key={i}
@@ -373,10 +377,10 @@ export default function PublicVendorPage() {
                       onClick={() => setActiveImage(url)}
                       aria-current={shown ? "true" : undefined}
                       aria-label={t("suppliers.detail.gallery_show_aria", { n: i + 1 })}
-                      className={`shrink-0 overflow-hidden rounded-xl ring-2 transition ${
+                      className={`shrink-0 overflow-hidden rounded-xl border-2 transition ${
                         shown
-                          ? "ring-ink-800 dark:ring-paper-100"
-                          : "ring-transparent hover:ring-paper-400 dark:hover:ring-umber-500"
+                          ? "border-ink-800 dark:border-paper-100"
+                          : "border-paper-300 hover:border-paper-400 dark:border-umber-600 dark:hover:border-umber-500"
                       }`}
                     >
                       <img
