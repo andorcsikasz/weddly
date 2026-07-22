@@ -173,7 +173,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       }
       lines.push(block.greeting);
       lines.push("");
-      for (const p of block.paragraphs) lines.push(stripBold(p));
+      for (const p of block.paragraphs) lines.push(paragraphToText(p));
       lines.push("");
       lines.push(`${block.cta}: ${ctaUrl}`);
       // Secondary links used to be HTML-only. For outreach mail one of them is
@@ -338,9 +338,12 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   ): string {
     if (primary) {
       const paras = block.paragraphs
-        .map(
-          (p) =>
-            `<p style="margin:0 0 16px 0;color:${COLOR.enInk};font-size:16px;line-height:1.6;word-break:break-word;hyphens:auto;">${renderBold(p)}</p>`,
+        .map((p) =>
+          renderRichParagraph(p, {
+            paragraph: `margin:0 0 16px 0;color:${COLOR.enInk};font-size:16px;line-height:1.6;word-break:break-word;hyphens:auto;`,
+            list: `margin:0 0 16px 0;padding-left:22px;color:${COLOR.enInk};font-size:16px;line-height:1.6;`,
+            item: "margin:0 0 6px 0;",
+          }),
         )
         .join("");
       const footnote = block.footnote
@@ -382,9 +385,12 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     // because the outer <html lang> only covers the primary block.
     const langLabel = locale === "en" ? "English" : "Magyar";
     const paras = block.paragraphs
-      .map(
-        (p) =>
-          `<p style="margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;line-height:1.55;word-break:break-word;hyphens:auto;">${renderBold(p)}</p>`,
+      .map((p) =>
+        renderRichParagraph(p, {
+          paragraph: `margin:0 0 12px 0;color:${COLOR.enInk};font-size:14px;line-height:1.55;word-break:break-word;hyphens:auto;`,
+          list: `margin:0 0 12px 0;padding-left:20px;color:${COLOR.enInk};font-size:14px;line-height:1.55;`,
+          item: "margin:0 0 4px 0;",
+        }),
       )
       .join("");
     const footnote = block.footnote
@@ -509,6 +515,54 @@ function renderBold(s: string): string {
 /** Strip **bold** markers for the plain-text variant. */
 function stripBold(s: string): string {
   return s.replace(/\*\*(.+?)\*\*/g, "$1");
+}
+
+/** Render one paragraph string into HTML, with support for an embedded bullet
+ *  list: any run of lines beginning with `- ` becomes a `<ul>`, and the
+ *  surrounding non-bullet lines render as normal `<p>`s. This lets a builder
+ *  hand a lead line + bullets as a single paragraph
+ *  (`"Missing:\n- photos\n- a bio"`) without the renderer needing a separate
+ *  list field. Falls back to a plain `<p>` when there are no bullet lines. */
+function renderRichParagraph(
+  p: string,
+  styles: { paragraph: string; list: string; item: string },
+): string {
+  const lines = p.split("\n");
+  if (!lines.some((l) => /^\s*-\s+/.test(l))) {
+    return `<p style="${styles.paragraph}">${renderBold(p)}</p>`;
+  }
+  const out: string[] = [];
+  let bullets: string[] = [];
+  const flush = () => {
+    if (bullets.length === 0) return;
+    out.push(
+      `<ul style="${styles.list}">${bullets
+        .map((b) => `<li style="${styles.item}">${renderBold(b)}</li>`)
+        .join("")}</ul>`,
+    );
+    bullets = [];
+  };
+  for (const line of lines) {
+    const m = /^\s*-\s+(.*)$/.exec(line);
+    if (m) {
+      bullets.push(m[1] ?? "");
+    } else {
+      flush();
+      if (line.trim().length > 0)
+        out.push(`<p style="${styles.paragraph}">${renderBold(line)}</p>`);
+    }
+  }
+  flush();
+  return out.join("");
+}
+
+/** Plain-text form of a paragraph: strip bold, and turn `- item` bullet lines
+ *  into `• item` so the text alternative reads as a list too. */
+function paragraphToText(p: string): string {
+  return p
+    .split("\n")
+    .map((line) => stripBold(line).replace(/^\s*-\s+/, "• "))
+    .join("\n");
 }
 function escapeAttr(s: string): string {
   return escapeHtml(s);

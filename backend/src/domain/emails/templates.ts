@@ -2243,8 +2243,10 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       huMissing.push("foglaltsági naptár");
       enMissing.push("an availability calendar");
     }
-    const huList = huMissing.length > 0 ? joinNaturalList(huMissing, "és") : "néhány rész";
-    const enList = enMissing.length > 0 ? joinNaturalList(enMissing, "and") : "a few sections";
+    // The missing sections render as a bullet list (a `- ` line per item, which
+    // the template turns into a <ul>) rather than an inline comma list: with up
+    // to five items it scans far faster as a checklist the vendor can tick off.
+    const bulletLines = (items: string[]): string => items.map((m) => `- ${m}`).join("\n");
 
     // Five wording variants so consecutive reminders to the same vendor never
     // read the same. Same ask (finish these sections, here's the editor),
@@ -2256,7 +2258,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           preheader: "Néhány rész még hiányzik a profilodról.",
           intro:
             "A profilod már él a Weddly-n, de még nincs teljesen kész. A hiányzó részek nélkül kevesebb pár kattint rád.",
-          missing: (l: string) => `Ezek még hiányoznak: **${l}**.`,
+          missingLead: "Ezek még hiányoznak:",
           close: "Pár perc kitölteni, és sokkal meggyőzőbb lesz a profilod.",
           cta: "Profil befejezése",
         },
@@ -2264,7 +2266,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           preheader: "A few sections are still missing from your profile.",
           intro:
             "Your profile is live on Weddly, but it isn't finished yet. Without the missing pieces, fewer couples click through.",
-          missing: (l: string) => `Still missing: **${l}**.`,
+          missingLead: "Still missing:",
           close: "It takes a couple of minutes and makes your profile far more convincing.",
           cta: "Finish my profile",
         },
@@ -2275,7 +2277,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           preheader: "Valódi párok böngésznek, a teljes profil dönt.",
           intro:
             "Most is valódi párok keresgélnek szolgáltatókat a Weddly-n. Amikor rád találnak, egy teljes profil sokkal meggyőzőbb.",
-          missing: (l: string) => `Nálad még üresen áll: **${l}**.`,
+          missingLead: "Nálad még üresen áll:",
           close: "Egészítsd ki, hogy a legjobb formádat lássák.",
           cta: "Profil kiegészítése",
         },
@@ -2283,7 +2285,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           preheader: "Real couples are browsing, a full profile wins.",
           intro:
             "Real couples are browsing vendors on Weddly right now. When they land on you, a complete profile is far more persuasive.",
-          missing: (l: string) => `Yours is still empty here: **${l}**.`,
+          missingLead: "Yours is still empty here:",
           close: "Fill it in so they see you at your best.",
           cta: "Complete my profile",
         },
@@ -2294,7 +2296,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           preheader: "Egy rendezett profil a legtöbbet hozza.",
           intro:
             "Egy rendezett, teljes profil az első benyomásnál a legtöbbet hozza. A tiéd már majdnem ott van.",
-          missing: (l: string) => `Még ennyi kell hozzá: **${l}**.`,
+          missingLead: "Még ennyi kell hozzá:",
           close: "Told ki gyorsan, és készen állsz a megkeresésekre.",
           cta: "Befejezem most",
         },
@@ -2302,7 +2304,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           preheader: "A tidy profile makes the difference.",
           intro:
             "A tidy, complete profile makes the strongest first impression. Yours is almost there.",
-          missing: (l: string) => `Just this left: **${l}**.`,
+          missingLead: "Just this left:",
           close: "Wrap it up and you're ready for enquiries.",
           cta: "Finish it now",
         },
@@ -2313,7 +2315,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           preheader: "A teljes profilok több megkeresést kapnak.",
           intro:
             "A teljes profilok érezhetően több megkeresést kapnak. A tiédből még hiányzik pár darab.",
-          missing: (l: string) => `Hiányzó részek: **${l}**.`,
+          missingLead: "Hiányzó részek:",
           close: "Ha kitöltöd, nagyobb eséllyel választanak a párok.",
           cta: "Kiegészítem",
         },
@@ -2321,7 +2323,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           preheader: "Full profiles get more enquiries.",
           intro:
             "Complete profiles get noticeably more enquiries. Yours is still missing a few pieces.",
-          missing: (l: string) => `Missing sections: **${l}**.`,
+          missingLead: "Missing sections:",
           close: "Fill them in and more couples will choose you.",
           cta: "Complete it",
         },
@@ -2331,14 +2333,14 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         hu: {
           preheader: "Rövid emlékeztető: a profilod még nincs kész.",
           intro: "Nem húzzuk az időd, csak egy emlékeztető: a profilod még nincs teljesen kész.",
-          missing: (l: string) => `Ennyi van hátra: **${l}**.`,
+          missingLead: "Ennyi van hátra:",
           close: "Fejezd be, amikor ráérsz, és utána nem zavarunk ezzel többet.",
           cta: "Befejezés",
         },
         en: {
           preheader: "Quick reminder: your profile isn't finished.",
           intro: "We'll keep it short, just a reminder that your profile isn't quite finished.",
-          missing: (l: string) => `This is what's left: **${l}**.`,
+          missingLead: "This is what's left:",
           close: "Finish it whenever suits you, and we'll stop nudging about it.",
           cta: "Finish up",
         },
@@ -2352,14 +2354,26 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       hu: {
         preheader: v.hu.preheader,
         greeting: name ? `Szia ${name}!` : "Szia!",
-        paragraphs: [v.hu.intro, v.hu.missing(huList), v.hu.close],
+        paragraphs: [
+          v.hu.intro,
+          huMissing.length > 0
+            ? `${v.hu.missingLead}\n${bulletLines(huMissing)}`
+            : v.hu.missingLead,
+          v.hu.close,
+        ],
         cta: v.hu.cta,
         footnote: "Csak akkor írunk, ha van valami, amivel előrébb léphetsz a Weddly-n.",
       },
       en: {
         preheader: v.en.preheader,
         greeting: name ? `Hi ${name},` : "Hi there,",
-        paragraphs: [v.en.intro, v.en.missing(enList), v.en.close],
+        paragraphs: [
+          v.en.intro,
+          enMissing.length > 0
+            ? `${v.en.missingLead}\n${bulletLines(enMissing)}`
+            : v.en.missingLead,
+          v.en.close,
+        ],
         cta: v.en.cta,
         footnote: "We only email when there's something useful for your Weddly profile.",
       },
