@@ -9,7 +9,11 @@ import "../setup";
 
 import { beforeEach, describe, expect, test } from "bun:test";
 import type { ReviewListResponse, SupplierReview } from "@shared/suppliers";
-import { CUSTOM_REVIEW_TAG_MAX_CHARS, MAX_REVIEW_TAGS } from "@shared/suppliers";
+import {
+  CUSTOM_REVIEW_TAG_MAX_CHARS,
+  MAX_REVIEW_TAGS,
+  REVIEW_AMOUNT_NOTE_MAX_CHARS,
+} from "@shared/suppliers";
 import { db, now } from "../../src/db";
 import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
@@ -284,5 +288,97 @@ describe("free-text review tags (+1)", () => {
     expect(create.status).toBe(201);
     expect(create.data.tags).toHaveLength(MAX_REVIEW_TAGS);
     expect(create.data.tags).not.toContain("one extra");
+  });
+});
+
+describe("review spend (optional paid amount + note)", () => {
+  test("stores amount + currency + note and round-trips", async () => {
+    const { token } = await bootstrapCouple("spend@test.test");
+    const sid = supplierId();
+    const create = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      {
+        rating: 5,
+        amount_paid: 350000,
+        amount_currency: "HUF",
+        amount_note: "napi csomag + album",
+      },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    expect(create.data.amount_paid).toBe(350000);
+    expect(create.data.amount_currency).toBe("HUF");
+    expect(create.data.amount_note).toBe("napi csomag + album");
+
+    const list = await req<ReviewListResponse>("GET", reviewsUrl(sid), undefined, { token });
+    const got = list.data.items.find((i) => i.id === create.data.id);
+    expect(got?.amount_paid).toBe(350000);
+    expect(got?.amount_currency).toBe("HUF");
+    expect(got?.amount_note).toBe("napi csomag + album");
+  });
+
+  test("zero/blank amount stores as null (not shared)", async () => {
+    const { token } = await bootstrapCouple("spend0@test.test");
+    const sid = supplierId();
+    const create = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 4, amount_paid: 0, amount_note: "   " },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    expect(create.data.amount_paid).toBeNull();
+    expect(create.data.amount_currency).toBeNull();
+    expect(create.data.amount_note).toBeNull();
+  });
+
+  test("invalid currency falls back to EUR when an amount is present", async () => {
+    const { token } = await bootstrapCouple("spendcur@test.test");
+    const sid = supplierId();
+    const create = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 5, amount_paid: 1500, amount_currency: "XYZ" },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    expect(create.data.amount_paid).toBe(1500);
+    expect(create.data.amount_currency).toBe("EUR");
+  });
+
+  test("rejects a negative amount and an over-long note", async () => {
+    const { token } = await bootstrapCouple("spendbad@test.test");
+    const sid = supplierId();
+    const neg = await req("POST", reviewsUrl(sid), { rating: 3, amount_paid: -5 }, { token });
+    expect(neg.status).toBe(400);
+    const longNote = await req(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 3, amount_note: "x".repeat(REVIEW_AMOUNT_NOTE_MAX_CHARS + 1) },
+      { token },
+    );
+    expect(longNote.status).toBe(400);
+  });
+
+  test("PATCH clears the currency when the amount is cleared", async () => {
+    const { token } = await bootstrapCouple("spendedit@test.test");
+    const sid = supplierId();
+    const create = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 5, amount_paid: 1000, amount_currency: "EUR" },
+      { token },
+    );
+    expect(create.status).toBe(201);
+    const cleared = await req<SupplierReview>(
+      "PATCH",
+      `/api/reviews/${create.data.id}`,
+      { amount_paid: 0 },
+      { token },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.amount_paid).toBeNull();
+    expect(cleared.data.amount_currency).toBeNull();
   });
 });

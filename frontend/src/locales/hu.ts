@@ -4623,6 +4623,8 @@ const hu: LocaleMessages = {
         submitted: "Értékelés mentve",
         customTagPlaceholder: "Saját címke",
         customTagAdd: "Hozzáad",
+        amountPlaceholder: "Mennyit fizettél",
+        amountNotePlaceholder: "Mit kaptál érte",
         pickStarFirst: "Válassz csillagot",
         empty: "Még nincs értékelés.",
         alreadyReviewed: "Erre a szolgáltatóra már írtatok értékelést.",

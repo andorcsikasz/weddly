@@ -11,6 +11,7 @@ import type { ReviewSummary, SupplierReview } from "@shared/suppliers";
 import { vendorPublicId } from "@shared/vendor_slug";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { reviewApi, vendorListingApi } from "../../lib/endpoints";
+import { ReviewSpendLine } from "../../components/ReviewSpendLine";
 import { useT } from "../../lib/i18n";
 import { reviewTagLabel } from "../../lib/reviewTags";
 import { useDocumentTitle } from "../../lib/seo";
@@ -298,6 +299,7 @@ export default function VendorReviewsPage() {
                   {r.body}
                 </p>
               )}
+              <ReviewSpendLine review={r} locale={locale} />
               {r.tags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {r.tags.map((tag) => (

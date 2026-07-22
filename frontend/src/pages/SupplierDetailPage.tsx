@@ -78,7 +78,10 @@ import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { ComposeDialog } from "../components/OutreachInbox";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
+import { ReviewSpendFields } from "../components/ReviewSpendFields";
+import { ReviewSpendLine } from "../components/ReviewSpendLine";
 import { ReviewTagPicker } from "../components/ReviewTagPicker";
+import { localeCurrency } from "../lib/format";
 import { reviewTagLabel } from "../lib/reviewTags";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
@@ -94,7 +97,7 @@ import {
   supplierBookingApi,
   supplierCommentApi,
 } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import {
   readSaved as readSavedStore,
   setSaved as setSavedStore,
@@ -827,6 +830,8 @@ function ReviewsSection({
   const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [body, setBody] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [amount, setAmount] = useState<number | null>(null);
+  const [amountNote, setAmountNote] = useState("");
   const [published, setPublished] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -840,10 +845,15 @@ function ReviewsSection({
         rating,
         body: body.trim() || null,
         tags,
+        amount_paid: amount,
+        amount_currency: localeCurrency(locale as Locale),
+        amount_note: amountNote.trim() || null,
         ...(isAdmin ? { published } : {}),
       });
       setBody("");
       setTags([]);
+      setAmount(null);
+      setAmountNote("");
       setRating(0);
       setPublished(false);
       toast.success(t("suppliers.detail.reviews.submitted"));
@@ -919,6 +929,14 @@ function ReviewsSection({
             rows={4}
             value={body}
             onChange={(e) => setBody(e.target.value)}
+          />
+          <ReviewSpendFields
+            amount={amount}
+            note={amountNote}
+            onAmount={setAmount}
+            onNote={setAmountNote}
+            locale={locale as Locale}
+            t={t}
           />
           <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
           <div className="flex items-center justify-between">
@@ -997,6 +1015,7 @@ function ReviewsSection({
                   {r.body}
                 </p>
               )}
+              <ReviewSpendLine review={r} locale={locale as Locale} />
               {r.tags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {r.tags.map((tag) => (

@@ -710,6 +710,13 @@ export function reviewTagsForCategory(category: SupplierCategory): readonly Supp
 }
 export const REVIEW_BODY_MAX_CHARS = 4000;
 export const COMMENT_BODY_MAX_CHARS = 1500;
+/** Cap for the optional "what you got for the price" note on a review — short
+ *  by design (it's a caption next to a figure, not prose). */
+export const REVIEW_AMOUNT_NOTE_MAX_CHARS = 80;
+/** Sanity ceiling on the optional paid amount (whole currency units). Guards a
+ *  fat-fingered figure from becoming a wild outlier; ~1 billion covers any real
+ *  wedding line item in any supported currency. */
+export const REVIEW_AMOUNT_MAX = 1_000_000_000;
 
 export type CommentVisibility = "admin_internal" | "public" | "vendor_only";
 export type BookingStatus =
@@ -733,6 +740,13 @@ export interface SupplierReview {
    *  known member has an i18n label; a free-text entry renders verbatim. Always
    *  render via `reviewTagLabel`, never `t("suppliers.reviewTags.<tag>")`. */
   tags: string[];
+  /** Optional "what it cost": a whole-unit integer amount in `amount_currency`,
+   *  captured at write time so it reads unambiguously for any later viewer. Both
+   *  null when the reviewer didn't share a price. */
+  amount_paid: number | null;
+  amount_currency: string | null;
+  /** Optional short caption for what the amount bought ("full day + album"). */
+  amount_note: string | null;
   published: boolean;
   /** True when the review is authored by an admin under the "Weddly editors"
    *  voice (couple_id null, author_kind 'admin'). Drives the editorial badge. */
@@ -756,6 +770,13 @@ export interface CreateReviewBody {
   rating: number;
   body?: string | null;
   tags?: string[];
+  /** Optional paid amount (whole units of `amount_currency`). */
+  amount_paid?: number | null;
+  /** ISO code the amount is in; defaults server-side from the reviewer's
+   *  locale/couple when omitted. */
+  amount_currency?: string | null;
+  /** Optional short "what you got for the price" caption. */
+  amount_note?: string | null;
   published?: boolean;
 }
 

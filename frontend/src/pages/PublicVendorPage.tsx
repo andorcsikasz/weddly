@@ -18,13 +18,16 @@ import { BadgeCheck, ExternalLink, Globe, Mail, MapPin, Phone, Star, Users } fro
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { ReviewSpendFields } from "../components/ReviewSpendFields";
+import { ReviewSpendLine } from "../components/ReviewSpendLine";
 import { ReviewTagPicker } from "../components/ReviewTagPicker";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import { getVisitorToken, setVisitorToken, supplierApi, visitorApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { localeCurrency } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
 import { reviewTagLabel } from "../lib/reviewTags";
 
 function StarRow({ value, size = 14 }: { value: number; size?: number }) {
@@ -95,6 +98,8 @@ function PublicReviewComposer({
   const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [body, setBody] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [amount, setAmount] = useState<number | null>(null);
+  const [amountNote, setAmountNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -118,6 +123,9 @@ function PublicReviewComposer({
         rating,
         body: body.trim() || null,
         tags,
+        amount_paid: amount,
+        amount_currency: localeCurrency(locale),
+        amount_note: amountNote.trim() || null,
       });
       setDone(true);
       onSubmitted();
@@ -174,6 +182,14 @@ function PublicReviewComposer({
             rows={4}
             value={body}
             onChange={(e) => setBody(e.target.value)}
+          />
+          <ReviewSpendFields
+            amount={amount}
+            note={amountNote}
+            onAmount={setAmount}
+            onNote={setAmountNote}
+            locale={locale}
+            t={t}
           />
           <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
           <div className="flex items-center justify-between gap-3">
@@ -674,6 +690,7 @@ function PublicReviewCard({
           {review.body}
         </p>
       )}
+      <ReviewSpendLine review={review} locale={locale as Locale} />
       {review.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {review.tags.map((tag) => (

@@ -49,6 +49,11 @@ export interface ReviewRow {
   author_visitor_id: number | null;
   rating: number;
   body: string | null;
+  /** Optional "what it cost": whole-unit amount + its currency + a short note.
+   *  All null when the reviewer didn't share a price. */
+  amount_paid: number | null;
+  amount_currency: string | null;
+  amount_note: string | null;
   published: number;
   /** 1 = engagement-proof-verified couple review (drives the "Verified" badge). */
   verified: number;
@@ -103,6 +108,9 @@ export function toReview(
     rating: Math.max(1, Math.min(5, Math.trunc(row.rating))) as 1 | 2 | 3 | 4 | 5,
     body: row.body,
     tags,
+    amount_paid: row.amount_paid,
+    amount_currency: row.amount_currency,
+    amount_note: row.amount_note,
     published: Boolean(row.published),
     editorial: kind === "admin",
     verified: Boolean(row.verified),
@@ -256,6 +264,10 @@ export interface CreateReviewArgs {
   rating: 1 | 2 | 3 | 4 | 5;
   body: string | null;
   tags: string[];
+  /** Optional "what it cost" — whole-unit amount, its currency, a short note. */
+  amountPaid: number | null;
+  amountCurrency: string | null;
+  amountNote: string | null;
   published: boolean;
   /** Engagement-proof "Verified" badge — only true for engaged couples. */
   verified: boolean;
@@ -270,8 +282,9 @@ export function createReview(args: CreateReviewArgs): SupplierReview {
       .prepare(
         `INSERT INTO supplier_reviews
            (supplier_id, author_user_id, couple_id, author_kind, author_visitor_id,
-            rating, body, published, verified, flagged, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            rating, body, amount_paid, amount_currency, amount_note,
+            published, verified, flagged, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         args.supplierId,
@@ -281,6 +294,9 @@ export function createReview(args: CreateReviewArgs): SupplierReview {
         args.visitorId,
         args.rating,
         args.body,
+        args.amountPaid,
+        args.amountCurrency,
+        args.amountNote,
         args.published ? 1 : 0,
         args.verified ? 1 : 0,
         args.flagged ? 1 : 0,
@@ -305,6 +321,9 @@ export interface UpdateReviewArgs {
   rating?: 1 | 2 | 3 | 4 | 5;
   body?: string | null;
   tags?: string[];
+  amountPaid?: number | null;
+  amountCurrency?: string | null;
+  amountNote?: string | null;
   published?: boolean;
   flagged?: boolean;
 }
@@ -324,6 +343,18 @@ export function updateReview(
   if (args.body !== undefined) {
     sets.push("body = ?");
     params.push(args.body);
+  }
+  if (args.amountPaid !== undefined) {
+    sets.push("amount_paid = ?");
+    params.push(args.amountPaid);
+  }
+  if (args.amountCurrency !== undefined) {
+    sets.push("amount_currency = ?");
+    params.push(args.amountCurrency);
+  }
+  if (args.amountNote !== undefined) {
+    sets.push("amount_note = ?");
+    params.push(args.amountNote);
   }
   if (args.published !== undefined) {
     sets.push("published = ?");

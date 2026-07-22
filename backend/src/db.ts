@@ -1918,6 +1918,18 @@ db.exec(
   "CREATE INDEX IF NOT EXISTS idx_supplier_reviews_flagged ON supplier_reviews(flagged) WHERE flagged = 1",
 );
 
+// ── Optional "what it cost" on a review ──────────────────────────────────────
+// A reviewer may (optionally) share what they paid and what that bought, so a
+// couple reading reviews gets a price signal, not just a star rating. `amount_paid`
+// is a whole-unit integer in `amount_currency` (same whole-unit model as the
+// budget — no minor units), captured at write time so it stays unambiguous for
+// every later viewer regardless of their own currency. `amount_note` is the
+// short "napi csomag + album" free text. All nullable — reviews without a price
+// are the norm.
+addColumnIfMissing("supplier_reviews", "amount_paid", "amount_paid INTEGER");
+addColumnIfMissing("supplier_reviews", "amount_currency", "amount_currency TEXT");
+addColumnIfMissing("supplier_reviews", "amount_note", "amount_note TEXT");
+
 // ── Verified-visitor content anchoring ───────────────────────────────────────
 // community_suppliers.submitter_user_id and supplier_reviews.author_user_id are
 // NOT-NULL FKs to users(id). A verified visitor is NOT a user, and the schema is

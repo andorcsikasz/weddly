@@ -7,8 +7,14 @@
 // row). The partial unique index on (supplier_id, couple_id) WHERE couple_id
 // IS NOT NULL enforces "one review per couple per supplier".
 
+import { type Currency, isCurrency } from "@shared/currency";
 import type { CreateReviewBody, SupplierReview } from "@shared/suppliers";
-import { normaliseReviewTags, REVIEW_BODY_MAX_CHARS } from "@shared/suppliers";
+import {
+  normaliseReviewTags,
+  REVIEW_AMOUNT_MAX,
+  REVIEW_AMOUNT_NOTE_MAX_CHARS,
+  REVIEW_BODY_MAX_CHARS,
+} from "@shared/suppliers";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
@@ -99,6 +105,37 @@ function parseTags(raw: unknown): string[] {
   });
 }
 
+/** Optional paid amount → a whole-unit integer, or null when not shared. 0 and
+ *  blank both read as "not shared" so an untouched field never stores a 0. */
+function parseAmount(raw: unknown): number | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) throw new HttpError(400, "amount_paid must be a number");
+  const int = Math.trunc(n);
+  if (int < 0) throw new HttpError(400, "amount_paid must be >= 0");
+  if (int > REVIEW_AMOUNT_MAX) throw new HttpError(400, "amount_paid too large");
+  return int === 0 ? null : int;
+}
+
+/** Optional "what you got for the price" caption → trimmed string or null. */
+function parseAmountNote(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "string") throw new HttpError(400, "amount_note must be a string");
+  const trimmed = raw.replace(/\s+/gu, " ").trim();
+  if (!trimmed) return null;
+  if (trimmed.length > REVIEW_AMOUNT_NOTE_MAX_CHARS) {
+    throw new HttpError(400, `amount_note too long (max ${REVIEW_AMOUNT_NOTE_MAX_CHARS} chars)`);
+  }
+  return trimmed;
+}
+
+/** Currency to store alongside a shared amount: the client's if valid, else a
+ *  neutral EUR fallback. Null when there's no amount (the currency is moot). */
+function resolveAmountCurrency(amount: number | null, raw: unknown): Currency | null {
+  if (amount === null) return null;
+  return isCurrency(raw) ? raw : "EUR";
+}
+
 async function handleList(ctx: Ctx): Promise<Response> {
   // Reads are open to any authed viewer now that the detail page serves
   // couples. Admins see every review (including unpublished drafts) for
@@ -154,6 +191,9 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   const rating = parseRating(body.rating);
   const reviewBody = parseBody(body.body);
   const tags = parseTags(body.tags);
+  const amountPaid = parseAmount(body.amount_paid);
+  const amountCurrency = resolveAmountCurrency(amountPaid, body.amount_currency);
+  const amountNote = parseAmountNote(body.amount_note);
 
   let coupleId: number | null;
   let authorKind: ReviewAuthorKind;
@@ -206,6 +246,9 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
       rating,
       body: reviewBody,
       tags,
+      amountPaid,
+      amountCurrency,
+      amountNote,
       published,
       verified,
       flagged,
@@ -261,6 +304,9 @@ async function handleVisitorCreate(ctx: Ctx): Promise<Response> {
   const rating = parseRating(body.rating);
   const reviewBody = parseBody(body.body);
   const tags = parseTags(body.tags);
+  const amountPaid = parseAmount(body.amount_paid);
+  const amountCurrency = resolveAmountCurrency(amountPaid, body.amount_currency);
+  const amountNote = parseAmountNote(body.amount_note);
 
   // Same-person guard: if a Weddly account with this exact email already
   // reviewed this supplier, don't let the visitor path post a second one.
@@ -281,6 +327,9 @@ async function handleVisitorCreate(ctx: Ctx): Promise<Response> {
       rating,
       body: reviewBody,
       tags,
+      amountPaid,
+      amountCurrency,
+      amountNote,
       published: true,
       verified: false,
       flagged,
@@ -319,6 +368,13 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   if (body.rating !== undefined) patch.rating = parseRating(body.rating);
   if (body.body !== undefined) patch.body = parseBody(body.body);
   if (body.tags !== undefined) patch.tags = parseTags(body.tags);
+  if (body.amount_paid !== undefined) {
+    const amt = parseAmount(body.amount_paid);
+    patch.amountPaid = amt;
+    // Clearing the amount clears its currency; setting it (re)resolves one.
+    patch.amountCurrency = resolveAmountCurrency(amt, body.amount_currency);
+  }
+  if (body.amount_note !== undefined) patch.amountNote = parseAmountNote(body.amount_note);
   if (body.published !== undefined) {
     // Draft/publish is a moderation lever — couple reviews are always live.
     if (!isAdmin) throw new HttpError(403, "Only admins may change published");

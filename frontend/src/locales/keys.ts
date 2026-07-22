@@ -5181,6 +5181,10 @@ export interface LocaleMessages {
         customTagPlaceholder: string;
         /** Label on the button that commits the typed free-text tag. */
         customTagAdd: string;
+        /** Placeholder in the optional "what you paid" amount field. */
+        amountPlaceholder: string;
+        /** Placeholder in the optional "what you got for the price" note. */
+        amountNotePlaceholder: string;
         /** Tooltip shown on the disabled Beküldés button when the rater
          *  hasn't picked a star yet. */
         pickStarFirst: string;

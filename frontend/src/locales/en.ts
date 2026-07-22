@@ -4575,6 +4575,8 @@ const en: LocaleMessages = {
         submitted: "Review saved",
         customTagPlaceholder: "Add your own",
         customTagAdd: "Add",
+        amountPlaceholder: "What you paid",
+        amountNotePlaceholder: "What you got for it",
         pickStarFirst: "Pick a star first",
         empty: "No reviews yet.",
         alreadyReviewed: "Your couple already reviewed this supplier.",
