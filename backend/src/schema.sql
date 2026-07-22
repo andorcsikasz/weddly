@@ -2073,6 +2073,56 @@ CREATE INDEX IF NOT EXISTS idx_vccs_sent_at ON vendor_claim_campaign_sends(sent_
 -- cannot resurrect a suppressed address.
 CREATE TABLE IF NOT EXISTS email_optouts (
   email TEXT PRIMARY KEY,                                      -- lowercased, trimmed
-  reason TEXT NOT NULL,                                        -- 'vendor_claim_campaign' | 'manual'
+  reason TEXT NOT NULL,                                        -- 'vendor_claim_campaign' | 'vendor_review_campaign' | 'manual'
   created_at INTEGER NOT NULL
 );
+
+-- ── Vendor review-invite campaign ───────────────────────────────────────────
+-- Sibling of the claim-invite campaign above, but the mirror image of it:
+-- it writes to the CLAIMED half of the directory (vendors who already run a
+-- Weddly account) to tell them supplier reviews are now open to anyone, and
+-- hands each one their own public review link to forward to past clients. The
+-- ask is "collect a few honest 5-star reviews", not "take over your profile".
+--
+-- Kept parallel rather than folded into vendor_claim_campaigns because the
+-- audience inverts (claimed vs unclaimed, every recipient HAS a users row), the
+-- conversion metric is "reviews landed" not "listing claimed", and the reminder
+-- gate is stricter (not-clicked AND not-opened). Shares email_optouts for
+-- suppression.
+CREATE TABLE IF NOT EXISTS vendor_review_campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL UNIQUE,                                   -- operator-facing handle, e.g. 'reviews-open-2026-07'
+  status TEXT NOT NULL DEFAULT 'paused',                       -- 'paused' | 'running' | 'done'
+  daily_cap INTEGER NOT NULL DEFAULT 50,                       -- rolling-24h send ceiling; paced by the worker
+  country TEXT,                                                -- ISO alpha-2 segment filter; NULL = every country
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+-- One row per recipient ADDRESS per campaign. `review_url` is the vendor's own
+-- public page, stored so the tracked click-redirect knows where to land without
+-- recomputing the slug. Unlike the claim campaign there is no bearer token in
+-- the mail: the CTA carries a signed <sendId>.<hmac> that resolves back here.
+CREATE TABLE IF NOT EXISTS vendor_review_campaign_sends (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id INTEGER NOT NULL REFERENCES vendor_review_campaigns(id) ON DELETE CASCADE,
+  vendor_account_id INTEGER NOT NULL,                          -- targets vendor_accounts.id; documented invariant, no FK
+  listing_id TEXT NOT NULL,                                    -- the claimed listings.id ('v{account_id}')
+  email TEXT NOT NULL,                                         -- lowercased account-owner email as of send time
+  locale TEXT NOT NULL,                                        -- 'hu' | 'en'
+  country TEXT,                                                -- resolved at send time, for the admin breakdown
+  review_url TEXT NOT NULL,                                    -- the vendor's public page; the tracked CTA destination
+  status TEXT NOT NULL DEFAULT 'queued',                       -- 'queued' | 'sent' | 'failed' | 'skipped'
+  error TEXT,
+  sent_at INTEGER,
+  opened_at INTEGER,                                           -- tracking pixel; unreliable upward (Apple MPP prefetch)
+  clicked_at INTEGER,                                          -- redirect hit; the trustworthy engagement signal
+  reminder_sent_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vrcs_campaign_email ON vendor_review_campaign_sends(campaign_id, email);
+CREATE INDEX IF NOT EXISTS idx_vrcs_campaign_status ON vendor_review_campaign_sends(campaign_id, status);
+CREATE INDEX IF NOT EXISTS idx_vrcs_listing ON vendor_review_campaign_sends(listing_id);
+-- Drives both the pacing query (sends in the last 24h) and the reminder sweep.
+CREATE INDEX IF NOT EXISTS idx_vrcs_sent_at ON vendor_review_campaign_sends(sent_at);

@@ -831,8 +831,15 @@ const en: LocaleMessages = {
       cold_start_note: "The average appears on your public profile after 3 published reviews.",
       empty_title: "No reviews yet",
       empty_body:
-        "Only verified couples can review: ones who actually picked you during their planning. As soon as the first one lands, you will see it here.",
+        "Reviews are now open to anyone you've worked with, no Weddly account needed. Share your link above with a few past clients and your first ratings will show up here.",
       load_more: "Load more",
+      share_title: "Collect reviews",
+      share_body:
+        "Reviews are now open to anyone, no Weddly account needed. Send your link to a few favourite past clients and ask for an honest rating. A handful of 5-star reviews is the best reference couples can see.",
+      share_copy: "Copy link",
+      share_copied: "Copied",
+      share_whatsapp: "WhatsApp",
+      share_email: "Email",
     },
     billing: {
       page_title: "Billing",
@@ -4697,6 +4704,7 @@ const en: LocaleMessages = {
     nav_users: "Users",
     nav_vendors: "Vendors",
     nav_vendor_campaign: "Invite campaign",
+    nav_vendor_review_campaign: "Review campaign",
     nav_planners: "Planners",
     nav_waitlist: "Vendor waitlist",
     nav_planner_waitlist: "Planner waitlist",
@@ -5911,6 +5919,15 @@ const en: LocaleMessages = {
     campaign_batch_confirm_cta: "Send",
     campaign_err_cap: "The daily cap must be a positive whole number.",
     campaign_err_email: "Enter a valid email address.",
+    // Review-invite campaign (reuses most campaign_* strings above).
+    review_campaign_title: "Review campaign",
+    review_campaign_subtitle:
+      "Tells claimed vendors that reviews are open to anyone now, and hands each one their own link to collect a few 5-star reviews from past clients.",
+    review_campaign_targets_hint:
+      "Claimed, live listings whose owner account is active and reachable, minus anyone suppressed or already written to in this campaign.",
+    review_campaign_stat_collected: "Collected",
+    review_campaign_send_collected: "Got a review",
+    review_campaign_batch_sent: "{n} notes sent.",
     email_list_title: "Email list",
     email_list_subtitle: "{n} email addresses across all sources",
     email_list_load_error: "Failed to load the email list. Please try again.",

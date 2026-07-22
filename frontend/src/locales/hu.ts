@@ -838,8 +838,15 @@ const hu: LocaleMessages = {
       cold_start_note: "Az átlag 3 megjelent vélemény után jelenik meg a nyilvános adatlapodon.",
       empty_title: "Még nincs véleményed",
       empty_body:
-        "Csak igazolt párok írhatnak véleményt: olyanok, akik a tervezésük során ténylegesen kiválasztottak téged. Amint megérkezik az első, itt látod.",
+        "A vélemények mostantól bárkitől jöhetnek, akivel dolgoztál, Weddly-fiók nélkül is. Oszd meg a fenti linked pár korábbi pároddal, és az első értékelések itt fognak megjelenni.",
       load_more: "Továbbiak betöltése",
+      share_title: "Gyűjts véleményeket",
+      share_body:
+        "A vélemények mostantól bárkitől jöhetnek, Weddly-fiók nélkül is. Küldd el a linked pár kedvenc korábbi párodnak, és kérj őszinte értékelést. Néhány 5 csillagos vélemény a legjobb ajánlólevél, amit a párok láthatnak.",
+      share_copy: "Link másolása",
+      share_copied: "Másolva",
+      share_whatsapp: "WhatsApp",
+      share_email: "E-mail",
     },
     billing: {
       page_title: "Számlázás",
@@ -4745,6 +4752,7 @@ const hu: LocaleMessages = {
     nav_users: "Felhasználók",
     nav_vendors: "Szolgáltatók",
     nav_vendor_campaign: "Meghívó kampány",
+    nav_vendor_review_campaign: "Vélemény kampány",
     nav_planners: "Szervezők",
     nav_waitlist: "Szolgáltatói várólista",
     nav_planner_waitlist: "Szervezői várólista",
@@ -5969,6 +5977,15 @@ const hu: LocaleMessages = {
     campaign_batch_confirm_cta: "Kiküldés",
     campaign_err_cap: "A napi limit pozitív egész szám legyen.",
     campaign_err_email: "Adj meg egy érvényes email címet.",
+    // Vélemény kampány (a legtöbb campaign_* kulcsot újrahasználja).
+    review_campaign_title: "Vélemény kampány",
+    review_campaign_subtitle:
+      "Szól a szolgáltatóknak, hogy a vélemények mostantól bárkitől jöhetnek, és mindegyiknek elküldi a saját linkjét, amivel pár 5 csillagos értékelést gyűjthet a korábbi pároktól.",
+    review_campaign_targets_hint:
+      "Átvett, élő hirdetések, amelyek tulajdonosi fiókja aktív és elérhető, kivéve a letiltottakat és akiknek ebben a kampányban már írtunk.",
+    review_campaign_stat_collected: "Beérkezett",
+    review_campaign_send_collected: "Kapott értékelést",
+    review_campaign_batch_sent: "{n} levél elküldve.",
     email_list_title: "Email lista",
     email_list_subtitle: "{n} email cím az összes forrásból",
     email_list_load_error: "Nem sikerult betolteni az email listat. Probald ujra.",

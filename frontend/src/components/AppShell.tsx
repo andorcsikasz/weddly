@@ -32,6 +32,7 @@ import {
   Plane,
   Send,
   ShieldCheck,
+  Star,
   Store,
   Sun,
   UserCog,
@@ -332,6 +333,13 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     labelKey: "admin.nav_vendor_campaign",
     // no tabKey, goes to the phone More sheet
     icon: <Send size={18} />,
+    group: "manage",
+  },
+  {
+    to: "/app/admin/vendor-review-campaign",
+    labelKey: "admin.nav_vendor_review_campaign",
+    // no tabKey, goes to the phone More sheet
+    icon: <Star size={18} />,
     group: "manage",
   },
   {

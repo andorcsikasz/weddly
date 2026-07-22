@@ -27,6 +27,14 @@ import {
   verifyCampaignOptOutToken,
   verifyCampaignPixelToken,
 } from "../domain/vendor_campaign";
+import {
+  getReviewSendById,
+  markReviewCampaignClicked,
+  markReviewCampaignOpened,
+  verifyReviewClickToken,
+  verifyReviewOptOutToken,
+  verifyReviewPixelToken,
+} from "../domain/vendor_review_campaign";
 import { type Ctx, HttpError, type Router } from "../lib/http";
 
 // 1×1 transparent GIF (43 bytes, canonical minimum).
@@ -126,6 +134,43 @@ function handleCampaignOptOutPost(ctx: Ctx): Response {
   return new Response(null, { status: 204 });
 }
 
+// ── Review-invite campaign ──────────────────────────────────────────────────
+// Same shape as the claim campaign above but against vendor_review_campaign_sends.
+// The CTA token is a signed <sendId>.<hmac> (not a bearer credential), so the
+// redirect just stamps the click and sends the vendor to their own public page.
+
+function handleReviewRedirect(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const sendId = verifyReviewClickToken(token);
+  const dest = sendId != null ? markReviewCampaignClicked(sendId) : null;
+  // No live destination (unknown/forged token) → the public directory rather
+  // than a dead end.
+  return Response.redirect(dest ?? `${CONFIG.frontendBaseUrl}/vendors`, 302);
+}
+
+function reviewOptOutEmailFromToken(token: string): string | null {
+  const sendId = verifyReviewOptOutToken(token);
+  if (sendId == null) return null;
+  return getReviewSendById(sendId)?.email ?? null;
+}
+
+function handleReviewOptOut(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const email = reviewOptOutEmailFromToken(token);
+  if (email) addOptOut(email, "vendor_review_campaign");
+  return new Response(optOutHtml(email != null), {
+    status: email ? 200 : 404,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+function handleReviewOptOutPost(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const email = reviewOptOutEmailFromToken(token);
+  if (email) addOptOut(email, "vendor_review_campaign");
+  return new Response(null, { status: 204 });
+}
+
 /** Static HTML, deliberately bilingual: this page is reached from a cold mail
  *  in either language and costs nothing to render both ways. No user input is
  *  interpolated, so there is nothing to escape. */
@@ -180,4 +225,16 @@ export function registerEmailTrackRoutes(router: Router): void {
   // recipient gets the confirmation instead of the React 404.
   router.get("/email-optout/:token", handleCampaignOptOut);
   router.post("/email-optout/:token", handleCampaignOptOutPost);
+
+  // Review-invite campaign: sibling pixel, click redirect and opt-out.
+  router.get("/api/emails/track/review-campaign", (ctx) => {
+    const sendId = verifyReviewPixelToken(ctx.url.searchParams.get("t") ?? "");
+    if (sendId != null) markReviewCampaignOpened(sendId);
+    return pixelResponse();
+  });
+  router.get("/r/vendor-review/:token", handleReviewRedirect);
+  router.get("/api/emails/optout-review/:token", handleReviewOptOut);
+  router.post("/api/emails/optout-review/:token", handleReviewOptOutPost);
+  router.get("/review-optout/:token", handleReviewOptOut);
+  router.post("/review-optout/:token", handleReviewOptOutPost);
 }

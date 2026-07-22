@@ -4,14 +4,93 @@
 // viewer), so there is no vendor-specific backend surface. Responding to
 // reviews is a deliberate non-goal for v1 — this page is about visibility.
 
-import { ExternalLink, RefreshCw, Star } from "lucide-react";
+import { Check, Copy, ExternalLink, Mail, MessageCircle, RefreshCw, Star } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { ReviewSummary, SupplierReview } from "@shared/suppliers";
+import { vendorPublicId } from "@shared/vendor_slug";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { reviewApi, vendorListingApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
+import { reviewTagLabel } from "../../lib/reviewTags";
 import { useDocumentTitle } from "../../lib/seo";
+
+/** The vendor's "reviews are open, go collect some" card. Reviews are now open
+ *  to anyone with a verified email, so the fastest way to a few 5-star ratings
+ *  is the vendor forwarding their own public link to past clients. Gives them
+ *  the link, a one-tap copy, and pre-filled WhatsApp/email shares (the `?review=1`
+ *  variant lands the client straight on the composer). */
+function CollectReviewsCard({
+  listingId,
+  listingName,
+}: {
+  listingId: string;
+  listingName: string;
+}) {
+  const { t, locale } = useT();
+  const [copied, setCopied] = useState(false);
+
+  const reviewUrl = `${window.location.origin}/vendors/${vendorPublicId(listingId, listingName)}`;
+  const shareUrl = `${reviewUrl}?review=1`;
+  const msg =
+    locale === "hu"
+      ? `Szia! Ha elégedett voltál a közös munkánkkal, sokat segítenél egy rövid értékeléssel a Weddly-n: ${shareUrl}`
+      : `Hi! If you enjoyed working with us, a short review on Weddly would mean a lot: ${shareUrl}`;
+  const subject = locale === "hu" ? "Egy rövid értékelés?" : "A quick review?";
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(msg)}`;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard blocked (or unavailable in tests) — the field stays selectable */
+    }
+  };
+
+  return (
+    <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
+      <div className="flex flex-col gap-1">
+        <h2 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+          {t("vendor.reviews.share_title")}
+        </h2>
+        <p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.reviews.share_body")}</p>
+      </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          type="text"
+          readOnly
+          value={reviewUrl}
+          onFocus={(e) => e.currentTarget.select()}
+          className="input flex-1 font-mono text-xs"
+          aria-label={t("vendor.reviews.share_title")}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => void copy()} className="btn-primary">
+            {copied ? (
+              <Check size={15} aria-hidden="true" />
+            ) : (
+              <Copy size={15} aria-hidden="true" />
+            )}
+            <span>
+              {copied ? t("vendor.reviews.share_copied") : t("vendor.reviews.share_copy")}
+            </span>
+          </button>
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost">
+            <MessageCircle size={15} aria-hidden="true" />
+            <span>{t("vendor.reviews.share_whatsapp")}</span>
+          </a>
+          <a href={mailtoUrl} className="btn-ghost">
+            <Mail size={15} aria-hidden="true" />
+            <span>{t("vendor.reviews.share_email")}</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -37,6 +116,7 @@ export default function VendorReviewsPage() {
   useDocumentTitle(t("vendor.reviews.page_title"));
 
   const [listingId, setListingId] = useState<string | null>(null);
+  const [listingName, setListingName] = useState<string>("");
   const [items, setItems] = useState<SupplierReview[]>([]);
   const [summary, setSummary] = useState<ReviewSummary | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -51,6 +131,7 @@ export default function VendorReviewsPage() {
       const view = await vendorListingApi.me();
       const id = view.listing.id;
       setListingId(id);
+      setListingName(view.listing.name);
       const page = await reviewApi.list(id);
       setItems(page.items);
       setSummary(page.summary);
@@ -123,6 +204,8 @@ export default function VendorReviewsPage() {
         </h1>
         <p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.reviews.page_body")}</p>
       </header>
+
+      {listingId && <CollectReviewsCard listingId={listingId} listingName={listingName} />}
 
       {/* Aggregate header — average only appears past the cold-start gate
           (>= 3 published reviews), matching the public card. */}
@@ -222,7 +305,7 @@ export default function VendorReviewsPage() {
                       key={tag}
                       className="rounded-full bg-paper-100 px-2 py-0.5 text-xs text-ink-700 dark:bg-umber-800 dark:text-paper-200"
                     >
-                      {t(`suppliers.reviewTags.${tag}`)}
+                      {reviewTagLabel(tag, t)}
                     </span>
                   ))}
                 </div>

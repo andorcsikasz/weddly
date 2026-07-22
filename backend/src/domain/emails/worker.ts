@@ -24,6 +24,11 @@ import { insertCoupleNotification, listActionableTimelineTasks } from "../notifi
 import { type PlannerProfileRow, sendPlannerProfileReminder } from "../planner_profile";
 import { getCampaignRow, sendCampaignBatch, sendCampaignReminders } from "../vendor_campaign";
 import {
+  getCampaignRow as getReviewCampaignRow,
+  sendCampaignBatch as sendReviewCampaignBatch,
+  sendCampaignReminders as sendReviewCampaignReminders,
+} from "../vendor_review_campaign";
+import {
   isVendorListingIncomplete,
   sendVendorIncompleteReminder,
   vendorListingMissing,
@@ -1370,12 +1375,36 @@ export async function runCampaignSweep(
   return { invites, reminders };
 }
 
+/** Pace out every running review-invite campaign, then fire the one-shot 7-day
+ *  reminders. Sibling of runCampaignSweep against the review-campaign tables. */
+export async function runReviewCampaignSweep(
+  ts: number = now(),
+): Promise<{ invites: number; reminders: number }> {
+  let invites = 0;
+  const running = db
+    .prepare("SELECT * FROM vendor_review_campaigns WHERE status = 'running' ORDER BY id ASC")
+    .all() as Array<{ id: number; daily_cap: number }>;
+  for (const row of running) {
+    const campaign = getReviewCampaignRow(row.id);
+    if (!campaign) continue;
+    invites += await sendReviewCampaignBatch(
+      campaign,
+      campaignSlicePerSweep(campaign.daily_cap),
+      ts,
+    );
+  }
+  const reminders = await sendReviewCampaignReminders(SENDS_PER_SWEEP_CAP, ts);
+  return { invites, reminders };
+}
+
 function kickCampaignSweep(label: string): void {
   // Fire-and-forget at the timer boundary: the interval callback is sync, and a
-  // campaign batch can take seconds. Failures are reported, never thrown.
-  void runCampaignSweep()
-    .then((r) => {
-      if (r.invites + r.reminders > 0) log.info(label, r);
+  // campaign batch can take seconds. Failures are reported, never thrown. Both
+  // campaign families (claim-invite + review-invite) ride the same tick.
+  void Promise.all([runCampaignSweep(), runReviewCampaignSweep()])
+    .then(([claim, review]) => {
+      const total = claim.invites + claim.reminders + review.invites + review.reminders;
+      if (total > 0) log.info(label, { claim, review });
     })
     .catch((e) => reportError("emails.campaign_sweep_failed", e));
 }

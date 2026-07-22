@@ -562,6 +562,29 @@ export interface VendorClaimCampaignPayload {
   locale: "hu" | "en";
 }
 
+/** Review-invite campaign to a CLAIMED vendor: reviews are now open to anyone,
+ *  here is your own public review link to forward to past clients. Rendered
+ *  single-language off `locale`. */
+export interface VendorReviewCampaignPayload {
+  /** The vendor's business name, used in the greeting. */
+  businessName: string;
+  /** The vendor's clean public page URL, shown in the body as "your link" so it
+   *  can be copied straight out of the mail. */
+  reviewUrl: string;
+  /** The `?review=1` deep-link variant behind the WhatsApp/email share buttons,
+   *  landing a past client on the review composer. */
+  shareUrl: string;
+  /** Tracked redirect for the CTA button; the click is the reminder gate. */
+  ctaUrl: string;
+  /** Pre-filled WhatsApp share (`https://wa.me/?text=...`), a secondary link. */
+  whatsappUrl: string;
+  /** Pre-filled mailto draft, a secondary link. */
+  mailtoUrl: string;
+  /** In-app reviews page where the durable copy/share widget lives. */
+  dashboardUrl: string;
+  locale: "hu" | "en";
+}
+
 export interface VendorClaimAdminAlertPayload {
   /** Listing name the claimer wants to take over. */
   listingName: string;
@@ -749,6 +772,8 @@ export type KindPayload = {
   community_supplier_reported: CommunitySupplierReportedPayload;
   vendor_claim_campaign: VendorClaimCampaignPayload;
   vendor_claim_campaign_reminder: VendorClaimCampaignPayload;
+  vendor_review_campaign: VendorReviewCampaignPayload;
+  vendor_review_campaign_reminder: VendorReviewCampaignPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_admin_alert: VendorClaimAdminAlertPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
@@ -2629,6 +2654,92 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
+    },
+  }),
+  // Review-invite campaign to a CLAIMED vendor. Warm, not cold: they already
+  // run a Weddly account. The hook is the news (reviews are open to anyone now),
+  // the pitch is social proof ("let your past clients vouch for you to couples
+  // who don't know you yet"), and the close is dead-simple sharing. The review
+  // URL is shown as plain text in the body so it copies straight out of the
+  // mail; the CTA is a tracked redirect (the click is half the reminder gate).
+  //
+  // Single-language render off `locale` (a HU subject to a vendor who signed up
+  // in English reads as spam), forced by the guestLocale in the SendTarget.
+  vendor_review_campaign: (p) => ({
+    subject:
+      p.locale === "hu"
+        ? "Mostantól bárki értékelhet titeket a Weddly-n"
+        : "Your reviews are now open to everyone on Weddly",
+    ctaUrl: p.ctaUrl,
+    hu: {
+      preheader: "A vélemények mostantól bárkitől jöhetnek. Kérj párat a korábbi pároktól.",
+      greeting: p.businessName.trim() ? `Szia ${p.businessName.trim()}!` : "Szia!",
+      paragraphs: [
+        "Nagy hír: a Weddly-n a **vélemények mostantól bárkitől jöhetnek**. Nincs Weddly-fiók, nincs regisztráció, csak egy e-mail-cím kell. Akivel valaha dolgoztatok, pár kattintással értékelhet.",
+        "A legtöbb pár, aki most nálunk böngész, még nem ismer titeket. Néhány őszinte, 5 csillagos vélemény a korábbi ügyfelektől a legjobb ajánlólevél. Hadd beszéljen helyettetek a munkátok, a párok pedig attól halljanak, aki már választott titeket.",
+        `Itt a saját értékelő linketek, küldjétek el pár kedvenc korábbi páratoknak: **${p.reviewUrl}**`,
+      ],
+      cta: "Nézd meg az oldalad",
+      ctaSubtext: "Pontosan ezt látják a párok is, belépés nélkül megnyílik.",
+      secondaryLinks: [
+        { label: "Megosztás WhatsApp-on", url: p.whatsappUrl },
+        { label: "Küldés e-mailben", url: p.mailtoUrl },
+        { label: "Kezelés a fiókodban", url: p.dashboardUrl },
+      ],
+      footnote:
+        "Néhány csillag, rengeteg bizalom. Ha most nem alkalmas, nyugodtan hagyd figyelmen kívül ezt a levelet.",
+    },
+    en: {
+      preheader: "Reviews are now open to anyone. Ask a few past clients for some stars.",
+      greeting: p.businessName.trim() ? `Hi ${p.businessName.trim()},` : "Hi there,",
+      paragraphs: [
+        "Big news: on Weddly, **reviews are now open to everyone**. No Weddly account, no sign-up, just an email address. Anyone you've ever worked with can leave you a rating in a couple of clicks.",
+        "Most couples browsing right now don't know you yet. A handful of honest 5-star reviews from past clients is the best reference you can have. Let your work speak for you, and let couples hear it from the people who have already booked you.",
+        `Here's your own review link, send it to a few favourite past clients: **${p.reviewUrl}**`,
+      ],
+      cta: "See your review page",
+      ctaSubtext: "It's exactly what couples see, and it opens with no login.",
+      secondaryLinks: [
+        { label: "Share on WhatsApp", url: p.whatsappUrl },
+        { label: "Send by email", url: p.mailtoUrl },
+        { label: "Manage in your dashboard", url: p.dashboardUrl },
+      ],
+      footnote: "A few stars, a lot of trust. Not a good time? Just ignore this email.",
+    },
+  }),
+  // The single 7-day nudge, only to vendors who neither clicked nor opened the
+  // first mail. Shorter: they have the context, this is a reminder of the ask.
+  vendor_review_campaign_reminder: (p) => ({
+    subject:
+      p.locale === "hu"
+        ? "Egy link, és jönnek az első csillagok"
+        : "One link away from your first reviews",
+    ctaUrl: p.ctaUrl,
+    hu: {
+      preheader: "A vélemények nyitva állnak. Elég egy link a korábbi pároknak.",
+      greeting: p.businessName.trim() ? `Szia ${p.businessName.trim()}!` : "Szia!",
+      paragraphs: [
+        "Pár napja írtunk: a Weddly-n a vélemények mostantól bárkitől jöhetnek. Ha van egy-két elégedett korábbi párotok, egyetlen link elég, hogy értékeljenek.",
+        `Küldd el nekik a saját értékelő linketek: **${p.reviewUrl}** — pár csillag, és a böngésző párok máris jobban bíznak bennetek.`,
+      ],
+      cta: "Nézd meg az oldalad",
+      secondaryLinks: [
+        { label: "Megosztás WhatsApp-on", url: p.whatsappUrl },
+        { label: "Küldés e-mailben", url: p.mailtoUrl },
+      ],
+    },
+    en: {
+      preheader: "Reviews are open. One link to a past client is all it takes.",
+      greeting: p.businessName.trim() ? `Hi ${p.businessName.trim()},` : "Hi there,",
+      paragraphs: [
+        "We wrote a few days ago: reviews on Weddly are now open to anyone. If you have a happy past client or two, a single link is all it takes for them to leave you a rating.",
+        `Send them your own review link: **${p.reviewUrl}** — a few stars, and couples browsing you will trust you that much more.`,
+      ],
+      cta: "See your review page",
+      secondaryLinks: [
+        { label: "Share on WhatsApp", url: p.whatsappUrl },
+        { label: "Send by email", url: p.mailtoUrl },
+      ],
     },
   }),
   // P2.C, vendor claim verify mail. Categorised as `outreach`: anyone (no

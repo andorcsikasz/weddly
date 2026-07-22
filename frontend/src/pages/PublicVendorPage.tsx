@@ -12,24 +12,20 @@ import type {
   SupplierComment,
   SupplierDetail,
   SupplierReview,
-  SupplierReviewTag,
 } from "@shared/suppliers";
-import {
-  MAX_REVIEW_TAGS,
-  REVIEW_BODY_MAX_CHARS,
-  reviewTagsForCategory,
-  showsCapacity,
-} from "@shared/suppliers";
+import { REVIEW_BODY_MAX_CHARS, showsCapacity } from "@shared/suppliers";
 import { BadgeCheck, ExternalLink, Globe, Mail, MapPin, Phone, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { ReviewTagPicker } from "../components/ReviewTagPicker";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import { getVisitorToken, setVisitorToken, supplierApi, visitorApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { reviewTagLabel } from "../lib/reviewTags";
 
 function StarRow({ value, size = 14 }: { value: number; size?: number }) {
   return (
@@ -98,21 +94,10 @@ function PublicReviewComposer({
   const [verified, setVerified] = useState<boolean>(() => Boolean(getVisitorToken()));
   const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [body, setBody] = useState("");
-  const [tags, setTags] = useState<SupplierReviewTag[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-
-  const tagOptions = reviewTagsForCategory(category);
-  const toggleTag = (tag: SupplierReviewTag) => {
-    setTags((prev) =>
-      prev.includes(tag)
-        ? prev.filter((x) => x !== tag)
-        : prev.length >= MAX_REVIEW_TAGS
-          ? prev
-          : [...prev, tag],
-    );
-  };
 
   const onGoogle = async (credential: string) => {
     setError(null);
@@ -190,30 +175,7 @@ function PublicReviewComposer({
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
-          <div className="mb-3">
-            <div className="mb-1.5 text-xs text-ink-500 dark:text-umber-300">
-              {t("suppliers.detail.reviews.tagsLabel", { max: MAX_REVIEW_TAGS })}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {tagOptions.map((tag) => {
-                const on = tags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => toggleTag(tag)}
-                    className={`rounded-full px-2.5 py-1 text-xs transition ${
-                      on
-                        ? "bg-rose-500 text-white"
-                        : "bg-white text-ink-700 ring-1 ring-ink-200 hover:bg-ink-50 dark:bg-umber-700/60 dark:text-umber-100 dark:ring-umber-600"
-                    }`}
-                  >
-                    {t(`suppliers.reviewTags.${tag}`)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
           <div className="flex items-center justify-between gap-3">
             {error ? (
               <span className="text-xs text-rose-600 dark:text-rose-300">{error}</span>
@@ -286,6 +248,10 @@ export default function PublicVendorPage() {
   const { t, locale } = useT();
   const { supplier_id: supplierIdRaw } = useParams<{ supplier_id: string }>();
   const supplierId = supplierIdRaw ?? "";
+  // `?review=1` on a shared link (the vendor forwarded it to a past client)
+  // deep-links straight to the reviews section + composer.
+  const [searchParams] = useSearchParams();
+  const wantsReview = searchParams.get("review") === "1";
 
   const [data, setData] = useState<PublicVendorPageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -320,6 +286,14 @@ export default function PublicVendorPage() {
   useEffect(() => {
     if (data?.detail) document.title = `${data.detail.name} · Weddly`;
   }, [data]);
+
+  // Once the page is rendered, a `?review=1` link scrolls the reviews section
+  // into view so a forwarded client lands on the composer rather than the hero.
+  useEffect(() => {
+    if (!wantsReview || !data?.detail) return;
+    const el = document.getElementById("reviews");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [wantsReview, data]);
 
   // Count a public-profile view once the real vendor payload has loaded. Keyed
   // on the resolved listing id (v{N}) so a shared link feeds the same reach
@@ -519,7 +493,7 @@ export default function PublicVendorPage() {
             )}
 
             {/* Reviews (read-only) */}
-            <section className="mt-10">
+            <section id="reviews" className="mt-10 scroll-mt-24">
               <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
                 <h2 className="text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                   {t("suppliers.detail.reviews.title")} ({ratingCount})
@@ -703,7 +677,7 @@ function PublicReviewCard({
               key={tag}
               className="rounded-full bg-paper-100 px-2 py-0.5 text-xs text-ink-700 dark:bg-umber-700/40 dark:text-umber-100"
             >
-              {t(`suppliers.reviewTags.${tag}`)}
+              {reviewTagLabel(tag, t)}
             </span>
           ))}
         </div>

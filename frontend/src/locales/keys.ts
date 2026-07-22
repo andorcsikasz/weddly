@@ -1058,6 +1058,12 @@ export interface LocaleMessages {
       empty_title: string;
       empty_body: string;
       load_more: string;
+      share_title: string;
+      share_body: string;
+      share_copy: string;
+      share_copied: string;
+      share_whatsapp: string;
+      share_email: string;
     };
     billing: {
       page_title: string;
@@ -5322,6 +5328,7 @@ export interface LocaleMessages {
     nav_users: string;
     nav_vendors: string;
     nav_vendor_campaign: string;
+    nav_vendor_review_campaign: string;
     nav_planners: string;
     nav_waitlist: string;
     nav_planner_waitlist: string;
@@ -6664,6 +6671,14 @@ export interface LocaleMessages {
     campaign_batch_confirm_cta: string;
     campaign_err_cap: string;
     campaign_err_email: string;
+    /** Review-invite campaign console (reuses the campaign_* strings above). */
+    review_campaign_title: string;
+    review_campaign_subtitle: string;
+    review_campaign_targets_hint: string;
+    review_campaign_stat_collected: string;
+    review_campaign_send_collected: string;
+    /** Receives `{n}` — how many notes went out in the manual batch. */
+    review_campaign_batch_sent: string;
     /** /app/admin/email-list — collected emails from all sources. */
     email_list_title: string;
     email_list_subtitle: string;

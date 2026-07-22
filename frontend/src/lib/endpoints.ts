@@ -194,6 +194,16 @@ import type {
   VendorCampaignStats,
   VendorCampaignTarget,
 } from "@shared/vendor_campaign";
+import type {
+  CreateVendorReviewCampaignInput,
+  UpdateVendorReviewCampaignInput,
+  VendorReviewCampaign,
+  VendorReviewCampaignDetail,
+  VendorReviewCampaignSegments,
+  VendorReviewCampaignSend,
+  VendorReviewCampaignStats,
+  VendorReviewCampaignTarget,
+} from "@shared/vendor_review_campaign";
 import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
 import type {
   CompleteVendorOnboardingInput,
@@ -2162,6 +2172,50 @@ export const adminVendorCampaignApi = {
     apiFetch<{ sent: number }>("POST", "/api/admin/vendor-campaigns/reminders", {}),
   optOut: (email: string) =>
     apiFetch<{ ok: true; created: boolean }>("POST", "/api/admin/vendor-campaigns/optout", {
+      email,
+    }),
+};
+
+/** Admin console for the review-invite campaign — the mirror of the claim
+ *  campaign, but writing to CLAIMED vendors to collect reviews. Same
+ *  preview-before-you-send shape. */
+export const adminVendorReviewCampaignApi = {
+  list: () =>
+    apiFetch<{ campaigns: VendorReviewCampaign[] }>("GET", "/api/admin/vendor-review-campaigns"),
+  create: (body: CreateVendorReviewCampaignInput) =>
+    apiFetch<{ campaign: VendorReviewCampaign }>(
+      "POST",
+      "/api/admin/vendor-review-campaigns",
+      body,
+    ),
+  detail: (id: number) =>
+    apiFetch<VendorReviewCampaignDetail>("GET", `/api/admin/vendor-review-campaigns/${id}`),
+  update: (id: number, body: UpdateVendorReviewCampaignInput) =>
+    apiFetch<{ campaign: VendorReviewCampaign }>(
+      "PATCH",
+      `/api/admin/vendor-review-campaigns/${id}`,
+      body,
+    ),
+  targets: (id: number) =>
+    apiFetch<{ targets: VendorReviewCampaignTarget[]; stats: VendorReviewCampaignStats }>(
+      "GET",
+      `/api/admin/vendor-review-campaigns/${id}/targets`,
+    ),
+  segments: () =>
+    apiFetch<VendorReviewCampaignSegments>("GET", "/api/admin/vendor-review-campaigns/segments"),
+  sends: (id: number) =>
+    apiFetch<{ sends: VendorReviewCampaignSend[] }>(
+      "GET",
+      `/api/admin/vendor-review-campaigns/${id}/sends`,
+    ),
+  sendBatch: (id: number, limit: number) =>
+    apiFetch<{ sent: number }>("POST", `/api/admin/vendor-review-campaigns/${id}/send-batch`, {
+      limit,
+    }),
+  runReminders: () =>
+    apiFetch<{ sent: number }>("POST", "/api/admin/vendor-review-campaigns/reminders", {}),
+  optOut: (email: string) =>
+    apiFetch<{ ok: true; created: boolean }>("POST", "/api/admin/vendor-review-campaigns/optout", {
       email,
     }),
 };
