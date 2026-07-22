@@ -12,13 +12,14 @@ import {
   Phone,
   Trash2,
 } from "lucide-react";
+import { intlLocale } from "../../lib/format";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import type { PlannerClientCrm, PlannerClientNote } from "@shared/types";
 import { useConfirm, useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { plannerApi } from "../../lib/endpoints";
-import { useT } from "../../lib/i18n";
+import { type Locale, useT } from "../../lib/i18n";
 import { titleCaseName } from "../../lib/planner_display";
 
 const CLIENT_COLORS = [
@@ -72,9 +73,9 @@ function parseAmount(raw: string): number | null {
   return digits ? Number(digits) : null;
 }
 
-function formatAmount(val: number | null, locale: string): string {
+function formatAmount(val: number | null, locale: Locale): string {
   if (val === null) return "–";
-  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  return new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency: locale === "hu" ? "HUF" : "EUR",
     maximumFractionDigits: 0,
@@ -99,7 +100,7 @@ function NotesFeed({ coupleId }: { coupleId: number }) {
       .catch(() => {});
   }, [coupleId]);
 
-  const stamp = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  const stamp = new Intl.DateTimeFormat(intlLocale(locale), {
     dateStyle: "medium",
     timeStyle: "short",
   });

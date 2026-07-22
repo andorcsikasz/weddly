@@ -10,6 +10,7 @@
 // show 3 task lanes + a "+N more" pill without truncating titles to nothing.
 
 import type { PlanningItem } from "@shared/types";
+import { intlLocale } from "../../lib/format";
 import { useMemo } from "react";
 import { useT } from "../../lib/i18n";
 
@@ -234,7 +235,7 @@ export default function QuarterView({
   // consistent across locales.
   const monthDayFmt = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+      new Intl.DateTimeFormat(intlLocale(locale), {
         month: "short",
         day: "numeric",
       }),
@@ -242,7 +243,7 @@ export default function QuarterView({
   );
   const dayOnlyFmt = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+      new Intl.DateTimeFormat(intlLocale(locale), {
         day: "numeric",
       }),
     [locale],

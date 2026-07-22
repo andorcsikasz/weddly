@@ -9,6 +9,7 @@
 // before billing data loads.
 
 import { Eye, Lock, Sparkles, UserPlus, X } from "lucide-react";
+import { intlLocale } from "../lib/format";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -141,7 +142,7 @@ export function SubscriptionBanner() {
   if (mode === "founding") {
     if (dismissed) return null;
     const until = foundingUntil
-      ? new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+      ? new Intl.DateTimeFormat(intlLocale(locale), {
           year: "numeric",
           month: "long",
         }).format(new Date(foundingUntil))

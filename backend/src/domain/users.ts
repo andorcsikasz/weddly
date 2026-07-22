@@ -93,11 +93,11 @@ export function toUser(row: UserRow): User {
 }
 
 /** Coerce a raw DB locale value into the shape the frontend expects. We
- *  only persist 'hu' | 'en' so anything else (legacy 'en-GB', stray
- *  'es-419') drops to null; the client then falls back to its own
- *  navigator detection. */
-export function normaliseLocale(raw: string | null | undefined): "hu" | "en" | null {
-  if (raw === "hu" || raw === "en") return raw;
+ *  persist the shipped UI locales 'hu' | 'en' | 'es'; anything else (legacy
+ *  'en-GB', stray 'es-419') drops to null and the client then falls back to
+ *  its own navigator detection. */
+export function normaliseLocale(raw: string | null | undefined): "hu" | "en" | "es" | null {
+  if (raw === "hu" || raw === "en" || raw === "es") return raw;
   return null;
 }
 

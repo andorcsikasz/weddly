@@ -7,6 +7,7 @@
 // first task on it.
 
 import type { PlanningItem } from "@shared/types";
+import { intlLocale } from "../../lib/format";
 import { useMemo } from "react";
 import { useT } from "../../lib/i18n";
 
@@ -65,7 +66,7 @@ function sameDay(a: Date, b: Date): boolean {
 
 export default function CalendarBoard({ today, tasks, onOpenTask }: CalendarBoardProps) {
   const { t, locale } = useT();
-  const intl = locale === "hu" ? "hu-HU" : "en-GB";
+  const intl = intlLocale(locale);
 
   // One month of lookback so TODAY sits in the SECOND of the four months.
   const months = useMemo(() => {

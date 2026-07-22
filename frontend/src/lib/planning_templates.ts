@@ -3,12 +3,12 @@
 // and (b) adding 50+ keys to keys.ts triples the i18n maintenance per item.
 // Pattern mirrors `domain/suppliers_data.ts` on the backend: HU + EN inline.
 
-import type { Locale } from "./i18n";
+import { contentLocale, type Locale } from "./i18n";
 
 export type LocaleText = { hu: string; en: string };
 
 export function localizeText(text: LocaleText, locale: Locale): string {
-  return text[locale];
+  return text[contentLocale(locale)];
 }
 
 /** Category tag carried by a creative idea so the Ideas tab can render and

@@ -11,15 +11,17 @@
 // This wraps the grid in that missing shell so a date field is a one-liner.
 
 import { CalendarDays, X } from "lucide-react";
+import { intlLocale } from "../../lib/format";
 import { useEffect, useId, useRef, useState } from "react";
+import type { Locale } from "../../lib/i18n";
 import { CalendarPicker } from "./CalendarPicker";
 
 /** Render an ISO 'YYYY-MM-DD' in the user's locale. Parsed as UTC midnight so
  *  the displayed day can't shift under a negative timezone offset. */
-function formatIso(iso: string, locale: "hu" | "en"): string {
+function formatIso(iso: string, locale: Locale): string {
   const d = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -44,7 +46,7 @@ export function DateField({
   value: string | null;
   /** Called with the picked YYYY-MM-DD, or "" when cleared. */
   onChange: (ymd: string) => void;
-  locale: "hu" | "en";
+  locale: Locale;
   /** Earliest selectable date as ISO-8601. */
   min?: string;
   /** Shown on the trigger while empty. */

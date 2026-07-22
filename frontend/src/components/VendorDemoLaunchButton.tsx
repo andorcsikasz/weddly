@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { markCurrentSessionDemo } from "../lib/demoSession";
 import { demoApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { contentLocale, useT } from "../lib/i18n";
 
 export function VendorDemoLaunchButton() {
   const { t, locale } = useT();
@@ -29,7 +29,7 @@ export function VendorDemoLaunchButton() {
       // Pass the active UI locale so the seeded workspace (listing copy,
       // client names, payment labels) is written in the same language as
       // the chrome around it.
-      const res = await demoApi.startVendor(locale);
+      const res = await demoApi.startVendor(contentLocale(locale));
       markCurrentSessionDemo();
       setSession(res.session.token, res.session.user);
       // Hard navigate so the vendor shell remounts on a clean session.

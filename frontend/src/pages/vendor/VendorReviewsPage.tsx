@@ -5,6 +5,7 @@
 // reviews is a deliberate non-goal for v1 — this page is about visibility.
 
 import { Check, Copy, ExternalLink, Mail, MessageCircle, RefreshCw, Star } from "lucide-react";
+import { intlLocale } from "../../lib/format";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { ReviewSummary, SupplierReview } from "@shared/suppliers";
@@ -163,7 +164,7 @@ export default function VendorReviewsPage() {
   };
 
   const fmtDate = (ms: number) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    new Intl.DateTimeFormat(intlLocale(locale), {
       year: "numeric",
       month: "long",
       day: "numeric",

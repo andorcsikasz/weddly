@@ -28,8 +28,8 @@ import { FOUNDING_CAP, type SubscriptionStatus } from "@shared/billing";
 import { AdminPageHeader, Pill } from "../components/admin";
 import { useConfirm, useToast } from "../components/ui";
 import { adminFinancialPlannerApi } from "../lib/endpoints";
-import { formatMoney } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { formatMoney, intlLocale } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 const PLAN_LABEL: Record<SubscriptionStatus, `billing.plan_${string}`> = {
@@ -544,7 +544,7 @@ export default function AdminFinancialPlannerPage() {
  *  Ha van kulcs, élő API-ping (accounts.retrieve) mondja meg, hogy a kapcsolat
  *  tényleg működik-e, és kiírja a kártyás fizetés / kifizetés go-live flageket.
  *  Titkos értéket sosem mutat. */
-function StripeHealthCard({ locale }: { locale: string }) {
+function StripeHealthCard({ locale }: { locale: Locale }) {
   const [h, setH] = useState<StripeHealth | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -589,7 +589,7 @@ function StripeHealthCard({ locale }: { locale: string }) {
 
   const checkedLabel =
     h && h.checkedAt
-      ? new Date(h.checkedAt).toLocaleTimeString(locale === "hu" ? "hu-HU" : "en-GB", {
+      ? new Date(h.checkedAt).toLocaleTimeString(intlLocale(locale), {
           hour: "2-digit",
           minute: "2-digit",
         })
@@ -750,7 +750,7 @@ function HealthRow({
  *  1 990 és 2 490 Ft) — bármelyik szabadon átírható, a táblázat élőben
  *  újraszámol. A számok HUF-ban; a matek a `subscriptionUnitEconomics`
  *  pure függvényből jön. Tájékoztató becslés, nem adótanácsadás. */
-function UnitEconomicsCard({ locale, liveHuf }: { locale: string; liveHuf: number }) {
+function UnitEconomicsCard({ locale, liveHuf }: { locale: Locale; liveHuf: number }) {
   const [priceA, setPriceA] = useState(990);
   const [priceB, setPriceB] = useState(2490);
   const ea = useMemo(() => subscriptionUnitEconomics(priceA), [priceA]);
@@ -947,7 +947,7 @@ function BillingLaunchCard({
   busy: boolean;
   onToggle: (next: boolean) => void;
   t: (k: string, vars?: Record<string, string | number>) => string;
-  locale: string;
+  locale: Locale;
 }) {
   const on = data.billing_enforcement_on;
   const total = data.total_couples;
@@ -999,7 +999,7 @@ function BillingLaunchCard({
             {t("admin.fin_enforce_progress_label")}
           </span>
           <span className="tabular-nums font-semibold text-neutral-900 dark:text-paper-50">
-            {new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB").format(total)} /{" "}
+            {new Intl.NumberFormat(intlLocale(locale)).format(total)} /{" "}
             {FOUNDING_CAP}
           </span>
         </div>

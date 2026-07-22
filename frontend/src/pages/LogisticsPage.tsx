@@ -64,8 +64,8 @@ import {
   scheduleApi,
   transferApi,
 } from "../lib/endpoints";
-import { currencySymbol, formatHuf } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { currencySymbol, formatHuf, intlLocale } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 type LogisticsTab = "accommodation" | "transfer";
@@ -1912,10 +1912,10 @@ function formatDepartAt(value: string): string {
  *  deliberately: every transfer sits within days of the wedding, so it carries
  *  no information, and the full localised datetime overflowed the editor's
  *  half-width field. Falls back to the raw value if the string isn't parseable. */
-function formatDepartShort(value: string, locale: string): string {
+function formatDepartShort(value: string, locale: Locale): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     month: "short",
     day: "numeric",
     hour: "2-digit",

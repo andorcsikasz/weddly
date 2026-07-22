@@ -12,6 +12,7 @@
 // category are intentionally read-only — admin moderation surfaces those.
 
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { intlLocale } from "../lib/format";
 import { Link, useNavigate } from "react-router-dom";
 import type {
   VendorAvailabilityView,
@@ -25,7 +26,7 @@ import { TextField } from "../components/ui/TextField";
 import { useToast } from "../components/ui/ToastProvider";
 import { useAuth } from "../lib/auth";
 import { vendorAvailabilityApi, vendorListingApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 /** Form state mirrors the backend's editable fields with every value coerced
@@ -46,10 +47,10 @@ interface FormState {
 
 /** Render an ISO 'YYYY-MM-DD' block date in the vendor's locale. Parsed as
  *  UTC midnight so the displayed day never shifts under a timezone offset. */
-function formatBlockedDate(iso: string, locale: string): string {
+function formatBlockedDate(iso: string, locale: Locale): string {
   const d = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -66,13 +67,13 @@ function BillingBanner({
   t,
 }: {
   billing: VendorBilling;
-  locale: string;
+  locale: Locale;
   t: (path: string, vars?: Record<string, string | number>) => string;
 }) {
   const fmtDate = (ms: number | null): string =>
     ms == null
       ? ""
-      : new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+      : new Intl.DateTimeFormat(intlLocale(locale), {
           year: "numeric",
           month: "long",
           day: "numeric",

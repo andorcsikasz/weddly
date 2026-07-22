@@ -12,6 +12,7 @@ import type {
   AdminPlannerWaitlistDetail,
   PlannerPlan,
 } from "@shared/types";
+import { intlLocale } from "../lib/format";
 import {
   Ban,
   BadgeCheck,
@@ -35,7 +36,7 @@ import type { PillTone } from "../components/admin";
 import { Button, Dialog, TextField, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminPlannerMgmtApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 
 type Filter = "all" | "active" | "pending" | "suspended";
 
@@ -205,10 +206,10 @@ function initials(name: string, email: string): string {
   return (first + second).toUpperCase();
 }
 
-function fmtDate(unixMs: number, locale: string): string {
+function fmtDate(unixMs: number, locale: Locale): string {
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",

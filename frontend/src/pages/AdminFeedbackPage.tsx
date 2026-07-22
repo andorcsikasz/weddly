@@ -13,6 +13,7 @@ import type {
   FeedbackReplyChannel,
   FeedbackStatus,
 } from "@shared/feedback";
+import { intlLocale } from "../lib/format";
 import {
   Archive,
   Ban,
@@ -41,7 +42,7 @@ import type { PillTone } from "../components/admin";
 import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminFeedbackApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 type Loadable<T> = { status: "loading" } | { status: "ok"; data: T } | { status: "error" };
@@ -340,14 +341,14 @@ export default function AdminFeedbackPage() {
   );
 
   const fmtDate = (ts: number) =>
-    new Date(ts).toLocaleDateString(locale === "hu" ? "hu-HU" : "en-GB", {
+    new Date(ts).toLocaleDateString(intlLocale(locale), {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
   const fmtMoney = (amount: number, entryLocale: string | null) => {
     const symbol = entryLocale === "en" ? "€" : "Ft";
-    const formatted = amount.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB");
+    const formatted = amount.toLocaleString(intlLocale(locale));
     return entryLocale === "en" ? `${symbol}${formatted}` : `${formatted} ${symbol}`;
   };
 
@@ -588,7 +589,7 @@ function TriagePanel({
 }: {
   entry: FeedbackEntry;
   t: (k: string, vars?: Record<string, string | number>) => string;
-  locale: string;
+  locale: Locale;
   sourceLabel: string;
   busy: boolean;
   notesDraft: string;
@@ -746,7 +747,7 @@ function TriagePanel({
                     {t("admin.feedback_col_monthly")}: {(() => {
                       const symbol = entry.locale === "en" ? "€" : "Ft";
                       const amt = (entry.monthly_value_ft ?? 0).toLocaleString(
-                        locale === "hu" ? "hu-HU" : "en-GB",
+                        intlLocale(locale),
                       );
                       return entry.locale === "en" ? `${symbol}${amt}` : `${amt} ${symbol}`;
                     })()}
@@ -801,7 +802,7 @@ function ReplySection({
 }: {
   entry: FeedbackEntry;
   t: (k: string, vars?: Record<string, string | number>) => string;
-  locale: string;
+  locale: Locale;
   busy: boolean;
   onSendReply: (message: string, channel: FeedbackReplyChannel) => Promise<boolean>;
 }) {
@@ -818,7 +819,7 @@ function ReplySection({
   if (emailPossible && notifPossible) channelOptions.push("both");
 
   const fmtDateTime = (ts: number) =>
-    new Date(ts).toLocaleString(locale === "hu" ? "hu-HU" : "en-GB", {
+    new Date(ts).toLocaleString(intlLocale(locale), {
       month: "short",
       day: "numeric",
       hour: "2-digit",

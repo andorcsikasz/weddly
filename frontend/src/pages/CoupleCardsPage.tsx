@@ -21,7 +21,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { TOOL_FAQ } from "@shared/tool_faq";
 import { PublicShell } from "../components/PublicShell";
-import { useT } from "../lib/i18n";
+import { contentLocale, useT } from "../lib/i18n";
 import {
   COUPLE_CARD_DECKS,
   DECK_SIZE,
@@ -294,7 +294,7 @@ export default function CoupleCardsPage() {
     try {
       await coupleCardsApi.submitSuggestion({
         deck_id: activeDeck,
-        locale: locale === "en" ? "en" : "hu",
+        locale: locale === "hu" ? "hu" : "en",
         suggestion: text,
       });
       setSuggestionStatus("success");
@@ -401,7 +401,7 @@ export default function CoupleCardsPage() {
         deck_id: activeDeck,
         card_index: cardIdx,
         rating,
-        locale,
+        locale: contentLocale(locale),
         question_snapshot: currentQuestion,
       });
     },
@@ -478,7 +478,7 @@ export default function CoupleCardsPage() {
               {t("tools.couple_cards.faq_h2")}
             </h2>
             <div className="mt-8 space-y-3">
-              {TOOL_FAQ[locale].couple_cards.map((entry) => (
+              {TOOL_FAQ[contentLocale(locale)].couple_cards.map((entry) => (
                 <details
                   key={entry.q}
                   className="group rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-5 py-4 transition-colors open:bg-white dark:open:bg-umber-700 sm:px-6 sm:py-5"

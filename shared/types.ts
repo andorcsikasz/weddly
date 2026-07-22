@@ -30,7 +30,7 @@ export interface User {
   /** Per-user UI locale captured at signup. Null until the user signs up
    *  through a client that sends `locale` in the register body — the
    *  frontend then prefers `user.locale` over its own navigator detection. */
-  locale: "hu" | "en" | null;
+  locale: "hu" | "en" | "es" | null;
   /** True when the user has a real local password (i.e. can sign in via the
    *  email/password form). False for Google-only signups whose stored hash is
    *  a synthetic placeholder. Drives the SessionExpiredDialog's choice of

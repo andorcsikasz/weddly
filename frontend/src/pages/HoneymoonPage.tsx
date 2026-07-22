@@ -69,8 +69,8 @@ import { ApiError } from "../lib/api";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { type AirportOrigin, searchAirportOrigins } from "../lib/airport_origins";
 import { budgetApi, coupleApi, honeymoonApi, placesApi, planningApi } from "../lib/endpoints";
-import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { formatMoney, intlLocale, maxIsoDate, todayIso } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
 import { publish, subscribe } from "../lib/sync";
 
 // Lazy — Leaflet (~150KB) only ships when the user opens the map popup.
@@ -190,11 +190,11 @@ function daysToStart(start: string | null): number | null {
   return Math.round((startDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function formatDateShort(iso: string | null, locale: "hu" | "en"): string {
+function formatDateShort(iso: string | null, locale: Locale): string {
   if (!iso) return "";
   const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -849,7 +849,7 @@ function DaysTile({
   start: string | null;
   end: string | null;
   nights: number | null;
-  locale: "hu" | "en";
+  locale: Locale;
   loaded: boolean;
   onSave: (start: string | null, end: string | null) => Promise<void>;
 }) {
@@ -1424,7 +1424,7 @@ function BudgetSummaryTile({
   planned: number;
   actual: number;
   count: number;
-  locale: "hu" | "en";
+  locale: Locale;
   loaded: boolean;
   currency: Currency;
 }) {
@@ -1532,7 +1532,7 @@ function CostRow({
   onRemove,
 }: {
   line: BudgetLine;
-  locale: "hu" | "en";
+  locale: Locale;
   sliderMax: number;
   currency: Currency;
   onPlannedChange: (v: number) => Promise<void>;
@@ -1960,7 +1960,7 @@ function FlightEstimateCard({
   onSaveFlight,
 }: {
   estimate: FlightEstimate;
-  locale: "hu" | "en";
+  locale: Locale;
   t: (key: string, vars?: Record<string, string | number>) => string;
   /** Couple's explicit override (3-letter IATA) or null when the backend
    *  is using the locale default. The input pre-fills with this; clearing
@@ -1971,7 +1971,7 @@ function FlightEstimateCard({
    *  in the parent). Resolves once the writes settle. */
   onSaveFlight: (offer: FlightOffer) => Promise<void>;
 }) {
-  const updated = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  const updated = new Intl.DateTimeFormat(intlLocale(locale), {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(estimate.fetched_at));
@@ -2088,7 +2088,7 @@ function FlightOfferRow({
   onSave,
 }: {
   offer: FlightOffer;
-  locale: "hu" | "en";
+  locale: Locale;
   t: (key: string, vars?: Record<string, string | number>) => string;
   /** Pick this offer → push it to the budget + todos via the parent. */
   onSave: (offer: FlightOffer) => Promise<void>;
@@ -2390,19 +2390,19 @@ function OriginAutocomplete({
 }
 
 /** Whole-unit offer price in its own currency, e.g. "603 138 Ft" / "€1,240". */
-function formatOfferPrice(offer: FlightOffer, locale: "hu" | "en"): string {
-  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+function formatOfferPrice(offer: FlightOffer, locale: Locale): string {
+  return new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency: offer.currency,
     maximumFractionDigits: 0,
   }).format(offer.price);
 }
 
-function formatOfferTime(iso: string, locale: "hu" | "en"): string {
+function formatOfferTime(iso: string, locale: Locale): string {
   if (!iso) return "-";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "-";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",

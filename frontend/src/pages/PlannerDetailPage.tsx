@@ -8,6 +8,7 @@
 // account-link handshake (invite → planner accepts → linked), not a booking lead.
 
 import { countryName } from "@shared/country_list";
+import { intlLocale } from "../lib/format";
 import type { PlannerDirectoryDetail, PlannerDirectoryEntry } from "@shared/types";
 import {
   BadgeCheck,
@@ -28,15 +29,15 @@ import { hrefFor, plannerInitials, plannerStyleLabel } from "../components/Plann
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { couplePlannerApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 
 type LinkStatus = PlannerDirectoryEntry["link_status"];
 
 /** Format an ISO 'YYYY-MM-DD' in the reader's locale ("2027. jún. 12."). */
-function formatIsoDate(iso: string, locale: string): string {
+function formatIsoDate(iso: string, locale: Locale): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",

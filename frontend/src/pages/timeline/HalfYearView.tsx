@@ -9,6 +9,7 @@
 // percent-of-row positioning so they stay aligned with the month columns.
 
 import type { PlanningItem } from "@shared/types";
+import { intlLocale } from "../../lib/format";
 import { Heart } from "lucide-react";
 import { useMemo } from "react";
 import { useT } from "../../lib/i18n";
@@ -175,7 +176,7 @@ export default function HalfYearView({
 
   const monthFmt = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+      new Intl.DateTimeFormat(intlLocale(locale), {
         month: "long",
       }),
     [locale],

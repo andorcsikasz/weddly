@@ -4,6 +4,7 @@
 // last-minute date shift doesn't rewrite every row.
 
 import type { CoupleSupplier } from "@shared/couple_suppliers";
+import { intlLocale } from "../lib/format";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import type { Couple } from "@shared/types";
 import {
@@ -62,7 +63,7 @@ import {
   scheduleApi,
   schedulePdfUrl,
 } from "../lib/endpoints";
-import { type Locale, useT } from "../lib/i18n";
+import { contentLocale, type Locale, useT } from "../lib/i18n";
 import {
   SCHEDULE_TEMPLATE,
   buildScheduleProposal,
@@ -829,7 +830,7 @@ function ScheduleSummaryCard({
 
   const date = parseISODate(couple.wedding_date);
   const dateLabel = date
-    ? new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    ? new Intl.DateTimeFormat(intlLocale(locale), {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -1254,7 +1255,7 @@ function ScheduleWandDialog({
     const picks = proposal
       .filter((row) => row.conflictsWith === null && selected.has(row.item.key))
       .map((row) => ({
-        label: row.item.title[locale],
+        label: row.item.title[contentLocale(locale)],
         starts_at_minutes: row.starts_at_minutes,
         duration_minutes: row.duration_minutes,
       }));
@@ -1389,7 +1390,7 @@ function ScheduleWandDialog({
                      *  flex-1 column with min-w-0 so the title can shrink and
                      *  the conflict pill never overflows the dialog edge. */}
                     <span className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span>{row.item.title[locale]}</span>
+                      <span>{row.item.title[contentLocale(locale)]}</span>
                       {conflict !== null ? (
                         <span
                           className="inline-flex w-fit max-w-full rounded-full bg-paper-200 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-500 dark:bg-umber-700 dark:text-umber-300"

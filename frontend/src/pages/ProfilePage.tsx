@@ -72,7 +72,7 @@ import {
   isPlausibleDateIso,
   todayIso,
 } from "../lib/format";
-import { type Locale, useT } from "../lib/i18n";
+import { contentLocale, type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 function deleteVerifyPhrase(couple: Couple | null): string {
@@ -1531,7 +1531,7 @@ function AccountSection({
     id: number;
     email: string;
     full_name: string;
-    locale: "hu" | "en" | null;
+    locale: Locale | null;
     role: UserRole;
     user_type: "couple" | "planner";
   } | null;
@@ -1596,7 +1596,7 @@ function AccountSection({
     setSavingLocale(next);
     try {
       onLocaleChange(next);
-      await userApi.updateProfile({ locale: next });
+      await userApi.updateProfile({ locale: contentLocale(next) });
       toast.success(t("profile.account_locale_save_success"));
       onSaved();
     } catch (err) {

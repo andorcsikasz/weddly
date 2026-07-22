@@ -24,11 +24,10 @@ import { SUPPLIER_TO_BUDGET, capacityKindFor } from "@shared/suppliers";
 import type { BudgetCategory, BudgetLine, Currency } from "@shared/types";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { supplierApi } from "../lib/endpoints";
-import { formatMoney } from "../lib/format";
+import { formatMoney, intlLocale } from "../lib/format";
+import type { Locale } from "../lib/i18n";
 import { haversineKm } from "../lib/geo";
 import { Dialog } from "./ui/Dialog";
-
-type Locale = "hu" | "en";
 
 /** The detail-only facts the comparison needs that aren't on the list DTO:
  *  the published rating + how many reviews back it, and the earliest free
@@ -205,7 +204,7 @@ function availableCell(
   const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime()))
     return { text: t("suppliers.compare.available_ask"), tone: "muted" };
-  const text = d.toLocaleDateString(locale === "hu" ? "hu-HU" : "en-GB", {
+  const text = d.toLocaleDateString(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",

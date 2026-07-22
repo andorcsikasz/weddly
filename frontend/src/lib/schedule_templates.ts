@@ -4,7 +4,7 @@
 // pattern used by `lib/planning_templates.ts`.
 
 import { SCHEDULE_MAX_MINUTES } from "@shared/schedule";
-import type { Locale } from "./i18n";
+import { contentLocale, type Locale } from "./i18n";
 import type { LocaleText } from "./planning_templates";
 
 /** One milestone in the wedding-day template. `fraction` positions the event
@@ -92,7 +92,7 @@ const KNOWN_LABELS: { hu: string; en: string }[] = SCHEDULE_TEMPLATE.map((item) 
 
 export function localizeKnownLabel(label: string, locale: Locale): string {
   for (const entry of KNOWN_LABELS) {
-    if (entry.hu === label || entry.en === label) return entry[locale];
+    if (entry.hu === label || entry.en === label) return entry[contentLocale(locale)];
   }
   return label;
 }

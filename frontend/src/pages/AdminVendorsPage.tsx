@@ -10,6 +10,7 @@
 // looks like a churned one (the trap a binary paying/not marker falls into).
 
 import type { AdminVendorView } from "@shared/listings";
+import { intlLocale } from "../lib/format";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
 import type { VendorPlan } from "@shared/vendor_plan";
@@ -42,7 +43,7 @@ import type { PillTone } from "../components/admin";
 import { Button, Dialog, TextField, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminVendorMgmtApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 
 // Filter buckets double as the "who's an early adopter / who pays" aggregate the
 // flat list never surfaced. Non-exclusive views (a suspended payer counts under
@@ -96,11 +97,11 @@ function initials(name: string, email: string | null): string {
   return (first + second).toUpperCase();
 }
 
-function fmtDate(unixMs: number | null, locale: string): string {
+function fmtDate(unixMs: number | null, locale: Locale): string {
   if (unixMs == null) return "";
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -153,7 +154,7 @@ interface PayState {
  *  actively-free founding member (the Bird glyph already says "free early
  *  adopter", so the pill would be redundant — mirrors how the couples page
  *  suppresses its payment marker for founding workspaces). */
-function vendorPaymentState(v: AdminVendorView, t: Translate, locale: string): PayState | null {
+function vendorPaymentState(v: AdminVendorView, t: Translate, locale: Locale): PayState | null {
   if (v.state !== "active") return null;
   const s = v.subscription_status;
   if (s === "founding") return null;

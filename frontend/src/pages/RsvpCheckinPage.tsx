@@ -10,7 +10,7 @@ import { Wordmark } from "../components/Wordmark";
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { nextLocale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 const KIOSK_STORAGE_KEY = "weddly.rsvp.kiosk";
@@ -216,9 +216,9 @@ export default function RsvpCheckinPage() {
           <button
             type="button"
             className="btn-ghost btn-sm"
-            onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+            onClick={() => setLocale(nextLocale(locale))}
             aria-label={t("nav.switch_language")}
-            title={(locale === "hu" ? "en" : "hu").toUpperCase()}
+            title={nextLocale(locale).toUpperCase()}
           >
             <Languages size={18} aria-hidden="true" />
           </button>

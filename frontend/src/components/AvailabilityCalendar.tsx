@@ -5,6 +5,7 @@
 // wedding a day, so there is no partial-hour concept like the vendor calendar.
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { intlLocale } from "../lib/format";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useT } from "../lib/i18n";
 
@@ -57,7 +58,7 @@ export function AvailabilityCalendar({
 
   const monthLabel = useMemo(() => {
     const d = new Date(cursor.year, cursor.month, 1);
-    return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    return new Intl.DateTimeFormat(intlLocale(locale), {
       month: "long",
       year: "numeric",
     }).format(d);
@@ -76,7 +77,7 @@ export function AvailabilityCalendar({
   }, [cursor]);
 
   const dayLabels = useMemo(() => {
-    const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", { weekday: "narrow" });
+    const fmt = new Intl.DateTimeFormat(intlLocale(locale), { weekday: "narrow" });
     const monday = new Date(2026, 4, 25); // a Monday
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(monday);

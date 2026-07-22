@@ -18,8 +18,8 @@ import type { VendorFeatureFlags } from "@shared/vendor_plan";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { AnimatedNumber } from "../../components/AnimatedNumber";
 import { vendorBillingApi, vendorStatsApi } from "../../lib/endpoints";
-import { formatDate, formatMoney } from "../../lib/format";
-import { useT } from "../../lib/i18n";
+import { formatDate, formatMoney, intlLocale } from "../../lib/format";
+import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
 
 // Booking statuses we have human labels for (reused from the supplier detail
@@ -200,7 +200,7 @@ export default function VendorStatsPage() {
                           </span>
                         </span>
                         <span className="shrink-0 font-semibold text-ink-900 tabular-nums dark:text-paper-50">
-                          {seg.count.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB")}
+                          {seg.count.toLocaleString(intlLocale(locale))}
                         </span>
                       </Link>
                     </li>
@@ -446,9 +446,9 @@ function utcDayISO(offsetDays: number): string {
 function bucketInquiries(
   series: { date: string; count: number }[],
   range: RangeKey,
-  locale: "hu" | "en",
+  locale: Locale,
 ): TrendBucket[] {
-  const tag = locale === "hu" ? "hu-HU" : "en-GB";
+  const tag = intlLocale(locale);
   const counts = new Map(series.map((s) => [s.date, s.count]));
   const dayLabel = new Intl.DateTimeFormat(tag, { month: "short", day: "numeric" });
   const monthLabel = new Intl.DateTimeFormat(tag, { year: "2-digit", month: "short" });
@@ -582,9 +582,9 @@ function ConversionFunnel({
   locale,
 }: {
   stages: FunnelStage[];
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
-  const nf = (n: number) => n.toLocaleString(locale === "hu" ? "hu-HU" : "en-GB");
+  const nf = (n: number) => n.toLocaleString(intlLocale(locale));
   return (
     <ul className="flex flex-col gap-3">
       {stages.map((s, i) => {

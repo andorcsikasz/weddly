@@ -32,7 +32,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import type { PlannerInviteView, PlannerProfile, PlannerStats, User } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { plannerApi, plannerBillingApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { nextLocale, useT } from "../lib/i18n";
 import { useNotifSeen } from "../lib/useNotifSeen";
 import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
@@ -310,7 +310,7 @@ function PlannerProfileMenu({
             role="menuitem"
             onClick={() => {
               setOpen(false);
-              setLocale(locale === "hu" ? "en" : "hu");
+              setLocale(nextLocale(locale));
             }}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 sm:hidden dark:text-paper-100 dark:hover:bg-umber-700"
           >
@@ -319,7 +319,7 @@ function PlannerProfileMenu({
               <span>{t("nav.switch_language")}</span>
             </span>
             <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-              {locale} → {locale === "hu" ? "en" : "hu"}
+              {locale} → {nextLocale(locale)}
             </span>
           </button>
           <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
@@ -450,9 +450,9 @@ export function PlannerShell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-1.5 sm:gap-2.5">
             <button
               type="button"
-              onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+              onClick={() => setLocale(nextLocale(locale))}
               className="hidden h-11 w-11 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800"
-              title={`${t("nav.switch_language")} (${locale} → ${locale === "hu" ? "en" : "hu"})`}
+              title={`${t("nav.switch_language")} (${locale} → ${nextLocale(locale)})`}
               aria-label={t("nav.switch_language")}
             >
               <Languages size={18} aria-hidden="true" />

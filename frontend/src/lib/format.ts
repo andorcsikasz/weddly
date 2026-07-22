@@ -10,16 +10,19 @@ import type {
   WeddingSeason,
 } from "@shared/types";
 
-type Locale = "hu" | "en";
+type Locale = "hu" | "en" | "es";
 
 /** The single BCP-47 tag every date/number formatter on the platform uses for
- *  a given UI locale: HU → `hu-HU`, everything else → `en-GB`. English surfaces
- *  format with en-GB platform-wide (day-month-year ordering, 24h clock, "8 June
- *  2026") — NEVER en-US — so a date reads identically no matter which screen
- *  renders it. Always derive Intl/`toLocale*` locale args from this, never inline
- *  the ternary, so the convention can never drift back to en-US in new code. */
-export function intlLocale(locale: Locale): "hu-HU" | "en-GB" {
-  return locale === "hu" ? "hu-HU" : "en-GB";
+ *  a given UI locale: HU → `hu-HU`, ES → `es-ES`, everything else → `en-GB`.
+ *  English surfaces format with en-GB platform-wide (day-month-year ordering,
+ *  24h clock, "8 June 2026") — NEVER en-US — so a date reads identically no
+ *  matter which screen renders it. Always derive Intl/`toLocale*` locale args
+ *  from this, never inline the ternary, so the convention can never drift back
+ *  to en-US in new code. */
+export function intlLocale(locale: Locale): "hu-HU" | "en-GB" | "es-ES" {
+  if (locale === "hu") return "hu-HU";
+  if (locale === "es") return "es-ES";
+  return "en-GB";
 }
 
 /** Best-guess currency for a UI locale. HU → HUF, anything else → EUR. Used
@@ -64,8 +67,17 @@ function moneyFmt(locale: Locale, currency: Currency): Intl.NumberFormat {
   return f;
 }
 
-const numFmt = NUMBER("hu");
-const numFmtEn = NUMBER("en");
+// Per-locale number-formatter cache — `new Intl.NumberFormat` per call shows
+// up under flame-graph in the budget table.
+const numberCache = new Map<Locale, Intl.NumberFormat>();
+function numberFmt(locale: Locale): Intl.NumberFormat {
+  let f = numberCache.get(locale);
+  if (!f) {
+    f = NUMBER(locale);
+    numberCache.set(locale, f);
+  }
+  return f;
+}
 
 /** Format an integer amount in the couple's currency. The amount is taken
  *  AS-IS in the currency's base unit — no conversion, the column names
@@ -93,8 +105,15 @@ const COMPACT = (locale: Locale) =>
     maximumFractionDigits: 1,
   });
 
-const compactHu = COMPACT("hu");
-const compactEn = COMPACT("en");
+const compactCache = new Map<Locale, Intl.NumberFormat>();
+function compactFmt(locale: Locale): Intl.NumberFormat {
+  let f = compactCache.get(locale);
+  if (!f) {
+    f = COMPACT(locale);
+    compactCache.set(locale, f);
+  }
+  return f;
+}
 
 /** Compact, symbol-less amount for tight UI spots: "132k", "2,8 M". Currency
  *  is opaque here; the caller pairs it with a visible symbol elsewhere.
@@ -103,9 +122,8 @@ const compactEn = COMPACT("en");
  *  is short enough anyway. Compact only earns its keep at "1,6 M". */
 export function formatHufCompact(amount: number, locale: Locale = "hu"): string {
   const n = Math.round(amount);
-  if (locale !== "en" && Math.abs(n) < 1_000_000) return numFmt.format(n);
-  const fmt = locale === "en" ? compactEn : compactHu;
-  return fmt.format(n);
+  if (locale === "hu" && Math.abs(n) < 1_000_000) return numberFmt("hu").format(n);
+  return compactFmt(locale).format(n);
 }
 
 /** Just the symbol (`Ft` / `€` / `$`) for the given currency + locale. Used
@@ -154,9 +172,10 @@ export function currencyName(currency: Currency, locale: Locale = "hu"): string 
   return raw.charAt(0).toLocaleUpperCase(intlLocale(locale)) + raw.slice(1);
 }
 
-/** Plain integer with locale grouping (e.g. "1 234" in HU, "1,234" in EN). */
+/** Plain integer with locale grouping (e.g. "1 234" in HU, "1,234" in EN,
+ *  "1.234" in ES). */
 export function formatNumber(n: number, locale: Locale = "hu"): string {
-  return (locale === "en" ? numFmtEn : numFmt).format(Math.round(n));
+  return numberFmt(locale).format(Math.round(n));
 }
 
 /** "1 234 – 5 678" style. Returns empty string if either bound is missing. */
@@ -274,8 +293,15 @@ export function formatDateMs(ms: number, locale: Locale = "hu"): string {
 const MONTH_FORMATTER = (locale: Locale) =>
   new Intl.DateTimeFormat(intlLocale(locale), { month: "long", year: "numeric" });
 
-const monthFmt = MONTH_FORMATTER("hu");
-const monthFmtEn = MONTH_FORMATTER("en");
+const monthCache = new Map<Locale, Intl.DateTimeFormat>();
+function monthFmtFor(locale: Locale): Intl.DateTimeFormat {
+  let f = monthCache.get(locale);
+  if (!f) {
+    f = MONTH_FORMATTER(locale);
+    monthCache.set(locale, f);
+  }
+  return f;
+}
 
 /**
  * Render "June 2027" / "2027 június" from a year+month pair. Day-of-month
@@ -283,7 +309,7 @@ const monthFmtEn = MONTH_FORMATTER("en");
  */
 export function formatYearMonth(year: number, month: number, locale: Locale = "hu"): string {
   const d = new Date(Date.UTC(year, Math.max(0, month - 1), 1));
-  return (locale === "en" ? monthFmtEn : monthFmt).format(d);
+  return monthFmtFor(locale).format(d);
 }
 
 export interface GoalText {

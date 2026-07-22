@@ -17,15 +17,15 @@ import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { clearDemoSessionFlag } from "../lib/demoSession";
 import { authApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { contentLocale, type Locale, useT } from "../lib/i18n";
 import { useToast } from "./ui";
 
 const CLIENT_ID = (import.meta.env.VITE_APPLE_CLIENT_ID ?? "") as string;
 const REDIRECT_URI = (import.meta.env.VITE_APPLE_REDIRECT_URI ?? "") as string;
 
 // Apple serves a locale-specific bundle; we only ever need en_US / hu_HU.
-function scriptSrc(locale: "hu" | "en"): string {
-  const appleLocale = locale === "hu" ? "hu_HU" : "en_US";
+function scriptSrc(locale: Locale): string {
+  const appleLocale = locale === "hu" ? "hu_HU" : locale === "es" ? "es_ES" : "en_US";
   return `https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/${appleLocale}/appleid.auth.js`;
 }
 
@@ -57,7 +57,7 @@ function getApple(): AppleAuth | null {
   return w.AppleID?.auth ?? null;
 }
 
-function loadAppleJs(locale: "hu" | "en"): Promise<void> {
+function loadAppleJs(locale: Locale): Promise<void> {
   if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
   if (getApple()) return Promise.resolve();
   const src = scriptSrc(locale);
@@ -160,7 +160,7 @@ export function AppleSignInButton({ mode: _mode, redirectTo = "/app", onSuccess,
         ...(fullName ? { full_name: fullName } : {}),
         privacy_version: PRIVACY_VERSION,
         terms_version: TERMS_VERSION,
-        locale,
+        locale: contentLocale(locale),
       });
       if (onSuccess) {
         onSuccess(session);

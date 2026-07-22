@@ -45,7 +45,7 @@ import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { isCurrentSessionDemo } from "../lib/demoSession";
 import { adminUserApi, authApi, plannerApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { LOCALE_NAMES, nextLocale, useT } from "../lib/i18n";
 import {
   adoptShareUser,
   markSharePromptSeenLocally,
@@ -718,9 +718,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-              onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+              onClick={() => setLocale(nextLocale(locale))}
               aria-label={t("nav.switch_language")}
-              title={locale === "hu" ? t("nav.switch_to_en") : t("nav.switch_to_hu")}
+              title={LOCALE_NAMES[nextLocale(locale)]}
             >
               <Languages size={18} aria-hidden="true" />
             </button>

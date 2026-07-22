@@ -51,8 +51,8 @@ import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useToast } from "../components/ui";
 import { publicStatsApi } from "../lib/endpoints";
-import { currencySymbol, localeCurrency } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { currencySymbol, intlLocale, localeCurrency } from "../lib/format";
+import { contentLocale, type Locale, useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
@@ -158,7 +158,7 @@ export default function LandingPage() {
   }, []);
   // Single source of truth (shared/seo_faq.ts) — same array also feeds the
   // FAQPage JSON-LD in seo_ssr.ts, so they can't drift.
-  const faqEntries = SEO_FAQ[locale];
+  const faqEntries = SEO_FAQ[contentLocale(locale)];
 
   // Capture the `?ref=<source>` query param once on mount. Only the
   // values we expect — `rsvp`, `site` (from /w/:slug footers), `share` —
@@ -995,12 +995,12 @@ function StatCounter({
   run,
 }: {
   value: number;
-  locale: string;
+  locale: Locale;
   label: string;
   run: boolean;
 }) {
   const display = useFlipTo(value, run);
-  const fmt = useMemo(() => new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-GB"), [locale]);
+  const fmt = useMemo(() => new Intl.NumberFormat(intlLocale(locale)), [locale]);
   return (
     <div className="text-center">
       {/* Vintage split-flap tile — espresso card, cream serif digit, and a
@@ -1119,6 +1119,8 @@ const FEATURED_SLUG = "bibliai-idezetek-eskuvore";
  *  or the catalogue is empty. */
 function BlogTeaser() {
   const { t, locale } = useT();
+  // Blog copy is authored in HU/EN only; ES reads it in EN.
+  const cLocale = contentLocale(locale);
   const [posts, setPosts] = useState<BlogPost[] | null>(null);
 
   useEffect(() => {
@@ -1146,7 +1148,7 @@ function BlogTeaser() {
 
   if (!posts || posts.length === 0) return null;
 
-  const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  const fmt = new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -1161,7 +1163,7 @@ function BlogTeaser() {
        *  the existing 3-up grid (re-rendered below). */}
       <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-6 scroll-pl-6 sm:hidden [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {posts.map((post) => {
-          const copy = post[locale];
+          const copy = post[cLocale];
           const [y, m, d] = post.published_at.split("-").map(Number);
           const dateLabel =
             y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
@@ -1175,11 +1177,11 @@ function BlogTeaser() {
                   url={post.cover_image_url ?? null}
                   alt={copy.title}
                   slug={post.slug}
-                  category={post.category[locale]}
+                  category={post.category[cLocale]}
                 />
                 <div className="flex flex-1 flex-col p-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
-                    {post.category[locale]}
+                    {post.category[cLocale]}
                   </p>
                   <h3 className="mt-1.5 font-grotesk text-base font-semibold leading-[1.15] tracking-tight text-umber-900 dark:text-paper-50">
                     {copy.title}
@@ -1206,7 +1208,7 @@ function BlogTeaser() {
             even tiles instead of jagged ones. */}
         <ul className="mt-4 grid gap-x-8 gap-y-10 sm:mt-2 sm:grid-cols-3 sm:items-stretch sm:gap-y-0">
           {posts.map((post) => {
-            const copy = post[locale];
+            const copy = post[cLocale];
             const [y, m, d] = post.published_at.split("-").map(Number);
             const dateLabel =
               y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
@@ -1220,11 +1222,11 @@ function BlogTeaser() {
                     url={post.cover_image_url ?? null}
                     alt={copy.title}
                     slug={post.slug}
-                    category={post.category[locale]}
+                    category={post.category[cLocale]}
                   />
                   <div className="flex flex-1 flex-col p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
-                      {post.category[locale]}
+                      {post.category[cLocale]}
                     </p>
                     <h3 className="mt-2 font-grotesk text-lg font-semibold leading-[1.15] tracking-tight text-umber-900 transition-colors group-hover:text-umber-500 dark:text-paper-50 dark:group-hover:text-umber-300 sm:text-xl">
                       {copy.title}

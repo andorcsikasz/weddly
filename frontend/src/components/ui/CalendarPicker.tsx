@@ -1,5 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { intlLocale } from "../../lib/format";
 import { useState } from "react";
+import type { Locale } from "../../lib/i18n";
 
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
@@ -33,7 +35,7 @@ export function CalendarPicker({
   min?: string;
   /** Called with the chosen YYYY-MM-DD string. */
   onSelect: (ymd: string) => void;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const today = new Date();
   const todayIso = today.toISOString().slice(0, 10);
@@ -43,7 +45,7 @@ export function CalendarPicker({
   const [year, setYear] = useState(initYear);
   const [month, setMonth] = useState(initMonth);
 
-  const monthLabel = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  const monthLabel = new Intl.DateTimeFormat(intlLocale(locale), {
     month: "long",
     year: "numeric",
   }).format(new Date(year, month, 1));

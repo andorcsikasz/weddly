@@ -1,13 +1,14 @@
 import { Send } from "lucide-react";
+import { intlLocale } from "../lib/format";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import type { PlannerClientView, PlannerMessage, PlannerThreadPreview } from "@shared/types";
 import { plannerApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
-function formatTs(ts: number, locale: string): string {
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+function formatTs(ts: number, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     month: "short",
     day: "numeric",
     hour: "2-digit",

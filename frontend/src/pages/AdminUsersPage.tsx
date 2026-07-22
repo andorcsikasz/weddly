@@ -1,4 +1,5 @@
 import type { AdminCoupleView, AdminEmailLogEntry, AdminUserView } from "@shared/types";
+import { intlLocale } from "../lib/format";
 import {
   Bird,
   Briefcase,
@@ -32,15 +33,15 @@ import { Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { adminUserApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 
 /** `created_at` is Unix milliseconds (see backend/src/db.ts `now()`). Mirrors
  *  the formatter on AdminSuppliersPage so the admin pages render dates
  *  identically (e.g. "2026. máj. 12."). */
-function formatDate(unixMs: number, locale: string): string {
+function formatDate(unixMs: number, locale: Locale): string {
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -52,7 +53,7 @@ function formatDate(unixMs: number, locale: string): string {
  *  days ago" territory where the date itself is more informative. */
 function formatRelative(
   unixMs: number | null,
-  locale: string,
+  locale: Locale,
   t: (k: string, vars?: Record<string, string | number>) => string,
 ): string {
   if (unixMs == null) return t("admin.last_active_never");

@@ -1129,7 +1129,7 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
 }
 
 /** Locale-aware glyph for a monogram separator. Only `and` differs by locale. */
-export function monogramSeparatorGlyph(slug: MonogramSeparatorSlug, locale: "hu" | "en"): string {
+export function monogramSeparatorGlyph(slug: MonogramSeparatorSlug, locale: "hu" | "en" | "es"): string {
   if (slug === "and") return locale === "hu" ? "és" : "and";
   return MONOGRAM_SEPARATORS.find((s) => s.slug === slug)?.glyph ?? "&";
 }
@@ -1147,7 +1147,7 @@ export function buildMonogram(
   nameA: string | null | undefined,
   nameB: string | null | undefined,
   separator: MonogramSeparatorSlug,
-  locale: "hu" | "en",
+  locale: "hu" | "en" | "es",
 ): string {
   const a = initialOf(nameA);
   const b = initialOf(nameB);
@@ -1192,7 +1192,7 @@ export function toRomanNumeral(n: number): string {
 export function formatWeddingDate(
   iso: string | null | undefined,
   slug: DateFormatSlug,
-  locale: "hu" | "en",
+  locale: "hu" | "en" | "es",
 ): string {
   const raw = (iso ?? "").trim();
   if (!raw) return "";

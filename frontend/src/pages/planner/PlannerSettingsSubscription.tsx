@@ -1,9 +1,10 @@
 import { AlertTriangle, Check } from "lucide-react";
+import { intlLocale } from "../../lib/format";
 import { useEffect, useState } from "react";
 import type { PlannerBillingStatus } from "@shared/planner_billing";
 import type { PlannerPlan, PlannerStats } from "@shared/types";
 import { plannerApi, plannerBillingApi } from "../../lib/endpoints";
-import { useT } from "../../lib/i18n";
+import { type Locale, useT } from "../../lib/i18n";
 
 // Same truthful per-tier feature keys as PlannerBillingPage; the client-count
 // line interpolates the live max_clients instead.
@@ -24,8 +25,8 @@ const PLAN_FEATURES: Record<PlannerPlan, string[]> = {
   ],
 };
 
-function formatPrice(amount: number, currency: string, locale: string): string {
-  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US", {
+function formatPrice(amount: number, currency: string, locale: Locale): string {
+  return new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
@@ -73,7 +74,7 @@ export default function PlannerSettingsSubscription() {
   const readOnly = b !== undefined && b !== null && !b.entitled;
 
   const fmtDate = (ms: number) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", { dateStyle: "long" }).format(
+    new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: "long" }).format(
       new Date(ms),
     );
   // One factual line about where the plan stands: founding window end, trial

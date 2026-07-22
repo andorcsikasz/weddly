@@ -11,7 +11,7 @@ import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
 import { Button, useConfirm, useToast } from "../components/ui";
 import type { AdminBlogPostPayload } from "../lib/endpoints";
 import { adminBlogApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { contentLocale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import type { BlogBlock, BlogPost } from "@shared/blog_posts";
 
@@ -103,10 +103,10 @@ function BlogList({ onEdit, onNew }: { onEdit: (id: number) => void; onNew: () =
                       onClick={() => post.id && onEdit(post.id)}
                       className="text-left font-medium text-neutral-900 hover:underline dark:text-paper-50"
                     >
-                      {post[locale].title || post.slug}
+                      {post[contentLocale(locale)].title || post.slug}
                     </button>
                     <p className="mt-0.5 text-xs text-neutral-500 dark:text-umber-300">
-                      {post.category[locale]}
+                      {post.category[contentLocale(locale)]}
                     </p>
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-neutral-600 dark:text-umber-200">

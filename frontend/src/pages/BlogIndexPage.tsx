@@ -1,10 +1,11 @@
 import { ArrowLeft } from "lucide-react";
+import { intlLocale } from "../lib/format";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { BlogCoverArt } from "../components/BlogCoverArt";
 import { PublicShell } from "../components/PublicShell";
 import { blogApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { contentLocale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import type { BlogPost } from "@shared/blog_posts";
 
@@ -61,7 +62,7 @@ export default function BlogIndexPage() {
           <ul className="mt-12 grid items-stretch gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-16">
             {posts.map((post) => (
               <li key={post.slug} className="h-full">
-                <BlogTile post={post} locale={locale} t={t} />
+                <BlogTile post={post} locale={contentLocale(locale)} t={t} />
               </li>
             ))}
           </ul>
@@ -90,10 +91,10 @@ function BlogTile({
   locale: "hu" | "en";
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
-  const copy = post[locale];
+  const copy = post[locale === "hu" ? "hu" : "en"];
   return (
     <Link
-      to={locale === "en" ? `/blog/${post.en_slug ?? post.slug}` : `/blog/${post.slug}`}
+      to={locale !== "hu" ? `/blog/${post.en_slug ?? post.slug}` : `/blog/${post.slug}`}
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-800 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-ink-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
     >
       <BlogCover
@@ -157,7 +158,7 @@ function formatDate(iso: string, locale: "hu" | "en"): string {
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   const date = new Date(Date.UTC(y, m - 1, d));
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "long",
     day: "numeric",

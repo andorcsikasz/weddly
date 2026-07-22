@@ -22,6 +22,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { intlLocale } from "../../lib/format";
 import { Check, ExternalLink, Hourglass, Lock, MoveVertical, Plus, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -46,7 +47,7 @@ import { Switch } from "../../components/ui/Switch";
 import { TextField } from "../../components/ui/TextField";
 import { useToast } from "../../components/ui/ToastProvider";
 import { vendorAvailabilityApi, vendorListingApi } from "../../lib/endpoints";
-import { useT } from "../../lib/i18n";
+import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import VendorListingPreview from "./VendorListingPreview";
@@ -83,10 +84,10 @@ type StringFormKey = {
 
 /** Render an ISO 'YYYY-MM-DD' block date in the vendor's locale. Parsed as
  *  UTC midnight so the displayed day never shifts under a timezone offset. */
-function formatBlockedDate(iso: string, locale: string): string {
+function formatBlockedDate(iso: string, locale: Locale): string {
   const d = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -103,13 +104,13 @@ function BillingBanner({
   t,
 }: {
   billing: VendorBilling;
-  locale: string;
+  locale: Locale;
   t: (path: string, vars?: Record<string, string | number>) => string;
 }) {
   const fmtDate = (ms: number | null): string =>
     ms == null
       ? ""
-      : new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+      : new Intl.DateTimeFormat(intlLocale(locale), {
           year: "numeric",
           month: "long",
           day: "numeric",
@@ -550,7 +551,7 @@ export default function VendorListingPage() {
   const priceLockedUntil = view ? priceBandLockedUntil(view.listing.price_band_changed_at) : null;
   const priceLocked = priceLockedUntil !== null && priceLockedUntil > Date.now();
   const priceUnlockDate = priceLocked
-    ? new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    ? new Intl.DateTimeFormat(intlLocale(locale), {
         year: "numeric",
         month: "long",
         day: "numeric",

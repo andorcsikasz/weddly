@@ -39,8 +39,8 @@ import { EUROPE_ISO_SET, WORLD_NAMES, WORLD_PATHS, WORLD_VIEWBOX } from "../lib/
 import { Skeleton, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminAnalyticsApi } from "../lib/endpoints";
-import { formatHuf, formatNumber } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { formatHuf, formatNumber, intlLocale } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 type Loadable<T> = { status: "loading" } | { status: "ok"; data: T } | { status: "error" };
@@ -421,7 +421,7 @@ function PageHeader({
   onRefresh: () => void;
   refreshing: boolean;
   hasError: boolean;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const [activeId, setActiveId] = useState<SectionId>("money");
@@ -464,7 +464,7 @@ function PageHeader({
   const lastLoadedLabel = useMemo(() => {
     if (lastLoadedAt == null) return null;
     const d = new Date(lastLoadedAt);
-    const time = d.toLocaleTimeString(locale === "hu" ? "hu-HU" : "en-GB", {
+    const time = d.toLocaleTimeString(intlLocale(locale), {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -738,7 +738,7 @@ function MoneySection({
   locale,
 }: {
   state: Loadable<AdminMoneyAnalytics>;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const title = t("admin.analytics_section_money");
@@ -845,7 +845,7 @@ function MoneyHistogram({
   title: string;
   buckets: Array<{ bucket_max_huf: number; count: number }>;
   zeroLabel: string;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const max = Math.max(0, ...buckets.map((b) => b.count));
@@ -890,7 +890,7 @@ function PerCategoryTable({
   locale,
 }: {
   rows: AdminMoneyAnalytics["per_category"];
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const sorted = useMemo(() => [...rows].sort((a, b) => b.avg_planned - a.avg_planned), [rows]);
@@ -944,7 +944,7 @@ function ActivitySection({
   locale,
 }: {
   state: Loadable<AdminActivityAnalytics>;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const title = t("admin.analytics_section_activity");
@@ -1103,7 +1103,7 @@ function FunnelStep({
   label: string;
   count: number;
   pct: number;
-  locale: "hu" | "en";
+  locale: Locale;
   /** Tiny muted "demo: N" line under the count — demo workspaces are
    *  excluded from `count`, this surfaces how many sit alongside it. */
   demoNote?: string;
@@ -1134,7 +1134,7 @@ function TrafficSection({
   locale,
 }: {
   state: Loadable<AdminTrafficAnalytics>;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const title = t("admin.analytics_section_traffic");
@@ -1193,7 +1193,7 @@ function TrafficSection({
   const dailyMax = Math.max(0, ...d.active_users_daily.map((p) => p.count));
   const hasTraffic = t28.active_users > 0 || t7.active_users > 0;
   const generatedLabel = new Date(d.generated_at).toLocaleTimeString(
-    locale === "hu" ? "hu-HU" : "en-GB",
+    intlLocale(locale),
     { hour: "2-digit", minute: "2-digit" },
   );
   const subtitle = t("admin.analytics_traffic_source", {
@@ -1580,7 +1580,7 @@ function CoverageLine({
 }: {
   known: number;
   total: number;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   return (
@@ -1614,7 +1614,7 @@ function AcqDimTable({
 }: {
   rows: AcquisitionDimensionRow[];
   keyHeader: string;
-  locale: "hu" | "en";
+  locale: Locale;
   maxRows?: number;
 }) {
   const { t } = useT();
@@ -1674,7 +1674,7 @@ function AcqBarList({
   locale,
 }: {
   rows: AcquisitionDimensionRow[];
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   if (rows.length === 0) {
@@ -1725,7 +1725,7 @@ function EuropeChoropleth({
   locale,
 }: {
   rows: AcquisitionDimensionRow[];
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const counts = new Map<string, number>();
@@ -1799,7 +1799,7 @@ function WorldChoropleth({
   locale,
 }: {
   rows: AcquisitionDimensionRow[];
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const counts = new Map<string, number>();
@@ -1866,7 +1866,7 @@ function AcquisitionChoropleth({
   locale,
 }: {
   rows: AcquisitionDimensionRow[];
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const hasNonEurope = rows.some((r) => r.key !== null && !EUROPE_ISO_SET.has(r.key));
   if (hasNonEurope) return <WorldChoropleth rows={rows} locale={locale} />;
@@ -1878,7 +1878,7 @@ function AcquisitionSection({
   locale,
 }: {
   state: Loadable<AdminAcquisitionAnalytics>;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const title = t("admin.analytics_section_acquisition");
@@ -2042,16 +2042,16 @@ function AcquisitionSection({
 
 /** Short month label (1..12) in the admin's locale via Intl — keeps the
  *  seasonality bars label-free of 12 hand-maintained i18n keys. */
-function monthLabel(month: number, locale: "hu" | "en"): string {
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+function monthLabel(month: number, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     month: "short",
   }).format(new Date(Date.UTC(2020, month - 1, 1)));
 }
 
 /** Short weekday label for ISO weekday (1=Mon..7=Sun). June 1 2020 was a
  *  Monday, so Date.UTC(2020, 5, weekday) maps 1→Mon … 7→Sun cleanly. */
-function weekdayLabel(weekday: number, locale: "hu" | "en"): string {
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+function weekdayLabel(weekday: number, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: "short",
   }).format(new Date(Date.UTC(2020, 5, weekday)));
 }
@@ -2059,7 +2059,7 @@ function weekdayLabel(weekday: number, locale: "hu" | "en"): string {
 /** Median + IQR sub-line shared by the quartile-backed KPI tiles. */
 function statSub(
   s: AdminAnalyticsStats,
-  locale: "hu" | "en",
+  locale: Locale,
   t: (k: string, v?: Record<string, string | number>) => string,
 ): string {
   return t("admin.analytics_stat_sub", {
@@ -2080,7 +2080,7 @@ function DistBars({
   labelWidth = "7rem",
 }: {
   rows: Array<{ label: string; count: number; sub?: string }>;
-  locale: "hu" | "en";
+  locale: Locale;
   emptyLabel: string;
   labelWidth?: string;
 }) {
@@ -2124,7 +2124,7 @@ function WeddingsSection({
   locale,
 }: {
   state: Loadable<AdminWeddingAnalytics>;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const title = t("admin.analytics_section_weddings");
@@ -2275,7 +2275,7 @@ function HoneymoonSection({
   locale,
 }: {
   state: Loadable<AdminHoneymoonAnalytics>;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const title = t("admin.analytics_section_honeymoon");
@@ -2371,7 +2371,7 @@ function GuestsSection({
   locale,
 }: {
   state: Loadable<AdminGuestAnalytics>;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const title = t("admin.analytics_section_guests");
@@ -2498,7 +2498,7 @@ function PicksSection({
   locale,
 }: {
   state: Loadable<AdminPicksAnalytics>;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const title = t("admin.analytics_section_picks");
@@ -2713,7 +2713,7 @@ function SourceMiniBar({
   community: number;
   diy: number;
   total: number;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const safeTotal = total > 0 ? total : 1;
@@ -2795,7 +2795,7 @@ function RetentionCard({
   locale,
 }: {
   retention: AdminEngagementAnalytics["retention"];
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const cols = [
@@ -2848,7 +2848,7 @@ function EngagementSection({
   locale,
 }: {
   state: Loadable<AdminEngagementAnalytics>;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const title = t("admin.analytics_engagement_title");
@@ -3039,7 +3039,7 @@ function TopFeaturesList({
   locale,
 }: {
   features: AdminEngagementAnalytics["top_features"];
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const rows = features.slice(0, 5);
@@ -3097,7 +3097,7 @@ function TopUsersList({
   locale,
 }: {
   users: AdminEngagementAnalytics["top_users"];
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   if (users.length === 0) {
@@ -3146,7 +3146,7 @@ function TopUsersList({
 
 function formatRelative(
   unixMs: number | null,
-  locale: string,
+  locale: Locale,
   t: (k: string, vars?: Record<string, string | number>) => string,
 ): string {
   if (unixMs == null) return t("admin.last_active_never");
@@ -3159,7 +3159,7 @@ function formatRelative(
   const days = Math.floor(diff / (24 * 60 * 60 * 1000));
   if (days < 7) return t("admin.last_active_days", { n: days });
   const d = new Date(unixMs);
-  return d.toLocaleDateString(locale === "hu" ? "hu-HU" : "en-GB", {
+  return d.toLocaleDateString(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -3179,7 +3179,7 @@ function DemoSection({
   locale,
 }: {
   state: Loadable<AdminDemoAnalytics>;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
   const [kind, setKind] = useState<AdminDemoKind>("couple");
@@ -3344,7 +3344,7 @@ function DemoSection({
   );
 }
 
-function formatLifetime(seconds: number, locale: "hu" | "en"): string {
+function formatLifetime(seconds: number, locale: Locale): string {
   if (!Number.isFinite(seconds) || seconds <= 0) return "-";
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);

@@ -7,6 +7,7 @@
 // stay pinned while a long day scrolls.
 
 import type { PlanningItem } from "@shared/types";
+import { intlLocale } from "../../lib/format";
 import { Calendar } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useT } from "../../lib/i18n";
@@ -103,7 +104,7 @@ export default function DayView({
     }
   }, [currentDate, today]);
 
-  const intl = locale === "hu" ? "hu-HU" : "en-GB";
+  const intl = intlLocale(locale);
   const dayStart = startOfDay(currentDate);
   const isToday = dayStart.getTime() === startOfDay(today).getTime();
   const dow = dayStart.getDay(); // 0 = Sun, 6 = Sat

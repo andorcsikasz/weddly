@@ -27,6 +27,7 @@ import {
 import { useState } from "react";
 import { weddingWebsiteApi } from "../lib/endpoints";
 import { currencySymbol, formatMoney, formatNumber } from "../lib/format";
+import type { Locale } from "../lib/i18n";
 import { useToast } from "./ui";
 
 function requestIconFor(title: string): typeof HandHeart {
@@ -38,7 +39,6 @@ function requestIconFor(title: string): typeof HandHeart {
   return HandHeart;
 }
 
-type Locale = "hu" | "en";
 
 function formatAmount(minor: number, currency: Currency, locale: Locale): string {
   return formatMoney(minor / minorUnitFactor(currency), currency, locale);

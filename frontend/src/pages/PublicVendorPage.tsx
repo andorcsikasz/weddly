@@ -26,7 +26,7 @@ import { LazyVideoPlayer } from "../components/VideoEmbed";
 import { Wordmark } from "../components/Wordmark";
 import { ApiError } from "../lib/api";
 import { getVisitorToken, setVisitorToken, supplierApi, visitorApi } from "../lib/endpoints";
-import { localeCurrency } from "../lib/format";
+import { intlLocale, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { reviewTagLabel } from "../lib/reviewTags";
 
@@ -230,10 +230,10 @@ function PriceBandDots({ band }: { band: 1 | 2 | 3 | 4 | 5 }) {
   );
 }
 
-function formatDate(unixMs: number, locale: string): string {
+function formatDate(unixMs: number, locale: Locale): string {
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -645,7 +645,7 @@ function PublicBlurb({
   t,
 }: {
   detail: SupplierDetail;
-  locale: string;
+  locale: Locale;
   t: (k: string) => string;
 }) {
   const blurb = (locale === "hu" ? detail.blurb_hu : detail.blurb_en).trim();
@@ -671,7 +671,7 @@ function PublicReviewCard({
   t,
 }: {
   review: SupplierReview;
-  locale: string;
+  locale: Locale;
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
   return (
@@ -707,7 +707,7 @@ function PublicReviewCard({
   );
 }
 
-function PublicCommentCard({ comment, locale }: { comment: SupplierComment; locale: string }) {
+function PublicCommentCard({ comment, locale }: { comment: SupplierComment; locale: Locale }) {
   return (
     <li className="rounded-xl border border-ink-200/60 bg-white p-5 dark:border-umber-700/60 dark:bg-umber-900">
       <div className="mb-1 flex items-center justify-between gap-2">
@@ -731,7 +731,7 @@ function PublicContactCard({
 }: {
   detail: SupplierDetail;
   availability: PublicVendorPageData["availability"];
-  locale: string;
+  locale: Locale;
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
   // A vendor can hide the tail of their address + email from anonymous
@@ -746,7 +746,7 @@ function PublicContactCard({
   const addressLine = detail.address ? `${detail.city} · ${detail.address}` : detail.city;
   const nextAvailable =
     availability.bookable && availability.next_available
-      ? new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+      ? new Intl.DateTimeFormat(intlLocale(locale), {
           year: "numeric",
           month: "short",
           day: "numeric",

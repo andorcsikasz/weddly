@@ -33,6 +33,7 @@ import {
   SquareKanban,
   Trash2,
 } from "lucide-react";
+import { intlLocale } from "../../lib/format";
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
@@ -56,7 +57,7 @@ import {
   vendorGoogleCalendarApi,
   vendorTaskApi,
 } from "../../lib/endpoints";
-import { useT } from "../../lib/i18n";
+import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
 
 type CalView = "day" | "4day" | "week" | "month" | "year" | "schedule";
@@ -98,10 +99,10 @@ function startOfWeekMonday(d: Date): Date {
 }
 
 /** Render an ISO 'YYYY-MM-DD' in the vendor's locale ("2026. aug. 2."). */
-function formatDay(iso: string, locale: string): string {
+function formatDay(iso: string, locale: Locale): string {
   const d = parseYmd(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -255,7 +256,7 @@ function YearView({
 }) {
   const { locale } = useT();
   const monthName = (m: number) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", { month: "long" }).format(
+    new Intl.DateTimeFormat(intlLocale(locale), { month: "long" }).format(
       new Date(year, m, 1),
     );
   return (
@@ -532,7 +533,7 @@ function TimeGridView({
   const nowTop = ((now.getHours() + now.getMinutes() / 60 - windowStart) / span) * 100;
   const showNow = days.some((d) => ymd(d) === todayStr) && nowTop >= 0 && nowTop <= 100;
   const wd = (d: Date) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", { weekday: "short" }).format(d);
+    new Intl.DateTimeFormat(intlLocale(locale), { weekday: "short" }).format(d);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
@@ -675,7 +676,7 @@ function ScheduleView({
     );
   }
   const fmt = (s: string) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    new Intl.DateTimeFormat(intlLocale(locale), {
       month: "short",
       day: "numeric",
       weekday: "short",
@@ -839,7 +840,7 @@ function BoardCard({
   const overdue = !done && task.due_date !== null && task.due_date < todayStr;
 
   const fmt = (s: string) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    new Intl.DateTimeFormat(intlLocale(locale), {
       month: "short",
       day: "numeric",
     }).format(parseYmd(s));
@@ -1372,7 +1373,7 @@ export default function VendorCalendarPage() {
   }, [events]);
 
   const weekdays = useMemo(() => {
-    const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", { weekday: "short" });
+    const fmt = new Intl.DateTimeFormat(intlLocale(locale), { weekday: "short" });
     return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 1 + i))); // Mon-first
   }, [locale]);
 
@@ -1397,7 +1398,7 @@ export default function VendorCalendarPage() {
   }
 
   const intl = (opts: Intl.DateTimeFormatOptions) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", opts);
+    new Intl.DateTimeFormat(intlLocale(locale), opts);
   const title = useMemo(() => {
     if (mode === "tasks") return t("vendor_calendar.mode_tasks");
     if (view === "year") return String(cursor.getFullYear());

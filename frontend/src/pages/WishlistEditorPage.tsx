@@ -49,7 +49,7 @@ import { Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, guestApi, householdApi, receivedGiftApi, wishlistApi } from "../lib/endpoints";
 import { currencySymbol, formatMoney, formatNumber } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 /** Minor units → the whole-unit number the couple typed (and we render via
@@ -161,7 +161,7 @@ function WishlistProgress({
   targetMinor: number;
   interestCount: number;
   currency: Currency;
-  locale: "hu" | "en";
+  locale: Locale;
   layout: "beside" | "below";
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
@@ -207,7 +207,7 @@ function WishlistProgress({
 interface ItemViewProps {
   item: WishlistItem;
   currency: Currency;
-  locale: "hu" | "en";
+  locale: Locale;
   t: (key: string, vars?: Record<string, string | number>) => string;
   onEdit: () => void;
   onDelete: () => void;
@@ -739,7 +739,7 @@ function ReceivedGiftsTable({
   guests: Guest[];
   households: Household[];
   couple: Couple;
-  locale: "hu" | "en";
+  locale: Locale;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const toast = useToast();

@@ -4,6 +4,7 @@ import {
   type SupplierCategory,
   type SupplierDirectoryAdminRow,
 } from "@shared/suppliers";
+import { intlLocale } from "../../lib/format";
 import {
   Download,
   ExternalLink,
@@ -19,7 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConfirm, useEntryPrompt, useToast } from "../ui";
 import { ApiError } from "../../lib/api";
 import { adminSupplierApi } from "../../lib/endpoints";
-import { useT } from "../../lib/i18n";
+import { type Locale, useT } from "../../lib/i18n";
 
 /** Categories the directory covers, derived from the single taxonomy source so
  *  it can never drift from the enum. */
@@ -70,11 +71,11 @@ function fromDateInput(value: string, endOfDay: boolean): number | null {
   return d.getTime();
 }
 
-function formatTimestamp(unixMs: number | null, locale: string): string {
+function formatTimestamp(unixMs: number | null, locale: Locale): string {
   if (!unixMs) return "";
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",

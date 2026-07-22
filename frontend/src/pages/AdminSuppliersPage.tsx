@@ -1,4 +1,5 @@
 import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
+import { intlLocale } from "../lib/format";
 import {
   AlertTriangle,
   Check,
@@ -21,7 +22,7 @@ import { SupplierDirectoryView } from "../components/admin/SupplierDirectoryView
 import { SegmentedControl, Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminSupplierApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 /** Decode HTML numeric character entities (`&#NN;`, `&#xHH;`) and the four
@@ -59,22 +60,22 @@ function normalizeSupplierName(name: string): string {
  *  see backend/src/db.ts `now()`). Earlier versions multiplied by 1000 here,
  *  which threw the date 1000× into the future and rendered the column
  *  unreadable — that was the "hozzáadás dátuma" bug. */
-function formatDate(unixMs: number | null, locale: string): string {
+function formatDate(unixMs: number | null, locale: Locale): string {
   if (unixMs == null) return "";
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
   }).format(d);
 }
 
-function formatDateTime(unixMs: number | null, locale: string): string {
+function formatDateTime(unixMs: number | null, locale: Locale): string {
   if (unixMs == null) return "";
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -587,7 +588,7 @@ interface SupplierCardProps {
   onDelete: () => void;
   enriching: boolean;
   onSavedNotes: (next: CommunitySupplierAdminView) => void;
-  locale: string;
+  locale: Locale;
   /** True only for the first awaiting_review row on initial load; lets the
    *  moderator see the full detail surface for triage without an extra click. */
   initiallyExpanded: boolean;

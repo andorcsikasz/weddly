@@ -18,10 +18,11 @@
 // it's obvious a task extends beyond what you're looking at.
 
 import type { PlanningItem } from "@shared/types";
+import { intlLocale } from "../../lib/format";
 import { Heart, Plus } from "lucide-react";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useT } from "../../lib/i18n";
+import { type Locale, useT } from "../../lib/i18n";
 
 interface ResolvedSupplier {
   id: string;
@@ -170,12 +171,12 @@ function buildGeometry(
   windowStart: Date,
   monthCount: number,
   includeWeeks: boolean,
-  locale: "hu" | "en",
+  locale: Locale,
 ): Geometry {
   const windowEnd = addDays(addMonths(windowStart, monthCount), -1);
   const totalDays = diffDays(windowStart, windowEnd) + 1;
 
-  const intl = locale === "hu" ? "hu-HU" : "en-GB";
+  const intl = intlLocale(locale);
   const monthFmt = new Intl.DateTimeFormat(intl, { month: "short" });
   const yearFmt = new Intl.DateTimeFormat(intl, { year: "numeric" });
   const months: MonthBand[] = [];

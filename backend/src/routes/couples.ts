@@ -281,12 +281,13 @@ function parseCountry(raw: unknown): string | null {
 }
 
 /** Pick a sensible default currency for a new couple based on the owner's
- *  signup locale. HU users get HUF (the dominant local market); EN / other
- *  users get EUR (broadest international fit — covers most of the EU). The
- *  picker is just a default — the user can override during onboarding via
- *  the optional `currency` field, and they can flip via PATCH afterwards. */
-function defaultCurrencyForLocale(locale: "hu" | "en" | null): Currency {
-  return locale === "en" ? "EUR" : "HUF";
+ *  signup locale. EN and ES users get EUR (broadest international fit — covers
+ *  most of the EU, incl. Spain); HU and unknown/null locales default to HUF,
+ *  preserving the historic HU-dominant default. The picker is just a default —
+ *  the user can override during onboarding via the optional `currency` field,
+ *  and they can flip via PATCH afterwards. */
+function defaultCurrencyForLocale(locale: "hu" | "en" | "es" | null): Currency {
+  return locale === "en" || locale === "es" ? "EUR" : "HUF";
 }
 
 const VALID_CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);

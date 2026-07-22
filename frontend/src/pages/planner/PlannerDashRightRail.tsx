@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import type { PlannerClientView, PlannerTaskRow } from "@shared/types";
 import { useT } from "../../lib/i18n";
 import { nameDayFor } from "../../lib/nameDays";
-import { localYmd } from "../../lib/format";
+import { intlLocale, localYmd } from "../../lib/format";
 
 interface Props {
   tasks: PlannerTaskRow[];
@@ -123,7 +123,7 @@ export function PlannerDashRightRail({
   // between midnight and 02:00 CEST.
   const today = localYmd(now);
 
-  const todayLabel = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  const todayLabel = new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: "long",
     month: "short",
     day: "numeric",

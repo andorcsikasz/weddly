@@ -93,7 +93,7 @@ import {
   isPlausibleDateIso,
   todayIso,
 } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish } from "../lib/sync";
 
@@ -1548,7 +1548,7 @@ function BudgetKpiTile({
   totalActual: number;
   cap: number | null;
   currency: Currency;
-  locale: "hu" | "en";
+  locale: Locale;
   onSaveCap: (next: number) => Promise<void>;
   progress: number | null;
   progressOver: boolean;
@@ -1966,7 +1966,7 @@ function RsvpRow({
   label: string;
   value: number;
   total: number;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (

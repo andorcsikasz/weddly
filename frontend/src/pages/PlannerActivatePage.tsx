@@ -6,6 +6,7 @@
 // returns a fresh session, so the planner lands straight in the workspace.
 
 import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
+import { intlLocale } from "../lib/format";
 import type { PlannerActivationView } from "@shared/types";
 import { Gift, Loader2 } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
@@ -15,7 +16,7 @@ import { Button, PasswordField } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { plannerActivationApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 type LoadState =
@@ -33,8 +34,8 @@ function detailCode(err: ApiError): string | undefined {
   return undefined;
 }
 
-function fmtDate(unixMs: number, locale: string): string {
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+function fmtDate(unixMs: number, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "long",
     day: "numeric",

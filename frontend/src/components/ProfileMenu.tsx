@@ -18,7 +18,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { coupleApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { nextLocale, useT } from "../lib/i18n";
 
 /** `onOpenFeedback` is supplied by AppShell. The feedback dialog's entry
  *  point lives here in the profile dropdown for every viewport (it used to
@@ -222,7 +222,7 @@ export function ProfileMenu({
             role="menuitem"
             onClick={() => {
               setOpen(false);
-              setLocale(locale === "hu" ? "en" : "hu");
+              setLocale(nextLocale(locale));
             }}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 sm:hidden dark:text-paper-100 dark:hover:bg-umber-700"
           >
@@ -231,7 +231,7 @@ export function ProfileMenu({
               <span>{t("nav.switch_language")}</span>
             </span>
             <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-              {locale} → {locale === "hu" ? "en" : "hu"}
+              {locale} → {nextLocale(locale)}
             </span>
           </button>
           {user.is_admin && (

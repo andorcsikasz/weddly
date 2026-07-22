@@ -10,7 +10,7 @@
 import type { Currency } from "@shared/types";
 import { Check, Minus, Pencil, Plus } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { currencySymbol, formatMoney } from "../lib/format";
+import { currencySymbol, formatMoney, intlLocale } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Button, Dialog } from "./ui";
 
@@ -254,7 +254,7 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
   const symbol = currencySymbol(currency, loc);
   // Quantities (kg, litres, bottles) carry a meaningful decimal — 7.7 kg, 46.2
   // bottles — so unlike money they're shown to one fractional digit.
-  const qtyFmt = new Intl.NumberFormat(loc === "hu" ? "hu-HU" : "en-GB", {
+  const qtyFmt = new Intl.NumberFormat(intlLocale(loc), {
     maximumFractionDigits: 1,
   });
 

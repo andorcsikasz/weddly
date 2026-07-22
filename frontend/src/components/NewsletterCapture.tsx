@@ -8,7 +8,7 @@ import { PRIVACY_VERSION } from "@shared/legal";
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { newsletterApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { contentLocale, useT } from "../lib/i18n";
 
 export function NewsletterCapture({ source }: { source: string }) {
   const { t, locale } = useT();
@@ -29,7 +29,7 @@ export function NewsletterCapture({ source }: { source: string }) {
     try {
       await newsletterApi.subscribe({
         email: email.trim(),
-        locale,
+        locale: contentLocale(locale),
         source,
         privacy_version: PRIVACY_VERSION,
       });

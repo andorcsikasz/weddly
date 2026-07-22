@@ -9,7 +9,7 @@ import { Shell } from "../components/Shell";
 import { Button, PasswordField, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { authApi, plannerInviteApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { contentLocale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 export default function RegisterPage() {
@@ -122,7 +122,7 @@ export default function RegisterPage() {
         // Carry the rendered locale so the user's preference survives across
         // devices — backend persists to users.locale. Only the two values
         // the i18n layer actually supports flow through.
-        locale,
+        locale: contentLocale(locale),
         referrer,
         ...utm,
         ...plannerInviteField,

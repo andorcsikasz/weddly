@@ -1,11 +1,12 @@
 import { ArrowLeft } from "lucide-react";
+import { intlLocale } from "../lib/format";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { NewsletterCapture } from "../components/NewsletterCapture";
 import { PublicShell } from "../components/PublicShell";
 import { ApiError } from "../lib/api";
 import { blogApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { contentLocale, useT } from "../lib/i18n";
 import { useDocumentMetaLiteral } from "../lib/seo";
 import type { BlogBlock, BlogPost } from "@shared/blog_posts";
 import NotFoundPage from "./NotFoundPage";
@@ -94,6 +95,8 @@ function citeToBibliaUrl(cite: string): string | null {
 export default function BlogPostPage() {
   const { slug = "" } = useParams<{ slug: string }>();
   const { t, locale } = useT();
+  // Long-form blog content is authored in HU/EN only; ES reads it in EN.
+  const cLocale = contentLocale(locale);
 
   const [post, setPost] = useState<BlogPost | null>(null);
   const [related, setRelated] = useState<BlogPost[]>([]);
@@ -122,7 +125,7 @@ export default function BlogPostPage() {
     };
   }, [slug]);
 
-  const copy = post?.[locale];
+  const copy = post?.[cLocale];
   useDocumentMetaLiteral(copy?.seo_title ?? "", copy?.seo_description ?? "");
 
   if (status === "not_found") return <NotFoundPage />;
@@ -138,7 +141,7 @@ export default function BlogPostPage() {
           <>
             <header className="border-b border-paper-300 dark:border-umber-700 pb-10">
               <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
-                {post.category[locale]}
+                {post.category[cLocale]}
               </p>
               <h1 className="mt-3 font-grotesk text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
                 {copy.title}
@@ -147,7 +150,7 @@ export default function BlogPostPage() {
                 {copy.lead}
               </p>
               <div className="mt-6 flex items-center gap-3 text-xs text-ink-500 dark:text-umber-300">
-                <time dateTime={post.published_at}>{formatDate(post.published_at, locale)}</time>
+                <time dateTime={post.published_at}>{formatDate(post.published_at, cLocale)}</time>
                 <span aria-hidden>·</span>
                 <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
               </div>
@@ -158,11 +161,11 @@ export default function BlogPostPage() {
                 url={post.cover_image_url ?? null}
                 alt={copy.title}
                 slug={post.slug}
-                category={post.category[locale]}
+                category={post.category[cLocale]}
               />
             </figure>
 
-            <BlogBody body={copy.body} locale={locale} />
+            <BlogBody body={copy.body} locale={cLocale} />
 
             <div className="mt-16">
               <NewsletterCapture source={`blog:${post.slug}`} />
@@ -175,7 +178,7 @@ export default function BlogPostPage() {
                 </p>
                 <ul className="mt-6 space-y-5">
                   {related.map((r) => {
-                    const rc = r[locale];
+                    const rc = r[cLocale];
                     return (
                       <li key={r.slug}>
                         <Link
@@ -183,7 +186,7 @@ export default function BlogPostPage() {
                           className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:focus-visible:ring-offset-umber-900"
                         >
                           <p className="text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                            {r.category[locale]}
+                            {r.category[cLocale]}
                           </p>
                           <h3 className="mt-1 font-grotesk text-xl text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
                             {rc.title}
@@ -519,7 +522,7 @@ function formatDate(iso: string, locale: "hu" | "en"): string {
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   const date = new Date(Date.UTC(y, m - 1, d));
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "long",
     day: "numeric",

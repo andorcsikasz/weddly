@@ -1524,9 +1524,7 @@ export default function DesignPage() {
                           className={`btn btn-primary btn-sm ${expandBtn}`}
                         >
                           <ExternalLink size={14} aria-hidden />
-                          <span className={expandLabel}>
-                            {t("design.finish.view_live")}
-                          </span>
+                          <span className={expandLabel}>{t("design.finish.view_live")}</span>
                         </a>
                         <button
                           type="button"
@@ -1534,9 +1532,7 @@ export default function DesignPage() {
                           className={`btn btn-outline btn-sm ${expandBtn}`}
                         >
                           <Copy size={14} aria-hidden />
-                          <span className={expandLabel}>
-                            {t("design.finish.copy_link")}
-                          </span>
+                          <span className={expandLabel}>{t("design.finish.copy_link")}</span>
                         </button>
                       </>
                     )}

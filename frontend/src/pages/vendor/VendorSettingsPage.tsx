@@ -11,7 +11,7 @@ import { useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { authApi, userApi } from "../../lib/endpoints";
-import { type Locale, useT } from "../../lib/i18n";
+import { contentLocale, type Locale, useT } from "../../lib/i18n";
 export default function VendorSettingsPage() {
   const { t, locale, setLocale } = useT();
   const { user, refresh: refreshAuth, setSession } = useAuth();
@@ -85,7 +85,7 @@ export default function VendorSettingsPage() {
       // Optimistic: flip the UI immediately. `silent: true` because this is a
       // settings save, not the first-run currency-prompt path.
       setLocale(next, { silent: true });
-      await userApi.updateProfile({ locale: next });
+      await userApi.updateProfile({ locale: contentLocale(next) });
       await refreshAuth();
     } catch (err) {
       setLocale(locale, { silent: true });

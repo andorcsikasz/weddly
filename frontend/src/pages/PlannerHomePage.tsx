@@ -28,7 +28,7 @@ import { plannerApi } from "../lib/endpoints";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
-import { formatDate, localYmd } from "../lib/format";
+import { formatDate, intlLocale, localYmd } from "../lib/format";
 import { AddClientCard } from "./planner/AddClientCard";
 import { PlannerDashPipeline } from "./planner/PlannerDashPipeline";
 import { PlannerDashRightRail } from "./planner/PlannerDashRightRail";
@@ -876,7 +876,7 @@ export default function PlannerHomePage() {
   }
 
   const firstName = user?.full_name.split(" ")[0] ?? "";
-  const todayLabel = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+  const todayLabel = new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: "long",
     year: "numeric",
     month: "long",

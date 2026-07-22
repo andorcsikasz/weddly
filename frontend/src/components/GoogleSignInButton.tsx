@@ -14,7 +14,7 @@ import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { clearDemoSessionFlag } from "../lib/demoSession";
 import { authApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { contentLocale, useT } from "../lib/i18n";
 import { useToast } from "./ui";
 
 const GSI_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
@@ -198,7 +198,7 @@ export function GoogleSignInButton({
                 terms_version: TERMS_VERSION,
                 // Carries the rendered UI locale to seed `users.locale` for
                 // brand-new accounts — see authApi.google docs.
-                locale,
+                locale: contentLocale(locale),
               });
               if (onSuccess) {
                 // Caller drives the post-auth side effects (e.g. the
@@ -252,7 +252,7 @@ export function GoogleSignInButton({
           // between the G and the label at the button's full width).
           logo_alignment: "center",
           width,
-          locale: locale === "hu" ? "hu_HU" : "en_US",
+          locale: locale === "hu" ? "hu_HU" : locale === "es" ? "es" : "en_US",
         });
 
         // One Tap fires the floating prompt (top-right by default) so a

@@ -13,6 +13,7 @@ import type {
   VendorReviewCampaignSend,
   VendorReviewCampaignTarget,
 } from "@shared/vendor_review_campaign";
+import { intlLocale } from "../lib/format";
 import { VENDOR_REVIEW_CAMPAIGN_DEFAULT_DAILY_CAP } from "@shared/vendor_review_campaign";
 import { CheckCircle2, ExternalLink, MailX, Pause, Play, Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -20,7 +21,7 @@ import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
 import { Button, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminEmailPreviewApi, adminVendorReviewCampaignApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 
 const MANUAL_BATCH_SIZE = 10;
 
@@ -40,8 +41,8 @@ const DAY_MS = 86_400_000;
 
 /** Short launched/ended stamp. `withTime` for the exact launch moment, date-only
  *  for the (approximate) projected finish. */
-function fmtStamp(ms: number, locale: string, withTime: boolean): string {
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+function fmtStamp(ms: number, locale: Locale, withTime: boolean): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",

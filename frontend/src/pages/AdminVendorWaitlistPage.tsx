@@ -17,6 +17,7 @@ import type {
   VendorWaitlistOutcome,
   VendorWaitlistStatus,
 } from "@shared/vendor_waitlist";
+import { intlLocale } from "../lib/format";
 import { buildEmailDraft } from "@shared/vendor_waitlist";
 import {
   Check,
@@ -244,7 +245,7 @@ export default function AdminVendorWaitlistPage() {
   }
 
   const fmtDate = (ts: number) =>
-    new Date(ts).toLocaleDateString(locale === "hu" ? "hu-HU" : "en-GB", {
+    new Date(ts).toLocaleDateString(intlLocale(locale), {
       year: "numeric",
       month: "short",
       day: "numeric",

@@ -16,8 +16,8 @@ import { Link, useParams } from "react-router-dom";
 import { Button, DateField, Skeleton, TextField, useConfirm, useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { vendorBillingApi, vendorClientsApi } from "../../lib/endpoints";
-import { formatMoney } from "../../lib/format";
-import { useT } from "../../lib/i18n";
+import { formatMoney, intlLocale } from "../../lib/format";
+import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
 
 /** The booking statuses a vendor can set. Labels come from the vendor.* i18n
@@ -50,10 +50,10 @@ function moneyToInput(value: number | null): string {
 /** Locale-grouped rendering of a raw digits string ("420000" → "420 000").
  *  Falls back to the raw text while it isn't a clean number so half-typed
  *  input never gets mangled. */
-function groupDigits(raw: string, locale: string): string {
+function groupDigits(raw: string, locale: Locale): string {
   const n = parseIntOrNull(raw);
   if (n === null || raw.trim() === "") return raw;
-  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US").format(n);
+  return new Intl.NumberFormat(intlLocale(locale)).format(n);
 }
 
 /** Money input that shows the same thousand-separated formatting as the
@@ -70,7 +70,7 @@ function MoneyField({
   label: string;
   value: string;
   onValueChange: (raw: string) => void;
-  locale: string;
+  locale: Locale;
 }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -302,7 +302,7 @@ export default function VendorClientDetailPage() {
         </h1>
         <p className="text-sm text-ink-600 dark:text-paper-300">
           {detail.event_date
-            ? new Date(detail.event_date).toLocaleDateString(locale === "hu" ? "hu-HU" : "en-US", {
+            ? new Date(detail.event_date).toLocaleDateString(intlLocale(locale), {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
@@ -465,7 +465,7 @@ export default function VendorClientDetailPage() {
                     <p className="text-xs text-ink-500 dark:text-paper-400">
                       {p.due_date
                         ? new Date(p.due_date).toLocaleDateString(
-                            locale === "hu" ? "hu-HU" : "en-US",
+                            intlLocale(locale),
                             { year: "numeric", month: "short", day: "numeric" },
                           )
                         : t("vendor.payments.no_due_date")}

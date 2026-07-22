@@ -1,11 +1,12 @@
 import { AlertTriangle, ArrowLeft, Check, CreditCard, Sparkles } from "lucide-react";
+import { intlLocale } from "../../lib/format";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { PlannerBillingStatus } from "@shared/planner_billing";
 import { PLANNER_PLAN_LIMITS, type PlannerPlan, type PlannerStats } from "@shared/types";
 import { useToast } from "../../components/ui";
 import { plannerApi, plannerBillingApi } from "../../lib/endpoints";
-import { useT } from "../../lib/i18n";
+import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentMeta } from "../../lib/seo";
 
 // Plans in upgrade order. Client limits come from the shared source of truth
@@ -51,8 +52,8 @@ const PLAN_FEATURES: Record<PlannerPlan, string[]> = {
 
 /** Currency-format a whole-unit monthly price (EUR 29 → "€29", HUF 6900 →
  *  "6 900 Ft") following the couple/vendor display convention. */
-function formatPrice(amount: number, currency: string, locale: string): string {
-  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : "en-US", {
+function formatPrice(amount: number, currency: string, locale: Locale): string {
+  return new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
@@ -283,13 +284,13 @@ function StatusBanner({
   locale,
 }: {
   billing: PlannerBillingStatus["billing"];
-  locale: string;
+  locale: Locale;
 }) {
   const { t } = useT();
   const status = billing.subscription_status;
 
   const fmtDate = (ms: number) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    new Intl.DateTimeFormat(intlLocale(locale), {
       year: "numeric",
       month: "long",
       day: "numeric",

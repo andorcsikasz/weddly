@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { BudgetCategory, BudgetLine, Currency } from "@shared/types";
 import { formatHufCompact, formatMoney } from "../lib/format";
+import type { Locale } from "../lib/i18n";
 import { CATEGORY_ICONS } from "./CostPlanningCard";
 
 /** Where every clickable figure on these cards drills into. The budget table
@@ -18,7 +19,6 @@ import { CATEGORY_ICONS } from "./CostPlanningCard";
  *  the top, which is the right default for the roll-up totals. */
 const BUDGET_LINK = "/app/budget";
 
-type Locale = "hu" | "en";
 type T = (key: string, params?: Record<string, string | number>) => string;
 
 /** One slice of a donut. `colorClass` is an SVG `stroke-*` utility; `key` is a

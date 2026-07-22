@@ -14,7 +14,7 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { useT } from "../lib/i18n";
+import { nextLocale, useT } from "../lib/i18n";
 import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { Wordmark } from "./Wordmark";
@@ -118,7 +118,7 @@ function PublicHeader() {
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const otherLocale = locale === "hu" ? "en" : "hu";
+  const otherLocale = nextLocale(locale);
   const { hidden, atTop } = useHeaderState();
   const isAudiencePage = pathname === "/planners" || pathname === "/vendors";
 

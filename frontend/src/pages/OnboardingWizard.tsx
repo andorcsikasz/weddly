@@ -36,7 +36,7 @@ import {
   isPlausibleDateIso,
   todayIso,
 } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 const DRAFT_KEY = "weddly.onboarding_draft";
@@ -226,7 +226,7 @@ function digitsOnly(raw: string): string {
 
 /** Display a digit-only string with thousand separators per locale. Empty
  *  string passes through so the input can be cleared while editing. */
-function formatGroupedDigits(raw: string, locale: "hu" | "en"): string {
+function formatGroupedDigits(raw: string, locale: Locale): string {
   if (!raw) return "";
   const n = Number(raw);
   if (!Number.isFinite(n)) return raw;

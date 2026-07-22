@@ -41,7 +41,7 @@ import { useToast } from "./ui/ToastProvider";
 import { ApiError } from "../lib/api";
 import { guestCountBaseline } from "../lib/budget";
 import { coupleApi, outreachApi, supplierApi } from "../lib/endpoints";
-import { formatDate } from "../lib/format";
+import { formatDate, intlLocale } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 export function OutreachInbox() {
@@ -85,7 +85,7 @@ export function OutreachInbox() {
 
   const dateFmt = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+      new Intl.DateTimeFormat(intlLocale(locale), {
         dateStyle: "medium",
         timeStyle: "short",
       }),

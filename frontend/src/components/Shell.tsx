@@ -2,7 +2,7 @@ import { Languages, LogIn } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { useT } from "../lib/i18n";
+import { nextLocale, useT } from "../lib/i18n";
 import { Wordmark } from "./Wordmark";
 
 export function Shell({ children, hideHeader }: { children: ReactNode; hideHeader?: boolean }) {
@@ -18,7 +18,7 @@ function Header() {
   const { user, logout } = useAuth();
   const { locale, setLocale, t } = useT();
   const { pathname } = useLocation();
-  const otherLocale = locale === "hu" ? "en" : "hu";
+  const otherLocale = nextLocale(locale);
   return (
     <header className="border-b border-paper-300 bg-paper-50/80 backdrop-blur dark:border-umber-700 dark:bg-umber-900/80">
       <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">

@@ -5,6 +5,7 @@
 // shows here is only ever real outreach-worthy contacts.
 
 import type { AdminEmailEntry, AdminEmailSourceType } from "@shared/types";
+import { intlLocale } from "../lib/format";
 import {
   AtSign,
   ClipboardList,
@@ -21,7 +22,7 @@ import { AdminEmptyState, AdminPageHeader, Pill, StatFilter } from "../component
 import type { PillTone } from "../components/admin";
 import { Skeleton } from "../components/ui";
 import { adminEmailListApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 
 type Filter = AdminEmailSourceType | "all";
 
@@ -46,8 +47,8 @@ const SOURCE_ICON: Record<Filter, ReactNode> = {
 
 const FILTERS: Filter[] = ["all", "user", "vendor", "guest", "vendor_waitlist", "planner_waitlist"];
 
-function formatDate(unixMs: number, locale: string): string {
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+function formatDate(unixMs: number, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",

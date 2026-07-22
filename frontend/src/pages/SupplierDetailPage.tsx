@@ -81,7 +81,7 @@ import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { ReviewSpendFields } from "../components/ReviewSpendFields";
 import { ReviewSpendLine } from "../components/ReviewSpendLine";
 import { ReviewTagPicker } from "../components/ReviewTagPicker";
-import { localeCurrency } from "../lib/format";
+import { intlLocale, localeCurrency } from "../lib/format";
 import { reviewTagLabel } from "../lib/reviewTags";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
@@ -115,10 +115,10 @@ import { CATEGORY_ICON } from "../lib/category_icons";
 
 const VISIBILITIES: CommentVisibility[] = ["admin_internal", "public", "vendor_only"];
 
-function formatDate(unixMs: number, locale: string): string {
+function formatDate(unixMs: number, locale: Locale): string {
   const d = new Date(unixMs);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -775,7 +775,7 @@ function BlurbBody({
   t,
 }: {
   detail: SupplierDetail;
-  locale: string;
+  locale: Locale;
   t: (k: string) => string;
 }) {
   const blurb = (locale === "hu" ? detail.blurb_hu : detail.blurb_en).trim();
@@ -800,7 +800,7 @@ interface SectionCtx {
   onChange: () => Promise<void>;
   toast: ReturnType<typeof useToast>;
   confirm: ReturnType<typeof useConfirm>;
-  locale: string;
+  locale: Locale;
   /** True only for Weddly admins. Gates the moderation affordances (compose,
    *  publish, delete, internal-visibility controls) that couples never see. */
   isAdmin: boolean;
@@ -1519,7 +1519,7 @@ function BusyCalendarCard({
   /** ISO wedding date; the calendar opens on this month when set (couples care
    *  about availability around the wedding, not today). Null → current month. */
   weddingDate: string | null;
-  locale: string;
+  locale: Locale;
   t: (k: string) => string;
 }) {
   const today = useMemo(() => new Date(), []);
@@ -1551,7 +1551,7 @@ function BusyCalendarCard({
 
   const monthLabel = useMemo(() => {
     const d = new Date(cursor.year, cursor.month, 1);
-    return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    return new Intl.DateTimeFormat(intlLocale(locale), {
       month: "long",
       year: "numeric",
     }).format(d);
@@ -1573,7 +1573,7 @@ function BusyCalendarCard({
   }, [cursor]);
 
   const dayLabels = useMemo(() => {
-    const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    const fmt = new Intl.DateTimeFormat(intlLocale(locale), {
       weekday: "narrow",
     });
     // 2026-05-25 is a Monday — use it as the anchor for Mon..Sun ordering.

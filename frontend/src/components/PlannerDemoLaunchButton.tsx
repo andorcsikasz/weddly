@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { markCurrentSessionDemo } from "../lib/demoSession";
 import { demoApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { contentLocale, useT } from "../lib/i18n";
 
 export function PlannerDemoLaunchButton() {
   const { t, locale } = useT();
@@ -27,7 +27,7 @@ export function PlannerDemoLaunchButton() {
     try {
       // Pass the active UI locale so the seeded book of business (clients,
       // tasks, notes, messages) is written in the same language as the UI.
-      const res = await demoApi.startPlanner(locale);
+      const res = await demoApi.startPlanner(contentLocale(locale));
       markCurrentSessionDemo();
       setSession(res.session.token, res.session.user);
       // Hard navigate so the planner shell remounts on a clean session.

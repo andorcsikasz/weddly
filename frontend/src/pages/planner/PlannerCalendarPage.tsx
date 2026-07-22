@@ -21,6 +21,7 @@ import {
   SquareKanban,
   Trash2,
 } from "lucide-react";
+import { intlLocale } from "../../lib/format";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type {
@@ -166,7 +167,7 @@ function YearView({
 }) {
   const { locale } = useT();
   const monthName = (m: number) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", { month: "long" }).format(
+    new Intl.DateTimeFormat(intlLocale(locale), { month: "long" }).format(
       new Date(year, m, 1),
     );
   return (
@@ -339,7 +340,7 @@ function TimeGridView({
       : 0;
   const showNow = days.some((d) => ymd(d) === todayStr) && nowTop >= 0 && nowTop <= 100;
   const wd = (d: Date) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", { weekday: "short" }).format(d);
+    new Intl.DateTimeFormat(intlLocale(locale), { weekday: "short" }).format(d);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft dark:border-umber-700 dark:bg-umber-800 dark:shadow-none">
@@ -458,7 +459,7 @@ function ScheduleView({
     );
   }
   const fmt = (s: string) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    new Intl.DateTimeFormat(intlLocale(locale), {
       month: "short",
       day: "numeric",
       weekday: "short",
@@ -689,7 +690,7 @@ function TasksView({
   const listVisible = useMemo(() => visible.filter((tk) => !tk.done), [visible]);
 
   const fmt = (s: string) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", {
+    new Intl.DateTimeFormat(intlLocale(locale), {
       month: "short",
       day: "numeric",
     }).format(parseYmd(s));
@@ -1367,7 +1368,7 @@ export default function PlannerCalendarPage() {
   }, [events, clients]);
 
   const weekdays = useMemo(() => {
-    const fmt = new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", { weekday: "short" });
+    const fmt = new Intl.DateTimeFormat(intlLocale(locale), { weekday: "short" });
     return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 1 + i))); // Mon-first
   }, [locale]);
 
@@ -1397,7 +1398,7 @@ export default function PlannerCalendarPage() {
   }
 
   const intl = (opts: Intl.DateTimeFormatOptions) =>
-    new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-US", opts);
+    new Intl.DateTimeFormat(intlLocale(locale), opts);
   const title = useMemo(() => {
     if (mode === "tasks") return t("planner_calendar.tasks_title");
     if (view === "year") return String(cursor.getFullYear());

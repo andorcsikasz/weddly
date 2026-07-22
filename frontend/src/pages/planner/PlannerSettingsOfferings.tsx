@@ -12,6 +12,7 @@ import {
   PACKAGE_PRICE_MAX,
   type ListingPackage,
 } from "@shared/listing_packages";
+import { intlLocale } from "../../lib/format";
 import type { PlannerAvailabilityView, PlannerProfile } from "@shared/types";
 import { FileText, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -20,7 +21,7 @@ import { useConfirm } from "../../components/ui/ConfirmDialogProvider";
 import { useToast } from "../../components/ui";
 import { AvailabilityCalendar } from "../../components/AvailabilityCalendar";
 import { plannerApi } from "../../lib/endpoints";
-import { useT } from "../../lib/i18n";
+import { type Locale, useT } from "../../lib/i18n";
 
 interface OutletCtx {
   profile: PlannerProfile | null;
@@ -28,10 +29,10 @@ interface OutletCtx {
   loadError: boolean;
 }
 
-function formatIsoDate(iso: string, locale: string): string {
+function formatIsoDate(iso: string, locale: Locale): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",

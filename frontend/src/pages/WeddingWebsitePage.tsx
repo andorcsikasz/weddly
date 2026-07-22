@@ -28,7 +28,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { weddingWebsiteApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { nextLocale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { Shell } from "../components/Shell";
 import { WeddingSiteView } from "../components/WeddingSiteView";
@@ -278,7 +278,7 @@ export default function WeddingWebsitePage() {
         <button
           type="button"
           className="btn-ghost btn-sm !px-2"
-          onClick={() => setLocale(locale === "hu" ? "en" : "hu")}
+          onClick={() => setLocale(nextLocale(locale))}
           aria-label={t("nav.switch_language")}
           title={t("nav.switch_language")}
         >

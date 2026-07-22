@@ -13,6 +13,7 @@ import type {
   MealMenu,
   RsvpStatus,
 } from "@shared/types";
+import { intlLocale } from "../lib/format";
 import {
   MEAL_LABEL_MAX,
   MEAL_ORDER,
@@ -3675,7 +3676,7 @@ function GuestDrawer({
                   <p className="mt-1.5 text-xs text-ink-500 dark:text-umber-300">
                     {t("guests.rsvp_filled_at", {
                       date: new Date(guest.rsvp_responded_at).toLocaleDateString(
-                        locale === "hu" ? "hu-HU" : "en-GB",
+                        intlLocale(locale),
                         { year: "numeric", month: "short", day: "numeric" },
                       ),
                     })}

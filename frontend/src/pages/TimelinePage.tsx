@@ -70,8 +70,8 @@ import {
   planningApi,
   supplierApi,
 } from "../lib/endpoints";
-import { maxIsoDate, todayIso } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { intlLocale, maxIsoDate, todayIso } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 type IconCmp = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
@@ -435,7 +435,7 @@ function PocCard({
 }: {
   items: { pick: CouplePick; supplier: ResolvedSupplier | null }[];
   loading: boolean;
-  locale: "hu" | "en";
+  locale: Locale;
 }) {
   const { t } = useT();
 
@@ -509,7 +509,7 @@ function PocRow({
 }: {
   pick: CouplePick;
   supplier: ResolvedSupplier | null;
-  locale: "hu" | "en";
+  locale: Locale;
   isFirst: boolean;
 }) {
   const { t } = useT();
@@ -656,7 +656,7 @@ function ChartCard({
   }
 
   const title = useMemo(() => {
-    const intl = locale === "hu" ? "hu-HU" : "en-GB";
+    const intl = intlLocale(locale);
     if (mode === "day") {
       return new Intl.DateTimeFormat(intl, {
         year: "numeric",

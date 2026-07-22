@@ -69,8 +69,8 @@ import {
   coupleApi,
   coupleSupplierApi,
 } from "../lib/endpoints";
-import { currencySymbol, formatDateMs, formatMoney, formatNumber, todayIso } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { currencySymbol, formatDateMs, formatMoney, formatNumber, intlLocale, todayIso } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";
 
@@ -1019,7 +1019,7 @@ export default function BudgetPage() {
                 {payments.next ? (
                   <>
                     {new Date(`${payments.next.due_date}T00:00:00`).toLocaleDateString(
-                      locale === "hu" ? "hu-HU" : "en-GB",
+                      intlLocale(locale),
                     )}
                     <span className="ml-1 font-normal text-ink-500 dark:text-umber-300">
                       · {payments.next.supplierName}
@@ -1755,7 +1755,7 @@ function PaidCell({
   documents: BudgetDocument[];
   payments: BudgetPayment[];
   currency: Currency;
-  locale: "hu" | "en";
+  locale: Locale;
   onCommitAmount: (v: number) => void;
   onDocsChanged: () => void;
   onPaymentsChanged: () => void;
@@ -1875,7 +1875,7 @@ function PaidEntryDialog({
   scope: string;
   payments: BudgetPayment[];
   currency: Currency;
-  locale: "hu" | "en";
+  locale: Locale;
   onCommitTotal: (paidHuf: number) => void;
   onPaymentsChanged: () => Promise<void> | void;
 }) {
@@ -2513,7 +2513,7 @@ function HoneymoonAggregateRow({
 }: {
   planned: number;
   actual: number;
-  locale: "hu" | "en";
+  locale: Locale;
   currency: Currency;
 }) {
   const { t } = useT();
@@ -2598,7 +2598,7 @@ function BudgetMobileCard({
   actual: number;
   paid: number;
   currency: Currency;
-  locale: "hu" | "en";
+  locale: Locale;
   readOnlyPlanned: boolean;
   readOnlyActual: boolean;
   canDelete: boolean;
@@ -2718,7 +2718,7 @@ function BudgetMobileCustomCard({
    *  and the CostPlanningCard. The raw per-baseline value stays in `line`. */
   planned: number;
   currency: Currency;
-  locale: "hu" | "en";
+  locale: Locale;
   scope: string;
   documents: BudgetDocument[];
   payments: BudgetPayment[];
@@ -2814,7 +2814,7 @@ function HoneymoonAggregateCard({
 }: {
   planned: number;
   actual: number;
-  locale: "hu" | "en";
+  locale: Locale;
   currency: Currency;
 }) {
   const { t } = useT();
@@ -3006,7 +3006,7 @@ function DeltaPill({
 }: {
   delta: number;
   currency: Currency;
-  locale: "hu" | "en";
+  locale: Locale;
   className?: string;
 }) {
   if (delta === 0) return null;
@@ -3038,7 +3038,7 @@ function SnapshotCard({
 }: {
   snapshot: BudgetSnapshot;
   livePlannedTotal: number;
-  locale: "hu" | "en";
+  locale: Locale;
   currency: Currency;
   /** This card is the one currently being restored — show a spinner. */
   restoring: boolean;
@@ -3149,7 +3149,7 @@ function SnapshotBreakdownDialog({
   onClose,
 }: {
   snapshot: BudgetSnapshot;
-  locale: "hu" | "en";
+  locale: Locale;
   currency: Currency;
   onClose: () => void;
 }) {
@@ -3273,13 +3273,13 @@ function SnapshotBreakdownDialog({
   );
 }
 
-function formatSnapshotDate(unixMs: number, locale: "hu" | "en"): string {
+function formatSnapshotDate(unixMs: number, locale: Locale): string {
   // Stored as ms (UnixMs). Be defensive: if the value looks like seconds (small
   // 10-digit), upscale.
   const ms = unixMs > 1e12 ? unixMs : unixMs * 1000;
   const d = new Date(ms);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
