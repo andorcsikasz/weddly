@@ -32,7 +32,6 @@ import {
   Plane,
   Send,
   ShieldCheck,
-  Star,
   Store,
   Sun,
   UserCog,
@@ -328,18 +327,14 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   },
   // ── Manage ────────────────────────────────────────────────────────
   // Taxonomy + content + email config. Stable surfaces, edited as needed.
+  // Both vendor-outreach consoles (claim-invite + review-collection) live
+  // behind ONE row that opens /app/admin/campaigns, which tabs between them.
+  // Keeps the rail from carrying two near-identical "…kampány" rows.
   {
-    to: "/app/admin/vendor-campaign",
-    labelKey: "admin.nav_vendor_campaign",
+    to: "/app/admin/campaigns",
+    labelKey: "admin.nav_campaigns",
     // no tabKey, goes to the phone More sheet
     icon: <Send size={18} />,
-    group: "manage",
-  },
-  {
-    to: "/app/admin/vendor-review-campaign",
-    labelKey: "admin.nav_vendor_review_campaign",
-    // no tabKey, goes to the phone More sheet
-    icon: <Star size={18} />,
     group: "manage",
   },
   {

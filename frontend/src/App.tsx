@@ -57,6 +57,7 @@ const AdminVendorCampaignPage = lazyWithReload(() => import("./pages/AdminVendor
 const AdminVendorReviewCampaignPage = lazyWithReload(
   () => import("./pages/AdminVendorReviewCampaignPage"),
 );
+const AdminCampaignsPage = lazyWithReload(() => import("./pages/AdminCampaignsPage"));
 const AdminPlannerWaitlistPage = lazyWithReload(() => import("./pages/AdminPlannerWaitlistPage"));
 const AdminEmailListPage = lazyWithReload(() => import("./pages/AdminEmailListPage"));
 const BudgetPage = lazyWithReload(() => import("./pages/BudgetPage"));
@@ -1141,6 +1142,16 @@ export default function App() {
               <Page>
                 <RequireAdmin>
                   <AdminVendorReviewCampaignPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/campaigns"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminCampaignsPage />
                 </RequireAdmin>
               </Page>
             }
