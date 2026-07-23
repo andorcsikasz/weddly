@@ -408,7 +408,19 @@ export function DecisionsPanel({
                           patchItem(item, { decision_status: "open", resolution: null })
                         }
                         onPromote={async (item) => {
-                          const ok = await patchItem(item, { decision_status: "promoted" });
+                          // A prompt that graduates into a real task leaves the
+                          // deck (which localizes titles by seed_key) and shows
+                          // on the Timeline/Tasks, which render the STORED title.
+                          // Seeded titles are stored single-language, so bake in
+                          // the couple's-locale title now or an EN couple's new
+                          // task would read in Hungarian.
+                          const seed = item.seed_key
+                            ? PROMPTS_BY_KEY.get(item.seed_key)
+                            : undefined;
+                          const ok = await patchItem(item, {
+                            decision_status: "promoted",
+                            ...(seed ? { title: loc(seed.title, locale) } : {}),
+                          });
                           if (ok) toast.success(t("planning.decisions.promoted_toast"));
                         }}
                       />
