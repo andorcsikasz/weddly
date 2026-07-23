@@ -6139,15 +6139,15 @@ const hu: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Weddly megosztása",
-    title: "Osszátok meg a Weddly-t, hogy több párhoz eljussunk.",
-    body: "Segítsetek, hogy más pároknak is segíthessünk.",
+    title: "Osszátok meg a Weddly-t, hogy több párhoz eljussunk. 🕊️🤍",
+    body: "Segítsetek, hogy más pároknak is segíthessünk. 🕊️🤍",
     messages_label: "Megosztandó üzenet",
     message_warm:
-      "Mi a Weddlyvel szervezzük az esküvőnket, és sokkal egyszerűbbé teszi az egész folyamatot. Ha ti is a nagy napotokra készültök, érdemes megnézni: https://tryweddly.com",
+      "Mi a Weddlyvel szervezzük az esküvőnket, és sokkal egyszerűbbé teszi az egész folyamatot. Ha ti is a nagy napotokra készültök, érdemes megnézni: https://tryweddly.com 🕊️🤍",
     message_clean:
-      "Mi a Weddlyvel tervezzük az esküvőnket. Minden, amire szükségünk van, átláthatóan, egy helyen: https://tryweddly.com",
+      "Mi a Weddlyvel tervezzük az esküvőnket. Minden, amire szükségünk van, átláthatóan, egy helyen: https://tryweddly.com 🕊️🤍",
     message_friendly:
-      "Ismertek valakit, aki éppen esküvőt szervez? Mi a Weddlyt használjuk, és nagyon szeretjük, hogy mennyivel egyszerűbbé teszi a tervezést: https://tryweddly.com",
+      "Ismertek valakit, aki éppen esküvőt szervez? Mi a Weddlyt használjuk, és nagyon szeretjük, hogy mennyivel egyszerűbbé teszi a tervezést: https://tryweddly.com 🕊️🤍",
     share_action: "Megosztás",
     copy_action: "Másolás",
     sharing: "Megosztás folyamatban",

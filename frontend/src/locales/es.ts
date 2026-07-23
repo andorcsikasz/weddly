@@ -6191,15 +6191,15 @@ const es: LocaleMessages = {
   },
   share_weddly: {
     menu_label: "Compartir Weddly",
-    title: "Comparte Weddly para llegar a más parejas.",
-    body: "Ayúdanos a ayudar también a otras parejas.",
+    title: "Comparte Weddly para llegar a más parejas. 🕊️🤍",
+    body: "Ayúdanos a ayudar también a otras parejas. 🕊️🤍",
     messages_label: "Mensaje para compartir",
     message_warm:
-      "Estamos organizando nuestra boda con Weddly, y hace que todo resulte mucho más fácil. Si también estás organizando la tuya, échale un vistazo: https://tryweddly.com",
+      "Estamos organizando nuestra boda con Weddly, y hace que todo resulte mucho más fácil. Si también estás organizando la tuya, échale un vistazo: https://tryweddly.com 🕊️🤍",
     message_clean:
-      "Estamos organizando nuestra boda con Weddly. Todo lo que necesitamos, muy bien organizado en un solo sitio: https://tryweddly.com",
+      "Estamos organizando nuestra boda con Weddly. Todo lo que necesitamos, muy bien organizado en un solo sitio: https://tryweddly.com 🕊️🤍",
     message_friendly:
-      "¿Conoces a alguien que esté organizando una boda? Nosotros usamos Weddly y de verdad nos encanta lo sencillo que lo hace todo. Échale un vistazo: https://tryweddly.com",
+      "¿Conoces a alguien que esté organizando una boda? Nosotros usamos Weddly y de verdad nos encanta lo sencillo que lo hace todo. Échale un vistazo: https://tryweddly.com 🕊️🤍",
     share_action: "Compartir",
     copy_action: "Copiar",
     sharing: "Compartiendo",
