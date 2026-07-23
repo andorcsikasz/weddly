@@ -6217,6 +6217,7 @@ const es: LocaleMessages = {
     no_name: "Sin nombre",
     zone_workspace: "Tú y tu espacio de trabajo",
     zone_planning: "Organización de la boda",
+    zone_notifications: "Notificaciones",
     zone_account: "Cuenta y datos",
     hero_days_until: "Faltan {n} días para tu boda",
     hero_days_one: "Falta un día para tu boda",
@@ -6427,7 +6428,8 @@ const es: LocaleMessages = {
       "Abre la página de confirmación de asistencia en una pestaña nueva bloqueada en modo quiosco, entrégale la tableta a tu recepcionista. Los invitados no pueden cambiar el modo por sí mismos; solo se activa desde aquí.",
     welcome_desk_button: "Abrir página de quiosco",
     welcome_desk_no_slug:
-      "Primero dale a tu pareja un slug de URL en Puesta en marcha / Perfil para que el enlace de la mesa de bienvenida tenga adónde apuntar.",
+      "La mesa de bienvenida necesita el código de la pareja (vuestra dirección web pública) para que el enlace del quiosco tenga adónde apuntar. Añádelo en tu página de invitados.",
+    welcome_desk_no_slug_cta: "Configúralo en tu página de invitados",
     welcome_desk_toggle_aria: "Modo mesa de bienvenida",
     welcome_desk_toggle_on: "La mesa de bienvenida está activada",
     welcome_desk_toggle_off: "La mesa de bienvenida está desactivada",

@@ -6165,6 +6165,7 @@ const hu: LocaleMessages = {
     no_name: "Névtelen",
     zone_workspace: "Te és a munkaterületed",
     zone_planning: "Esküvő tervezése",
+    zone_notifications: "Értesítések",
     zone_account: "Fiók és adatok",
     hero_days_until: "Még {n} nap az esküvőig",
     hero_days_one: "Egy nap az esküvőig",
@@ -6370,7 +6371,8 @@ const hu: LocaleMessages = {
       "Új lapon megnyitja az RSVP oldalt kiosk-zárral, add át a tabletet a fogadásnál. A vendégek nem férnek hozzá a kapcsolóhoz, csak innen indítható.",
     welcome_desk_button: "Kiosk oldal megnyitása",
     welcome_desk_no_slug:
-      "Az üdvözlő pulthoz előbb adj egy URL-azonosítót a párnak az Onboarding/Profil beállításokban.",
+      "Az üdvözlő pulthoz páros kód (a nyilvános webcímetek) kell, hogy a kioszk-linknek legyen hova mutatnia. Add meg a vendégoldaladon.",
+    welcome_desk_no_slug_cta: "Beállítás a vendégoldalon",
     welcome_desk_toggle_aria: "Üdvözlő pult mód",
     welcome_desk_toggle_on: "Üdvözlő pult bekapcsolva",
     welcome_desk_toggle_off: "Üdvözlő pult kikapcsolva",

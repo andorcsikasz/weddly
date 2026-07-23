@@ -42,7 +42,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CountryCombobox } from "../components/CountryCombobox";
 import { CurrencySelect } from "../components/CurrencySelect";
 import { PauseReasonDialog } from "../components/PauseReasonDialog";
@@ -1055,6 +1055,11 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
         </section>
       )}
 
+      {/* Communication cadence is a different mental model from the wedding
+       *  config above (budget + region), so break it into its own labelled
+       *  group rather than stacking it as a third unlabelled planning card. */}
+      {showPlanning && couple && <ZoneLabel>{t("profile.zone_notifications")}</ZoneLabel>}
+
       {showPlanning && couple && (
         <section className="card mt-6">
           <h2 className="flex items-center gap-2 font-grotesk text-lg">
@@ -1982,11 +1987,20 @@ function WelcomeDeskCard({
       </div>
 
       {/* No-slug fallback. We still surface the toggle above — flipping it
-       *  to "on" is the gesture, and the slug warning is informational. */}
+       *  to "on" is the gesture, and the slug warning is informational. The
+       *  couple code (public URL slug) is set on the guest page, so link
+       *  straight there instead of leaving the user to hunt for it. */}
       {!couple?.slug && (
-        <p className="mt-3 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
-          {t("profile.welcome_desk_no_slug")}
-        </p>
+        <div className="mt-3 rounded-xl border border-blush-300 bg-white px-4 py-3 text-sm text-ink-700 dark:border-blush-400/40 dark:bg-umber-800 dark:text-paper-100">
+          <p>{t("profile.welcome_desk_no_slug")}</p>
+          <Link
+            to="/app/guest-page"
+            className="mt-1.5 inline-flex items-center gap-1.5 font-medium text-ink-900 underline underline-offset-2 hover:text-ink-700 dark:text-paper-50 dark:hover:text-paper-200"
+          >
+            <Link2 size={14} aria-hidden />
+            {t("profile.welcome_desk_no_slug_cta")}
+          </Link>
+        </div>
       )}
 
       {error && <p className="field-error mt-3">{error}</p>}

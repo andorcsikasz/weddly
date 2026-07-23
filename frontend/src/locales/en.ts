@@ -6106,6 +6106,7 @@ const en: LocaleMessages = {
     no_name: "Unnamed",
     zone_workspace: "You & your workspace",
     zone_planning: "Wedding planning",
+    zone_notifications: "Notifications",
     zone_account: "Account & data",
     hero_days_until: "{n} days until your wedding",
     hero_days_one: "One day until your wedding",
@@ -6305,7 +6306,8 @@ const en: LocaleMessages = {
       "Opens the RSVP page in a new tab locked into kiosk mode, hand the tablet to your greeter. Guests can't flip the switch themselves; it only starts from here.",
     welcome_desk_button: "Open kiosk page",
     welcome_desk_no_slug:
-      "Give your couple a URL slug in Onboarding / Profile first so the welcome-desk link has somewhere to point.",
+      "The welcome desk needs your couple code (your public web address) so the kiosk link has somewhere to point. Add one on your guest page.",
+    welcome_desk_no_slug_cta: "Set it on your guest page",
     welcome_desk_toggle_aria: "Welcome-desk mode",
     welcome_desk_toggle_on: "Welcome-desk is on",
     welcome_desk_toggle_off: "Welcome-desk is off",

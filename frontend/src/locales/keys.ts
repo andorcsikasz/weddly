@@ -6920,6 +6920,7 @@ export interface LocaleMessages {
      *  group instead of scrolling 12 indistinguishable rectangles. */
     zone_workspace: string;
     zone_planning: string;
+    zone_notifications: string;
     zone_account: string;
     /** Profile hero band — top-of-page identity strip. Shows the couple's
      *  monogram, names, wedding date and a days-until counter so the page
@@ -7178,6 +7179,9 @@ export interface LocaleMessages {
     welcome_desk_body: string;
     welcome_desk_button: string;
     welcome_desk_no_slug: string;
+    /** CTA link on the no-slug hint — routes to the guest page where the
+     *  couple code (public URL slug) is set. */
+    welcome_desk_no_slug_cta: string;
     /** Toggle states + status pill labels for the Welcome Desk card. The
      *  toggle is a switch; the status pill is colour-coded (sage when on,
      *  paper when off) so the couple can read the kiosk status at a glance. */
