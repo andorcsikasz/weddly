@@ -747,8 +747,11 @@ export function CostPlanningCard({
       <div className="mt-4 border-t border-paper-200 pt-3 dark:border-umber-700">
         <div className="flex items-baseline justify-between">
           <span className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
-            {/* Label tracks what's actually shown — pure planned vs. actual/planned. */}
-            {totalActual > 0 ? t("budget.total_actual") : t("budget.total_planned")}
+            {/* The bold headline figure below is ALWAYS totalPlanned (actual is
+                only the small "{actual} /" prefix), so the label names planned.
+                It used to flip to "Total actual" once any actual spend existed,
+                which mislabelled the planned figure as actual. */}
+            {t("budget.total_planned")}
           </span>
           <span
             data-testid="cost-planning-total"

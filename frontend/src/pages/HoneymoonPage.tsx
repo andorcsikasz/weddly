@@ -1490,7 +1490,11 @@ function PresetChips({
       {PRESETS.map((p) => {
         const isOther = p.id === "other";
         const used = isOther ? otherCount >= MAX_OTHER_LINES : usedIds.has(p.id);
-        const Icon = used ? Check : p.icon;
+        // Keep the category's own icon even once added. `used` only means the
+        // category is already on the cost list (its line may still be 0 Ft), so
+        // a checkmark read as "done" when nothing had been filled in. The greyed,
+        // disabled chip already says "already added" without implying completion.
+        const Icon = p.icon;
         const label =
           isOther && otherCount > 0
             ? `${t("honeymoon.preset.other")} (${otherCount}/${MAX_OTHER_LINES})`

@@ -1174,7 +1174,10 @@ export default function MediaPage() {
                     <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-umber-400">
                       {filmExpired ? t("media.film_stat_closed") : t("media.film_stat_left")}
                     </span>
-                    {album.eventEndsAt && !filmExpired && (
+                    {album.eventEndsAt && (
+                      // Show the close date even once the window has closed, so
+                      // the "Closed" stat's bare "-" has context (closed as of
+                      // this date) instead of reading as a stat yet to populate.
                       <span className="mt-0.5 text-[9px] leading-tight text-umber-400">
                         {formatRevealDate(album.eventEndsAt)}
                       </span>
