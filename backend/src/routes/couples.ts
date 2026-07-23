@@ -254,6 +254,8 @@ interface OnboardBody {
    *  Fractional values are rounded to the nearest integer. */
   cover_position_x?: unknown;
   cover_position_y?: unknown;
+  /** Cover-photo zoom, 100–300 percent (100 = fit-to-frame). */
+  cover_scale?: unknown;
 }
 
 function parseCurrency(raw: unknown): Currency | null {
@@ -1490,6 +1492,16 @@ function parseCoverPosition(raw: unknown, field: string): number {
   return Math.round(n);
 }
 
+/** Cover-photo zoom, 100–300 % (100 = fit-to-frame). Rounded to an integer. */
+function parseCoverScale(raw: unknown): number {
+  if (raw === null || raw === undefined) throw new HttpError(400, "cover_scale is required");
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (Number.isNaN(n) || n < 100 || n > 300) {
+    throw new HttpError(400, "cover_scale must be between 100 and 300");
+  }
+  return Math.round(n);
+}
+
 /** A single photo-share URL slot on the Photos page. Empty string / null →
  *  null (clears the slot). Mirrors parseCoverImageUrl: explicit http(s) scheme
  *  required, length capped, the normalized href stored. */
@@ -1592,6 +1604,7 @@ const GUEST_PAGE_ADDON_FIELDS: ReadonlySet<string> = new Set([
   "cover_image_url",
   "cover_position_x",
   "cover_position_y",
+  "cover_scale",
   "guest_page_intro",
   "useful_info",
   "post_rsvp_content",
@@ -2140,6 +2153,11 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         : couple.cover_position_y;
     if (nextX !== couple.cover_position_x) updates.push({ col: "cover_position_x", val: nextX });
     if (nextY !== couple.cover_position_y) updates.push({ col: "cover_position_y", val: nextY });
+  }
+
+  if (body.cover_scale !== undefined) {
+    const next = parseCoverScale(body.cover_scale);
+    if (next !== couple.cover_scale) updates.push({ col: "cover_scale", val: next });
   }
 
   if (body.guest_page_intro !== undefined) {

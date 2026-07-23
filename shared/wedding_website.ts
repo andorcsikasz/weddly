@@ -63,6 +63,9 @@ export interface PublicWeddingWebsiteView {
    *  (defaults to 50/50 at render) so SSR/fixture literals can omit it. */
   cover_position_x?: number;
   cover_position_y?: number;
+  /** Cover-photo zoom (percent, 100 = fit-to-frame, up to 300). Optional;
+   *  defaults to 100 at render. */
+  cover_scale?: number;
   /** Optional fixed-slot photos: slot 1 renders as a full-bleed band after the
    *  welcome section, slot 2 before the RSVP ask. Visible at every tier.
    *  Optional so existing fixture literals keep compiling; absent and null

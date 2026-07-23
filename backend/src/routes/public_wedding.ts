@@ -134,6 +134,7 @@ function buildView(
     cover_image_url: couple.cover_image_url,
     cover_position_x: couple.cover_position_x,
     cover_position_y: couple.cover_position_y,
+    cover_scale: couple.cover_scale,
     // Optional fixed-slot photos — presentation content, visible at every tier.
     site_image_1_url: couple.site_image_1_url,
     site_image_2_url: couple.site_image_2_url,

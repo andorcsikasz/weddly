@@ -2932,6 +2932,9 @@ const hu: LocaleMessages = {
       cover_constraints: "JPEG, PNG vagy WebP · max. {mb} MB",
       cover_too_large: "Ez a kép nagyobb {mb} MB-nál. Válassz kisebbet.",
       cover_wrong_type: "Használj JPEG, PNG vagy WebP képet.",
+      cover_adjust: "Igazítás",
+      cover_adjust_hint: "Húzd a képet a pozicionáláshoz",
+      cover_zoom: "Nagyítás",
       photo_art: {
         reception_pergola: "Kerti fogadás",
         reception_candlelit: "Gyertyafényes vacsora",

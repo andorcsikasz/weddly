@@ -21,10 +21,12 @@ import {
   IMAGE_TREATMENTS,
   type ImageTreatmentSlug,
 } from "@shared/design";
-import { ImagePlus, Images, Loader2, X } from "lucide-react";
+import { ImagePlus, Images, Loader2, Move, X } from "lucide-react";
 import { useState } from "react";
 import { useT } from "../../lib/i18n";
+import { Button } from "../ui";
 import { Dialog } from "../ui/Dialog";
+import { CoverPositioner } from "./CoverPositioner";
 
 export function PhotoDock({
   slot1Url,
@@ -37,6 +39,10 @@ export function PhotoDock({
   onRemove,
   onCoverUpload,
   onCoverRemove,
+  coverPositionX,
+  coverPositionY,
+  coverScale,
+  onCoverReposition,
   coverBusy,
   busySlot,
   readOnly,
@@ -51,12 +57,22 @@ export function PhotoDock({
   onRemove: (slot: 1 | 2) => void;
   onCoverUpload: (file: File) => void;
   onCoverRemove: () => void;
+  /** Cover focal point (object-position %, 0..100) + zoom (percent, 100..300). */
+  coverPositionX: number;
+  coverPositionY: number;
+  coverScale: number;
+  /** Persist a new focal point + zoom (from the Adjust dialog). */
+  onCoverReposition: (x: number, y: number, scale: number) => void;
   coverBusy: boolean;
   busySlot: 1 | 2 | null;
   readOnly: boolean;
 }) {
   const { t } = useT();
   const [galleryFor, setGalleryFor] = useState<1 | 2 | null>(null);
+  // Adjust dialog: a local draft so dragging/zooming previews live and only the
+  // Save button persists (Cancel discards).
+  const [adjusting, setAdjusting] = useState(false);
+  const [draft, setDraft] = useState({ x: 50, y: 50, scale: 100 });
   const filter = treatment === "grayscale" ? "grayscale(1)" : "none";
   // The treatment only exists once it has something to act on. A cover photo
   // counts: it is the biggest image on the guest page.
@@ -101,36 +117,62 @@ export function PhotoDock({
       <div className="mb-3">
         {coverUrl ? (
           <div className="relative">
-            <img
-              src={coverUrl}
-              alt={t("design.web.cover_label")}
-              className="aspect-[21/9] w-full rounded-xl border border-paper-300 object-cover dark:border-umber-700"
-              style={{ filter }}
-            />
-            <label
-              className={`absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 rounded-b-xl border-t border-white/20 bg-black/45 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition hover:bg-black/60 focus-within:ring-2 focus-within:ring-inset focus-within:ring-white/70 ${
-                coverBusy || readOnly ? "cursor-default opacity-60" : "cursor-pointer"
-              }`}
-            >
-              {coverBusy ? (
-                <Loader2 size={13} className="animate-spin" aria-hidden />
-              ) : (
-                <ImagePlus size={13} aria-hidden />
-              )}
-              <span>{t("design.web.cover_replace")}</span>
-              <input
-                type="file"
-                accept={COVER_IMAGE_ACCEPT}
-                aria-label={t("design.web.cover_replace_aria")}
-                className="sr-only"
-                disabled={coverBusy || readOnly}
-                onChange={(ev) => {
-                  const f = ev.target.files?.[0];
-                  if (f) onCoverUpload(f);
-                  ev.target.value = "";
+            {/* Inner clip layer: the zoom transform scales the image up, so it
+                must be clipped here (the corner buttons live OUTSIDE this so they
+                aren't cut off). Mirrors the guest-page hero render. */}
+            <div className="relative overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700">
+              <img
+                src={coverUrl}
+                alt={t("design.web.cover_label")}
+                className="aspect-[21/9] w-full object-cover"
+                style={{
+                  objectPosition: `${coverPositionX}% ${coverPositionY}%`,
+                  transform: `scale(${Math.max(1, coverScale / 100)})`,
+                  transformOrigin: `${coverPositionX}% ${coverPositionY}%`,
+                  filter,
                 }}
               />
-            </label>
+              <label
+                className={`absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 border-t border-white/20 bg-black/45 py-1.5 text-[11px] font-medium text-white backdrop-blur-sm transition hover:bg-black/60 focus-within:ring-2 focus-within:ring-inset focus-within:ring-white/70 ${
+                  coverBusy || readOnly ? "cursor-default opacity-60" : "cursor-pointer"
+                }`}
+              >
+                {coverBusy ? (
+                  <Loader2 size={13} className="animate-spin" aria-hidden />
+                ) : (
+                  <ImagePlus size={13} aria-hidden />
+                )}
+                <span>{t("design.web.cover_replace")}</span>
+                <input
+                  type="file"
+                  accept={COVER_IMAGE_ACCEPT}
+                  aria-label={t("design.web.cover_replace_aria")}
+                  className="sr-only"
+                  disabled={coverBusy || readOnly}
+                  onChange={(ev) => {
+                    const f = ev.target.files?.[0];
+                    if (f) onCoverUpload(f);
+                    ev.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            {/* Adjust (drag + zoom). Seeds the draft from the saved values. */}
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft({ x: coverPositionX, y: coverPositionY, scale: coverScale });
+                  setAdjusting(true);
+                }}
+                disabled={coverBusy}
+                aria-label={t("design.web.cover_adjust")}
+                title={t("design.web.cover_adjust")}
+                className="absolute -left-1.5 -top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-paper-200 bg-white text-ink-700 shadow-soft transition hover:text-ink-900 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:focus-visible:ring-paper-100"
+              >
+                <Move size={12} aria-hidden />
+              </button>
+            )}
             <button
               type="button"
               onClick={onCoverRemove}
@@ -255,6 +297,44 @@ export function PhotoDock({
           );
         })}
       </div>
+
+      {/* Adjust the cover in-frame: drag to reposition + zoom. Draft-then-Save
+          so Cancel discards. */}
+      <Dialog
+        open={adjusting}
+        onClose={() => setAdjusting(false)}
+        role="dialog"
+        size="lg"
+        title={t("design.web.cover_adjust")}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setAdjusting(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={() => {
+                onCoverReposition(draft.x, draft.y, draft.scale);
+                setAdjusting(false);
+              }}
+            >
+              {t("common.save")}
+            </Button>
+          </>
+        }
+      >
+        {coverUrl && (
+          <CoverPositioner
+            src={coverUrl}
+            x={draft.x}
+            y={draft.y}
+            scale={draft.scale}
+            filter={filter}
+            onChange={(x, y, scale) => setDraft({ x, y, scale })}
+            onCommit={(x, y, scale) => setDraft({ x, y, scale })}
+            hint={t("design.web.cover_adjust_hint")}
+          />
+        )}
+      </Dialog>
 
       <Dialog
         open={galleryFor !== null}

@@ -3201,6 +3201,9 @@ export interface LocaleMessages {
       cover_constraints: string;
       cover_too_large: string;
       cover_wrong_type: string;
+      cover_adjust: string;
+      cover_adjust_hint: string;
+      cover_zoom: string;
       photo_art: {
         reception_pergola: string;
         reception_candlelit: string;

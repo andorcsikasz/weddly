@@ -2904,6 +2904,9 @@ const en: LocaleMessages = {
       cover_constraints: "JPEG, PNG or WebP · max {mb} MB",
       cover_too_large: "That image is over {mb} MB. Please use a smaller one.",
       cover_wrong_type: "Use a JPEG, PNG or WebP image.",
+      cover_adjust: "Adjust",
+      cover_adjust_hint: "Drag to reposition",
+      cover_zoom: "Zoom",
       photo_art: {
         reception_pergola: "Garden reception",
         reception_candlelit: "Candlelit dinner",

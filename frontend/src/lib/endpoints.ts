@@ -696,6 +696,8 @@ export const coupleApi = {
     /** Cover-photo focal point as object-position percentages (0..100). */
     cover_position_x?: number;
     cover_position_y?: number;
+    /** Cover-photo zoom (percent, 100 = fit-to-frame, up to 300). */
+    cover_scale?: number;
     /** Pre-RSVP welcome block on the merged Vendégoldal (markdown,
      *  ≤4000 chars). Empty string clears the column. */
     guest_page_intro?: string | null;

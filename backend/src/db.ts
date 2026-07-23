@@ -912,6 +912,10 @@ addColumnIfMissing("couples", "cover_image_url", "cover_image_url TEXT");
 // photo in the guest-page editor to choose which part stays in frame.
 addColumnIfMissing("couples", "cover_position_x", "cover_position_x INTEGER NOT NULL DEFAULT 50");
 addColumnIfMissing("couples", "cover_position_y", "cover_position_y INTEGER NOT NULL DEFAULT 50");
+// Cover-photo zoom as a percent (100 = fit-to-frame, up to 300 = 3x in). Paired
+// with the focal point above: the couple drags to reposition + zooms in to crop
+// tighter. Stored INTEGER; the guest page scales the image from the focal point.
+addColumnIfMissing("couples", "cover_scale", "cover_scale INTEGER NOT NULL DEFAULT 100");
 // Two OPTIONAL fixed-slot photos on the public wedding site (slot 1 renders
 // after the welcome band, slot 2 before the RSVP ask). Uploaded via
 // POST /api/couples/current/site-photo/:slot; stores the /uploads/... URL.

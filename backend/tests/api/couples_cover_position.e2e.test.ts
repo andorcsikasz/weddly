@@ -8,7 +8,7 @@ import { bootstrapCouple, req, wipeAll } from "../helpers";
 // guest page so the hero crop frames the chosen part.
 
 interface CoupleResp {
-  couple: { cover_position_x: number; cover_position_y: number };
+  couple: { cover_position_x: number; cover_position_y: number; cover_scale: number };
 }
 
 describe("couple cover_position_x/y", () => {
@@ -58,5 +58,30 @@ describe("couple cover_position_x/y", () => {
     const { token } = await bootstrapCouple("cover-pos-range@weddly.test");
     const r = await req("PATCH", "/api/couples/current", { cover_position_x: 150 }, { token });
     expect(r.status).toBe(400);
+  });
+
+  test("cover_scale defaults to 100 (fit), persists in range, and rejects out-of-range", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("cover-scale@weddly.test");
+
+    const fresh = await req<CoupleResp>("GET", "/api/couples/current", undefined, { token });
+    expect(fresh.data.couple.cover_scale).toBe(100);
+
+    const patch = await req<CoupleResp>(
+      "PATCH",
+      "/api/couples/current",
+      { cover_scale: 175 },
+      { token },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.couple.cover_scale).toBe(175);
+
+    // Below 100 (would show gaps) and above 300 are rejected.
+    expect(
+      (await req("PATCH", "/api/couples/current", { cover_scale: 90 }, { token })).status,
+    ).toBe(400);
+    expect(
+      (await req("PATCH", "/api/couples/current", { cover_scale: 400 }, { token })).status,
+    ).toBe(400);
   });
 });

@@ -657,22 +657,23 @@ export function WeddingSiteView({
           // date's own click-to-edit isn't swallowed by the cover affordance.
           <div className="relative w-full">
             <div
-              className={
-                isPreview && e.onEditCover
-                  ? "cursor-pointer transition hover:opacity-95"
-                  : undefined
-              }
+              className={`overflow-hidden ${
+                isPreview && e.onEditCover ? "cursor-pointer transition hover:opacity-95" : ""
+              }`}
               {...(isPreview ? editAffordance(e.onEditCover, editHint) : {})}
             >
               <img
                 src={view.cover_image_url}
                 alt=""
                 className="aspect-[3/4] max-h-[88vh] w-full object-cover sm:aspect-[21/9]"
-                // Honour the couple's chosen focal point (CoverPositioner writes
-                // cover_position_x/y, 0–100, default centre). Without this the
-                // public page always centre-crops and ignores the positioner.
+                // Honour the couple's chosen focal point + zoom (CoverPositioner
+                // writes cover_position_x/y 0–100 and cover_scale 100–300). The
+                // transform zooms IN from the focal point; overflow-hidden on the
+                // wrapper clips it. Without this the page centre-crops at 1x.
                 style={{
                   objectPosition: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
+                  transform: `scale(${Math.max(1, (view.cover_scale ?? 100) / 100)})`,
+                  transformOrigin: `${view.cover_position_x ?? 50}% ${view.cover_position_y ?? 50}%`,
                   filter: imgFilter,
                   transition: "filter 400ms ease",
                 }}

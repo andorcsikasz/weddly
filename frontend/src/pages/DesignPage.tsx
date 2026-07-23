@@ -755,6 +755,20 @@ export default function DesignPage() {
     }
   }
 
+  // Persist the cover focal point + zoom the couple set in the Adjust dialog.
+  async function repositionCover(x: number, y: number, scale: number) {
+    try {
+      const r = await coupleApi.update({
+        cover_position_x: x,
+        cover_position_y: y,
+        cover_scale: scale,
+      });
+      setCouple(r.couple);
+    } catch {
+      toast.error(t("design.save_error"));
+    }
+  }
+
   // Copy the live guest-page URL (finish card, public sites only).
   async function copyGuestLink() {
     if (!couple?.slug) return;
@@ -860,6 +874,12 @@ export default function DesignPage() {
             venue_name: couple.venue_name,
             venue_city: couple.venue_city,
             cover_image_url: couple.cover_image_url,
+            // Focal point + zoom so the in-editor preview crops the cover exactly
+            // as the guest page will (the fields were previously omitted here, so
+            // the preview always centre-cropped).
+            cover_position_x: couple.cover_position_x,
+            cover_position_y: couple.cover_position_y,
+            cover_scale: couple.cover_scale,
             site_image_1_url: couple.site_image_1_url,
             site_image_2_url: couple.site_image_2_url,
             guest_page_intro: couple.guest_page_intro,
@@ -1032,6 +1052,10 @@ export default function DesignPage() {
                     onRemove={(slot) => void removeSitePhoto(slot)}
                     onCoverUpload={(file) => void uploadCoverImage(file)}
                     onCoverRemove={() => void removeCoverImage()}
+                    coverPositionX={couple?.cover_position_x ?? 50}
+                    coverPositionY={couple?.cover_position_y ?? 50}
+                    coverScale={couple?.cover_scale ?? 100}
+                    onCoverReposition={(x, y, s) => void repositionCover(x, y, s)}
                     coverBusy={coverBusy}
                     busySlot={photoBusy}
                     readOnly={readOnly}

@@ -788,6 +788,9 @@ export interface Couple {
    *  (defaults to 50/50 at the render site) so legacy/fixture literals omit it. */
   cover_position_x?: number;
   cover_position_y?: number;
+  /** Cover-photo zoom (percent, 100 = fit-to-frame, up to 300). Optional; the
+   *  render site defaults to 100. */
+  cover_scale?: number;
   /** Optional fixed-slot photos on the public wedding site — slot 1 renders
    *  after the welcome band, slot 2 before the RSVP ask. Uploaded via
    *  POST /api/couples/current/site-photo/:slot. Optional (server always
