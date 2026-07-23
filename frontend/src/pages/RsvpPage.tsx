@@ -4,20 +4,20 @@
 // HouseholdRsvpForm as the new check-in page.
 
 import type { PublicCheckinView } from "@shared/types";
-import { Languages } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { HouseholdRsvpForm } from "../components/HouseholdRsvpForm";
+import { LocaleSwitcher } from "../components/LocaleSwitcher";
 import { Wordmark } from "../components/Wordmark";
 import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
-import { nextLocale, useT } from "../lib/i18n";
+import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 export default function RsvpPage() {
   const { code = "" } = useParams<{ code: string }>();
-  const { t, locale, setLocale } = useT();
+  const { t } = useT();
   useDocumentMeta("seo.rsvp_legacy_title", "seo.rsvp_legacy_description");
   const [view, setView] = useState<PublicCheckinView | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,15 +42,7 @@ export default function RsvpPage() {
         >
           <Wordmark size="sm" />
         </Link>
-        <button
-          type="button"
-          className="btn-ghost btn-sm"
-          onClick={() => setLocale(nextLocale(locale))}
-          aria-label={t("nav.switch_language")}
-          title={nextLocale(locale).toUpperCase()}
-        >
-          <Languages size={18} aria-hidden="true" />
-        </button>
+        <LocaleSwitcher buttonClassName="btn-ghost btn-sm" />
       </div>
 
       {error ? (

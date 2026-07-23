@@ -11,6 +11,7 @@ import {
   BarChart3,
   Bell,
   CalendarDays,
+  Check,
   ChevronDown,
   Home,
   Languages,
@@ -32,10 +33,11 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import type { PlannerInviteView, PlannerProfile, PlannerStats, User } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { plannerApi, plannerBillingApi } from "../lib/endpoints";
-import { nextLocale, useT } from "../lib/i18n";
+import { LOCALE_NAMES, LOCALES, useT } from "../lib/i18n";
 import { useNotifSeen } from "../lib/useNotifSeen";
 import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 import { PlannerDemoOverlay } from "./PlannerDemoOverlay";
 import { Wordmark } from "./Wordmark";
 
@@ -305,23 +307,32 @@ function PlannerProfileMenu({
           {/* Language toggle lives inline in the header on tablet+, so it's a
            *  mobile-only entry here (`sm:hidden`) - mirrors the couple-side
            *  ProfileMenu. */}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              setLocale(nextLocale(locale));
-            }}
-            className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-moss-50 sm:hidden dark:text-paper-100 dark:hover:bg-umber-700"
-          >
-            <span className="inline-flex items-center gap-2">
-              <Languages size={16} aria-hidden="true" />
-              <span>{t("nav.switch_language")}</span>
-            </span>
-            <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-              {locale} → {nextLocale(locale)}
-            </span>
-          </button>
+          <div className="sm:hidden">
+            <p className="flex items-center gap-2 px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
+              <Languages size={14} aria-hidden="true" />
+              {t("nav.switch_language")}
+            </p>
+            {LOCALES.map((l) => (
+              <button
+                key={l}
+                type="button"
+                role="menuitemradio"
+                aria-checked={l === locale}
+                onClick={() => {
+                  setOpen(false);
+                  if (l !== locale) setLocale(l);
+                }}
+                className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-moss-50 dark:hover:bg-umber-700 ${
+                  l === locale
+                    ? "font-semibold text-ink-900 dark:text-paper-50"
+                    : "text-ink-700 dark:text-paper-100"
+                }`}
+              >
+                <span>{LOCALE_NAMES[l]}</span>
+                {l === locale && <Check size={15} aria-hidden="true" className="shrink-0" />}
+              </button>
+            ))}
+          </div>
           <div className="my-1 h-px bg-paper-200 dark:bg-umber-700" />
           <button
             type="button"
@@ -448,15 +459,10 @@ export function PlannerShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2.5">
-            <button
-              type="button"
-              onClick={() => setLocale(nextLocale(locale))}
-              className="hidden h-11 w-11 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800"
-              title={`${t("nav.switch_language")} (${locale} → ${nextLocale(locale)})`}
-              aria-label={t("nav.switch_language")}
-            >
-              <Languages size={18} aria-hidden="true" />
-            </button>
+            <LocaleSwitcher
+              className="hidden sm:block"
+              buttonClassName="inline-flex h-11 w-11 items-center justify-center rounded-lg text-umber-700 transition-colors hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800"
+            />
 
             <button
               type="button"

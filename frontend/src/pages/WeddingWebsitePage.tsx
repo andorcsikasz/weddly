@@ -23,13 +23,13 @@
 // identically here (live) and in the /app/guest-page editor preview, so the
 // couple's preview matches what guests actually see.
 
-import { Languages } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { weddingWebsiteApi } from "../lib/endpoints";
-import { nextLocale, useT } from "../lib/i18n";
+import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+import { LocaleSwitcher } from "../components/LocaleSwitcher";
 import { Shell } from "../components/Shell";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import type {
@@ -50,7 +50,7 @@ function canonicalUrlFor(slug: string): string {
 export default function WeddingWebsitePage() {
   const { slug = "", code = "" } = useParams<{ slug: string; code?: string }>();
   const hasCode = code.length > 0;
-  const { t, locale, setLocale } = useT();
+  const { t, locale } = useT();
   const [view, setView] = useState<PublicWeddingWebsiteView | null>(null);
   const [household, setHousehold] = useState<PublicWeddingHouseholdContext | null>(null);
   const [tier, setTier] = useState<PublicWeddingTier>("public");
@@ -275,15 +275,7 @@ export default function WeddingWebsitePage() {
     // Weddly brand lives in the footer.
     <div className="relative min-h-full">
       <div className="absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
-        <button
-          type="button"
-          className="btn-ghost btn-sm !px-2"
-          onClick={() => setLocale(nextLocale(locale))}
-          aria-label={t("nav.switch_language")}
-          title={t("nav.switch_language")}
-        >
-          <Languages size={18} aria-hidden="true" />
-        </button>
+        <LocaleSwitcher buttonClassName="btn-ghost btn-sm !px-2" />
       </div>
       <WeddingSiteView
         view={view}

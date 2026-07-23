@@ -2,15 +2,16 @@
 // code) → one resolved household → one RSVP submission for everyone in it.
 
 import { HOUSEHOLD_CODE_LENGTH, type PublicCheckinView } from "@shared/types";
-import { Languages, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { HouseholdRsvpForm } from "../components/HouseholdRsvpForm";
+import { LocaleSwitcher } from "../components/LocaleSwitcher";
 import { Wordmark } from "../components/Wordmark";
 import { useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
-import { nextLocale, useT } from "../lib/i18n";
+import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 const KIOSK_STORAGE_KEY = "weddly.rsvp.kiosk";
@@ -26,7 +27,7 @@ const KIOSK_PRESS_MOVE_TOLERANCE_PX = 10;
 type LookupErrorField = "couple" | "code" | "both" | null;
 
 export default function RsvpCheckinPage() {
-  const { t, locale, setLocale } = useT();
+  const { t } = useT();
   const toast = useToast();
   useDocumentMeta("seo.rsvp_checkin_title", "seo.rsvp_checkin_description");
   const [params, setParams] = useSearchParams();
@@ -212,17 +213,7 @@ export default function RsvpCheckinPage() {
             <Wordmark size="sm" />
           </Link>
         )}
-        {!kiosk && (
-          <button
-            type="button"
-            className="btn-ghost btn-sm"
-            onClick={() => setLocale(nextLocale(locale))}
-            aria-label={t("nav.switch_language")}
-            title={nextLocale(locale).toUpperCase()}
-          >
-            <Languages size={18} aria-hidden="true" />
-          </button>
-        )}
+        {!kiosk && <LocaleSwitcher buttonClassName="btn-ghost btn-sm" />}
       </div>
 
       {kiosk && (

@@ -5,6 +5,7 @@
 import type { CouplePartnerView } from "@shared/types";
 import {
   ArrowLeftRight,
+  Check,
   Home,
   Languages,
   Layers,
@@ -18,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { coupleApi } from "../lib/endpoints";
-import { nextLocale, useT } from "../lib/i18n";
+import { LOCALE_NAMES, LOCALES, useT } from "../lib/i18n";
 
 /** `onOpenFeedback` is supplied by AppShell. The feedback dialog's entry
  *  point lives here in the profile dropdown for every viewport (it used to
@@ -217,23 +218,34 @@ export function ProfileMenu({
               <span>{t("landing.nav_feedback")}</span>
             </button>
           )}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              setLocale(nextLocale(locale));
-            }}
-            className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 sm:hidden dark:text-paper-100 dark:hover:bg-umber-700"
-          >
-            <span className="inline-flex items-center gap-2">
-              <Languages size={16} aria-hidden="true" />
-              <span>{t("nav.switch_language")}</span>
-            </span>
-            <span className="text-xs font-medium uppercase tracking-wider text-ink-500 dark:text-umber-300">
-              {locale} → {nextLocale(locale)}
-            </span>
-          </button>
+          {/* Mobile: list the languages so the user PICKS one, instead of the
+              old blind cycle (which got confusing with a third language). */}
+          <div className="sm:hidden">
+            <p className="flex items-center gap-2 px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
+              <Languages size={14} aria-hidden="true" />
+              {t("nav.switch_language")}
+            </p>
+            {LOCALES.map((l) => (
+              <button
+                key={l}
+                type="button"
+                role="menuitemradio"
+                aria-checked={l === locale}
+                onClick={() => {
+                  setOpen(false);
+                  if (l !== locale) setLocale(l);
+                }}
+                className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-paper-100 dark:hover:bg-umber-700 ${
+                  l === locale
+                    ? "font-semibold text-ink-900 dark:text-paper-50"
+                    : "text-ink-700 dark:text-paper-100"
+                }`}
+              >
+                <span>{LOCALE_NAMES[l]}</span>
+                {l === locale && <Check size={15} aria-hidden="true" className="shrink-0" />}
+              </button>
+            ))}
+          </div>
           {user.is_admin && (
             <>
               <Link

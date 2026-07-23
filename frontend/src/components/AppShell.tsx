@@ -18,7 +18,6 @@ import {
   Handshake,
   Image as ImageIcon,
   Inbox,
-  Languages,
   Mail,
   LayoutDashboard,
   LayoutList,
@@ -45,7 +44,7 @@ import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { isCurrentSessionDemo } from "../lib/demoSession";
 import { adminUserApi, authApi, plannerApi } from "../lib/endpoints";
-import { LOCALE_NAMES, nextLocale, useT } from "../lib/i18n";
+import { useT } from "../lib/i18n";
 import {
   adoptShareUser,
   markSharePromptSeenLocally,
@@ -62,6 +61,7 @@ import { SubscriptionBanner } from "./SubscriptionBanner";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { KeyboardShortcutsSheet, useShortcutsHotkey } from "./KeyboardShortcutsSheet";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 import { NotificationBell } from "./NotificationBell";
 import { ProfileMenu } from "./ProfileMenu";
 import { Wordmark } from "./Wordmark";
@@ -383,7 +383,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { t, locale, setLocale } = useT();
+  const { t } = useT();
   const location = useLocation();
   const mainRef = useRef<HTMLElement | null>(null);
   const { user } = useAuth();
@@ -715,15 +715,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Compass size={18} aria-hidden="true" />
               </button>
             )}
-            <button
-              type="button"
-              className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
-              onClick={() => setLocale(nextLocale(locale))}
-              aria-label={t("nav.switch_language")}
-              title={LOCALE_NAMES[nextLocale(locale)]}
-            >
-              <Languages size={18} aria-hidden="true" />
-            </button>
+            <LocaleSwitcher
+              className="hidden sm:block"
+              buttonClassName="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+            />
             {user && <NotificationBell />}
             <button
               type="button"

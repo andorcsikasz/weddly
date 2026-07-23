@@ -1,4 +1,5 @@
 import {
+  Check,
   ClipboardList,
   LayoutDashboard,
   Languages,
@@ -14,9 +15,10 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { nextLocale, useT } from "../lib/i18n";
+import { LOCALE_NAMES, LOCALES, useT } from "../lib/i18n";
 import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Wordmark } from "./Wordmark";
 
 /** Track scroll direction so the public header can hide on scroll-down
@@ -118,7 +120,6 @@ function PublicHeader() {
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const otherLocale = nextLocale(locale);
   const { hidden, atTop } = useHeaderState();
   const isAudiencePage = pathname === "/planners" || pathname === "/vendors";
 
@@ -203,16 +204,10 @@ function PublicHeader() {
           >
             <MessageSquare size={18} aria-hidden="true" />
           </button>
-          <button
-            type="button"
-            data-nav-icon
-            onClick={() => setLocale(otherLocale)}
-            className="hidden h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50 md:inline-flex"
-            aria-label={t("nav.switch_language")}
-            title={otherLocale.toUpperCase()}
-          >
-            <Languages size={18} aria-hidden="true" />
-          </button>
+          <LocaleSwitcher
+            className="hidden md:block"
+            buttonClassName="inline-flex h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+          />
           <button
             type="button"
             data-nav-icon
@@ -365,26 +360,29 @@ function PublicHeader() {
               />
               <span>{t("landing.nav_feedback")}</span>
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setLocale(otherLocale);
-                setMenuOpen(false);
-              }}
-              className="flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
-            >
-              <span className="inline-flex items-center gap-3">
-                <Languages
-                  size={16}
-                  aria-hidden="true"
-                  className="text-umber-600 dark:text-umber-300"
-                />
-                <span>{t("nav.switch_language")}</span>
-              </span>
-              <span className="text-xs font-medium uppercase tracking-wider text-umber-700 dark:text-umber-300">
-                {locale} → {otherLocale}
-              </span>
-            </button>
+            <div>
+              <p className="flex items-center gap-3 px-2 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-umber-600 dark:text-umber-300">
+                <Languages size={16} aria-hidden="true" />
+                {t("nav.switch_language")}
+              </p>
+              {LOCALES.map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  aria-checked={l === locale}
+                  onClick={() => {
+                    if (l !== locale) setLocale(l);
+                    setMenuOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50 ${
+                    l === locale ? "font-semibold text-umber-900 dark:text-paper-50" : ""
+                  }`}
+                >
+                  <span>{LOCALE_NAMES[l]}</span>
+                  {l === locale && <Check size={16} aria-hidden="true" className="shrink-0" />}
+                </button>
+              ))}
+            </div>
             <button
               type="button"
               onClick={() => {
