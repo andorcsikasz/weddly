@@ -12,6 +12,7 @@ import {
   Flag,
   FlagOff,
   FlaskConical,
+  Gem,
   Gift,
   Heart,
   History,
@@ -176,6 +177,9 @@ export default function AdminUsersPage() {
   // `*ListOpen` derivations below) so matches never hide behind a fold.
   const [couplesOpen, setCouplesOpen] = useState(true);
   const [soloOpen, setSoloOpen] = useState(true);
+  // Married is the graduated set — collapsed by default so the active couples
+  // stay front and centre.
+  const [marriedOpen, setMarriedOpen] = useState(false);
   const [orphansOpen, setOrphansOpen] = useState(true);
 
   type WorkspaceSortKey =
@@ -342,6 +346,14 @@ export default function AdminUsersPage() {
     return groups;
   }, [realCouples, userById]);
 
+  // Wedding day already behind them → the "Married" segment, split out of the
+  // active Couple/Solo lists so the admin sees who's still planning vs already
+  // wed. Keyed off the primary (main) workspace's date; `en-CA` yields a local
+  // 'YYYY-MM-DD', and ISO date strings compare lexicographically, so `<` works.
+  const todayIso = new Date().toLocaleDateString("en-CA");
+  const isMarried = (g: OwnerGroup): boolean =>
+    g.primary.wedding_date != null && g.primary.wedding_date < todayIso;
+
   // Order groups by their primary using the active workspace sort, so bands and
   // single cards interleave in the same order the columns are sorted by.
   function sortGroups(groups: OwnerGroup[]): OwnerGroup[] {
@@ -475,20 +487,31 @@ export default function AdminUsersPage() {
   // is a one-member workspace), search-filtered and sorted for display. An
   // owner's additional solo events nest under the PRIMARY's section wherever it
   // lives, so a paired-primary owner never also shows up as a loose solo card.
+  // Married graduates out of BOTH pair + solo lists (a solo whose wedding passed
+  // is married too), into its own section, so the Couple/Solo lists only ever
+  // show couples still in the run-up.
+  const marriedGroups = useMemo(
+    () => sortGroups(filterGroupsForDisplay(ownerGroups.filter(isMarried))),
+    [ownerGroups, searchQuery, userById, sortKey, sortDir, todayIso],
+  );
   const pairedGroups = useMemo(
-    () => sortGroups(filterGroupsForDisplay(ownerGroups.filter((g) => g.paired))),
-    [ownerGroups, searchQuery, userById, sortKey, sortDir],
+    () => sortGroups(filterGroupsForDisplay(ownerGroups.filter((g) => g.paired && !isMarried(g)))),
+    [ownerGroups, searchQuery, userById, sortKey, sortDir, todayIso],
   );
   const soloGroups = useMemo(
-    () => sortGroups(filterGroupsForDisplay(ownerGroups.filter((g) => !g.paired))),
-    [ownerGroups, searchQuery, userById, sortKey, sortDir],
+    () => sortGroups(filterGroupsForDisplay(ownerGroups.filter((g) => !g.paired && !isMarried(g)))),
+    [ownerGroups, searchQuery, userById, sortKey, sortDir, todayIso],
   );
   // Header stat counts are per-OWNER (one card each), computed over the full
   // unfiltered set so the top-of-page tally stays stable while searching.
-  const totalCouplePairs = useMemo(() => ownerGroups.filter((g) => g.paired).length, [ownerGroups]);
+  const totalMarried = useMemo(() => ownerGroups.filter(isMarried).length, [ownerGroups, todayIso]);
+  const totalCouplePairs = useMemo(
+    () => ownerGroups.filter((g) => g.paired && !isMarried(g)).length,
+    [ownerGroups, todayIso],
+  );
   const totalSoloWorkspaces = useMemo(
-    () => ownerGroups.filter((g) => !g.paired).length,
-    [ownerGroups],
+    () => ownerGroups.filter((g) => !g.paired && !isMarried(g)).length,
+    [ownerGroups, todayIso],
   );
   const filteredOrphans = useMemo(
     () => (searchQuery === "" ? orphans : orphans.filter(orphanMatches)),
@@ -525,6 +548,7 @@ export default function AdminUsersPage() {
   // hits are never hidden behind a fold; the fold toggle is suppressed then.
   const couplesListOpen = couplesOpen || isSearching;
   const soloListOpen = soloOpen || isSearching;
+  const marriedListOpen = marriedOpen || isSearching;
   const orphansListOpen = orphansOpen || isSearching;
   // Auto-expand the demo bucket while searching so matching demo accounts
   // surface inline instead of hiding behind the collapsed summary.
@@ -1426,6 +1450,7 @@ export default function AdminUsersPage() {
                 [
                   { key: "admin-section-couples", value: totalCouplePairs, icon: Heart },
                   { key: "admin-section-solo", value: totalSoloWorkspaces, icon: User },
+                  { key: "admin-section-married", value: totalMarried, icon: Gem },
                   { key: "admin-section-beta", value: betaCouples.length, icon: FlaskConical },
                   { key: "admin-section-founding", value: foundingCouples.length, icon: Gift },
                 ] as const
@@ -1670,6 +1695,40 @@ export default function AdminUsersPage() {
                     <>
                       {workspaceColumnHeader}
                       <ul className="space-y-1.5">{soloGroups.map((g) => renderOwnerGroup(g))}</ul>
+                    </>
+                  ))}
+              </section>
+
+              {/* ── Married — couples whose wedding day has already passed;
+               *  graduated out of the active Couple/Solo lists ── */}
+              <section id="admin-section-married" className="mb-6 scroll-mt-20">
+                <AdminSectionHeader
+                  title={t("admin.married_section")}
+                  count={t(
+                    marriedGroups.length === 1
+                      ? "admin.married_count_one"
+                      : "admin.married_count_other",
+                    { n: marriedGroups.length },
+                  )}
+                  collapse={
+                    !isSearching
+                      ? {
+                          open: marriedOpen,
+                          onToggle: () => setMarriedOpen((v) => !v),
+                          label: t(marriedOpen ? "admin.section_hide" : "admin.section_show"),
+                        }
+                      : undefined
+                  }
+                />
+                {marriedListOpen &&
+                  (marriedGroups.length === 0 ? (
+                    <AdminEmptyState>{t("admin.married_empty")}</AdminEmptyState>
+                  ) : (
+                    <>
+                      {workspaceColumnHeader}
+                      <ul className="space-y-1.5">
+                        {marriedGroups.map((g) => renderOwnerGroup(g))}
+                      </ul>
                     </>
                   ))}
               </section>

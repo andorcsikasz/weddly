@@ -5790,6 +5790,10 @@ export interface LocaleMessages {
     solo_count_one: string;
     solo_count_other: string;
     solo_empty: string;
+    married_section: string;
+    married_count_one: string;
+    married_count_other: string;
+    married_empty: string;
     /** "×N" pill + tooltip on a banded owner card (one owner, several event
      *  workspaces), and the fallback owner label when the owner can't resolve. */
     owner_workspaces_pill: string;
