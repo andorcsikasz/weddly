@@ -80,7 +80,7 @@ import { PlannerCard } from "../components/PlannerDirectoryRail";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SupplierCountryFilter } from "../components/SupplierCountryFilter";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
-import { Button, Skeleton, useToast } from "../components/ui";
+import { Button, Skeleton, SmartImage, useToast } from "../components/ui";
 import {
   hydrateCostPlanningCount,
   readCostPlanningCount,
@@ -2270,9 +2270,10 @@ export default function SuppliersPage() {
                       live ON the card rather than in a separate text footer. */}
                       <div className="relative h-40 w-full shrink-0 bg-paper-200 dark:bg-umber-700">
                         {s.hero_image_url ? (
-                          <img
+                          <SmartImage
                             src={s.hero_image_url}
                             alt=""
+                            wrapperClassName="h-full w-full"
                             className="h-full w-full object-cover"
                             loading="lazy"
                           />

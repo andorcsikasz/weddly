@@ -14,7 +14,7 @@ import type { MoodboardPin, MoodboardState } from "@shared/types";
 import { AlertTriangle, ExternalLink, ImagePlus, Lock, Trash2, UploadCloud } from "lucide-react";
 import { type ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
-import { Skeleton, useToast } from "../components/ui";
+import { Skeleton, SmartImage, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { moodboardApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -112,7 +112,14 @@ function PinGrid({ pins }: { pins: MoodboardPin[] }) {
           rel="noopener noreferrer"
           className="block break-inside-avoid overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 transition-shadow hover:shadow-md dark:border-umber-700 dark:bg-umber-800"
         >
-          <img src={pin.image_url} alt={pin.title ?? ""} loading="lazy" className="block w-full" />
+          <SmartImage
+            src={pin.image_url}
+            alt={pin.title ?? ""}
+            loading="lazy"
+            wrapperClassName="w-full"
+            loadingClassName="aspect-[3/4]"
+            className="block w-full"
+          />
         </a>
       ))}
     </div>
