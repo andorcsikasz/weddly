@@ -40,6 +40,7 @@ import {
   type CuratedPhotoSlug,
   type ColorRole,
   type CoupleDesign,
+  COVER_IMAGE_MAX_BYTES,
   type DateFormatSlug,
   type FontFamilySlug,
   type FontPresetSlug,
@@ -2492,7 +2493,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
 // accepts a remote http(s) URL for couples who prefer hot-linking — they
 // just don't go through this endpoint.
 
-const MAX_COVER_BYTES = 4 * 1024 * 1024;
+const MAX_COVER_BYTES = COVER_IMAGE_MAX_BYTES;
 const SUPPORTED_COVER_MIMES: Record<string, "jpg" | "png" | "webp"> = {
   "image/jpeg": "jpg",
   "image/png": "png",

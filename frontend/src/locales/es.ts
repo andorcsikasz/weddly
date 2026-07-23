@@ -2960,7 +2960,11 @@ const es: LocaleMessages = {
       cover_label: "Foto de portada",
       cover_upload_cta: "Añadir foto de portada",
       cover_replace: "Reemplazar",
+      cover_replace_aria: "Reemplazar la foto de portada",
       cover_remove: "Quitar portada",
+      cover_constraints: "JPEG, PNG o WebP · máx. {mb} MB",
+      cover_too_large: "Esa imagen supera los {mb} MB. Usa una más pequeña.",
+      cover_wrong_type: "Usa una imagen JPEG, PNG o WebP.",
       photo_art: {
         reception_pergola: "Recepción en el jardín",
         reception_candlelit: "Cena a la luz de las velas",

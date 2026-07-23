@@ -3195,7 +3195,12 @@ export interface LocaleMessages {
       cover_label: string;
       cover_upload_cta: string;
       cover_replace: string;
+      cover_replace_aria: string;
       cover_remove: string;
+      /** Receives `{mb}` — the max upload size. */
+      cover_constraints: string;
+      cover_too_large: string;
+      cover_wrong_type: string;
       photo_art: {
         reception_pergola: string;
         reception_candlelit: string;

@@ -2927,7 +2927,11 @@ const hu: LocaleMessages = {
       cover_label: "Borítókép",
       cover_upload_cta: "Borítókép hozzáadása",
       cover_replace: "Csere",
+      cover_replace_aria: "Borítókép cseréje",
       cover_remove: "Borító eltávolítása",
+      cover_constraints: "JPEG, PNG vagy WebP · max. {mb} MB",
+      cover_too_large: "Ez a kép nagyobb {mb} MB-nál. Válassz kisebbet.",
+      cover_wrong_type: "Használj JPEG, PNG vagy WebP képet.",
       photo_art: {
         reception_pergola: "Kerti fogadás",
         reception_candlelit: "Gyertyafényes vacsora",

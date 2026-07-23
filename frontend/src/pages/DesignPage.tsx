@@ -18,6 +18,8 @@ import {
   COLOR_ROLES,
   type ColorRole,
   type CoupleDesign,
+  COVER_IMAGE_MAX_MB,
+  coverImageRejectReason,
   DATE_FORMATS,
   FONT_FAMILIES,
   FONT_PRESETS,
@@ -708,15 +710,33 @@ export default function DesignPage() {
   // photos, so the live preview updates in place. Removal PATCHes the field null.
   async function uploadCoverImage(file: File) {
     if (coverBusy) return;
+    // Explain the problem BEFORE the round trip — a photo straight off a camera
+    // is often over the 4 MB cap, and the old generic error never said so.
+    const reason = coverImageRejectReason(file);
+    if (reason) {
+      toast.error(
+        reason === "too_large"
+          ? t("design.web.cover_too_large", { mb: COVER_IMAGE_MAX_MB })
+          : t("design.web.cover_wrong_type"),
+      );
+      return;
+    }
     setCoverBusy(true);
     try {
       const r = await coupleApi.uploadCover(file);
       setCouple(r.couple);
     } catch (err) {
+      // Surface the server's real reason instead of a blanket "upload failed":
+      // 402 = billing lapse, 413 = too large, 415 = not a real image.
+      const status = err instanceof ApiError ? err.status : 0;
       toast.error(
-        err instanceof ApiError && err.status === 402
+        status === 402
           ? t("design.save_blocked")
-          : t("design.web.photo_upload_error"),
+          : status === 413
+            ? t("design.web.cover_too_large", { mb: COVER_IMAGE_MAX_MB })
+            : status === 415
+              ? t("design.web.cover_wrong_type")
+              : t("design.web.photo_upload_error"),
       );
     } finally {
       setCoverBusy(false);

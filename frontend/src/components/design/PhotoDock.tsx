@@ -14,6 +14,8 @@
 // it to act on.
 
 import {
+  COVER_IMAGE_ACCEPT,
+  COVER_IMAGE_MAX_MB,
   CURATED_SITE_PHOTOS,
   curatedPhotoUrl,
   IMAGE_TREATMENTS,
@@ -118,7 +120,8 @@ export function PhotoDock({
               <span>{t("design.web.cover_replace")}</span>
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept={COVER_IMAGE_ACCEPT}
+                aria-label={t("design.web.cover_replace_aria")}
                 className="sr-only"
                 disabled={coverBusy || readOnly}
                 onChange={(ev) => {
@@ -156,7 +159,8 @@ export function PhotoDock({
             <span className="text-[11px] font-medium">{t("design.web.cover_upload_cta")}</span>
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept={COVER_IMAGE_ACCEPT}
+              aria-label={t("design.web.cover_upload_cta")}
               className="sr-only"
               disabled={coverBusy || readOnly}
               onChange={(ev) => {
@@ -167,6 +171,11 @@ export function PhotoDock({
             />
           </label>
         )}
+        {/* Spell out what the uploader accepts, so a couple isn't guessing (a
+            camera photo is often over the cap). */}
+        <p className="mt-1 text-[10px] leading-tight text-ink-400 dark:text-umber-400">
+          {t("design.web.cover_constraints", { mb: COVER_IMAGE_MAX_MB })}
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

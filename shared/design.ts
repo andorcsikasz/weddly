@@ -846,6 +846,27 @@ export function curatedPhotoUrl(slug: string): string | null {
   return found ? `/design-photos/${found.file}` : null;
 }
 
+// ── Cover / guest-page image upload constraints ──────────────────────────────
+// Single source of truth for the limits the backend enforces AND the frontend
+// communicates up-front + pre-checks, so a couple learns "too large, use under
+// 4 MB" before a failed round trip instead of after a generic error.
+export const COVER_IMAGE_MAX_MB = 4;
+export const COVER_IMAGE_MAX_BYTES = COVER_IMAGE_MAX_MB * 1024 * 1024;
+/** MIME types the cover/photo uploader accepts (also the `<input accept>`). */
+export const COVER_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const COVER_IMAGE_ACCEPT = COVER_IMAGE_MIME_TYPES.join(",");
+
+/** Client-side pre-check mirroring the server's gate, so the UI can explain the
+ *  problem before uploading. Returns null when the file is acceptable. */
+export function coverImageRejectReason(file: {
+  size: number;
+  type: string;
+}): "too_large" | "wrong_type" | null {
+  if (file.size > COVER_IMAGE_MAX_BYTES) return "too_large";
+  if (!(COVER_IMAGE_MIME_TYPES as readonly string[]).includes(file.type)) return "wrong_type";
+  return null;
+}
+
 /** The three corner + shadow pairings the four style packs actually use.
  *
  *  `cardRadius` and `shadow` are stored separately and stay separate, because
@@ -1129,7 +1150,10 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
 }
 
 /** Locale-aware glyph for a monogram separator. Only `and` differs by locale. */
-export function monogramSeparatorGlyph(slug: MonogramSeparatorSlug, locale: "hu" | "en" | "es"): string {
+export function monogramSeparatorGlyph(
+  slug: MonogramSeparatorSlug,
+  locale: "hu" | "en" | "es",
+): string {
   if (slug === "and") return locale === "hu" ? "és" : "and";
   return MONOGRAM_SEPARATORS.find((s) => s.slug === slug)?.glyph ?? "&";
 }

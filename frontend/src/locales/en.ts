@@ -2899,7 +2899,11 @@ const en: LocaleMessages = {
       cover_label: "Cover photo",
       cover_upload_cta: "Add a cover photo",
       cover_replace: "Replace",
+      cover_replace_aria: "Replace cover photo",
       cover_remove: "Remove cover",
+      cover_constraints: "JPEG, PNG or WebP · max {mb} MB",
+      cover_too_large: "That image is over {mb} MB. Please use a smaller one.",
+      cover_wrong_type: "Use a JPEG, PNG or WebP image.",
       photo_art: {
         reception_pergola: "Garden reception",
         reception_candlelit: "Candlelit dinner",
