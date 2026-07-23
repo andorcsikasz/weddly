@@ -5,7 +5,7 @@
 // supplier chip on a bar → scroll to that supplier in the contact panel.
 
 import type { CoupleSupplier } from "@shared/couple_suppliers";
-import type { CouplePick } from "@shared/picks";
+import { type CouplePick, isSentinelPick } from "@shared/picks";
 import type { DirectorySupplier, DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
 import { toIsoDate } from "@shared/planning_timeline";
 import type { GoogleCalendarStatus, PlanningItem } from "@shared/types";
@@ -219,11 +219,17 @@ export default function TimelinePage() {
   // point at suppliers we couldn't resolve — e.g. a curated entry retired
   // after the pick was made — surface a name-less placeholder instead of
   // dropping the row so the couple still sees the orphan and can fix it).
+  // Sentinel picks ("self-organised" / "not needed") are declarations, not
+  // contactable suppliers, so they never belong in this panel — leaving them
+  // in rendered a row per not-needed category as "Unknown supplier" under the
+  // raw i18n key `SUPPLIERS.CAT.NOT-NEEDED`.
   const pocList = useMemo(() => {
-    return picks.map((p) => {
-      const resolved = supplierById.get(p.supplier_id);
-      return { pick: p, supplier: resolved ?? null };
-    });
+    return picks
+      .filter((p) => !isSentinelPick(p.supplier_id))
+      .map((p) => {
+        const resolved = supplierById.get(p.supplier_id);
+        return { pick: p, supplier: resolved ?? null };
+      });
   }, [picks, supplierById]);
 
   // Task rows considered for the Gantt — kind===task is the only kind with
@@ -514,7 +520,10 @@ function PocRow({
 }) {
   const { t } = useT();
   const Icon = supplier ? CATEGORY_ICON[supplier.category] : Building2;
-  const category = supplier?.category ?? (pick.supplier_id as SupplierCategory);
+  // Fall back to the pick's own category (a real SupplierCategory), never the
+  // supplier_id — an unresolved orphan should still read "Photographer", not a
+  // raw id cast to a category key.
+  const category = supplier?.category ?? (pick.category as SupplierCategory);
   const displayName =
     supplier?.name ?? (locale === "hu" ? "Ismeretlen kapcsolattartó" : "Unknown supplier");
 

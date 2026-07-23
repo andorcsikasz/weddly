@@ -8,6 +8,7 @@
 
 import { countryName } from "@shared/country_list";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
+import { NOT_NEEDED_PICK, SELF_ORGANIZED_PICK } from "@shared/picks";
 import type {
   DirectorySupplier,
   SupplierCategory,
@@ -188,17 +189,12 @@ function trackSupplierClick(supplierId: string, type: "website_click" | "phone_c
 // paint cheap on broad filters (the directory can run to hundreds of cards).
 const SUPPLIERS_PAGE_SIZE = 50;
 
-// Sentinel "pick" id recorded on the wedding_planner category when a couple
-// chooses to organize the wedding themselves (no planner). Matches no real
-// listing, so it resolves the planning step without highlighting any card. The
-// picks backend accepts any non-empty string id (it doesn't validate existence).
-const SELF_ORGANIZED_PICK = "self-organized";
-
-// Sentinel "pick" id recorded on ANY category the couple marks "I don't need
-// this" (e.g. no lighting, no transport). Same mechanism as SELF_ORGANIZED_PICK:
-// a non-empty sentinel that matches no real listing, so the category resolves
-// (its runner segment turns green + counts as done) without highlighting a card.
-const NOT_NEEDED_PICK = "not-needed";
+// Sentinel "pick" ids (SELF_ORGANIZED_PICK = "organising it ourselves",
+// NOT_NEEDED_PICK = "we don't need this category") live in @shared/picks so the
+// Timeline contact panel can exclude them too. Both match no real listing, so
+// they resolve a category's planning step (its runner segment turns green +
+// counts as done) without highlighting any card. The picks backend accepts any
+// non-empty string id, which is what lets these ride the same storage.
 
 /** Count of categories the couple actually chose a vendor for — the number
  *  behind the "választottak" (picked) filter/badge. A "nem kell" (not-needed)
