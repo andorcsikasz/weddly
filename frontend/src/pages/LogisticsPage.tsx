@@ -624,7 +624,7 @@ export default function LogisticsPage() {
             <div
               role="tablist"
               aria-label={t("logistics.tabs_aria")}
-              className="flex flex-1 min-w-[12rem] rounded-lg border border-paper-400 bg-paper-100 p-0.5 dark:border-umber-600 dark:bg-umber-900"
+              className="flex min-w-max flex-1 rounded-lg border border-paper-400 bg-paper-100 p-0.5 dark:border-umber-600 dark:bg-umber-900"
             >
               <TabButton
                 active={tab === "accommodation"}
@@ -952,7 +952,7 @@ function TabButton({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
+      className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors ${
         active
           ? "bg-white text-ink-900 shadow-sm dark:bg-umber-700 dark:text-paper-100"
           : "text-ink-600 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-100"
