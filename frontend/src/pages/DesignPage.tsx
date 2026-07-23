@@ -62,7 +62,7 @@ import {
   Smartphone,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { InfoHint } from "../components/InfoHint";
 import { LookBar } from "../components/design/LookBar";
@@ -153,6 +153,58 @@ function FontChip({
         {label}
       </span>
     </button>
+  );
+}
+
+/** Renders `children` at a fixed logical width and scales the whole thing down
+ *  to fit the available column width. The guest hero sizes itself off the
+ *  VIEWPORT (sm: breakpoints + a whitespace-nowrap date), so dropping the
+ *  desktop layout straight into the narrow preview column blew the hero past
+ *  the frame and `overflow-hidden` clipped the names + date. Rendering at a
+ *  real desktop width and scaling gives a faithful, unclipped miniature. Pass
+ *  `logicalWidth={null}` to render children as-is (the mobile frame, which is
+ *  already a real phone width, needs no scaling). */
+function ScaledPreview({
+  logicalWidth,
+  children,
+}: {
+  logicalWidth: number | null;
+  children: ReactNode;
+}) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [height, setHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (logicalWidth === null) return;
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner || typeof ResizeObserver === "undefined") return;
+    const recompute = () => {
+      const avail = outer.clientWidth;
+      const s = avail > 0 ? Math.min(1, avail / logicalWidth) : 1;
+      setScale(s);
+      setHeight(inner.offsetHeight * s);
+    };
+    recompute();
+    const ro = new ResizeObserver(recompute);
+    ro.observe(outer);
+    ro.observe(inner);
+    return () => ro.disconnect();
+  }, [logicalWidth]);
+
+  if (logicalWidth === null) return <>{children}</>;
+
+  return (
+    <div ref={outerRef} className="overflow-hidden" style={{ height: height ?? undefined }}>
+      <div
+        ref={innerRef}
+        style={{ width: logicalWidth, transform: `scale(${scale})`, transformOrigin: "top left" }}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -1856,14 +1908,20 @@ export default function DesignPage() {
                               : undefined
                           }
                         >
-                          <WeddingSiteView
-                            view={previewView}
-                            household={null}
-                            tier="public"
-                            locale={locale}
-                            isPreview={false}
-                            showFooter={false}
-                          />
+                          {/* Desktop: render at a real 1280px width and scale to
+                              fit, so the viewport-sized hero lands at true
+                              proportions instead of clipping. Mobile: the frame
+                              is already a phone width, so no scaling. */}
+                          <ScaledPreview logicalWidth={previewViewport === "desktop" ? 1280 : null}>
+                            <WeddingSiteView
+                              view={previewView}
+                              household={null}
+                              tier="public"
+                              locale={locale}
+                              isPreview={false}
+                              showFooter={false}
+                            />
+                          </ScaledPreview>
                         </div>
                       </div>
                       <p className="sr-only">{t("design.preview_sr_note")}</p>
