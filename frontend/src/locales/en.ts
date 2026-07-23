@@ -220,6 +220,8 @@ const en: LocaleMessages = {
     subscribe_cta: "Subscribe",
     manage_cta: "Manage subscription",
     opening: "Opening…",
+    card_on_file: "Card on file",
+    card_expires: "expires {date}",
     disabled_note: "Online payment isn't live yet. We'll email you before your free period ends.",
     error_generic: "Something went wrong. Please try again.",
     banner_title: "Read-only mode",

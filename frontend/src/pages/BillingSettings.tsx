@@ -7,14 +7,30 @@
 // headline was cut. Referrals are two list rows with icon-only actions rather
 // than two nested boxes with four labelled buttons.
 
-import { Check, Copy, Share2, Sparkles, Store, Users } from "lucide-react";
+import { Check, Copy, CreditCard, Share2, Sparkles, Store, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { BillingStatusResponse, SubscriptionStatus } from "@shared/billing";
+import type { BillingStatusResponse, PaymentMethodCard, SubscriptionStatus } from "@shared/billing";
 import { useToast } from "../components/ui";
 import { billingApi, referralApi, type ReferralStatus } from "../lib/endpoints";
 import { formatDateMs, formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
+
+/** Prettified Stripe card-brand label. Stripe returns lowercase slugs
+ *  ("visa", "mastercard", "amex", …); we title-case unknown brands and
+ *  special-case the ones whose casing isn't a plain capitalize. */
+const CARD_BRANDS: Record<string, string> = {
+  visa: "Visa",
+  mastercard: "Mastercard",
+  amex: "Amex",
+  discover: "Discover",
+  diners: "Diners Club",
+  jcb: "JCB",
+  unionpay: "UnionPay",
+};
+function brandLabel(brand: string): string {
+  return CARD_BRANDS[brand] ?? (brand ? brand[0]?.toUpperCase() + brand.slice(1) : "Card");
+}
 
 const PLAN_LABEL_KEY: Record<SubscriptionStatus, `billing.plan_${string}`> = {
   trialing: "billing.plan_trialing",
@@ -36,6 +52,7 @@ export default function BillingSettings() {
   const [busy, setBusy] = useState<"idle" | "checkout" | "portal">("idle");
   const [referral, setReferral] = useState<ReferralStatus | null>(null);
   const [copiedKey, setCopiedKey] = useState<RefKind | null>(null);
+  const [card, setCard] = useState<PaymentMethodCard | null>(null);
 
   useEffect(() => {
     billingApi
@@ -47,6 +64,12 @@ export default function BillingSettings() {
       .get()
       .then(setReferral)
       .catch(() => setReferral(null));
+    // Read-only card on file. Returns `{ card: null }` cheaply when there's no
+    // Stripe customer yet (trial/founding), so it's safe to fetch unconditionally.
+    billingApi
+      .paymentMethod()
+      .then((r) => setCard(r.card))
+      .catch(() => setCard(null));
   }, []);
 
   // Surface the Checkout return state once, then strip the query param so a
@@ -180,6 +203,30 @@ export default function BillingSettings() {
               </button>
             ))}
         </div>
+
+        {/* Card on file — read-only brand/last-4/expiry pulled from Stripe.
+         *  The card is only editable in the portal (the "Manage" button above),
+         *  so this line is purely informational. Hidden when no card is on
+         *  file (trial/founding, or Stripe not configured). */}
+        {card && (
+          <p className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-ink-600 dark:text-umber-200">
+            <CreditCard size={15} className="text-ink-400 dark:text-umber-400" aria-hidden />
+            <span className="font-medium text-ink-800 dark:text-paper-100">
+              {t("billing.card_on_file")}:
+            </span>
+            <span>
+              {brandLabel(card.brand)} •••• {card.last4}
+            </span>
+            <span className="text-ink-400 dark:text-umber-400" aria-hidden>
+              ·
+            </span>
+            <span>
+              {t("billing.card_expires", {
+                date: `${String(card.exp_month).padStart(2, "0")}/${String(card.exp_year).slice(-2)}`,
+              })}
+            </span>
+          </p>
+        )}
 
         {!enabled && (
           <p className="mt-4 text-sm text-ink-500 dark:text-umber-300">

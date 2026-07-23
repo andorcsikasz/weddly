@@ -221,6 +221,8 @@ const hu: LocaleMessages = {
     subscribe_cta: "Előfizetés",
     manage_cta: "Előfizetés kezelése",
     opening: "Megnyitás…",
+    card_on_file: "Mentett kártya",
+    card_expires: "lejár: {date}",
     disabled_note:
       "Az online fizetés még nem él. Az ingyenes időszak vége előtt e-mailben szólunk.",
     error_generic: "Valami hiba történt. Próbáljátok újra.",

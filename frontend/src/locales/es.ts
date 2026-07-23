@@ -44,12 +44,14 @@ const es: LocaleMessages = {
     dashboard_description:
       "Cuenta atrás, confirmaciones, gastos y tareas en una sola vista; retoma donde lo dejaste.",
     profile_title: "Perfil · Weddly",
-    profile_description: "Cuenta, seguridad, exportaciones y ajustes del espacio en un lugar tranquilo.",
+    profile_description:
+      "Cuenta, seguridad, exportaciones y ajustes del espacio en un lugar tranquilo.",
     guests_title: "Invitados · Weddly",
     guests_description:
       "Grupos familiares, códigos de confirmación, elecciones de menú e importaciones CSV; cada detalle de los invitados en una lista ordenada.",
     suppliers_title: "Proveedores · Weddly",
-    suppliers_description: "Proveedores de boda filtrados por categoría, ciudad y opiniones de la comunidad.",
+    suppliers_description:
+      "Proveedores de boda filtrados por categoría, ciudad y opiniones de la comunidad.",
     budget_title: "Presupuesto · Weddly",
     budget_description:
       "Gasto previsto frente al real por categoría, con instantáneas y desgloses por invitado.",
@@ -80,12 +82,14 @@ const es: LocaleMessages = {
     rsvp_checkin_description:
       "Escribe el código de la pareja y el código de 8 caracteres de tu invitación, y luego revisa la confirmación de tu grupo familiar.",
     rsvp_legacy_title: "Confirmación de asistencia · Weddly",
-    rsvp_legacy_description: "Responde a tu invitación de boda usando el código que aparece en ella.",
+    rsvp_legacy_description:
+      "Responde a tu invitación de boda usando el código que aparece en ella.",
     reset_password_title: "Establecer una nueva contraseña · Weddly",
     reset_password_description:
       "Elige una nueva contraseña y volverás a entrar en vuestro espacio de trabajo de pareja.",
     forgot_password_title: "Restablece tu contraseña · Weddly",
-    forgot_password_description: "Enviaremos un enlace de restablecimiento al correo que usaste para registrarte.",
+    forgot_password_description:
+      "Enviaremos un enlace de restablecimiento al correo que usaste para registrarte.",
     schedule_title: "Programa · Weddly",
     schedule_description:
       "El desarrollo del día de vuestra boda: llegada, ceremonia, cena, primer baile; imprimible con un clic.",
@@ -127,7 +131,8 @@ const es: LocaleMessages = {
     verify_required_body:
       "Antes de poder iniciar sesión, confirma tu dirección de correo. Acabamos de enviar un nuevo enlace de confirmación a {email}. Revisa también la carpeta de spam.",
     verify_resend_button: "Reenviar enlace de confirmación",
-    verify_resent: "Enlace de confirmación enviado. Revisa tu bandeja de entrada (y la carpeta de spam).",
+    verify_resent:
+      "Enlace de confirmación enviado. Revisa tu bandeja de entrada (y la carpeta de spam).",
     verify_back_to_login: "Volver a iniciar sesión",
     forgot_link: "¿Olvidaste tu contraseña?",
     forgot_title: "Restablece tu contraseña",
@@ -148,7 +153,8 @@ const es: LocaleMessages = {
     password_mismatch: "Las contraseñas no coinciden.",
     reset_submit: "Actualizar contraseña",
     reset_done: "Contraseña actualizada. Te redirigimos a iniciar sesión…",
-    reset_invalid: "Este enlace de restablecimiento no es válido o ha caducado. Solicita uno nuevo.",
+    reset_invalid:
+      "Este enlace de restablecimiento no es válido o ha caducado. Solicita uno nuevo.",
     show_password: "Mostrar contraseña",
     hide_password: "Ocultar contraseña",
     or: "o",
@@ -201,7 +207,8 @@ const es: LocaleMessages = {
     plan_past_due: "Pago pendiente",
     plan_canceled: "Cancelada",
     plan_none: "Sin plan activo",
-    status_trialing: "Tu prueba gratuita dura hasta el {date}. Añade una tarjeta cuando quieras para seguir.",
+    status_trialing:
+      "Tu prueba gratuita dura hasta el {date}. Añade una tarjeta cuando quieras para seguir.",
     status_founding:
       "Eres una de nuestras primeras 200 parejas, así que Weddly es gratis para ti hasta el {date}. Sin tarjeta.",
     status_active: "Gracias por suscribirte. Tu plan se renueva el {date}.",
@@ -220,7 +227,10 @@ const es: LocaleMessages = {
     subscribe_cta: "Suscribirse",
     manage_cta: "Gestionar suscripción",
     opening: "Abriendo…",
-    disabled_note: "El pago online aún no está activo. Te avisaremos por correo antes de que termine tu período gratuito.",
+    card_on_file: "Tarjeta guardada",
+    card_expires: "caduca: {date}",
+    disabled_note:
+      "El pago online aún no está activo. Te avisaremos por correo antes de que termine tu período gratuito.",
     error_generic: "Algo ha salido mal. Inténtalo de nuevo.",
     banner_title: "Modo solo lectura",
     banner_body:
@@ -258,7 +268,8 @@ const es: LocaleMessages = {
     not_found_body:
       "Puede que el enlace tenga una errata, o que la pareja haya retirado su página. Prueba de nuevo con la dirección completa.",
     network_error_title: "Error de red",
-    network_error_body: "No hemos podido conectar con Weddly. Actualiza la página o inténtalo de nuevo en un momento.",
+    network_error_body:
+      "No hemos podido conectar con Weddly. Actualiza la página o inténtalo de nuevo en un momento.",
     back_home: "Volver a la página de inicio",
     eyebrow: "Boda · Weddly",
     date_tbd: "Fecha por confirmar",
@@ -272,7 +283,8 @@ const es: LocaleMessages = {
     rsvp_cta: "Confirmar asistencia →",
     invited_eyebrow: "Tu invitación",
     rsvp_personal_title: "Contamos contigo",
-    rsvp_personal_body: "Responde en un par de toques; ya hemos rellenado el código de tu grupo familiar.",
+    rsvp_personal_body:
+      "Responde en un par de toques; ya hemos rellenado el código de tu grupo familiar.",
     rsvp_personal_cta: "Responder →",
     rsvp_manage_cta: "Actualiza tu confirmación",
     confirmed_title: "Para invitados confirmados",
@@ -318,7 +330,7 @@ const es: LocaleMessages = {
   wedding_site_editor: {
     page_title: "Web de la boda",
     intro:
-      'Define lo que ven los invitados en /w/{slug}: el lugar, la imagen de portada y si el enlace ya está publicado. Hasta que lo publiques, cualquiera que lo visite verá una página de «no encontrado».',
+      "Define lo que ven los invitados en /w/{slug}: el lugar, la imagen de portada y si el enlace ya está publicado. Hasta que lo publiques, cualquiera que lo visite verá una página de «no encontrado».",
     url_label: "Tu URL pública",
     url_copied: "URL copiada al portapapeles.",
     url_open: "Abrir en una pestaña nueva",
@@ -346,7 +358,8 @@ const es: LocaleMessages = {
     venue_city_placeholder: "p. ej. Dunakiliti",
     cover_image_label: "Imagen de portada",
     cover_image_placeholder: "https://…",
-    cover_image_hint: "Sube un archivo, o pega un enlace http(s) a una imagen alojada públicamente.",
+    cover_image_hint:
+      "Sube un archivo, o pega un enlace http(s) a una imagen alojada públicamente.",
     cover_image_invalid: "Debe ser una URL http(s); no se aceptan otros esquemas.",
     cover_upload_button: "Subir imagen",
     cover_upload_uploading: "Subiendo…",
@@ -369,7 +382,8 @@ const es: LocaleMessages = {
     page_loading: "Confirmando…",
     page_success:
       "Gracias, tu ficha ya es visible para las parejas en el directorio de Weddly. Si algo en ella necesita cambios, ponte en contacto.",
-    page_already: "Este enlace ya se ha usado; tu ficha está activa. No hace falta volver a hacer clic.",
+    page_already:
+      "Este enlace ya se ha usado; tu ficha está activa. No hace falta volver a hacer clic.",
     page_invalid:
       "No reconocemos este enlace. Puede que esté mal escrito o que sea de un correo antiguo; pide uno nuevo al equipo de Weddly.",
     page_expired:
@@ -382,8 +396,10 @@ const es: LocaleMessages = {
     button_label: "Este es mi negocio",
     page_title: "Reclama tu ficha",
     page_body: "Confirma que eres el propietario de esta ficha del directorio de Weddly.",
-    page_invalid: "No reconocemos este enlace. Puede que esté mal escrito o que sea de un correo antiguo.",
-    page_expired: "Este enlace ha caducado. Vuelve a iniciar la reclamación desde el directorio de Weddly.",
+    page_invalid:
+      "No reconocemos este enlace. Puede que esté mal escrito o que sea de un correo antiguo.",
+    page_expired:
+      "Este enlace ha caducado. Vuelve a iniciar la reclamación desde el directorio de Weddly.",
     page_cancelled: "Esta reclamación se ha cancelado; empieza de nuevo desde el directorio.",
     page_already_verified:
       "Esta ficha ya ha sido reclamada. Si fuiste tú, inicia sesión con el correo del proveedor.",
@@ -394,18 +410,21 @@ const es: LocaleMessages = {
     modal_body_email_hidden:
       "No mostramos la dirección completa por privacidad; una vez que confirmes, gestionarás la ficha tú mismo.",
     modal_email_label: "Tu correo",
-    modal_email_help: "Nuestro equipo de administración lo usa para ver quién inició la reclamación.",
+    modal_email_help:
+      "Nuestro equipo de administración lo usa para ver quién inició la reclamación.",
     modal_email_invalid: "Introduce una dirección de correo válida.",
     modal_submit: "Enviar correo de verificación",
     modal_submitting: "Enviando…",
     modal_close: "Entendido",
-    modal_sent_body: "Correo enviado a {email}. Haz clic en el enlace para confirmar; es válido durante 7 días.",
+    modal_sent_body:
+      "Correo enviado a {email}. Haz clic en el enlace para confirmar; es válido durante 7 días.",
     modal_sent_hint: "Si no llega nada en unos minutos, revisa el spam, o inténtalo más tarde.",
     modal_err_already_claimed: "Esta ficha ya ha sido reclamada.",
     modal_err_no_email:
       "Esta ficha no tiene ningún correo de contacto registrado, así que no podemos verificar tu propiedad.",
     modal_err_not_found: "No encontramos esta ficha.",
-    modal_err_rate_limited: "Demasiadas solicitudes; espera unos minutos antes de volver a intentarlo.",
+    modal_err_rate_limited:
+      "Demasiadas solicitudes; espera unos minutos antes de volver a intentarlo.",
     form_title: "Crea tu cuenta de proveedor",
     form_intro:
       "Has confirmado la propiedad de {name} a través de {email}. Establece una contraseña para empezar a gestionar la ficha.",
@@ -416,7 +435,8 @@ const es: LocaleMessages = {
     form_submitting: "Creando…",
     form_err_name: "Introduce tu nombre completo.",
     form_err_password: "La contraseña debe tener al menos 8 caracteres.",
-    form_err_email_taken: "Ya existe una cuenta con este correo. Ponte en contacto con el equipo de Weddly.",
+    form_err_email_taken:
+      "Ya existe una cuenta con este correo. Ponte en contacto con el equipo de Weddly.",
     form_err_already_claimed: "Otra persona acaba de reclamar esta ficha.",
     success_toast: "¡Bienvenido a Weddly! La ficha es tuya.",
   },
@@ -431,7 +451,8 @@ const es: LocaleMessages = {
     early_badge: "Acceso anticipado · quedan {left}/{cap} plazas",
     early_note:
       "Estamos regalando a 300 proveedores tres meses de acceso gratis, y todavía quedan plazas.",
-    cohort_full_note: "Las plazas gratuitas se han agotado. Empiezas con una prueba de 3 días y luego 10 €/mes.",
+    cohort_full_note:
+      "Las plazas gratuitas se han agotado. Empiezas con una prueba de 3 días y luego 10 €/mes.",
     form_name_label: "Nombre completo",
     form_password_label: "Contraseña",
     form_password_hint: "Al menos 8 caracteres.",
@@ -439,10 +460,12 @@ const es: LocaleMessages = {
     form_submitting: "Creando…",
     form_err_name: "Introduce tu nombre completo.",
     form_err_password: "La contraseña debe tener al menos 8 caracteres.",
-    form_err_email_taken: "Ya existe una cuenta con este correo. Ponte en contacto con el equipo de Weddly.",
+    form_err_email_taken:
+      "Ya existe una cuenta con este correo. Ponte en contacto con el equipo de Weddly.",
     form_err_already_completed: "Esta cuenta ya se ha activado. Inicia sesión con tu correo.",
     success_toast: "¡Bienvenido a Weddly! Tu ficha está activa.",
-    page_invalid: "No reconocemos este enlace. Puede que esté mal escrito o que sea de un correo antiguo.",
+    page_invalid:
+      "No reconocemos este enlace. Puede que esté mal escrito o que sea de un correo antiguo.",
     page_expired: "Este enlace de activación ha caducado. Pide a nuestro equipo que lo reenvíe.",
     page_completed:
       "Esta cuenta ya se ha activado. Inicia sesión con tu correo de proveedor para gestionarla.",
@@ -450,16 +473,18 @@ const es: LocaleMessages = {
   },
   planner_activate: {
     page_title: "Activa tu cuenta de wedding planner",
-    page_body:
-      "Tu perfil está listo en Weddly con 2 años de acceso gratis. Actívalo en un minuto.",
+    page_body: "Tu perfil está listo en Weddly con 2 años de acceso gratis. Actívalo en un minuto.",
     title: "Activa tu cuenta de wedding planner",
-    intro: "¡Hola, {name}! Hemos creado el perfil de wedding planner de {business} en Weddly a tu nombre.",
+    intro:
+      "¡Hola, {name}! Hemos creado el perfil de wedding planner de {business} en Weddly a tu nombre.",
     email_line: "La cuenta pertenece a esta dirección de correo: {email}",
-    free_line: "Como regalo tienes 2 años de acceso completamente gratis, hasta el {date}. Sin tarjeta.",
+    free_line:
+      "Como regalo tienes 2 años de acceso completamente gratis, hasta el {date}. Sin tarjeta.",
     submit: "Activar cuenta",
     legal_prefix: "Al activarla aceptas los ",
     error_title: "Este enlace no funciona",
-    error_invalid: "No reconocemos este enlace. Puede que esté mal escrito o que sea de un correo antiguo.",
+    error_invalid:
+      "No reconocemos este enlace. Puede que esté mal escrito o que sea de un correo antiguo.",
     error_expired: "Este enlace de activación ha caducado. Escríbenos y te enviaremos uno nuevo.",
     error_consumed: "Esta cuenta ya se ha activado. Inicia sesión con tu correo.",
   },
@@ -534,7 +559,8 @@ const es: LocaleMessages = {
       "Marca los días que ya tienes reservados. Las parejas los ven en tu calendario, y tu próxima fecha libre se actualiza automáticamente.",
     availability_add_label: "Bloquear una fecha",
     availability_add: "Añadir",
-    availability_empty: "Aún no hay días bloqueados; tu calendario te muestra como totalmente disponible.",
+    availability_empty:
+      "Aún no hay días bloqueados; tu calendario te muestra como totalmente disponible.",
     availability_remove: "Desbloquear {date}",
     availability_next_free: "Próxima fecha libre: {date}",
     availability_none_free: "No hay días libres en los próximos 12 meses.",
@@ -600,7 +626,8 @@ const es: LocaleMessages = {
     videos_add: "Añadir vídeo de YouTube",
     videos_url_label: "Enlace del vídeo de YouTube",
     videos_url_placeholder: "Pega un enlace de YouTube",
-    videos_url_invalid: "Eso no parece un enlace de YouTube. Prueba con una URL de youtube.com o youtu.be.",
+    videos_url_invalid:
+      "Eso no parece un enlace de YouTube. Prueba con una URL de youtube.com o youtu.be.",
     videos_count: "{n} / {max} vídeos",
     videos_full: "Has alcanzado el límite ({max} vídeos). Quita uno antes de añadir otro.",
     videos_add_success: "Vídeo añadido.",
@@ -637,8 +664,7 @@ const es: LocaleMessages = {
     packages_save_failed: "No se pudo guardar; inténtalo de nuevo.",
     packages_delete: "Eliminar paquete",
     packages_delete_confirm_title: "¿Eliminar este paquete?",
-    packages_delete_confirm_body:
-      "El paquete «{name}» se eliminará permanentemente de tu ficha.",
+    packages_delete_confirm_body: "El paquete «{name}» se eliminará permanentemente de tu ficha.",
     packages_delete_success: "Paquete eliminado.",
     packages_delete_failed: "No se pudo eliminar; inténtalo de nuevo.",
     packages_pdf_label: "Lista de precios en PDF",
@@ -858,7 +884,8 @@ const es: LocaleMessages = {
       per_month: "/mes",
       compare_title: "Comparar planes",
       you_are_here: "Estás aquí",
-      payment_portal_note: "Los pagos online llegarán pronto. Te avisaremos por email antes de cualquier cobro.",
+      payment_portal_note:
+        "Los pagos online llegarán pronto. Te avisaremos por email antes de cualquier cobro.",
       upgrade_value:
         "Desbloquea las solicitudes directas de las parejas, el calendario de disponibilidad, el CRM completo de clientes, el seguimiento de pagos y las estadísticas avanzadas.",
       upgrade_cta: "Cambiar a Pro",
@@ -867,10 +894,12 @@ const es: LocaleMessages = {
       add_card_body:
         "Guarda una tarjeta para seguir en Pro. No se cobra nada hasta que te hayamos entregado tus primeras {total} solicitudes directas. Tus pagos solo empiezan el mes siguiente a la llegada de la tercera.",
       add_card_cta: "Añadir tarjeta y seguir en Pro",
-      setup_success_note: "Tarjeta guardada. Tu acceso Pro se está confirmando, actualiza en un momento.",
+      setup_success_note:
+        "Tarjeta guardada. Tu acceso Pro se está confirmando, actualiza en un momento.",
       lead_meter_title: "Solicitudes de nuestra cuenta",
       lead_meter_count: "{used} de {total} usadas",
-      lead_window_line: "Pro corre de nuestra cuenta hasta que te hayamos entregado tus primeras {total} solicitudes directas.",
+      lead_window_line:
+        "Pro corre de nuestra cuenta hasta que te hayamos entregado tus primeras {total} solicitudes directas.",
       billing_starts_line:
         "Entregadas las {total} solicitudes de cortesía. Tu primer pago es el {date}.",
       next_payment_line: "Próximo pago: {date}.",
@@ -919,7 +948,8 @@ const es: LocaleMessages = {
       company_display_name: "Nombre visible",
       company_display_name_help: "El nombre que las parejas ven en tu ficha.",
       company_legal_name: "Nombre de la empresa (oficial)",
-      company_legal_name_help: "El nombre legal de tu empresa — se muestra en pequeño, bajo el nombre de marca.",
+      company_legal_name_help:
+        "El nombre legal de tu empresa — se muestra en pequeño, bajo el nombre de marca.",
       company_email: "Email del negocio",
       company_phone: "Número de teléfono",
       company_vat: "Número de IVA",
@@ -1028,7 +1058,8 @@ const es: LocaleMessages = {
     task_due_label: "Fecha de vencimiento",
     task_add: "Añadir",
     task_add_failed: "No se pudo crear la tarea. Inténtalo de nuevo.",
-    tasks_empty: "Aún no hay tareas. Añade la primera arriba y arrástrala por el tablero a medida que avances.",
+    tasks_empty:
+      "Aún no hay tareas. Añade la primera arriba y arrástrala por el tablero a medida que avances.",
     board_todo: "Por hacer",
     board_doing: "En curso",
     board_done: "Hecho",
@@ -1116,7 +1147,8 @@ const es: LocaleMessages = {
     intro:
       "Unas preguntas rápidas y tu espacio de trabajo estará listo. Todo se puede editar; solo son puntos de partida para que puedas centrarte en la boda.",
     step1_title: "¿Quién se casa?",
-    step1_help: 'Vuestros nombres aparecerán por todo el espacio de trabajo, p. ej. «Allie y Noah».',
+    step1_help:
+      "Vuestros nombres aparecerán por todo el espacio de trabajo, p. ej. «Allie y Noah».",
     step1_short: "Pareja",
     step2_short: "Fecha",
     step3_short: "Invitados",
@@ -1141,7 +1173,8 @@ const es: LocaleMessages = {
     country_helper: "Lo usaremos para no sugerirte proveedores que no puedan trabajar en tu país.",
     country_placeholder: "Empieza a escribir…",
     country_required: "Elige un país.",
-    style_help: "Elige tantos como quieras. El estilo es solo una etiqueta del perfil, nada queda fijado.",
+    style_help:
+      "Elige tantos como quieras. El estilo es solo una etiqueta del perfil, nada queda fijado.",
     style_classic: "Clásico",
     style_modern: "Moderno",
     style_rustic: "Rústico",
@@ -1152,7 +1185,8 @@ const es: LocaleMessages = {
     style_destination: "De destino",
     finish: "¡Vamos allá!",
     saving: "Guardando…",
-    submit_failed: "No hemos podido guardar ahora mismo. Tus respuestas están a salvo, inténtalo de nuevo.",
+    submit_failed:
+      "No hemos podido guardar ahora mismo. Tus respuestas están a salvo, inténtalo de nuevo.",
     submit_retry: "Inténtalo de nuevo",
     all_set_title: "¡Todo listo!",
     all_set_body: "Tu espacio de trabajo está listo. Aquí empieza la planificación.",
@@ -1252,11 +1286,13 @@ const es: LocaleMessages = {
     invite_email_placeholder: "p. ej. pareja@ejemplo.com",
     invite_email_help: "Déjalo vacío para generar solo un enlace para compartir.",
     invite_email_invalid: "Introduce una dirección de email válida.",
-    invite_email_own: "No puedes invitar a tu propio email, ya formas parte del espacio de trabajo.",
+    invite_email_own:
+      "No puedes invitar a tu propio email, ya formas parte del espacio de trabajo.",
     invite_send: "Enviar invitación",
     invite_sending: "Enviando…",
     invite_sent: "Enviada a {email}",
-    invite_pending_hint: "Esperando a que se una. Enlazaremos vuestros espacios de trabajo automáticamente.",
+    invite_pending_hint:
+      "Esperando a que se una. Enlazaremos vuestros espacios de trabajo automáticamente.",
     invite_sent_title: "¡Invitación en camino!",
     invite_sent_body:
       "Acabamos de enviar un email a {email} con un enlace para unirse a tu espacio de trabajo. Puede hacer clic en cualquier momento durante los próximos 7 días.",
@@ -1271,7 +1307,8 @@ const es: LocaleMessages = {
     pick_up_where: "Continúa donde lo dejaste:",
     coming_soon: "Próximamente",
     coming_soon_headline: "Próximamente",
-    coming_soon_body: "Estamos trabajando en esta función para que planificar la boda sea aún más fácil.",
+    coming_soon_body:
+      "Estamos trabajando en esta función para que planificar la boda sea aún más fácil.",
     feature_budget: "Presupuesto",
     feature_guests: "Lista de invitados",
     feature_seating: "Mesas",
@@ -1339,7 +1376,8 @@ const es: LocaleMessages = {
     upcoming_due_overdue: "{n} d de retraso",
     upcoming_due_today: "Vence hoy",
     upcoming_due_in: "en {n} d",
-    upcoming_empty_none: "Tus próximas tareas aparecerán aquí en cuanto les pongas fechas de vencimiento.",
+    upcoming_empty_none:
+      "Tus próximas tareas aparecerán aquí en cuanto les pongas fechas de vencimiento.",
     upcoming_empty_none_cta: "Empezar a planificar",
     upcoming_empty_clear: "Nada urgente. Todo va según lo previsto.",
     upcoming_next_step_lock_date: "Siguiente paso: fija la fecha de la boda",
@@ -1359,7 +1397,8 @@ const es: LocaleMessages = {
       remaining_label: "Restante",
       over_label: "Fuera de presupuesto",
       distribution_title: "En qué se va el presupuesto",
-      distribution_empty: "Añade costes previstos para ver cómo se reparte tu presupuesto por categorías.",
+      distribution_empty:
+        "Añade costes previstos para ver cómo se reparte tu presupuesto por categorías.",
       other: "Otros",
       of_total: "{pct}% de lo previsto",
       details_title: "Detalles",
@@ -1393,7 +1432,8 @@ const es: LocaleMessages = {
       "Esto enviará un email a cada invitado con dirección registrada ({n} invitados). ¿Continuar?",
     date_changed_confirm_yes: "Enviar",
     date_changed_done: "Se ha avisado a {count} invitados",
-    date_changed_no_emails: "Ningún invitado tiene una dirección de email registrada, así que no hay nada que enviar.",
+    date_changed_no_emails:
+      "Ningún invitado tiene una dirección de email registrada, así que no hay nada que enviar.",
     archive_workspace_button: "Archivar espacio de trabajo",
     archive_workspace_confirm_title: "¿Archivar este espacio de trabajo?",
     archive_workspace_confirm_body:
@@ -1413,7 +1453,8 @@ const es: LocaleMessages = {
       "Aún no hay identificador de pareja, configura uno en la página de Invitados para que funcione el registro.",
     day_of_qr_todo: "(El código QR llega en la v2, por ahora solo comparte el enlace de arriba)",
     welcome_desk_open: "Abrir tablet de recepción",
-    welcome_desk_help: "Se abre en una pestaña nueva en modo recepción, entrega la tablet a quien recibe a los invitados.",
+    welcome_desk_help:
+      "Se abre en una pestaña nueva en modo recepción, entrega la tablet a quien recibe a los invitados.",
     day_of_stats_yes: "Invitados confirmados",
     day_of_stats_checked_in: "Registrados hoy",
     day_of_dietary_title: "Dietas de un vistazo",
@@ -1462,7 +1503,8 @@ const es: LocaleMessages = {
       "Ya formas parte de otro espacio de trabajo. Cierra sesión y usa otra cuenta para aceptar esta invitación.",
     merge_from_invite_body:
       "Ya tienes un espacio de trabajo. Al unirte a {couple} se eliminará de forma permanente tu espacio de trabajo actual: invitados, presupuesto, mesas, todo. Esto no se puede deshacer.",
-    couple_full: "Este espacio de trabajo ya tiene dos personas. Pide a quien te invitó que cancele y vuelva a enviar la invitación.",
+    couple_full:
+      "Este espacio de trabajo ya tiene dos personas. Pide a quien te invitó que cancele y vuelva a enviar la invitación.",
     couple_gone: "Este espacio de trabajo ya no existe.",
     merge_banner_body:
       "{inviter} ya empezó el espacio de trabajo de la boda de {couple} y te ha invitado. ¿Quieres unirte?",
@@ -1523,7 +1565,8 @@ const es: LocaleMessages = {
     demo_guests_label: "Número de invitados",
     demo_budget_label: "Presupuesto previsto",
     demo_per_guest_label: "Coste por invitado",
-    demo_per_guest_sub: "Lo que Wēddly planeará por persona según ese número de invitados y ese tope.",
+    demo_per_guest_sub:
+      "Lo que Wēddly planeará por persona según ese número de invitados y ese tope.",
     demo_breakdown_eyebrow: "Desglose en directo",
     demo_breakdown_sub: "basado en medias europeas",
     demo_total_label: "Presupuesto total",
@@ -1570,11 +1613,13 @@ const es: LocaleMessages = {
     guest_link: "¿Invitado? Introduce tu código de invitación",
     phases_title: "Cinco fases, un solo lugar",
     phase_plan_title: "Planear",
-    phase_plan_body: "Fecha, estilo, número de invitados, presupuesto. Juntos, con números en vivo.",
+    phase_plan_body:
+      "Fecha, estilo, número de invitados, presupuesto. Juntos, con números en vivo.",
     phase_suppliers_title: "Proveedores",
     phase_suppliers_body: "Directorio seleccionado por categoría. Guarda, compara y anota.",
     phase_guests_title: "Invitados",
-    phase_guests_body: "Lista de invitados, enlaces de confirmación por invitado, menús y acompañantes.",
+    phase_guests_body:
+      "Lista de invitados, enlaces de confirmación por invitado, menús y acompañantes.",
     phase_seating_title: "Mesas",
     phase_seating_body: "Lienzo, mesas, arrastrar y soltar. Impresión A4, A6, A3.",
     phase_aftermath_title: "Después de la boda",
@@ -1672,7 +1717,8 @@ const es: LocaleMessages = {
     product_eyebrow: "Qué incluye",
     product_title: "Las piezas que de verdad vas a usar",
     block_budget_eyebrow: "Presupuesto en vivo",
-    block_budget_title: "Mueve el control del número de invitados y mira cómo se recalcula cada categoría.",
+    block_budget_title:
+      "Mueve el control del número de invitados y mira cómo se recalcula cada categoría.",
     block_budget_body:
       "Catering, bebidas, decoración y espacio se recalculan en vivo según tu número de invitados y tu tope. Los dos compartís una única vista en directo, así que cada decisión se toma sobre la misma imagen.",
     block_budget_bullet_1: "Gasto restante en vivo, seis categorías",
@@ -1723,7 +1769,8 @@ const es: LocaleMessages = {
     pricing_bullet_3: "Exportación CSV / PDF, incluida",
     pricing_bullet_4: "Pausa cuando quieras · 30 días de cortesía",
     pricing_bullet_referral: "Recomendaciones: 1 mes gratis por pareja invitada, 2 por proveedor",
-    pricing_v2_note: "Cuando se llenen las primeras 200 plazas, las nuevas parejas empiezan con la prueba gratuita de 2 semanas.",
+    pricing_v2_note:
+      "Cuando se llenen las primeras 200 plazas, las nuevas parejas empiezan con la prueba gratuita de 2 semanas.",
     mockup_aria_dashboard: "Vista previa del panel de Weddly",
     mockup_aria_budget: "Maqueta del presupuesto en vivo",
     mockup_aria_guests: "Maqueta de la lista de invitados y confirmaciones",
@@ -1847,7 +1894,8 @@ const es: LocaleMessages = {
     privacy_consent_link: "política de privacidad",
     privacy_consent_suffix: ", y consiento el tratamiento de los datos que facilito.",
     privacy_required_hint: "Obligatorio para enviar",
-    form_err_privacy_consent: "Acepta la política de privacidad para enviar tu solicitud, por favor.",
+    form_err_privacy_consent:
+      "Acepta la política de privacidad para enviar tu solicitud, por favor.",
     section_business_title: "Tu negocio",
     section_business_sub: "Unos datos básicos para saber quién se presenta.",
     section_contact_title: "Dónde trabajas",
@@ -1861,7 +1909,8 @@ const es: LocaleMessages = {
     portfolio_link_remove: "Quitar enlace",
     portfolio_add_link: "Añadir enlace",
     portfolio_count_hint: "Con 1–3 enlaces es más que suficiente.",
-    portfolio_hint_default: "Galería, web, publicación de Instagram, carpeta de Drive, lo que quieras compartir.",
+    portfolio_hint_default:
+      "Galería, web, publicación de Instagram, carpeta de Drive, lo que quieras compartir.",
     portfolio_hint_venue_stay:
       "Fotos del espacio, vídeo de recorrido, panorámica de Google Maps o la galería de tu propia web.",
     portfolio_hint_food_drink:
@@ -1897,7 +1946,8 @@ const es: LocaleMessages = {
     seo_description:
       "Crea tu perfil de proveedor en Weddly y llega a las parejas que están organizando su boda ahora mismo.",
     title: "Crea tu cuenta de proveedor",
-    subtitle: "Publica tu negocio en Weddly y llega a las parejas que están organizando su boda ahora mismo.",
+    subtitle:
+      "Publica tu negocio en Weddly y llega a las parejas que están organizando su boda ahora mismo.",
     step_account: "Cuenta",
     step_business: "Negocio",
     email_required: "Introduce tu correo electrónico.",
@@ -2066,9 +2116,11 @@ const es: LocaleMessages = {
     delete_confirm_body: "Esta acción no se puede deshacer.",
     empty_task: "Aún no hay tareas. Añade una para llevar el control de lo que queda por hacer.",
     empty_idea: "Aún no hay ideas. Apunta lo que sea, ya lo irás concretando.",
-    empty_schedule: "Aún no hay programa. Empieza por la hora de la ceremonia y ve construyendo el día a partir de ahí.",
+    empty_schedule:
+      "Aún no hay programa. Empieza por la hora de la ceremonia y ve construyendo el día a partir de ahí.",
     template_button: "Generar plantilla",
-    template_button_hint: "El flujo típico del día de la boda en un clic, ajustado a la hora de tu ceremonia.",
+    template_button_hint:
+      "El flujo típico del día de la boda en un clic, ajustado a la hora de tu ceremonia.",
     template_dialog_title: "Plantilla de programa",
     template_dialog_body:
       "¿A qué hora empieza la ceremonia? Organizaremos el resto del día en torno a ella.",
@@ -2317,7 +2369,8 @@ const es: LocaleMessages = {
     outside_after_one: "{count} después",
     outside_after_other: "{count} después",
     seo_title: "Cronograma · Weddly",
-    seo_description: "Las tareas de tu boda como diagrama de Gantt con contactos rápidos de proveedores.",
+    seo_description:
+      "Las tareas de tu boda como diagrama de Gantt con contactos rápidos de proveedores.",
     all_day_label: "Todo el día",
     now_label: "Ahora",
     day_empty: "No hay tareas para este día",
@@ -2362,7 +2415,8 @@ const es: LocaleMessages = {
     countdown_past_other: "Empezó hace {count} días",
     flight_estimate_title: "Estimación de vuelo",
     flight_estimate_basis: "{origin} → {destination} · {adults} adultos · ida y vuelta",
-    flight_estimate_empty: "No hay ninguna oferta disponible ahora mismo para estas fechas. Vuelve a comprobarlo más tarde.",
+    flight_estimate_empty:
+      "No hay ninguna oferta disponible ahora mismo para estas fechas. Vuelve a comprobarlo más tarde.",
     flight_estimate_prompt: "Precios de vuelo para tu destino y las fechas de arriba.",
     flight_estimate_search: "Ver precios de vuelo",
     flight_estimate_searching: "Buscando…",
@@ -2387,14 +2441,15 @@ const es: LocaleMessages = {
     flight_estimate_view_on_google: "Abrir en Google Flights",
     flight_expand_aria: "Expandir estimación de vuelo",
     flight_collapse_aria: "Contraer estimación de vuelo",
-    flight_price_disclaimer: "Los precios cambian constantemente; una tarifa guardada solo es válida hoy.",
+    flight_price_disclaimer:
+      "Los precios cambian constantemente; una tarifa guardada solo es válida hoy.",
     flight_price_disclaimer_dated:
       "Los precios cambian constantemente, así que esta tarifa solo es válida hoy ({date}).",
     flight_save_cta: "Nos quedamos con este",
     flight_save_cta_aria: "Guardar este vuelo en tu presupuesto y tus tareas",
     flight_save_confirm_title: "Guardar este vuelo en tu plan",
     flight_save_confirm_body:
-      'Añadiremos {price} a tu presupuesto de luna de miel como Viaje y crearemos una tarea «Comprar el billete de avión» con el enlace de Google Flights.',
+      "Añadiremos {price} a tu presupuesto de luna de miel como Viaje y crearemos una tarea «Comprar el billete de avión» con el enlace de Google Flights.",
     flight_save_confirm_cta: "Guardar en el plan",
     flight_save_todo_title: "Comprar el billete de avión",
     flight_save_todo_note:
@@ -2440,7 +2495,8 @@ const es: LocaleMessages = {
     budget_lines_count_one: "1 elemento",
     budget_lines_count_other: "{count} elementos",
     costs_title: "Costes",
-    costs_sub: "Añade líneas para tu gasto previsto. Los cambios también aparecen en el Presupuesto.",
+    costs_sub:
+      "Añade líneas para tu gasto previsto. Los cambios también aparecen en el Presupuesto.",
     costs_empty_title: "Aún no hay costes",
     costs_empty_body:
       "Empieza con una categoría: viaje, alojamiento, comida, actividades. Puedes editar el importe previsto en cualquier momento.",
@@ -2573,9 +2629,11 @@ const es: LocaleMessages = {
     film_how_1_title: "Crea tu película de boda",
     film_how_1_body: "Define el nombre, el límite de fotos, el estilo y la hora de revelación.",
     film_how_2_title: "Comparte el código QR",
-    film_how_2_body: "Colócalo en las mesas, los carteles o las invitaciones. Los invitados se unen sin una app.",
+    film_how_2_body:
+      "Colócalo en las mesas, los carteles o las invitaciones. Los invitados se unen sin una app.",
     film_how_3_title: "Revivid el día juntos",
-    film_how_3_body: "Las fotos permanecen ocultas hasta la hora de revelación y luego se abren como una galería compartida.",
+    film_how_3_body:
+      "Las fotos permanecen ocultas hasta la hora de revelación y luego se abren como una galería compartida.",
     film_settings_title: "Ajustes de la película",
     film_settings_name: "Nombre de la película",
     film_settings_aesthetic: "Estilo de la película",
@@ -2584,7 +2642,8 @@ const es: LocaleMessages = {
     film_settings_ends_hint: "Los invitados pueden subir fotos hasta esta hora.",
     film_settings_reveal: "Hora de revelación",
     film_settings_reveal_default: "Cuando se cierre la película",
-    film_settings_reveal_hint: "Las fotos se hacen visibles para los invitados a partir de esta hora.",
+    film_settings_reveal_hint:
+      "Las fotos se hacen visibles para los invitados a partir de esta hora.",
     film_settings_cap: "Límite de invitados",
     film_settings_upload: "Estado de la subida",
     film_settings_unnamed: "Película sin título",
@@ -2639,7 +2698,8 @@ const es: LocaleMessages = {
     share_email_body:
       "Querido invitado:\n\nSomos {{names}} y nos encantaría ver nuestro día también a través de tus ojos. Abre este enlace en tu móvil, haz unas fotos y listo, sin app ni registro:\n\n{{url}}\n\nCada foto se revela a la vez el gran día. ¡Gracias por formar parte de él! 🎞️",
     early_close: "Cerrar subidas",
-    early_close_hint: "Los invitados no podrán subir más fotos de inmediato. Puedes reabrir cuando quieras.",
+    early_close_hint:
+      "Los invitados no podrán subir más fotos de inmediato. Puedes reabrir cuando quieras.",
     early_close_reopen: "Reabrir subidas",
     kamera_preview_banner: "Esto es lo que ven tus invitados",
     slug_label: "Enlace personalizado",
@@ -2652,12 +2712,12 @@ const es: LocaleMessages = {
     participant_remove: "Eliminar",
     participant_removed: "Participante eliminado",
     participant_remove_title: "Eliminar participante",
-    participant_remove_body:
-      "{{name}} ya no podrá subir fotos. Sus fotos actuales se conservan.",
+    participant_remove_body: "{{name}} ya no podrá subir fotos. Sus fotos actuales se conservan.",
     participant_remove_with_photos: "Ocultar también sus fotos",
     participant_remove_confirm: "Eliminar",
     gallery_link_note: "Cualquier enlace: Pixieset, Google Drive, Dropbox, tu propia web.",
-    shared_gallery_teaser: "Las fotos de los invitados y tu galería pro en un solo lugar, ordenadas automáticamente.",
+    shared_gallery_teaser:
+      "Las fotos de los invitados y tu galería pro en un solo lugar, ordenadas automáticamente.",
   },
   photos: {
     loading: "Cargando…",
@@ -2690,7 +2750,8 @@ const es: LocaleMessages = {
     error_generic: "Algo ha ido mal. Inténtalo de nuevo.",
     shot_count: "{{used}} de {{max}} fotos usadas",
     sent_heading: "Tu foto ya está 🎞️",
-    sent_sub_reveal: "{{names}} la verán el día de la revelación, {{date}}. Gracias por capturarla.",
+    sent_sub_reveal:
+      "{{names}} la verán el día de la revelación, {{date}}. Gracias por capturarla.",
     sent_sub_now: "{{names}} la verán pronto. Gracias por capturarla.",
     sent_count: "{{n}} fotos tuyas hasta ahora.",
     sent_add_more: "Añadir otra",
@@ -2772,7 +2833,8 @@ const es: LocaleMessages = {
       gift_1: "Fondo para la luna de miel",
       gift_2: "Una cita para dos",
     },
-    preview_sr_note: "Vista previa en vivo de tu página de la boda. Los elementos interactivos están desactivados aquí.",
+    preview_sr_note:
+      "Vista previa en vivo de tu página de la boda. Los elementos interactivos están desactivados aquí.",
     publish_cta_text: "Tiene buena pinta. ¿Listo para publicar tu página de la boda?",
     publish_cta_button: "Publicar página de la boda",
     font_sample_body: "Junto a sus familias, te invitan",
@@ -2878,7 +2940,8 @@ const es: LocaleMessages = {
       print: "Tarjetas impresas",
     },
     website: {
-      helper: "Los ajustes compartidos de arriba dan forma a tu página de la boda. La vista previa en vivo está a la derecha.",
+      helper:
+        "Los ajustes compartidos de arriba dan forma a tu página de la boda. La vista previa en vivo está a la derecha.",
     },
     web: {
       card_radius_label: "Redondeo de tarjetas",
@@ -2944,7 +3007,8 @@ const es: LocaleMessages = {
       editing_title: "Diseño de {name}",
       editing_helper:
         "Parte de tu identidad compartida. Personaliza esta tarjeta aquí y ve el resultado en vivo a la derecha.",
-      content_hint: "El texto de la tarjeta (nombres, fecha, programa) proviene del contenido de tu página de la boda.",
+      content_hint:
+        "El texto de la tarjeta (nombres, fecha, programa) proviene del contenido de tu página de la boda.",
       content_change: "Editar el texto en la web de la boda →",
       common_identity: "Identidad compartida",
       inherited_title: "Diseño heredado de la web de la boda",
@@ -3036,7 +3100,8 @@ const es: LocaleMessages = {
       "Este tablero es secreto o no es público. Hazlo público en Pinterest (Ajustes del tablero → desactiva «Secreto») e inténtalo de nuevo.",
     error_empty:
       "Este tablero está vacío, aún no tiene pines. Fija unas cuantas imágenes en Pinterest y vuelve aquí.",
-    error_fetch: "No pudimos conectar con Pinterest ahora mismo. Inténtalo de nuevo en unos minutos.",
+    error_fetch:
+      "No pudimos conectar con Pinterest ahora mismo. Inténtalo de nuevo en unos minutos.",
     preset_badge: "Sugerido",
     replace_title: "Hazlo tuyo",
     choose_upload: "Sube tus propias imágenes",
@@ -3075,7 +3140,8 @@ const es: LocaleMessages = {
     wishlist_pledged_progress: "{pledged} de {target} comprometido",
     wishlist_pledge_simple_cta: "Me interesa",
     wishlist_pledge_simple_active: "Retirar",
-    wishlist_pledge_step1_warn: "Confirma solo si realmente tienes la intención de contribuir a este regalo.",
+    wishlist_pledge_step1_warn:
+      "Confirma solo si realmente tienes la intención de contribuir a este regalo.",
     wishlist_pledge_step1_confirm: "Confirmar →",
     wishlist_pledge_step2_amount_label: "¿Cuánto te gustaría contribuir?",
     wishlist_pledge_step2_fill_remaining: "Completar el importe restante",
@@ -3091,7 +3157,8 @@ const es: LocaleMessages = {
     wishlist_pledge_contributors_funded: "¡Este regalo está totalmente financiado! 🎉",
     wishlist_pledge_error_generic: "Algo salió mal. Inténtalo de nuevo.",
     schedule_title: "Desarrollo del día",
-    schedule_empty: "La pareja aún no ha publicado un cronograma; vuelve a mirar cuando se acerque el día.",
+    schedule_empty:
+      "La pareja aún no ha publicado un cronograma; vuelve a mirar cuando se acerque el día.",
     schedule_next_day: "día siguiente",
     location_title: "Lugar",
     location_open_map: "Abrir en Mapas",
@@ -3114,7 +3181,8 @@ const es: LocaleMessages = {
       "Esta página se abre en cuanto al menos uno de vosotros haya confirmado que asiste. Responde antes en la página de confirmación.",
     gate_cta: "Ir a confirmar asistencia",
     not_found_title: "No pudimos encontrar esta invitación",
-    not_found_body: "Revisa el enlace o usa el registro de confirmación para localizar tu invitación.",
+    not_found_body:
+      "Revisa el enlace o usa el registro de confirmación para localizar tu invitación.",
     not_found_cta: "Volver al registro de confirmación",
     load_error: "Algo salió mal al cargar la página. Inténtalo de nuevo en un minuto.",
     ghost: {
@@ -3147,8 +3215,10 @@ const es: LocaleMessages = {
     preview_live_label: "Vista previa en vivo",
     preview_live_aria: "Abrir la página de la boda en vivo en una pestaña nueva",
     preview_live_hint_ready: "Abre tu página pública en una pestaña nueva",
-    preview_live_hint_no_slug: "Establece primero una dirección web (slug) para que haya una página que abrir",
-    preview_live_hint_not_published: "Tu página sigue siendo privada. Publícala para que los invitados puedan verla",
+    preview_live_hint_no_slug:
+      "Establece primero una dirección web (slug) para que haya una página que abrir",
+    preview_live_hint_not_published:
+      "Tu página sigue siendo privada. Publícala para que los invitados puedan verla",
     section_share_title: "Comparte con los invitados",
     section_share_body:
       "Este es el enlace que envías. Pégalo en WhatsApp, un email o un save-the-date; quien lo abra llega a tu página de la boda.",
@@ -3164,14 +3234,15 @@ const es: LocaleMessages = {
     section_unlocked_link_profile: "Editar la ubicación del lugar",
     intro_label: "Nota de bienvenida (la ve todo el mundo)",
     intro_placeholder:
-      'Un párrafo corto para tus invitados, p. ej. «Gracias por formar parte de nuestro día. Aquí encontrarás todos los detalles que necesitas a medida que se acerca la fecha.»',
+      "Un párrafo corto para tus invitados, p. ej. «Gracias por formar parte de nuestro día. Aquí encontrarás todos los detalles que necesitas a medida que se acerca la fecha.»",
     intro_hint:
       "Visible para cualquiera con el enlace. Déjalo en blanco si no quieres una nota de bienvenida pública.",
     intro_suggestions_heading: "¿Necesitas un punto de partida? Elige una nota y hazla tuya:",
     intro_suggestion_1:
       "Gracias por celebrar con nosotros uno de los días más bonitos de nuestras vidas.",
     intro_suggestion_2: "Nos hace muy felices compartir contigo la alegría de nuestra boda.",
-    intro_suggestion_3: "Significa muchísimo para nosotros que estés aquí en este día tan especial.",
+    intro_suggestion_3:
+      "Significa muchísimo para nosotros que estés aquí en este día tan especial.",
     intro_suggestion_4:
       "Estamos agradecidos de que tu presencia haga aún más bonito el día de nuestra boda.",
     intro_suggestion_5: "Gracias por formar parte de nuestro día con tu cariño y tu presencia.",
@@ -3192,7 +3263,8 @@ const es: LocaleMessages = {
     schedule_panel_open_full: "Editar el programa",
     schedule_panel_empty: "Aún no hay momentos. Abre el editor de programa para añadirlos.",
     post_rsvp_label: "Detalles para invitados confirmados",
-    post_rsvp_placeholder: "Haz clic en un tema sugerido de arriba, o simplemente escribe los detalles libremente.",
+    post_rsvp_placeholder:
+      "Haz clic en un tema sugerido de arriba, o simplemente escribe los detalles libremente.",
     post_rsvp_hint:
       "Solo se revela cuando al menos uno de los miembros del hogar ha confirmado su asistencia. La ubicación exacta del lugar se desbloquea en ese mismo momento.",
     post_rsvp_suggestions_heading: "Temas sugeridos",
@@ -3220,7 +3292,8 @@ const es: LocaleMessages = {
       "Cualquiera con el enlace de tu página verá la dirección exacta del lugar y un mapa, no solo los invitados confirmados.",
     venue_map_confirm_cta: "Mostrarla",
     venue_pin_title: "Lugar en el mapa",
-    venue_pin_hint: "Arrastra el marcador al punto exacto. Este es el punto que ven tus invitados en el mapa.",
+    venue_pin_hint:
+      "Arrastra el marcador al punto exacto. Este es el punto que ven tus invitados en el mapa.",
     venue_pin_locating: "Buscando la ubicación a partir de la dirección…",
     venue_pin_set_cta: "Fijar el marcador del mapa",
     venue_pin_move_cta: "Mover el marcador",
@@ -3251,8 +3324,10 @@ const es: LocaleMessages = {
     share_per_household_rotate_success: "Nuevo código generado. El enlace antiguo ya no funciona.",
     share_per_household_rotate_error: "No se pudo rotar el código. Inténtalo de nuevo.",
     share_per_household_copy_all: "Copiar todos los enlaces",
-    share_per_household_copy_all_aria: "Copiar una lista separada por tabulaciones del enlace de cada hogar",
-    share_per_household_copy_all_success: "Se copiaron todos los enlaces personales en tu portapapeles.",
+    share_per_household_copy_all_aria:
+      "Copiar una lista separada por tabulaciones del enlace de cada hogar",
+    share_per_household_copy_all_success:
+      "Se copiaron todos los enlaces personales en tu portapapeles.",
     whatsapp_message_template:
       "¡Hola {guest_name}! Aquí tienes tu enlace personal a nuestra página de la boda, ábrelo para ver los detalles y confirmar tu asistencia: {link}",
   },
@@ -3260,7 +3335,8 @@ const es: LocaleMessages = {
     title: "Vista previa de la página de la boda",
     subtitle:
       "Página de solo lectura que ven tus invitados que confirman asistencia. Úsala para comprobar que el programa y el lugar se leen bien antes de compartirla.",
-    empty: "Añade una fecha de boda, ubicación y elementos del programa para completar esta vista previa.",
+    empty:
+      "Añade una fecha de boda, ubicación y elementos del programa para completar esta vista previa.",
     share_title: "Comparte con los invitados",
     share_body:
       "Los invitados llegan a esta página registrándose en /rsvp con el código de la pareja + su código de hogar de 8 caracteres. Una vez que confirman su asistencia, ven la misma vista de arriba.",
@@ -3270,7 +3346,8 @@ const es: LocaleMessages = {
     share_copy_link_aria: "Copiar el enlace de la página de confirmación",
     share_copied: "Copiado",
     share_copy_failed: "No se pudo copiar, cópialo manualmente.",
-    share_no_slug: "Tu código de pareja aparecerá cuando tu espacio de trabajo termine la incorporación.",
+    share_no_slug:
+      "Tu código de pareja aparecerá cuando tu espacio de trabajo termine la incorporación.",
   },
   wishlist_editor: {
     title: "Lista de deseos",
@@ -3310,7 +3387,8 @@ const es: LocaleMessages = {
     delete_confirm_title: "¿Quitar este deseo?",
     delete_confirm_body: "Desaparecerá de tu página de la boda. Esto no se puede deshacer.",
     saved_toast: "Guardado",
-    stale_reload: "Alguien editó este deseo en otro dispositivo. Hemos recargado la versión más reciente.",
+    stale_reload:
+      "Alguien editó este deseo en otro dispositivo. Hemos recargado la versión más reciente.",
     save_button: "Guardar",
     view_list: "Vista de lista",
     view_cards: "Vista de tarjetas",
@@ -3417,8 +3495,10 @@ const es: LocaleMessages = {
     full_name: "Nombre",
     email: "Email",
     send_invite_label: "Enviar invitación ahora",
-    send_invite_help: "Enviaremos al invitado por email una invitación personal con un enlace de confirmación de asistencia en un clic.",
-    send_invite_disabled_help: "Añade una dirección de email para que podamos entregar la invitación automáticamente.",
+    send_invite_help:
+      "Enviaremos al invitado por email una invitación personal con un enlace de confirmación de asistencia en un clic.",
+    send_invite_disabled_help:
+      "Añade una dirección de email para que podamos entregar la invitación automáticamente.",
     invite_send: "Enviar invitaciones",
     invite_send_count: "Enviar invitaciones ({count})",
     invite_send_hint:
@@ -3471,7 +3551,8 @@ const es: LocaleMessages = {
     rsvp_badge_no: "No asiste",
     rsvp_badge_maybe: "Quizá asista",
     copy_failed_title: "No se pudo copiar",
-    copy_failed_body: "Tu navegador bloqueó el acceso al portapapeles. Copia el enlace manualmente:",
+    copy_failed_body:
+      "Tu navegador bloqueó el acceso al portapapeles. Copia el enlace manualmente:",
     copy_failed_close: "Cerrar",
     notes: "Notas",
     accommodation: "Necesita alojamiento",
@@ -3504,7 +3585,8 @@ const es: LocaleMessages = {
     guest_section_divider: "Rellenado por el invitado en la confirmación de asistencia",
     hosts_badge: "La pareja",
     rsvp_settings_title: "Ajustes de confirmación de asistencia",
-    rsvp_settings_help: "Estos ajustes se aplican a la confirmación de asistencia de todos los invitados.",
+    rsvp_settings_help:
+      "Estos ajustes se aplican a la confirmación de asistencia de todos los invitados.",
     rsvp_offers_accommodation_label: "Ofrecer alojamiento en la confirmación",
     rsvp_offers_accommodation_help:
       "Al activarlo, los invitados pueden indicar si necesitan alojamiento al responder.",
@@ -3548,7 +3630,8 @@ const es: LocaleMessages = {
     meals_summary_header: "Resumen de menús",
     meals_close: "Cerrar",
     household_label: "Hogar",
-    household_assign_help: "Las personas que confirman juntas comparten un mismo código de 8 caracteres.",
+    household_assign_help:
+      "Las personas que confirman juntas comparten un mismo código de 8 caracteres.",
     household_new: "Nuevo hogar",
     household_new_label: "Nombre del hogar",
     household_existing: "Hogar existente",
@@ -3733,9 +3816,9 @@ const es: LocaleMessages = {
     note_placeholder: "p. ej. ref. del presupuesto, siguiente paso…",
     add_line: "Añadir línea",
     save_snapshot: "Guardar instantánea",
-    snapshot_name_prompt: 'Nombre de la instantánea (p. ej. «escenario de 120 invitados»)',
+    snapshot_name_prompt: "Nombre de la instantánea (p. ej. «escenario de 120 invitados»)",
     snapshot_name_label: "Nombre de la instantánea",
-    snapshot_name_help: 'p. ej. «escenario de 120 invitados», para reconocerla más tarde.',
+    snapshot_name_help: "p. ej. «escenario de 120 invitados», para reconocerla más tarde.",
     snapshot_save_failed: "No se pudo guardar la instantánea.",
     save_failed_retry: "No se pudo guardar esa línea. Inténtalo de nuevo.",
     save_conflict: "Otra persona acaba de editar esta línea. ¿Recargar?",
@@ -3748,7 +3831,8 @@ const es: LocaleMessages = {
     over_budget: "Fuera de presupuesto",
     over_budget_strip: "Superas el tope en {amount}",
     cost_per_guest: "Coste por invitado",
-    slider_scope_note: "El control deslizante solo escala los importes previstos; el gasto real se mantiene tal como se registró.",
+    slider_scope_note:
+      "El control deslizante solo escala los importes previstos; el gasto real se mantiene tal como se registró.",
     cost_planning_title: "Planificación de costes",
     cost_planning_with_count: "Presupuesto en vivo · {n} invitados",
     cost_planning_headline: "Presupuesto en vivo",
@@ -3921,7 +4005,8 @@ const es: LocaleMessages = {
     accommodation_deleted: "Alojamiento eliminado.",
     transfer_deleted: "Traslado eliminado.",
     delete_accommodation_title: "¿Eliminar alojamiento?",
-    delete_accommodation_body: "Se eliminará «{name}». Los invitados asignados quedarán sin asignar.",
+    delete_accommodation_body:
+      "Se eliminará «{name}». Los invitados asignados quedarán sin asignar.",
     delete_transfer_title: "¿Eliminar traslado?",
     delete_transfer_body: "Se eliminará «{label}». Los invitados asignados quedarán sin asignar.",
     transfer_label: "Etiqueta",
@@ -3954,7 +4039,8 @@ const es: LocaleMessages = {
     room_name_required: "El nombre de la habitación es obligatorio.",
     room_deleted: "Habitación eliminada.",
     delete_room_title: "¿Eliminar esta habitación?",
-    delete_room_body: "Se eliminará la habitación «{name}». Sus invitados asignados quedarán sin asignar.",
+    delete_room_body:
+      "Se eliminará la habitación «{name}». Sus invitados asignados quedarán sin asignar.",
     unroomed_label: "Sin habitación",
   },
   seating: {
@@ -4013,7 +4099,8 @@ const es: LocaleMessages = {
     print_format_a4: "A4",
     print_format_a3: "A3",
     map_title: "Plano de la sala",
-    map_help: "Arrastra una mesa para moverla. Arrastra sus bordes para cambiar el tamaño. Haz clic para editar.",
+    map_help:
+      "Arrastra una mesa para moverla. Arrastra sus bordes para cambiar el tamaño. Haz clic para editar.",
     map_expand: "Ampliar el plano de la sala",
     map_collapse: "Cerrar la vista ampliada",
     map_recenter: "Recentrar el plano",
@@ -4026,7 +4113,8 @@ const es: LocaleMessages = {
     add_seat: "Añadir asiento",
     remove_seat: "Quitar asiento",
     preview_title: "Vista previa y descarga",
-    preview_help: "Échale un vistazo antes de guardar; las impresiones grandes son fáciles de enviar a la bandeja equivocada.",
+    preview_help:
+      "Échale un vistazo antes de guardar; las impresiones grandes son fáciles de enviar a la bandeja equivocada.",
     confirm_download: "Descargar",
     drop_to_unassign: "Suelta aquí a un invitado para dejarlo sin asignar.",
     drop_to_unassign_active: "Suelta para quitarlo del asiento",
@@ -4039,7 +4127,8 @@ const es: LocaleMessages = {
       "Arrastra o toca a los invitados en las tarjetas de abajo; el plano solo muestra la distribución de la sala.",
     tap_mode_on: "Modo toque",
     tap_mode_off: "Salir del modo toque",
-    tap_select_help: "Toca a un invitado para seleccionarlo y luego toca un asiento para colocarlo.",
+    tap_select_help:
+      "Toca a un invitado para seleccionarlo y luego toca un asiento para colocarlo.",
     tap_place_hint: "{guest} seleccionado, toca un asiento para colocarlo.",
     undo_action: "Deshacer",
     undo_label: "Restaurar",
@@ -4057,7 +4146,8 @@ const es: LocaleMessages = {
       "La sala se queda justa para tantas mesas; a algunos pares les faltan 80 cm de espacio para caminar. Aumenta el tamaño de la sala o quita mesas.",
     arrange_button_label: "Colocar las mesas de forma simétrica",
     swap_seats_title: "Este asiento ya está ocupado",
-    swap_seats_body: "{occupant} está sentado aquí ahora mismo. ¿Intercambiar con {guest}, sustituir o cancelar?",
+    swap_seats_body:
+      "{occupant} está sentado aquí ahora mismo. ¿Intercambiar con {guest}, sustituir o cancelar?",
     swap_button: "Intercambiar",
     replace_button: "Sustituir",
     shortcuts_button_label: "Atajos de teclado",
@@ -4109,7 +4199,8 @@ const es: LocaleMessages = {
     pdf_failed: "No se pudo generar el PDF. Inténtalo de nuevo.",
     pdf_cancel: "Cancelar",
     pdf_loading: "Preparando el PDF…",
-    keyboard_selected_guest: "{guest} seleccionado. Muévete a un asiento y pulsa Intro para colocarlo.",
+    keyboard_selected_guest:
+      "{guest} seleccionado. Muévete a un asiento y pulsa Intro para colocarlo.",
     keyboard_cleared_selection: "Selección borrada.",
     tap_mode_announce_on: "Modo tocar para colocar activado.",
     tap_mode_announce_off: "Modo tocar para colocar desactivado.",
@@ -4121,7 +4212,8 @@ const es: LocaleMessages = {
     mode_edit_tab: "Plano de la sala",
     mode_seat_tab: "Sentar invitados",
     seat_mode_panel_title: "Sin asignar",
-    seat_mode_help: "Arrastra a los invitados de la lista a los asientos, o toca una silla para seleccionar y colocar.",
+    seat_mode_help:
+      "Arrastra a los invitados de la lista a los asientos, o toca una silla para seleccionar y colocar.",
     seat_tap_place: "{guest} seleccionado, toca un asiento para colocarlo.",
     seat_unassign_selected: "Quitar asignación",
     table_panel_filled: "{filled}/{total} ocupados",
@@ -4136,7 +4228,8 @@ const es: LocaleMessages = {
     progress_label: "{seated} / {total} invitados sentados",
     progress_remaining: "Faltan {n} por sentar",
     progress_done: "Todos sentados",
-    name_table_hint: "Ponle un nombre a esta mesa (Familia, Amigos, Trabajo…) para que se vea claro de un vistazo.",
+    name_table_hint:
+      "Ponle un nombre a esta mesa (Familia, Amigos, Trabajo…) para que se vea claro de un vistazo.",
     table_name_placeholder: "Nombra esta mesa",
   },
   suppliers: {
@@ -4220,7 +4313,8 @@ const es: LocaleMessages = {
     diy_modal_notes_label: "Notas",
     diy_modal_notes_placeholder: "Qué habéis acordado, cómo se organizarán los detalles",
     diy_modal_price_label: "Coste previsto (HUF)",
-    diy_modal_price_help: "Se refleja automáticamente en el Presupuesto bajo la categoría correspondiente.",
+    diy_modal_price_help:
+      "Se refleja automáticamente en el Presupuesto bajo la categoría correspondiente.",
     diy_modal_submit: "Guardar",
     diy_modal_submitting: "Guardando…",
     diy_modal_delete: "Eliminar",
@@ -4240,7 +4334,8 @@ const es: LocaleMessages = {
     suggest_category: "Categoría",
     suggest_supplier: "Proveedor",
     nearby_plus_km: "+{km} km",
-    empty_filtered: "Ningún proveedor coincide con esta búsqueda. Prueba con otra palabra o ciudad.",
+    empty_filtered:
+      "Ningún proveedor coincide con esta búsqueda. Prueba con otra palabra o ciudad.",
     load_more: "Cargar {n} más",
     bookedCard: {
       title: "Ya reservado",
@@ -4353,7 +4448,8 @@ const es: LocaleMessages = {
       submit_button: "Añadir al directorio",
       submitting: "Guardando…",
       success_title: "¡Gracias!",
-      success_body: "Tu recomendación ya está publicada. Un administrador puede moderarla en cualquier momento.",
+      success_body:
+        "Tu recomendación ya está publicada. Un administrador puede moderarla en cualquier momento.",
       cancel: "Cancelar",
       err_required: "Rellena este campo.",
       err_invalid_url: "Necesita una URL válida (https://…).",
@@ -4362,7 +4458,8 @@ const es: LocaleMessages = {
       err_rate_limited: "Demasiados envíos, inténtalo de nuevo en un minuto.",
       err_duplicate_email: "Alguien ya se registró con este correo, estás en la lista de espera.",
       magic_title: "¿Tienes un enlace de Google Maps?",
-      magic_help: "Pégalo y rellenaremos por ti la dirección, el nombre, el sitio web y el teléfono.",
+      magic_help:
+        "Pégalo y rellenaremos por ti la dirección, el nombre, el sitio web y el teléfono.",
       magic_placeholder: "https://maps.app.goo.gl/…",
       magic_or_manual: "o rellénalo a mano",
       magic_resolve: "Rellenar desde el enlace",
@@ -4727,7 +4824,8 @@ const es: LocaleMessages = {
       register_email: "Email",
       register_category: "Categoría",
       register_submit: "Enviar enlace de activación",
-      register_success: "Enlace de activación enviado. El proveedor está ahora pendiente de activación.",
+      register_success:
+        "Enlace de activación enviado. El proveedor está ahora pendiente de activación.",
       register_email_taken: "Ya existe una cuenta con este email.",
       filter_all: "Todos",
       filter_active: "Activos",
@@ -4794,7 +4892,8 @@ const es: LocaleMessages = {
       field_name_help: "El nombre de marca que se muestra en la ficha.",
       field_category: "Categoría",
       field_company: "Nombre de la empresa",
-      field_company_help: "Nombre legal de la empresa: se muestra en pequeño, bajo el nombre de marca.",
+      field_company_help:
+        "Nombre legal de la empresa: se muestra en pequeño, bajo el nombre de marca.",
       field_email: "Email de contacto",
       field_phone: "Teléfono de contacto",
       field_vat: "Número de IVA",
@@ -4830,7 +4929,8 @@ const es: LocaleMessages = {
       onboarding_pending: "Onboarding pendiente",
       free_until: "Gratis hasta el {date}",
       reach_label: "Alcance de la tarjeta (visitas · clics)",
-      reach_tooltip: "Alcance de la tarjeta: {views} visitas · {clicks} clics ({connect} fueron Felkérés)",
+      reach_tooltip:
+        "Alcance de la tarjeta: {views} visitas · {clicks} clics ({connect} fueron Felkérés)",
       details_toggle: "Detalles",
       field_company: "Empresa",
       field_location: "Ubicación",
@@ -4911,7 +5011,8 @@ const es: LocaleMessages = {
     fin_kpi_mrr_hint:
       "MRR = Ingresos Recurrentes Mensuales: los ingresos de las suscripciones activas en un solo mes.",
     fin_kpi_arr: "ARR (EUR)",
-    fin_kpi_arr_hint: "ARR = Ingresos Recurrentes Anuales: el ritmo anualizado, es decir, MRR × 12.",
+    fin_kpi_arr_hint:
+      "ARR = Ingresos Recurrentes Anuales: el ritmo anualizado, es decir, MRR × 12.",
     fin_kpi_paying: "Parejas de pago",
     fin_kpi_founding_left: "Plazas de las primeras 200 disponibles",
     fin_kpi_trialing: "En prueba",
@@ -5029,7 +5130,7 @@ const es: LocaleMessages = {
     waitlist_modal_outcome_under_review: "En revisión",
     waitlist_modal_outcome_rejected: "Rechazado",
     waitlist_modal_accept_invite_note:
-      'Añadimos automáticamente un botón «Activar cuenta» con un enlace de un solo uso al final del email (bajo el mensaje que escribas aquí). El proveedor puede usarlo para entrar directamente al portal de proveedores, con los datos de su solicitud ya rellenados.',
+      "Añadimos automáticamente un botón «Activar cuenta» con un enlace de un solo uso al final del email (bajo el mensaje que escribas aquí). El proveedor puede usarlo para entrar directamente al portal de proveedores, con los datos de su solicitud ya rellenados.",
     waitlist_modal_subject_label: "Asunto",
     waitlist_modal_body_label: "Mensaje",
     waitlist_modal_notes_label: "Notas internas",
@@ -5108,7 +5209,8 @@ const es: LocaleMessages = {
     workspaces_count_one: "{n} espacio de trabajo",
     workspaces_count_other: "{n} espacios de trabajo",
     solo_section: "Usuarios individuales",
-    solo_help: "Espacios de trabajo de un solo miembro, la pareja nunca fue invitada o no se ha unido.",
+    solo_help:
+      "Espacios de trabajo de un solo miembro, la pareja nunca fue invitada o no se ha unido.",
     solo_count_one: "{n} individual",
     solo_count_other: "{n} individuales",
     solo_empty: "No hay usuarios individuales.",
@@ -5150,7 +5252,8 @@ const es: LocaleMessages = {
     last_active_hours: "hace {n} h",
     last_active_days: "hace {n} d",
     workspace_solo_member: "Miembro individual",
-    remind_invite_partner_tooltip: "Envía a este miembro un recordatorio por email para invitar a su pareja",
+    remind_invite_partner_tooltip:
+      "Envía a este miembro un recordatorio por email para invitar a su pareja",
     remind_invite_partner_aria: "Enviar recordatorio para invitar a la pareja",
     remind_invite_partner_confirm_title: "¿Enviar recordatorio para invitar a la pareja?",
     remind_invite_partner_confirm_body:
@@ -5168,7 +5271,8 @@ const es: LocaleMessages = {
     grant_free: "Conceder gratis",
     revoke_free: "Revocar gratis",
     grant_free_confirm_title: "¿Conceder acceso gratis?",
-    grant_free_confirm_body: "{workspace} obtiene 18 meses gratis, sin importar el tope de las primeras 200.",
+    grant_free_confirm_body:
+      "{workspace} obtiene 18 meses gratis, sin importar el tope de las primeras 200.",
     revoke_free_confirm_title: "¿Revocar el acceso gratis?",
     revoke_free_confirm_body:
       "{workspace} pierde su insignia de gratis y pasa a solo lectura hasta que se suscriba.",
@@ -5234,7 +5338,7 @@ const es: LocaleMessages = {
     unflag_user_button: "Quitar marca",
     unflag_user_title: "Quitar marca",
     unflag_user_label: "Nota (opcional)",
-    unflag_user_placeholder: 'p. ej. «el usuario respondió, asunto resuelto»',
+    unflag_user_placeholder: "p. ej. «el usuario respondió, asunto resuelto»",
     unflag_user_help: "La nota se registra en el registro de auditoría.",
     unflag_user_clear: "Quitar marca",
     unflag_user_success: "Marca quitada.",
@@ -5249,7 +5353,7 @@ const es: LocaleMessages = {
     delete_user_confirm_phrase: "törlés",
     delete_user_confirm_help:
       "Esto no se puede deshacer. Se eliminará el usuario y el espacio de trabajo de la pareja al que pertenece.",
-    delete_user_confirm_mismatch: 'Escribe exactamente: «törlés»',
+    delete_user_confirm_mismatch: "Escribe exactamente: «törlés»",
     delete_user_success: "Cuenta eliminada.",
     delete_user_cannot_self: "No puedes eliminar tu propia cuenta de admin desde aquí.",
     suppliers_title: "Proveedores de la comunidad",
@@ -5337,7 +5441,7 @@ const es: LocaleMessages = {
     suppliers_card_incomplete: "Perfil escaso",
     suppliers_card_incomplete_aria: "Aviso de perfil incompleto",
     suppliers_card_incomplete_detail:
-      'Sin web ni descripción: las parejas casi no tienen información. Considera ejecutar «Obtener de la web» antes de aprobar.',
+      "Sin web ni descripción: las parejas casi no tienen información. Considera ejecutar «Obtener de la web» antes de aprobar.",
     suppliers_card_field_id: "ID",
     suppliers_card_field_admin_notes: "Nota del admin",
     suppliers_card_field_admin_notes_placeholder: "p. ej. contactado, esperando respuesta…",
@@ -5429,7 +5533,8 @@ const es: LocaleMessages = {
     },
     nav_couple_cards: "100 preguntas",
     feedback_title: "Comentarios entrantes",
-    feedback_sub: "Envíos desde el diálogo de Comentarios en la landing y en las superficies dentro de la app.",
+    feedback_sub:
+      "Envíos desde el diálogo de Comentarios en la landing y en las superficies dentro de la app.",
     feedback_empty: "Aún no hay comentarios.",
     feedback_col_submitter: "De",
     feedback_col_message: "Mensaje",
@@ -5492,7 +5597,8 @@ const es: LocaleMessages = {
     feedback_area_label: "Área de producto",
     feedback_area_unset: "Sin asignar",
     feedback_notes_label: "Notas internas",
-    feedback_notes_placeholder: "Notas de clasificación solo para admins. Nunca se muestran a quien lo envió.",
+    feedback_notes_placeholder:
+      "Notas de clasificación solo para admins. Nunca se muestran a quien lo envió.",
     feedback_notes_save: "Guardar notas",
     feedback_notes_saved: "Notas guardadas",
     feedback_tech_label: "Detalles técnicos",
@@ -5523,7 +5629,8 @@ const es: LocaleMessages = {
     feedback_reply_via_both: "por correo + en la app",
     feedback_replied: "Respondido",
     analytics_title: "Analíticas",
-    analytics_sub: "Resúmenes de solo lectura desde tres perspectivas: dinero, actividad y elección de proveedores.",
+    analytics_sub:
+      "Resúmenes de solo lectura desde tres perspectivas: dinero, actividad y elección de proveedores.",
     analytics_retry: "Reintentar",
     analytics_load_error: "No se han podido cargar las analíticas.",
     analytics_refresh: "Actualizar",
@@ -5560,7 +5667,8 @@ const es: LocaleMessages = {
     analytics_weddings_with_date: "{count} con fecha",
     analytics_weddings_lead_time: "Tiempo de planificación",
     analytics_weddings_lead_time_trend_title: "Tiempo de planificación por cohorte",
-    analytics_weddings_lead_time_trend_sub: "Mediana de días de registro a boda, por mes de registro",
+    analytics_weddings_lead_time_trend_sub:
+      "Mediana de días de registro a boda, por mes de registro",
     analytics_weddings_cohort_n: "{count} parejas",
     analytics_weddings_guest_target: "Número de invitados objetivo (mediana)",
     analytics_weddings_peak_season: "Temporada alta",
@@ -5741,7 +5849,8 @@ const es: LocaleMessages = {
     analytics_money_cost_histogram_title: "Distribución del coste total",
     analytics_money_cost_histogram_no_cost: "Sin coste introducido",
     analytics_money_histogram_no_budget: "Sin presupuesto",
-    analytics_money_no_budget_warning: "{pct} de las parejas ({count}) aún no han fijado un presupuesto.",
+    analytics_money_no_budget_warning:
+      "{pct} de las parejas ({count}) aún no han fijado un presupuesto.",
     analytics_money_histogram_bucket_upper: "hasta {max}",
     analytics_activity_signups_7d: "Registros (7d)",
     analytics_activity_active_users_7d: "Usuarios activos (7d)",
@@ -5794,7 +5903,8 @@ const es: LocaleMessages = {
     analytics_picks_top_empty: "Aún no hay proveedores elegidos.",
     analytics_picks_coverage_empty: "No hay datos de cobertura.",
     analytics_engagement_title: "Interacción",
-    analytics_engagement_sub: "Sesiones, retención, franja horaria y uso de funciones (últimos 30 días).",
+    analytics_engagement_sub:
+      "Sesiones, retención, franja horaria y uso de funciones (últimos 30 días).",
     analytics_engagement_empty: "Aún no hay datos de interacción.",
     analytics_engagement_load_error: "No se ha podido cargar el resumen de interacción.",
     analytics_engagement_session_duration: "Duración de la sesión",
@@ -5895,7 +6005,8 @@ const es: LocaleMessages = {
     campaign_stat_failed: "Fallidas",
     campaign_stat_today: "{n}/{cap} en las últimas 24h",
     campaign_offer: "La invitación promete {months} meses gratis, quedan {left} de {cap} plazas.",
-    campaign_offer_none: "Ambas cohortes gratuitas están completas, así que la invitación no promete ventana gratuita.",
+    campaign_offer_none:
+      "Ambas cohortes gratuitas están completas, así que la invitación no promete ventana gratuita.",
     campaign_plan: "{n} direcciones · {cap} al día · unos {days} días para enviarlas.",
     campaign_plan_empty: "No hay nadie a quien escribir en este segmento.",
     campaign_preview_invite: "Invitación",
@@ -6000,7 +6111,8 @@ const es: LocaleMessages = {
     checkin_lookup_failed: "No encontramos esa combinación. Revisa bien la pareja y el código.",
     checkin_lookup_couple_unknown: "No reconocemos ese nombre de pareja, revisa tu invitación.",
     checkin_lookup_code_unknown: "Ese código de 8 caracteres no coincide con esta pareja.",
-    checkin_lookup_missing: "Rellena ambos campos, el nombre de la pareja y el código de 8 caracteres.",
+    checkin_lookup_missing:
+      "Rellena ambos campos, el nombre de la pareja y el código de 8 caracteres.",
     checkin_contact_hosts: "Contacta con tus anfitriones",
     checkin_contact_hosts_email: "mailto:support@weddly.hu",
     checkin_household_for: "Registrando a",
@@ -6060,7 +6172,8 @@ const es: LocaleMessages = {
     offline_drained_one: "1 respuesta entregada.",
     offline_drained_other: "{n} respuestas entregadas.",
     kiosk_banner: "Modo mesa de bienvenida, mantén pulsada la esquina para salir.",
-    kiosk_exit_hold: "Mantén pulsado para salir de la mesa de bienvenida (Mayús+K también funciona)",
+    kiosk_exit_hold:
+      "Mantén pulsado para salir de la mesa de bienvenida (Mayús+K también funciona)",
     kiosk_exit_confirmed: "Modo mesa de bienvenida desactivado.",
   },
   notfound: {
@@ -6114,7 +6227,8 @@ const es: LocaleMessages = {
     hero_name_edit: "Editar nombres",
     hero_name_bride_placeholder: "Pareja 1",
     hero_name_groom_placeholder: "Pareja 2",
-    hero_name_save_error: "No se pudieron guardar los nombres. Cada uno debe tener entre 1 y 100 caracteres.",
+    hero_name_save_error:
+      "No se pudieron guardar los nombres. Cada uno debe tener entre 1 y 100 caracteres.",
     hero_name_save_success: "Nombres actualizados.",
     account_title: "Tu cuenta",
     account_body:
@@ -6128,7 +6242,8 @@ const es: LocaleMessages = {
     account_name_save_error: "No pudimos guardar tu nombre. Inténtalo de nuevo en un momento.",
     account_name_save_success: "Nombre actualizado.",
     account_locale_label: "Idioma",
-    account_locale_help: "Fija el idioma de la interfaz de Weddly en todos los dispositivos en los que inicies sesión.",
+    account_locale_help:
+      "Fija el idioma de la interfaz de Weddly en todos los dispositivos en los que inicies sesión.",
     account_locale_hu: "Magyar",
     account_locale_en: "English",
     account_locale_save_success: "Idioma actualizado.",
@@ -6156,7 +6271,8 @@ const es: LocaleMessages = {
       "Un clic más cancelará la invitación de la pareja. Haz clic en cualquier otro sitio para desistir.",
     partner_invite_cancelling: "Cancelando…",
     activity_title: "Lo que ha ido pasando",
-    activity_empty: "Aún no hay nada registrado. Aquí aparecerán guardados, subidas y confirmaciones de asistencia.",
+    activity_empty:
+      "Aún no hay nada registrado. Aquí aparecerán guardados, subidas y confirmaciones de asistencia.",
     activity_actor_you: "Tú",
     activity_actor_unknown: "Alguien",
     activity_just_now: "justo ahora",
@@ -6205,11 +6321,14 @@ const es: LocaleMessages = {
     activity_action_invite_accept: "aceptó la invitación de la pareja",
     activity_action_supplier_cost_upsert: "guardó el coste de un proveedor",
     activity_action_supplier_community_create: "añadió un proveedor de la comunidad",
-    activity_action_couple_budget_cap_update: "actualizó el tope de presupuesto: {before} → {after}",
+    activity_action_couple_budget_cap_update:
+      "actualizó el tope de presupuesto: {before} → {after}",
     activity_action_couple_wedding_date_update: "actualizó la fecha de la boda: {before} → {after}",
     activity_action_couple_names_update: "actualizó los nombres de la pareja: {before} → {after}",
-    activity_action_couple_ceremony_kind_update: "actualizó el tipo de ceremonia: {before} → {after}",
-    activity_action_couple_planning_count_update: "fijó el número de invitados previsto: {before} → {after}",
+    activity_action_couple_ceremony_kind_update:
+      "actualizó el tipo de ceremonia: {before} → {after}",
+    activity_action_couple_planning_count_update:
+      "fijó el número de invitados previsto: {before} → {after}",
     activity_action_pick_upsert: "eligió un proveedor de {category}",
     activity_action_pick_remove: "borró la elección de {category}",
     activity_action_schedule_create: "añadió un elemento del programa: {label}",
@@ -6220,8 +6339,10 @@ const es: LocaleMessages = {
     activity_action_couple_supplier_delete: "eliminó una entrada de bricolaje: {name}",
     activity_action_household_update_rename: "renombró un grupo familiar: {before} → {after}",
     activity_action_table_update_rename: "renombró una mesa: {before} → {after}",
-    activity_action_budget_line_update_rename: "renombró una partida de presupuesto: {before} → {after}",
-    activity_action_budget_line_update_diff: "actualizó una partida de presupuesto: {label} ({changes})",
+    activity_action_budget_line_update_rename:
+      "renombró una partida de presupuesto: {before} → {after}",
+    activity_action_budget_line_update_diff:
+      "actualizó una partida de presupuesto: {label} ({changes})",
     activity_budget_planned: "previsto",
     activity_budget_actual: "real",
     activity_toggle_expand: "Abrir",
@@ -6237,7 +6358,8 @@ const es: LocaleMessages = {
     budget_cap_placeholder: "p. ej. 5 000 000",
     budget_cap_invalid: "Introduce una cantidad válida (entre 0 y 10 000 000 000 Ft).",
     budget_paid_label: "Pagado hasta ahora",
-    budget_paid_hint: "Suma en vivo de tus partidas de presupuesto. Abre Presupuesto para editar por categoría.",
+    budget_paid_hint:
+      "Suma en vivo de tus partidas de presupuesto. Abre Presupuesto para editar por categoría.",
     budget_payment_add: "Añadir entrada",
     budget_payment_save: "Añadir",
     budget_payment_label_placeholder: "¿Para qué es? (p. ej. Señal del lugar)",
@@ -6257,7 +6379,8 @@ const es: LocaleMessages = {
     workspaces_body:
       "¿Celebras varios eventos (civil, banquete, brunch del día siguiente)? Crea un espacio de trabajo aparte por evento. Los invitados y los grupos familiares pueden trasladarse desde tu espacio de trabajo activo.",
     workspaces_add: "Nuevo evento",
-    workspaces_cap_reached: "Máximo de tres espacios de trabajo, elimina o archiva uno para liberar un hueco.",
+    workspaces_cap_reached:
+      "Máximo de tres espacios de trabajo, elimina o archiva uno para liberar un hueco.",
     workspaces_empty: "Aún no hay espacios de trabajo.",
     workspaces_switch: "Abrir",
     workspaces_role_owner: "Propietario",
@@ -6266,7 +6389,8 @@ const es: LocaleMessages = {
     workspaces_create_body:
       "Cada evento tiene su propia lista de invitados, presupuesto y distribución de mesas independientes, los nombres de los novios se heredan de tu espacio de trabajo actual. Opcionalmente, copia los invitados del espacio de trabajo en el que estás; se traen con códigos de confirmación nuevos y las respuestas se reinician a pendiente.",
     workspaces_create_event_label: "Nombre del evento",
-    workspaces_create_event_placeholder: "p. ej. Ceremonia religiosa, Cena familiar, Fiesta posterior",
+    workspaces_create_event_placeholder:
+      "p. ej. Ceremonia religiosa, Cena familiar, Fiesta posterior",
     workspaces_create_event_required: "Introduce un nombre para el evento",
     workspaces_create_date_label: "Fecha (opcional)",
     workspaces_create_country_label: "País",
@@ -6333,7 +6457,8 @@ const es: LocaleMessages = {
     security_pw_confirm: "Confirma la nueva contraseña",
     security_pw_submit: "Cambiar contraseña",
     security_pw_submitting: "Cambiando…",
-    security_pw_success: "Se ha establecido la nueva contraseña. También te hemos enviado un correo de confirmación.",
+    security_pw_success:
+      "Se ha establecido la nueva contraseña. También te hemos enviado un correo de confirmación.",
     security_pw_too_short: "La contraseña debe tener al menos 8 caracteres.",
     security_pw_mismatch: "Las dos contraseñas nuevas no coinciden.",
     security_email_heading: "Cambiar dirección de correo",
@@ -6533,20 +6658,21 @@ const es: LocaleMessages = {
     automated_decisions_title: "Decisiones automatizadas (art. 22 del RGPD)",
     automated_decisions_body:
       "Weddly no toma decisiones basadas únicamente en el tratamiento automatizado que produzcan efectos jurídicos sobre ti o te afecten significativamente de modo similar. La clasificación de proveedores, el estimador de planificación de costes, el asistente de asignación de mesas, todos son algoritmos, pero cada uno es una sugerencia que aceptas o anulas.",
-    complaint_authority_title: "Presentar una reclamación ante una autoridad de control (art. 77 del RGPD)",
+    complaint_authority_title:
+      "Presentar una reclamación ante una autoridad de control (art. 77 del RGPD)",
     complaint_authority_body:
       "Si crees que estamos tratando tus datos de forma ilícita y contactar con nosotros no ha resuelto el problema, puedes presentar una reclamación ante la Autoridad húngara de Protección de Datos (NAIH, Falk Miksa utca 9-11., 1055 Budapest; ugyfelszolgalat@naih.hu; naih.hu). También puedes buscar una tutela judicial ante el tribunal de tu residencia habitual.",
     changes_title: "Cambios en esta política",
     changes_body:
       "Si cambiamos de forma sustancial cómo gestionamos tus datos, te escribiremos por correo y actualizaremos la fecha de la parte superior de esta página. Las correcciones menores de redacción se hacen sin aviso.",
     contact_title: "¿Preguntas?",
-    contact_body: "Escribe a hello@tryweddly.com y una persona te responderá en un plazo de siete días.",
+    contact_body:
+      "Escribe a hello@tryweddly.com y una persona te responderá en un plazo de siete días.",
     definitions_title: "Definiciones",
     def_intro: "Los siguientes términos tienen el significado que les atribuye el RGPD:",
     def_personal_data:
       "Datos personales: cualquier información relativa a una persona física identificada o identificable (p. ej. nombre, dirección de correo, dirección IP).",
-    def_data_subject:
-      "Interesado: la persona física cuyos datos personales trata el Responsable.",
+    def_data_subject: "Interesado: la persona física cuyos datos personales trata el Responsable.",
     def_processing:
       "Tratamiento: cualquier operación realizada sobre datos personales, recogida, registro, organización, almacenamiento, uso, comunicación, supresión o destrucción.",
     def_processor:
@@ -6557,10 +6683,13 @@ const es: LocaleMessages = {
     principles_intro:
       "El Responsable aplica los siguientes principios a toda actividad de tratamiento:",
     principles_lawfulness: "Licitud, lealtad y transparencia",
-    principles_purpose: "Limitación de la finalidad, los datos se usan solo para los fines aquí indicados",
-    principles_minimisation: "Minimización de datos, solo se recogen los datos necesarios para la finalidad",
+    principles_purpose:
+      "Limitación de la finalidad, los datos se usan solo para los fines aquí indicados",
+    principles_minimisation:
+      "Minimización de datos, solo se recogen los datos necesarios para la finalidad",
     principles_accuracy: "Exactitud, los datos se mantienen actualizados cuando es necesario",
-    principles_storage: "Limitación del plazo de conservación, los datos no se conservan más de lo necesario",
+    principles_storage:
+      "Limitación del plazo de conservación, los datos no se conservan más de lo necesario",
     principles_integrity:
       "Integridad y confidencialidad, salvaguardias técnicas y organizativas apropiadas",
     principles_accountability:
@@ -6589,7 +6718,8 @@ const es: LocaleMessages = {
       "Datos recogidos: dirección de correo, contraseña (hash Argon2id, la contraseña original nunca se almacena), nombre completo, (opcionalmente) nombre de la pareja, preferencia de idioma, fecha de registro, estado de la cuenta.",
     proc_account_purpose:
       "Finalidad: autenticación del usuario, gestión del inicio de sesión y prestación de las funciones vinculadas a la cuenta.",
-    proc_account_basis: "Base jurídica: art. 6.1.b del RGPD, ejecución del contrato de servicio con el usuario.",
+    proc_account_basis:
+      "Base jurídica: art. 6.1.b del RGPD, ejecución del contrato de servicio con el usuario.",
     proc_account_retention:
       "Conservación: mientras la cuenta esté activa; al eliminarla se aplica un periodo de gracia de 30 días, tras el cual los datos se borran de forma permanente e irreversible.",
     proc_workspace_title: "Espacio de trabajo de boda, datos de planificación y organización",
@@ -6608,7 +6738,8 @@ const es: LocaleMessages = {
       "Finalidad: envío de novedades del producto, actualizaciones de desarrollo, inspiración para bodas y promociones, solo sobre la base del consentimiento explícito.",
     proc_newsletter_basis:
       "Base jurídica: art. 6.1.a del RGPD, el consentimiento libremente prestado y revocable del interesado.",
-    proc_newsletter_retention: "Conservación: hasta la baja (es decir, la retirada del consentimiento).",
+    proc_newsletter_retention:
+      "Conservación: hasta la baja (es decir, la retirada del consentimiento).",
     proc_newsletter_unsubscribe:
       "Baja: en cualquier momento, sin dar un motivo, a través del enlace de baja del correo o escribiendo a hello@tryweddly.com. La retirada no afecta a la licitud del tratamiento realizado antes de la retirada.",
     proc_billing_title: "Facturación y suscripciones",
@@ -6834,7 +6965,8 @@ const es: LocaleMessages = {
     paragraph_contact_email: "hello@tryweddly.com",
     paragraph_contact_cta: "Escribe un mensaje",
     paragraph_principles_title: "En qué creemos",
-    principle_calm: "La calma vence a lo ingenioso. La boda es el acontecimiento; la herramienta se mantiene al margen.",
+    principle_calm:
+      "La calma vence a lo ingenioso. La boda es el acontecimiento; la herramienta se mantiene al margen.",
     principle_no_lock_in:
       "Tus datos son tuyos. Exporta, pausa o elimina según tus propios términos; sin necesidad de abrir un ticket de soporte.",
     en_section_label: "Inglés",
@@ -7020,7 +7152,8 @@ const es: LocaleMessages = {
     guests_p4_body:
       "Filtra por estado de confirmación, asignación de mesa o elección de menú, y luego exporta la lista filtrada como CSV para tu catering o coordinador.",
     budget_title: "Presupuesto",
-    budget_body: "Controla el gasto previsto frente al real por categoría, con un desglose de coste por invitado.",
+    budget_body:
+      "Controla el gasto previsto frente al real por categoría, con un desglose de coste por invitado.",
     budget_p1_title: "Previsto frente a real",
     budget_p1_body:
       "Introduce un importe previsto por categoría y registra los pagos reales a medida que llegan. La diferencia se actualiza en vivo para detectar el sobregasto a tiempo.",
@@ -7211,7 +7344,8 @@ const es: LocaleMessages = {
   },
   // ── Vendor-side demo (Gingy's Wedding Cakes sandbox) ───────────────────
   vendor_demo: {
-    banner_title: "Demo de Gingy's Wedding Cakes · un patio de juegos, todo se reinicia tras unas horas",
+    banner_title:
+      "Demo de Gingy's Wedding Cakes · un patio de juegos, todo se reinicia tras unas horas",
     banner_exit: "Volver a la página de proveedores",
     banner_cta: "Empieza el tuyo",
     banner_dismiss_aria: "Descartar",
@@ -7913,7 +8047,8 @@ const es: LocaleMessages = {
     first_client_error: "No se ha encontrado ninguna cuenta con ese correo.",
     skip: "Saltar",
     step5_title: "¡Todo listo!",
-    step5_body: "Tu perfil está listo. Empieza a gestionar a tus clientes desde el panel de Wedding Planner.",
+    step5_body:
+      "Tu perfil está listo. Empieza a gestionar a tus clientes desde el panel de Wedding Planner.",
     step5_cta: "Ir al panel de Wedding Planner",
     meta_title: "Configuración del wedding planner · Weddly",
     meta_description: "Configura tu perfil de wedding planner en unos pocos pasos rápidos.",
@@ -7923,7 +8058,8 @@ const es: LocaleMessages = {
     prefill_banner_title: "Hemos tomado esto de tu solicitud",
     prefill_banner_body: "Revísalo y ajusta lo que haya cambiado, y luego solo confirma.",
     prefill_review_title: "Revisa tus datos",
-    prefill_review_body: "Esto es lo que verán tus clientes. Edita cualquier campo si lo necesitas.",
+    prefill_review_body:
+      "Esto es lo que verán tus clientes. Edita cualquier campo si lo necesitas.",
     prefill_confirm_cta: "Confirmar y continuar",
     prefill_summary_title: "De tu solicitud",
     summary_weddings: "Bodas / año",
@@ -7954,7 +8090,8 @@ const es: LocaleMessages = {
     body_placeholder: "Escribe tu mensaje aquí…",
     meta_title: "Mensajes · Weddly",
     meta_description: "Envía mensajes a tus clientes.",
-    empty_no_clients: "Todavía no tienes clientes. Añade uno desde el panel para empezar a enviar mensajes.",
+    empty_no_clients:
+      "Todavía no tienes clientes. Añade uno desde el panel para empezar a enviar mensajes.",
     empty_back_cta: "Volver al panel",
     first_message_cta: "Enviar el primer mensaje",
   },
@@ -7999,7 +8136,8 @@ const es: LocaleMessages = {
     guest_page_enable_success: "Edición de la página de invitados activada",
     guest_page_disable_success: "Edición de la página de invitados desactivada",
     guest_page_not_prepaid: "La pareja debe comprar primero el complemento de página de invitados.",
-    guest_page_error: "No se ha podido actualizar la edición de la página de invitados. Inténtalo de nuevo.",
+    guest_page_error:
+      "No se ha podido actualizar la edición de la página de invitados. Inténtalo de nuevo.",
     tasks_heading: "Tareas",
     tasks_empty: "Todavía no hay tareas para este cliente.",
     danger_heading: "Zona de peligro",
@@ -8018,13 +8156,15 @@ const es: LocaleMessages = {
   },
   company_lookup: {
     title: "Búsqueda de empresas",
-    subtitle: "Busca en el registro oficial por {kinds}. Al elegir una coincidencia se rellenan tus datos.",
+    subtitle:
+      "Busca en el registro oficial por {kinds}. Al elegir una coincidencia se rellenan tus datos.",
     kind_name: "nombre de la empresa",
     kind_tax_number: "número de identificación fiscal",
     kind_registry_number: "número de registro",
     search_button: "Buscar",
     searching: "Buscando…",
-    no_results: "No se ha encontrado ninguna coincidencia. Comprueba el identificador o continúa con la introducción manual.",
+    no_results:
+      "No se ha encontrado ninguna coincidencia. Comprueba el identificador o continúa con la introducción manual.",
     error_upstream:
       "El registro no está disponible temporalmente. Inténtalo más tarde o continúa con la introducción manual.",
     use_button: "Usar esta empresa",
@@ -8069,7 +8209,8 @@ const es: LocaleMessages = {
     data_heading: "Datos",
     data_export_button: "Exportar datos",
     data_delete_heading: "Eliminar cuenta",
-    data_delete_body: "Una vez eliminada, todos tus datos y vínculos con clientes se borran de forma permanente.",
+    data_delete_body:
+      "Una vez eliminada, todos tus datos y vínculos con clientes se borran de forma permanente.",
     data_delete_button: "Eliminar cuenta",
     meta_title: "Ajustes · Weddly",
     meta_description: "Gestiona tu cuenta de wedding planner, tu suscripción y tus datos.",
@@ -8081,7 +8222,8 @@ const es: LocaleMessages = {
     avatar_saved: "Foto de perfil actualizada",
     avatar_error: "No se ha podido subir la imagen.",
     avatar_invalid: "Solo se permiten archivos de imagen (JPEG, PNG, WebP).",
-    avatar_hint: "Haz clic en el icono de la cámara para cambiar tu foto. JPEG, PNG o WebP, hasta 5 MB.",
+    avatar_hint:
+      "Haz clic en el icono de la cámara para cambiar tu foto. JPEG, PNG o WebP, hasta 5 MB.",
     references_title: "Referencias",
     references_subtitle:
       "Muestra tus trabajos anteriores: una breve descripción y una foto por cada referencia.",
@@ -8114,7 +8256,8 @@ const es: LocaleMessages = {
     state_trial: "Prueba · quedan {days} días",
     state_active: "Suscripción activa",
     state_past_due: "Problema con el pago · actualiza tu tarjeta",
-    state_readonly: "Tu suscripción ha caducado · el espacio de trabajo es de solo lectura hasta que te suscribas",
+    state_readonly:
+      "Tu suscripción ha caducado · el espacio de trabajo es de solo lectura hasta que te suscribas",
     cta_subscribe: "Suscribirse",
     cta_current: "Plan actual",
     cta_switch: "Cambiar a este",
@@ -8130,7 +8273,8 @@ const es: LocaleMessages = {
     reference_add_toggle: "Añadir una referencia",
     reference_form_close: "Cancelar",
     data_export_heading: "Exportar mis datos",
-    data_export_desc: "Solicita una copia de los datos asociados a tu cuenta y a los vínculos con clientes.",
+    data_export_desc:
+      "Solicita una copia de los datos asociados a tu cuenta y a los vínculos con clientes.",
     data_export_soon: "Próximamente",
     data_delete_desc:
       "Elimina de forma permanente tu cuenta de wedding planner y todos los vínculos con clientes. Los espacios de trabajo y los datos de tus clientes se conservan.",
@@ -8197,7 +8341,8 @@ const es: LocaleMessages = {
     pdf_invalid: "Solo se permiten archivos PDF.",
     save_error: "Algo ha salido mal.",
     availability_title: "Calendario de disponibilidad",
-    availability_subtitle: "Marca los días que ya tienes reservados. Las parejas lo ven en tu perfil.",
+    availability_subtitle:
+      "Marca los días que ya tienes reservados. Las parejas lo ven en tu perfil.",
     availability_next_free: "Próxima fecha libre: {date}",
     availability_none_free: "Todos los días del próximo año están reservados.",
     availability_error: "No se ha podido actualizar el calendario.",
@@ -8257,7 +8402,8 @@ const es: LocaleMessages = {
     channel_physical: "En persona",
     responded_never: "Sin respuesta aún",
     comm_title: "Comunicación",
-    comm_subtitle: "Tres comunicaciones reutilizables. Envíalas ahora o prográmalas para más tarde.",
+    comm_subtitle:
+      "Tres comunicaciones reutilizables. Envíalas ahora o prográmalas para más tarde.",
     audience_label: "Destinatarios",
     audience_all: "Todos",
     audience_pending: "Aún sin responder",
@@ -8280,7 +8426,8 @@ const es: LocaleMessages = {
     template_invite: "Invitación",
     template_major_update: "Actualización importante",
     template_pre_wedding_info: "Información previa a la boda",
-    invite_desc: "Envía la invitación junto con el enlace personal de confirmación de cada invitado.",
+    invite_desc:
+      "Envía la invitación junto con el enlace personal de confirmación de cada invitado.",
     major_update_desc: "Informa a tus invitados de un cambio importante (lugar, hora, lo que sea).",
     pre_wedding_desc:
       "El resumen final de logística antes del gran día, con una sugerencia opcional para el sobre.",
@@ -8292,7 +8439,8 @@ const es: LocaleMessages = {
     envelope_tip_manual: "Manual",
     envelope_tip_amount_label: "Cantidad por persona",
     envelope_tip_per_head: "{amount} por invitado",
-    envelope_tip_none: "Sin cantidad aún: añade un presupuesto e invitados confirmados, o defínela manualmente.",
+    envelope_tip_none:
+      "Sin cantidad aún: añade un presupuesto e invitados confirmados, o defínela manualmente.",
     envelope_tip_saved: "Sugerencia para el sobre guardada",
     envelope_tip_save_error: "No se ha podido guardar la sugerencia para el sobre.",
     broadcasts_title: "Enviadas y programadas",
@@ -8316,7 +8464,8 @@ const es: LocaleMessages = {
     notFoundBody: "Puede que la ficha haya cambiado o que el enlace esté desactualizado.",
     browseCta: "Explorar proveedores",
     bandTitle: "Organiza tu boda con Weddly",
-    bandBody: "Presupuesto, lista de invitados, distribución de mesas y proveedores, en un espacio de trabajo compartido para los dos.",
+    bandBody:
+      "Presupuesto, lista de invitados, distribución de mesas y proveedores, en un espacio de trabajo compartido para los dos.",
     bandCta: "Empezar gratis",
     footerHome: "Inicio",
     footerVendors: "Proveedores",

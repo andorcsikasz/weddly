@@ -382,6 +382,10 @@ export interface LocaleMessages {
     subscribe_cta: string;
     manage_cta: string;
     opening: string;
+    /** Label for the read-only card-on-file line on the billing tab. */
+    card_on_file: string;
+    /** Card expiry line; receives `{date}` as "MM/YY". */
+    card_expires: string;
     disabled_note: string;
     error_generic: string;
     banner_title: string;

@@ -344,6 +344,23 @@ describe("billing state machine", () => {
     const webhook = await req("POST", "/api/billing/webhook", {});
     expect(webhook.status).toBe(503);
   });
+
+  test("payment-method returns a clean {card:null} when there's no Stripe customer", async () => {
+    // Trial/founding couples have no Stripe customer yet, and Stripe is off in
+    // tests — either way the endpoint answers 200 {card:null}, never an error,
+    // so the billing tab renders a neutral "no card on file" state.
+    const { token } = await bootstrapCouple("pm-none@weddly.test");
+    const r = await req<{ card: unknown }>("GET", "/api/billing/payment-method", undefined, {
+      token,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.card).toBeNull();
+  });
+
+  test("payment-method requires auth", async () => {
+    const r = await req("GET", "/api/billing/payment-method");
+    expect(r.status).toBe(401);
+  });
 });
 
 // ── Multi-workspace billing inheritance ─────────────────────────────────────

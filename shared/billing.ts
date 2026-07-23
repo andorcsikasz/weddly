@@ -112,6 +112,27 @@ export interface CoupleBilling {
   guest_page_addon: boolean;
 }
 
+/** The card currently on file for the couple's Stripe customer, read-only.
+ *  Brand/last-4/expiry only — never a full number, never a token. Sourced from
+ *  Stripe on demand (GET /api/billing/payment-method); we store none of it. */
+export interface PaymentMethodCard {
+  /** Stripe card brand slug, e.g. "visa", "mastercard", "amex". */
+  brand: string;
+  /** Last four digits of the card number. */
+  last4: string;
+  /** Expiry month, 1-12. */
+  exp_month: number;
+  /** Expiry year, four digits. */
+  exp_year: number;
+}
+
+/** Response of GET /api/billing/payment-method. `card` is null when Stripe is
+ *  off, the couple has no Stripe customer yet (trial/founding), or no card is
+ *  attached — the tab renders a neutral "no card on file" state in every case. */
+export interface PaymentMethodResponse {
+  card: PaymentMethodCard | null;
+}
+
 /** Response of GET /api/billing/status — everything the billing page needs. */
 export interface BillingStatusResponse {
   /** Whether Stripe is configured server-side. When false, checkout/portal

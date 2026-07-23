@@ -91,7 +91,7 @@ import type {
   FxRates,
   StripeHealth,
 } from "@shared/admin_financial_planner";
-import type { BillingStatusResponse } from "@shared/billing";
+import type { BillingStatusResponse, PaymentMethodResponse } from "@shared/billing";
 import type { GrowthEventKind } from "@shared/growth";
 import type { CompanyLookupAvailability, CompanyLookupResult } from "@shared/company_lookup";
 import type { TranslateAvailability, TranslateRequest, TranslateResult } from "@shared/translate";
@@ -572,6 +572,9 @@ export const billingApi = {
     apiFetch<{ url: string }>("POST", "/api/billing/guest-page-addon/checkout", {}),
   /** Open the Stripe Billing Portal — returns the redirect URL. */
   portal: () => apiFetch<{ url: string }>("POST", "/api/billing/portal", {}),
+  /** Read-only card on file (brand/last-4/expiry) for the in-app display; the
+   *  card itself is only editable in the portal. `{ card: null }` when none. */
+  paymentMethod: () => apiFetch<PaymentMethodResponse>("GET", "/api/billing/payment-method"),
 };
 
 export const plannerBillingApi = {

@@ -5,7 +5,12 @@
 // mint redirect URLs and react to webhook events. No card data touches us.
 
 import type Stripe from "stripe";
-import { type BillingStatusResponse, FOUNDING_CAP, monthlyPrice } from "@shared/billing";
+import {
+  type BillingStatusResponse,
+  FOUNDING_CAP,
+  monthlyPrice,
+  type PaymentMethodResponse,
+} from "@shared/billing";
 import { isCurrency } from "@shared/currency";
 import type { Currency } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
@@ -156,6 +161,60 @@ async function handlePortal(ctx: Ctx): Promise<Response> {
   return json({ url: session.url });
 }
 
+// ── GET /api/billing/payment-method ─────────────────────────────────────────
+/** Read-only brand/last-4/expiry of the card Stripe will charge, for the
+ *  in-app "card on file" line. We fetch it from Stripe on demand and store
+ *  nothing — the source of truth (and every mutation) stays in the portal.
+ *  Returns `{ card: null }` (never an error) whenever there is nothing to show:
+ *  Stripe off, no customer yet (trial/founding), or no attached card. */
+async function handlePaymentMethod(ctx: Ctx): Promise<Response> {
+  const userId = requireVerifiedAuth(ctx, getUserById);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const empty: PaymentMethodResponse = { card: null };
+  if (!STRIPE_ENABLED || !couple.stripe_customer_id) return json(empty);
+
+  try {
+    const customer = await stripe().customers.retrieve(couple.stripe_customer_id, {
+      expand: ["invoice_settings.default_payment_method"],
+    });
+    if (customer.deleted) return json(empty);
+
+    // Prefer the customer's default PM (what future invoices charge); fall back
+    // to the newest attached card so a card saved at checkout still shows even
+    // before Stripe stamps it as the invoice default.
+    let pm = customer.invoice_settings?.default_payment_method as
+      | Stripe.PaymentMethod
+      | string
+      | null
+      | undefined;
+    if (!pm || typeof pm === "string") {
+      const cards = await stripe().paymentMethods.list({
+        customer: couple.stripe_customer_id,
+        type: "card",
+        limit: 1,
+      });
+      pm = cards.data[0];
+    }
+    if (!pm || typeof pm === "string" || !pm.card) return json(empty);
+
+    const c = pm.card;
+    const payload: PaymentMethodResponse = {
+      card: {
+        brand: c.brand,
+        last4: c.last4,
+        exp_month: c.exp_month,
+        exp_year: c.exp_year,
+      },
+    };
+    return json(payload);
+  } catch (e) {
+    // A Stripe hiccup must not break the billing tab — degrade to "no card".
+    ctx.log.warn("billing.payment_method_fetch_failed", { error: String(e) });
+    return json(empty);
+  }
+}
+
 // ── POST /api/billing/webhook ───────────────────────────────────────────────
 function resolveCoupleId(sub: Stripe.Subscription): number | null {
   const fromMeta = Number(sub.metadata?.couple_id);
@@ -255,6 +314,7 @@ export function registerBillingRoutes(router: Router) {
   router.post("/api/billing/checkout", handleCheckout, true);
   router.post("/api/billing/guest-page-addon/checkout", handleGuestPageAddonCheckout, true);
   router.post("/api/billing/portal", handlePortal, true);
+  router.get("/api/billing/payment-method", handlePaymentMethod, true);
   // Public: authenticated by the Stripe signature, not a session bearer.
   router.post("/api/billing/webhook", handleWebhook, false);
 }
