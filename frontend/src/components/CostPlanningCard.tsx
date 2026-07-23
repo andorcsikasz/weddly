@@ -4,6 +4,7 @@
 
 import type { BudgetCategory, BudgetLine, Currency } from "@shared/types";
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowUp,
   Bell,
@@ -1119,14 +1120,29 @@ function CategoryRowInner({
     width: `${widthPct}%`,
     background: `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualFillStop}, var(--range-actual-remainder) ${actualFillStop}, var(--range-actual-remainder) 100%)`,
   };
+  // A category whose real spend has passed its own plan. The slider fill only
+  // shows the PLANNED position on a rail shared across categories, so an
+  // overspent row read as "~85 % full" with no danger cue unless the couple
+  // toggled the actual overlay on. Surface it unconditionally instead: the red
+  // actual bar always shows when over, plus a "Over by {amount}" callout so the
+  // excess is spelled out rather than hidden behind the toggle.
+  const overBudget = actual > liveDisplay && actual > 0;
   const actualOverlayEl =
-    showActualOverlay && actual > 0 ? (
+    (showActualOverlay || overBudget) && actual > 0 ? (
       <div
         className="range-fill range-fill-thin mt-1 block"
         style={actualOverlayStyle}
         aria-hidden="true"
       />
     ) : null;
+  const overBudgetEl = overBudget ? (
+    <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-blush-700 dark:text-blush-300">
+      <AlertTriangle size={11} aria-hidden="true" className="shrink-0" />
+      {t("budget.over_by", {
+        amount: formatMoney(actual - liveDisplay, currency, locale),
+      })}
+    </span>
+  ) : null;
 
   if (linkTo) {
     return (
@@ -1146,6 +1162,7 @@ function CategoryRowInner({
           <div className="w-full">
             {trackEl}
             {actualOverlayEl}
+            {overBudgetEl}
           </div>
           <span className="stat-num block text-right text-xs text-ink-700 dark:text-paper-100">
             {amountInner}
@@ -1164,6 +1181,7 @@ function CategoryRowInner({
       <div className="w-full">
         {trackEl}
         {actualOverlayEl}
+        {overBudgetEl}
       </div>
       {amountTile}
     </li>
