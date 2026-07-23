@@ -80,6 +80,16 @@ function daysUntil(dueIso: string, today: string): number {
   return Math.round((due - now) / MS_PER_DAY);
 }
 
+/** A seeded decision-prompt (Döntések deck) the couple hasn't promoted into a
+ *  real task. These are considerations, not scheduled work: Planning's Tasks
+ *  tab deliberately hides them, so this card must too — otherwise the ~100
+ *  seeded prompts flood it with due-date countdowns that don't exist in the
+ *  task tracker. A promoted prompt (decision_status='promoted') is a genuine
+ *  task and stays. */
+function isUnpromotedSeededPrompt(it: PlanningItem): boolean {
+  return Boolean(it.seed_key) && it.decision_status !== "promoted";
+}
+
 /** Dated, undone tasks filtered + sorted by settings, capped to the scroll pool.
  *  `settings.count` no longer truncates the data, it sizes the visible window. */
 function selectUpcoming(items: PlanningItem[], settings: UpcomingSettings): PlanningItem[] {
@@ -87,6 +97,7 @@ function selectUpcoming(items: PlanningItem[], settings: UpcomingSettings): Plan
     .filter((it) => {
       if (it.kind !== "task" || it.done || it.due_date === null) return false;
       if (it.decision_status === "not_relevant") return false;
+      if (isUnpromotedSeededPrompt(it)) return false;
       if (settings.topic === "wedding") return it.topic !== "honeymoon";
       if (settings.topic === "honeymoon") return it.topic === "honeymoon";
       return true;
@@ -112,6 +123,7 @@ function selectFallback(
     .filter((it) => {
       if (it.kind !== "task" || it.done) return false;
       if (it.decision_status === "not_relevant") return false;
+      if (isUnpromotedSeededPrompt(it)) return false;
       if (settings.topic === "wedding") return it.topic !== "honeymoon";
       if (settings.topic === "honeymoon") return it.topic === "honeymoon";
       return true;
@@ -202,13 +214,14 @@ export function UpcomingTasksCard({
   // an empty card, with a nudge to add due dates.
   const fallback = upcoming.length === 0 ? selectFallback(items, settings) : [];
   const showFallback = fallback.length > 0;
-  const hasAnyTask = items.some((it) => it.kind === "task");
+  const hasAnyTask = items.some((it) => it.kind === "task" && !isUnpromotedSeededPrompt(it));
   const totalUpcoming = items.filter(
     (it) =>
       it.kind === "task" &&
       !it.done &&
       it.due_date !== null &&
       it.decision_status !== "not_relevant" &&
+      !isUnpromotedSeededPrompt(it) &&
       (settings.topic === "all"
         ? true
         : settings.topic === "honeymoon"

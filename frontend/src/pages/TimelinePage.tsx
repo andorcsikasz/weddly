@@ -236,7 +236,17 @@ export default function TimelinePage() {
   // date fields in the contract. Rows dismissed as "not relevant" drop off the
   // timeline entirely (the Döntések deck keeps them recoverable).
   const tasks = useMemo(
-    () => items.filter((i) => i.kind === "task" && i.decision_status !== "not_relevant"),
+    () =>
+      items.filter(
+        (i) =>
+          i.kind === "task" &&
+          i.decision_status !== "not_relevant" &&
+          // Seeded decision-prompts (Döntések deck) are considerations, not
+          // scheduled work — Planning's Tasks tab hides them and so does the
+          // dashboard. Only a promoted prompt (turned into a real task) belongs
+          // on the timeline, so the two views agree on what a "task" is.
+          !(i.seed_key && i.decision_status !== "promoted"),
+      ),
     [items],
   );
 
