@@ -252,6 +252,13 @@ export interface HoneymoonNudgePayload {
   /** Optional couple display name for a warmer preheader ("Mia & Lucas"). */
   coupleDisplayName?: string;
 }
+export interface PostWeddingReviewPayload {
+  /** Deep link to /app/rate-vendors, the one-click star surface. */
+  ctaUrl: string;
+  /** Names of the vendors the couple picked, listed in the body so the ask is
+   *  concrete ("rate THESE") rather than abstract. May be empty. */
+  vendorNames: string[];
+}
 export interface FoundingPartnerPushPayload {
   /** Deep link to the dashboard's invite-partner anchor. Signing in is the
    *  fastest path for a recipient who is already logged in on this device. */
@@ -755,6 +762,7 @@ export type KindPayload = {
   onboarding_nudge: OnboardingNudgePayload;
   onboarding_nudge_week: OnboardingNudgePayload;
   honeymoon_nudge: HoneymoonNudgePayload;
+  post_wedding_review_request: PostWeddingReviewPayload;
   milestone_t90: MilestonePayload;
   milestone_t30: MilestonePayload;
   milestone_t7: MilestonePayload;
@@ -1741,6 +1749,44 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
 
+  // ~7 days after the wedding: rate the vendors you used. Bold and low-friction,
+  // the whole pitch is "a star takes a second". Names the couple's actual
+  // vendors so the ask is concrete.
+  post_wedding_review_request: (p, ctx) => {
+    const list = p.vendorNames.length > 0 ? p.vendorNames.join(", ") : "";
+    return {
+      subject: "Értékeljétek a szolgáltatóitokat / Rate your wedding vendors",
+      ctaUrl: p.ctaUrl,
+      hu: {
+        preheader: "Egy hete volt az esküvőtök. Pár csillag a szolgáltatóknak, pár másodperc.",
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          "Egy hete házasodtatok össze. Gratulálunk még egyszer!",
+          list
+            ? `Segítenétek a következő pároknak? Akikkel dolgoztatok (**${list}**), megérdemlik a visszajelzést, és pár őszinte csillag másoknak is aranyat ér.`
+            : "Segítenétek a következő pároknak? A szolgáltatóitok megérdemlik a visszajelzést, és pár őszinte csillag másoknak is aranyat ér.",
+          "**Egy kattintás csillagonként, pár másodperc az egész.** Ha van kedvetek, írhattok pár szót is.",
+        ],
+        cta: "Értékelem a szolgáltatókat",
+        ctaSubtext: "Csillag, kész. Belépve, egy helyen az összes.",
+        footnote: "Ezt egyszer küldjük, az esküvőtök után.",
+      },
+      en: {
+        preheader: "Your wedding was a week ago. A few stars for your vendors, a few seconds.",
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          "You got married a week ago. Congratulations again!",
+          list
+            ? `Would you help the next couples? The vendors you worked with (**${list}**) deserve your feedback, and a few honest stars are gold to couples who don't know them yet.`
+            : "Would you help the next couples? Your vendors deserve your feedback, and a few honest stars are gold to couples who don't know them yet.",
+          "**One click per star, a few seconds total.** Add a line or two if you feel like it.",
+        ],
+        cta: "Rate your vendors",
+        ctaSubtext: "Tap a star, done. All of them in one place.",
+        footnote: "We send this once, after your wedding.",
+      },
+    };
+  },
   honeymoon_nudge: (p, ctx) => {
     // Sent once, inside the 90-day window, only to couples who haven't touched
     // the honeymoon planner. The pitch is the one thing the page does that

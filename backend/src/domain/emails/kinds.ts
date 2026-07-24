@@ -62,6 +62,7 @@ export type EmailKind =
   | "vendor_review_campaign" // admin-run note to a CLAIMED vendor: reviews are open to anyone, here's your link to collect 5 stars
   | "vendor_review_campaign_reminder" // one nudge 7 days later to vendors who neither clicked nor opened
   | "personal_invite" // admin-run note to the founder's own contacts: you (or someone you love) is getting married, meet Weddly
+  | "post_wedding_review_request" // ~7 days after the wedding: rate the vendors you used, one-click stars
   | "vendor_claim_verify" // P2.C, sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
@@ -156,6 +157,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // footer. Deliberately dodges the 90/30/7 milestone days, since those mails
   // promise in their own footnote that we only write at 90, 30 and 7 days out.
   honeymoon_nudge: "lifecycle",
+  post_wedding_review_request: "lifecycle",
   milestone_t90: "lifecycle",
   milestone_t30: "lifecycle",
   milestone_t7: "lifecycle",

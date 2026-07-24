@@ -20,6 +20,9 @@ export type NotificationKind =
   | "timeline_email_sent"
   | "admin_message"
   | "feedback_survey"
+  // Post-wedding: ~7 days after the wedding, a nudge to rate the vendors the
+  // couple used. Stored (not computed); links to /app/rate-vendors.
+  | "review_vendors"
   // Computed (like the timeline_* pair): a dateless to-do that's been parked
   // for a week, and a decisions category that's piled up untouched. Both are
   // gentle, derived live from planning_items — never stored.

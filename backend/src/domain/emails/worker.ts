@@ -21,6 +21,7 @@ import { generateInviteToken } from "../invite_codes";
 import { resolveRecipients, sendGuestMessage } from "../guest_messages";
 import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "../listings";
 import { insertCoupleNotification, listActionableTimelineTasks } from "../notifications";
+import { listCoupleVendorsToReview } from "../post_wedding_reviews";
 import { type PlannerProfileRow, sendPlannerProfileReminder } from "../planner_profile";
 import { getCampaignRow, sendCampaignBatch, sendCampaignReminders } from "../vendor_campaign";
 import {
@@ -927,35 +928,73 @@ function sweepWeddingDay(ts: number): number {
 }
 
 function sweepWeddingFollowup(ts: number): number {
-  // T+7 days after the wedding — NPS / "how was it?" nudge. Mirrors
-  // sweepWeddingDay but on the trailing edge. The couple row is still
-  // active (we don't purge after the wedding date), so partnersForWeddingDate
-  // returns the same partner pairs that ran through the T+0 sweep a week
-  // earlier.
+  // T+7 days after the wedding, the trailing-edge touch. Mirrors sweepWeddingDay
+  // but a week later (the couple row is still active — we don't purge after the
+  // wedding). When the couple actually picked vendors, this becomes the
+  // actionable "rate the vendors you used" prompt (email + in-app notification,
+  // one-click stars on /app/rate-vendors) instead of the generic "how was it?"
+  // NPS — that is what a post-wedding email should drive, and it keeps the T+7
+  // touch to a single mail. Couples with no concrete vendor to rate still get
+  // the NPS.
   const today = startOfDayUtc(ts);
   const target = ymd(today - 7 * 86_400_000);
   const rows = partnersForWeddingDate(target);
   let count = 0;
+  const notified = new Set<number>();
   for (const r of rows) {
-    if (
-      !markDispatched({
-        kind: "wedding_today_followup",
-        couple_id: r.couple_id,
-        user_id: r.user_id,
-      })
-    )
-      continue;
-    void sendKind(
-      "wedding_today_followup",
-      {
-        coupleDisplayName: r.display_name,
-        feedbackUrl: `${CONFIG.frontendBaseUrl}/app?feedback=1`,
-      },
-      {
-        user: { id: r.user_id, email: r.email, full_name: r.full_name },
-        couple_id: r.couple_id,
-      },
-    );
+    const vendors = listCoupleVendorsToReview(r.couple_id);
+    if (vendors.length > 0) {
+      if (
+        !markDispatched({
+          kind: "post_wedding_review_request",
+          couple_id: r.couple_id,
+          user_id: r.user_id,
+        })
+      )
+        continue;
+      // One in-app notification per couple (both partners share the feed).
+      if (!notified.has(r.couple_id)) {
+        insertCoupleNotification({
+          couple_id: r.couple_id,
+          kind: "review_vendors",
+          data: { count: vendors.length },
+          link: "/app/rate-vendors",
+          dedupe_key: `review_vendors:${r.couple_id}`,
+        });
+        notified.add(r.couple_id);
+      }
+      void sendKind(
+        "post_wedding_review_request",
+        {
+          ctaUrl: `${CONFIG.frontendBaseUrl}/app/rate-vendors`,
+          vendorNames: vendors.slice(0, 8).map((v) => v.name),
+        },
+        {
+          user: { id: r.user_id, email: r.email, full_name: r.full_name },
+          couple_id: r.couple_id,
+        },
+      );
+    } else {
+      if (
+        !markDispatched({
+          kind: "wedding_today_followup",
+          couple_id: r.couple_id,
+          user_id: r.user_id,
+        })
+      )
+        continue;
+      void sendKind(
+        "wedding_today_followup",
+        {
+          coupleDisplayName: r.display_name,
+          feedbackUrl: `${CONFIG.frontendBaseUrl}/app?feedback=1`,
+        },
+        {
+          user: { id: r.user_id, email: r.email, full_name: r.full_name },
+          couple_id: r.couple_id,
+        },
+      );
+    }
     count++;
     if (count >= SENDS_PER_SWEEP_CAP) break;
   }

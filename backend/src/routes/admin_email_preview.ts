@@ -139,6 +139,10 @@ const STUBS: KindPayload = {
     daysUntil: 62,
     coupleDisplayName: "Mia & Lucas",
   },
+  post_wedding_review_request: {
+    ctaUrl: `${BASE_URL}/app/rate-vendors`,
+    vendorNames: ["Bloom Studio", "Sweet Layers Cukrászda", "DJ Marco"],
+  },
   milestone_t90: {
     coupleDisplayName: "Mia & Lucas",
     weddingDate: "2026-09-12",

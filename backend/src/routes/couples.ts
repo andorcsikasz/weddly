@@ -88,6 +88,7 @@ import {
   toCoupleBilling,
 } from "../domain/couples";
 import { sendKind } from "../domain/emails";
+import { listCoupleVendorsToReview } from "../domain/post_wedding_reviews";
 import {
   activatePartnerFreeWindow,
   initBillingAtOnboarding,
@@ -752,6 +753,15 @@ function handleGetCurrentCouple(ctx: Ctx): Response {
   const row = getCoupleForUser(userId);
   if (!row) return json({ couple: null });
   return json({ couple: toCouple(row) });
+}
+
+/** The vendors the couple picked and hasn't reviewed yet — feeds the
+ *  post-wedding "rate your vendors" page. */
+function handleVendorsToReview(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) return json({ vendors: [] });
+  return json({ vendors: listCoupleVendorsToReview(couple.id) });
 }
 
 interface InviteCreateBody {
@@ -3653,6 +3663,7 @@ export function registerCoupleRoutes(router: Router) {
   router.delete("/api/couples/:id", handleDeleteCouple, true);
   router.get("/api/couples/current", handleGetCurrentCouple, true);
   router.get("/api/couples/partner", handleGetPartner, true);
+  router.get("/api/couples/current/vendors-to-review", handleVendorsToReview, true);
   router.get("/api/couples/activity", handleGetActivity, true);
   router.patch("/api/couples/current", handleUpdateCurrentCouple, true);
   router.post("/api/couples/current/cover", handleUploadCover, true);
