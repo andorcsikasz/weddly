@@ -27,6 +27,7 @@ import {
   verifyCampaignOptOutToken,
   verifyCampaignPixelToken,
 } from "../domain/vendor_campaign";
+import { getInviteSendById, verifyInviteOptOutToken } from "../domain/personal_invite_campaign";
 import {
   getReviewSendById,
   markReviewCampaignClicked,
@@ -171,6 +172,34 @@ function handleReviewOptOutPost(ctx: Ctx): Response {
   return new Response(null, { status: 204 });
 }
 
+// ── Personal-invite campaign ────────────────────────────────────────────────
+// No click/pixel tracking on this family (conversion is UTM + a users-row join),
+// so the only public route is the opt-out, reached from the mail footer and the
+// RFC 8058 List-Unsubscribe header.
+
+function inviteOptOutEmailFromToken(token: string): string | null {
+  const sendId = verifyInviteOptOutToken(token);
+  if (sendId == null) return null;
+  return getInviteSendById(sendId)?.email ?? null;
+}
+
+function handleInviteOptOut(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const email = inviteOptOutEmailFromToken(token);
+  if (email) addOptOut(email, "personal_invite");
+  return new Response(optOutHtml(email != null), {
+    status: email ? 200 : 404,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+function handleInviteOptOutPost(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const email = inviteOptOutEmailFromToken(token);
+  if (email) addOptOut(email, "personal_invite");
+  return new Response(null, { status: 204 });
+}
+
 /** Static HTML, deliberately bilingual: this page is reached from a cold mail
  *  in either language and costs nothing to render both ways. No user input is
  *  interpolated, so there is nothing to escape. */
@@ -237,4 +266,10 @@ export function registerEmailTrackRoutes(router: Router): void {
   router.post("/api/emails/optout-review/:token", handleReviewOptOutPost);
   router.get("/review-optout/:token", handleReviewOptOut);
   router.post("/review-optout/:token", handleReviewOptOutPost);
+
+  // Personal-invite campaign opt-out (List-Unsubscribe target + footer link).
+  router.get("/api/emails/optout-invite/:token", handleInviteOptOut);
+  router.post("/api/emails/optout-invite/:token", handleInviteOptOutPost);
+  router.get("/invite-optout/:token", handleInviteOptOut);
+  router.post("/invite-optout/:token", handleInviteOptOutPost);
 }

@@ -2139,3 +2139,42 @@ CREATE INDEX IF NOT EXISTS idx_vrcs_campaign_status ON vendor_review_campaign_se
 CREATE INDEX IF NOT EXISTS idx_vrcs_listing ON vendor_review_campaign_sends(listing_id);
 -- Drives both the pacing query (sends in the last 24h) and the reminder sweep.
 CREATE INDEX IF NOT EXISTS idx_vrcs_sent_at ON vendor_review_campaign_sends(sent_at);
+
+-- ── Personal-invite campaign ────────────────────────────────────────────────
+-- The founder's own contacts (CSV import), told about Weddly with a "you (or
+-- someone you love) is getting married" note and a register CTA. Unlike the two
+-- vendor campaigns this targets a FIXED imported list, not a live directory
+-- query: one send row is seeded per contact at import (deduped against `users`
+-- and `email_optouts`), and the paced sweep drains 'queued' rows up to the
+-- rolling-24h daily_cap, re-checking users/optouts at send time so anyone who
+-- registers or opts out between import and send is never mailed. Shares
+-- email_optouts for suppression; conversion is attributed via a UTM on the CTA
+-- plus a live join to `users`, so there is no click-tracking column here.
+CREATE TABLE IF NOT EXISTS personal_invite_campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL UNIQUE,                                   -- operator handle, e.g. 'friends-2026-07'
+  status TEXT NOT NULL DEFAULT 'paused',                       -- 'paused' | 'running' | 'done'
+  daily_cap INTEGER NOT NULL DEFAULT 50,                       -- rolling-24h send ceiling; paced by the worker
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  started_at INTEGER,
+  ended_at INTEGER
+);
+
+-- One row per recipient ADDRESS per campaign, seeded 'queued' at import.
+CREATE TABLE IF NOT EXISTS personal_invite_campaign_sends (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id INTEGER NOT NULL REFERENCES personal_invite_campaigns(id) ON DELETE CASCADE,
+  name TEXT NOT NULL DEFAULT '',                               -- for the greeting; may be empty
+  email TEXT NOT NULL,                                         -- lowercased, trimmed
+  locale TEXT NOT NULL DEFAULT 'hu',                           -- 'hu' | 'en', detected at import
+  status TEXT NOT NULL DEFAULT 'queued',                       -- 'queued' | 'sent' | 'failed' | 'skipped'
+  error TEXT,
+  sent_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pics_campaign_email ON personal_invite_campaign_sends(campaign_id, email);
+CREATE INDEX IF NOT EXISTS idx_pics_campaign_status ON personal_invite_campaign_sends(campaign_id, status);
+-- Drives the rolling-24h pacing query.
+CREATE INDEX IF NOT EXISTS idx_pics_sent_at ON personal_invite_campaign_sends(sent_at);

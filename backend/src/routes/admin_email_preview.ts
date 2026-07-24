@@ -303,6 +303,11 @@ const STUBS: KindPayload = {
     dashboardUrl: `${BASE_URL}/vendor/reviews`,
     locale: "hu",
   },
+  personal_invite: {
+    name: "Anna",
+    ctaUrl: `${BASE_URL}/?utm_source=invite&utm_medium=email&utm_campaign=friends-2026-07`,
+    locale: "hu",
+  },
   vendor_review_campaign_reminder: {
     businessName: "Bloom Studio",
     reviewUrl: `${BASE_URL}/vendors/bloom-studio-v12`,

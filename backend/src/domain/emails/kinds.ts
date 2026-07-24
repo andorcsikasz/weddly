@@ -61,6 +61,7 @@ export type EmailKind =
   | "vendor_claim_campaign_reminder" // one nudge 2 days later to invites nobody clicked
   | "vendor_review_campaign" // admin-run note to a CLAIMED vendor: reviews are open to anyone, here's your link to collect 5 stars
   | "vendor_review_campaign_reminder" // one nudge 7 days later to vendors who neither clicked nor opened
+  | "personal_invite" // admin-run note to the founder's own contacts: you (or someone you love) is getting married, meet Weddly
   | "vendor_claim_verify" // P2.C, sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
@@ -246,6 +247,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   vendor_claim_campaign_reminder: "outreach",
   vendor_review_campaign: "outreach",
   vendor_review_campaign_reminder: "outreach",
+  personal_invite: "outreach",
   // Outreach: anyone (no auth required) can hit /api/vendor/claim/start with a
   // listing id, and the listing's contact_email gets the mail, the recipient
   // didn't necessarily start the flow themselves.

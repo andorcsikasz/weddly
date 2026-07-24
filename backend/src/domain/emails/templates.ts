@@ -585,6 +585,15 @@ export interface VendorReviewCampaignPayload {
   locale: "hu" | "en";
 }
 
+export interface PersonalInvitePayload {
+  /** The contact's name, for the greeting. May be empty. */
+  name: string;
+  /** The register CTA, carrying the campaign UTM. Same as the plain link shown
+   *  in the body so it can be copied straight out of the mail. */
+  ctaUrl: string;
+  locale: "hu" | "en";
+}
+
 export interface VendorClaimAdminAlertPayload {
   /** Listing name the claimer wants to take over. */
   listingName: string;
@@ -774,6 +783,7 @@ export type KindPayload = {
   vendor_claim_campaign_reminder: VendorClaimCampaignPayload;
   vendor_review_campaign: VendorReviewCampaignPayload;
   vendor_review_campaign_reminder: VendorReviewCampaignPayload;
+  personal_invite: PersonalInvitePayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_admin_alert: VendorClaimAdminAlertPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
@@ -2758,6 +2768,42 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         { label: "Share on WhatsApp", url: p.whatsappUrl },
         { label: "Send by email", url: p.mailtoUrl },
       ],
+    },
+  }),
+  // The founder's own contacts, told about Weddly with a "you (or someone you
+  // love) is getting married" note and a register CTA. Outreach category, so the
+  // footer carries the one-click unsubscribe. Personalised by first name.
+  personal_invite: (p) => ({
+    subject:
+      p.locale === "hu"
+        ? "Csináltam valamit. Neked, vagy valakinek, aki most házasodik."
+        : "I built something for anyone getting married.",
+    ctaUrl: p.ctaUrl,
+    hu: {
+      preheader: "Az egész esküvőtervezés egy nyugodt helyen. Az első 200 pár ingyen.",
+      greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
+      paragraphs: [
+        "Építettem egy appot: a **Weddly**. Az egész esküvőtervezést egy nyugodt helyre teszi. Költségvetés, ami nem borul fel, vendéglista és online RSVP, nyomtatható ültetési rend, szolgáltatók, idővonal és saját esküvői weboldal. Kettőtöknek, közösen, a 100 böngészőfül és a végtelen Excel helyett.",
+        "Miért tőlem kapod? Mert ha **te, vagy valaki, akit szeretsz, most tervez esküvőt**, ez rengeteg stresszt levehet a válláról.",
+        "Az **első 200 pár ingyen** használja, bankkártya nélkül. Ha ismersz jegyespárt, a legszebb ajándék, ha továbbküldöd nekik ezt a levelet.",
+      ],
+      cta: "Regisztrálok",
+      ctaSubtext: "Ingyenes, egy perc az egész.",
+      footnote:
+        "Ha most nem aktuális, hagyd figyelmen kívül ezt a levelet, vagy iratkozz le lent. Nem zavarlak többet.",
+    },
+    en: {
+      preheader: "The whole wedding in one calm place. The first 200 couples are free.",
+      greeting: p.name.trim() ? `Hi ${p.name.trim()},` : "Hi there,",
+      paragraphs: [
+        "I built an app: **Weddly**. It puts the whole wedding in one calm place. A budget that stays under control, a guest list with online RSVP, a printable seating chart, suppliers, a timeline and your own wedding website. For the two of you, together, instead of 100 browser tabs and endless spreadsheets.",
+        "Why me? Because if **you, or someone you love, is getting married**, this lifts a lot of the stress off their plate.",
+        "The **first 200 couples are free**, no card needed. Know an engaged couple? Forwarding this to them is the nicest gift.",
+      ],
+      cta: "Sign up",
+      ctaSubtext: "Free, takes a minute.",
+      footnote:
+        "Not the right time? Ignore this email or unsubscribe below. I won't email you again.",
     },
   }),
   // P2.C, vendor claim verify mail. Categorised as `outreach`: anyone (no

@@ -24,6 +24,10 @@ import { insertCoupleNotification, listActionableTimelineTasks } from "../notifi
 import { type PlannerProfileRow, sendPlannerProfileReminder } from "../planner_profile";
 import { getCampaignRow, sendCampaignBatch, sendCampaignReminders } from "../vendor_campaign";
 import {
+  getCampaignRow as getPersonalInviteCampaignRow,
+  sendCampaignBatch as sendPersonalInviteCampaignBatch,
+} from "../personal_invite_campaign";
+import {
   getCampaignRow as getReviewCampaignRow,
   sendCampaignBatch as sendReviewCampaignBatch,
   sendCampaignReminders as sendReviewCampaignReminders,
@@ -1397,14 +1401,38 @@ export async function runReviewCampaignSweep(
   return { invites, reminders };
 }
 
+/** Pace out every running personal-invite campaign. No reminders on this
+ *  family: it's a one-shot note to the founder's own contacts. Sibling of the
+ *  two runners above against the personal_invite tables. */
+export async function runPersonalInviteCampaignSweep(
+  ts: number = now(),
+): Promise<{ invites: number }> {
+  let invites = 0;
+  const running = db
+    .prepare("SELECT * FROM personal_invite_campaigns WHERE status = 'running' ORDER BY id ASC")
+    .all() as Array<{ id: number; daily_cap: number }>;
+  for (const row of running) {
+    const campaign = getPersonalInviteCampaignRow(row.id);
+    if (!campaign) continue;
+    invites += await sendPersonalInviteCampaignBatch(
+      campaign,
+      campaignSlicePerSweep(campaign.daily_cap),
+      ts,
+    );
+  }
+  return { invites };
+}
+
 function kickCampaignSweep(label: string): void {
   // Fire-and-forget at the timer boundary: the interval callback is sync, and a
-  // campaign batch can take seconds. Failures are reported, never thrown. Both
-  // campaign families (claim-invite + review-invite) ride the same tick.
-  void Promise.all([runCampaignSweep(), runReviewCampaignSweep()])
-    .then(([claim, review]) => {
-      const total = claim.invites + claim.reminders + review.invites + review.reminders;
-      if (total > 0) log.info(label, { claim, review });
+  // campaign batch can take seconds. Failures are reported, never thrown. All
+  // campaign families (claim-invite + review-invite + personal-invite) ride the
+  // same tick.
+  void Promise.all([runCampaignSweep(), runReviewCampaignSweep(), runPersonalInviteCampaignSweep()])
+    .then(([claim, review, personal]) => {
+      const total =
+        claim.invites + claim.reminders + review.invites + review.reminders + personal.invites;
+      if (total > 0) log.info(label, { claim, review, personal });
     })
     .catch((e) => reportError("emails.campaign_sweep_failed", e));
 }
