@@ -519,7 +519,7 @@ export function CostPlanningCard({
   return (
     <section className="card p-4">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
           {t("budget.cost_planning_headline")}
         </p>
         <div className="flex items-center gap-3">
@@ -635,7 +635,7 @@ export function CostPlanningCard({
             {formatNumber(count, locale)}
           </div>
         )}
-        <div className="mt-2 text-xs uppercase tracking-wide text-ink-500 sm:mt-0.5 dark:text-umber-300">
+        <div className="mt-2 text-[11px] font-medium uppercase tracking-wider text-ink-400 sm:mt-0.5 dark:text-umber-400">
           {t("budget.cost_planning_unit_label")}
         </div>
       </div>
@@ -746,7 +746,7 @@ export function CostPlanningCard({
 
       <div className="mt-4 border-t border-paper-200 pt-3 dark:border-umber-700">
         <div className="flex items-baseline justify-between">
-          <span className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
             {/* The bold headline figure below is ALWAYS totalPlanned (actual is
                 only the small "{actual} /" prefix), so the label names planned.
                 It used to flip to "Total actual" once any actual spend existed,
@@ -755,7 +755,7 @@ export function CostPlanningCard({
           </span>
           <span
             data-testid="cost-planning-total"
-            className={`stat-num text-xl font-semibold ${overCap ? "text-blush-700 dark:text-blush-300" : "text-ink-900 dark:text-paper-50"}`}
+            className={`stat-num font-grotesk text-xl font-semibold tracking-tight ${overCap ? "text-blush-700 dark:text-blush-300" : "text-ink-900 dark:text-paper-50"}`}
           >
             {totalActual > 0 && (
               <span

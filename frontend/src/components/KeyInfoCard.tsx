@@ -401,7 +401,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
   return (
     <section className="card mb-6 p-0" data-tour-target="dashboard-keyinfo">
       <header className="flex items-center justify-between gap-2 border-b border-paper-200 px-5 py-2.5 dark:border-umber-700">
-        <h2 className="flex items-center gap-2.5 font-grotesk text-base text-ink-900 dark:text-paper-50">
+        <h2 className="flex items-center gap-2.5 font-grotesk text-base font-medium tracking-tight text-ink-900 dark:text-paper-50">
           <span className="inline-block h-4 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
           {t("dashboard.keyinfo_title")}
         </h2>

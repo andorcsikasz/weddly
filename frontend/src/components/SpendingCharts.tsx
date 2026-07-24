@@ -530,7 +530,7 @@ export function SpendingCharts({
                       : undefined
                   }
                 >
-                  <span className="text-2xl font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+                  <span className="font-grotesk text-2xl font-semibold tracking-tight tabular-nums text-ink-900 dark:text-paper-50">
                     {paidPct}%
                   </span>
                   <span className="text-[11px] text-ink-500 dark:text-umber-300">

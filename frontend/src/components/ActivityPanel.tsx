@@ -341,7 +341,7 @@ export function ActivityPanel({
         className="flex w-full items-start gap-4 border-b border-paper-300 px-6 py-4 text-left transition-colors hover:bg-paper-200/60 dark:border-ink-800 dark:hover:bg-ink-800/40"
       >
         <span className="flex-1">
-          <span className="flex items-center gap-2 text-lg text-ink-900 dark:text-paper-50">
+          <span className="flex items-center gap-2 font-grotesk text-lg font-medium tracking-tight text-ink-900 dark:text-paper-50">
             <History size={18} className="text-ink-400 dark:text-ink-300" aria-hidden />
             {t("profile.activity_title")}
           </span>
