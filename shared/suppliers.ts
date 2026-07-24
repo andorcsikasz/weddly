@@ -34,6 +34,7 @@ export type SupplierCategory =
   | "live_music"
   | "entertainment"
   | "mc_celebrant"
+  | "celebrant"
   | "sound_tech"
   // Fashion & beauty
   | "bridal_boutique"
@@ -129,6 +130,7 @@ export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
   live_music: "music_dj",
   entertainment: "music_dj",
   mc_celebrant: "music_dj",
+  celebrant: "other",
   sound_tech: "music_dj",
   bridal_boutique: "attire",
   suit_formal: "attire",
@@ -165,6 +167,7 @@ export const SUPPLIER_CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
   live_music: "Élőzene",
   entertainment: "Műsor & animáció",
   mc_celebrant: "Ceremóniamester",
+  celebrant: "Szertartásvezető",
   sound_tech: "Hangtechnika",
   bridal_boutique: "Menyasszonyi ruha",
   suit_formal: "Öltöny & alkalmi",
@@ -200,7 +203,8 @@ export const SUPPLIER_CATEGORY_LABEL_EN: Record<SupplierCategory, string> = {
   dj: "DJ",
   live_music: "Live music",
   entertainment: "Entertainment",
-  mc_celebrant: "MC & celebrant",
+  mc_celebrant: "Master of ceremonies",
+  celebrant: "Celebrant",
   sound_tech: "Sound & AV tech",
   bridal_boutique: "Bridal boutique",
   suit_formal: "Suit & formal wear",
@@ -233,7 +237,7 @@ export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
   { id: "media", categories: ["photography", "videography", "content_creator", "photo_booth"] },
   {
     id: "entertainment",
-    categories: ["dj", "live_music", "entertainment", "mc_celebrant", "sound_tech"],
+    categories: ["dj", "live_music", "entertainment", "mc_celebrant", "celebrant", "sound_tech"],
   },
   {
     id: "fashion_beauty",
@@ -291,6 +295,7 @@ export const SUPPLIER_CAPACITY_KIND: Record<SupplierCategory, SupplierCapacityKi
   live_music: null,
   entertainment: null,
   mc_celebrant: null,
+  celebrant: null,
   sound_tech: null,
   bridal_boutique: null,
   suit_formal: null,
@@ -690,6 +695,7 @@ export const REVIEW_TAGS_BY_CATEGORY: Record<SupplierCategory, readonly Supplier
   live_music: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   entertainment: ["kid_friendly", "outdoor_space", "creative", ...UNIVERSAL_REVIEW_TAGS],
   mc_celebrant: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  celebrant: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   sound_tech: [...UNIVERSAL_REVIEW_TAGS],
   bridal_boutique: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   suit_formal: ["creative", ...UNIVERSAL_REVIEW_TAGS],

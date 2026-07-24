@@ -444,8 +444,14 @@ const SEED: SeedGroup[] = [
       {
         slug: "mc_celebrant",
         label_hu: "Ceremóniamester",
-        label_en: "MC & celebrant",
+        label_en: "Master of ceremonies",
         budget: "music_dj",
+      },
+      {
+        slug: "celebrant",
+        label_hu: "Szertartásvezető",
+        label_en: "Celebrant",
+        budget: "other",
       },
       {
         slug: "sound_tech",

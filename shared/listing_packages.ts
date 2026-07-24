@@ -122,8 +122,12 @@ export const PACKAGE_NAME_SUGGESTIONS: Record<SupplierCategory, { hu: string[]; 
     en: ["Ceremony live act", "Headline act", "Interactive show"],
   },
   mc_celebrant: {
-    hu: ["Szertartásvezetés", "Ceremóniamester", "Teljes napi vezetés"],
-    en: ["Ceremony officiant", "Master of ceremonies", "Full-day hosting"],
+    hu: ["Ceremóniamester", "Teljes napi vezetés", "Vacsora és buli levezetése"],
+    en: ["Master of ceremonies", "Full-day hosting", "Reception hosting"],
+  },
+  celebrant: {
+    hu: ["Polgári szertartás", "Szimbolikus szertartás", "Egyedi szertartás"],
+    en: ["Civil ceremony", "Symbolic ceremony", "Bespoke ceremony"],
   },
   sound_tech: {
     hu: ["Ceremónia hangosítás", "Alap hangrendszer", "Teljes színpadtechnika"],
