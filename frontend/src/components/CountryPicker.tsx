@@ -25,6 +25,7 @@ export function CountryPicker({
   onChange,
   allLabel,
   ariaLabel,
+  tone = "brand",
 }: {
   /** null = every country. */
   value: string | null;
@@ -32,6 +33,10 @@ export function CountryPicker({
   onChange: (code: string | null) => void;
   allLabel: string;
   ariaLabel: string;
+  /** Closed-state skin. `brand` is the stationery-coffee pill the in-app
+   *  directory uses; `ink` is the flat near-black one the public browse page
+   *  runs, where every control on the page is monochrome. */
+  tone?: "brand" | "ink";
 }) {
   const [open, setOpen] = useState(false);
   // Which row the keyboard is on. Index 0 is always the "all countries" row.
@@ -115,8 +120,12 @@ export function CountryPicker({
         aria-label={ariaLabel}
         className={`inline-flex min-h-tap items-center gap-2 rounded-full border px-4 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900 ${
           selected
-            ? "stationery-coffee border-transparent text-paper-50"
-            : "border-umber-600 bg-paper-50 text-ink-700 hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+            ? tone === "ink"
+              ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-ink-900"
+              : "stationery-coffee border-transparent text-paper-50"
+            : tone === "ink"
+              ? "border-ink-900/15 bg-transparent text-ink-700 hover:border-ink-900 dark:border-paper-50/20 dark:text-paper-100"
+              : "border-umber-600 bg-paper-50 text-ink-700 hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
         }`}
       >
         <Globe size={15} aria-hidden />
