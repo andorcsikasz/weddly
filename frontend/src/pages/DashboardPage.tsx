@@ -1450,7 +1450,6 @@ function KpiTile({
   unit,
   progress,
   progressOver,
-  accent,
   onToggle,
   expanded,
   breakdown,
@@ -1461,23 +1460,14 @@ function KpiTile({
   unit: string;
   progress?: number | null;
   progressOver?: boolean;
-  accent?: "blush";
   onToggle?: () => void;
   expanded?: boolean;
   breakdown?: ReactNode;
 }) {
-  const accentBg =
-    accent === "blush" ? "bg-blush-50 dark:bg-blush-400/15" : "bg-paper-50 dark:bg-umber-700/60";
-  const accentRing =
-    accent === "blush" ? "text-blush-700 dark:text-blush-300" : "text-ink-700 dark:text-paper-100";
   return (
     <div className="card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-        <span
-          className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${accentBg} ${accentRing}`}
-        >
-          {icon}
-        </span>
+      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
+        <span className="text-ink-400 dark:text-umber-400">{icon}</span>
         {label}
         {onToggle && (
           <button
@@ -1505,10 +1495,10 @@ function KpiTile({
           breakdown
         ) : (
           <>
-            <div className="stat-num text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
+            <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
               {value}
             </div>
-            <div className="mt-1 text-center text-xs font-semibold text-ink-500 dark:text-umber-300">
+            <div className="mt-1.5 text-xs font-medium text-ink-400 dark:text-umber-400">
               {unit}
             </div>
             {progress !== undefined && progress !== null && (
@@ -1598,10 +1588,8 @@ function BudgetKpiTile({
 
   return (
     <div className="card p-3 sm:p-4 !border-ink-700 dark:!border-paper-100">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-paper-50 text-ink-700 dark:bg-umber-700/60 dark:text-paper-100">
-          <Wallet size={14} aria-hidden="true" />
-        </span>
+      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
+        <Wallet size={13} aria-hidden="true" />
         {label}
         {topSpend.length > 0 && (
           <button
@@ -1653,10 +1641,10 @@ function BudgetKpiTile({
         </div>
       ) : (
         <>
-          <div className="stat-num mt-2 text-center text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
+          <div className="stat-num mt-2 font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
             {formatMoney(totalActual, currency, locale)}
           </div>
-          <div className="mt-1 flex items-baseline justify-center gap-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
+          <div className="mt-1.5 flex items-baseline gap-1 text-xs font-medium text-ink-400 dark:text-umber-400">
             {cap === null ? (
               <span>{t("dashboard.kpi_budget_no_cap")}</span>
             ) : editing ? (
@@ -1788,10 +1776,8 @@ function DaysToGoTile({
       ref={wrapperRef}
       className="card relative p-3 sm:p-4 !border-ink-700 dark:!border-paper-100"
     >
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-paper-50 text-ink-700 dark:bg-umber-700/60 dark:text-paper-100">
-          <CalendarHeart size={14} aria-hidden="true" />
-        </span>
+      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
+        <CalendarHeart size={13} aria-hidden="true" />
         {label}
         {planningPct !== null && (
           <button
@@ -1818,11 +1804,11 @@ function DaysToGoTile({
                 style={{ width: `${planningPct}%` }}
               />
             </div>
-            <div className="mt-2 text-center">
-              <div className="stat-num text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
+            <div className="mt-2 text-left">
+              <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
                 {planningPct}%
               </div>
-              <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
+              <div className="mt-1.5 text-xs font-medium text-ink-400 dark:text-umber-400">
                 {formatNumber(daysElapsed, locale)} nap eltelt ·{" "}
                 {days !== null ? formatNumber(days, locale) : "-"} hátra
               </div>
@@ -1835,12 +1821,12 @@ function DaysToGoTile({
             disabled={saving}
             title={t("dashboard.kpi_days_edit_hint")}
             aria-label={t("dashboard.kpi_days_edit_hint")}
-            className="-mx-2 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-center transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:hover:bg-umber-700"
+            className="-mx-2 block w-[calc(100%+1rem)] rounded-lg px-2 py-1 text-left transition hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 disabled:opacity-60 dark:hover:bg-umber-700"
           >
-            <div className="stat-num text-xl font-bold leading-none text-ink-900 sm:text-2xl dark:text-paper-50">
+            <div className="stat-num font-grotesk text-xl font-semibold leading-none tracking-tight text-ink-900 sm:text-2xl dark:text-paper-50">
               {days !== null ? formatNumber(days, locale) : "-"}
             </div>
-            <div className="mt-1 text-xs font-semibold text-ink-500 dark:text-umber-300">
+            <div className="mt-1.5 text-xs font-medium text-ink-400 dark:text-umber-400">
               {days !== null && goal.exact_date
                 ? goal.exact_date.replace(/-/g, ".")
                 : t("dashboard.kpi_days_tbd")}
