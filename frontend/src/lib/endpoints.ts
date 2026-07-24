@@ -598,8 +598,18 @@ export const plannerBillingApi = {
   portal: () => apiFetch<{ url: string }>("POST", "/api/planner/billing/portal", {}),
 };
 
+/** A vendor the couple picked and hasn't reviewed yet — feeds /app/rate-vendors. */
+export interface VendorToReview {
+  id: string;
+  name: string;
+  category: string;
+}
+
 export const coupleApi = {
   current: () => apiFetch<{ couple: Couple | null }>("GET", "/api/couples/current"),
+  /** Vendors the couple picked and hasn't reviewed yet (post-wedding prompt). */
+  vendorsToReview: () =>
+    apiFetch<{ vendors: VendorToReview[] }>("GET", "/api/couples/current/vendors-to-review"),
   /** Every workspace this user is a member of (Alpha / Bravo / Charlie).
    *  `current_couple_id` matches whichever is active right now — same value
    *  the next `current()` call would resolve to. */

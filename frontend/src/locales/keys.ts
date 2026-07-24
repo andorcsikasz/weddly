@@ -89,6 +89,17 @@ export interface LocaleMessages {
     wedding_site_title: string;
     wedding_site_description: string;
   };
+  /** Post-wedding "rate your vendors" page (/app/rate-vendors). */
+  rate_vendors: {
+    title: string;
+    subtitle: string;
+    thanks: string;
+    empty_title: string;
+    empty_body: string;
+    back: string;
+    add_comment: string;
+    stars_aria: string;
+  };
   /** Gantt-style task timeline + point-of-contact panel. */
   notifications: {
     /** Bell button + dropdown chrome. */
@@ -138,6 +149,7 @@ export interface LocaleMessages {
     settings_back: string;
     /** One-time feedback survey prompt (120-action gate). */
     feedback_survey: string;
+    review_vendors: string;
     feedback_survey_intro: string;
     /** Planning reminder: a dateless task has been sitting 7+ days. */
     planning_stale_task: string;
@@ -9117,6 +9129,11 @@ export interface LocaleMessages {
     convert_title: string;
     convert_sub: string;
     vendor_prompt: string;
+    /** Aria-label for the sticky category rail that indexes the page. */
+    nav_categories: string;
+    /** Aria-labels for the desktop scrubbers on each category rail. */
+    rail_prev: string;
+    rail_next: string;
     /** Distinct planner module: planners are workspace collaborators, invited
      *  via /planners, not directory contacts. */
     planner_badge: string;

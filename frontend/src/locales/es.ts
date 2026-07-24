@@ -2274,6 +2274,17 @@ const es: LocaleMessages = {
     idea_to_task_dismiss: "Ahora no",
     idea_to_task_done: "Añadida como tarea",
   },
+  rate_vendors: {
+    title: "Valora a tus proveedores",
+    subtitle:
+      "Tu boda fue hace una semana. Un toque en una estrella deja una reseña y ayuda a las próximas parejas a elegir con confianza.",
+    thanks: "¡Gracias, guardado!",
+    empty_title: "¡Todo listo!",
+    empty_body: "No quedan proveedores por valorar. ¡Gracias!",
+    back: "Volver al panel",
+    add_comment: "añadir un comentario",
+    stars_aria: "Valorar a {name}",
+  },
   notifications: {
     aria_label: "Notificaciones",
     title: "Notificaciones",
@@ -2315,6 +2326,7 @@ const es: LocaleMessages = {
     settings_focus_partner: "Actividad de la pareja",
     settings_back: "Atrás",
     feedback_survey: "Nos encantaría conocer tu opinión",
+    review_vendors: "Valora los {count} proveedores que usaste",
     feedback_survey_intro: "Estamos aquí para hacerte la vida más fácil y tu boda inolvidable.",
     planning_stale_task: "Lleva un tiempo esperando: {task}",
     planning_decisions_stale: "{count} decisiones te están esperando",
@@ -4480,7 +4492,8 @@ const es: LocaleMessages = {
       err_duplicate_email: "Alguien ya se registró con este correo, estás en la lista de espera.",
       err_already_listed: "{name} ya está en Weddly, no hace falta añadirlo de nuevo.",
       already_title: "Puede que ya esté en Weddly",
-      already_body: "¡Gracias por la recomendación! Parece que este proveedor ya está en el directorio, así que no hace falta añadirlo de nuevo.",
+      already_body:
+        "¡Gracias por la recomendación! Parece que este proveedor ya está en el directorio, así que no hace falta añadirlo de nuevo.",
       already_view: "Ver su ficha",
       already_checking: "Comprobando si ya está en el directorio…",
       visitor_verify_title: "Primero, confirma tu correo",
@@ -8537,6 +8550,9 @@ const es: LocaleMessages = {
     convert_sub:
       "Esto es solo una muestra. Crea una cuenta gratuita para explorar todos los proveedores, guardar favoritos y contactarlos directamente por teléfono, correo o Instagram.",
     vendor_prompt: "¿Eres proveedor? Aparece en el directorio",
+    nav_categories: "Categorías",
+    rail_prev: "Ver anteriores",
+    rail_next: "Ver siguientes",
     planner_badge: "Colaboración",
     planner_title: "Wedding planners",
     planner_body:

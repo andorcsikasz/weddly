@@ -2223,6 +2223,17 @@ const en: LocaleMessages = {
     idea_to_task_dismiss: "Not now",
     idea_to_task_done: "Added as a task",
   },
+  rate_vendors: {
+    title: "Rate your vendors",
+    subtitle:
+      "Your wedding was a week ago. One tap on a star files a review, and it helps the next couples choose with confidence.",
+    thanks: "Thanks, your rating is in!",
+    empty_title: "You're all done",
+    empty_body: "No vendors left to rate. Thank you!",
+    back: "Back to dashboard",
+    add_comment: "add a comment",
+    stars_aria: "Rate {name}",
+  },
   notifications: {
     aria_label: "Notifications",
     title: "Notifications",
@@ -2264,6 +2275,7 @@ const en: LocaleMessages = {
     settings_focus_partner: "Partner activity",
     settings_back: "Back",
     feedback_survey: "We'd love your feedback",
+    review_vendors: "Rate the {count} vendors you used",
     feedback_survey_intro: "We're here to make your life easier and your wedding unforgettable.",
     planning_stale_task: "Been waiting a while: {task}",
     planning_decisions_stale: "{count} decisions are waiting for you",
@@ -4385,7 +4397,8 @@ const en: LocaleMessages = {
       err_duplicate_email: "Someone already registered with this email, you're on the waitlist.",
       err_already_listed: "{name} is already on Weddly, no need to add them again.",
       already_title: "They might already be on Weddly",
-      already_body: "Thanks for the tip! This supplier looks like it's already listed, so there's no need to add them again.",
+      already_body:
+        "Thanks for the tip! This supplier looks like it's already listed, so there's no need to add them again.",
       already_view: "See their listing",
       already_checking: "Checking if they're already listed…",
       visitor_verify_title: "First, confirm your email",
@@ -8389,6 +8402,9 @@ const en: LocaleMessages = {
     convert_sub:
       "This is just a taste. Create a free account to browse every vendor, save favourites and contact them directly by phone, email or Instagram.",
     vendor_prompt: "Are you a vendor? Get listed",
+    nav_categories: "Categories",
+    rail_prev: "Show previous",
+    rail_next: "Show next",
     planner_badge: "Collaboration",
     planner_title: "Wedding planners",
     planner_body:

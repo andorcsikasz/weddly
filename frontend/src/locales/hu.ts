@@ -2247,6 +2247,17 @@ const hu: LocaleMessages = {
     idea_to_task_dismiss: "Most nem",
     idea_to_task_done: "Feladatként hozzáadva",
   },
+  rate_vendors: {
+    title: "Értékeljétek a szolgáltatóitokat",
+    subtitle:
+      "Egy hete volt az esküvőtök. Egy koppintás egy csillagra, és kész az értékelés. A következő pároknak sokat segít.",
+    thanks: "Köszönjük, mentettük!",
+    empty_title: "Minden kész",
+    empty_body: "Nincs több értékelendő szolgáltató. Köszönjük!",
+    back: "Vissza az irányítópultra",
+    add_comment: "megjegyzés hozzáadása",
+    stars_aria: "{name} értékelése",
+  },
   notifications: {
     aria_label: "Értesítések",
     title: "Értesítések",
@@ -2288,6 +2299,7 @@ const hu: LocaleMessages = {
     settings_focus_partner: "Páros aktivitás",
     settings_back: "Vissza",
     feedback_survey: "Mit gondolsz rólunk?",
+    review_vendors: "Értékeljétek a szolgáltatóitokat ({count})",
     feedback_survey_intro:
       "Azért vagyunk, hogy megkönnyítsük az életedet és feledhetetlenné tegyük az esküvődet.",
     planning_stale_task: "Régóta vár: {task}",
@@ -4434,7 +4446,8 @@ const hu: LocaleMessages = {
       err_duplicate_email: "Ezzel az e-mail címmel már regisztráltak, és várólistára kerültek.",
       err_already_listed: "{name} már fent van a Weddly-n, nem kell újra hozzáadni.",
       already_title: "Lehet, hogy már fent van a Weddly-n",
-      already_body: "Köszönjük a tippet! Úgy tűnik, ez a szolgáltató már szerepel a listában, így nem kell újra hozzáadni.",
+      already_body:
+        "Köszönjük a tippet! Úgy tűnik, ez a szolgáltató már szerepel a listában, így nem kell újra hozzáadni.",
       already_view: "Nézd meg a profilját",
       already_checking: "Ellenőrizzük, hogy szerepel-e már…",
       visitor_verify_title: "Előbb erősítsd meg az e-mailed",
@@ -8456,6 +8469,9 @@ const hu: LocaleMessages = {
     convert_sub:
       "Ez csak ízelítő. Hozz létre egy ingyenes fiókot, böngészd az összes szolgáltatót, mentsd a kedvenceket, és keresd őket közvetlenül telefonon, e-mailben vagy Instagramon.",
     vendor_prompt: "Szolgáltató vagy? Kerülj fel a listára",
+    nav_categories: "Kategóriák",
+    rail_prev: "Előzőek",
+    rail_next: "Következők",
     planner_badge: "Együttműködés",
     planner_title: "Esküvőszervezők",
     planner_body:

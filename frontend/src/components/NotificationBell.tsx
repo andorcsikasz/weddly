@@ -27,6 +27,7 @@ import {
   MessageCircle,
   Send,
   Settings,
+  Star,
 } from "lucide-react";
 import { type ComponentType, type SVGProps, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -47,6 +48,7 @@ const KIND_ICON: Record<NotificationItem["kind"], IconCmp> = {
   feedback_survey: MessageCircle,
   planning_stale_task: Clock,
   planning_decisions_stale: ListChecks,
+  review_vendors: Star,
 };
 
 /** Compose the human label for a feed row from its kind + params. */
@@ -80,6 +82,8 @@ function useLabel() {
         return String(d.message ?? "");
       case "feedback_survey":
         return t("notifications.feedback_survey");
+      case "review_vendors":
+        return t("notifications.review_vendors", { count: Number(d.count ?? 0) });
       case "planning_stale_task":
         return t("notifications.planning_stale_task", { task: String(d.taskTitle ?? "") });
       case "planning_decisions_stale":
