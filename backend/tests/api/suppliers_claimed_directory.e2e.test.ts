@@ -9,6 +9,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
 import { createVendorListing } from "../../src/domain/listings";
+import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { getUserByEmail } from "../../src/domain/users";
 import { convertUserToVendor } from "../../src/domain/vendor_conversion";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
@@ -244,5 +245,64 @@ describe("voting on a registered vendor's listing", () => {
     );
     expect(r.status).toBe(403);
     expect(r.data.detail?.code).toBe("self_vote");
+  });
+});
+
+// Regression: a vendor who CLAIMS a curated listing gets vendor_account_id set
+// on the existing curated row, but its stored `source` stays 'curated' (the
+// claim UPDATE doesn't touch it, and resolveSupplierBase hands back the static
+// curated entry). The directory badge + "Verified only" filter key off
+// source==='claimed', so the claim was invisible until the read paths derived
+// `source` from ownership.
+describe("a claimed CURATED listing surfaces as verified", () => {
+  test("directory + detail report source='claimed' once a vendor owns the curated slug", async () => {
+    wipeAll();
+    const curatedId = DIRECTORY[0]?.id;
+    if (!curatedId) throw new Error("DIRECTORY is empty — no curated listing to claim");
+
+    const reg = await registerAndVerify({
+      email: "curated-claim@weddly.test",
+      password: "supersafe123",
+      full_name: "Owner",
+    });
+    db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(
+      reg.data.user.id,
+    );
+    const account = createVendorAccount({
+      ownerUserId: reg.data.user.id,
+      displayName: "Claimed Curated Co",
+      contactEmail: "curated-claim@weddly.test",
+      onboardingDone: false,
+    });
+    // Exactly what vendor_claim's UPDATE does: attach the owner, leave source.
+    db.prepare("UPDATE listings SET vendor_account_id = ? WHERE id = ?").run(account.id, curatedId);
+    const viewer = await bootstrapCouple("curated-claim-viewer@weddly.test");
+
+    try {
+      const list = await req<{ suppliers: DirectoryItem[] }>(
+        "GET",
+        "/api/suppliers?country=all",
+        undefined,
+        { token: viewer.token },
+      );
+      const card = list.data.suppliers.find((s) => s.id === curatedId);
+      expect(card).toBeDefined();
+      expect(card?.vendor_account_id).toBe(account.id);
+      expect(card?.source).toBe("claimed");
+
+      const detail = await req<{ source: string; vendor_account_id: number | null }>(
+        "GET",
+        `/api/suppliers/${encodeURIComponent(curatedId)}`,
+        undefined,
+        { token: viewer.token },
+      );
+      expect(detail.status).toBe(200);
+      expect(detail.data.vendor_account_id).toBe(account.id);
+      expect(detail.data.source).toBe("claimed");
+    } finally {
+      // Curated listings survive wipeAll, so detach to avoid leaking the claim
+      // into a later test in this file.
+      db.prepare("UPDATE listings SET vendor_account_id = NULL WHERE id = ?").run(curatedId);
+    }
   });
 });

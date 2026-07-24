@@ -152,12 +152,13 @@ async function handleList(ctx: Ctx): Promise<Response> {
     const placeholders = ids.map(() => "?").join(",");
     const rows = db
       .prepare(
-        `SELECT id, vendor_account_id, hero_image_url FROM listings WHERE id IN (${placeholders})`,
+        `SELECT id, vendor_account_id, hero_image_url, source FROM listings WHERE id IN (${placeholders})`,
       )
       .all(...ids) as Array<{
       id: string;
       vendor_account_id: number | null;
       hero_image_url: string | null;
+      source: string;
     }>;
     const byListing = new Map(rows.map((r) => [r.id, r] as const));
     for (const b of allBase) {
@@ -165,6 +166,15 @@ async function handleList(ctx: Ctx): Promise<Response> {
       if (row === undefined) continue;
       b.vendor_account_id = row.vendor_account_id;
       b.hero_image_url = row.hero_image_url;
+      // A vendor-owned listing IS claimed — surface it as such even on a
+      // curated/community entry whose stored origin `source` predates the
+      // claim, so the Verified badge + "Verified only" filter see the real
+      // ownership. Derive from the DB row every request (never from the possibly
+      // shared, possibly stale `b.source`).
+      b.source =
+        row.vendor_account_id !== null
+          ? "claimed"
+          : (row.source as "curated" | "community" | "claimed");
     }
   }
 
@@ -319,6 +329,11 @@ function buildSupplierDetail(
   if (listing) {
     base.vendor_account_id = listing.vendor_account_id;
     base.hero_image_url = listing.hero_image_url;
+    // Vendor-owned ⇒ claimed, so the Verified badge shows even on a curated
+    // slug the vendor took over (resolveSupplierBase hands back the static
+    // curated entry, whose source is hardcoded 'curated'). `base` is a copy, so
+    // this never mutates the shared DIRECTORY object.
+    if (listing.vendor_account_id !== null) base.source = "claimed";
   }
 
   // Build the gallery from LOCAL (CSP-safe) images only: the cached hero first,
