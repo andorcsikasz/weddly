@@ -39,7 +39,6 @@ function requestIconFor(title: string): typeof HandHeart {
   return HandHeart;
 }
 
-
 function formatAmount(minor: number, currency: Currency, locale: Locale): string {
   return formatMoney(minor / minorUnitFactor(currency), currency, locale);
 }

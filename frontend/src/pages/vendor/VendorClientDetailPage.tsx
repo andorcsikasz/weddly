@@ -464,10 +464,11 @@ export default function VendorClientDetailPage() {
                     </p>
                     <p className="text-xs text-ink-500 dark:text-paper-400">
                       {p.due_date
-                        ? new Date(p.due_date).toLocaleDateString(
-                            intlLocale(locale),
-                            { year: "numeric", month: "short", day: "numeric" },
-                          )
+                        ? new Date(p.due_date).toLocaleDateString(intlLocale(locale), {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
                         : t("vendor.payments.no_due_date")}
                     </p>
                   </div>

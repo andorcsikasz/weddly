@@ -74,9 +74,7 @@ export default function PlannerSettingsSubscription() {
   const readOnly = b !== undefined && b !== null && !b.entitled;
 
   const fmtDate = (ms: number) =>
-    new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: "long" }).format(
-      new Date(ms),
-    );
+    new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: "long" }).format(new Date(ms));
   // One factual line about where the plan stands: founding window end, trial
   // days left, or the next paid renewal date.
   let stateDetail: string | null = null;

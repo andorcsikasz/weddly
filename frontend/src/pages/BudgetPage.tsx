@@ -69,7 +69,14 @@ import {
   coupleApi,
   coupleSupplierApi,
 } from "../lib/endpoints";
-import { currencySymbol, formatDateMs, formatMoney, formatNumber, intlLocale, todayIso } from "../lib/format";
+import {
+  currencySymbol,
+  formatDateMs,
+  formatMoney,
+  formatNumber,
+  intlLocale,
+  todayIso,
+} from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 import { publish, subscribe } from "../lib/sync";

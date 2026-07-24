@@ -130,7 +130,8 @@ async function warnDriftDev() {
   for (const loc of ["hu", "es"] as const) {
     const tree = await loadTree(loc);
     const keys = new Set(flatten(tree as unknown as Record<string, unknown>));
-    for (const k of keys) if (!enKeys.has(k)) console.warn(`[i18n] missing in en (present in ${loc}):`, k);
+    for (const k of keys)
+      if (!enKeys.has(k)) console.warn(`[i18n] missing in en (present in ${loc}):`, k);
     for (const k of enKeys) if (!keys.has(k)) console.warn(`[i18n] missing in ${loc}:`, k);
   }
 }

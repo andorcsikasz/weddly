@@ -746,9 +746,7 @@ function TriagePanel({
                   <span>
                     {t("admin.feedback_col_monthly")}: {(() => {
                       const symbol = entry.locale === "en" ? "€" : "Ft";
-                      const amt = (entry.monthly_value_ft ?? 0).toLocaleString(
-                        intlLocale(locale),
-                      );
+                      const amt = (entry.monthly_value_ft ?? 0).toLocaleString(intlLocale(locale));
                       return entry.locale === "en" ? `${symbol}${amt}` : `${amt} ${symbol}`;
                     })()}
                   </span>

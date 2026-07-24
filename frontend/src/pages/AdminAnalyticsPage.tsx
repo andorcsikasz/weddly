@@ -1192,10 +1192,10 @@ function TrafficSection({
   const t28 = d.totals_28d;
   const dailyMax = Math.max(0, ...d.active_users_daily.map((p) => p.count));
   const hasTraffic = t28.active_users > 0 || t7.active_users > 0;
-  const generatedLabel = new Date(d.generated_at).toLocaleTimeString(
-    intlLocale(locale),
-    { hour: "2-digit", minute: "2-digit" },
-  );
+  const generatedLabel = new Date(d.generated_at).toLocaleTimeString(intlLocale(locale), {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   const subtitle = t("admin.analytics_traffic_source", {
     property: d.property_id,
     time: generatedLabel,

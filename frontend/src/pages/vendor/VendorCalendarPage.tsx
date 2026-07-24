@@ -256,9 +256,7 @@ function YearView({
 }) {
   const { locale } = useT();
   const monthName = (m: number) =>
-    new Intl.DateTimeFormat(intlLocale(locale), { month: "long" }).format(
-      new Date(year, m, 1),
-    );
+    new Intl.DateTimeFormat(intlLocale(locale), { month: "long" }).format(new Date(year, m, 1));
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {Array.from({ length: 12 }, (_, m) => {

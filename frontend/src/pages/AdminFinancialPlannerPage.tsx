@@ -999,8 +999,7 @@ function BillingLaunchCard({
             {t("admin.fin_enforce_progress_label")}
           </span>
           <span className="tabular-nums font-semibold text-neutral-900 dark:text-paper-50">
-            {new Intl.NumberFormat(intlLocale(locale)).format(total)} /{" "}
-            {FOUNDING_CAP}
+            {new Intl.NumberFormat(intlLocale(locale)).format(total)} / {FOUNDING_CAP}
           </span>
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800">
