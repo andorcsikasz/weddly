@@ -4931,6 +4931,12 @@ export interface LocaleMessages {
       next_steps_review_body: string;
       category_label: string;
       category_placeholder: string;
+      /** Searchable category picker: "change" affordance on the chosen pill,
+       *  search input placeholder, empty-result line, common-categories label. */
+      category_change: string;
+      category_search_placeholder: string;
+      category_no_match: string;
+      category_common_label: string;
       name_label: string;
       name_placeholder: string;
       city_label: string;

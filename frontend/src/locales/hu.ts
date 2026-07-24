@@ -1864,7 +1864,7 @@ const hu: LocaleMessages = {
     contact_subject: "Szolgáltatói várólista",
     recommend_title: "Ismersz jó szolgáltatót?",
     recommend_body:
-      "Van olyan szolgáltató, akit jó szívvel ajánlanál? Regisztráld pár kattintással (csak az e-mailed kell megerősítened, fiók nem szükséges), vagy oszd meg ezt a linket, hogy még többekhez eljusson.",
+      "Van olyan szolgáltató, akit jó szívvel ajánlanál? Regisztráld pár kattintással, vagy oszd meg ezt a linket, hogy még többekhez eljusson.",
     recommend_register_cta: "Szolgáltatót regisztrálok",
     recommend_share_cta: "Megosztom",
     recommend_share_message:
@@ -4394,8 +4394,12 @@ const hu: LocaleMessages = {
         "Csapatunk átnézi a bejegyzést, és hamarosan megjelenik a párok listáján.",
       category_label: "Kategória",
       category_placeholder: "Válassz kategóriát",
+      category_change: "Módosítás",
+      category_search_placeholder: "Keress kategóriát (pl. fotó, helyszín)…",
+      category_no_match: "Nincs találat erre.",
+      category_common_label: "Gyakori kategóriák",
       name_label: "Név",
-      name_placeholder: "Anna Fotó",
+      name_placeholder: "pl. Anna Fotó",
       city_label: "Város",
       city_placeholder: "Budapest",
       address_label: "Pontos cím vagy Google Maps link",

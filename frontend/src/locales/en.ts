@@ -1841,7 +1841,7 @@ const en: LocaleMessages = {
     contact_subject: "Vendor waitlist",
     recommend_title: "Know a great supplier?",
     recommend_body:
-      "Is there a supplier you'd wholeheartedly recommend? Register them in a couple of clicks (just confirm your email, no account needed) or share this link so it reaches more people.",
+      "Is there a supplier you'd wholeheartedly recommend? Register them in a couple of clicks or share this link so it reaches more people.",
     recommend_register_cta: "Register a supplier",
     recommend_share_cta: "Share",
     recommend_share_message:
@@ -4346,8 +4346,12 @@ const en: LocaleMessages = {
         "Our team will review the entry and it'll appear in the couples' directory shortly.",
       category_label: "Category",
       category_placeholder: "Pick a category",
+      category_change: "Change",
+      category_search_placeholder: "Search categories (e.g. photo, venue)…",
+      category_no_match: "No category matches that.",
+      category_common_label: "Common categories",
       name_label: "Name",
-      name_placeholder: "Anna's Photography",
+      name_placeholder: "e.g. Anna's Photography",
       city_label: "City",
       city_placeholder: "Budapest",
       address_label: "Street address or Google Maps link",
