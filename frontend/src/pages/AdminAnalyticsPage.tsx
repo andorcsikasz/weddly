@@ -1706,9 +1706,11 @@ function AcqBarList({
 }
 
 // Choropleth fill ramp — token classes only (no raw hex, JIT-safe literals).
-// Index 0 = no signups (faint base); 1..5 = increasing signup density.
+// Index 0 = no signups (almost-white base, barely above the page so empty
+// countries read as "nothing here"); 1..5 = increasing signup density. The
+// legend renders .slice(1), so index 0 is the map-only zero state.
 const ACQ_CHORO_FILL = [
-  "fill-umber-100 dark:fill-umber-800",
+  "fill-umber-50 dark:fill-umber-900",
   "fill-umber-200 dark:fill-umber-600",
   "fill-umber-300 dark:fill-umber-500",
   "fill-umber-500 dark:fill-umber-400",
