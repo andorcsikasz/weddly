@@ -577,6 +577,8 @@ const hu: LocaleMessages = {
     price_band_level_5_name: "Ultra-luxus",
     capacity_range_label: "Vendégkapacitás",
     capacity_seating_label: "Befogadóképesség",
+    languages_label: "Beszélt nyelvek",
+    languages_hint: "Milyen nyelveken tudod magabiztosan levezetni az esküvőt?",
     capacity_service_label: "Kiszolgálható vendégszám",
     capacity_min_label: "Min. vendég",
     capacity_max_label: "Max. vendég",

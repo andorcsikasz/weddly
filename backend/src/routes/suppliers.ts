@@ -15,7 +15,7 @@ import type {
   SupplierDetail,
   SupplierEventInput,
 } from "@shared/suppliers";
-import { SUPPLIER_GROUPS } from "@shared/suppliers";
+import { parseSpokenLanguages, SUPPLIER_GROUPS } from "@shared/suppliers";
 import {
   listActiveCommunitySuppliers,
   toDirectorySupplierBase,
@@ -322,13 +322,22 @@ function buildSupplierDetail(
   // uses). Curated entries default to null and only flip when the vendor
   // claims the listing.
   const listing = db
-    .prepare("SELECT vendor_account_id, hero_image_url FROM listings WHERE id = ?")
+    .prepare(
+      "SELECT vendor_account_id, hero_image_url, spoken_languages FROM listings WHERE id = ?",
+    )
     .get(supplierId) as
-    | { vendor_account_id: number | null; hero_image_url: string | null }
+    | {
+        vendor_account_id: number | null;
+        hero_image_url: string | null;
+        spoken_languages: string | null;
+      }
     | undefined;
   if (listing) {
     base.vendor_account_id = listing.vendor_account_id;
     base.hero_image_url = listing.hero_image_url;
+    // Always reflect the listing's current languages, even on a claimed curated
+    // slug whose static base carried none.
+    base.spoken_languages = parseSpokenLanguages(listing.spoken_languages);
     // Vendor-owned ⇒ claimed, so the Verified badge shows even on a curated
     // slug the vendor took over (resolveSupplierBase hands back the static
     // curated entry, whose source is hardcoded 'curated'). `base` is a copy, so

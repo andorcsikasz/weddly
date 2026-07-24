@@ -23,6 +23,7 @@ import {
   type VendorListingEditInput,
   type VendorListingView,
 } from "@shared/listings";
+import { isKnownLanguage } from "@shared/suppliers";
 import {
   MAX_LISTING_PACKAGES,
   PACKAGE_DESCRIPTION_MAX,
@@ -169,6 +170,25 @@ function parseCapacity(raw: unknown, field: string): number | null | undefined {
   return raw;
 }
 
+/** Spoken languages a verbal vendor works in: an array of ISO 639-1 codes from
+ *  the controlled list. Unknown codes are rejected here; the domain layer dedups
+ *  and orders. */
+function parseSpokenLanguagesInput(raw: unknown): string[] | null | undefined {
+  if (raw === undefined) return undefined;
+  if (raw === null) return null;
+  if (!Array.isArray(raw)) {
+    throw new HttpError(400, "spoken_languages must be an array of language codes");
+  }
+  const codes: string[] = [];
+  for (const c of raw) {
+    if (typeof c !== "string") throw new HttpError(400, "spoken_languages must be code strings");
+    const code = c.trim().toLowerCase();
+    if (!isKnownLanguage(code)) throw new HttpError(400, `unknown language code: ${c}`);
+    codes.push(code);
+  }
+  return codes;
+}
+
 function buildPatch(body: VendorListingEditInput): ListingPatch {
   const patch: ListingPatch = {};
   // City is one of the few NOT-NULL columns on listings — empty / null
@@ -200,6 +220,8 @@ function buildPatch(body: VendorListingEditInput): ListingPatch {
   if (capMin !== undefined) patch.capacity_min = capMin;
   const capMax = parseCapacity(body.capacity_max, "capacity_max");
   if (capMax !== undefined) patch.capacity_max = capMax;
+  const langs = parseSpokenLanguagesInput(body.spoken_languages);
+  if (langs !== undefined) patch.spoken_languages = langs;
   if (body.hide_contact_public !== undefined) {
     if (typeof body.hide_contact_public !== "boolean") {
       throw new HttpError(400, "hide_contact_public must be a boolean");

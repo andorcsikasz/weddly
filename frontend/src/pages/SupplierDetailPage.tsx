@@ -61,6 +61,7 @@ import {
   Tent,
   Trash2,
   Users,
+  Speech,
   Wine,
 } from "lucide-react";
 import type {
@@ -72,7 +73,13 @@ import type {
   SupplierDetail,
   SupplierReview,
 } from "@shared/suppliers";
-import { COMMENT_BODY_MAX_CHARS, REVIEW_BODY_MAX_CHARS, showsCapacity } from "@shared/suppliers";
+import {
+  COMMENT_BODY_MAX_CHARS,
+  languageLabel,
+  REVIEW_BODY_MAX_CHARS,
+  showsCapacity,
+  showsSpokenLanguages,
+} from "@shared/suppliers";
 import { vendorPublicId } from "@shared/vendor_slug";
 import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
@@ -490,6 +497,16 @@ export default function SupplierDetailPage() {
                         max: detail.capacity_max,
                       })
                     : t("suppliers.capacity_max_only", { max: detail.capacity_max ?? 0 })}
+                </span>
+              )}
+              {showsSpokenLanguages(detail) && (
+                <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
+                  <Speech size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+                  {(detail.spoken_languages ?? [])
+                    .map((c) =>
+                      languageLabel(c, locale === "hu" ? "hu" : locale === "es" ? "es" : "en"),
+                    )
+                    .join(", ")}
                 </span>
               )}
               {detail.venue_style && (

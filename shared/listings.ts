@@ -71,6 +71,10 @@ export interface Listing {
    *  on curated entries we haven't placed. */
   capacity_min: number | null;
   capacity_max: number | null;
+  /** ISO 639-1 codes a verbal vendor (celebrant / MC) confidently works in.
+   *  Empty on every other category and until the vendor fills it in. See
+   *  {@link speaksLanguages}. */
+  spoken_languages: string[] | null;
   /** What kind of venue this is (castle, boat, restaurant…). Null on non-venue
    *  and unclassified listings. See {@link VenueStyle}. */
   venue_style: VenueStyle | null;
@@ -241,6 +245,8 @@ export interface VendorListingEditInput {
   price_band?: 1 | 2 | 3 | 4 | 5 | null;
   capacity_min?: number | null;
   capacity_max?: number | null;
+  /** ISO 639-1 codes for a verbal vendor; ignored for other categories. */
+  spoken_languages?: string[] | null;
   /** Toggle the public-page contact masking (address + email tail) for
    *  anonymous visitors. See {@link Listing.hide_contact_public}. */
   hide_contact_public?: boolean;

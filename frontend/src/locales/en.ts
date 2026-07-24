@@ -569,6 +569,8 @@ const en: LocaleMessages = {
     price_band_level_5_name: "Ultra-luxury",
     capacity_range_label: "Guest capacity",
     capacity_seating_label: "Guest capacity",
+    languages_label: "Spoken languages",
+    languages_hint: "Which languages can you confidently host a wedding in?",
     capacity_service_label: "Guests you can serve",
     capacity_min_label: "Min guests",
     capacity_max_label: "Max guests",

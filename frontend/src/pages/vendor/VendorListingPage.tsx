@@ -34,7 +34,12 @@ import {
   type VendorListingEditInput,
   type VendorListingView,
 } from "@shared/listings";
-import { capacityKindFor } from "@shared/suppliers";
+import {
+  capacityKindFor,
+  languageLabel,
+  SPOKEN_LANGUAGE_OPTIONS,
+  speaksLanguages,
+} from "@shared/suppliers";
 import type { VendorBilling } from "@shared/vendor_billing";
 import { listingChecklistFor } from "@shared/vendor_clients";
 import { AddressAutocomplete } from "../../components/AddressAutocomplete";
@@ -70,8 +75,11 @@ interface FormState {
   price_band: string;
   capacity_min: string;
   capacity_max: string;
+  /** ISO 639-1 codes a verbal vendor (celebrant / MC) works in. Non-string
+   *  field, handled on its own path in formToPatch (like hide_contact_public). */
+  spoken_languages: string[];
   /** Hide the address + email tail from anonymous visitors on the public page.
-   *  The one non-string field — handled on its own path in formToPatch. */
+   *  A non-string field — handled on its own path in formToPatch. */
   hide_contact_public: boolean;
 }
 
@@ -163,6 +171,7 @@ function viewToForm(view: VendorListingView): FormState {
     price_band: l.price_band == null ? "" : String(l.price_band),
     capacity_min: l.capacity_min == null ? "" : String(l.capacity_min),
     capacity_max: l.capacity_max == null ? "" : String(l.capacity_max),
+    spoken_languages: l.spoken_languages ?? [],
     hide_contact_public: l.hide_contact_public,
   };
 }
@@ -205,6 +214,10 @@ function formToPatch(form: FormState, baseline: VendorListingView): VendorListin
   }
   if (form.hide_contact_public !== baseStr.hide_contact_public) {
     patch.hide_contact_public = form.hide_contact_public;
+  }
+  const baseLangs = baseline.listing.spoken_languages ?? [];
+  if (form.spoken_languages.join(",") !== baseLangs.join(",")) {
+    patch.spoken_languages = form.spoken_languages;
   }
   return patch;
 }
@@ -468,6 +481,10 @@ export default function VendorListingPage() {
   // Category is admin-curated and not editable here, so this is stable for the
   // lifetime of the page.
   const capacityKind = capacityKindFor(view?.listing.category);
+  // Verbal vendors (celebrant / MC) advertise the languages they can confidently
+  // run a wedding in — the deciding question for those categories, hidden for
+  // everyone else.
+  const speaksLang = speaksLanguages(view?.listing.category);
 
   // Dirty = the form diverges from the last-loaded view. Saveable = passes the
   // client guard. Autosave fires only when BOTH hold; the explicit Save button
@@ -1146,6 +1163,49 @@ export default function VendorListingPage() {
                       {t("vendor_home.capacity_invalid")}
                     </p>
                   )}
+                </div>
+              )}
+
+              {speaksLang && (
+                <div id="vendor-section-languages">
+                  <span className="field-label">{t("vendor_home.languages_label")}</span>
+                  <p className="mb-2 text-xs text-ink-500 dark:text-umber-300">
+                    {t("vendor_home.languages_hint")}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {SPOKEN_LANGUAGE_OPTIONS.map((opt) => {
+                      const on = form.spoken_languages.includes(opt.code);
+                      return (
+                        <button
+                          key={opt.code}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() =>
+                            setForm((prev) =>
+                              prev
+                                ? {
+                                    ...prev,
+                                    spoken_languages: on
+                                      ? prev.spoken_languages.filter((c) => c !== opt.code)
+                                      : [...prev.spoken_languages, opt.code],
+                                  }
+                                : prev,
+                            )
+                          }
+                          className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                            on
+                              ? "border-steel-500 bg-steel-50 text-steel-800 dark:border-steel-400 dark:bg-steel-400/15 dark:text-steel-200"
+                              : "border-paper-300 text-ink-600 hover:border-ink-400 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500"
+                          }`}
+                        >
+                          {languageLabel(
+                            opt.code,
+                            locale === "hu" ? "hu" : locale === "es" ? "es" : "en",
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </fieldset>

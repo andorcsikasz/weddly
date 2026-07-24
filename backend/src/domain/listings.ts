@@ -34,6 +34,8 @@ import type { ListingPackage } from "@shared/listing_packages";
 import type { ListingVideo, VideoProvider } from "@shared/listing_videos";
 import {
   type DirectorySupplierBase,
+  formatSpokenLanguages,
+  parseSpokenLanguages,
   type SupplierCategory,
   type VenueStyle,
   VENUE_STYLES,
@@ -57,6 +59,7 @@ export interface ListingRow {
   price_band_changed_at: number | null;
   capacity_min: number | null;
   capacity_max: number | null;
+  spoken_languages: string | null;
   venue_style: string | null;
   lat: number | null;
   lng: number | null;
@@ -129,6 +132,7 @@ export function toListing(row: ListingRow): Listing {
     price_band_changed_at: row.price_band_changed_at,
     capacity_min: row.capacity_min,
     capacity_max: row.capacity_max,
+    spoken_languages: parseSpokenLanguages(row.spoken_languages),
     venue_style: toVenueStyle(row.venue_style),
     lat: row.lat,
     lng: row.lng,
@@ -204,6 +208,7 @@ function claimedListingToDirectoryBase(row: ClaimedDirectoryRow): DirectorySuppl
     address: row.address,
     capacity_min: row.capacity_min,
     capacity_max: row.capacity_max,
+    spoken_languages: parseSpokenLanguages(row.spoken_languages),
     venue_style: toVenueStyle(row.venue_style),
     lat: row.lat,
     lng: row.lng,
@@ -642,6 +647,8 @@ export interface ListingPatch {
   price_band_changed_at?: number;
   capacity_min?: number | null;
   capacity_max?: number | null;
+  /** ISO 639-1 codes for a verbal vendor; stored comma-separated. */
+  spoken_languages?: string[] | null;
   /** Vendor opt-in to hide the address + contact-email tail from anonymous
    *  visitors on the public page. Stored as 0/1; the phone is masked for
    *  anonymous visitors regardless of this flag. */
@@ -667,6 +674,12 @@ export function patchListing(id: string, patch: ListingPatch): Listing | null {
   push("price_band_changed_at", patch.price_band_changed_at);
   push("capacity_min", patch.capacity_min);
   push("capacity_max", patch.capacity_max);
+  push(
+    "spoken_languages",
+    patch.spoken_languages === undefined
+      ? undefined
+      : formatSpokenLanguages(patch.spoken_languages ?? []),
+  );
   push(
     "hide_contact_public",
     patch.hide_contact_public === undefined ? undefined : patch.hide_contact_public ? 1 : 0,

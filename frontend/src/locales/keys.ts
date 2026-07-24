@@ -765,6 +765,8 @@ export interface LocaleMessages {
     capacity_range_label: string;
     /** Capacity heading for a category that HAS a room: "Befogadóképesség". */
     capacity_seating_label: string;
+    languages_label: string;
+    languages_hint: string;
     /** Capacity heading for a category that SERVES guests rather than seating
      *  them (catering, bar, rentals): "Kiszolgálható vendégszám". */
     capacity_service_label: string;

@@ -1521,3 +1521,60 @@ describe("vendor listing — packages (/api/vendor/listing/me/packages)", () => 
     expect(forbidden.status).toBe(403);
   });
 });
+
+// Spoken languages: the deciding attribute for a verbal vendor (celebrant / MC).
+// The PATCH accepts a controlled list of ISO 639-1 codes, dedups + orders them,
+// rejects unknown codes, and the public detail surfaces them for those
+// categories.
+describe("vendor listing — spoken languages (verbal vendors)", () => {
+  test("celebrant sets, dedups, reads back + shows on detail; unknown code rejected", async () => {
+    const { listingId } = await makeApprovedListing(
+      "cel-owner@weddly.test",
+      "cel@vendor.test",
+      "Ceremony Anna",
+    );
+    const { vendorToken } = await claimListing(listingId, "cel@vendor.test", "Anna");
+
+    // Learn the post-claim listing id and make it a celebrant (category is not
+    // mutable via the API on purpose).
+    const me = await req<VendorListingView>("GET", "/api/vendor/listing/me", undefined, {
+      token: vendorToken,
+    });
+    expect(me.status).toBe(200);
+    const myId = me.data.listing.id;
+    db.prepare("UPDATE listings SET category = 'celebrant' WHERE id = ?").run(myId);
+
+    // Dupe + mixed case + out-of-order in → deduped, controlled order out.
+    const patched = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { spoken_languages: ["EN", "hu", "en", "de"] },
+      { token: vendorToken },
+    );
+    expect(patched.status).toBe(200);
+    expect(patched.data.listing.spoken_languages).toEqual(["hu", "en", "de"]);
+
+    const after = await req<VendorListingView>("GET", "/api/vendor/listing/me", undefined, {
+      token: vendorToken,
+    });
+    expect(after.data.listing.spoken_languages).toEqual(["hu", "en", "de"]);
+
+    // Unknown code rejected.
+    const bad = await req(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { spoken_languages: ["hu", "zz"] },
+      { token: vendorToken },
+    );
+    expect(bad.status).toBe(400);
+
+    // Clearing empties the list.
+    const cleared = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { spoken_languages: [] },
+      { token: vendorToken },
+    );
+    expect(cleared.data.listing.spoken_languages).toEqual([]);
+  });
+});

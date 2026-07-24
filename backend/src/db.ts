@@ -1639,6 +1639,9 @@ addColumnIfMissing("listings", "custom_category", "custom_category TEXT");
 // price_band change (see PRICE_BAND_COOLDOWN_DAYS in shared/listings.ts).
 // NULL = the published band was never changed, so the next change is free.
 addColumnIfMissing("listings", "price_band_changed_at", "price_band_changed_at INTEGER");
+// Comma-separated ISO 639-1 codes a verbal vendor (celebrant / MC) confidently
+// works in. NULL on every other category and until a vendor fills it in.
+addColumnIfMissing("listings", "spoken_languages", "spoken_languages TEXT");
 // Google Places reputation, refreshed by the operator-run
 // `scripts/google_places_sync.ts` (billed API, so nothing syncs automatically).
 // Read-only ranking input for the public browse teaser: a country's vendors

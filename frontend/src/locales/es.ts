@@ -593,6 +593,8 @@ const es: LocaleMessages = {
     price_band_level_5_name: "Ultralujo",
     capacity_range_label: "Capacidad de invitados",
     capacity_seating_label: "Capacidad de invitados",
+    languages_label: "Idiomas hablados",
+    languages_hint: "¿En qué idiomas puedes oficiar una boda con confianza?",
     capacity_service_label: "Invitados a los que puedes dar servicio",
     capacity_min_label: "Invitados mín.",
     capacity_max_label: "Invitados máx.",

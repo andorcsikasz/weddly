@@ -333,6 +333,128 @@ export function showsCapacity(s: {
   return capacityKindFor(s.category) != null && (s.capacity_max ?? 0) > 0;
 }
 
+/** Verbal vendors: booked for what they SAY, so the deciding question a couple
+ *  has is which languages they can confidently run a wedding in. A celebrant
+ *  (szertartásvezető) leads the ceremony; a master of ceremonies
+ *  (ceremóniamester) hosts the reception. Both live here; any future spoken/host
+ *  role (a toastmaster, a bilingual officiant) joins by flipping its flag.
+ *
+ *  Exhaustive over `SupplierCategory` on purpose, same as the capacity rule:
+ *  adding a category without deciding this is a compile error. A photographer
+ *  has no "spoken languages" to advertise, so asking is noise on the form. */
+export const SUPPLIER_SPEAKS_LANGUAGES: Record<SupplierCategory, boolean> = {
+  wedding_planner: false,
+  rental_equipment: false,
+  venue: false,
+  accommodation: false,
+  tent_pavilion: false,
+  catering: false,
+  cake_dessert: false,
+  bar_drinks: false,
+  food_trucks: false,
+  wedding_decor: false,
+  florist: false,
+  lighting: false,
+  photography: false,
+  videography: false,
+  content_creator: false,
+  photo_booth: false,
+  dj: false,
+  live_music: false,
+  entertainment: false,
+  mc_celebrant: true,
+  celebrant: true,
+  sound_tech: false,
+  bridal_boutique: false,
+  suit_formal: false,
+  hair_makeup: false,
+  nails: false,
+  wedding_jewelry: false,
+  stationery: false,
+  invitation_graphics: false,
+  transport: false,
+  other: false,
+};
+
+/** Whether this category is a verbal/host vendor whose spoken languages matter.
+ *  Tolerant of the untyped slugs that reach the UI (listing rows, admin-editable
+ *  taxonomy). Unknown slug → false, so a new admin-added category starts without
+ *  the field until it earns one here. */
+export function speaksLanguages(category: string | null | undefined): boolean {
+  if (!category) return false;
+  return SUPPLIER_SPEAKS_LANGUAGES[category as SupplierCategory] ?? false;
+}
+
+/** Should a public surface print this listing's spoken languages? Both halves in
+ *  one place (mirrors showsCapacity): the category has to be one where languages
+ *  matter, and the listing has to have filled them in. */
+export function showsSpokenLanguages(s: {
+  category?: string | null;
+  spoken_languages?: readonly string[] | null;
+}): boolean {
+  return speaksLanguages(s.category) && (s.spoken_languages?.length ?? 0) > 0;
+}
+
+/** Controlled list of languages a verbal vendor can offer, ISO 639-1 codes with
+ *  per-locale display names. Kept here rather than the i18n tree so the list is
+ *  one translatable source shared by the editor, the public page and any
+ *  backend surface. Ordered by rough relevance to the HU + neighbouring markets,
+ *  then the big Western-European languages. */
+export interface LanguageOption {
+  code: string;
+  hu: string;
+  en: string;
+  es: string;
+}
+export const SPOKEN_LANGUAGE_OPTIONS: readonly LanguageOption[] = [
+  { code: "hu", hu: "Magyar", en: "Hungarian", es: "Húngaro" },
+  { code: "en", hu: "Angol", en: "English", es: "Inglés" },
+  { code: "de", hu: "Német", en: "German", es: "Alemán" },
+  { code: "ro", hu: "Román", en: "Romanian", es: "Rumano" },
+  { code: "sk", hu: "Szlovák", en: "Slovak", es: "Eslovaco" },
+  { code: "sr", hu: "Szerb", en: "Serbian", es: "Serbio" },
+  { code: "hr", hu: "Horvát", en: "Croatian", es: "Croata" },
+  { code: "uk", hu: "Ukrán", en: "Ukrainian", es: "Ucraniano" },
+  { code: "ru", hu: "Orosz", en: "Russian", es: "Ruso" },
+  { code: "fr", hu: "Francia", en: "French", es: "Francés" },
+  { code: "it", hu: "Olasz", en: "Italian", es: "Italiano" },
+  { code: "es", hu: "Spanyol", en: "Spanish", es: "Español" },
+  { code: "he", hu: "Héber", en: "Hebrew", es: "Hebreo" },
+];
+
+const LANGUAGE_BY_CODE = new Map(SPOKEN_LANGUAGE_OPTIONS.map((l) => [l.code, l]));
+
+/** ISO code → display name in the given locale; unknown code falls back to its
+ *  uppercased code so a legacy value never renders blank. */
+export function languageLabel(code: string, locale: "hu" | "en" | "es"): string {
+  const opt = LANGUAGE_BY_CODE.get(code);
+  return opt ? opt[locale] : code.toUpperCase();
+}
+
+export function isKnownLanguage(code: string): boolean {
+  return LANGUAGE_BY_CODE.has(code);
+}
+
+/** Parse the stored `spoken_languages` string (comma-separated ISO codes) into a
+ *  clean, de-duplicated, known-only list preserving the controlled order. */
+export function parseSpokenLanguages(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  const set = new Set(
+    raw
+      .split(",")
+      .map((c) => c.trim().toLowerCase())
+      .filter((c) => isKnownLanguage(c)),
+  );
+  return SPOKEN_LANGUAGE_OPTIONS.filter((l) => set.has(l.code)).map((l) => l.code);
+}
+
+/** Serialise a list of language codes back to the stored form, or null when
+ *  empty so the column stays clean. */
+export function formatSpokenLanguages(codes: readonly string[]): string | null {
+  const clean = parseSpokenLanguages(codes.join(","));
+  return clean.length > 0 ? clean.join(",") : null;
+}
+
 /** Shape of a directory entry without the per-request overlay (votes). Used
  *  by the static curated list in `suppliers_data.ts` and by community mappers. */
 export interface DirectorySupplierBase {
@@ -361,6 +483,10 @@ export interface DirectorySupplierBase {
   /** Approximate seated-dinner capacity range. Null = not published. */
   capacity_min: number | null;
   capacity_max: number | null;
+  /** ISO 639-1 codes a verbal vendor (celebrant / MC) confidently works in.
+   *  Absent/empty on every other category and on curated/community entries.
+   *  See {@link showsSpokenLanguages}. */
+  spoken_languages?: string[] | null;
   /** What kind of venue this is (castle, boat, restaurant…). Refines the
    *  always-"venue" category. Null on non-venue listings and on venues we
    *  haven't classified yet. See {@link VenueStyle}. */
