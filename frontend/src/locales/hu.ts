@@ -1864,7 +1864,8 @@ const hu: LocaleMessages = {
     contact_subject: "Szolgáltatói várólista",
     recommend_title: "Ismersz jó szolgáltatót?",
     recommend_body:
-      "Van olyan szolgáltató, akit jó szívvel ajánlanál? Oszd meg ezt a linket, hogy még többekhez eljusson, és több pár rátaláljon.",
+      "Van olyan szolgáltató, akit jó szívvel ajánlanál? Regisztráld pár kattintással (csak az e-mailed kell megerősítened, fiók nem szükséges), vagy oszd meg ezt a linket, hogy még többekhez eljusson.",
+    recommend_register_cta: "Szolgáltatót regisztrálok",
     recommend_share_cta: "Megosztom",
     recommend_share_message:
       "Van olyan szolgáltató, akit jó szívvel ajánlanál? Itt megteheted, hogy még többekhez eljusson:",
@@ -4425,6 +4426,11 @@ const hu: LocaleMessages = {
       err_too_long: "Túl hosszú.",
       err_rate_limited: "Sok küldés érkezett, próbáld pár perc múlva.",
       err_duplicate_email: "Ezzel az e-mail címmel már regisztráltak, és várólistára kerültek.",
+      err_already_listed: "{name} már fent van a Weddly-n, nem kell újra hozzáadni.",
+      visitor_verify_title: "Előbb erősítsd meg az e-mailed",
+      visitor_verify_body:
+        "A szolgáltató regisztrálásához igazold magad Google-lal. Fiók nem kell, eszközönként csak egyszer.",
+      visitor_reverify: "A folytatáshoz erősítsd meg újra az e-mailed.",
       magic_title: "Van Google Maps linked?",
       magic_help: "Illeszd be, kibontjuk a címet, nevet, weboldalt és telefont helyetted.",
       magic_placeholder: "https://maps.app.goo.gl/…",

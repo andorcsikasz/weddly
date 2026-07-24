@@ -1704,8 +1704,10 @@ export const supplierApi = {
   submitCommunity: (body: SubmitCommunitySupplierInput) =>
     apiFetch<{ supplier: DirectorySupplier }>("POST", "/api/suppliers/community", body),
   /** Best-effort resolver: paste a Google Maps URL, get back any of:
-   *  name, address, city, lat/lng, website, phone. Each field may be null. */
-  resolveMapsUrl: (url: string) =>
+   *  name, address, city, lat/lng, website, phone. Each field may be null.
+   *  Pass `visitorToken` (public /vendors register flow) to auth as a verified
+   *  visitor via X-Visitor-Token instead of a session bearer. */
+  resolveMapsUrl: (url: string, visitorToken?: string) =>
     apiFetch<{
       place: {
         name: string | null;
@@ -1716,7 +1718,14 @@ export const supplierApi = {
         website: string | null;
         phone: string | null;
       };
-    }>("POST", "/api/suppliers/resolve-maps-url", { url }),
+    }>(
+      "POST",
+      "/api/suppliers/resolve-maps-url",
+      { url },
+      {
+        headers: visitorToken ? { "X-Visitor-Token": visitorToken } : {},
+      },
+    ),
   vote: (supplierId: string, value: -1 | 0 | 1) =>
     apiFetch<{ supplier_id: string; votes_score: number; user_vote: -1 | 0 | 1 }>(
       "PUT",
@@ -1836,6 +1845,15 @@ export const visitorApi = {
       body,
       { headers: token ? { "X-Visitor-Token": token } : {} },
     );
+  },
+  /** Suggest/register a new vendor as a verified visitor (no account). Same
+   *  public community endpoint the logged-in couple uses, but authed by the
+   *  device token on X-Visitor-Token instead of a session bearer. */
+  submitSupplier: (body: SubmitCommunitySupplierInput, visitorToken?: string) => {
+    const token = visitorToken ?? getVisitorToken();
+    return apiFetch<{ supplier: DirectorySupplier }>("POST", "/api/suppliers/community", body, {
+      headers: token ? { "X-Visitor-Token": token } : {},
+    });
   },
 };
 

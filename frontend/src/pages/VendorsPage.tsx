@@ -3,11 +3,12 @@
 // (admin-accept → emailed token activation) is retired — vendors now create an
 // account directly and run the in-app onboarding wizard.
 
-import { ArrowLeft, Gem, MapPinned, PhoneCall, Share2 } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowLeft, Gem, MapPinned, PhoneCall, Share2, Store } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
+import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { VendorDemoLaunchButton } from "../components/VendorDemoLaunchButton";
 import { useToast } from "../components/ui";
 import { useT } from "../lib/i18n";
@@ -17,6 +18,10 @@ export default function VendorsPage() {
   const { t } = useT();
   const toast = useToast();
   useDocumentMeta("vendors.seo_title", "vendors.seo_description");
+  // Register-a-vendor flow for random visitors (no account): the modal handles
+  // the email-verify gate (Google one-tap → device token) and submits the
+  // community listing on X-Visitor-Token.
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   // Growth loop: anyone on the vendor site can pass a link on so their friends
   // come recommend a supplier they trust. Native share sheet on mobile, with a
@@ -105,10 +110,10 @@ export default function VendorsPage() {
         </div>
       </section>
 
-      {/* Recommend-a-supplier share prompt — a shareable link so word-of-mouth
-          recommendations reach more couples. */}
+      {/* Recommend-a-supplier prompt — two ways to help: register the vendor
+          yourself (verify email, no account needed) or pass the link on. */}
       <section className="mx-auto max-w-3xl px-4 pb-12 sm:px-6">
-        <div className="card flex flex-col items-start gap-4 !p-6 sm:flex-row sm:items-center sm:justify-between sm:!p-8">
+        <div className="card flex flex-col items-start gap-5 !p-6 sm:flex-row sm:items-center sm:justify-between sm:!p-8">
           <div className="min-w-0">
             <h2 className="font-grotesk text-xl text-ink-900 sm:text-2xl dark:text-paper-50">
               {t("vendors.recommend_title")}
@@ -117,16 +122,33 @@ export default function VendorsPage() {
               {t("vendors.recommend_body")}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={shareRecommendPrompt}
-            className="btn-primary inline-flex shrink-0 items-center gap-2 whitespace-nowrap"
-          >
-            <Share2 size={16} aria-hidden />
-            {t("vendors.recommend_share_cta")}
-          </button>
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setRegisterOpen(true)}
+              className="btn-primary inline-flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              <Store size={16} aria-hidden />
+              {t("vendors.recommend_register_cta")}
+            </button>
+            <button
+              type="button"
+              onClick={shareRecommendPrompt}
+              className="btn-outline inline-flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              <Share2 size={16} aria-hidden />
+              {t("vendors.recommend_share_cta")}
+            </button>
+          </div>
         </div>
       </section>
+
+      <SubmitSupplierModal
+        open={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        onSubmitted={() => setRegisterOpen(false)}
+        visitor
+      />
 
       {/* Back to landing */}
       <section className="mx-auto max-w-2xl px-4 pb-12 text-center sm:px-6">

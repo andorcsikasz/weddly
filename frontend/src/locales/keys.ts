@@ -2135,6 +2135,8 @@ export interface LocaleMessages {
      *  so word-of-mouth supplier recommendations reach more couples. */
     recommend_title: string;
     recommend_body: string;
+    /** CTA that opens the register-a-supplier modal (visitor mode). */
+    recommend_register_cta: string;
     recommend_share_cta: string;
     /** Text put on the clipboard / into the native share sheet (the URL is
      *  appended in code). */
@@ -4962,6 +4964,13 @@ export interface LocaleMessages {
       /** Shown when a contact email is already in the moderation queue: a
        *  re-submission is rejected with a friendly "you're on the waitlist". */
       err_duplicate_email: string;
+      /** 409 already-listed toast; receives `{name}` of the live listing. */
+      err_already_listed: string;
+      /** Visitor-mode email-verify gate (public /vendors register flow). */
+      visitor_verify_title: string;
+      visitor_verify_body: string;
+      /** Toast when a visitor's device token went stale mid-submit. */
+      visitor_reverify: string;
       /** Hero "paste a Google Maps link" affordance copy + smart-fill input. */
       magic_title: string;
       magic_help: string;

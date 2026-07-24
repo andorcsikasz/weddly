@@ -366,10 +366,18 @@ interface ResolveBody {
 }
 
 async function handleResolveMapsUrl(ctx: Ctx): Promise<Response> {
-  const userId = requireAuth(ctx);
-  // Strict per-user bucket — Nominatim's TOS asks for ≤ 1 req/sec, and even
+  // The smart-fill helper is available to a logged-in couple OR a verified
+  // visitor (no account) using the public /vendors register flow. Same
+  // principal split as the community submit below.
+  let bucketKey: string;
+  if (ctx.userId) {
+    bucketKey = `user:${requireAuth(ctx)}`;
+  } else {
+    bucketKey = `visitor:${requireVerifiedVisitor(ctx).id}`;
+  }
+  // Strict per-principal bucket — Nominatim's TOS asks for ≤ 1 req/sec, and even
   // typing speed shouldn't produce more than one resolve per ~2 seconds.
-  rateLimit(`user:${userId}`, "maps_resolve", { capacity: 5, refillRate: 1 / 2 });
+  rateLimit(bucketKey, "maps_resolve", { capacity: 5, refillRate: 1 / 2 });
 
   const body = await readJson<ResolveBody>(ctx.req);
   const raw = typeof body.url === "string" ? body.url.trim() : "";
@@ -478,7 +486,9 @@ export function registerCommunitySupplierRoutes(router: Router) {
   // account-less visitors could never reach the visitor branch.
   router.post("/api/suppliers/community", handleSubmit, false);
   router.post("/api/suppliers/community/:id/report", handleReport, true);
-  router.post("/api/suppliers/resolve-maps-url", handleResolveMapsUrl, true);
+  // Public: authed inside by bearer (couple) OR X-Visitor-Token (verified
+  // visitor), so it can't be router-gated to sessions only.
+  router.post("/api/suppliers/resolve-maps-url", handleResolveMapsUrl, false);
   // Public — the link comes from an email and the recipient is the listing's
   // contact_email, who may not be a Weddly user. Token in path acts as bearer.
   router.post("/api/suppliers/community/verify/:token", handleVerify, false);

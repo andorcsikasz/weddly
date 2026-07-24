@@ -44,8 +44,9 @@ import {
 import type { ComponentType, FormEvent, SVGProps } from "react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
-import { supplierApi } from "../lib/endpoints";
+import { getVisitorToken, setVisitorToken, supplierApi, visitorApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { GoogleSignInButton } from "./GoogleSignInButton";
 import { Button, Dialog, FieldError, HelperText, TextField, useToast } from "./ui";
 
 type Props = {
@@ -61,6 +62,11 @@ type Props = {
    *  foglaltam" card so the user doesn't have to retype what they already
    *  typed on the card. */
   initialName?: string;
+  /** Public/visitor mode: no logged-in session. The submitter first verifies
+   *  their email (Google one-tap → device token) and the submit is authed by
+   *  X-Visitor-Token instead of a bearer. Used by the /vendors recommend
+   *  section so anyone can register a vendor. Default false = couple mode. */
+  visitor?: boolean;
 };
 
 type FieldKey =
@@ -133,12 +139,17 @@ export function SubmitSupplierModal({
   onSubmitted,
   initialCategory,
   initialName,
+  visitor = false,
 }: Props) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  // Visitor mode gates the form behind an email verification. Couple mode is
+  // verified by definition (a logged-in session), so this is true immediately.
+  const [verified, setVerified] = useState<boolean>(() => !visitor || Boolean(getVisitorToken()));
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
   // Hero Maps-link input. Lives in its own state because the value is
   // ephemeral — once the resolver fires, the parsed fields land in `form` and
@@ -172,8 +183,12 @@ export function SubmitSupplierModal({
       setResolving(false);
       setResolveState({ kind: "idle" });
       lastResolvedRef.current = "";
+      // Re-check verification each open: a returning visitor with a stored
+      // device token skips the gate; couple mode is always verified.
+      setVerified(!visitor || Boolean(getVisitorToken()));
+      setVerifyError(null);
     }
-  }, [open, initialCategory, initialName]);
+  }, [open, initialCategory, initialName, visitor]);
 
   async function resolveMapsLink(raw: string) {
     const trimmed = raw.trim();
@@ -187,7 +202,10 @@ export function SubmitSupplierModal({
     setResolving(true);
     setResolveState({ kind: "idle" });
     try {
-      const { place } = await supplierApi.resolveMapsUrl(trimmed);
+      const { place } = await supplierApi.resolveMapsUrl(
+        trimmed,
+        visitor ? (getVisitorToken() ?? undefined) : undefined,
+      );
       setForm((cur) => ({
         ...cur,
         address: place.address ?? cur.address,
@@ -286,7 +304,9 @@ export function SubmitSupplierModal({
 
     setSubmitting(true);
     try {
-      const res = await supplierApi.submitCommunity(payload);
+      const res = visitor
+        ? await visitorApi.submitSupplier(payload)
+        : await supplierApi.submitCommunity(payload);
       toast.success(
         trimmedEmail
           ? `${t("suppliers.submit.next_steps_title")} ${t("suppliers.submit.next_steps_body")}`
@@ -296,12 +316,22 @@ export function SubmitSupplierModal({
       onClose();
     } catch (err) {
       if (err instanceof ApiError) {
-        const detailCode =
-          err.detail && typeof err.detail === "object"
-            ? (err.detail as { code?: string }).code
-            : undefined;
-        if (err.status === 429) {
+        const detail = err.detail && typeof err.detail === "object" ? err.detail : {};
+        const detailCode = (detail as { code?: string }).code;
+        if (visitor && err.status === 401) {
+          // Device token expired/unknown — drop it and send the visitor back
+          // through the verify gate rather than showing a raw auth error.
+          setVisitorToken(null);
+          setVerified(false);
+          setVerifyError(t("suppliers.submit.visitor_reverify"));
+        } else if (err.status === 429) {
           toast.error(t("suppliers.submit.err_rate_limited"));
+        } else if (err.status === 409 && detailCode === "already_listed") {
+          // Already curated/claimed/approved: point them at the live listing
+          // instead of queuing a duplicate.
+          const existing = (detail as { existing?: { name?: string } }).existing;
+          toast.info(t("suppliers.submit.err_already_listed", { name: existing?.name ?? "" }));
+          onClose();
         } else if (err.status === 409 && detailCode === "duplicate_email") {
           // Re-submission from a contact already in the moderation queue: tell
           // them they're already registered and waitlisted, not a hard error.
@@ -334,6 +364,46 @@ export function SubmitSupplierModal({
   }, [form.category, form.name, form.price_band]);
 
   const blurbLen = form.blurb.length;
+
+  const onVisitorVerify = async (credential: string) => {
+    setVerifyError(null);
+    try {
+      await visitorApi.googleVerify(credential, locale === "hu" ? "hu" : "en");
+      setVerified(true);
+    } catch (e) {
+      setVerifyError(e instanceof Error ? e.message : t("common.error_generic"));
+    }
+  };
+
+  // Visitor mode, not yet verified: gate the whole form behind a one-tap email
+  // verification (same device-token flow as the public review composer). Once
+  // verified we fall through to the normal form below.
+  if (visitor && !verified) {
+    return (
+      <Dialog
+        open={open}
+        role="dialog"
+        size="lg"
+        title={t("suppliers.submit.title")}
+        onClose={onClose}
+      >
+        <div className="mx-auto max-w-md py-2 text-center">
+          <h3 className="text-base font-semibold text-ink-900 dark:text-paper-50">
+            {t("suppliers.submit.visitor_verify_title")}
+          </h3>
+          <p className="mt-2 text-sm text-ink-600 dark:text-umber-200">
+            {t("suppliers.submit.visitor_verify_body")}
+          </p>
+          <div className="mt-5 flex justify-center">
+            <GoogleSignInButton mode="signin" onCredential={onVisitorVerify} />
+          </div>
+          {verifyError && (
+            <p className="mt-3 text-xs text-rose-600 dark:text-rose-300">{verifyError}</p>
+          )}
+        </div>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog

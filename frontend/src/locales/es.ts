@@ -1887,7 +1887,8 @@ const es: LocaleMessages = {
     contact_subject: "Lista de espera de proveedores",
     recommend_title: "¿Conoces a un gran proveedor?",
     recommend_body:
-      "¿Hay algún proveedor que recomendarías de todo corazón? Comparte este enlace para que llegue a más gente y más parejas lo descubran.",
+      "¿Hay algún proveedor que recomendarías de todo corazón? Regístralo en un par de clics (solo confirma tu correo, sin necesidad de cuenta) o comparte este enlace para que llegue a más gente.",
+    recommend_register_cta: "Registrar un proveedor",
     recommend_share_cta: "Compartir",
     recommend_share_message:
       "¿Hay algún proveedor que recomendarías de todo corazón? Aquí es donde puedes pasarlo para que llegue a más gente:",
@@ -4471,6 +4472,11 @@ const es: LocaleMessages = {
       err_too_long: "Demasiado largo.",
       err_rate_limited: "Demasiados envíos, inténtalo de nuevo en un minuto.",
       err_duplicate_email: "Alguien ya se registró con este correo, estás en la lista de espera.",
+      err_already_listed: "{name} ya está en Weddly, no hace falta añadirlo de nuevo.",
+      visitor_verify_title: "Primero, confirma tu correo",
+      visitor_verify_body:
+        "Verifícate con Google para registrar un proveedor. No hace falta cuenta, solo una vez por dispositivo.",
+      visitor_reverify: "Confirma tu correo de nuevo para continuar.",
       magic_title: "¿Tienes un enlace de Google Maps?",
       magic_help:
         "Pégalo y rellenaremos por ti la dirección, el nombre, el sitio web y el teléfono.",

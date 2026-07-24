@@ -1841,7 +1841,8 @@ const en: LocaleMessages = {
     contact_subject: "Vendor waitlist",
     recommend_title: "Know a great supplier?",
     recommend_body:
-      "Is there a supplier you'd wholeheartedly recommend? Share this link so it reaches more people and more couples find them.",
+      "Is there a supplier you'd wholeheartedly recommend? Register them in a couple of clicks (just confirm your email, no account needed) or share this link so it reaches more people.",
+    recommend_register_cta: "Register a supplier",
     recommend_share_cta: "Share",
     recommend_share_message:
       "Is there a supplier you'd wholeheartedly recommend? Here's where you can pass it on so it reaches more people:",
@@ -4376,6 +4377,11 @@ const en: LocaleMessages = {
       err_too_long: "Too long.",
       err_rate_limited: "Too many submissions, try again in a minute.",
       err_duplicate_email: "Someone already registered with this email, you're on the waitlist.",
+      err_already_listed: "{name} is already on Weddly, no need to add them again.",
+      visitor_verify_title: "First, confirm your email",
+      visitor_verify_body:
+        "Verify with Google to register a supplier. No account needed, just once per device.",
+      visitor_reverify: "Please confirm your email again to continue.",
       magic_title: "Got a Google Maps link?",
       magic_help: "Paste it, we'll fill in the address, name, website and phone for you.",
       magic_placeholder: "https://maps.app.goo.gl/…",

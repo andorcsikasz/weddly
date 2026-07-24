@@ -149,3 +149,27 @@ describe("verified visitor suggests a supplier", () => {
     expect(supplierByName("VVSup Priced")?.price_band).toBe(4);
   });
 });
+
+describe("resolve-maps-url is open to a verified visitor", () => {
+  // The register modal's smart-fill helper must work for a no-account visitor.
+  // We assert the AUTH branch only (a verified visitor gets past the gate),
+  // using inputs that fail validation before any external Nominatim/Google
+  // call, so the test never hits the network.
+  test("a verified visitor clears auth and is validated (400, not 401)", async () => {
+    const { deviceToken } = await verifiedVisitor("vmap1@example.com");
+    const res = await req(
+      "POST",
+      "/api/suppliers/resolve-maps-url",
+      { url: "https://example.com/not-a-map" },
+      { headers: { "X-Visitor-Token": deviceToken } },
+    );
+    expect(res.status).toBe(400);
+  });
+
+  test("no token and no session is refused (401)", async () => {
+    const res = await req("POST", "/api/suppliers/resolve-maps-url", {
+      url: "https://example.com/not-a-map",
+    });
+    expect(res.status).toBe(401);
+  });
+});
