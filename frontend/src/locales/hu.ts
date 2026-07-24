@@ -4218,7 +4218,7 @@ const hu: LocaleMessages = {
     self_pill_tooltip: "A szolgáltató maga jelentkezett be a Weddly közösségbe.",
     verified_vendor: "Hitelesített szolgáltató · saját Weddly-fiók",
     verified_filter: "Hitelesített",
-    drop_your_own: "Tipp leadása",
+    drop_your_own: "Ajánlj egy szolgáltatót",
     calc: {
       open: "Kalkulátor",
       open_aria: "Süti és ital kalkulátor megnyitása",
@@ -4382,7 +4382,7 @@ const hu: LocaleMessages = {
     view_map: "Térkép",
     map_missing_count: "{n} helyszín nincs még a térképre helyezve.",
     submit: {
-      title: "Tipp leadása",
+      title: "Ajánlj egy szolgáltatót",
       intro: "Pár adat, és más párok is könnyebben rátalálnak.",
       trust_review: "Csapatunk átnézi mielőtt megjelenik a párok listáján",
       trust_email_private: "Az e-mail címed nem lesz nyilvános",
@@ -4431,6 +4431,10 @@ const hu: LocaleMessages = {
       err_rate_limited: "Sok küldés érkezett, próbáld pár perc múlva.",
       err_duplicate_email: "Ezzel az e-mail címmel már regisztráltak, és várólistára kerültek.",
       err_already_listed: "{name} már fent van a Weddly-n, nem kell újra hozzáadni.",
+      already_title: "Lehet, hogy már fent van a Weddly-n",
+      already_body: "Köszönjük a tippet! Úgy tűnik, ez a szolgáltató már szerepel a listában, így nem kell újra hozzáadni.",
+      already_view: "Nézd meg a profilját",
+      already_checking: "Ellenőrizzük, hogy szerepel-e már…",
       visitor_verify_title: "Előbb erősítsd meg az e-mailed",
       visitor_verify_body:
         "A szolgáltató regisztrálásához igazold magad Google-lal. Fiók nem kell, eszközönként csak egyszer.",
@@ -4534,6 +4538,7 @@ const hu: LocaleMessages = {
       live_music: "Élőzene",
       entertainment: "Műsor & animáció",
       mc_celebrant: "Ceremóniamester",
+      celebrant: "Szertartásvezető",
       sound_tech: "Hangtechnika",
       bridal_boutique: "Menyasszonyi ruha",
       suit_formal: "Öltöny & alkalmi",

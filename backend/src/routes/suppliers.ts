@@ -631,8 +631,38 @@ function recordSupplierEventsSafe(
   }
 }
 
+/** GET /api/suppliers/name-check?name= — public. Live "is this supplier already
+ *  on Weddly?" lookup for the recommend form. Searches the full directory
+ *  (curated + active community + claimed vendors) by case-insensitive name
+ *  overlap and returns up to 6 lightweight matches so the submitter can jump to
+ *  the existing listing instead of filing a duplicate. */
+function handleNameCheck(ctx: Ctx): Response {
+  const q = (ctx.url.searchParams.get("name") ?? "").trim().toLowerCase();
+  if (q.length < 3) return json({ matches: [] });
+  const overrides = curatedOverrideMap();
+  const curated = overrides.size > 0 ? DIRECTORY.filter((s) => !overrides.has(s.id)) : DIRECTORY;
+  const community = listActiveCommunitySuppliers(null).map(toDirectorySupplierBase);
+  const seen = new Set<string>([...curated, ...community].map((b) => b.id));
+  const claimed = listActiveClaimedListingsForDirectory(null).filter((c) => !seen.has(c.id));
+  const all: DirectorySupplierBase[] = [...curated, ...community, ...claimed];
+  const matches = all
+    .filter((b) => {
+      const n = b.name.toLowerCase();
+      // Match either direction so "Anna" finds "Anna's Photography" and a
+      // pasted full name finds a shorter listing, but never let a 1-2 char
+      // listing name swallow every query.
+      return n.includes(q) || (n.length >= 3 && q.includes(n));
+    })
+    .slice(0, 6)
+    .map((b) => ({ id: b.id, name: b.name, city: b.city, category: b.category }));
+  return json({ matches });
+}
+
 export function registerSupplierRoutes(router: Router) {
   router.get("/api/suppliers", handleList);
+  // Registered before the `:supplier_id` route so "name-check" isn't parsed as
+  // a supplier id.
+  router.get("/api/suppliers/name-check", handleNameCheck);
   router.get("/api/suppliers/:supplier_id", handleDetail, true);
   // Public, unauthenticated vendor page payload (the shareable surface).
   router.get("/api/public/vendors/:supplier_id", handlePublicDetail);

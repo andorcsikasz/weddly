@@ -4263,7 +4263,7 @@ const es: LocaleMessages = {
     self_pill_tooltip: "El proveedor se unió a la comunidad de Weddly por su cuenta.",
     verified_vendor: "Proveedor verificado · tiene su propia cuenta de Weddly",
     verified_filter: "Verificados",
-    drop_your_own: "Añade el tuyo",
+    drop_your_own: "Recomienda un proveedor",
     calc: {
       open: "Calculadora",
       open_aria: "Abrir la calculadora de tarta y bebidas",
@@ -4428,7 +4428,7 @@ const es: LocaleMessages = {
     view_map: "Mapa",
     map_missing_count: "{n} entradas aún no están situadas en el mapa.",
     submit: {
-      title: "Añade el tuyo",
+      title: "Recomienda un proveedor",
       intro: "Con unos pocos datos basta, otras parejas los encontrarán más rápido.",
       trust_review: "Nuestro equipo lo revisa antes de que aparezca en el directorio",
       trust_email_private: "Tu correo se mantiene privado",
@@ -4477,6 +4477,10 @@ const es: LocaleMessages = {
       err_rate_limited: "Demasiados envíos, inténtalo de nuevo en un minuto.",
       err_duplicate_email: "Alguien ya se registró con este correo, estás en la lista de espera.",
       err_already_listed: "{name} ya está en Weddly, no hace falta añadirlo de nuevo.",
+      already_title: "Puede que ya esté en Weddly",
+      already_body: "¡Gracias por la recomendación! Parece que este proveedor ya está en el directorio, así que no hace falta añadirlo de nuevo.",
+      already_view: "Ver su ficha",
+      already_checking: "Comprobando si ya está en el directorio…",
       visitor_verify_title: "Primero, confirma tu correo",
       visitor_verify_body:
         "Verifícate con Google para registrar un proveedor. No hace falta cuenta, solo una vez por dispositivo.",
@@ -4580,7 +4584,8 @@ const es: LocaleMessages = {
       dj: "DJ",
       live_music: "Música en vivo",
       entertainment: "Entretenimiento",
-      mc_celebrant: "Maestro de ceremonias y oficiante",
+      mc_celebrant: "Maestro de ceremonias",
+      celebrant: "Oficiante",
       sound_tech: "Sonido y técnica audiovisual",
       bridal_boutique: "Boutique nupcial",
       suit_formal: "Trajes y ropa de etiqueta",

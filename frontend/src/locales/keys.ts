@@ -4972,6 +4972,13 @@ export interface LocaleMessages {
       err_duplicate_email: string;
       /** 409 already-listed toast; receives `{name}` of the live listing. */
       err_already_listed: string;
+      /** Live "already on Weddly?" name check on the first step: heading,
+       *  thank-you body, the link to the existing listing, and the
+       *  in-flight checking hint. */
+      already_title: string;
+      already_body: string;
+      already_view: string;
+      already_checking: string;
       /** Visitor-mode email-verify gate (public /vendors register flow). */
       visitor_verify_title: string;
       visitor_verify_body: string;
@@ -5066,6 +5073,7 @@ export interface LocaleMessages {
       live_music: string;
       entertainment: string;
       mc_celebrant: string;
+      celebrant: string;
       sound_tech: string;
       bridal_boutique: string;
       suit_formal: string;

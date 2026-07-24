@@ -4171,7 +4171,7 @@ const en: LocaleMessages = {
     self_pill_tooltip: "The supplier joined the Weddly community themselves.",
     verified_vendor: "Verified vendor · has their own Weddly account",
     verified_filter: "Verified",
-    drop_your_own: "Drop your own",
+    drop_your_own: "Recommend a supplier",
     calc: {
       open: "Calculator",
       open_aria: "Open the cake & drinks calculator",
@@ -4334,7 +4334,7 @@ const en: LocaleMessages = {
     view_map: "Map",
     map_missing_count: "{n} entries aren't placed on the map yet.",
     submit: {
-      title: "Drop your own",
+      title: "Recommend a supplier",
       intro: "A few details is all it takes, other couples will find them faster.",
       trust_review: "Our team reviews it before it shows in the directory",
       trust_email_private: "Your email stays private",
@@ -4382,6 +4382,10 @@ const en: LocaleMessages = {
       err_rate_limited: "Too many submissions, try again in a minute.",
       err_duplicate_email: "Someone already registered with this email, you're on the waitlist.",
       err_already_listed: "{name} is already on Weddly, no need to add them again.",
+      already_title: "They might already be on Weddly",
+      already_body: "Thanks for the tip! This supplier looks like it's already listed, so there's no need to add them again.",
+      already_view: "See their listing",
+      already_checking: "Checking if they're already listed…",
       visitor_verify_title: "First, confirm your email",
       visitor_verify_body:
         "Verify with Google to register a supplier. No account needed, just once per device.",
@@ -4484,7 +4488,8 @@ const en: LocaleMessages = {
       dj: "DJ",
       live_music: "Live music",
       entertainment: "Entertainment",
-      mc_celebrant: "MC & celebrant",
+      mc_celebrant: "Master of ceremonies",
+      celebrant: "Celebrant",
       sound_tech: "Sound & AV tech",
       bridal_boutique: "Bridal boutique",
       suit_formal: "Suit & formal wear",

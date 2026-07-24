@@ -54,6 +54,20 @@ export interface SubmitCommunitySupplierInput {
 }
 
 /** Admin-only view: includes hidden rows + submitter info for moderation. */
+/** One directory listing that matches a typed-in supplier name, used by the
+ *  live "are they already on Weddly?" check on the recommend form. */
+export interface SupplierNameMatch {
+  /** Directory id: curated slug, `c{N}` community, or `v{N}` claimed vendor. */
+  id: string;
+  name: string;
+  city: string;
+  category: SupplierCategory;
+}
+
+export interface SupplierNameCheckResponse {
+  matches: SupplierNameMatch[];
+}
+
 export interface CommunitySupplierAdminView {
   id: number;
   category: SupplierCategory;

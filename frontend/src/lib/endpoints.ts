@@ -114,6 +114,7 @@ import type {
   CommunitySupplierAdminView,
   CommunitySupplierReportReason,
   SubmitCommunitySupplierInput,
+  SupplierNameCheckResponse,
 } from "@shared/community_suppliers";
 import type {
   CoupleSupplier,
@@ -1713,6 +1714,13 @@ export const supplierApi = {
   },
   submitCommunity: (body: SubmitCommunitySupplierInput) =>
     apiFetch<{ supplier: DirectorySupplier }>("POST", "/api/suppliers/community", body),
+  /** Live "is this supplier already on Weddly?" lookup for the recommend form.
+   *  Public — matches the full directory by name, returns up to 6 matches. */
+  nameCheck: (name: string) =>
+    apiFetch<SupplierNameCheckResponse>(
+      "GET",
+      `/api/suppliers/name-check?name=${encodeURIComponent(name)}`,
+    ),
   /** Best-effort resolver: paste a Google Maps URL, get back any of:
    *  name, address, city, lat/lng, website, phone. Each field may be null.
    *  Pass `visitorToken` (public /vendors register flow) to auth as a verified

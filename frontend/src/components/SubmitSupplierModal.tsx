@@ -7,7 +7,11 @@
 // booking-order vocabulary stays consistent with the directory chain on
 // /app/suppliers without dumping all 29 categories on screen at once.
 
-import type { SubmitCommunitySupplierInput, PriceBand } from "@shared/community_suppliers";
+import type {
+  SubmitCommunitySupplierInput,
+  PriceBand,
+  SupplierNameMatch,
+} from "@shared/community_suppliers";
 import type { DirectorySupplier, SupplierCategory, SupplierGroup } from "@shared/suppliers";
 import { SUPPLIER_GROUPS } from "@shared/suppliers";
 import {
@@ -45,6 +49,7 @@ import {
 import type { ComponentType, FormEvent, SVGProps } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
+import { fireConfetti } from "../lib/confetti";
 import { getVisitorToken, setVisitorToken, supplierApi, visitorApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { GoogleSignInButton } from "./GoogleSignInButton";
@@ -85,13 +90,18 @@ type Errors = Partial<Record<FieldKey, string>>;
 
 const PRICE_BANDS: PriceBand[] = [1, 2, 3, 4, 5];
 
+/** Uber-style monochrome CTA — black in light mode, white in dark. Overrides
+ *  btn-primary's blush accent so the recommend form stays black-and-white. */
+const BLACK_BTN =
+  "!bg-ink-900 !text-paper-50 !border-ink-900 hover:!bg-ink-800 dark:!bg-paper-50 dark:!text-ink-900 dark:!border-paper-50 dark:hover:!bg-paper-200";
+
 /** The submit flow is a short 4-step wizard (Who → Where → Reach → Pitch) so
  *  each screen shows 2-4 fields instead of one long scroll. `fields` is the
  *  subset of validated keys the step gates Next on; the required ones (name,
  *  category, price_band) sit on the first and last steps. */
 const WIZARD_STEPS: ReadonlyArray<{ titleKey: string; fields: FieldKey[] }> = [
   { titleKey: "suppliers.submit.section_who", fields: ["name", "category"] },
-  { titleKey: "suppliers.submit.section_where", fields: ["city", "address"] },
+  { titleKey: "suppliers.submit.section_where", fields: ["address"] },
   { titleKey: "suppliers.submit.section_contact", fields: ["website", "contact_email"] },
   { titleKey: "suppliers.submit.section_pitch", fields: ["blurb", "price_band"] },
 ];
@@ -182,6 +192,9 @@ export function SubmitSupplierModal({
   const [verified, setVerified] = useState<boolean>(() => !visitor || Boolean(getVisitorToken()));
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
+  // Live "already on Weddly?" check keyed to the name field, rendered on step 0.
+  const [nameMatches, setNameMatches] = useState<SupplierNameMatch[]>([]);
+  const [checkingName, setCheckingName] = useState(false);
 
   // Hero Maps-link input. Lives in its own state because the value is
   // ephemeral — once the resolver fires, the parsed fields land in `form` and
@@ -220,8 +233,31 @@ export function SubmitSupplierModal({
       setVerified(!visitor || Boolean(getVisitorToken()));
       setVerifyError(null);
       setStep(0);
+      setNameMatches([]);
+      setCheckingName(false);
     }
   }, [open, initialCategory, initialName, visitor]);
+
+  // Debounced "is this supplier already listed?" lookup — runs whenever the
+  // name changes (≥3 chars) and drives the dedupe panel on step 0, so the
+  // submitter can jump to an existing listing instead of filing a duplicate.
+  useEffect(() => {
+    const q = form.name.trim();
+    if (q.length < 3) {
+      setNameMatches([]);
+      setCheckingName(false);
+      return;
+    }
+    setCheckingName(true);
+    const handle = window.setTimeout(() => {
+      supplierApi
+        .nameCheck(q)
+        .then((res) => setNameMatches(res.matches))
+        .catch(() => setNameMatches([]))
+        .finally(() => setCheckingName(false));
+    }, 400);
+    return () => window.clearTimeout(handle);
+  }, [form.name]);
 
   async function resolveMapsLink(raw: string) {
     const trimmed = raw.trim();
@@ -300,9 +336,8 @@ export function SubmitSupplierModal({
     if (website && !isValidUrl(website)) next.website = t("suppliers.submit.err_invalid_url");
 
     const email = form.contact_email.trim();
-    if (email && !isLikelyEmail(email)) {
-      next.contact_email = t("suppliers.submit.err_invalid_email");
-    }
+    if (!email) next.contact_email = required;
+    else if (!isLikelyEmail(email)) next.contact_email = t("suppliers.submit.err_invalid_email");
 
     if (form.blurb.trim().length > 500) next.blurb = tooLong;
 
@@ -345,6 +380,8 @@ export function SubmitSupplierModal({
       const res = visitor
         ? await visitorApi.submitSupplier(payload)
         : await supplierApi.submitCommunity(payload);
+      // End-of-flow celebration.
+      fireConfetti();
       toast.success(
         trimmedEmail
           ? `${t("suppliers.submit.next_steps_title")} ${t("suppliers.submit.next_steps_body")}`
@@ -479,7 +516,13 @@ export function SubmitSupplierModal({
               {step === 0 ? t("suppliers.submit.cancel") : t("common.back")}
             </Button>
             {step < WIZARD_STEPS.length - 1 ? (
-              <Button variant="primary" type="button" onClick={goNext} disabled={submitting}>
+              <Button
+                variant="primary"
+                type="button"
+                onClick={goNext}
+                disabled={submitting}
+                className={BLACK_BTN}
+              >
                 {t("common.next")}
               </Button>
             ) : (
@@ -489,6 +532,7 @@ export function SubmitSupplierModal({
                 form="submit-supplier-form"
                 loading={submitting}
                 loadingLabel={t("suppliers.submit.submitting")}
+                className={BLACK_BTN}
               >
                 {t("suppliers.submit.submit_button")}
               </Button>
@@ -517,6 +561,51 @@ export function SubmitSupplierModal({
                 errorText={errors.name}
                 placeholder={t("suppliers.submit.name_placeholder")}
               />
+              {/* Live "already on Weddly?" dedupe — if the typed name matches a
+                  live listing, thank the submitter and link them to it instead
+                  of queuing a duplicate. */}
+              {(checkingName || nameMatches.length > 0) && (
+                <div className="rounded-xl border border-ink-200 bg-ink-50 p-3 dark:border-umber-700 dark:bg-umber-800/50">
+                  {nameMatches.length === 0 ? (
+                    <p className="text-xs text-ink-500 dark:text-umber-300">
+                      {t("suppliers.submit.already_checking")}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-xs font-semibold text-ink-900 dark:text-paper-50">
+                        {t("suppliers.submit.already_title")}
+                      </p>
+                      <p className="mt-1 text-[11px] text-ink-600 dark:text-umber-200">
+                        {t("suppliers.submit.already_body")}
+                      </p>
+                      <ul className="mt-2 space-y-1.5">
+                        {nameMatches.map((m) => (
+                          <li key={m.id}>
+                            <a
+                              href={`${visitor ? "/vendors/" : "/app/suppliers/"}${encodeURIComponent(m.id)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between gap-2 rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm transition hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:hover:border-paper-50"
+                            >
+                              <span className="min-w-0 flex-1 truncate font-medium text-ink-900 dark:text-paper-50">
+                                {m.name}
+                                {m.city && (
+                                  <span className="ml-1.5 text-xs font-normal text-ink-500 dark:text-umber-300">
+                                    {m.city}
+                                  </span>
+                                )}
+                              </span>
+                              <span className="shrink-0 text-xs font-medium text-ink-900 underline underline-offset-2 dark:text-paper-50">
+                                {t("suppliers.submit.already_view")}
+                              </span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              )}
               {/* When the launcher pre-pinned a category (the "Már foglaltam"
                   card on /app/suppliers), skip the picker — a read-only pill
                   keeps the form context obvious. */}
@@ -557,36 +646,28 @@ export function SubmitSupplierModal({
                 compact
                 t={t}
               />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <TextField
-                  id="submit-supplier-city"
-                  label={t("suppliers.submit.city_label")}
-                  maxLength={80}
-                  value={form.city}
-                  onChange={(e) => setField("city", e.target.value)}
-                  errorText={errors.city}
-                  placeholder={t("suppliers.submit.city_placeholder")}
-                />
-                <TextField
-                  id="submit-supplier-address"
-                  label={t("suppliers.submit.address_label")}
-                  maxLength={600}
-                  value={form.address}
-                  onChange={(e) => setField("address", e.target.value)}
-                  errorText={errors.address}
-                  placeholder={t("suppliers.submit.address_placeholder")}
-                />
-              </div>
+              <TextField
+                id="submit-supplier-address"
+                label={t("suppliers.submit.address_label")}
+                maxLength={600}
+                value={form.address}
+                onChange={(e) => setField("address", e.target.value)}
+                errorText={errors.address}
+                placeholder={t("suppliers.submit.address_placeholder")}
+              />
             </div>
           )}
 
-          {/* STEP 2 — how to REACH them: all optional. */}
+          {/* STEP 2 — how to REACH them: the vendor's own contact. Email is
+              required (it's how the listing is confirmed); phone + website
+              stay optional. */}
           {step === 2 && (
             <div className="mt-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField
                   id="submit-supplier-email"
                   label={t("suppliers.submit.email_label")}
+                  required
                   type="email"
                   inputMode="email"
                   value={form.contact_email}
@@ -673,12 +754,12 @@ export function SubmitSupplierModal({
 
               {/* Self-vs-recommendation switch — a final attestation next to
                   submit. Drives the trust pill on the public card. */}
-              <label className="flex cursor-pointer items-start gap-2 rounded-md border border-paper-200 bg-paper-50 p-3 text-sm text-ink-700 transition-colors hover:border-blush-300 hover:bg-blush-50 dark:border-umber-700 dark:bg-umber-800/40 dark:text-paper-100 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/10">
+              <label className="flex cursor-pointer items-start gap-2 rounded-md border border-paper-200 bg-paper-50 p-3 text-sm text-ink-700 transition-colors hover:border-ink-400 hover:bg-ink-50 dark:border-umber-700 dark:bg-umber-800/40 dark:text-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800/60">
                 <input
                   type="checkbox"
                   checked={form.is_self}
                   onChange={(e) => setField("is_self", e.target.checked)}
-                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-paper-300 text-blush-600 focus:ring-blush-500 dark:border-umber-600"
+                  className="mt-0.5 h-4 w-4 cursor-pointer rounded border-paper-300 text-ink-900 focus:ring-ink-500 dark:border-umber-600"
                 />
                 <span className="flex-1">
                   <span className="block font-medium text-ink-800 dark:text-paper-50">
@@ -779,10 +860,10 @@ function MapsLinkHero({
     <div
       className={`${compact ? "rounded-xl p-2.5" : "rounded-2xl p-4"} border transition-colors ${
         ok
-          ? "border-sage-300 bg-sage-50/60 dark:border-sage-400/40 dark:bg-sage-400/15"
+          ? "border-ink-300 bg-ink-50 dark:border-umber-600 dark:bg-umber-800"
           : error
-            ? "border-blush-300 bg-blush-50/40 dark:border-blush-400/40 dark:bg-blush-400/15"
-            : "border-blush-200 bg-gradient-to-br from-blush-50 via-paper-50 to-sage-50 dark:border-blush-400/40 dark:from-blush-400/10 dark:via-umber-800 dark:to-sage-400/10"
+            ? "border-ink-300 bg-paper-100 dark:border-umber-600 dark:bg-umber-800"
+            : "border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800/60"
       }`}
     >
       <div className={`flex items-start ${compact ? "gap-2" : "gap-3"}`}>
@@ -790,7 +871,7 @@ function MapsLinkHero({
           aria-hidden
           className={`mt-0.5 inline-flex shrink-0 items-center justify-center rounded-full ${
             compact ? "h-5 w-5" : "h-7 w-7"
-          } ${ok ? "bg-sage-500 text-white" : "bg-blush-600 text-white"}`}
+          } bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900`}
         >
           {ok ? <Check size={compact ? 11 : 14} /> : <Sparkles size={compact ? 11 : 14} />}
         </span>
@@ -834,8 +915,9 @@ function MapsLinkHero({
             />
             <Button
               type="button"
-              variant="accent"
+              variant="primary"
               size="sm"
+              className={BLACK_BTN}
               onClick={onResolve}
               loading={resolving}
               disabled={!value.trim() || resolving}
@@ -849,11 +931,11 @@ function MapsLinkHero({
             aria-live="polite"
             className={`mt-2 text-[11px] ${
               ok
-                ? "text-sage-700 dark:text-sage-300"
+                ? "text-ink-900 dark:text-paper-50"
                 : partial
                   ? "text-ink-500 dark:text-umber-300"
                   : error
-                    ? "text-blush-700 dark:text-blush-300"
+                    ? "text-ink-700 dark:text-paper-100"
                     : "text-ink-400 dark:text-umber-300"
             }`}
           >
@@ -870,23 +952,9 @@ function MapsLinkHero({
   );
 }
 
-/** The most-booked categories, surfaced first so the common case is one tap
- *  and the other 21 stay behind the search box. */
-const COMMON_CATEGORIES: SupplierCategory[] = [
-  "venue",
-  "photography",
-  "catering",
-  "dj",
-  "florist",
-  "videography",
-  "cake_dessert",
-  "hair_makeup",
-];
-
-/** Searchable category field. Empty → the common categories as quick-pick
- *  chips; typing filters all 29 by their translated name ("photo" → Photography).
- *  Once chosen, collapses to a single selected pill with a "change" affordance,
- *  so the picker never dominates the step. Replaces the old all-at-once grid. */
+/** Searchable category field. Type to filter every category by its translated
+ *  name ("photo" → Photography). Once chosen, collapses to a single selected
+ *  pill with a "change" affordance, so the picker never dominates the step. */
 function CategorySearchPicker({
   value,
   onPick,
@@ -929,7 +997,7 @@ function CategorySearchPicker({
       <div>
         <span className="field-label">
           {t("suppliers.submit.category_label")}
-          <span aria-hidden="true" className="ml-0.5 text-blush-700">
+          <span aria-hidden="true" className="ml-0.5 text-ink-900 dark:text-paper-50">
             *
           </span>
         </span>
@@ -962,7 +1030,7 @@ function CategorySearchPicker({
     <div>
       <label htmlFor="submit-supplier-category-search" className="field-label">
         {t("suppliers.submit.category_label")}
-        <span aria-hidden="true" className="ml-0.5 text-blush-700">
+        <span aria-hidden="true" className="ml-0.5 text-ink-900 dark:text-paper-50">
           *
         </span>
       </label>
@@ -1013,29 +1081,7 @@ function CategorySearchPicker({
             })
           )}
         </ul>
-      ) : (
-        <div className="mt-2">
-          <p className="mb-1.5 text-[11px] text-ink-400 dark:text-umber-300">
-            {t("suppliers.submit.category_common_label")}
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {COMMON_CATEGORIES.map((c) => {
-              const Icon = CATEGORY_ICON[c];
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => pick(c)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-white px-2.5 py-1 text-xs text-ink-700 transition hover:border-ink-400 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
-                >
-                  <Icon size={12} aria-hidden />
-                  {t(`suppliers.cat.${c}`)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -1055,7 +1101,7 @@ function PriceBandPicker({
     <div>
       <span className="field-label">
         {t("suppliers.submit.price_label")}
-        <span aria-hidden="true" className="ml-0.5 text-blush-700">
+        <span aria-hidden="true" className="ml-0.5 text-ink-900 dark:text-paper-50">
           *
         </span>
       </span>
@@ -1090,7 +1136,7 @@ function PriceBandPicker({
                 selected
                   ? "flex min-h-tap items-center justify-center rounded-xl border border-ink-800 bg-ink-800 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900 px-2 py-2 text-paper-100 transition"
                   : invalid
-                    ? "flex min-h-tap items-center justify-center rounded-xl border border-blush-300 bg-white dark:bg-umber-700 dark:border-blush-400/40 px-2 py-2 text-ink-700 dark:text-paper-100 transition hover:border-blush-500 dark:hover:border-blush-400/60"
+                    ? "flex min-h-tap items-center justify-center rounded-xl border border-ink-400 bg-white dark:bg-umber-700 dark:border-paper-300 px-2 py-2 text-ink-700 dark:text-paper-100 transition hover:border-ink-700 dark:hover:border-paper-100"
                     : "flex min-h-tap items-center justify-center rounded-xl border border-paper-300 bg-white dark:bg-umber-700 dark:border-umber-700 px-2 py-2 text-ink-700 dark:text-paper-100 transition hover:border-ink-400 dark:hover:border-umber-600"
               }
             >
@@ -1121,11 +1167,11 @@ function LivePreviewCard({
   const blurbDisplay = blurb || t("suppliers.submit.preview_placeholder_blurb");
 
   return (
-    <div className="card mt-1 overflow-hidden border-l-4 border-l-blush-400 !p-4 shadow-sm">
+    <div className="card mt-1 overflow-hidden border-l-4 border-l-ink-900 dark:border-l-paper-50 !p-4 shadow-sm">
       {/* "Pending" pill — its own top row so the long HU label
           ("MEGERŐSÍTÉSRE VÁR") can't crash into the supplier name. */}
       <div className="mb-2 flex justify-end">
-        <span className="inline-flex items-center gap-1 rounded-full border border-blush-200 bg-blush-50 dark:border-blush-400/40 dark:bg-blush-400/15 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-blush-700 dark:text-blush-300">
+        <span className="inline-flex items-center gap-1 rounded-full border border-ink-200 bg-ink-50 dark:border-umber-600 dark:bg-umber-800 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide text-ink-700 dark:text-paper-100">
           <Sparkles size={9} aria-hidden />
           {t("suppliers.submit.preview_pending_pill")}
         </span>
