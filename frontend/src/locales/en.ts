@@ -4732,6 +4732,22 @@ const en: LocaleMessages = {
     nav_vendors: "Vendors",
     nav_vendor_campaign: "Invite campaign",
     nav_vendor_review_campaign: "Review campaign",
+    nav_personal_invite: "Personal invites",
+    pinvite_title: "Personal invites",
+    pinvite_subtitle:
+      "Cold outreach to your own contacts: a 'you, or someone you love, is getting married' note with a register CTA. Deduped against registered users and opt-outs, paced by the worker.",
+    pinvite_import_heading: "Import contacts",
+    pinvite_import_hint:
+      "Paste a name,email CSV (with header). Already-registered, opted-out, duplicate and invalid rows are dropped automatically.",
+    pinvite_import_placeholder: 'name,email\n"Anna Kovács","anna@example.com"',
+    pinvite_import_cta: "Import",
+    pinvite_import_result:
+      "Imported {imported}. Skipped: {registered} registered, {optout} opted out, {dup} duplicate, {invalid} invalid.",
+    pinvite_stat_queued: "Queued",
+    pinvite_stat_registered: "Registered",
+    pinvite_stat_lang: "HU / EN",
+    pinvite_start_confirm_body:
+      "Start sending to the {n} queued contacts, up to {cap} per day? Already-registered and opted-out addresses are skipped at send time.",
     nav_campaigns: "Campaigns",
     nav_planners: "Planners",
     nav_waitlist: "Vendor waitlist",

@@ -5,19 +5,22 @@
 // = review-collection outreach); this wrapper only adds the tab bar and mounts
 // one at a time. The active tab lives in `?tab=` so a refresh or a shared deep
 // link reopens the same console.
-import { Send, Star } from "lucide-react";
+import { Heart, Send, Star } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { useT } from "../lib/i18n";
+import AdminPersonalInviteCampaignPage from "./AdminPersonalInviteCampaignPage";
 import AdminVendorCampaignPage from "./AdminVendorCampaignPage";
 import AdminVendorReviewCampaignPage from "./AdminVendorReviewCampaignPage";
 
-type CampaignTab = "invite" | "reviews";
+type CampaignTab = "invite" | "reviews" | "personal";
 
 export default function AdminCampaignsPage() {
   const { t } = useT();
   const [params, setParams] = useSearchParams();
-  const tab: CampaignTab = params.get("tab") === "reviews" ? "reviews" : "invite";
+  const raw = params.get("tab");
+  const tab: CampaignTab =
+    raw === "reviews" ? "reviews" : raw === "personal" ? "personal" : "invite";
 
   const select = (next: CampaignTab) => {
     const p = new URLSearchParams(params);
@@ -38,9 +41,20 @@ export default function AdminCampaignsPage() {
             label: t("admin.nav_vendor_review_campaign"),
             icon: <Star size={15} />,
           },
+          {
+            value: "personal",
+            label: t("admin.nav_personal_invite"),
+            icon: <Heart size={15} />,
+          },
         ]}
       />
-      {tab === "invite" ? <AdminVendorCampaignPage /> : <AdminVendorReviewCampaignPage />}
+      {tab === "invite" ? (
+        <AdminVendorCampaignPage />
+      ) : tab === "reviews" ? (
+        <AdminVendorReviewCampaignPage />
+      ) : (
+        <AdminPersonalInviteCampaignPage />
+      )}
     </div>
   );
 }

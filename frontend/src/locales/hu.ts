@@ -4781,6 +4781,22 @@ const hu: LocaleMessages = {
     nav_vendors: "Szolgáltatók",
     nav_vendor_campaign: "Meghívó kampány",
     nav_vendor_review_campaign: "Vélemény kampány",
+    nav_personal_invite: "Személyes meghívók",
+    pinvite_title: "Személyes meghívók",
+    pinvite_subtitle:
+      "Hideg megkeresés a saját kontaktjaidnak: „te, vagy valaki, akit szeretsz, most házasodik” üzenet regisztrációs gombbal. A regisztrált felhasználók és a leiratkozók automatikusan kiszűrve, ütemezetten kiküldve.",
+    pinvite_import_heading: "Kontaktok importálása",
+    pinvite_import_hint:
+      "Illessz be egy name,email CSV-t (fejléccel). A már regisztrált, leiratkozott, duplikált és hibás sorokat automatikusan kihagyjuk.",
+    pinvite_import_placeholder: 'name,email\n"Kovács Anna","anna@example.com"',
+    pinvite_import_cta: "Importálás",
+    pinvite_import_result:
+      "Importálva: {imported}. Kihagyva: {registered} regisztrált, {optout} leiratkozott, {dup} duplikált, {invalid} hibás.",
+    pinvite_stat_queued: "Sorban",
+    pinvite_stat_registered: "Regisztrált",
+    pinvite_stat_lang: "HU / EN",
+    pinvite_start_confirm_body:
+      "Elindítod a küldést a sorban álló {n} kontaktnak, naponta legfeljebb {cap} címre? A már regisztrált és leiratkozott címeket küldéskor kihagyjuk.",
     nav_campaigns: "Kampányok",
     nav_planners: "Szervezők",
     nav_waitlist: "Szolgáltatói várólista",

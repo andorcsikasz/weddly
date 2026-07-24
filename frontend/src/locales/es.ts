@@ -4828,6 +4828,22 @@ const es: LocaleMessages = {
     nav_vendors: "Proveedores",
     nav_vendor_campaign: "Campaña de invitación",
     nav_vendor_review_campaign: "Campaña de reseñas",
+    nav_personal_invite: "Invitaciones personales",
+    pinvite_title: "Invitaciones personales",
+    pinvite_subtitle:
+      "Difusión en frío a tus propios contactos: una nota de tipo «tú, o alguien a quien quieres, se casa» con un botón de registro. Sin usuarios ya registrados ni bajas, enviado a ritmo controlado.",
+    pinvite_import_heading: "Importar contactos",
+    pinvite_import_hint:
+      "Pega un CSV name,email (con encabezado). Las filas ya registradas, dadas de baja, duplicadas o inválidas se descartan automáticamente.",
+    pinvite_import_placeholder: 'name,email\n"Anna Kovács","anna@example.com"',
+    pinvite_import_cta: "Importar",
+    pinvite_import_result:
+      "Importados {imported}. Omitidos: {registered} registrados, {optout} dados de baja, {dup} duplicados, {invalid} inválidos.",
+    pinvite_stat_queued: "En cola",
+    pinvite_stat_registered: "Registrados",
+    pinvite_stat_lang: "HU / EN",
+    pinvite_start_confirm_body:
+      "¿Empezar a enviar a los {n} contactos en cola, hasta {cap} por día? Las direcciones ya registradas o dadas de baja se omiten al enviar.",
     nav_campaigns: "Campañas",
     nav_planners: "Wedding planners",
     nav_waitlist: "Lista de espera de proveedores",

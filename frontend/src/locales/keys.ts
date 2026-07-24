@@ -5366,6 +5366,18 @@ export interface LocaleMessages {
     nav_vendors: string;
     nav_vendor_campaign: string;
     nav_vendor_review_campaign: string;
+    nav_personal_invite: string;
+    pinvite_title: string;
+    pinvite_subtitle: string;
+    pinvite_import_heading: string;
+    pinvite_import_hint: string;
+    pinvite_import_placeholder: string;
+    pinvite_import_cta: string;
+    pinvite_import_result: string;
+    pinvite_stat_queued: string;
+    pinvite_stat_registered: string;
+    pinvite_stat_lang: string;
+    pinvite_start_confirm_body: string;
     /** Merged sidebar entry that hosts both campaign consoles as tabs. */
     nav_campaigns: string;
     nav_planners: string;

@@ -204,6 +204,16 @@ import type {
   VendorReviewCampaignStats,
   VendorReviewCampaignTarget,
 } from "@shared/vendor_review_campaign";
+import type {
+  CreatePersonalInviteCampaignInput,
+  ImportPersonalInviteContactsInput,
+  PersonalInviteCampaign,
+  PersonalInviteCampaignDetail,
+  PersonalInviteCampaignSend,
+  PersonalInviteCampaignStats,
+  PersonalInviteImportResult,
+  UpdatePersonalInviteCampaignInput,
+} from "@shared/personal_invite_campaign";
 import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
 import type {
   CompleteVendorOnboardingInput,
@@ -2249,6 +2259,49 @@ export const adminVendorReviewCampaignApi = {
     apiFetch<{ ok: true; created: boolean }>("POST", "/api/admin/vendor-review-campaigns/optout", {
       email,
     }),
+};
+
+/** Admin console for the personal-invite campaign — the founder's own contacts,
+ *  imported from a CSV. `import` dedups server-side (against `users` +
+ *  `email_optouts`) and returns the breakdown; everything beyond the supervised
+ *  `sendBatch` is paced by the worker. */
+export const adminPersonalInviteCampaignApi = {
+  list: () =>
+    apiFetch<{ campaigns: PersonalInviteCampaign[] }>(
+      "GET",
+      "/api/admin/personal-invite/campaigns",
+    ),
+  create: (body: CreatePersonalInviteCampaignInput) =>
+    apiFetch<{ campaign: PersonalInviteCampaign }>(
+      "POST",
+      "/api/admin/personal-invite/campaigns",
+      body,
+    ),
+  detail: (id: number) =>
+    apiFetch<PersonalInviteCampaignDetail>("GET", `/api/admin/personal-invite/campaigns/${id}`),
+  update: (id: number, body: UpdatePersonalInviteCampaignInput) =>
+    apiFetch<{ campaign: PersonalInviteCampaign }>(
+      "PATCH",
+      `/api/admin/personal-invite/campaigns/${id}`,
+      body,
+    ),
+  import: (id: number, body: ImportPersonalInviteContactsInput) =>
+    apiFetch<{ result: PersonalInviteImportResult; stats: PersonalInviteCampaignStats }>(
+      "POST",
+      `/api/admin/personal-invite/campaigns/${id}/import`,
+      body,
+    ),
+  sends: (id: number) =>
+    apiFetch<{ sends: PersonalInviteCampaignSend[] }>(
+      "GET",
+      `/api/admin/personal-invite/campaigns/${id}/sends`,
+    ),
+  sendBatch: (id: number, limit: number) =>
+    apiFetch<{ sent: number; stats: PersonalInviteCampaignStats }>(
+      "POST",
+      `/api/admin/personal-invite/campaigns/${id}/send-batch`,
+      { limit },
+    ),
 };
 
 /** Vendor listing-claim flow — P2.C. Three steps:
