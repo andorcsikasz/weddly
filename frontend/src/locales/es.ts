@@ -1154,6 +1154,7 @@ const es: LocaleMessages = {
     step3_short: "Invitados",
     step4_short: "Presupuesto",
     step5_short: "País",
+    step6_short: "Invitar",
     bride_name_label: "Novia",
     groom_name_label: "Novio",
     bride_name_placeholder: "Allie",
@@ -1173,6 +1174,12 @@ const es: LocaleMessages = {
     country_helper: "Lo usaremos para no sugerirte proveedores que no puedan trabajar en tu país.",
     country_placeholder: "Empieza a escribir…",
     country_required: "Elige un país.",
+    step6_title: "¿Invitar a tu media naranja?",
+    invite_help:
+      "Le enviaremos una invitación para que planifiquéis juntos en este espacio desde ya.",
+    invite_email_label: "Correo de tu pareja",
+    invite_email_placeholder: "nombre@example.com",
+    invite_skip_hint: "Opcional — déjalo en blanco para omitir. Puedes invitarla más tarde.",
     style_help:
       "Elige tantos como quieras. El estilo es solo una etiqueta del perfil, nada queda fijado.",
     style_classic: "Clásico",

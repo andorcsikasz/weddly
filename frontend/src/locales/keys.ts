@@ -1372,6 +1372,7 @@ export interface LocaleMessages {
     step3_short: string;
     step4_short: string;
     step5_short: string;
+    step6_short: string;
     bride_name_label: string;
     groom_name_label: string;
     bride_name_placeholder: string;
@@ -1412,6 +1413,11 @@ export interface LocaleMessages {
     country_helper: string;
     country_placeholder: string;
     country_required: string;
+    step6_title: string;
+    invite_help: string;
+    invite_email_label: string;
+    invite_email_placeholder: string;
+    invite_skip_hint: string;
     // ── Uncertainty: kind selectors and helper copy ───────────────────
     date_kind_question: string;
     date_kind_exact: string;

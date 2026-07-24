@@ -95,9 +95,21 @@ interface FormState {
    *  Picked on step 5 (country); empty string until the user commits a
    *  pick. Drives supplier region filtering after onboarding. */
   country: string;
+  /** Optional: the other half's email. Filled on the last (optional) step; when
+   *  present, an invite to this workspace is sent the moment onboarding
+   *  completes. Empty = skip. */
+  partner_email: string;
 }
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
+
+/** Loose email shape — enough to gate the invite (the server validates for
+ *  real). Empty is allowed: the invite step is optional. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function partnerEmailValid(f: FormState): boolean {
+  const v = f.partner_email.trim();
+  return v === "" || EMAIL_RE.test(v);
+}
 
 // One oversized, tightly-tracked headline for every step. General Sans is
 // self-hosted at 600 max (no 700 woff2), so "bold" here is size + tight
@@ -125,6 +137,7 @@ const DEFAULT_FORM: FormState = {
   budget_max: TUNED_BUDGET_DEFAULTS.HUF!.max,
   currency: "HUF",
   country: "",
+  partner_email: "",
 };
 
 function buildDateGoal(f: FormState): WeddingDateGoal {
@@ -269,6 +282,11 @@ function isStepValid(step: number, f: FormState): boolean {
   // an explicit pick, so an empty string here means "no commit yet".
   if (step === 4) {
     return f.country.length === 2;
+  }
+  // Step 5 (the 6th, invite your other half): optional. Finish is enabled when
+  // the field is empty OR holds a plausible email — never on a half-typed one.
+  if (step === 5) {
+    return partnerEmailValid(f);
   }
   return true;
 }
@@ -445,6 +463,18 @@ export default function OnboardingWizard() {
         style_tags: [],
         ref_code: pendingRefCode,
       });
+      // Optional: invite the other half straight into the fresh workspace. The
+      // couple now exists, so the invite endpoint resolves it off the session.
+      // Best-effort — a failure here (e.g. the email already has an account)
+      // must NOT block onboarding; the couple can still invite from the app.
+      const partnerEmail = form.partner_email.trim();
+      if (partnerEmail && EMAIL_RE.test(partnerEmail)) {
+        try {
+          await coupleApi.createInvite({ invited_email: partnerEmail });
+        } catch (inviteErr) {
+          console.error("partner invite failed", inviteErr);
+        }
+      }
       completedRef.current = true;
       clearDraft();
       setDone(true);
@@ -824,6 +854,34 @@ export default function OnboardingWizard() {
                   placeholder={t("onboarding.country_placeholder")}
                   required
                 />
+              </div>
+            </>
+          )}
+
+          {step === 5 && (
+            <>
+              <h1 className={STEP_TITLE}>{t("onboarding.step6_title")}</h1>
+              <p className="mt-3 text-base text-umber-600 dark:text-umber-300">
+                {t("onboarding.invite_help")}
+              </p>
+              <div className="mt-8">
+                <label className="field-label" htmlFor="onb-partner-email">
+                  {t("onboarding.invite_email_label")}
+                </label>
+                <input
+                  id="onb-partner-email"
+                  type="email"
+                  className="input"
+                  autoComplete="email"
+                  inputMode="email"
+                  placeholder={t("onboarding.invite_email_placeholder")}
+                  value={form.partner_email}
+                  onChange={(e) => update("partner_email", e.target.value)}
+                  aria-invalid={!partnerEmailValid(form)}
+                />
+                <p className="mt-2 text-sm text-umber-500 dark:text-umber-400">
+                  {t("onboarding.invite_skip_hint")}
+                </p>
               </div>
             </>
           )}
