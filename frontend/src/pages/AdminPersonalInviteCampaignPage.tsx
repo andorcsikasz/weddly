@@ -5,7 +5,7 @@
 // deliberate action (Start), and pacing beyond a supervised send-batch belongs
 // to the worker.
 
-import { Play, Send, Square, Upload } from "lucide-react";
+import { FileUp, Play, Send, Square, Upload } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type {
   PersonalInviteCampaign,
@@ -167,6 +167,22 @@ function CampaignCard({
   const [sending, setSending] = useState(false);
   const [lastImport, setLastImport] = useState<PersonalInviteImportResult | null>(null);
 
+  // Load a picked .csv file into the same textarea, so the admin can eyeball it
+  // before importing. Reuses the whole paste-import flow — the file just fills
+  // `csv`. Reset the input value so re-picking the same file fires onChange.
+  function loadFile(file: File | undefined, reset: () => void) {
+    reset();
+    if (!file) return;
+    if (file.size > 5_000_000) {
+      toast.error(t("common.error_generic"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setCsv(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => toast.error(t("common.error_generic"));
+    reader.readAsText(file);
+  }
+
   async function runImport() {
     if (importing || csv.trim().length === 0) return;
     setImporting(true);
@@ -274,14 +290,31 @@ function CampaignCard({
           rows={4}
           className="input mt-2 w-full font-mono text-xs"
         />
-        <button
-          type="button"
-          className="btn-secondary mt-2 h-8 gap-1.5 text-sm"
-          onClick={() => void runImport()}
-          disabled={importing || csv.trim().length === 0}
-        >
-          <Upload size={14} /> {t("admin.pinvite_import_cta")}
-        </button>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {/* Upload a .csv file — it loads into the textarea above so the same
+              paste-import flow (with review) applies. */}
+          <label className="btn-secondary h-8 cursor-pointer gap-1.5 text-sm">
+            <FileUp size={14} /> {t("admin.pinvite_import_file_cta")}
+            <input
+              type="file"
+              accept=".csv,text/csv,text/plain"
+              className="sr-only"
+              onChange={(e) =>
+                loadFile(e.target.files?.[0], () => {
+                  e.target.value = "";
+                })
+              }
+            />
+          </label>
+          <button
+            type="button"
+            className="btn-secondary h-8 gap-1.5 text-sm"
+            onClick={() => void runImport()}
+            disabled={importing || csv.trim().length === 0}
+          >
+            <Upload size={14} /> {t("admin.pinvite_import_cta")}
+          </button>
+        </div>
         {lastImport && (
           <p className="mt-2 text-xs text-ink-600 dark:text-umber-200">
             {t("admin.pinvite_import_result", {

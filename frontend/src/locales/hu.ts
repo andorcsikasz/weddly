@@ -4810,6 +4810,7 @@ const hu: LocaleMessages = {
       "Illessz be egy name,email CSV-t (fejléccel). A már regisztrált, leiratkozott, duplikált és hibás sorokat automatikusan kihagyjuk.",
     pinvite_import_placeholder: 'name,email\n"Kovács Anna","anna@example.com"',
     pinvite_import_cta: "Importálás",
+    pinvite_import_file_cta: "Fájl feltöltése",
     pinvite_import_result:
       "Importálva: {imported}. Kihagyva: {registered} regisztrált, {optout} leiratkozott, {dup} duplikált, {invalid} hibás.",
     pinvite_stat_queued: "Sorban",

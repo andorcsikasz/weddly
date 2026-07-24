@@ -4857,6 +4857,7 @@ const es: LocaleMessages = {
       "Pega un CSV name,email (con encabezado). Las filas ya registradas, dadas de baja, duplicadas o inválidas se descartan automáticamente.",
     pinvite_import_placeholder: 'name,email\n"Anna Kovács","anna@example.com"',
     pinvite_import_cta: "Importar",
+    pinvite_import_file_cta: "Subir archivo",
     pinvite_import_result:
       "Importados {imported}. Omitidos: {registered} registrados, {optout} dados de baja, {dup} duplicados, {invalid} inválidos.",
     pinvite_stat_queued: "En cola",

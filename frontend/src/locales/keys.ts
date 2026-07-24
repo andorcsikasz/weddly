@@ -5395,6 +5395,8 @@ export interface LocaleMessages {
     pinvite_import_hint: string;
     pinvite_import_placeholder: string;
     pinvite_import_cta: string;
+    /** Label for the "upload a .csv file" picker on the contact import. */
+    pinvite_import_file_cta: string;
     pinvite_import_result: string;
     pinvite_stat_queued: string;
     pinvite_stat_registered: string;

@@ -4761,6 +4761,7 @@ const en: LocaleMessages = {
       "Paste a name,email CSV (with header). Already-registered, opted-out, duplicate and invalid rows are dropped automatically.",
     pinvite_import_placeholder: 'name,email\n"Anna Kovács","anna@example.com"',
     pinvite_import_cta: "Import",
+    pinvite_import_file_cta: "Upload file",
     pinvite_import_result:
       "Imported {imported}. Skipped: {registered} registered, {optout} opted out, {dup} duplicate, {invalid} invalid.",
     pinvite_stat_queued: "Queued",
