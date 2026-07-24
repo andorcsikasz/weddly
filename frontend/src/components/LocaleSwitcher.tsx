@@ -16,6 +16,7 @@ export function LocaleSwitcher({
   buttonClassName = DEFAULT_BUTTON,
   className = "",
   align = "right",
+  dataNavIcon = false,
 }: {
   buttonClassName?: string;
   /** Applied to the positioning wrapper — use for responsive visibility
@@ -24,6 +25,9 @@ export function LocaleSwitcher({
   /** Which edge the menu hangs from. Right for top bars; left when the trigger
    *  sits on the left of its row. */
   align?: "left" | "right";
+  /** Tags the trigger with `data-nav-icon` so the public header's over-hero CSS
+   *  (index.css) recolors it white like the sibling icons. */
+  dataNavIcon?: boolean;
 }) {
   const { t, locale, setLocale } = useT();
   const [open, setOpen] = useState(false);
@@ -55,6 +59,7 @@ export function LocaleSwitcher({
         title={t("nav.switch_language")}
         aria-haspopup="menu"
         aria-expanded={open}
+        {...(dataNavIcon ? { "data-nav-icon": "" } : {})}
       >
         <Languages size={18} aria-hidden="true" />
       </button>

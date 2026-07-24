@@ -206,6 +206,7 @@ function PublicHeader() {
           </button>
           <LocaleSwitcher
             className="hidden md:block"
+            dataNavIcon
             buttonClassName="inline-flex h-8 w-8 items-center justify-center rounded-md text-umber-800 transition-colors hover:bg-paper-100 hover:text-umber-900 dark:text-paper-200 dark:hover:bg-umber-800 dark:hover:text-paper-50"
           />
           <button
