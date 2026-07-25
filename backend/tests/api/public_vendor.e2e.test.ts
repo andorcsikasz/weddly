@@ -205,6 +205,39 @@ describe("public vendor phone is gated behind registration", () => {
   });
 });
 
+// A business that publishes two lines (venue desk + events) carries the second
+// one in `contact_phone_alt`. It is a public DTO field, so it has to be gated
+// exactly like the primary — an unmasked second number would hand anonymous
+// visitors the digits the first one is deliberately hiding.
+describe("a second published phone is gated like the first", () => {
+  // Curated entry from suppliers_data.ts, the only listing shape that carries
+  // an alt number today. Deterministic: it ships in code, not in a fixture.
+  const CURATED_ID = "finca-monasterio";
+  const EVENTS = "+34 654 373 549";
+  const HOTEL = "+34 856 626 777";
+
+  test("an anonymous visitor gets both numbers masked", async () => {
+    const r = await req<{
+      detail: { contact_phone: string | null; contact_phone_alt?: string | null };
+    }>("GET", `/api/public/vendors/${CURATED_ID}`);
+    expect(r.status).toBe(200);
+    expect(r.data.detail.contact_phone).toBe(maskPhoneForAnonymous(EVENTS));
+    expect(r.data.detail.contact_phone_alt).toBe(maskPhoneForAnonymous(HOTEL));
+    // The masked tails never leave the server.
+    expect(r.data.detail.contact_phone_alt).not.toContain("626 777");
+  });
+
+  test("a signed-in user gets both in full", async () => {
+    const { token } = await bootstrapCouple("alt-phone-couple@test.test");
+    const r = await req<{
+      detail: { contact_phone: string | null; contact_phone_alt?: string | null };
+    }>("GET", `/api/public/vendors/${CURATED_ID}`, undefined, { token });
+    expect(r.status).toBe(200);
+    expect(r.data.detail.contact_phone).toBe(EVENTS);
+    expect(r.data.detail.contact_phone_alt).toBe(HOTEL);
+  });
+});
+
 describe("maskPhoneForAnonymous", () => {
   test("keeps the first five digits, masks the rest", () => {
     expect(maskPhoneForAnonymous("06706361792")).toBe("06706******");

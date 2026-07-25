@@ -478,6 +478,11 @@ export interface DirectorySupplierBase {
   website: string;
   contact_email: string | null;
   contact_phone: string | null;
+  /** Second published number, when a business runs one line for the venue/hotel
+   *  desk and another for events. `contact_phone` stays the one to call about a
+   *  wedding; this is the alternative. Absent on almost every listing. Masked
+   *  for anonymous visitors exactly like `contact_phone`. */
+  contact_phone_alt?: string | null;
   /** Optional street address. Surfaces on the card under the city/category line. */
   address: string | null;
   /** Approximate seated-dinner capacity range. Null = not published. */

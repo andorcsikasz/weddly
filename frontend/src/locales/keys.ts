@@ -1368,6 +1368,9 @@ export interface LocaleMessages {
     err_rate_limited: string;
     err_supplier_not_found: string;
     err_supplier_no_email: string;
+    /** A listing whose address is in `email_optouts`: the business asked us to
+     *  stop mailing it, so a couple campaign cannot reach it either. */
+    err_supplier_no_contact: string;
     err_generic: string;
   };
   /** Page reached from the email_change_verify confirm link. */

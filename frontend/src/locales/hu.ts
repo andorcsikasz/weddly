@@ -1118,6 +1118,8 @@ const hu: LocaleMessages = {
     err_rate_limited: "Túl gyakori: heti legfeljebb 3 körlevél mehet ki.",
     err_supplier_not_found: "Egy vagy több ID nem található a katalógusban.",
     err_supplier_no_email: "Egy vagy több szolgáltatónak nincs publikus e-mail címe.",
+    err_supplier_no_contact:
+      "Egy vagy több szolgáltató kérte, hogy ne keressük a Weddlyn keresztül. Vedd fel velük közvetlenül a kapcsolatot.",
     err_generic: "Nem sikerült kiküldeni, próbáld újra.",
   },
   change_email: {
@@ -2257,7 +2259,8 @@ const hu: LocaleMessages = {
     back: "Vissza az irányítópultra",
     add_comment: "megjegyzés hozzáadása",
     stars_aria: "{name} értékelése",
-    card_body: "Értékeld a(z) {count} szolgáltatót, akit használtatok. Egy koppintás a csillagra, és kész.",
+    card_body:
+      "Értékeld a(z) {count} szolgáltatót, akit használtatok. Egy koppintás a csillagra, és kész.",
     card_cta: "Értékelés",
   },
   notifications: {

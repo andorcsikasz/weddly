@@ -20,6 +20,7 @@ import { reportError } from "../../lib/observability";
 import { makeOpenTrackingToken } from "../../routes/email_track";
 import { type EmailKind, KIND_CATEGORY } from "./kinds";
 import { recordEmailAttempt } from "./log";
+import { isOptedOut } from "./optouts";
 import { ensurePreferences } from "./preferences";
 import type { RecipientLocale } from "./template";
 import { buildEmail, type KindPayload } from "./templates";
@@ -168,6 +169,29 @@ async function sendKindInner<K extends EmailKind>(
       error: "no recipient address",
     });
     return { status: "failed", error: "no recipient" };
+  }
+
+  // Address-level suppression, enforced for EVERY kind before we render or
+  // send anything. Until now `email_optouts` was only consulted by campaign
+  // targeting, which meant an unsubscribed address could still be reached by
+  // any other outreach path — and a business that writes in asking us to stop
+  // has asked about all of it, not one campaign. See domain/emails/optouts.ts.
+  //
+  // Transactional is the one carve-out: those are mails the recipient just
+  // triggered and is waiting on (verify link, password reset, RSVP receipt).
+  // Blocking them would mean a suppressed address that later decides to sign
+  // up on its own could never complete the signup, which serves nobody.
+  if (category !== "transactional" && isOptedOut(recipient.email)) {
+    recordEmailAttempt({
+      user_id: target.user?.id ?? null,
+      couple_id: target.couple_id ?? null,
+      kind,
+      category,
+      to_email: recipient.email,
+      subject: "",
+      status: "skipped_opt_out",
+    });
+    return { status: "skipped_opt_out" };
   }
 
   let unsubscribeToken: string | undefined;

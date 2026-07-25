@@ -454,6 +454,9 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
     if (detail.contact_phone) {
       detail.contact_phone = maskPhoneForAnonymous(detail.contact_phone);
     }
+    if (detail.contact_phone_alt) {
+      detail.contact_phone_alt = maskPhoneForAnonymous(detail.contact_phone_alt);
+    }
     if (listingContactHidden(detail.id)) {
       if (detail.contact_email) detail.contact_email = maskEmailForPublic(detail.contact_email);
       if (detail.address) detail.address = maskAddressForPublic(detail.address);

@@ -34,6 +34,7 @@ import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { HttpError } from "../lib/http";
 import { sendKind } from "./emails";
+import { isOptedOut } from "./emails/optouts";
 
 /** Subset of `Couple` / `CoupleRow` the outreach send pipeline actually
  *  reads. Decoupled so the route handler can pass either shape without a
@@ -251,6 +252,7 @@ function resolveSupplierContacts(supplierIds: string[]): SupplierContact[] {
   const out: SupplierContact[] = [];
   const missingEmail: string[] = [];
   const notFound: string[] = [];
+  const suppressed: string[] = [];
   for (const id of supplierIds) {
     const row = byId.get(id);
     if (!row) {
@@ -259,6 +261,15 @@ function resolveSupplierContacts(supplierIds: string[]): SupplierContact[] {
     }
     if (!row.contact_email) {
       missingEmail.push(id);
+      continue;
+    }
+    // A business that asked us to stop mailing it must not be reachable through
+    // a couple's campaign either. `sendKind` would suppress the mail anyway, but
+    // it does so after `outreach_messages` has recorded a row — so without this
+    // the couple sees "sent" for a mail that never left. Refuse at the door
+    // instead, with the same shape as the no-email case.
+    if (isOptedOut(row.contact_email)) {
+      suppressed.push(id);
       continue;
     }
     out.push({ id, name: row.name, email: row.contact_email });
@@ -271,6 +282,11 @@ function resolveSupplierContacts(supplierIds: string[]): SupplierContact[] {
   if (missingEmail.length > 0) {
     throw new HttpError(400, `Suppliers without contact email: ${missingEmail.join(", ")}`, {
       code: "supplier_no_email",
+    });
+  }
+  if (suppressed.length > 0) {
+    throw new HttpError(400, `Suppliers who opted out of contact: ${suppressed.join(", ")}`, {
+      code: "supplier_no_contact",
     });
   }
   return out;

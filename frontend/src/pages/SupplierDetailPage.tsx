@@ -1476,7 +1476,9 @@ function ContactCard({
   detail: SupplierDetail;
   t: (k: string) => string;
 }) {
-  const hasAny = Boolean(detail.website || detail.contact_email || detail.contact_phone);
+  const hasAny = Boolean(
+    detail.website || detail.contact_email || detail.contact_phone || detail.contact_phone_alt,
+  );
   return (
     <SidebarCard>
       {!hasAny && (
@@ -1511,6 +1513,18 @@ function ContactCard({
         >
           <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
           {detail.contact_phone}
+        </a>
+      )}
+      {/* Second published line, when a business runs one. No label: the icon
+          already says "phone", and which desk answers is not something we can
+          state accurately for every listing. */}
+      {detail.contact_phone_alt && (
+        <a
+          href={`tel:${detail.contact_phone_alt}`}
+          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
+        >
+          <Phone size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
+          {detail.contact_phone_alt}
         </a>
       )}
     </SidebarCard>

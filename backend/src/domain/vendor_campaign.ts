@@ -120,26 +120,14 @@ export const makeCampaignOptOutToken = (sendId: number) => makeSendToken("optout
 export const verifyCampaignOptOutToken = (t: string) => verifySendToken("optout", t);
 
 // ── Suppression ─────────────────────────────────────────────────────────────
-
-export function normalizeEmail(raw: string): string {
-  return raw.trim().toLowerCase();
-}
-
-export function isOptedOut(email: string): boolean {
-  const row = db
-    .prepare("SELECT 1 AS x FROM email_optouts WHERE email = ?")
-    .get(normalizeEmail(email)) as { x: number } | undefined;
-  return row != null;
-}
-
-/** Idempotent. Returns true when this call created the tombstone, so the
- *  route can tell a first opt-out from a re-click without a second query. */
-export function addOptOut(email: string, reason: string): boolean {
-  const r = db
-    .prepare("INSERT OR IGNORE INTO email_optouts (email, reason, created_at) VALUES (?, ?, ?)")
-    .run(normalizeEmail(email), reason, now());
-  return r.changes === 1;
-}
+//
+// These moved to domain/emails/optouts.ts when `send.ts` started enforcing
+// suppression for every outbound kind, not just campaign targeting: the
+// dispatcher cannot import a campaign module without closing an import cycle.
+// Re-exported here so the campaigns, routes and admin console that already
+// import them from this module keep working.
+import { normalizeEmail } from "./emails/optouts";
+export { addOptOut, isOptedOut, normalizeEmail } from "./emails/optouts";
 
 // ── Campaign CRUD ───────────────────────────────────────────────────────────
 

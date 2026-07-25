@@ -1105,6 +1105,8 @@ const en: LocaleMessages = {
     err_rate_limited: "Too frequent: max 3 campaigns per 7 days.",
     err_supplier_not_found: "One or more IDs aren't in the directory.",
     err_supplier_no_email: "One or more vendors have no public email.",
+    err_supplier_no_contact:
+      "One or more vendors asked not to be contacted through Weddly. Reach out to them directly.",
     err_generic: "Couldn't send, please try again.",
   },
   change_email: {

@@ -22,6 +22,7 @@ import {
   type OutreachCampaignDetail,
 } from "@shared/outreach";
 import { db } from "../../src/db";
+import { addOptOut } from "../../src/domain/emails/optouts";
 import { buildEmail } from "../../src/domain/emails/templates";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 
@@ -119,6 +120,37 @@ describe("POST /api/outreach/campaigns — happy path + validation", () => {
     );
     expect(r.status).toBe(400);
     expect(r.data.detail?.code).toBe("supplier_no_email");
+  });
+
+  test("supplier that opted out of contact → 400 with code=supplier_no_contact", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("outreach-optout@weddly.test");
+    // The listing is real and has an address, but the business asked us to stop
+    // mailing it. `sendKind` would suppress the mail regardless; refusing here is
+    // what keeps `outreach_messages` from recording a send that never happened.
+    const email = db
+      .prepare("SELECT contact_email FROM listings WHERE id = ?")
+      .get("finca-monasterio") as { contact_email: string | null } | undefined;
+    expect(email?.contact_email).toBeTruthy();
+    addOptOut(email?.contact_email as string, "do_not_contact");
+
+    const r = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/outreach/campaigns",
+      {
+        subject: "Hi",
+        body_template: "Hi",
+        supplier_ids: ["finca-monasterio"],
+      },
+      { token },
+    );
+    expect(r.status).toBe(400);
+    expect(r.data.detail?.code).toBe("supplier_no_contact");
+    // Nothing recorded: no campaign, no message, no mail.
+    const count = db
+      .prepare("SELECT COUNT(*) AS n FROM outreach_messages WHERE supplier_id = ?")
+      .get("finca-monasterio") as { n: number };
+    expect(count.n).toBe(0);
   });
 
   test("4th campaign in 7 days → 429 with code=campaign_rate_limited", async () => {

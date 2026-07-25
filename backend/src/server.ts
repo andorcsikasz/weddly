@@ -126,6 +126,7 @@ import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
 import { retireLegacyTaxonomy, seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
 import { backfillPartnerPropagation } from "./domain/couples";
+import { seedDoNotContact } from "./domain/emails/optouts";
 import { reconcileOrphanCouples } from "./domain/orphan_reconcile";
 import {
   backfillPlannerProfilesFromWaitlist,
@@ -148,6 +149,10 @@ seedBlogPostsIfEmpty();
   const counts = backfillListings();
   log.info("listings.backfill", counts);
 }
+// Suppress every address that has asked us in writing never to be contacted
+// again (domain/emails/optouts.ts). Idempotent INSERT OR IGNORE, so it runs on
+// every boot and needs no SQL against the production volume.
+seedDoNotContact();
 // Mirror each couple's invited partner across all of that owner's event-
 // workspaces (membership only, billing-neutral, idempotent). Fixes existing
 // couples whose partner only ever joined their first event so every workspace

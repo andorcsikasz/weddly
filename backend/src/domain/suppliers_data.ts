@@ -6828,7 +6828,10 @@ const RAW_DIRECTORY: (Omit<
       "Exclusive boutique country finca with five acres of gardens, ideal for destination weddings in southern Spain.",
     website: "https://www.finca-monasterio.com/",
     contact_email: "info@finca-monasterio.com",
+    // Both numbers as the owner published them (2026-07-25): the events line
+    // first, since that is the one a couple wants, and the hotel desk second.
     contact_phone: "+34 654 373 549",
+    contact_phone_alt: "+34 856 626 777",
     lat: 36.343307,
     lng: -5.36821,
     source: "curated",

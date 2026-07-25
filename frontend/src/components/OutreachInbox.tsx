@@ -436,7 +436,9 @@ export function ComposeDialog({
               ? t("outreach.err_supplier_not_found")
               : code === "supplier_no_email"
                 ? t("outreach.err_supplier_no_email")
-                : t("outreach.err_generic");
+                : code === "supplier_no_contact"
+                  ? t("outreach.err_supplier_no_contact")
+                  : t("outreach.err_generic");
       toast.error(message);
     } finally {
       setSending(false);
