@@ -2284,6 +2284,8 @@ const es: LocaleMessages = {
     back: "Volver al panel",
     add_comment: "añadir un comentario",
     stars_aria: "Valorar a {name}",
+    card_body: "Valora los {count} proveedores que usaste. Un toque en una estrella y listo.",
+    card_cta: "Valorar ahora",
   },
   notifications: {
     aria_label: "Notificaciones",

@@ -99,6 +99,8 @@ export interface LocaleMessages {
     back: string;
     add_comment: string;
     stars_aria: string;
+    card_body: string;
+    card_cta: string;
   };
   /** Gantt-style task timeline + point-of-contact panel. */
   notifications: {

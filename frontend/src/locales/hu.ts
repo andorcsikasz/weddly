@@ -2257,6 +2257,8 @@ const hu: LocaleMessages = {
     back: "Vissza az irányítópultra",
     add_comment: "megjegyzés hozzáadása",
     stars_aria: "{name} értékelése",
+    card_body: "Értékeld a(z) {count} szolgáltatót, akit használtatok. Egy koppintás a csillagra, és kész.",
+    card_cta: "Értékelés",
   },
   notifications: {
     aria_label: "Értesítések",

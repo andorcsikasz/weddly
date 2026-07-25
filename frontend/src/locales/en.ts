@@ -2233,6 +2233,8 @@ const en: LocaleMessages = {
     back: "Back to dashboard",
     add_comment: "add a comment",
     stars_aria: "Rate {name}",
+    card_body: "Rate the {count} vendors you used. A tap on a star, done.",
+    card_cta: "Rate now",
   },
   notifications: {
     aria_label: "Notifications",

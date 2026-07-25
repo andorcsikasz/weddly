@@ -54,6 +54,7 @@ import { PartnerMergeBanner } from "../components/PartnerMergeBanner";
 import { PlannerApprovalBanner } from "../components/PlannerApprovalBanner";
 import { TimelineStatusCard } from "../components/TimelineStatusCard";
 import { KeyInfoCard } from "../components/KeyInfoCard";
+import { RateVendorsCard } from "../components/RateVendorsCard";
 import { UpcomingTasksCard } from "../components/UpcomingTasksCard";
 import { CalendarPicker, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -1339,6 +1340,10 @@ export default function DashboardPage() {
           stays focused on the jumbo check-in panel. ───────────────── */}
       {!dayOfMode && (
         <>
+          {/* ── Post-wedding "rate your vendors" nudge — self-fetching, only shows
+              once the wedding has passed and vendors are unrated. ── */}
+          <RateVendorsCard weddingDate={couple.wedding_date} />
+
           {/* ── Kulcsinfó — venue map/phone + booked-supplier quick-dial. Self-fetching. ── */}
           <KeyInfoCard couple={couple} />
 
