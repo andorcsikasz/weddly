@@ -150,7 +150,7 @@ export function CountryPicker({
           id={listId}
           role="listbox"
           aria-label={ariaLabel}
-          className="absolute left-0 z-20 mt-2 max-h-80 w-64 animate-fade-in overflow-y-auto rounded-2xl border border-paper-300 bg-paper-50 p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+          className="absolute left-0 z-40 mt-2 max-h-80 w-64 animate-fade-in overflow-y-auto rounded-2xl border border-paper-300 bg-paper-50 p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
         >
           {rows.map((row, i) => {
             const isSelected = row === null ? value === null : value === row.code;
