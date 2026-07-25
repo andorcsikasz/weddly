@@ -26,6 +26,7 @@ import {
   toGuest,
   uniqueInviteCode,
 } from "../domain/guests";
+import { purgeHouseholdIfEmpty } from "../domain/household_cleanup";
 import {
   createHousehold,
   getHouseholdById,
@@ -647,8 +648,16 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
     nextPhysicalAt = null;
   }
 
-  db.prepare(
-    `UPDATE guests SET
+  // The move and the empty-household cleanup are one atomic step: if this guest
+  // vacated its previous household and left it with no members, that household
+  // is deleted in the same transaction so the guest list, the household picker,
+  // and the check-in code space never show a 0-member orphan. Deletion is
+  // FK-safe (see domain/household_cleanup.ts).
+  const previousHouseholdId = existing.household_id;
+  const householdChanged = previousHouseholdId !== nextHouseholdId;
+  db.transaction(() => {
+    db.prepare(
+      `UPDATE guests SET
         full_name = ?, email = ?, phone = ?, group_tag = ?, kind = ?, is_supplier = ?,
         is_plus_one = ?, plus_one_of = ?, rsvp_status = ?,
         meal_choice = ?, dietary = ?, plus_one_name = ?, plus_one_meal = ?,
@@ -656,34 +665,36 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
         invited_at = ?, invitation_delivered_at = ?, invitation_opened_at = ?,
         invited_online_at = ?, invited_physical_at = ?, updated_at = ?
        WHERE id = ? AND couple_id = ?`,
-  ).run(
-    parsed.full_name,
-    parsed.email,
-    parsed.phone,
-    parsed.group_tag,
-    parsed.kind,
-    parsed.is_supplier,
-    nextIsPlusOne,
-    nextPlusOneOf,
-    parsed.rsvp_status,
-    parsed.meal_choice,
-    parsed.dietary,
-    parsed.plus_one_name,
-    parsed.plus_one_meal,
-    parsed.accommodation_needed,
-    parsed.song_request,
-    parsed.notes,
-    nextRespondedAt,
-    nextHouseholdId,
-    nextInvitedAt,
-    nextDeliveredAt,
-    nextOpenedAt,
-    nextOnlineAt,
-    nextPhysicalAt,
-    ts,
-    id,
-    couple.id,
-  );
+    ).run(
+      parsed.full_name,
+      parsed.email,
+      parsed.phone,
+      parsed.group_tag,
+      parsed.kind,
+      parsed.is_supplier,
+      nextIsPlusOne,
+      nextPlusOneOf,
+      parsed.rsvp_status,
+      parsed.meal_choice,
+      parsed.dietary,
+      parsed.plus_one_name,
+      parsed.plus_one_meal,
+      parsed.accommodation_needed,
+      parsed.song_request,
+      parsed.notes,
+      nextRespondedAt,
+      nextHouseholdId,
+      nextInvitedAt,
+      nextDeliveredAt,
+      nextOpenedAt,
+      nextOnlineAt,
+      nextPhysicalAt,
+      ts,
+      id,
+      couple.id,
+    );
+    if (householdChanged) purgeHouseholdIfEmpty(couple.id, previousHouseholdId);
+  })();
 
   addAuditLog({
     actor_user_id: userId,

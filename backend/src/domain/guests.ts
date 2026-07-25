@@ -9,6 +9,7 @@ import type {
   RsvpStatus,
 } from "@shared/types";
 import { db, now } from "../db";
+import { purgeHouseholdIfEmpty } from "./household_cleanup";
 import { generateHouseholdCode, generateInviteCode } from "./invite_codes";
 
 export interface GuestRow {
@@ -205,8 +206,6 @@ export function ensurePartnerGuests(input: {
     "INSERT INTO households (couple_id, code, label, notes, rsvp_collects_meal, created_at, updated_at) VALUES (?, ?, ?, NULL, 0, ?, ?)",
   );
   const updateHhLabel = db.prepare("UPDATE households SET label = ?, updated_at = ? WHERE id = ?");
-  const countMembers = db.prepare("SELECT COUNT(*) AS n FROM guests WHERE household_id = ?");
-  const deleteHh = db.prepare("DELETE FROM households WHERE id = ?");
 
   const ts = now();
   let hostHhId: number;
@@ -247,10 +246,12 @@ export function ensurePartnerGuests(input: {
              ?, ?, ?, ?)`,
   );
 
+  // Moving a partner into the host household can empty their previous one; the
+  // shared cleanup deletes it. The host household is guarded here because it is
+  // mid-population during couple setup and must never be swept.
   const cleanupIfEmpty = (hhId: number | null) => {
     if (hhId == null || hhId === hostHhId) return;
-    const row = countMembers.get(hhId) as { n: number };
-    if (row.n === 0) deleteHh.run(hhId);
+    purgeHouseholdIfEmpty(coupleId, hhId);
   };
 
   let touched = 0;
