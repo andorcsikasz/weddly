@@ -6,7 +6,7 @@
 // to the worker.
 
 import { FileUp, Play, Send, Sparkles, Square, Upload } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   PersonalInviteCampaign,
   PersonalInviteCampaignDetail,
@@ -14,8 +14,8 @@ import type {
   PersonalInviteImportResult,
 } from "@shared/personal_invite_campaign";
 import { PERSONAL_INVITE_DEFAULT_DAILY_CAP } from "@shared/personal_invite_campaign";
-import { useConfirm, useToast } from "../components/ui";
-import { adminPersonalInviteCampaignApi as api } from "../lib/endpoints";
+import { Skeleton, useConfirm, useToast } from "../components/ui";
+import { adminEmailPreviewApi, adminPersonalInviteCampaignApi as api } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 
 // ── Client-side CSV preview + cleanup ───────────────────────────────────────
@@ -57,10 +57,66 @@ function parseContacts(csv: string): PreviewRow[] {
   return rows;
 }
 
+/** Live render of the actual outbound invite, from the same template builders
+ *  that ship, via the admin preview endpoint — so the console can never show
+ *  copy that differs from what sends. Same iframe-write approach the vendor
+ *  campaign consoles use. The personal-invite campaign has a single email kind
+ *  (`personal_invite`), so this only toggles locale. */
+function EmailPreview({ locale }: { locale: "hu" | "en" }) {
+  const frame = useRef<HTMLIFrameElement | null>(null);
+  const [html, setHtml] = useState<string | null>(null);
+  const [subject, setSubject] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setHtml(null);
+    adminEmailPreviewApi
+      .render("personal_invite", locale)
+      .then((r) => {
+        if (cancelled) return;
+        setHtml(r.html);
+        setSubject(r.subject);
+      })
+      .catch(() => {
+        if (!cancelled)
+          setHtml("<p style='padding:16px;font-family:sans-serif;color:#7a7065'>?</p>");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+
+  useEffect(() => {
+    const doc = frame.current?.contentDocument;
+    if (!doc || html == null) return;
+    doc.open();
+    doc.write(html);
+    doc.close();
+  }, [html]);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="truncate font-mono text-[11px] text-neutral-500 dark:text-umber-300">
+        {subject}
+      </p>
+      <div className="relative h-[420px] overflow-hidden rounded-xl ring-1 ring-ink-100 dark:ring-umber-700">
+        {html == null && <Skeleton variant="block" height={420} rounded="lg" />}
+        <iframe
+          ref={frame}
+          title="preview"
+          className="h-full w-full border-0"
+          sandbox="allow-same-origin"
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPersonalInviteCampaignPage() {
   const { t } = useT();
   const toast = useToast();
   const confirm = useConfirm();
+  const [previewLocale, setPreviewLocale] = useState<"hu" | "en">("hu");
   const [campaigns, setCampaigns] = useState<PersonalInviteCampaign[]>([]);
   const [details, setDetails] = useState<Record<number, PersonalInviteCampaignStats>>({});
   const [slug, setSlug] = useState("");
@@ -164,6 +220,34 @@ export default function AdminPersonalInviteCampaignPage() {
         >
           {t("admin.campaign_create")}
         </button>
+      </section>
+
+      {/* Email preview — what the invite actually looks like when it sends. */}
+      <section className="card p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-sm font-medium text-ink-800 dark:text-paper-100">
+            {t("admin.pinvite_preview_heading")}
+          </p>
+          <div className="flex items-center gap-1">
+            {(["hu", "en"] as const).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setPreviewLocale(l)}
+                className={`rounded-full px-2.5 py-1 text-[11px] uppercase tracking-wide ring-1 transition ${
+                  previewLocale === l
+                    ? "bg-neutral-900 text-paper-50 ring-neutral-900 dark:bg-paper-100 dark:text-umber-900 dark:ring-paper-100"
+                    : "text-neutral-500 ring-ink-100 dark:text-umber-300 dark:ring-umber-700"
+                }`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mx-auto max-w-xl">
+          <EmailPreview locale={previewLocale} />
+        </div>
       </section>
 
       {campaigns.length === 0 ? (

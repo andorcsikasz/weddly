@@ -4768,6 +4768,7 @@ const en: LocaleMessages = {
     pinvite_suspicious: "suspicious",
     pinvite_clean_cta: "Clean list",
     pinvite_clean_done: "{n} rows removed",
+    pinvite_preview_heading: "Email preview",
     pinvite_import_result:
       "Imported {imported}. Skipped: {registered} registered, {optout} opted out, {dup} duplicate, {invalid} invalid.",
     pinvite_stat_queued: "Queued",

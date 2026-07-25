@@ -4817,6 +4817,7 @@ const hu: LocaleMessages = {
     pinvite_suspicious: "gyanús",
     pinvite_clean_cta: "Lista tisztítása",
     pinvite_clean_done: "{n} sor eltávolítva",
+    pinvite_preview_heading: "Email előnézet",
     pinvite_import_result:
       "Importálva: {imported}. Kihagyva: {registered} regisztrált, {optout} leiratkozott, {dup} duplikált, {invalid} hibás.",
     pinvite_stat_queued: "Sorban",

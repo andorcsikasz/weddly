@@ -5405,6 +5405,8 @@ export interface LocaleMessages {
     pinvite_clean_cta: string;
     /** Toast after cleaning; receives {n} removed rows. */
     pinvite_clean_done: string;
+    /** Heading over the outbound-invite email preview. */
+    pinvite_preview_heading: string;
     pinvite_import_result: string;
     pinvite_stat_queued: string;
     pinvite_stat_registered: string;

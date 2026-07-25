@@ -4864,6 +4864,7 @@ const es: LocaleMessages = {
     pinvite_suspicious: "sospechosos",
     pinvite_clean_cta: "Limpiar lista",
     pinvite_clean_done: "{n} filas eliminadas",
+    pinvite_preview_heading: "Vista previa del correo",
     pinvite_import_result:
       "Importados {imported}. Omitidos: {registered} registrados, {optout} dados de baja, {dup} duplicados, {invalid} inválidos.",
     pinvite_stat_queued: "En cola",
