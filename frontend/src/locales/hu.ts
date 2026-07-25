@@ -4811,6 +4811,12 @@ const hu: LocaleMessages = {
     pinvite_import_placeholder: 'name,email\n"Kovács Anna","anna@example.com"',
     pinvite_import_cta: "Importálás",
     pinvite_import_file_cta: "Fájl feltöltése",
+    pinvite_valid: "érvényes",
+    pinvite_duplicate: "duplikált",
+    pinvite_invalid: "hibás",
+    pinvite_suspicious: "gyanús",
+    pinvite_clean_cta: "Lista tisztítása",
+    pinvite_clean_done: "{n} sor eltávolítva",
     pinvite_import_result:
       "Importálva: {imported}. Kihagyva: {registered} regisztrált, {optout} leiratkozott, {dup} duplikált, {invalid} hibás.",
     pinvite_stat_queued: "Sorban",

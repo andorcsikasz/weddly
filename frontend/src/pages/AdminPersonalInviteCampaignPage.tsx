@@ -5,8 +5,8 @@
 // deliberate action (Start), and pacing beyond a supervised send-batch belongs
 // to the worker.
 
-import { FileUp, Play, Send, Square, Upload } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { FileUp, Play, Send, Sparkles, Square, Upload } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   PersonalInviteCampaign,
   PersonalInviteCampaignDetail,
@@ -17,6 +17,45 @@ import { PERSONAL_INVITE_DEFAULT_DAILY_CAP } from "@shared/personal_invite_campa
 import { useConfirm, useToast } from "../components/ui";
 import { adminPersonalInviteCampaignApi as api } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+
+// ── Client-side CSV preview + cleanup ───────────────────────────────────────
+// The server already skips already-registered / opted-out / duplicate / invalid
+// rows on import; this mirrors the objective checks (email format + in-file
+// duplicates) plus an obvious test-account heuristic so the admin can SEE and
+// strip the junk before importing. `ok` rows are the ones that survive Clean.
+type RowStatus = "ok" | "duplicate" | "invalid" | "suspicious";
+interface PreviewRow {
+  name: string;
+  email: string;
+  status: RowStatus;
+}
+// Same shape the backend accepts, so the "valid" count reflects reality.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Obvious test/demo accounts (by name or the test app's domain) — outliers.
+const TEST_RE = /\b(teszt|test|demo)\b|colibriapp/i;
+
+function parseContacts(csv: string): PreviewRow[] {
+  const rows: PreviewRow[] = [];
+  const seen = new Set<string>();
+  for (const raw of csv.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (line.replace(/["\s]/g, "").toLowerCase() === "name,email") continue; // header
+    const m = line.match(/^\s*"?(.*?)"?\s*,\s*"?([^",]*)"?\s*$/);
+    const name = (m?.[1] ?? "").trim();
+    const email = (m?.[2] ?? line.replace(/"/g, "")).trim();
+    const lc = email.toLowerCase();
+    let status: RowStatus;
+    if (!EMAIL_RE.test(email)) status = "invalid";
+    else if (seen.has(lc)) status = "duplicate";
+    else {
+      seen.add(lc);
+      status = TEST_RE.test(email) || TEST_RE.test(name) ? "suspicious" : "ok";
+    }
+    rows.push({ name, email, status });
+  }
+  return rows;
+}
 
 export default function AdminPersonalInviteCampaignPage() {
   const { t } = useT();
@@ -167,6 +206,33 @@ function CampaignCard({
   const [sending, setSending] = useState(false);
   const [lastImport, setLastImport] = useState<PersonalInviteImportResult | null>(null);
 
+  const preview = useMemo(() => parseContacts(csv), [csv]);
+  const counts = useMemo(() => {
+    const c = { ok: 0, duplicate: 0, invalid: 0, suspicious: 0 };
+    for (const r of preview) c[r.status] += 1;
+    return c;
+  }, [preview]);
+  const flagged = preview.filter((r) => r.status !== "ok");
+
+  // Rewrite the textarea to only the clean rows (with header), so the very next
+  // Import sends nothing the server would reject anyway.
+  function cleanList() {
+    const removed = preview.length - counts.ok;
+    if (removed === 0) return;
+    const body = preview
+      .filter((r) => r.status === "ok")
+      .map((r) => `"${r.name.replace(/"/g, '""')}","${r.email}"`)
+      .join("\n");
+    setCsv(`name,email\n${body}\n`);
+    toast.success(t("admin.pinvite_clean_done", { n: removed }));
+  }
+
+  function statusLabel(s: Exclude<RowStatus, "ok">): string {
+    if (s === "duplicate") return t("admin.pinvite_duplicate");
+    if (s === "invalid") return t("admin.pinvite_invalid");
+    return t("admin.pinvite_suspicious");
+  }
+
   // Load a picked .csv file into the same textarea, so the admin can eyeball it
   // before importing. Reuses the whole paste-import flow — the file just fills
   // `csv`. Reset the input value so re-picking the same file fires onChange.
@@ -315,6 +381,58 @@ function CampaignCard({
             <Upload size={14} /> {t("admin.pinvite_import_cta")}
           </button>
         </div>
+
+        {/* Live preview of the pasted/loaded list: valid count + what will be
+            stripped, with a one-click Clean that keeps only the good rows. */}
+        {preview.length > 0 && (
+          <div className="mt-3 rounded-lg bg-paper-100 p-2.5 dark:bg-umber-800/50">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+              <span className="rounded-full bg-sage-100 px-2 py-0.5 font-medium text-sage-800 dark:bg-sage-500/20 dark:text-sage-200">
+                {counts.ok} {t("admin.pinvite_valid")}
+              </span>
+              {counts.duplicate > 0 && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-400/20 dark:text-amber-200">
+                  {counts.duplicate} {t("admin.pinvite_duplicate")}
+                </span>
+              )}
+              {counts.invalid > 0 && (
+                <span className="rounded-full bg-rose-100 px-2 py-0.5 font-medium text-rose-700 dark:bg-rose-500/20 dark:text-rose-200">
+                  {counts.invalid} {t("admin.pinvite_invalid")}
+                </span>
+              )}
+              {counts.suspicious > 0 && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-400/20 dark:text-amber-200">
+                  {counts.suspicious} {t("admin.pinvite_suspicious")}
+                </span>
+              )}
+              {flagged.length > 0 && (
+                <button
+                  type="button"
+                  className="btn-secondary ml-auto h-7 gap-1.5 text-xs"
+                  onClick={cleanList}
+                >
+                  <Sparkles size={13} /> {t("admin.pinvite_clean_cta")}
+                </button>
+              )}
+            </div>
+            {flagged.length > 0 && (
+              <ul className="mt-2 max-h-40 space-y-0.5 overflow-y-auto text-[11px] text-ink-600 dark:text-umber-200">
+                {flagged.slice(0, 300).map((r, i) => (
+                  <li
+                    key={`${r.email}-${i}`}
+                    className="flex items-center justify-between gap-2 border-b border-paper-200/60 py-0.5 last:border-0 dark:border-umber-700/60"
+                  >
+                    <span className="truncate font-mono">{r.email || r.name || "—"}</span>
+                    <span className="shrink-0 text-ink-400 dark:text-umber-400">
+                      {statusLabel(r.status as Exclude<RowStatus, "ok">)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {lastImport && (
           <p className="mt-2 text-xs text-ink-600 dark:text-umber-200">
             {t("admin.pinvite_import_result", {

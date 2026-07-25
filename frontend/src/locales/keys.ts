@@ -5397,6 +5397,14 @@ export interface LocaleMessages {
     pinvite_import_cta: string;
     /** Label for the "upload a .csv file" picker on the contact import. */
     pinvite_import_file_cta: string;
+    /** Client-side CSV preview: category words + Clean action + result toast. */
+    pinvite_valid: string;
+    pinvite_duplicate: string;
+    pinvite_invalid: string;
+    pinvite_suspicious: string;
+    pinvite_clean_cta: string;
+    /** Toast after cleaning; receives {n} removed rows. */
+    pinvite_clean_done: string;
     pinvite_import_result: string;
     pinvite_stat_queued: string;
     pinvite_stat_registered: string;

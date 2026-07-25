@@ -4762,6 +4762,12 @@ const en: LocaleMessages = {
     pinvite_import_placeholder: 'name,email\n"Anna Kovács","anna@example.com"',
     pinvite_import_cta: "Import",
     pinvite_import_file_cta: "Upload file",
+    pinvite_valid: "valid",
+    pinvite_duplicate: "duplicate",
+    pinvite_invalid: "invalid",
+    pinvite_suspicious: "suspicious",
+    pinvite_clean_cta: "Clean list",
+    pinvite_clean_done: "{n} rows removed",
     pinvite_import_result:
       "Imported {imported}. Skipped: {registered} registered, {optout} opted out, {dup} duplicate, {invalid} invalid.",
     pinvite_stat_queued: "Queued",
