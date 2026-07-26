@@ -1820,23 +1820,19 @@ const hu: LocaleMessages = {
     couple_escape_link: "Pároknak",
     planner_escape_link: "Szervezőknek",
     hero_title: "A párok itt választanak szolgáltatót.",
-    hero_sub:
-      "Nálunk tervezik az esküvőt: vendéglista, büdzsé, ütemterv. Amikor a te kategóriádra kerül a sor, egy rövid listáról választanak. Legyél rajta.",
+    hero_sub: "Amikor a te kategóriádra kerül a sor, egy rövid listáról választanak. Legyél rajta.",
     offer_founding: "Aki bekerül, az első évben a vendégünk.",
     offer_early: "Aki bekerül, az első három hónapban a vendégünk.",
     cta_microcopy: "Két lépés, és a hirdetésed élő.",
     closing_title: "Legyél ott, amikor választanak.",
-    closing_body: "Regisztrálsz, feltöltesz egy borítóképet, és a hirdetésed élő.",
     closing_cta: "Foglald a helyed",
     benefit_1_title: "Előbb a megkeresés, aztán a számla",
     benefit_1_body:
-      "Teljes hozzáférés az első naptól. A számla akkor jön, ha a Wēddly már hozott neked három valódi megkeresést, és akkor is csak a következő hónap elsején.",
+      "Teljes hozzáférés az első naptól. A számla csak három valódi megkeresés után jön.",
     benefit_2_title: "Aznap fent vagy a listán",
-    benefit_2_body:
-      "Regisztrálsz, írsz pár sort, feltöltesz egy borítóképet. A hirdetésed azonnal élesedik. A megkeresés a saját postaládádba fut be, a válaszod egyenesen a párhoz megy.",
+    benefit_2_body: "A megkeresés a saját postaládádba fut be, a válaszod egyenesen a párhoz megy.",
     benefit_3_title: "Rövid lista, nem katalógus",
-    benefit_3_body:
-      "A pár nem görget végtelen találati listát. Kézzel gondozott listát lát a saját városában és árszintjén.",
+    benefit_3_body: "A pár kézzel gondozott listát lát a saját városában és árszintjén.",
     form_title: "Iratkozzatok fel",
     form_business_label: "Vállalkozás neve",
     form_email_label: "E-mail",
@@ -1885,8 +1881,6 @@ const hu: LocaleMessages = {
     contact_cta: "Csatlakozz a várólistára",
     contact_subject: "Szolgáltatói várólista",
     recommend_title: "Ismersz jó szolgáltatót?",
-    recommend_body:
-      "Regisztráld pár kattintással, vagy oszd meg a linket, hogy másokhoz is eljusson.",
     recommend_register_cta: "Szolgáltatót regisztrálok",
     recommend_share_cta: "Megosztom",
     recommend_share_message:
@@ -1942,8 +1936,8 @@ const hu: LocaleMessages = {
     price_list_upload_cta: "Árajánlat csatolása (PDF vagy kép)",
     price_list_remove: "Fájl eltávolítása",
     signup_cta: "Foglald a helyed",
-    have_account_cta: "Van már fiókod? Jelentkezz be",
-    demo_cta: "Nézz körül egy demó fiókban",
+    have_account_cta: "Bejelentkezés",
+    demo_cta: "Demó megnyitása",
     demo_loading: "Egy pillanat…",
     demo_error: "Nem indult. Próbáld újra.",
   },

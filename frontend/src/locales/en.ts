@@ -1797,23 +1797,18 @@ const en: LocaleMessages = {
     couple_escape_link: "For couples",
     planner_escape_link: "For planners",
     hero_title: "Couples pick their suppliers here.",
-    hero_sub:
-      "They run the whole wedding on Weddly: guest list, budget, timeline. When they get to your category, they choose from a short list. Be on it.",
+    hero_sub: "When they get to your category, they choose from a short list. Be on it.",
     offer_founding: "Everyone who gets in is our guest for the first year.",
     offer_early: "Everyone who gets in is our guest for the first three months.",
     cta_microcopy: "Two steps and your listing is live.",
     closing_title: "Be there when they choose.",
-    closing_body: "Sign up, add a cover photo, and your listing is live.",
     closing_cta: "Take your spot",
     benefit_1_title: "Inquiries first, then the invoice",
-    benefit_1_body:
-      "Full access from day one. The invoice comes once Weddly has brought you three real inquiries, and even then only on the 1st of the next month.",
+    benefit_1_body: "Full access from day one. The invoice comes only after three real inquiries.",
     benefit_2_title: "On the list the same day",
-    benefit_2_body:
-      "Sign up, write a few lines, add a cover photo. Your listing goes live right away. Inquiries land in your own inbox and your reply goes straight to the couple.",
+    benefit_2_body: "Inquiries land in your own inbox and your reply goes straight to the couple.",
     benefit_3_title: "A short list, not a catalogue",
-    benefit_3_body:
-      "Couples don't scroll an endless catalogue. They see a hand-kept list for their own city and price range.",
+    benefit_3_body: "Couples see a hand-kept list for their own city and price range.",
     form_title: "Join the waitlist",
     form_business_label: "Business name",
     form_email_label: "Email",
@@ -1862,8 +1857,6 @@ const en: LocaleMessages = {
     contact_cta: "Join the waitlist",
     contact_subject: "Vendor waitlist",
     recommend_title: "Know a great supplier?",
-    recommend_body:
-      "Register them in a couple of clicks, or share the link so it reaches more people.",
     recommend_register_cta: "Register a supplier",
     recommend_share_cta: "Share",
     recommend_share_message:
@@ -1918,8 +1911,8 @@ const en: LocaleMessages = {
     price_list_upload_cta: "Attach a price list (PDF or image)",
     price_list_remove: "Remove file",
     signup_cta: "Take your spot",
-    have_account_cta: "Already have an account? Log in",
-    demo_cta: "Look around a demo account",
+    have_account_cta: "Log in",
+    demo_cta: "Open a demo",
     demo_loading: "One moment…",
     demo_error: "Couldn't start. Try again.",
   },

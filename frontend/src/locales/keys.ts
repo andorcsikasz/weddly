@@ -2122,9 +2122,9 @@ export interface LocaleMessages {
     offer_early: string;
     /** Effort claim under the single primary CTA. */
     cta_microcopy: string;
-    /** Closing band: headline, one line, and the single repeat of the CTA. */
+    /** Closing band: headline and the single repeat of the CTA. No sub-line:
+     *  it only repeated the hero microcopy. */
     closing_title: string;
-    closing_body: string;
     closing_cta: string;
     benefit_1_title: string;
     benefit_1_body: string;
@@ -2183,7 +2183,6 @@ export interface LocaleMessages {
     /** Recommend-a-supplier share prompt on the vendor site: a shareable link
      *  so word-of-mouth supplier recommendations reach more couples. */
     recommend_title: string;
-    recommend_body: string;
     /** CTA that opens the register-a-supplier modal (visitor mode). */
     recommend_register_cta: string;
     recommend_share_cta: string;

@@ -194,9 +194,6 @@ export default function VendorsPage() {
             <h2 className="font-grotesk text-xl text-ink-900 sm:text-2xl dark:text-paper-50">
               {t("vendors.recommend_title")}
             </h2>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-600 dark:text-umber-200">
-              {t("vendors.recommend_body")}
-            </p>
           </div>
           <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
             <button
@@ -243,7 +240,8 @@ export default function VendorsPage() {
 /** Closing band: the one repeat of the primary CTA, plus real vendor quotes if
  *  we have any. It used to be a counter band ("N page views", "N spots left");
  *  those are gone on purpose (see rule 3 at the top) and the section now stands
- *  on the offer itself, which needs no number to be true. */
+ *  on the offer itself, which needs no number to be true. The sub-line under the
+ *  headline is gone too: it repeated the hero microcopy word for word. */
 function ClosingBand() {
   const { t } = useT();
   return (
@@ -251,9 +249,6 @@ function ClosingBand() {
       <h2 className="font-grotesk text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
         {t("vendors.closing_title")}
       </h2>
-      <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-ink-600 dark:text-umber-200">
-        {t("vendors.closing_body")}
-      </p>
       {VENDOR_TESTIMONIALS.length > 0 && (
         <div className="mx-auto mt-10 grid max-w-4xl gap-4 text-left sm:grid-cols-2">
           {VENDOR_TESTIMONIALS.map((v) => (

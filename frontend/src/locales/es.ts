@@ -1843,23 +1843,20 @@ const es: LocaleMessages = {
     couple_escape_link: "Para parejas",
     planner_escape_link: "Para wedding planners",
     hero_title: "Aquí es donde las parejas eligen proveedor.",
-    hero_sub:
-      "En Weddly llevan toda la boda: lista de invitados, presupuesto y cronograma. Cuando les toca tu categoría, eligen de una lista corta. Entra en esa lista.",
+    hero_sub: "Cuando les toca tu categoría, eligen de una lista corta. Entra en esa lista.",
     offer_founding: "Quien entra es nuestro invitado durante el primer año.",
     offer_early: "Quien entra es nuestro invitado durante los primeros tres meses.",
     cta_microcopy: "Dos pasos y tu anuncio está publicado.",
     closing_title: "Estate ahí cuando elijan.",
-    closing_body: "Te registras, subes una foto de portada y tu anuncio está publicado.",
     closing_cta: "Reserva tu plaza",
     benefit_1_title: "Primero las solicitudes, después la factura",
     benefit_1_body:
-      "Acceso completo desde el primer día. La factura llega cuando Weddly ya te ha traído tres solicitudes reales, y aun así el día 1 del mes siguiente.",
+      "Acceso completo desde el primer día. La factura llega solo tras tres solicitudes reales.",
     benefit_2_title: "El mismo día estás en la lista",
     benefit_2_body:
-      "Te registras, escribes unas líneas y subes una foto de portada. Tu anuncio se publica al momento. Las solicitudes llegan a tu propio correo y tu respuesta va directa a la pareja.",
+      "Las solicitudes llegan a tu propio correo y tu respuesta va directa a la pareja.",
     benefit_3_title: "Una lista corta, no un catálogo",
-    benefit_3_body:
-      "La pareja no recorre un catálogo infinito. Ve una lista cuidada a mano para su ciudad y su nivel de precio.",
+    benefit_3_body: "La pareja ve una lista cuidada a mano para su ciudad y su nivel de precio.",
     form_title: "Únete a la lista de espera",
     form_business_label: "Nombre del negocio",
     form_email_label: "Correo electrónico",
@@ -1908,8 +1905,6 @@ const es: LocaleMessages = {
     contact_cta: "Únete a la lista de espera",
     contact_subject: "Lista de espera de proveedores",
     recommend_title: "¿Conoces a un gran proveedor?",
-    recommend_body:
-      "Regístralo en un par de clics o comparte el enlace para que llegue a más gente.",
     recommend_register_cta: "Registrar un proveedor",
     recommend_share_cta: "Compartir",
     recommend_share_message:
@@ -1966,8 +1961,8 @@ const es: LocaleMessages = {
     price_list_upload_cta: "Adjunta una lista de precios (PDF o imagen)",
     price_list_remove: "Quitar archivo",
     signup_cta: "Reserva tu plaza",
-    have_account_cta: "¿Ya tienes cuenta? Inicia sesión",
-    demo_cta: "Echa un vistazo a una cuenta demo",
+    have_account_cta: "Iniciar sesión",
+    demo_cta: "Abrir una demo",
     demo_loading: "Un momento…",
     demo_error: "No se pudo iniciar. Inténtalo de nuevo.",
   },
