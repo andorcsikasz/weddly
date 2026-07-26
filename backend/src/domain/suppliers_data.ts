@@ -14458,13 +14458,19 @@ const RAW_DIRECTORY: (Omit<
     name: "Alice's Cake Cukrászda",
     category: "cake_dessert",
     city: "Pécs",
-    address: "Pécs, Pannónia u. 26, 7632 Magyarország",
+    // Primary shop only: the detail page renders `address` as a single
+    // map-trigger row, so the second location lives in the blurb instead.
+    address: "7632 Pécs, Pannónia utca 26. (bejárat a Móra Ferenc utca felől)",
     capacity_min: null,
     capacity_max: null,
-    blurb_hu: "Esküvői torták és cukrászsütemények, Pécs.",
-    blurb_en: "Wedding cakes and desserts in Pécs.",
+    blurb_hu:
+      "Esküvői torták Pécsen, két üzlet: Pannónia u. 26. és Varsány u. 10. Kedd-vasárnap 10-18, hétfőn zárva.",
+    blurb_en:
+      "Wedding cakes in Pécs, two shops: Pannónia u. 26. and Varsány u. 10. Tue-Sun 10:00-18:00, closed Mon.",
     website: "https://www.alicescake.hu/",
     ...noContact,
+    contact_email: "pecs@alicescake.hu",
+    contact_phone: "+36 72 337 407",
     source: "curated",
     price_band: null,
   },
