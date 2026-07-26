@@ -2677,7 +2677,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: "Szia!",
       paragraphs: [
         `Egy felhasználónk ajánlására felvettük a(z) ${p.listingName} vállalkozást a Weddly esküvői katalógusába, ${p.categoryLabel} kategóriában, ${p.city} környékén. A profil már él, a párok látják.`,
-        `Havonta több ezren terveznek nálunk esküvőt. A profilt viszont mi állítottuk össze nyilvános adatokból, így pont az hiányzik róla, ami valóban eladna: a saját fotóitok, a csomagok és árak, a szabad időpontok.`,
+        `Havonta több ezren látogatják az oldalunkat. A profilt viszont mi állítottuk össze nyilvános adatokból, így pont az hiányzik róla, ami valóban eladna: a saját fotóitok, a csomagok és árak, a szabad időpontok.`,
         offerSentenceHu(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Profil átvétele",
@@ -2691,7 +2691,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: "Hi there,",
       paragraphs: [
         `A user suggested you, so we added ${p.listingName} to the Weddly wedding directory under ${p.categoryLabel}, around ${p.city}. The profile is already live and couples can see it.`,
-        `Several thousand couples plan their wedding with us every month. But we built this profile from public information, so the things that actually win bookings are missing: your own photos, your packages and prices, the dates you are free.`,
+        `Several thousand people visit our site every month. But we built this profile from public information, so the things that actually win bookings are missing: your own photos, your packages and prices, the dates you are free.`,
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
