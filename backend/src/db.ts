@@ -1651,6 +1651,11 @@ addColumnIfMissing("listings", "google_place_id", "google_place_id TEXT");
 addColumnIfMissing("listings", "google_rating", "google_rating REAL");
 addColumnIfMissing("listings", "google_ratings_count", "google_ratings_count INTEGER");
 addColumnIfMissing("listings", "google_synced_at", "google_synced_at INTEGER");
+// When `scripts/geocode_listings.ts` last asked the geocoder about this row.
+// Stamped on a miss too, so an unfindable address can't be re-queried on every
+// run; NULL means "never asked". Curated rows get their coords from
+// suppliers_data.ts instead and never enter that script's candidate set.
+addColumnIfMissing("listings", "geo_synced_at", "geo_synced_at INTEGER");
 // Vendor opt-in: hide the tail of the public-page address + contact email from
 // anonymous visitors (a reason to register — same gate as the always-on phone
 // mask). Off by default, so existing listings show full contact exactly as
