@@ -4,7 +4,7 @@
 // no navigation. A quiet "add a comment" link goes to the vendor page for anyone
 // who wants to write more.
 
-import { Check } from "lucide-react";
+import { Check, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useToast } from "../components/ui";
@@ -88,7 +88,11 @@ export default function RateVendorsPage() {
                 {done ? (
                   <span className="inline-flex shrink-0 items-center gap-2 text-sm font-medium text-sage-700 dark:text-sage-300">
                     <Check size={16} aria-hidden />
-                    <span className="text-star text-lg leading-none">{"★".repeat(done)}</span>
+                    <span className="inline-flex items-center gap-0.5">
+                      {Array.from({ length: done }).map((_, i) => (
+                        <Star key={i} size={16} className="fill-star stroke-star" aria-hidden />
+                      ))}
+                    </span>
                     <Link
                       to={`/app/suppliers/${encodeURIComponent(v.id)}?review=1`}
                       className="text-xs font-normal text-ink-500 underline underline-offset-2 hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
@@ -115,11 +119,17 @@ export default function RateVendorsPage() {
                           disabled={busy === v.id}
                           onMouseEnter={() => setHover({ id: v.id, n })}
                           onClick={() => void rate(v, n)}
-                          className={`text-2xl leading-none transition disabled:opacity-50 ${
-                            lit ? "text-star" : "text-paper-300 hover:text-star dark:text-umber-500"
-                          }`}
+                          className="p-0.5 leading-none transition disabled:opacity-50"
                         >
-                          {lit ? "★" : "☆"}
+                          <Star
+                            size={26}
+                            aria-hidden
+                            className={
+                              lit
+                                ? "fill-star stroke-star"
+                                : "stroke-paper-300 dark:stroke-umber-500"
+                            }
+                          />
                         </button>
                       );
                     })}

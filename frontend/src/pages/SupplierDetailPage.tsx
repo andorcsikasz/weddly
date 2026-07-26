@@ -187,11 +187,13 @@ function StarPicker({
           role="radio"
           aria-checked={value === n}
           onClick={() => onChange(n as 1 | 2 | 3 | 4 | 5)}
-          className={`text-2xl leading-none transition ${
-            n <= value ? "text-star" : "text-paper-300 hover:text-star"
-          }`}
+          className="p-0.5 leading-none transition"
         >
-          {n <= value ? "★" : "☆"}
+          <Star
+            size={24}
+            aria-hidden
+            className={n <= value ? "fill-star stroke-star" : "stroke-paper-300 hover:stroke-star"}
+          />
         </button>
       ))}
     </div>
