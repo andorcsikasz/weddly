@@ -65,6 +65,7 @@ export type EmailKind =
   | "onboarding_campaign" // admin-run re-engagement blast to registered couples who never onboarded (no workspace)
   | "onboarding_campaign_reminder" // one nudge later to campaign recipients still not onboarded
   | "post_wedding_review_request" // ~7 days after the wedding: rate the vendors you used, one-click stars
+  | "wedding_farewell" // T+14: the last mail we ever send a married couple, then lifecycle goes silent
   | "vendor_claim_verify" // P2.C, sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
@@ -160,6 +161,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // promise in their own footnote that we only write at 90, 30 and 7 days out.
   honeymoon_nudge: "lifecycle",
   post_wedding_review_request: "lifecycle",
+  // Lifecycle, and the last one: the sweep that sends it flips
+  // `lifecycle_opt_out` immediately afterwards, so this is the final mail a
+  // married couple ever gets from us apart from transactional replies.
+  wedding_farewell: "lifecycle",
   milestone_t90: "lifecycle",
   milestone_t30: "lifecycle",
   milestone_t7: "lifecycle",

@@ -259,6 +259,17 @@ export interface PostWeddingReviewPayload {
    *  concrete ("rate THESE") rather than abstract. May be empty. */
   vendorNames: string[];
 }
+export interface WeddingFarewellPayload {
+  /** Couple display name, so the congratulation names them. */
+  coupleDisplayName: string;
+  /** Primary CTA: the feedback surface. Always present — every couple can tell
+   *  us how it went, whether or not they picked vendors here. */
+  ctaUrl: string;
+  /** Secondary CTA: /app/rate-vendors. Null when the couple has no vendor left
+   *  to rate, in which case the link is omitted rather than pointing at an
+   *  empty page. */
+  reviewUrl: string | null;
+}
 export interface FoundingPartnerPushPayload {
   /** Deep link to the dashboard's invite-partner anchor. Signing in is the
    *  fastest path for a recipient who is already logged in on this device. */
@@ -771,6 +782,7 @@ export type KindPayload = {
   onboarding_nudge_week: OnboardingNudgePayload;
   honeymoon_nudge: HoneymoonNudgePayload;
   post_wedding_review_request: PostWeddingReviewPayload;
+  wedding_farewell: WeddingFarewellPayload;
   milestone_t90: MilestonePayload;
   milestone_t30: MilestonePayload;
   milestone_t7: MilestonePayload;
@@ -1794,6 +1806,52 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         cta: "Rate your vendors",
         ctaSubtext: "Tap a star, done. All of them in one place.",
         footnote: "We send this once, after your wedding.",
+      },
+    };
+  },
+  // T+14, and the last mail this couple ever gets from us. The tone is a
+  // send-off, not a campaign: congratulate first, ask second, and say plainly
+  // that we're going quiet. Two asks, both optional, both one click: tell us how
+  // we did (primary), and put a few stars on the vendors they loved (secondary,
+  // omitted when there's nobody left to rate). Saying "this is the last one" is
+  // load-bearing — it is literally true (the sweep opts them out right after),
+  // and it is the reason the asks don't read as another nag.
+  wedding_farewell: (p, ctx) => {
+    const coupleHu = p.coupleDisplayName ? `**${p.coupleDisplayName}**, ` : "";
+    return {
+      subject: "Köszönjük, hogy velünk terveztetek / Thank you for planning with us",
+      ctaUrl: p.ctaUrl,
+      hu: {
+        preheader: "Megvolt a nagy nap. Gratulálunk, és köszönjük!",
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `${coupleHu}megvolt a nagy nap! Gratulálunk mindkettőtöknek, szívből. Reméljük, pont olyan lett, amilyennek elképzeltétek, és hogy a tervezés utolsó heteiben egy kicsit könnyebb volt a dolgotok, mert itt minden egy helyen volt.`,
+          "Ez az **utolsó levelünk**. Innentől nem írunk többet, a munkaterületetek viszont megmarad: bármikor visszanézhetitek a vendéglistát, az ültetést és a képeket.",
+          "Két dolgot kérnénk búcsúzóul, ha van rá öt percetek. Az egyik nekünk segít, a másik a következő pároknak.",
+        ],
+        cta: "Elmondom, mit gondolok",
+        ctaSubtext: "Őszintén, bármit. Minden sort elolvasunk.",
+        ...(p.reviewUrl
+          ? {
+              secondaryLinks: [{ label: "Értékelem a szolgáltatóinkat", url: p.reviewUrl }],
+            }
+          : {}),
+        footnote: "Sok boldogságot kívánunk nektek. Köszönjük, hogy minket választottatok!",
+      },
+      en: {
+        preheader: "The big day is behind you. Congratulations, and thank you!",
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `${p.coupleDisplayName ? `**${p.coupleDisplayName}**, the` : "The"} big day is behind you. Congratulations to you both! We hope it was everything you pictured, and that the last few weeks of planning were a little lighter for having it all in one place.`,
+          "This is our **last email**. We won't write again, but your workspace stays: the guest list, the seating chart and the photos are there whenever you want to look back.",
+          "Two small things before we go quiet, if you have five minutes. One helps us, the other helps the couples planning right now.",
+        ],
+        cta: "Tell us how we did",
+        ctaSubtext: "Anything, honestly. We read every line.",
+        ...(p.reviewUrl
+          ? { secondaryLinks: [{ label: "Rate the vendors we loved", url: p.reviewUrl }] }
+          : {}),
+        footnote: "Wishing you both every happiness. Thank you for choosing us!",
       },
     };
   },

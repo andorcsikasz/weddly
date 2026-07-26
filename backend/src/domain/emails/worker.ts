@@ -22,6 +22,7 @@ import { resolveRecipients, sendGuestMessage } from "../guest_messages";
 import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "../listings";
 import { insertCoupleNotification, listActionableTimelineTasks } from "../notifications";
 import { listCoupleVendorsToReview } from "../post_wedding_reviews";
+import { setLifecycleOptOut } from "./preferences";
 import { type PlannerProfileRow, sendPlannerProfileReminder } from "../planner_profile";
 import { getCampaignRow, sendCampaignBatch, sendCampaignReminders } from "../vendor_campaign";
 import {
@@ -51,6 +52,12 @@ import { markDispatched, sendKind } from "./send";
 // preventing 429 rate-limit failures when a cohort of accounts all become
 // due at the same time. Remaining accounts are picked up in the next sweep.
 const SENDS_PER_SWEEP_CAP = 8;
+
+// The send-off window. Two weeks is long enough that the couple is back from
+// the honeymoon and short enough that the day is still fresh; three months is
+// where a goodbye stops being warm and starts being late.
+const FAREWELL_AFTER_DAYS = 14;
+const FAREWELL_MAX_AGE_DAYS = 90;
 
 const ONBOARDING_NUDGE_AFTER_MS = 1000 * 60 * 60 * 24; // 24h
 const VENDOR_SHARE_NUDGE_AFTER_MS = 1000 * 60 * 60 * 2; // 2h
@@ -118,6 +125,7 @@ export function runEmailSweep(): {
   weddings: number;
   rsvpDeadlines: number;
   weddingFollowups: number;
+  weddingFarewells: number;
   mealFollowups: number;
   adminDigests: number;
   rsvpDigests: number;
@@ -136,6 +144,7 @@ export function runEmailSweep(): {
   const weddings = sweepWeddingDay(ts);
   const rsvpDeadlines = sweepRsvpDeadline(ts);
   const weddingFollowups = sweepWeddingFollowup(ts);
+  const weddingFarewells = sweepWeddingFarewell(ts);
   const mealFollowups = sweepRsvpMealFollowup(ts);
   const adminDigests = sweepAdminModerationDigest(ts);
   const rsvpDigests = sweepRsvpWeeklyDigest(ts);
@@ -158,6 +167,7 @@ export function runEmailSweep(): {
     weddings,
     rsvpDeadlines,
     weddingFollowups,
+    weddingFarewells,
     mealFollowups,
     adminDigests,
     rsvpDigests,
@@ -1006,6 +1016,65 @@ function sweepWeddingFollowup(ts: number): number {
   return count;
 }
 
+// T+14, the send-off. A week after the rate-your-vendors touch, we congratulate
+// the couple, ask twice (feedback + vendor stars) and then stop writing for
+// good: each recipient is flipped to `lifecycle_opt_out` the moment their mail
+// is handed off. There is no follow-up and no reminder by design — a couple
+// whose wedding is behind them has no reason to keep hearing from a planning
+// tool, and the goodwill of a clean exit is worth more than another nudge.
+//
+// Note the opt-out is user-keyed, so a person who later plans a SECOND event
+// starts out silenced. That is the right trade at this size (it is one
+// checkbox in Profile to undo, and re-engaging someone who asked for nothing is
+// the worse failure), but it is the thing to revisit if second weddings become
+// common.
+function sweepWeddingFarewell(ts: number): number {
+  const today = startOfDayUtc(ts);
+  // A WINDOW, not the single T+14 day the other wedding sweeps match on. A
+  // one-day match only ever reaches couples whose 14th day falls after this
+  // code ships; every couple already married by then would silently never get
+  // a send-off, which is most of the cohort on the day it launches. The window
+  // drains that backlog once (markDispatched + the opt-out make it once-only)
+  // and afterwards only ever matches couples crossing T+14 normally.
+  //
+  // The far edge matters as much as the near one: past ~3 months a "the big day
+  // is behind you, here's our goodbye" mail stops reading as thoughtful and
+  // starts reading as a system that lost track of time. Those couples get
+  // nothing rather than something awkward.
+  const rows = partnersForWeddingDateRange(
+    ymd(today - FAREWELL_MAX_AGE_DAYS * 86_400_000),
+    ymd(today - FAREWELL_AFTER_DAYS * 86_400_000),
+  );
+  let count = 0;
+  for (const r of rows) {
+    if (!markDispatched({ kind: "wedding_farewell", couple_id: r.couple_id, user_id: r.user_id }))
+      continue;
+    // Only offer the review link when there is actually something left to rate;
+    // the T+7 mail may already have collected them all.
+    const hasVendors = listCoupleVendorsToReview(r.couple_id).length > 0;
+    void sendKind(
+      "wedding_farewell",
+      {
+        coupleDisplayName: r.display_name,
+        ctaUrl: `${CONFIG.frontendBaseUrl}/app?feedback=1`,
+        reviewUrl: hasVendors ? `${CONFIG.frontendBaseUrl}/app/rate-vendors` : null,
+      },
+      {
+        user: { id: r.user_id, email: r.email, full_name: r.full_name },
+        couple_id: r.couple_id,
+      },
+    ).then(() => {
+      // AFTER the handoff, never before: `lifecycle_opt_out` makes the
+      // dispatcher skip lifecycle mail, so setting it first would suppress this
+      // very email. `sendKind` never rejects, so this always runs.
+      setLifecycleOptOut(r.user_id, true);
+    });
+    count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
+  }
+  return count;
+}
+
 interface DigestCoupleRow {
   couple_id: number;
   display_name: string;
@@ -1363,6 +1432,25 @@ function partnersForWeddingDate(date: string): CouplePartnerRow[] {
           AND u.status = 'active'`,
     )
     .all(date) as CouplePartnerRow[];
+}
+
+/** Partners of every active couple whose wedding falls in a closed date range.
+ *  The farewell needs a WINDOW rather than the single-day match the other
+ *  wedding sweeps use — see `sweepWeddingFarewell`. */
+function partnersForWeddingDateRange(fromDate: string, toDate: string): CouplePartnerRow[] {
+  return db
+    .prepare(
+      `SELECT c.id AS couple_id, c.display_name, c.wedding_date,
+              u.id AS user_id, u.email, u.full_name, u.status AS user_status
+         FROM couples c
+         JOIN users u ON u.couple_id = c.id
+        WHERE c.status = 'active'
+          AND c.wedding_date >= ?
+          AND c.wedding_date <= ?
+          AND u.status = 'active'
+        ORDER BY c.wedding_date DESC`,
+    )
+    .all(fromDate, toDate) as CouplePartnerRow[];
 }
 
 function startOfDayUtc(ts: number): number {

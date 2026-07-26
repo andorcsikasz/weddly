@@ -143,6 +143,11 @@ const STUBS: KindPayload = {
     ctaUrl: `${BASE_URL}/app/rate-vendors`,
     vendorNames: ["Bloom Studio", "Sweet Layers Cukrászda", "DJ Marco"],
   },
+  wedding_farewell: {
+    coupleDisplayName: "Mia & Lucas",
+    ctaUrl: `${BASE_URL}/app?feedback=1`,
+    reviewUrl: `${BASE_URL}/app/rate-vendors`,
+  },
   milestone_t90: {
     coupleDisplayName: "Mia & Lucas",
     weddingDate: "2026-09-12",
