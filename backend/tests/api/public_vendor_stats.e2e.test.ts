@@ -1,4 +1,4 @@
-// GET /api/public/vendor-stats — the live numbers behind the public /vendors
+// GET /api/public/vendor-stats: the live numbers behind the public /vendors
 // recruitment page.
 //
 // Contract:

@@ -106,7 +106,9 @@ export default function VendorsPage() {
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-10 sm:px-6 sm:pt-20 sm:pb-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
-          <h1 className="font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
+          {/* text-5xl, not the 6xl the shorter old headline used: this one is a
+              full sentence and four lines of 60px shouts rather than states. */}
+          <h1 className="font-grotesk text-4xl leading-[1.08] tracking-tight text-ink-900 sm:text-5xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
           <p className="mt-5 text-base leading-relaxed text-ink-600 sm:text-lg dark:text-umber-200">
@@ -119,16 +121,15 @@ export default function VendorsPage() {
             </Link>
             <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
               {t("vendors.cta_microcopy")}
-              {spotsLeft > 0 && (
-                <>
-                  {" "}
-                  <span className="font-medium text-ink-700 dark:text-umber-100">
-                    {t("vendors.spots_line", { n: spotsLeft })}
-                  </span>{" "}
-                  {offerLine}
-                </>
-              )}
             </p>
+            {spotsLeft > 0 && (
+              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+                <span className="font-medium text-ink-800 dark:text-paper-50">
+                  {t("vendors.spots_line", { n: spotsLeft })}
+                </span>{" "}
+                {offerLine}
+              </p>
+            )}
           </div>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 lg:justify-start">
             <VendorDemoLaunchButton variant="quiet" />
@@ -263,9 +264,11 @@ function ProofBand({ stats, locale }: { stats: PublicVendorStats | null; locale:
       <h2 className="text-center font-grotesk text-2xl text-ink-900 sm:text-3xl dark:text-paper-50">
         {t("vendors.proof_title")}
       </h2>
-      <div className="mx-auto mt-8 grid max-w-3xl gap-8 sm:grid-cols-3">
+      {/* Flex, not a 3-column grid: counters drop out on their own floor, and a
+          lone survivor in a grid sits off-centre in the first column. */}
+      <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-14 gap-y-8">
         {items.map((item) => (
-          <div key={item.label} className="text-center">
+          <div key={item.label} className="w-56 max-w-full text-center">
             <div className="font-grotesk text-4xl text-ink-900 tabular-nums dark:text-paper-50">
               {nf.format(item.value)}
             </div>
