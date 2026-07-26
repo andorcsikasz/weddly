@@ -2224,15 +2224,39 @@ const RAW_DIRECTORY: (Omit<
     name: "Johnny's Catering",
     category: "catering",
     city: "Budapest",
+    // Buda restaurant, the address the catering arm sits behind. The other two
+    // (Diósd, Veszprém) are restaurant locations, not catering desks, so they
+    // stay out of the single map-trigger address row.
+    address: "1125 Budapest, Szarvas Gábor út 33.",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu: "Esküvői és céges catering országosan, vegán opciókkal és desszertpultokkal.",
+    blurb_en: "Wedding and corporate catering nationwide, vegan options and dessert stations.",
+    website: "https://johnnys.hu/en/catering-services-budapest/",
+    ...noContact,
+    contact_email: "catering@johnnys.hu",
+    contact_phone: "+36 30 504 3066",
+    source: "curated",
+    price_band: 3,
+  },
+  {
+    id: "rosemary-event-catering",
+    name: "Rosemary Event & Catering",
+    category: "catering",
+    city: "Budapest",
+    // Mobile operation: they work at the client's or a partner venue, and no
+    // office address is published anywhere on the site.
     address: null,
     capacity_min: null,
     capacity_max: null,
-    blurb_hu: "Catering szolgáltatások Budapest és Magyarország területén.",
-    blurb_en: "Catering services around Budapest and Hungary.",
-    website: "https://johnnys.hu/en/catering-services-budapest/",
+    blurb_hu: "Teljes körű rendezvény-catering: étel, ital, személyzet, bútor, speciális étrendek.",
+    blurb_en: "Full-service event catering: food, drinks, staff, furniture, special diets.",
+    website: "https://rosemarycatering.hu/",
     ...noContact,
+    contact_email: "ajanlatkeres@rosemarycatering.hu",
+    contact_phone: "+36 20 431 1008",
     source: "curated",
-    price_band: 3,
+    price_band: null,
   },
   {
     id: "budapest-congress-center-catering",
@@ -2250,6 +2274,72 @@ const RAW_DIRECTORY: (Omit<
     contact_phone: "+36 1 372 5400",
     source: "curated",
     price_band: 4,
+  },
+
+  // Food trucks (July 2026 batch, first entries in this category).
+  // All three are mobile operations that travel to the couple's venue, so
+  // `address` is null across the board: none of them publishes a street address
+  // for the truck, and a parent restaurant's address would send couples to the
+  // wrong place. What a couple actually needs to plan around (minimum head
+  // count, power draw, how many people it feeds) lives in the blurb.
+  {
+    id: "moto-catering-budapest",
+    name: "Moto Catering Budapest",
+    category: "food_trucks",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Nápolyi pizza mobil kemencéből, a helyszínen sütve. Négyféle pizza, egyedi kérésre több.",
+    blurb_en:
+      "Neapolitan pizza from a mobile oven, baked on site. Four varieties, more on request.",
+    website: "https://motocatering.hu/",
+    ...noContact,
+    contact_email: "hello@motocatering.hu",
+    contact_phone: "+36 30 922 5535",
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "simons-foodtruck",
+    name: "Simon's Foodtruck",
+    category: "food_trucks",
+    city: "Budapest",
+    address: null,
+    // Their limit is a MINIMUM (100 guests), and `showsCapacity` only prints a
+    // range when `capacity_max` is set, so a min-only number would never
+    // surface. It goes in the blurb, where it's actually readable.
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu: "Smash burger food truck bárhol Magyarországon. Min. 100 fő, 4 óra, 3×63A áram.",
+    blurb_en: "Smash-burger truck anywhere in Hungary. Min. 100 guests, 4 hours, 3×63A power.",
+    website: "https://simonsburger.hu/foodtruck",
+    ...noContact,
+    contact_email: "foodtruck@simonsburger.hu",
+    contact_phone: "+36 30 411 2186",
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "krumpello",
+    name: "Krumpello",
+    category: "food_trucks",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: 400,
+    blurb_hu:
+      "Töltött sültkrumpli food truck, háromféle ízben. Húsmentes és gluténmentes opcióval.",
+    blurb_en: "Loaded baked-potato truck in three flavours. Meat-free and gluten-free options.",
+    website: "https://krumpellotruck.com/",
+    ...noContact,
+    // Quote-request form only, no public address published. Phone is the
+    // contact path (Varga Ádám).
+    contact_email: null,
+    contact_phone: "+36 30 705 1348",
+    source: "curated",
+    price_band: null,
   },
 
   // Photographers
