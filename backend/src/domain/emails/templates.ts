@@ -2826,28 +2826,29 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         : "I built something for anyone getting married.",
     ctaUrl: p.ctaUrl,
     hu: {
-      preheader: "Az egész esküvőtervezés egy nyugodt helyen. Az első 200 pár ingyen.",
+      preheader:
+        "Az egész esküvőtervezés egy nyugodt helyen. A következő másfél évben a vendégünk vagy.",
       greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
       paragraphs: [
         "Építettem egy appot: a **Weddly**. Az egész esküvőtervezést egy nyugodt helyre teszi. Költségvetés, ami nem borul fel, vendéglista és online RSVP, nyomtatható ültetési rend, szolgáltatók, idővonal és saját esküvői weboldal. Kettőtöknek, közösen, a 100 böngészőfül és a végtelen Excel helyett.",
         "Miért tőlem kapod? Mert ha **te, vagy valaki, akit szeretsz, most tervez esküvőt**, ez rengeteg stresszt levehet a válláról.",
-        "Az **első 200 pár ingyen** használja, bankkártya nélkül. Ha ismersz jegyespárt, a legszebb ajándék, ha továbbküldöd nekik ezt a levelet.",
+        "Regisztrálj most, és tarts velünk az első fejezettől: a következő **másfél évben a vendégünk vagy**, teljes hozzáféréssel. Ha ismersz jegyespárt, a legszebb ajándék, ha továbbküldöd neki ezt a levelet.",
       ],
       cta: "Regisztrálok",
-      ctaSubtext: "Ingyenes, egy perc az egész.",
+      ctaSubtext: "Egy perc az egész.",
       footnote:
         "Ha most nem aktuális, hagyd figyelmen kívül ezt a levelet, vagy iratkozz le lent. Nem zavarlak többet.",
     },
     en: {
-      preheader: "The whole wedding in one calm place. The first 200 couples are free.",
+      preheader: "The whole wedding in one calm place. Be our guest for the next 18 months.",
       greeting: p.name.trim() ? `Hi ${p.name.trim()},` : "Hi there,",
       paragraphs: [
         "I built an app: **Weddly**. It puts the whole wedding in one calm place. A budget that stays under control, a guest list with online RSVP, a printable seating chart, suppliers, a timeline and your own wedding website. For the two of you, together, instead of 100 browser tabs and endless spreadsheets.",
         "Why me? Because if **you, or someone you love, is getting married**, this lifts a lot of the stress off their plate.",
-        "The **first 200 couples are free**, no card needed. Know an engaged couple? Forwarding this to them is the nicest gift.",
+        "Register now and be part of our growth story from the first chapter: **the next 18 months are on us**, with everything unlocked. Know an engaged couple? Forwarding this to them is the nicest gift.",
       ],
       cta: "Sign up",
-      ctaSubtext: "Free, takes a minute.",
+      ctaSubtext: "Takes a minute.",
       footnote:
         "Not the right time? Ignore this email or unsubscribe below. I won't email you again.",
     },
