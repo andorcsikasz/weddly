@@ -16,6 +16,7 @@ import {
   Gift,
   Heart,
   History,
+  Hourglass,
   Layers,
   Mail,
   RefreshCw,
@@ -799,18 +800,34 @@ export default function AdminUsersPage() {
   function renderPaymentStatus(c: AdminCoupleView) {
     const s = c.billing.subscription_status;
     if (s === "founding") return null;
-    return s === "active" || s === "past_due" ? (
-      <span
-        className="relative inline-flex items-center text-sage-600 dark:text-sage-300"
-        title={t("admin.billing_paying")}
-        aria-label={t("admin.billing_paying")}
-      >
-        <DollarSign size={14} aria-hidden />
-        <span className="pointer-events-none absolute -right-1 -bottom-1 inline-flex h-3 w-3 items-center justify-center rounded-full bg-sage-500 text-paper-50 ring-1 ring-paper-50 dark:ring-umber-900">
-          <Check size={8} strokeWidth={3} aria-hidden />
+    if (s === "active" || s === "past_due") {
+      return (
+        <span
+          className="relative inline-flex items-center text-sage-600 dark:text-sage-300"
+          title={t("admin.billing_paying")}
+          aria-label={t("admin.billing_paying")}
+        >
+          <DollarSign size={14} aria-hidden />
+          <span className="pointer-events-none absolute -right-1 -bottom-1 inline-flex h-3 w-3 items-center justify-center rounded-full bg-sage-500 text-paper-50 ring-1 ring-paper-50 dark:ring-umber-900">
+            <Check size={8} strokeWidth={3} aria-hidden />
+          </span>
         </span>
-      </span>
-    ) : (
+      );
+    }
+    // On trial: its own amber hourglass so it reads as "time-limited, not paying
+    // yet" rather than the red X of a lapsed/never-subscribed workspace.
+    if (s === "trialing") {
+      return (
+        <span
+          className="inline-flex items-center text-amber-600 dark:text-amber-300"
+          title={t("admin.billing_trial")}
+          aria-label={t("admin.billing_trial")}
+        >
+          <Hourglass size={14} aria-hidden />
+        </span>
+      );
+    }
+    return (
       <span
         className="inline-flex items-center text-blush-600 dark:text-blush-300"
         title={t("admin.billing_not_subscribed")}
