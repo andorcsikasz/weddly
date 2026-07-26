@@ -208,7 +208,10 @@ describe("vendor self-serve registration", () => {
     expect(listing.city).toBe("Budapest");
     expect(listing.address).toBe("Fő utca 1.");
     expect(listing.contact_phone).toBe("+36 30 123 4567");
-    expect(listing.website).toBe("https://florea.example");
+    // Stored normalized: the scheme guard (lib/url.ts, added to block stored XSS
+    // via javascript: URLs) persists `URL.href`, which spells a bare origin with
+    // its root path.
+    expect(listing.website).toBe("https://florea.example/");
   });
 
   test("keeps the legal company name distinct from the public display name", async () => {
