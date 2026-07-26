@@ -1818,8 +1818,8 @@ const es: LocaleMessages = {
     mockup_table_uni: "Universidad",
     mockup_table_head: "Mesa presidencial",
     mockup_drag_subtitle: "Veg · Acompañante 1",
-    mockup_vendor_category: "Diseño floral · Viena, AT",
-    mockup_vendor_reviews: "4,9 · 23 reseñas",
+    mockup_vendor_name: "Tu negocio",
+    mockup_vendor_category: "Categoría · Ciudad",
     mockup_vendor_cta: "Ver perfil",
     // ── Landing "try the demo" card, small tilted sticker on the right
     //    of the hero. Eyebrow + italic title + one button. The fairytale
@@ -1833,33 +1833,29 @@ const es: LocaleMessages = {
   vendors: {
     seo_title: "Para proveedores · Weddly",
     seo_description:
-      "Ponte delante de parejas que ya tienen fecha y presupuesto. Mira cómo entrar en la lista de proveedores seleccionados de Weddly.",
+      "Aquí es donde las parejas eligen proveedor. Lista de invitados, presupuesto y cronograma en un solo sitio, y cuando les toca tu categoría eligen de una lista corta.",
     pill: "Acceso anticipado",
     wrong_audience: "¿No eres proveedor?",
     couple_escape_link: "Para parejas",
     planner_escape_link: "Para wedding planners",
-    hero_title: "Ponte delante de parejas que ya tienen fecha y presupuesto.",
+    hero_title: "Aquí es donde las parejas eligen proveedor.",
     hero_sub:
-      "En Weddly las parejas llevan su lista de invitados, su presupuesto y su cronograma. Cuando les toca tu categoría, eligen de esta lista seleccionada. A esa lista es a la que te damos acceso.",
-    trust_signal: "Únete a los 47 proveedores que ya están en la lista de espera",
-    spots_line: "En esta ronda quedan {n} plazas.",
+      "En Weddly llevan toda la boda: lista de invitados, presupuesto y cronograma. Cuando les toca tu categoría, eligen de una lista corta. Entra en esa lista.",
     offer_founding: "Quien entra es nuestro invitado durante el primer año.",
     offer_early: "Quien entra es nuestro invitado durante los primeros tres meses.",
     cta_microcopy: "Dos pasos y tu anuncio está publicado.",
-    proof_title: "Esto está pasando ahora en Weddly",
-    proof_visits_label: "páginas vistas en los últimos 28 días",
-    proof_inquiries_label: "solicitudes enviadas a proveedores en 30 días",
-    proof_spots_label: "plazas libres en esta ronda",
-    proof_cta: "Reserva tu plaza",
-    benefit_1_title: "Primero las tres solicitudes, después la factura",
+    closing_title: "Estate ahí cuando elijan.",
+    closing_body: "Te registras, subes una foto de portada y tu anuncio está publicado.",
+    closing_cta: "Reserva tu plaza",
+    benefit_1_title: "Primero las solicitudes, después la factura",
     benefit_1_body:
-      "Acceso completo desde el primer día. La facturación empieza cuando Weddly ya te ha traído tres solicitudes reales, y aun así el día 1 del mes siguiente.",
+      "Acceso completo desde el primer día. La factura llega cuando Weddly ya te ha traído tres solicitudes reales, y aun así el día 1 del mes siguiente.",
     benefit_2_title: "El mismo día estás en la lista",
     benefit_2_body:
-      "Te registras, escribes una breve presentación y subes una foto de portada. Tu anuncio se publica al momento, las solicitudes llegan a tu propio correo y tu respuesta va directa a la pareja.",
+      "Te registras, escribes unas líneas y subes una foto de portada. Tu anuncio se publica al momento. Las solicitudes llegan a tu propio correo y tu respuesta va directa a la pareja.",
     benefit_3_title: "Una lista corta, no un catálogo",
     benefit_3_body:
-      "La pareja no recorre un catálogo infinito: ve una lista cuidada a mano para su ciudad y su nivel de precio. Por eso cada ronda tiene un número limitado de plazas.",
+      "La pareja no recorre un catálogo infinito. Ve una lista cuidada a mano para su ciudad y su nivel de precio.",
     form_title: "Únete a la lista de espera",
     form_business_label: "Nombre del negocio",
     form_email_label: "Correo electrónico",
@@ -1909,7 +1905,7 @@ const es: LocaleMessages = {
     contact_subject: "Lista de espera de proveedores",
     recommend_title: "¿Conoces a un gran proveedor?",
     recommend_body:
-      "¿Hay algún proveedor que recomendarías de todo corazón? Regístralo en un par de clics (solo confirma tu correo, sin necesidad de cuenta) o comparte este enlace para que llegue a más gente.",
+      "Regístralo en un par de clics o comparte el enlace para que llegue a más gente.",
     recommend_register_cta: "Registrar un proveedor",
     recommend_share_cta: "Compartir",
     recommend_share_message:

@@ -1772,8 +1772,8 @@ const en: LocaleMessages = {
     mockup_table_uni: "Uni",
     mockup_table_head: "Head table",
     mockup_drag_subtitle: "Veg · Plus 1",
-    mockup_vendor_category: "Floral design · Vienna, AT",
-    mockup_vendor_reviews: "4.9 · 23 reviews",
+    mockup_vendor_name: "Your business",
+    mockup_vendor_category: "Category · City",
     mockup_vendor_cta: "View profile",
     // ── Landing "try the demo" card, small tilted sticker on the right
     //    of the hero. Eyebrow + italic title + one button. The fairytale
@@ -1787,33 +1787,29 @@ const en: LocaleMessages = {
   vendors: {
     seo_title: "For vendors · Weddly",
     seo_description:
-      "Get in front of couples who already have a date and a budget. See how to get onto Weddly's curated supplier list.",
+      "This is where couples pick their suppliers. Guest list, budget and timeline in one place, and when they get to your category they choose from a short list.",
     pill: "Early access",
     wrong_audience: "Not a vendor?",
     couple_escape_link: "For couples",
     planner_escape_link: "For planners",
-    hero_title: "Get in front of couples who already have a date and a budget.",
+    hero_title: "Couples pick their suppliers here.",
     hero_sub:
-      "Couples run their guest list, their budget and their timeline on Weddly. When they get to your category, they pick from this curated list. That list is what we give you access to.",
-    trust_signal: "Join 47 vendors already on the waitlist",
-    spots_line: "This round has {n} spots left.",
+      "They run the whole wedding on Weddly: guest list, budget, timeline. When they get to your category, they choose from a short list. Be on it.",
     offer_founding: "Everyone who gets in is our guest for the first year.",
     offer_early: "Everyone who gets in is our guest for the first three months.",
     cta_microcopy: "Two steps and your listing is live.",
-    proof_title: "What's happening on Weddly right now",
-    proof_visits_label: "page views in the last 28 days",
-    proof_inquiries_label: "inquiries sent to vendors in 30 days",
-    proof_spots_label: "spots left in this round",
-    proof_cta: "Take your spot",
-    benefit_1_title: "Three inquiries first, then the invoice",
+    closing_title: "Be there when they choose.",
+    closing_body: "Sign up, add a cover photo, and your listing is live.",
+    closing_cta: "Take your spot",
+    benefit_1_title: "Inquiries first, then the invoice",
     benefit_1_body:
-      "Full access from day one. Billing starts once Weddly has brought you three real inquiries, and even then only on the 1st of the following month.",
+      "Full access from day one. The invoice comes once Weddly has brought you three real inquiries, and even then only on the 1st of the next month.",
     benefit_2_title: "On the list the same day",
     benefit_2_body:
-      "Sign up, write a short intro, add a cover photo. Your listing goes live straight away, inquiries land in your own inbox, and your reply goes directly to the couple.",
+      "Sign up, write a few lines, add a cover photo. Your listing goes live right away. Inquiries land in your own inbox and your reply goes straight to the couple.",
     benefit_3_title: "A short list, not a catalogue",
     benefit_3_body:
-      "Couples don't scroll an endless catalogue: they see a hand-kept list for their own city and price range. That's why each round has a limited number of spots.",
+      "Couples don't scroll an endless catalogue. They see a hand-kept list for their own city and price range.",
     form_title: "Join the waitlist",
     form_business_label: "Business name",
     form_email_label: "Email",
@@ -1863,7 +1859,7 @@ const en: LocaleMessages = {
     contact_subject: "Vendor waitlist",
     recommend_title: "Know a great supplier?",
     recommend_body:
-      "Is there a supplier you'd wholeheartedly recommend? Register them in a couple of clicks or share this link so it reaches more people.",
+      "Register them in a couple of clicks, or share the link so it reaches more people.",
     recommend_register_cta: "Register a supplier",
     recommend_share_cta: "Share",
     recommend_share_message:

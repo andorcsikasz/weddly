@@ -2093,8 +2093,10 @@ export interface LocaleMessages {
     mockup_table_uni: string;
     mockup_table_head: string;
     mockup_drag_subtitle: string;
+    /** Vendor card preview. Placeholders only: the card carries no invented
+     *  business name, rating or review count. */
+    mockup_vendor_name: string;
     mockup_vendor_category: string;
-    mockup_vendor_reviews: string;
     mockup_vendor_cta: string;
   };
   vendors: {
@@ -2106,25 +2108,18 @@ export interface LocaleMessages {
     planner_escape_link: string;
     hero_title: string;
     hero_sub: string;
-    trust_signal: string;
-    /** Live scarcity line under the hero CTA. {n} = slots left in the free
-     *  window a signup would land in right now (GET /api/public/vendor-stats).
-     *  Never rendered when the round is full or the fetch fails. */
-    spots_line: string;
-    /** What the current round grants, appended after the spots line. Picked by
-     *  offer tier; the trial tier has no such promise, so it has no key. */
+    /** What the current free window grants, under the hero CTA. Picked by offer
+     *  tier (GET /api/public/vendor-stats); the trial tier has no such promise,
+     *  so it has no key. The slot COUNT behind it is deliberately never
+     *  rendered, so these lines must read as a promise, not a countdown. */
     offer_founding: string;
     offer_early: string;
     /** Effort claim under the single primary CTA. */
     cta_microcopy: string;
-    /** Social-proof band. Each counter self-hides below its own floor, so the
-     *  labels must read correctly on their own. */
-    proof_title: string;
-    proof_visits_label: string;
-    proof_inquiries_label: string;
-    proof_spots_label: string;
-    /** Closing repeat of the single CTA at the end of the proof band. */
-    proof_cta: string;
+    /** Closing band: headline, one line, and the single repeat of the CTA. */
+    closing_title: string;
+    closing_body: string;
+    closing_cta: string;
     benefit_1_title: string;
     benefit_1_body: string;
     benefit_2_title: string;

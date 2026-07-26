@@ -965,7 +965,12 @@ export function SeatingMockup({ className }: Common) {
 
 /** Vendor listing mockup — a single supplier card as it appears in
  *  the directory, used on VendorsPage to show vendors what their
- *  listing will look like. */
+ *  listing will look like.
+ *
+ *  It carries NO invented data: no business name, no star rating, no review
+ *  count. Those read as a fabricated endorsement on a public page, and on a
+ *  young marketplace they are also a promise we can't back. The card shows the
+ *  empty template a vendor fills in ("Your business" / "Category · City"). */
 export function VendorListingMockup({ className }: Common) {
   const { t } = useT();
   return (
@@ -1018,49 +1023,28 @@ export function VendorListingMockup({ className }: Common) {
       <g className="text-paper-300 dark:text-umber-600">
         <circle cx="40" cy="92" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
       </g>
-      <g className="font-serif text-umber-700 dark:text-paper-200">
-        <text x="40" y="98" fontSize="18" fill="currentColor" textAnchor="middle">
-          F
-        </text>
-      </g>
 
-      {/* Name + category */}
+      {/* Name + category, both placeholders the vendor replaces. */}
       <g className="font-serif text-ink-900 dark:text-paper-100">
-        <text x="20" y="142" fontSize="18" fill="currentColor">
-          Florea Studio
+        <text x="20" y="150" fontSize="18" fill="currentColor">
+          {t("landing.mockup_vendor_name")}
         </text>
       </g>
       <g className="text-ink-500 font-sans dark:text-umber-300">
-        <text x="20" y="160" fontSize="10" fill="currentColor">
+        <text x="20" y="170" fontSize="10" fill="currentColor">
           {t("landing.mockup_vendor_category")}
         </text>
       </g>
 
-      {/* Stars */}
-      <g className="text-umber-600 dark:text-umber-400">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <path
-            key={i}
-            transform={`translate(${20 + i * 14}, 178)`}
-            d="M 5 0 L 6.5 3.5 L 10 4 L 7.5 6.5 L 8 10 L 5 8 L 2 10 L 2.5 6.5 L 0 4 L 3.5 3.5 Z"
-            fill="currentColor"
-          />
-        ))}
-      </g>
-      <g className="text-ink-500 font-sans dark:text-umber-300">
-        <text x="98" y="187" fontSize="10" fill="currentColor">
-          {t("landing.mockup_vendor_reviews")}
-        </text>
-      </g>
-
-      {/* CTA */}
+      {/* CTA, full width now that the star row is gone, so the lower half of
+          the card doesn't read as half-empty. */}
       <g className="text-umber-600 dark:text-paper-200">
-        <rect x="220" y="170" width="120" height="28" rx="14" fill="currentColor" />
+        <rect x="20" y="182" width="320" height="34" rx="17" fill="currentColor" />
       </g>
       <g className="text-white font-sans dark:text-ink-900">
         <text
-          x="280"
-          y="188"
+          x="180"
+          y="204"
           fontSize="11"
           fontWeight="600"
           fill="currentColor"

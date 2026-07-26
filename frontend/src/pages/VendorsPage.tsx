@@ -8,12 +8,16 @@
 //   1. Couples are the product; vendors get ACCESS to what couples already
 //      use. No "partner", no "community", nothing that reads as co-ownership.
 //   2. Concrete over abstract: what a vendor gets, how fast, and what it
-//      costs, in that order.
-//   3. Every number on the page is live (GET /api/public/vendor-stats). We do
-//      not type counts into the copy, and a counter that is too small to be
-//      persuasive hides itself instead of being dressed up.
-//   4. ONE dominant call to action (signup). Demo, login and the wrong-audience
-//      escape hatches are all quiet text links.
+//      costs, in that order. Short sentences, no hedging.
+//   3. NO COUNTS ON THE PAGE. Page views, inquiry totals and "N spots left"
+//      are all gone: while the marketplace is young those numbers argue
+//      against us, and a scarcity counter is the first thing a vendor reads
+//      as marketing. The only live thing left is WHICH free window a signup
+//      lands in (founding / early), stated as a promise, never as a tally.
+//      Same rule in the hero mockup: no invented business, rating or review
+//      count in the card preview.
+//   4. ONE dominant call to action (signup), repeated once at the end. Demo,
+//      login and the wrong-audience escape hatches are all quiet text links.
 
 import type { PublicVendorStats } from "@shared/vendor_billing";
 import { ArrowLeft, ArrowRight, Gem, Inbox, Receipt, Share2, Store } from "lucide-react";
@@ -28,19 +32,14 @@ import { publicStatsApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
-/** Floor under the two demand counters in the proof band. A real but tiny
- *  number ("12 page views in 28 days") argues against us, so each counter stays
- *  hidden until it clears this. Lower it as the numbers grow. */
-const MIN_SHOWABLE = 25;
-
-/** Real vendor quotes for the proof band, empty until we have some.
+/** Real vendor quotes for the closing band, empty until we have some.
  *  DELIBERATELY EMPTY: an invented testimonial on a public page is a fabricated
  *  endorsement, and the block renders fine without one. To turn it on, paste
  *  real, permission-given quotes here (quote in the speaker's own language). */
 const VENDOR_TESTIMONIALS: { quote: string; name: string; business: string }[] = [];
 
 export default function VendorsPage() {
-  const { t, locale } = useT();
+  const { t } = useT();
   const toast = useToast();
   useDocumentMeta("vendors.seo_title", "vendors.seo_description");
   // Register-a-vendor flow for random visitors (no account): the modal handles
@@ -48,34 +47,36 @@ export default function VendorsPage() {
   // community listing on X-Visitor-Token.
   const [registerOpen, setRegisterOpen] = useState(false);
 
-  // Live counters behind the scarcity line and the proof band. A failed fetch
-  // leaves them null, which drops both surfaces and keeps the evergreen copy.
-  const [stats, setStats] = useState<PublicVendorStats | null>(null);
+  // The only live thing on the page: which free window a signup lands in right
+  // now. We read the offer tier and say what it grants; the slot count that
+  // comes with it is deliberately never rendered. A failed fetch just drops the
+  // promise line and leaves the evergreen copy standing.
+  const [offer, setOffer] = useState<PublicVendorStats["offer"] | null>(null);
   useEffect(() => {
     let cancelled = false;
     publicStatsApi
       .vendors()
       .then((r) => {
-        if (!cancelled) setStats(r);
+        if (!cancelled) setOffer(r.offer);
       })
       .catch(() => {
-        // Public counters, never block the page on a fetch failure.
+        // Public endpoint, never block the page on a fetch failure.
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const offer = stats?.offer ?? null;
-  // The scarcity line only makes a claim while a capped free round is actually
-  // running. On the trial tier there are no slots to count down.
-  const spotsLeft = offer && offer.tier !== "trial" && offer.spots_left > 0 ? offer.spots_left : 0;
+  // A capped free window is running (and still has room) → say what it grants.
+  // On the trial tier there is no such promise, so there is no line.
   const offerLine =
-    offer?.tier === "founding"
-      ? t("vendors.offer_founding")
-      : offer?.tier === "early"
-        ? t("vendors.offer_early")
-        : null;
+    offer && offer.spots_left > 0
+      ? offer.tier === "founding"
+        ? t("vendors.offer_founding")
+        : offer.tier === "early"
+          ? t("vendors.offer_early")
+          : null
+      : null;
 
   // Growth loop: anyone on the vendor site can pass a link on so their friends
   // come recommend a supplier they trust. Native share sheet on mobile, with a
@@ -106,16 +107,9 @@ export default function VendorsPage() {
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-10 sm:px-6 sm:pt-20 sm:pb-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
-          {/* Scarcity as a bold eyebrow badge — the urgency signal reads first. */}
-          {spotsLeft > 0 && (
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-paper-300 bg-paper-100 px-3.5 py-1.5 text-sm font-semibold text-umber-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50">
-              <span className="inline-block h-2 w-2 rounded-full bg-sage-500" aria-hidden />
-              {t("vendors.spots_line", { n: spotsLeft })}
-            </div>
-          )}
-          {/* Heavier weight + tighter leading for a bolder read. Size stays at
-              5xl on purpose: this is a full sentence, and 60px would shout it. */}
-          <h1 className="font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-ink-900 sm:text-5xl dark:text-paper-50">
+          {/* The headline is short enough to carry real display size now that
+              no badge sits above it. */}
+          <h1 className="font-grotesk text-4xl font-semibold leading-[1.02] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
           <p className="mt-5 text-base leading-relaxed text-ink-600 sm:text-lg dark:text-umber-200">
@@ -133,8 +127,10 @@ export default function VendorsPage() {
             <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
               {t("vendors.cta_microcopy")}
             </p>
-            {spotsLeft > 0 && offerLine && (
-              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{offerLine}</p>
+            {offerLine && (
+              <p className="mt-1 text-sm font-medium text-ink-700 dark:text-umber-100">
+                {offerLine}
+              </p>
             )}
           </div>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 lg:justify-start">
@@ -188,7 +184,7 @@ export default function VendorsPage() {
         </div>
       </section>
 
-      <ProofBand stats={stats} locale={locale} />
+      <ClosingBand />
 
       {/* Recommend-a-supplier prompt — two ways to help: register the vendor
           yourself (verify email, no account needed) or pass the link on. */}
@@ -244,48 +240,22 @@ export default function VendorsPage() {
   );
 }
 
-/** Proof band: live demand numbers, optional real testimonials, and the one
- *  repeat of the primary CTA. Each counter clears its own floor before it
- *  renders (see MIN_SHOWABLE); when none of them qualifies the whole band
- *  disappears rather than shipping a thin "0 couples" sign. */
-function ProofBand({ stats, locale }: { stats: PublicVendorStats | null; locale: string }) {
+/** Closing band: the one repeat of the primary CTA, plus real vendor quotes if
+ *  we have any. It used to be a counter band ("N page views", "N spots left");
+ *  those are gone on purpose (see rule 3 at the top) and the section now stands
+ *  on the offer itself, which needs no number to be true. */
+function ClosingBand() {
   const { t } = useT();
-  if (!stats) return null;
-
-  const nf = new Intl.NumberFormat(locale === "hu" ? "hu-HU" : locale === "es" ? "es-ES" : "en-US");
-  const items: { value: number; label: string }[] = [];
-  if (stats.visits_28d >= MIN_SHOWABLE) {
-    items.push({ value: stats.visits_28d, label: t("vendors.proof_visits_label") });
-  }
-  if (stats.inquiries_30d >= MIN_SHOWABLE) {
-    items.push({ value: stats.inquiries_30d, label: t("vendors.proof_inquiries_label") });
-  }
-  if (stats.offer.tier !== "trial" && stats.offer.spots_left > 0) {
-    items.push({ value: stats.offer.spots_left, label: t("vendors.proof_spots_label") });
-  }
-  if (items.length === 0) return null;
-
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-14">
-      <h2 className="text-center font-grotesk text-2xl text-ink-900 sm:text-3xl dark:text-paper-50">
-        {t("vendors.proof_title")}
+    <section className="mx-auto max-w-6xl px-4 py-12 text-center sm:px-6 sm:py-16">
+      <h2 className="font-grotesk text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl dark:text-paper-50">
+        {t("vendors.closing_title")}
       </h2>
-      {/* Flex, not a 3-column grid: counters drop out on their own floor, and a
-          lone survivor in a grid sits off-centre in the first column. */}
-      <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-14 gap-y-8">
-        {items.map((item) => (
-          <div key={item.label} className="w-56 max-w-full text-center">
-            <div className="font-grotesk text-4xl font-semibold text-ink-900 tabular-nums sm:text-5xl dark:text-paper-50">
-              {nf.format(item.value)}
-            </div>
-            <div className="mt-1.5 text-sm leading-snug text-ink-600 dark:text-umber-200">
-              {item.label}
-            </div>
-          </div>
-        ))}
-      </div>
+      <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-ink-600 dark:text-umber-200">
+        {t("vendors.closing_body")}
+      </p>
       {VENDOR_TESTIMONIALS.length > 0 && (
-        <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-2">
+        <div className="mx-auto mt-10 grid max-w-4xl gap-4 text-left sm:grid-cols-2">
           {VENDOR_TESTIMONIALS.map((v) => (
             <figure key={v.business} className="card !p-6">
               <blockquote className="text-sm leading-relaxed text-ink-700 dark:text-umber-100">
@@ -298,9 +268,13 @@ function ProofBand({ stats, locale }: { stats: PublicVendorStats | null; locale:
           ))}
         </div>
       )}
-      <div className="mt-10 text-center">
-        <Link to="/vendors/signup" className="btn-primary btn-lg shadow-sm">
-          {t("vendors.proof_cta")}
+      <div className="mt-8">
+        <Link
+          to="/vendors/signup"
+          className="btn-primary btn-lg inline-flex items-center gap-2 shadow-sm"
+        >
+          {t("vendors.closing_cta")}
+          <ArrowRight size={18} aria-hidden />
         </Link>
       </div>
     </section>

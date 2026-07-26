@@ -1795,8 +1795,8 @@ const hu: LocaleMessages = {
     mockup_table_uni: "Egyetem",
     mockup_table_head: "Főasztal",
     mockup_drag_subtitle: "Vega · +1",
-    mockup_vendor_category: "Virágdekoráció · Bécs",
-    mockup_vendor_reviews: "4,9 · 23 értékelés",
+    mockup_vendor_name: "A te vállalkozásod",
+    mockup_vendor_category: "Kategória · Város",
     mockup_vendor_cta: "Profil megtekintése",
     // ── Landing "try the demo" card, small tilted sticker on the right
     //    of the hero. Eyebrow + italic title + one button. The fairytale
@@ -1810,33 +1810,29 @@ const hu: LocaleMessages = {
   vendors: {
     seo_title: "Szolgáltatóknak · Wēddly",
     seo_description:
-      "Olyan párok elé kerülsz, akiknek már megvan a dátum és a keret. Nézd meg, hogyan kerülhetsz fel a Wēddly válogatott szolgáltatói listájára.",
+      "A párok itt választanak szolgáltatót. Vendéglista, büdzsé, ütemterv egy helyen, és amikor a te kategóriádra kerül a sor, egy rövid listáról választanak.",
     pill: "Korai hozzáférés",
     wrong_audience: "Nem szolgáltató?",
     couple_escape_link: "Pároknak",
     planner_escape_link: "Szervezőknek",
-    hero_title: "Olyan párok elé kerülsz, akiknek már megvan a dátum és a keret.",
+    hero_title: "A párok itt választanak szolgáltatót.",
     hero_sub:
-      "A Wēddlyn a párok a vendéglistát, a büdzsét és az ütemtervet vezetik. Amikor a te kategóriádra kerül a sor, ebből a válogatott listából választanak. Ehhez a listához adunk hozzáférést.",
-    trust_signal: "Csatlakozz a 47 várólistás szolgáltató mellé",
-    spots_line: "A mostani kör még {n} helyre szól.",
+      "Nálunk tervezik az esküvőt: vendéglista, büdzsé, ütemterv. Amikor a te kategóriádra kerül a sor, egy rövid listáról választanak. Legyél rajta.",
     offer_founding: "Aki bekerül, az első évben a vendégünk.",
     offer_early: "Aki bekerül, az első három hónapban a vendégünk.",
     cta_microcopy: "Két lépés, és a hirdetésed élő.",
-    proof_title: "Ez történik most a Wēddlyn",
-    proof_visits_label: "oldalmegtekintés az elmúlt 28 napban",
-    proof_inquiries_label: "megkeresés ment ki szolgáltatóknak 30 nap alatt",
-    proof_spots_label: "hely maradt a mostani körben",
-    proof_cta: "Foglald a helyed",
-    benefit_1_title: "Előbb a három megkeresés, aztán a számla",
+    closing_title: "Legyél ott, amikor választanak.",
+    closing_body: "Regisztrálsz, feltöltesz egy borítóképet, és a hirdetésed élő.",
+    closing_cta: "Foglald a helyed",
+    benefit_1_title: "Előbb a megkeresés, aztán a számla",
     benefit_1_body:
-      "Teljes hozzáférés az első naptól. A számlázás akkor indul, amikor a Wēddly már hozott neked három valódi megkeresést, és akkor is csak a rákövetkező hónap 1-jén.",
+      "Teljes hozzáférés az első naptól. A számla akkor jön, ha a Wēddly már hozott neked három valódi megkeresést, és akkor is csak a következő hónap elsején.",
     benefit_2_title: "Aznap fent vagy a listán",
     benefit_2_body:
-      "Regisztráció, egy rövid bemutatkozás, egy borítókép. A hirdetésed azonnal élesedik, a megkeresés a saját postaládádba fut be, a válaszod pedig egyenesen a párhoz megy.",
-    benefit_3_title: "Rövid lista, kevés név",
+      "Regisztrálsz, írsz pár sort, feltöltesz egy borítóképet. A hirdetésed azonnal élesedik. A megkeresés a saját postaládádba fut be, a válaszod egyenesen a párhoz megy.",
+    benefit_3_title: "Rövid lista, nem katalógus",
     benefit_3_body:
-      "A pár nem végtelen katalógust görget: kézzel gondozott listát lát a saját városában és árszintjén. Ezért szól a mostani kör is véges számú helyre.",
+      "A pár nem görget végtelen találati listát. Kézzel gondozott listát lát a saját városában és árszintjén.",
     form_title: "Iratkozzatok fel",
     form_business_label: "Vállalkozás neve",
     form_email_label: "E-mail",
@@ -1886,7 +1882,7 @@ const hu: LocaleMessages = {
     contact_subject: "Szolgáltatói várólista",
     recommend_title: "Ismersz jó szolgáltatót?",
     recommend_body:
-      "Van olyan szolgáltató, akit jó szívvel ajánlanál? Regisztráld pár kattintással, vagy oszd meg ezt a linket, hogy még többekhez eljusson.",
+      "Regisztráld pár kattintással, vagy oszd meg a linket, hogy másokhoz is eljusson.",
     recommend_register_cta: "Szolgáltatót regisztrálok",
     recommend_share_cta: "Megosztom",
     recommend_share_message:
