@@ -3,7 +3,7 @@
 // showcase), deliberately stripped of the in-app directory's search / filters /
 // save / contact. The whole point is acquisition: a couple gets a real taste,
 // then registers to unlock the full directory; a vendor seeing it is nudged to
-// get listed. Data: publicShowcase + the real couples count from publicStats.
+// get listed. Data: publicShowcase (photos-only sample).
 //
 // Visual direction (2026-07-24): the page reads like a marketplace app rather
 // than a brochure — near-black chrome on the warm paper ground, one heavy tight
@@ -32,16 +32,11 @@ import { Link } from "react-router-dom";
 import { CountryPicker } from "../components/CountryPicker";
 import { Wordmark } from "../components/Wordmark";
 import { CATEGORY_ICON } from "../lib/category_icons";
-import { publicStatsApi, supplierApi } from "../lib/endpoints";
+import { supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
-
-// Below this many real couples the demand-side line reads as thin, so we hide
-// it rather than undersell — honest either way (audit item 8: no fabricated
-// numbers).
-const MIN_COUPLES_TO_SHOW = 15;
 
 // Height of the stacked sticky chrome (header 64px + category rail ~59px) plus
 // a little air. Single-sourced: it sets the sections' scroll-margin, and the
@@ -423,7 +418,6 @@ export default function VendorBrowsePage() {
   const { t, locale } = useT();
   useDocumentMeta("vendorBrowse.title", "vendorBrowse.subtitle");
   const [categories, setCategories] = useState<PublicShowcaseCategory[] | null>(null);
-  const [couples, setCouples] = useState<number | null>(null);
   // null = every country. The server still ranks the visitor's own country
   // first in that case, so "Mind" isn't a random pile.
   const [country, setCountry] = useState<string | null>(null);
@@ -453,22 +447,6 @@ export default function VendorBrowsePage() {
     };
   }, [country]);
 
-  useEffect(() => {
-    let cancelled = false;
-    publicStatsApi
-      .get()
-      .then((r) => {
-        if (!cancelled) setCouples(r.couples);
-      })
-      .catch(() => {
-        /* stat is optional — the page works without it */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const showCouples = couples !== null && couples >= MIN_COUPLES_TO_SHOW;
   // Pull planners out of the vendor rails — they get their own reframed module.
   const plannerCat = categories?.find((c) => c.category === "wedding_planner") ?? null;
   const gridCategories = categories?.filter((c) => c.category !== "wedding_planner") ?? [];
@@ -554,10 +532,9 @@ export default function VendorBrowsePage() {
           {t("vendorBrowse.title")}
         </h1>
 
-        {/* The intro and the one control row share a line from lg: the country
-            filter, and the live-couples number as proof rather than a badge.
-            The filter only earns its space once the catalogue actually spans
-            more than one country. */}
+        {/* The intro and the country filter share a line from lg. The filter
+            only earns its space once the catalogue actually spans more than one
+            country. */}
         <div className="mt-4 flex flex-col gap-4 sm:mt-5 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
           <p className="max-w-xl text-[15px] leading-relaxed text-ink-500 dark:text-umber-200">
             {t("vendorBrowse.subtitle")}
@@ -576,12 +553,6 @@ export default function VendorBrowsePage() {
                   count: c.count,
                 }))}
               />
-            )}
-            {showCouples && (
-              <p className="flex items-center gap-2 text-[13px] text-ink-500 dark:text-umber-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden />
-                {t("vendorBrowse.couples_stat", { count: String(couples) })}
-              </p>
             )}
           </div>
         </div>
