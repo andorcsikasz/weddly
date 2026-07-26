@@ -1846,12 +1846,12 @@ const es: LocaleMessages = {
     wrong_audience: "¿No eres proveedor?",
     couple_escape_link: "Para parejas",
     planner_escape_link: "Para wedding planners",
-    hero_title: "Aquí es donde las parejas eligen proveedor.",
-    hero_sub: "Cuando les toca tu categoría, eligen de una lista corta. Entra en esa lista.",
+    hero_title: "Entra en la lista corta.",
+    hero_sub: "Cuando las parejas llegan a tu categoría, eligen entre unos pocos nombres.",
     offer_founding: "Quien entra es nuestro invitado durante el primer año.",
     offer_early: "Quien entra es nuestro invitado durante los primeros tres meses.",
     cta_microcopy: "Dos pasos y tu anuncio está publicado.",
-    closing_title: "Estate ahí cuando elijan.",
+    closing_title: "La próxima temporada se reserva ahora.",
     closing_cta: "Reserva tu plaza",
     benefit_1_title: "Primero las solicitudes, después la factura",
     benefit_1_body:
@@ -1909,7 +1909,7 @@ const es: LocaleMessages = {
     contact_cta: "Únete a la lista de espera",
     contact_subject: "Lista de espera de proveedores",
     recommend_title: "¿Conoces a un gran proveedor?",
-    recommend_register_cta: "Registrar un proveedor",
+    recommend_register_cta: "Lo recomiendo",
     recommend_share_cta: "Compartir",
     recommend_share_message:
       "¿Hay algún proveedor que recomendarías de todo corazón? Aquí es donde puedes pasarlo para que llegue a más gente:",
@@ -1965,7 +1965,6 @@ const es: LocaleMessages = {
     price_list_upload_cta: "Adjunta una lista de precios (PDF o imagen)",
     price_list_remove: "Quitar archivo",
     signup_cta: "Reserva tu plaza",
-    have_account_cta: "Iniciar sesión",
     demo_cta: "Abrir una demo",
     demo_loading: "Un momento…",
     demo_error: "No se pudo iniciar. Inténtalo de nuevo.",
@@ -4468,7 +4467,7 @@ const es: LocaleMessages = {
     view_grid: "Cuadrícula",
     view_line: "Lista",
     view_map: "Mapa",
-    map_missing_count: "{n} entradas aún no están situadas en el mapa.",
+    map_missing_count: "{n} proveedores aún no están en el mapa.",
     map_group_count: "{n} proveedores en este punto",
     submit: {
       title: "Recomienda un proveedor",
@@ -8629,6 +8628,10 @@ const es: LocaleMessages = {
       "Los wedding planners funcionan de otra forma en Weddly: en lugar de contratar a uno del catálogo, lo invitas a tu propio espacio de trabajo para colaborar en tu lista de invitados, la distribución de mesas y los documentos.",
     planner_cta: "Descubre cómo funciona",
     planner_featured: "Wedding planners destacados",
+    nearby_title: "Cerca de {city}",
+    nearby_body:
+      "En la ciudad hay pocos proveedores, así que aquí está todo lo que queda a menos de una hora. Las distancias se miden desde {city}.",
+    distance_km: "{km} km",
   },
 };
 

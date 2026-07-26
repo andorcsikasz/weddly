@@ -16,8 +16,11 @@
 //      lands in (founding / early), stated as a promise, never as a tally.
 //      Same rule in the hero mockup: no invented business, rating or review
 //      count in the card preview.
-//   4. ONE dominant call to action (signup), repeated once at the end. Demo,
-//      login and the wrong-audience escape hatches are all quiet text links.
+//   4. ONE dominant call to action (signup), repeated once at the end. The
+//      demo launcher and the wrong-audience escape hatches are quiet text
+//      links; there is deliberately no "log in" link in the hero, because the
+//      header already carries one (icon on desktop, menu item on mobile) and a
+//      second one just competes with the signup button.
 
 import type { PublicVendorStats } from "@shared/vendor_billing";
 import { ArrowLeft, ArrowRight, Gem, Inbox, Receipt, Share2, Store } from "lucide-react";
@@ -124,33 +127,28 @@ export default function VendorsPage() {
               {t("vendors.signup_cta")}
               <ArrowRight size={18} aria-hidden />
             </Link>
+            {/* ONE line under the button, not a stack. How fast you are live
+                and which free window you land in are two different facts, but
+                stacked as two paragraphs they read as the same promise said
+                twice and pull attention off the CTA. The offer half stays
+                conditional (no window running → the sentence just ends). */}
             <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
               {t("vendors.cta_microcopy")}
+              {offerLine ? ` ${offerLine}` : ""}
             </p>
-            {offerLine && (
-              <p className="mt-1 text-sm font-medium text-ink-700 dark:text-umber-100">
-                {offerLine}
-              </p>
-            )}
           </div>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 lg:justify-start">
             <VendorDemoLaunchButton variant="quiet" />
-            <Link
-              to="/login"
-              className="text-sm font-medium text-ink-600 underline-offset-2 hover:underline dark:text-umber-200"
-            >
-              {t("vendors.have_account_cta")}
-            </Link>
           </div>
-          {/* Wrong-audience escape hatch — one compact line so it stays quiet
-              (audit item 12). */}
-          <div className="mt-5 text-sm text-ink-500 lg:text-left dark:text-umber-300">
+          {/* Wrong-audience escape hatch — one compact line, a size below the
+              body copy so it never competes with the CTA (audit item 12). */}
+          <div className="mt-5 text-xs text-ink-500 lg:text-left dark:text-umber-300">
             {t("vendors.wrong_audience")}{" "}
-            <Link to="/signup" className="font-medium underline underline-offset-2">
+            <Link to="/signup" className="underline underline-offset-2">
               {t("vendors.couple_escape_link")}
             </Link>
             {" · "}
-            <Link to="/planners" className="font-medium underline underline-offset-2">
+            <Link to="/planners" className="underline underline-offset-2">
               {t("vendors.planner_escape_link")}
             </Link>
           </div>
@@ -241,7 +239,13 @@ export default function VendorsPage() {
  *  we have any. It used to be a counter band ("N page views", "N spots left");
  *  those are gone on purpose (see rule 3 at the top) and the section now stands
  *  on the offer itself, which needs no number to be true. The sub-line under the
- *  headline is gone too: it repeated the hero microcopy word for word. */
+ *  headline is gone too: it repeated the hero microcopy word for word.
+ *
+ *  The headline takes the TIMING angle ("next season is being booked now"), not
+ *  the hero's "couples choose here" angle. It used to be a paraphrase of the
+ *  hero title, which on a page this short read as the same block twice. Social
+ *  proof would be the other natural angle here and is not available: counts are
+ *  banned (rule 3) and VENDOR_TESTIMONIALS is empty until we have real quotes. */
 function ClosingBand() {
   const { t } = useT();
   return (

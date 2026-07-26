@@ -1800,12 +1800,12 @@ const en: LocaleMessages = {
     wrong_audience: "Not a vendor?",
     couple_escape_link: "For couples",
     planner_escape_link: "For planners",
-    hero_title: "Couples pick their suppliers here.",
-    hero_sub: "When they get to your category, they choose from a short list. Be on it.",
+    hero_title: "Get on the short list.",
+    hero_sub: "When couples reach your category, they choose from a handful of names.",
     offer_founding: "Everyone who gets in is our guest for the first year.",
     offer_early: "Everyone who gets in is our guest for the first three months.",
     cta_microcopy: "Two steps and your listing is live.",
-    closing_title: "Be there when they choose.",
+    closing_title: "Next season is being booked now.",
     closing_cta: "Take your spot",
     benefit_1_title: "Inquiries first, then the invoice",
     benefit_1_body: "Full access from day one. The invoice comes only after three real inquiries.",
@@ -1861,7 +1861,7 @@ const en: LocaleMessages = {
     contact_cta: "Join the waitlist",
     contact_subject: "Vendor waitlist",
     recommend_title: "Know a great supplier?",
-    recommend_register_cta: "Register a supplier",
+    recommend_register_cta: "Recommend them",
     recommend_share_cta: "Share",
     recommend_share_message:
       "Is there a supplier you'd wholeheartedly recommend? Here's where you can pass it on so it reaches more people:",
@@ -1915,7 +1915,6 @@ const en: LocaleMessages = {
     price_list_upload_cta: "Attach a price list (PDF or image)",
     price_list_remove: "Remove file",
     signup_cta: "Take your spot",
-    have_account_cta: "Log in",
     demo_cta: "Open a demo",
     demo_loading: "One moment…",
     demo_error: "Couldn't start. Try again.",
@@ -4372,7 +4371,7 @@ const en: LocaleMessages = {
     view_grid: "Grid",
     view_line: "List",
     view_map: "Map",
-    map_missing_count: "{n} entries aren't placed on the map yet.",
+    map_missing_count: "{n} suppliers aren't on the map yet.",
     map_group_count: "{n} suppliers at this point",
     submit: {
       title: "Recommend a supplier",
@@ -8479,6 +8478,10 @@ const en: LocaleMessages = {
       "Planners work differently on Weddly: instead of hiring one from the catalog, you invite them into your own workspace to collaborate on your guest list, seating plan and documents.",
     planner_cta: "See how it works",
     planner_featured: "Featured planners",
+    nearby_title: "Near {city}",
+    nearby_body:
+      "Only a few vendors are listed in the town itself, so here is everything within an hour's drive. Distances are measured from {city}.",
+    distance_km: "{km} km",
   },
 };
 

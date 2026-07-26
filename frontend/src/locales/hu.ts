@@ -1823,12 +1823,12 @@ const hu: LocaleMessages = {
     wrong_audience: "Nem szolgáltató?",
     couple_escape_link: "Pároknak",
     planner_escape_link: "Szervezőknek",
-    hero_title: "A párok itt választanak szolgáltatót.",
-    hero_sub: "Amikor a te kategóriádra kerül a sor, egy rövid listáról választanak. Legyél rajta.",
+    hero_title: "Legyél a rövid listán.",
+    hero_sub: "Amikor a párok a te kategóriádra érnek, néhány névből választanak.",
     offer_founding: "Aki bekerül, az első évben a vendégünk.",
     offer_early: "Aki bekerül, az első három hónapban a vendégünk.",
     cta_microcopy: "Két lépés, és a hirdetésed élő.",
-    closing_title: "Legyél ott, amikor választanak.",
+    closing_title: "A jövő szezon most dől el.",
     closing_cta: "Foglald a helyed",
     benefit_1_title: "Előbb a megkeresés, aztán a számla",
     benefit_1_body:
@@ -1885,7 +1885,7 @@ const hu: LocaleMessages = {
     contact_cta: "Csatlakozz a várólistára",
     contact_subject: "Szolgáltatói várólista",
     recommend_title: "Ismersz jó szolgáltatót?",
-    recommend_register_cta: "Szolgáltatót regisztrálok",
+    recommend_register_cta: "Beajánlom",
     recommend_share_cta: "Megosztom",
     recommend_share_message:
       "Van olyan szolgáltató, akit jó szívvel ajánlanál? Itt megteheted, hogy még többekhez eljusson:",
@@ -1940,7 +1940,6 @@ const hu: LocaleMessages = {
     price_list_upload_cta: "Árajánlat csatolása (PDF vagy kép)",
     price_list_remove: "Fájl eltávolítása",
     signup_cta: "Foglald a helyed",
-    have_account_cta: "Bejelentkezés",
     demo_cta: "Demó megnyitása",
     demo_loading: "Egy pillanat…",
     demo_error: "Nem indult. Próbáld újra.",
@@ -4422,7 +4421,7 @@ const hu: LocaleMessages = {
     view_grid: "Rács",
     view_line: "Lista",
     view_map: "Térkép",
-    map_missing_count: "{n} helyszín nincs még a térképre helyezve.",
+    map_missing_count: "{n} szolgáltató nincs még a térképen.",
     map_group_count: "{n} szolgáltató ezen a ponton",
     submit: {
       title: "Ajánlj egy szolgáltatót",
@@ -8548,6 +8547,10 @@ const hu: LocaleMessages = {
       "Az esküvőszervezők másképp működnek a Weddlyn: nem a katalógusból bérled fel őket, hanem meghívod őket a saját munkaterületedre, ahol együtt dolgoztok a vendéglistán, az ülésrenden és a dokumentumokon.",
     planner_cta: "Ismerd meg, hogyan",
     planner_featured: "Kiemelt szervezők",
+    nearby_title: "{city} közelében",
+    nearby_body:
+      "Magában a városban kevés szolgáltató van, ezért itt van minden, ami egy órán belül elérhető. A távolságok {city} központjától számítva.",
+    distance_km: "{km} km",
   },
 };
 

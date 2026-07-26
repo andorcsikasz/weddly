@@ -2119,6 +2119,10 @@ export interface LocaleMessages {
     wrong_audience: string;
     couple_escape_link: string;
     planner_escape_link: string;
+    /** Hero. The title is an INSTRUCTION to the vendor naming the mechanic
+     *  ("get on the short list"), not a claim about us ("couples pick their
+     *  suppliers here") — the vendor's own move is the point. The sub explains
+     *  the mechanic once and must not repeat the title's imperative. */
     hero_title: string;
     hero_sub: string;
     /** What the current free window grants, under the hero CTA. Picked by offer
@@ -2130,7 +2134,9 @@ export interface LocaleMessages {
     /** Effort claim under the single primary CTA. */
     cta_microcopy: string;
     /** Closing band: headline and the single repeat of the CTA. No sub-line:
-     *  it only repeated the hero microcopy. */
+     *  it only repeated the hero microcopy. The headline must take a DIFFERENT
+     *  angle from the hero title (it used to paraphrase it) — timing, not the
+     *  same "couples choose here" claim said twice. */
     closing_title: string;
     closing_cta: string;
     benefit_1_title: string;
@@ -2190,7 +2196,9 @@ export interface LocaleMessages {
     /** Recommend-a-supplier share prompt on the vendor site: a shareable link
      *  so word-of-mouth supplier recommendations reach more couples. */
     recommend_title: string;
-    /** CTA that opens the register-a-supplier modal (visitor mode). */
+    /** CTA that opens the register-a-supplier modal (visitor mode). Phrase it
+     *  as "I recommend THEM", first person, parallel with the share CTA next
+     *  to it: "register a supplier" was read as "sign myself up". */
     recommend_register_cta: string;
     recommend_share_cta: string;
     /** Text put on the clipboard / into the native share sheet (the URL is
@@ -2253,7 +2261,6 @@ export interface LocaleMessages {
     price_list_upload_cta: string;
     price_list_remove: string;
     signup_cta: string;
-    have_account_cta: string;
     demo_cta: string;
     demo_loading: string;
     demo_error: string;
@@ -9248,5 +9255,13 @@ export interface LocaleMessages {
     planner_body: string;
     planner_cta: string;
     planner_featured: string;
+    /** "Nearby" block, appended when a town filter came back nearly empty.
+     *  A one-card page reads as an empty directory, so the surrounding region
+     *  is offered with the drive attached. `{city}` is the filtered town. */
+    nearby_title: string;
+    nearby_body: string;
+    /** Distance suffix on a nearby card's meta line. `{km}` is a whole number
+     *  of kilometres, straight-line from the filtered town. */
+    distance_km: string;
   };
 }
