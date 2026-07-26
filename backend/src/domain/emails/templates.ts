@@ -2884,41 +2884,38 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
     },
   }),
-  // The founder's own contacts, told about Weddly with a "you (or someone you
-  // love) is getting married" note and a register CTA. Outreach category, so the
-  // footer carries the one-click unsubscribe. Personalised by first name.
+  // The founder's own contacts, introduced to Weddly with a "you (or someone you
+  // love) is getting married" angle and a register CTA. Weddly is the voice the
+  // whole way through (never "I"/"me"), Uber-tight, and there is no discount /
+  // "free" framing. Outreach category, so the footer carries the one-click
+  // unsubscribe. Personalised by first name.
   personal_invite: (p) => ({
     subject:
-      p.locale === "hu"
-        ? "Csináltam valamit. Neked, vagy valakinek, aki most házasodik."
-        : "I built something for anyone getting married.",
+      p.locale === "hu" ? "Az egész esküvő egy nyugodt helyen" : "The whole wedding, one calm place",
     ctaUrl: p.ctaUrl,
     hu: {
-      preheader:
-        "Az egész esküvőtervezés egy nyugodt helyen. A következő másfél évben a vendégünk vagy.",
+      preheader: "Vendéglista, ülésrend, költségvetés, RSVP. Egy helyen.",
       greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
       paragraphs: [
-        "Építettem egy appot: a **Weddly**. Az egész esküvőtervezést egy nyugodt helyre teszi. Költségvetés, ami nem borul fel, vendéglista és online RSVP, nyomtatható ültetési rend, szolgáltatók, idővonal és saját esküvői weboldal. Kettőtöknek, közösen, a 100 böngészőfül és a végtelen Excel helyett.",
-        "Miért tőlem kapod? Mert ha **te, vagy valaki, akit szeretsz, most tervez esküvőt**, ez rengeteg stresszt levehet a válláról.",
-        "Regisztrálj most, és tarts velünk az első fejezettől: a következő **másfél évben a vendégünk vagy**, teljes hozzáféréssel. Ha ismersz jegyespárt, a legszebb ajándék, ha továbbküldöd neki ezt a levelet.",
+        "A **Weddly** az egész esküvőtervezést egy helyre teszi: költségvetés, vendéglista, online RSVP, nyomtatható ültetési rend, szolgáltatók, idővonal és saját esküvői weboldal. Kettőtöknek, közösen. Böngészőfülek és Excel nélkül.",
+        "Ha te, vagy valaki, akit szeretsz, most tervez esküvőt, a Weddly leveszi a nehezét.",
+        "Ismersz jegyespárt? Küldd tovább nekik ezt a levelet.",
       ],
-      cta: "Regisztrálok",
+      cta: "Kezdés",
       ctaSubtext: "Egy perc az egész.",
-      footnote:
-        "Ha most nem aktuális, hagyd figyelmen kívül ezt a levelet, vagy iratkozz le lent. Nem zavarlak többet.",
+      footnote: "Ha most nem aktuális, hagyd figyelmen kívül ezt a levelet. Leiratkozás lent.",
     },
     en: {
-      preheader: "The whole wedding in one calm place. Be our guest for the next 18 months.",
+      preheader: "Guest list, seating, budget, RSVP. In one place.",
       greeting: p.name.trim() ? `Hi ${p.name.trim()},` : "Hi there,",
       paragraphs: [
-        "I built an app: **Weddly**. It puts the whole wedding in one calm place. A budget that stays under control, a guest list with online RSVP, a printable seating chart, suppliers, a timeline and your own wedding website. For the two of you, together, instead of 100 browser tabs and endless spreadsheets.",
-        "Why me? Because if **you, or someone you love, is getting married**, this lifts a lot of the stress off their plate.",
-        "Register now and be part of our growth story from the first chapter: **the next 18 months are on us**, with everything unlocked. Know an engaged couple? Forwarding this to them is the nicest gift.",
+        "**Weddly** puts the whole wedding in one place: budget, guest list, online RSVP, printable seating chart, suppliers, timeline and your own wedding website. For the two of you, together. No browser tabs, no spreadsheets.",
+        "If you, or someone you love, is getting married, Weddly takes the hard part off their plate.",
+        "Know an engaged couple? Forward this to them.",
       ],
-      cta: "Sign up",
+      cta: "Get started",
       ctaSubtext: "Takes a minute.",
-      footnote:
-        "Not the right time? Ignore this email or unsubscribe below. I won't email you again.",
+      footnote: "Not the right time? Just ignore this email. Unsubscribe below.",
     },
   }),
   // Admin re-engagement blast to a registered couple who never onboarded. Warm,
