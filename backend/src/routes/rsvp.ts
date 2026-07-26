@@ -513,13 +513,20 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "Nothing to submit");
   }
 
+  // Coarse per-IP throttle BEFORE the slug/code lookup below. Slugs are public
+  // (they are the /w/:slug address), so the household code is the only secret
+  // guarding the RSVP roster; a wrong code throws in resolveHousehold, so
+  // without this an attacker could enumerate codes (legacy 4-digit codes are a
+  // 10k space) unthrottled. Keyed on IP, it costs a token per attempt whether
+  // the code resolves or not — mirrors the lookup path.
+  rateLimit(ctx.clientIp, "rsvp:submit-ip", RSVP_BUCKET);
+
   const couple = resolveCoupleBySlug(body.couple_slug);
   const hh = resolveHousehold(couple.id, body.household_code);
 
-  // Per-household rate-limit bucket — replaces the previous per-IP bucket so a
-  // wedding venue WiFi (everyone NAT'd through one address) doesn't get
-  // throttled. We *also* keep a coarse per-IP fallback (used during lookup) to
-  // slow blind enumeration of slug+code pairs.
+  // Per-household bucket — a wedding venue WiFi (everyone NAT'd through one
+  // address) shouldn't get throttled once a valid code resolves, so the
+  // venue-friendly limit is keyed per household on top of the per-IP guard above.
   rateLimit(`couple:${couple.id}:hh:${hh.id}`, "rsvp:submit", RSVP_BUCKET);
 
   // Idempotency. Header is preferred (frontend sends a fresh UUID per submit

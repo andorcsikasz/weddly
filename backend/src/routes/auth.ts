@@ -197,13 +197,16 @@ async function handleLogin(ctx: Ctx): Promise<Response> {
     recordLoginFailure(email);
     throw new HttpError(401, "Invalid credentials");
   }
-  if (row.status === "suspended") throw new HttpError(403, "Account suspended");
-
   const ok = await verifyPassword(password, row.password_hash);
   if (!ok) {
     recordLoginFailure(email);
     throw new HttpError(401, "Invalid credentials");
   }
+
+  // Reveal suspension only AFTER the password check — otherwise the distinct
+  // 403 "suspended" vs 401 "invalid" lets an attacker enumerate which addresses
+  // are suspended without knowing the password.
+  if (row.status === "suspended") throw new HttpError(403, "Account suspended");
 
   clearLoginFailures(email);
 

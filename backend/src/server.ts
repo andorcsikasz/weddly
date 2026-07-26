@@ -20,6 +20,7 @@ import {
   Router,
 } from "./lib/http";
 import { maybeCompress, negotiateEncoding } from "./lib/compression";
+import { redactTokensInPath } from "./lib/log_redact";
 import { log, makeLogger } from "./lib/logger";
 import { GA4_CSP_HASHES, GTM_INLINE_CSP_HASH, localeForHost, renderIndexHtml } from "./lib/seo_ssr";
 import { entitlementBlock } from "./domain/billing";
@@ -432,17 +433,14 @@ function isRsvpRoute(pathname: string): boolean {
   return pathname === "/rsvp" || pathname.startsWith("/rsvp/");
 }
 
-/** Strip single-use credential tokens that travel in the URL path (email
- *  verification + email-change confirm) before the path is written to request
- *  logs or attached to Sentry. An un-consumed token in a log line is a
- *  replayable account/email-takeover credential; the redaction keeps the route
- *  shape ("which endpoint") without the secret. Password reset is unaffected —
- *  its token rides in the JSON body, which is never logged. */
-function redactPath(pathname: string): string {
-  return pathname
-    .replace(/^(\/api\/auth\/verify)\/[^/]+$/, "$1/[token]")
-    .replace(/^(\/api\/auth\/change-email)\/[^/]+$/, "$1/[token]");
-}
+/** Strip capability tokens that travel in the URL path before the path is
+ *  written to request logs or attached to Sentry. An un-consumed token in a log
+ *  line (forwarded to a third-party log service) is a replayable credential —
+ *  this covers email verify/change, photo-album links, planner activation,
+ *  couple + vendor invites, listing claim, and opt-out generically. Route shape
+ *  is preserved. Password reset is unaffected — its token rides in the JSON
+ *  body, which is never logged. See lib/log_redact.ts. */
+const redactPath = redactTokensInPath;
 
 /** decodeURIComponent that returns null on malformed percent-encoding (e.g.
  *  `%ZZ`) instead of throwing a URIError. This path runs OUTSIDE the request
