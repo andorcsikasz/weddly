@@ -12362,6 +12362,8 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Wedding decor in Budapest.",
     website: "http://www.blushweddingdecor.com/",
     ...noContact,
+    contact_email: "hello@blushweddingdecor.com",
+    contact_phone: "+36 70 377 7932",
     source: "curated",
     price_band: null,
     gallery_urls: ["https://blushweddingdecor.hu/wp-content/uploads/2025/10/250924-131728.jpg"],
