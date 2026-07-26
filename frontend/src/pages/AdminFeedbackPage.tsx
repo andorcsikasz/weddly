@@ -31,6 +31,7 @@ import {
   RotateCcw,
   Send,
   Smartphone,
+  Star,
   Tablet,
   Trash2,
   X,
@@ -453,7 +454,12 @@ export default function AdminFeedbackPage() {
                           </span>
                         )}
                         <div className="mt-1 flex gap-3 text-xs text-neutral-500 dark:text-umber-300 lg:hidden">
-                          {e.rating !== null && <span>★ {e.rating}/10</span>}
+                          {e.rating !== null && (
+                            <span className="inline-flex items-center gap-1">
+                              <Star size={12} className="fill-star stroke-star" aria-hidden />
+                              {e.rating}/10
+                            </span>
+                          )}
                           {e.monthly_value_ft !== null && e.monthly_value_ft > 0 && (
                             <span>{fmtMoney(e.monthly_value_ft, e.locale)}</span>
                           )}
