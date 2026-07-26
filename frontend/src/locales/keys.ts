@@ -1924,8 +1924,14 @@ export interface LocaleMessages {
     card_guests_cta: string;
     suppliers_section_title: string;
     suppliers_section_body: string;
-    suppliers_couple_cta: string;
-    suppliers_vendor_cta: string;
+    /** The three directory doors on the landing suppliers block: find one,
+     *  name one, be one. Each row is label + one supporting line. */
+    suppliers_action_browse_label: string;
+    suppliers_action_browse_sub: string;
+    suppliers_action_suggest_label: string;
+    suppliers_action_suggest_sub: string;
+    suppliers_action_join_label: string;
+    suppliers_action_join_sub: string;
     guest_sheet_title: string;
     guest_sheet_body: string;
     guest_sheet_label: string;

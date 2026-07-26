@@ -1612,8 +1612,12 @@ const en: LocaleMessages = {
     suppliers_section_title: "A curated directory",
     suppliers_section_body:
       "Handpicked venues, photographers, caterers and more, all in one place, with direct contact details.",
-    suppliers_couple_cta: "Browse",
-    suppliers_vendor_cta: "Get listed",
+    suppliers_action_browse_label: "Find a supplier",
+    suppliers_action_browse_sub: "Venues, photographers, musicians, one list.",
+    suppliers_action_suggest_label: "Recommend a supplier",
+    suppliers_action_suggest_sub: "Worked with someone good? Put them on the list.",
+    suppliers_action_join_label: "List your business",
+    suppliers_action_join_sub: "Create a profile and start taking enquiries.",
     guest_sheet_title: "Enter your invite code",
     guest_sheet_body:
       "The code is on the invite the couple sent you. Once you enter it, we'll take you to your RSVP page.",

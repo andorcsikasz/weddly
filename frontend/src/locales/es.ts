@@ -1656,8 +1656,12 @@ const es: LocaleMessages = {
     suppliers_section_title: "Un directorio seleccionado",
     suppliers_section_body:
       "Espacios, fotógrafos, caterings y mucho más, elegidos a mano y reunidos en un solo lugar, con datos de contacto directo.",
-    suppliers_couple_cta: "Explorar",
-    suppliers_vendor_cta: "Aparece en el directorio",
+    suppliers_action_browse_label: "Buscar un proveedor",
+    suppliers_action_browse_sub: "Espacios, fotógrafos, músicos, en una sola lista.",
+    suppliers_action_suggest_label: "Recomendar un proveedor",
+    suppliers_action_suggest_sub: "¿Trabajaste con alguien bueno? Añádelo a la lista.",
+    suppliers_action_join_label: "Registra tu negocio",
+    suppliers_action_join_sub: "Crea un perfil y empieza a recibir solicitudes.",
     guest_sheet_title: "Introduce tu código de invitación",
     guest_sheet_body:
       "El código está en la invitación que te envió la pareja. En cuanto lo introduzcas, te llevaremos a tu página de confirmación de asistencia.",

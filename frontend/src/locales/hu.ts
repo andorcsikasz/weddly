@@ -1633,8 +1633,12 @@ const hu: LocaleMessages = {
     suppliers_section_title: "Válogatott szolgáltatói lista",
     suppliers_section_body:
       "Kézzel válogatott helyszínek, fotósok, vendéglátók és még sok más, mind egy helyen, közvetlen elérhetőségekkel.",
-    suppliers_couple_cta: "Szolgáltatók böngészése",
-    suppliers_vendor_cta: "Kerülj fel a listára",
+    suppliers_action_browse_label: "Szolgáltató keresése",
+    suppliers_action_browse_sub: "Helyszínek, fotósok, zenészek, egy listán.",
+    suppliers_action_suggest_label: "Szolgáltató ajánlása",
+    suppliers_action_suggest_sub: "Dolgoztál valakivel, aki jó volt? Tedd fel a listára.",
+    suppliers_action_join_label: "Szolgáltató regisztráció",
+    suppliers_action_join_sub: "Készíts profilt, és fogadd a megkereséseket.",
     guest_sheet_title: "Add meg a meghívó kódod",
     guest_sheet_body:
       "A pártól kapott meghívódon ott a kódod. Ha megadod, átviszünk az RSVP oldalra.",

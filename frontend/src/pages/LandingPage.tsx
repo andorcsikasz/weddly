@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   ChevronDown,
+  ChevronRight,
   ClipboardList,
   Download,
   FileText,
@@ -15,6 +16,7 @@ import {
   Pause,
   Plus,
   Printer,
+  Search,
   Share2,
   Smartphone,
   Sparkles,
@@ -23,7 +25,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LazyMount } from "../components/LazyMount";
 import { WorkspaceMockup } from "../components/mockups";
@@ -45,6 +47,9 @@ const SeatingMockup = lazyWithReload(() =>
 );
 const SuppliersPreview = lazyWithReload(() =>
   import("../components/illustrations").then((m) => ({ default: m.SuppliersPreview })),
+);
+const SubmitSupplierModal = lazyWithReload(() =>
+  import("../components/SubmitSupplierModal").then((m) => ({ default: m.SubmitSupplierModal })),
 );
 import { DemoLaunchCard } from "../components/DemoLaunchCard";
 import { NewsletterCapture } from "../components/NewsletterCapture";
@@ -131,6 +136,8 @@ export default function LandingPage() {
   const { t, locale } = useT();
   useDocumentMeta("seo.home_title", "seo.home_description");
   const askGuestCode = useGuestCodePrompt();
+  // Community "recommend a supplier" wizard, opened from the directory block.
+  const [suggestOpen, setSuggestOpen] = useState(false);
 
   // Make the sticky header transparent while the hero section is still visible.
   // IntersectionObserver removes the class as soon as the hero scrolls out of
@@ -360,6 +367,68 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ════════════════════════ 02 · Suppliers — THREE DOORS ════════════════════
+          Pulled up from mid-page to the first scroll beat: the directory is
+          the one thing a visitor can use before signing up, so it earns the
+          slot right under the hero, ahead of the budget demo.
+          Three doors, one per intent — find one, name one, be one. Rendered
+          as full-width list rows (icon, label, one supporting line, chevron)
+          instead of a button cluster: the three intents belong to three
+          different people, so none of them is "primary", and a row gives a
+          44px+ tap target with the sub-line doing the disambiguating.
+          "Recommend" opens the community submission wizard in place —
+          it's the same visitor-verified flow as /vendors, and bouncing a
+          motivated recommender to another page to find the button lost them. */}
+      <section id="suppliers" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+          <div>
+            <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              {t("landing.suppliers_section_title")}
+            </h2>
+            <p className="mt-5 max-w-xl font-grotesk text-base text-umber-700 dark:text-umber-200 sm:text-lg">
+              {t("landing.suppliers_section_body")}
+            </p>
+            <div className="mt-8 divide-y divide-paper-300 border-y border-paper-300 dark:divide-umber-700 dark:border-umber-700">
+              <SupplierAction
+                icon={<Search size={18} strokeWidth={1.6} />}
+                label={t("landing.suppliers_action_browse_label")}
+                sub={t("landing.suppliers_action_browse_sub")}
+                to="/vendors/browse"
+              />
+              <SupplierAction
+                icon={<Sparkles size={18} strokeWidth={1.6} />}
+                label={t("landing.suppliers_action_suggest_label")}
+                sub={t("landing.suppliers_action_suggest_sub")}
+                onClick={() => setSuggestOpen(true)}
+              />
+              <SupplierAction
+                icon={<Store size={18} strokeWidth={1.6} />}
+                label={t("landing.suppliers_action_join_label")}
+                sub={t("landing.suppliers_action_join_sub")}
+                to="/vendors"
+              />
+            </div>
+          </div>
+          <LazyMount aspectRatio={MOCKUP_AR_SUPPLIERS} className="w-full">
+            <SuppliersPreview className="h-auto w-full" />
+          </LazyMount>
+        </div>
+      </section>
+
+      {/* The wizard is ~1200 lines of form; mount it only once someone opens
+          it so its chunk never touches the landing payload. `visitor` gates
+          the form behind an email verification instead of a session. */}
+      {suggestOpen && (
+        <Suspense fallback={null}>
+          <SubmitSupplierModal
+            open
+            onClose={() => setSuggestOpen(false)}
+            onSubmitted={() => setSuggestOpen(false)}
+            visitor
+          />
+        </Suspense>
+      )}
+
       {/* ════════════════════════ Interactive "Try it" demo ════════════════════════
           A no-signup budget calculator using the real DEFAULT_BUDGET_SPLIT.
           The CTA stashes the visitor's numbers into the onboarding draft so
@@ -479,34 +548,6 @@ export default function LandingPage() {
               </LazyMount>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════ 07 · Suppliers ════════════════════════ */}
-      <section id="suppliers" className="relative scroll-mt-20 bg-white dark:bg-umber-900">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:gap-12 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-center">
-          <div>
-            <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
-              {t("landing.suppliers_section_title")}
-            </h2>
-            <p className="mt-5 max-w-xl font-grotesk text-base text-umber-700 dark:text-umber-200 sm:text-lg">
-              {t("landing.suppliers_section_body")}
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                to="/vendors/browse"
-                className="btn-primary btn-lifted btn-landing w-full sm:w-auto"
-              >
-                {t("landing.suppliers_couple_cta")}
-              </Link>
-              <Link to="/vendors" className="btn-outline btn-lifted btn-landing w-full sm:w-auto">
-                {t("landing.suppliers_vendor_cta")}
-              </Link>
-            </div>
-          </div>
-          <LazyMount aspectRatio={MOCKUP_AR_SUPPLIERS} className="w-full">
-            <SuppliersPreview className="h-auto w-full" />
-          </LazyMount>
         </div>
       </section>
 
@@ -1631,6 +1672,57 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
         ))}
       </div>
     </div>
+  );
+}
+
+// One door of the suppliers block. Icon medallion, label, one supporting
+// line, chevron — the whole row is the target, and the medallion inverts to
+// solid ink on hover so the row reads as a control rather than a list item.
+// Same shape whether it navigates (`to`) or opens the wizard (`onClick`).
+function SupplierAction({
+  icon,
+  label,
+  sub,
+  to,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  sub: string;
+  to?: string;
+  onClick?: () => void;
+}) {
+  const className =
+    "group flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/50 sm:gap-5 sm:py-5";
+  const inner = (
+    <>
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-paper-300 text-umber-800 transition-colors group-hover:border-umber-900 group-hover:bg-umber-900 group-hover:text-paper-50 dark:border-umber-700 dark:text-paper-100 dark:group-hover:border-paper-200 dark:group-hover:bg-paper-50 dark:group-hover:text-umber-900 sm:h-11 sm:w-11">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-grotesk text-base font-medium leading-snug text-umber-900 dark:text-paper-50 sm:text-lg">
+          {label}
+        </span>
+        <span className="mt-0.5 block font-grotesk text-sm leading-snug text-umber-700 dark:text-umber-200">
+          {sub}
+        </span>
+      </span>
+      <ChevronRight
+        size={18}
+        strokeWidth={1.8}
+        aria-hidden
+        className="shrink-0 text-umber-500 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-umber-300"
+      />
+    </>
+  );
+  return to ? (
+    <Link to={to} aria-label={label} className={className}>
+      {inner}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} aria-label={label} className={className}>
+      {inner}
+    </button>
   );
 }
 
