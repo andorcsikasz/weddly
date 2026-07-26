@@ -229,7 +229,7 @@ import type {
   CompleteVendorOnboardingInput,
   VendorOnboardingVerifyView,
 } from "@shared/vendor_onboarding";
-import type { VendorBillingStatus } from "@shared/vendor_billing";
+import type { PublicVendorStats, VendorBillingStatus } from "@shared/vendor_billing";
 import type { VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
 import type {
   VendorBoardStatus,
@@ -295,6 +295,10 @@ async function uploadMultipart<T>(
  *  submitted any RSVP (yes / no / maybe). Cached server-side for 60s. */
 export const publicStatsApi = {
   get: () => apiFetch<{ couples: number; rsvps: number; ts: number }>("GET", "/api/public/stats"),
+  /** Vendor-recruitment counters for the public /vendors page: couples
+   *  planning right now, inquiry volume over the last 30 days, and the free
+   *  window a signup would land in (with its remaining slots). */
+  vendors: () => apiFetch<PublicVendorStats>("GET", "/api/public/vendor-stats"),
 };
 
 /** Public newsletter capture (landing + blog). Double opt-in: subscribe only

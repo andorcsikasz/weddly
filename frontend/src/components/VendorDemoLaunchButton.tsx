@@ -3,8 +3,11 @@
 // vendor account pre-loaded with fairy-tale client inquiries, and drops the
 // visitor into /vendor.
 //
-// Mirrors PlannerDemoLaunchButton: an inline secondary button beside the
-// /vendors hero CTA.
+// Mirrors PlannerDemoLaunchButton: an inline secondary action beside the
+// /vendors hero CTA. `variant="quiet"` renders it as a plain text link so the
+// recruitment page can keep exactly one visually dominant button (the signup
+// CTA); the default outline button is kept for any surface that wants the demo
+// to read as a real alternative.
 
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -14,7 +17,7 @@ import { markCurrentSessionDemo } from "../lib/demoSession";
 import { demoApi } from "../lib/endpoints";
 import { contentLocale, useT } from "../lib/i18n";
 
-export function VendorDemoLaunchButton() {
+export function VendorDemoLaunchButton({ variant = "outline" }: { variant?: "outline" | "quiet" }) {
   const { t, locale } = useT();
   const navigate = useNavigate();
   const { setSession } = useAuth();
@@ -47,7 +50,11 @@ export function VendorDemoLaunchButton() {
         onClick={launch}
         disabled={busy}
         aria-busy={busy}
-        className="btn btn-outline inline-flex items-center gap-2 px-6 py-3 text-sm disabled:cursor-wait disabled:opacity-80"
+        className={
+          variant === "quiet"
+            ? "inline-flex items-center gap-1.5 text-sm font-medium text-ink-600 underline-offset-2 hover:underline disabled:cursor-wait disabled:opacity-80 dark:text-umber-200"
+            : "btn btn-outline inline-flex items-center gap-2 px-6 py-3 text-sm disabled:cursor-wait disabled:opacity-80"
+        }
       >
         {busy ? (
           <>
@@ -57,7 +64,7 @@ export function VendorDemoLaunchButton() {
         ) : (
           <>
             {t("vendors.demo_cta")}
-            <ArrowRight size={16} aria-hidden="true" />
+            {variant === "outline" && <ArrowRight size={16} aria-hidden="true" />}
           </>
         )}
       </button>

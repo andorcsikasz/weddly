@@ -58,18 +58,18 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
     hu: {
       title: "Szolgáltatóknak · Wēddly",
       description:
-        "Iratkozzatok fel a Wēddly válogatott esküvői szolgáltatói listájára: helyszínek, fotósok, cateringek, zenészek. Érjétek el a most tervező párokat.",
-      h1: "Érjétek el a most tervező párokat.",
+        "Olyan párok elé kerülsz, akiknek már megvan a dátum és a keret. Így kerülhetsz fel a Wēddly válogatott esküvői szolgáltatói listájára.",
+      h1: "Olyan párok elé kerülsz, akiknek már megvan a dátum és a keret.",
       intro:
-        "A Wēddly válogatott címjegyzéke az első hely, ahol a párok keresnek esküvői szolgáltatókat, helyszínt, fotót, catering-et, zenét, dekort. Iratkozzatok fel a várólistára, és értesítünk, amint nyitunk a szolgáltatóknak.",
+        "A Wēddlyn a párok a vendéglistát, a büdzsét és az ütemtervet vezetik. Amikor a te kategóriádra kerül a sor, helyszínre, fotóra, cateringre, zenére vagy dekorra, ebből a válogatott listából választanak. Ehhez a listához adunk hozzáférést.",
     },
     en: {
       title: "For vendors · Weddly",
       description:
-        "Join Weddly's curated directory of Hungarian wedding suppliers, venues, photographers, caterers, musicians. Reach couples actively planning their wedding.",
-      h1: "Reach couples who are planning now.",
+        "Get in front of couples who already have a date and a budget. How to get onto Weddly's curated directory of wedding suppliers.",
+      h1: "Get in front of couples who already have a date and a budget.",
       intro:
-        "Weddly's curated directory is where couples look first when they shop venue, photo, catering, music or decor. Join the waitlist and we'll write when we open the supplier side.",
+        "Couples run their guest list, their budget and their timeline on Weddly. When they get to your category, venue, photo, catering, music or decor, they pick from this curated list. That list is what we give you access to.",
     },
   },
   "/privacy": {

@@ -231,3 +231,21 @@ export interface VendorBillingStatus {
    *  reading the two counters, it already encodes which tier is live. */
   offer: VendorOffer;
 }
+
+/** Response of GET /api/public/vendor-stats: the three honest numbers the
+ *  public /vendors recruitment page quotes. No auth, no PII, all derived from
+ *  live rows, so the marketing copy can never drift from reality (a hardcoded
+ *  "47 vendors already signed up" is exactly the claim we refuse to make).
+ *  Every consumer must self-hide a counter it considers too small to show
+ *  rather than dress the number up. */
+export interface PublicVendorStats {
+  /** Real, onboarded, non-demo couple workspaces. Same definition as the
+   *  landing page's counter (GET /api/public/stats). */
+  couples: number;
+  /** Inquiry emails actually delivered to vendors in the last 30 days. This is
+   *  the demand signal a vendor cares about, so it counts SENT messages only. */
+  inquiries_30d: number;
+  /** Which free window is live right now, and how many slots it still has.
+   *  Same shape (and same source) the authed vendor billing surface quotes. */
+  offer: VendorOffer;
+}

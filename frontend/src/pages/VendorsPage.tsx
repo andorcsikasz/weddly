@@ -1,27 +1,81 @@
-// Public vendor marketing page. Pitches the vendor SaaS and routes into the
+// Public vendor recruitment page. Pitches the vendor side and routes into the
 // self-serve signup at /vendors/signup. The old 4-step public waitlist form
 // (admin-accept → emailed token activation) is retired — vendors now create an
 // account directly and run the in-app onboarding wizard.
+//
+// Messaging rules this page is built on, so a future edit doesn't undo them:
+//
+//   1. Couples are the product; vendors get ACCESS to what couples already
+//      use. No "partner", no "community", nothing that reads as co-ownership.
+//   2. Concrete over abstract: what a vendor gets, how fast, and what it
+//      costs, in that order.
+//   3. Every number on the page is live (GET /api/public/vendor-stats). We do
+//      not type counts into the copy, and a counter that is too small to be
+//      persuasive hides itself instead of being dressed up.
+//   4. ONE dominant call to action (signup). Demo, login and the wrong-audience
+//      escape hatches are all quiet text links.
 
-import { ArrowLeft, Gem, MapPinned, PhoneCall, Share2, Store } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import type { PublicVendorStats } from "@shared/vendor_billing";
+import { ArrowLeft, Gem, Inbox, Receipt, Share2, Store } from "lucide-react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { VendorDemoLaunchButton } from "../components/VendorDemoLaunchButton";
 import { useToast } from "../components/ui";
+import { publicStatsApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
+/** Floor under the two demand counters in the proof band. A real but tiny
+ *  number ("4 couples planning here") argues against us, so each counter stays
+ *  hidden until it clears this. Lower it as the numbers grow. */
+const MIN_SHOWABLE = 25;
+
+/** Real vendor quotes for the proof band, empty until we have some.
+ *  DELIBERATELY EMPTY: an invented testimonial on a public page is a fabricated
+ *  endorsement, and the block renders fine without one. To turn it on, paste
+ *  real, permission-given quotes here (quote in the speaker's own language). */
+const VENDOR_TESTIMONIALS: { quote: string; name: string; business: string }[] = [];
+
 export default function VendorsPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   useDocumentMeta("vendors.seo_title", "vendors.seo_description");
   // Register-a-vendor flow for random visitors (no account): the modal handles
   // the email-verify gate (Google one-tap → device token) and submits the
   // community listing on X-Visitor-Token.
   const [registerOpen, setRegisterOpen] = useState(false);
+
+  // Live counters behind the scarcity line and the proof band. A failed fetch
+  // leaves them null, which drops both surfaces and keeps the evergreen copy.
+  const [stats, setStats] = useState<PublicVendorStats | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    publicStatsApi
+      .vendors()
+      .then((r) => {
+        if (!cancelled) setStats(r);
+      })
+      .catch(() => {
+        // Public counters, never block the page on a fetch failure.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const offer = stats?.offer ?? null;
+  // The scarcity line only makes a claim while a capped free round is actually
+  // running. On the trial tier there are no slots to count down.
+  const spotsLeft = offer && offer.tier !== "trial" && offer.spots_left > 0 ? offer.spots_left : 0;
+  const offerLine =
+    offer?.tier === "founding"
+      ? t("vendors.offer_founding")
+      : offer?.tier === "early"
+        ? t("vendors.offer_early")
+        : null;
 
   // Growth loop: anyone on the vendor site can pass a link on so their friends
   // come recommend a supplier they trust. Native share sheet on mobile, with a
@@ -55,11 +109,29 @@ export default function VendorsPage() {
           <h1 className="font-grotesk text-4xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
-          <div className="mt-8 flex flex-col flex-wrap items-center gap-3 sm:flex-row lg:justify-start">
+          <p className="mt-5 text-base leading-relaxed text-ink-600 sm:text-lg dark:text-umber-200">
+            {t("vendors.hero_sub")}
+          </p>
+          {/* Single dominant action. Everything else below it is a text link. */}
+          <div className="mt-8">
             <Link to="/vendors/signup" className="btn-primary btn-lg shadow-sm">
               {t("vendors.signup_cta")}
             </Link>
-            <VendorDemoLaunchButton />
+            <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
+              {t("vendors.cta_microcopy")}
+              {spotsLeft > 0 && (
+                <>
+                  {" "}
+                  <span className="font-medium text-ink-700 dark:text-umber-100">
+                    {t("vendors.spots_line", { n: spotsLeft })}
+                  </span>{" "}
+                  {offerLine}
+                </>
+              )}
+            </p>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 lg:justify-start">
+            <VendorDemoLaunchButton variant="quiet" />
             <Link
               to="/login"
               className="text-sm font-medium text-ink-600 underline-offset-2 hover:underline dark:text-umber-200"
@@ -85,30 +157,31 @@ export default function VendorsPage() {
         </div>
       </section>
 
-      {/* Benefits */}
+      {/* Benefits. Order is deliberate: what it costs, how fast you are live,
+          why the list is short. */}
       <section className="bg-paper-100/60 dark:bg-umber-900/40">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="grid gap-4 lg:grid-cols-3 lg:items-stretch">
-            {/* Direct contact leads — it's the differentiator vendors care about
-                most (audit item 9). */}
             <Benefit
-              icon={<PhoneCall size={22} strokeWidth={1.75} aria-hidden />}
-              title={t("vendors.benefit_3_title")}
-              body={t("vendors.benefit_3_body")}
-            />
-            <Benefit
-              icon={<Gem size={22} strokeWidth={1.75} aria-hidden />}
+              icon={<Receipt size={22} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_1_title")}
               body={t("vendors.benefit_1_body")}
             />
             <Benefit
-              icon={<MapPinned size={22} strokeWidth={1.75} aria-hidden />}
+              icon={<Inbox size={22} strokeWidth={1.75} aria-hidden />}
               title={t("vendors.benefit_2_title")}
               body={t("vendors.benefit_2_body")}
+            />
+            <Benefit
+              icon={<Gem size={22} strokeWidth={1.75} aria-hidden />}
+              title={t("vendors.benefit_3_title")}
+              body={t("vendors.benefit_3_body")}
             />
           </div>
         </div>
       </section>
+
+      <ProofBand stats={stats} locale={locale} />
 
       {/* Recommend-a-supplier prompt — two ways to help: register the vendor
           yourself (verify email, no account needed) or pass the link on. */}
@@ -126,7 +199,7 @@ export default function VendorsPage() {
             <button
               type="button"
               onClick={() => setRegisterOpen(true)}
-              className="btn-primary inline-flex items-center justify-center gap-2 whitespace-nowrap"
+              className="btn-outline inline-flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <Store size={16} aria-hidden />
               {t("vendors.recommend_register_cta")}
@@ -161,6 +234,67 @@ export default function VendorsPage() {
         </Link>
       </section>
     </PublicShell>
+  );
+}
+
+/** Proof band: live demand numbers, optional real testimonials, and the one
+ *  repeat of the primary CTA. Each counter clears its own floor before it
+ *  renders (see MIN_SHOWABLE); when none of them qualifies the whole band
+ *  disappears rather than shipping a thin "0 couples" sign. */
+function ProofBand({ stats, locale }: { stats: PublicVendorStats | null; locale: string }) {
+  const { t } = useT();
+  if (!stats) return null;
+
+  const nf = new Intl.NumberFormat(locale === "hu" ? "hu-HU" : locale === "es" ? "es-ES" : "en-US");
+  const items: { value: number; label: string }[] = [];
+  if (stats.couples >= MIN_SHOWABLE) {
+    items.push({ value: stats.couples, label: t("vendors.proof_couples_label") });
+  }
+  if (stats.inquiries_30d >= MIN_SHOWABLE) {
+    items.push({ value: stats.inquiries_30d, label: t("vendors.proof_inquiries_label") });
+  }
+  if (stats.offer.tier !== "trial" && stats.offer.spots_left > 0) {
+    items.push({ value: stats.offer.spots_left, label: t("vendors.proof_spots_label") });
+  }
+  if (items.length === 0) return null;
+
+  return (
+    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-14">
+      <h2 className="text-center font-grotesk text-2xl text-ink-900 sm:text-3xl dark:text-paper-50">
+        {t("vendors.proof_title")}
+      </h2>
+      <div className="mx-auto mt-8 grid max-w-3xl gap-8 sm:grid-cols-3">
+        {items.map((item) => (
+          <div key={item.label} className="text-center">
+            <div className="font-grotesk text-4xl text-ink-900 tabular-nums dark:text-paper-50">
+              {nf.format(item.value)}
+            </div>
+            <div className="mt-1.5 text-sm leading-snug text-ink-600 dark:text-umber-200">
+              {item.label}
+            </div>
+          </div>
+        ))}
+      </div>
+      {VENDOR_TESTIMONIALS.length > 0 && (
+        <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-2">
+          {VENDOR_TESTIMONIALS.map((v) => (
+            <figure key={v.business} className="card !p-6">
+              <blockquote className="text-sm leading-relaxed text-ink-700 dark:text-umber-100">
+                {v.quote}
+              </blockquote>
+              <figcaption className="mt-3 text-xs text-ink-500 dark:text-umber-300">
+                {v.name} · {v.business}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+      <div className="mt-10 text-center">
+        <Link to="/vendors/signup" className="btn-primary btn-lg shadow-sm">
+          {t("vendors.proof_cta")}
+        </Link>
+      </div>
+    </section>
   );
 }
 
