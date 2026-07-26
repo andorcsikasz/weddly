@@ -34,6 +34,7 @@ import {
 import { MAX_LISTING_VIDEOS, parseVideoUrl } from "@shared/listing_videos";
 import { db, now } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { requireHttpUrl } from "../lib/url";
 import { sniffUploadedImage } from "../lib/image_sniff";
 import { keyFromUploadUrl, storage } from "../lib/storage";
 import {
@@ -205,7 +206,10 @@ function buildPatch(body: VendorListingEditInput): ListingPatch {
   const address = parseStringField(body.address, "address", MAX_ADDRESS_LEN);
   if (address !== undefined) patch.address = address;
   const website = parseStringField(body.website, "website", MAX_WEBSITE_LEN);
-  if (website !== undefined) patch.website = website;
+  // Scheme-guard: the public directory + admin panel anchor this straight into
+  // an href, so a `javascript:` value would be stored XSS. Only http(s) is stored.
+  if (website !== undefined)
+    patch.website = website === null ? null : requireHttpUrl(website, "website");
   const contactEmail = parseStringField(body.contact_email, "contact_email", MAX_EMAIL_LEN);
   if (contactEmail !== undefined) patch.contact_email = contactEmail;
   const contactPhone = parseStringField(body.contact_phone, "contact_phone", MAX_PHONE_LEN);

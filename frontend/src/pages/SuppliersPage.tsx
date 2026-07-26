@@ -99,6 +99,7 @@ import type { BudgetLine, Currency, PlannerDirectoryEntry } from "@shared/types"
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { SupplierCompareDialog } from "../components/SupplierCompareDialog";
 import { formatMoney } from "../lib/format";
+import { safeExternalHref } from "../lib/url";
 import {
   distanceContextForQuery,
   distanceKmForQuery,
@@ -2192,7 +2193,7 @@ export default function SuppliersPage() {
                       far right. */}
                         <div className="flex shrink-0 items-center gap-1.5">
                           <a
-                            href={s.website}
+                            href={safeExternalHref(s.website)}
                             target="_blank"
                             rel="noreferrer noopener"
                             className="btn-outline btn-sm"

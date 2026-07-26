@@ -5,6 +5,7 @@ import {
   type SupplierDirectoryAdminRow,
 } from "@shared/suppliers";
 import { intlLocale } from "../../lib/format";
+import { safeExternalHref } from "../../lib/url";
 import {
   Download,
   ExternalLink,
@@ -499,7 +500,7 @@ export function SupplierDirectoryView() {
                     <span className="block">{row.name}</span>
                     {row.website && (
                       <a
-                        href={row.website}
+                        href={safeExternalHref(row.website)}
                         target="_blank"
                         rel="noreferrer noopener"
                         className="mt-0.5 inline-flex items-center gap-1 text-xs text-neutral-500 underline-offset-2 hover:underline dark:text-umber-300"

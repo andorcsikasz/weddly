@@ -203,6 +203,37 @@ describe("P2.D vendor listing — PATCH /api/vendor/listing/me", () => {
     expect(patch.data.listing.name).toBe("Patch Photo Studio");
   });
 
+  test("website with a non-http(s) scheme is rejected (stored-XSS guard); http(s) is stored", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-xss@weddly.test",
+      "vendor-xss@weddly.test",
+      "XSS Guard Studio",
+    );
+    const { vendorToken } = await claimListing(listingId, "vendor-xss@weddly.test", "Vendor Owner");
+
+    // The public directory + admin panel anchor `website` into an href, so a
+    // javascript: value would be stored XSS. It must be refused, not persisted.
+    for (const evil of ["javascript:alert(document.cookie)", "data:text/html,<script>1</script>"]) {
+      const bad = await req(
+        "PATCH",
+        "/api/vendor/listing/me",
+        { website: evil },
+        { token: vendorToken },
+      );
+      expect(bad.status).toBe(400);
+    }
+
+    const good = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { website: "https://studio.example" },
+      { token: vendorToken },
+    );
+    expect(good.status).toBe(200);
+    expect(good.data.listing.website).toBe("https://studio.example/");
+  });
+
   test("explicit null clears a nullable field, empty string normalises to null", async () => {
     wipeAll();
     const { listingId } = await makeApprovedListing(

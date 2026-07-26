@@ -11,6 +11,7 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import { useT } from "../lib/i18n";
+import { safeExternalHref } from "../lib/url";
 
 // Brand-tinted vector dots instead of Leaflet's default PNG pins. Keeps the
 // map quieter (no shadow, no anchor offset) and matches the rest of the
@@ -107,7 +108,7 @@ export default function SupplierMap({ suppliers }: { suppliers: DirectorySupplie
                   {locale === "hu" ? s.blurb_hu : s.blurb_en}
                 </p>
                 <a
-                  href={s.website}
+                  href={safeExternalHref(s.website)}
                   target="_blank"
                   rel="noreferrer noopener"
                   className="inline-block pt-1 text-xs font-medium text-blush-700 hover:text-blush-800"

@@ -1,5 +1,6 @@
 import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
 import { intlLocale } from "../lib/format";
+import { safeExternalHref } from "../lib/url";
 import {
   AlertTriangle,
   Check,
@@ -770,7 +771,7 @@ function SupplierCard({
                 <DefRow
                   label={t("admin.suppliers_card_field_website")}
                   value={s.website}
-                  href={s.website || undefined}
+                  href={safeExternalHref(s.website)}
                 />
                 <DefRow
                   label={t("admin.suppliers_card_field_contact_email")}

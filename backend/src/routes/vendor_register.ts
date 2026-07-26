@@ -31,6 +31,7 @@ import { getUserById, getUserByEmail, toUser, type UserRow } from "../domain/use
 import { addAuditLog } from "../lib/audit";
 import { verifyGoogleCredential } from "../lib/google_oauth";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+import { requireHttpUrl } from "../lib/url";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
 import { createVerificationToken } from "./email_verify";
 
@@ -134,6 +135,13 @@ function parseOptional(raw: unknown, maxLen: number): string | null {
   return trimmed;
 }
 
+/** Optional website, scheme-guarded: the listing's website renders as a live
+ *  href in the directory + admin panel, so only http(s) may be stored. */
+function parseOptionalWebsite(raw: unknown): string | null {
+  const trimmed = parseOptional(raw, 240);
+  return trimmed === null ? null : requireHttpUrl(trimmed, "website");
+}
+
 function parseCountry(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const trimmed = raw.trim().toUpperCase();
@@ -193,7 +201,7 @@ function parseBusinessFields(body: VendorRegisterBody, email: string): VendorPro
     city: parseOptional(body.city, 80),
     postalCode: parseOptional(body.postal_code, 20),
     contactPhone: parseOptional(body.contact_phone, 40),
-    website: parseOptional(body.website, 240),
+    website: parseOptionalWebsite(body.website),
   };
 }
 

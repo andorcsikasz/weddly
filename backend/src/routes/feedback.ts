@@ -33,6 +33,7 @@ import { insertCoupleNotification } from "../domain/notifications";
 import { requireAdmin } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
+import { httpUrlOrNull } from "../lib/url";
 import { rateLimit } from "../lib/rate_limit";
 
 interface SubmitBody {
@@ -118,7 +119,10 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   // Context is an in-app route; only retain it for in-product submissions so
   // a crafted landing-page POST can't smuggle a bogus surface label in.
   const context = source === "app" ? trimStr(body.context, 200) : null;
-  const url = trimStr(body.url, 500);
+  // Scheme-guard: this URL is anchored into an href in the admin feedback panel,
+  // so a javascript:/data: value would be stored XSS. Drop anything non-http(s).
+  const urlRaw = trimStr(body.url, 500);
+  const url = urlRaw === null ? null : httpUrlOrNull(urlRaw);
   const message = trimStr(body.message, 2000);
   const rating = intInRange(body.rating, 1, 10, "rating");
   const monthlyValue = intInRange(body.monthly_value_ft, 0, 15000, "monthly_value_ft");

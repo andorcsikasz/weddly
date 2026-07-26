@@ -71,6 +71,7 @@ import {
   supplierApi,
 } from "../lib/endpoints";
 import { intlLocale, maxIsoDate, todayIso } from "../lib/format";
+import { safeExternalHref } from "../lib/url";
 import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -582,7 +583,7 @@ function PocRow({
   );
   const websitePill = supplier?.website ? (
     <a
-      href={supplier.website}
+      href={safeExternalHref(supplier.website)}
       target="_blank"
       rel="noreferrer noopener"
       className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"

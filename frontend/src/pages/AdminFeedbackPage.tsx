@@ -14,6 +14,7 @@ import type {
   FeedbackStatus,
 } from "@shared/feedback";
 import { intlLocale } from "../lib/format";
+import { safeExternalHref } from "../lib/url";
 import {
   Archive,
   Ban,
@@ -732,7 +733,7 @@ function TriagePanel({
             </div>
             {entry.url && (
               <a
-                href={entry.url}
+                href={safeExternalHref(entry.url)}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-xs text-neutral-500 hover:text-neutral-800 dark:text-umber-300 dark:hover:text-paper-50"
