@@ -46,8 +46,12 @@ export default function BudgetCalculatorPage() {
       {/* The widget — same one the landing uses. Its internal CTA writes
           the visitor's guest count + budget into the onboarding draft, so
           the handoff is identical whether they came from the landing or
-          this dedicated tool URL. */}
-      <InteractiveBudgetDemo />
+          this dedicated tool URL.
+          `vendorTeaser` appends the directory rail: this page arrives from a
+          "how much does a wedding cost" search, and the natural next question
+          after the per-category numbers is who to spend it with. The rail
+          answers it with real listings and carries the same draft into signup. */}
+      <InteractiveBudgetDemo vendorTeaser />
 
       {/* Averages + source note — anchors the "mennyibe kerül" search
           intent with concrete numbers Google can excerpt as a snippet. */}

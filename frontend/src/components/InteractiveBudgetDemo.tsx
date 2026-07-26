@@ -11,6 +11,7 @@ import { scaleFromEur } from "@shared/currency";
 import type { Currency } from "@shared/types";
 import { formatMoney, localeCurrency } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { VendorDirectoryTeaser } from "./VendorDirectoryTeaser";
 
 const MIN_GUESTS = 20;
 const MAX_GUESTS = 250;
@@ -116,7 +117,16 @@ function stashDraft(guests: number, budget: number) {
   }
 }
 
-export function InteractiveBudgetDemo() {
+export function InteractiveBudgetDemo({
+  vendorTeaser = false,
+}: {
+  /** Append the directory rail under the calculator: the visitor has just
+   *  decided what they'd spend per category, so "here is who you'd spend it
+   *  with, sign up to see all of them" converts better than a bare register
+   *  ask. Opt-in because the landing already has its own conversion path;
+   *  today only the /eszkozok budget-calculator tool page turns it on. */
+  vendorTeaser?: boolean;
+}) {
   const { t, locale } = useT();
   // Currency follows the UI locale: HU → HUF, everything else → EUR.
   const currency = localeCurrency(locale);
@@ -312,6 +322,16 @@ export function InteractiveBudgetDemo() {
             </div>
           </div>
         </div>
+
+        {/* Same signup href + draft stash as the button above, so a visitor who
+            converts from the rail keeps the guest count and budget they just
+            set. */}
+        {vendorTeaser && (
+          <VendorDirectoryTeaser
+            signupHref={signupHref}
+            onSignupClick={() => stashDraft(guests, budget)}
+          />
+        )}
       </div>
     </section>
   );
