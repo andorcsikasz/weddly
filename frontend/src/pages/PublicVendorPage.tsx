@@ -20,6 +20,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { ReviewSpendFields } from "../components/ReviewSpendFields";
 import { ReviewSpendLine } from "../components/ReviewSpendLine";
+import { VendorGallery } from "../components/VendorGallery";
 import { ReviewTagPicker } from "../components/ReviewTagPicker";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
@@ -272,10 +273,6 @@ export default function PublicVendorPage() {
   const [data, setData] = useState<PublicVendorPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  // Which gallery image is shown big; null → the hero. Clicking a thumbnail
-  // swaps it in place (a lightbox on the page, no new tab).
-  const [activeImage, setActiveImage] = useState<string | null>(null);
-  useEffect(() => setActiveImage(null), [supplierId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -377,42 +374,12 @@ export default function PublicVendorPage() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
           {/* ── MAIN ─────────────────────────────────────────────────────── */}
           <main className="min-w-0">
-            <PublicHero detail={detail} t={t} src={activeImage ?? detail.hero_image_url} />
-            {detail.gallery_urls && detail.gallery_urls.length > 1 && (
-              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {detail.gallery_urls.map((url, i) => {
-                  const shown = (activeImage ?? detail.hero_image_url) === url;
-                  // Flush inset border (not a floating ring): with overflow-hidden
-                  // it wraps the clipped photo as an even frame that hugs the
-                  // rounded corners. Every thumbnail is framed subtly; the active
-                  // one gets the strong frame.
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setActiveImage(url)}
-                      aria-current={shown ? "true" : undefined}
-                      aria-label={t("suppliers.detail.gallery_show_aria", { n: i + 1 })}
-                      className={`shrink-0 overflow-hidden rounded-xl border-2 transition ${
-                        shown
-                          ? "border-ink-800 dark:border-paper-100"
-                          : "border-paper-300 hover:border-paper-400 dark:border-umber-600 dark:hover:border-umber-500"
-                      }`}
-                    >
-                      <img
-                        src={url}
-                        alt={`${detail.name} ${i + 1}`}
-                        loading="lazy"
-                        className="h-20 w-20 object-cover sm:h-24 sm:w-24"
-                        style={{
-                          objectPosition: `50% ${detail.gallery_positions_y?.[url] ?? 50}%`,
-                        }}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            <VendorGallery
+              images={detail.gallery_urls ?? []}
+              name={detail.name}
+              positionsY={detail.gallery_positions_y}
+              emptyState={<PublicHero detail={detail} t={t} src={null} />}
+            />
 
             <div className="mt-5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t(`suppliers.cat.${detail.category}`)} · {detail.city}

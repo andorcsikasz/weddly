@@ -2096,6 +2096,24 @@ export interface LocaleMessages {
     hero_title: string;
     hero_sub: string;
     trust_signal: string;
+    /** Live scarcity line under the hero CTA. {n} = slots left in the free
+     *  window a signup would land in right now (GET /api/public/vendor-stats).
+     *  Never rendered when the round is full or the fetch fails. */
+    spots_line: string;
+    /** What the current round grants, appended after the spots line. Picked by
+     *  offer tier; the trial tier has no such promise, so it has no key. */
+    offer_founding: string;
+    offer_early: string;
+    /** Effort claim under the single primary CTA. */
+    cta_microcopy: string;
+    /** Social-proof band. Each counter self-hides below its own floor, so the
+     *  labels must read correctly on their own. */
+    proof_title: string;
+    proof_couples_label: string;
+    proof_inquiries_label: string;
+    proof_spots_label: string;
+    /** Closing repeat of the single CTA at the end of the proof band. */
+    proof_cta: string;
     benefit_1_title: string;
     benefit_1_body: string;
     benefit_2_title: string;
@@ -5182,6 +5200,11 @@ export interface LocaleMessages {
      *  up at /app/suppliers/:supplier_id; the directory card links here only
      *  for admin viewers. */
     detail: {
+      /** VendorGallery: thumbnail aria-label, the two arrows, and the zoom. */
+      gallery_show_aria: string;
+      gallery_prev: string;
+      gallery_next: string;
+      gallery_zoom: string;
       adminTitle: string;
       back: string;
       claimed: string;
