@@ -8,9 +8,8 @@ import type { ListingVideo } from "./listing_videos";
 // SUPPLIER_GROUPS. `other` is retired from the UI but kept as a hidden legacy
 // fallback so a stray row with a pre-v2 slug never crashes a category lookup.
 export type SupplierCategory =
-  // Planning & rentals
+  // Planning
   | "wedding_planner"
-  | "rental_equipment"
   // Venue & stay
   | "venue"
   | "accommodation"
@@ -24,6 +23,7 @@ export type SupplierCategory =
   | "wedding_decor"
   | "florist"
   | "lighting"
+  | "rental_equipment"
   // Media
   | "photography"
   | "videography"
@@ -230,10 +230,10 @@ export function supplierCategoryLabel(category: string, locale: "hu" | "en"): st
 // entertainment, personal style, paper, and transport. `other` is intentionally
 // NOT in any group — it's a hidden legacy fallback, absent from every picker.
 export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
-  { id: "planning_rentals", categories: ["wedding_planner", "rental_equipment"] },
+  { id: "planning_rentals", categories: ["wedding_planner"] },
   { id: "venue_stay", categories: ["venue", "accommodation", "tent_pavilion"] },
   { id: "food_drink", categories: ["catering", "cake_dessert", "bar_drinks", "food_trucks"] },
-  { id: "decor_flowers", categories: ["wedding_decor", "florist", "lighting"] },
+  { id: "decor_flowers", categories: ["wedding_decor", "florist", "lighting", "rental_equipment"] },
   { id: "media", categories: ["photography", "videography", "content_creator", "photo_booth"] },
   {
     id: "entertainment",

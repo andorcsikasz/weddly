@@ -4595,7 +4595,7 @@ const es: LocaleMessages = {
       },
     },
     group: {
-      planning_rentals: "Planificación y alquiler",
+      planning_rentals: "Planificación",
       venue_stay: "Espacio y alojamiento",
       food_drink: "Comida y bebida",
       decor_flowers: "Decoración y flores",

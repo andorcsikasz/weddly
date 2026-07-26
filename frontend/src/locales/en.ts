@@ -4499,7 +4499,7 @@ const en: LocaleMessages = {
       },
     },
     group: {
-      planning_rentals: "Planning & rentals",
+      planning_rentals: "Planning",
       venue_stay: "Venue & stay",
       food_drink: "Food & drink",
       decor_flowers: "Decor & flowers",

@@ -4549,7 +4549,7 @@ const hu: LocaleMessages = {
       },
     },
     group: {
-      planning_rentals: "Szervezés & kölcsönzés",
+      planning_rentals: "Szervezés",
       venue_stay: "Helyszín & szállás",
       food_drink: "Étel & ital",
       decor_flowers: "Dekor & virág",

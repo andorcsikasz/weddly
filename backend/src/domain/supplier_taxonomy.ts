@@ -339,19 +339,13 @@ interface SeedGroup {
 const SEED: SeedGroup[] = [
   {
     slug: "planning_rentals",
-    label_hu: "Szervezés & kölcsönzés",
-    label_en: "Planning & rentals",
+    label_hu: "Szervezés",
+    label_en: "Planning",
     categories: [
       {
         slug: "wedding_planner",
         label_hu: "Esküvőszervező",
         label_en: "Wedding planner",
-        budget: "other",
-      },
-      {
-        slug: "rental_equipment",
-        label_hu: "Kölcsönzés & technika",
-        label_en: "Rental & equipment",
         budget: "other",
       },
     ],
@@ -405,6 +399,12 @@ const SEED: SeedGroup[] = [
       },
       { slug: "florist", label_hu: "Virágkötő", label_en: "Florist", budget: "decor_floral" },
       { slug: "lighting", label_hu: "Világítás", label_en: "Lighting", budget: "decor_floral" },
+      {
+        slug: "rental_equipment",
+        label_hu: "Kölcsönzés & technika",
+        label_en: "Rental & equipment",
+        budget: "other",
+      },
     ],
   },
   {
