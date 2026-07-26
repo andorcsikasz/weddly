@@ -26,7 +26,21 @@ import {
 import { db, now } from "../db";
 import type { HouseholdRow } from "./households";
 import { HttpError } from "../lib/http";
+import { httpUrlOrNull } from "../lib/url";
 import { sendRawEmail } from "./emails";
+
+/** Escape a user-authored string for interpolation into the raw HTML of the
+ *  gift-coordination email. Item titles + household labels are couple/guest
+ *  authored, so an unescaped value could inject markup into another guest's
+ *  inbox; this closes that. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 export interface WishlistItemRow {
   id: number;
@@ -723,7 +737,7 @@ export async function sendGroupGiftNotification(params: {
       const amountCell =
         c.pledgedAmountMinor != null ? formatAmount(c.pledgedAmountMinor, currency) : "-";
       return `<tr${isMe ? ' style="font-weight:bold"' : ""}>
-        <td>${c.label}${isMe ? " [Te/You]" : ""}</td>
+        <td>${escapeHtml(c.label)}${isMe ? " [Te/You]" : ""}</td>
         <td>${amountCell}</td>
       </tr>`;
     })
@@ -747,8 +761,11 @@ export async function sendGroupGiftNotification(params: {
       ? `<p>Összesen / Total: <strong>${formatAmount(total, currency)} / ${formatAmount(targetAmountMinor, currency)}${pct != null ? ` (${pct}%)` : ""}</strong></p>`
       : `<p>Összesen / Total: <strong>${formatAmount(total, currency)}</strong></p>`;
 
-  const itemUrlLink = itemUrl
-    ? `<p><a href="${itemUrl}">Megnézheted az ajándékot / View the gift item</a></p>`
+  // Only render the link if it is a real http(s) URL (defense in depth: the URL
+  // is validated on write too), and escape it inside the href attribute.
+  const safeItemUrl = itemUrl ? httpUrlOrNull(itemUrl) : null;
+  const itemUrlLink = safeItemUrl
+    ? `<p><a href="${escapeHtml(safeItemUrl)}">Megnézheted az ajándékot / View the gift item</a></p>`
     : "";
 
   let bodyHtml: string;
@@ -759,8 +776,8 @@ export async function sendGroupGiftNotification(params: {
         ? formatAmount(ownPledge.pledgedAmountMinor, currency)
         : "nincs megadva / not specified";
     bodyHtml = `
-      <p>Megerősítjük, hogy szándéknyilatkozatod megérkezett a(z) <strong>${itemTitle}</strong> ajándékhoz.<br>
-      <em>We've noted your intention to contribute to <strong>${itemTitle}</strong>.</em></p>
+      <p>Megerősítjük, hogy szándéknyilatkozatod megérkezett a(z) <strong>${escapeHtml(itemTitle)}</strong> ajándékhoz.<br>
+      <em>We've noted your intention to contribute to <strong>${escapeHtml(itemTitle)}</strong>.</em></p>
       <p>Vállalt összeg / Your pledge: <strong>${ownAmount}</strong></p>
       ${contributors.length > 1 ? contributorTableHtml : ""}
       ${progressLine}
@@ -769,8 +786,8 @@ export async function sendGroupGiftNotification(params: {
       This is a non-binding expression of interest — you can withdraw at any time.</em></p>`;
   } else {
     bodyHtml = `
-      <p>Örömmel értesítünk, hogy <strong>${newContributorLabel}</strong> is csatlakozott a(z) <strong>${itemTitle}</strong> ajándékhoz.<br>
-      <em>Another guest joined <strong>${itemTitle}</strong>.</em></p>
+      <p>Örömmel értesítünk, hogy <strong>${escapeHtml(newContributorLabel)}</strong> is csatlakozott a(z) <strong>${escapeHtml(itemTitle)}</strong> ajándékhoz.<br>
+      <em>Another guest joined <strong>${escapeHtml(itemTitle)}</strong>.</em></p>
       ${contributorTableHtml}
       ${progressLine}
       <p><strong>Egyeztessetek a vásárlásról! / Coordinate the purchase!</strong></p>
