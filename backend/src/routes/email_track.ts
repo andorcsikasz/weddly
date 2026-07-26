@@ -27,6 +27,7 @@ import {
   verifyCampaignOptOutToken,
   verifyCampaignPixelToken,
 } from "../domain/vendor_campaign";
+import { getOnboardingSendById, verifyOnboardingOptOutToken } from "../domain/onboarding_campaign";
 import { getInviteSendById, verifyInviteOptOutToken } from "../domain/personal_invite_campaign";
 import {
   getReviewSendById,
@@ -200,6 +201,33 @@ function handleInviteOptOutPost(ctx: Ctx): Response {
   return new Response(null, { status: 204 });
 }
 
+// ── Onboarding re-engagement campaign ───────────────────────────────────────
+// Same as personal-invite: no click/pixel tracking (conversion is UTM + an
+// onboarded-ness join), only an opt-out reached from the footer + List-Unsubscribe.
+
+function onboardingOptOutEmailFromToken(token: string): string | null {
+  const sendId = verifyOnboardingOptOutToken(token);
+  if (sendId == null) return null;
+  return getOnboardingSendById(sendId)?.email ?? null;
+}
+
+function handleOnboardingOptOut(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const email = onboardingOptOutEmailFromToken(token);
+  if (email) addOptOut(email, "onboarding_campaign");
+  return new Response(optOutHtml(email != null), {
+    status: email ? 200 : 404,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+function handleOnboardingOptOutPost(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const email = onboardingOptOutEmailFromToken(token);
+  if (email) addOptOut(email, "onboarding_campaign");
+  return new Response(null, { status: 204 });
+}
+
 /** Static HTML, deliberately bilingual: this page is reached from a cold mail
  *  in either language and costs nothing to render both ways. No user input is
  *  interpolated, so there is nothing to escape. */
@@ -272,4 +300,10 @@ export function registerEmailTrackRoutes(router: Router): void {
   router.post("/api/emails/optout-invite/:token", handleInviteOptOutPost);
   router.get("/invite-optout/:token", handleInviteOptOut);
   router.post("/invite-optout/:token", handleInviteOptOutPost);
+
+  // Onboarding re-engagement campaign opt-out (List-Unsubscribe target + footer link).
+  router.get("/api/emails/optout-onboarding/:token", handleOnboardingOptOut);
+  router.post("/api/emails/optout-onboarding/:token", handleOnboardingOptOutPost);
+  router.get("/onboarding-optout/:token", handleOnboardingOptOut);
+  router.post("/onboarding-optout/:token", handleOnboardingOptOutPost);
 }

@@ -601,6 +601,14 @@ export interface PersonalInvitePayload {
   locale: "hu" | "en";
 }
 
+export interface OnboardingCampaignPayload {
+  /** The account holder's name, for the greeting. May be empty. */
+  name: string;
+  /** The /onboarding CTA, carrying the campaign UTM. */
+  ctaUrl: string;
+  locale: "hu" | "en";
+}
+
 export interface VendorClaimAdminAlertPayload {
   /** Listing name the claimer wants to take over. */
   listingName: string;
@@ -792,6 +800,8 @@ export type KindPayload = {
   vendor_review_campaign: VendorReviewCampaignPayload;
   vendor_review_campaign_reminder: VendorReviewCampaignPayload;
   personal_invite: PersonalInvitePayload;
+  onboarding_campaign: OnboardingCampaignPayload;
+  onboarding_campaign_reminder: OnboardingCampaignPayload;
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_admin_alert: VendorClaimAdminAlertPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
@@ -2853,6 +2863,77 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Not the right time? Ignore this email or unsubscribe below. I won't email you again.",
     },
   }),
+  // Admin re-engagement blast to a registered couple who never onboarded. Warm,
+  // low-friction, the whole pitch is "2 minutes and your planner is seeded".
+  // Outreach category, so the footer carries the one-click unsubscribe.
+  onboarding_campaign: (p) => ({
+    subject:
+      p.locale === "hu"
+        ? "2 perc, és kész az esküvőterveződ alapja"
+        : "2 minutes to set up your wedding planner",
+    ctaUrl: p.ctaUrl,
+    hu: {
+      preheader: "Regisztráltál, de a terveződ még üres. Pár adat, és indulhat.",
+      greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
+      paragraphs: [
+        "Regisztráltál a **Weddly**-re, de az alap beállítást még nem fejezted be, így a tervező egyelőre üres.",
+        "Pár perc az egész: pár adat (nevek, dátum, vendégszám), és máris a kezedben egy szabható **költségvetés**, **vendéglista** online RSVP-vel és egy **ülésrend-vázlat**. Minden egy nyugodt helyen, magyarul.",
+        "Ha most nem alkalmas, semmi gond, lentről egy kattintással leiratkozhatsz.",
+      ],
+      cta: "Befejezem a beállítást",
+      ctaSubtext: "2 perc az egész.",
+      footnote:
+        "Ezt azért kaptad, mert van egy Weddly-fiókod, de még nem kezdtél esküvőt tervezni. Leiratkozás lent.",
+    },
+    en: {
+      preheader: "You signed up, but your planner is still empty. A few facts and you're set.",
+      greeting: p.name.trim() ? `Hi ${p.name.trim()},` : "Hi there,",
+      paragraphs: [
+        "You signed up for **Weddly**, but you haven't finished the initial setup, so your planner is still empty.",
+        "It only takes a few minutes: a few facts (names, date, guest count) and you'll have a flexible **budget**, a **guest list** with online RSVP, and a **seating skeleton** ready to shape. Everything in one calm place.",
+        "Not the right time? No problem, you can unsubscribe with one click below.",
+      ],
+      cta: "Finish setup",
+      ctaSubtext: "Takes 2 minutes.",
+      footnote:
+        "You're getting this because you have a Weddly account but haven't started a wedding yet. Unsubscribe below.",
+    },
+  }),
+
+  // The single reminder wave for the campaign above, sent only to recipients
+  // still without a workspace. Warmer and shorter, framed as "we kept your spot".
+  onboarding_campaign_reminder: (p) => ({
+    subject:
+      p.locale === "hu"
+        ? "Még megvan a helyed, fejezzük be együtt?"
+        : "Your spot is still saved, shall we finish?",
+    ctaUrl: p.ctaUrl,
+    hu: {
+      preheader: "Pár napja kezdtél bele. A terveződ egy kattintásra van a kezdéstől.",
+      greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
+      paragraphs: [
+        "Pár napja szóltunk, hogy a Weddly-fiókod megvan, de a tervező még üres. Megtartottuk neked a helyed.",
+        "Pár adat (nevek, dátum, vendégszám), és máris kapsz egy szabható költségvetést, vendéglistát és ülésrend-vázat. Utána bármit módosíthatsz.",
+      ],
+      cta: "Elkezdem most",
+      ctaSubtext: "2 perc az egész.",
+      footnote:
+        "Ez az utolsó emlékeztetőnk. Ha most nem aktuális, iratkozz le lent, nem zavarunk többet.",
+    },
+    en: {
+      preheader: "You started a few days ago. Your planner is one click from ready.",
+      greeting: p.name.trim() ? `Hi ${p.name.trim()},` : "Hi there,",
+      paragraphs: [
+        "A few days ago we mentioned your Weddly account is set up but your planner is still empty. We kept your spot.",
+        "A few facts (names, date, guest count) and you'll get a flexible budget, guest list, and seating skeleton. Change anything afterwards.",
+      ],
+      cta: "Start now",
+      ctaSubtext: "Takes 2 minutes.",
+      footnote:
+        "This is our last reminder. If now is not the time, unsubscribe below and we won't email again.",
+    },
+  }),
+
   // P2.C, vendor claim verify mail. Categorised as `outreach`: anyone (no
   // auth) can hit /api/vendor/claim/start with a listing id, so the recipient
   // didn't necessarily start the flow themselves. The footer copy reflects

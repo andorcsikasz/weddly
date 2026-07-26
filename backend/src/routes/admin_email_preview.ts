@@ -312,6 +312,16 @@ const STUBS: KindPayload = {
     ctaUrl: `${BASE_URL}/?utm_source=invite&utm_medium=email&utm_campaign=friends-2026-07`,
     locale: "hu",
   },
+  onboarding_campaign: {
+    name: "Anna",
+    ctaUrl: `${BASE_URL}/onboarding?utm_source=onboarding_campaign&utm_medium=email&utm_campaign=reengage-2026-07&utm_content=initial`,
+    locale: "hu",
+  },
+  onboarding_campaign_reminder: {
+    name: "Anna",
+    ctaUrl: `${BASE_URL}/onboarding?utm_source=onboarding_campaign&utm_medium=email&utm_campaign=reengage-2026-07&utm_content=reminder`,
+    locale: "hu",
+  },
   vendor_review_campaign_reminder: {
     businessName: "Bloom Studio",
     reviewUrl: `${BASE_URL}/vendors/bloom-studio-v12`,

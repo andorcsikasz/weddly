@@ -2178,3 +2178,45 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_pics_campaign_email ON personal_invite_cam
 CREATE INDEX IF NOT EXISTS idx_pics_campaign_status ON personal_invite_campaign_sends(campaign_id, status);
 -- Drives the rolling-24h pacing query.
 CREATE INDEX IF NOT EXISTS idx_pics_sent_at ON personal_invite_campaign_sends(sent_at);
+
+-- Admin-run re-engagement blast to REGISTERED couple accounts that verified
+-- their email but never onboarded (no workspace: users.couple_id IS NULL). This
+-- is the manual counterpart to the automatic 24h + 1-week onboarding drip
+-- (domain/emails/worker.ts): that drip fires once per user forever, so a stale
+-- orphan cohort it already exhausted can only be re-nudged from here. Targets
+-- are a LIVE query over `users` (not a CSV): the operator "syncs" the current
+-- orphan segment into send rows, then the paced sweep drains 'queued' up to the
+-- rolling-24h daily_cap, re-checking onboarded/opt-out at send time so anyone
+-- who onboards or opts out between sync and send is never mailed. Conversion is
+-- a live join (the targeted user now has a couple_id); one reminder wave is
+-- gated on STILL-not-onboarded (not on opens/clicks, which are unreliable).
+CREATE TABLE IF NOT EXISTS onboarding_campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL UNIQUE,                                   -- operator handle, e.g. 'reengage-2026-07'
+  status TEXT NOT NULL DEFAULT 'paused',                       -- 'paused' | 'running' | 'done'
+  daily_cap INTEGER NOT NULL DEFAULT 50,                       -- rolling-24h send ceiling; paced by the worker
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  started_at INTEGER,
+  ended_at INTEGER
+);
+
+-- One row per targeted USER per campaign, seeded 'queued' at sync.
+CREATE TABLE IF NOT EXISTS onboarding_campaign_sends (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id INTEGER NOT NULL REFERENCES onboarding_campaigns(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,      -- the targeted account; conversion joins on it
+  name TEXT NOT NULL DEFAULT '',                               -- for the greeting; may be empty
+  email TEXT NOT NULL,                                         -- lowercased, trimmed (snapshot at sync)
+  locale TEXT NOT NULL DEFAULT 'hu',                           -- 'hu' | 'en', from users.locale at sync
+  status TEXT NOT NULL DEFAULT 'queued',                       -- 'queued' | 'sent' | 'failed' | 'skipped'
+  error TEXT,
+  sent_at INTEGER,
+  reminder_sent_at INTEGER,                                    -- one reminder wave, gated on still-not-onboarded
+  created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_oncs_campaign_email ON onboarding_campaign_sends(campaign_id, email);
+CREATE INDEX IF NOT EXISTS idx_oncs_campaign_status ON onboarding_campaign_sends(campaign_id, status);
+CREATE INDEX IF NOT EXISTS idx_oncs_sent_at ON onboarding_campaign_sends(sent_at);
+CREATE INDEX IF NOT EXISTS idx_oncs_user ON onboarding_campaign_sends(user_id);

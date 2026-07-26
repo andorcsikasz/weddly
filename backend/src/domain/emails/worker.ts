@@ -25,6 +25,11 @@ import { listCoupleVendorsToReview } from "../post_wedding_reviews";
 import { type PlannerProfileRow, sendPlannerProfileReminder } from "../planner_profile";
 import { getCampaignRow, sendCampaignBatch, sendCampaignReminders } from "../vendor_campaign";
 import {
+  getCampaignRow as getOnboardingCampaignRow,
+  sendCampaignBatch as sendOnboardingCampaignBatch,
+  sendCampaignReminders as sendOnboardingCampaignReminders,
+} from "../onboarding_campaign";
+import {
   getCampaignRow as getPersonalInviteCampaignRow,
   sendCampaignBatch as sendPersonalInviteCampaignBatch,
 } from "../personal_invite_campaign";
@@ -1462,16 +1467,50 @@ export async function runPersonalInviteCampaignSweep(
   return { invites };
 }
 
+/** Pace out every running onboarding re-engagement campaign, then send the one
+ *  reminder wave across non-paused campaigns. Sibling of the runners above
+ *  against the onboarding_campaign tables. */
+export async function runOnboardingCampaignSweep(
+  ts: number = now(),
+): Promise<{ invites: number; reminders: number }> {
+  let invites = 0;
+  const running = db
+    .prepare("SELECT * FROM onboarding_campaigns WHERE status = 'running' ORDER BY id ASC")
+    .all() as Array<{ id: number; daily_cap: number }>;
+  for (const row of running) {
+    const campaign = getOnboardingCampaignRow(row.id);
+    if (!campaign) continue;
+    invites += await sendOnboardingCampaignBatch(
+      campaign,
+      campaignSlicePerSweep(campaign.daily_cap),
+      ts,
+    );
+  }
+  const reminders = await sendOnboardingCampaignReminders(SENDS_PER_SWEEP_CAP, ts);
+  return { invites, reminders };
+}
+
 function kickCampaignSweep(label: string): void {
   // Fire-and-forget at the timer boundary: the interval callback is sync, and a
   // campaign batch can take seconds. Failures are reported, never thrown. All
-  // campaign families (claim-invite + review-invite + personal-invite) ride the
-  // same tick.
-  void Promise.all([runCampaignSweep(), runReviewCampaignSweep(), runPersonalInviteCampaignSweep()])
-    .then(([claim, review, personal]) => {
+  // campaign families (claim-invite + review-invite + personal-invite +
+  // onboarding) ride the same tick.
+  void Promise.all([
+    runCampaignSweep(),
+    runReviewCampaignSweep(),
+    runPersonalInviteCampaignSweep(),
+    runOnboardingCampaignSweep(),
+  ])
+    .then(([claim, review, personal, onboarding]) => {
       const total =
-        claim.invites + claim.reminders + review.invites + review.reminders + personal.invites;
-      if (total > 0) log.info(label, { claim, review, personal });
+        claim.invites +
+        claim.reminders +
+        review.invites +
+        review.reminders +
+        personal.invites +
+        onboarding.invites +
+        onboarding.reminders;
+      if (total > 0) log.info(label, { claim, review, personal, onboarding });
     })
     .catch((e) => reportError("emails.campaign_sweep_failed", e));
 }

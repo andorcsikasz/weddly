@@ -62,6 +62,8 @@ export type EmailKind =
   | "vendor_review_campaign" // admin-run note to a CLAIMED vendor: reviews are open to anyone, here's your link to collect 5 stars
   | "vendor_review_campaign_reminder" // one nudge 7 days later to vendors who neither clicked nor opened
   | "personal_invite" // admin-run note to the founder's own contacts: you (or someone you love) is getting married, meet Weddly
+  | "onboarding_campaign" // admin-run re-engagement blast to registered couples who never onboarded (no workspace)
+  | "onboarding_campaign_reminder" // one nudge later to campaign recipients still not onboarded
   | "post_wedding_review_request" // ~7 days after the wedding: rate the vendors you used, one-click stars
   | "vendor_claim_verify" // P2.C, sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
@@ -250,6 +252,11 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   vendor_review_campaign: "outreach",
   vendor_review_campaign_reminder: "outreach",
   personal_invite: "outreach",
+  // Bulk re-engagement to registered-but-not-onboarded couples. Outreach (not
+  // lifecycle) so it rides the address-level email_optouts + List-Unsubscribe
+  // suppression, matching the other admin campaigns.
+  onboarding_campaign: "outreach",
+  onboarding_campaign_reminder: "outreach",
   // Outreach: anyone (no auth required) can hit /api/vendor/claim/start with a
   // listing id, and the listing's contact_email gets the mail, the recipient
   // didn't necessarily start the flow themselves.
