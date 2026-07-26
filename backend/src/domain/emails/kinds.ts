@@ -4,6 +4,8 @@
 
 export type EmailKind =
   | "welcome_verify" // signup welcome + verify-email CTA, single send
+  | "welcome_account" // the account is now LIVE (verify clicked, or OAuth-attested): first-steps mail
+  | "partner_welcome" // partner B joined a workspace: welcome + what they can do now
   | "verify_resend" // user clicked "resend verification" in dashboard
   | "password_reset"
   | "password_changed" // security confirmation after a successful reset / change
@@ -98,6 +100,15 @@ export type EmailCategory = "transactional" | "lifecycle" | "outreach";
  */
 export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   welcome_verify: "transactional",
+  // Transactional: the account came into existence one second ago because the
+  // recipient proved the address (verify click) or the provider attested it
+  // (Google/Apple). This is the receipt for that, and the ONLY mail an OAuth
+  // signup ever gets — they never see welcome_verify.
+  welcome_account: "transactional",
+  // Transactional: they clicked the invite link and joined the workspace; this
+  // is the resolution of their own action, mirroring partner_invite_accepted
+  // on the inviter's side.
+  partner_welcome: "transactional",
   verify_resend: "transactional",
   password_reset: "transactional",
   password_changed: "transactional",

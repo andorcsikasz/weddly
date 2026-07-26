@@ -710,19 +710,36 @@ async function handleSetBetaTester(ctx: Ctx): Promise<Response> {
 }
 
 /** Return the 30 most recent email_log rows for a user so admin can
- *  diagnose delivery failures (e.g. bounced account_flagged email). */
+ *  diagnose delivery failures (e.g. bounced account_flagged email).
+ *
+ *  Matching on `user_id` alone showed an EMPTY history for freshly registered
+ *  couples, which read as "we never wrote to them" when we had. Two whole
+ *  classes of mail are logged with `user_id = NULL` because no account existed
+ *  at send time:
+ *    - `welcome_verify`, sent against a `pending_signups` row (the users row is
+ *      only minted when the link is clicked, see domain/pending_signups.ts);
+ *    - `partner_invite`, sent to an address that becomes partner B's account
+ *      minutes later.
+ *  Both went to THIS address, so we stitch them on by `to_email` and leave the
+ *  rows themselves alone. Restricting the address match to `user_id IS NULL`
+ *  keeps another user's mail out even if two accounts ever shared an address. */
 function handleListUserEmails(ctx: Ctx): Response {
   requireAdmin(ctx);
   const userId = parseId(ctx);
+  const target = db.prepare("SELECT email FROM users WHERE id = ?").get(userId) as
+    | { email: string | null }
+    | undefined;
+  const email = (target?.email ?? "").trim();
   const rows = db
     .prepare(
       `SELECT id, kind, category, to_email, subject, status, error, created_at
          FROM email_log
         WHERE user_id = ?
+           OR (user_id IS NULL AND ? <> '' AND to_email = ? COLLATE NOCASE)
         ORDER BY created_at DESC
         LIMIT 30`,
     )
-    .all(userId) as Array<{
+    .all(userId, email, email) as Array<{
     id: number;
     kind: string;
     category: string;

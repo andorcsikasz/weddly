@@ -21,6 +21,7 @@ import { issueSession } from "../auth/session";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { recordConsent } from "../domain/consents";
+import { sendKind } from "../domain/emails";
 import { alertOnNewDevice } from "../domain/known_devices";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
@@ -220,6 +221,15 @@ async function handleGoogleAuth(ctx: Ctx): Promise<Response> {
   // No verify-email send: Google has already attested the address. The
   // dashboard's "verify your email" banner short-circuits when
   // verified_email = 1 so the user lands directly on onboarding.
+  //
+  // A welcome mail still goes out, and for this path it's the ONLY one: a
+  // Google signup skips welcome_verify entirely, so until this send existed a
+  // Google-registered couple had an empty inbox and an empty email history.
+  void sendKind(
+    "welcome_account",
+    { dashboardUrl: `${CONFIG.frontendBaseUrl}/app`, via: "google" },
+    { user: { id: userId, email: identity.email, full_name: fullName } },
+  );
 
   const token = issueSession(userId);
   // Re-read the freshly-inserted row instead of hand-reconstructing it — the

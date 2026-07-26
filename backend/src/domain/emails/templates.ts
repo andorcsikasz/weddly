@@ -48,6 +48,22 @@ export interface BuiltEmail {
 export interface WelcomeVerifyPayload {
   verifyUrl: string;
 }
+export interface WelcomeAccountPayload {
+  /** Where the account starts — the onboarding wizard / dashboard. */
+  dashboardUrl: string;
+  /** How the account was born. `password` means they just clicked the verify
+   *  link (so the copy can say "confirmed"); `google` / `apple` means the
+   *  provider attested the address and this is the FIRST mail they ever get
+   *  from us, so it has to carry the welcome on its own. */
+  via: "password" | "google" | "apple";
+}
+export interface PartnerWelcomePayload {
+  /** The partner who sent the invite, for the opening line. */
+  inviterName: string;
+  /** Shared workspace name, when it's a real one. */
+  coupleDisplayName?: string;
+  dashboardUrl: string;
+}
 export interface VerifyResendPayload {
   verifyUrl: string;
 }
@@ -753,6 +769,8 @@ export interface VisitorVerifyPayload {
 
 export type KindPayload = {
   welcome_verify: WelcomeVerifyPayload;
+  welcome_account: WelcomeAccountPayload;
+  partner_welcome: PartnerWelcomePayload;
   verify_resend: VerifyResendPayload;
   password_reset: PasswordResetPayload;
   password_changed: PasswordChangedPayload;
@@ -913,6 +931,16 @@ function offerSentenceEn(freeMonths: number): string {
   return "";
 }
 
+/** Subject line that follows the SAME language decision the body makes.
+ *  `renderEmail` prints one card when it knows the recipient's locale and the
+ *  bilingual HU+EN stack when it doesn't, so a `null` locale gets the legacy
+ *  slash-joined subject and a known one gets clean single-language copy. */
+function localeSubject(locale: RecipientLocale | undefined, hu: string, en: string): string {
+  if (locale === "hu") return hu;
+  if (locale === "en") return en;
+  return `${hu} / ${en}`;
+}
+
 const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   welcome_verify: (p, ctx) => ({
     subject: "Üdv a Weddly-n / Welcome to Weddly",
@@ -941,6 +969,90 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       footnote: "You'll need to confirm before you can sign in, so it's best to do it now.",
     },
   }),
+
+  // The account exists as of a second ago. Two ways in, and the opening line
+  // has to differ: a password signup just clicked the verify link (so the
+  // confirmation is the news), while an OAuth signup never saw welcome_verify
+  // at all, which makes THIS their welcome mail.
+  welcome_account: (p, ctx) => {
+    const provider = p.via === "google" ? "Google" : p.via === "apple" ? "Apple" : null;
+    const openerHu = provider
+      ? `A Weddly fiókod él, ${provider}-fiókkal léptél be. Örülünk, hogy itt vagytok.`
+      : "Megerősítetted az e-mail címed, a Weddly fiókod él. Örülünk, hogy itt vagytok.";
+    const openerEn = provider
+      ? `Your Weddly account is live, signed in with ${provider}. We're glad you're here.`
+      : "Your email is confirmed and your Weddly account is live. We're glad you're here.";
+    return {
+      // Locale-matched subject where we know the locale. `null` (unknown) still
+      // renders the bilingual HU+EN body, so the subject stays bilingual too
+      // rather than promising one language and delivering both.
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Kész a Weddly fiókod",
+        "Your Weddly account is live",
+      ),
+      ctaUrl: p.dashboardUrl,
+      hu: {
+        preheader: "Dátum, helyszín, vendéglista. Ebben a sorrendben a legkönnyebb.",
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          openerHu,
+          "Innen indulj: add meg az esküvő dátumát és a helyszínt. A vendéglista, a költségvetés és az ülésrend mind ezekre épül, így pár perc alatt összeáll a váza.",
+          "Ha ketten tervezitek, hívd meg a párodat a munkamenetbe. Ugyanazt az adatot látja és szerkeszti, valós időben, e-mailezés nélkül.",
+        ],
+        cta: "Tervezés indítása",
+        footnote: "Kérdés van? Válaszolj erre a levélre, egy ember olvassa.",
+      },
+      en: {
+        preheader: "Date, venue, guest list. Easiest in that order.",
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          openerEn,
+          "Start here: set the wedding date and the venue. The guest list, budget and seating plan all build on those, so the skeleton comes together in a few minutes.",
+          "Planning as two? Invite your partner into the workspace. They see and edit the same data in real time, no emailing files back and forth.",
+        ],
+        cta: "Start planning",
+        footnote: "Questions? Just reply to this email, a human reads it.",
+      },
+    };
+  },
+
+  // Partner B's side of the invite. The inviter gets partner_invite_accepted;
+  // until this kind existed the person who actually joined got nothing.
+  partner_welcome: (p, ctx) => {
+    const coupleHu = p.coupleDisplayName ? ` A közös munkamenet: ${p.coupleDisplayName}.` : "";
+    const coupleEn = p.coupleDisplayName ? ` Your shared workspace: ${p.coupleDisplayName}.` : "";
+    return {
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Bent vagy a tervezésben",
+        "You're in the workspace",
+      ),
+      ctaUrl: p.dashboardUrl,
+      hu: {
+        preheader: `${p.inviterName} munkamenetéhez csatlakoztál.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `Csatlakoztál ${p.inviterName} esküvőtervezőjéhez.${coupleHu}`,
+          "Mostantól mindketten ugyanazt az adatot szerkesztitek: vendéglista, ülésrend, költségvetés, RSVP linkek, nyomtatható helykártyák. Amit egyikőtök módosít, a másiknál azonnal látszik.",
+          "A vendéglistával a legérdemesebb kezdeni, ott van a legtöbb közös munka, és onnan jön az ülésrend meg az RSVP is.",
+        ],
+        cta: "Vezérlőpult megnyitása",
+        footnote: "Kérdés van? Válaszolj erre a levélre, egy ember olvassa.",
+      },
+      en: {
+        preheader: `You joined ${p.inviterName}'s workspace.`,
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `You've joined ${p.inviterName}'s wedding planner.${coupleEn}`,
+          "From here you both edit the same data: guest list, seating chart, budget, RSVP links, printable place cards. Changes made by either of you show up instantly on the other side.",
+          "The guest list is the best place to start. It's where most of the shared work happens, and both the seating chart and the RSVP links come off it.",
+        ],
+        cta: "Open the dashboard",
+        footnote: "Questions? Just reply to this email, a human reads it.",
+      },
+    };
+  },
 
   verify_resend: (p, ctx) => ({
     subject: "Új megerősítő link / fresh verification link",
@@ -2889,7 +3001,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // unsubscribe. Personalised by first name.
   personal_invite: (p) => ({
     subject:
-      p.locale === "hu" ? "Az egész esküvő egy nyugodt helyen" : "The whole wedding, one calm place",
+      p.locale === "hu"
+        ? "Az egész esküvő egy nyugodt helyen"
+        : "The whole wedding, one calm place",
     ctaUrl: p.ctaUrl,
     hu: {
       preheader: "Vendéglista, ülésrend, költségvetés, RSVP. Egy helyen.",

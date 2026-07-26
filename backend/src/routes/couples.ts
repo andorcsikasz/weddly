@@ -909,6 +909,31 @@ function sendPartnerInvite(
   );
 }
 
+/** Fire-and-forget the "you're in the workspace" mail to the partner who just
+ *  joined. The mirror of `partner_invite_accepted`, which only ever reaches the
+ *  INVITER: until this existed, the person who actually clicked the link and
+ *  landed in a shared workspace received nothing at all. Shared by the accept
+ *  and the accept-merge paths so the two can't drift. */
+function sendPartnerWelcome(
+  couple: CoupleRow,
+  inviter: UserRow | null,
+  accepter: { id: number; email: string; full_name: string | null },
+): void {
+  const inviterName = inviter?.full_name || inviter?.email || "Your partner";
+  const coupleDisplayName =
+    couple.display_name && couple.display_name !== "Purged workspace"
+      ? couple.display_name
+      : undefined;
+  void sendKind(
+    "partner_welcome",
+    { inviterName, coupleDisplayName, dashboardUrl: `${CONFIG.frontendBaseUrl}/app` },
+    {
+      user: { id: accepter.id, email: accepter.email, full_name: accepter.full_name ?? "" },
+      couple_id: couple.id,
+    },
+  );
+}
+
 /** Revoke any pending invite this couple has open. We don't DELETE — schema
  *  is additive-only and we want the audit trail to keep the original row.
  *  Instead we stamp `consumed_at` so the token can't be accepted, then the
@@ -1076,6 +1101,7 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
       },
     );
   }
+  if (accepter) sendPartnerWelcome(couple, inviter, accepter);
 
   const refreshed = getCoupleById(couple.id) as CoupleRow;
   return json({ couple: toCouple(refreshed) });
@@ -1299,6 +1325,11 @@ async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
     });
   });
   applyMerge();
+
+  // Outside the transaction: the mail is fire-and-forget and must not be able
+  // to roll back an irreversible merge.
+  const merger = getUserById(userId);
+  if (merger) sendPartnerWelcome(target, getUserById(row.invited_by_user_id), merger);
 
   const refreshed = getCoupleById(target.id) as CoupleRow;
   return json({ couple: toCouple(refreshed) });

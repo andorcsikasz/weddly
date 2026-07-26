@@ -29,6 +29,7 @@ import { issueSession } from "../auth/session";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { recordConsent } from "../domain/consents";
+import { sendKind } from "../domain/emails";
 import { alertOnNewDevice } from "../domain/known_devices";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { AUTH_BUCKET, rateLimit } from "../lib/rate_limit";
@@ -209,6 +210,15 @@ async function handleAppleAuth(ctx: Ctx): Promise<Response> {
   // No verify-email send: Apple has already attested the address. The
   // dashboard's "verify your email" banner short-circuits when
   // verified_email = 1 so the user lands directly on onboarding.
+  //
+  // A welcome mail still goes out, and for this path it's the ONLY one: an
+  // Apple signup skips welcome_verify entirely. Note Private Relay addresses
+  // land here too, and they forward fine.
+  void sendKind(
+    "welcome_account",
+    { dashboardUrl: `${CONFIG.frontendBaseUrl}/app`, via: "apple" },
+    { user: { id: userId, email: identity.email, full_name: fullName } },
+  );
 
   const token = issueSession(userId);
   // Re-read the freshly-inserted row instead of hand-reconstructing it — the

@@ -149,6 +149,14 @@ async function handleConsume(ctx: Ctx): Promise<Response> {
   const pending = getPendingSignupByToken(tokenRaw);
   if (pending) {
     const userRow = promotePendingSignup(pending);
+    // First mail this account gets under its OWN user_id: welcome_verify went
+    // out while the signup was still a `pending_signups` row, so it logged with
+    // user_id = NULL and is invisible to any user-keyed lookup.
+    void sendKind(
+      "welcome_account",
+      { dashboardUrl: `${CONFIG.frontendBaseUrl}/app`, via: "password" },
+      { user: { id: userRow.id, email: userRow.email, full_name: userRow.full_name ?? "" } },
+    );
     const token = issueSession(userRow.id);
     // 201: the click is what created the account.
     const session: AuthSession = { token, user: toUser(userRow) };

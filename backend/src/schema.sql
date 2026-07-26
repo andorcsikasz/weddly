@@ -314,6 +314,12 @@ CREATE TABLE IF NOT EXISTS email_log (
 CREATE INDEX IF NOT EXISTS idx_email_log_user ON email_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_email_log_couple ON email_log(couple_id);
 CREATE INDEX IF NOT EXISTS idx_email_log_kind ON email_log(kind);
+-- Address-keyed lookup, NOCASE to match how we compare addresses everywhere
+-- else. Needed because plenty of mail is logged with user_id = NULL: it was
+-- sent BEFORE the account existed (welcome_verify to a pending signup) or to
+-- someone who had no account at the time (partner_invite). The admin email
+-- history stitches those onto the user by address.
+CREATE INDEX IF NOT EXISTS idx_email_log_to_email ON email_log(to_email COLLATE NOCASE);
 
 -- User-submitted ("Drop your own") suppliers. Auto-active on submit; admins
 -- can hide (status='hidden') or hard-delete. The static curated list lives in

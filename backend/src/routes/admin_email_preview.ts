@@ -19,6 +19,12 @@ const BASE_URL = "https://tryweddly.com";
 
 const STUBS: KindPayload = {
   welcome_verify: { verifyUrl: `${BASE_URL}/verify?token=preview-token` },
+  welcome_account: { dashboardUrl: `${BASE_URL}/app`, via: "password" },
+  partner_welcome: {
+    inviterName: "Mia",
+    coupleDisplayName: "Mia & Lucas",
+    dashboardUrl: `${BASE_URL}/app`,
+  },
   verify_resend: { verifyUrl: `${BASE_URL}/verify?token=preview-token` },
   password_reset: { resetUrl: `${BASE_URL}/reset-password?token=preview-token` },
   password_changed: {

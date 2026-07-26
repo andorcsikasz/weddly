@@ -3535,9 +3535,11 @@ describe("email pipeline", () => {
     expect(rows[0]!.status).toBe("skipped_no_provider");
   });
 
-  // The welcome mail is addressed to a pending signup, which has no user_id to
-  // key preferences to, so nothing seeds them at register anymore. They're
-  // ensured on first use instead — reading them is what mints the row.
+  // Nothing seeds preferences at REGISTER: that mail is addressed to a pending
+  // signup, which has no user_id to key a row to. The row appears at VERIFY,
+  // where the account is minted and `welcome_account` is dispatched against a
+  // real user (sendKind → ensurePreferences). Either way the token is minted
+  // once and never rotates, which is what this test actually guards.
   test("a fresh account gets preferences with a stable unsubscribe token on first read", async () => {
     wipeAll();
     const reg = await registerAndVerify({
@@ -3548,7 +3550,7 @@ describe("email pipeline", () => {
     const seeded = db
       .prepare("SELECT COUNT(*) AS n FROM email_preferences WHERE user_id = ?")
       .get(reg.data.user.id) as { n: number };
-    expect(seeded.n).toBe(0);
+    expect(seeded.n).toBe(1);
 
     const read = await req<{ unsubscribe_token: string; lifecycle_opt_out: boolean }>(
       "GET",
