@@ -552,6 +552,45 @@ export function listShowcaseCandidates(): ShowcaseVendorRow[] {
   }));
 }
 
+export interface SearchListingRow {
+  id: string;
+  name: string;
+  category: SupplierCategory;
+  city: string;
+  source: string;
+  country: string;
+  google_rating: number | null;
+  /** 1 when the listing carries a real hero photo. The browse teaser only
+   *  shows photographed listings, so city/category suggestions are counted
+   *  over these; a name hit is offered either way, since the public profile
+   *  reads fine without a cover. */
+  has_photo: 0 | 1;
+}
+
+/** Every listing the public typeahead may return: active and not tombstoned,
+ *  with or without a photo. Same eligibility as `listShowcaseCandidates` minus
+ *  the photo requirement, and the same country derivation. */
+export function listSearchCandidates(): SearchListingRow[] {
+  const rows = db
+    .prepare(
+      `SELECT l.id, l.name, l.category, l.city, l.source, l.google_rating,
+              CASE WHEN l.hero_image_url IS NOT NULL AND l.hero_image_url != '' THEN 1 ELSE 0 END AS has_photo,
+              va.country AS owner_country
+         FROM listings l
+         LEFT JOIN vendor_accounts va ON va.id = l.vendor_account_id
+        WHERE l.status = 'active'
+          AND l.id NOT IN (SELECT supplier_id FROM curated_supplier_overrides)`,
+    )
+    .all() as (Omit<SearchListingRow, "country"> & { owner_country: string | null })[];
+  return rows.map(({ owner_country, ...r }) => ({
+    ...r,
+    country:
+      r.source === "claimed" && owner_country
+        ? owner_country.toUpperCase()
+        : curatedCountry(r.id, r.city),
+  }));
+}
+
 /** Create a fresh 'claimed' listing for a newly-onboarded vendor — one that
  *  came through the waitlist and so has NO existing directory row to claim.
  *  id = 'v' + accountId per the listings id convention. Seeded with the

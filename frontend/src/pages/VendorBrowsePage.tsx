@@ -26,9 +26,17 @@ import type {
   SupplierCategory,
   SupplierCountryCount,
 } from "@shared/suppliers";
-import { ArrowRight, ArrowUpRight, BadgeCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BadgeCheck,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { CountryPicker } from "../components/CountryPicker";
 import { Wordmark } from "../components/Wordmark";
 import { CATEGORY_ICON } from "../lib/category_icons";
@@ -417,6 +425,13 @@ function LoadingRails() {
 export default function VendorBrowsePage() {
   const { t, locale } = useT();
   useDocumentMeta("vendorBrowse.title", "vendorBrowse.subtitle");
+  // Both filters arrive in the URL from the landing-page typeahead: a town
+  // narrows the sample, a category is only a scroll target. They live in the
+  // query string rather than in state so the filtered page is shareable and
+  // the back button undoes the pick.
+  const [params, setParams] = useSearchParams();
+  const city = params.get("city")?.trim() || null;
+  const jumpCategory = params.get("category");
   const [categories, setCategories] = useState<PublicShowcaseCategory[] | null>(null);
   // null = every country. The server still ranks the visitor's own country
   // first in that case, so "Mind" isn't a random pile.
@@ -433,7 +448,7 @@ export default function VendorBrowsePage() {
     let cancelled = false;
     setCategories(null);
     supplierApi
-      .publicShowcase(country)
+      .publicShowcase(country, city)
       .then((r) => {
         if (cancelled) return;
         setCategories(r.categories);
@@ -445,7 +460,7 @@ export default function VendorBrowsePage() {
     return () => {
       cancelled = true;
     };
-  }, [country]);
+  }, [country, city]);
 
   // Pull planners out of the vendor rails — they get their own reframed module.
   const plannerCat = categories?.find((c) => c.category === "wedding_planner") ?? null;
@@ -482,6 +497,26 @@ export default function VendorBrowsePage() {
     }
     return () => observer.disconnect();
   }, [navKey]);
+
+  // A `?category=` pick from the landing typeahead is a scroll target, not a
+  // filter — the visitor asked for photographers, not for everything else to
+  // disappear. Runs once the sections exist; the param is then dropped so a
+  // later scroll (or a refresh) isn't yanked back up here. If the category
+  // isn't in this sample, the top of the page is a fine place to be.
+  const jumpedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!jumpCategory || categories === null) return;
+    if (jumpedRef.current === jumpCategory) return;
+    jumpedRef.current = jumpCategory;
+    const el = document.getElementById(sectionDomId(jumpCategory));
+    if (el) {
+      setActiveCat(jumpCategory);
+      el.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+    }
+    const next = new URLSearchParams(params);
+    next.delete("category");
+    setParams(next, { replace: true });
+  }, [jumpCategory, categories, params, setParams]);
 
   // The phone sign-up pill: on once you're past the hero, off again as soon as
   // the closing CTA is on screen so the same action never appears twice.
@@ -540,6 +575,24 @@ export default function VendorBrowsePage() {
             {t("vendorBrowse.subtitle")}
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 lg:shrink-0">
+            {/* Active town, and the way out of it. A filter the visitor can't
+                see themselves out of reads as an empty directory. */}
+            {city && (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = new URLSearchParams(params);
+                  next.delete("city");
+                  setParams(next, { replace: true });
+                }}
+                className="inline-flex items-center gap-2 rounded-full border border-ink-900 bg-ink-900 py-2 pl-3.5 pr-3 text-[13px] font-medium tracking-tight text-paper-50 transition hover:bg-ink-950 dark:border-paper-100 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-50"
+              >
+                <MapPin size={14} aria-hidden />
+                {city}
+                <X size={14} aria-hidden />
+                <span className="sr-only">{t("vendorBrowse.city_filter_clear")}</span>
+              </button>
+            )}
             {countries.length > 1 && (
               <CountryPicker
                 value={country}

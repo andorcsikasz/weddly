@@ -620,6 +620,85 @@ export interface PublicVendorShowcase {
   viewer_country: string | null;
 }
 
+// ───────────────────────── Public vendor search ─────────────────────────
+// One typeahead over three things a visitor might type: a business name, a
+// town, or a kind of vendor. Vendors and cities are matched server-side (it
+// holds the data); CATEGORIES are matched on the client, because the category
+// names live in the frontend locale tree in three languages and duplicating
+// them here would drift. Both sides score with `searchScore` below, so the
+// three kinds can be merged into one ranked list of three.
+
+/** Below this many characters the typeahead stays quiet — one letter matches
+ *  most of the directory and reads as noise. */
+export const VENDOR_SEARCH_MIN_CHARS = 2;
+/** How many suggestions the visitor is offered. Three is the whole point: a
+ *  short, decidable list rather than a results page in a dropdown. */
+export const VENDOR_SEARCH_LIMIT = 3;
+
+/** Lowercase and strip diacritics so "fotos" finds "Fotós" and "wien" finds
+ *  "Wien". NFD splits an accented char into base + combining mark; the range
+ *  below is the combining-marks block. */
+export function foldForSearch(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+/** How well `label` answers `foldedQuery` (already folded by the caller).
+ *  0 means no match. The tiers are deliberately far apart so a whole-word hit
+ *  always outranks a mid-word one, whatever kind of thing it is. */
+export function searchScore(label: string, foldedQuery: string): number {
+  if (foldedQuery.length === 0) return 0;
+  const l = foldForSearch(label);
+  if (l === foldedQuery) return 100;
+  if (l.startsWith(foldedQuery)) return 70;
+  // Any word in the label starting with the query: "zene" finds "Élő zene".
+  if (l.split(/[\s&,/-]+/).some((w) => w.startsWith(foldedQuery))) return 55;
+  if (l.includes(foldedQuery)) return 35;
+  return 0;
+}
+
+/** A city string may carry the curated ", XX" country suffix ("Wien, AT").
+ *  That suffix is a storage detail — never show it, never search it. */
+export function cityDisplayName(city: string): string {
+  return city.replace(/,\s*[A-Za-z]{2}\s*$/, "").trim();
+}
+
+/** One row in the typeahead. `kind` decides where picking it goes:
+ *  vendor → /vendors/{id}, city → /vendors/browse?city={label},
+ *  category → /vendors/browse?category={category}. */
+export interface PublicVendorSuggestion {
+  kind: "vendor" | "city" | "category";
+  /** Ranking value from `searchScore` plus per-kind nudges. Client-side
+   *  category hits are scored with the same function and merged on this. */
+  score: number;
+  /** Vendor name, city name, or (client-side) the localized category label. */
+  label: string;
+  /** Directory id — vendor hits only. */
+  id?: string;
+  /** Vendor hits: the vendor's category, for the context line. Category hits:
+   *  the category itself. */
+  category?: SupplierCategory;
+  /** Vendor hits: the vendor's city, for the context line. */
+  city?: string;
+  /** City + category hits: how many photographed listings sit behind it. */
+  count?: number;
+}
+
+/** GET /api/public/vendor-search?q= — vendor + city hits, plus the category
+ *  census the client needs to match category names in its own language. */
+export interface PublicVendorSearchResult {
+  /** Vendor and city hits only, best first. Never longer than
+   *  `VENDOR_SEARCH_LIMIT` (the client still has categories to merge in). */
+  suggestions: PublicVendorSuggestion[];
+  /** Every category with at least one browsable (photographed) listing.
+   *  Query-independent — it's the set the client scores against. */
+  categories: { category: SupplierCategory; count: number }[];
+}
+
 /** Admin directory row — curated + community merged into one shape. For
  *  community rows, `id` is the public string id (`c{N}`) and `community_id`
  *  is the numeric DB id (so the admin page can deep-link into the existing

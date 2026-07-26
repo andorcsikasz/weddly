@@ -1926,8 +1926,15 @@ export interface LocaleMessages {
     suppliers_section_body: string;
     /** The three directory doors on the landing suppliers block: find one,
      *  name one, be one. Each row is label + one supporting line. */
-    suppliers_action_browse_label: string;
-    suppliers_action_browse_sub: string;
+    /** The directory typeahead that replaced the "find a supplier" row. */
+    suppliers_search_label: string;
+    suppliers_search_placeholder: string;
+    suppliers_search_submit: string;
+    /** Always-present last row: the whole directory, unfiltered. */
+    suppliers_search_all: string;
+    /** Context line under a town or category hit: how many are listed. */
+    suppliers_search_count: string;
+    suppliers_search_count_one: string;
     suppliers_action_suggest_label: string;
     suppliers_action_suggest_sub: string;
     suppliers_action_join_label: string;
@@ -9222,6 +9229,8 @@ export interface LocaleMessages {
     vendor_prompt: string;
     /** Aria-label for the sticky category rail that indexes the page. */
     nav_categories: string;
+    /** Clears the ?city= filter a landing-page town pick arrives with. */
+    city_filter_clear: string;
     /** Aria-labels for the desktop scrubbers on each category rail. */
     rail_prev: string;
     rail_next: string;

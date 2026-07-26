@@ -15,7 +15,13 @@ import type {
   SupplierDetail,
   SupplierEventInput,
 } from "@shared/suppliers";
-import { parseSpokenLanguages, SUPPLIER_GROUPS } from "@shared/suppliers";
+import {
+  cityDisplayName,
+  foldForSearch,
+  parseSpokenLanguages,
+  SUPPLIER_GROUPS,
+} from "@shared/suppliers";
+import { searchPublicVendors } from "../domain/vendor_search";
 import {
   listActiveCommunitySuppliers,
   toDirectorySupplierBase,
@@ -548,9 +554,18 @@ function handlePublicShowcase(ctx: Ctx): Response {
     .map(([code, count]) => ({ code, count }))
     .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
 
-  const pool = requestedCountry
+  // `?city=` scopes the sample to one town — where a city pick from the public
+  // typeahead lands. Matched on the folded display name so "Wien" finds the
+  // curated "Wien, AT" rows and accents don't have to survive a URL.
+  const cityParam = ctx.url.searchParams.get("city");
+  const requestedCity = cityParam?.trim() ? foldForSearch(cityParam) : null;
+
+  const countryPool = requestedCountry
     ? candidates.filter((r) => r.country === requestedCountry)
     : candidates;
+  const pool = requestedCity
+    ? countryPool.filter((r) => foldForSearch(cityDisplayName(r.city)) === requestedCity)
+    : countryPool;
   // Rank: the preferred country, then registered Weddly vendors, then how the
   // outside world rates them (Google Places, null = unrated and sorted last),
   // then newest. Each tier only breaks ties inside the one above it.
@@ -670,6 +685,18 @@ function handleNameCheck(ctx: Ctx): Response {
   return json({ matches });
 }
 
+/** GET /api/public/vendor-search?q= — the public typeahead. Vendor + city hits
+ *  (max `VENDOR_SEARCH_LIMIT`) plus the category census the client scores in
+ *  its own language. Fires per keystroke behind a client debounce, so the
+ *  bucket is roomier than the other public routes but still bounded. */
+function handlePublicSearch(ctx: Ctx): Response {
+  rateLimit(ctx.clientIp, "public.vendorSearch", { capacity: 90, refillRate: 3 });
+  const q = ctx.url.searchParams.get("q") ?? "";
+  // A pasted paragraph can't match anything useful and would fold char by char
+  // over every listing; cut it at a length no business name reaches.
+  return json(searchPublicVendors(q.slice(0, 80)));
+}
+
 export function registerSupplierRoutes(router: Router) {
   router.get("/api/suppliers", handleList);
   // Registered before the `:supplier_id` route so "name-check" isn't parsed as
@@ -680,6 +707,8 @@ export function registerSupplierRoutes(router: Router) {
   router.get("/api/public/vendors/:supplier_id", handlePublicDetail);
   // Public "browse teaser" — photos-only directory sample, capped per category.
   router.get("/api/public/vendor-showcase", handlePublicShowcase);
+  // Public typeahead over vendor names + cities (categories are client-side).
+  router.get("/api/public/vendor-search", handlePublicSearch);
   router.post("/api/suppliers/events", handleRecordEvents);
   router.put("/api/suppliers/:supplier_id/vote", handleVote, true);
   router.get("/r/supplier/:supplier_id", handleRedirect);

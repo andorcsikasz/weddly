@@ -16,7 +16,6 @@ import {
   Pause,
   Plus,
   Printer,
-  Search,
   Share2,
   Smartphone,
   Sparkles,
@@ -53,6 +52,7 @@ const SubmitSupplierModal = lazyWithReload(() =>
 );
 import { DemoLaunchCard } from "../components/DemoLaunchCard";
 import { NewsletterCapture } from "../components/NewsletterCapture";
+import { VendorSearchBar } from "../components/VendorSearchBar";
 import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useToast } from "../components/ui";
@@ -388,13 +388,10 @@ export default function LandingPage() {
             <p className="mt-5 max-w-xl font-grotesk text-base text-umber-700 dark:text-umber-200 sm:text-lg">
               {t("landing.suppliers_section_body")}
             </p>
-            <div className="mt-8 divide-y divide-paper-300 border-y border-paper-300 dark:divide-umber-700 dark:border-umber-700">
-              <SupplierAction
-                icon={<Search size={18} strokeWidth={1.6} />}
-                label={t("landing.suppliers_action_browse_label")}
-                sub={t("landing.suppliers_action_browse_sub")}
-                to="/vendors/browse"
-              />
+            {/* Search first, doors under it: a visitor who knows what they're
+                after types it; the two rows are for the ones who don't. */}
+            <VendorSearchBar className="mt-8" />
+            <div className="mt-6 divide-y divide-paper-300 border-y border-paper-300 dark:divide-umber-700 dark:border-umber-700">
               <SupplierAction
                 icon={<Sparkles size={18} strokeWidth={1.6} />}
                 label={t("landing.suppliers_action_suggest_label")}

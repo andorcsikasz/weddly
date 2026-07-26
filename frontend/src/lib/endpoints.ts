@@ -163,6 +163,7 @@ import type {
   CreateReviewBody,
   DirectorySupplier,
   PublicVendorPageData,
+  PublicVendorSearchResult,
   PublicVendorShowcase,
   ReviewListResponse,
   SupplierAvailability,
@@ -1814,13 +1815,22 @@ export const supplierApi = {
   /** Public "browse teaser" — a photos-only directory sample grouped by
    *  category (max 6 each) for the unauthenticated `/vendors/browse` page. */
   /** `country` scopes the sample to one ISO alpha-2 code (the teaser's chip
-   *  row); omitted means every country, ordered with the visitor's own first. */
-  publicShowcase: (country?: string | null) =>
-    apiFetch<PublicVendorShowcase>(
+   *  row); `city` to one town (where a city pick from the public typeahead
+   *  lands). Both omitted means every country, ordered with the visitor's
+   *  own first. */
+  publicShowcase: (country?: string | null, city?: string | null) => {
+    const qs = new URLSearchParams();
+    if (country) qs.set("country", country);
+    if (city) qs.set("city", city);
+    const suffix = qs.size > 0 ? `?${qs}` : "";
+    return apiFetch<PublicVendorShowcase>("GET", `/api/public/vendor-showcase${suffix}`);
+  },
+  /** Public typeahead for the landing-page directory search: vendor + city
+   *  hits, plus the category census the client matches in its own language. */
+  publicSearch: (q: string) =>
+    apiFetch<PublicVendorSearchResult>(
       "GET",
-      country
-        ? `/api/public/vendor-showcase?country=${encodeURIComponent(country)}`
-        : "/api/public/vendor-showcase",
+      `/api/public/vendor-search?q=${encodeURIComponent(q)}`,
     ),
 };
 
