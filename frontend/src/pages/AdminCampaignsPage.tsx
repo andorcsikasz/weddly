@@ -5,22 +5,29 @@
 // = review-collection outreach); this wrapper only adds the tab bar and mounts
 // one at a time. The active tab lives in `?tab=` so a refresh or a shared deep
 // link reopens the same console.
-import { Heart, Send, Star } from "lucide-react";
+import { Heart, Rocket, Send, Star } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { useT } from "../lib/i18n";
+import AdminOnboardingCampaignPage from "./AdminOnboardingCampaignPage";
 import AdminPersonalInviteCampaignPage from "./AdminPersonalInviteCampaignPage";
 import AdminVendorCampaignPage from "./AdminVendorCampaignPage";
 import AdminVendorReviewCampaignPage from "./AdminVendorReviewCampaignPage";
 
-type CampaignTab = "invite" | "reviews" | "personal";
+type CampaignTab = "invite" | "reviews" | "personal" | "onboarding";
 
 export default function AdminCampaignsPage() {
   const { t } = useT();
   const [params, setParams] = useSearchParams();
   const raw = params.get("tab");
   const tab: CampaignTab =
-    raw === "reviews" ? "reviews" : raw === "personal" ? "personal" : "invite";
+    raw === "reviews"
+      ? "reviews"
+      : raw === "personal"
+        ? "personal"
+        : raw === "onboarding"
+          ? "onboarding"
+          : "invite";
 
   const select = (next: CampaignTab) => {
     const p = new URLSearchParams(params);
@@ -46,14 +53,21 @@ export default function AdminCampaignsPage() {
             label: t("admin.nav_personal_invite"),
             icon: <Heart size={15} />,
           },
+          {
+            value: "onboarding",
+            label: t("admin.nav_onboarding_campaign"),
+            icon: <Rocket size={15} />,
+          },
         ]}
       />
       {tab === "invite" ? (
         <AdminVendorCampaignPage />
       ) : tab === "reviews" ? (
         <AdminVendorReviewCampaignPage />
-      ) : (
+      ) : tab === "personal" ? (
         <AdminPersonalInviteCampaignPage />
+      ) : (
+        <AdminOnboardingCampaignPage />
       )}
     </div>
   );

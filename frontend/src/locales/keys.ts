@@ -5394,6 +5394,7 @@ export interface LocaleMessages {
     nav_vendor_campaign: string;
     nav_vendor_review_campaign: string;
     nav_personal_invite: string;
+    nav_onboarding_campaign: string;
     pinvite_title: string;
     pinvite_subtitle: string;
     pinvite_import_heading: string;
@@ -6782,6 +6783,31 @@ export interface LocaleMessages {
     campaign_ended: string;
     /** Receives `{date}` — projected finish (remaining ÷ daily cap). */
     campaign_ends_est: string;
+    /** Onboarding re-engagement console (reuses the campaign_* strings above;
+     *  these are the segment-specific labels). */
+    onbcamp_title: string;
+    onbcamp_subtitle: string;
+    onbcamp_stat_total: string;
+    onbcamp_stat_queued: string;
+    onbcamp_stat_converted: string;
+    onbcamp_stat_reminded: string;
+    onbcamp_stat_lang: string;
+    onbcamp_sync_heading: string;
+    onbcamp_sync_hint: string;
+    onbcamp_sync_cta: string;
+    /** Receives `{added}`, `{existing}`, `{optout}`. */
+    onbcamp_sync_result: string;
+    /** Receives `{n}` — eligible orphans a sync would add right now. */
+    onbcamp_eligible: string;
+    onbcamp_contacts: string;
+    onbcamp_contacts_hint: string;
+    onbcamp_contacts_empty: string;
+    /** Receives `{n}` — recipients beyond the rendered rows. */
+    onbcamp_contacts_more: string;
+    onbcamp_send_queued: string;
+    onbcamp_send_skipped: string;
+    onbcamp_send_converted: string;
+    onbcamp_reminded_badge: string;
     /** Review-invite campaign console (reuses the campaign_* strings above). */
     review_campaign_title: string;
     review_campaign_subtitle: string;

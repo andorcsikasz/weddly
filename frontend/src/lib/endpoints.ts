@@ -206,6 +206,15 @@ import type {
   VendorReviewCampaignTarget,
 } from "@shared/vendor_review_campaign";
 import type {
+  CreateOnboardingCampaignInput,
+  OnboardingCampaign,
+  OnboardingCampaignDetail,
+  OnboardingCampaignSend,
+  OnboardingCampaignStats,
+  OnboardingCampaignSyncResult,
+  UpdateOnboardingCampaignInput,
+} from "@shared/onboarding_campaign";
+import type {
   CreatePersonalInviteCampaignInput,
   ImportPersonalInviteContactsInput,
   PersonalInviteCampaign,
@@ -2318,6 +2327,41 @@ export const adminPersonalInviteCampaignApi = {
     apiFetch<{ sent: number; stats: PersonalInviteCampaignStats }>(
       "POST",
       `/api/admin/personal-invite/campaigns/${id}/send-batch`,
+      { limit },
+    ),
+};
+
+/** Onboarding re-engagement campaign — admin re-nudge of registered couples who
+ *  never onboarded. Like personal-invite but the audience is a LIVE orphan
+ *  query, so `sync` (snapshot the current segment) replaces the CSV `import`. */
+export const adminOnboardingCampaignApi = {
+  list: () =>
+    apiFetch<{ campaigns: OnboardingCampaign[] }>("GET", "/api/admin/onboarding-campaigns"),
+  create: (body: CreateOnboardingCampaignInput) =>
+    apiFetch<{ campaign: OnboardingCampaign }>("POST", "/api/admin/onboarding-campaigns", body),
+  detail: (id: number) =>
+    apiFetch<OnboardingCampaignDetail>("GET", `/api/admin/onboarding-campaigns/${id}`),
+  update: (id: number, body: UpdateOnboardingCampaignInput) =>
+    apiFetch<{ campaign: OnboardingCampaign }>(
+      "PATCH",
+      `/api/admin/onboarding-campaigns/${id}`,
+      body,
+    ),
+  sync: (id: number) =>
+    apiFetch<{ result: OnboardingCampaignSyncResult; stats: OnboardingCampaignStats }>(
+      "POST",
+      `/api/admin/onboarding-campaigns/${id}/sync`,
+      {},
+    ),
+  sends: (id: number) =>
+    apiFetch<{ sends: OnboardingCampaignSend[] }>(
+      "GET",
+      `/api/admin/onboarding-campaigns/${id}/sends`,
+    ),
+  sendBatch: (id: number, limit: number) =>
+    apiFetch<{ sent: number; stats: OnboardingCampaignStats }>(
+      "POST",
+      `/api/admin/onboarding-campaigns/${id}/send-batch`,
       { limit },
     ),
 };
