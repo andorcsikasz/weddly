@@ -27,6 +27,13 @@ const noContact = {
  *  the venue website for precise navigation. */
 export const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
   "normafa-rendezvenyhaz": { lat: 47.5048, lng: 18.9667 },
+  "kinfolk-cottage": { lat: 47.3336, lng: 19.7447 },
+  "szigethalmi-rendezvenykozpont": { lat: 47.3232, lng: 19.0004 },
+  "pezsgo-borhaz": { lat: 47.4483, lng: 18.7511 },
+  "aranytiz-kulturhaz": { lat: 47.501, lng: 19.0506 },
+  "villa-fontaine-budapest": { lat: 47.496, lng: 19.006 },
+  "v30-belvarosi-sportkozpont": { lat: 47.5057, lng: 19.0525 },
+  "volgy-major": { lat: 47.8231, lng: 19.0369 },
   "etyeki-kuria": { lat: 47.4519, lng: 18.7548 },
   "nadas-pihenopark": { lat: 47.3543, lng: 19.4675 },
   obolhaz: { lat: 47.4647, lng: 19.0464 },
@@ -16536,6 +16543,196 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "jantaszregi@gmail.com",
     source: "curated",
     price_band: null,
+  },
+  // ── Rosemary partner venues (July 2026) ───────────────────────────────
+  // The venues Rosemary Event & Catering works with, added alongside the
+  // caterer itself. Every one of them quotes per event — none publishes a
+  // number — so `price_band` stays null rather than being guessed. Gallery
+  // photos are the venues' own, taken from their own sites.
+  {
+    id: "kinfolk-cottage",
+    name: "Kinfolk Cottage",
+    category: "venue",
+    city: "Tápiószentmárton",
+    address: "2711 Tápiószentmárton",
+    capacity_min: 80,
+    capacity_max: 100,
+    blurb_hu:
+      "Butik esküvőhelyszín Tápiószentmártonban: 220 m²-es terem 80–100 főre, szertartáspark egy százéves tölgy körül, 5 fürdőszobás szoba 13 vendégnek.",
+    blurb_en:
+      "Boutique wedding venue near Tápiószentmárton: a 220 m² hall for 80–100, a ceremony park around a century-old oak, 5 en-suite rooms sleeping 13.",
+    website: "https://kinfolkcottage.hu/",
+    ...noContact,
+    contact_email: "kinfolkcottage@gmail.com",
+    contact_phone: "+36 30 463 2054",
+    source: "curated",
+    price_band: null,
+    venue_style: "venue_with_stay",
+    gallery_urls: [
+      "https://images.squarespace-cdn.com/content/v1/652434123e769866a0875bef/918eb29e-7f82-48b9-a215-0629d7e59836/eskuvoi-helyszin-konfolk-cottage-tapioszentmarton-slow-wedding-3.jpg",
+      "https://images.squarespace-cdn.com/content/v1/652434123e769866a0875bef/cda6dbcb-9a33-43d5-8741-25254ce0c488/_DSC4441.jpg",
+      "https://images.squarespace-cdn.com/content/v1/652434123e769866a0875bef/aff7c9aa-047f-4248-9521-93e266442d6f/_DSC3193.jpg",
+      "https://images.squarespace-cdn.com/content/v1/652434123e769866a0875bef/b3518891-644d-4450-a6d2-8231e3e419fc/_DSC4202.jpg",
+      "https://images.squarespace-cdn.com/content/v1/652434123e769866a0875bef/e1c4b341-2314-43e4-82f2-3caff43d707c/_DSC2301.jpg",
+      "https://images.squarespace-cdn.com/content/v1/652434123e769866a0875bef/1723731033173-XMWTZ39SHD140TZHK7MH/2024.08.Kinfolk-124.jpg",
+    ],
+  },
+  {
+    id: "szigethalmi-rendezvenykozpont",
+    name: "Szigethalmi Rendezvényközpont – Várudvar és Várterem",
+    category: "venue",
+    city: "Szigethalom",
+    address: "2315 Szigethalom, Rákóczi utca 147.",
+    // 300 seated indoors; the up-to-1500 figure is the outdoor capacity and
+    // lives in the blurb rather than the seated-dinner range.
+    capacity_min: null,
+    capacity_max: 300,
+    blurb_hu:
+      "Rendezvényközpont Szigethalmon vadaspark mellett: 300 fő beltéren, kültéren akár 1500, erdei és tóparti szertartáshelyszínnel, 100 fős szállással.",
+    blurb_en:
+      "Event centre in Szigethalom next to a wildlife park: 300 guests indoors, up to 1,500 outdoors, forest and lakeside ceremony spots, accommodation for 100.",
+    // No own site: the venue is only listed on aggregators, and linking one of
+    // those from a directory card would send couples to a competitor's page.
+    website: "",
+    ...noContact,
+    contact_phone: "+36 20 330 3805",
+    source: "curated",
+    price_band: null,
+    venue_style: "event_hall",
+  },
+  {
+    id: "pezsgo-borhaz",
+    name: "Pezsgő Borház",
+    category: "venue",
+    city: "Etyek",
+    address: "Etyek, Sóskúti út",
+    capacity_min: null,
+    capacity_max: 60,
+    blurb_hu: "Etyeki pezsgőház bensőséges esküvőkre, ültetett vacsorával legfeljebb 60 főre.",
+    blurb_en: "Sparkling-wine house in Etyek for intimate weddings, seated dinner for up to 60.",
+    website: "https://pezsgoborhaz.hu/",
+    ...noContact,
+    contact_email: "info@pezsgoborhaz.hu",
+    contact_phone: "+36 20 330 3805",
+    source: "curated",
+    price_band: null,
+    gallery_urls: [
+      "https://pezsgoborhaz.hu/wp-content/uploads/2024/04/EP-ceremony-19-1024x681.jpg",
+      "https://pezsgoborhaz.hu/wp-content/uploads/2024/04/Party-10-1024x681.jpg",
+      "https://pezsgoborhaz.hu/wp-content/uploads/2024/04/4B0A9915-1024x683.jpg",
+      "https://pezsgoborhaz.hu/wp-content/uploads/2024/12/LiliIsti-pillanatok-004-1024x683.jpg",
+      "https://pezsgoborhaz.hu/wp-content/uploads/2024/09/dekor-07-scaled.jpg",
+    ],
+  },
+  {
+    id: "aranytiz-kulturhaz",
+    name: "Aranytíz Kultúrház",
+    category: "venue",
+    city: "Budapest",
+    address: "1051 Budapest, Arany János utca 10.",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "1879-ben épült neoreneszánsz kultúrház a belvárosban, 11 különböző méretű terem fogadásokhoz és rendezvényekhez.",
+    blurb_en:
+      "Neo-renaissance cultural centre from 1879 in downtown Budapest, 11 rooms of varying sizes for receptions and events.",
+    // The room-rental page, not the homepage: that is where a couple finds the
+    // rooms, the photos and the person who books them.
+    website: "https://www.aranytiz.hu/content.php?pagename=Teremberlet-Catering",
+    ...noContact,
+    contact_email: "teremberlet@aranytiz.hu",
+    contact_phone: "+36 20 313 8305",
+    source: "curated",
+    price_band: null,
+    venue_style: "event_hall",
+    gallery_urls: [
+      "https://www.aranytiz.hu/uploads/0Nagylovag.jpg",
+      "https://www.aranytiz.hu/uploads/0Kislovag.jpg",
+      "https://www.aranytiz.hu/uploads/1emtermek.jpg",
+      "https://www.aranytiz.hu/uploads/3Tolnay.jpg",
+      "https://www.aranytiz.hu/uploads/teremberlet/elso-emeleti-terem-berendezve.jpg",
+    ],
+  },
+  {
+    id: "villa-fontaine-budapest",
+    name: "Villa Fontaine",
+    category: "venue",
+    city: "Budapest",
+    address: "1125 Budapest, Lóránt út 15.",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Exkluzív villa saját kerttel a XII. kerületben, esküvőkre, eljegyzésekre és zártkörű rendezvényekre.",
+    blurb_en:
+      "Exclusive villa with its own garden in Budapest's District XII, for weddings, engagements and private events.",
+    website: "https://villafontaine.hu/",
+    ...noContact,
+    contact_email: "rendezveny@villafontaine.hu",
+    contact_phone: "+36 30 606 4665",
+    source: "curated",
+    price_band: null,
+    gallery_urls: [
+      "https://villafontaine.hu/img/villa_fontaine_carousel_01.jpg",
+      "https://villafontaine.hu/img/gallery/01.jpg",
+      "https://villafontaine.hu/img/gallery/02.jpg",
+      "https://villafontaine.hu/img/gallery/04.jpg",
+      "https://villafontaine.hu/img/gallery/06.jpg",
+      "https://villafontaine.hu/img/gallery/11.jpg",
+    ],
+  },
+  {
+    id: "v30-belvarosi-sportkozpont",
+    name: "V.30 Belvárosi Sportközpont",
+    category: "venue",
+    city: "Budapest",
+    address: "1054 Budapest, Vadász utca 30.",
+    capacity_min: 20,
+    capacity_max: 150,
+    blurb_hu:
+      "Belvárosi rendezvényhelyszín mozgatható falú termekkel 20–150 főre, tetőterasszal a városra néző vacsorákhoz.",
+    blurb_en:
+      "Downtown event venue with movable-wall rooms for 20–150 and a rooftop terrace for dinners over the city.",
+    website: "https://www.v30sportkozpont.hu/eskuvo/",
+    ...noContact,
+    contact_email: "acs.monika@v30.hu",
+    contact_phone: "+36 70 524 3164",
+    source: "curated",
+    price_band: null,
+    venue_style: "event_hall",
+    gallery_urls: [
+      "https://www.v30sportkozpont.hu/wp-content/uploads/2021/08/V30-48.jpg",
+      "https://www.v30sportkozpont.hu/wp-content/uploads/2021/12/2021-10-V30-rendezveny-15.jpg",
+      "https://www.v30sportkozpont.hu/wp-content/uploads/2021/02/Vadasz-utca-30-42-1_-scaled.jpg",
+      "https://www.v30sportkozpont.hu/wp-content/uploads/2021/07/Vadasz-utca-30-108_-scaled.jpg",
+      "https://www.v30sportkozpont.hu/wp-content/uploads/2021/06/2021.05.-V30-4-scaled.jpg",
+    ],
+  },
+  {
+    id: "volgy-major",
+    name: "Völgy Major",
+    category: "venue",
+    city: "Verőce",
+    address: "2621 Verőce, Wass Albert utca",
+    capacity_min: 70,
+    capacity_max: 120,
+    blurb_hu:
+      "Erdei esküvőhelyszín a Dunakanyarban, 14 hektáron: kápolna, patakparti és réti szertartáshely, 200 m²-es pajta 70–120 főre, 20 szoba 68 vendégnek.",
+    blurb_en:
+      "Forest wedding venue in the Danube Bend on 14 hectares: a chapel, streamside and meadow ceremony spots, a 200 m² barn for 70–120, 20 rooms sleeping 68.",
+    website: "https://volgymajor.hu/",
+    ...noContact,
+    contact_email: "volgymajor@volgymajor.hu",
+    contact_phone: "+36 70 335 8281",
+    source: "curated",
+    price_band: null,
+    venue_style: "venue_with_stay",
+    gallery_urls: [
+      "https://volgymajor.hu/images/anetttomi-naplemente-68b468a98affa.webp",
+      "https://volgymajor.hu/images/AnettTomiszertarts2-min.webp",
+      "https://volgymajor.hu/images/299-Fanni-Dani-IMG_5580-min.webp",
+      "https://volgymajor.hu/images/loli-szabi-08221-min.webp",
+      "https://volgymajor.hu/images/20230708-647-WEB-min.webp",
+    ],
   },
 ];
 
