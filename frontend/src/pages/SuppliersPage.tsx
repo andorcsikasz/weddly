@@ -32,6 +32,7 @@ import {
   Bookmark,
   BookmarkCheck,
   Check,
+  ChevronDown,
   ChevronRight,
   ClipboardList,
   LayoutGrid,
@@ -55,6 +56,7 @@ import {
   Scale,
   Scissors,
   Search,
+  SlidersHorizontal,
   Shirt,
   Sparkles,
   Speaker,
@@ -80,7 +82,7 @@ import { PlannerCard } from "../components/PlannerDirectoryRail";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SupplierCountryFilter } from "../components/SupplierCountryFilter";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
-import { Button, Skeleton, SmartImage, useToast } from "../components/ui";
+import { Button, Dialog, Skeleton, SmartImage, useToast } from "../components/ui";
 import {
   hydrateCostPlanningCount,
   readCostPlanningCount,
@@ -302,6 +304,8 @@ export default function SuppliersPage() {
   // `wedding_planner` category (the curated planner listings live in the grid).
   const [planners, setPlanners] = useState<PlannerDirectoryEntry[]>([]);
   const [submitOpen, setSubmitOpen] = useState(false);
+  // Country + price + guest count, behind one chip. See the dialog below.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false);
   const [diyOpen, setDiyOpen] = useState(false);
   const [diyEditing, setDiyEditing] = useState<CoupleSupplier | null>(null);
@@ -570,6 +574,20 @@ export default function SuppliersPage() {
     p.delete("price_max"); // legacy param — keep URL clean if it was set
     if (next === null) p.delete("price");
     else p.set("price", String(next));
+    setParams(p, { replace: true });
+  }
+
+  // What the "Szűrők" chip counts: the scoping filters that live inside its
+  // dialog. Guest count is deliberately not counted — the couple didn't set it
+  // here, it's mirrored from the budget page. Country only counts when it is
+  // NOT the couple's own country, which is the resting state.
+  const scopeFilterCount =
+    (countrySelection !== (coupleCountry || "all") ? 1 : 0) + (priceBand !== null ? 1 : 0);
+  function clearScopeFilters() {
+    const p = new URLSearchParams(params);
+    p.delete("country");
+    p.delete("price");
+    p.delete("price_max");
     setParams(p, { replace: true });
   }
 
@@ -1236,20 +1254,28 @@ export default function SuppliersPage() {
           supplier chain, so the directory owns the full page width. */}
       <div>
         <div className="min-w-0">
-          <header className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          {/* Chrome, rebuilt 2026-07-27 to read like a marketplace app rather
+              than a control panel. It used to be four stacked bands: title +
+              actions, five fields, a boxed row of ORSZÁG/ÁRSZINT/VENDÉGSZÁM/
+              HITELESÍTETT, then the chain. That is a lot of apparatus to scroll
+              past before the first supplier. Now: a search surface, one line of
+              chips, the chain. Nothing was dropped — country, price and guest
+              count moved into the "Szűrők" dialog, which carries a count badge
+              so a filter can never be on without being visible. */}
+          <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
               <h1 className="font-grotesk">{t("suppliers.title")}</h1>
               <InfoHint text={t("suppliers.sub")} />
             </div>
-            {/* Controls stack under the title on mobile so the view-mode pills and
-            "Drop your own" button don't compress the heading + sub-copy into a
-            tall narrow column. `flex-wrap` lets the two control groups break
-            independently on the narrowest viewports. */}
-            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end">
+            <div className="flex items-center gap-2">
+              {/* Icon-only view switch: three glyphs, one filled. The words
+                  ride in the tooltip + aria-label — at three modes the icons
+                  are unambiguous and the labels were the widest thing in the
+                  row. */}
               <div
                 role="group"
                 aria-label={t("suppliers.view_label")}
-                className="inline-flex items-center rounded-full border border-umber-600 dark:border-umber-700 dark:bg-umber-800 p-0.5 text-xs"
+                className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 p-1 dark:border-umber-700 dark:bg-umber-800"
               >
                 {(
                   [
@@ -1263,39 +1289,41 @@ export default function SuppliersPage() {
                     type="button"
                     onClick={() => setViewMode(mode)}
                     aria-pressed={viewMode === mode}
+                    aria-label={t(`suppliers.${label}`)}
+                    title={t(`suppliers.${label}`)}
                     className={
                       viewMode === mode
-                        ? "inline-flex items-center gap-1 rounded-full bg-ink-700 dark:bg-paper-50 dark:text-umber-900 px-2.5 py-1 text-paper-100"
-                        : "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-ink-600 dark:text-umber-200 hover:text-ink-900 dark:hover:text-paper-50"
+                        ? "inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                        : "inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-ink-900 dark:text-umber-200 dark:hover:bg-umber-700 dark:hover:text-paper-50"
                     }
                   >
-                    <VIcon size={12} aria-hidden /> {t(`suppliers.${label}`)}
+                    <VIcon size={15} aria-hidden />
                   </button>
                 ))}
               </div>
-              {/* "Tipp leadása" is a community contribution, not a primary
-              action — using btn-primary made it visually compete with
-              the view toggle next to it (taller, dark navy) when it's
-              actually a secondary affordance. Now: dashed outline at
-              the toggle's exact height, Plus icon to reinforce
-              "add new" semantics, ink-toned not navy. */}
+              {/* The label hides on a phone, so the accessible name has to be
+                  carried explicitly — otherwise it degrades to a bare "+". */}
               <button
                 type="button"
                 onClick={() => setSubmitOpen(true)}
-                className="inline-flex h-7 items-center gap-1.5 rounded-full border border-dashed border-umber-600 px-3 text-xs font-medium text-ink-700 transition hover:border-umber-700 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                aria-label={t("suppliers.drop_your_own")}
+                title={t("suppliers.drop_your_own")}
+                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 text-sm font-medium text-ink-800 transition hover:border-ink-900 hover:text-ink-900 sm:px-4 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:text-paper-50"
               >
-                <Plus size={12} aria-hidden />
-                {t("suppliers.drop_your_own")}
+                <Plus size={15} aria-hidden />
+                <span className="hidden sm:inline">{t("suppliers.drop_your_own")}</span>
               </button>
             </div>
           </header>
 
-          {/* Search + city filter + saved chip. Inputs share the soft pill
-          look of the "Mentett" toggle so the row reads as one quiet
-          control surface rather than competing heavyweight fields. */}
-          <div data-tour-target="vendors-search" className="mb-3 flex flex-wrap items-center gap-2">
+          {/* The search surface. Two fields, both tall enough to be the thing
+              you reach for first: what you're after, and where. */}
+          <div
+            data-tour-target="vendors-search"
+            className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center"
+          >
             <Combobox
-              className="min-w-[14rem] flex-1"
+              className="min-w-0 flex-1"
               value={query}
               onChange={setQuery}
               onSelect={onSearchSuggestion}
@@ -1304,10 +1332,10 @@ export default function SuppliersPage() {
               placeholder={t("suppliers.search_placeholder")}
               leadingIcon={Search}
               onClear={() => setQuery("")}
-              inputClassName="h-9 w-full rounded-full border border-umber-600 pl-9 pr-9 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
+              inputClassName="h-12 w-full rounded-full border border-paper-300 bg-white pl-10 pr-9 text-[15px] text-ink-900 shadow-soft transition placeholder:text-ink-400 hover:border-ink-300 focus:border-ink-900 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-paper-200"
             />
             <Combobox
-              className="w-full sm:w-60"
+              className="w-full sm:w-64"
               value={cityInput}
               onChange={(v) => {
                 setCityInput(v);
@@ -1330,62 +1358,99 @@ export default function SuppliersPage() {
                   ? t("suppliers.nearby_plus_km", { km: cityNearbyKm })
                   : undefined
               }
-              inputClassName="h-9 w-full rounded-full border border-umber-600 pl-9 pr-20 text-sm text-ink-800 placeholder:text-ink-400 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-umber-600"
+              inputClassName="h-12 w-full rounded-full border border-paper-300 bg-white pl-10 pr-20 text-[15px] text-ink-900 shadow-soft transition placeholder:text-ink-400 hover:border-ink-300 focus:border-ink-900 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:placeholder:text-umber-300 dark:hover:border-umber-600 dark:focus:border-paper-200"
             />
+          </div>
+
+          {/* One line of chips. Everything here is one tap from a decision:
+              the three the couple flips constantly stay out, the scoping
+              controls live behind the first chip. Scrolls sideways on a phone
+              rather than wrapping into a second and third row. */}
+          <div className="mb-3 -mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
             <button
               type="button"
-              onClick={toggleSavedFilter}
-              disabled={saved.size === 0 && !showSavedOnly}
-              aria-pressed={showSavedOnly}
-              aria-label={t("suppliers.saved_filter", { n: saved.size })}
-              title={t("suppliers.saved_filter", { n: saved.size })}
+              onClick={() => setFiltersOpen(true)}
+              aria-haspopup="dialog"
               className={
-                showSavedOnly
-                  ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-700 dark:border-paper-50 px-3 text-sm font-medium text-ink-900 dark:text-paper-50"
-                  : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
-                      saved.size > 0
-                        ? "border-umber-600 text-ink-700 hover:border-umber-700 dark:border-umber-700 dark:text-paper-100 dark:hover:border-umber-600"
-                        : "border-umber-600 text-ink-500 dark:border-umber-700 dark:text-umber-300"
-                    }`
+                scopeFilterCount > 0
+                  ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                  : "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm font-medium text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
               }
             >
-              <Star size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
-              <span className="tabular-nums">{saved.size}</span>
+              <SlidersHorizontal size={14} aria-hidden />
+              {t("suppliers.filters_button")}
+              {scopeFilterCount > 0 && <span className="tabular-nums">{scopeFilterCount}</span>}
             </button>
+            {/* A "0 saved" chip is a control that can't do anything — it used
+                to sit here greyed out, teaching nobody. It appears the moment
+                there is something to filter to. */}
+            {(saved.size > 0 || showSavedOnly) && (
+              <button
+                type="button"
+                onClick={toggleSavedFilter}
+                aria-pressed={showSavedOnly}
+                aria-label={t("suppliers.saved_filter", { n: saved.size })}
+                title={t("suppliers.saved_filter", { n: saved.size })}
+                className={
+                  showSavedOnly
+                    ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                    : "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
+                }
+              >
+                <Star size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
+                <span className="tabular-nums">{saved.size}</span>
+              </button>
+            )}
+            {(pickedCount > 0 || showPickedOnly) && (
+              <button
+                type="button"
+                onClick={togglePickedFilter}
+                aria-pressed={showPickedOnly}
+                aria-label={t(
+                  showPickedOnly
+                    ? "suppliers.picked_filter_active"
+                    : "suppliers.picked_filter_idle",
+                  { n: pickedCount },
+                )}
+                title={t(
+                  showPickedOnly
+                    ? "suppliers.picked_filter_active"
+                    : "suppliers.picked_filter_idle",
+                  { n: pickedCount },
+                )}
+                className={
+                  showPickedOnly
+                    ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                    : "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
+                }
+              >
+                <BookmarkCheck size={14} aria-hidden />
+                <span className="tabular-nums">{pickedCount}</span>
+              </button>
+            )}
             <button
               type="button"
-              onClick={togglePickedFilter}
-              disabled={pickedCount === 0 && !showPickedOnly}
-              aria-pressed={showPickedOnly}
-              aria-label={t(
-                showPickedOnly ? "suppliers.picked_filter_active" : "suppliers.picked_filter_idle",
-                { n: pickedCount },
-              )}
-              title={t(
-                showPickedOnly ? "suppliers.picked_filter_active" : "suppliers.picked_filter_idle",
-                { n: pickedCount },
-              )}
+              onClick={toggleVerifiedFilter}
+              aria-pressed={showVerifiedOnly}
+              title={t("suppliers.verified_filter")}
               className={
-                showPickedOnly
-                  ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-sage-600 px-3 text-sm font-medium text-sage-700 dark:border-sage-300 dark:text-sage-300"
-                  : `inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition disabled:cursor-default ${
-                      pickedCount > 0
-                        ? "border-sage-400 text-sage-700 hover:border-sage-500 dark:border-sage-400/40 dark:text-sage-300"
-                        : "border-umber-600 text-ink-500 dark:border-umber-700 dark:text-umber-300"
-                    }`
+                showVerifiedOnly
+                  ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                  : "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
               }
             >
-              <BookmarkCheck
+              <BadgeCheck
                 size={14}
-                className={showPickedOnly || pickedCount > 0 ? "fill-sage-200" : ""}
                 aria-hidden
+                className={showVerifiedOnly ? "" : "text-verified"}
               />
-              <span className="tabular-nums">{pickedCount}</span>
+              {t("suppliers.verified_filter")}
             </button>
-            <label className="flex items-center gap-2">
-              <span className="sr-only">{t("suppliers.sort_label")}</span>
+            {/* Sort stays a native select so it keeps the platform picker on a
+                phone; only the box around it is ours. */}
+            <div className="relative shrink-0">
               <select
-                className="h-9 min-w-[10rem] rounded-full border border-umber-600 px-3 text-sm text-ink-800 transition hover:border-umber-700 focus:border-umber-700 focus:outline-none dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600 dark:focus:border-umber-600"
+                className="h-9 appearance-none rounded-full border border-paper-300 bg-transparent pl-3.5 pr-8 text-sm text-ink-800 transition hover:border-ink-900 focus:border-ink-900 focus:outline-none dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
                 value={sortMode}
                 onChange={(e) =>
                   setSortMode(e.target.value as "top" | "alpha" | "price_asc" | "price_desc")
@@ -1397,124 +1462,19 @@ export default function SuppliersPage() {
                 <option value="price_desc">{t("suppliers.sort_price_desc")}</option>
                 <option value="alpha">{t("suppliers.sort_alpha")}</option>
               </select>
-            </label>
-          </div>
-
-          {/* Row 2: catalogue scope (country) + price-band picker + guest-count,
-          grouped inside a softened container so they read as one control.
-          Country leads (it's the broadest scope), then Árszint, then the
-          user-context Vendégszám. Each price chip represents one band —
-          clicking the $$$$ chip filters to band-4 suppliers only, not
-          "up to 4". Click the same chip to clear. Suppliers with no
-          declared value pass through so non-venue cards are not dropped.
-          The row wraps on narrow screens so the extra country control never
-          pushes the guest count off the edge. */}
-          <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-paper-200 bg-paper-100/60 px-3 py-1.5 sm:gap-x-5 sm:px-4 dark:border-umber-700 dark:bg-umber-700/40">
-            <SupplierCountryFilter
-              value={countrySelection}
-              homeCountry={coupleCountry}
-              countries={availableCountries}
-              onChange={setCountryFilter}
-            />
-            <div
-              className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
-              aria-hidden
-            />
-            <div className="flex flex-nowrap items-center gap-2 shrink-0 sm:gap-3">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-                {t("suppliers.price_filter_label")}
-              </span>
-              <div className="inline-flex items-center gap-0.5">
-                {[1, 2, 3, 4, 5].map((band) => {
-                  const active = priceBand !== null && band <= priceBand;
-                  return (
-                    <button
-                      key={band}
-                      type="button"
-                      aria-pressed={priceBand === band}
-                      aria-label={t("suppliers.price_filter_band_aria", { n: band })}
-                      onClick={() => setPriceBand(priceBand === band ? null : band)}
-                      className={
-                        active
-                          ? "inline-flex h-6 w-4 items-center justify-center text-[11px] sm:w-5 font-semibold text-ink-700 transition hover:text-ink-900 dark:text-paper-50"
-                          : "inline-flex h-6 w-4 items-center justify-center text-[11px] sm:w-5 text-ink-300 transition hover:text-ink-500 dark:text-umber-500 dark:hover:text-umber-300"
-                      }
-                    >
-                      $
-                    </button>
-                  );
-                })}
-              </div>
-              {priceBand !== null && (
-                <button
-                  type="button"
-                  onClick={() => setPriceBand(null)}
-                  className="hidden text-[11px] text-ink-400 underline-offset-2 hover:text-ink-700 hover:underline sm:inline dark:text-umber-300 dark:hover:text-paper-100"
-                >
-                  {t("suppliers.guests_filter_clear")}
-                </button>
-              )}
-            </div>
-            <div
-              className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
-              aria-hidden
-            />
-            {/* Guest count is read-only here — it's owned by the cost-planning
-            slider on /app/budget and mirrored in. Editing it inline would
-            give couples two sources of truth for the same number, so the
-            whole control (label + value + arrow) is a link that routes
-            edits to the budget page. */}
-            <Link
-              to="/app/budget"
-              title={t("suppliers.guests_filter_edit_in_budget")}
-              aria-label={t("suppliers.guests_filter_edit_in_budget")}
-              className="group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 transition hover:bg-paper-50 sm:gap-2 dark:hover:bg-umber-800"
-            >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100">
-                {t("suppliers.guests_filter_label")}
-              </span>
-              <span className="min-w-[2ch] text-center text-[11px] font-semibold tabular-nums text-ink-800 dark:text-paper-100">
-                {guestsFilter ?? "-"}
-              </span>
-              <ArrowUpRight
-                size={13}
-                aria-hidden
-                className="text-ink-400 transition group-hover:text-ink-700 dark:text-umber-300 dark:group-hover:text-paper-100"
-              />
-            </Link>
-            <div
-              className="hidden h-4 w-px self-center bg-paper-300 dark:bg-umber-700 sm:block"
-              aria-hidden
-            />
-            {/* Verified-only toggle — the blue vendor badge doubles as the
-            control. Off = quiet grey outline; on = filled azure badge +
-            azure label, and the grid drops to registered (claimed) vendors. */}
-            <button
-              type="button"
-              onClick={toggleVerifiedFilter}
-              aria-pressed={showVerifiedOnly}
-              title={t("suppliers.verified_filter")}
-              className={
-                showVerifiedOnly
-                  ? "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 text-verified"
-                  : "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-1.5 py-0.5 text-ink-500 transition hover:bg-paper-50 dark:text-umber-300 dark:hover:bg-umber-800"
-              }
-            >
-              <BadgeCheck
+              <ChevronDown
                 size={14}
                 aria-hidden
-                className={showVerifiedOnly ? "fill-verified stroke-white" : ""}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 dark:text-umber-200"
               />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.08em]">
-                {t("suppliers.verified_filter")}
-              </span>
-            </button>
+            </div>
           </div>
 
-          {/* Step chain. Sequence numbers dropped — the icons carry the meaning.
-          Steps are packed tightly (gap-1) and separated by a thin forward
-          arrow so the row reads as one process flow, not a sequence of
-          buttons. Each step also carries a row of discreet bars (one per
+          {/* Step chain. Sequence numbers dropped — the icons carry the meaning,
+          and the left-to-right order carries the sequence. The little "→"
+          between the steps went with the 2026-07-27 pass: nine arrows are
+          nine pieces of punctuation to read past, and the row already reads
+          as an order. Each step keeps its row of discreet bars (one per
           sub-category) that turn sage as the couple locks each pick in.
           The right-edge fade only shows when the row actually overflows —
           otherwise it leaves a phantom white slab next to the last step. */}
@@ -1524,23 +1484,15 @@ export default function SuppliersPage() {
             has to nudge it back. snap-start on each child anchors the
             alignment to the leading edge of the step group. */}
             <div ref={chainScrollRef} className="overflow-x-auto snap-x snap-mandatory pb-1">
-              <div className="flex min-w-max items-stretch gap-1">
-                {SUPPLIER_GROUPS.map((g, i) => {
+              <div className="flex min-w-max items-stretch gap-2">
+                {SUPPLIER_GROUPS.map((g) => {
                   const Icon = GROUP_ICON[g.id];
                   const progress = groupSelectionProgress.byGroup.get(g.id) ?? {
                     done: 0,
                     total: g.categories.length,
                   };
                   return (
-                    <div key={g.id} className="flex snap-start items-stretch gap-1">
-                      {i > 0 && (
-                        <span
-                          className="self-center text-paper-400 dark:text-umber-300"
-                          aria-hidden
-                        >
-                          →
-                        </span>
-                      )}
+                    <div key={g.id} className="flex snap-start items-stretch">
                       <ChainStep
                         active={activeGroup === g.id}
                         // Re-click on the active group clears the filter — the
@@ -1590,8 +1542,8 @@ export default function SuppliersPage() {
                 onClick={() => setActiveCat(null)}
                 className={
                   activeCat === null
-                    ? "inline-flex items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
-                    : "inline-flex items-center gap-1.5 rounded-xl border border-umber-600 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
+                    ? "inline-flex items-center gap-1.5 rounded-full border border-transparent stationery-coffee px-3.5 py-1.5 text-xs font-medium text-paper-50"
+                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 py-1.5 text-xs text-ink-700 transition hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
                 }
               >
                 <span className="lowercase">{t("suppliers.filter_all")}</span>
@@ -1616,8 +1568,8 @@ export default function SuppliersPage() {
                     onClick={() => setActiveCat(c)}
                     className={
                       selected
-                        ? "inline-flex items-center gap-1.5 rounded-xl border border-transparent stationery-coffee px-3 py-1 text-xs font-medium text-paper-50"
-                        : "inline-flex items-center gap-1.5 rounded-xl border border-umber-600 bg-paper-50 dark:border-umber-700 dark:bg-umber-800 px-3 py-1 text-xs text-ink-700 dark:text-paper-100"
+                        ? "inline-flex items-center gap-1.5 rounded-full border border-transparent stationery-coffee px-3.5 py-1.5 text-xs font-medium text-paper-50"
+                        : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3.5 py-1.5 text-xs text-ink-700 transition hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
                     }
                   >
                     <Icon size={13} />
@@ -2438,6 +2390,90 @@ export default function SuppliersPage() {
           now redirects here. */}
       <OutreachInbox />
 
+      {/* The scoping filters that used to sit in a boxed row above the chain.
+          They belong together (all three narrow WHICH catalogue you're
+          looking at, not which trade), they're set once and rarely touched,
+          and out on the page they cost a whole band of chrome. The chip that
+          opens this carries the count, so a live filter is never hidden. */}
+      <Dialog
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        role="dialog"
+        closeOnBackdrop
+        title={t("suppliers.filters_button")}
+        footer={
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={clearScopeFilters}
+              disabled={scopeFilterCount === 0}
+              className="text-sm text-ink-600 underline-offset-2 transition hover:text-ink-900 hover:underline disabled:text-ink-300 disabled:no-underline dark:text-umber-200 dark:hover:text-paper-50 dark:disabled:text-umber-500"
+            >
+              {t("suppliers.filters_clear")}
+            </button>
+            <Button onClick={() => setFiltersOpen(false)}>{t("suppliers.filters_apply")}</Button>
+          </div>
+        }
+      >
+        <div className="space-y-6">
+          {/* No label of our own here: the picker ships with one. */}
+          <div className="flex flex-wrap items-center gap-3">
+            <SupplierCountryFilter
+              value={countrySelection}
+              homeCountry={coupleCountry}
+              countries={availableCountries}
+              onChange={setCountryFilter}
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+              {t("suppliers.price_filter_label")}
+            </span>
+            {/* Each chip is ONE band, not a ceiling: tapping $$$ shows band-3
+                suppliers. Tap the same chip again to clear. */}
+            <div className="inline-flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((band) => (
+                <button
+                  key={band}
+                  type="button"
+                  aria-pressed={priceBand === band}
+                  aria-label={t("suppliers.price_filter_band_aria", { n: band })}
+                  onClick={() => setPriceBand(priceBand === band ? null : band)}
+                  className={
+                    priceBand === band
+                      ? "inline-flex h-8 items-center justify-center rounded-full border border-ink-900 bg-ink-900 px-3 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                      : "inline-flex h-8 items-center justify-center rounded-full border border-paper-300 px-3 text-sm text-ink-600 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:text-umber-200 dark:hover:border-paper-200 dark:hover:text-paper-50"
+                  }
+                >
+                  {"$".repeat(band)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Guest count is owned by the cost-planning slider on /app/budget and
+              only mirrored here — two edit surfaces for one number is how they
+              drift apart. So the whole row is a link that routes the edit. */}
+          <Link
+            to="/app/budget"
+            className="group flex items-center justify-between gap-3 rounded-2xl border border-paper-300 px-4 py-3 transition hover:border-ink-900 dark:border-umber-700 dark:hover:border-paper-200"
+          >
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+              {t("suppliers.guests_filter_label")}
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold tabular-nums text-ink-900 dark:text-paper-50">
+              {guestsFilter ?? "-"}
+              <ArrowUpRight
+                size={14}
+                aria-hidden
+                className="text-ink-400 transition group-hover:text-ink-900 dark:text-umber-300 dark:group-hover:text-paper-50"
+              />
+            </span>
+          </Link>
+        </div>
+      </Dialog>
+
       <SubmitSupplierModal
         open={submitOpen}
         onClose={() => setSubmitOpen(false)}
@@ -2590,7 +2626,7 @@ function ChainStep({
         onClick={onClick}
         title={collapsedLabel}
         aria-label={collapsedLabel}
-        className="group relative flex items-center justify-center rounded-lg border border-sage-600 bg-sage-600 px-2.5 py-2 text-white transition-colors duration-300 ease-out hover:border-sage-700 hover:bg-sage-700 dark:border-sage-600 dark:bg-sage-600 dark:text-white dark:hover:border-sage-700 dark:hover:bg-sage-700"
+        className="group relative flex items-center justify-center rounded-full border border-sage-600 bg-sage-600 px-3 py-2 text-white transition-colors duration-300 ease-out hover:border-sage-700 hover:bg-sage-700 dark:border-sage-600 dark:bg-sage-600 dark:text-white dark:hover:border-sage-700 dark:hover:bg-sage-700"
       >
         <span className="flex h-5 items-center leading-none" aria-hidden>
           {icon}
@@ -2602,12 +2638,12 @@ function ChainStep({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative flex items-center justify-center rounded-lg border px-2.5 pt-[5px] pb-2.5 text-sm transition-colors duration-300 ease-out ${
+      className={`group relative flex items-center justify-center rounded-full border px-3.5 pt-[5px] pb-2.5 text-sm transition-colors duration-300 ease-out ${
         active
           ? "border-transparent stationery-coffee text-paper-50"
           : allDone
             ? "border-sage-600 bg-sage-600 text-white hover:border-sage-700 hover:bg-sage-700 dark:border-sage-600 dark:bg-sage-600 dark:text-white dark:hover:border-sage-700 dark:hover:bg-sage-700"
-            : "border-umber-600 bg-umber-100 text-ink-800 hover:border-umber-700 hover:bg-umber-200 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+            : "border-paper-300 bg-paper-50 text-ink-800 hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
       }`}
     >
       {/* Explicit h-4 row + leading-none on every child forces all three

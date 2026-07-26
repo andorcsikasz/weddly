@@ -4257,6 +4257,9 @@ const hu: LocaleMessages = {
     self_pill_tooltip: "A szolgáltató maga jelentkezett be a Weddly közösségbe.",
     verified_vendor: "Hitelesített szolgáltató · saját Weddly-fiók",
     verified_filter: "Hitelesített",
+    filters_button: "Szűrők",
+    filters_clear: "Törlés",
+    filters_apply: "Kész",
     drop_your_own: "Ajánlj egy szolgáltatót",
     calc: {
       open: "Kalkulátor",
@@ -4420,6 +4423,7 @@ const hu: LocaleMessages = {
     view_line: "Lista",
     view_map: "Térkép",
     map_missing_count: "{n} helyszín nincs még a térképre helyezve.",
+    map_group_count: "{n} szolgáltató ezen a ponton",
     submit: {
       title: "Ajánlj egy szolgáltatót",
       intro: "Pár adat, és más párok is könnyebben rátalálnak.",

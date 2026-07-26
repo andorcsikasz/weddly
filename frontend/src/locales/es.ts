@@ -4302,6 +4302,9 @@ const es: LocaleMessages = {
     self_pill_tooltip: "El proveedor se unió a la comunidad de Weddly por su cuenta.",
     verified_vendor: "Proveedor verificado · tiene su propia cuenta de Weddly",
     verified_filter: "Verificados",
+    filters_button: "Filtros",
+    filters_clear: "Borrar",
+    filters_apply: "Listo",
     drop_your_own: "Recomienda un proveedor",
     calc: {
       open: "Calculadora",
@@ -4466,6 +4469,7 @@ const es: LocaleMessages = {
     view_line: "Lista",
     view_map: "Mapa",
     map_missing_count: "{n} entradas aún no están situadas en el mapa.",
+    map_group_count: "{n} proveedores en este punto",
     submit: {
       title: "Recomienda un proveedor",
       intro: "Con unos pocos datos basta, otras parejas los encontrarán más rápido.",

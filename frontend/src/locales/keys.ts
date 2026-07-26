@@ -4769,6 +4769,10 @@ export interface LocaleMessages {
     verified_vendor: string;
     /** Short label for the verified-only filter toggle in the country/price row. */
     verified_filter: string;
+    /** Chip that opens the scoping-filter dialog (country / price / guests). */
+    filters_button: string;
+    filters_clear: string;
+    filters_apply: string;
     drop_your_own: string;
     /** Cake & drinks calculator — surfaced from the food/drink category header. */
     calc: {
@@ -4982,6 +4986,9 @@ export interface LocaleMessages {
     view_map: string;
     /** Footer note on the map view when some entries aren't geocoded. */
     map_missing_count: string;
+    /** Title + popup heading of a map marker several suppliers share (they sit
+     *  on the same address, or on the same town-centre fallback coordinate). */
+    map_group_count: string;
     submit: {
       title: string;
       intro: string;
