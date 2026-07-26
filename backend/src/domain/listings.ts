@@ -519,6 +519,11 @@ export interface ShowcaseVendorRow {
    *  clear of Google's attribution requirements for displayed ratings. */
   google_rating: number | null;
   created_at: number;
+  /** WGS-84 coords, null on listings we never placed. Feeds the "nearby" block
+   *  the teaser attaches when a town filter comes back nearly empty: without a
+   *  coordinate a listing simply can't be offered as 40 km from anywhere. */
+  lat: number | null;
+  lng: number | null;
 }
 
 /** Every directory listing eligible for the public browse teaser: a real hero
@@ -535,7 +540,7 @@ export function listShowcaseCandidates(): ShowcaseVendorRow[] {
   const rows = db
     .prepare(
       `SELECT l.id, l.name, l.category, l.city, l.hero_image_url, l.source, l.created_at,
-              l.google_rating, va.country AS owner_country
+              l.google_rating, l.lat, l.lng, va.country AS owner_country
          FROM listings l
          LEFT JOIN vendor_accounts va ON va.id = l.vendor_account_id
         WHERE l.hero_image_url IS NOT NULL AND l.hero_image_url != ''

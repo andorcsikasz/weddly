@@ -52,7 +52,13 @@ type T = (key: string, vars?: Record<string, string | number>) => string;
 // produces always agree.
 const STICKY_OFFSET = 140;
 
+// Two scopes render the same category: the filtered town's own results, and
+// the "within an hour" block underneath. They need distinct anchors so the
+// sticky index can jump to either, and a shared category so one chip covers
+// both when the town has some of that category and the region has more.
 const sectionDomId = (category: string) => `cat-${category}`;
+const nearbyDomId = (category: string) => `near-${category}`;
+const categoryOfDomId = (domId: string) => domId.replace(/^(cat|near)-/, "");
 
 /** Programmatic scrolls respect the OS motion preference — `scroll-behavior:
  *  smooth` on <html> covers CSS-driven scrolling, but not these. */
@@ -191,6 +197,7 @@ function VendorCard({
   name,
   city,
   categoryLabel,
+  distanceLabel,
   hero,
   verified,
   verifiedLabel,
@@ -199,6 +206,10 @@ function VendorCard({
   name: string;
   city: string;
   categoryLabel: string;
+  /** "35 km" on a nearby card, absent on an in-town one. Rendered as a third
+   *  segment of the same muted line: at this size a badge over the photo would
+   *  compete with the verified check, and the distance is a fact, not a claim. */
+  distanceLabel?: string;
   hero: string;
   /** Registered Weddly vendor — same blue check as the in-app directory. */
   verified: boolean;
@@ -237,10 +248,10 @@ function VendorCard({
           />
         )}
       </p>
-      {/* One muted line, no pin icon: the city and category are the only two
-          facts worth carrying at this size. */}
+      {/* One muted line, no pin icon: city, category, and (nearby only) how far
+          it is from the town that was filtered for. */}
       <p className="truncate text-[13px] text-ink-500 dark:text-umber-300">
-        {city ? `${city} · ${categoryLabel}` : categoryLabel}
+        {[city || null, categoryLabel, distanceLabel ?? null].filter(Boolean).join(" · ")}
       </p>
     </Link>
   );
@@ -252,11 +263,15 @@ function VendorCard({
 // is the only way a mouse can drive a horizontal scroller comfortably.
 function CategoryRow({
   category,
+  domId,
   label,
   vendors,
   t,
 }: {
   category: SupplierCategory;
+  /** Anchor for the sticky index. Differs between the in-town block and the
+   *  nearby one so a chip can target either. */
+  domId: string;
   label: string;
   vendors: PublicShowcaseVendor[];
   t: T;
@@ -289,7 +304,7 @@ function CategoryRow({
     "grid h-9 w-9 place-items-center rounded-full border border-ink-900/15 text-ink-900 transition hover:border-ink-900 disabled:pointer-events-none disabled:opacity-25 dark:border-paper-50/20 dark:text-paper-100";
 
   return (
-    <section id={sectionDomId(category)} style={{ scrollMarginTop: STICKY_OFFSET }}>
+    <section id={domId} style={{ scrollMarginTop: STICKY_OFFSET }}>
       <div className="mb-3 flex items-end justify-between gap-4">
         <h2 className="font-grotesk text-xl font-semibold tracking-[-0.02em] text-ink-900 sm:text-2xl dark:text-paper-50">
           {label}
@@ -335,11 +350,58 @@ function CategoryRow({
               name={v.name}
               city={v.city}
               categoryLabel={t(`suppliers.cat.${v.category}`)}
+              distanceLabel={
+                v.distance_km == null
+                  ? undefined
+                  : t("vendorBrowse.distance_km", { km: v.distance_km })
+              }
               hero={v.hero_image_url}
               verified={v.verified}
               verifiedLabel={t("suppliers.verified_vendor")}
             />
           </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// The rescue block for a town that came back with almost nothing. Same rails,
+// same cards, one hairline and a heading to mark the change of scope: from here
+// down, every card is somewhere else and says how far. Deliberately NOT tinted
+// or boxed — it is more directory, not a promo panel, and a filled container
+// here would read as an ad for the region.
+function NearbyBlock({
+  categories,
+  origin,
+  t,
+}: {
+  categories: PublicShowcaseCategory[];
+  /** The filtered town, as the visitor typed it. Both the heading and the
+   *  "measured from" sentence name it, so a distance is never ambiguous. */
+  origin: string;
+  t: T;
+}) {
+  return (
+    <section className="border-t border-ink-900/10 pt-10 dark:border-paper-50/10">
+      <div className="mb-8 max-w-xl">
+        <h2 className="font-grotesk text-2xl font-semibold tracking-[-0.03em] text-ink-900 sm:text-3xl dark:text-paper-50">
+          {t("vendorBrowse.nearby_title", { city: origin })}
+        </h2>
+        <p className="mt-3 text-[15px] leading-relaxed text-ink-500 dark:text-umber-200">
+          {t("vendorBrowse.nearby_body", { city: origin })}
+        </p>
+      </div>
+      <div className="space-y-10">
+        {categories.map((c) => (
+          <CategoryRow
+            key={c.category}
+            category={c.category}
+            domId={nearbyDomId(c.category)}
+            label={t(`suppliers.cat.${c.category}`)}
+            vendors={c.vendors}
+            t={t}
+          />
         ))}
       </div>
     </section>
@@ -433,6 +495,10 @@ export default function VendorBrowsePage() {
   const city = params.get("city")?.trim() || null;
   const jumpCategory = params.get("category");
   const [categories, setCategories] = useState<PublicShowcaseCategory[] | null>(null);
+  // Populated by the server only when the town filter came back nearly empty:
+  // the surrounding region, distance-stamped. Empty the rest of the time.
+  const [nearby, setNearby] = useState<PublicShowcaseCategory[]>([]);
+  const [nearbyOrigin, setNearbyOrigin] = useState<string | null>(null);
   // null = every country. The server still ranks the visitor's own country
   // first in that case, so "Mind" isn't a random pile.
   const [country, setCountry] = useState<string | null>(null);
@@ -452,10 +518,16 @@ export default function VendorBrowsePage() {
       .then((r) => {
         if (cancelled) return;
         setCategories(r.categories);
+        setNearby(r.nearby ?? []);
+        setNearbyOrigin(r.nearby_origin ?? null);
         if (r.countries.length > 0) setCountries(r.countries);
       })
       .catch(() => {
-        if (!cancelled) setCategories([]);
+        if (!cancelled) {
+          setCategories([]);
+          setNearby([]);
+          setNearbyOrigin(null);
+        }
       });
     return () => {
       cancelled = true;
@@ -463,40 +535,70 @@ export default function VendorBrowsePage() {
   }, [country, city]);
 
   // Pull planners out of the vendor rails — they get their own reframed module.
-  const plannerCat = categories?.find((c) => c.category === "wedding_planner") ?? null;
   const gridCategories = categories?.filter((c) => c.category !== "wedding_planner") ?? [];
-  const navCategories = gridCategories.map((c) => c.category);
+  const nearbyCategories = nearby.filter((c) => c.category !== "wedding_planner");
+  // Planners from BOTH scopes feed the one module. No distance on those chips
+  // on purpose: a planner works inside your workspace rather than showing up at
+  // the venue, so the drive isn't what decides between them, and stamping a
+  // number on it would imply otherwise.
+  const plannerVendors = [
+    ...(categories?.find((c) => c.category === "wedding_planner")?.vendors ?? []),
+    ...(nearby.find((c) => c.category === "wedding_planner")?.vendors ?? []),
+  ];
+
+  // The index spans BOTH blocks. On a thin town page the in-town results are
+  // one category, which used to hide the rail entirely (`length > 1`); the
+  // nearby block is what gives the page enough categories to be worth indexing,
+  // so leaving it out would keep the rail hidden exactly when it's most useful.
+  // A category present in both scopes gets ONE chip, pointing at the in-town
+  // section, since that's the block the visitor asked for.
+  const navCategories: SupplierCategory[] = [
+    ...gridCategories.map((c) => c.category),
+    ...nearbyCategories
+      .map((c) => c.category)
+      .filter((c) => !gridCategories.some((g) => g.category === c)),
+  ];
   const navKey = navCategories.join(",");
+  const inTownKey = gridCategories.map((c) => c.category).join(",");
+  const nearbyKey = nearbyCategories.map((c) => c.category).join(",");
 
   // Scroll-spy for the sticky rail. The observer watches a thin band starting
   // right under the sticky chrome — whichever section crosses it is the one
   // being read, and in DOM order so overlaps resolve to the upper section.
   useEffect(() => {
-    const ids = navKey ? navKey.split(",") : [];
-    if (ids.length === 0) {
+    const chips = navKey ? navKey.split(",") : [];
+    if (chips.length === 0) {
       setActiveCat(null);
       return;
     }
-    setActiveCat((prev) => (prev && ids.includes(prev) ? prev : (ids[0] ?? null)));
+    setActiveCat((prev) => (prev && chips.includes(prev) ? prev : (chips[0] ?? null)));
+    // Document order, which is also the order the "topmost visible section
+    // wins" tiebreak needs: every in-town rail, then every nearby one. Tracked
+    // as DOM ids rather than categories because one category can own a section
+    // in each block, and a Set of categories would go dark the moment either
+    // one scrolled out.
+    const domIds = [
+      ...(inTownKey ? inTownKey.split(",").map(sectionDomId) : []),
+      ...(nearbyKey ? nearbyKey.split(",").map(nearbyDomId) : []),
+    ];
     const visible = new Set<string>();
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const id = entry.target.id.replace(/^cat-/, "");
-          if (entry.isIntersecting) visible.add(id);
-          else visible.delete(id);
+          if (entry.isIntersecting) visible.add(entry.target.id);
+          else visible.delete(entry.target.id);
         }
-        const first = ids.find((id) => visible.has(id));
-        if (first) setActiveCat(first);
+        const first = domIds.find((id) => visible.has(id));
+        if (first) setActiveCat(categoryOfDomId(first));
       },
       { rootMargin: `-${STICKY_OFFSET}px 0px -55% 0px`, threshold: 0 },
     );
-    for (const id of ids) {
-      const el = document.getElementById(sectionDomId(id));
+    for (const id of domIds) {
+      const el = document.getElementById(id);
       if (el) observer.observe(el);
     }
     return () => observer.disconnect();
-  }, [navKey]);
+  }, [navKey, inTownKey, nearbyKey]);
 
   // A `?category=` pick from the landing typeahead is a scroll target, not a
   // filter — the visitor asked for photographers, not for everything else to
@@ -508,7 +610,9 @@ export default function VendorBrowsePage() {
     if (!jumpCategory || categories === null) return;
     if (jumpedRef.current === jumpCategory) return;
     jumpedRef.current = jumpCategory;
-    const el = document.getElementById(sectionDomId(jumpCategory));
+    const el =
+      document.getElementById(sectionDomId(jumpCategory)) ??
+      document.getElementById(nearbyDomId(jumpCategory));
     if (el) {
       setActiveCat(jumpCategory);
       el.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
@@ -542,9 +646,12 @@ export default function VendorBrowsePage() {
 
   function jumpTo(category: string) {
     setActiveCat(category);
-    document
-      .getElementById(sectionDomId(category))
-      ?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+    // In-town first, nearby as the fallback: a chip that only exists because
+    // the region has that category still has somewhere to go.
+    const el =
+      document.getElementById(sectionDomId(category)) ??
+      document.getElementById(nearbyDomId(category));
+    el?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
   }
 
   return (
@@ -639,12 +746,16 @@ export default function VendorBrowsePage() {
                 <CategoryRow
                   key={c.category}
                   category={c.category}
+                  domId={sectionDomId(c.category)}
                   label={t(`suppliers.cat.${c.category}`)}
                   vendors={c.vendors}
                   t={t}
                 />
               ))}
-              {plannerCat && <PlannerInviteModule t={t} vendors={plannerCat.vendors} />}
+              {nearbyCategories.length > 0 && nearbyOrigin && (
+                <NearbyBlock categories={nearbyCategories} origin={nearbyOrigin} t={t} />
+              )}
+              {plannerVendors.length > 0 && <PlannerInviteModule t={t} vendors={plannerVendors} />}
             </div>
           )}
         </main>

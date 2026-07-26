@@ -599,6 +599,10 @@ export interface PublicShowcaseVendor {
   /** Registered Weddly vendor (`source === "claimed"`) — the same blue-check
    *  rule the in-app directory uses, so the badge means one thing everywhere. */
   verified: boolean;
+  /** Kilometres from the filtered town, rounded. Only set on entries in the
+   *  `nearby` block, where "40 km away" is the fact that makes the card usable;
+   *  absent on the in-town results, whose distance from themselves is noise. */
+  distance_km?: number;
 }
 export interface PublicShowcaseCategory {
   category: SupplierCategory;
@@ -618,6 +622,21 @@ export interface PublicVendorShowcase {
    *  (no MaxMind DB) or misses. Vendors here are ranked ahead of the rest;
    *  nothing is hidden because of it. */
   viewer_country: string | null;
+  /**
+   * Vendors just outside the filtered town, grouped the same way as
+   * `categories` and carrying `distance_km` on every entry.
+   *
+   * Only populated when a `?city=` filter is active AND the town itself came
+   * back with almost nothing (see NEARBY_TRIGGER). A one-card page is a dead
+   * end: the honest answer to "photographers in Győr" when there is one is not
+   * an empty page but "here is the one, and here is everything within an
+   * hour's drive". Empty array whenever the trigger doesn't fire, so callers
+   * never branch on null.
+   */
+  nearby: PublicShowcaseCategory[];
+  /** The town the `nearby` distances are measured from, as the visitor typed
+   *  it. Null when there is no nearby block. */
+  nearby_origin: string | null;
 }
 
 // ───────────────────────── Public vendor search ─────────────────────────

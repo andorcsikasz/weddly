@@ -219,3 +219,226 @@ describe("public vendor showcase", () => {
     expect(r.data.viewer_country).toBeNull();
   });
 });
+
+// ─── The "nearly empty town" rescue ─────────────────────────────────────────
+// Filtering to a small town used to leave a single card on the page, which
+// reads as "Weddly has nothing here". Below NEARBY_TRIGGER the response carries
+// a `nearby` block: the same shape as `categories`, drawn from the surrounding
+// region, with a straight-line `distance_km` on every card.
+
+/** Real coordinates, so the radius maths is exercised against real geography
+ *  rather than numbers picked to pass. Distances from Győr: Mosonmagyaróvár
+ *  ~35 km, Pápa ~42 km, Budapest ~106 km (outside the 70 km radius). */
+const GYOR = { lat: 47.6875, lng: 17.6504 };
+const MOSONMAGYAROVAR = { lat: 47.8676, lng: 17.2716 };
+const PAPA = { lat: 47.3297, lng: 17.4678 };
+const BUDAPEST = { lat: 47.4979, lng: 19.0402 };
+
+function insertPlaced(opts: {
+  id?: string;
+  category: string;
+  name: string;
+  city: string;
+  at: { lat: number; lng: number };
+  source?: string;
+}): string {
+  const id = insertListing({
+    id: opts.id,
+    source: opts.source ?? "curated",
+    category: opts.category,
+    name: opts.name,
+    city: opts.city,
+  });
+  db.prepare("UPDATE listings SET lat = ?, lng = ? WHERE id = ?").run(opts.at.lat, opts.at.lng, id);
+  return id;
+}
+
+function getCityShowcase(city: string) {
+  return req<PublicVendorShowcase>(
+    "GET",
+    `/api/public/vendor-showcase?city=${encodeURIComponent(city)}`,
+  );
+}
+
+describe("public vendor showcase: nearby fallback", () => {
+  test("a one-result town gets the region appended, nearest first, with distances", async () => {
+    insertPlaced({
+      id: "gy-1",
+      category: "photography",
+      name: "Győr Photo",
+      city: "Győr",
+      at: GYOR,
+    });
+    insertPlaced({
+      id: "mo-1",
+      category: "photography",
+      name: "Óvár Photo",
+      city: "Mosonmagyaróvár",
+      at: MOSONMAGYAROVAR,
+    });
+    insertPlaced({ id: "pa-1", category: "venue", name: "Pápa Venue", city: "Pápa", at: PAPA });
+
+    const r = await getCityShowcase("Győr");
+    expect(r.status).toBe(200);
+    // The town's own result is untouched and stays the headline.
+    expect(r.data.categories.flatMap((c) => c.vendors.map((v) => v.id))).toEqual(["gy-1"]);
+
+    // Grouped by category in the same order as the main block, so the two read
+    // as one page. Distance decides WHICH vendors make the cut and how they sit
+    // inside a rail, not the order of the rails themselves.
+    expect(r.data.nearby.map((c) => c.category)).toEqual(["venue", "photography"]);
+    const near = r.data.nearby.flatMap((c) => c.vendors);
+    expect(near.map((v) => v.id).sort()).toEqual(["mo-1", "pa-1"]);
+    expect(r.data.nearby_origin).toBe("Győr");
+    // Whole kilometres, matching the real ~35 km Győr → Mosonmagyaróvár hop.
+    const ovar = near.find((v) => v.id === "mo-1");
+    expect(ovar?.distance_km).toBeGreaterThan(25);
+    expect(ovar?.distance_km).toBeLessThan(45);
+    expect(Number.isInteger(ovar?.distance_km)).toBe(true);
+    // In-town cards carry no distance: their distance from themselves is noise.
+    expect(r.data.categories[0]?.vendors[0]?.distance_km).toBeUndefined();
+  });
+
+  test("inside one category the nearest vendor comes first", async () => {
+    insertPlaced({
+      id: "gy-near",
+      category: "photography",
+      name: "Győr Photo",
+      city: "Győr",
+      at: GYOR,
+    });
+    // Pápa (~42 km) inserted BEFORE Mosonmagyaróvár (~35 km), so passing this
+    // can't be an artefact of insertion order.
+    insertPlaced({
+      id: "pa-far",
+      category: "photography",
+      name: "Pápa Photo",
+      city: "Pápa",
+      at: PAPA,
+    });
+    insertPlaced({
+      id: "mo-close",
+      category: "photography",
+      name: "Óvár Photo",
+      city: "Mosonmagyaróvár",
+      at: MOSONMAGYAROVAR,
+    });
+
+    const r = await getCityShowcase("Győr");
+    const photo = r.data.nearby.find((c) => c.category === "photography")?.vendors ?? [];
+    expect(photo.map((v) => v.id)).toEqual(["mo-close", "pa-far"]);
+  });
+
+  test("beyond the radius is a different region, not a nearby vendor", async () => {
+    insertPlaced({
+      id: "gy-2",
+      category: "photography",
+      name: "Győr Photo",
+      city: "Győr",
+      at: GYOR,
+    });
+    insertPlaced({
+      id: "bp-1",
+      category: "photography",
+      name: "Budapest Photo",
+      city: "Budapest",
+      at: BUDAPEST,
+    });
+
+    const r = await getCityShowcase("Győr");
+    expect(r.data.nearby).toEqual([]);
+    expect(r.data.nearby_origin).toBeNull();
+  });
+
+  test("a town that stands on its own gets no nearby block", async () => {
+    for (let i = 0; i < 4; i++) {
+      insertPlaced({
+        id: `gy-full-${i}`,
+        category: "photography",
+        name: `Győr Photo ${i}`,
+        city: "Győr",
+        at: GYOR,
+      });
+    }
+    insertPlaced({
+      id: "mo-2",
+      category: "photography",
+      name: "Óvár Photo",
+      city: "Mosonmagyaróvár",
+      at: MOSONMAGYAROVAR,
+    });
+
+    const r = await getCityShowcase("Győr");
+    expect(r.data.total).toBe(4);
+    expect(r.data.nearby).toEqual([]);
+  });
+
+  test("no city filter means no nearby block, however thin the sample", async () => {
+    insertPlaced({
+      id: "gy-3",
+      category: "photography",
+      name: "Győr Photo",
+      city: "Győr",
+      at: GYOR,
+    });
+    insertPlaced({
+      id: "mo-3",
+      category: "photography",
+      name: "Óvár Photo",
+      city: "Mosonmagyaróvár",
+      at: MOSONMAGYAROVAR,
+    });
+
+    const r = await getShowcase();
+    // Both show up as ordinary results; there is no origin to measure from.
+    expect(r.data.total).toBe(2);
+    expect(r.data.nearby).toEqual([]);
+    expect(r.data.nearby_origin).toBeNull();
+  });
+
+  test("an ungeocoded town gets no block rather than distances from the wrong place", async () => {
+    // The only listing in town has no coordinates, so there is no origin.
+    insertListing({
+      id: "gy-nocoord",
+      source: "curated",
+      category: "photography",
+      name: "Győr Photo",
+      city: "Győr",
+    });
+    insertPlaced({
+      id: "mo-4",
+      category: "photography",
+      name: "Óvár Photo",
+      city: "Mosonmagyaróvár",
+      at: MOSONMAGYAROVAR,
+    });
+
+    const r = await getCityShowcase("Győr");
+    expect(r.data.total).toBe(1);
+    expect(r.data.nearby).toEqual([]);
+  });
+
+  test("a nearby card never repeats an in-town result", async () => {
+    // Same coordinates as the town itself: distance 0, and still excluded,
+    // because it is already on the page above.
+    insertPlaced({
+      id: "gy-4",
+      category: "photography",
+      name: "Győr Photo",
+      city: "Győr",
+      at: GYOR,
+    });
+    insertPlaced({ id: "gy-5", category: "venue", name: "Győr Venue", city: "Győr", at: GYOR });
+    insertPlaced({
+      id: "mo-5",
+      category: "photography",
+      name: "Óvár Photo",
+      city: "Mosonmagyaróvár",
+      at: MOSONMAGYAROVAR,
+    });
+
+    const r = await getCityShowcase("Győr");
+    const nearIds = r.data.nearby.flatMap((c) => c.vendors.map((v) => v.id));
+    expect(nearIds).toEqual(["mo-5"]);
+  });
+});

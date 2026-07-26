@@ -41,6 +41,7 @@ import {
   listListingPhotos,
   listListingVideos,
   listShowcaseCandidates,
+  type ShowcaseVendorRow,
 } from "../domain/listings";
 import { maskAddressForPublic, maskEmailForPublic } from "../domain/contact_mask";
 import { getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
@@ -531,6 +532,41 @@ const SHOWCASE_CATEGORY_ORDER: SupplierCategory[] = [
   "transport",
   "wedding_planner",
 ];
+// ── The "nearly empty town" rescue ────────────────────────────────────────
+// Filtering to a small town regularly leaves one card on the page, which reads
+// as "Weddly has nothing here" when the truth is "Weddly has 40 of these an
+// hour up the road". Below the trigger we keep the town's own results exactly
+// as they are and APPEND everything within the radius, distance-stamped, so
+// the visitor can judge "35 km" for themselves rather than being handed an
+// empty page.
+//
+// Only fires behind a `?city=` filter: without one the sample is already the
+// whole catalogue and there is no origin to measure from.
+/** At or below this many in-town cards the page can't stand on its own. */
+const NEARBY_TRIGGER = 3;
+/** Driving-distance sanity, not a hard geography rule: past this a vendor is a
+ *  different region's vendor, and offering them reads as padding. */
+const NEARBY_RADIUS_KM = 70;
+/** Total nearby cards. Enough to fill several rails, few enough that the town's
+ *  own results stay the headline. */
+const NEARBY_MAX = 18;
+/** Per category, so one dense category (venues) can't eat the whole block. */
+const NEARBY_PER_CATEGORY = 4;
+
+/** Mean coordinate of the listings that matched the town filter, which is the
+ *  town itself to within a few hundred metres and needs no gazetteer. Falls
+ *  back to the whole-country pool's match on the same folded name, so a town
+ *  whose only listing lacks coords can still anchor. Null when nothing in the
+ *  town has been geocoded at all — then there is no nearby block, rather than
+ *  a block measured from the wrong place. */
+function originOf(rows: ShowcaseVendorRow[]): { lat: number; lng: number } | null {
+  const placed = rows.filter((r) => r.lat != null && r.lng != null);
+  if (placed.length === 0) return null;
+  const lat = placed.reduce((n, r) => n + (r.lat as number), 0) / placed.length;
+  const lng = placed.reduce((n, r) => n + (r.lng as number), 0) / placed.length;
+  return { lat, lng };
+}
+
 function handlePublicShowcase(ctx: Ctx): Response {
   rateLimit(ctx.clientIp, "public.showcase", { capacity: 60, refillRate: 1 });
   // `?country=XX` scopes the sample to one country (the chip row). Absent or
@@ -606,11 +642,73 @@ function handlePublicShowcase(ctx: Ctx): Response {
     categories.push({ category, vendors });
     total += vendors.length;
   }
+
+  // A town that came back nearly empty gets the surrounding region appended.
+  // Measured from the matched listings themselves, ranked by distance, and
+  // capped per category so the block reads as a directory rather than a list
+  // of the one thing that happens to be dense nearby.
+  const nearby: PublicShowcaseCategory[] = [];
+  let nearbyOrigin: string | null = null;
+  if (requestedCity && total > 0 && total <= NEARBY_TRIGGER) {
+    const origin = originOf(pool);
+    if (origin) {
+      const shown = new Set(pool.map((r) => r.id));
+      // Country pool, not the global one: the whole point is a drive away, and
+      // the radius already keeps it tight. Staying inside the active country
+      // filter also means the chip row and this block never disagree.
+      const withDistance = countryPool
+        .filter((r) => !shown.has(r.id) && r.lat != null && r.lng != null)
+        .map((r) => ({
+          row: r,
+          km: haversineKm(origin.lat, origin.lng, r.lat as number, r.lng as number),
+        }))
+        .filter((x) => x.km <= NEARBY_RADIUS_KM)
+        .sort((a, b) => a.km - b.km);
+
+      const nearByCat = new Map<SupplierCategory, PublicShowcaseVendor[]>();
+      let taken = 0;
+      for (const { row, km } of withDistance) {
+        if (taken >= NEARBY_MAX) break;
+        const list = nearByCat.get(row.category) ?? [];
+        if (list.length >= NEARBY_PER_CATEGORY) continue;
+        list.push({
+          id: row.id,
+          name: row.name,
+          category: row.category,
+          // Raw, exactly like the main block: a curated ", AT" suffix is real
+          // context, and stripping it in one block and not the other would read
+          // as a bug on a page that shows both.
+          city: row.city,
+          hero_image_url: row.hero_image_url,
+          country: row.country,
+          verified: row.source === "claimed",
+          // Rounded to the kilometre: these are straight-line distances between
+          // town centroids, and a decimal would claim a precision we don't have.
+          distance_km: Math.max(1, Math.round(km)),
+        });
+        nearByCat.set(row.category, list);
+        taken++;
+      }
+      // Same category order as the main block, so the two read as one page.
+      for (const category of SHOWCASE_CATEGORY_ORDER) {
+        const vendors = nearByCat.get(category);
+        if (!vendors || vendors.length === 0) continue;
+        nearby.push({ category, vendors });
+      }
+      // Origin only when there is actually a block to measure — the frontend
+      // uses it to name the town in the heading, so a stray value with no
+      // section under it would be worse than null.
+      if (nearby.length > 0) nearbyOrigin = cityParam?.trim() ?? null;
+    }
+  }
+
   const payload: PublicVendorShowcase = {
     categories,
     total,
     countries,
     viewer_country: viewerCountry,
+    nearby,
+    nearby_origin: nearbyOrigin,
   };
   // Private: the body now varies by the caller's IP country, so a shared cache
   // could serve one visitor's ordering to another country's visitor.
