@@ -26,6 +26,7 @@ import {
   RotateCcw,
   Save,
   Trash2,
+  TriangleAlert,
   Upload,
   X,
 } from "lucide-react";
@@ -1688,7 +1689,12 @@ function CategoryCell({ category }: { category: BudgetCategory }) {
 /** Read-only row that rolls every honeymoon-category line into one entry.
  *  The actual edits happen on /app/honeymoon — the chevron link in the
  *  action cell sends the user there. */
-type PaidState = "paid" | "partial" | "unpaid";
+// `over` is its own state, not a flavour of `paid`. Recorded payments summing
+// past the actual cost is never a finished line: either a payment was entered
+// wrong, or the actual is stale and the real cost is higher. Both need the
+// couple's attention, and both used to render as the same green check as a line
+// settled to the forint.
+type PaidState = "paid" | "over" | "partial" | "unpaid";
 
 /** Small circular gauge that fills clockwise to `pct`. Renders a solid check
  *  glyph once fully settled. Tone follows the paid state: grey = nothing,
@@ -1697,9 +1703,14 @@ function PercentRing({ pct, state }: { pct: number; state: PaidState }) {
   const tone =
     state === "paid"
       ? "text-emerald-600 dark:text-emerald-400"
-      : state === "partial"
-        ? "text-amber-600 dark:text-amber-400"
-        : "text-ink-300 dark:text-umber-500";
+      : state === "over"
+        ? "text-blush-600 dark:text-blush-400"
+        : state === "partial"
+          ? "text-amber-600 dark:text-amber-400"
+          : "text-ink-300 dark:text-umber-500";
+  // Overpaid gets a warning glyph, not a check: a full ring would say "done"
+  // about the one case that isn't.
+  if (state === "over") return <TriangleAlert size={18} aria-hidden className={tone} />;
   if (state === "paid") return <CircleCheck size={18} aria-hidden className={tone} />;
   const size = 18;
   const cx = size / 2;
@@ -1770,8 +1781,19 @@ function PaidCell({
   const { t } = useT();
   const [entryOpen, setEntryOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
-  const pct = actual > 0 ? Math.round((Math.min(paid, actual) / actual) * 100) : 0;
-  const state: PaidState = actual > 0 && paid >= actual ? "paid" : paid > 0 ? "partial" : "unpaid";
+  // The TRUE ratio, uncapped. The ring still draws clamped to 100 (it can't
+  // show more), but every number the user reads has to be the real one: the old
+  // code capped this and then listed the uncapped per-payment shares beside it,
+  // producing tooltips like "300% + 150% + 30% + 120% = 100%".
+  const pct = actual > 0 ? Math.round((paid / actual) * 100) : 0;
+  const overpaid = actual > 0 && paid > actual;
+  const state: PaidState = overpaid
+    ? "over"
+    : actual > 0 && paid >= actual
+      ? "paid"
+      : paid > 0
+        ? "partial"
+        : "unpaid";
   const docCount = documents.length;
   // "20% + 80%" breakdown for the hover tooltip when there's a recorded history.
   const breakdown =
@@ -1781,9 +1803,13 @@ function PaidCell({
   const ringTitle =
     actual === 0
       ? t("budget.paid_needs_actual")
-      : breakdown
-        ? `${t("budget.paid")}: ${breakdown} = ${pct}%`
-        : `${t("budget.paid")}: ${pct}%`;
+      : overpaid
+        ? t("budget.paid_overpaid_by", {
+            amount: formatMoney(paid - actual, currency, locale),
+          })
+        : breakdown
+          ? `${t("budget.paid")}: ${breakdown} = ${pct}%`
+          : `${t("budget.paid")}: ${pct}%`;
   return (
     <div className={`flex items-center gap-1 ${align === "center" ? "justify-center" : ""}`}>
       <button
@@ -1797,6 +1823,14 @@ function PaidCell({
         <PercentRing pct={pct} state={state} />
         {state === "partial" && (
           <span className="text-xs font-medium tabular-nums text-amber-600 dark:text-amber-400">
+            {pct}%
+          </span>
+        )}
+        {/* The number is the point here: a bare warning glyph tells the couple
+            something is off but not how far off, and this is the one state
+            where the row can't be read at a glance without it. */}
+        {state === "over" && (
+          <span className="text-xs font-medium tabular-nums text-blush-600 dark:text-blush-400">
             {pct}%
           </span>
         )}
@@ -1906,13 +1940,21 @@ function PaidEntryDialog({
   );
   const total = opening + ledgerSum;
   const share = (amt: number) => (actual > 0 ? Math.round((amt / actual) * 100) : 0);
-  const totalPct = actual > 0 ? Math.round((Math.min(total, actual) / actual) * 100) : 0;
+  // Uncapped, so the figure and the "a% + b% = c%" line below it agree. Capping
+  // this while the per-payment shares stayed uncapped is what produced
+  // "300% + 150% + 30% + 120% = 100%".
+  const totalPct = actual > 0 ? Math.round((total / actual) * 100) : 0;
   // With no agreed amount there is nothing to be "fully paid" against, so the
   // outstanding balance is unbounded and the entry stays open (capping it at 0
   // would make such a row impossible to pay).
   const hasActual = actual > 0;
   const remaining = hasActual ? Math.max(0, actual - total) : Number.POSITIVE_INFINITY;
-  const settled = hasActual && remaining === 0;
+  // Overpaid is its own state: `remaining` bottoms out at 0, so without this a
+  // line paid past its actual would claim to be settled. It is reachable
+  // without any bad input — record deposits, then correct the actual downwards,
+  // and the recorded history now exceeds it.
+  const overpaid = hasActual && total > actual;
+  const settled = hasActual && remaining === 0 && !overpaid;
 
   const num = Number(draft.replace(/[^\d]/g, ""));
   const safeNum = Number.isFinite(num) ? num : 0;
@@ -2061,27 +2103,34 @@ function PaidEntryDialog({
             separate "settled" label is needed. */}
         <div
           ref={totalCardRef}
-          className={`rounded-2xl border px-4 py-3.5 text-center transition-colors ${settled ? "border-sage-300 bg-sage-50 dark:border-sage-500/40 dark:bg-sage-500/10" : "border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800/50"}`}
+          className={`rounded-2xl border px-4 py-3.5 text-center transition-colors ${overpaid ? "border-blush-300 bg-blush-50 dark:border-blush-500/40 dark:bg-blush-500/10" : settled ? "border-sage-300 bg-sage-50 dark:border-sage-500/40 dark:bg-sage-500/10" : "border-paper-200 bg-paper-50 dark:border-umber-700 dark:bg-umber-800/50"}`}
         >
           <p
-            className={`text-[11px] font-semibold uppercase tracking-[0.1em] ${settled ? "text-sage-700 dark:text-sage-300" : "text-umber-500 dark:text-umber-300"}`}
+            className={`text-[11px] font-semibold uppercase tracking-[0.1em] ${overpaid ? "text-blush-700 dark:text-blush-300" : settled ? "text-sage-700 dark:text-sage-300" : "text-umber-500 dark:text-umber-300"}`}
           >
-            {settled ? t("budget.payment_settled") : t("budget.payment_total")}
+            {overpaid
+              ? t("budget.payment_overpaid", {
+                  amount: formatMoney(total - actual, currency, locale),
+                })
+              : settled
+                ? t("budget.payment_settled")
+                : t("budget.payment_total")}
           </p>
           <p
-            className={`mt-1 flex items-center justify-center gap-2 text-xl font-semibold tabular-nums ${settled ? "text-sage-700 dark:text-sage-300" : "text-ink-900 dark:text-paper-50"}`}
+            className={`mt-1 flex items-center justify-center gap-2 text-xl font-semibold tabular-nums ${overpaid ? "text-blush-700 dark:text-blush-300" : settled ? "text-sage-700 dark:text-sage-300" : "text-ink-900 dark:text-paper-50"}`}
           >
+            {overpaid && <TriangleAlert size={18} aria-hidden />}
             {settled && <CircleCheck size={18} aria-hidden />}
             {formatMoney(total, currency, locale)}
             <span
-              className={`text-sm font-semibold ${settled ? "text-sage-600 dark:text-sage-400" : "text-amber-600 dark:text-amber-400"}`}
+              className={`text-sm font-semibold ${overpaid ? "text-blush-600 dark:text-blush-400" : settled ? "text-sage-600 dark:text-sage-400" : "text-amber-600 dark:text-amber-400"}`}
             >
               {totalPct}%
             </span>
           </p>
           {breakdown.length > 1 && (
             <p
-              className={`mt-1 text-xs tabular-nums ${settled ? "text-sage-600/80 dark:text-sage-300/80" : "text-umber-500 dark:text-umber-300"}`}
+              className={`mt-1 text-xs tabular-nums ${overpaid ? "text-blush-600/80 dark:text-blush-300/80" : settled ? "text-sage-600/80 dark:text-sage-300/80" : "text-umber-500 dark:text-umber-300"}`}
             >
               {breakdown.join(" + ")} = {totalPct}%
             </p>
