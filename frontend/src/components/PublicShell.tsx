@@ -426,7 +426,13 @@ function PublicFooter() {
   const couplesCardsPath =
     locale === "hu" ? "/eszkozok/100-kerdes-eskuvo-elott" : "/tools/100-questions-before-marriage";
   return (
-    <footer className="mt-16 bg-paper-100/60 font-grotesk sm:mt-24 dark:bg-umber-950/60">
+    // The footer is a black slab in BOTH themes — an intentional hard edge that
+    // closes the cream page. The `dark` class on the element (Tailwind's
+    // class strategy is descendant-based, so it styles the subtree, not itself)
+    // flips every child's `dark:` variant on, which is why the links, borders,
+    // social icons and the who-are-you band all read correctly on umber-900
+    // without a single duplicated colour.
+    <footer className="dark mt-16 bg-umber-900 font-grotesk sm:mt-24">
       {/* Band: who-are-you. Hidden on audience pages (/planners, /vendors)
        *  which already have their own escape-route sections immediately above
        *  the footer — showing it again here would be a duplicate. On the
