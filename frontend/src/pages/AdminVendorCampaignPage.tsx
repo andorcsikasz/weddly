@@ -284,7 +284,7 @@ export default function AdminVendorCampaignPage() {
           because "what exactly goes out" is the question an operator has while
           filling this in, not a separate errand. */}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <section className="flex flex-col gap-4">
+        <section className="flex min-w-0 flex-col gap-4">
           {/* One setup row. */}
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-[190px] flex-1">
@@ -474,7 +474,7 @@ export default function AdminVendorCampaignPage() {
         </section>
 
         {/* Live copy. */}
-        <section className="flex flex-col gap-3">
+        <section className="flex min-w-0 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-1.5">
             {(["invite", "reminder"] as const).map((k) => (
               <button

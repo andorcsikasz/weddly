@@ -1,22 +1,61 @@
 // Admin console for the personal-invite campaign: the founder's own contacts
-// (CSV import), told about Weddly with a register CTA. Mirrors the two vendor
-// campaign consoles but adds a paste-a-CSV import step, because this audience is
-// a fixed imported list rather than a live directory query. Launching is a
-// deliberate action (Start), and pacing beyond a supervised send-batch belongs
-// to the worker.
+// (CSV import), told about Weddly with a register CTA. Wears the SAME shell as
+// the two vendor campaign consoles — create row + campaign chips + the selected
+// campaign's funnel on the left, the live outbound email pinned to the 380px
+// right rail, the per-address lists full width underneath — so all three tabs of
+// KEZELÉS → Kampányok read identically. What differs is only the audience: a
+// fixed imported list rather than a live directory query, so where the vendor
+// consoles show a "targets" query this one shows a CSV import plus the contacts
+// it produced. Launching stays a deliberate second step (Start), and pacing
+// beyond a supervised send-batch belongs to the worker.
 
-import { FileUp, Play, Send, Sparkles, Square, Upload } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   PersonalInviteCampaign,
-  PersonalInviteCampaignDetail,
+  PersonalInviteCampaignSend,
   PersonalInviteCampaignStats,
   PersonalInviteImportResult,
 } from "@shared/personal_invite_campaign";
-import { PERSONAL_INVITE_DEFAULT_DAILY_CAP } from "@shared/personal_invite_campaign";
-import { Skeleton, useConfirm, useToast } from "../components/ui";
+import {
+  PERSONAL_INVITE_DEFAULT_DAILY_CAP,
+  PERSONAL_INVITE_MAX_DAILY_CAP,
+} from "@shared/personal_invite_campaign";
+import { FileUp, Pause, Play, Send, Sparkles, Upload } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
+import { Button, Skeleton, useConfirm, useToast } from "../components/ui";
+import { ApiError } from "../lib/api";
 import { adminEmailPreviewApi, adminPersonalInviteCampaignApi as api } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { intlLocale } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
+
+const MANUAL_BATCH_SIZE = 25;
+/** How many contact rows the table renders before it stops and just counts the
+ *  rest — a 700-address import would otherwise paint 700 table rows. */
+const CONTACT_ROWS = 200;
+const DAY_MS = 86_400_000;
+
+/** Suggested handle: month-stamped, so a second list in the same month is the
+ *  only case that needs a manual edit. Mirrors the vendor consoles. */
+function suggestSlug(): string {
+  const d = new Date();
+  return `friends-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function daysToSend(n: number, cap: number): number {
+  if (cap <= 0) return 0;
+  return Math.ceil(n / cap);
+}
+
+/** Short launched/ended stamp. `withTime` for the exact launch moment, date-only
+ *  for the (approximate) projected finish. */
+function fmtStamp(ms: number, locale: Locale, withTime: boolean): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+  }).format(new Date(ms));
+}
 
 // ── Client-side CSV preview + cleanup ───────────────────────────────────────
 // The server already skips already-registered / opted-out / duplicate / invalid
@@ -55,6 +94,23 @@ function parseContacts(csv: string): PreviewRow[] {
     rows.push({ name, email, status });
   }
   return rows;
+}
+
+function Stat({ value, label, muted }: { value: number | string; label: string; muted?: boolean }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span
+        className={`font-grotesk text-xl font-semibold leading-none tabular-nums ${
+          muted ? "text-neutral-400 dark:text-umber-400" : ""
+        }`}
+      >
+        {value}
+      </span>
+      <span className="text-[11px] leading-tight text-neutral-500 dark:text-umber-300">
+        {label}
+      </span>
+    </div>
+  );
 }
 
 /** Live render of the actual outbound invite, from the same template builders
@@ -113,122 +169,275 @@ function EmailPreview({ locale }: { locale: "hu" | "en" }) {
 }
 
 export default function AdminPersonalInviteCampaignPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const confirm = useConfirm();
-  const [previewLocale, setPreviewLocale] = useState<"hu" | "en">("hu");
-  const [campaigns, setCampaigns] = useState<PersonalInviteCampaign[]>([]);
-  const [details, setDetails] = useState<Record<number, PersonalInviteCampaignStats>>({});
-  const [slug, setSlug] = useState("");
-  const [cap, setCap] = useState(PERSONAL_INVITE_DEFAULT_DAILY_CAP);
-  const [creating, setCreating] = useState(false);
 
-  const refresh = useCallback(async () => {
-    const res = await api.list();
-    setCampaigns(res.campaigns);
-    const stats: Record<number, PersonalInviteCampaignStats> = {};
-    await Promise.all(
-      res.campaigns.map(async (c) => {
-        const d: PersonalInviteCampaignDetail = await api.detail(c.id);
-        stats[c.id] = d.stats;
-      }),
-    );
-    setDetails(stats);
+  const [campaigns, setCampaigns] = useState<PersonalInviteCampaign[] | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [stats, setStats] = useState<PersonalInviteCampaignStats | null>(null);
+  const [sends, setSends] = useState<PersonalInviteCampaignSend[] | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const [slug, setSlug] = useState(suggestSlug);
+  const [dailyCap, setDailyCap] = useState(String(PERSONAL_INVITE_DEFAULT_DAILY_CAP));
+  const [previewLocale, setPreviewLocale] = useState<"hu" | "en">("hu");
+
+  const refreshList = useCallback(async () => {
+    const list = await api.list();
+    setCampaigns(list.campaigns);
+    setSelectedId((prev) => prev ?? list.campaigns[0]?.id ?? null);
+  }, []);
+
+  const refreshDetail = useCallback(async (id: number) => {
+    const [d, sd] = await Promise.all([api.detail(id), api.sends(id)]);
+    setStats(d.stats);
+    setSends(sd.sends);
   }, []);
 
   useEffect(() => {
-    void refresh().catch(() => toast.error(t("common.error_generic")));
-  }, [refresh, toast, t]);
+    void refreshList().catch(() => toast.error(t("common.error_generic")));
+  }, [refreshList, toast, t]);
 
-  async function create() {
-    if (creating) return;
-    setCreating(true);
+  useEffect(() => {
+    if (selectedId == null) return;
+    setStats(null);
+    setSends(null);
+    void refreshDetail(selectedId).catch(() => toast.error(t("common.error_generic")));
+  }, [selectedId, refreshDetail, toast, t]);
+
+  async function run(fn: () => Promise<unknown>) {
+    setBusy(true);
     try {
-      await api.create({ slug: slug.trim(), daily_cap: cap });
-      setSlug("");
-      toast.success(t("admin.campaign_created"));
-      await refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("common.error_generic"));
+      await fn();
+      await refreshList();
+      if (selectedId != null) await refreshDetail(selectedId);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : t("common.error_generic"));
     } finally {
-      setCreating(false);
+      setBusy(false);
     }
   }
 
-  async function setStatus(c: PersonalInviteCampaign, status: "running" | "paused") {
-    if (status === "running") {
+  const cap = Number.parseInt(dailyCap, 10);
+
+  async function onCreate() {
+    if (!Number.isInteger(cap) || cap < 1 || cap > PERSONAL_INVITE_MAX_DAILY_CAP) {
+      toast.error(t("admin.campaign_err_cap"));
+      return;
+    }
+    await run(async () => {
+      const r = await api.create({ slug: slug.trim(), daily_cap: cap });
+      setSelectedId(r.campaign.id);
+      setSlug(suggestSlug());
+      toast.success(t("admin.campaign_created"));
+    });
+  }
+
+  async function onToggleStatus(campaign: PersonalInviteCampaign) {
+    const next = campaign.status === "running" ? "paused" : "running";
+    if (next === "running") {
       const ok = await confirm({
         title: t("admin.campaign_start_confirm_title"),
         body: t("admin.pinvite_start_confirm_body", {
-          n: details[c.id]?.queued ?? 0,
-          cap: c.daily_cap,
+          n: stats?.queued ?? 0,
+          cap: campaign.daily_cap,
         }),
         confirmLabel: t("admin.campaign_start_confirm_cta"),
         cancelLabel: t("common.cancel"),
       });
       if (!ok) return;
     }
-    try {
-      await api.update(c.id, { status });
-      toast.success(
-        status === "running" ? t("admin.campaign_launched") : t("admin.campaign_pause"),
-      );
-      await refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("common.error_generic"));
-    }
+    await run(() => api.update(campaign.id, { status: next }));
   }
 
+  async function onSendBatch(campaign: PersonalInviteCampaign) {
+    const ok = await confirm({
+      title: t("admin.campaign_batch_confirm_title"),
+      body: t("admin.campaign_batch_confirm_body", { n: MANUAL_BATCH_SIZE }),
+      confirmLabel: t("admin.campaign_batch_confirm_cta"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    await run(async () => {
+      const r = await api.sendBatch(campaign.id, MANUAL_BATCH_SIZE);
+      toast.success(t("admin.campaign_batch_sent", { n: r.sent }));
+    });
+  }
+
+  const selected = campaigns?.find((c) => c.id === selectedId) ?? null;
+
   return (
-    <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="font-grotesk text-xl text-ink-900 dark:text-paper-50">
-          {t("admin.pinvite_title")}
-        </h1>
-        <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-          {t("admin.pinvite_subtitle")}
-        </p>
-      </header>
+    <div className="flex flex-col gap-5">
+      <AdminPageHeader title={t("admin.pinvite_title")} subtitle={t("admin.pinvite_subtitle")} />
 
-      {/* Create */}
-      <section className="card flex flex-wrap items-end gap-3 p-4">
-        <label className="flex flex-col gap-1 text-xs font-medium text-ink-600 dark:text-umber-200">
-          {t("admin.campaign_slug")}
-          <input
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            placeholder="friends-2026-07"
-            className="input h-9 w-56"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-ink-600 dark:text-umber-200">
-          {t("admin.campaign_daily_cap")}
-          <input
-            type="number"
-            min={1}
-            max={200}
-            value={cap}
-            onChange={(e) => setCap(Number(e.target.value))}
-            className="input h-9 w-28 tabular-nums"
-          />
-        </label>
-        <button
-          type="button"
-          className="btn-primary h-9"
-          onClick={() => void create()}
-          disabled={creating}
-        >
-          {t("admin.campaign_create")}
-        </button>
-      </section>
+      {/* `min-w-0` on both columns is load-bearing: the preview's subject line is
+          `truncate` (white-space: nowrap), so its min-content is the full subject.
+          Without the override a long subject sizes the single mobile column wider
+          than the viewport and clips the Create button off-screen. */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <section className="flex min-w-0 flex-col gap-4">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-[190px] flex-1">
+              <label className="field-label" htmlFor="pi-slug">
+                {t("admin.campaign_slug")}
+              </label>
+              <input
+                id="pi-slug"
+                className="input"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                maxLength={61}
+              />
+            </div>
+            <div className="w-[104px]">
+              <label className="field-label" htmlFor="pi-cap">
+                {t("admin.campaign_daily_cap")}
+              </label>
+              <input
+                id="pi-cap"
+                className="input tabular-nums"
+                type="number"
+                min={1}
+                max={PERSONAL_INVITE_MAX_DAILY_CAP}
+                value={dailyCap}
+                onChange={(e) => setDailyCap(e.target.value)}
+              />
+            </div>
+            <Button onClick={() => void onCreate()} disabled={busy || slug.trim().length < 2}>
+              {t("admin.campaign_create")}
+            </Button>
+          </div>
 
-      {/* Email preview — what the invite actually looks like when it sends. */}
-      <section className="card p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <p className="text-sm font-medium text-ink-800 dark:text-paper-100">
-            {t("admin.pinvite_preview_heading")}
-          </p>
-          <div className="flex items-center gap-1">
+          {/* The audience is whatever was imported, so the pacing line only has
+              something to say once contacts are queued. */}
+          {stats != null && stats.queued > 0 && selected != null && (
+            <p className="text-sm text-neutral-500 dark:text-umber-300">
+              {t("admin.campaign_plan", {
+                n: stats.queued,
+                cap: selected.daily_cap,
+                days: daysToSend(stats.queued, selected.daily_cap),
+              })}
+            </p>
+          )}
+
+          {campaigns == null ? (
+            <Skeleton variant="block" height={34} rounded="lg" />
+          ) : campaigns.length === 0 ? (
+            <AdminEmptyState title={t("admin.campaign_empty")} />
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {campaigns.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedId(c.id)}
+                  className={`rounded-full px-3 py-1 text-[13px] ring-1 transition ${
+                    c.id === selectedId
+                      ? "bg-neutral-900 text-paper-50 ring-neutral-900 dark:bg-paper-100 dark:text-umber-900 dark:ring-paper-100"
+                      : "text-ink-700 ring-ink-100 dark:text-paper-100 dark:ring-umber-700"
+                  }`}
+                >
+                  {c.slug}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {selected != null && (
+            <div className="flex flex-col gap-4 rounded-2xl bg-paper-200 p-4 ring-2 ring-ink-900 dark:bg-umber-800 dark:ring-umber-600">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{selected.slug}</span>
+                  <Pill
+                    tone={
+                      selected.status === "running"
+                        ? "sage"
+                        : selected.status === "done"
+                          ? "muted"
+                          : "violet"
+                    }
+                  >
+                    {t(`admin.campaign_status_${selected.status}`)}
+                  </Pill>
+                </div>
+                {selected.status !== "done" && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() => void onSendBatch(selected)}
+                    >
+                      <Send size={14} aria-hidden />
+                      {t("admin.campaign_send_batch", { n: MANUAL_BATCH_SIZE })}
+                    </Button>
+                    <Button disabled={busy} onClick={() => void onToggleStatus(selected)}>
+                      {selected.status === "running" ? (
+                        <>
+                          <Pause size={14} aria-hidden />
+                          {t("admin.campaign_pause")}
+                        </>
+                      ) : (
+                        <>
+                          <Play size={14} aria-hidden />
+                          {t("admin.campaign_start")}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* When it launched, and when it ends (actual once Done, else a
+                  projection from queued ÷ daily cap). */}
+              <p className="text-xs text-neutral-500 dark:text-umber-300">
+                {selected.started_at
+                  ? t("admin.campaign_launched", {
+                      date: fmtStamp(selected.started_at, locale, true),
+                    })
+                  : t("admin.campaign_not_launched")}
+                {selected.ended_at
+                  ? ` · ${t("admin.campaign_ended", { date: fmtStamp(selected.ended_at, locale, true) })}`
+                  : selected.status === "running" && stats != null && stats.queued > 0
+                    ? ` · ${t("admin.campaign_ends_est", {
+                        date: fmtStamp(
+                          Date.now() + daysToSend(stats.queued, selected.daily_cap) * DAY_MS,
+                          locale,
+                          false,
+                        ),
+                      })}`
+                    : ""}
+              </p>
+
+              {stats == null ? (
+                <Skeleton variant="block" height={44} rounded="md" />
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+                    <Stat value={stats.total} label={t("admin.pinvite_stat_total")} />
+                    <Stat value={stats.queued} label={t("admin.pinvite_stat_queued")} />
+                    <Stat value={stats.sent} label={t("admin.campaign_stat_sent")} />
+                    <Stat value={stats.registered} label={t("admin.pinvite_stat_registered")} />
+                    <Stat
+                      value={`${stats.hu} / ${stats.en}`}
+                      label={t("admin.pinvite_stat_lang")}
+                    />
+                    <Stat value={stats.failed} label={t("admin.campaign_stat_failed")} muted />
+                  </div>
+                  <p className="text-xs text-neutral-500 dark:text-umber-300">
+                    {t("admin.campaign_stat_today", {
+                      n: stats.sent_last_24h,
+                      cap: selected.daily_cap,
+                    })}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </section>
+
+        <section className="flex min-w-0 flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(["hu", "en"] as const).map((l) => (
               <button
                 key={l}
@@ -244,50 +453,96 @@ export default function AdminPersonalInviteCampaignPage() {
               </button>
             ))}
           </div>
-        </div>
-        <div className="mx-auto max-w-xl">
           <EmailPreview locale={previewLocale} />
-        </div>
-      </section>
+        </section>
+      </div>
 
-      {campaigns.length === 0 ? (
-        <p className="text-sm text-ink-500 dark:text-umber-300">{t("admin.campaign_empty")}</p>
-      ) : (
-        <ul className="flex flex-col gap-4">
-          {campaigns.map((c) => (
-            <CampaignCard
-              key={c.id}
-              campaign={c}
-              stats={details[c.id]}
-              onChanged={refresh}
-              onStart={() => setStatus(c, "running")}
-              onPause={() => setStatus(c, "paused")}
-            />
-          ))}
-        </ul>
+      {selected != null && (
+        <ContactImport
+          key={selected.id}
+          campaignId={selected.id}
+          busy={busy}
+          // The import already ran inside the child; this just re-pulls the
+          // funnel + contact table through the shared refresh path.
+          onImported={() => run(async () => {})}
+        />
+      )}
+
+      {selected != null && (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-sm font-medium">{t("admin.pinvite_contacts")}</h2>
+            <p className="text-xs text-neutral-500 dark:text-umber-300">
+              {t("admin.pinvite_contacts_hint")}
+            </p>
+          </div>
+          {sends == null ? (
+            <Skeleton variant="block" height={110} rounded="lg" />
+          ) : sends.length === 0 ? (
+            <AdminEmptyState title={t("admin.pinvite_contacts_empty")} />
+          ) : (
+            <>
+              <div className="overflow-x-auto rounded-xl ring-1 ring-ink-100 dark:ring-umber-700">
+                <table className="w-full text-[13px]">
+                  <tbody>
+                    {sends.slice(0, CONTACT_ROWS).map((s) => (
+                      <tr
+                        key={s.id}
+                        className="border-b border-ink-100 last:border-0 dark:border-umber-700"
+                      >
+                        <td className="px-3 py-1.5 font-medium">{s.name || "—"}</td>
+                        <td className="px-3 py-1.5 text-neutral-500 dark:text-umber-300">
+                          {s.email}
+                        </td>
+                        <td className="px-3 py-1.5">
+                          {s.registered ? (
+                            <Pill tone="sage">{t("admin.pinvite_stat_registered")}</Pill>
+                          ) : s.status === "failed" ? (
+                            <Pill tone="blush">{t("admin.campaign_send_failed")}</Pill>
+                          ) : s.status === "skipped" ? (
+                            <Pill tone="muted">{t("admin.pinvite_send_skipped")}</Pill>
+                          ) : s.status === "sent" ? (
+                            <Pill tone="violet">{t("admin.campaign_send_sent")}</Pill>
+                          ) : (
+                            <Pill tone="muted">{t("admin.pinvite_stat_queued")}</Pill>
+                          )}
+                        </td>
+                        <td className="px-3 py-1.5 uppercase text-neutral-400 dark:text-umber-400">
+                          {s.locale}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {sends.length > CONTACT_ROWS && (
+                <p className="text-xs text-neutral-500 dark:text-umber-300">
+                  {t("admin.pinvite_contacts_more", { n: sends.length - CONTACT_ROWS })}
+                </p>
+              )}
+            </>
+          )}
+        </section>
       )}
     </div>
   );
 }
 
-function CampaignCard({
-  campaign,
-  stats,
-  onChanged,
-  onStart,
-  onPause,
+/** The import step, scoped to one campaign (remount on switch via `key`) so a
+ *  half-pasted list can never land on a campaign the admin moved away from. */
+function ContactImport({
+  campaignId,
+  busy,
+  onImported,
 }: {
-  campaign: PersonalInviteCampaign;
-  stats: PersonalInviteCampaignStats | undefined;
-  onChanged: () => Promise<void>;
-  onStart: () => void;
-  onPause: () => void;
+  campaignId: number;
+  busy: boolean;
+  onImported: () => Promise<void>;
 }) {
   const { t } = useT();
   const toast = useToast();
   const [csv, setCsv] = useState("");
   const [importing, setImporting] = useState(false);
-  const [sending, setSending] = useState(false);
   const [lastImport, setLastImport] = useState<PersonalInviteImportResult | null>(null);
 
   const preview = useMemo(() => parseContacts(csv), [csv]);
@@ -337,7 +592,7 @@ function CampaignCard({
     if (importing || csv.trim().length === 0) return;
     setImporting(true);
     try {
-      const res = await api.import(campaign.id, { csv });
+      const res = await api.import(campaignId, { csv });
       setLastImport(res.result);
       setCsv("");
       toast.success(
@@ -349,7 +604,7 @@ function CampaignCard({
           invalid: res.result.skipped_invalid,
         }),
       );
-      await onChanged();
+      await onImported();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("common.error_generic"));
     } finally {
@@ -357,88 +612,21 @@ function CampaignCard({
     }
   }
 
-  async function sendBatch() {
-    if (sending) return;
-    setSending(true);
-    try {
-      const res = await api.sendBatch(campaign.id, 25);
-      toast.success(t("admin.review_campaign_batch_sent", { count: res.sent }));
-      await onChanged();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("common.error_generic"));
-    } finally {
-      setSending(false);
-    }
-  }
-
-  const statusTone =
-    campaign.status === "running"
-      ? "bg-sage-100 text-sage-800 dark:bg-sage-500/20 dark:text-sage-200"
-      : campaign.status === "done"
-        ? "bg-paper-200 text-ink-600 dark:bg-umber-700 dark:text-umber-200"
-        : "bg-amber-100 text-amber-800 dark:bg-amber-400/20 dark:text-amber-200";
-
   return (
-    <li className="card flex flex-col gap-4 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="font-grotesk text-lg text-ink-900 dark:text-paper-50">
-            {campaign.slug}
-          </span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusTone}`}>
-            {campaign.status}
-          </span>
-          <span className="text-xs text-ink-500 dark:text-umber-300">
-            {t("admin.campaign_daily_cap")}: {campaign.daily_cap}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          {campaign.status === "running" ? (
-            <button type="button" className="btn-secondary h-8 gap-1.5 text-sm" onClick={onPause}>
-              <Square size={14} /> {t("admin.campaign_pause")}
-            </button>
-          ) : (
-            <button type="button" className="btn-primary h-8 gap-1.5 text-sm" onClick={onStart}>
-              <Play size={14} /> {t("admin.campaign_start")}
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn-secondary h-8 gap-1.5 text-sm"
-            onClick={() => void sendBatch()}
-            disabled={sending}
-          >
-            <Send size={14} /> {t("admin.campaign_send_batch")}
-          </button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          <Stat label={t("admin.campaign_targets")} value={stats.total} />
-          <Stat label={t("admin.campaign_stat_sent")} value={stats.sent} />
-          <Stat label={t("admin.pinvite_stat_queued")} value={stats.queued} />
-          <Stat label={t("admin.campaign_send_failed")} value={stats.failed} />
-          <Stat label={t("admin.pinvite_stat_registered")} value={stats.registered} />
-          <Stat label={t("admin.pinvite_stat_lang")} value={`${stats.hu} / ${stats.en}`} />
-        </div>
-      )}
-
-      {/* Import */}
-      <div className="rounded-xl border border-paper-300 p-3 dark:border-umber-700">
-        <p className="text-sm font-medium text-ink-800 dark:text-paper-100">
-          {t("admin.pinvite_import_heading")}
-        </p>
-        <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+    <section className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-medium">{t("admin.pinvite_import_heading")}</h2>
+        <p className="text-xs text-neutral-500 dark:text-umber-300">
           {t("admin.pinvite_import_hint")}
         </p>
+      </div>
+      <div className="rounded-xl p-3 ring-1 ring-ink-100 dark:ring-umber-700">
         <textarea
           value={csv}
           onChange={(e) => setCsv(e.target.value)}
           placeholder={t("admin.pinvite_import_placeholder")}
           rows={4}
-          className="input mt-2 w-full font-mono text-xs"
+          className="input w-full font-mono text-xs"
         />
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {/* Upload a .csv file — it loads into the textarea above so the same
@@ -460,7 +648,7 @@ function CampaignCard({
             type="button"
             className="btn-secondary h-8 gap-1.5 text-sm"
             onClick={() => void runImport()}
-            disabled={importing || csv.trim().length === 0}
+            disabled={importing || busy || csv.trim().length === 0}
           >
             <Upload size={14} /> {t("admin.pinvite_import_cta")}
           </button>
@@ -529,19 +717,6 @@ function CampaignCard({
           </p>
         )}
       </div>
-    </li>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="rounded-lg bg-paper-100 px-2 py-1.5 dark:bg-umber-800">
-      <div className="stat-num text-base font-semibold tabular-nums text-ink-900 dark:text-paper-50">
-        {value}
-      </div>
-      <div className="text-[10px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
-        {label}
-      </div>
-    </div>
+    </section>
   );
 }

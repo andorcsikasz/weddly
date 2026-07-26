@@ -271,7 +271,7 @@ export default function AdminVendorReviewCampaignPage() {
       />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <section className="flex flex-col gap-4">
+        <section className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-[190px] flex-1">
               <label className="field-label" htmlFor="rc-slug">
@@ -447,7 +447,7 @@ export default function AdminVendorReviewCampaignPage() {
           )}
         </section>
 
-        <section className="flex flex-col gap-3">
+        <section className="flex min-w-0 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-1.5">
             {(["invite", "reminder"] as const).map((k) => (
               <button

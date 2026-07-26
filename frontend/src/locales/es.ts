@@ -4868,14 +4868,20 @@ const es: LocaleMessages = {
     pinvite_suspicious: "sospechosos",
     pinvite_clean_cta: "Limpiar lista",
     pinvite_clean_done: "{n} filas eliminadas",
-    pinvite_preview_heading: "Vista previa del correo",
     pinvite_import_result:
       "Importados {imported}. Omitidos: {registered} registrados, {optout} dados de baja, {dup} duplicados, {invalid} inválidos.",
+    pinvite_stat_total: "Contactos",
     pinvite_stat_queued: "En cola",
     pinvite_stat_registered: "Registrados",
     pinvite_stat_lang: "HU / EN",
     pinvite_start_confirm_body:
       "¿Empezar a enviar a los {n} contactos en cola, hasta {cap} por día? Las direcciones ya registradas o dadas de baja se omiten al enviar.",
+    pinvite_contacts: "Contactos importados",
+    pinvite_contacts_hint:
+      "Las direcciones importadas en esta campaña. Al enviar volvemos a comprobar si alguien se ha registrado o dado de baja entretanto.",
+    pinvite_contacts_empty: "Todavía no hay contactos importados.",
+    pinvite_contacts_more: "…y {n} más.",
+    pinvite_send_skipped: "Omitido",
     nav_campaigns: "Campañas",
     nav_planners: "Wedding planners",
     nav_waitlist: "Lista de espera de proveedores",

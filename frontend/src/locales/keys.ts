@@ -5410,13 +5410,20 @@ export interface LocaleMessages {
     pinvite_clean_cta: string;
     /** Toast after cleaning; receives {n} removed rows. */
     pinvite_clean_done: string;
-    /** Heading over the outbound-invite email preview. */
-    pinvite_preview_heading: string;
     pinvite_import_result: string;
+    /** Funnel counters on the selected campaign's panel. */
+    pinvite_stat_total: string;
     pinvite_stat_queued: string;
     pinvite_stat_registered: string;
     pinvite_stat_lang: string;
     pinvite_start_confirm_body: string;
+    /** Imported-contact table: heading, hint, empty state, overflow counter and
+     *  the one row status the shared campaign_send_* keys don't cover. */
+    pinvite_contacts: string;
+    pinvite_contacts_hint: string;
+    pinvite_contacts_empty: string;
+    pinvite_contacts_more: string;
+    pinvite_send_skipped: string;
     /** Merged sidebar entry that hosts both campaign consoles as tabs. */
     nav_campaigns: string;
     nav_planners: string;

@@ -4822,14 +4822,20 @@ const hu: LocaleMessages = {
     pinvite_suspicious: "gyanús",
     pinvite_clean_cta: "Lista tisztítása",
     pinvite_clean_done: "{n} sor eltávolítva",
-    pinvite_preview_heading: "Email előnézet",
     pinvite_import_result:
       "Importálva: {imported}. Kihagyva: {registered} regisztrált, {optout} leiratkozott, {dup} duplikált, {invalid} hibás.",
+    pinvite_stat_total: "Kontakt",
     pinvite_stat_queued: "Sorban",
     pinvite_stat_registered: "Regisztrált",
     pinvite_stat_lang: "HU / EN",
     pinvite_start_confirm_body:
       "Elindítod a küldést a sorban álló {n} kontaktnak, naponta legfeljebb {cap} címre? A már regisztrált és leiratkozott címeket küldéskor kihagyjuk.",
+    pinvite_contacts: "Importált kontaktok",
+    pinvite_contacts_hint:
+      "A kampányba importált címek. Küldés előtt újra ellenőrizzük, hogy közben nem regisztrált vagy iratkozott le valaki.",
+    pinvite_contacts_empty: "Még nincs importált kontakt.",
+    pinvite_contacts_more: "…és még {n} cím.",
+    pinvite_send_skipped: "Kihagyva",
     nav_campaigns: "Kampányok",
     nav_planners: "Szervezők",
     nav_waitlist: "Szolgáltatói várólista",

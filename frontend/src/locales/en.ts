@@ -4772,14 +4772,20 @@ const en: LocaleMessages = {
     pinvite_suspicious: "suspicious",
     pinvite_clean_cta: "Clean list",
     pinvite_clean_done: "{n} rows removed",
-    pinvite_preview_heading: "Email preview",
     pinvite_import_result:
       "Imported {imported}. Skipped: {registered} registered, {optout} opted out, {dup} duplicate, {invalid} invalid.",
+    pinvite_stat_total: "Contacts",
     pinvite_stat_queued: "Queued",
     pinvite_stat_registered: "Registered",
     pinvite_stat_lang: "HU / EN",
     pinvite_start_confirm_body:
       "Start sending to the {n} queued contacts, up to {cap} per day? Already-registered and opted-out addresses are skipped at send time.",
+    pinvite_contacts: "Imported contacts",
+    pinvite_contacts_hint:
+      "The addresses imported into this campaign. We re-check at send time whether anyone registered or opted out in the meantime.",
+    pinvite_contacts_empty: "No contacts imported yet.",
+    pinvite_contacts_more: "…and {n} more.",
+    pinvite_send_skipped: "Skipped",
     nav_campaigns: "Campaigns",
     nav_planners: "Planners",
     nav_waitlist: "Vendor waitlist",
