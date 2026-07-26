@@ -1,14 +1,14 @@
 // Public landing-page counters.
 //
 //   GET /api/public/stats — { couples, rsvps, ts }
-//   GET /api/public/vendor-stats — { couples, inquiries_30d, offer }
+//   GET /api/public/vendor-stats — { visits_28d, inquiries_30d, offer }
 //
 // The second one feeds the public /vendors recruitment page. Its whole reason
-// to exist: every number that page quotes (how many couples are planning, how
-// much inquiry volume is flowing, how many spots the current free round has
-// left) is read from live rows instead of being typed into the copy, so the
-// pitch cannot drift away from the truth. The page self-hides any counter it
-// considers too small to show.
+// to exist: every number that page quotes (how much traffic flows through
+// Weddly, how much inquiry volume is flowing, how many spots the current free
+// round has left) is read from live rows instead of being typed into the copy,
+// so the pitch cannot drift away from the truth. The page self-hides any
+// counter it considers too small to show.
 //
 // `couples` is the number of real, onboarded, active workspaces (demo rows
 // stamped with `is_demo = 1` are excluded so the visible number reflects
@@ -37,6 +37,13 @@ const TTL_MS = 60_000;
 /** Window the vendor-facing demand counter looks back over. */
 const INQUIRY_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
+/** Window the public-traffic counter looks back over. */
+const VISIT_WINDOW_MS = 28 * 24 * 60 * 60 * 1000;
+
+/** Public page-view growth events that count as a Weddly-hosted page visit.
+ *  All three fire for anonymous visitors on public URLs (no auth, no PII). */
+const VISIT_KINDS = ["wedding_site.view", "rsvp.page.view", "guest.portal.view"] as const;
+
 function computeStats(): PublicStats {
   const couples = db
     .prepare(
@@ -59,19 +66,22 @@ function computeStats(): PublicStats {
   return { couples: couples.n, rsvps: rsvps.n };
 }
 
-/** Vendor-facing counters. `couples` reuses the landing-page definition (real,
- *  onboarded, active, non-demo). `inquiries_30d` counts outreach messages that
- *  actually went out, which is the honest read of "couples are writing to
- *  vendors" — queued or bounced rows never reached anyone. The offer comes
- *  straight from the same helper the activation grant uses, so the public
- *  scarcity line and the slot a signup would actually receive can't disagree. */
+/** Vendor-facing counters. `visits_28d` sums the public page-view growth events
+ *  (wedding-site + RSVP-page + guest-portal) over the last 28 days — the honest
+ *  "traffic flowing through Weddly" number, all real anonymous visitors on
+ *  Weddly-hosted pages. `inquiries_30d` counts outreach messages that actually
+ *  went out, which is the honest read of "couples are writing to vendors" —
+ *  queued or bounced rows never reached anyone. The offer comes straight from
+ *  the same helper the activation grant uses, so the public scarcity line and
+ *  the slot a signup would actually receive can't disagree. */
 export function computeVendorStats(ts: number): PublicVendorStats {
-  const couples = db
+  const placeholders = VISIT_KINDS.map(() => "?").join(", ");
+  const visits = db
     .prepare(
-      `SELECT COUNT(*) AS n FROM couples
-       WHERE status = 'active' AND is_demo = 0 AND onboarded_at IS NOT NULL`,
+      `SELECT COUNT(*) AS n FROM growth_events
+        WHERE kind IN (${placeholders}) AND created_at >= ?`,
     )
-    .get() as { n: number };
+    .get(...VISIT_KINDS, ts - VISIT_WINDOW_MS) as { n: number };
 
   const inquiries = db
     .prepare(
@@ -80,7 +90,7 @@ export function computeVendorStats(ts: number): PublicVendorStats {
     )
     .get(ts - INQUIRY_WINDOW_MS) as { n: number };
 
-  return { couples: couples.n, inquiries_30d: inquiries.n, offer: currentVendorOffer() };
+  return { visits_28d: visits.n, inquiries_30d: inquiries.n, offer: currentVendorOffer() };
 }
 
 export function registerPublicStatsRoutes(router: Router) {

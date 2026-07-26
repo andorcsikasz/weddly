@@ -239,9 +239,13 @@ export interface VendorBillingStatus {
  *  Every consumer must self-hide a counter it considers too small to show
  *  rather than dress the number up. */
 export interface PublicVendorStats {
-  /** Real, onboarded, non-demo couple workspaces. Same definition as the
-   *  landing page's counter (GET /api/public/stats). */
-  couples: number;
+  /** Public page visits over the last 28 days: wedding-site views, RSVP-page
+   *  opens and guest-portal views summed from `growth_events`. The honest
+   *  read of "how much traffic flows through Weddly" — real people on
+   *  Weddly-hosted pages, counted as visits (not deduped to unique people,
+   *  since the UA hash collapses browsers). No marketing-page pageview log
+   *  exists yet, so this is guest-facing traffic only. */
+  visits_28d: number;
   /** Inquiry emails actually delivered to vendors in the last 30 days. This is
    *  the demand signal a vendor cares about, so it counts SENT messages only. */
   inquiries_30d: number;

@@ -2,8 +2,10 @@
 // recruitment page.
 //
 // Contract:
-//   - Anonymous callers get { couples, inquiries_30d, offer }.
-//   - `couples` uses the landing-page definition (active, onboarded, non-demo).
+//   - Anonymous callers get { visits_28d, inquiries_30d, offer }.
+//   - `visits_28d` sums the public page-view growth events (wedding-site, RSVP
+//     page, guest portal) inside the 28-day window; other kinds and older rows
+//     don't count.
 //   - `inquiries_30d` counts outreach messages that were actually SENT inside
 //     the 30-day window. Queued rows never reached a vendor, and anything older
 //     than the window is not "current demand", so neither counts.
@@ -42,12 +44,18 @@ function seedOutreach(coupleId: number, status: string, sentAt: number | null): 
   ).run(campaign.id, sentAt, status, `tok-${Math.round(Math.random() * 1e9)}`, now());
 }
 
+/** Insert one growth event with an explicit kind + created_at. The visit
+ *  counter reads kind + created_at only, so the other columns stay null. */
+function seedGrowthEvent(kind: string, createdAt: number): void {
+  db.prepare(`INSERT INTO growth_events (kind, created_at) VALUES (?, ?)`).run(kind, createdAt);
+}
+
 describe("GET /api/public/vendor-stats", () => {
   test("is public and returns the three counters", async () => {
     wipeAll();
     const r = await req<PublicVendorStats>("GET", "/api/public/vendor-stats");
     expect(r.status).toBe(200);
-    expect(typeof r.data.couples).toBe("number");
+    expect(typeof r.data.visits_28d).toBe("number");
     expect(typeof r.data.inquiries_30d).toBe("number");
     expect(["founding", "early", "trial"]).toContain(r.data.offer.tier);
     expect(r.data.offer.spots_left).toBeLessThanOrEqual(r.data.offer.cap);
@@ -71,13 +79,21 @@ describe("GET /api/public/vendor-stats", () => {
     expect(computeVendorStats(ts).inquiries_30d).toBe(2);
   });
 
-  test("couples counter matches the onboarded, non-demo definition", async () => {
+  test("visits_28d sums public page-view events inside the 28-day window", () => {
     wipeAll();
-    const { coupleId } = await bootstrapCouple("vendor-stats-couples@weddly.test");
-    expect(computeVendorStats(now()).couples).toBe(1);
+    db.exec("DELETE FROM growth_events;");
+    const ts = now();
 
-    db.prepare("UPDATE couples SET is_demo = 1 WHERE id = ?").run(coupleId);
-    expect(computeVendorStats(now()).couples).toBe(0);
+    expect(computeVendorStats(ts).visits_28d).toBe(0);
+
+    seedGrowthEvent("wedding_site.view", ts - 2 * DAY_MS);
+    seedGrowthEvent("rsvp.page.view", ts - 27 * DAY_MS);
+    seedGrowthEvent("guest.portal.view", ts - 2 * DAY_MS);
+    // Excluded: a non-visit kind, and a visit that fell out of the 28-day window.
+    seedGrowthEvent("signup.completed", ts - DAY_MS);
+    seedGrowthEvent("wedding_site.view", ts - 30 * DAY_MS);
+
+    expect(computeVendorStats(ts).visits_28d).toBe(3);
   });
 
   test("offer mirrors the grant helper, so the page can't advertise a dead round", () => {

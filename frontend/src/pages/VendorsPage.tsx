@@ -16,7 +16,7 @@
 //      escape hatches are all quiet text links.
 
 import type { PublicVendorStats } from "@shared/vendor_billing";
-import { ArrowLeft, Gem, Inbox, Receipt, Share2, Store } from "lucide-react";
+import { ArrowLeft, ArrowRight, Gem, Inbox, Receipt, Share2, Store } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
@@ -29,7 +29,7 @@ import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
 /** Floor under the two demand counters in the proof band. A real but tiny
- *  number ("4 couples planning here") argues against us, so each counter stays
+ *  number ("12 page views in 28 days") argues against us, so each counter stays
  *  hidden until it clears this. Lower it as the numbers grow. */
 const MIN_SHOWABLE = 25;
 
@@ -106,9 +106,16 @@ export default function VendorsPage() {
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-10 sm:px-6 sm:pt-20 sm:pb-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
-          {/* text-5xl, not the 6xl the shorter old headline used: this one is a
-              full sentence and four lines of 60px shouts rather than states. */}
-          <h1 className="font-grotesk text-4xl leading-[1.08] tracking-tight text-ink-900 sm:text-5xl dark:text-paper-50">
+          {/* Scarcity as a bold eyebrow badge — the urgency signal reads first. */}
+          {spotsLeft > 0 && (
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-paper-300 bg-paper-100 px-3.5 py-1.5 text-sm font-semibold text-umber-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50">
+              <span className="inline-block h-2 w-2 rounded-full bg-sage-500" aria-hidden />
+              {t("vendors.spots_line", { n: spotsLeft })}
+            </div>
+          )}
+          {/* Heavier weight + tighter leading for a bolder read. Size stays at
+              5xl on purpose: this is a full sentence, and 60px would shout it. */}
+          <h1 className="font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-ink-900 sm:text-5xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
           <p className="mt-5 text-base leading-relaxed text-ink-600 sm:text-lg dark:text-umber-200">
@@ -116,19 +123,18 @@ export default function VendorsPage() {
           </p>
           {/* Single dominant action. Everything else below it is a text link. */}
           <div className="mt-8">
-            <Link to="/vendors/signup" className="btn-primary btn-lg shadow-sm">
+            <Link
+              to="/vendors/signup"
+              className="btn-primary btn-lg inline-flex items-center gap-2 shadow-sm"
+            >
               {t("vendors.signup_cta")}
+              <ArrowRight size={18} aria-hidden />
             </Link>
             <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
               {t("vendors.cta_microcopy")}
             </p>
-            {spotsLeft > 0 && (
-              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
-                <span className="font-medium text-ink-800 dark:text-paper-50">
-                  {t("vendors.spots_line", { n: spotsLeft })}
-                </span>{" "}
-                {offerLine}
-              </p>
+            {spotsLeft > 0 && offerLine && (
+              <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">{offerLine}</p>
             )}
           </div>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 lg:justify-start">
@@ -248,8 +254,8 @@ function ProofBand({ stats, locale }: { stats: PublicVendorStats | null; locale:
 
   const nf = new Intl.NumberFormat(locale === "hu" ? "hu-HU" : locale === "es" ? "es-ES" : "en-US");
   const items: { value: number; label: string }[] = [];
-  if (stats.couples >= MIN_SHOWABLE) {
-    items.push({ value: stats.couples, label: t("vendors.proof_couples_label") });
+  if (stats.visits_28d >= MIN_SHOWABLE) {
+    items.push({ value: stats.visits_28d, label: t("vendors.proof_visits_label") });
   }
   if (stats.inquiries_30d >= MIN_SHOWABLE) {
     items.push({ value: stats.inquiries_30d, label: t("vendors.proof_inquiries_label") });
@@ -269,7 +275,7 @@ function ProofBand({ stats, locale }: { stats: PublicVendorStats | null; locale:
       <div className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-14 gap-y-8">
         {items.map((item) => (
           <div key={item.label} className="w-56 max-w-full text-center">
-            <div className="font-grotesk text-4xl text-ink-900 tabular-nums dark:text-paper-50">
+            <div className="font-grotesk text-4xl font-semibold text-ink-900 tabular-nums sm:text-5xl dark:text-paper-50">
               {nf.format(item.value)}
             </div>
             <div className="mt-1.5 text-sm leading-snug text-ink-600 dark:text-umber-200">

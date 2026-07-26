@@ -1857,6 +1857,8 @@ export interface LocaleMessages {
     demo_card_loading: string;
     demo_card_error: string;
     faq_title: string;
+    /** "+N more questions" button that reveals the collapsed landing FAQ items. */
+    faq_show_more: string;
     // FAQ Q&A pairs moved to shared/seo_faq.ts so the visible landing FAQ
     // and the FAQPage JSON-LD share a single source. Only faq_title (the
     // section heading) lives here.
@@ -2109,7 +2111,7 @@ export interface LocaleMessages {
     /** Social-proof band. Each counter self-hides below its own floor, so the
      *  labels must read correctly on their own. */
     proof_title: string;
-    proof_couples_label: string;
+    proof_visits_label: string;
     proof_inquiries_label: string;
     proof_spots_label: string;
     /** Closing repeat of the single CTA at the end of the proof band. */
@@ -2249,6 +2251,8 @@ export interface LocaleMessages {
     step_account: string;
     step_business: string;
     email_required: string;
+    optional_details_toggle: string;
+    optional_details_hint: string;
     business_name_label: string;
     business_name_help: string;
     business_name_required: string;
@@ -4174,6 +4178,11 @@ export interface LocaleMessages {
     payment_pdf_failed: string;
     payment_remaining: string;
     payment_settled: string;
+    /** Overpaid states: recorded payments exceed the line's actual cost, which
+     *  happens when the actual is edited down after deposits were logged.
+     *  {amount} is the formatted excess. */
+    payment_overpaid: string;
+    paid_overpaid_by: string;
     payment_added: string;
     payment_amount_required: string;
     docs_title: string;
