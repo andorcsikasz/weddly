@@ -8597,7 +8597,7 @@ const es: LocaleMessages = {
   vendorBrowse: {
     title: "Explora proveedores de bodas",
     subtitle:
-      "Una vista previa de los proveedores en Weddly. Regístrate gratis para ver el directorio completo, guardar tus favoritos y contactar directamente.",
+      "Una muestra del directorio de Weddly. Regístrate para ver todos los proveedores, guardar tus favoritos y escribirles directamente.",
     couples_stat: "{count} parejas están organizando su boda en Weddly ahora mismo",
     cta_couple: "Regístrate para verlos todos",
     cta_vendor: "Únete como proveedor",

@@ -539,43 +539,51 @@ export default function VendorBrowsePage() {
       <TopBar t={t} />
 
       {/* Hero. Short on purpose: on a marketplace the fastest route to trust is
-          the catalogue itself, so the type is loud, the copy is one paragraph,
-          and the photos start within a screen. */}
-      <section className="mx-auto max-w-7xl px-4 pb-6 pt-10 sm:px-6 sm:pb-12 sm:pt-16 lg:px-8">
-        {/* leading-[1] rather than tighter: Hungarian sets this headline with
-            ő/á on the second line, and at 0.95 the accents touched the
-            descenders above them. */}
-        <h1 className="max-w-[15ch] font-grotesk text-[clamp(2.5rem,7.5vw,5rem)] font-semibold leading-[1] tracking-[-0.04em] text-ink-900 dark:text-paper-50">
+          the catalogue itself, so it is two rows deep and the photos start well
+          within the first screen. Row one is the headline alone; row two pairs
+          the intro with the controls instead of stacking a third block under
+          it, which is where most of the vertical was going. */}
+      <section className="mx-auto max-w-7xl px-4 pb-5 pt-8 sm:px-6 sm:pb-7 sm:pt-11 lg:px-8">
+        {/* Sized to set on ONE line in every locale, which is what the width
+            cap used to prevent: 6.5vw keeps the longest string (ES, "Explora
+            proveedores de bodas") inside the content box at every width down to
+            ~490px, where the 2rem floor takes over and phones wrap as they
+            should. leading-[1.05] rather than tighter because Hungarian sets
+            ő/á up top, and at 1 the accents touch the line above on a wrap. */}
+        <h1 className="text-balance font-grotesk text-[clamp(2rem,6.5vw,4.25rem)] font-semibold leading-[1.05] tracking-[-0.04em] text-ink-900 dark:text-paper-50">
           {t("vendorBrowse.title")}
         </h1>
-        <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-ink-500 dark:text-umber-200">
-          {t("vendorBrowse.subtitle")}
-        </p>
 
-        {/* One control row: the country filter, and the live-couples number as
-            proof rather than a badge. The filter only earns its space once the
-            catalogue actually spans more than one country. */}
-        <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
-          {countries.length > 1 && (
-            <CountryPicker
-              value={country}
-              onChange={setCountry}
-              tone="ink"
-              allLabel={t("suppliers.country_filter_all")}
-              ariaLabel={t("suppliers.country_filter_label")}
-              options={countries.map((c) => ({
-                code: c.code,
-                label: countryName(c.code, locale === "hu" ? "hu" : "en"),
-                count: c.count,
-              }))}
-            />
-          )}
-          {showCouples && (
-            <p className="flex items-center gap-2 text-[13px] text-ink-500 dark:text-umber-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden />
-              {t("vendorBrowse.couples_stat", { count: String(couples) })}
-            </p>
-          )}
+        {/* The intro and the one control row share a line from lg: the country
+            filter, and the live-couples number as proof rather than a badge.
+            The filter only earns its space once the catalogue actually spans
+            more than one country. */}
+        <div className="mt-4 flex flex-col gap-4 sm:mt-5 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+          <p className="max-w-xl text-[15px] leading-relaxed text-ink-500 dark:text-umber-200">
+            {t("vendorBrowse.subtitle")}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 lg:shrink-0">
+            {countries.length > 1 && (
+              <CountryPicker
+                value={country}
+                onChange={setCountry}
+                tone="ink"
+                allLabel={t("suppliers.country_filter_all")}
+                ariaLabel={t("suppliers.country_filter_label")}
+                options={countries.map((c) => ({
+                  code: c.code,
+                  label: countryName(c.code, locale === "hu" ? "hu" : "en"),
+                  count: c.count,
+                }))}
+              />
+            )}
+            {showCouples && (
+              <p className="flex items-center gap-2 text-[13px] text-ink-500 dark:text-umber-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-sage-500" aria-hidden />
+                {t("vendorBrowse.couples_stat", { count: String(couples) })}
+              </p>
+            )}
+          </div>
         </div>
       </section>
 
@@ -592,7 +600,7 @@ export default function VendorBrowsePage() {
         ) : null}
 
         {/* Body */}
-        <main className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
+        <main className="mx-auto max-w-7xl px-4 pb-14 pt-6 sm:px-6 lg:px-8">
           {categories === null ? (
             <div aria-label={t("common.loading")}>
               <LoadingRails />
@@ -602,7 +610,7 @@ export default function VendorBrowsePage() {
               {t("vendorBrowse.empty")}
             </p>
           ) : (
-            <div className="space-y-12">
+            <div className="space-y-10">
               {gridCategories.map((c) => (
                 <CategoryRow
                   key={c.category}
@@ -621,7 +629,7 @@ export default function VendorBrowsePage() {
       {/* Closing band: couples primary, vendors secondary (audit item 6). Full
           bleed and near-black — after a page of light photo rows, the one thing
           that can stop the scroll is the page changing colour entirely. */}
-      <section ref={closingRef} className="bg-ink-950 px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
+      <section ref={closingRef} className="bg-ink-950 px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="mx-auto max-w-[17ch] font-grotesk text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1.02] tracking-[-0.035em] text-paper-50">
             {t("vendorBrowse.convert_title")}

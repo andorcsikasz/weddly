@@ -8449,7 +8449,7 @@ const en: LocaleMessages = {
   vendorBrowse: {
     title: "Browse wedding vendors",
     subtitle:
-      "A preview of the vendors on Weddly. Sign up free to see the full directory, save your favourites and reach out directly.",
+      "A taste of the Weddly directory. Sign up to see every vendor, save your favourites and message them directly.",
     couples_stat: "{count} couples are planning their wedding on Weddly right now",
     cta_couple: "Sign up to see all",
     cta_vendor: "Join as vendor",

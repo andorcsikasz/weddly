@@ -8517,7 +8517,7 @@ const hu: LocaleMessages = {
   vendorBrowse: {
     title: "Szolgáltatók böngészése",
     subtitle:
-      "Ízelítő a Weddly szolgáltatóiból. Regisztrálj ingyen, és látod a teljes katalógust, elmentheted a kedvenceket, és közvetlenül felveheted velük a kapcsolatot.",
+      "Ízelítő a Weddly katalógusából. Regisztrálj, és megnyílik az összes szolgáltató: mentheted a kedvenceket, és írhatsz nekik.",
     couples_stat: "Jelenleg {count} pár tervezi az esküvőjét a Weddly-n",
     cta_couple: "Regisztrálj, és látod az összeset",
     cta_vendor: "Szolgáltatóként",
