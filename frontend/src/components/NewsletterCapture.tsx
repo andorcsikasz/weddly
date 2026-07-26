@@ -44,7 +44,7 @@ export function NewsletterCapture({ source }: { source: string }) {
     <div className="rounded-xl border border-paper-300 bg-white px-5 py-6 dark:border-umber-700 dark:bg-umber-800 sm:px-6">
       {state === "done" ? (
         <div aria-live="polite">
-          <h3 className="font-grotesk text-lg font-semibold text-umber-900 dark:text-paper-50">
+          <h3 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-3xl lg:text-4xl">
             {t("newsletter.success_title")}
           </h3>
           <p className="mt-2 font-grotesk text-sm leading-relaxed text-umber-700 dark:text-umber-200">
@@ -53,7 +53,7 @@ export function NewsletterCapture({ source }: { source: string }) {
         </div>
       ) : (
         <form onSubmit={submit} noValidate={false}>
-          <h3 className="font-grotesk text-lg font-semibold text-umber-900 dark:text-paper-50">
+          <h3 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-3xl lg:text-4xl">
             {t("newsletter.title")}
           </h3>
           <p className="mt-2 font-grotesk text-sm leading-relaxed text-umber-700 dark:text-umber-200">
