@@ -736,13 +736,16 @@ export default function LandingPage() {
           </div>
           {!faqOpen && faqEntries.length > FAQ_VISIBLE && (
             <div className="mt-3 flex justify-center">
+              {/* Icon-only on purpose: the "+N more questions" label was
+                  restating what a plus under a truncated list already says. */}
               <button
                 type="button"
                 onClick={() => setFaqOpen(true)}
-                className="inline-flex items-center gap-2 rounded-full border border-paper-300 bg-paper-50 px-5 py-2.5 text-sm font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
+                aria-label={t("landing.faq_show_more", { n: faqEntries.length - FAQ_VISIBLE })}
+                title={t("landing.faq_show_more", { n: faqEntries.length - FAQ_VISIBLE })}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
               >
-                <Plus size={16} aria-hidden />
-                {t("landing.faq_show_more", { n: faqEntries.length - FAQ_VISIBLE })}
+                <Plus size={18} aria-hidden />
               </button>
             </div>
           )}
