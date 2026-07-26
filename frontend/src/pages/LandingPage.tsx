@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   Mail,
   Pause,
+  Plus,
   Printer,
   Share2,
   Smartphone,
@@ -159,6 +160,11 @@ export default function LandingPage() {
   // Single source of truth (shared/seo_faq.ts) — same array also feeds the
   // FAQPage JSON-LD in seo_ssr.ts, so they can't drift.
   const faqEntries = SEO_FAQ[contentLocale(locale)];
+  // Show the first few, reveal the rest behind a "+" so the section stays
+  // short. All entries are always in the DOM's JSON-LD (built separately), so
+  // this only affects the visible cards, not indexing.
+  const [faqOpen, setFaqOpen] = useState(false);
+  const FAQ_VISIBLE = 5;
 
   // Capture the `?ref=<source>` query param once on mount. Only the
   // values we expect — `rsvp`, `site` (from /w/:slug footers), `share` —
@@ -555,7 +561,12 @@ export default function LandingPage() {
           <div className="relative mx-auto max-w-lg [filter:drop-shadow(0_22px_30px_rgba(16,24,48,0.20))]">
             <div
               ref={pricingCardRef}
-              className="relative rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 border border-paper-300 dark:border-umber-700 sm:p-8"
+              // The dark border is a much bigger step off the surface than the
+              // light one on purpose: in dark mode the card fill and the
+              // stationery section behind it are the SAME token (umber-800), so
+              // the hairline is the only thing drawing the ticket. umber-700
+              // against umber-800 was invisible.
+              className="relative rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 border border-paper-300 dark:border-umber-500 sm:p-8"
               style={
                 ticketClip == null
                   ? undefined
@@ -636,7 +647,7 @@ export default function LandingPage() {
                   measures this row's center). Inset so the dashes clear the
                   notches. */}
               <div ref={perforationRef} className="my-5 -mx-6 sm:-mx-8" aria-hidden="true">
-                <div className="mx-7 border-t border-dashed border-paper-300 dark:border-umber-700" />
+                <div className="mx-7 border-t border-dashed border-paper-300 dark:border-umber-500" />
               </div>
               <ul className="space-y-2">
                 <IconRow tone="coffee" icon={<Gift size={16} />}>
@@ -719,10 +730,22 @@ export default function LandingPage() {
             {t("landing.faq_title")}
           </h2>
           <div className="mt-6 space-y-2 sm:mt-8">
-            {faqEntries.map((entry) => (
+            {(faqOpen ? faqEntries : faqEntries.slice(0, FAQ_VISIBLE)).map((entry) => (
               <FaqCard key={entry.q} q={entry.q} a={entry.a} cta={entry.cta} />
             ))}
           </div>
+          {!faqOpen && faqEntries.length > FAQ_VISIBLE && (
+            <div className="mt-3 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setFaqOpen(true)}
+                className="inline-flex items-center gap-2 rounded-full border border-paper-300 bg-paper-50 px-5 py-2.5 text-sm font-medium text-ink-700 transition hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200"
+              >
+                <Plus size={16} aria-hidden />
+                {t("landing.faq_show_more", { n: faqEntries.length - FAQ_VISIBLE })}
+              </button>
+            </div>
+          )}
           <div className="mt-10">
             <NewsletterCapture source="landing" />
           </div>

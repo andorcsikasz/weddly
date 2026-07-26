@@ -11,7 +11,7 @@ import type { CompanyLookupResult } from "@shared/company_lookup";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import type { AuthSession } from "@shared/types";
-import { Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { Fragment, type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AddressAutocomplete } from "../components/AddressAutocomplete";
@@ -92,6 +92,10 @@ export default function VendorRegisterPage() {
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
 
+  // Only business name + category are required; the legal/registry/contact block
+  // is optional (and also collected in onboarding), so it stays collapsed by
+  // default — the form then matches the "two steps, live today" promise.
+  const [showDetails, setShowDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Hold the session until the user clicks past the success screen; see
@@ -491,51 +495,8 @@ export default function VendorRegisterPage() {
                   {t("vendor_register.google_continue_as", { email: googleEmail ?? "Google" })}
                 </p>
               )}
-              <CountryCombobox
-                id="vr_country"
-                label={t("vendor_register.country_label")}
-                value={country}
-                onChange={setCountry}
-              />
 
-              <CompanyLookupBox country={country} onPick={applyCompany} />
-
-              <div>
-                <label htmlFor="vr_business" className="field-label">
-                  {t("vendor_register.business_name_label")}{" "}
-                  <span className="text-blush-600">*</span>
-                </label>
-                <input
-                  ref={businessRef}
-                  id="vr_business"
-                  type="text"
-                  className="input"
-                  value={businessName}
-                  onChange={(e) => {
-                    setBusinessName(e.target.value);
-                    clearError();
-                  }}
-                  maxLength={120}
-                  autoComplete="organization"
-                  required
-                />
-                <p className="field-help mt-1">{t("vendor_register.business_name_help")}</p>
-              </div>
-              <div>
-                <label htmlFor="vr_company" className="field-label">
-                  {t("vendor_register.company_name_label")}
-                </label>
-                <input
-                  id="vr_company"
-                  type="text"
-                  className="input"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  maxLength={120}
-                  autoComplete="organization"
-                />
-                <p className="field-help mt-1">{t("vendor_register.company_name_help")}</p>
-              </div>
+              {/* Category — the primary decision, so it leads step 2. */}
               <div>
                 <label htmlFor="vr_category" className="field-label">
                   {t("vendor_register.category_label")} <span className="text-blush-600">*</span>
@@ -604,112 +565,190 @@ export default function VendorRegisterPage() {
                 </div>
               )}
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="vr_registry_number" className="field-label">
-                    {t("vendor_register.registry_number_label")}
-                  </label>
-                  <input
-                    id="vr_registry_number"
-                    type="text"
-                    className="input"
-                    value={registryNumber}
-                    onChange={(e) => setRegistryNumber(e.target.value)}
-                    maxLength={40}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="vr_vat_number" className="field-label">
-                    {t("vendor_register.vat_number_label")}
-                  </label>
-                  <input
-                    id="vr_vat_number"
-                    type="text"
-                    className="input"
-                    value={vatNumber}
-                    onChange={(e) => setVatNumber(e.target.value)}
-                    maxLength={40}
-                  />
-                </div>
+              {/* Display name — the only other required field. */}
+              <div>
+                <label htmlFor="vr_business" className="field-label">
+                  {t("vendor_register.business_name_label")}{" "}
+                  <span className="text-blush-600">*</span>
+                </label>
+                <input
+                  ref={businessRef}
+                  id="vr_business"
+                  type="text"
+                  className="input"
+                  value={businessName}
+                  onChange={(e) => {
+                    setBusinessName(e.target.value);
+                    clearError();
+                  }}
+                  maxLength={120}
+                  autoComplete="organization"
+                  required
+                />
+                <p className="field-help mt-1">{t("vendor_register.business_name_help")}</p>
               </div>
 
-              <AddressAutocomplete
-                id="vr_address"
-                label={t("vendor_register.address_label")}
-                value={address}
-                onChange={(v) => {
-                  clearError();
-                  setAddress(v);
-                }}
-                onPick={(s) => {
-                  if (s.city) setCity(s.city);
-                  if (s.postal_code) setPostalCode(s.postal_code);
-                }}
-                maxLength={240}
-              />
+              {/* Everything below is optional (and also collected in onboarding),
+                  so it stays behind a disclosure — the required path is just
+                  category + name. */}
+              <button
+                type="button"
+                onClick={() => setShowDetails((v) => !v)}
+                aria-expanded={showDetails}
+                className="flex w-full items-center justify-between gap-3 rounded-lg border border-paper-300 px-4 py-3 text-left transition hover:bg-paper-100 dark:border-umber-700 dark:hover:bg-umber-800"
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-umber-900 dark:text-paper-100">
+                    {t("vendor_register.optional_details_toggle")}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-umber-500 dark:text-umber-400">
+                    {t("vendor_register.optional_details_hint")}
+                  </span>
+                </span>
+                <ChevronDown
+                  size={18}
+                  aria-hidden
+                  className={`shrink-0 text-umber-500 transition-transform dark:text-umber-400 ${
+                    showDetails ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="vr_city" className="field-label">
-                    {t("vendor_register.city_label")}
-                  </label>
-                  <input
-                    id="vr_city"
-                    type="text"
-                    className="input"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    maxLength={80}
-                    autoComplete="address-level2"
+              {showDetails && (
+                <div className="space-y-4 border-l-2 border-paper-200 pl-4 dark:border-umber-800">
+                  <CountryCombobox
+                    id="vr_country"
+                    label={t("vendor_register.country_label")}
+                    value={country}
+                    onChange={setCountry}
                   />
-                </div>
-                <div>
-                  <label htmlFor="vr_postal_code" className="field-label">
-                    {t("vendor_register.postal_code_label")}
-                  </label>
-                  <input
-                    id="vr_postal_code"
-                    type="text"
-                    className="input"
-                    value={postalCode}
-                    onChange={(e) => setPostalCode(e.target.value)}
-                    maxLength={20}
-                    autoComplete="postal-code"
-                  />
-                </div>
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="vr_phone" className="field-label">
-                    {t("vendor_register.phone_label")}
-                  </label>
-                  <input
-                    id="vr_phone"
-                    type="tel"
-                    className="input"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    maxLength={40}
-                    autoComplete="tel"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="vr_website" className="field-label">
-                    {t("vendor_register.website_label")}
-                  </label>
-                  <input
-                    id="vr_website"
-                    type="url"
-                    className="input"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
+                  <CompanyLookupBox country={country} onPick={applyCompany} />
+
+                  <div>
+                    <label htmlFor="vr_company" className="field-label">
+                      {t("vendor_register.company_name_label")}
+                    </label>
+                    <input
+                      id="vr_company"
+                      type="text"
+                      className="input"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      maxLength={120}
+                      autoComplete="organization"
+                    />
+                    <p className="field-help mt-1">{t("vendor_register.company_name_help")}</p>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="vr_registry_number" className="field-label">
+                        {t("vendor_register.registry_number_label")}
+                      </label>
+                      <input
+                        id="vr_registry_number"
+                        type="text"
+                        className="input"
+                        value={registryNumber}
+                        onChange={(e) => setRegistryNumber(e.target.value)}
+                        maxLength={40}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="vr_vat_number" className="field-label">
+                        {t("vendor_register.vat_number_label")}
+                      </label>
+                      <input
+                        id="vr_vat_number"
+                        type="text"
+                        className="input"
+                        value={vatNumber}
+                        onChange={(e) => setVatNumber(e.target.value)}
+                        maxLength={40}
+                      />
+                    </div>
+                  </div>
+
+                  <AddressAutocomplete
+                    id="vr_address"
+                    label={t("vendor_register.address_label")}
+                    value={address}
+                    onChange={(v) => {
+                      clearError();
+                      setAddress(v);
+                    }}
+                    onPick={(s) => {
+                      if (s.city) setCity(s.city);
+                      if (s.postal_code) setPostalCode(s.postal_code);
+                    }}
                     maxLength={240}
-                    placeholder="https://"
-                    autoComplete="url"
                   />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="vr_city" className="field-label">
+                        {t("vendor_register.city_label")}
+                      </label>
+                      <input
+                        id="vr_city"
+                        type="text"
+                        className="input"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        maxLength={80}
+                        autoComplete="address-level2"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="vr_postal_code" className="field-label">
+                        {t("vendor_register.postal_code_label")}
+                      </label>
+                      <input
+                        id="vr_postal_code"
+                        type="text"
+                        className="input"
+                        value={postalCode}
+                        onChange={(e) => setPostalCode(e.target.value)}
+                        maxLength={20}
+                        autoComplete="postal-code"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="vr_phone" className="field-label">
+                        {t("vendor_register.phone_label")}
+                      </label>
+                      <input
+                        id="vr_phone"
+                        type="tel"
+                        className="input"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        maxLength={40}
+                        autoComplete="tel"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="vr_website" className="field-label">
+                        {t("vendor_register.website_label")}
+                      </label>
+                      <input
+                        id="vr_website"
+                        type="url"
+                        className="input"
+                        value={website}
+                        onChange={(e) => setWebsite(e.target.value)}
+                        maxLength={240}
+                        placeholder="https://"
+                        autoComplete="url"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {error && (
                 <p id={errorId} className="field-error" role="alert">

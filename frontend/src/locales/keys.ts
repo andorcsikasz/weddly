@@ -1839,6 +1839,15 @@ export interface LocaleMessages {
     demo_breakdown_eyebrow: string;
     demo_breakdown_sub: string;
     demo_total_label: string;
+    /** Directory rail under the calculator (opt-in, see InteractiveBudgetDemo
+     *  `vendorTeaser`). `_body` takes {n} = photographed listings in the whole
+     *  directory; `_body_plain` is the same line without the count, used while
+     *  the number is still too small to help. */
+    demo_vendors_title: string;
+    demo_vendors_body: string;
+    demo_vendors_body_plain: string;
+    demo_vendors_cta: string;
+    demo_vendors_browse: string;
     demo_cta: string;
     demo_cat_food_drinks: string;
     demo_cat_venue: string;
