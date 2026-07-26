@@ -895,20 +895,20 @@ type Builder<K extends EmailKind> = (payload: KindPayload[K], ctx: BuildContext)
  *  because the exact number moves between the send and the click. */
 function offerSentenceHu(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "Az első 100 szolgáltatónak egy teljes év, bankkártya nélkül. Van még hely.";
+    return "Az első 100 szolgáltató egy teljes évet kap a Weddlyn. Van még hely.";
   }
   if (freeMonths > 0) {
-    return `300 szolgáltatónak ${freeMonths} hónap, bankkártya nélkül. Van még hely.`;
+    return `300 szolgáltató ${freeMonths} hónapot kap a Weddlyn. Van még hely.`;
   }
   return "";
 }
 
 function offerSentenceEn(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "First 100 vendors: a full year, no card. Still room.";
+    return "The first 100 vendors get a full year on Weddly. Still room.";
   }
   if (freeMonths > 0) {
-    return `300 vendors get ${freeMonths} months, no card. Still room.`;
+    return `300 vendors get ${freeMonths} months on Weddly. Still room.`;
   }
   return "";
 }
@@ -2750,8 +2750,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ].filter((s) => s.length > 0),
       cta: "Profil átvétele",
       ctaSubtext: "Egy kattintás, egy jelszó.",
-      footnote:
-        "Nem te kezeled? Add tovább a kollégának. Nem kéritek a profilt? Hagyd figyelmen kívül, a Weddly leveszi.",
+      footnote: "Nem te kezeled? Add tovább a kollégának.",
       secondaryLinks: [{ label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl }],
     },
     en: {
@@ -2764,8 +2763,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
       ctaSubtext: "One click, one password.",
-      footnote:
-        "Not the right person? Pass it to whoever runs the diary. Rather not be listed? Ignore this email and Weddly takes it down.",
+      footnote: "Not the right person? Pass it to whoever runs the diary.",
       secondaryLinks: [{ label: "What is Weddly?", url: CONFIG.frontendBaseUrl }],
     },
   }),
