@@ -895,20 +895,20 @@ type Builder<K extends EmailKind> = (payload: KindPayload[K], ctx: BuildContext)
  *  because the exact number moves between the send and the click. */
 function offerSentenceHu(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "Az első 100 szolgáltató egy teljes évet kap tőlünk ingyen, és még van szabad hely.";
+    return "Az első 100 szolgáltatónak egy teljes év, bankkártya nélkül. Van még hely.";
   }
   if (freeMonths > 0) {
-    return `300 szolgáltatónak adunk ${freeMonths} hónap ingyenes hozzáférést, és még van szabad hely.`;
+    return `300 szolgáltatónak ${freeMonths} hónap, bankkártya nélkül. Van még hely.`;
   }
   return "";
 }
 
 function offerSentenceEn(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "The first 100 vendors get a full year with us for free, and there are still spots open.";
+    return "First 100 vendors: a full year, no card. Still room.";
   }
   if (freeMonths > 0) {
-    return `We're giving 300 vendors ${freeMonths} months of free access, and there are still spots open.`;
+    return `300 vendors get ${freeMonths} months, no card. Still room.`;
   }
   return "";
 }
@@ -2741,31 +2741,31 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         : `${p.listingName} is already listed on Weddly`,
     ctaUrl: p.inviteUrl,
     hu: {
-      preheader: `${p.categoryLabel} · ${p.city}. Vedd át a profilt, és innentől te szerkeszted.`,
+      preheader: `${p.categoryLabel} · ${p.city}. Vedd át a profilt, tiéd a szerkesztés.`,
       greeting: "Szia!",
       paragraphs: [
-        `Egy felhasználónk ajánlására felvettük a(z) ${p.listingName} vállalkozást a Weddly esküvői katalógusába, ${p.categoryLabel} kategóriában, ${p.city} környékén. A profil már él, a párok látják.`,
-        `Havonta több ezren látogatják az oldalunkat. A profilt viszont mi állítottuk össze nyilvános adatokból, így pont az hiányzik róla, ami valóban eladna: a saját fotóitok, a csomagok és árak, a szabad időpontok.`,
+        `Egy felhasználó javaslatára a **Weddly** felvette a(z) **${p.listingName}** profilját a katalógusba: ${p.categoryLabel}, ${p.city}. Már él, a párok látják.`,
+        `Havonta több ezren böngésznek a Weddlyn. Ezt a profilt a Weddly nyilvános adatokból rakta össze, így hiányzik róla, ami eladna: a saját fotóitok, a csomagok, az árak, a szabad időpontok.`,
         offerSentenceHu(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Profil átvétele",
-      ctaSubtext: "Egy kattintás, és egy jelszó. Regisztrálni nem kell.",
+      ctaSubtext: "Egy kattintás, egy jelszó.",
       footnote:
-        "Ha nem te kezeled a vállalkozást, add tovább a kollégának. Ha egyáltalán nem kéritek a profilt, hagyd figyelmen kívül ezt a levelet, és levesszük.",
+        "Nem te kezeled? Add tovább a kollégának. Nem kéritek a profilt? Hagyd figyelmen kívül, a Weddly leveszi.",
       secondaryLinks: [{ label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl }],
     },
     en: {
-      preheader: `${p.categoryLabel} · ${p.city}. Take the profile over and edit it yourself.`,
+      preheader: `${p.categoryLabel} · ${p.city}. Take the profile over, it's yours to edit.`,
       greeting: "Hi there,",
       paragraphs: [
-        `A user suggested you, so we added ${p.listingName} to the Weddly wedding directory under ${p.categoryLabel}, around ${p.city}. The profile is already live and couples can see it.`,
-        `Several thousand people visit our site every month. But we built this profile from public information, so the things that actually win bookings are missing: your own photos, your packages and prices, the dates you are free.`,
+        `A user suggested you, so **Weddly** added **${p.listingName}** to the directory: ${p.categoryLabel}, around ${p.city}. It's already live and couples can see it.`,
+        `Several thousand people visit Weddly every month. Weddly built this profile from public info, so what wins bookings is missing: your own photos, your packages, your prices, your open dates.`,
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
-      ctaSubtext: "One click and a password. No sign-up form.",
+      ctaSubtext: "One click, one password.",
       footnote:
-        "Not the right person? Pass it to whoever runs the diary. If you would rather not be listed at all, ignore this email and we will take it down.",
+        "Not the right person? Pass it to whoever runs the diary. Rather not be listed? Ignore this email and Weddly takes it down.",
       secondaryLinks: [{ label: "What is Weddly?", url: CONFIG.frontendBaseUrl }],
     },
   }),
@@ -2778,21 +2778,21 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         : `Still yours to edit: ${p.listingName}`,
     ctaUrl: p.inviteUrl,
     hu: {
-      preheader: `A(z) ${p.listingName} profilját még mindig mi kezeljük helyettetek.`,
+      preheader: `A(z) ${p.listingName} profilját még a Weddly kezeli helyettetek.`,
       greeting: "Szia!",
       paragraphs: [
-        `Pár napja írtunk, hogy a(z) ${p.listingName} fent van a Weddly katalógusában ${p.categoryLabel} kategóriában. A profil még mindig azokkal az adatokkal fut, amiket mi állítottunk össze róla.`,
-        `Pár perc átvenni, utána a fotók, az árak és a szabad időpontok is a tiétek.`,
+        `Pár napja: a(z) ${p.listingName} fent van a Weddlyn, ${p.categoryLabel} kategóriában. A profil még a Weddly összeállította adatokkal fut.`,
+        `Pár perc átvenni, utána a fotók, az árak és a szabad időpontok a tiétek.`,
         offerSentenceHu(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Profil átvétele",
     },
     en: {
-      preheader: `${p.listingName} is still running on the details we put together.`,
+      preheader: `${p.listingName} is still running on the details Weddly put together.`,
       greeting: "Hi there,",
       paragraphs: [
-        `We wrote a couple of days ago about ${p.listingName} being listed on Weddly under ${p.categoryLabel}. The profile is still running on the details we put together ourselves.`,
-        `It takes a couple of minutes to take over. After that the photos, the prices and the free dates are yours to set.`,
+        `A couple of days ago: ${p.listingName} is listed on Weddly under ${p.categoryLabel}. The profile still runs on the details Weddly put together.`,
+        `It takes a couple of minutes to take over. After that the photos, the prices and the open dates are yours.`,
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
