@@ -88,6 +88,13 @@ const FOUNDING_PUSH_MAX_SENDS = 3;
 // thought about their honeymoon yet.
 const HONEYMOON_NUDGE_MIN_DAYS = 14;
 const HONEYMOON_NUDGE_MAX_DAYS = 90;
+// Win-back for a workspace nobody has opened in three weeks. Three is the
+// shortest gap that can't be a holiday or a busy fortnight at work, so the mail
+// reads as "we noticed" rather than "we're counting your logins".
+const COMEBACK_NUDGE_AFTER_MS = 1000 * 60 * 60 * 24 * 21; // 21 days
+// ...but not in the last fortnight before the wedding. "Come and have a look
+// around" is a planning message, and by then the couple is executing.
+const COMEBACK_MIN_DAYS_BEFORE_WEDDING = 14;
 // The exact offsets sweepMilestones owns. The honeymoon nudge yields on these
 // days so a couple never gets two lifecycle mails from us at once.
 const MILESTONE_DAYS: ReadonlySet<number> = new Set([90, 30, 7]);
@@ -121,6 +128,7 @@ export function runEmailSweep(): {
   vendorIncompleteNudges: number;
   plannerProfileNudges: number;
   honeymoonNudges: number;
+  comebackNudges: number;
   milestones: number;
   weddings: number;
   rsvpDeadlines: number;
@@ -150,10 +158,13 @@ export function runEmailSweep(): {
   const rsvpDigests = sweepRsvpWeeklyDigest(ts);
   const timelineEscalations = sweepTimelineEscalation(ts);
   const scheduledGuestMessages = sweepScheduledGuestMessages(ts);
-  // Deliberately LAST. It is the only sweep that yields to the others: it skips
-  // any couple already written to today, so it has to run once they've all
-  // logged their sends.
+  // Deliberately LAST, both of them. These two are the sweeps that yield to the
+  // others: they skip any couple already written to today, so they have to run
+  // once everyone else has logged their sends. The honeymoon nudge goes first
+  // of the pair because it is the more specific mail (a window, a feature, a
+  // deadline) and the comeback nudge is the catch-all.
   const honeymoonNudges = sweepHoneymoonNudge(ts);
+  const comebackNudges = sweepComebackNudge(ts);
   return {
     nudges,
     nudgesWeek,
@@ -163,6 +174,7 @@ export function runEmailSweep(): {
     vendorIncompleteNudges,
     plannerProfileNudges,
     honeymoonNudges,
+    comebackNudges,
     milestones,
     weddings,
     rsvpDeadlines,
@@ -828,6 +840,118 @@ function sweepHoneymoonNudge(ts: number): number {
     );
     count++;
     if (count >= SENDS_PER_SWEEP_CAP) break;
+  }
+  return count;
+}
+
+interface ComebackNudgeRow {
+  couple_id: number;
+  display_name: string | null;
+  wedding_date: string | null;
+  user_id: number;
+  email: string;
+  full_name: string;
+  /** Newest `last_seen_at` across EVERYONE in the workspace. */
+  last_seen: number;
+}
+
+function sweepComebackNudge(ts: number): number {
+  // One win-back mail to a workspace nobody has opened in three weeks: what
+  // shipped while they were away, and a way back in.
+  //
+  // The unit is the WORKSPACE, not the person. `last_seen` is the newest
+  // last_seen_at across every member, so a couple where one partner is in the
+  // budget every evening never gets told nothing is happening. When it does
+  // fire, both partners hear it, same as the milestone mails.
+  //
+  // Two guards keep this from becoming noise:
+  //   - It stops COMEBACK_MIN_DAYS_BEFORE_WEDDING out. Inside that fortnight the
+  //     couple is executing, not planning, and the T-7 milestone owns the
+  //     relationship. A wedding already behind them is excluded outright: their
+  //     arc ends with wedding_today_followup and the farewell.
+  //   - It yields to any lifecycle mail from the last 24h, like the honeymoon
+  //     nudge. Being away three weeks is not urgent, so it can wait for a quiet
+  //     day rather than being the second marketing mail of one.
+  //
+  // One-shot per (couple, user) via email_dispatches, deliberately. A couple who
+  // stays away is making a choice, and a drip that keeps reminding them they're
+  // absent is the fastest way to earn an unsubscribe. If a second, later touch
+  // is ever wanted, it should be its own kind with its own copy.
+  const cutoff = ts - COMEBACK_NUDGE_AFTER_MS;
+  const today = startOfDayUtc(ts);
+  const earliestWedding = ymd(today + COMEBACK_MIN_DAYS_BEFORE_WEDDING * 86_400_000);
+
+  const rows = db
+    .prepare(
+      `SELECT c.id AS couple_id, c.display_name, c.wedding_date,
+              u.id AS user_id, u.email, u.full_name,
+              (SELECT MAX(COALESCE(u2.last_seen_at, u2.created_at))
+                 FROM users u2 WHERE u2.couple_id = c.id) AS last_seen
+         FROM couples c
+         JOIN users u ON u.couple_id = c.id
+        WHERE c.status = 'active'
+          AND c.is_demo = 0
+          AND u.status = 'active'
+          AND u.verified_email = 1
+          AND u.email NOT LIKE '%@purged.local'
+          AND u.email NOT LIKE '%@demo.weddly.local'
+          AND ${COUPLE_AUDIENCE_SQL}
+          AND (c.wedding_date IS NULL OR TRIM(c.wedding_date) = '' OR c.wedding_date >= ?)
+          AND last_seen <= ?
+        ORDER BY last_seen ASC`,
+    )
+    .all(earliestWedding, cutoff) as ComebackNudgeRow[];
+
+  const wroteToday = db.prepare(
+    `SELECT 1 FROM email_log
+      WHERE couple_id = ? AND category = 'lifecycle' AND created_at > ?
+      LIMIT 1`,
+  );
+
+  // Grouped by workspace, because the quiet-day check is a WORKSPACE question.
+  // Asked per row it answers itself: the first partner's send lands in
+  // email_log before the loop reaches the second, and the couple's other half
+  // silently never hears from us.
+  const byCouple = new Map<number, ComebackNudgeRow[]>();
+  for (const r of rows) {
+    const list = byCouple.get(r.couple_id);
+    if (list) list.push(r);
+    else byCouple.set(r.couple_id, [r]);
+  }
+
+  let count = 0;
+  for (const [coupleId, members] of byCouple) {
+    // Checked at the workspace boundary, not per member, so a couple is always
+    // mailed whole. Overshooting the cap by one partner beats a household where
+    // one of them got the mail and the other is left waiting an hour.
+    if (count >= SENDS_PER_SWEEP_CAP) break;
+    if (wroteToday.get(coupleId, ts - 86_400_000)) continue;
+    for (const r of members) {
+      if (!markDispatched({ kind: "comeback_nudge", couple_id: coupleId, user_id: r.user_id })) {
+        continue;
+      }
+      const daysUntil =
+        r.wedding_date && r.wedding_date.trim()
+          ? Math.round((Date.parse(`${r.wedding_date}T00:00:00Z`) - today) / 86_400_000)
+          : null;
+      void sendKind(
+        "comeback_nudge",
+        {
+          appUrl: `${CONFIG.frontendBaseUrl}/app`,
+          daysAway: Math.floor((ts - r.last_seen) / 86_400_000),
+          ...(daysUntil !== null && Number.isFinite(daysUntil)
+            ? { daysUntilWedding: daysUntil }
+            : {}),
+          coupleDisplayName:
+            r.display_name && r.display_name !== "Purged workspace" ? r.display_name : undefined,
+        },
+        {
+          user: { id: r.user_id, email: r.email, full_name: r.full_name },
+          couple_id: coupleId,
+        },
+      );
+      count++;
+    }
   }
   return count;
 }

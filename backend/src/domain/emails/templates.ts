@@ -268,6 +268,19 @@ export interface HoneymoonNudgePayload {
   /** Optional couple display name for a warmer preheader ("Mia & Lucas"). */
   coupleDisplayName?: string;
 }
+export interface ComebackNudgePayload {
+  /** Deep link to /app, the workspace this mail exists to pull them back into. */
+  appUrl: string;
+  /** Whole days since anyone in the workspace was last seen, >= 21. Rounded to
+   *  weeks in the copy, since "22 nap" reads as surveillance and "három hete"
+   *  reads as a friend noticing. */
+  daysAway: number;
+  /** Days until the wedding when a date is set. Drives the "there's still time"
+   *  line; omitted for a couple who hasn't picked a date. */
+  daysUntilWedding?: number;
+  /** Optional couple display name for a warmer preheader ("Mia & Lucas"). */
+  coupleDisplayName?: string;
+}
 export interface PostWeddingReviewPayload {
   /** Deep link to /app/rate-vendors, the one-click star surface. */
   ctaUrl: string;
@@ -799,6 +812,7 @@ export type KindPayload = {
   onboarding_nudge: OnboardingNudgePayload;
   onboarding_nudge_week: OnboardingNudgePayload;
   honeymoon_nudge: HoneymoonNudgePayload;
+  comeback_nudge: ComebackNudgePayload;
   post_wedding_review_request: PostWeddingReviewPayload;
   wedding_farewell: WeddingFarewellPayload;
   milestone_t90: MilestonePayload;
@@ -1882,6 +1896,67 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       cta: "Start planning",
     },
   }),
+
+  // Win-back after three quiet weeks. The tone is a friend noticing, not a
+  // product chasing a metric: nothing is wrong, nothing was lost, and here is
+  // what got built while they were away.
+  //
+  // THE FEATURE LIST IS COPY WITH A SHELF LIFE. Every bullet names something
+  // that is live for couples today; when it stops being new, swap it for
+  // whatever shipped since rather than letting the mail brag about last
+  // season's work. Never list anything gated behind an env var that prod
+  // doesn't have set (the Google Calendar sync, for one).
+  comeback_nudge: (p, ctx) => {
+    const weeks = Math.max(3, Math.floor(p.daysAway / 7));
+    // The couple name goes in the preheader, not the opening line: the mail is
+    // addressed to one person ("Szia Fanni!"), so "Fanni & Balázs, 3 hete nem
+    // jártál" mixes the two of them with a verb meant for one.
+    const couplePrefix = p.coupleDisplayName ? `${p.coupleDisplayName}: ` : "";
+    const closingHu =
+      p.daysUntilWedding !== undefined
+        ? `Az esküvőtökig ${p.daysUntilWedding} nap van. Most még kényelmesen haladtok, egy hónappal előtte viszont már minden sürgős, szóval érdemes ránézni.`
+        : "Ha még nincs kitűzve a dátum, az sem baj. Nézz körül, és onnan folytasd, ahol abbahagytad.";
+    const closingEn =
+      p.daysUntilWedding !== undefined
+        ? `Your wedding is ${p.daysUntilWedding} days away. There's still room to do this calmly; a month out, everything turns urgent at once.`
+        : "No date yet? That's fine too. Have a look around and pick up where you left off.";
+    return {
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Rég jártál nálunk, közben építkeztünk",
+        "It's been a while, and we've been building",
+      ),
+      ctaUrl: p.appUrl,
+      hu: {
+        preheader: `${couplePrefix}minden ott van, ahol hagytad. Plusz pár új dolog.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `${weeks} hete nem jártál a tervezőtökben. Semmi baj, a vendéglista nem szökött meg, minden pontosan ott van, ahol hagytad.`,
+          "Mi közben nem tétlenkedtünk. Ez került be azóta:\n- **Szolgáltatók térképen**: a katalógus térképen is nézhető, értékelésekkel, és egy kattintással mentheted a kedvenceidet.\n- **Döntések**: a Tervezés fülön végigvezetünk azon a sok apró kérdésen, amire a végén mindig rákérdez valaki.\n- **Arculat**: egy összefüggő stíluskészlet, és nyomtatható ültetőkártyák, menük, táblák hozzá.",
+          closingHu,
+          "Egy kávé alatt átfutod, mi van kész és mi vár még rátok.",
+        ],
+        cta: "Megnézem, mi újság",
+        ctaSubtext: "Egyenesen a tervezőtökbe visz.",
+        footnote:
+          "Folyamatosan fejlesztjük az oldalt. Ha most nem alkalmas, a levél alján egy kattintással leiratkozhatsz.",
+      },
+      en: {
+        preheader: `${couplePrefix}everything is where you left it. Plus a few new things.`,
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `It's been ${weeks} weeks since you were last in your planner. Nothing to worry about: the guest list didn't run off, everything is exactly where you left it.`,
+          "We haven't been idle either. Here's what landed since:\n- **Vendors on a map**: the directory has a map view now, with reviews, and one tap saves a favourite.\n- **Decisions**: the Planning tab walks you through the small questions someone always asks about at the end.\n- **Style kit**: one visual identity for the wedding, plus printable place cards, menus and signs to match.",
+          closingEn,
+          "One coffee is enough to see what's done and what's still waiting.",
+        ],
+        cta: "See what's new",
+        ctaSubtext: "Takes you straight into your planner.",
+        footnote:
+          "We're improving Weddly constantly. If now isn't a good time, you can opt out from the footer below.",
+      },
+    };
+  },
 
   // ~7 days after the wedding: rate the vendors you used. Bold and low-friction,
   // the whole pitch is "a star takes a second". Names the couple's actual

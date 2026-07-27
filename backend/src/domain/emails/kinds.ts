@@ -34,6 +34,7 @@ export type EmailKind =
   | "onboarding_nudge" // 24h after signup if they haven't onboarded a couple
   | "onboarding_nudge_week" // 7 days after signup, still no workspace, second, warmer nudge
   | "honeymoon_nudge" // one-shot, inside the 90-day window, to couples who haven't touched the honeymoon planner
+  | "comeback_nudge" // one-shot win-back: nobody in the workspace has been seen for 3 weeks, here's what shipped meanwhile
   | "milestone_t90" // 90 days before the wedding
   | "milestone_t30" // 30 days before
   | "milestone_t7" // 7 days before
@@ -171,6 +172,11 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // footer. Deliberately dodges the 90/30/7 milestone days, since those mails
   // promise in their own footnote that we only write at 90, 30 and 7 days out.
   honeymoon_nudge: "lifecycle",
+  // Lifecycle: pure win-back. Nobody asked to hear from us three weeks after
+  // they last logged in, so it honours the unsubscribe footer, and it is
+  // one-shot per workspace — a couple who is deliberately away must not be
+  // followed by a drip.
+  comeback_nudge: "lifecycle",
   post_wedding_review_request: "lifecycle",
   // Lifecycle, and the last one: the sweep that sends it flips
   // `lifecycle_opt_out` immediately afterwards, so this is the final mail a

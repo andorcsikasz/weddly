@@ -145,6 +145,12 @@ const STUBS: KindPayload = {
     daysUntil: 62,
     coupleDisplayName: "Mia & Lucas",
   },
+  comeback_nudge: {
+    appUrl: `${BASE_URL}/app`,
+    daysAway: 24,
+    daysUntilWedding: 210,
+    coupleDisplayName: "Mia & Lucas",
+  },
   post_wedding_review_request: {
     ctaUrl: `${BASE_URL}/app/rate-vendors`,
     vendorNames: ["Bloom Studio", "Sweet Layers Cukrászda", "DJ Marco"],
