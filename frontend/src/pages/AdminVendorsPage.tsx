@@ -10,7 +10,7 @@
 // looks like a churned one (the trap a binary paying/not marker falls into).
 
 import type { AdminVendorView } from "@shared/listings";
-import { intlLocale } from "../lib/format";
+import { formatLastActive, intlLocale } from "../lib/format";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
 import type { VendorPlan } from "@shared/vendor_plan";
@@ -28,11 +28,14 @@ import {
   Gift,
   Loader2,
   Mail,
+  MessageSquare,
   MinusCircle,
+  Moon,
   MousePointerClick,
   Pencil,
   RotateCcw,
   Search,
+  Star,
   Store,
   Trash2,
   UserPlus,
@@ -55,6 +58,7 @@ type Filter =
   | "trial"
   | "free"
   | "incomplete"
+  | "dormant"
   | "pending"
   | "suspended";
 const FILTERS: Filter[] = [
@@ -64,9 +68,21 @@ const FILTERS: Filter[] = [
   "trial",
   "free",
   "incomplete",
+  "dormant",
   "pending",
   "suspended",
 ];
+
+/** An activated vendor counts as dormant once nobody has signed into the
+ *  account for this long. Same three weeks the couples' comeback mail uses, so
+ *  "quiet" means one thing across the product. Never-signed-in counts too: a
+ *  live listing nobody is behind is exactly what this bucket is for. */
+const DORMANT_AFTER_MS = 21 * 24 * 60 * 60 * 1000;
+
+function isDormant(v: AdminVendorView): boolean {
+  if (v.state !== "active") return false;
+  return v.owner_last_seen_at == null || Date.now() - v.owner_last_seen_at > DORMANT_AFTER_MS;
+}
 
 /** Glyph per filter bucket for the stat-filter tiles. Bird mirrors the
  *  founding-member badge used on the cards; the rest read the billing state. */
@@ -77,6 +93,7 @@ const VENDOR_FILTER_ICON: Record<Filter, ReactNode> = {
   trial: <Clock size={16} />,
   free: <Gift size={16} />,
   incomplete: <AlertTriangle size={16} />,
+  dormant: <Moon size={16} />,
   pending: <Mail size={16} />,
   suspended: <Ban size={16} />,
 };
@@ -126,6 +143,7 @@ function matchesFilter(v: AdminVendorView, f: Filter): boolean {
   if (v.state !== "active") return false;
   if (f === "suspended") return v.owner_status === "suspended";
   if (f === "incomplete") return v.listing_incomplete;
+  if (f === "dormant") return isDormant(v);
   if (f === "founding") return v.is_founding_member;
   if (f === "paying")
     return v.subscription_status === "active" || v.subscription_status === "past_due";
@@ -579,15 +597,34 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                   </Pill>
                 </span>
               )}
-              {/* Listing completeness: which public sections are still empty. */}
+              {/* Listing completeness: which public sections are still empty,
+                  and when the vendor last touched the thing. "Incomplete since
+                  March" and "incomplete, edited yesterday" call for opposite
+                  actions. */}
               {vendor.state === "active" && vendor.listing_incomplete && (
                 <span
-                  title={t("admin.vendors.incomplete_tooltip", {
+                  title={`${t("admin.vendors.incomplete_tooltip", {
                     sections: missingLabels.join(", "),
-                  })}
+                  })}${
+                    vendor.listing_updated_at
+                      ? ` · ${t("admin.vendors.listing_edited", {
+                          date: fmtDate(vendor.listing_updated_at, locale),
+                        })}`
+                      : ""
+                  }`}
                 >
                   <Pill tone="blush" icon={<AlertTriangle size={11} />}>
                     {t("admin.vendors.incomplete")}
+                  </Pill>
+                </span>
+              )}
+              {/* Never signed in. A state, not a datum, so it sits with the
+                  other pills instead of in the meta line: the account exists,
+                  the listing is live, and nobody has ever opened the door. */}
+              {vendor.state === "active" && vendor.owner_last_seen_at == null && (
+                <span title={t("admin.vendors.never_signed_in_tooltip")}>
+                  <Pill tone="muted" icon={<Moon size={11} />}>
+                    {t("admin.vendors.never_signed_in")}
                   </Pill>
                 </span>
               )}
@@ -603,11 +640,64 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-umber-500 dark:text-umber-400">
               {vendor.vendor_code && <span>{vendor.vendor_code}</span>}
               {vendor.vendor_code && <span aria-hidden="true">·</span>}
-              <span>{fmtDate(vendor.created_at, locale)}</span>
+              <span title={t("admin.vendors.joined_tooltip")}>
+                {fmtDate(vendor.created_at, locale)}
+              </span>
+              {/* Last sign-in. The one number that says whether anything else on
+                  this row is worth acting on, so it sits right after the join
+                  date and goes amber once the account has gone quiet. */}
+              {vendor.state === "active" && vendor.owner_last_seen_at !== null && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span
+                    className={`inline-flex items-center gap-1 ${
+                      isDormant(vendor) ? "text-blush-600 dark:text-blush-300" : ""
+                    }`}
+                    title={t("admin.vendors.last_active_tooltip", {
+                      date: fmtDate(vendor.owner_last_seen_at, locale),
+                    })}
+                  >
+                    <Clock size={12} aria-hidden />
+                    {formatLastActive(vendor.owner_last_seen_at, locale, t)}
+                  </span>
+                </>
+              )}
               {vendor.state === "active" && (
                 <>
                   <span aria-hidden="true">·</span>
                   <span>{t("admin.vendors.listing_count", { n: vendor.listing_count })}</span>
+                </>
+              )}
+              {/* Demand + reputation. Both stay hidden at zero: on a young
+                  marketplace most rows are zero, and a column of them is noise
+                  that buries the handful that aren't. */}
+              {vendor.inquiry_count > 0 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span
+                    className="inline-flex items-center gap-1"
+                    title={t("admin.vendors.inquiries_tooltip")}
+                  >
+                    <MessageSquare size={12} aria-hidden />
+                    <span className="tabular-nums">{vendor.inquiry_count}</span>
+                  </span>
+                </>
+              )}
+              {vendor.review_count > 0 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span
+                    className="inline-flex items-center gap-1"
+                    title={t("admin.vendors.reviews_tooltip", { n: vendor.review_count })}
+                  >
+                    <Star size={12} aria-hidden className="text-star" />
+                    <span className="tabular-nums">
+                      {vendor.review_avg != null
+                        ? vendor.review_avg.toFixed(1).replace(".", locale === "en" ? "." : ",")
+                        : "–"}
+                    </span>
+                    <span className="tabular-nums opacity-70">({vendor.review_count})</span>
+                  </span>
                 </>
               )}
               {vendor.analytics && (
@@ -940,6 +1030,7 @@ export default function AdminVendorsPage() {
       trial: 0,
       free: 0,
       incomplete: 0,
+      dormant: 0,
       pending: 0,
       suspended: 0,
     };

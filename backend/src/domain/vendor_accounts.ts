@@ -168,6 +168,13 @@ interface AdminVendorRow extends VendorAccountRow {
   /** Recurring incomplete-listing reminder bookkeeping (SELECT va.*). */
   profile_nudge_count: number;
   profile_nudge_last_at: number | null;
+  /** Owner activity + demand + reputation, all correlated subqueries on the one
+   *  admin list query rather than an N+1 per row. */
+  owner_last_seen_at: number | null;
+  inquiry_count: number;
+  review_count: number;
+  review_avg: number | null;
+  listing_updated_at: number | null;
 }
 
 /** Split the GROUP_CONCAT category blob into a clean SupplierCategory[]. */
@@ -231,6 +238,12 @@ export function toAdminVendorView(row: AdminVendorRow): AdminVendorView {
     listing_incomplete: isVendorListingIncomplete(missing),
     profile_nudge_count: row.profile_nudge_count ?? 0,
     profile_nudge_last_at: row.profile_nudge_last_at,
+    owner_last_seen_at: row.owner_last_seen_at,
+    inquiry_count: row.inquiry_count ?? 0,
+    review_count: row.review_count ?? 0,
+    // SQLite AVG returns a full float; one decimal is all a star rating means.
+    review_avg: row.review_avg == null ? null : Math.round(row.review_avg * 10) / 10,
+    listing_updated_at: row.listing_updated_at,
     created_at: row.created_at,
   };
 }
@@ -249,8 +262,22 @@ export function listAdminVendorAccounts(): AdminVendorView[] {
               vs.billing_starts_at    AS sub_billing_starts_at,
               vs.card_on_file         AS sub_card_on_file,
               vs.current_period_end   AS sub_current_period_end,
+              u.last_seen_at          AS owner_last_seen_at,
               (SELECT COUNT(*) FROM listings l WHERE l.vendor_account_id = va.id) AS listing_count,
-              (SELECT GROUP_CONCAT(DISTINCT l.category) FROM listings l WHERE l.vendor_account_id = va.id) AS categories
+              (SELECT GROUP_CONCAT(DISTINCT l.category) FROM listings l WHERE l.vendor_account_id = va.id) AS categories,
+              (SELECT MAX(l.updated_at) FROM listings l WHERE l.vendor_account_id = va.id) AS listing_updated_at,
+              (SELECT COUNT(*) FROM supplier_bookings b WHERE b.vendor_account_id = va.id) AS inquiry_count,
+              -- Reviews hang off the LISTING (supplier_id), not the account, so
+              -- they are counted across everything this vendor owns: their own
+              -- v{N} card plus any curated listing they claimed.
+              (SELECT COUNT(*) FROM supplier_reviews r
+                 JOIN listings l ON l.id = r.supplier_id
+                WHERE l.vendor_account_id = va.id
+                  AND r.published = 1 AND r.deleted_at IS NULL) AS review_count,
+              (SELECT AVG(r.rating) FROM supplier_reviews r
+                 JOIN listings l ON l.id = r.supplier_id
+                WHERE l.vendor_account_id = va.id
+                  AND r.published = 1 AND r.deleted_at IS NULL) AS review_avg
          FROM vendor_accounts va
          LEFT JOIN users u ON u.id = va.owner_user_id
          LEFT JOIN vendor_subscriptions vs ON vs.vendor_account_id = va.id

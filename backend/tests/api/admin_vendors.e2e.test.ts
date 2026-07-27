@@ -124,6 +124,86 @@ describe("admin vendor management", () => {
     ).toBe(2);
   });
 
+  test("row carries owner activity, inquiry count and the review rollup", async () => {
+    // The admin list answers "is anyone behind this account, and is anything
+    // happening to it": last sign-in, inquiries received, reviews earned.
+    const adminToken = await bootstrapAdmin();
+    const { userId, accountId } = await seedActivatedVendor("busy@weddly.test", "Busy Studio");
+    createVendorListing({
+      vendorAccountId: accountId,
+      category: "photography",
+      name: "Busy Studio",
+      city: "Budapest",
+      contactEmail: "busy@weddly.test",
+    });
+    const listingId = `v${accountId}`;
+    const seenAt = Date.now() - 3 * 86_400_000;
+    db.prepare("UPDATE users SET last_seen_at = ? WHERE id = ?").run(seenAt, userId);
+
+    const { coupleId } = await bootstrapCouple("inquirer@weddly.test");
+    const ts = Date.now();
+    for (const date of ["2027-05-01", "2027-06-02"]) {
+      db.prepare(
+        `INSERT INTO supplier_bookings (supplier_id, couple_id, vendor_account_id, event_date, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 'requested', ?, ?)`,
+      ).run(listingId, coupleId, accountId, date, ts, ts);
+    }
+    const admin = db.prepare("SELECT id FROM users WHERE email = ?").get("admin@test.test") as {
+      id: number;
+    };
+    // Two published (5 + 4 → 4.5) and one hidden, which must not count.
+    for (const [rating, published] of [
+      [5, 1],
+      [4, 1],
+      [1, 0],
+    ] as const) {
+      db.prepare(
+        `INSERT INTO supplier_reviews (supplier_id, author_user_id, couple_id, rating, published, created_at, updated_at)
+         VALUES (?, ?, NULL, ?, ?, ?, ?)`,
+      ).run(listingId, admin.id, rating, published, ts, ts);
+    }
+
+    const res = await req<{ active: AdminVendorView[] }>("GET", "/api/admin/vendors", undefined, {
+      token: adminToken,
+    });
+    const row = res.data.active.find((v) => v.id === accountId);
+    expect(row?.owner_last_seen_at).toBe(seenAt);
+    expect(row?.inquiry_count).toBe(2);
+    expect(row?.review_count).toBe(2);
+    expect(row?.review_avg).toBe(4.5);
+    expect(row?.listing_updated_at).not.toBeNull();
+  });
+
+  test("an account nobody has signed into reports a null last-seen", async () => {
+    // The "never signed in" pill and the dormant filter both key on null, so a
+    // fresh account must not report a fallback timestamp instead.
+    const adminToken = await bootstrapAdmin();
+    const { userId, accountId } = await seedActivatedVendor("quiet@weddly.test", "Quiet Studio");
+    db.prepare("UPDATE users SET last_seen_at = NULL WHERE id = ?").run(userId);
+    createOnboardingToken({
+      waitlistId: null,
+      businessName: "Pending Co",
+      email: "pending2@weddly.test",
+      category: null,
+      locale: null,
+    });
+
+    const res = await req<{ active: AdminVendorView[]; pending: AdminVendorView[] }>(
+      "GET",
+      "/api/admin/vendors",
+      undefined,
+      { token: adminToken },
+    );
+    const row = res.data.active.find((v) => v.id === accountId);
+    expect(row?.owner_last_seen_at).toBeNull();
+    expect(row?.inquiry_count).toBe(0);
+    expect(row?.review_count).toBe(0);
+    expect(row?.review_avg).toBeNull();
+    // A pending onboarding is an emailed link and an address, nothing more.
+    expect(res.data.pending[0]?.owner_last_seen_at).toBeNull();
+    expect(res.data.pending[0]?.review_avg).toBeNull();
+  });
+
   test("suspend + reactivate flips the owner's users.status", async () => {
     const adminToken = await bootstrapAdmin();
     const { userId, accountId } = await seedActivatedVendor("vendor2@weddly.test", "Cake Co");

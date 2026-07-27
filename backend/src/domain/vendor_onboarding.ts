@@ -125,6 +125,13 @@ export function listPendingOnboardings(): AdminVendorView[] {
     listing_incomplete: false,
     profile_nudge_count: 0,
     profile_nudge_last_at: null,
+    // Nobody has signed in, nobody can have written to them, nothing to review:
+    // a pending row is an emailed link and an address, nothing more.
+    owner_last_seen_at: null,
+    inquiry_count: 0,
+    review_count: 0,
+    review_avg: null,
+    listing_updated_at: null,
     created_at: row.created_at,
   }));
 }

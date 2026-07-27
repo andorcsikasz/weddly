@@ -218,6 +218,24 @@ export interface AdminVendorView {
   profile_nudge_count: number;
   /** Epoch ms of the last incomplete-listing reminder sent, or null. */
   profile_nudge_last_at: number | null;
+  /** Epoch ms the owner was last seen (`users.last_seen_at`), or null when they
+   *  have never signed in. THE admin question about a vendor account: an
+   *  incomplete listing means one thing from someone who was here yesterday and
+   *  another from someone who never opened the door. Null for pending rows,
+   *  which have no user yet. */
+  owner_last_seen_at: number | null;
+  /** Couple inquiries this vendor has received (`supplier_bookings`), all
+   *  statuses. The demand side of the same account: reach says how many people
+   *  looked, this says how many wrote. 0 for pending rows. */
+  inquiry_count: number;
+  /** Published, undeleted reviews across every listing this vendor owns. */
+  review_count: number;
+  /** Mean of those reviews, 1..5, or null when there are none. */
+  review_avg: number | null;
+  /** Epoch ms of the newest `listings.updated_at` the vendor owns, or null with
+   *  no listing. Reads next to the "incomplete" badge as "and they last touched
+   *  it in May", which separates abandoned profiles from fresh ones. */
+  listing_updated_at: number | null;
   created_at: number;
   /** Directory reach — views + outbound clicks summed across every listing this
    *  vendor owns (`supplier_events`). Present on active rows (all-zero until the

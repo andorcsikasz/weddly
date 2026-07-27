@@ -290,6 +290,40 @@ export function formatDateMs(ms: number, locale: Locale = "hu"): string {
   return formatDate(`${yyyy}-${mo}-${dd}`, locale);
 }
 
+/**
+ * "most" / "12 perce" / "3 órája" / "5 napja", then an absolute date once the
+ * gap passes a week. Used wherever an admin surface answers "when was this
+ * account last active": the users overview, the analytics page and the vendor
+ * list all render the same ladder, and they used to do it from three private
+ * copies of this function.
+ *
+ * Takes `t` rather than importing it: the callers are components with a live
+ * `useT()` in hand, and this module is deliberately hook-free.
+ */
+export function formatLastActive(
+  unixMs: number | null,
+  locale: Locale,
+  t: (k: string, vars?: Record<string, string | number>) => string,
+): string {
+  if (unixMs == null) return t("admin.last_active_never");
+  const diff = Date.now() - unixMs;
+  if (diff < 60 * 1000) return t("admin.last_active_now");
+  const mins = Math.floor(diff / (60 * 1000));
+  if (mins < 60) return t("admin.last_active_minutes", { n: mins });
+  const hours = Math.floor(diff / (60 * 60 * 1000));
+  if (hours < 24) return t("admin.last_active_hours", { n: hours });
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  if (days < 7) return t("admin.last_active_days", { n: days });
+  // Short month ("2026. jún. 24."), matching the created-at date the admin rows
+  // print next to this one. The long form reads as a different kind of value
+  // sitting in the same line.
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(unixMs));
+}
+
 const MONTH_FORMATTER = (locale: Locale) =>
   new Intl.DateTimeFormat(intlLocale(locale), { month: "long", year: "numeric" });
 

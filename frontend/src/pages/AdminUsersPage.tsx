@@ -1,5 +1,5 @@
 import type { AdminCoupleView, AdminEmailLogEntry, AdminUserView } from "@shared/types";
-import { intlLocale } from "../lib/format";
+import { formatLastActive, intlLocale } from "../lib/format";
 import {
   Bird,
   Briefcase,
@@ -48,26 +48,6 @@ function formatDate(unixMs: number, locale: Locale): string {
     month: "short",
     day: "numeric",
   }).format(d);
-}
-
-/** Coarse-grained "X minutes/hours/days ago" for the Last-active column. We
- *  show absolute dates beyond a week so the column doesn't drift into "47
- *  days ago" territory where the date itself is more informative. */
-function formatRelative(
-  unixMs: number | null,
-  locale: Locale,
-  t: (k: string, vars?: Record<string, string | number>) => string,
-): string {
-  if (unixMs == null) return t("admin.last_active_never");
-  const diff = Date.now() - unixMs;
-  if (diff < 60 * 1000) return t("admin.last_active_now");
-  const mins = Math.floor(diff / (60 * 1000));
-  if (mins < 60) return t("admin.last_active_minutes", { n: mins });
-  const hours = Math.floor(diff / (60 * 60 * 1000));
-  if (hours < 24) return t("admin.last_active_hours", { n: hours });
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-  if (days < 7) return t("admin.last_active_days", { n: days });
-  return formatDate(unixMs, locale);
 }
 
 function workspaceLabel(c: AdminCoupleView): string {
@@ -910,7 +890,8 @@ export default function AdminUsersPage() {
           )}
           {opts.showLastActive && (
             <span className="text-[11px] text-neutral-500 dark:text-umber-300">
-              {t("admin.table_workspace_last_active")}: {formatRelative(u.last_seen_at, locale, t)}
+              {t("admin.table_workspace_last_active")}:{" "}
+              {formatLastActive(u.last_seen_at, locale, t)}
             </span>
           )}
         </div>
@@ -1179,7 +1160,7 @@ export default function AdminUsersPage() {
           <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
             <div>{formatDate(c.created_at, locale)}</div>
             <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
-              {formatRelative(c.last_seen_at, locale, t)}
+              {formatLastActive(c.last_seen_at, locale, t)}
             </div>
           </div>
           <div>
@@ -1224,7 +1205,7 @@ export default function AdminUsersPage() {
             <span className="text-neutral-300 dark:text-umber-600">·</span>
             <span>{formatDate(c.created_at, locale)}</span>
             <span className="text-neutral-500/70 dark:text-umber-300/80">
-              {formatRelative(c.last_seen_at, locale, t)}
+              {formatLastActive(c.last_seen_at, locale, t)}
             </span>
           </div>
         </div>
@@ -1898,7 +1879,7 @@ export default function AdminUsersPage() {
                                     <div className="whitespace-nowrap text-xs text-neutral-500 dark:text-umber-300">
                                       <div>{formatDate(c.created_at, locale)}</div>
                                       <div className="mt-0.5 text-neutral-500/70 dark:text-umber-300/80">
-                                        {formatRelative(c.last_seen_at, locale, t)}
+                                        {formatLastActive(c.last_seen_at, locale, t)}
                                       </div>
                                     </div>
                                   </div>
