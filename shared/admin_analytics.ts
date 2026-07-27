@@ -117,7 +117,25 @@ export interface AdminActivityAnalytics {
    *  REAL traffic — demo workspaces (`couples.is_demo`, `…@demo.weddly.local`
    *  users) are excluded so the headlines aren't inflated by the landing's
    *  "Try the demo" seeds. */
-  signups_daily: Array<{ date: string; count: number }>;
+  signups_daily: Array<{
+    date: string;
+    /** Every real account created that day, all three kinds together. */
+    count: number;
+    /** Subsets of `count`, mutually exclusive and both subtracted from it to
+     *  get the couple line: a planner is `user_type='planner'`, a vendor is
+     *  `role='vendor'` and not a planner. Split out because a vendor signup
+     *  and a couple signup are different businesses on the same chart. */
+    planners: number;
+    vendors: number;
+  }>;
+  /** Headline registration counts per account kind, same windows as
+   *  `signups`. `couples` is the remainder: every real signup that is neither
+   *  a planner nor a vendor, which is what the Felhasználók page lists. */
+  signups_by_kind: {
+    couples: { last_24h: number; last_7d: number; last_30d: number; total: number };
+    planners: { last_24h: number; last_7d: number; last_30d: number; total: number };
+    vendors: { last_24h: number; last_7d: number; last_30d: number; total: number };
+  };
   /** Demo-only mirror of the headline counts, rendered as a small "demo: N"
    *  note under each real figure. Same windows + funnel stages, but counted
    *  over the demo users/couples that the fields above deliberately omit. */

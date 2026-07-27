@@ -815,10 +815,19 @@ async function handleResendFlagEmail(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
-type AdminSection = "suppliers" | "users" | "vendor_waitlist" | "planner_waitlist" | "feedback";
+type AdminSection =
+  | "suppliers"
+  | "users"
+  | "planners"
+  | "vendors"
+  | "vendor_waitlist"
+  | "planner_waitlist"
+  | "feedback";
 const VALID_SECTIONS: ReadonlySet<AdminSection> = new Set([
   "suppliers",
   "users",
+  "planners",
+  "vendors",
   "vendor_waitlist",
   "planner_waitlist",
   "feedback",
@@ -835,6 +844,8 @@ function seenWatermarks(userId: number): Record<AdminSection, number> {
   const out: Record<AdminSection, number> = {
     suppliers: 0,
     users: 0,
+    planners: 0,
+    vendors: 0,
     vendor_waitlist: 0,
     planner_waitlist: 0,
     feedback: 0,
@@ -901,6 +912,41 @@ function handleSidebarBadges(ctx: Ctx): Response {
       .get(seen.users) as { n: number }
   ).n;
   const users = newUsers + newFlags;
+  // Planners and vendors are deliberately excluded from the `users` badge above
+  // (they're filtered out of the Felhasználók list, so lighting that badge would
+  // point at a page where the new account never appears). They get their own
+  // index instead, and each predicate mirrors what its page actually lists —
+  // `listAdminPlanners` / `listAdminVendorAccounts` — so a badge can never
+  // promise a row the admin then can't find. Demo seeds and purged tombstones
+  // are excluded on both, same as everywhere else.
+  const planners = (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS n
+           FROM users u
+          WHERE u.user_type = 'planner'
+            AND u.email NOT LIKE '%${DEMO_EMAIL_SUFFIX}'
+            AND u.email NOT LIKE '%@purged.local'
+            AND u.created_at > ?`,
+      )
+      .get(seen.planners) as { n: number }
+  ).n;
+  // Counted on the vendor ACCOUNT, not the user: that is the row the Szolgáltatók
+  // page lists, and an admin convert-to-vendor mints an account for a user who
+  // registered long ago (so `users.created_at` would never light the badge).
+  const vendors = (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS n
+           FROM vendor_accounts va
+           LEFT JOIN users u ON u.id = va.owner_user_id
+          WHERE va.created_at > ?
+            AND (u.email IS NULL
+                 OR (u.email NOT LIKE '%${DEMO_EMAIL_SUFFIX}'
+                     AND u.email NOT LIKE '%@purged.local'))`,
+      )
+      .get(seen.vendors) as { n: number }
+  ).n;
   const vendor_waitlist = (
     db
       .prepare("SELECT COUNT(*) AS n FROM vendor_waitlist WHERE status = 'new' AND created_at > ?")
@@ -918,7 +964,7 @@ function handleSidebarBadges(ctx: Ctx): Response {
       )
       .get(seen.feedback) as { n: number }
   ).n;
-  return json({ suppliers, users, vendor_waitlist, planner_waitlist, feedback });
+  return json({ suppliers, users, planners, vendors, vendor_waitlist, planner_waitlist, feedback });
 }
 
 /** Upsert the admin's `seen_at` for one sidebar section. The frontend

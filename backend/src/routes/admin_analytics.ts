@@ -392,25 +392,52 @@ function activityAnalytics(audience: AnalyticsAudience): AdminActivityAnalytics 
   // SQLite (bucketed by UTC midnight) into a Map, then walk the calendar
   // window in order so zero-days surface as `{ date, count: 0 }` and the
   // x-axis stays uniform.
+  // Account KIND, split three ways and mutually exclusive so the series sum to
+  // the total: a planner is `user_type='planner'`, a vendor is `role='vendor'`
+  // that isn't also a planner, and a couple is everything else — the same
+  // partition the Felhasználók / Szervezők / Szolgáltatók pages list under.
+  const IS_PLANNER = "user_type = 'planner'";
+  const IS_VENDOR = "role = 'vendor' AND user_type != 'planner'";
+  const IS_COUPLE = `NOT (${IS_PLANNER}) AND NOT (${IS_VENDOR})`;
+
+  /** The four headline windows for one account kind, always ANDed with the
+   *  active audience filter so a kind split can never show accounts the rest
+   *  of the page is hiding. */
+  const kindWindows = (kind: string) => ({
+    last_24h: countSince(`${REAL} AND (${kind})`, w24h),
+    last_7d: countSince(`${REAL} AND (${kind})`, w7d),
+    last_30d: countSince(`${REAL} AND (${kind})`, w30d),
+    total: totalCount(`${REAL} AND (${kind})`),
+  });
+
   const since14 = now - 14 * DAY_MS;
   const dailyRows = db
     .prepare(
-      `SELECT strftime('%Y-%m-%d', created_at / 1000, 'unixepoch') AS d, COUNT(*) AS n
+      `SELECT strftime('%Y-%m-%d', created_at / 1000, 'unixepoch') AS d,
+              COUNT(*) AS n,
+              SUM(CASE WHEN ${IS_PLANNER} THEN 1 ELSE 0 END) AS planners,
+              SUM(CASE WHEN ${IS_VENDOR} THEN 1 ELSE 0 END) AS vendors
          FROM users
         WHERE ${REAL} AND created_at >= ?
         GROUP BY d`,
     )
-    .all(since14) as { d: string; n: number }[];
-  const dailyMap = new Map(dailyRows.map((r) => [r.d, r.n]));
+    .all(since14) as { d: string; n: number; planners: number; vendors: number }[];
+  const dailyMap = new Map(dailyRows.map((r) => [r.d, r]));
 
-  const signupsDaily: { date: string; count: number }[] = [];
+  const signupsDaily: { date: string; count: number; planners: number; vendors: number }[] = [];
   // Walk oldest → newest. Date arithmetic stays in UTC so the dashboard's
   // x-axis lines up regardless of the admin's local timezone.
   const startMs = now - 13 * DAY_MS;
   for (let i = 0; i < 14; i += 1) {
     const d = new Date(startMs + i * DAY_MS);
     const iso = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-    signupsDaily.push({ date: iso, count: dailyMap.get(iso) ?? 0 });
+    const row = dailyMap.get(iso);
+    signupsDaily.push({
+      date: iso,
+      count: row?.n ?? 0,
+      planners: row?.planners ?? 0,
+      vendors: row?.vendors ?? 0,
+    });
   }
 
   return {
@@ -437,6 +464,11 @@ function activityAnalytics(audience: AnalyticsAudience): AdminActivityAnalytics 
     couples_by_status: couplesByStatus,
     top_actions: topActions.map((r) => ({ action: r.action, count: r.n })),
     signups_daily: signupsDaily,
+    signups_by_kind: {
+      couples: kindWindows(IS_COUPLE),
+      planners: kindWindows(IS_PLANNER),
+      vendors: kindWindows(IS_VENDOR),
+    },
     demo: {
       signups: {
         last_24h: countSince(DEMO, w24h),

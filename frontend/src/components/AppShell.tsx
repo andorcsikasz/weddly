@@ -240,7 +240,14 @@ type AdminNavGroup = "inbox" | "accounts" | "manage" | "insights";
 /** Maps each admin nav row to the matching `AdminSidebarBadges` key.
  *  Items without a badgeKey never show a red index (e.g. Categories —
  *  admin-edited content with no inbox). */
-type AdminBadgeKey = "suppliers" | "users" | "vendor_waitlist" | "feedback" | "planner_waitlist";
+type AdminBadgeKey =
+  | "suppliers"
+  | "users"
+  | "planners"
+  | "vendors"
+  | "vendor_waitlist"
+  | "feedback"
+  | "planner_waitlist";
 // `group` is re-typed (not intersected) — `NavItem.group` is
 // `NavGroup | undefined`, intersecting with `AdminNavGroup | undefined`
 // collapses to `never`. `Omit<NavItem, "group">` lets the admin variant
@@ -316,6 +323,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     labelKey: "admin.nav_planners",
     // no tabKey — goes to the phone More sheet
     icon: <Handshake size={18} />,
+    badgeKey: "planners",
     group: "accounts",
   },
   {
@@ -323,6 +331,7 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     labelKey: "admin.nav_vendors",
     // no tabKey — goes to the phone More sheet
     icon: <Store size={18} />,
+    badgeKey: "vendors",
     group: "accounts",
   },
   // ── Manage ────────────────────────────────────────────────────────
@@ -472,16 +481,23 @@ export function AppShell({ children }: { children: ReactNode }) {
     let section:
       | "suppliers"
       | "users"
+      | "planners"
+      | "vendors"
       | "vendor_waitlist"
       | "planner_waitlist"
       | "feedback"
       | null = null;
     if (location.pathname.startsWith("/app/admin/suppliers")) section = "suppliers";
     else if (location.pathname.startsWith("/app/admin/users")) section = "users";
+    // Both waitlist paths are prefixes of nothing else, but `/app/admin/vendors`
+    // and `/app/admin/vendor-waitlist` DO share a prefix — the waitlist arms
+    // must be tested first or a waitlist visit would clear the wrong index.
     else if (location.pathname.startsWith("/app/admin/vendor-waitlist"))
       section = "vendor_waitlist";
     else if (location.pathname.startsWith("/app/admin/planner-waitlist"))
       section = "planner_waitlist";
+    else if (location.pathname.startsWith("/app/admin/planners")) section = "planners";
+    else if (location.pathname.startsWith("/app/admin/vendors")) section = "vendors";
     else if (location.pathname.startsWith("/app/admin/feedback")) section = "feedback";
     if (!section) return;
     // Optimistic zero — the server roundtrip will catch up in <100ms.

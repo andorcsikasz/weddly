@@ -2110,7 +2110,14 @@ export const adminUserApi = {
    *  AFTER the visit. AppShell fires this on navigation into the matching
    *  /app/admin/{section} path. */
   markSectionSeen: (
-    section: "suppliers" | "users" | "vendor_waitlist" | "planner_waitlist" | "feedback",
+    section:
+      | "suppliers"
+      | "users"
+      | "planners"
+      | "vendors"
+      | "vendor_waitlist"
+      | "planner_waitlist"
+      | "feedback",
   ) =>
     apiFetch<{ ok: true; section: string; seen_at: number }>(
       "POST",

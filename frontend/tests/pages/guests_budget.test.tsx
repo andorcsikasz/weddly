@@ -639,8 +639,20 @@ describe("<GuestsPage>", () => {
     installDefaultEndpoints({
       households: [coupleHh, realHh],
       guests: [
-        makeGuest({ id: 1, full_name: "Bride", household_id: 1, partner_role: "a", invited_at: 5 }),
-        makeGuest({ id: 2, full_name: "Groom", household_id: 1, partner_role: "b", invited_at: 5 }),
+        makeGuest({
+          id: 1,
+          full_name: "Bride",
+          household_id: 1,
+          partner_role: "bride",
+          invited_at: 5,
+        }),
+        makeGuest({
+          id: 2,
+          full_name: "Groom",
+          household_id: 1,
+          partner_role: "groom",
+          invited_at: 5,
+        }),
         makeGuest({ id: 10, full_name: "Alice", household_id: 2 }),
         makeGuest({ id: 11, full_name: "Bob", household_id: 2 }),
       ],

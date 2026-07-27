@@ -39,7 +39,7 @@ import { EUROPE_ISO_SET, WORLD_NAMES, WORLD_PATHS, WORLD_VIEWBOX } from "../lib/
 import { Skeleton, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminAnalyticsApi } from "../lib/endpoints";
-import { formatHuf, formatNumber, intlLocale } from "../lib/format";
+import { formatHuf, formatLastActive, formatNumber, intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -1024,6 +1024,14 @@ function ActivitySection({
                 <span>{a.signups_daily[0]?.date ?? ""}</span>
                 <span>{a.signups_daily[a.signups_daily.length - 1]?.date ?? ""}</span>
               </div>
+              {/* Who those signups WERE, as small multiples rather than three
+                  overlaid lines. The chart palette is deliberately low-chroma
+                  (an editorial "low-cortisol" set), and three of its hues can't
+                  be told apart on a 14-day sparkline — the CVD and even the
+                  normal-vision separation checks fail. Faceting carries identity
+                  in a text label instead, which is stronger than colour anyway,
+                  and the shared y-scale keeps the three rows comparable. */}
+              <SignupKindFacets points={a.signups_daily} max={dailyMax} locale={locale} t={t} />
             </>
           )}
         </InnerCard>
@@ -3127,7 +3135,7 @@ function TopUsersList({
                 {u.full_name}
               </div>
               <div className="truncate text-[10px] text-neutral-500 dark:text-umber-300">
-                {formatRelative(u.last_seen_at, locale, t)}
+                {formatLastActive(u.last_seen_at, locale, t)}
               </div>
             </div>
             <div className="relative h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
@@ -3144,28 +3152,6 @@ function TopUsersList({
       })}
     </ul>
   );
-}
-
-function formatRelative(
-  unixMs: number | null,
-  locale: Locale,
-  t: (k: string, vars?: Record<string, string | number>) => string,
-): string {
-  if (unixMs == null) return t("admin.last_active_never");
-  const diff = Date.now() - unixMs;
-  if (diff < 60 * 1000) return t("admin.last_active_now");
-  const mins = Math.floor(diff / (60 * 1000));
-  if (mins < 60) return t("admin.last_active_minutes", { n: mins });
-  const hours = Math.floor(diff / (60 * 60 * 1000));
-  if (hours < 24) return t("admin.last_active_hours", { n: hours });
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-  if (days < 7) return t("admin.last_active_days", { n: days });
-  const d = new Date(unixMs);
-  return d.toLocaleDateString(intlLocale(locale), {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }
 
 // ─── Demo section ──────────────────────────────────────────────────────────
@@ -3540,6 +3526,105 @@ function SignupsAreaChart({
         </div>
       )}
     </div>
+  );
+}
+
+/** Daily signups split by account kind, as three stacked facets sharing ONE
+ *  y-scale (the same `max` the chart above uses), so a row's height means the
+ *  same thing in every row and against the total.
+ *
+ *  Small multiples rather than three series in one plot, deliberately. The
+ *  chart palette is a muted editorial set and running three of its hues through
+ *  a contrast check fails on adjacent-pair separation for normal vision, never
+ *  mind CVD — so an overlay would be identity-by-colour that nobody can read.
+ *  A facet is a single series, which needs no legend and no categorical hue: the
+ *  row label carries identity and every mark keeps the one neutral ink.
+ *
+ *  Couples are the remainder (`count - planners - vendors`) because the three
+ *  kinds partition the day's signups exactly. */
+function SignupKindFacets({
+  points,
+  max,
+  locale,
+  t,
+}: {
+  points: Array<{ date: string; count: number; planners: number; vendors: number }>;
+  max: number;
+  locale: Locale;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const rows = [
+    {
+      key: "couples",
+      label: t("admin.analytics_activity_signups_kind_couples"),
+      values: points.map((p) => Math.max(0, p.count - p.planners - p.vendors)),
+    },
+    {
+      key: "planners",
+      label: t("admin.analytics_activity_signups_kind_planners"),
+      values: points.map((p) => p.planners),
+    },
+    {
+      key: "vendors",
+      label: t("admin.analytics_activity_signups_kind_vendors"),
+      values: points.map((p) => p.vendors),
+    },
+  ];
+  return (
+    <div className="mt-3 flex flex-col gap-2 border-t border-paper-200 pt-3 dark:border-umber-700">
+      {rows.map((row) => {
+        const total = row.values.reduce((n, v) => n + v, 0);
+        return (
+          <div key={row.key} className="flex items-center gap-3">
+            <div className="w-24 shrink-0">
+              <div className="truncate text-[11px] font-medium text-ink-700 dark:text-paper-200">
+                {row.label}
+              </div>
+              <div className="stat-num text-[10px] text-neutral-500 dark:text-umber-300">
+                {t("admin.analytics_activity_signups_kind_sub", {
+                  n: formatNumber(total, locale),
+                })}
+              </div>
+            </div>
+            <Sparkline values={row.values} max={max} label={`${row.label}: ${total}`} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** One facet's mark: a filled area on a shared scale, no axes of its own — the
+ *  chart above already labels the window, and repeating ticks three times would
+ *  be noise. `max` comes from the caller so every facet is comparable. */
+function Sparkline({ values, max, label }: { values: number[]; max: number; label: string }) {
+  const W = 240;
+  const H = 26;
+  const niceMax = niceCeiling(Math.max(1, max));
+  const stepX = values.length > 1 ? W / (values.length - 1) : W;
+  const coords = values.map((v, i) => ({ x: i * stepX, y: H - (v / niceMax) * (H - 2) }));
+  const path = coords.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(" ");
+  const fill = `${path} L ${W} ${H} L 0 ${H} Z`;
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      className="h-7 w-full"
+      role="img"
+      aria-label={label}
+    >
+      <title>{label}</title>
+      <path d={fill} className="fill-neutral-500/15 dark:fill-neutral-300/15" />
+      <path
+        d={path}
+        className="stroke-neutral-600 dark:stroke-neutral-300"
+        strokeWidth={1.5}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
   );
 }
 

@@ -7,6 +7,7 @@ import type {
   AdminHoneymoonAnalytics,
   AdminWeddingAnalytics,
 } from "@shared/admin_analytics";
+import type { AdminSidebarBadges } from "@shared/types";
 import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
 import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
@@ -393,6 +394,111 @@ describe("admin users — list, engagement, badges", () => {
     expect(badges.data.feedback).toBe(1);
     // users badge includes the new signup itself.
     expect(badges.data.users).toBeGreaterThanOrEqual(1);
+  });
+
+  test("planners and vendors get their OWN index, and it isn't the users one", async () => {
+    // Real planners and vendors are filtered out of the Felhasználók list, so
+    // the `users` badge deliberately skips them — a badge that points at a page
+    // where the new account never appears is worse than no badge. They light
+    // their own rows instead.
+    const adminToken = await bootstrapAdmin();
+    for (const section of ["users", "planners", "vendors"]) {
+      await req("POST", "/api/admin/sidebar-badges/seen", { section }, { token: adminToken });
+    }
+    // A millisecond past the watermark: the badge predicate is `created_at >
+    // seen_at`, and the seen stamp above can land in the same millisecond as a
+    // fixture inserted right after it.
+    const ts = now() + 1_000;
+    db.prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, user_type, verified_email, created_at, updated_at)
+       VALUES ('fresh.planner@weddly.test', 'x', 'Fresh Planner', 'active', 'owner', 'planner', 1, ?, ?)`,
+    ).run(ts, ts);
+    const vendorUser = db
+      .prepare(
+        `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+         VALUES ('fresh.vendor@weddly.test', 'x', 'Fresh Vendor', 'active', 'vendor', 1, ?, ?)`,
+      )
+      .run(ts, ts);
+    db.prepare(
+      `INSERT INTO vendor_accounts (owner_user_id, display_name, created_at, updated_at)
+       VALUES (?, 'Fresh Vendor Co', ?, ?)`,
+    ).run(Number(vendorUser.lastInsertRowid), ts, ts);
+
+    const badges = await req<AdminSidebarBadges>("GET", "/api/admin/sidebar-badges", undefined, {
+      token: adminToken,
+    });
+    expect(badges.status).toBe(200);
+    expect(badges.data.planners).toBe(1);
+    expect(badges.data.vendors).toBe(1);
+    // Neither shows up on the couples-oriented Users badge.
+    expect(badges.data.users).toBe(0);
+  });
+
+  test("opening Szervezők / Szolgáltatók clears only that index", async () => {
+    const adminToken = await bootstrapAdmin();
+    const ts = now();
+    db.prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, user_type, verified_email, created_at, updated_at)
+       VALUES ('seen.planner@weddly.test', 'x', 'P', 'active', 'owner', 'planner', 1, ?, ?)`,
+    ).run(ts, ts);
+    const vu = db
+      .prepare(
+        `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+         VALUES ('seen.vendor@weddly.test', 'x', 'V', 'active', 'vendor', 1, ?, ?)`,
+      )
+      .run(ts, ts);
+    db.prepare(
+      `INSERT INTO vendor_accounts (owner_user_id, display_name, created_at, updated_at)
+       VALUES (?, 'Seen Vendor Co', ?, ?)`,
+    ).run(Number(vu.lastInsertRowid), ts, ts);
+
+    const read = () =>
+      req<AdminSidebarBadges>("GET", "/api/admin/sidebar-badges", undefined, {
+        token: adminToken,
+      });
+    expect((await read()).data.planners).toBe(1);
+    expect((await read()).data.vendors).toBe(1);
+
+    await req(
+      "POST",
+      "/api/admin/sidebar-badges/seen",
+      { section: "planners" },
+      {
+        token: adminToken,
+      },
+    );
+    const after = await read();
+    expect(after.data.planners).toBe(0);
+    // The vendor index is untouched — the two rails are independent.
+    expect(after.data.vendors).toBe(1);
+  });
+
+  test("a demo planner or vendor never lights an index", async () => {
+    const adminToken = await bootstrapAdmin();
+    for (const section of ["planners", "vendors"]) {
+      await req("POST", "/api/admin/sidebar-badges/seen", { section }, { token: adminToken });
+    }
+    const ts = now() + 1_000;
+    db.prepare(
+      `INSERT INTO users (email, password_hash, full_name, status, role, user_type, verified_email, created_at, updated_at)
+       VALUES ('demo-x@demo.weddly.local', 'x', 'D', 'active', 'owner', 'planner', 1, ?, ?)`,
+    ).run(ts, ts);
+    const dv = db
+      .prepare(
+        `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+         VALUES ('demo-y@demo.weddly.local', 'x', 'D', 'active', 'vendor', 1, ?, ?)`,
+      )
+      .run(ts, ts);
+    db.prepare(
+      `INSERT INTO vendor_accounts (owner_user_id, display_name, created_at, updated_at)
+       VALUES (?, 'Demo Vendor Co', ?, ?)`,
+    ).run(Number(dv.lastInsertRowid), ts, ts);
+
+    const badges = await req<AdminSidebarBadges>("GET", "/api/admin/sidebar-badges", undefined, {
+      token: adminToken,
+    });
+    expect(badges.data.planners).toBe(0);
+    expect(badges.data.vendors).toBe(0);
   });
 
   test("sidebar users badge ignores freshly generated demo accounts", async () => {

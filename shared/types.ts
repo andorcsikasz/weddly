@@ -365,6 +365,15 @@ export interface AdminUserActivity {
 export interface AdminSidebarBadges {
   suppliers: number;
   users: number;
+  /** New planner accounts since this admin last opened Szervezők. Separate
+   *  from `users` because real planners and vendors are filtered OUT of the
+   *  Felhasználók list — counting them there would light a badge pointing at a
+   *  page where the new account never appears. */
+  planners: number;
+  /** New vendor ACCOUNTS since this admin last opened Szolgáltatók. Counted on
+   *  `vendor_accounts.created_at`, not the owner's, so an admin
+   *  convert-to-vendor on a long-standing user still registers as new. */
+  vendors: number;
   vendor_waitlist: number;
   planner_waitlist: number;
   feedback: number;

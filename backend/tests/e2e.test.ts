@@ -10461,7 +10461,12 @@ describe("admin analytics", () => {
     };
     couples_by_status: Record<string, number>;
     top_actions: { action: string; count: number }[];
-    signups_daily: { date: string; count: number }[];
+    signups_daily: { date: string; count: number; planners: number; vendors: number }[];
+    signups_by_kind: {
+      couples: { last_24h: number; last_7d: number; last_30d: number; total: number };
+      planners: { last_24h: number; last_7d: number; last_30d: number; total: number };
+      vendors: { last_24h: number; last_7d: number; last_30d: number; total: number };
+    };
   }
   interface PicksPayload {
     total_picks: number;
@@ -10697,6 +10702,47 @@ describe("admin analytics", () => {
     const honeymoon = money.data.per_category.find((c) => c.category === "honeymoon");
     expect(honeymoon).toBeDefined();
     expect(honeymoon?.couples_with_data).toBe(0);
+  });
+
+  test("activity: signups split into couples / planners / vendors, summing to the total", async () => {
+    // The admin sidebar has three account rails, so the chart does too. The
+    // three kinds partition the day exactly — a planner is user_type='planner',
+    // a vendor is role='vendor' that isn't also a planner, a couple is the rest
+    // — which is what lets the facets be read against one another.
+    wipeAll();
+    const adminToken = await registerAdmin();
+    const ts = Date.now() - 2 * 24 * 60 * 60 * 1000;
+    const insert = (email: string, role: string, userType: string) =>
+      db
+        .prepare(
+          `INSERT INTO users (email, password_hash, full_name, status, role, user_type, verified_email, created_at, updated_at)
+           VALUES (?, '', 'X', 'active', ?, ?, 0, ?, ?)`,
+        )
+        .run(email, role, userType, ts, ts);
+    insert("kind-couple-a@weddly.test", "owner", "couple");
+    insert("kind-couple-b@weddly.test", "owner", "couple");
+    insert("kind-planner@weddly.test", "owner", "planner");
+    insert("kind-vendor@weddly.test", "vendor", "couple");
+
+    const activity = await req<ActivityPayload>("GET", "/api/admin/analytics/activity", undefined, {
+      token: adminToken,
+    });
+    expect(activity.status).toBe(200);
+    const k = activity.data.signups_by_kind;
+    expect(k.couples.total).toBe(2);
+    expect(k.planners.total).toBe(1);
+    expect(k.vendors.total).toBe(1);
+    // Mutually exclusive: the three kinds account for every real signup.
+    expect(k.couples.total + k.planners.total + k.vendors.total).toBe(activity.data.signups.total);
+
+    const d = new Date(ts);
+    const iso = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+    const bucket = activity.data.signups_daily.find((b) => b.date === iso);
+    expect(bucket?.count).toBe(4);
+    expect(bucket?.planners).toBe(1);
+    expect(bucket?.vendors).toBe(1);
+    // The couple line the chart draws is the remainder, and it has to be right.
+    expect((bucket?.count ?? 0) - (bucket?.planners ?? 0) - (bucket?.vendors ?? 0)).toBe(2);
   });
 
   test("activity: signups_daily buckets users by created_at date (5d + 12d ago)", async () => {

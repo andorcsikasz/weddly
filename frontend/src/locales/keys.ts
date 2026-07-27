@@ -5516,6 +5516,9 @@ export interface LocaleMessages {
       filter_trial: string;
       filter_free: string;
       filter_incomplete: string;
+      /** "Gone quiet": activated vendors nobody has signed into for 21 days,
+       *  never-signed-in included. */
+      filter_dormant: string;
       filter_pending: string;
       filter_suspended: string;
       search_placeholder: string;
@@ -5537,6 +5540,17 @@ export interface LocaleMessages {
       reminders_last: string;
       reach_label: string;
       reach_tooltip: string;
+      /** Row meta: when the account was created, when its owner was last seen,
+       *  and (in the incomplete pill's tooltip) when the listing was last
+       *  edited. `last_active_*` under `admin.` renders the relative value. */
+      joined_tooltip: string;
+      last_active_tooltip: string;
+      never_signed_in: string;
+      never_signed_in_tooltip: string;
+      listing_edited: string;
+      /** Demand + reputation, both hidden at zero on the row itself. */
+      inquiries_tooltip: string;
+      reviews_tooltip: string;
       remind: string;
       remind_success: string;
       subscription: string;
@@ -6692,6 +6706,14 @@ export interface LocaleMessages {
     analytics_money_per_category_empty: string;
     analytics_money_histogram_empty: string;
     analytics_activity_signups_empty: string;
+    /** Small-multiple facet labels for the daily-signups card: one row per
+     *  account kind, so identity is carried by a label rather than by colour
+     *  alone (the palette is deliberately low-chroma and can't separate three
+     *  overlaid series). `_sub` is the facet's 14-day total. */
+    analytics_activity_signups_kind_couples: string;
+    analytics_activity_signups_kind_planners: string;
+    analytics_activity_signups_kind_vendors: string;
+    analytics_activity_signups_kind_sub: string;
     analytics_activity_top_actions_empty: string;
     analytics_picks_empty: string;
     analytics_picks_top_empty: string;
