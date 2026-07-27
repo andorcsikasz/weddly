@@ -45,6 +45,7 @@ import {
   Gem,
   Globe,
   Hand,
+  Heart,
   Lightbulb,
   Mail,
   MapPin,
@@ -1397,7 +1398,7 @@ export default function SuppliersPage() {
                     : "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
                 }
               >
-                <Star size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
+                <Heart size={14} className={showSavedOnly ? "fill-current" : ""} aria-hidden />
                 <span className="tabular-nums">{saved.size}</span>
               </button>
             )}
@@ -1433,9 +1434,13 @@ export default function SuppliersPage() {
               onClick={toggleVerifiedFilter}
               aria-pressed={showVerifiedOnly}
               title={t("suppliers.verified_filter")}
+              // Active state takes the `verified` azure rather than the ink of
+              // the other chips: this filter is the badge, so it turns the
+              // badge's own colour on. The token reads on light paper and dark
+              // umber alike, so there is no dark-mode flip here.
               className={
                 showVerifiedOnly
-                  ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3.5 text-sm font-medium text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                  ? "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-verified bg-verified px-3.5 text-sm font-medium text-white"
                   : "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-paper-300 px-3.5 text-sm text-ink-800 transition hover:border-ink-900 dark:border-umber-700 dark:text-paper-100 dark:hover:border-paper-200"
               }
             >
@@ -2141,7 +2146,7 @@ export default function SuppliersPage() {
                           </p>
                         </div>
                         {/* Action cluster: contact CTAs collapse to icons on small
-                      widths so the row never wraps. Star + vote pinned to the
+                      widths so the row never wraps. Heart + vote pinned to the
                       far right. */}
                         <div className="flex shrink-0 items-center gap-1.5">
                           <a
@@ -2864,6 +2869,13 @@ function CompareToggle({
   );
 }
 
+/** The shortlist affordance, and deliberately a HEART rather than the bookmark
+ *  next to it. The two mean different things and the icons have to say so:
+ *  hearting is cheap and plural (as many per category as you like, recalled
+ *  later from the toolbar chip), while the bookmark is `PUT /api/picks/:category`
+ *  — one per category, "this is our photographer", a real commitment. A star
+ *  read as a rating and blurred the line; the heart is the universal "keep this
+ *  for later" and pairs with the blush it was already tinted. */
 function SaveToggle({
   isSaved,
   onToggle,
@@ -2887,7 +2899,7 @@ function SaveToggle({
           : "inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
       }
     >
-      <Star size={15} aria-hidden className={isSaved ? "fill-blush-500 text-blush-500" : ""} />
+      <Heart size={15} aria-hidden className={isSaved ? "fill-blush-500 text-blush-500" : ""} />
     </button>
   );
 }
