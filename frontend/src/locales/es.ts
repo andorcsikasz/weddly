@@ -657,6 +657,7 @@ const es: LocaleMessages = {
     packages_add_success: "Paquete añadido.",
     packages_add_failed: "No se pudo añadir el paquete; inténtalo de nuevo.",
     packages_name_label: "Nombre del paquete",
+    packages_rename: "Renombrar",
     packages_name_placeholder: "p. ej. Paquete de día completo",
     packages_suggestions_label: "Sugerencias:",
     packages_price_label: "Precio",

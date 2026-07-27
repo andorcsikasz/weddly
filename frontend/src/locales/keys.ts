@@ -851,6 +851,8 @@ export interface LocaleMessages {
     packages_add_success: string;
     packages_add_failed: string;
     packages_name_label: string;
+    /** Pencil affordance on the collapsed package header. */
+    packages_rename: string;
     packages_name_placeholder: string;
     packages_suggestions_label: string;
     packages_price_label: string;

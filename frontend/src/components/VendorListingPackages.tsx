@@ -11,7 +11,7 @@
 // mirroring the videos/gallery flow.
 
 import { type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { ChevronDown, FileText, Plus, Trash2, Upload } from "lucide-react";
+import { ChevronDown, FileText, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import {
   type ListingPackage,
   MAX_LISTING_PACKAGES,
@@ -134,7 +134,12 @@ function PackageCard({
   const [priceText, setPriceText] = useState(pkg.price_text ?? "");
   const [description, setDescription] = useState(pkg.description ?? "");
   const [busy, setBusy] = useState(false);
+  // Renaming from the collapsed header. A rename is the one edit a vendor makes
+  // without wanting to see the rest of the card, and it used to cost an expand
+  // plus a scroll to a "CSOMAG NEVE" field.
+  const [renaming, setRenaming] = useState(false);
   const pdfInputRef = useRef<HTMLInputElement | null>(null);
+  const renameRef = useRef<HTMLInputElement | null>(null);
 
   // Resync drafts when the persisted values change (after a save, or an
   // unrelated view refresh). Value-based deps so a re-render that doesn't touch
@@ -172,6 +177,25 @@ function PackageCard({
     } finally {
       setBusy(false);
     }
+  };
+
+  // Focus + select on entering rename mode: the vendor is renaming, so the old
+  // name should be replaceable with one keystroke.
+  useEffect(() => {
+    if (renaming) renameRef.current?.select();
+  }, [renaming]);
+
+  /** Leaving the inline field commits, unless the name is unchanged or was
+   *  emptied — an empty package name is what the editor's own validation
+   *  refuses, so it reverts rather than saving a nameless card. */
+  const commitRename = () => {
+    setRenaming(false);
+    if (!name.trim()) {
+      setName(pkg.name);
+      return;
+    }
+    if (name.trim() === pkg.name) return;
+    void onSave();
   };
 
   const onDelete = async () => {
@@ -238,29 +262,71 @@ function PackageCard({
 
   return (
     <li className="overflow-hidden rounded-lg border border-paper-300 dark:border-umber-700">
-      {/* Collapsible header — name + price summary, click to expand/collapse */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-controls={`pkg-body-${pkg.id}`}
-        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/50"
-      >
-        <ChevronDown
-          size={16}
-          aria-hidden
-          className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${open ? "" : "-rotate-90"}`}
-        />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium text-ink-800 dark:text-paper-100">
-            {name.trim() || t("vendor_home.packages_default_name")}
-          </span>
-          {priceText.trim() && (
-            <span className="block truncate text-xs text-ink-500 dark:text-umber-300">
-              {priceText.trim()}
-            </span>
-          )}
-        </span>
+      {/* Collapsible header — name + price summary, click to expand/collapse.
+          A row, not one big button: the title doubles as an inline rename field
+          and an <input> can't live inside a <button>. */}
+      <div className="flex w-full items-center gap-2.5 px-3 py-2.5">
+        {renaming ? (
+          <input
+            ref={renameRef}
+            className="input min-w-0 flex-1 !py-1 text-sm font-medium"
+            value={name}
+            maxLength={PACKAGE_NAME_MAX}
+            disabled={busy}
+            aria-label={t("vendor_home.packages_name_label")}
+            placeholder={t("vendor_home.packages_name_placeholder")}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitRename();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                setName(pkg.name);
+                setRenaming(false);
+              }
+            }}
+          />
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              aria-controls={`pkg-body-${pkg.id}`}
+              className="-my-2.5 -ml-3 flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-3 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/50"
+            >
+              <ChevronDown
+                size={16}
+                aria-hidden
+                className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${open ? "" : "-rotate-90"}`}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium text-ink-800 dark:text-paper-100">
+                  {name.trim() || t("vendor_home.packages_default_name")}
+                </span>
+                {priceText.trim() && (
+                  <span className="block truncate text-xs text-ink-500 dark:text-umber-300">
+                    {priceText.trim()}
+                  </span>
+                )}
+              </span>
+            </button>
+            {/* Muted rather than hover-only: on a touch screen there is no
+                hover, and an affordance nobody can see is the bug we're fixing. */}
+            <button
+              type="button"
+              onClick={() => setRenaming(true)}
+              disabled={busy}
+              aria-label={t("vendor_home.packages_rename")}
+              title={t("vendor_home.packages_rename")}
+              className="shrink-0 rounded-md p-1.5 text-ink-400 transition-colors hover:bg-paper-100 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            >
+              <Pencil size={14} aria-hidden />
+            </button>
+          </>
+        )}
         {pkg.pdf_url && (
           <FileText size={14} aria-hidden className="shrink-0 text-ink-400 dark:text-umber-300" />
         )}
@@ -269,7 +335,7 @@ function PackageCard({
             {t("vendor_home.packages_unsaved")}
           </span>
         )}
-      </button>
+      </div>
 
       {open && (
         <div

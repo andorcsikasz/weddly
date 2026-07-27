@@ -640,6 +640,7 @@ const hu: LocaleMessages = {
     packages_add_success: "Csomag hozzáadva.",
     packages_add_failed: "Nem sikerült hozzáadni a csomagot, próbáld újra.",
     packages_name_label: "Csomag neve",
+    packages_rename: "Átnevezés",
     packages_name_placeholder: "pl. Egész napos csomag",
     packages_suggestions_label: "Javaslatok:",
     packages_price_label: "Ár",

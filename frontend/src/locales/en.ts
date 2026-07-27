@@ -632,6 +632,7 @@ const en: LocaleMessages = {
     packages_add_success: "Package added.",
     packages_add_failed: "Could not add the package, please try again.",
     packages_name_label: "Package name",
+    packages_rename: "Rename",
     packages_name_placeholder: "e.g. Full-day package",
     packages_suggestions_label: "Suggestions:",
     packages_price_label: "Price",
