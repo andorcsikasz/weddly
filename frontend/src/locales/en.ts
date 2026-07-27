@@ -202,8 +202,7 @@ const en: LocaleMessages = {
     plan_canceled: "Canceled",
     plan_none: "No active plan",
     status_trialing: "Your free trial runs until {date}. Add a card any time to keep going.",
-    status_founding:
-      "You're one of our first 200 couples, so Weddly is free for you until {date}. No card needed.",
+    status_founding: "You're one of our first 200 couples, so Weddly is free for you until {date}.",
     status_active: "Thanks for subscribing. Your plan renews on {date}.",
     status_past_due:
       "Your last payment didn't go through. Update your card to restore full access.",
@@ -426,8 +425,7 @@ const en: LocaleMessages = {
     page_title: "Activate your vendor account",
     page_body: "You're in. Set up your Weddly vendor account in seconds.",
     form_title: "You're in, {name}.",
-    form_intro:
-      "We've accepted you onto Weddly. Set a password and your listing is live. No card needed.",
+    form_intro: "We've accepted you onto Weddly. Set a password and your listing is live.",
     founding_badge: "Founding member · {left}/{cap} spots left",
     founding_note: "The first 100 vendors get a full year with us for free.",
     early_badge: "Early access · {left}/{cap} spots left",
@@ -457,7 +455,7 @@ const en: LocaleMessages = {
     title: "Activate your planner account",
     intro: "Hi {name}! We've set up the planner profile for {business} on Weddly in your name.",
     email_line: "The account belongs to this email address: {email}",
-    free_line: "As a gift you get 2 years of completely free access, until {date}. No card needed.",
+    free_line: "As a gift you get 2 years of completely free access, until {date}.",
     submit: "Activate account",
     legal_prefix: "By activating you accept the ",
     error_title: "This link doesn't work",
@@ -1765,7 +1763,7 @@ const en: LocaleMessages = {
     pricing_after: "Free for 18 months for the first 200 couples.",
     pricing_after_detail:
       "We'd love to help make planning your wedding easier. If you and your partner both register among the first 200 couples, we won't charge you a thing for 18 months.",
-    pricing_bullet_1: "2 weeks free to try, no card needed",
+    pricing_bullet_1: "2 weeks to try it, on us",
     pricing_bullet_2: "Every feature open to couples",
     pricing_bullet_3: "CSV / PDF export, included",
     pricing_bullet_4: "Pause any time · 30-day grace",
@@ -4852,7 +4850,7 @@ const en: LocaleMessages = {
       register_cta: "New vendor",
       register_title: "Register a new vendor",
       register_intro:
-        "We create a pending account and email the vendor an activation link. They set their own password from the link, no card needed.",
+        "We create a pending account and email the vendor an activation link. They set their own password from the link.",
       register_business: "Business name",
       register_email: "Email",
       register_category: "Category",
@@ -4912,7 +4910,7 @@ const en: LocaleMessages = {
       pay_past_due: "Past due",
       pay_past_due_tooltip: "Payment failed, in the grace window.",
       pay_trial: "Trial",
-      pay_trial_tooltip: "Free trial, no card on file — until {date}.",
+      pay_trial_tooltip: "Trial period, until {date}.",
       pay_leads: "Free leads",
       pay_leads_tooltip: "Card on file — {used}/{total} free inquiries used.",
       pay_scheduled: "Billing scheduled",
@@ -7394,7 +7392,7 @@ const en: LocaleMessages = {
     popup_title: "Every inquiry. One workspace.",
     popup_body: "The only workspace you'll ever need.",
     popup_cta: "List your business",
-    popup_microcopy: "Two minutes, no card needed.",
+    popup_microcopy: "Takes two minutes.",
   },
   tools: {
     budget_calculator: {
@@ -7617,7 +7615,7 @@ const en: LocaleMessages = {
     couple_escape_link: "This way",
     pricing_eyebrow: "Pricing",
     pricing_title: "Simple, transparent pricing",
-    pricing_trial: "Try free for 30 days, no card required.",
+    pricing_trial: "The first 30 days are on us.",
     pricing_active_note:
       "Active couple = a wedding actively managed within the current calendar year.",
     billing_monthly: "Monthly",

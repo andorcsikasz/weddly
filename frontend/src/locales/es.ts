@@ -210,7 +210,7 @@ const es: LocaleMessages = {
     status_trialing:
       "Tu prueba gratuita dura hasta el {date}. Añade una tarjeta cuando quieras para seguir.",
     status_founding:
-      "Eres una de nuestras primeras 200 parejas, así que Weddly es gratis para ti hasta el {date}. Sin tarjeta.",
+      "Eres una de nuestras primeras 200 parejas, así que Weddly es gratis para ti hasta el {date}.",
     status_active: "Gracias por suscribirte. Tu plan se renueva el {date}.",
     status_past_due:
       "Tu último pago no se ha completado. Actualiza tu tarjeta para recuperar el acceso completo.",
@@ -444,8 +444,7 @@ const es: LocaleMessages = {
     page_title: "Activa tu cuenta de proveedor",
     page_body: "Ya estás dentro. Configura tu cuenta de proveedor de Weddly en segundos.",
     form_title: "Ya estás dentro, {name}.",
-    form_intro:
-      "Te hemos aceptado en Weddly. Establece una contraseña y tu ficha estará activa. Sin tarjeta.",
+    form_intro: "Te hemos aceptado en Weddly. Establece una contraseña y tu ficha estará activa.",
     founding_badge: "Miembro fundador · quedan {left}/{cap} plazas",
     founding_note: "Los primeros 100 proveedores tienen un año completo con nosotros gratis.",
     early_badge: "Acceso anticipado · quedan {left}/{cap} plazas",
@@ -478,8 +477,7 @@ const es: LocaleMessages = {
     intro:
       "¡Hola, {name}! Hemos creado el perfil de wedding planner de {business} en Weddly a tu nombre.",
     email_line: "La cuenta pertenece a esta dirección de correo: {email}",
-    free_line:
-      "Como regalo tienes 2 años de acceso completamente gratis, hasta el {date}. Sin tarjeta.",
+    free_line: "Como regalo tienes 2 años de acceso completamente gratis, hasta el {date}.",
     submit: "Activar cuenta",
     legal_prefix: "Al activarla aceptas los ",
     error_title: "Este enlace no funciona",
@@ -1811,7 +1809,7 @@ const es: LocaleMessages = {
     pricing_after: "Gratis durante 18 meses para las primeras 200 parejas.",
     pricing_after_detail:
       "Nos encantaría ayudarte a que planear tu boda sea más fácil. Si tu pareja y tú os registráis entre las primeras 200 parejas, no te cobraremos nada durante 18 meses.",
-    pricing_bullet_1: "2 semanas gratis para probar, sin tarjeta",
+    pricing_bullet_1: "2 semanas para probarlo, por nuestra cuenta",
     pricing_bullet_2: "Todas las funciones abiertas para las parejas",
     pricing_bullet_3: "Exportación CSV / PDF, incluida",
     pricing_bullet_4: "Pausa cuando quieras · 30 días de cortesía",
@@ -4951,7 +4949,7 @@ const es: LocaleMessages = {
       register_cta: "Nuevo proveedor",
       register_title: "Registrar un nuevo proveedor",
       register_intro:
-        "Creamos una cuenta pendiente y enviamos al proveedor un enlace de activación por email. Ellos mismos establecen su contraseña desde el enlace, sin necesidad de tarjeta.",
+        "Creamos una cuenta pendiente y enviamos al proveedor un enlace de activación por email. Ellos mismos establecen su contraseña desde el enlace.",
       register_business: "Nombre del negocio",
       register_email: "Email",
       register_category: "Categoría",
@@ -5012,7 +5010,7 @@ const es: LocaleMessages = {
       pay_past_due: "Pago vencido",
       pay_past_due_tooltip: "El pago ha fallado, en periodo de gracia.",
       pay_trial: "Prueba",
-      pay_trial_tooltip: "Prueba gratuita, sin tarjeta registrada: hasta el {date}.",
+      pay_trial_tooltip: "Periodo de prueba, hasta el {date}.",
       pay_leads: "Leads gratis",
       pay_leads_tooltip: "Tarjeta registrada: {used}/{total} solicitudes gratis usadas.",
       pay_scheduled: "Facturación programada",
@@ -7530,7 +7528,7 @@ const es: LocaleMessages = {
     popup_title: "Cada consulta. Un solo espacio de trabajo.",
     popup_body: "El único espacio de trabajo que necesitarás.",
     popup_cta: "Publica tu negocio",
-    popup_microcopy: "Dos minutos, sin tarjeta.",
+    popup_microcopy: "Solo dos minutos.",
   },
   tools: {
     budget_calculator: {
@@ -7753,7 +7751,7 @@ const es: LocaleMessages = {
     couple_escape_link: "Por aquí",
     pricing_eyebrow: "Precios",
     pricing_title: "Precios sencillos y transparentes",
-    pricing_trial: "Prueba gratis durante 30 días, sin tarjeta.",
+    pricing_trial: "Los primeros 30 días corren de nuestra cuenta.",
     pricing_active_note:
       "Pareja activa = una boda que se gestiona activamente dentro del año natural en curso.",
     billing_monthly: "Mensual",

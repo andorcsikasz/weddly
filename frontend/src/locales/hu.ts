@@ -203,8 +203,7 @@ const hu: LocaleMessages = {
     plan_none: "Nincs aktív csomag",
     status_trialing:
       "Az ingyenes próbaidőtök {date}-ig tart. Bármikor megadhattok egy kártyát a folytatáshoz.",
-    status_founding:
-      "Az első 200 párunk egyike vagytok, így a Weddly nektek {date}-ig ingyenes. Kártya nem szükséges.",
+    status_founding: "Az első 200 párunk egyike vagytok, így a Weddly nektek {date}-ig ingyenes.",
     status_active: "Köszönjük az előfizetést. A csomagotok {date}-kor újul meg.",
     status_past_due:
       "Az utolsó fizetés nem ment át. Frissítsétek a kártyát a teljes hozzáférésért.",
@@ -432,7 +431,7 @@ const hu: LocaleMessages = {
     page_body: "Felvettünk a Weddly szolgáltatói közé. Állítsd be a fiókod pár másodperc alatt.",
     form_title: "Üdv a fedélzeten, {name}!",
     form_intro:
-      "Felvettünk a Weddly szolgáltatói közé. Állíts be egy jelszót, és máris a tiéd a hirdetés. Bankkártya nem kell.",
+      "Felvettünk a Weddly szolgáltatói közé. Állíts be egy jelszót, és máris a tiéd a hirdetés.",
     founding_badge: "Alapító tag · {left}/{cap} hely szabad",
     founding_note: "Az első 100 szolgáltató egy teljes évet kap tőlünk ingyen.",
     early_badge: "Korai hozzáférés · {left}/{cap} hely szabad",
@@ -464,8 +463,7 @@ const hu: LocaleMessages = {
     title: "Szervezői fiók élesítése",
     intro: "Szia {name}! Elkészítettük neked a(z) {business} szervezői profilját a Weddly-n.",
     email_line: "A fiók ehhez az email címhez tartozik: {email}",
-    free_line:
-      "Ajándékba 2 év teljesen ingyenes hozzáférés jár, eddig: {date}. Bankkártya nem kell.",
+    free_line: "Ajándékba 2 év teljesen ingyenes hozzáférés jár, eddig: {date}.",
     submit: "Fiók élesítése",
     legal_prefix: "Az élesítéssel elfogadod az ",
     error_title: "Ez a link nem működik",
@@ -1788,7 +1786,7 @@ const hu: LocaleMessages = {
     pricing_after: "Az első 200 párnak 18 hónapig ingyenes.",
     pricing_after_detail:
       "Szeretnénk segíteni, hogy könnyebb legyen az esküvőtök szervezése. Ha a pároddal mindketten regisztráltok az első 200 pár között, 18 hónapig semmilyen költséget nem számolunk fel nektek.",
-    pricing_bullet_1: "2 hét ingyenes próbaidő, kártya nélkül",
+    pricing_bullet_1: "2 hét próbaidő, a vendégünk vagy",
     pricing_bullet_2: "Minden funkció elérhető a pároknak",
     pricing_bullet_3: "Korlátlan CSV- és PDF-export",
     pricing_bullet_4: "Bármikor szüneteltethető · 30 nap türelmi idő",
@@ -4905,7 +4903,7 @@ const hu: LocaleMessages = {
       register_cta: "Új szolgáltató",
       register_title: "Új szolgáltató regisztrálása",
       register_intro:
-        "Létrehozunk egy aktiválásra váró fiókot, és e-mailben elküldjük az aktivációs linket. A szolgáltató a linken keresztül állítja be a saját jelszavát, bankkártya nem kell.",
+        "Létrehozunk egy aktiválásra váró fiókot, és e-mailben elküldjük az aktivációs linket. A szolgáltató a linken keresztül állítja be a saját jelszavát.",
       register_business: "Vállalkozás neve",
       register_email: "E-mail",
       register_category: "Kategória",
@@ -4965,7 +4963,7 @@ const hu: LocaleMessages = {
       pay_past_due: "Késedelem",
       pay_past_due_tooltip: "Sikertelen fizetés, türelmi időszakban.",
       pay_trial: "Próba",
-      pay_trial_tooltip: "Ingyenes próba, bankkártya nélkül — eddig: {date}.",
+      pay_trial_tooltip: "Próbaidőszak, eddig: {date}.",
       pay_leads: "Ingyen leadek",
       pay_leads_tooltip: "Kártya mentve — {used}/{total} ingyenes megkeresés felhasználva.",
       pay_scheduled: "Számlázás ütemezve",
@@ -7465,7 +7463,7 @@ const hu: LocaleMessages = {
     popup_title: "Minden megkeresés egy helyen.",
     popup_body: "Az egyetlen munkafelület, amire szükséged lesz.",
     popup_cta: "Hirdesd a vállalkozásod",
-    popup_microcopy: "Két perc, bankkártya nélkül.",
+    popup_microcopy: "Két perc az egész.",
   },
   tools: {
     budget_calculator: {
@@ -7686,7 +7684,7 @@ const hu: LocaleMessages = {
     couple_escape_link: "Erre jöjj",
     pricing_eyebrow: "Árképzés",
     pricing_title: "Egyszerű, átlátható árak",
-    pricing_trial: "Próbáld ki 30 napig ingyen, bankkártya nélkül.",
+    pricing_trial: "Az első 30 nap a vendégünk vagy.",
     pricing_active_note: "Aktív pár = egyidejűleg kezelt esküvő a naptári éven belül.",
     billing_monthly: "Havi",
     billing_annual: "Éves",

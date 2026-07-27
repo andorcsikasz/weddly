@@ -2410,14 +2410,14 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ? introParas
         : [
             "Jó hírünk van: felvettünk titeket a Weddly-n tervező pároknak ajánlott szolgáltatók közé.",
-            '**A szolgáltatói fiókotok aktiválásához kattintsatok a lenti „Fiók aktiválása" gombra.** Nincs szükség bankkártyára. A jelentkezéskor megadott adataitok és képeitek alapján már összeraktuk a profilotokat, belépés után csak átnézitek és élesítitek.',
+            '**A szolgáltatói fiókotok aktiválásához kattintsatok a lenti „Fiók aktiválása" gombra.** A jelentkezéskor megadott adataitok és képeitek alapján már összeraktuk a profilotokat, belépés után csak átnézitek és élesítitek.',
           ];
     const enParas =
       introParas.length > 0
         ? introParas
         : [
             "Good news: we've added you to the vendors we recommend to couples planning on Weddly.",
-            '**To activate your vendor account, tap the "Activate account" button below.** No card needed. We\'ve already built your profile from the details and photos in your application, so once you sign in you just review it and go live.',
+            '**To activate your vendor account, tap the "Activate account" button below.** We\'ve already built your profile from the details and photos in your application, so once you sign in you just review it and go live.',
           ];
     return {
       subject:
@@ -2427,12 +2427,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       plainCtaUrl: true,
       noUtm: true,
       hu: {
-        preheader: "Aktiváld a szolgáltatói fiókod, nincs szükség bankkártyára.",
+        preheader: "Aktiváld a szolgáltatói fiókod.",
         greeting: name ? `Szia ${name}!` : "Szia!",
         paragraphs: huParas,
         cta: "Fiók aktiválása",
-        ctaSubtext:
-          "Nincs szükség bankkártyára. A link 30 napig érvényes, és csak egyszer működik.",
+        ctaSubtext: "A link 30 napig érvényes, és csak egyszer működik.",
         footnote:
           "Ha nem te kérted ezt a fiókot, nyugodtan hagyd figyelmen kívül ezt a levelet, aktiválás nélkül a profil nem lép életbe.",
       },
@@ -2440,7 +2439,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: name ? `Hi ${name},` : "Hi there,",
         paragraphs: enParas,
         cta: "Activate account",
-        ctaSubtext: "No card needed. The link is valid for 30 days and works once.",
+        ctaSubtext: "The link is valid for 30 days and works once.",
         footnote:
           "If you didn't ask for this account, you can safely ignore this email, without activation the profile never goes live.",
       },
@@ -2777,7 +2776,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Szia ${p.plannerName}!`,
       paragraphs: [
         `Jó hírünk van: elkészítettük neked a(z) **${p.businessName}**${p.category ? ` (${p.category})` : ""} szervezői profilját a Weddly-n.`,
-        `Ajándékba **2 év teljesen ingyenes hozzáférést** kapsz (érvényes eddig: ${p.freeUntilHu}). Nincs bankkártya, nincs apró betű: a lenti gombbal élesíted a fiókot, beállítasz egy jelszót, és már használhatod is.`,
+        `Ajándékba **2 év teljesen ingyenes hozzáférést** kapsz (érvényes eddig: ${p.freeUntilHu}). Nincs apró betű: a lenti gombbal élesíted a fiókot, beállítasz egy jelszót, és már használhatod is.`,
         `Az élesítéssel elfogadod az Általános Szerződési Feltételeket (${CONFIG.frontendBaseUrl}/terms) és az Adatkezelési tájékoztatót (${CONFIG.frontendBaseUrl}/privacy). Mindkettőt a gomb után is megtalálod, mielőtt véglegesítenél.`,
       ],
       cta: "Fiók élesítése",
@@ -2789,7 +2788,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Hi ${p.plannerName},`,
       paragraphs: [
         `Good news: we've set up the planner profile for **${p.businessName}**${p.category ? ` (${p.category})` : ""} on Weddly in your name.`,
-        `As a gift you get **2 years of completely free access**, until ${p.freeUntilEn}. No card, no fine print: hit the button below to activate the account, set a password, and you're in.`,
+        `As a gift you get **2 years of completely free access**, until ${p.freeUntilEn}. No fine print: hit the button below to activate the account, set a password, and you're in.`,
         `By activating you accept the Terms of Service (${CONFIG.frontendBaseUrl}/terms) and the Privacy Policy (${CONFIG.frontendBaseUrl}/privacy). Both are shown again on the activation page before you confirm.`,
       ],
       cta: "Activate account",
@@ -2812,7 +2811,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         `Köszönjük a jelentkezésed a Weddly tervezői programjába. Átnéztük és **jóváhagytuk** a(z) **${p.businessName}** profilját.`,
         "Már csak egy lépés van hátra: nyisd meg a fiókod a lenti gombbal, és állíts be egy jelszót. Az onboardingot **előre kitöltöttük a jelentkezésed adataival**, csak át kell nézned.",
-        `A hozzáférés ingyenes eddig: ${p.freeUntilHu}. Nincs bankkártya, nincs apró betű.`,
+        `A hozzáférés ingyenes eddig: ${p.freeUntilHu}. Nincs apró betű.`,
         `A fiók megnyitásával elfogadod az Általános Szerződési Feltételeket (${CONFIG.frontendBaseUrl}/terms) és az Adatkezelési tájékoztatót (${CONFIG.frontendBaseUrl}/privacy). Mindkettőt a gomb után is megtalálod, mielőtt véglegesítenél.`,
       ],
       cta: "Fiók megnyitása",
@@ -2824,7 +2823,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         `Thanks for applying to the Weddly planner programme. We have reviewed and **approved** the profile for **${p.businessName}**.`,
         "One step left: open your account with the button below and set a password. We have **pre-filled your onboarding with the details from your application**, so you just need to review them.",
-        `Your access is free until ${p.freeUntilEn}. No card, no fine print.`,
+        `Your access is free until ${p.freeUntilEn}. No fine print.`,
         `By opening the account you accept the Terms of Service (${CONFIG.frontendBaseUrl}/terms) and the Privacy Policy (${CONFIG.frontendBaseUrl}/privacy). Both are shown again on the activation page before you confirm.`,
       ],
       cta: "Open your account",
