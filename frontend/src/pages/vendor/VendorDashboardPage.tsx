@@ -11,6 +11,8 @@ import {
   CalendarOff,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
+  Eye,
   Image as ImageIcon,
   Inbox,
   RefreshCw,
@@ -23,7 +25,13 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
-import type { VendorPointsStatus } from "@shared/vendor_points";
+import {
+  EARNABLE_EVENTS,
+  FAST_REPLY_HOURS,
+  POINTS_BY_EVENT,
+  type VendorPointsStatus,
+  perksForTier,
+} from "@shared/vendor_points";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { AnimatedNumber } from "../../components/AnimatedNumber";
 import {
@@ -190,7 +198,6 @@ export default function VendorDashboardPage() {
   const currency = stats.currency;
   const pct = Math.round(stats.listing_completeness);
   const completenessDone = pct >= 100;
-  const revenuePositive = stats.revenue_tracked > 0;
   // Dismissing no longer HIDES the setup guidance, it COLLAPSES it to a small
   // persistent progress chip, so an incomplete listing always keeps a visible,
   // reopenable prompt (and the % is never lost until the listing is done).
@@ -290,7 +297,7 @@ export default function VendorDashboardPage() {
 
       {/* Greeting */}
       <header>
-        <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
+        <h1 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-[-0.02em] text-ink-900 sm:text-4xl dark:text-paper-50">
           {t("vendor.dashboard.welcome", { name: greetingName })}
         </h1>
       </header>
@@ -321,22 +328,22 @@ export default function VendorDashboardPage() {
       )}
 
       {/* HERO metric - last 30 days of inquiries, the number that matters most. */}
-      <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 dark:border-umber-600 dark:bg-umber-900">
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
-          <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-steel-600 dark:text-steel-300">
-            <TrendingUp size={16} aria-hidden="true" />
+          <span className="flex items-center gap-2 text-sm text-ink-500 dark:text-paper-400">
+            <TrendingUp size={15} aria-hidden="true" className="text-steel-500" />
             {t("vendor.dashboard.hero_label")}
           </span>
-          <span className="font-grotesk text-5xl font-semibold leading-none tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
+          <span className="font-grotesk text-6xl font-semibold leading-none tracking-[-0.03em] text-ink-900 tabular-nums sm:text-7xl dark:text-paper-50">
             <AnimatedNumber value={stats.inquiries_30d} />
           </span>
-          <span className="text-sm text-ink-600 dark:text-paper-300">
+          <span className="text-sm text-ink-500 dark:text-paper-400">
             {t("vendor.dashboard.hero_hint")}
           </span>
         </div>
         <Link
           to="/vendor/clients"
-          className="inline-flex shrink-0 items-center gap-1 self-start rounded-xl border border-paper-300 px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-paper-100 sm:self-auto dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800"
+          className="inline-flex h-11 shrink-0 items-center gap-1.5 self-start rounded-xl bg-ink-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-ink-800 sm:self-auto dark:bg-paper-50 dark:text-ink-900 dark:hover:bg-paper-100"
         >
           <span>{t("vendor.dashboard.view_clients")}</span>
           <ArrowRight size={15} aria-hidden="true" />
@@ -344,9 +351,16 @@ export default function VendorDashboardPage() {
       </section>
 
       {/* Secondary KPIs — each opens the surface behind the number. */}
-      {/* Three KPIs: two per row on small screens with the odd third spanning
-          the full width (no lonely half-empty row), three-up from lg. */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 [&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
+      {/* Four KPIs divide evenly two-up on small screens and four-up from lg,
+          so no row ends ragged and the odd-one-out span hack is unnecessary. */}
+      <div className="grid grid-cols-2 divide-x divide-y divide-paper-200 border-y border-paper-200 lg:grid-cols-4 lg:divide-y-0 dark:divide-umber-700 dark:border-umber-700">
+        <KpiCard
+          icon={<Eye size={18} aria-hidden="true" />}
+          label={t("vendor.dashboard.views_30d")}
+          value={<AnimatedNumber value={stats.views_30d} />}
+          to="/vendor/stats"
+          linkLabel={t("vendor.stats.page_title")}
+        />
         <KpiCard
           icon={<Inbox size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.inquiries_total")}
@@ -363,7 +377,6 @@ export default function VendorDashboardPage() {
               format={(n) => formatMoney(n, currency, locale)}
             />
           }
-          tone={revenuePositive ? "sage" : undefined}
           to="/vendor/clients"
           linkLabel={t("vendor.dashboard.view_clients")}
         />
@@ -378,14 +391,10 @@ export default function VendorDashboardPage() {
 
       {/* Upcoming events preview + smart action cards */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <section className="lg:col-span-2 flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900">
+        <section className="lg:col-span-2 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
-              <CalendarClock
-                size={18}
-                aria-hidden="true"
-                className="text-steel-600 dark:text-steel-300"
-              />
+            <h2 className="flex items-center gap-2 font-grotesk text-lg font-semibold tracking-[-0.01em] text-ink-900 dark:text-paper-50">
+              <CalendarClock size={18} aria-hidden="true" className="text-steel-500" />
               <span>{t("vendor.dashboard.upcoming_title")}</span>
             </h2>
             <Link
@@ -402,24 +411,28 @@ export default function VendorDashboardPage() {
               {t("vendor.dashboard.no_upcoming")}
             </p>
           ) : (
-            <ul className="flex flex-col divide-y divide-paper-200 dark:divide-umber-700">
+            <ul className="flex flex-col divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
               {stats.upcoming.map((event) => (
                 <li key={event.id}>
                   <Link
                     to={`/vendor/clients/${event.id}`}
-                    className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800"
+                    className="group -mx-2 flex items-center justify-between gap-3 px-2 py-4 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800"
                   >
                     <span
-                      className="truncate text-sm font-medium text-ink-900 dark:text-paper-50"
+                      className="truncate font-medium text-ink-900 dark:text-paper-50"
                       title={event.couple_display_name}
                     >
                       {event.couple_display_name}
                     </span>
-                    <span className="flex shrink-0 items-center gap-2 text-sm text-ink-600 dark:text-paper-300">
+                    <span className="flex shrink-0 items-center gap-2 text-sm text-ink-500 dark:text-paper-400">
                       {event.event_date
                         ? formatDate(event.event_date, locale)
                         : t("vendor.clients.no_event_date")}
-                      <ArrowRight size={15} aria-hidden="true" />
+                      <ChevronRight
+                        size={16}
+                        aria-hidden="true"
+                        className="text-ink-300 transition-transform group-hover:translate-x-0.5 dark:text-paper-400"
+                      />
                     </span>
                   </Link>
                 </li>
@@ -428,11 +441,11 @@ export default function VendorDashboardPage() {
           )}
         </section>
 
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
+        <section className="flex flex-col gap-2">
+          <h2 className="font-grotesk text-lg font-semibold tracking-[-0.01em] text-ink-900 dark:text-paper-50">
             {t("vendor.dashboard.actions_title")}
           </h2>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
             {actions.map((action) => (
               <ActionCard key={`${action.title}-${action.to}`} {...action} />
             ))}
@@ -443,14 +456,11 @@ export default function VendorDashboardPage() {
   );
 }
 
-type KpiTone = "sage";
-
 function KpiCard({
   icon,
   label,
   value,
   sub,
-  tone,
   to,
   linkLabel,
 }: {
@@ -458,7 +468,6 @@ function KpiCard({
   label: string;
   value: ReactNode;
   sub?: string;
-  tone?: KpiTone;
   to?: string;
   /** Names the destination in the tile, in the same "Ügyfelek megtekintése →"
    *  shape the sections above use. A whole-tile Link with nothing but a hover
@@ -466,40 +475,40 @@ function KpiCard({
    *  link to the calendar that nobody could tell was one. */
   linkLabel?: string;
 }) {
-  const iconTone =
-    tone === "sage" ? "text-sage-600 dark:text-sage-300" : "text-steel-600 dark:text-steel-300";
-  const valueTone =
-    tone === "sage" ? "text-sage-700 dark:text-sage-300" : "text-ink-900 dark:text-paper-50";
   const body = (
     <>
-      <div className={`flex items-center gap-2 ${iconTone}`}>
-        {icon}
-        <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
+      <div className="flex items-center gap-2 text-sm text-ink-500 dark:text-paper-400">
+        <span className="shrink-0">{icon}</span>
+        {/* Wraps rather than truncating: on a phone the two-up grid is narrow
+            enough that "Követett bevétel" would otherwise read "Követett bev…". */}
+        <span className="min-w-0 leading-snug">{label}</span>
+        {to && (
+          <ChevronRight
+            size={16}
+            aria-hidden="true"
+            className="ml-auto shrink-0 text-ink-300 transition-transform group-hover:translate-x-0.5 dark:text-paper-400"
+          />
+        )}
       </div>
-      {/* Shrinks a notch on mobile and wraps (break-words) so a large money
-          value like "1 200 000 Ft" stays inside the narrow tile instead of
-          overflowing its right edge. */}
-      <div
-        className={`break-words text-center text-xl font-semibold leading-tight tabular-nums sm:text-2xl ${valueTone}`}
-      >
+      {/* Wraps (break-words) so a large money value like "1 200 000 Ft" stays
+          inside the narrow tile instead of overflowing its right edge. */}
+      <div className="break-words font-grotesk text-2xl font-semibold leading-tight tracking-[-0.02em] tabular-nums text-ink-900 sm:text-3xl dark:text-paper-50">
         {value}
       </div>
-      {sub && <div className="text-center text-xs text-ink-500 dark:text-paper-400">{sub}</div>}
-      {to && linkLabel && (
-        <span className="mt-auto inline-flex items-center justify-center gap-1 pt-1 text-xs font-medium text-steel-600 dark:text-steel-300">
-          <span className="truncate">{linkLabel}</span>
-          <ArrowRight size={13} aria-hidden="true" className="shrink-0" />
-        </span>
-      )}
+      {sub && <div className="text-xs text-ink-500 dark:text-paper-400">{sub}</div>}
     </>
   );
-  const frame =
-    "flex flex-col gap-2 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900";
+  // No frame: the tiles are cells of one hairline grid, which is why the
+  // destination is a chevron rather than a labelled link. The whole cell is the
+  // hit area, so naming it twice was the old card's compensation for looking
+  // static.
+  const frame = "group flex flex-col gap-1 px-4 py-4 sm:px-5";
   if (!to) return <div className={frame}>{body}</div>;
   return (
     <Link
       to={to}
-      className={`${frame} transition-colors hover:border-steel-300 hover:bg-paper-100 dark:hover:border-steel-600 dark:hover:bg-umber-800`}
+      aria-label={linkLabel ? `${label} · ${linkLabel}` : label}
+      className={`${frame} transition-colors hover:bg-paper-100 dark:hover:bg-umber-800`}
     >
       {body}
     </Link>
@@ -522,20 +531,18 @@ function ActionCard({ to, icon, title, body, tone }: ActionCardProps) {
   return (
     <Link
       to={to}
-      className="group flex items-start gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 transition-colors hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-900 dark:hover:bg-umber-800"
+      className="group -mx-2 flex items-center gap-3 px-2 py-4 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800"
     >
-      <span className={`mt-0.5 shrink-0 ${accent}`}>{icon}</span>
+      <span className={`shrink-0 ${accent}`}>{icon}</span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-center gap-1 text-sm font-medium text-ink-900 dark:text-paper-50">
-          <span className="truncate">{title}</span>
-          <ArrowRight
-            size={15}
-            aria-hidden="true"
-            className="shrink-0 text-ink-400 transition-transform group-hover:translate-x-0.5 dark:text-paper-400"
-          />
-        </span>
-        <span className="text-sm text-ink-600 dark:text-paper-300">{body}</span>
+        <span className="truncate font-medium text-ink-900 dark:text-paper-50">{title}</span>
+        <span className="text-sm text-ink-500 dark:text-paper-400">{body}</span>
       </div>
+      <ChevronRight
+        size={16}
+        aria-hidden="true"
+        className="shrink-0 text-ink-300 transition-transform group-hover:translate-x-0.5 dark:text-paper-400"
+      />
     </Link>
   );
 }
@@ -588,62 +595,173 @@ function DashboardSkeleton({ title }: { title: string }) {
   );
 }
 
-/** Weddly Points strip: where the vendor stands and what the next tier is
- *  worth. Read-only in phase 1 — nothing here can spend, claim or trigger
- *  anything, it reports what the ledger already says.
+/** Where each earning rule sends a vendor who wants to act on it. `null` means
+ *  the rule isn't something a vendor can go and do in one click (a repeat
+ *  booking is a couple's decision), so the row stays a plain, unlinked line
+ *  rather than pretending a button exists for it. */
+const EARN_ROUTE: Record<(typeof EARNABLE_EVENTS)[number], string | null> = {
+  profile_completeness: "/vendor/listing",
+  first_review: "/vendor/reviews",
+  review_collected: "/vendor/reviews",
+  fast_reply: "/vendor/clients",
+  repeat_booking: null,
+};
+
+/** Weddly Points strip: where the vendor stands, how the score goes up, and
+ *  what the next tier is worth. Read-only: nothing here can spend, claim or
+ *  trigger anything, it reports what the ledger already says.
  *
  *  Deliberately number-first: the points total is the hero figure, with the
  *  ring carrying the "how far to the next tier" that a bare percentage in text
- *  never communicates as well. The perks line is what stops the tier from
- *  reading as a sticker — it names what the vendor gets, not that they are
- *  special. */
+ *  never communicates as well.
+ *
+ *  The collapsed strip alone was a scoreboard with no rulebook: a Blue vendor
+ *  saw "10" and "240 to Gold" and nothing about what moves either number (the
+ *  perks list renders only from Gold up, so entry-tier vendors, which is
+ *  everyone at first, saw no payoff either). The expander answers both, and
+ *  pairs every rule with what THIS vendor has earned from it, so "where did my
+ *  10 come from" is answered on the same line as "how do I get more". */
 function PointsStrip({ points }: { points: VendorPointsStatus }) {
   const { t } = useT();
+  const [showEarn, setShowEarn] = useState(false);
   const atTop = points.next_tier === null;
+
+  // What the NEXT tier unlocks, which is the reason to chase it. Composed from
+  // the shared perk table so a tier's perks are described in exactly one place.
+  const nextPerks = points.next_tier ? perksForTier(points.next_tier) : null;
+  const unlocks: string[] = [];
+  if (nextPerks) {
+    if (nextPerks.search_boost > 0) unlocks.push(t("vendor.points.perk_search"));
+    if (nextPerks.extra_lead_credits > 0) {
+      unlocks.push(t("vendor.points.perk_leads", { n: String(nextPerks.extra_lead_credits) }));
+    }
+    if (nextPerks.subscription_discount_pct > 0) {
+      unlocks.push(
+        t("vendor.points.perk_discount", { pct: String(nextPerks.subscription_discount_pct) }),
+      );
+    }
+    if (nextPerks.profile_badge) unlocks.push(t("vendor.points.perk_badge"));
+  }
+
   return (
-    <section className="flex flex-wrap items-center gap-4 rounded-2xl border border-paper-300 bg-white p-4 dark:border-umber-600 dark:bg-umber-900">
-      <ProgressRing
-        pct={points.progress * 100}
-        size={56}
-        stroke={5}
-        tone={atTop ? "complete" : "active"}
-        label={t("vendor.points.ring_label")}
-      >
-        <TrendingUp size={18} className="text-steel-600 dark:text-steel-300" aria-hidden="true" />
-      </ProgressRing>
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <p className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-            {t("vendor.points.label")}
+    <section className="border-b border-paper-200 pb-4 dark:border-umber-700">
+      <div className="flex flex-wrap items-center gap-4">
+        <ProgressRing
+          pct={points.progress * 100}
+          size={56}
+          stroke={5}
+          tone={atTop ? "complete" : "active"}
+          label={t("vendor.points.ring_label")}
+        >
+          <TrendingUp size={18} className="text-steel-600 dark:text-steel-300" aria-hidden="true" />
+        </ProgressRing>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <p className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+              {t("vendor.points.label")}
+            </p>
+            <TierBadge tier={points.tier} size="sm" />
+          </div>
+          <p className="font-grotesk text-3xl font-semibold leading-none text-ink-900 dark:text-paper-50">
+            <AnimatedNumber value={points.points} />
           </p>
-          <TierBadge tier={points.tier} size="sm" />
+          <p className="text-xs text-ink-500 dark:text-umber-300">
+            {atTop
+              ? t("vendor.points.at_top")
+              : t("vendor.points.to_next", {
+                  points: String(points.points_to_next),
+                  tier: t(`vendor.points.tier.${points.next_tier}`),
+                })}
+          </p>
         </div>
-        <p className="font-grotesk text-3xl font-semibold leading-none text-ink-900 dark:text-paper-50">
-          <AnimatedNumber value={points.points} />
-        </p>
-        <p className="text-xs text-ink-500 dark:text-umber-300">
-          {atTop
-            ? t("vendor.points.at_top")
-            : t("vendor.points.to_next", {
-                points: String(points.points_to_next),
-                tier: t(`vendor.points.tier.${points.next_tier}`),
-              })}
-        </p>
+        {points.perks.profile_badge && (
+          <ul className="flex flex-col gap-1 text-xs text-ink-600 dark:text-umber-200">
+            {points.perks.search_boost > 0 && <li>{t("vendor.points.perk_search")}</li>}
+            {points.perks.extra_lead_credits > 0 && (
+              <li>
+                {t("vendor.points.perk_leads", { n: String(points.perks.extra_lead_credits) })}
+              </li>
+            )}
+            {points.perks.subscription_discount_pct > 0 && (
+              <li>
+                {t("vendor.points.perk_discount", {
+                  pct: String(points.perks.subscription_discount_pct),
+                })}
+              </li>
+            )}
+          </ul>
+        )}
       </div>
-      {points.perks.profile_badge && (
-        <ul className="flex flex-col gap-1 text-xs text-ink-600 dark:text-umber-200">
-          {points.perks.search_boost > 0 && <li>{t("vendor.points.perk_search")}</li>}
-          {points.perks.extra_lead_credits > 0 && (
-            <li>{t("vendor.points.perk_leads", { n: String(points.perks.extra_lead_credits) })}</li>
+
+      <button
+        type="button"
+        onClick={() => setShowEarn((v) => !v)}
+        aria-expanded={showEarn}
+        className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+      >
+        <span>{t("vendor.points.how_to_earn")}</span>
+        <ChevronDown
+          size={14}
+          aria-hidden="true"
+          className={`transition-transform ${showEarn ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {showEarn && (
+        <div className="mt-3 flex flex-col gap-3 border-t border-paper-200 pt-3 dark:border-umber-700">
+          <ul className="flex flex-col gap-1">
+            {EARNABLE_EVENTS.map((event) => {
+              const to = EARN_ROUTE[event];
+              const earned = points.earned_by_event[event] ?? 0;
+              const row = (
+                <>
+                  <span className="w-11 shrink-0 rounded-md bg-steel-50 py-0.5 text-center font-grotesk text-xs font-semibold tabular-nums text-steel-700 dark:bg-steel-600/20 dark:text-steel-200">
+                    +{POINTS_BY_EVENT[event]}
+                  </span>
+                  <span className="min-w-0 flex-1 text-sm text-ink-700 dark:text-paper-200">
+                    {t(`vendor.points.earn_${event}`, { hours: String(FAST_REPLY_HOURS) })}
+                  </span>
+                  {earned > 0 && (
+                    <span className="shrink-0 text-xs tabular-nums text-ink-500 dark:text-umber-300">
+                      {t("vendor.points.earned_so_far", { n: String(earned) })}
+                    </span>
+                  )}
+                  {to && (
+                    <ChevronRight
+                      size={14}
+                      aria-hidden="true"
+                      className="shrink-0 text-ink-400 dark:text-umber-400"
+                    />
+                  )}
+                </>
+              );
+              const className =
+                "flex items-center gap-3 rounded-lg px-2 py-1.5 -mx-2 transition-colors";
+              return (
+                <li key={event}>
+                  {to ? (
+                    <Link
+                      to={to}
+                      className={`${className} hover:bg-paper-100 dark:hover:bg-umber-800`}
+                    >
+                      {row}
+                    </Link>
+                  ) : (
+                    <div className={className}>{row}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {points.next_tier && unlocks.length > 0 && (
+            <p className="text-xs text-ink-500 dark:text-umber-300">
+              {t("vendor.points.next_unlocks", {
+                tier: t(`vendor.points.tier.${points.next_tier}`),
+              })}{" "}
+              {unlocks.join(" · ")}
+            </p>
           )}
-          {points.perks.subscription_discount_pct > 0 && (
-            <li>
-              {t("vendor.points.perk_discount", {
-                pct: String(points.perks.subscription_discount_pct),
-              })}
-            </li>
-          )}
-        </ul>
+        </div>
       )}
     </section>
   );

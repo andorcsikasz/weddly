@@ -440,9 +440,9 @@ export function VendorShell({ children }: { children: ReactNode }) {
   const displayName = businessName ?? t("vendor.nav.brand_fallback");
 
   return (
-    <div className="min-h-full overflow-x-clip">
+    <div className="min-h-screen overflow-x-clip bg-white dark:bg-umber-900">
       <VendorDemoOverlay />
-      <header className="sticky top-0 z-30 border-b border-paper-300 bg-paper-50/85 backdrop-blur dark:border-umber-700 dark:bg-umber-900/85">
+      <header className="sticky top-0 z-30 border-b border-paper-200 bg-white/90 backdrop-blur dark:border-umber-700 dark:bg-umber-900/90">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
           <Link
             to="/vendor"
@@ -548,12 +548,12 @@ export function VendorShell({ children }: { children: ReactNode }) {
                   end={item.end}
                   title={collapsed ? label : undefined}
                   className={({ isActive }) =>
-                    `relative flex shrink-0 items-center gap-3 rounded-xl py-2 text-sm transition-colors ${
+                    `relative flex shrink-0 items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition-colors ${
                       collapsed ? "lg:justify-center lg:px-0 px-3" : "px-3"
                     } ${
                       isActive
-                        ? "bg-steel-600 text-white [&_svg]:text-white"
-                        : "text-ink-700 hover:bg-steel-50 dark:text-paper-200 dark:hover:bg-steel-600/15 [&_svg]:text-steel-700 dark:[&_svg]:text-steel-300"
+                        ? "bg-steel-500 text-white [&_svg]:text-white"
+                        : "text-ink-800 hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800 [&_svg]:text-ink-400 dark:[&_svg]:text-paper-400"
                     }`
                   }
                 >
