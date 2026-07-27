@@ -352,6 +352,7 @@ export default function VendorDashboardPage() {
           label={t("vendor.dashboard.inquiries_total")}
           value={<AnimatedNumber value={stats.inquiries_total} />}
           to="/vendor/clients"
+          linkLabel={t("vendor.dashboard.view_clients")}
         />
         <KpiCard
           icon={<Wallet size={18} aria-hidden="true" />}
@@ -364,12 +365,14 @@ export default function VendorDashboardPage() {
           }
           tone={revenuePositive ? "sage" : undefined}
           to="/vendor/clients"
+          linkLabel={t("vendor.dashboard.view_clients")}
         />
         <KpiCard
           icon={<CalendarOff size={18} aria-hidden="true" />}
           label={t("vendor.dashboard.blocked_dates")}
           value={<AnimatedNumber value={stats.blocked_dates_count} />}
           to="/vendor/calendar"
+          linkLabel={t("vendor.dashboard.open_calendar")}
         />
       </div>
 
@@ -449,6 +452,7 @@ function KpiCard({
   sub,
   tone,
   to,
+  linkLabel,
 }: {
   icon: ReactNode;
   label: string;
@@ -456,6 +460,11 @@ function KpiCard({
   sub?: string;
   tone?: KpiTone;
   to?: string;
+  /** Names the destination in the tile, in the same "Ügyfelek megtekintése →"
+   *  shape the sections above use. A whole-tile Link with nothing but a hover
+   *  tint reads as a static stat: the Foglalt napok tile had been a working
+   *  link to the calendar that nobody could tell was one. */
+  linkLabel?: string;
 }) {
   const iconTone =
     tone === "sage" ? "text-sage-600 dark:text-sage-300" : "text-steel-600 dark:text-steel-300";
@@ -476,6 +485,12 @@ function KpiCard({
         {value}
       </div>
       {sub && <div className="text-center text-xs text-ink-500 dark:text-paper-400">{sub}</div>}
+      {to && linkLabel && (
+        <span className="mt-auto inline-flex items-center justify-center gap-1 pt-1 text-xs font-medium text-steel-600 dark:text-steel-300">
+          <span className="truncate">{linkLabel}</span>
+          <ArrowRight size={13} aria-hidden="true" className="shrink-0" />
+        </span>
+      )}
     </>
   );
   const frame =

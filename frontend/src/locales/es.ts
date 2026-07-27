@@ -555,6 +555,7 @@ const es: LocaleMessages = {
     name_locked: "El nombre de marca está bloqueado; abre un ticket de soporte para cambiarlo.",
     back_to_directory: "Volver al directorio",
     section_availability: "Disponibilidad",
+    availability_open_calendar: "Abrir el calendario",
     availability_intro:
       "Marca los días que ya tienes reservados. Las parejas los ven en tu calendario, y tu próxima fecha libre se actualiza automáticamente.",
     availability_add_label: "Bloquear una fecha",
@@ -752,6 +753,7 @@ const es: LocaleMessages = {
       upcoming_title: "Próximos eventos",
       no_upcoming: "Aún no hay eventos confirmados.",
       view_clients: "Ver clientes",
+      open_calendar: "Abrir el calendario",
       view_listing: "Editar ficha",
       completeness_alert: "Tu ficha está completa al {pct}%",
       completeness_alert_body: "Termínala para que las parejas puedan encontrarte y reservarte.",

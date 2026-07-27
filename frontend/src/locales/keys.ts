@@ -743,6 +743,8 @@ export interface LocaleMessages {
     name_locked: string;
     back_to_directory: string;
     section_availability: string;
+    /** Link out of the whole-day block list into the real calendar. */
+    availability_open_calendar: string;
     availability_intro: string;
     availability_add_label: string;
     availability_add: string;
@@ -973,6 +975,8 @@ export interface LocaleMessages {
       upcoming_title: string;
       no_upcoming: string;
       view_clients: string;
+      /** Names where the tile goes, so a whole-card Link is legible as one. */
+      open_calendar: string;
       view_listing: string;
       /** Receives `{pct}` - listing completeness percentage. */
       completeness_alert: string;

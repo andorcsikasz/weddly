@@ -532,6 +532,7 @@ const en: LocaleMessages = {
     name_locked: "Brand name is locked, open a support ticket to change it.",
     back_to_directory: "Back to the directory",
     section_availability: "Availability",
+    availability_open_calendar: "Open calendar",
     availability_intro:
       "Mark the days you're already booked. Couples see these on your calendar, and your next free date updates automatically.",
     availability_add_label: "Block a date",
@@ -728,6 +729,7 @@ const en: LocaleMessages = {
       upcoming_title: "Upcoming events",
       no_upcoming: "No confirmed events yet.",
       view_clients: "View clients",
+      open_calendar: "Open calendar",
       view_listing: "Edit listing",
       completeness_alert: "Your listing is {pct}% complete",
       completeness_alert_body: "Finish it so couples can find and book you.",

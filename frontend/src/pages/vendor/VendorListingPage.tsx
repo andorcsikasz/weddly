@@ -23,7 +23,16 @@ import {
   useState,
 } from "react";
 import { intlLocale } from "../../lib/format";
-import { Check, ExternalLink, Hourglass, Lock, MoveVertical, Plus, X } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  ExternalLink,
+  Hourglass,
+  Lock,
+  MoveVertical,
+  Plus,
+  X,
+} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
   blockedHoursLabel,
@@ -1303,7 +1312,19 @@ export default function VendorListingPage() {
 
       {availability && (!view?.billing || view.billing.entitled) && (
         <section className="card mt-2.5 space-y-2.5 p-4">
-          <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
+          {/* This section only does whole-day blocks; hour-level edits, the
+              month grid and the task board all live on /vendor/calendar, which
+              until now this page never mentioned. */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
+            <Link
+              to="/vendor/calendar"
+              className="inline-flex items-center gap-1 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+            >
+              <span>{t("vendor_home.availability_open_calendar")}</span>
+              <ArrowRight size={15} aria-hidden="true" />
+            </Link>
+          </div>
 
           <form onSubmit={onAddBlock} className="flex flex-wrap items-end gap-2">
             <div className="w-56">

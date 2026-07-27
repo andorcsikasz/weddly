@@ -540,6 +540,7 @@ const hu: LocaleMessages = {
     name_locked: "A márkanév zárolt, ügyfélszolgálati ticketet nyiss a módosításhoz.",
     back_to_directory: "Vissza a katalógusba",
     section_availability: "Foglaltság",
+    availability_open_calendar: "Naptár megnyitása",
     availability_intro:
       "Jelöld be a már lefoglalt napokat. A párok ezeket látják a naptáradban, a következő szabad dátum pedig automatikusan frissül.",
     availability_add_label: "Nap blokkolása",
@@ -735,6 +736,7 @@ const hu: LocaleMessages = {
       upcoming_title: "Közelgő események",
       no_upcoming: "Még nincs visszaigazolt esemény.",
       view_clients: "Ügyfelek megtekintése",
+      open_calendar: "Naptár megnyitása",
       view_listing: "Hirdetés szerkesztése",
       completeness_alert: "A hirdetésed {pct}%-ban kész",
       completeness_alert_body: "Fejezd be, hogy a párok megtaláljanak és foglalhassanak nálad.",
