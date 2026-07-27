@@ -6,6 +6,7 @@
 // section badges. Labels are composed here via t() from kind + data, so the
 // stored payload never freezes locale.
 
+import { PROMPT_GROUPS } from "@shared/planning_prompts";
 import type { NotifEmailCadence, NotifFocus } from "@shared/notifications";
 import {
   NOTIF_EMAIL_CADENCE_VALUES,
@@ -53,7 +54,7 @@ const KIND_ICON: Record<NotificationItem["kind"], IconCmp> = {
 
 /** Compose the human label for a feed row from its kind + params. */
 function useLabel() {
-  const { t } = useT();
+  const { t, locale } = useT();
   return (item: NotificationItem): string => {
     const d = item.data;
     switch (item.kind) {
@@ -86,8 +87,22 @@ function useLabel() {
         return t("notifications.review_vendors", { count: Number(d.count ?? 0) });
       case "planning_stale_task":
         return t("notifications.planning_stale_task", { task: String(d.taskTitle ?? "") });
-      case "planning_decisions_stale":
-        return t("notifications.planning_decisions_stale", { count: Number(d.count ?? 0) });
+      case "planning_decisions_stale": {
+        // One row covers every stalled theme, so the label has to say which
+        // shape it is: a single named theme reads as something to go and do,
+        // "across N themes" reads as a backlog. Group titles live in
+        // shared/planning_prompts.ts (they are deck content, not UI chrome).
+        const groups = Number(d.groups ?? 1);
+        const count = Number(d.count ?? 0);
+        if (groups > 1) {
+          return t("notifications.planning_decisions_stale_multi", { count, groups });
+        }
+        const group = PROMPT_GROUPS.find((g) => g.key === d.group);
+        const title = group ? group.title[locale === "hu" ? "hu" : "en"] : "";
+        return title
+          ? t("notifications.planning_decisions_stale_group", { count, group: title })
+          : t("notifications.planning_decisions_stale", { count });
+      }
       default:
         return "";
     }

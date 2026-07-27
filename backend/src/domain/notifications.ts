@@ -277,17 +277,35 @@ export function getNotificationFeed(userId: number): NotificationFeed {
     if (p.updated_at > agg.lastTouched) agg.lastTouched = p.updated_at;
     byGroup.set(group, agg);
   }
-  for (const [group, agg] of byGroup) {
-    if (agg.count < DECISIONS_STALE_MIN_OPEN) continue;
-    const crossed = agg.lastTouched + DECISIONS_STALE_DAYS * DAY_MS;
-    if (crossed > nowTs) continue;
+  // ONE item for every stalled group, not one per group. The decision deck has
+  // eight themes and a couple who leaves it alone stalls most of them at once,
+  // which used to put six near-identical "N decisions are waiting" rows in the
+  // bell — a single feature drowning out the timeline and the RSVPs, and
+  // nothing to act on per row anyway (every one of them links to /app/planning).
+  // So they collapse into a total, with the biggest theme named so the line
+  // still says something concrete.
+  const stalled = [...byGroup.entries()]
+    .filter(([, agg]) => agg.count >= DECISIONS_STALE_MIN_OPEN)
+    .map(([group, agg]) => ({
+      group,
+      count: agg.count,
+      crossed: agg.lastTouched + DECISIONS_STALE_DAYS * DAY_MS,
+    }))
+    .filter((g) => g.crossed <= nowTs)
+    .sort((a, b) => b.count - a.count || a.group.localeCompare(b.group));
+  if (stalled.length > 0) {
+    const total = stalled.reduce((sum, g) => sum + g.count, 0);
+    // Dated by the EARLIEST crossing: the nudge has existed since the first
+    // theme went stale, so it holds its place in the feed instead of jumping
+    // to the top every time another theme joins it.
+    const crossed = stalled.reduce((min, g) => Math.min(min, g.crossed), stalled[0]!.crossed);
     items.push({
-      id: `decstale:${group}`,
+      id: "decstale",
       kind: "planning_decisions_stale",
-      data: { count: agg.count, group },
+      data: { count: total, group: stalled[0]!.group, groups: stalled.length },
       link: "/app/planning",
       created_at: crossed,
-      read: readIds.has(`decstale:${group}`),
+      read: readIds.has("decstale"),
     });
   }
 

@@ -37,6 +37,7 @@ import {
 import type { DirectorySupplier } from "@shared/suppliers";
 import type { Couple } from "@shared/types";
 import { Dialog } from "./ui/Dialog";
+import { useConfirm } from "./ui/ConfirmDialogProvider";
 import { useToast } from "./ui/ToastProvider";
 import { ApiError } from "../lib/api";
 import { guestCountBaseline } from "../lib/budget";
@@ -304,6 +305,7 @@ export function ComposeDialog({
 }) {
   const { t, locale } = useT();
   const toast = useToast();
+  const confirm = useConfirm();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   // Picked recipients: id + name (name for the chip, id for the API).
@@ -344,9 +346,29 @@ export function ComposeDialog({
     : t("outreach.tpl_placeholder_date");
   const tplGuests = outreachGuestLabel(couple) ?? t("outreach.tpl_placeholder_guests");
 
-  const applyTemplate = (key: TemplateKey) => {
-    setSubject(t(`outreach.tpl_${key}_subject`, { date: tplDate, guests: tplGuests }));
-    setBody(t(`outreach.tpl_${key}_body`, { date: tplDate, guests: tplGuests }));
+  // A template REPLACES subject + body, which is fine while the draft is still
+  // ours to overwrite and destructive the moment the couple has typed. So we
+  // remember what we last wrote into the box: if the body still matches it (or
+  // is empty), swapping templates is a free preview; if it has been edited, the
+  // swap asks first. Losing a paragraph someone wrote to a vendor is not
+  // something a click on a chip should be able to do.
+  const lastAppliedBody = useRef<string>("");
+  const applyTemplate = async (key: TemplateKey) => {
+    const nextSubject = t(`outreach.tpl_${key}_subject`, { date: tplDate, guests: tplGuests });
+    const nextBody = t(`outreach.tpl_${key}_body`, { date: tplDate, guests: tplGuests });
+    const edited = body.trim() !== "" && body !== lastAppliedBody.current;
+    if (edited) {
+      const ok = await confirm({
+        title: t("outreach.tpl_overwrite_title"),
+        body: t("outreach.tpl_overwrite_body"),
+        confirmLabel: t("outreach.tpl_overwrite_confirm"),
+        cancelLabel: t("common.cancel"),
+      });
+      if (!ok) return;
+    }
+    lastAppliedBody.current = nextBody;
+    setSubject(nextSubject);
+    setBody(nextBody);
   };
 
   // Picker: filter suppliers by query (name or city, accent-insensitive),
@@ -469,54 +491,11 @@ export function ComposeDialog({
       }
     >
       <form id="outreach-compose-form" onSubmit={onSubmit} className="space-y-3">
-        {/* Quick-fill templates. One row of chips; click replaces subject +
-            body with a friendly draft that already names the wedding date
-            and guest count (or shows a [placeholder] when those aren't set).
-            Not a wizard step — couples can still write from scratch. */}
-        <div>
-          <span className="field-label inline-flex items-center gap-1.5">
-            <Sparkles size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
-            {t("outreach.tpl_section_label")}
-          </span>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {TEMPLATE_KEYS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => applyTemplate(key)}
-                className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-              >
-                {t(`outreach.tpl_${key}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <label className="block" htmlFor="outreach-subject">
-          <span className="field-label">{t("outreach.label_subject")}</span>
-          <input
-            id="outreach-subject"
-            className="input"
-            type="text"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            maxLength={OUTREACH_SUBJECT_MAX_LEN}
-            required
-          />
-        </label>
-        <label className="block" htmlFor="outreach-body">
-          <span className="field-label">{t("outreach.label_body")}</span>
-          <textarea
-            id="outreach-body"
-            className="input min-h-[10rem]"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            maxLength={OUTREACH_BODY_MAX_LEN}
-            required
-          />
-        </label>
-
-        {/* Supplier autocomplete. Selected vendors render as chips with an
+        {/* Recipients come FIRST, like the To: line of any mail composer — and
+            because the autocomplete drops DOWNWARD inside the dialog's scroll
+            box. As the last field it opened into the footer and got clipped to
+            one visible row; above the subject and the message it has the whole
+            form to open into. Selected vendors render as chips with an
             × button; the input below filters the directory by name/city as
             you type and shows a dropdown of matches. Couples never have to
             know the internal supplier id — the chip carries the display
@@ -642,6 +621,52 @@ export function ComposeDialog({
               : t("outreach.suppliers_picker_help", { max: cap })}
           </p>
         </div>
+        {/* Quick-fill templates. One row of chips; click replaces subject +
+            body with a friendly draft that already names the wedding date
+            and guest count (or shows a [placeholder] when those aren't set).
+            Not a wizard step — couples can still write from scratch. */}
+        <div>
+          <span className="field-label inline-flex items-center gap-1.5">
+            <Sparkles size={12} aria-hidden className="text-ink-400 dark:text-umber-300" />
+            {t("outreach.tpl_section_label")}
+          </span>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {TEMPLATE_KEYS.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => void applyTemplate(key)}
+                className="inline-flex items-center gap-1 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-700 transition hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+              >
+                {t(`outreach.tpl_${key}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label className="block" htmlFor="outreach-subject">
+          <span className="field-label">{t("outreach.label_subject")}</span>
+          <input
+            id="outreach-subject"
+            className="input"
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            maxLength={OUTREACH_SUBJECT_MAX_LEN}
+            required
+          />
+        </label>
+        <label className="block" htmlFor="outreach-body">
+          <span className="field-label">{t("outreach.label_body")}</span>
+          <textarea
+            id="outreach-body"
+            className="input min-h-[10rem]"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            maxLength={OUTREACH_BODY_MAX_LEN}
+            required
+          />
+        </label>
       </form>
     </Dialog>
   );

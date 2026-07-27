@@ -1,19 +1,27 @@
 import { REVIEW_AMOUNT_NOTE_MAX_CHARS } from "@shared/suppliers";
+import type { Currency } from "@shared/types";
 import { currencySymbol, localeCurrency } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 
 /** Optional "what it cost" pair on the review composer: how much the couple
  *  paid (a plain numeric field with the locale currency symbol) and a short
  *  caption for what that bought. Both optional — the whole row is a soft prompt,
- *  no labels, so it stays out of the way of the star + tags flow. Currency
- *  follows the reviewer's locale (HU → Ft, else €); the parent sends it to the
- *  API so the stored figure is unambiguous for later viewers. */
+ *  no labels, so it stays out of the way of the star + tags flow.
+ *
+ *  Currency: the couple's own `currency` when the caller has one, and only
+ *  otherwise a guess from the UI locale. Deriving it from the interface
+ *  language alone was a real misstatement — flipping the UI to English turned a
+ *  3 030 300 Ft spend into "€3,030,300" with the number untouched. Public
+ *  surfaces (a visitor with no account) still pass nothing and get the guess,
+ *  which is the best they can do. The parent sends the same value to the API so
+ *  the stored figure is unambiguous for later viewers. */
 export function ReviewSpendFields({
   amount,
   note,
   onAmount,
   onNote,
   locale,
+  currency,
   t,
 }: {
   amount: number | null;
@@ -21,9 +29,11 @@ export function ReviewSpendFields({
   onAmount: (next: number | null) => void;
   onNote: (next: string) => void;
   locale: Locale;
+  /** The reviewing couple's currency. Omit only where there is no couple. */
+  currency?: Currency | null;
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
-  const symbol = currencySymbol(localeCurrency(locale), locale);
+  const symbol = currencySymbol(currency ?? localeCurrency(locale), locale);
 
   return (
     <div className="mb-3 flex flex-col gap-2 sm:flex-row">

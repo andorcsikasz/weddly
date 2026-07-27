@@ -20,7 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   BadgeCheck,
   BedDouble,
@@ -75,11 +75,13 @@ import type {
 } from "@shared/suppliers";
 import {
   COMMENT_BODY_MAX_CHARS,
+  isVendorSelfServeBlocked,
   languageLabel,
   REVIEW_BODY_MAX_CHARS,
   showsCapacity,
   showsSpokenLanguages,
 } from "@shared/suppliers";
+import type { Currency } from "@shared/types";
 import { vendorPublicId } from "@shared/vendor_slug";
 import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
@@ -224,6 +226,10 @@ export default function SupplierDetailPage() {
   // The viewing couple's id — keys the shared server-side shortlist so the
   // "saved" state matches the directory grid + the partner's device.
   const [coupleId, setCoupleId] = useState<number | null>(null);
+  // The couple's own currency, for the review composer's spend field. Deriving
+  // it from the UI language turned a HUF amount into euros the moment someone
+  // switched the interface to English, with the number left untouched.
+  const [coupleCurrency, setCoupleCurrency] = useState<Currency | null>(null);
   const [bookings, setBookings] = useState<SupplierBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapOpen, setMapOpen] = useState(false);
@@ -295,6 +301,7 @@ export default function SupplierDetailPage() {
         if (cancelled) return;
         setWeddingDate(r.couple?.wedding_date ?? null);
         setCoupleId(r.couple?.id ?? null);
+        setCoupleCurrency(r.couple?.currency ?? null);
       })
       .catch(() => undefined);
     return () => {
@@ -342,21 +349,29 @@ export default function SupplierDetailPage() {
       vendorPublicId(detail.id, detail.name),
     )}`;
     const shareText = t("suppliers.detail.cta.shareText", { name: detail.name });
+    const copyToClipboard = async () => {
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error("no_clipboard");
+        await navigator.clipboard.writeText(url);
+        toast.success(t("suppliers.detail.cta.shareCopied"));
+      } catch {
+        toast.error(t("common.error_generic"));
+      }
+    };
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({ title: detail.name, text: shareText, url });
-      } catch {
-        // User dismissed the sheet or the payload was rejected — stay quiet.
+      } catch (e) {
+        // AbortError is the user closing the sheet — their decision, no toast.
+        // ANY other rejection (a desktop browser that advertises the API and
+        // then refuses it, a payload the OS declines) used to leave the button
+        // doing visibly nothing at all, which reads as broken. Fall back to the
+        // clipboard so a click always ends in something the user can see.
+        if (!(e instanceof DOMException && e.name === "AbortError")) await copyToClipboard();
       }
       return;
     }
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("no_clipboard");
-      await navigator.clipboard.writeText(url);
-      toast.success(t("suppliers.detail.cta.shareCopied"));
-    } catch {
-      toast.error(t("common.error_generic"));
-    }
+    await copyToClipboard();
   }, [detail, t, toast]);
 
   if (loading || !detail) {
@@ -639,6 +654,7 @@ export default function SupplierDetailPage() {
             confirm={confirm}
             toast={toast}
             locale={locale}
+            currency={coupleCurrency}
             isAdmin={isAdmin}
             t={t}
           />
@@ -666,7 +682,12 @@ export default function SupplierDetailPage() {
               listing's contact_email AND records a listing_claims row
               admins can see in the moderation queue. */}
           {detail.vendor_account_id === null && (
-            <ClaimCtaSection supplierId={detail.id} listingName={detail.name} t={t} />
+            <ClaimCtaSection
+              supplierId={detail.id}
+              listingName={detail.name}
+              category={detail.category}
+              t={t}
+            />
           )}
 
           {/* Admin meta — internal ids / source / redirect. Admin-only. */}
@@ -820,8 +841,10 @@ function ReviewsSection({
   canReview: boolean;
   alreadyReviewed: boolean;
   category: SupplierCategory;
+  /** The reviewing couple's currency; null for a viewer without a workspace. */
+  currency: Currency | null;
 }) {
-  const { supplierId, onChange, toast, confirm, locale, isAdmin, t } = ctx;
+  const { supplierId, onChange, toast, confirm, locale, isAdmin, t, currency } = ctx;
   // Default 0 = no rating picked yet. Stars render as hollow glyphs and the
   // Beküldés button stays disabled until the user actually clicks one.
   // Avoids the "everyone defaults to 5 stars" trap that inflates aggregates.
@@ -844,7 +867,9 @@ function ReviewsSection({
         body: body.trim() || null,
         tags,
         amount_paid: amount,
-        amount_currency: localeCurrency(locale as Locale),
+        // The couple's currency, never the interface language. Only a viewer
+        // with no workspace falls back to the locale guess.
+        amount_currency: currency ?? localeCurrency(locale as Locale),
         amount_note: amountNote.trim() || null,
         ...(isAdmin ? { published } : {}),
       });
@@ -934,6 +959,7 @@ function ReviewsSection({
             onAmount={setAmount}
             onNote={setAmountNote}
             locale={locale as Locale}
+            currency={currency}
             t={t}
           />
           <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
@@ -1222,17 +1248,51 @@ function BookingsSection({
 /** Renders for unclaimed listings only. Opens the shared claim modal, which
  *  collects the claimer's email, fires vendor-claim/start, and notifies the
  *  admins. Single entry point keeps this surface consistent with the directory
- *  page's "this is mine" button. */
+ *  page's "this is mine" button.
+ *
+ *  On a wedding-planner card it swaps the claim button for the planner signup:
+ *  claiming would mint a vendor account, which the API now refuses anyway, and
+ *  a button that always errors is worse than the right door. */
 function ClaimCtaSection({
   supplierId,
   listingName,
+  category,
   t,
 }: {
   supplierId: string;
   listingName: string;
+  category: string;
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
   const [open, setOpen] = useState(false);
+
+  if (isVendorSelfServeBlocked(category)) {
+    return (
+      <section className="mb-10 rounded-xl border border-ink-200/60 bg-cream-50 p-6 dark:border-umber-700/60 dark:bg-umber-800/40">
+        <div className="mb-4 flex items-start gap-3">
+          <ShieldCheck
+            size={22}
+            aria-hidden
+            className="mt-0.5 shrink-0 text-paper-600 dark:text-paper-400"
+          />
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+              {t("suppliers.detail.claim.plannerTitle")}
+            </h2>
+            <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+              {t("suppliers.detail.claim.plannerBody")}
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/planners"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blush-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-blush-700"
+        >
+          {t("suppliers.detail.claim.plannerCta")}
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <section className="mb-10 rounded-xl border border-ink-200/60 bg-cream-50 p-6 dark:border-umber-700/60 dark:bg-umber-800/40">

@@ -157,6 +157,11 @@ export interface LocaleMessages {
     planning_stale_task: string;
     /** Planning reminder: a decisions category has 10+ open items untouched 14+ days. */
     planning_decisions_stale: string;
+    /** Receives `{count}` and `{group}` — the single stalled theme's title. */
+    planning_decisions_stale_group: string;
+    /** Receives `{count}` and `{groups}` — several themes stalled at once, so
+     *  the bell shows one backlog line instead of one row per theme. */
+    planning_decisions_stale_multi: string;
     show_history: string;
     hide_history: string;
     no_new: string;
@@ -1415,6 +1420,10 @@ export interface LocaleMessages {
     status_bounced: string;
     status_replied: string;
     compose_title: string;
+    /** Confirm before a template chip discards a body the couple has typed. */
+    tpl_overwrite_title: string;
+    tpl_overwrite_body: string;
+    tpl_overwrite_confirm: string;
     label_subject: string;
     label_body: string;
     label_suppliers: string;

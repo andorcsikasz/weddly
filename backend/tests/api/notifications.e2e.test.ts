@@ -274,8 +274,13 @@ describe("notifications: stale dateless to-do reminder", () => {
 });
 
 describe("notifications: stalled decisions category reminder", () => {
-  function seedOpenPrompts(coupleId: number, count: number, ageDays: number): void {
-    const seeds = promptsForGroup("guests").slice(0, count);
+  function seedOpenPrompts(
+    coupleId: number,
+    count: number,
+    ageDays: number,
+    group: "guests" | "food_drink" = "guests",
+  ): void {
+    const seeds = promptsForGroup(group).slice(0, count);
     expect(seeds.length).toBe(count); // guard: the group has enough seeds
     const ts = Date.now() - ageDays * DAY_MS;
     for (const s of seeds) {
@@ -299,7 +304,29 @@ describe("notifications: stalled decisions category reminder", () => {
     expect(dec.length).toBe(1);
     expect(dec[0]?.data.count).toBe(12);
     expect(dec[0]?.data.group).toBe("guests");
+    expect(dec[0]?.data.groups).toBe(1);
     expect(dec[0]?.link).toBe("/app/planning");
+  });
+
+  test("several stalled themes collapse into ONE row, not one per theme", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("notif-dec-many@weddly.test");
+    seedOpenPrompts(coupleId, 12, 20, "guests");
+    seedOpenPrompts(coupleId, 11, 30, "food_drink");
+
+    const r = await feed(token);
+    const dec = r.data.items.filter((i) => i.kind === "planning_decisions_stale");
+    // The bell used to carry one near-identical row per theme, which buried
+    // every other kind of notification under a single feature.
+    expect(dec.length).toBe(1);
+    expect(dec[0]?.data.count).toBe(23); // the total across both themes
+    expect(dec[0]?.data.groups).toBe(2);
+    // Named theme = the biggest one, so the label can still say something.
+    expect(dec[0]?.data.group).toBe("guests");
+    // Dated from the EARLIEST crossing (the 30-day-old theme), so a newly
+    // stalling theme can't bounce the row back to the top of the feed.
+    const olderCrossing = Date.now() - (30 - 14) * DAY_MS;
+    expect(dec[0]?.created_at).toBeLessThanOrEqual(olderCrossing + 60_000);
   });
 
   test("does NOT fire under the count threshold", async () => {
