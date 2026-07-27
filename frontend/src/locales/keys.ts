@@ -2156,24 +2156,17 @@ export interface LocaleMessages {
     pricing_bullet_referral: string;
     pricing_v2_note: string;
     /** aria-labels for the four decorative landing-page SVG mockups. */
-    mockup_aria_dashboard: string;
     mockup_aria_budget: string;
     mockup_aria_guests: string;
     mockup_aria_seating: string;
     mockup_aria_vendor: string;
-    mockup_date: string;
     mockup_live_budget_label: string;
     mockup_total_spend: string;
     /** Pre-formatted amounts inside the budget SVG mockup. HU shows the
      *  amount in Ft, EN in € so an English-speaking visitor never sees
      *  a Hungarian-forint amount on the landing — that's the "mentally
      *  walks away" friction point a strategic agent flagged. */
-    mockup_budget_spent: string;
-    mockup_budget_target: string;
     mockup_budget_total_compact: string;
-    mockup_yes_count: string;
-    mockup_pending_count: string;
-    mockup_seating_summary: string;
     mockup_search_placeholder: string;
     mockup_filter_all: string;
     mockup_filter_pending: string;

@@ -27,7 +27,6 @@ import {
 import { type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LazyMount } from "../components/LazyMount";
-import { WorkspaceMockup } from "../components/mockups";
 
 // Below-the-fold SVG mockups (Budget, Guests, Seating, Suppliers) are
 // heavy (~1500 lines combined) and never visible before the user scrolls.
@@ -120,7 +119,6 @@ function BurgerIcon({ size = 24, ...props }: { size?: number } & React.SVGProps<
 // SVGs mount when scrolled into view.
 const MOCKUP_AR_FEATURE = "496 / 376";
 const MOCKUP_AR_SUPPLIERS = "320 / 280";
-const MOCKUP_AR_WORKSPACE = "656 / 456";
 
 // Stash any `?ref=<source>` query param landing on a public page so the
 // signup form can later attach it to the register call (which the backend
@@ -351,17 +349,6 @@ export default function LandingPage() {
               <div className="mt-6 flex justify-end lg:mt-0 lg:justify-end">
                 <DemoLaunchCard />
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Dashboard preview — overlaps the bottom of the hero photo */}
-        <div className="hero-dashboard">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6">
-            <div className="pb-6 sm:pb-10 lg:pb-14">
-              <LazyMount aspectRatio={MOCKUP_AR_WORKSPACE}>
-                <WorkspaceMockup className="h-auto w-full" />
-              </LazyMount>
             </div>
           </div>
         </div>

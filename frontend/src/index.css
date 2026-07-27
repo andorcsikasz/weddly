@@ -1147,18 +1147,6 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     z-index: 2;
   }
 
-  /* Dashboard preview overlaps the bottom of the hero photo */
-  .hero-dashboard {
-    position: relative;
-    z-index: 3;
-    padding-top: 2rem;
-  }
-  @media (min-width: 640px) {
-    .hero-dashboard {
-      padding-top: 3rem;
-    }
-  }
-
   .input {
     /* min-h-tap (44px) + text-base (16px) keeps mobile tap targets WCAG-compliant
        and prevents iOS auto-zoom on focus. */
