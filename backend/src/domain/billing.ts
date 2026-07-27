@@ -233,6 +233,113 @@ export function activatePartnerFreeWindow(coupleId: number, nowMs: number = now(
   return grant();
 }
 
+/** Put an owner's founding verdict where the couple can actually use it: on the
+ *  billing ANCHOR (their oldest workspace).
+ *
+ *  `activatePartnerFreeWindow` is the grant; this is the repair around it, and
+ *  it exists because a badge can end up on the wrong workspace or on none at
+ *  all while both partners are demonstrably in:
+ *
+ *   - **Stranded badge.** Before the anchor rule (2026-07-06) the grant landed
+ *     on whatever workspace the invite happened to target. A badge sitting on a
+ *     secondary delivers NOTHING — `toCoupleBilling` reads the anchor — while
+ *     still consuming a FOUNDING_CAP slot. The couple sees "Próba" and pays
+ *     after the trial, and the cohort is one seat smaller for everyone else.
+ *   - **Anchor shift.** Pausing the first workspace (`status='deleting'`)
+ *     promotes the next one to anchor, and the badge does not follow it.
+ *   - **Partner arrived by propagation.** `propagatePartnerToOwnerWorkspaces`
+ *     fills `partner_b_id` on the anchor but is deliberately billing-neutral,
+ *     so an anchor can hold both partners and no verdict.
+ *
+ *  Moving a badge is slot-neutral (one owner holds at most one, and extras are
+ *  cleared, which returns seats). Granting only happens when no badge exists
+ *  anywhere in the owner's set, so this can never mint a second slot for the
+ *  same owner. Idempotent: a healthy anchor returns "none" on every re-run. */
+export function reconcileFoundingOnAnchor(
+  ownerUserId: number,
+  nowMs: number = now(),
+): "moved" | "granted" | "none" {
+  const owned = db
+    .prepare(
+      `SELECT c.*
+         FROM couple_members cm
+         JOIN couples c ON c.id = cm.couple_id
+        WHERE cm.user_id = ? AND cm.role = 'owner' AND c.status != 'deleting'
+        ORDER BY cm.created_at ASC, cm.couple_id ASC`,
+    )
+    .all(ownerUserId) as CoupleRow[];
+  const anchor = owned[0];
+  if (!anchor || anchor.is_demo) return "none";
+  // Already settled: a founder, a subscriber, or someone mid-dunning. Never
+  // touch a paying couple.
+  if (["founding", "active", "past_due"].includes(anchor.subscription_status)) return "none";
+
+  const stranded = owned.slice(1).filter((c) => c.is_founding_member === 1);
+  if (stranded.length > 0) {
+    const move = db.transaction(() => {
+      for (const s of stranded) {
+        db.prepare(
+          `UPDATE couples
+              SET is_founding_member = 0,
+                  founding_until = NULL,
+                  subscription_status = 'trialing',
+                  updated_at = ?
+            WHERE id = ?`,
+        ).run(nowMs, s.id);
+      }
+      // The window is recomputed from the ANCHOR's own wedding date — the
+      // secondary's date can be a different event (a civil ceremony weeks
+      // earlier), and "free until your wedding day" means the wedding.
+      db.prepare(
+        `UPDATE couples
+            SET subscription_status = 'founding',
+                is_founding_member = 1,
+                founding_until = ?,
+                updated_at = ?
+          WHERE id = ?`,
+      ).run(partnerFreeWindowEnd(weddingMsOf(anchor.wedding_date), nowMs), nowMs, anchor.id);
+    });
+    move();
+    return "moved";
+  }
+
+  // No badge anywhere in this owner's set: this is an ordinary first-time
+  // grant, so it goes through the normal path — anchor guard, cohort cap and
+  // all. A still-solo owner is refused there on `partner_b_id`.
+  return activatePartnerFreeWindow(anchor.id, nowMs) ? "granted" : "none";
+}
+
+/** One-time-per-boot repair of the above across every owner. Idempotent and
+ *  slot-safe (see `reconcileFoundingOnAnchor`), so it is fine on every reboot.
+ *  Scoped to owners whose anchor is unsettled AND who have a partner somewhere,
+ *  which is the only population that can be wrong. Returns counts for the log. */
+export function backfillFoundingAnchor(nowMs: number = now()): {
+  moved: number;
+  granted: number;
+} {
+  const owners = db
+    .prepare(
+      `SELECT DISTINCT cm.user_id AS id
+         FROM couple_members cm
+         JOIN couples c ON c.id = cm.couple_id AND c.status != 'deleting' AND c.is_demo = 0
+        WHERE cm.role = 'owner'
+          AND EXISTS (
+                SELECT 1 FROM couple_members mine
+                  JOIN couples c2 ON c2.id = mine.couple_id AND c2.status != 'deleting'
+                 WHERE mine.user_id = cm.user_id AND mine.role = 'owner'
+                   AND (c2.partner_b_id IS NOT NULL OR c2.is_founding_member = 1))`,
+    )
+    .all() as { id: number }[];
+  let moved = 0;
+  let granted = 0;
+  for (const o of owners) {
+    const r = reconcileFoundingOnAnchor(o.id, nowMs);
+    if (r === "moved") moved++;
+    else if (r === "granted") granted++;
+  }
+  return { moved, granted };
+}
+
 /** Keep the founding cohort's "free until your wedding day" window pinned to
  *  the wedding date when the couple moves it. Only touches the first-200
  *  founding members (`founding` + `is_founding_member = 1`); admin comps

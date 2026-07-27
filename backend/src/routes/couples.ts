@@ -93,6 +93,7 @@ import {
   activatePartnerFreeWindow,
   initBillingAtOnboarding,
   isManagingPlanner,
+  reconcileFoundingOnAnchor,
   refreshPartnerFreeWindow,
 } from "../domain/billing";
 import { lookupCoupleByRefCode, maybeGrantCoupleReferral } from "../domain/referrals";
@@ -1068,7 +1069,11 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   // couple, so the common path is unchanged.
   const inviteOwner = ownerUserIdOf(couple);
   if (inviteOwner != null) propagatePartnerToOwnerWorkspaces(inviteOwner, ts);
-  activatePartnerFreeWindow(billingAnchorRow(couple).id, ts);
+  // Reconcile rather than grant outright: same first-time grant on the anchor,
+  // plus it rescues a badge an earlier join stranded on a secondary. Falls back
+  // to the plain grant when the owner can't be resolved off the membership row.
+  if (inviteOwner != null) reconcileFoundingOnAnchor(inviteOwner, ts);
+  else activatePartnerFreeWindow(billingAnchorRow(couple).id, ts);
   // Referral reward: if this couple was referred by another, the referrer
   // gets 1 month free now that both partners have joined.
   maybeGrantCoupleReferral(couple.id, ts);
@@ -1310,7 +1315,8 @@ async function handleAcceptInviteMerge(ctx: Ctx): Promise<Response> {
     // `target`). See the accept-invite path above for the reasoning.
     const mergeOwner = ownerUserIdOf(target);
     if (mergeOwner != null) propagatePartnerToOwnerWorkspaces(mergeOwner, ts);
-    activatePartnerFreeWindow(billingAnchorRow(target).id, ts);
+    if (mergeOwner != null) reconcileFoundingOnAnchor(mergeOwner, ts);
+    else activatePartnerFreeWindow(billingAnchorRow(target).id, ts);
     maybeGrantCoupleReferral(target.id, ts);
 
     addAuditLog({

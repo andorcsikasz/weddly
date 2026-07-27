@@ -23,7 +23,7 @@ import { maybeCompress, negotiateEncoding } from "./lib/compression";
 import { redactTokensInPath } from "./lib/log_redact";
 import { log, makeLogger } from "./lib/logger";
 import { GA4_CSP_HASHES, GTM_INLINE_CSP_HASH, localeForHost, renderIndexHtml } from "./lib/seo_ssr";
-import { entitlementBlock } from "./domain/billing";
+import { backfillFoundingAnchor, entitlementBlock } from "./domain/billing";
 import { plannerEntitlementBlock } from "./domain/planner_billing";
 import { vendorEntitlementBlock } from "./domain/vendor_billing";
 import { ensureGeoDb } from "./lib/geoip";
@@ -162,6 +162,15 @@ seedDoNotContact();
 {
   const owners = backfillPartnerPropagation();
   log.info("partners.backfill", { owners });
+}
+// Put every founding verdict on the workspace that can actually spend it. Runs
+// AFTER partners.backfill so an anchor that just gained its partner_b_id is
+// eligible on this same pass. Heals badges stranded on a secondary by the
+// pre-anchor grant (2026-07-06) or by an anchor shift, and grants to anchors
+// that hold both partners but no verdict. Slot-neutral and idempotent.
+{
+  const { moved, granted } = backfillFoundingAnchor();
+  if (moved > 0 || granted > 0) log.info("founding.anchor_backfill", { moved, granted });
 }
 // Reconcile orphaned workspaces: a couple with no member resolvable to a live
 // user (e.g. a hard-deleted owner, or a pre-fix non-atomic create that half-
