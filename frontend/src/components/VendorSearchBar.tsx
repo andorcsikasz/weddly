@@ -139,7 +139,13 @@ export function VendorSearchBar({ className = "" }: { className?: string }) {
 
   return (
     <div ref={rootRef} className={`relative ${className}`}>
-      <div className="flex items-center gap-2 rounded-full border border-paper-300 bg-white px-4 py-2.5 shadow-soft transition focus-within:border-umber-900 dark:border-umber-700 dark:bg-umber-800 dark:focus-within:border-paper-200 sm:px-5 sm:py-3">
+      {/* Near-black outline, not the tan paper-300 hairline it used to wear: on
+          a cream page that border read as an absence, and this box is the
+          directory's front door. Focus adds a ring rather than thickening the
+          border, which would shift the row by a pixel. Dark mode inverts to a
+          light outline for the same reason the arrow button does — a near-black
+          edge on umber-800 is no edge at all. */}
+      <div className="flex items-center gap-2 rounded-full border border-umber-900 bg-white px-4 py-2.5 shadow-soft transition focus-within:ring-2 focus-within:ring-umber-900/20 dark:border-paper-200 dark:bg-umber-800 dark:focus-within:ring-paper-200/25 sm:px-5 sm:py-3">
         <Search
           size={18}
           strokeWidth={1.8}
@@ -179,7 +185,7 @@ export function VendorSearchBar({ className = "" }: { className?: string }) {
           id={listId}
           role="listbox"
           aria-label={t("landing.suppliers_search_label")}
-          className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-paper-300 bg-white py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+          className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-umber-900 bg-white py-1 shadow-pop dark:border-paper-200 dark:bg-umber-800"
         >
           {items.map((s, i) => {
             const Icon =
