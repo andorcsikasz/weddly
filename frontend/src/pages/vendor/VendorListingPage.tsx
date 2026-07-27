@@ -1275,7 +1275,12 @@ export default function VendorListingPage() {
               )}
             </fieldset>
 
-            <div className="flex items-center justify-between gap-3 pt-1">
+            {/* Actions grouped right, not pinned to both edges. This row is the
+                only unframed thing in a stack of cards, and justify-between put
+                ~400px of nothing between a ghost link and the save button on a
+                desktop-width form — which reads as a rendering fault between
+                the price card and the one below it, not as a toolbar. */}
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
               <Link to="/vendors" className="btn-ghost">
                 {t("vendor_home.back_to_directory")}
               </Link>
