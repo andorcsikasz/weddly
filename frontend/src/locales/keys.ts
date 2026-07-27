@@ -6542,6 +6542,9 @@ export interface LocaleMessages {
     analytics_nav_weddings: string;
     analytics_nav_honeymoon: string;
     analytics_nav_guests: string;
+    analytics_nav_planners: string;
+    analytics_nav_campaigns: string;
+    analytics_nav_users: string;
     /** aria-label for the mobile section dropdown that replaces the
      *  anchor pills below the `sm:` breakpoint. */
     analytics_jump_to_section: string;
@@ -6589,6 +6592,99 @@ export interface LocaleMessages {
     analytics_honeymoon_start_month: string;
     // Guests section (RSVP funnel, kind, plus-one, dietary load).
     analytics_section_guests: string;
+    /** Planners lens: waitlist → paying funnel, capacity, subscription health. */
+    analytics_section_planners: string;
+    analytics_planners_subtitle: string;
+    analytics_planners_empty: string;
+    analytics_planners_total: string;
+    analytics_planners_active: string;
+    analytics_planners_pending: string;
+    analytics_planners_suspended: string;
+    /** Receives `{n}` — accepted applicants with no account yet. */
+    analytics_planners_awaiting: string;
+    /** Receives `{n}` — planners with at least one client. */
+    analytics_planners_with_client: string;
+    analytics_planners_funnel_title: string;
+    analytics_planners_step_applied: string;
+    analytics_planners_step_accepted: string;
+    analytics_planners_step_account: string;
+    analytics_planners_step_activated: string;
+    analytics_planners_step_with_client: string;
+    analytics_planners_step_paying: string;
+    analytics_planners_capacity_title: string;
+    /** Receives `{avg}`. */
+    analytics_planners_capacity_sub: string;
+    analytics_planners_tier_starter: string;
+    analytics_planners_tier_pro: string;
+    analytics_planners_tier_premium: string;
+    /** Receives `{n}` planners and `{cap}` client ceiling. */
+    analytics_planners_tier_sub: string;
+    analytics_planners_billing_title: string;
+    analytics_planners_free_window: string;
+    analytics_planners_paying: string;
+    analytics_planners_conversion: string;
+    /** Receives `{days}`. Deliberately hedged: we never stamped a went-paid-at. */
+    analytics_planners_time_to_paid: string;
+    analytics_planners_sub_trialing: string;
+    analytics_planners_sub_founding: string;
+    analytics_planners_sub_active: string;
+    analytics_planners_sub_past_due: string;
+    analytics_planners_sub_canceled: string;
+    analytics_planners_sub_none: string;
+    analytics_planners_signups_title: string;
+    /** Receives `{n}`. */
+    analytics_planners_signups_sub: string;
+    /** Campaigns lens: all four outreach families, their funnels and rates. */
+    analytics_section_campaigns: string;
+    analytics_campaigns_subtitle: string;
+    analytics_campaigns_empty: string;
+    analytics_campaigns_sent: string;
+    analytics_campaigns_open_rate: string;
+    analytics_campaigns_click_rate: string;
+    analytics_campaigns_conv_rate: string;
+    analytics_campaigns_converted: string;
+    analytics_campaigns_utm: string;
+    analytics_campaigns_optout: string;
+    /** Receives `{n}`. */
+    analytics_campaigns_failed: string;
+    /** Receives `{n}`. */
+    analytics_campaigns_campaign_count: string;
+    analytics_campaigns_daily_title: string;
+    /** Receives `{days}`. */
+    analytics_campaigns_daily_sub: string;
+    analytics_campaigns_family_title: string;
+    analytics_campaigns_family_sub: string;
+    analytics_campaigns_col_family: string;
+    analytics_campaigns_col_campaign: string;
+    analytics_campaigns_table_title: string;
+    analytics_campaigns_table_sub: string;
+    /** Users lens: composition, pairing, recency, cohorts. */
+    analytics_section_users: string;
+    analytics_users_empty: string;
+    analytics_users_total: string;
+    analytics_users_paired: string;
+    /** Receives `{pct}`. */
+    analytics_users_paired_sub: string;
+    analytics_users_solo: string;
+    /** Receives `{days}`. */
+    analytics_users_time_to_pair: string;
+    analytics_users_no_workspace: string;
+    analytics_users_recency_title: string;
+    analytics_users_recency_sub: string;
+    analytics_users_recency_week: string;
+    analytics_users_recency_month: string;
+    analytics_users_recency_dormant30: string;
+    analytics_users_recency_dormant90: string;
+    analytics_users_recency_never: string;
+    analytics_users_cohorts_title: string;
+    analytics_users_cohorts_sub: string;
+    /** Receives `{admins}`, `{test}`, `{demo}` — the cohorts the audience
+     *  filter is holding back, counted regardless of the toggles. */
+    analytics_users_cohorts_note: string;
+    analytics_users_col_month: string;
+    analytics_users_col_workspaces: string;
+    analytics_users_col_active: string;
+    analytics_users_col_share: string;
     analytics_guests_empty: string;
     analytics_guests_total: string;
     analytics_guests_per_couple: string;

@@ -16,6 +16,7 @@ import type {
   AdminAcquisitionAnalytics,
   AdminActivityAnalytics,
   AdminAnalyticsStats,
+  AdminCampaignAnalytics,
   AdminDemoAnalytics,
   AdminDemoKind,
   AdminEngagementAnalytics,
@@ -23,9 +24,12 @@ import type {
   AdminHoneymoonAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
+  AdminPlannerAnalytics,
   AdminTrafficAnalytics,
+  AdminUserAnalytics,
   AdminWeddingAnalytics,
   AnalyticsAudience,
+  CampaignFamily,
   WeddingSeason,
 } from "@shared/admin_analytics";
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
@@ -65,7 +69,10 @@ type SectionId =
   | "demo"
   | "weddings"
   | "honeymoon"
-  | "guests";
+  | "guests"
+  | "planners"
+  | "campaigns"
+  | "users";
 
 interface SectionDef {
   id: SectionId;
@@ -80,6 +87,9 @@ const SECTIONS: ReadonlyArray<SectionDef> = [
   { id: "weddings", labelKey: "admin.analytics_nav_weddings" },
   { id: "honeymoon", labelKey: "admin.analytics_nav_honeymoon" },
   { id: "guests", labelKey: "admin.analytics_nav_guests" },
+  { id: "planners", labelKey: "admin.analytics_nav_planners" },
+  { id: "campaigns", labelKey: "admin.analytics_nav_campaigns" },
+  { id: "users", labelKey: "admin.analytics_nav_users" },
   { id: "picks", labelKey: "admin.analytics_nav_picks" },
   { id: "engagement", labelKey: "admin.analytics_nav_engagement" },
   { id: "demo", labelKey: "admin.analytics_nav_demo" },
@@ -124,6 +134,11 @@ export default function AdminAnalyticsPage() {
   const [acquisition, setAcquisition] = useState<Loadable<AdminAcquisitionAnalytics>>({
     status: "loading",
   });
+  const [planners, setPlanners] = useState<Loadable<AdminPlannerAnalytics>>({ status: "loading" });
+  const [campaigns, setCampaigns] = useState<Loadable<AdminCampaignAnalytics>>({
+    status: "loading",
+  });
+  const [users, setUsers] = useState<Loadable<AdminUserAnalytics>>({ status: "loading" });
 
   // Audience filter. Default is the clean "real users only" lens — admins,
   // test accounts, demos, archived + deleting couples are all excluded until
@@ -150,7 +165,10 @@ export default function AdminAnalyticsPage() {
     weddings.status === "loading" ||
     honeymoon.status === "loading" ||
     guests.status === "loading" ||
-    acquisition.status === "loading";
+    acquisition.status === "loading" ||
+    planners.status === "loading" ||
+    campaigns.status === "loading" ||
+    users.status === "loading";
 
   const loadAll = useCallback(() => {
     setMoney({ status: "loading" });
@@ -163,6 +181,9 @@ export default function AdminAnalyticsPage() {
     setHoneymoon({ status: "loading" });
     setGuests({ status: "loading" });
     setAcquisition({ status: "loading" });
+    setPlanners({ status: "loading" });
+    setCampaigns({ status: "loading" });
+    setUsers({ status: "loading" });
     setNonce((n) => n + 1);
   }, []);
 
@@ -179,6 +200,8 @@ export default function AdminAnalyticsPage() {
     setHoneymoon({ status: "loading" });
     setGuests({ status: "loading" });
     setAcquisition({ status: "loading" });
+    setPlanners({ status: "loading" });
+    setUsers({ status: "loading" });
     Promise.all([
       adminAnalyticsApi.money(audience).catch((e) => {
         anyError = true;
@@ -293,6 +316,42 @@ export default function AdminAnalyticsPage() {
         if (!cancelled) setAcquisition({ status: "error" });
       });
 
+    adminAnalyticsApi
+      .planners(audience)
+      .then((d) => {
+        if (!cancelled) {
+          setPlanners({ status: "ok", data: d });
+          setLastLoadedAt(Date.now());
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPlanners({ status: "error" });
+      });
+
+    adminAnalyticsApi
+      .campaigns()
+      .then((d) => {
+        if (!cancelled) {
+          setCampaigns({ status: "ok", data: d });
+          setLastLoadedAt(Date.now());
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCampaigns({ status: "error" });
+      });
+
+    adminAnalyticsApi
+      .users(audience)
+      .then((d) => {
+        if (!cancelled) {
+          setUsers({ status: "ok", data: d });
+          setLastLoadedAt(Date.now());
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setUsers({ status: "error" });
+      });
+
     return () => {
       cancelled = true;
     };
@@ -334,6 +393,15 @@ export default function AdminAnalyticsPage() {
         </SectionAnchor>
         <SectionAnchor id="guests">
           <GuestsSection state={guests} locale={locale} />
+        </SectionAnchor>
+        <SectionAnchor id="planners">
+          <PlannersSection state={planners} locale={locale} />
+        </SectionAnchor>
+        <SectionAnchor id="campaigns">
+          <CampaignsSection state={campaigns} locale={locale} />
+        </SectionAnchor>
+        <SectionAnchor id="users">
+          <UsersSection state={users} locale={locale} />
         </SectionAnchor>
         <SectionAnchor id="picks">
           <PicksSection state={picks} locale={locale} />
@@ -2497,6 +2565,564 @@ function GuestsSection({
           </div>
         </>
       )}
+    </SectionCard>
+  );
+}
+
+// ─── Planners section ──────────────────────────────────────────────────────
+//
+// The planner cohort's own funnel. Mirrors the couple Onboarding tölcsér, but
+// the population is the waitlist: planners are invited, not self-served, so
+// "applied" is the only honest denominator.
+
+function PlannersSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminPlannerAnalytics>;
+  locale: Locale;
+}) {
+  const { t } = useT();
+  const title = t("admin.analytics_section_planners");
+  if (state.status === "loading") return <SectionStatus title={title} variant="loading" />;
+  if (state.status === "error")
+    return (
+      <SectionStatus title={title} variant="error" message={t("admin.analytics_load_error")} />
+    );
+
+  const p = state.data;
+  const maxSignups = p.signups_daily.reduce((m, d) => Math.max(m, d.count), 0);
+  const statusRows = p.subscription_status.map((s) => ({
+    label: t(`admin.analytics_planners_sub_${s.status}`),
+    count: s.count,
+  }));
+
+  return (
+    <SectionCard title={title} subtitle={t("admin.analytics_planners_subtitle")}>
+      {p.total === 0 ? (
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
+          {t("admin.analytics_planners_empty")}
+        </p>
+      ) : (
+        <>
+          <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <KpiTile
+              label={t("admin.analytics_planners_total")}
+              value={formatNumber(p.total, locale)}
+              sub={t("admin.analytics_planners_awaiting", {
+                n: formatNumber(p.accepted_awaiting_account, locale),
+              })}
+              emphasis
+            />
+            <KpiTile
+              label={t("admin.analytics_planners_active")}
+              value={formatNumber(p.active, locale)}
+              sub={t("admin.analytics_planners_with_client", {
+                n: formatNumber(p.funnel.find((f) => f.key === "with_client")?.count ?? 0, locale),
+              })}
+            />
+            <KpiTile
+              label={t("admin.analytics_planners_pending")}
+              value={formatNumber(p.pending_registration, locale)}
+            />
+            <KpiTile
+              label={t("admin.analytics_planners_suspended")}
+              value={formatNumber(p.suspended, locale)}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <InnerCard title={t("admin.analytics_planners_funnel_title")}>
+              <div className="flex flex-col gap-2">
+                {p.funnel.map((step) => (
+                  <FunnelStep
+                    key={step.key}
+                    label={t(`admin.analytics_planners_step_${step.key}`)}
+                    count={step.count}
+                    pct={step.pct_of_first}
+                    locale={locale}
+                  />
+                ))}
+              </div>
+            </InnerCard>
+
+            <InnerCard
+              title={t("admin.analytics_planners_capacity_title")}
+              subtitle={t("admin.analytics_planners_capacity_sub", {
+                avg: formatNumber(p.clients_per_planner.avg, locale),
+              })}
+            >
+              <ul className="flex flex-col gap-1.5 text-xs">
+                {p.by_tier.map((tier) => (
+                  <li
+                    key={tier.plan}
+                    className="grid items-center gap-2"
+                    style={{ gridTemplateColumns: "5rem 1fr 4.5rem" }}
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-medium text-neutral-800 dark:text-paper-100">
+                        {t(`admin.analytics_planners_tier_${tier.plan}`)}
+                      </div>
+                      <div className="text-[10px] text-neutral-500 dark:text-umber-300">
+                        {t("admin.analytics_planners_tier_sub", {
+                          n: formatNumber(tier.planners, locale),
+                          cap: formatNumber(tier.cap, locale),
+                        })}
+                      </div>
+                    </div>
+                    <HBar
+                      pct={(tier.utilisation ?? 0) * 100}
+                      ariaLabel={`${tier.plan}: ${Math.round((tier.utilisation ?? 0) * 100)}%`}
+                    />
+                    <span className="stat-num text-right font-semibold text-neutral-800 dark:text-paper-50">
+                      {tier.utilisation == null ? "–" : `${Math.round(tier.utilisation * 100)}%`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </InnerCard>
+
+            <InnerCard title={t("admin.analytics_planners_billing_title")}>
+              <div className="mb-3 grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="stat-num text-lg font-semibold text-neutral-900 dark:text-paper-50">
+                    {formatNumber(p.in_free_window, locale)}
+                  </div>
+                  <div className="text-[11px] text-neutral-500 dark:text-umber-300">
+                    {t("admin.analytics_planners_free_window")}
+                  </div>
+                </div>
+                <div>
+                  <div className="stat-num text-lg font-semibold text-neutral-900 dark:text-paper-50">
+                    {formatNumber(p.paying, locale)}
+                  </div>
+                  <div className="text-[11px] text-neutral-500 dark:text-umber-300">
+                    {t("admin.analytics_planners_paying")}
+                  </div>
+                </div>
+                <div>
+                  <div className="stat-num text-lg font-semibold text-neutral-900 dark:text-paper-50">
+                    {p.free_window_ended > 0
+                      ? `${Math.round((p.converted_after_free / p.free_window_ended) * 100)}%`
+                      : "–"}
+                  </div>
+                  <div className="text-[11px] text-neutral-500 dark:text-umber-300">
+                    {t("admin.analytics_planners_conversion")}
+                  </div>
+                </div>
+              </div>
+              <DistBars
+                rows={statusRows}
+                locale={locale}
+                emptyLabel={t("admin.analytics_planners_empty")}
+                labelWidth="6rem"
+              />
+              {p.avg_days_to_paid_approx != null && (
+                <p className="mt-2 text-[11px] text-neutral-400 dark:text-umber-400">
+                  {t("admin.analytics_planners_time_to_paid", {
+                    days: formatNumber(p.avg_days_to_paid_approx, locale),
+                  })}
+                </p>
+              )}
+            </InnerCard>
+
+            <InnerCard
+              title={t("admin.analytics_planners_signups_title")}
+              subtitle={t("admin.analytics_planners_signups_sub", {
+                n: formatNumber(
+                  p.signups_daily.reduce((sum, d) => sum + d.count, 0),
+                  locale,
+                ),
+              })}
+            >
+              <Sparkline
+                values={p.signups_daily.map((d) => d.count)}
+                max={maxSignups}
+                label={t("admin.analytics_planners_signups_title")}
+              />
+              <div className="mt-1 flex justify-between text-[10px] text-neutral-400 dark:text-umber-400">
+                <span>{p.signups_daily[0]?.date}</span>
+                <span>{p.signups_daily[p.signups_daily.length - 1]?.date}</span>
+              </div>
+            </InnerCard>
+          </div>
+        </>
+      )}
+    </SectionCard>
+  );
+}
+
+// ─── Campaigns section ─────────────────────────────────────────────────────
+//
+// All four outreach families in one place. "Converted" means a different event
+// per family (claimed listing / review collected / registration / onboarding),
+// so the comparison table keeps them side by side and never averages them into
+// a single number that would mean nothing.
+
+const CAMPAIGN_FAMILY_LABEL: Record<CampaignFamily, string> = {
+  vendor_claim: "admin.nav_vendor_campaign",
+  vendor_review: "admin.nav_vendor_review_campaign",
+  personal_invite: "admin.nav_personal_invite",
+  onboarding: "admin.nav_onboarding_campaign",
+};
+
+/** Rate as a whole percent, or an em-space when the denominator is zero — a
+ *  "0%" off nothing reads as a failure that never happened. */
+function rateCell(part: number, whole: number): string {
+  if (whole <= 0) return "–";
+  return `${Math.round((part / whole) * 100)}%`;
+}
+
+function CampaignsSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminCampaignAnalytics>;
+  locale: Locale;
+}) {
+  const { t } = useT();
+  const title = t("admin.analytics_section_campaigns");
+  if (state.status === "loading") return <SectionStatus title={title} variant="loading" />;
+  if (state.status === "error")
+    return (
+      <SectionStatus title={title} variant="error" message={t("admin.analytics_load_error")} />
+    );
+
+  const c = state.data;
+  const totals = c.by_family.reduce(
+    (acc, f) => ({
+      sent: acc.sent + f.sent,
+      opened: acc.opened + f.opened,
+      clicked: acc.clicked + f.clicked,
+      converted: acc.converted + f.converted,
+      failed: acc.failed + f.failed,
+    }),
+    { sent: 0, opened: 0, clicked: 0, converted: 0, failed: 0 },
+  );
+  const maxDaily = c.daily.reduce((m, d) => Math.max(m, d.sent), 0);
+  const maxConv = c.daily.reduce((m, d) => Math.max(m, d.converted), 0);
+
+  return (
+    <SectionCard title={title} subtitle={t("admin.analytics_campaigns_subtitle")}>
+      {totals.sent === 0 ? (
+        <p className="text-sm text-neutral-500 dark:text-umber-300">
+          {t("admin.analytics_campaigns_empty")}
+        </p>
+      ) : (
+        <>
+          <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-5">
+            <KpiTile
+              label={t("admin.analytics_campaigns_sent")}
+              value={formatNumber(totals.sent, locale)}
+              sub={t("admin.analytics_campaigns_campaign_count", {
+                n: formatNumber(c.campaigns.length, locale),
+              })}
+              emphasis
+            />
+            <KpiTile
+              label={t("admin.analytics_campaigns_open_rate")}
+              value={rateCell(totals.opened, totals.sent)}
+              sub={formatNumber(totals.opened, locale)}
+            />
+            <KpiTile
+              label={t("admin.analytics_campaigns_click_rate")}
+              value={rateCell(totals.clicked, totals.sent)}
+              sub={formatNumber(totals.clicked, locale)}
+            />
+            <KpiTile
+              label={t("admin.analytics_campaigns_conv_rate")}
+              value={rateCell(totals.converted, totals.sent)}
+              sub={formatNumber(totals.converted, locale)}
+            />
+            <KpiTile
+              label={t("admin.analytics_campaigns_optout")}
+              value={formatNumber(c.opted_out, locale)}
+              sub={t("admin.analytics_campaigns_failed", {
+                n: formatNumber(totals.failed, locale),
+              })}
+            />
+          </div>
+
+          <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <InnerCard
+              title={t("admin.analytics_campaigns_daily_title")}
+              subtitle={t("admin.analytics_campaigns_daily_sub", { days: c.window_days })}
+            >
+              <div className="text-[11px] text-neutral-500 dark:text-umber-300">
+                {t("admin.analytics_campaigns_sent")}
+              </div>
+              <Sparkline
+                values={c.daily.map((d) => d.sent)}
+                max={maxDaily}
+                label={t("admin.analytics_campaigns_sent")}
+              />
+              <div className="mt-2 text-[11px] text-neutral-500 dark:text-umber-300">
+                {t("admin.analytics_campaigns_converted")}
+              </div>
+              <Sparkline
+                values={c.daily.map((d) => d.converted)}
+                max={maxConv}
+                label={t("admin.analytics_campaigns_converted")}
+              />
+              <div className="mt-1 flex justify-between text-[10px] text-neutral-400 dark:text-umber-400">
+                <span>{c.daily[0]?.date}</span>
+                <span>{c.daily[c.daily.length - 1]?.date}</span>
+              </div>
+            </InnerCard>
+
+            <InnerCard
+              title={t("admin.analytics_campaigns_family_title")}
+              subtitle={t("admin.analytics_campaigns_family_sub")}
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-neutral-500 dark:text-umber-300">
+                      <th className="py-1 text-left font-medium">
+                        {t("admin.analytics_campaigns_col_family")}
+                      </th>
+                      <th className="py-1 text-right font-medium">
+                        {t("admin.analytics_campaigns_sent")}
+                      </th>
+                      <th className="py-1 text-right font-medium">
+                        {t("admin.analytics_campaigns_open_rate")}
+                      </th>
+                      <th className="py-1 text-right font-medium">
+                        {t("admin.analytics_campaigns_click_rate")}
+                      </th>
+                      <th className="py-1 text-right font-medium">
+                        {t("admin.analytics_campaigns_conv_rate")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {c.by_family.map((f) => (
+                      <tr key={f.family} className="border-t border-ink-100 dark:border-umber-700">
+                        <td className="py-1 text-left font-medium text-neutral-800 dark:text-paper-100">
+                          {t(CAMPAIGN_FAMILY_LABEL[f.family])}
+                        </td>
+                        <td className="stat-num py-1 text-right">{formatNumber(f.sent, locale)}</td>
+                        <td className="stat-num py-1 text-right">{rateCell(f.opened, f.sent)}</td>
+                        <td className="stat-num py-1 text-right">{rateCell(f.clicked, f.sent)}</td>
+                        <td className="stat-num py-1 text-right font-semibold">
+                          {rateCell(f.converted, f.sent)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </InnerCard>
+          </div>
+
+          <InnerCard
+            title={t("admin.analytics_campaigns_table_title")}
+            subtitle={t("admin.analytics_campaigns_table_sub")}
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-neutral-500 dark:text-umber-300">
+                    <th className="py-1 text-left font-medium">
+                      {t("admin.analytics_campaigns_col_campaign")}
+                    </th>
+                    <th className="py-1 text-right font-medium">
+                      {t("admin.analytics_campaigns_sent")}
+                    </th>
+                    <th className="py-1 text-right font-medium">
+                      {t("admin.campaign_stat_opened")}
+                    </th>
+                    <th className="py-1 text-right font-medium">
+                      {t("admin.campaign_stat_clicked")}
+                    </th>
+                    <th className="py-1 text-right font-medium">
+                      {t("admin.campaign_stat_reminded")}
+                    </th>
+                    <th className="py-1 text-right font-medium">
+                      {t("admin.analytics_campaigns_converted")}
+                    </th>
+                    <th className="py-1 text-right font-medium">
+                      {t("admin.analytics_campaigns_utm")}
+                    </th>
+                    <th className="py-1 text-right font-medium">
+                      {t("admin.campaign_stat_failed")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {c.campaigns.map((row) => (
+                    <tr
+                      key={`${row.family}-${row.id}`}
+                      className="border-t border-ink-100 dark:border-umber-700"
+                    >
+                      <td className="py-1 text-left">
+                        <div className="font-medium text-neutral-800 dark:text-paper-100">
+                          {row.slug}
+                        </div>
+                        <div className="text-[10px] text-neutral-500 dark:text-umber-300">
+                          {t(CAMPAIGN_FAMILY_LABEL[row.family])} ·{" "}
+                          {t(`admin.campaign_status_${row.status}`)}
+                        </div>
+                      </td>
+                      <td className="stat-num py-1 text-right">{formatNumber(row.sent, locale)}</td>
+                      <td className="stat-num py-1 text-right">
+                        {formatNumber(row.opened, locale)}
+                      </td>
+                      <td className="stat-num py-1 text-right">
+                        {formatNumber(row.clicked, locale)}
+                      </td>
+                      <td className="stat-num py-1 text-right">
+                        {formatNumber(row.reminded, locale)}
+                      </td>
+                      <td className="stat-num py-1 text-right font-semibold">
+                        {formatNumber(row.converted, locale)}
+                      </td>
+                      <td className="stat-num py-1 text-right text-neutral-500 dark:text-umber-300">
+                        {formatNumber(row.utm_signups, locale)}
+                      </td>
+                      <td className="stat-num py-1 text-right text-neutral-400 dark:text-umber-400">
+                        {formatNumber(row.failed, locale)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </InnerCard>
+        </>
+      )}
+    </SectionCard>
+  );
+}
+
+// ─── Users & workspaces section ────────────────────────────────────────────
+//
+// Composition and lifecycle of the account base. The pair is the product's
+// central promise, so paired-vs-solo is a health metric here rather than a
+// filter toggle on the Users table.
+
+function UsersSection({
+  state,
+  locale,
+}: {
+  state: Loadable<AdminUserAnalytics>;
+  locale: Locale;
+}) {
+  const { t } = useT();
+  const title = t("admin.analytics_section_users");
+  if (state.status === "loading") return <SectionStatus title={title} variant="loading" />;
+  if (state.status === "error")
+    return (
+      <SectionStatus title={title} variant="error" message={t("admin.analytics_load_error")} />
+    );
+
+  const u = state.data;
+  const recencyRows = [
+    { label: t("admin.analytics_users_recency_week"), count: u.recency.week },
+    { label: t("admin.analytics_users_recency_month"), count: u.recency.month },
+    { label: t("admin.analytics_users_recency_dormant30"), count: u.recency.dormant_30d },
+    { label: t("admin.analytics_users_recency_dormant90"), count: u.recency.dormant_90d },
+    { label: t("admin.analytics_users_recency_never"), count: u.recency.never },
+  ];
+
+  return (
+    <SectionCard
+      title={title}
+      subtitle={t("admin.analytics_users_cohorts_note", {
+        admins: formatNumber(u.admins, locale),
+        test: formatNumber(u.test_accounts, locale),
+        demo: formatNumber(u.demo_accounts, locale),
+      })}
+    >
+      <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiTile
+          label={t("admin.analytics_users_total")}
+          value={formatNumber(u.total_users, locale)}
+          emphasis
+        />
+        <KpiTile
+          label={t("admin.analytics_users_paired")}
+          value={formatNumber(u.paired_workspaces, locale)}
+          sub={t("admin.analytics_users_paired_sub", {
+            pct: `${Math.round(u.paired_rate * 100)}`,
+          })}
+        />
+        <KpiTile
+          label={t("admin.analytics_users_solo")}
+          value={formatNumber(u.solo_workspaces, locale)}
+          sub={
+            u.median_days_to_pair == null
+              ? undefined
+              : t("admin.analytics_users_time_to_pair", {
+                  days: formatNumber(u.median_days_to_pair, locale),
+                })
+          }
+        />
+        <KpiTile
+          label={t("admin.analytics_users_no_workspace")}
+          value={formatNumber(u.users_without_workspace, locale)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <InnerCard
+          title={t("admin.analytics_users_recency_title")}
+          subtitle={t("admin.analytics_users_recency_sub")}
+        >
+          <DistBars
+            rows={recencyRows}
+            locale={locale}
+            emptyLabel={t("admin.analytics_users_empty")}
+            labelWidth="7rem"
+          />
+        </InnerCard>
+
+        <InnerCard
+          title={t("admin.analytics_users_cohorts_title")}
+          subtitle={t("admin.analytics_users_cohorts_sub")}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-neutral-500 dark:text-umber-300">
+                  <th className="py-1 text-left font-medium">
+                    {t("admin.analytics_users_col_month")}
+                  </th>
+                  <th className="py-1 text-right font-medium">
+                    {t("admin.analytics_users_col_workspaces")}
+                  </th>
+                  <th className="py-1 text-right font-medium">
+                    {t("admin.analytics_users_col_active")}
+                  </th>
+                  <th className="py-1 text-right font-medium">
+                    {t("admin.analytics_users_col_share")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {u.cohorts.map((row) => (
+                  <tr key={row.month} className="border-t border-ink-100 dark:border-umber-700">
+                    <td className="py-1 text-left font-medium text-neutral-800 dark:text-paper-100">
+                      {row.month}
+                    </td>
+                    <td className="stat-num py-1 text-right">
+                      {formatNumber(row.workspaces, locale)}
+                    </td>
+                    <td className="stat-num py-1 text-right">
+                      {formatNumber(row.active_30d, locale)}
+                    </td>
+                    <td className="stat-num py-1 text-right font-semibold">
+                      {row.workspaces > 0
+                        ? `${Math.round((row.active_30d / row.workspaces) * 100)}%`
+                        : "–"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </InnerCard>
+      </div>
     </SectionCard>
   );
 }

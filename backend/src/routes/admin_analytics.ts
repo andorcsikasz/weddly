@@ -10,6 +10,7 @@ import type {
   AdminAcquisitionAnalytics,
   AdminActivityAnalytics,
   AdminAnalyticsStats,
+  AdminCampaignAnalytics,
   AdminDemoAnalytics,
   AdminDemoKind,
   AdminDemoTypeStats,
@@ -20,9 +21,14 @@ import type {
   AdminHoneymoonAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
+  AdminPlannerAnalytics,
   AdminTrafficAnalytics,
   AdminTrafficTotals,
+  AdminUserAnalytics,
   AdminWeddingAnalytics,
+  CampaignFamily,
+  CampaignFamilyStats,
+  CampaignRowStats,
   WeddingSeason,
 } from "@shared/admin_analytics";
 import type { BudgetCategory, CoupleStatus } from "@shared/types";
@@ -2168,6 +2174,593 @@ function handleGuests(ctx: Ctx): Response {
   return json(guestAnalytics(parseAudience(ctx.url.searchParams)));
 }
 
+// ─── /api/admin/analytics/planners ──────────────────────────────────────────
+//
+// The planner cohort had a roster (the admin Szervezők table) and no health
+// check. Same three questions the couple side answers: where do they come from,
+// are they getting value, and do they pay. Sources: `users`
+// (user_type='planner'), `planner_waitlist`, `planner_clients`,
+// `planner_subscriptions`.
+
+const PLANNER_TIERS: readonly string[] = ["starter", "pro", "premium"];
+const PLANNER_SIGNUP_WINDOW_DAYS = 30;
+
+interface PlannerRow {
+  id: number;
+  created_at: number;
+  status: string;
+  password_set: number;
+  planner_plan: string | null;
+  planner_max_clients: number | null;
+  client_count: number;
+  pending_activation: number;
+  sub_status: string | null;
+  trial_ends_at: number | null;
+  founding_until: number | null;
+  sub_updated_at: number | null;
+}
+
+/** Zero-filled daily buckets for the last `days` UTC days, oldest first. */
+function dailyBuckets(days: number, nowMs: number): Map<string, number> {
+  const out = new Map<string, number>();
+  for (let i = days - 1; i >= 0; i -= 1) out.set(utcDateKey(nowMs - i * DAY_MS), 0);
+  return out;
+}
+
+function plannerAnalytics(audience: AnalyticsAudience): AdminPlannerAnalytics {
+  const now = Date.now();
+  const USER_OK = userAudienceSql("u", audience);
+
+  const planners = db
+    .prepare(
+      `SELECT u.id, u.created_at, u.status, u.password_set,
+              u.planner_plan, u.planner_max_clients,
+              (SELECT COUNT(*) FROM planner_clients pc
+                WHERE pc.planner_user_id = u.id AND pc.status = 'active') AS client_count,
+              EXISTS(SELECT 1 FROM planner_activation_tokens pat
+                WHERE pat.user_id = u.id AND pat.consumed_at IS NULL) AS pending_activation,
+              ps.subscription_status AS sub_status,
+              ps.trial_ends_at AS trial_ends_at,
+              ps.founding_until AS founding_until,
+              ps.updated_at AS sub_updated_at
+         FROM users u
+         LEFT JOIN planner_subscriptions ps ON ps.user_id = u.id
+        WHERE u.user_type = 'planner' AND ${USER_OK}`,
+    )
+    .all() as PlannerRow[];
+
+  let active = 0;
+  let pendingRegistration = 0;
+  let suspended = 0;
+  let paying = 0;
+  let inFreeWindow = 0;
+  let freeWindowEnded = 0;
+  let convertedAfterFree = 0;
+  let withClient = 0;
+  let activated = 0;
+  const statusCensus = new Map<string, number>();
+  const tierAgg = new Map<string, { planners: number; clients: number; capSum: number }>();
+  const clientCounts: number[] = [];
+  const daysToPaid: number[] = [];
+  const signupBuckets = dailyBuckets(PLANNER_SIGNUP_WINDOW_DAYS, now);
+
+  for (const p of planners) {
+    const isActivated = p.password_set === 1 && p.pending_activation === 0;
+    if (isActivated) activated += 1;
+    else pendingRegistration += 1;
+    if (p.status === "suspended") suspended += 1;
+    else if (isActivated) active += 1;
+
+    const status = p.sub_status ?? "none";
+    statusCensus.set(status, (statusCensus.get(status) ?? 0) + 1);
+
+    // A free window is open while the trial or the founding grant still runs.
+    const freeEndsAt =
+      status === "trialing" ? p.trial_ends_at : status === "founding" ? p.founding_until : null;
+    const isPaying = status === "active" || status === "past_due";
+    if (isPaying) paying += 1;
+    if (freeEndsAt != null && freeEndsAt > now) inFreeWindow += 1;
+    if (freeEndsAt != null && freeEndsAt <= now) freeWindowEnded += 1;
+    // Conversion is only meaningful once the free ride is over: someone who is
+    // paying today and once had a window that has since closed converted; a
+    // planner still inside their window is neither a win nor a loss yet.
+    if (isPaying && p.sub_updated_at != null) {
+      convertedAfterFree += 1;
+      freeWindowEnded += 1;
+      daysToPaid.push(Math.max(0, Math.round((p.sub_updated_at - p.created_at) / DAY_MS)));
+    }
+
+    const plan = PLANNER_TIERS.includes(p.planner_plan ?? "")
+      ? (p.planner_plan as string)
+      : "starter";
+    let tier = tierAgg.get(plan);
+    if (!tier) {
+      tier = { planners: 0, clients: 0, capSum: 0 };
+      tierAgg.set(plan, tier);
+    }
+    tier.planners += 1;
+    tier.clients += p.client_count;
+    tier.capSum += p.planner_max_clients ?? 0;
+
+    if (p.client_count > 0) {
+      withClient += 1;
+      clientCounts.push(p.client_count);
+    }
+
+    const key = utcDateKey(p.created_at);
+    if (signupBuckets.has(key)) signupBuckets.set(key, (signupBuckets.get(key) ?? 0) + 1);
+  }
+
+  // Waitlist side of the funnel. Deduped by address: one person re-applying is
+  // one applicant, not two, otherwise every later step reads as a worse
+  // conversion than it is.
+  const waitlist = db
+    .prepare(
+      `SELECT COUNT(DISTINCT lower(email)) AS applied,
+              COUNT(DISTINCT CASE WHEN status = 'accepted' THEN lower(email) END) AS accepted
+         FROM planner_waitlist`,
+    )
+    .get() as { applied: number; accepted: number };
+
+  const acceptedWithAccount = (
+    db
+      .prepare(
+        `SELECT COUNT(DISTINCT lower(w.email)) AS n
+           FROM planner_waitlist w
+          WHERE w.status = 'accepted'
+            AND EXISTS (SELECT 1 FROM users u
+                         WHERE lower(u.email) = lower(w.email) AND u.user_type = 'planner')`,
+      )
+      .get() as { n: number }
+  ).n;
+
+  const applied = waitlist.applied;
+  const step = (
+    key: AdminPlannerAnalytics["funnel"][number]["key"],
+    count: number,
+  ): AdminPlannerAnalytics["funnel"][number] => ({
+    key,
+    count,
+    pct_of_first: applied > 0 ? Math.round((count / applied) * 100) : 0,
+  });
+
+  const by_tier = PLANNER_TIERS.map((plan) => {
+    const agg = tierAgg.get(plan) ?? { planners: 0, clients: 0, capSum: 0 };
+    return {
+      plan,
+      planners: agg.planners,
+      clients: agg.clients,
+      // Per-tier cap as configured on the accounts themselves, not a constant:
+      // an admin can raise one planner's ceiling and the utilisation has to
+      // reflect the seat they actually have.
+      cap: agg.planners > 0 ? Math.round(agg.capSum / agg.planners) : 0,
+      utilisation: agg.capSum > 0 ? agg.clients / agg.capSum : null,
+    };
+  });
+
+  return {
+    total: planners.length,
+    active,
+    pending_registration: pendingRegistration,
+    suspended,
+    accepted_awaiting_account: Math.max(0, waitlist.accepted - acceptedWithAccount),
+    funnel: [
+      step("applied", applied),
+      step("accepted", waitlist.accepted),
+      step("account", acceptedWithAccount),
+      step("activated", activated),
+      step("with_client", withClient),
+      step("paying", paying),
+    ],
+    by_tier,
+    subscription_status: [...statusCensus.entries()]
+      .map(([status, count]) => ({ status, count }))
+      .sort((a, b) => b.count - a.count || a.status.localeCompare(b.status)),
+    in_free_window: inFreeWindow,
+    paying,
+    converted_after_free: convertedAfterFree,
+    free_window_ended: freeWindowEnded,
+    avg_days_to_paid_approx:
+      daysToPaid.length > 0
+        ? Math.round(daysToPaid.reduce((s, d) => s + d, 0) / daysToPaid.length)
+        : null,
+    signups_daily: [...signupBuckets.entries()].map(([date, count]) => ({ date, count })),
+    clients_per_planner: quantiles(clientCounts),
+  };
+}
+
+function handlePlanners(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(plannerAnalytics(parseAudience(ctx.url.searchParams)));
+}
+
+// ─── /api/admin/analytics/campaigns ─────────────────────────────────────────
+//
+// The four outreach families keep rich per-recipient state that only ever
+// showed up inside their own console, one campaign at a time. This reads all
+// four together so "which channel actually works" is answerable.
+//
+// Two things are deliberate. First, "converted" means something different per
+// family (a claimed listing, a review that landed, a registration, a completed
+// onboarding) and is never averaged into a single cross-family rate — the
+// per-family table is the comparison surface. Second, `utm_signups` is a
+// SECOND, independent conversion number for the families whose CTA lands on a
+// signup page: it counts accounts whose captured `utm_campaign` is this
+// campaign's slug, i.e. the same attribution the Csatorna model uses. Where
+// both exist they should roughly agree; a gap is a measurement problem worth
+// seeing rather than hiding behind one number.
+
+const CAMPAIGN_WINDOW_DAYS = 30;
+
+interface CampaignAggRow {
+  id: number;
+  slug: string;
+  status: string;
+  started_at: number | null;
+  created_at: number;
+  sent: number;
+  opened: number;
+  clicked: number;
+  reminded: number;
+  converted: number;
+  failed: number;
+}
+
+/** Per-family aggregate SQL. Each yields one row per campaign with the same
+ *  column names; only the conversion predicate and the tracking columns a
+ *  family actually has differ (personal-invite has no pixel or click redirect,
+ *  onboarding has no click tracking), and a missing signal reads as 0 rather
+ *  than being faked. */
+const CAMPAIGN_AGG_SQL: Record<CampaignFamily, string> = {
+  vendor_claim: `
+    SELECT c.id, c.slug, c.status, c.started_at, c.created_at,
+           SUM(CASE WHEN s.status = 'sent' THEN 1 ELSE 0 END) AS sent,
+           SUM(CASE WHEN s.opened_at IS NOT NULL THEN 1 ELSE 0 END) AS opened,
+           SUM(CASE WHEN s.clicked_at IS NOT NULL THEN 1 ELSE 0 END) AS clicked,
+           SUM(CASE WHEN s.reminder_sent_at IS NOT NULL THEN 1 ELSE 0 END) AS reminded,
+           SUM(CASE WHEN l.vendor_account_id IS NOT NULL THEN 1 ELSE 0 END) AS converted,
+           SUM(CASE WHEN s.status = 'failed' THEN 1 ELSE 0 END) AS failed
+      FROM vendor_claim_campaigns c
+      LEFT JOIN vendor_claim_campaign_sends s ON s.campaign_id = c.id
+      LEFT JOIN listings l ON l.id = s.listing_id
+     GROUP BY c.id`,
+  vendor_review: `
+    SELECT c.id, c.slug, c.status, c.started_at, c.created_at,
+           SUM(CASE WHEN s.status = 'sent' THEN 1 ELSE 0 END) AS sent,
+           SUM(CASE WHEN s.opened_at IS NOT NULL THEN 1 ELSE 0 END) AS opened,
+           SUM(CASE WHEN s.clicked_at IS NOT NULL THEN 1 ELSE 0 END) AS clicked,
+           SUM(CASE WHEN s.reminder_sent_at IS NOT NULL THEN 1 ELSE 0 END) AS reminded,
+           SUM(CASE WHEN EXISTS (SELECT 1 FROM supplier_reviews r
+                                  WHERE r.supplier_id = s.listing_id AND r.published = 1
+                                    AND r.deleted_at IS NULL AND s.sent_at IS NOT NULL
+                                    AND r.created_at > s.sent_at) THEN 1 ELSE 0 END) AS converted,
+           SUM(CASE WHEN s.status = 'failed' THEN 1 ELSE 0 END) AS failed
+      FROM vendor_review_campaigns c
+      LEFT JOIN vendor_review_campaign_sends s ON s.campaign_id = c.id
+     GROUP BY c.id`,
+  personal_invite: `
+    SELECT c.id, c.slug, c.status, c.started_at, c.created_at,
+           SUM(CASE WHEN s.status = 'sent' THEN 1 ELSE 0 END) AS sent,
+           0 AS opened,
+           0 AS clicked,
+           0 AS reminded,
+           SUM(CASE WHEN EXISTS (SELECT 1 FROM users u
+                                  WHERE LOWER(TRIM(u.email)) = s.email) THEN 1 ELSE 0 END) AS converted,
+           SUM(CASE WHEN s.status = 'failed' THEN 1 ELSE 0 END) AS failed
+      FROM personal_invite_campaigns c
+      LEFT JOIN personal_invite_campaign_sends s ON s.campaign_id = c.id
+     GROUP BY c.id`,
+  onboarding: `
+    SELECT c.id, c.slug, c.status, c.started_at, c.created_at,
+           SUM(CASE WHEN s.status = 'sent' THEN 1 ELSE 0 END) AS sent,
+           0 AS opened,
+           0 AS clicked,
+           SUM(CASE WHEN s.reminder_sent_at IS NOT NULL THEN 1 ELSE 0 END) AS reminded,
+           SUM(CASE WHEN EXISTS (SELECT 1 FROM users u
+                                  WHERE u.id = s.user_id AND u.couple_id IS NOT NULL)
+                    THEN 1 ELSE 0 END) AS converted,
+           SUM(CASE WHEN s.status = 'failed' THEN 1 ELSE 0 END) AS failed
+      FROM onboarding_campaigns c
+      LEFT JOIN onboarding_campaign_sends s ON s.campaign_id = c.id
+     GROUP BY c.id`,
+};
+
+/** Sends per UTC day per family, for the shared daily series. Same shape for
+ *  all four; the send table is the only difference. */
+const CAMPAIGN_SENDS_TABLE: Record<CampaignFamily, string> = {
+  vendor_claim: "vendor_claim_campaign_sends",
+  vendor_review: "vendor_review_campaign_sends",
+  personal_invite: "personal_invite_campaign_sends",
+  onboarding: "onboarding_campaign_sends",
+};
+
+const CAMPAIGN_FAMILIES: readonly CampaignFamily[] = [
+  "vendor_claim",
+  "vendor_review",
+  "personal_invite",
+  "onboarding",
+];
+
+function campaignAnalytics(): AdminCampaignAnalytics {
+  const now = Date.now();
+  const campaigns: CampaignRowStats[] = [];
+  const by_family: CampaignFamilyStats[] = [];
+
+  // Signups tagged with a campaign slug, counted once and looked up per row.
+  // Cheaper than a correlated subquery per campaign, and it keeps the
+  // attribution rule in one place.
+  const utmRows = db
+    .prepare(
+      `SELECT LOWER(utm_campaign) AS slug, COUNT(*) AS n
+         FROM users
+        WHERE utm_campaign IS NOT NULL AND TRIM(utm_campaign) <> ''
+        GROUP BY LOWER(utm_campaign)`,
+    )
+    .all() as Array<{ slug: string; n: number }>;
+  const utmBySlug = new Map(utmRows.map((r) => [r.slug, r.n]));
+
+  for (const family of CAMPAIGN_FAMILIES) {
+    let rows: CampaignAggRow[] = [];
+    try {
+      rows = db.prepare(CAMPAIGN_AGG_SQL[family]).all() as CampaignAggRow[];
+    } catch (e) {
+      // A family whose tables aren't there yet (fresh DB mid-migration) must
+      // not take the whole dashboard down with it.
+      log.warn("analytics.campaign_family_failed", {
+        family,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+    const totals: CampaignFamilyStats = {
+      family,
+      campaigns: rows.length,
+      sent: 0,
+      opened: 0,
+      clicked: 0,
+      converted: 0,
+      failed: 0,
+    };
+    for (const r of rows) {
+      totals.sent += r.sent ?? 0;
+      totals.opened += r.opened ?? 0;
+      totals.clicked += r.clicked ?? 0;
+      totals.converted += r.converted ?? 0;
+      totals.failed += r.failed ?? 0;
+      campaigns.push({
+        family,
+        id: r.id,
+        slug: r.slug,
+        status: r.status,
+        started_at: r.started_at,
+        sent: r.sent ?? 0,
+        opened: r.opened ?? 0,
+        clicked: r.clicked ?? 0,
+        reminded: r.reminded ?? 0,
+        converted: r.converted ?? 0,
+        failed: r.failed ?? 0,
+        utm_signups: utmBySlug.get(r.slug.toLowerCase()) ?? 0,
+      });
+    }
+    by_family.push(totals);
+  }
+
+  campaigns.sort((a, b) => (b.started_at ?? 0) - (a.started_at ?? 0) || b.id - a.id);
+
+  // Daily sends + conversions across every family. Conversions are dated by the
+  // SEND (the only per-recipient timestamp we keep), so the two series answer
+  // "of the mail that went out that day, how much of it worked".
+  const sentBuckets = dailyBuckets(CAMPAIGN_WINDOW_DAYS, now);
+  const convBuckets = dailyBuckets(CAMPAIGN_WINDOW_DAYS, now);
+  const since = now - (CAMPAIGN_WINDOW_DAYS - 1) * DAY_MS;
+  for (const family of CAMPAIGN_FAMILIES) {
+    try {
+      const rows = db
+        .prepare(`SELECT sent_at FROM ${CAMPAIGN_SENDS_TABLE[family]} WHERE sent_at >= ?`)
+        .all(since) as Array<{ sent_at: number }>;
+      for (const r of rows) {
+        const key = utcDateKey(r.sent_at);
+        if (sentBuckets.has(key)) sentBuckets.set(key, (sentBuckets.get(key) ?? 0) + 1);
+      }
+    } catch {
+      // Same tolerance as above.
+    }
+  }
+  // Conversions per day, per family, reusing each family's own predicate.
+  const CONVERTED_DAILY_SQL: Record<CampaignFamily, string> = {
+    vendor_claim: `SELECT s.sent_at FROM vendor_claim_campaign_sends s
+                     JOIN listings l ON l.id = s.listing_id
+                    WHERE s.sent_at >= ? AND l.vendor_account_id IS NOT NULL`,
+    vendor_review: `SELECT s.sent_at FROM vendor_review_campaign_sends s
+                    WHERE s.sent_at >= ? AND EXISTS (
+                      SELECT 1 FROM supplier_reviews r
+                       WHERE r.supplier_id = s.listing_id AND r.published = 1
+                         AND r.deleted_at IS NULL AND r.created_at > s.sent_at)`,
+    personal_invite: `SELECT s.sent_at FROM personal_invite_campaign_sends s
+                      WHERE s.sent_at >= ? AND EXISTS (
+                        SELECT 1 FROM users u WHERE LOWER(TRIM(u.email)) = s.email)`,
+    onboarding: `SELECT s.sent_at FROM onboarding_campaign_sends s
+                 WHERE s.sent_at >= ? AND EXISTS (
+                   SELECT 1 FROM users u WHERE u.id = s.user_id AND u.couple_id IS NOT NULL)`,
+  };
+  for (const family of CAMPAIGN_FAMILIES) {
+    try {
+      const rows = db.prepare(CONVERTED_DAILY_SQL[family]).all(since) as Array<{ sent_at: number }>;
+      for (const r of rows) {
+        const key = utcDateKey(r.sent_at);
+        if (convBuckets.has(key)) convBuckets.set(key, (convBuckets.get(key) ?? 0) + 1);
+      }
+    } catch {
+      // Same tolerance as above.
+    }
+  }
+
+  const opted_out = (db.prepare("SELECT COUNT(*) AS n FROM email_optouts").get() as { n: number })
+    .n;
+
+  return {
+    campaigns: campaigns.slice(0, 100),
+    by_family,
+    daily: [...sentBuckets.entries()].map(([date, sent]) => ({
+      date,
+      sent,
+      converted: convBuckets.get(date) ?? 0,
+    })),
+    opted_out,
+    window_days: CAMPAIGN_WINDOW_DAYS,
+  };
+}
+
+function handleCampaigns(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(campaignAnalytics());
+}
+
+// ─── /api/admin/analytics/users ─────────────────────────────────────────────
+//
+// Account composition and lifecycle. The admin Users table already knows all of
+// this per row; nothing turned it into a trend. The cohort counts (admins /
+// test / demo) are computed WITHOUT the audience filter on purpose: their whole
+// job is to show what the filter is holding back.
+
+const RECENCY_WEEK_DAYS = 7;
+const RECENCY_MONTH_DAYS = 30;
+const RECENCY_DORMANT_DAYS = 90;
+const USER_COHORT_MONTHS = 6;
+
+function userAnalytics(audience: AnalyticsAudience): AdminUserAnalytics {
+  const now = Date.now();
+  const USER_OK = userAudienceSql("u", audience);
+  const COUPLE_OK = coupleAudienceSql("c", audience);
+
+  const users = db
+    .prepare(
+      `SELECT u.id, u.couple_id, u.last_seen_at, u.verified_email, u.role, u.user_type
+         FROM users u
+        WHERE ${USER_OK}`,
+    )
+    .all() as Array<{
+    id: number;
+    couple_id: number | null;
+    last_seen_at: number | null;
+    verified_email: number;
+    role: string;
+    user_type: string;
+  }>;
+
+  const recency = { week: 0, month: 0, dormant_30d: 0, dormant_90d: 0, never: 0 };
+  let usersWithoutWorkspace = 0;
+  for (const u of users) {
+    if (u.couple_id === null && u.role !== "vendor" && u.user_type !== "planner") {
+      usersWithoutWorkspace += 1;
+    }
+    const seen = u.last_seen_at;
+    if (seen == null) {
+      recency.never += 1;
+      continue;
+    }
+    const ageDays = (now - seen) / DAY_MS;
+    if (ageDays <= RECENCY_WEEK_DAYS) recency.week += 1;
+    else if (ageDays <= RECENCY_MONTH_DAYS) recency.month += 1;
+    else if (ageDays <= RECENCY_DORMANT_DAYS) recency.dormant_30d += 1;
+    else recency.dormant_90d += 1;
+  }
+
+  // Workspaces, with the moment a second person joined. `couple_members` is the
+  // membership record; the second member's created_at is when the pair formed,
+  // which is what makes "time to pair" measurable at all.
+  const workspaces = db
+    .prepare(
+      `SELECT c.id, c.created_at,
+              (SELECT COUNT(*) FROM couple_members m WHERE m.couple_id = c.id) AS members,
+              (SELECT MAX(m.created_at) FROM couple_members m WHERE m.couple_id = c.id) AS last_join,
+              (SELECT MAX(u.last_seen_at) FROM couple_members m
+                 JOIN users u ON u.id = m.user_id
+                WHERE m.couple_id = c.id) AS last_seen
+         FROM couples c
+        WHERE ${COUPLE_OK}`,
+    )
+    .all() as Array<{
+    id: number;
+    created_at: number;
+    members: number;
+    last_join: number | null;
+    last_seen: number | null;
+  }>;
+
+  let paired = 0;
+  let solo = 0;
+  const daysToPair: number[] = [];
+  const cohortKeys = lastNMonthKeys(USER_COHORT_MONTHS, now);
+  const cohorts = new Map<string, { workspaces: number; active_30d: number }>();
+  for (const key of cohortKeys) cohorts.set(key, { workspaces: 0, active_30d: 0 });
+
+  for (const w of workspaces) {
+    if (w.members >= 2) {
+      paired += 1;
+      if (w.last_join != null) {
+        daysToPair.push(Math.max(0, Math.round((w.last_join - w.created_at) / DAY_MS)));
+      }
+    } else {
+      solo += 1;
+    }
+    const cohort = cohorts.get(monthKeyUtc(w.created_at));
+    if (cohort) {
+      cohort.workspaces += 1;
+      if (w.last_seen != null && now - w.last_seen <= RECENCY_MONTH_DAYS * DAY_MS) {
+        cohort.active_30d += 1;
+      }
+    }
+  }
+
+  const totalWorkspaces = paired + solo;
+  const medianDaysToPair = daysToPair.length > 0 ? quantiles(daysToPair).median : null;
+
+  // Cohort counts ignore the audience filter deliberately (see header).
+  const adminList = CONFIG.adminEmails.map((e) => e.toLowerCase());
+  const admins =
+    adminList.length === 0
+      ? 0
+      : (
+          db
+            .prepare(
+              `SELECT COUNT(*) AS n FROM users
+                WHERE lower(email) IN (${adminList.map(() => "?").join(", ")})`,
+            )
+            .get(...adminList) as { n: number }
+        ).n;
+  const testAccounts = (
+    db.prepare("SELECT COUNT(*) AS n FROM users WHERE is_beta_tester = 1").get() as { n: number }
+  ).n;
+  const demoAccounts = (
+    db.prepare("SELECT COUNT(*) AS n FROM users WHERE email LIKE '%@demo.weddly.local'").get() as {
+      n: number;
+    }
+  ).n;
+
+  return {
+    total_users: users.length,
+    paired_workspaces: paired,
+    solo_workspaces: solo,
+    users_without_workspace: usersWithoutWorkspace,
+    admins,
+    test_accounts: testAccounts,
+    demo_accounts: demoAccounts,
+    paired_rate: totalWorkspaces > 0 ? paired / totalWorkspaces : 0,
+    median_days_to_pair: medianDaysToPair,
+    recency,
+    cohorts: cohortKeys.map((month) => ({
+      month,
+      workspaces: cohorts.get(month)?.workspaces ?? 0,
+      active_30d: cohorts.get(month)?.active_30d ?? 0,
+    })),
+  };
+}
+
+function handleUsers(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  return json(userAnalytics(parseAudience(ctx.url.searchParams)));
+}
+
 export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/money", handleMoney, true);
   router.get("/api/admin/analytics/activity", handleActivity, true);
@@ -2180,4 +2773,7 @@ export function registerAdminAnalyticsRoutes(router: Router) {
   router.get("/api/admin/analytics/honeymoon", handleHoneymoon, true);
   router.get("/api/admin/analytics/weddings", handleWeddings, true);
   router.get("/api/admin/analytics/guests", handleGuests, true);
+  router.get("/api/admin/analytics/planners", handlePlanners, true);
+  router.get("/api/admin/analytics/campaigns", handleCampaigns, true);
+  router.get("/api/admin/analytics/users", handleUsers, true);
 }

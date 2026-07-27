@@ -144,13 +144,16 @@ import type { SavedSupplier } from "@shared/saved";
 import type {
   AdminAcquisitionAnalytics,
   AdminActivityAnalytics,
+  AdminCampaignAnalytics,
   AdminDemoAnalytics,
   AdminEngagementAnalytics,
   AdminGuestAnalytics,
   AdminHoneymoonAnalytics,
   AdminMoneyAnalytics,
   AdminPicksAnalytics,
+  AdminPlannerAnalytics,
   AdminTrafficAnalytics,
+  AdminUserAnalytics,
   AdminWeddingAnalytics,
   AnalyticsAudience,
 } from "@shared/admin_analytics";
@@ -3023,9 +3026,15 @@ export const adminAnalyticsApi = {
       "GET",
       `/api/admin/analytics/acquisition${audienceQuery(a)}`,
     ),
-  // Demo is itself the demo lens; traffic is external GA4 — neither takes the
-  // audience filter.
+  planners: (a?: AnalyticsAudience) =>
+    apiFetch<AdminPlannerAnalytics>("GET", `/api/admin/analytics/planners${audienceQuery(a)}`),
+  users: (a?: AnalyticsAudience) =>
+    apiFetch<AdminUserAnalytics>("GET", `/api/admin/analytics/users${audienceQuery(a)}`),
+  // Demo is itself the demo lens; traffic is external GA4; campaigns count
+  // outbound mail to people who mostly have no account at all — none of the
+  // three takes the audience filter.
   demo: () => apiFetch<AdminDemoAnalytics>("GET", "/api/admin/analytics/demo"),
+  campaigns: () => apiFetch<AdminCampaignAnalytics>("GET", "/api/admin/analytics/campaigns"),
   traffic: () => apiFetch<AdminTrafficAnalytics>("GET", "/api/admin/analytics/traffic"),
 };
 

@@ -620,3 +620,153 @@ export interface AdminTrafficAnalytics {
   /** When the report was generated (unix ms) — drives the "as of" line. */
   generated_at: number;
 }
+
+// ─── Planners (Szervezők) ────────────────────────────────────────────────────
+//
+// Planners are the second paying account type and had no analytics surface at
+// all: the admin Szervezők table shows who they are, never how the cohort is
+// doing. Everything here comes from `users` (user_type='planner'),
+// `planner_waitlist`, `planner_clients` and `planner_subscriptions`.
+
+/** One step of the waitlist → paying funnel. `count` is the population that
+ *  reached this step; `pct_of_first` is its share of step 1, so a reader can
+ *  see the drop without doing the division. */
+export interface PlannerFunnelStep {
+  key: "applied" | "accepted" | "account" | "activated" | "with_client" | "paying";
+  count: number;
+  pct_of_first: number;
+}
+
+/** Capacity utilisation for one plan tier. `cap` is `users.planner_max_clients`
+ *  as configured for that tier; a planner sitting at their cap is either about
+ *  to churn or about to upgrade, which is why this is a headline number. */
+export interface PlannerTierUsage {
+  plan: string;
+  planners: number;
+  clients: number;
+  cap: number;
+  /** clients ÷ (planners × cap), 0..1. Null when nobody is on the tier. */
+  utilisation: number | null;
+}
+
+export interface AdminPlannerAnalytics {
+  total: number;
+  active: number;
+  /** Provisioned but never activated: no password set, or an unconsumed
+   *  activation token still outstanding. */
+  pending_registration: number;
+  suspended: number;
+  /** Accepted waitlist applicants with no planner account yet — the queue the
+   *  admin list surfaces as "pending" rows. */
+  accepted_awaiting_account: number;
+  funnel: PlannerFunnelStep[];
+  by_tier: PlannerTierUsage[];
+  /** Live subscription-state census. Keys are the planner subscription
+   *  statuses; `none` covers accounts with no subscription row at all. */
+  subscription_status: Array<{ status: string; count: number }>;
+  /** Planners whose free window (trial or founding) is still open. */
+  in_free_window: number;
+  /** Planners on a paid Stripe subscription (active or past_due). */
+  paying: number;
+  /** Free window → paid conversion among planners whose window has ENDED, so a
+   *  planner still inside their trial neither counts as a win nor a loss. */
+  converted_after_free: number;
+  free_window_ended: number;
+  /** Mean days from account creation to the subscription row's last update
+   *  while paying. An APPROXIMATION: we never stamped a "went paid at", and the
+   *  webhook touches `updated_at` on every renewal, so a long-lived subscriber
+   *  drifts upward. Null when nobody is paying. */
+  avg_days_to_paid_approx: number | null;
+  /** New planner accounts per UTC day for the last 30 days, zero-filled. */
+  signups_daily: Array<{ date: string; count: number }>;
+  /** Clients per planner across accounts that have at least one. */
+  clients_per_planner: AdminAnalyticsStats;
+}
+
+// ─── Campaigns (Kampányok) ───────────────────────────────────────────────────
+//
+// The four outreach families already record per-recipient state; this is the
+// first surface that reads them together. "Converted" means something different
+// per family and is deliberately NOT averaged into one number: a claimed
+// listing, a review that landed, a registration, an onboarding.
+
+export type CampaignFamily = "vendor_claim" | "vendor_review" | "personal_invite" | "onboarding";
+
+export interface CampaignRowStats {
+  family: CampaignFamily;
+  id: number;
+  slug: string;
+  status: string;
+  started_at: number | null;
+  sent: number;
+  opened: number;
+  clicked: number;
+  reminded: number;
+  converted: number;
+  failed: number;
+  /** Signups whose captured `utm_campaign` equals this campaign's slug. Only
+   *  the families whose CTA lands on a signup page can produce these, and it is
+   *  the ONE conversion number that is attributed the same way the Csatorna
+   *  model attributes everything else. */
+  utm_signups: number;
+}
+
+/** One family's totals, for the "which channel actually works" comparison. */
+export interface CampaignFamilyStats {
+  family: CampaignFamily;
+  campaigns: number;
+  sent: number;
+  opened: number;
+  clicked: number;
+  converted: number;
+  failed: number;
+}
+
+export interface AdminCampaignAnalytics {
+  /** Every campaign ever run, newest first, capped at a sane page. */
+  campaigns: CampaignRowStats[];
+  by_family: CampaignFamilyStats[];
+  /** Sends and conversions per UTC day for the last 30 days, across families.
+   *  Conversions are dated by the SEND, not by when the person converted (we
+   *  only know the send timestamp per recipient), so the two series line up. */
+  daily: Array<{ date: string; sent: number; converted: number }>;
+  /** Addresses on the permanent suppression list (`email_optouts`). */
+  opted_out: number;
+  /** Length of the `daily` series, in days. */
+  window_days: number;
+}
+
+// ─── Users & workspaces (Felhasználók) ───────────────────────────────────────
+
+export interface AdminUserAnalytics {
+  total_users: number;
+  /** Workspaces with two people in them vs. one. The pair is the product's
+   *  central promise, so the split is a health metric, not a filter. */
+  paired_workspaces: number;
+  solo_workspaces: number;
+  /** Verified accounts with no workspace at all — the onboarding-campaign
+   *  audience, counted here so the two surfaces agree. */
+  users_without_workspace: number;
+  /** Standing cohort counts, computed regardless of the audience toggles so
+   *  the admin can see what the filter is holding back. */
+  admins: number;
+  test_accounts: number;
+  demo_accounts: number;
+  /** Share of workspaces that ever gained a second person, and how long it took
+   *  (median days from workspace creation to the partner joining). */
+  paired_rate: number;
+  median_days_to_pair: number | null;
+  /** `users.last_seen_at` buckets. `never` are accounts that have not loaded
+   *  the app since the column existed, which is why they are their own bucket
+   *  rather than folded into the dormant tail. */
+  recency: {
+    week: number;
+    month: number;
+    dormant_30d: number;
+    dormant_90d: number;
+    never: number;
+  };
+  /** Monthly workspace cohorts (oldest first): how many were created, and how
+   *  many of them had someone active in the last 30 days. */
+  cohorts: Array<{ month: string; workspaces: number; active_30d: number }>;
+}
