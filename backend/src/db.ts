@@ -1639,6 +1639,10 @@ addColumnIfMissing("listings", "custom_category", "custom_category TEXT");
 // price_band change (see PRICE_BAND_COOLDOWN_DAYS in shared/listings.ts).
 // NULL = the published band was never changed, so the next change is free.
 addColumnIfMissing("listings", "price_band_changed_at", "price_band_changed_at INTEGER");
+// Anchors the 7-day rename cooldown (shared/listings.ts). Null until the first
+// self-serve rename, so the name a listing was moderated under never starts the
+// clock and the first correction is free.
+addColumnIfMissing("listings", "name_changed_at", "name_changed_at INTEGER");
 // Comma-separated ISO 639-1 codes a verbal vendor (celebrant / MC) confidently
 // works in. NULL on every other category and until a vendor fills it in.
 addColumnIfMissing("listings", "spoken_languages", "spoken_languages TEXT");

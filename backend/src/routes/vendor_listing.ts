@@ -17,6 +17,7 @@
 
 import {
   type Listing,
+  listingNameLockedUntil,
   MAX_LISTING_PHOTOS,
   priceBandLockedUntil,
   type VendorAccount,
@@ -131,6 +132,9 @@ async function handleGetMe(ctx: Ctx): Promise<Response> {
 
 // ── PATCH input parsing ────────────────────────────────────────────────────
 
+// Matches vendor_accounts.display_name so a brand can't be longer on one
+// surface than the other.
+const MAX_NAME_LEN = 120;
 const MAX_CITY_LEN = 80;
 const MAX_ADDRESS_LEN = 240;
 const MAX_WEBSITE_LEN = 240;
@@ -193,6 +197,18 @@ function parseSpokenLanguagesInput(raw: unknown): string[] | null | undefined {
 
 function buildPatch(body: VendorListingEditInput): ListingPatch {
   const patch: ListingPatch = {};
+  // `name` is NOT NULL and a nameless card is unusable in the directory, so an
+  // empty string is rejected rather than stored. The cooldown itself lives in
+  // the handler — this only validates the shape.
+  if (body.name !== undefined) {
+    if (typeof body.name !== "string") throw new HttpError(400, "name must be a string");
+    const trimmed = body.name.trim();
+    if (trimmed.length === 0) throw new HttpError(400, "name cannot be empty");
+    if (trimmed.length > MAX_NAME_LEN) {
+      throw new HttpError(400, `name is too long (${trimmed.length} > ${MAX_NAME_LEN})`);
+    }
+    patch.name = trimmed;
+  }
   // City is one of the few NOT-NULL columns on listings — empty / null
   // rejected at this boundary so a vendor can't blank it out.
   if (body.city !== undefined) {
@@ -250,6 +266,26 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
   const { listing: currentListing, account } = resolveVendorListing(ctx);
   const body = await readJson<VendorListingEditInput>(ctx.req);
   const patch = buildPatch(body);
+  // Rename cooldown (shared/listings.ts): the vendor owns their brand name, but
+  // only one change a week. Re-sending the CURRENT name is a no-op that never
+  // trips the gate, so a form that submits every field on save stays safe. The
+  // first rename is always allowed — the name a listing was moderated under
+  // doesn't start the clock, which keeps fixing a typo free.
+  if (patch.name !== undefined && patch.name !== currentListing.name) {
+    const lockedUntil = listingNameLockedUntil(currentListing.name_changed_at);
+    if (lockedUntil !== null && now() < lockedUntil) {
+      throw new HttpError(409, `name is locked until ${new Date(lockedUntil).toISOString()}`, {
+        code: "name_locked",
+        locked_until: lockedUntil,
+      });
+    }
+    patch.name_changed_at = now();
+  } else if (patch.name !== undefined) {
+    // Unchanged value — drop it so `updated_at` isn't bumped by a no-op and the
+    // audit entry doesn't claim a rename that never happened.
+    patch.name = undefined;
+  }
+
   // Anti-fraud pricing cooldown (shared/listings.ts): a change to the price
   // band, including withdrawing it, is allowed once every 30 days. Only a
   // real change trips the gate; re-sending the current value is a no-op.
@@ -287,10 +323,14 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
     before: {
       listing_id: currentListing.id,
       ...(patch.price_band !== undefined ? { price_band: currentListing.price_band } : {}),
+      // Renames are recorded verbatim on both sides: a listing that launders a
+      // reputation by rebranding has to be reconstructable from the log alone.
+      ...(patch.name !== undefined ? { name: currentListing.name } : {}),
     },
     after: {
       fields: Object.keys(patch),
       ...(patch.price_band !== undefined ? { price_band: patch.price_band } : {}),
+      ...(patch.name !== undefined ? { name: patch.name } : {}),
     },
   });
   return json(listingViewWithMedia(updated, account));

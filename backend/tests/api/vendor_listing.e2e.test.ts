@@ -259,7 +259,10 @@ describe("P2.D vendor listing — PATCH /api/vendor/listing/me", () => {
     expect(patch.data.listing.blurb_en).toBeNull();
   });
 
-  test("name / category / status / source / vendor_account_id are NOT mutable here", async () => {
+  // `name` used to live in this set. It is vendor-editable now (behind the
+  // 7-day cooldown covered further down); everything else here is still
+  // admin-only or server-derived.
+  test("category / status / source / vendor_account_id are NOT mutable here", async () => {
     wipeAll();
     const { listingId } = await makeApprovedListing(
       "owner-immutable@weddly.test",
@@ -279,7 +282,6 @@ describe("P2.D vendor listing — PATCH /api/vendor/listing/me", () => {
         // Every one of these is an admin-only / server-derived field; they
         // get silently ignored rather than 400'd so a generous client
         // sending the whole listing back doesn't break.
-        name: "Hostile Rename",
         category: "venue",
         status: "hidden",
         source: "curated",
@@ -291,7 +293,6 @@ describe("P2.D vendor listing — PATCH /api/vendor/listing/me", () => {
       { token: vendorToken },
     );
     expect(patch.status).toBe(200);
-    expect(patch.data.listing.name).toBe("Immutable Photo Studio");
     expect(patch.data.listing.category).toBe("photography");
     expect(patch.data.listing.status).toBe("active");
     expect(patch.data.listing.source).toBe("community");
@@ -1607,5 +1608,118 @@ describe("vendor listing — spoken languages (verbal vendors)", () => {
       { token: vendorToken },
     );
     expect(cleared.data.listing.spoken_languages).toEqual([]);
+  });
+});
+
+// ── Brand-name rename, behind a 7-day cooldown ──────────────────────────────
+// The listing name used to be frozen at moderation with a mailto to support,
+// which made every typo a ticket. The vendor owns it now; the cooldown is what
+// keeps the catalogue stable and stops a listing laundering a reputation by
+// rebranding weekly.
+
+describe("vendor listing rename 7-day cooldown", () => {
+  async function makeVendor(tag: string): Promise<{ vendorToken: string; listingId: string }> {
+    const { listingId } = await makeApprovedListing(
+      `owner-${tag}@weddly.test`,
+      `vendor-${tag}@weddly.test`,
+      `${tag} Photo Studio`,
+    );
+    return claimListing(listingId, `vendor-${tag}@weddly.test`, "Vendor Owner");
+  }
+
+  test("the first rename is free, the second inside the window is refused", async () => {
+    wipeAll();
+    const { vendorToken } = await makeVendor("rename-lock");
+
+    const first = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { name: "Fényes Fotó Stúdió" },
+      { token: vendorToken },
+    );
+    expect(first.status).toBe(200);
+    expect(first.data.listing.name).toBe("Fényes Fotó Stúdió");
+    // The name a listing was moderated under doesn't start the clock, so this
+    // first correction was free; it's the one that stamps the anchor.
+    expect(first.data.listing.name_changed_at).not.toBeNull();
+
+    const second = await req(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { name: "Másik Név" },
+      { token: vendorToken },
+    );
+    expect(second.status).toBe(409);
+    const still = await req<VendorListingView>("GET", "/api/vendor/listing/me", undefined, {
+      token: vendorToken,
+    });
+    expect(still.data.listing.name).toBe("Fényes Fotó Stúdió");
+  });
+
+  test("re-sending the SAME name is a no-op, not a rename", async () => {
+    // The editor autosaves whole sections, so an untouched name field ships on
+    // every save. That must never burn the week.
+    wipeAll();
+    const { vendorToken } = await makeVendor("rename-noop");
+    const before = await req<VendorListingView>("GET", "/api/vendor/listing/me", undefined, {
+      token: vendorToken,
+    });
+    const currentName = before.data.listing.name;
+
+    const echo = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { name: currentName, city: "Szeged" },
+      { token: vendorToken },
+    );
+    expect(echo.status).toBe(200);
+    expect(echo.data.listing.name_changed_at).toBeNull();
+    // The rest of the patch still applied.
+    expect(echo.data.listing.city).toBe("Szeged");
+
+    // And because nothing was burned, a real rename right after is accepted.
+    const real = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { name: "Új Márkanév" },
+      { token: vendorToken },
+    );
+    expect(real.status).toBe(200);
+    expect(real.data.listing.name).toBe("Új Márkanév");
+  });
+
+  test("once the week is up the next rename goes through", async () => {
+    wipeAll();
+    const { vendorToken, listingId } = await makeVendor("rename-expiry");
+    const eightDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
+    db.prepare("UPDATE listings SET name_changed_at = ? WHERE id = ?").run(eightDaysAgo, listingId);
+
+    const after = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { name: "Nyolc Nap Múlva" },
+      { token: vendorToken },
+    );
+    expect(after.status).toBe(200);
+    expect(after.data.listing.name).toBe("Nyolc Nap Múlva");
+    expect(after.data.listing.name_changed_at).toBeGreaterThan(eightDaysAgo);
+  });
+
+  test("an empty or whitespace-only name is rejected outright", async () => {
+    // `name` is NOT NULL and a nameless card is unusable in the directory.
+    wipeAll();
+    const { vendorToken } = await makeVendor("rename-empty");
+    for (const bad of ["", "   "]) {
+      const r = await req("PATCH", "/api/vendor/listing/me", { name: bad }, { token: vendorToken });
+      expect(r.status).toBe(400);
+    }
+    // A refused name must not have consumed the cooldown.
+    const ok = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { name: "Rendes Név" },
+      { token: vendorToken },
+    );
+    expect(ok.status).toBe(200);
   });
 });

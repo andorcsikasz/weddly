@@ -57,6 +57,7 @@ export interface ListingRow {
   blurb_en: string | null;
   price_band: number | null;
   price_band_changed_at: number | null;
+  name_changed_at: number | null;
   capacity_min: number | null;
   capacity_max: number | null;
   spoken_languages: string | null;
@@ -130,6 +131,7 @@ export function toListing(row: ListingRow): Listing {
     blurb_en: row.blurb_en,
     price_band: clampPriceBand(row.price_band),
     price_band_changed_at: row.price_band_changed_at,
+    name_changed_at: row.name_changed_at,
     capacity_min: row.capacity_min,
     capacity_max: row.capacity_max,
     spoken_languages: parseSpokenLanguages(row.spoken_languages),
@@ -689,6 +691,14 @@ export interface ListingPatch {
    *  band; anchors the 30-day cooldown (shared/listings.ts). Never set by
    *  admin/sync paths. */
   price_band_changed_at?: number;
+  /** Public brand name. Vendor-editable behind the rename cooldown; admin and
+   *  sync paths set it freely. */
+  name?: string;
+  /** Set by the vendor route when an accepted patch RENAMES the listing;
+   *  anchors the 7-day cooldown (shared/listings.ts). Never set by admin/sync
+   *  paths, so a support-side correction doesn't cost the vendor their next
+   *  self-serve edit. */
+  name_changed_at?: number;
   capacity_min?: number | null;
   capacity_max?: number | null;
   /** ISO 639-1 codes for a verbal vendor; stored comma-separated. */
@@ -715,6 +725,8 @@ export function patchListing(id: string, patch: ListingPatch): Listing | null {
   push("blurb_hu", patch.blurb_hu);
   push("blurb_en", patch.blurb_en);
   push("price_band", patch.price_band);
+  push("name", patch.name);
+  push("name_changed_at", patch.name_changed_at);
   push("price_band_changed_at", patch.price_band_changed_at);
   push("capacity_min", patch.capacity_min);
   push("capacity_max", patch.capacity_max);

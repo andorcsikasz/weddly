@@ -67,6 +67,11 @@ export interface Listing {
    *  the published band has never been changed. Publishing the FIRST price
    *  does not start the clock, so a fresh vendor can still correct a misclick. */
   price_band_changed_at: number | null;
+  /** Epoch ms of the last accepted listing-NAME change. Anchors the rename
+   *  cooldown (see LISTING_NAME_COOLDOWN_DAYS + listingNameLockedUntil). Null
+   *  until the vendor renames for the first time — the name they were moderated
+   *  under does not start the clock, so the first correction is always free. */
+  name_changed_at: number | null;
   /** Seated-dinner capacity range. Null on community/claimed (no field yet) and
    *  on curated entries we haven't placed. */
   capacity_min: number | null;
@@ -253,6 +258,10 @@ export interface AdminVendorView {
  *  once a geocode worker lands), and identity fields (`id`, `source`,
  *  `vendor_account_id`, timestamps). */
 export interface VendorListingEditInput {
+  /** Public brand / listing name. Self-serve, but rate-limited: see
+   *  LISTING_NAME_COOLDOWN_DAYS. Empty or whitespace-only is rejected — the
+   *  column is NOT NULL and a nameless card is unusable in the directory. */
+  name?: string;
   city?: string;
   address?: string | null;
   website?: string | null;
@@ -268,6 +277,30 @@ export interface VendorListingEditInput {
   /** Toggle the public-page contact masking (address + email tail) for
    *  anonymous visitors. See {@link Listing.hide_contact_public}. */
   hide_contact_public?: boolean;
+}
+
+/** Rename cooldown. The listing name used to be frozen at moderation and only
+ *  support could change it, which turned every typo and every real rebrand into
+ *  a support ticket. Vendors own the name now; the cooldown is what keeps the
+ *  catalogue stable — a card that renames itself weekly is one couples can't
+ *  recognise between visits, and rapid renaming is how a listing would launder
+ *  a reputation earned under another name.
+ *
+ *  Shorter than the price-band window on purpose: a wrong name is visible to
+ *  everyone and worth fixing quickly, whereas a price band is a ranking input
+ *  and abusing it pays better.
+ *
+ *  Note the public URL is `/vendors/{id}` and the id never changes, so a rename
+ *  breaks no links and no shared cards. */
+export const LISTING_NAME_COOLDOWN_DAYS = 7;
+
+/** Epoch ms until which the listing name is locked, or null when it is freely
+ *  editable (never renamed). Callers compare against "now" — a past timestamp
+ *  means the cooldown has expired. Same contract as priceBandLockedUntil, so
+ *  the editor can disable the field with the exact date the server enforces. */
+export function listingNameLockedUntil(changedAt: number | null): number | null {
+  if (changedAt == null) return null;
+  return changedAt + LISTING_NAME_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
 }
 
 /** Anti-fraud pricing cooldown: once a vendor changes (or withdraws) their

@@ -311,7 +311,9 @@ describe("vendor_activation email builder points every link at the activation UR
     expect(built.subject).toContain("Aktiváld a Weddly szolgáltatói fiókod");
     expect(html).toContain(`href="${ACTIVATE_URL}" class="wd-cta"`);
     expect(html).toContain("Fiók aktiválása");
-    expect(html).toContain("nincs szükség bankkártyára");
+    // The single-use expiry line under the button (the no-card sentence that
+    // used to sit here is banned copy now).
+    expect(html).toContain("A link 30 napig érvényes");
     expect(html).not.toContain("Weddly megnyitása");
   });
 });

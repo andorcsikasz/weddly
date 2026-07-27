@@ -41,6 +41,7 @@ import {
   blockedHoursLabel,
   type ListingPhoto,
   MAX_LISTING_PHOTOS,
+  listingNameLockedUntil,
   priceBandLockedUntil,
   type VendorAvailabilityView,
   type VendorListingEditInput,
@@ -77,6 +78,9 @@ const PRICE_LEVELS = [1, 2, 3, 4, 5] as const;
  *  to string for the controlled inputs — empty string maps back to `null`
  *  at PATCH time, matching the server's "trim → null" normalisation. */
 interface FormState {
+  /** Public brand name. Editable, but only once a week — see the cooldown
+   *  note in the editor and LISTING_NAME_COOLDOWN_DAYS on the server. */
+  name: string;
   blurb_hu: string;
   blurb_en: string;
   city: string;
@@ -173,6 +177,7 @@ function BillingBanner({
 function viewToForm(view: VendorListingView): FormState {
   const l = view.listing;
   return {
+    name: l.name,
     blurb_hu: l.blurb_hu ?? "",
     blurb_en: l.blurb_en ?? "",
     city: l.city,
@@ -200,6 +205,11 @@ function formToPatch(form: FormState, baseline: VendorListingView): VendorListin
     const trimmed = form[key].trim();
     (patch as Record<string, unknown>)[key] = trimmed.length === 0 ? null : trimmed;
   };
+  // Name and city are both NOT NULL, so they diff as plain strings rather than
+  // through setNullable (which would send `null` for a blanked field). An empty
+  // name is simply not sent — the server would 400 and the vendor would lose
+  // the rest of the save with it.
+  if (form.name !== baseStr.name && form.name.trim().length > 0) patch.name = form.name.trim();
   if (form.city !== baseStr.city) patch.city = form.city.trim();
   setNullable("address");
   setNullable("website");
@@ -249,8 +259,6 @@ function isFormSaveable(form: FormState, capacityShown: boolean): boolean {
   if (min.length > 0 && max.length > 0 && Number(min) > Number(max)) return false;
   return true;
 }
-
-const looksLikeEmail = (s: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
 /** Geometry + validity for the capacity visual track. Scales the filled band
  *  against a soft reference so the segment reads proportionally; flags an
@@ -568,11 +576,6 @@ export default function VendorListingPage() {
       ? "unsaved"
       : "saved";
 
-  const supportEmailRaw = t("about.paragraph_contact_email");
-  const supportEmail = looksLikeEmail(supportEmailRaw)
-    ? supportEmailRaw.trim()
-    : "hello@tryweddly.com";
-
   const track = form && capacityKind ? capacityTrack(form) : null;
 
   // The cover to render right now: the optimistic just-picked file if one is in
@@ -583,6 +586,18 @@ export default function VendorListingPage() {
   // Anti-fraud pricing cooldown, mirrored from the server rule
   // (shared/listings.ts): while locked the band buttons are disabled and the
   // unlock date replaces the help line, so the vendor never hits the 409.
+  // Same mirrored-cooldown treatment for the brand name (7 days, see
+  // shared/listings.ts): while locked the input is disabled and the note
+  // carries the exact unlock date, so the vendor never hits the 409.
+  const nameLockedUntil = view ? listingNameLockedUntil(view.listing.name_changed_at) : null;
+  const nameLocked = nameLockedUntil !== null && nameLockedUntil > Date.now();
+  const nameUnlockDate = nameLocked
+    ? new Intl.DateTimeFormat(intlLocale(locale), {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(new Date(nameLockedUntil))
+    : null;
   const priceLockedUntil = view ? priceBandLockedUntil(view.listing.price_band_changed_at) : null;
   const priceLocked = priceLockedUntil !== null && priceLockedUntil > Date.now();
   const priceUnlockDate = priceLocked
@@ -758,32 +773,32 @@ export default function VendorListingPage() {
           </aside>
 
           <form onSubmit={onSubmit} className="order-2 space-y-2.5 lg:order-1">
-            {/* Brand lock info card: the listing name is admin-moderated. */}
-            <div className="card flex items-start gap-3 p-4">
-              <Lock
-                aria-hidden="true"
-                size={20}
-                strokeWidth={1.75}
-                className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
-              />
-              <div className="min-w-0">
-                <h2 className="text-base font-semibold text-ink-900 dark:text-paper-100">
-                  {view.listing.name}
-                </h2>
-                <p className="mt-0.5 text-sm text-ink-600 dark:text-umber-200">
-                  <span className="font-medium text-ink-700 dark:text-umber-100">
-                    {t("vendor_home.brand_locked_card_title")}
-                  </span>{" "}
-                  {t("vendor_home.brand_locked_card_body")}
+            {/* Brand name. It used to be frozen at moderation with a mailto to
+                support, which made every typo a ticket. The vendor owns it now;
+                the once-a-week cooldown is what keeps the catalogue stable, and
+                while it's running the field is disabled with the exact unlock
+                date rather than letting the vendor type into a 409. */}
+            <fieldset className="card space-y-1.5 p-4" disabled={saving || heroBusy}>
+              <legend className="font-semibold">{t("vendor_home.label_name")}</legend>
+              {nameLocked && nameUnlockDate ? (
+                <p className="inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-200">
+                  <Lock size={12} aria-hidden="true" />
+                  {t("vendor_home.name_locked_until", { date: nameUnlockDate })}
                 </p>
-                <a
-                  href={`mailto:${supportEmail}`}
-                  className="mt-1.5 inline-flex text-sm font-medium text-steel-600 underline decoration-steel-200 underline-offset-2 hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
-                >
-                  {t("vendor_home.brand_locked_contact_cta")}
-                </a>
-              </div>
-            </div>
+              ) : (
+                <p className="text-xs text-ink-600 dark:text-umber-200">
+                  {t("vendor_home.label_name_help")}
+                </p>
+              )}
+              <input
+                className="input"
+                value={form.name}
+                onChange={onChange("name")}
+                disabled={nameLocked}
+                maxLength={120}
+                aria-label={t("vendor_home.label_name")}
+              />
+            </fieldset>
 
             <fieldset
               className="card space-y-2.5 p-4"
