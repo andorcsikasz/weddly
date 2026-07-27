@@ -508,6 +508,7 @@ const en: LocaleMessages = {
     label_hide_contact: "Hide contact details from the public",
     label_hide_contact_hint:
       "Logged-out visitors see a partly hidden address and email (e.g. Attila út •••, in•••@…); couples get the full details once signed in. Your phone is always partly hidden until sign-in.",
+    label_hide_contact_hint_short: "Signed-out visitors see your contact details partly masked.",
     label_price_band: "Price band",
     label_price_band_help: "1 = budget, 5 = premium. Leave blank to hide.",
     price_band_locked_until:

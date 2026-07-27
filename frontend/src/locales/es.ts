@@ -531,6 +531,8 @@ const es: LocaleMessages = {
     label_hide_contact: "Ocultar los datos de contacto al público",
     label_hide_contact_hint:
       "Los visitantes sin sesión ven una dirección y un correo parcialmente ocultos (p. ej. Attila út •••, in•••@…); las parejas obtienen los datos completos una vez que inician sesión. Tu teléfono siempre queda parcialmente oculto hasta el inicio de sesión.",
+    label_hide_contact_hint_short:
+      "Los visitantes sin sesión ven tus datos de contacto parcialmente ocultos.",
     label_price_band: "Franja de precio",
     label_price_band_help: "1 = económico, 5 = premium. Déjalo en blanco para ocultarlo.",
     price_band_locked_until:

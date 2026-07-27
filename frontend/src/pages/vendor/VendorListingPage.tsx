@@ -34,6 +34,7 @@ import {
   X,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { InfoHint } from "../../components/InfoHint";
 import {
   blockedHoursLabel,
   type ListingPhoto,
@@ -861,10 +862,13 @@ export default function VendorListingPage() {
               disabled={saving || galleryBusy}
               id="vendor-section-gallery"
             >
-              <legend className="font-semibold">{t("vendor_home.section_gallery")}</legend>
-              <p className="text-sm text-ink-600 dark:text-umber-200">
-                {t("vendor_home.gallery_intro")}
-              </p>
+              {/* The thumbnails and the "add photo" tile say what this is; the
+                  sentence explaining where the photos surface is one (i) away
+                  for the first visit and out of the way on every later one. */}
+              <legend className="flex items-center gap-1.5 font-semibold">
+                {t("vendor_home.section_gallery")}
+                <InfoHint text={t("vendor_home.gallery_intro")} />
+              </legend>
               <input
                 ref={galleryInputRef}
                 type="file"
@@ -1074,14 +1078,19 @@ export default function VendorListingPage() {
               />
               <div className="flex items-start justify-between gap-3 rounded-lg border border-paper-200 px-3 py-2.5 dark:border-umber-700">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink-900 dark:text-paper-100">
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-ink-900 dark:text-paper-100">
                     {t("vendor_home.label_hide_contact")}
+                    {/* The three-line version (which addresses get masked, what
+                        a signed-in couple sees, why the phone stays hidden)
+                        lives in the tooltip. The line below is what a vendor
+                        needs to decide the toggle. */}
+                    <InfoHint text={t("vendor_home.label_hide_contact_hint")} />
                   </p>
                   <p
                     id="vendor-hide-contact-hint"
                     className="mt-0.5 text-xs text-ink-500 dark:text-umber-300"
                   >
-                    {t("vendor_home.label_hide_contact_hint")}
+                    {t("vendor_home.label_hide_contact_hint_short")}
                   </p>
                 </div>
                 <Switch

@@ -720,6 +720,9 @@ export interface LocaleMessages {
     label_contact_phone: string;
     label_hide_contact: string;
     label_hide_contact_hint: string;
+    /** The one line that stays on screen; the full text above moved into an
+     *  InfoHint next to the toggle's label. */
+    label_hide_contact_hint_short: string;
     label_price_band: string;
     label_price_band_help: string;
     /** Anti-fraud cooldown (shared/listings.ts PRICE_BAND_COOLDOWN_DAYS):
