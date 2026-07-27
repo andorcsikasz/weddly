@@ -115,13 +115,10 @@ export default function VendorsPage() {
             </Link>
           </div>
         </div>
-        {/* The card is the pitch, so it gets the one line of copy that says
-            what it is. Above it, not below: read after the card it explains
-            something the visitor has already worked out. */}
+        {/* The card carries itself: a listing card next to a vendor pitch needs
+            no line telling the vendor it is their listing card. The caption that
+            used to sit here said what the picture already showed. */}
         <div className="mx-auto w-full max-w-md lg:max-w-none">
-          <p className="mb-3 text-center text-sm text-ink-500 lg:text-left dark:text-umber-300">
-            {t("vendors.mockup_caption")}
-          </p>
           <VendorListingMockup className="h-auto w-full" />
         </div>
       </section>

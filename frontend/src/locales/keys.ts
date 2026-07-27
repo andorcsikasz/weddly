@@ -2220,8 +2220,6 @@ export interface LocaleMessages {
      *  and the free-window promise (founding / early) are all gone, so nothing
      *  sits between the headline and the button. */
     hero_title: string;
-    /** One line over the listing-card mockup, naming what the card is. */
-    mockup_caption: string;
     /** Closing band: headline and the single repeat of the CTA. No sub-line:
      *  it only repeated the hero microcopy. The headline must take a DIFFERENT
      *  angle from the hero title (it used to paraphrase it) — timing, not the
