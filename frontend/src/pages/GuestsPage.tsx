@@ -230,8 +230,22 @@ export default function GuestsPage() {
   // actually search on (200ms after the user stops typing).
   const [query, setQuery] = useState(() => params.get("q") ?? "");
   const [debouncedQuery, setDebouncedQuery] = useState(() => (params.get("q") ?? "").trim());
-  const [searchResults, setSearchResults] = useState<Guest[] | null>(null);
-  const [searching, setSearching] = useState(false);
+  // Results are STAMPED with the query they answer. A bare `Guest[]` couldn't
+  // say which search it belonged to, and the separate `searching` boolean it
+  // used to pair with was set inside the fetch effect — one commit LATER than
+  // the render where `debouncedQuery` changed. In that one render the page had
+  // a live query, no results yet, and searching still false, so it painted
+  // "0 results" for a frame. Usually invisible; right after a filter clear
+  // (which also refetches guests + households) the main thread is busy enough
+  // for that frame to sit on screen and read as "no such guest". Stamping lets
+  // `searching` be DERIVED, so there is no window where the two disagree.
+  const [searchResults, setSearchResults] = useState<{ q: string; guests: Guest[] } | null>(null);
+  /** Apply an optimistic edit to the search results without disturbing the
+   *  query stamp — the results still answer the same search, they just carry
+   *  the newer row. No-op when nothing has been searched. */
+  const patchSearchResults = useCallback((fn: (list: Guest[]) => Guest[]) => {
+    setSearchResults((prev) => (prev ? { q: prev.q, guests: fn(prev.guests) } : prev));
+  }, []);
   // ── Virtualization knob ─────────────────────────────────────────────
   // Long lists (>100 guests) render the first chunk synchronously and
   // reveal the rest after the first idle frame so the initial paint isn't
@@ -251,14 +265,22 @@ export default function GuestsPage() {
 
   // Mirror the debounced query into the URL (`?q=`) so a search is
   // bookmarkable and shareable. Intentionally keyed on `debouncedQuery` only:
-  // we read the latest params inside, and depending on `params` would loop.
+  // depending on `params` would loop. That makes the captured `params` stale by
+  // construction, so the write goes through the updater form — it reads the
+  // params as they are at commit time, and a filter the user removed 150ms ago
+  // stays removed instead of riding back in on the search.
   useEffect(() => {
-    const cur = params.get("q") ?? "";
-    if (cur === debouncedQuery) return;
-    const next = new URLSearchParams(params);
-    if (debouncedQuery) next.set("q", debouncedQuery);
-    else next.delete("q");
-    setParams(next, { replace: true });
+    setParams(
+      (prev) => {
+        const cur = prev.get("q") ?? "";
+        if (cur === debouncedQuery) return prev;
+        const next = new URLSearchParams(prev);
+        if (debouncedQuery) next.set("q", debouncedQuery);
+        else next.delete("q");
+        return next;
+      },
+      { replace: true },
+    );
   }, [debouncedQuery]);
 
   // Fire the server-side search whenever the debounced query changes.
@@ -266,24 +288,23 @@ export default function GuestsPage() {
   useEffect(() => {
     if (!debouncedQuery) {
       setSearchResults(null);
-      setSearching(false);
       return;
     }
+    const q = debouncedQuery;
     let cancelled = false;
-    setSearching(true);
     guestApi
-      .search({ q: debouncedQuery, limit: 200 })
+      .search({ q, limit: 200 })
       .then((r) => {
         if (cancelled) return;
-        setSearchResults(r.guests);
+        setSearchResults({ q, guests: r.guests });
       })
       .catch(() => {
         if (cancelled) return;
-        setSearchResults([]);
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setSearching(false);
+        // A failed search must not read as "this guest doesn't exist". The list
+        // still empties (there is nothing truthful to show), but the toast says
+        // why, so a network blip is never mistaken for a missing guest.
+        setSearchResults({ q, guests: [] });
+        toast.error(t("common.error_generic"));
       });
     return () => {
       cancelled = true;
@@ -467,12 +488,12 @@ export default function GuestsPage() {
     const apply = (list: Guest[]) =>
       list.map((row) => (row.id === g.id ? { ...row, ...patch } : row));
     setGuests(apply);
-    setSearchResults((prev) => (prev ? apply(prev) : prev));
+    patchSearchResults(apply);
     try {
       const r = await guestApi.update(g.id, { ...g, ...patch });
       const reconcile = (list: Guest[]) => list.map((row) => (row.id === g.id ? r.guest : row));
       setGuests(reconcile);
-      setSearchResults((prev) => (prev ? reconcile(prev) : prev));
+      patchSearchResults(reconcile);
     } catch (e) {
       setGuests(prevGuests);
       setSearchResults(prevSearch);
@@ -501,7 +522,7 @@ export default function GuestsPage() {
         row.household_id === hhId && row.partner_role === null ? { ...row, group_tag: tag } : row,
       );
     setGuests(applyGuests);
-    setSearchResults((prev) => (prev ? applyGuests(prev) : prev));
+    patchSearchResults(applyGuests);
     setHouseholds((list) => list.map((hh) => (hh.id === hhId ? { ...hh, group_tag: tag } : hh)));
     try {
       await householdApi.update(hhId, { group_tag: tag });
@@ -528,7 +549,7 @@ export default function GuestsPage() {
       const apply = (list: Guest[]) =>
         list.map((row) => (row.id === g.id ? { ...row, household_id: hid } : row));
       setGuests(apply);
-      setSearchResults((prev) => (prev ? apply(prev) : prev));
+      patchSearchResults(apply);
     }
     try {
       const body: GuestUpsert =
@@ -588,7 +609,7 @@ export default function GuestsPage() {
           : row,
       );
     setGuests((prev) => optimistic(prev));
-    setSearchResults((prev) => (prev ? optimistic(prev) : prev));
+    patchSearchResults(optimistic);
     try {
       // PATCH revalidates the row, so ship the full guest plus the two flags.
       // The backend cascades the same flags onto this guest's +1s.
@@ -605,7 +626,7 @@ export default function GuestsPage() {
           return orig ? { ...row, ...orig } : row;
         });
       setGuests((prev) => rollback(prev));
-      setSearchResults((prev) => (prev ? rollback(prev) : prev));
+      patchSearchResults(rollback);
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
     }
   }
@@ -717,36 +738,60 @@ export default function GuestsPage() {
     [listableGuests],
   );
 
+  // Closed households = multi-member households (explicitly grouped units).
+  // Declared up here because the flat-list predicate below needs the id set:
+  // "group households" has to narrow the table and the search results too, not
+  // just swap the card view.
+  const closedHouseholds = useMemo(
+    () => listableHouseholds.filter((hh) => hh.member_ids.length > 1),
+    [listableHouseholds],
+  );
+  const closedHouseholdIds = useMemo(
+    () => new Set(closedHouseholds.map((hh) => hh.id)),
+    [closedHouseholds],
+  );
+
+  // Results for the query currently in the box, or null while the answer is
+  // still in flight. Both `searching` and the flat list read this one value, so
+  // "we have a query but no answer yet" can never render as "no matches".
+  const freshResults = searchResults?.q === debouncedQuery ? searchResults.guests : null;
+  const searching = !!debouncedQuery && freshResults === null;
+
   // Flat filtered list: every active guest-level predicate ANDed together,
   // over either the server search results (while searching) or the full guest
   // list, then sorted. Powers the flat view whenever any filter or the search
   // box is active.
   const filteredFlatGuests = useMemo(() => {
-    const base = debouncedQuery ? (searchResults ?? []) : listableGuests;
+    const base = debouncedQuery ? (freshResults ?? []) : listableGuests;
     const out = base.filter((g) => {
       if (g.partner_role) return false;
       if (rsvpSet.size > 0 && !rsvpSet.has(g.rsvp_status)) return false;
       if (groupSet.size > 0 && !groupSet.has(g.group_tag)) return false;
       if (invitedFilter && g.invited_at == null) return false;
       if (accommodationFilter && !g.accommodation_needed) return false;
+      // "Group households" is a real predicate, not only a card-view lens. The
+      // table branch renders this list and is checked BEFORE the grouped view,
+      // so without this the chip sat there pressed and changed nothing —
+      // single-person households included. Same for a search: the chip has to
+      // keep narrowing once the flat list takes over.
+      if (householdFilter && (g.household_id == null || !closedHouseholdIds.has(g.household_id))) {
+        return false;
+      }
       return true;
     });
     return sortGuests(out, sortKey);
   }, [
     debouncedQuery,
-    searchResults,
+    freshResults,
     listableGuests,
     rsvpSet,
     groupSet,
     invitedFilter,
     accommodationFilter,
+    householdFilter,
+    closedHouseholdIds,
     sortKey,
   ]);
-  // Closed households = multi-member households (explicitly grouped units).
-  const closedHouseholds = useMemo(
-    () => listableHouseholds.filter((hh) => hh.member_ids.length > 1),
-    [listableHouseholds],
-  );
   const activeGroupTags = useMemo(() => {
     const present = new Set(closedHouseholds.map((hh) => hh.group_tag));
     return GROUPS.filter((g) => present.has(g));
@@ -769,10 +814,22 @@ export default function GuestsPage() {
   // ── Filter writers ───────────────────────────────────────────────────
   // All mutate the URL (replace, no history spam). Toggles add/remove a value
   // from its axis; filters stack rather than replacing one another.
+  // Always mutate the CURRENT params, never the render's captured copy. Two
+  // writers race here in normal use — a filter toggle and the `?q=` mirror
+  // effect below — and building both from a stale snapshot means whichever
+  // lands second resurrects what the first removed. That was the "cleared a
+  // filter, typed a search, got 0 hits" report: the mirror wrote the search
+  // back on top of the filter the user had just removed, and the search results
+  // were then narrowed to a group they weren't in.
   function patchParams(mut: (p: URLSearchParams) => void) {
-    const next = new URLSearchParams(params);
-    mut(next);
-    setParams(next, { replace: true });
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        mut(next);
+        return next;
+      },
+      { replace: true },
+    );
   }
   function toggleSetParam(key: "rsvp" | "group", value: string) {
     patchParams((p) => {
@@ -876,7 +933,7 @@ export default function GuestsPage() {
       <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
           <h1 className="font-grotesk">{t("guests.title")}</h1>
-          {guests.length > 0 ? (
+          {listableGuests.length > 0 ? (
             <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
               {plannedGuests !== null && (
                 <GuestStat
@@ -888,8 +945,15 @@ export default function GuestsPage() {
                   dimmed={anyStatActive}
                 />
               )}
+              {/* Every stat counts `listableGuests`, NOT `guests`. The couple's
+                  own two rows live in the guests table for headcount + seating
+                  but are filtered out of the list and out of every filter, so
+                  counting them here made the header disagree with the page it
+                  sits on: "10 guests" over a list of 8, and "2 invited" over a
+                  filter that found none (the demo seed stamps invited_at on the
+                  partner rows too). */}
               <GuestStat
-                value={guests.length}
+                value={listableGuests.length}
                 label={t("guests.total_summary_unit")}
                 icon={<Users size={18} aria-hidden />}
                 tone="primary"
@@ -908,7 +972,7 @@ export default function GuestsPage() {
                 dimmed={anyStatActive && !householdActive}
               />
               <GuestStat
-                value={guests.filter((g) => g.invited_at != null).length}
+                value={listableGuests.filter((g) => g.invited_at != null).length}
                 label={t("guests.total_summary_invited_unit")}
                 icon={<Send size={18} aria-hidden />}
                 onClick={showInvitedOnly}
@@ -918,7 +982,7 @@ export default function GuestsPage() {
               />
             </dl>
           ) : (
-            <p className="text-sm text-ink-500 dark:text-umber-300">{guests.length}</p>
+            <p className="text-sm text-ink-500 dark:text-umber-300">{listableGuests.length}</p>
           )}
         </div>
         <div className="flex flex-wrap gap-2 sm:ml-auto">

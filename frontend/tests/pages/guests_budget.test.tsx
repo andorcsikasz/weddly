@@ -377,6 +377,26 @@ function renderGuests() {
   );
 }
 
+/** Render GuestsPage at an explicit URL so `?view=`, `?household=` and friends
+ *  are exercised the way a shared link would arrive. */
+function renderAt(url: string) {
+  return render(
+    <MemoryRouter initialEntries={[url]}>
+      <I18nProvider>
+        <ToastProvider>
+          <ConfirmDialogProvider>
+            <EntryDialogProvider>
+              <AuthProvider>
+                <GuestsPage />
+              </AuthProvider>
+            </EntryDialogProvider>
+          </ConfirmDialogProvider>
+        </ToastProvider>
+      </I18nProvider>
+    </MemoryRouter>,
+  );
+}
+
 function renderBudget() {
   return render(
     <Providers>
@@ -600,6 +620,87 @@ describe("<GuestsPage>", () => {
     // note and surfaces a "Clear all" affordance for the active filter.
     expect(screen.getByText(/matches your filters/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /clear all/i })).toBeInTheDocument();
+  });
+
+  // ── Bug report follow-ups (2026-07-27 Guests-page pass) ──────────────────
+
+  it("header counts exclude the couple's own two rows, so they match the list", async () => {
+    // The bride/groom live in the guests table for headcount + seating but are
+    // filtered out of the list and out of every filter. Counting them in the
+    // header made it disagree with the page below it: "4 guests" over a list of
+    // 2, and "2 invited" over an invited filter that found none.
+    const coupleHh = makeHousehold({
+      id: 1,
+      label: "Us",
+      member_ids: [1, 2],
+      is_couple_household: true,
+    });
+    const realHh = makeHousehold({ id: 2, label: "Smith", member_ids: [10, 11] });
+    installDefaultEndpoints({
+      households: [coupleHh, realHh],
+      guests: [
+        makeGuest({ id: 1, full_name: "Bride", household_id: 1, partner_role: "a", invited_at: 5 }),
+        makeGuest({ id: 2, full_name: "Groom", household_id: 1, partner_role: "b", invited_at: 5 }),
+        makeGuest({ id: 10, full_name: "Alice", household_id: 2 }),
+        makeGuest({ id: 11, full_name: "Bob", household_id: 2 }),
+      ],
+    });
+    renderGuests();
+    await waitFor(() => expect(screen.getByText("Smith")).toBeInTheDocument());
+
+    // Each stat is a button whose accessible name is its click action; the
+    // number itself is the button's text.
+    const total = screen.getByRole("button", { name: /show all guests/i });
+    expect(total.textContent).toContain("2");
+    expect(total.textContent).not.toContain("4");
+    // Nobody but the partner rows was invited, and they don't count.
+    const invited = screen.getByRole("button", { name: /show invited guests only/i });
+    expect(invited.textContent).toContain("0");
+  });
+
+  it("the group-households filter narrows the table view, not just the card view", async () => {
+    // The table branch renders the flat list and is checked BEFORE the grouped
+    // household lens, so the chip used to sit there pressed and change nothing.
+    const pair = makeHousehold({ id: 1, label: "Smith", member_ids: [10, 11] });
+    const solo = makeHousehold({ id: 2, label: "Solo", member_ids: [12] });
+    installDefaultEndpoints({
+      households: [pair, solo],
+      guests: [
+        makeGuest({ id: 10, full_name: "Alice", household_id: 1 }),
+        makeGuest({ id: 11, full_name: "Bob", household_id: 1 }),
+        makeGuest({ id: 12, full_name: "Loner", household_id: 2 }),
+      ],
+    });
+    renderAt("/app/guests?view=table&household=closed");
+    await waitFor(() => expect(screen.getByText("Alice")).toBeInTheDocument());
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    // The single-person household is exactly what "group households" excludes.
+    expect(screen.queryByText("Loner")).not.toBeInTheDocument();
+  });
+
+  it("a live query with no answer yet never paints as 'no guests match'", async () => {
+    // The regression: `searching` was set inside the fetch effect, one commit
+    // after the render where the query changed, so that render had a query, no
+    // results and searching=false — and printed the empty-state for a frame.
+    const hh = makeHousehold({ id: 1, label: "Smith", member_ids: [10] });
+    installDefaultEndpoints({
+      households: [hh],
+      guests: [makeGuest({ id: 10, full_name: "Csíkász Andor", household_id: 1 })],
+    });
+    // Search never resolves: the page has to sit in its loading state, not
+    // claim there are no matches.
+    on(
+      ({ url, method }) => method === "GET" && url.startsWith("/api/guests?") && url.includes("q="),
+      () => new Promise<Response>(() => {}),
+    );
+    renderGuests();
+    await waitFor(() => expect(screen.getByText("Csíkász Andor")).toBeInTheDocument());
+    fireEvent.change(screen.getByRole("searchbox", { name: /search guests/i }), {
+      target: { value: "Csíkász" },
+    });
+    await new Promise((r) => setTimeout(r, 250));
+    await flush(2);
+    expect(screen.queryByText(/no guests match these filters/i)).not.toBeInTheDocument();
   });
 
   it("shows the Hungarian copy fallback dialog (Copy didn't work) only when clipboard fails — smoke that the share-link button is rendered", async () => {
