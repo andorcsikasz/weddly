@@ -3080,44 +3080,57 @@ export interface LocaleMessages {
     participant_remove_confirm: string;
     gallery_link_note: string;
     shared_gallery_teaser: string;
+    /** Placeholder carries the whole explanation of the film-name field. */
+    film_settings_name_placeholder: string;
+    film_price_free: string;
+    film_not_set: string;
+    film_anonymous: string;
+    film_participants_joined: string;
+    film_shots_short: string;
+    film_uploading: string;
+    film_activated: string;
+    film_upgrade_body: string;
+    film_upgrade_cta: string;
+    /** The couple's own view of the film — bypasses the guest reveal lock. */
+    gallery_title: string;
+    gallery_empty: string;
+    gallery_show_all: string;
+    gallery_from_you: string;
+    gallery_download: string;
+    gallery_prev: string;
+    gallery_next: string;
   };
   /** /photos/:token — public guest upload page. */
   photos: {
-    loading: string;
     not_found: string;
     not_found_sub: string;
     uploads_disabled: string;
     uploads_disabled_sub: string;
-    welcome_kicker: string;
+    /** 429 from register-device: venue wifi is one IP, so this is common. */
+    busy: string;
+    busy_sub: string;
+    busy_retry: string;
     name_heading: string;
-    name_sub: string;
     name_placeholder: string;
     name_continue: string;
-    name_required: string;
-    step_name: string;
-    step_photo: string;
-    steps_hint: string;
-    shots_left: string;
-    ready_heading: string;
-    ready_sub: string;
-    ready_sub_limit: string;
-    choose_photo: string;
-    uploading: string;
-    success_heading: string;
-    success_sub: string;
-    success_add_more: string;
     limit_heading: string;
     limit_sub: string;
     error_too_large: string;
     error_bad_type: string;
     error_generic: string;
-    shot_count: string;
+    /** Camera controls — labels live in tooltip + aria only. */
+    take_photo: string;
+    upload_existing: string;
+    flip_camera: string;
+    /** getUserMedia refused or absent; the file picker is the way through. */
+    camera_blocked: string;
+    camera_blocked_sub: string;
+    camera_blocked_inapp: string;
     sent_heading: string;
     sent_sub_reveal: string;
     sent_sub_now: string;
     sent_count: string;
     sent_add_more: string;
-    sent_done: string;
     sent_invite: string;
     welcome_back_heading: string;
     welcome_back_sub_one: string;
@@ -3125,7 +3138,7 @@ export interface LocaleMessages {
     welcome_back_cta: string;
     developing_heading: string;
     developing_sub: string;
-    developing_hint: string;
+    gallery_count: string;
     guest_subtitle: string;
     guest_subtitle_plain: string;
     preview_banner: string;

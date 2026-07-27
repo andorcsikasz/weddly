@@ -1,10 +1,18 @@
-import type { Couple, FilmAccessCheck, FilmAesthetic, FilmDevice, PhotoAlbum } from "@shared/types";
+import type {
+  Couple,
+  FilmAccessCheck,
+  FilmAesthetic,
+  FilmDevice,
+  FilmUpload,
+  PhotoAlbum,
+} from "@shared/types";
 import { FILM_AESTHETICS, FILM_FILTERS, MAX_PHOTOGRAPHER_LINKS } from "@shared/types";
 import {
   AlertTriangle,
   CalendarDays,
   Camera,
   Check,
+  ChevronLeft,
   ChevronRight,
   Clock3,
   Copy,
@@ -24,12 +32,14 @@ import {
   Trash2,
   Upload,
   Users,
+  X,
 } from "lucide-react";
 import React, { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import { coupleApi, photoAlbumApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { intlLocale } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
 
 // --- helpers ----------------------------------------------------------------
 
@@ -75,8 +85,10 @@ function formatDuration(ms: number): string {
   return `${sec}s`;
 }
 
-function formatRevealDate(ms: number): string {
-  return new Date(ms).toLocaleString(undefined, {
+// The app locale, not the device's — an HU couple on an en-US laptop was
+// reading "13 Sept 2026" inside Hungarian sentences.
+function formatRevealDate(ms: number, locale: Locale): string {
+  return new Date(ms).toLocaleString(intlLocale(locale), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -295,7 +307,7 @@ function ParticipantDashboard({
 
   async function handleRemove(device: FilmDevice) {
     if (removingId) return;
-    const name = device.guestName ?? "Anonymous";
+    const name = device.guestName ?? t("media.film_anonymous");
     const ok = await confirm({
       title: t("media.participant_remove_title"),
       body: t("media.participant_remove_body").replace("{{name}}", name),
@@ -327,7 +339,7 @@ function ParticipantDashboard({
       >
         <span className="flex items-center gap-2 text-xs text-umber-500">
           <Users size={12} aria-hidden="true" />
-          {displayCount} joined
+          {t("media.film_participants_joined").replace("{{n}}", String(displayCount))}
         </span>
         <span className="text-xs text-umber-400">{expanded ? "▲" : "▼"}</span>
       </button>
@@ -339,9 +351,9 @@ function ParticipantDashboard({
                 key={d.deviceId}
                 className="group flex items-center justify-between gap-2 text-xs text-umber-500"
               >
-                <span className="truncate">{d.guestName ?? "Anonymous"}</span>
+                <span className="truncate">{d.guestName ?? t("media.film_anonymous")}</span>
                 <span className="ml-auto shrink-0 tabular-nums text-umber-500">
-                  {d.shotCount} shot{d.shotCount !== 1 ? "s" : ""}
+                  {t("media.film_shots_short").replace("{{n}}", String(d.shotCount))}
                 </span>
                 <button
                   type="button"
@@ -359,6 +371,206 @@ function ParticipantDashboard({
             <li className="text-xs text-umber-500">{t("media.film_no_participants")}</li>
           )}
         </ul>
+      )}
+    </div>
+  );
+}
+
+// --- the couple's own gallery -----------------------------------------------
+//
+// The whole point of the film is seeing what came out of it, and until now the
+// couple had no way to. The host endpoint bypasses the reveal lock on purpose:
+// the time capsule is sealed for guests, never for the two people it is about.
+
+const GALLERY_PREVIEW = 12;
+
+function shotFilter(upload: FilmUpload, fallback: FilmAesthetic): string {
+  const applied = upload.filterApplied as FilmAesthetic | null;
+  return FILM_FILTERS[applied ?? fallback] ?? "none";
+}
+
+function Lightbox({
+  uploads,
+  index,
+  aesthetic,
+  onClose,
+  onMove,
+}: {
+  uploads: FilmUpload[];
+  index: number;
+  aesthetic: FilmAesthetic;
+  onClose: () => void;
+  onMove: (next: number) => void;
+}) {
+  const { t } = useT();
+  const current = uploads[index];
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") onMove((index + 1) % uploads.length);
+      if (e.key === "ArrowLeft") onMove((index - 1 + uploads.length) % uploads.length);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [index, uploads.length, onClose, onMove]);
+
+  if (!current) return null;
+
+  const arrow =
+    "flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20";
+
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-black/95 backdrop-blur-sm">
+      <div className="flex items-center gap-2 px-4 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
+        <span className="flex-1 truncate font-grotesk text-[15px] font-bold text-white">
+          {current.source === "couple"
+            ? t("media.gallery_from_you")
+            : (current.guestName ?? t("media.film_anonymous"))}
+        </span>
+        <span className="shrink-0 font-grotesk text-[13px] font-medium tabular-nums text-white/45">
+          {index + 1}/{uploads.length}
+        </span>
+        <a
+          href={current.fileUrl}
+          download
+          aria-label={t("media.gallery_download")}
+          title={t("media.gallery_download")}
+          className={arrow}
+        >
+          <Download size={18} aria-hidden="true" />
+        </a>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t("a11y.close")}
+          title={t("a11y.close")}
+          className={arrow}
+        >
+          <X size={18} aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <img
+          src={current.fileUrl}
+          alt=""
+          className="max-h-full max-w-full rounded-2xl object-contain"
+          style={{ filter: shotFilter(current, aesthetic) }}
+        />
+        {uploads.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => onMove((index - 1 + uploads.length) % uploads.length)}
+              aria-label={t("media.gallery_prev")}
+              className={`${arrow} absolute left-3 top-1/2 -translate-y-1/2`}
+            >
+              <ChevronLeft size={20} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onMove((index + 1) % uploads.length)}
+              aria-label={t("media.gallery_next")}
+              className={`${arrow} absolute right-3 top-1/2 -translate-y-1/2`}
+            >
+              <ChevronRight size={20} aria-hidden="true" />
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FilmGallery({
+  uploads,
+  aesthetic,
+  loading,
+}: {
+  uploads: FilmUpload[];
+  aesthetic: FilmAesthetic;
+  loading: boolean;
+}) {
+  const { t } = useT();
+  const [showAll, setShowAll] = useState(false);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const visible = showAll ? uploads : uploads.slice(0, GALLERY_PREVIEW);
+  const hidden = uploads.length - visible.length;
+
+  return (
+    <div className="border-t border-paper-200 px-4 pb-4 pt-3">
+      <div className="mb-2 flex items-center justify-between gap-2 px-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-umber-400">
+          {t("media.gallery_title")}
+        </p>
+        {uploads.length > 0 && (
+          <span className="font-grotesk text-[13px] font-bold tabular-nums text-umber-900">
+            {uploads.length}
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="aspect-square animate-pulse rounded-xl bg-paper-100" />
+          ))}
+        </div>
+      ) : uploads.length === 0 ? (
+        <p className="px-1 py-3 text-[15px] font-medium text-umber-400">
+          {t("media.gallery_empty")}
+        </p>
+      ) : (
+        <>
+          <ul className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+            {visible.map((u, i) => (
+              <li key={u.id}>
+                <button
+                  type="button"
+                  onClick={() => setOpenIndex(i)}
+                  className="group relative block aspect-square w-full overflow-hidden rounded-xl bg-paper-100"
+                >
+                  <img
+                    src={u.fileUrl}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    style={{ filter: shotFilter(u, aesthetic) }}
+                  />
+                  {u.source === "couple" && (
+                    <span className="absolute left-1 top-1 rounded-full bg-black/55 px-1.5 py-0.5 font-grotesk text-[9px] font-semibold uppercase tracking-[0.08em] text-white backdrop-blur-sm">
+                      {t("media.gallery_from_you")}
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {hidden > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className="mt-2 w-full rounded-2xl border border-paper-300 py-3 font-grotesk text-[14px] font-semibold text-umber-700 transition-colors hover:bg-paper-50"
+            >
+              {t("media.gallery_show_all").replace("{{n}}", String(uploads.length))}
+            </button>
+          )}
+        </>
+      )}
+
+      {/* The full film, not the preview slice — `visible` is a prefix of
+          `uploads`, so the tapped index carries over and the arrows can walk
+          past the twelfth thumbnail instead of dead-ending there. */}
+      {openIndex !== null && (
+        <Lightbox
+          uploads={uploads}
+          index={openIndex}
+          aesthetic={aesthetic}
+          onClose={() => setOpenIndex(null)}
+          onMove={setOpenIndex}
+        />
       )}
     </div>
   );
@@ -458,9 +670,9 @@ function FilmModal({
 
   const priceLabel =
     access === null
-      ? "..."
+      ? "…"
       : access.free
-        ? "Free"
+        ? t("media.film_price_free")
         : `€${((access.priceEurCents ?? 990) / 100).toFixed(2)}`;
 
   return (
@@ -473,15 +685,13 @@ function FilmModal({
       footer={
         <div className="flex items-center justify-between gap-2">
           {!isEdit && (
-            <span className="text-xs text-ink-400">
-              {access?.free ? (
-                <span className="flex items-center gap-1 text-sage-700">
-                  <Check size={12} />
-                  Free · loyal couple
-                </span>
-              ) : (
-                `Access: ${priceLabel}`
-              )}
+            <span
+              className={`flex items-center gap-1 font-grotesk text-[13px] font-semibold ${
+                access?.free ? "text-sage-700" : "text-umber-500"
+              }`}
+            >
+              {access?.free && <Check size={13} aria-hidden="true" />}
+              {priceLabel}
             </span>
           )}
           <div className="ml-auto flex gap-2">
@@ -504,127 +714,106 @@ function FilmModal({
         </div>
       }
     >
-      <form id="film-modal-form" onSubmit={handleSubmit} className="space-y-3">
-        {/* Film neve */}
+      {/* Uber-shaped: the name field explains itself through its placeholder, the
+          looks are their own preview, and every field label is one word. The one
+          sentence that survived is the placeholder-title warning, because
+          "guests see this" is genuinely surprising. */}
+      <form id="film-modal-form" onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="mb-0.5 flex items-baseline gap-1.5 text-xs font-medium text-ink-700 dark:text-paper-200">
-            {t("media.film_settings_name")}
-            <span className="font-normal text-ink-400">(optional)</span>
-          </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={200}
-            placeholder="e.g. Anna & Bence, Summer 2026"
-            className="input w-full text-sm"
+            placeholder={t("media.film_settings_name_placeholder")}
+            aria-label={t("media.film_settings_name")}
+            className="input w-full rounded-2xl px-4 py-3.5 font-grotesk font-medium"
           />
           {isPlaceholderTitle(title) && (
-            <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+            <div className="mt-2 flex items-start gap-2.5 rounded-2xl bg-amber-50 px-3.5 py-2.5 dark:bg-amber-400/10">
               <AlertTriangle
                 size={14}
-                className="mt-0.5 shrink-0 text-amber-600"
+                className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400"
                 aria-hidden="true"
               />
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-amber-800">
-                  {t("media.placeholder_warn_title")}
-                </p>
-                <p className="mt-0.5 text-xs leading-snug text-amber-700">
-                  {t("media.placeholder_warn_body").replace("{{title}}", title.trim())}
-                </p>
-              </div>
+              <p className="text-xs leading-snug text-amber-800 dark:text-amber-200">
+                {t("media.placeholder_warn_body").replace("{{title}}", title.trim())}
+              </p>
             </div>
           )}
         </div>
 
-        {/* Megjelenés + Fotókorlát on one row */}
-        <div className="flex items-start gap-4">
-          <div className="min-w-0 flex-1">
-            <p className="mb-1.5 text-xs font-medium text-ink-700 dark:text-paper-200">
-              {t("media.film_settings_aesthetic")}
-            </p>
-            <div className="flex gap-1.5">
-              {FILM_AESTHETICS.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setAesthetic(a)}
-                  title={AESTHETIC_LABELS[a]}
-                  className={`flex flex-col items-center gap-0.5 rounded-lg border-2 p-0.5 transition-colors ${
-                    aesthetic === a
-                      ? "border-ink-900 dark:border-paper-100"
-                      : "border-transparent hover:border-paper-300 dark:hover:border-umber-600"
-                  }`}
-                >
-                  <img
-                    src={DEMO_STRIP[0]}
-                    alt=""
-                    aria-hidden="true"
-                    className="h-8 w-8 rounded-md object-cover"
-                    style={{ filter: FILM_FILTERS[a] }}
-                  />
-                  <span className="text-[9px] leading-tight text-ink-500 dark:text-umber-300">
-                    {AESTHETIC_LABELS[a]}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="shrink-0">
-            <label className="mb-1.5 block text-xs font-medium text-ink-700 dark:text-paper-200">
-              {t("media.film_settings_shots")}
-            </label>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min={1}
-                max={500}
-                value={shots}
-                onChange={(e) => setShots(e.target.value)}
-                className="input w-16 text-center text-sm"
+        {/* Film look — the swatch IS the label. */}
+        <div className="flex gap-2">
+          {FILM_AESTHETICS.map((a) => (
+            <button
+              key={a}
+              type="button"
+              onClick={() => setAesthetic(a)}
+              title={AESTHETIC_LABELS[a]}
+              aria-label={AESTHETIC_LABELS[a]}
+              aria-pressed={aesthetic === a}
+              className={`overflow-hidden rounded-2xl transition-all ${
+                aesthetic === a
+                  ? "ring-2 ring-umber-900 ring-offset-2 dark:ring-paper-100 dark:ring-offset-umber-900"
+                  : "opacity-70 hover:opacity-100"
+              }`}
+            >
+              <img
+                src={DEMO_STRIP[0]}
+                alt=""
+                aria-hidden="true"
+                className="h-12 w-12 object-cover"
+                style={{ filter: FILM_FILTERS[a] }}
               />
-              <span className="text-xs text-ink-400">/ person</span>
-            </div>
-          </div>
+            </button>
+          ))}
         </div>
 
-        {/* Date fields side by side */}
-        {isEdit && (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-0.5 flex items-baseline gap-1 text-xs font-medium text-ink-700 dark:text-paper-200">
-                {t("media.film_settings_ends")}
-                <span className="font-normal text-ink-400">(opt)</span>
+        {/* One settings list, same shape as the page behind it. `.input` carries
+            the dark-theme colours AND `color-scheme: dark`, without which the
+            native datetime picker glyph renders black on the dark sheet. */}
+        <div className="divide-y divide-paper-200 overflow-hidden rounded-2xl border border-paper-200 dark:divide-umber-700 dark:border-umber-700">
+          <label className="flex items-center gap-3 px-4 py-3">
+            <span className="flex-1 text-sm font-medium text-umber-900 dark:text-paper-100">
+              {t("media.film_settings_shots")}
+            </span>
+            <input
+              type="number"
+              min={1}
+              max={500}
+              value={shots}
+              onChange={(e) => setShots(e.target.value)}
+              className="input w-20 rounded-xl px-3 text-right font-grotesk text-sm font-semibold tabular-nums"
+            />
+          </label>
+          {isEdit && (
+            <>
+              <label className="flex items-center gap-3 px-4 py-3">
+                <span className="flex-1 text-sm font-medium text-umber-900 dark:text-paper-100">
+                  {t("media.film_settings_ends")}
+                </span>
+                <input
+                  type="datetime-local"
+                  value={eventEndsAt}
+                  onChange={(e) => setEventEndsAt(e.target.value)}
+                  className="input w-auto min-w-0 shrink rounded-xl px-3 text-right text-sm"
+                />
               </label>
-              <input
-                type="datetime-local"
-                value={eventEndsAt}
-                onChange={(e) => setEventEndsAt(e.target.value)}
-                className="input w-full text-xs"
-              />
-              <p className="mt-0.5 text-[10px] leading-snug text-ink-400">
-                {t("media.film_settings_ends_hint")}
-              </p>
-            </div>
-            <div>
-              <label className="mb-0.5 flex items-baseline gap-1 text-xs font-medium text-ink-700 dark:text-paper-200">
-                {t("media.film_settings_reveal")}
-                <span className="font-normal text-ink-400">(opt)</span>
+              <label className="flex items-center gap-3 px-4 py-3">
+                <span className="flex-1 text-sm font-medium text-umber-900 dark:text-paper-100">
+                  {t("media.film_settings_reveal")}
+                </span>
+                <input
+                  type="datetime-local"
+                  value={revealAt}
+                  onChange={(e) => setRevealAt(e.target.value)}
+                  className="input w-auto min-w-0 shrink rounded-xl px-3 text-right text-sm"
+                />
               </label>
-              <input
-                type="datetime-local"
-                value={revealAt}
-                onChange={(e) => setRevealAt(e.target.value)}
-                className="input w-full text-xs"
-              />
-              <p className="mt-0.5 text-[10px] leading-snug text-ink-400">
-                {t("media.film_settings_reveal_hint")}
-              </p>
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </form>
     </Dialog>
   );
@@ -633,7 +822,7 @@ function FilmModal({
 // --- page -------------------------------------------------------------------
 
 export default function MediaPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const location = useLocation();
 
@@ -685,16 +874,31 @@ export default function MediaPage() {
     total: number;
   } | null>(null);
   const coupleUploadRef = useRef<HTMLInputElement | null>(null);
+  // The couple's own view of the film. The host endpoint bypasses the reveal
+  // lock deliberately — the time capsule is sealed for guests, not for them.
+  const [uploads, setUploads] = useState<FilmUpload[]>([]);
+  const [uploadsLoading, setUploadsLoading] = useState(false);
+
+  const refreshUploads = useCallback(() => {
+    return photoAlbumApi
+      .listPhotos()
+      .then((r) => setUploads(r.uploads))
+      .catch(() => {})
+      .finally(() => setUploadsLoading(false));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([coupleApi.current(), photoAlbumApi.current(), photoAlbumApi.filmAccess()])
       .then(([coupleRes, albumRes, accessRes]) => {
-        if (!cancelled) {
-          setCouple(coupleRes.couple);
-          setAlbum(albumRes.album);
-          setFilmAccess(accessRes.access);
-          setLoading(false);
+        if (cancelled) return;
+        setCouple(coupleRes.couple);
+        setAlbum(albumRes.album);
+        setFilmAccess(accessRes.access);
+        setLoading(false);
+        if (albumRes.album) {
+          setUploadsLoading(true);
+          void refreshUploads();
         }
       })
       .catch(() => {
@@ -703,12 +907,12 @@ export default function MediaPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshUploads]);
 
   useEffect(() => {
     const qs = new URLSearchParams(location.search);
     if (qs.get("film") !== "activated") return;
-    toast.success("Film activated! Guests can now join, up to 200 participants.");
+    toast.success(t("media.film_activated"));
     photoAlbumApi
       .current()
       .then((r) => setAlbum(r.album))
@@ -746,6 +950,7 @@ export default function MediaPage() {
       .current()
       .then((r) => setAlbum(r.album))
       .catch(() => {});
+    void refreshUploads();
   }
 
   const photographerUrls = couple?.media_links?.photographer ?? [];
@@ -876,8 +1081,9 @@ export default function MediaPage() {
 
   if (loading) return null;
 
-  // Cover photo for hero
-  const coverPhoto = album?.coverImageUrl ?? DEMO_STRIP[0];
+  // Cover photo for hero. Once the film has anything in it, the newest shot is
+  // a truer cover than a stock frame — it is the couple's own day.
+  const coverPhoto = album?.coverImageUrl ?? uploads[0]?.fileUrl ?? DEMO_STRIP[0];
   const daysLeft = album?.eventEndsAt ? daysUntil(album.eventEndsAt) : null;
   const filmExpired = album?.eventEndsAt != null && Date.now() >= album.eventEndsAt;
 
@@ -894,13 +1100,15 @@ export default function MediaPage() {
         {
           icon: <CalendarDays size={15} aria-hidden="true" />,
           label: t("media.film_settings_ends"),
-          value: album.eventEndsAt ? formatRevealDate(album.eventEndsAt) : "Not set",
+          value: album.eventEndsAt
+            ? formatRevealDate(album.eventEndsAt, locale)
+            : t("media.film_not_set"),
         },
         {
           icon: <Clock3 size={15} aria-hidden="true" />,
           label: t("media.film_settings_reveal"),
           value: album.revealAt
-            ? formatRevealDate(album.revealAt)
+            ? formatRevealDate(album.revealAt, locale)
             : t("media.film_settings_reveal_default"),
           dividerAfter: true,
         },
@@ -1179,7 +1387,7 @@ export default function MediaPage() {
                       // the "Closed" stat's bare "-" has context (closed as of
                       // this date) instead of reading as a stat yet to populate.
                       <span className="mt-0.5 text-[9px] leading-tight text-umber-400">
-                        {formatRevealDate(album.eventEndsAt)}
+                        {formatRevealDate(album.eventEndsAt, locale)}
                       </span>
                     )}
                   </div>
@@ -1210,6 +1418,13 @@ export default function MediaPage() {
                     />
                   </div>
                 )}
+
+                {/* ── The film itself — sits right under the count it explains ── */}
+                <FilmGallery
+                  uploads={uploads}
+                  aesthetic={album.filmAesthetic}
+                  loading={uploadsLoading}
+                />
 
                 {/* ── Action toolbar ────────────────────────────────────── */}
                 {uploadUrl && (
@@ -1253,25 +1468,29 @@ export default function MediaPage() {
                         </span>
                       </a>
                     </div>
-                    {/* Reveal explainer — couple-facing time-capsule card */}
-                    <div className="mx-4 mb-2 mt-3 flex items-start gap-3 rounded-2xl border border-paper-200 bg-paper-50 px-4 py-3">
-                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-umber-900">
-                        <Lock size={14} aria-hidden="true" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-umber-900">
-                          {t("media.reveal_explainer_title")}
-                        </p>
-                        <p className="mt-0.5 text-xs leading-relaxed text-umber-500">
-                          {album.revealAt
-                            ? t("media.reveal_explainer_body").replace(
-                                "{{date}}",
-                                formatRevealDate(album.revealAt),
-                              )
-                            : t("media.reveal_explainer_unset")}
-                        </p>
+                    {/* Reveal explainer — the one paragraph worth keeping, since
+                        "guests can't see any of this yet" is genuinely
+                        surprising. Retires once the reveal has passed. */}
+                    {(album.revealAt === null || Date.now() < album.revealAt) && (
+                      <div className="mx-4 mb-2 mt-3 flex items-start gap-3 rounded-2xl border border-paper-200 bg-paper-50 px-4 py-3">
+                        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-100 text-umber-900">
+                          <Lock size={14} aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-umber-900">
+                            {t("media.reveal_explainer_title")}
+                          </p>
+                          <p className="mt-0.5 text-xs leading-relaxed text-umber-500">
+                            {album.revealAt
+                              ? t("media.reveal_explainer_body").replace(
+                                  "{{date}}",
+                                  formatRevealDate(album.revealAt, locale),
+                                )
+                              : t("media.reveal_explainer_unset")}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </>
                 )}
 
@@ -1323,7 +1542,9 @@ export default function MediaPage() {
                     >
                       <Upload size={18} aria-hidden="true" />
                       {coupleUploadProgress
-                        ? `Uploading ${coupleUploadProgress.done}/${coupleUploadProgress.total}...`
+                        ? t("media.film_uploading")
+                            .replace("{{done}}", String(coupleUploadProgress.done))
+                            .replace("{{total}}", String(coupleUploadProgress.total))
                         : t("media.film_add_own_photos")}
                     </button>
                     <input
@@ -1342,25 +1563,18 @@ export default function MediaPage() {
 
                 {/* ── Upgrade notice ────────────────────────────────────── */}
                 {needsUpgrade && (
-                  <div className="mx-4 mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                    <p className="flex items-start gap-2.5 text-xs text-amber-700">
-                      <AlertTriangle
-                        size={13}
-                        className="mt-0.5 shrink-0 text-amber-600"
-                        aria-hidden="true"
-                      />
-                      <span>
-                        Trial: up to {album.guestCap} guests.{" "}
-                        <button
-                          type="button"
-                          className="font-semibold text-amber-800 underline underline-offset-2 hover:no-underline"
-                          onClick={handleUpgradeFilm}
-                        >
-                          Unlock for €9.90
-                        </button>{" "}
-                        to allow up to 200 guests.
-                      </span>
+                  <div className="mx-4 mb-4 flex items-center gap-3 rounded-2xl bg-amber-50 px-4 py-3">
+                    <AlertTriangle size={16} className="shrink-0 text-amber-600" aria-hidden />
+                    <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-amber-800">
+                      {t("media.film_upgrade_body").replace("{{cap}}", String(album.guestCap))}
                     </p>
+                    <button
+                      type="button"
+                      onClick={handleUpgradeFilm}
+                      className="shrink-0 rounded-xl bg-amber-800 px-3.5 py-2 font-grotesk text-[13px] font-semibold text-white transition-colors hover:bg-amber-900"
+                    >
+                      {t("media.film_upgrade_cta")}
+                    </button>
                   </div>
                 )}
 

@@ -41,6 +41,7 @@ import type {
   FilmAccessCheck,
   FilmAesthetic,
   FilmDevice,
+  FilmUpload,
   MealMenu,
   MediaLinks,
   PhotoAlbum,
@@ -3368,7 +3369,7 @@ export const photoAlbumApi = {
   },
 
   /** Host-only: all uploads bypassing reveal lock. */
-  listPhotos: (): Promise<{ uploads: unknown[]; total: number }> =>
+  listPhotos: (): Promise<{ uploads: FilmUpload[]; total: number }> =>
     apiFetch("GET", "/api/photo-albums/current/photos"),
 
   /** Host-only: participant list. */
