@@ -34,7 +34,15 @@ import {
   Trash2,
 } from "lucide-react";
 import { intlLocale } from "../../lib/format";
-import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   blockedHoursRange,
@@ -656,10 +664,16 @@ function ScheduleView({
   events,
   onOpenDay,
   openTitleFor,
+  emptyFallback,
 }: {
   events: CalEvent[];
   onOpenDay?: (iso: string) => void;
   openTitleFor: (iso: string) => string;
+  /** Rendered under the "nothing upcoming" line. The page passes the month
+   *  grid: an empty agenda on its own leaves the calendar tab with no calendar
+   *  on it, and the view is restored across sessions, so that state is where a
+   *  vendor lands rather than somewhere they pass through. */
+  emptyFallback?: ReactNode;
 }) {
   const { t, locale } = useT();
   const todayStr = ymd(new Date());
@@ -668,9 +682,12 @@ function ScheduleView({
     .sort((a, b) => a.date.localeCompare(b.date));
   if (upcoming.length === 0) {
     return (
-      <p className="text-sm text-umber-400 dark:text-umber-500">
-        {t("vendor_calendar.schedule_empty")}
-      </p>
+      <div>
+        <p className="mb-4 text-sm text-umber-400 dark:text-umber-500">
+          {t("vendor_calendar.schedule_empty")}
+        </p>
+        {emptyFallback}
+      </div>
     );
   }
   const fmt = (s: string) =>
@@ -1517,6 +1534,25 @@ export default function VendorCalendarPage() {
     }
   }
 
+  // Built once and used twice: as the "month" view, and as what the agenda
+  // shows when nothing is upcoming. Landing on /vendor/calendar has to put a
+  // calendar on screen — the view is restored from localStorage, so a vendor
+  // who once picked Ütemezés used to arrive at a single sentence and no grid,
+  // which reads as a broken page rather than as an empty schedule.
+  const monthGrid = (
+    <MonthView
+      cursor={cursor}
+      eventsByDate={eventsByDate}
+      blockedDays={blockedDays}
+      weekdays={weekdays}
+      todayStr={todayStr}
+      canEdit={canEditAvailability}
+      busy={availBusy}
+      onOpenDay={openDay}
+      openTitleFor={openTitleFor}
+    />
+  );
+
   return (
     <div className="py-2">
       {/* Toolbar: Today, prev/next, dynamic title, view dropdown, mode toggle */}
@@ -1632,19 +1668,14 @@ export default function VendorCalendarPage() {
               }}
             />
           ) : view === "month" ? (
-            <MonthView
-              cursor={cursor}
-              eventsByDate={eventsByDate}
-              blockedDays={blockedDays}
-              weekdays={weekdays}
-              todayStr={todayStr}
-              canEdit={canEditAvailability}
-              busy={availBusy}
-              onOpenDay={openDay}
-              openTitleFor={openTitleFor}
-            />
+            monthGrid
           ) : view === "schedule" ? (
-            <ScheduleView events={events} onOpenDay={openHandler} openTitleFor={openTitleFor} />
+            <ScheduleView
+              events={events}
+              onOpenDay={openHandler}
+              openTitleFor={openTitleFor}
+              emptyFallback={monthGrid}
+            />
           ) : (
             <TimeGridView
               days={gridDays}
