@@ -1686,8 +1686,6 @@ const hu: LocaleMessages = {
     card_guests_body: "Írd be a meghívódon szereplő kódot, és válaszolj pár perc alatt.",
     card_guests_cta: "Add meg a kódodat",
     suppliers_section_title: "Válogatott szolgáltatói lista",
-    suppliers_section_body:
-      "Kézzel válogatott helyszínek, fotósok, vendéglátók és még sok más, mind egy helyen, közvetlen elérhetőségekkel.",
     suppliers_search_label: "Szolgáltató keresése",
     suppliers_search_placeholder: "Város, kategória vagy szolgáltató",
     suppliers_search_submit: "Keresés",

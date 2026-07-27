@@ -2020,7 +2020,6 @@ export interface LocaleMessages {
     card_guests_body: string;
     card_guests_cta: string;
     suppliers_section_title: string;
-    suppliers_section_body: string;
     /** The three directory doors on the landing suppliers block: find one,
      *  name one, be one. Each row is label + one supporting line. */
     /** The directory typeahead that replaced the "find a supplier" row. */

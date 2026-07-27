@@ -22,6 +22,7 @@ import {
 } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  ArrowUpRight,
   BadgeCheck,
   BedDouble,
   Bookmark,
@@ -1100,7 +1101,9 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
   };
 
   return (
-    <section className="mb-10">
+    // The id is the jump target for the admin panel's comment counter, which
+    // was a dead number sitting a screen below the thread it counts.
+    <section id={COMMENTS_ANCHOR_ID} className="mb-10 scroll-mt-24">
       <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
         {t("suppliers.detail.comments.title")}
       </h2>
@@ -1756,6 +1759,9 @@ function BusyCalendarCard({
 
 // ─── Admin meta ──────────────────────────────────────────────────────────────
 
+/** Anchor shared by the Q&A section and the admin panel's counter. */
+const COMMENTS_ANCHOR_ID = "supplier-comments";
+
 function AdminMetaSection({
   detail,
   t,
@@ -1791,7 +1797,27 @@ function AdminMetaSection({
           <dt className="text-xs uppercase tracking-wide text-ink-500">
             {t("suppliers.detail.adminMeta.commentsCount")}
           </dt>
-          <dd>{detail.comments_count ?? "-"}</dd>
+          {/* A count with nothing behind it is a dead end: the thread it counts
+              is on this same page, a screen up. Scroll there rather than
+              re-rendering the comments inside a read-only meta panel. Zero
+              stays plain text, since there is nothing to jump to. */}
+          <dd>
+            {detail.comments_count ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById(COMMENTS_ANCHOR_ID);
+                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="inline-flex items-center gap-1 font-medium text-rose-600 underline-offset-2 transition-colors hover:underline dark:text-rose-300"
+              >
+                {detail.comments_count}
+                <ArrowUpRight size={13} aria-hidden="true" />
+              </button>
+            ) : (
+              (detail.comments_count ?? "-")
+            )}
+          </dd>
         </div>
         <div className="sm:col-span-2">
           <dt className="text-xs uppercase tracking-wide text-ink-500">

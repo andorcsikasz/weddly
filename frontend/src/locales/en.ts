@@ -1664,8 +1664,6 @@ const en: LocaleMessages = {
     card_guests_body: "Enter the code from your invite and reply in a couple of minutes.",
     card_guests_cta: "Enter your code",
     suppliers_section_title: "A curated directory",
-    suppliers_section_body:
-      "Handpicked venues, photographers, caterers and more, all in one place, with direct contact details.",
     suppliers_search_label: "Find a supplier",
     suppliers_search_placeholder: "City, category or supplier",
     suppliers_search_submit: "Search",

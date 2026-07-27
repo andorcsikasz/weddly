@@ -43,9 +43,6 @@ const GuestListMockup = lazyWithReload(() =>
 const SeatingMockup = lazyWithReload(() =>
   import("../components/mockups").then((m) => ({ default: m.SeatingMockup })),
 );
-const SuppliersPreview = lazyWithReload(() =>
-  import("../components/illustrations").then((m) => ({ default: m.SuppliersPreview })),
-);
 const SubmitSupplierModal = lazyWithReload(() =>
   import("../components/SubmitSupplierModal").then((m) => ({ default: m.SubmitSupplierModal })),
 );
@@ -118,7 +115,6 @@ function BurgerIcon({ size = 24, ...props }: { size?: number } & React.SVGProps<
 // these to reserve layout space, so the page doesn't jump as below-fold
 // SVGs mount when scrolled into view.
 const MOCKUP_AR_FEATURE = "496 / 376";
-const MOCKUP_AR_SUPPLIERS = "320 / 280";
 
 // Stash any `?ref=<source>` query param landing on a public page so the
 // signup form can later attach it to the register call (which the backend
@@ -372,9 +368,6 @@ export default function LandingPage() {
             <h2 className="font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
               {t("landing.suppliers_section_title")}
             </h2>
-            <p className="mt-5 max-w-xl font-grotesk text-base text-umber-700 dark:text-umber-200 sm:text-lg">
-              {t("landing.suppliers_section_body")}
-            </p>
             {/* Search first, doors under it: a visitor who knows what they're
                 after types it; the two rows are for the ones who don't. */}
             <VendorSearchBar className="mt-8" />
@@ -393,9 +386,19 @@ export default function LandingPage() {
               />
             </div>
           </div>
-          <LazyMount aspectRatio={MOCKUP_AR_SUPPLIERS} className="w-full">
-            <SuppliersPreview className="h-auto w-full" />
-          </LazyMount>
+          {/* Decorative: the heading and the search box carry the meaning, so
+              this stays out of the accessibility tree. width/height are the
+              real pixels so the row reserves its space before the file lands. */}
+          <img
+            src="/suppliers-illustration.jpg"
+            alt=""
+            aria-hidden="true"
+            width={1100}
+            height={1015}
+            loading="lazy"
+            decoding="async"
+            className="h-auto w-full rounded-3xl"
+          />
         </div>
       </section>
 

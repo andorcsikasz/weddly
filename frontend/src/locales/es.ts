@@ -1711,8 +1711,6 @@ const es: LocaleMessages = {
     card_guests_body: "Introduce el código de tu invitación y responde en un par de minutos.",
     card_guests_cta: "Introduce tu código",
     suppliers_section_title: "Un directorio seleccionado",
-    suppliers_section_body:
-      "Espacios, fotógrafos, caterings y mucho más, elegidos a mano y reunidos en un solo lugar, con datos de contacto directo.",
     suppliers_search_label: "Buscar un proveedor",
     suppliers_search_placeholder: "Ciudad, categoría o proveedor",
     suppliers_search_submit: "Buscar",
