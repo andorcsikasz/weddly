@@ -29,11 +29,6 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
       a: "A Wēddly leváltja a táblázatokat, jegyzeteket, RSVP-üzeneteket és ültetési vázlatokat, amelyek általában szétszóródnak a telefonokon és laptopokon. A költségvetés, a vendéglista, az RSVP-válaszok, az ültetés és az esküvői weboldal egyetlen közös felületen él.",
     },
     {
-      q: "Tényleg ingyenes a Wēddly?",
-      a: "Igen. Az első 200 pár az esküvője napjáig, legfeljebb 18 hónapig ingyen használhatja a Wēddly-t. Az induláshoz nincs szükség bankkártyára.",
-      cta: { href: "/signup", label: "Kezdjétek el ingyen" },
-    },
-    {
       q: "Mindketten ugyanazt a tervet használhatjuk?",
       a: "Igen. Egyikőtök létrehozza a felületet, és egy privát linkkel meghívja a másikat. Mindketten saját belépéssel léptek be, de ugyanazt a költségvetést, vendéglistát, RSVP-válaszokat és ültetést látjátok, valós időben.",
     },
@@ -80,11 +75,6 @@ export const SEO_FAQ: Record<SeoFaqLocale, ReadonlyArray<SeoFaqEntry>> = {
     {
       q: "What does Weddly replace?",
       a: "Weddly replaces the spreadsheets, notes, RSVP messages and seating drafts that usually get scattered across phones and laptops. Your budget, guest list, RSVP replies, seating chart and wedding website live in one shared workspace.",
-    },
-    {
-      q: "Is Weddly really free?",
-      a: "Yes. The first 200 couples can use Weddly free until their wedding day, for up to 18 months. No credit card is needed to start.",
-      cta: { href: "/signup", label: "Start free" },
     },
     {
       q: "Can both of us use the same wedding plan?",
