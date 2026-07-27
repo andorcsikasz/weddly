@@ -454,6 +454,12 @@ const SEED: SeedGroup[] = [
         budget: "other",
       },
       {
+        slug: "dance_lessons",
+        label_hu: "Táncoktatás",
+        label_en: "Dance lessons",
+        budget: "other",
+      },
+      {
         slug: "sound_tech",
         label_hu: "Hangtechnika",
         label_en: "Sound & AV tech",

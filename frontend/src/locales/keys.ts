@@ -5143,6 +5143,7 @@ export interface LocaleMessages {
       entertainment: string;
       mc_celebrant: string;
       celebrant: string;
+      dance_lessons: string;
       sound_tech: string;
       bridal_boutique: string;
       suit_formal: string;

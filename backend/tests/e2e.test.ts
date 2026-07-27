@@ -5554,20 +5554,32 @@ describe("supplier taxonomy (admin-editable groups + categories)", () => {
     return r.data.token;
   }
 
-  test("public GET /api/supplier-categories returns the seeded 9 groups / 30 categories", async () => {
+  test("public GET /api/supplier-categories returns the seeded 9 groups / 31 categories", async () => {
     wipeAll();
     const r = await req<TaxonomyResponse>("GET", "/api/supplier-categories");
     expect(r.status).toBe(200);
     expect(r.data.groups.length).toBe(9);
     const allCats = r.data.groups.flatMap((g) => g.categories);
-    // 30 = 29 original + `celebrant` (szertartásvezető), split from mc_celebrant.
-    expect(allCats.length).toBe(30);
+    // 31 = 29 original + `celebrant` (szertartásvezető, split from mc_celebrant)
+    // + `dance_lessons` (táncoktatás).
+    expect(allCats.length).toBe(31);
     const venueGroup = r.data.groups.find((g) => g.slug === "venue_stay");
     expect(venueGroup?.label_hu).toBe("Helyszín & szállás");
     expect(venueGroup?.categories.map((c) => c.slug)).toEqual([
       "venue",
       "accommodation",
       "tent_pavilion",
+    ]);
+    // The entertainment group carries the new slug in its seeded order.
+    const entertainment = r.data.groups.find((g) => g.slug === "entertainment");
+    expect(entertainment?.categories.map((c) => c.slug)).toEqual([
+      "dj",
+      "live_music",
+      "entertainment",
+      "mc_celebrant",
+      "celebrant",
+      "dance_lessons",
+      "sound_tech",
     ]);
   });
 

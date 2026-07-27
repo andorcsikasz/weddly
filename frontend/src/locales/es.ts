@@ -4625,6 +4625,7 @@ const es: LocaleMessages = {
       entertainment: "Entretenimiento",
       mc_celebrant: "Maestro de ceremonias",
       celebrant: "Oficiante",
+      dance_lessons: "Clases de baile",
       sound_tech: "Sonido y técnica audiovisual",
       bridal_boutique: "Boutique nupcial",
       suit_formal: "Trajes y ropa de etiqueta",

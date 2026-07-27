@@ -4578,6 +4578,7 @@ const hu: LocaleMessages = {
       entertainment: "Műsor & animáció",
       mc_celebrant: "Ceremóniamester",
       celebrant: "Szertartásvezető",
+      dance_lessons: "Táncoktatás",
       sound_tech: "Hangtechnika",
       bridal_boutique: "Menyasszonyi ruha",
       suit_formal: "Öltöny & alkalmi",

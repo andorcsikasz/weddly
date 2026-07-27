@@ -500,7 +500,11 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
  */
 const SHOWCASE_PER_CATEGORY = 6;
 // Lead with the visual, high-intent categories; the rest follow. Only
-// categories with at least one photographed vendor are emitted.
+// categories with at least one photographed vendor are emitted. A category
+// MISSING from this list is invisible on the teaser however many vendors it
+// has, so every slug in SupplierCategory except the legacy `other` belongs
+// here (`celebrant` was left out when it split off mc_celebrant, and stayed
+// dark until this list caught up).
 const SHOWCASE_CATEGORY_ORDER: SupplierCategory[] = [
   "venue",
   "photography",
@@ -519,6 +523,8 @@ const SHOWCASE_CATEGORY_ORDER: SupplierCategory[] = [
   "suit_formal",
   "entertainment",
   "mc_celebrant",
+  "celebrant",
+  "dance_lessons",
   "lighting",
   "bar_drinks",
   "accommodation",

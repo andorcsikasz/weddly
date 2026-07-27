@@ -4527,6 +4527,7 @@ const en: LocaleMessages = {
       entertainment: "Entertainment",
       mc_celebrant: "Master of ceremonies",
       celebrant: "Celebrant",
+      dance_lessons: "Dance lessons",
       sound_tech: "Sound & AV tech",
       bridal_boutique: "Bridal boutique",
       suit_formal: "Suit & formal wear",

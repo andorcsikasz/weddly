@@ -35,6 +35,7 @@ export type SupplierCategory =
   | "entertainment"
   | "mc_celebrant"
   | "celebrant"
+  | "dance_lessons"
   | "sound_tech"
   // Fashion & beauty
   | "bridal_boutique"
@@ -131,6 +132,9 @@ export const SUPPLIER_TO_BUDGET: Record<SupplierCategory, string> = {
   entertainment: "music_dj",
   mc_celebrant: "music_dj",
   celebrant: "other",
+  // The first-dance lessons are bought months before the day and have no music
+  // budget line of their own — "other", same as the celebrant's fee.
+  dance_lessons: "other",
   sound_tech: "music_dj",
   bridal_boutique: "attire",
   suit_formal: "attire",
@@ -168,6 +172,7 @@ export const SUPPLIER_CATEGORY_LABEL_HU: Record<SupplierCategory, string> = {
   entertainment: "Műsor & animáció",
   mc_celebrant: "Ceremóniamester",
   celebrant: "Szertartásvezető",
+  dance_lessons: "Táncoktatás",
   sound_tech: "Hangtechnika",
   bridal_boutique: "Menyasszonyi ruha",
   suit_formal: "Öltöny & alkalmi",
@@ -205,6 +210,7 @@ export const SUPPLIER_CATEGORY_LABEL_EN: Record<SupplierCategory, string> = {
   entertainment: "Entertainment",
   mc_celebrant: "Master of ceremonies",
   celebrant: "Celebrant",
+  dance_lessons: "Dance lessons",
   sound_tech: "Sound & AV tech",
   bridal_boutique: "Bridal boutique",
   suit_formal: "Suit & formal wear",
@@ -237,7 +243,15 @@ export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
   { id: "media", categories: ["photography", "videography", "content_creator", "photo_booth"] },
   {
     id: "entertainment",
-    categories: ["dj", "live_music", "entertainment", "mc_celebrant", "celebrant", "sound_tech"],
+    categories: [
+      "dj",
+      "live_music",
+      "entertainment",
+      "mc_celebrant",
+      "celebrant",
+      "dance_lessons",
+      "sound_tech",
+    ],
   },
   {
     id: "fashion_beauty",
@@ -296,6 +310,9 @@ export const SUPPLIER_CAPACITY_KIND: Record<SupplierCategory, SupplierCapacityKi
   entertainment: null,
   mc_celebrant: null,
   celebrant: null,
+  // A dance teacher's studio holds a couple and their wedding party, never the
+  // guest list, so a "max guests" here would mean nothing.
+  dance_lessons: null,
   sound_tech: null,
   bridal_boutique: null,
   suit_formal: null,
@@ -364,6 +381,10 @@ export const SUPPLIER_SPEAKS_LANGUAGES: Record<SupplierCategory, boolean> = {
   entertainment: false,
   mc_celebrant: true,
   celebrant: true,
+  // A dance teacher instructs in a language too, but they are booked for the
+  // choreography, not for what they say on the day. Flip this if couples start
+  // asking, it costs one line.
+  dance_lessons: false,
   sound_tech: false,
   bridal_boutique: false,
   suit_formal: false,
@@ -925,6 +946,7 @@ export const REVIEW_TAGS_BY_CATEGORY: Record<SupplierCategory, readonly Supplier
   entertainment: ["kid_friendly", "outdoor_space", "creative", ...UNIVERSAL_REVIEW_TAGS],
   mc_celebrant: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   celebrant: ["creative", ...UNIVERSAL_REVIEW_TAGS],
+  dance_lessons: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   sound_tech: [...UNIVERSAL_REVIEW_TAGS],
   bridal_boutique: ["creative", ...UNIVERSAL_REVIEW_TAGS],
   suit_formal: ["creative", ...UNIVERSAL_REVIEW_TAGS],

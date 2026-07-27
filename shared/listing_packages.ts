@@ -129,6 +129,10 @@ export const PACKAGE_NAME_SUGGESTIONS: Record<SupplierCategory, { hu: string[]; 
     hu: ["Polgári szertartás", "Szimbolikus szertartás", "Egyedi szertartás"],
     en: ["Civil ceremony", "Symbolic ceremony", "Bespoke ceremony"],
   },
+  dance_lessons: {
+    hu: ["Nyitótánc koreográfia", "Próbacsomag", "Teljes felkészítés"],
+    en: ["First-dance choreography", "Lesson package", "Full preparation"],
+  },
   sound_tech: {
     hu: ["Ceremónia hangosítás", "Alap hangrendszer", "Teljes színpadtechnika"],
     en: ["Ceremony sound", "Basic PA system", "Full stage tech"],
