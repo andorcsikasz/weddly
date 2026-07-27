@@ -83,6 +83,36 @@ function detectInitial(): Locale {
   return "en";
 }
 
+/** What the user sees when a key resolves in NO tree, not even EN.
+ *
+ *  `keys.ts` is a type every locale must satisfy, so a statically written key
+ *  can't go missing without breaking the build. Two things still reach here:
+ *  a key built at runtime from data (`suppliers.cat.${slug}`, tier names,
+ *  anything slug-shaped) whose value isn't in the union, and a stale bundle
+ *  where an old chunk asks for a key a newer locale chunk has dropped.
+ *
+ *  Printing the raw dotted path, which is what this used to do, hands the
+ *  vendor our internals: a real screen once read
+ *  "vendor_home.brand_locked_card_title". In development that IS the useful
+ *  output (plus a console warning), because the point is to notice. In
+ *  production the last segment humanised at least reads as a label, which is
+ *  exactly right for the slug case and merely bland for the stale-bundle one. */
+function missingKeyFallback(path: string): string {
+  return missingKeyFallbackForTests(path, import.meta.env.DEV);
+}
+
+/** The body of {@link missingKeyFallback} with the environment passed in, so a
+ *  test can exercise the production branch (the runner always reports DEV). */
+export function missingKeyFallbackForTests(path: string, dev: boolean): string {
+  if (dev) {
+    console.warn(`[i18n] missing key: ${path}`);
+    return path;
+  }
+  const last = path.split(".").pop() ?? path;
+  const words = last.replace(/_/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 function resolve(tree: LocaleMessages, path: string): string | null {
   const parts = path.split(".");
   let cur: unknown = tree;
@@ -195,11 +225,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const count = pickCount(vars);
       if (count !== null) {
         const variant = count === 1 ? `${path}_one` : `${path}_other`;
-        const pluralForm = resolve(tree, variant);
+        // Same per-key EN fallback as the singular path below: a plural form
+        // that only landed in EN should read in EN, not as a raw key.
+        const pluralForm = resolve(tree, variant) ?? resolve(en, variant);
         if (pluralForm !== null) return interpolate(pluralForm, vars);
       }
-      const base = resolve(tree, path);
-      return interpolate(base ?? path, vars);
+      const base = resolve(tree, path) ?? resolve(en, path);
+      return interpolate(base ?? missingKeyFallback(path), vars);
     },
     [locale, lazyLoadedAt],
   );
