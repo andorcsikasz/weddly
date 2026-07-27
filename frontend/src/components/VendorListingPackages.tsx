@@ -76,11 +76,23 @@ export function VendorListingPackages({
   };
 
   return (
-    <fieldset className="card space-y-3 p-4">
-      <legend className="font-semibold">{t("vendor_home.section_packages")}</legend>
+    <fieldset className="vp-card p-5">
+      {/* Title row carries the count, so the footer doesn't need a second line
+          of chrome saying the same thing in words. */}
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <legend className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+          {t("vendor_home.section_packages")}
+        </legend>
+        <span className="text-xs tabular-nums text-ink-500 dark:text-umber-300">
+          {t("vendor_home.packages_count", {
+            n: String(packages.length),
+            max: String(MAX_LISTING_PACKAGES),
+          })}
+        </span>
+      </div>
 
       {packages.length > 0 && (
-        <ul className="space-y-3">
+        <ul className="divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-800 dark:border-umber-800">
           {packages.map((p) => (
             <PackageCard
               key={p.id}
@@ -98,19 +110,12 @@ export function VendorListingPackages({
           type="button"
           onClick={() => void onAdd()}
           disabled={adding}
-          className="btn inline-flex items-center gap-1.5 bg-steel-600 text-white hover:bg-steel-700 disabled:opacity-50"
+          className="vp-btn-secondary mt-4 w-full"
         >
           <Plus size={16} aria-hidden />
           {t("vendor_home.packages_add")}
         </button>
       )}
-
-      <p className="text-xs text-ink-500 dark:text-umber-300">
-        {t("vendor_home.packages_count", {
-          n: String(packages.length),
-          max: String(MAX_LISTING_PACKAGES),
-        })}
-      </p>
     </fieldset>
   );
 }
@@ -261,26 +266,27 @@ function PackageCard({
   };
 
   return (
-    <li className="overflow-hidden rounded-lg border border-paper-300 dark:border-umber-700">
-      {/* Collapsible header — name + price summary, click to expand/collapse.
-          A row, not one big button: the title doubles as an inline rename field
-          and an <input> can't live inside a <button>. */}
-      <div className="flex w-full items-center gap-2.5 px-3 py-2.5">
-        {renaming ? (
+    <li>
+      {/* Header row. The package name lives HERE and only here: when the card
+          is open the same text becomes a borderless input, so the title is
+          never printed twice (it used to appear as a heading AND again inside
+          a "package name" field two rows below). */}
+      <div className="flex w-full items-center gap-2">
+        {open || renaming ? (
           <input
             ref={renameRef}
-            className="input min-w-0 flex-1 !py-1 text-sm font-medium"
+            className="min-w-0 flex-1 border-0 bg-transparent px-0 py-3 font-grotesk text-base font-semibold text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-0 dark:text-paper-50 dark:placeholder:text-umber-400"
             value={name}
             maxLength={PACKAGE_NAME_MAX}
             disabled={busy}
             aria-label={t("vendor_home.packages_name_label")}
             placeholder={t("vendor_home.packages_name_placeholder")}
             onChange={(e) => setName(e.target.value)}
-            onBlur={commitRename}
+            onBlur={renaming ? commitRename : undefined}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                commitRename();
+                if (renaming) commitRename();
               } else if (e.key === "Escape") {
                 e.preventDefault();
                 setName(pkg.name);
@@ -292,98 +298,81 @@ function PackageCard({
           <>
             <button
               type="button"
-              onClick={() => setOpen((v) => !v)}
+              onClick={() => setOpen(true)}
               aria-expanded={open}
               aria-controls={`pkg-body-${pkg.id}`}
-              className="-my-2.5 -ml-3 flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-3 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/50"
+              className="-mx-2 flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-3 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/60"
             >
-              <ChevronDown
-                size={16}
-                aria-hidden
-                className={`shrink-0 text-ink-400 transition-transform dark:text-umber-300 ${open ? "" : "-rotate-90"}`}
-              />
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium text-ink-800 dark:text-paper-100">
+                <span className="block truncate font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
                   {name.trim() || t("vendor_home.packages_default_name")}
                 </span>
                 {priceText.trim() && (
-                  <span className="block truncate text-xs text-ink-500 dark:text-umber-300">
+                  <span className="block truncate text-sm text-ink-500 dark:text-umber-300">
                     {priceText.trim()}
                   </span>
                 )}
               </span>
+              {pkg.pdf_url && (
+                <FileText
+                  size={15}
+                  aria-hidden
+                  className="shrink-0 text-ink-400 dark:text-umber-300"
+                />
+              )}
             </button>
-            {/* Muted rather than hover-only: on a touch screen there is no
-                hover, and an affordance nobody can see is the bug we're fixing. */}
             <button
               type="button"
               onClick={() => setRenaming(true)}
               disabled={busy}
               aria-label={t("vendor_home.packages_rename")}
               title={t("vendor_home.packages_rename")}
-              className="shrink-0 rounded-md p-1.5 text-ink-400 transition-colors hover:bg-paper-100 hover:text-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+              className="vp-btn-quiet shrink-0"
             >
-              <Pencil size={14} aria-hidden />
+              <Pencil size={15} aria-hidden />
             </button>
           </>
         )}
-        {pkg.pdf_url && (
-          <FileText size={14} aria-hidden className="shrink-0 text-ink-400 dark:text-umber-300" />
-        )}
         {dirty && (
-          <span className="shrink-0 rounded-full bg-steel-100 px-2 py-0.5 text-[11px] font-medium text-steel-700 dark:bg-steel-400/15 dark:text-steel-300">
+          <span className="shrink-0 rounded-full bg-steel-500/12 px-2.5 py-1 text-[11px] font-semibold text-steel-700 dark:bg-steel-500/20 dark:text-steel-200">
             {t("vendor_home.packages_unsaved")}
           </span>
+        )}
+        {open && (
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-expanded={open}
+            aria-controls={`pkg-body-${pkg.id}`}
+            aria-label={t("common.close")}
+            className="vp-btn-quiet shrink-0"
+          >
+            <ChevronDown size={16} aria-hidden />
+          </button>
         )}
       </div>
 
       {open && (
-        <div
-          id={`pkg-body-${pkg.id}`}
-          className="space-y-2.5 border-t border-paper-200 p-3 dark:border-umber-800"
-        >
-          {/* Name + category-aware suggestion chips */}
-          <div>
-            <label className="field-label" htmlFor={`pkg-name-${pkg.id}`}>
-              {t("vendor_home.packages_name_label")}
-            </label>
-            <input
-              id={`pkg-name-${pkg.id}`}
-              className="input"
-              value={name}
-              maxLength={PACKAGE_NAME_MAX}
-              disabled={busy}
-              placeholder={t("vendor_home.packages_name_placeholder")}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={noEnterSubmit}
-            />
-            {suggestions.length > 0 && (
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-ink-500 dark:text-umber-300">
-                  {t("vendor_home.packages_suggestions_label")}
-                </span>
-                {suggestions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setName(s)}
-                    className="rounded-full border border-paper-300 bg-paper-50 px-2.5 py-0.5 text-xs text-ink-700 transition hover:border-steel-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        <div id={`pkg-body-${pkg.id}`} className="space-y-4 pb-4">
+          {/* Suggestion chips sit under the (single) title, where they read as
+              "or start from one of these" rather than as a second name field. */}
+          {suggestions.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {suggestions.map((sug) => (
+                <button key={sug} type="button" onClick={() => setName(sug)} className="vp-chip">
+                  {sug}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {/* Optional free-text price */}
           <div>
-            <label className="field-label" htmlFor={`pkg-price-${pkg.id}`}>
+            <label className="vp-label" htmlFor={`pkg-price-${pkg.id}`}>
               {t("vendor_home.packages_price_label")}
             </label>
             <input
               id={`pkg-price-${pkg.id}`}
-              className="input"
+              className="vp-input"
               value={priceText}
               maxLength={PACKAGE_PRICE_MAX}
               disabled={busy}
@@ -393,15 +382,14 @@ function PackageCard({
             />
           </div>
 
-          {/* Optional description */}
           <div>
-            <label className="field-label" htmlFor={`pkg-desc-${pkg.id}`}>
+            <label className="vp-label" htmlFor={`pkg-desc-${pkg.id}`}>
               {t("vendor_home.packages_desc_label")}
             </label>
             <textarea
               id={`pkg-desc-${pkg.id}`}
-              className="input"
-              rows={2}
+              className="vp-input"
+              rows={3}
               maxLength={PACKAGE_DESCRIPTION_MAX}
               value={description}
               disabled={busy}
@@ -425,7 +413,7 @@ function PackageCard({
                   href={pkg.pdf_url}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="inline-flex items-center gap-1.5 text-sm text-steel-700 hover:underline dark:text-steel-300"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-steel-700 hover:underline dark:text-steel-300"
                 >
                   <FileText size={15} aria-hidden />
                   {pkg.pdf_name ?? t("vendor_home.packages_pdf_label")}
@@ -434,7 +422,7 @@ function PackageCard({
                   type="button"
                   onClick={() => pdfInputRef.current?.click()}
                   disabled={busy}
-                  className="btn-ghost px-2 py-1 text-xs disabled:opacity-50"
+                  className="vp-btn-quiet text-sm"
                 >
                   {t("vendor_home.packages_pdf_replace")}
                 </button>
@@ -442,34 +430,40 @@ function PackageCard({
                   type="button"
                   onClick={() => void onRemovePdf()}
                   disabled={busy}
-                  className="btn-ghost px-2 py-1 text-xs text-blush-600 disabled:opacity-50 dark:text-blush-300"
+                  className="vp-btn-quiet text-sm text-blush-600 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-950/40"
                 >
                   {t("vendor_home.packages_pdf_remove")}
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                onClick={() => pdfInputRef.current?.click()}
-                disabled={busy}
-                className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-paper-400 px-3 py-1.5 text-sm text-ink-600 transition hover:border-steel-400 disabled:opacity-50 dark:border-umber-600 dark:text-umber-200"
-              >
-                <Upload size={15} aria-hidden />
-                {t("vendor_home.packages_pdf_upload")}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => pdfInputRef.current?.click()}
+                  disabled={busy}
+                  className="vp-btn-secondary w-full border-dashed sm:w-auto"
+                >
+                  <Upload size={15} aria-hidden />
+                  {t("vendor_home.packages_pdf_upload")}
+                </button>
+                {/* The size limit is a constraint, not a label: worth one quiet
+                    line so an 11 MB brochure fails in the file picker's head
+                    rather than in a toast after the upload. */}
+                <span className="text-xs text-ink-400 dark:text-umber-400">
+                  {t("vendor_home.packages_pdf_hint")}
+                </span>
+              </>
             )}
-            <span className="text-xs text-ink-400 dark:text-umber-400">
-              {t("vendor_home.packages_pdf_hint")}
-            </span>
           </div>
 
-          {/* Row actions */}
-          <div className="flex items-center justify-between gap-2 pt-1">
+          {/* Row actions. Save is the only filled control on the card, so the
+              eye lands on it without a colour hunt. */}
+          <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => void onDelete()}
               disabled={busy}
-              className="inline-flex items-center gap-1 text-sm text-blush-600 transition hover:text-blush-700 disabled:opacity-50 dark:text-blush-300"
+              className="vp-btn-quiet text-sm text-blush-600 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-950/40"
             >
               <Trash2 size={15} aria-hidden />
               {t("vendor_home.packages_delete")}
@@ -478,7 +472,7 @@ function PackageCard({
               type="button"
               onClick={() => void onSave()}
               disabled={!dirty || !nameValid || busy}
-              className="btn bg-steel-600 px-3 py-1.5 text-sm text-white hover:bg-steel-700 disabled:opacity-50"
+              className="vp-btn-primary"
             >
               {t("vendor_home.packages_save")}
             </button>

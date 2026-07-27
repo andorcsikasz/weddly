@@ -1206,6 +1206,62 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
       dark:hover:border-umber-600 dark:hover:bg-umber-700/60;
   }
 
+  /* ── Vendor portal primitives ───────────────────────────────────────
+     The vendor side is a professional tool, not the couples' stationery:
+     white surfaces, near-black text, hairline grey dividers, and ONE accent
+     (steel, the slate blue). Deliberately separate from `.card` / `.input` /
+     `.btn`, which the couple-facing app shares, so the portal can move
+     without touching a single couple screen.
+
+     Rules the rest of the portal should follow as it adopts these:
+       steel = active, in progress, primary action, links
+       sage  = complete, earned
+       amber = needs attention, at risk
+     Never mix those meanings; a vendor learns the colour code once. */
+  .vp-card {
+    @apply rounded-xl border border-paper-300 bg-white
+      dark:border-umber-700 dark:bg-umber-900;
+  }
+  /* Small, quiet, sentence case. The old field labels shouted in uppercase;
+     on a dense tool screen that reads as chrome rather than as guidance. */
+  .vp-label {
+    @apply mb-1.5 block text-xs font-medium text-ink-500 dark:text-umber-300;
+  }
+  .vp-input {
+    @apply block w-full min-h-tap rounded-lg border border-paper-300 bg-white px-3.5 py-2.5
+      text-base text-ink-900 placeholder:text-ink-400 transition-colors
+      focus:border-steel-500 focus:outline-none focus:ring-2 focus:ring-steel-500/25
+      disabled:cursor-not-allowed disabled:bg-paper-100 disabled:text-ink-500
+      dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50
+      dark:placeholder:text-umber-300 dark:focus:border-steel-300
+      dark:focus:ring-steel-300/25 dark:disabled:bg-umber-900;
+  }
+  .vp-btn {
+    @apply inline-flex min-h-tap items-center justify-center gap-2 rounded-lg px-4 py-2.5
+      text-sm font-semibold transition-colors duration-150
+      disabled:cursor-not-allowed disabled:opacity-40
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-steel-500
+      focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900;
+  }
+  .vp-btn-primary {
+    @apply vp-btn bg-steel-500 text-white hover:bg-steel-700 active:bg-steel-800;
+  }
+  .vp-btn-secondary {
+    @apply vp-btn border border-paper-300 bg-white text-ink-900 hover:bg-paper-50
+      dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50 dark:hover:bg-umber-700;
+  }
+  .vp-btn-quiet {
+    @apply vp-btn px-2.5 text-ink-600 hover:bg-paper-100
+      dark:text-umber-200 dark:hover:bg-umber-800;
+  }
+  .vp-chip {
+    @apply inline-flex items-center rounded-full border border-paper-300 bg-white px-3 py-1
+      text-xs font-medium text-ink-700 transition-colors
+      hover:border-steel-500 hover:text-steel-700
+      dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100
+      dark:hover:border-steel-300 dark:hover:text-steel-200;
+  }
+
   /* ── Admin shell primitives ─────────────────────────────────────────
      Unified card chrome for the admin shell. The admin pages had drifted
      into three competing languages — `.card` with shadow-soft + the

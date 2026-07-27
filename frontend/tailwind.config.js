@@ -145,7 +145,10 @@ export default {
           200: "#a6c3cf",
           300: "#8aafbe",
           400: "#6e94a4",
-          500: "#5c8090",
+          // The portal's stated accent, exactly as specified (2026-07-27). It was
+          // #5c8090 by interpolation, a one-step difference nobody can see; pinned
+          // to the requested value so the config matches the brief literally.
+          500: "#5B7A90",
           600: "#4F6D7A",
           700: "#415a65",
           800: "#344850",
