@@ -171,46 +171,60 @@ function VendorPointsDialog({
       open={open}
       onClose={onClose}
       title={t("vendor.points.how_to_earn")}
+      titleClassName="text-2xl tracking-[-0.02em]"
       role="dialog"
       closeOnBackdrop
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <p className="font-grotesk text-3xl font-semibold leading-none text-ink-900 dark:text-paper-50">
-            {points.points}
-          </p>
-          <TierBadge tier={points.tier} size="sm" />
-          <p className="min-w-0 flex-1 text-xs text-ink-500 dark:text-umber-300">{status}</p>
+      <div className="flex flex-col">
+        {/* The total, display-size: the portal lets type carry the hierarchy
+            rather than boxing the number. */}
+        <div className="flex flex-col gap-1.5 pb-5">
+          <span className="flex items-center gap-3">
+            <span className="font-grotesk text-5xl font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink-900 dark:text-paper-50">
+              {points.points}
+            </span>
+            <TierBadge tier={points.tier} size="sm" />
+          </span>
+          <span className="text-sm text-ink-500 dark:text-paper-400">{status}</span>
         </div>
 
-        <ul className="flex flex-col gap-1">
+        {/* Full-bleed rows on hairlines, the whole width tappable: the same list
+            anatomy as the dashboard's upcoming events, and the reason the point
+            values dropped their tinted pills. A value belongs in the value
+            column, right-aligned against its chevron, not in a badge. */}
+        <ul className="-mx-4 flex flex-col divide-y divide-paper-200 border-y border-paper-200 sm:-mx-6 dark:divide-umber-700 dark:border-umber-700">
           {EARNABLE_EVENTS.map((event) => {
             const to = EARN_ROUTE[event];
             const earned = points.earned_by_event[event] ?? 0;
             const row = (
               <>
-                <span className="w-11 shrink-0 rounded-md bg-steel-50 py-0.5 text-center font-grotesk text-xs font-semibold tabular-nums text-steel-700 dark:bg-steel-600/20 dark:text-steel-200">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-base font-medium text-ink-900 dark:text-paper-50">
+                    {t(`vendor.points.earn_${event}`, { hours: String(FAST_REPLY_HOURS) })}
+                  </span>
+                  {earned > 0 && (
+                    <span className="block text-sm tabular-nums text-ink-500 dark:text-paper-400">
+                      {t("vendor.points.earned_so_far", { n: String(earned) })}
+                    </span>
+                  )}
+                </span>
+                <span className="shrink-0 font-grotesk font-semibold tabular-nums text-ink-900 dark:text-paper-50">
                   +{POINTS_BY_EVENT[event]}
                 </span>
-                <span className="min-w-0 flex-1 text-sm text-ink-700 dark:text-paper-200">
-                  {t(`vendor.points.earn_${event}`, { hours: String(FAST_REPLY_HOURS) })}
-                </span>
-                {earned > 0 && (
-                  <span className="shrink-0 text-xs tabular-nums text-ink-500 dark:text-umber-300">
-                    {t("vendor.points.earned_so_far", { n: String(earned) })}
-                  </span>
-                )}
-                {to && (
-                  <ChevronRight
-                    size={14}
-                    aria-hidden="true"
-                    className="shrink-0 text-ink-400 dark:text-umber-400"
-                  />
-                )}
+                {/* Kept (invisible) on the unlinked row so every value lands in
+                    the same column instead of one line hanging 20px right. */}
+                <ChevronRight
+                  size={16}
+                  aria-hidden="true"
+                  className={`shrink-0 transition-transform ${
+                    to
+                      ? "text-ink-300 group-hover:translate-x-0.5 dark:text-paper-400"
+                      : "invisible"
+                  }`}
+                />
               </>
             );
-            const className =
-              "-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors";
+            const className = "group flex w-full items-center gap-4 px-4 py-4 sm:px-6";
             return (
               <li key={event}>
                 {to ? (
@@ -219,7 +233,7 @@ function VendorPointsDialog({
                   <Link
                     to={to}
                     onClick={onClose}
-                    className={`${className} hover:bg-paper-100 dark:hover:bg-umber-800`}
+                    className={`${className} transition-colors hover:bg-paper-100 dark:hover:bg-umber-800`}
                   >
                     {row}
                   </Link>
@@ -232,7 +246,7 @@ function VendorPointsDialog({
         </ul>
 
         {points.next_tier && unlocks.length > 0 && (
-          <p className="text-xs text-ink-500 dark:text-umber-300">
+          <p className="pt-4 text-sm text-ink-500 dark:text-paper-400">
             {t("vendor.points.next_unlocks", {
               tier: t(`vendor.points.tier.${points.next_tier}`),
             })}{" "}
