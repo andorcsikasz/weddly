@@ -18,7 +18,7 @@
 //    opening dozens of simultaneous outbound fetches.
 
 import { db, now } from "../db";
-import { fetchLinkPreview } from "../lib/link_preview";
+import { fetchLinkPreview, fetchPageImageCandidates } from "../lib/link_preview";
 import { fetchRemoteImage } from "../lib/remote_image";
 import { log } from "../lib/logger";
 import { storage } from "../lib/storage";
@@ -39,6 +39,10 @@ const CONCURRENCY = 4;
 const MIN_SHORT_EDGE = 200;
 const MIN_LONG_EDGE = 400;
 const MAX_ASPECT_RATIO = 4;
+// How many body-image candidates to download before giving up on a site. Four
+// is enough to walk past a header logo or two and still reach the slider,
+// without turning one listing into a crawl of the whole homepage.
+const BODY_IMAGE_ATTEMPTS = 4;
 
 /** True when an image is good enough to use as a card hero. Unmeasured images
  *  (width/height null) pass — the gate only rejects what it can prove is junk. */
@@ -97,24 +101,52 @@ export async function fetchAndStoreListingHero(
   website: string,
   opts: { skipQualityGate?: boolean } = {},
 ): Promise<boolean> {
+  const gate = (candidate: NonNullable<Awaited<ReturnType<typeof fetchRemoteImage>>>): boolean => {
+    if (opts.skipQualityGate) return true;
+    if (isAcceptableHero(candidate.width, candidate.height)) return true;
+    // Measurably too small / too elongated to be a real hero (likely a logo or
+    // banner). Rejected candidates fall through to the next one, and if none
+    // survives the row is stamped checked so the sweep never retries the junk.
+    log.info("listing.hero_backfill.rejected_quality", {
+      id,
+      width: candidate.width,
+      height: candidate.height,
+    });
+    return false;
+  };
+
   let img: Awaited<ReturnType<typeof fetchRemoteImage>> = null;
   try {
     const preview = await fetchLinkPreview(website);
-    img = preview.image_url ? await fetchRemoteImage(preview.image_url) : null;
+    if (preview.image_url) {
+      const candidate = await fetchRemoteImage(preview.image_url);
+      if (candidate && gate(candidate)) img = candidate;
+    }
   } catch {
     // fetchLinkPreview / fetchRemoteImage are soft by contract; belt-and-braces.
     img = null;
   }
 
-  if (img && !opts.skipQualityGate && !isAcceptableHero(img.width, img.height)) {
-    // Measurably too small / too elongated to be a real hero (likely a logo or
-    // banner). Stamp it checked so the sweep doesn't retry the same junk.
-    log.info("listing.hero_backfill.rejected_quality", {
-      id,
-      width: img.width,
-      height: img.height,
-    });
-    img = null;
+  // No usable og:image. Most small venue sites don't have one at all, so fall
+  // back to the photos in the page body — the slider and the gallery strip are
+  // where these businesses actually put their pictures. Candidates are tried in
+  // document order (the hero image of a site is near the top far more often
+  // than not) and each still has to clear the quality gate, which is what keeps
+  // a stray logo out. Capped, because a page can list dozens.
+  if (!img) {
+    try {
+      const candidates = await fetchPageImageCandidates(website);
+      for (const url of candidates.slice(0, BODY_IMAGE_ATTEMPTS)) {
+        const candidate = await fetchRemoteImage(url);
+        if (candidate && gate(candidate)) {
+          img = candidate;
+          log.info("listing.hero_backfill.body_image", { id, url });
+          break;
+        }
+      }
+    } catch {
+      img = null;
+    }
   }
 
   if (!img) {

@@ -219,3 +219,132 @@ export async function fetchLinkPreview(rawUrl: string): Promise<WishlistLinkPrev
     clearTimeout(timer);
   }
 }
+
+// ─── Body images ────────────────────────────────────────────────────────────
+//
+// Small venue sites routinely ship no og:image at all (measured on the July
+// 2026 Maps batch: 0 of 30 Hungarian venue homepages had one), so a directory
+// that only reads the head leaves those listings with a placeholder card
+// forever. The photos ARE on the page, in the slider and the gallery strip;
+// this reads them out of the body so the hero backfill has something to try.
+//
+// Everything here is a CANDIDATE, never a decision: the caller downloads them
+// in order and lets its own quality gate throw out the logos and badges that
+// slip past the filename filter.
+
+/** Filenames that are never a hero, whatever their size. Cheap pre-filter so
+ *  the caller doesn't spend a download on an obvious logo or spacer. */
+const JUNK_IMAGE_RE =
+  /(logo|favicon|icon|sprite|placeholder|spacer|avatar|banner|button|arrow|badge|pixel|loader|spinner|watermark|cookie)/i;
+const IMAGE_EXT_RE = /\.(jpe?g|png|webp)(?:[?#]|$)/i;
+/** Enough to find a real photo without turning one listing into a crawl. */
+const MAX_IMAGE_CANDIDATES = 12;
+
+/** Pull plausible photo URLs out of page HTML, in document order, resolved
+ *  against `baseUrl`. Reads `<img src>`, the lazy-loading `data-src` variants,
+ *  the first entry of a `srcset`, and inline `background-image:url(…)`, which
+ *  between them cover the sliders these sites are built on. Pure, no network,
+ *  exported for tests. */
+export function extractBodyImageCandidates(html: string, baseUrl: string): string[] {
+  const raw: string[] = [];
+  const push = (v: string | undefined | null) => {
+    const s = (v ?? "").trim();
+    if (s) raw.push(s);
+  };
+  for (const tag of html.match(/<img\b[^>]*>/gi) ?? []) {
+    push(tag.match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1]);
+    push(tag.match(/\bdata-(?:src|lazy-src|original)\s*=\s*["']([^"']+)["']/i)?.[1]);
+    // srcset is "url 320w, url 640w" — the first URL is enough, the quality
+    // gate cares about the pixels it actually downloads.
+    push(tag.match(/\b(?:data-)?srcset\s*=\s*["']([^"',\s]+)/i)?.[1]);
+  }
+  for (const m of html.matchAll(/background-image\s*:\s*url\((["']?)([^"')]+)\1\)/gi)) {
+    push(m[2]);
+  }
+
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const candidate of raw) {
+    if (candidate.startsWith("data:")) continue;
+    let resolved: URL;
+    try {
+      resolved = new URL(decodeEntities(candidate), baseUrl);
+    } catch {
+      continue;
+    }
+    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") continue;
+    const url = resolved.toString();
+    if (!IMAGE_EXT_RE.test(resolved.pathname)) continue;
+    if (JUNK_IMAGE_RE.test(resolved.pathname)) continue;
+    if (seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+    if (out.length >= MAX_IMAGE_CANDIDATES) break;
+  }
+  return out;
+}
+
+/** Fetch a page and return its body photo candidates. Same SSRF guard, timeout
+ *  and redirect handling as `fetchLinkPreview`; the only difference is that it
+ *  reads past `</head>`, since that is where the photos live. Never throws:
+ *  any failure resolves to an empty list. */
+export async function fetchPageImageCandidates(rawUrl: string): Promise<string[]> {
+  let current: string;
+  try {
+    current = (await assertSafeUrl(rawUrl)).toString();
+  } catch {
+    return [];
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      const res = await fetch(current, {
+        method: "GET",
+        redirect: "manual",
+        signal: controller.signal,
+        headers: {
+          "User-Agent": PREVIEW_UA,
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "hu-HU,hu;q=0.9,en-US;q=0.8,en;q=0.7",
+        },
+      });
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get("location");
+        if (!location) return [];
+        current = (await assertSafeUrl(new URL(location, current).toString())).toString();
+        continue;
+      }
+      if (!res.ok) return [];
+      if (!(res.headers.get("content-type") ?? "").includes("html")) return [];
+      return extractBodyImageCandidates(await readCappedBody(res), current);
+    }
+    return [];
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Whole-body twin of `readCappedHtml`: same byte cap, no early `</head>` exit. */
+async function readCappedBody(res: Response): Promise<string> {
+  const body = res.body;
+  if (!body) return await res.text();
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let html = "";
+  let total = 0;
+  try {
+    while (total < MAX_BODY_BYTES) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      html += decoder.decode(value, { stream: true });
+    }
+  } finally {
+    await reader.cancel().catch(() => {});
+  }
+  return html;
+}
