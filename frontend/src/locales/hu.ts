@@ -884,11 +884,12 @@ const hu: LocaleMessages = {
       load_more: "Továbbiak betöltése",
       share_title: "Gyűjts véleményeket",
       share_body:
-        "A vélemények mostantól bárkitől jöhetnek, Weddly-fiók nélkül is. Küldd el a linked pár kedvenc korábbi párodnak, és kérj őszinte értékelést. Néhány 5 csillagos vélemény a legjobb ajánlólevél, amit a párok láthatnak.",
+        "Bárki írhat véleményt, Weddly-fiók nélkül is. Küldd el a linked a korábbi párjaidnak.",
       share_copy: "Link másolása",
       share_copied: "Másolva",
       share_whatsapp: "WhatsApp",
       share_email: "E-mail",
+      share_native: "Megosztás",
     },
     billing: {
       page_title: "Számlázás",

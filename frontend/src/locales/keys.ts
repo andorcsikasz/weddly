@@ -1154,6 +1154,8 @@ export interface LocaleMessages {
       share_copied: string;
       share_whatsapp: string;
       share_email: string;
+      /** Native share-sheet button, rendered only where `navigator.share` exists. */
+      share_native: string;
     };
     billing: {
       page_title: string;

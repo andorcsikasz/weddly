@@ -41,18 +41,22 @@ function CollectReviewsCard({
   const subject = locale === "hu" ? "Egy rövid értékelés?" : "A quick review?";
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
-      <div className="flex flex-col gap-1">
-        <h2 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
-          {t("vendor.reviews.share_title")}
-        </h2>
-        <p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.reviews.share_body")}</p>
-      </div>
+    <section className="rounded-2xl border border-paper-300 bg-paper-50 p-4 sm:p-5 dark:border-umber-600 dark:bg-umber-900">
       <VendorShareSheet
         url={shareUrl}
         message={msg}
         subject={subject}
         label={t("vendor.reviews.share_title")}
+        lead={
+          <div className="flex flex-col gap-0.5">
+            <h2 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+              {t("vendor.reviews.share_title")}
+            </h2>
+            <p className="text-sm text-ink-600 dark:text-paper-300">
+              {t("vendor.reviews.share_body")}
+            </p>
+          </div>
+        }
       />
     </section>
   );

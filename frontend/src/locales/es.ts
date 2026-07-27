@@ -903,11 +903,12 @@ const es: LocaleMessages = {
       load_more: "Cargar más",
       share_title: "Consigue reseñas",
       share_body:
-        "Ahora las reseñas están abiertas a cualquiera, sin necesidad de una cuenta de Weddly. Envía tu enlace a algunos de tus clientes anteriores favoritos y pídeles una valoración sincera. Un puñado de reseñas de 5 estrellas es la mejor referencia que una pareja puede ver.",
+        "Cualquiera puede dejar una reseña, sin cuenta de Weddly. Envía tu enlace a algunos clientes anteriores.",
       share_copy: "Copiar enlace",
       share_copied: "Copiado",
       share_whatsapp: "WhatsApp",
       share_email: "Email",
+      share_native: "Compartir",
     },
     billing: {
       page_title: "Facturación",

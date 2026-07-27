@@ -876,11 +876,12 @@ const en: LocaleMessages = {
       load_more: "Load more",
       share_title: "Collect reviews",
       share_body:
-        "Reviews are now open to anyone, no Weddly account needed. Send your link to a few favourite past clients and ask for an honest rating. A handful of 5-star reviews is the best reference couples can see.",
+        "Anyone can leave a review, no Weddly account needed. Send your link to a few past clients.",
       share_copy: "Copy link",
       share_copied: "Copied",
       share_whatsapp: "WhatsApp",
       share_email: "Email",
+      share_native: "Share",
     },
     billing: {
       page_title: "Billing",

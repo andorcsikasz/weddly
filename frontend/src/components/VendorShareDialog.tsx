@@ -30,13 +30,12 @@ export function VendorShareDialog({
 
   return (
     <Dialog open={open} onClose={onClose} title={t("vendor.share.title")} role="dialog" size="lg">
-      <p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.share.body")}</p>
       <VendorShareSheet
         url={url}
         message={message}
         subject={subject}
         label={t("vendor.share.title")}
-        className="mt-4"
+        lead={<p className="text-sm text-ink-600 dark:text-paper-300">{t("vendor.share.body")}</p>}
       />
     </Dialog>
   );
