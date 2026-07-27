@@ -3437,10 +3437,14 @@ export const companyLookupApi = {
 /** Address autocomplete (backend proxy over the free Photon/OSM geocoder).
  *  Anonymous-allowed: the vendor signup form runs pre-account. */
 export const geoApi = {
-  addressSuggest: (q: string, lang: string) =>
+  /** `kind: "city"` narrows the geocoder to populated places, for fields that
+   *  store a bare city name (vendor onboarding) rather than a street line. */
+  addressSuggest: (q: string, lang: string, kind: "address" | "city" = "address") =>
     apiFetch<{ suggestions: AddressSuggestion[] }>(
       "GET",
-      `/api/geo/address-suggest?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}`,
+      `/api/geo/address-suggest?q=${encodeURIComponent(q)}&lang=${encodeURIComponent(lang)}${
+        kind === "city" ? "&kind=city" : ""
+      }`,
     ),
   /** Reverse geocode a pin drop → { address, city } (either may be null). Used
    *  by the venue map picker to fill the address when the couple taps the map. */

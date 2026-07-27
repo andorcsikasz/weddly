@@ -61,3 +61,45 @@ describe("GET /api/geo/address-suggest", () => {
     expect(r.status).toBe(400);
   });
 });
+
+// City mode backs the vendor-onboarding city field, where the value the vendor
+// picks becomes the string couples later filter the directory by. It must hand
+// back one canonical row per town, with the town in `city` (not `address`).
+describe("GET /api/geo/address-suggest?kind=city", () => {
+  test("maps place features to city rows and dedups the same town", async () => {
+    const r = await req<{ suggestions: AddressSuggestion[] }>(
+      "GET",
+      "/api/geo/address-suggest?q=Budapest&kind=city",
+    );
+    expect(r.status).toBe(200);
+
+    const first = r.data.suggestions[0];
+    expect(first?.city).toBe("Budapest");
+    expect(first?.label).toBe("Budapest, Central Hungary, Hungary");
+    expect(first?.country).toBe("HU");
+    // A city row fills a city field and nothing else.
+    expect(first?.address).toBeNull();
+    expect(first?.postal_code).toBeNull();
+    // Two fixtures are the same town from different extracts → one row.
+    expect(r.data.suggestions.filter((s) => s.city === "Budapest")).toHaveLength(1);
+    expect(r.data.suggestions.map((s) => s.city)).toEqual(["Budapest", "Szeged"]);
+  });
+
+  test("an unknown kind falls back to street-level suggestions", async () => {
+    const r = await req<{ suggestions: AddressSuggestion[] }>(
+      "GET",
+      "/api/geo/address-suggest?q=Andr%C3%A1ssy%20%C3%BAt&kind=street",
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.suggestions[0]?.address).toBe("Andrássy út 60");
+  });
+
+  test("no match in city mode → empty list", async () => {
+    const r = await req<{ suggestions: AddressSuggestion[] }>(
+      "GET",
+      "/api/geo/address-suggest?q=nomatch%20town&kind=city",
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.suggestions).toEqual([]);
+  });
+});

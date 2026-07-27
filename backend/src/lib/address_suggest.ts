@@ -27,6 +27,9 @@ interface PhotonFeature {
     street?: string;
     postcode?: string;
     city?: string;
+    /** County / region. Only read in city mode, where it is what tells two
+     *  same-named towns apart. */
+    state?: string;
     country?: string;
     countrycode?: string;
   };
@@ -41,6 +44,18 @@ interface PhotonResponse {
  *  expects for Hungarian streets, so only "en" is ever passed upstream. */
 export type SuggestLang = "en" | "hu";
 
+/** What the caller is picking. "address" is the original street-level typeahead
+ *  (vendor signup, listing editor). "city" asks the geocoder for populated
+ *  places only, so a form that stores a bare city name gets one canonical
+ *  spelling per town instead of whatever the vendor typed — the values are what
+ *  couples later filter the directory by. */
+export type SuggestKind = "address" | "city";
+
+/** Photon tags that mean "a place people live in". Anything smaller (hamlet,
+ *  suburb, quarter) is deliberately out: a vendor picking "Zugló" instead of
+ *  "Budapest" would fragment the very filter this mode exists to keep clean. */
+const CITY_OSM_TAGS = ["place:city", "place:town", "place:village"] as const;
+
 function toSuggestion(f: PhotonFeature): AddressSuggestion | null {
   const p = f.properties ?? {};
   const street = p.street ?? p.name ?? null;
@@ -54,6 +69,25 @@ function toSuggestion(f: PhotonFeature): AddressSuggestion | null {
     address,
     city: p.city ?? null,
     postal_code: p.postcode ?? null,
+    country: p.countrycode ? p.countrycode.toUpperCase() : null,
+    lat: typeof lat === "number" ? lat : null,
+    lng: typeof lng === "number" ? lng : null,
+  };
+}
+
+/** City mode: the feature IS the place, so its `name` is the value we want in
+ *  the form and `city` is usually absent. Street/postcode fields are dropped
+ *  rather than guessed at — this suggestion fills a city field, nothing else. */
+function toCitySuggestion(f: PhotonFeature): AddressSuggestion | null {
+  const p = f.properties ?? {};
+  const name = p.city ?? p.name ?? null;
+  if (!name) return null;
+  const [lng, lat] = f.geometry?.coordinates ?? [];
+  return {
+    label: [name, p.state ?? null, p.country ?? null].filter(Boolean).join(", "),
+    address: null,
+    city: name,
+    postal_code: null,
     country: p.countrycode ? p.countrycode.toUpperCase() : null,
     lat: typeof lat === "number" ? lat : null,
     lng: typeof lng === "number" ? lng : null,
@@ -100,9 +134,37 @@ const FAKE_FEATURES: PhotonFeature[] = [
   },
 ];
 
-function fakePhotonResponse(q: string): PhotonResponse {
+/** City-mode fixtures: place features as Photon returns them (a `name`, no
+ *  street, no postcode), plus a duplicate row so the dedup is exercised. */
+const FAKE_CITY_FEATURES: PhotonFeature[] = [
+  {
+    geometry: { coordinates: [19.0402, 47.4979] },
+    properties: {
+      name: "Budapest",
+      state: "Central Hungary",
+      country: "Hungary",
+      countrycode: "HU",
+    },
+  },
+  {
+    // Same place from a second OSM extract — must collapse into the row above.
+    geometry: { coordinates: [19.0403, 47.498] },
+    properties: { name: "Budapest", country: "Hungary", countrycode: "HU" },
+  },
+  {
+    geometry: { coordinates: [20.1414, 46.253] },
+    properties: {
+      name: "Szeged",
+      state: "Csongrád-Csanád",
+      country: "Hungary",
+      countrycode: "HU",
+    },
+  },
+];
+
+function fakePhotonResponse(q: string, kind: SuggestKind): PhotonResponse {
   if (q.toLowerCase().includes("nomatch")) return { features: [] };
-  return { features: FAKE_FEATURES };
+  return { features: kind === "city" ? FAKE_CITY_FEATURES : FAKE_FEATURES };
 }
 
 // ── Upstream fetch with TTL cache ──────────────────────────────────────────
@@ -114,25 +176,31 @@ const cache = new Map<string, { at: number; suggestions: AddressSuggestion[] }>(
 export async function suggestAddresses(
   q: string,
   lang: SuggestLang,
+  kind: SuggestKind = "address",
 ): Promise<AddressSuggestion[] | null> {
-  const key = `${lang} ${q}`;
+  // Kind is part of the cache key: the same query returns streets in one mode
+  // and towns in the other.
+  const key = `${kind} ${lang} ${q}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.suggestions;
 
   let body: PhotonResponse | null;
   if (process.env.ADDRESS_SUGGEST_FAKE === "1") {
-    body = fakePhotonResponse(q);
+    body = fakePhotonResponse(q, kind);
   } else {
-    body = await fetchPhoton(q, lang);
+    body = await fetchPhoton(q, lang, kind);
   }
   if (body === null) return null;
 
   const seen = new Set<string>();
   const suggestions: AddressSuggestion[] = [];
   for (const feature of body.features ?? []) {
-    const s = toSuggestion(feature);
-    if (!s || seen.has(s.label)) continue;
-    seen.add(s.label);
+    const s = kind === "city" ? toCitySuggestion(feature) : toSuggestion(feature);
+    // City rows dedup on the value that lands in the form (name + country), not
+    // on the label: two OSM extracts of one town differ only in the region line.
+    const dedupKey = kind === "city" ? `${s?.city ?? ""}|${s?.country ?? ""}` : (s?.label ?? "");
+    if (!s || seen.has(dedupKey)) continue;
+    seen.add(dedupKey);
     suggestions.push(s);
     if (suggestions.length >= MAX_SUGGESTIONS) break;
   }
@@ -145,12 +213,17 @@ export async function suggestAddresses(
   return suggestions;
 }
 
-async function fetchPhoton(q: string, lang: SuggestLang): Promise<PhotonResponse | null> {
+async function fetchPhoton(
+  q: string,
+  lang: SuggestLang,
+  kind: SuggestKind,
+): Promise<PhotonResponse | null> {
   // Ask for a few more than we show: the dedup above collapses rows that
   // differ only in OSM metadata (same street from two extracts).
+  const tags = kind === "city" ? CITY_OSM_TAGS.map((t) => `&osm_tag=${t}`).join("") : "";
   const url = `${PHOTON_BASE}?q=${encodeURIComponent(q)}&limit=${MAX_SUGGESTIONS * 2}${
     lang === "en" ? "&lang=en" : ""
-  }`;
+  }${tags}`;
   try {
     const r = await fetch(url, {
       headers: { accept: "application/json" },

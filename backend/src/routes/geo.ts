@@ -27,8 +27,12 @@ async function handleAddressSuggest(ctx: Ctx): Promise<Response> {
   // them locally with an empty list instead of burning an upstream call.
   if (q.length < MIN_QUERY_LEN) return json({ suggestions: [] });
   const lang = params.get("lang") === "hu" ? "hu" : "en";
+  // `kind=city` narrows the geocoder to populated places, for forms that store
+  // a bare city name (vendor onboarding). Anything else keeps the default
+  // street-level behaviour, so existing callers need no change.
+  const kind = params.get("kind") === "city" ? "city" : "address";
 
-  const suggestions = await suggestAddresses(q, lang);
+  const suggestions = await suggestAddresses(q, lang, kind);
   if (suggestions === null) {
     throw new HttpError(502, "address suggestions temporarily unavailable");
   }

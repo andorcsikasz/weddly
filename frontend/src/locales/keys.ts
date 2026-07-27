@@ -2323,19 +2323,30 @@ export interface LocaleMessages {
     city_label: string;
     city_required: string;
     phone_label: string;
+    phone_placeholder: string;
+    /** Shown under the phone input the moment it loses focus with something
+     *  that isn't a number. Field-level, never a form-level "couldn't save". */
+    phone_invalid: string;
     website_label: string;
+    website_placeholder: string;
+    website_invalid: string;
     save_error: string;
     listing_title: string;
     listing_body: string;
-    blurb_label: string;
+    /** No blurb/photo labels: step 2 is laid out as the listing card itself,
+     *  so the shape names the parts and the placeholder carries the ask. */
     blurb_placeholder: string;
     price_band_label: string;
-    price_band_hint: string;
-    hero_label: string;
     hero_cta: string;
     hero_replace: string;
     hero_uploading: string;
     hero_error: string;
+    /** The one question before publishing a listing with neither photo nor
+     *  text. `empty_body` states how the card renders; it must never quote a
+     *  conversion statistic we can't back. */
+    empty_title: string;
+    empty_body: string;
+    empty_upload: string;
     skip: string;
     done_title: string;
     done_body: string;

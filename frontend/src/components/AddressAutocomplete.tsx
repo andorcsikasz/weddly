@@ -26,6 +26,15 @@ type Props = {
   /** Fired when the user picks a suggestion, AFTER onChange(address line).
    *  Fill the sibling fields (city, postal code) here. */
   onPick: (s: AddressSuggestion) => void;
+  /** "city" asks the geocoder for populated places only and writes the town
+   *  name (not a street line) into the input, so a field that stores a bare
+   *  city ends up with one canonical spelling per town. */
+  kind?: "address" | "city";
+  /** Inline validation message, rendered under the input and wired to
+   *  aria-describedby / aria-invalid. */
+  error?: string | null;
+  required?: boolean;
+  placeholder?: string;
   maxLength?: number;
   disabled?: boolean;
 };
@@ -36,6 +45,10 @@ export function AddressAutocomplete({
   value,
   onChange,
   onPick,
+  kind = "address",
+  error,
+  required,
+  placeholder,
   maxLength,
   disabled,
 }: Props) {
@@ -63,7 +76,7 @@ export function AddressAutocomplete({
     const seq = ++requestSeq.current;
     const timer = setTimeout(() => {
       geoApi
-        .addressSuggest(q, locale)
+        .addressSuggest(q, locale, kind)
         .then((r) => {
           if (requestSeq.current !== seq) return;
           setSuggestions(r.suggestions);
@@ -76,11 +89,11 @@ export function AddressAutocomplete({
         });
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [value, locale]);
+  }, [value, locale, kind]);
 
   function pick(s: AddressSuggestion) {
     suppressNext.current = true;
-    onChange(s.address ?? s.label);
+    onChange(kind === "city" ? (s.city ?? s.label) : (s.address ?? s.label));
     onPick(s);
     setOpen(false);
     setSuggestions([]);
@@ -109,24 +122,40 @@ export function AddressAutocomplete({
     <div className="relative">
       <label htmlFor={id} className="field-label">
         {label}
+        {required && <span className="text-blush-600"> *</span>}
       </label>
       <input
         id={id}
         type="text"
-        className="input"
+        className={`input ${error ? "border-blush-500 dark:border-blush-400" : ""}`}
         role="combobox"
         aria-expanded={open}
         aria-controls={open ? listboxId : undefined}
         aria-activedescendant={highlighted >= 0 ? `${listboxId}-${highlighted}` : undefined}
         aria-autocomplete="list"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}_err` : undefined}
+        aria-required={required || undefined}
         autoComplete="off"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
         onBlur={() => setOpen(false)}
+        placeholder={placeholder}
         maxLength={maxLength}
         disabled={disabled}
       />
+      {/* Under its own field, not at the foot of the form: the message has to
+          sit where the eye already is when the input is rejected. */}
+      {error && (
+        <p
+          id={`${id}_err`}
+          role="alert"
+          className="mt-1 text-sm text-blush-700 dark:text-blush-300"
+        >
+          {error}
+        </p>
+      )}
       {open && (
         <ul
           id={listboxId}
