@@ -562,7 +562,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
       *
     </span>
   );
-  const opt = <span className="ml-1 text-xs text-umber-500">({t("common.optional")})</span>;
 
   // i18n keys already match the desired order: step0=Intro, step1=Business, step2=Tell us more, step3=Choose a plan
   const STEP_TITLES: Record<Step, string> = {
@@ -662,7 +661,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
               <div>
                 <label htmlFor="pw-company" className={labelCls}>
                   {t("planners.label_company")}
-                  {opt}
                 </label>
                 <input
                   id="pw-company"
@@ -678,7 +676,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 <div>
                   <label htmlFor="pw-city" className={labelCls}>
                     {t("planners.label_city")}
-                    {opt}
                   </label>
                   <input
                     id="pw-city"
@@ -693,7 +690,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 <div>
                   <label htmlFor="pw-km" className={labelCls}>
                     {t("planners.label_km_radius")}
-                    {opt}
                   </label>
                   <input
                     id="pw-km"
@@ -711,7 +707,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 <div>
                   <label htmlFor="pw-website" className={labelCls}>
                     {t("planners.label_website")}
-                    {opt}
                   </label>
                   <input
                     id="pw-website"
@@ -726,7 +721,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                 <div>
                   <label htmlFor="pw-wdone" className={labelCls}>
                     {t("planners.label_weddings_done")}
-                    {opt}
                   </label>
                   <input
                     id="pw-wdone"
@@ -742,7 +736,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
               <div>
                 <label htmlFor="pw-reflinks" className={labelCls}>
                   {t("planners.label_reference_links")}
-                  {opt}
                 </label>
                 <input
                   id="pw-reflinks"
@@ -803,7 +796,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
                   <div className="mt-2">
                     <label htmlFor="pw-otherstyle" className={labelCls}>
                       {t("planners.label_other_style")}
-                      {opt}
                     </label>
                     <input
                       id="pw-otherstyle"
@@ -845,7 +837,6 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
               <div>
                 <label htmlFor="pw-message" className={labelCls}>
                   {t("planners.label_message")}
-                  {opt}
                 </label>
                 <textarea
                   id="pw-message"
