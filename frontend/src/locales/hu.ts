@@ -1061,6 +1061,7 @@ const hu: LocaleMessages = {
     blocked_pill_label: "Blokkolt",
     block_day_title: "{date} blokkolása",
     block_editor_title: "{date} elérhetősége",
+    mode_label: "Nézet",
     block_mode_label: "Blokkolás típusa",
     block_all_day: "Egész nap",
     block_certain_hours: "Bizonyos órák",

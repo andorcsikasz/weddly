@@ -1333,6 +1333,8 @@ export interface LocaleMessages {
     /** Day-block editor modal. `block_editor_title` receives `{date}`. */
     block_editor_title: string;
     /** Aria-label for the whole-day / hours segmented control. */
+    /** Accessible name of the calendar/tasks segmented control. */
+    mode_label: string;
     block_mode_label: string;
     block_all_day: string;
     block_certain_hours: string;

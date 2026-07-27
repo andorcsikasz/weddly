@@ -1048,6 +1048,7 @@ const en: LocaleMessages = {
     blocked_pill_label: "Blocked",
     block_day_title: "Block {date}",
     block_editor_title: "{date} availability",
+    mode_label: "View",
     block_mode_label: "Block type",
     block_all_day: "All day",
     block_certain_hours: "Certain hours",

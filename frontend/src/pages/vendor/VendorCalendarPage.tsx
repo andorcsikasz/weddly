@@ -1598,38 +1598,29 @@ export default function VendorCalendarPage() {
           )}
           {mode === "calendar" && <ViewDropdown view={view} onChange={changeView} />}
 
-          <div className="inline-flex rounded-full border border-paper-300 p-0.5 dark:border-umber-700">
-            <button
-              type="button"
-              onClick={() => changeMode("calendar")}
-              aria-label={t("vendor_calendar.mode_calendar")}
-              title={t("vendor_calendar.mode_calendar")}
-              aria-pressed={mode === "calendar"}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors ${
-                mode === "calendar"
-                  ? "bg-steel-600 text-white"
-                  : "text-umber-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-800"
-              }`}
-            >
-              <CalendarDays size={16} aria-hidden="true" />
-              <span className="hidden sm:inline">{t("vendor_calendar.mode_calendar")}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => changeMode("tasks")}
-              aria-label={t("vendor_calendar.mode_tasks")}
-              title={t("vendor_calendar.mode_tasks")}
-              aria-pressed={mode === "tasks"}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors ${
-                mode === "tasks"
-                  ? "bg-steel-600 text-white"
-                  : "text-umber-500 hover:bg-paper-100 dark:text-umber-300 dark:hover:bg-umber-800"
-              }`}
-            >
-              <SquareKanban size={16} aria-hidden="true" />
-              <span className="hidden sm:inline">{t("vendor_calendar.mode_tasks")}</span>
-            </button>
-          </div>
+          {/* Was a hand-rolled pair of buttons whose fill jumped from one to the
+              other. Same two options, same steel, but the selection is now the
+              shared control's sliding pill — and it picks up the arrow-key
+              navigation the hand-rolled version never had. */}
+          <SegmentedControl
+            ariaLabel={t("vendor_calendar.mode_label")}
+            value={mode}
+            onChange={changeMode}
+            tone="steel"
+            hideLabelsOnMobile
+            options={[
+              {
+                value: "calendar" as const,
+                label: t("vendor_calendar.mode_calendar"),
+                icon: <CalendarDays size={16} aria-hidden="true" />,
+              },
+              {
+                value: "tasks" as const,
+                label: t("vendor_calendar.mode_tasks"),
+                icon: <SquareKanban size={16} aria-hidden="true" />,
+              },
+            ]}
+          />
         </div>
       </div>
 
