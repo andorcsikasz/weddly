@@ -20,6 +20,17 @@ export type SegmentedOption<T extends string> = {
  *  belongs to the vendor calendar, which has used it since it shipped. */
 export type SegmentedTone = "ink" | "steel";
 
+/** Corner treatment. `pill` is for a control that sits in a row of pill-shaped
+ *  filters (the vendor calendar toolbar next to "Ma" and the view dropdown),
+ *  where a rounded rectangle is the one square thing in the row. */
+export type SegmentedShape = "rounded" | "pill";
+
+/** `sm` matches the height of a `px-3.5 py-1.5` toolbar pill (34px) so the
+ *  control lines up with its neighbours instead of towering over them. It gives
+ *  up `min-h-tap`, which is why it is opt-in: only use it in a row that is
+ *  already built at that height. */
+export type SegmentedSize = "md" | "sm";
+
 type SegmentedControlProps<T extends string> = {
   ariaLabel: string;
   value: T;
@@ -29,6 +40,8 @@ type SegmentedControlProps<T extends string> = {
   /** Stack icons over labels at narrow widths instead of side-by-side. */
   compact?: boolean;
   tone?: SegmentedTone;
+  shape?: SegmentedShape;
+  size?: SegmentedSize;
   /** Hide the labels below `sm`, leaving icon-only pills. The label still
    *  reaches assistive tech through the button's aria-label. */
   hideLabelsOnMobile?: boolean;
@@ -41,6 +54,27 @@ const TONE_PILL: Record<SegmentedTone, string> = {
 const TONE_ACTIVE_TEXT: Record<SegmentedTone, string> = {
   ink: "text-paper-50",
   steel: "text-white",
+};
+const SHAPE_BOX: Record<SegmentedShape, string> = {
+  rounded: "rounded-xl",
+  pill: "rounded-full",
+};
+const SHAPE_ITEM: Record<SegmentedShape, string> = {
+  rounded: "rounded-lg",
+  pill: "rounded-full",
+};
+// The three size-dependent numbers have to agree: the box padding, the pill's
+// inset (it must clear that padding exactly) and the button's own height.
+const SIZE_BOX: Record<SegmentedSize, string> = { md: "p-1", sm: "p-0.5" };
+const SIZE_PILL_INSET: Record<SegmentedSize, string> = {
+  md: "top-1 bottom-1",
+  sm: "top-0.5 bottom-0.5",
+};
+// `min-h-7` rather than padding alone, so an icon-only button (hideLabelsOnMobile)
+// keeps the same 34px total as one with a label.
+const SIZE_BUTTON: Record<SegmentedSize, string> = {
+  md: "min-h-tap px-4 py-1.5",
+  sm: "min-h-7 px-3 py-1",
 };
 
 /** Single-select segmented control. Roving tabindex, arrow-key navigation,
@@ -71,6 +105,8 @@ export function SegmentedControl<T extends string>({
   className,
   compact = false,
   tone = "ink",
+  shape = "rounded",
+  size = "md",
   hideLabelsOnMobile = false,
 }: SegmentedControlProps<T>) {
   const groupId = useId();
@@ -161,7 +197,9 @@ export function SegmentedControl<T extends string>({
       ref={listRef}
       // `relative` makes this the offsetParent the pill is measured against.
       className={[
-        "relative inline-flex max-w-full overflow-x-auto rounded-xl border border-paper-300 bg-paper-100 p-1 dark:border-umber-700 dark:bg-umber-800 [&::-webkit-scrollbar]:hidden",
+        "relative inline-flex max-w-full overflow-x-auto border border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800 [&::-webkit-scrollbar]:hidden",
+        SHAPE_BOX[shape],
+        SIZE_BOX[size],
         className ?? "",
       ]
         .filter(Boolean)
@@ -175,7 +213,9 @@ export function SegmentedControl<T extends string>({
         <span
           aria-hidden="true"
           className={[
-            "pointer-events-none absolute top-1 bottom-1 left-0 z-0 rounded-lg motion-reduce:transition-none",
+            "pointer-events-none absolute left-0 z-0 motion-reduce:transition-none",
+            SIZE_PILL_INSET[size],
+            SHAPE_ITEM[shape],
             TONE_PILL[tone],
             slides
               ? "transition-[transform,width] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
@@ -203,7 +243,9 @@ export function SegmentedControl<T extends string>({
               // Only the TEXT colour transitions here. The fill moved out to the
               // pill above, so a background transition on the button would fight
               // it and leave a ghost behind the slide.
-              "relative z-10 min-h-tap whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100",
+              "relative z-10 whitespace-nowrap text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100",
+              SHAPE_ITEM[shape],
+              SIZE_BUTTON[size],
               compact ? "flex flex-col items-center gap-0.5" : "inline-flex items-center gap-1.5",
               active
                 ? TONE_ACTIVE_TEXT[tone]

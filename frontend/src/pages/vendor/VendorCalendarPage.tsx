@@ -1601,12 +1601,18 @@ export default function VendorCalendarPage() {
           {/* Was a hand-rolled pair of buttons whose fill jumped from one to the
               other. Same two options, same steel, but the selection is now the
               shared control's sliding pill — and it picks up the arrow-key
-              navigation the hand-rolled version never had. */}
+              navigation the hand-rolled version never had.
+
+              Pill-shaped at toolbar height: it shares this row with "Ma" and the
+              view dropdown, both 34px rounded-full, and at the default size it
+              stood 20px taller with square-ish corners. */}
           <SegmentedControl
             ariaLabel={t("vendor_calendar.mode_label")}
             value={mode}
             onChange={changeMode}
             tone="steel"
+            shape="pill"
+            size="sm"
             hideLabelsOnMobile
             options={[
               {
