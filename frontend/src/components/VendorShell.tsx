@@ -64,6 +64,14 @@ const VENDOR_ITEMS: VendorNavItem[] = [
 // localStorage key for the desktop nav rail collapsed/expanded preference.
 const NAV_COLLAPSED_KEY = "weddly.vendor_nav_collapsed";
 
+/** Shared styling for the header's circular icon buttons (share, theme, bell).
+ *  They sit on the steel bar, so everything inverts: paper glyphs, a lighter
+ *  steel hover wash instead of the page's paper-200, and a focus ring offset
+ *  against the BAR colour rather than the page. Kept in one constant because
+ *  the bell lives in its own component and would otherwise drift. */
+const HEADER_ICON_BTN =
+  "inline-flex h-11 w-11 items-center justify-center rounded-full text-paper-100 transition-colors hover:bg-steel-600 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-paper-100 focus-visible:ring-offset-2 focus-visible:ring-offset-steel-700 dark:hover:bg-steel-800 dark:focus-visible:ring-offset-steel-900";
+
 /** Header notification bell, mirroring the planner shell's: live counts from
  *  the stats rollup (new inquiries + confirmed events in the next 7 days),
  *  every row a link, and a per-device seen-watermark so the dot clears when
@@ -122,12 +130,16 @@ function VendorNotificationBell({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={toggleOpen}
-        className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+        className={`relative ${HEADER_ICON_BTN}`}
         aria-label={t("vendor.notif.aria")}
         title={t("vendor.notif.heading")}
       >
         <Bell size={18} aria-hidden="true" />
-        {dot && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />}
+        {/* Ringed against the steel bar so the dot still reads as a separate
+            mark rather than a smudge on the bell. */}
+        {dot && (
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-steel-700 dark:ring-steel-900" />
+        )}
       </button>
       {open && (
         <div
@@ -242,15 +254,19 @@ function VendorProfileMenu({
         aria-expanded={open}
         aria-label={t("vendor.shell.menu_label")}
         onClick={() => setOpen((v) => !v)}
-        className="group inline-flex h-9 items-center gap-2 rounded-full pl-1 pr-2 text-ink-700 transition-colors hover:bg-steel-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-steel-500 focus-visible:ring-offset-2 dark:text-paper-100 dark:hover:bg-umber-800 dark:focus-visible:ring-steel-300"
+        className="group inline-flex h-9 items-center gap-2 rounded-full pl-1 pr-2 text-paper-50 transition-colors hover:bg-steel-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-paper-100 focus-visible:ring-offset-2 focus-visible:ring-offset-steel-700 dark:hover:bg-steel-800 dark:focus-visible:ring-offset-steel-900"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-steel-600 text-xs font-semibold uppercase text-paper-50">
+        {/* The avatar inverts on the steel bar. A steel-600 chip on a steel-700
+            header is a one-step difference nobody can see, so it goes light and
+            becomes the brightest thing in the row, which is right: it is the
+            control the vendor reaches for most. */}
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-50 text-xs font-semibold uppercase text-steel-700 dark:bg-paper-100 dark:text-steel-900">
           {initialsOf(displayName)}
         </span>
         <span className="hidden max-w-[10rem] truncate text-sm font-medium sm:inline">
           {displayName}
         </span>
-        <ChevronDown size={15} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
+        <ChevronDown size={15} aria-hidden="true" className="text-steel-200" />
       </button>
 
       {open && (
@@ -444,11 +460,21 @@ export function VendorShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen overflow-x-clip bg-white dark:bg-umber-900">
       <VendorDemoOverlay />
-      <header className="sticky top-0 z-30 border-b border-paper-200 bg-white/90 backdrop-blur dark:border-umber-700 dark:bg-umber-900/90">
+      {/* The chrome carries the portal's steel accent rather than sitting on
+          the same white as the page. A vendor lives in this thing all day and a
+          white bar over white content gave the app no edge at all: the sticky
+          header was invisible until you scrolled something under it. Steel-700
+          is dark enough for paper-50 text to clear AA at this size, so the
+          wordmark and every icon simply invert.
+
+          The bar is opaque, not the usual /90 + blur: a translucent dark strip
+          picks up whatever colour scrolls beneath it, which reads as a bug on a
+          surface this saturated. */}
+      <header className="sticky top-0 z-30 border-b border-steel-800 bg-steel-700 dark:border-steel-800 dark:bg-steel-900">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
           <Link
             to="/vendor"
-            className="inline-flex h-11 items-center text-ink-900 transition-colors hover:text-ink-700 dark:text-paper-50 dark:hover:text-blush-300"
+            className="inline-flex h-11 items-center rounded-lg text-paper-50 transition-colors hover:text-steel-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-paper-100 focus-visible:ring-offset-2 focus-visible:ring-offset-steel-700 dark:focus-visible:ring-offset-steel-900"
           >
             <Wordmark size="sm" />
           </Link>
@@ -461,7 +487,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={() => setShareOpen(true)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+                className={HEADER_ICON_BTN}
                 aria-label={t("vendor.share.title")}
                 title={t("vendor.share.title")}
               >
@@ -471,7 +497,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+              className={HEADER_ICON_BTN}
               aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
               title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
             >
@@ -580,21 +606,10 @@ export function VendorShell({ children }: { children: ReactNode }) {
                 there is no collapsed state. */}
             <VendorPointsRail collapsed={collapsed} />
 
-            {/* Profile chip - desktop only. */}
-            <div className="mt-1 hidden border-t border-paper-300 pt-1 lg:block dark:border-umber-700">
-              <Link
-                to="/vendor/settings"
-                title={collapsed ? displayName : undefined}
-                className={`flex shrink-0 items-center gap-3 rounded-xl py-2 text-sm text-ink-700 transition-colors hover:bg-steel-50 dark:text-paper-200 dark:hover:bg-steel-600/15 ${
-                  collapsed ? "justify-center px-0" : "px-3"
-                }`}
-              >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-steel-100 text-xs font-semibold text-steel-700">
-                  {initialsOf(displayName)}
-                </span>
-                <span className={`truncate ${collapsed ? "hidden" : ""}`}>{displayName}</span>
-              </Link>
-            </div>
+            {/* No profile chip at the foot of the rail: the same avatar, the
+                same business name and the same route already sit in the header
+                menu, top right, on every screen. Two copies of one control made
+                the rail end on account housekeeping rather than on the work. */}
           </nav>
         </aside>
         <main id="main-content" className="min-w-0 flex-1 focus:outline-none">

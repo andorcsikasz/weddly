@@ -93,7 +93,10 @@ export function VendorPointsRail({ collapsed }: { collapsed: boolean }) {
         >
           {t("vendor.points.label")}
         </span>
-        <span className="flex w-full items-center gap-3">
+        {/* justify-center on the collapsed rail, not just items-center on the
+            column: the row is w-full, so without it the ring sits at the left
+            edge of a 64px rail while every nav icon above it is centred. */}
+        <span className={`flex w-full items-center gap-3 ${collapsed ? "lg:justify-center" : ""}`}>
           <ProgressRing
             pct={points.progress * 100}
             size={34}
