@@ -6156,6 +6156,32 @@ const es: LocaleMessages = {
     analytics_demo_top_features_empty: "Aún no se ha usado ninguna función en las demos.",
     analytics_demo_feature_demos_one: "{n} demo",
     analytics_demo_feature_demos_other: "{n} demos",
+    plan_title: "Plan",
+    plan_subtitle:
+      "Las campañas se preparan solas; tú solo las lanzas. La repetición y el intervalo se ajustan en cada tarjeta.",
+    plan_what_vendor_claim:
+      "Invita a los anuncios sin reclamar del directorio a hacerse con su perfil.",
+    plan_what_vendor_review:
+      "Recuerda a los proveedores con cuenta que pidan reseñas a sus clientes anteriores.",
+    plan_what_onboarding_name: "Reactivación de onboarding",
+    plan_what_onboarding:
+      "Recupera las cuentas que se registraron y verificaron pero nunca empezaron a planificar.",
+    plan_repeat: "Repetición",
+    plan_interval: "Intervalo (días)",
+    plan_auto_start: "Inicio automático",
+    plan_reach: "{n} direcciones esperando",
+    plan_cooling: "{n} en pausa ({days} días)",
+    plan_next: "Siguiente: {date}",
+    plan_no_repeat: "No se repite",
+    plan_prepared: "{slug} · llegaría a {n}",
+    plan_prepare: "Preparar",
+    plan_run: "Lanzar",
+    plan_open_console: "Consola",
+    plan_empty: "Aún no hay plan.",
+    plan_prepared_toast: "Lista, {n} direcciones. Solo falta lanzarla.",
+    plan_started_toast: "En marcha, los envíos salen escalonados.",
+    plan_skip_too_few: "Muy pocas direcciones ({n}), esperamos a la siguiente ronda.",
+    plan_skip_in_flight: "La campaña anterior aún no ha terminado.",
     campaign_title: "Campaña de invitación a reclamar",
     campaign_subtitle:
       "Invita a las fichas sin reclamar del directorio a hacerse cargo de su propio perfil. El correo en frío no se puede deshacer, así que lee la lista de destinatarios antes de empezar.",

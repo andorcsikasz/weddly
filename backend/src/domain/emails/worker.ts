@@ -24,6 +24,7 @@ import { insertCoupleNotification, listActionableTimelineTasks } from "../notifi
 import { listCoupleVendorsToReview } from "../post_wedding_reviews";
 import { setLifecycleOptOut } from "./preferences";
 import { type PlannerProfileRow, sendPlannerProfileReminder } from "../planner_profile";
+import { prepareDueSchedules } from "../campaign_schedules";
 import { getCampaignRow, sendCampaignBatch, sendCampaignReminders } from "../vendor_campaign";
 import {
   getCampaignRow as getOnboardingCampaignRow,
@@ -1703,6 +1704,16 @@ export async function runOnboardingCampaignSweep(
 }
 
 function kickCampaignSweep(label: string): void {
+  // Compose what the plan says is due BEFORE the send pass, so a campaign that
+  // becomes due this hour and has auto_start on goes out on this tick rather
+  // than idling until the next one. Synchronous and mail-free (it only creates
+  // paused campaigns), so it cannot delay the sends behind it.
+  try {
+    const { prepared } = prepareDueSchedules();
+    if (prepared > 0) log.info("campaign_schedules.prepared_due", { prepared });
+  } catch (e) {
+    reportError("campaign_schedules.prepare_failed", e);
+  }
   // Fire-and-forget at the timer boundary: the interval callback is sync, and a
   // campaign batch can take seconds. Failures are reported, never thrown. All
   // campaign families (claim-invite + review-invite + personal-invite +

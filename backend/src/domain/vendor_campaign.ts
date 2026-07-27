@@ -325,6 +325,18 @@ export function listTargets(campaign: CampaignRow, limit: number): VendorCampaig
   });
 }
 
+/** Every address a brand-new, unsegmented campaign would write to. The campaign
+ *  scheduler (domain/campaign_schedules.ts) needs the addresses themselves, not
+ *  a count, because it subtracts the ones this family mailed inside its
+ *  cooldown window before deciding a round is worth composing. */
+export function eligibleCampaignEmails(): string[] {
+  return eligibleTargets({
+    excludeCampaignId: null,
+    country: null,
+    limit: Number.MAX_SAFE_INTEGER,
+  }).map((t) => t.email);
+}
+
 /** Reachable audience broken down by country, for the create form. An operator
  *  picking a country segment should not have to guess a 2-letter code and hope
  *  it matches something: this is the actual menu, with the actual counts, as a

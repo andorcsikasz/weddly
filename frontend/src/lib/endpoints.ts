@@ -216,6 +216,11 @@ import type {
   UpdateOnboardingCampaignInput,
 } from "@shared/onboarding_campaign";
 import type {
+  CampaignPlanView,
+  CampaignScheduleView,
+  UpdateCampaignScheduleInput,
+} from "@shared/campaign_schedules";
+import type {
   CreatePersonalInviteCampaignInput,
   ImportPersonalInviteContactsInput,
   PersonalInviteCampaign,
@@ -2386,6 +2391,29 @@ export const adminOnboardingCampaignApi = {
       `/api/admin/onboarding-campaigns/${id}/send-batch`,
       { limit },
     ),
+};
+
+/** The standing campaign plan: one schedule per campaign family, composing the
+ *  next round on its own interval. `prepare` is "don't wait for the due date",
+ *  `run` launches the campaign a schedule has already built. */
+export const adminCampaignScheduleApi = {
+  list: () => apiFetch<CampaignPlanView>("GET", "/api/admin/campaign-schedules"),
+  update: (id: number, body: UpdateCampaignScheduleInput) =>
+    apiFetch<CampaignScheduleView>("PATCH", `/api/admin/campaign-schedules/${id}`, body),
+  prepare: (id: number) =>
+    apiFetch<{
+      result: {
+        prepared: boolean;
+        reason: string | null;
+        campaign_id: number | null;
+        reach: number;
+        cooling_down: number;
+        suppressed: number;
+      };
+      item: CampaignScheduleView;
+    }>("POST", `/api/admin/campaign-schedules/${id}/prepare`, {}),
+  run: (id: number) =>
+    apiFetch<{ item: CampaignScheduleView }>("POST", `/api/admin/campaign-schedules/${id}/run`, {}),
 };
 
 /** Vendor listing-claim flow — P2.C. Three steps:

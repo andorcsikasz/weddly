@@ -2227,6 +2227,39 @@ CREATE INDEX IF NOT EXISTS idx_oncs_campaign_status ON onboarding_campaign_sends
 CREATE INDEX IF NOT EXISTS idx_oncs_sent_at ON onboarding_campaign_sends(sent_at);
 CREATE INDEX IF NOT EXISTS idx_oncs_user ON onboarding_campaign_sends(user_id);
 
+-- ── Campaign schedules (the standing plan) ──────────────────────────────────
+-- One row per campaign FAMILY, not per campaign: the recurring instruction
+-- "every `interval_days`, build the next one of these and leave it ready to
+-- run". The hourly worker prepares a due schedule's campaign PAUSED with its
+-- targets resolved, so the operator's whole job is pressing Run (or flipping
+-- `auto_start` and not even that).
+--
+-- Kept separate from the four campaign tables because it describes intent, not
+-- an outbound batch: it survives every campaign it creates, holds no
+-- recipients, and a family with no schedule row simply never auto-composes.
+-- `kind` is UNIQUE — two competing plans for the same audience is exactly the
+-- pile-up this table exists to prevent.
+--
+-- The cooldown window and the minimum audience are NOT columns: they are
+-- deliberate per-family constants in shared/campaign_schedules.ts, because they
+-- protect the sending domain's reputation rather than expressing a preference.
+CREATE TABLE IF NOT EXISTS campaign_schedules (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL UNIQUE,                                   -- CampaignScheduleKind
+  enabled INTEGER NOT NULL DEFAULT 1,                          -- the "repeat" switch
+  interval_days INTEGER NOT NULL,                              -- repetition interval
+  daily_cap INTEGER NOT NULL,                                  -- inherited by each campaign it builds
+  auto_start INTEGER NOT NULL DEFAULT 0,                       -- 1 = launch it too, don't wait for a click
+  last_prepared_at INTEGER,
+  next_due_at INTEGER NOT NULL,                                -- when the next campaign gets built
+  last_campaign_id INTEGER,                                    -- the campaign it last built (id in that family's table)
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+-- The sweep asks one question every hour: what is due?
+CREATE INDEX IF NOT EXISTS idx_campaign_schedules_due
+  ON campaign_schedules(enabled, next_due_at);
+
 -- ── Weddly Points: the vendor tier currency ─────────────────────────────────
 -- APPEND-ONLY ledger. The total, the tier and (from phase 2) quest progress are
 -- all derived by replaying these rows; there is deliberately no mutable counter

@@ -6896,6 +6896,38 @@ export interface LocaleMessages {
     analytics_demo_top_features_empty: string;
     analytics_demo_feature_demos_one: string;
     analytics_demo_feature_demos_other: string;
+    /** The campaign PLAN tab: one card per campaign family, each composing its
+     *  own next round on an interval the operator can change. */
+    plan_title: string;
+    plan_subtitle: string;
+    plan_what_vendor_claim: string;
+    plan_what_vendor_review: string;
+    /** The onboarding family's name on the plan card; the tab label is just
+     *  "Onboarding", which reads as a product area rather than a campaign. */
+    plan_what_onboarding_name: string;
+    plan_what_onboarding: string;
+    plan_repeat: string;
+    plan_interval: string;
+    plan_auto_start: string;
+    /** Receives `{n}` — addresses a campaign built now would reach. */
+    plan_reach: string;
+    /** Receives `{n}` and `{days}` — addresses held back by the cooldown. */
+    plan_cooling: string;
+    /** Receives `{date}` — when the next round gets composed. */
+    plan_next: string;
+    plan_no_repeat: string;
+    /** Receives `{slug}` and `{n}` — the prepared campaign and its audience. */
+    plan_prepared: string;
+    plan_prepare: string;
+    plan_run: string;
+    plan_open_console: string;
+    plan_empty: string;
+    /** Receives `{n}`. */
+    plan_prepared_toast: string;
+    plan_started_toast: string;
+    /** Receives `{n}` — how few addresses were left. */
+    plan_skip_too_few: string;
+    plan_skip_in_flight: string;
     /** /app/admin/vendor-campaign, the claim-invite campaign console. */
     campaign_title: string;
     campaign_subtitle: string;

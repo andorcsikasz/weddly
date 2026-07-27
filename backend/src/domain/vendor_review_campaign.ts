@@ -328,6 +328,16 @@ export function listTargets(campaign: CampaignRow, limit: number): VendorReviewC
   return eligibleTargets({ excludeCampaignId: campaign.id, country: campaign.country, limit });
 }
 
+/** Every address a brand-new, unsegmented campaign would write to. Sibling of
+ *  the claim campaign's helper, for the scheduler's cooldown arithmetic. */
+export function eligibleCampaignEmails(): string[] {
+  return eligibleTargets({
+    excludeCampaignId: null,
+    country: null,
+    limit: Number.MAX_SAFE_INTEGER,
+  }).map((t) => t.email);
+}
+
 /** Reachable audience broken down by country, for the create form. */
 export function listSegments(): VendorReviewCampaignSegments {
   const all = eligibleTargets({

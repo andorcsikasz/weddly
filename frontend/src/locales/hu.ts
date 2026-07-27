@@ -6105,6 +6105,32 @@ const hu: LocaleMessages = {
     analytics_demo_top_features_empty: "Még nem használtak semmilyen funkciót a demókban.",
     analytics_demo_feature_demos_one: "{n} demo",
     analytics_demo_feature_demos_other: "{n} demo",
+    plan_title: "Terv",
+    plan_subtitle:
+      "A kampányok maguktól összeállnak, neked csak el kell indítanod őket. Az ismétlés és az ismétlésköz kártyánként állítható.",
+    plan_what_vendor_claim:
+      "Meghívja a még át nem vett hirdetéseket, hogy vegyék át a profiljukat.",
+    plan_what_vendor_review:
+      "Emlékezteti az átvett szolgáltatókat, hogy kérjenek véleményt a korábbi párjaiktól.",
+    plan_what_onboarding_name: "Onboarding újranyitás",
+    plan_what_onboarding:
+      "Visszahívja azokat, akik regisztráltak és megerősítették a címüket, de sosem kezdték el a tervezést.",
+    plan_repeat: "Ismétlés",
+    plan_interval: "Ismétlésköz (nap)",
+    plan_auto_start: "Automatikus indítás",
+    plan_reach: "{n} cím vár rá",
+    plan_cooling: "{n} pihen ({days} nap)",
+    plan_next: "Következő: {date}",
+    plan_no_repeat: "Nem ismétlődik",
+    plan_prepared: "{slug} · {n} címre menne ki",
+    plan_prepare: "Előkészítés",
+    plan_run: "Indítás",
+    plan_open_console: "Konzol",
+    plan_empty: "Még nincs terv.",
+    plan_prepared_toast: "Kész, {n} címmel. Már csak indítanod kell.",
+    plan_started_toast: "Elindítva, a kiküldés ütemezetten megy.",
+    plan_skip_too_few: "Túl kevés cím ({n}), várunk a következő körre.",
+    plan_skip_in_flight: "Az előző kampány még nem futott le.",
     campaign_title: "Meghívó kampány",
     campaign_subtitle:
       "A még át nem vett katalógus-hirdetéseket hívja meg, hogy vegyék át a saját profiljukat. A hideg levél nem vonható vissza, szóval indítás előtt nézd át a célközönséget.",

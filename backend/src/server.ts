@@ -47,6 +47,7 @@ import { registerAdminPlannerRoutes } from "./routes/admin_planners";
 import { registerAdminSupplierRoutes } from "./routes/admin_suppliers";
 import { registerAdminReviewRoutes } from "./routes/admin_reviews";
 import { registerAdminUserRoutes } from "./routes/admin_users";
+import { registerAdminCampaignScheduleRoutes } from "./routes/admin_campaign_schedules";
 import { registerAdminOnboardingCampaignRoutes } from "./routes/admin_onboarding_campaign";
 import { registerAdminPersonalInviteCampaignRoutes } from "./routes/admin_personal_invite_campaign";
 import { registerAdminVendorCampaignRoutes } from "./routes/admin_vendor_campaign";
@@ -132,6 +133,7 @@ import { retireLegacyTaxonomy, seedSupplierTaxonomy } from "./domain/supplier_ta
 import { backfillListings } from "./domain/listings";
 import { backfillPartnerPropagation } from "./domain/couples";
 import { seedDoNotContact } from "./domain/emails/optouts";
+import { ensureDefaultSchedules } from "./domain/campaign_schedules";
 import { reconcileOrphanCouples } from "./domain/orphan_reconcile";
 import {
   backfillPlannerProfilesFromWaitlist,
@@ -158,6 +160,13 @@ seedBlogPostsIfEmpty();
 // again (domain/emails/optouts.ts). Idempotent INSERT OR IGNORE, so it runs on
 // every boot and needs no SQL against the production volume.
 seedDoNotContact();
+// Seed the standing campaign plan (one schedule per campaign family) so the
+// console has something to show and the first sweep can compose the first
+// round. Idempotent; an operator's tuned interval / cap is never overwritten.
+{
+  const created = ensureDefaultSchedules();
+  if (created > 0) log.info("campaign_schedules.seeded", { created });
+}
 // Mirror each couple's invited partner across all of that owner's event-
 // workspaces (membership only, billing-neutral, idempotent). Fixes existing
 // couples whose partner only ever joined their first event so every workspace
@@ -262,6 +271,7 @@ registerAdminVendorCampaignRoutes(router);
 registerAdminVendorReviewCampaignRoutes(router);
 registerAdminPersonalInviteCampaignRoutes(router);
 registerAdminOnboardingCampaignRoutes(router);
+registerAdminCampaignScheduleRoutes(router);
 registerAdminPlannerRoutes(router);
 registerAdminAnalyticsRoutes(router);
 registerAdminEmailListRoutes(router);

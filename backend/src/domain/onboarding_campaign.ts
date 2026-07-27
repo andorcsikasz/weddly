@@ -268,6 +268,23 @@ export function syncTargets(campaignId: number): OnboardingCampaignSyncResult {
   };
 }
 
+/** Every orphan address a brand-new campaign would target, opt-outs excluded.
+ *  The campaign scheduler (domain/campaign_schedules.ts) subtracts the ones we
+ *  nudged inside the cooldown window from this before deciding whether a round
+ *  is worth composing. */
+export function eligibleOrphanEmails(): string[] {
+  const rows = db
+    .prepare(
+      `SELECT LOWER(TRIM(u.email)) AS email
+         FROM users u
+        WHERE ${ORPHAN_SEGMENT_SQL}
+          AND LOWER(TRIM(u.email)) NOT IN (SELECT email FROM email_optouts)
+        ORDER BY u.created_at ASC`,
+    )
+    .all(`%${DEMO_EMAIL_SUFFIX}`, VISITOR_SYSTEM_USER_EMAIL) as Array<{ email: string }>;
+  return rows.map((r) => r.email).filter((e) => e.length > 0);
+}
+
 /** How many eligible orphans are NOT yet in this campaign (what a Sync would add
  *  right now), excluding opted-out addresses. */
 function eligibleUnsyncedCount(campaignId: number): number {
