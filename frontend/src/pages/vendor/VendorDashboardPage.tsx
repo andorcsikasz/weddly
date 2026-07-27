@@ -25,13 +25,6 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
-import {
-  EARNABLE_EVENTS,
-  FAST_REPLY_HOURS,
-  POINTS_BY_EVENT,
-  type VendorPointsStatus,
-  perksForTier,
-} from "@shared/vendor_points";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { AnimatedNumber } from "../../components/AnimatedNumber";
 import {
@@ -39,14 +32,7 @@ import {
   SetupChecklist,
   SetupLinger,
 } from "../../components/VendorSetupProgress";
-import { ProgressRing } from "../../components/ProgressRing";
-import { TierBadge } from "../../components/TierBadge";
-import {
-  vendorBillingApi,
-  vendorListingApi,
-  vendorPointsApi,
-  vendorStatsApi,
-} from "../../lib/endpoints";
+import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useAuth } from "../../lib/auth";
 import { useT } from "../../lib/i18n";
@@ -75,10 +61,6 @@ export default function VendorDashboardPage() {
   // The listing-completeness percent the vendor last dismissed the alert at.
   // Re-shows the alert if the percent later changes (read from localStorage so
   // the dismissal survives reloads).
-  // Weddly Points. Loaded separately from stats + billing on purpose: the tier
-  // strip is a nice-to-have, and a points outage must not take the dashboard's
-  // real numbers down with it (a failed fetch just drops the strip).
-  const [points, setPoints] = useState<VendorPointsStatus | null>(null);
   const [dismissedPct, setDismissedPct] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const raw = window.localStorage.getItem(COMPLETENESS_DISMISS_KEY);
@@ -110,22 +92,6 @@ export default function VendorDashboardPage() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  useEffect(() => {
-    let cancelled = false;
-    vendorPointsApi
-      .get()
-      .then((p) => {
-        if (!cancelled) setPoints(p);
-      })
-      .catch(() => {
-        // Non-critical surface: no points strip is better than an error state
-        // on a dashboard whose real numbers loaded fine.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // Best-effort business name + hero image for the greeting and action cards. A
   // vendor without a listing yet falls back to their account name, then the
@@ -235,7 +201,6 @@ export default function VendorDashboardPage() {
 
   return (
     <div className="flex animate-fade-in flex-col gap-5">
-      {points && <PointsStrip points={points} />}
       {/* Completeness alert strip - the full setup prompt, shown while the
           listing is incomplete and not collapsed. A live progress ring replaces
           the old static sparkle so the percent reads at a glance. SetupLinger
@@ -592,177 +557,5 @@ function DashboardSkeleton({ title }: { title: string }) {
         </div>
       </div>
     </div>
-  );
-}
-
-/** Where each earning rule sends a vendor who wants to act on it. `null` means
- *  the rule isn't something a vendor can go and do in one click (a repeat
- *  booking is a couple's decision), so the row stays a plain, unlinked line
- *  rather than pretending a button exists for it. */
-const EARN_ROUTE: Record<(typeof EARNABLE_EVENTS)[number], string | null> = {
-  profile_completeness: "/vendor/listing",
-  first_review: "/vendor/reviews",
-  review_collected: "/vendor/reviews",
-  fast_reply: "/vendor/clients",
-  repeat_booking: null,
-};
-
-/** Weddly Points strip: where the vendor stands, how the score goes up, and
- *  what the next tier is worth. Read-only: nothing here can spend, claim or
- *  trigger anything, it reports what the ledger already says.
- *
- *  Deliberately number-first: the points total is the hero figure, with the
- *  ring carrying the "how far to the next tier" that a bare percentage in text
- *  never communicates as well.
- *
- *  The collapsed strip alone was a scoreboard with no rulebook: a Blue vendor
- *  saw "10" and "240 to Gold" and nothing about what moves either number (the
- *  perks list renders only from Gold up, so entry-tier vendors, which is
- *  everyone at first, saw no payoff either). The expander answers both, and
- *  pairs every rule with what THIS vendor has earned from it, so "where did my
- *  10 come from" is answered on the same line as "how do I get more". */
-function PointsStrip({ points }: { points: VendorPointsStatus }) {
-  const { t } = useT();
-  const [showEarn, setShowEarn] = useState(false);
-  const atTop = points.next_tier === null;
-
-  // What the NEXT tier unlocks, which is the reason to chase it. Composed from
-  // the shared perk table so a tier's perks are described in exactly one place.
-  const nextPerks = points.next_tier ? perksForTier(points.next_tier) : null;
-  const unlocks: string[] = [];
-  if (nextPerks) {
-    if (nextPerks.search_boost > 0) unlocks.push(t("vendor.points.perk_search"));
-    if (nextPerks.extra_lead_credits > 0) {
-      unlocks.push(t("vendor.points.perk_leads", { n: String(nextPerks.extra_lead_credits) }));
-    }
-    if (nextPerks.subscription_discount_pct > 0) {
-      unlocks.push(
-        t("vendor.points.perk_discount", { pct: String(nextPerks.subscription_discount_pct) }),
-      );
-    }
-    if (nextPerks.profile_badge) unlocks.push(t("vendor.points.perk_badge"));
-  }
-
-  return (
-    <section className="border-b border-paper-200 pb-4 dark:border-umber-700">
-      <div className="flex flex-wrap items-center gap-4">
-        <ProgressRing
-          pct={points.progress * 100}
-          size={56}
-          stroke={5}
-          tone={atTop ? "complete" : "active"}
-          label={t("vendor.points.ring_label")}
-        >
-          <TrendingUp size={18} className="text-steel-600 dark:text-steel-300" aria-hidden="true" />
-        </ProgressRing>
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <p className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-              {t("vendor.points.label")}
-            </p>
-            <TierBadge tier={points.tier} size="sm" />
-          </div>
-          <p className="font-grotesk text-3xl font-semibold leading-none text-ink-900 dark:text-paper-50">
-            <AnimatedNumber value={points.points} />
-          </p>
-          <p className="text-xs text-ink-500 dark:text-umber-300">
-            {atTop
-              ? t("vendor.points.at_top")
-              : t("vendor.points.to_next", {
-                  points: String(points.points_to_next),
-                  tier: t(`vendor.points.tier.${points.next_tier}`),
-                })}
-          </p>
-        </div>
-        {points.perks.profile_badge && (
-          <ul className="flex flex-col gap-1 text-xs text-ink-600 dark:text-umber-200">
-            {points.perks.search_boost > 0 && <li>{t("vendor.points.perk_search")}</li>}
-            {points.perks.extra_lead_credits > 0 && (
-              <li>
-                {t("vendor.points.perk_leads", { n: String(points.perks.extra_lead_credits) })}
-              </li>
-            )}
-            {points.perks.subscription_discount_pct > 0 && (
-              <li>
-                {t("vendor.points.perk_discount", {
-                  pct: String(points.perks.subscription_discount_pct),
-                })}
-              </li>
-            )}
-          </ul>
-        )}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => setShowEarn((v) => !v)}
-        aria-expanded={showEarn}
-        className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
-      >
-        <span>{t("vendor.points.how_to_earn")}</span>
-        <ChevronDown
-          size={14}
-          aria-hidden="true"
-          className={`transition-transform ${showEarn ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {showEarn && (
-        <div className="mt-3 flex flex-col gap-3 border-t border-paper-200 pt-3 dark:border-umber-700">
-          <ul className="flex flex-col gap-1">
-            {EARNABLE_EVENTS.map((event) => {
-              const to = EARN_ROUTE[event];
-              const earned = points.earned_by_event[event] ?? 0;
-              const row = (
-                <>
-                  <span className="w-11 shrink-0 rounded-md bg-steel-50 py-0.5 text-center font-grotesk text-xs font-semibold tabular-nums text-steel-700 dark:bg-steel-600/20 dark:text-steel-200">
-                    +{POINTS_BY_EVENT[event]}
-                  </span>
-                  <span className="min-w-0 flex-1 text-sm text-ink-700 dark:text-paper-200">
-                    {t(`vendor.points.earn_${event}`, { hours: String(FAST_REPLY_HOURS) })}
-                  </span>
-                  {earned > 0 && (
-                    <span className="shrink-0 text-xs tabular-nums text-ink-500 dark:text-umber-300">
-                      {t("vendor.points.earned_so_far", { n: String(earned) })}
-                    </span>
-                  )}
-                  {to && (
-                    <ChevronRight
-                      size={14}
-                      aria-hidden="true"
-                      className="shrink-0 text-ink-400 dark:text-umber-400"
-                    />
-                  )}
-                </>
-              );
-              const className =
-                "flex items-center gap-3 rounded-lg px-2 py-1.5 -mx-2 transition-colors";
-              return (
-                <li key={event}>
-                  {to ? (
-                    <Link
-                      to={to}
-                      className={`${className} hover:bg-paper-100 dark:hover:bg-umber-800`}
-                    >
-                      {row}
-                    </Link>
-                  ) : (
-                    <div className={className}>{row}</div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          {points.next_tier && unlocks.length > 0 && (
-            <p className="text-xs text-ink-500 dark:text-umber-300">
-              {t("vendor.points.next_unlocks", {
-                tier: t(`vendor.points.tier.${points.next_tier}`),
-              })}{" "}
-              {unlocks.join(" · ")}
-            </p>
-          )}
-        </div>
-      )}
-    </section>
   );
 }

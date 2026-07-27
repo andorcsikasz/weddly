@@ -36,6 +36,7 @@ import { useT } from "../lib/i18n";
 import { useNotifSeen } from "../lib/useNotifSeen";
 import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
+import { VendorPointsRail } from "./VendorPointsRail";
 import { VendorShareDialog } from "./VendorShareDialog";
 import { VendorDemoOverlay } from "./VendorDemoOverlay";
 import { Wordmark } from "./Wordmark";
@@ -572,6 +573,11 @@ export function VendorShell({ children }: { children: ReactNode }) {
                 </NavLink>
               );
             })}
+
+            {/* Weddly Points, docked under the nav. Collapses to the ring
+                alone on the icon rail; stays a full block on mobile, where
+                there is no collapsed state. */}
+            <VendorPointsRail collapsed={collapsed} />
 
             {/* Profile chip - desktop only. */}
             <div className="mt-1 hidden border-t border-paper-300 pt-1 lg:block dark:border-umber-700">
