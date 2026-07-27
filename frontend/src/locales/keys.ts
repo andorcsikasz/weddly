@@ -898,6 +898,13 @@ export interface LocaleMessages {
    *  always works; PRO unlocks the CRM detail, payment tracking, advanced
    *  stats, and the respond/status workflow. */
   vendor: {
+    /** Header share action + the dialog behind it, pointed at the public
+     *  profile URL (the reviews page owns the ?review=1 variant). */
+    share: {
+      title: string;
+      body: string;
+      action: string;
+    };
     nav: {
       dashboard: string;
       clients: string;

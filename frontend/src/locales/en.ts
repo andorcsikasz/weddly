@@ -665,6 +665,11 @@ const en: LocaleMessages = {
     preview_capacity_guests: "{range} guests",
   },
   vendor: {
+    share: {
+      title: "Share your profile",
+      body: "Send the link to your public page to couples, or put it on your own channels.",
+      action: "Share",
+    },
     nav: {
       dashboard: "Dashboard",
       clients: "Clients",

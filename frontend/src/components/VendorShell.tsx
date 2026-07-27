@@ -21,6 +21,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  Share2,
   Star,
   Store,
   Sun,
@@ -35,6 +36,7 @@ import { useT } from "../lib/i18n";
 import { useNotifSeen } from "../lib/useNotifSeen";
 import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
+import { VendorShareDialog } from "./VendorShareDialog";
 import { VendorDemoOverlay } from "./VendorDemoOverlay";
 import { Wordmark } from "./Wordmark";
 
@@ -322,12 +324,19 @@ export function VendorShell({ children }: { children: ReactNode }) {
   // Best-effort fetch of the vendor's business name for the header. A vendor
   // without a listing yet just sees the brand fallback — never blocks render.
   const [businessName, setBusinessName] = useState<string | null>(null);
+  // Listing id + name build the public profile URL behind the header's share
+  // button. Null until the fetch lands (or forever, for an account with no
+  // listing yet), which is exactly when the button should not be there.
+  const [listing, setListing] = useState<{ id: string; name: string } | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
   useEffect(() => {
     let cancelled = false;
     vendorListingApi
       .me()
       .then((view) => {
-        if (!cancelled) setBusinessName(view.account.display_name);
+        if (cancelled) return;
+        setBusinessName(view.account.display_name);
+        setListing({ id: view.listing.id, name: view.listing.name });
       })
       .catch(() => {
         /* no listing/account yet — fall back to the generic label */
@@ -442,6 +451,21 @@ export function VendorShell({ children }: { children: ReactNode }) {
             <Wordmark size="sm" />
           </Link>
           <div className="flex items-center gap-1">
+            {/* Share the public profile. Sits with the other header actions
+                because "send someone my Weddly page" is not a task that belongs
+                to any one page — it used to exist only on Vélemények, pointed
+                at the review composer. */}
+            {listing && (
+              <button
+                type="button"
+                onClick={() => setShareOpen(true)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+                aria-label={t("vendor.share.title")}
+                title={t("vendor.share.title")}
+              >
+                <Share2 size={18} aria-hidden="true" />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -570,6 +594,15 @@ export function VendorShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      {listing && (
+        <VendorShareDialog
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          listingId={listing.id}
+          listingName={listing.name}
+        />
+      )}
 
       <FeedbackDialog
         open={feedbackOpen}

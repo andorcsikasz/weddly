@@ -690,6 +690,11 @@ const es: LocaleMessages = {
     preview_capacity_guests: "{range} invitados",
   },
   vendor: {
+    share: {
+      title: "Comparte tu perfil",
+      body: "Envía el enlace de tu página pública a las parejas o ponlo en tus propios canales.",
+      action: "Compartir",
+    },
     nav: {
       dashboard: "Panel",
       clients: "Clientes",

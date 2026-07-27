@@ -673,6 +673,11 @@ const hu: LocaleMessages = {
     preview_capacity_guests: "{range} vendég",
   },
   vendor: {
+    share: {
+      title: "Profil megosztása",
+      body: "Küldd el a nyilvános oldalad linkjét a pároknak, vagy tedd ki a saját felületeidre.",
+      action: "Megosztás",
+    },
     nav: {
       dashboard: "Áttekintés",
       clients: "Ügyfelek",

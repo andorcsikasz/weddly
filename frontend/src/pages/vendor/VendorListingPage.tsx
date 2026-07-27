@@ -31,10 +31,12 @@ import {
   Lock,
   MoveVertical,
   Plus,
+  Share2,
   X,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { InfoHint } from "../../components/InfoHint";
+import { VendorShareDialog } from "../../components/VendorShareDialog";
 import {
   blockedHoursLabel,
   type ListingPhoto,
@@ -288,6 +290,7 @@ export default function VendorListingPage() {
   // falls back to HU for any locale that has no blurb column of its own.
   const [blurbLang, setBlurbLang] = useState<"hu" | "en">(locale === "en" ? "en" : "hu");
   const [galleryBusy, setGalleryBusy] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const heroInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
@@ -714,6 +717,22 @@ export default function VendorListingPage() {
               <ExternalLink size={14} aria-hidden="true" />
               {t("vendor_home.preview_open")}
             </Link>
+            {/* Right under the card it shares: the preview answers "what does
+                my page look like", this answers "send it to someone". */}
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="ml-4 mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+            >
+              <Share2 size={14} aria-hidden="true" />
+              {t("vendor.share.action")}
+            </button>
+            <VendorShareDialog
+              open={shareOpen}
+              onClose={() => setShareOpen(false)}
+              listingId={view.listing.id}
+              listingName={view.listing.name}
+            />
 
             {/* Second surface for the setup progress (the dashboard alert is the
                 first). It sits in the sticky column so the vendor can see how
