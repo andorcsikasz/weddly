@@ -156,8 +156,18 @@ describe("photo-albums API", () => {
     );
   });
 
-  test("GET /:token/qr returns SVG", async () => {
+  // The download link saves this as guest-qr.png, so the bytes have to BE a PNG —
+  // serving SVG under that name is what made macOS Preview refuse to open it.
+  test("GET /:token/qr returns a real PNG", async () => {
     const res = await fetch(`${BASE}/api/photo-albums/${albumToken}/qr`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type") ?? "").toContain("image/png");
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    expect(Array.from(bytes.slice(0, 8))).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  });
+
+  test("GET /:token/qr?format=svg still returns SVG", async () => {
+    const res = await fetch(`${BASE}/api/photo-albums/${albumToken}/qr?format=svg`);
     expect(res.status).toBe(200);
     const ct = res.headers.get("content-type") ?? "";
     expect(ct).toContain("image/svg+xml");

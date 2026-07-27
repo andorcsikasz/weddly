@@ -5,7 +5,7 @@
 //   GET  /api/photo-albums/:token               — album info for the guest camera page
 //   GET  /api/photo-albums/:token/photos        — reveal-locked photo list
 //   POST /api/photo-albums/:token/photos        — guest uploads a photo (multipart)
-//   GET  /api/photo-albums/:token/qr            — printable QR code SVG
+//   GET  /api/photo-albums/:token/qr            — printable QR code (PNG, ?format=svg for vector)
 //
 // Authenticated (couple only):
 //   GET  /api/photo-albums/film-access          — pricing eligibility check
@@ -650,7 +650,14 @@ async function handleGetPublicPhotos(ctx: Ctx): Promise<Response> {
   return json({ locked: false, uploads, total: uploads.length });
 }
 
-/** GET /api/photo-albums/:token/qr — printable QR code SVG. */
+/**
+ * GET /api/photo-albums/:token/qr — printable QR code.
+ *
+ * PNG by default: the couple saves this to their phone, drops it in Canva, or
+ * hands it to a print shop, and every one of those chokes on an SVG (macOS
+ * Preview cannot open one at all). `?format=svg` keeps the vector around for
+ * anyone laying out a table card at press resolution.
+ */
 async function handleGetQr(ctx: Ctx): Promise<Response> {
   const token = ctx.params.token ?? "";
   const row = db
@@ -659,11 +666,23 @@ async function handleGetQr(ctx: Ctx): Promise<Response> {
   if (!row) throw new HttpError(404, "Album not found");
 
   const url = `${CONFIG.frontendBaseUrl}/photos/${token}`;
-  const svg = await generateQrSvg(url);
+  const wantsSvg = ctx.url.searchParams.get("format") === "svg";
 
-  return new Response(svg, {
+  if (wantsSvg) {
+    return new Response(await generateQrSvg(url), {
+      headers: {
+        "Content-Type": "image/svg+xml",
+        "Content-Disposition": 'inline; filename="guest-qr.svg"',
+        "Cache-Control": "public, max-age=86400",
+      },
+    });
+  }
+
+  const png = await generateQrPng(url);
+  return new Response(new Uint8Array(png), {
     headers: {
-      "Content-Type": "image/svg+xml",
+      "Content-Type": "image/png",
+      "Content-Disposition": 'inline; filename="guest-qr.png"',
       "Cache-Control": "public, max-age=86400",
     },
   });
@@ -827,6 +846,17 @@ async function generateQrSvg(url: string): Promise<string> {
     type: "svg",
     errorCorrectionLevel: "M",
     margin: 2,
+    color: { dark: "#1a1a1a", light: "#ffffff" },
+  });
+}
+
+/** 1024px wide — big enough to print on a table card without a soft edge. */
+async function generateQrPng(url: string): Promise<Buffer> {
+  return QRCode.toBuffer(url, {
+    type: "png",
+    errorCorrectionLevel: "M",
+    margin: 2,
+    width: 1024,
     color: { dark: "#1a1a1a", light: "#ffffff" },
   });
 }
