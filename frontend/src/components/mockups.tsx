@@ -675,19 +675,26 @@ export function VendorListingMockup({ className }: Common) {
         preserveAspectRatio="xMidYMid slice"
       />
 
-      {/* Profile badge. The disc underneath is the backdrop the photo lands on
-          (and what shows while it loads), the photo fills it, and the hairline
-          ring goes on top so the edge stays crisp in both modes.
+      {/* Profile badge. The disc underneath is the backdrop the illustration
+          lands on (and what shows while it loads), the artwork fills it, and the
+          hairline ring goes on top so the edge stays crisp in both modes.
 
-          A portrait rather than a work shot: the badge renders at ~44px, and a
-          bouquet or a venue turns to mush at that size while a face still
-          resolves. Same placeholder convention as the cover above — swap the
-          href for a real vendor's photo before launch. */}
+          An ILLUSTRATED florist, not a stock photograph. This card is the
+          "here's your listing" mockup on the vendor landing — a real face in it
+          reads as a specific person Weddly signed, which is a claim the page
+          shouldn't make, and a stock portrait reads as one every vendor has
+          already seen elsewhere. The drawing says "a vendor like you" without
+          pretending to be anyone. It also matches the flat, warm-neutral
+          illustration language of the rest of the landing.
+
+          Head-and-shoulders crop, shipped at 176px for a badge that renders at
+          ~44: a full-body drawing turns to mush at that size while a face still
+          resolves. */}
       <g className="text-white dark:text-umber-700">
         <circle cx="40" cy="92" r="22" fill="currentColor" />
       </g>
       <image
-        href="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=176&h=176&fit=crop&crop=faces&q=80"
+        href="/vendor-avatar-illustration.jpg"
         x="18"
         y="70"
         width="44"
