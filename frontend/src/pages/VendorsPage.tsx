@@ -9,11 +9,12 @@
 //      use. No "partner", no "community", nothing that reads as co-ownership.
 //   2. Concrete over abstract: what a vendor gets, how fast, and what it
 //      costs, in that order. Short sentences, no hedging.
-//   3. NO COUNTS ON THE PAGE. Page views, inquiry totals and "N spots left"
-//      are all gone: while the marketplace is young those numbers argue
-//      against us, and a scarcity counter is the first thing a vendor reads
-//      as marketing. The only live thing left is WHICH free window a signup
-//      lands in (founding / early), stated as a promise, never as a tally.
+//   3. NO COUNTS AND NO OFFER ON THE PAGE. Page views, inquiry totals and
+//      "N spots left" are all gone: while the marketplace is young those
+//      numbers argue against us, and a scarcity counter is the first thing a
+//      vendor reads as marketing. The free window (founding / early) used to
+//      survive as a promise under the CTA and is gone too, so the page now
+//      fetches nothing and just states what a vendor gets.
 //      Same rule in the hero mockup: no invented business, rating or review
 //      count in the card preview.
 //   4. ONE dominant call to action (signup), repeated once at the end. The
@@ -22,16 +23,14 @@
 //      header already carries one (icon on desktop, menu item on mobile) and a
 //      second one just competes with the signup button.
 
-import type { PublicVendorStats } from "@shared/vendor_billing";
 import { ArrowLeft, ArrowRight, Gem, Inbox, Receipt, Share2, Store } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { VendorDemoLaunchButton } from "../components/VendorDemoLaunchButton";
 import { useToast } from "../components/ui";
-import { publicStatsApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -49,37 +48,6 @@ export default function VendorsPage() {
   // the email-verify gate (Google one-tap → device token) and submits the
   // community listing on X-Visitor-Token.
   const [registerOpen, setRegisterOpen] = useState(false);
-
-  // The only live thing on the page: which free window a signup lands in right
-  // now. We read the offer tier and say what it grants; the slot count that
-  // comes with it is deliberately never rendered. A failed fetch just drops the
-  // promise line and leaves the evergreen copy standing.
-  const [offer, setOffer] = useState<PublicVendorStats["offer"] | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    publicStatsApi
-      .vendors()
-      .then((r) => {
-        if (!cancelled) setOffer(r.offer);
-      })
-      .catch(() => {
-        // Public endpoint, never block the page on a fetch failure.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // A capped free window is running (and still has room) → say what it grants.
-  // On the trial tier there is no such promise, so there is no line.
-  const offerLine =
-    offer && offer.spots_left > 0
-      ? offer.tier === "founding"
-        ? t("vendors.offer_founding")
-        : offer.tier === "early"
-          ? t("vendors.offer_early")
-          : null
-      : null;
 
   // Growth loop: anyone on the vendor site can pass a link on so their friends
   // come recommend a supplier they trust. Native share sheet on mobile, with a
@@ -115,10 +83,10 @@ export default function VendorsPage() {
           <h1 className="font-grotesk text-4xl font-semibold leading-[1.02] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
-          <p className="mt-5 text-base leading-relaxed text-ink-600 sm:text-lg dark:text-umber-200">
-            {t("vendors.hero_sub")}
-          </p>
-          {/* Single dominant action. Everything else below it is a text link. */}
+          {/* Single dominant action. Everything else below it is a text link.
+              Nothing sits under the button any more: the effort claim and the
+              free-window promise both read as marketing next to a headline
+              that already says what the page is for. */}
           <div className="mt-8">
             <Link
               to="/vendors/signup"
@@ -127,15 +95,6 @@ export default function VendorsPage() {
               {t("vendors.signup_cta")}
               <ArrowRight size={18} aria-hidden />
             </Link>
-            {/* ONE line under the button, not a stack. How fast you are live
-                and which free window you land in are two different facts, but
-                stacked as two paragraphs they read as the same promise said
-                twice and pull attention off the CTA. The offer half stays
-                conditional (no window running → the sentence just ends). */}
-            <p className="mt-3 text-sm text-ink-500 dark:text-umber-300">
-              {t("vendors.cta_microcopy")}
-              {offerLine ? ` ${offerLine}` : ""}
-            </p>
           </div>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 lg:justify-start">
             <VendorDemoLaunchButton variant="quiet" />
@@ -237,9 +196,9 @@ export default function VendorsPage() {
 
 /** Closing band: the one repeat of the primary CTA, plus real vendor quotes if
  *  we have any. It used to be a counter band ("N page views", "N spots left");
- *  those are gone on purpose (see rule 3 at the top) and the section now stands
- *  on the offer itself, which needs no number to be true. The sub-line under the
- *  headline is gone too: it repeated the hero microcopy word for word.
+ *  those are gone on purpose (see rule 3 at the top) and so is the sub-line
+ *  under the headline, which repeated the hero microcopy word for word before
+ *  that microcopy was itself dropped.
  *
  *  The headline takes the TIMING angle ("next season is being booked now"), not
  *  the hero's "couples choose here" angle. It used to be a paraphrase of the

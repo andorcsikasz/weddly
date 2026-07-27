@@ -2121,18 +2121,11 @@ export interface LocaleMessages {
     planner_escape_link: string;
     /** Hero. The title is an INSTRUCTION to the vendor naming the mechanic
      *  ("get on the short list"), not a claim about us ("couples pick their
-     *  suppliers here") — the vendor's own move is the point. The sub explains
-     *  the mechanic once and must not repeat the title's imperative. */
+     *  suppliers here") — the vendor's own move is the point. It stands alone:
+     *  the sub-line that restated the mechanic, the effort claim under the CTA
+     *  and the free-window promise (founding / early) are all gone, so nothing
+     *  sits between the headline and the button. */
     hero_title: string;
-    hero_sub: string;
-    /** What the current free window grants, under the hero CTA. Picked by offer
-     *  tier (GET /api/public/vendor-stats); the trial tier has no such promise,
-     *  so it has no key. The slot COUNT behind it is deliberately never
-     *  rendered, so these lines must read as a promise, not a countdown. */
-    offer_founding: string;
-    offer_early: string;
-    /** Effort claim under the single primary CTA. */
-    cta_microcopy: string;
     /** Closing band: headline and the single repeat of the CTA. No sub-line:
      *  it only repeated the hero microcopy. The headline must take a DIFFERENT
      *  angle from the hero title (it used to paraphrase it) — timing, not the
