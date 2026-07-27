@@ -387,6 +387,28 @@ export function vendorPointsTotal(vendorAccountId: number): number {
   ).total;
 }
 
+/** Lifetime points per rule, every key present. Derived like everything else:
+ *  one GROUP BY over the ledger, no stored counter. */
+function pointsByEvent(vendorAccountId: number): Record<VendorPointsEvent, number> {
+  const totals = Object.fromEntries(
+    (Object.keys(POINTS_BY_EVENT) as VendorPointsEvent[]).map((key) => [key, 0]),
+  ) as Record<VendorPointsEvent, number>;
+  const rows = db
+    .prepare(
+      `SELECT event_type, COALESCE(SUM(points), 0) AS total
+         FROM vendor_points_ledger
+        WHERE vendor_account_id = ?
+        GROUP BY event_type`,
+    )
+    .all(vendorAccountId) as { event_type: VendorPointsEvent; total: number }[];
+  // A row whose event_type predates (or postdates) this build is ignored rather
+  // than added as a key the shared type doesn't declare.
+  for (const row of rows) {
+    if (row.event_type in totals) totals[row.event_type] = row.total;
+  }
+  return totals;
+}
+
 /** Everything the dashboard needs, all derived. */
 export function vendorPointsStatus(vendorAccountId: number): VendorPointsStatus {
   const points = vendorPointsTotal(vendorAccountId);
@@ -409,5 +431,6 @@ export function vendorPointsStatus(vendorAccountId: number): VendorPointsStatus 
     points_to_next: next ? Math.max(0, next.min_points - points) : 0,
     progress: tierProgress(points),
     recent,
+    earned_by_event: pointsByEvent(vendorAccountId),
   };
 }

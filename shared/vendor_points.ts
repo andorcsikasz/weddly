@@ -64,6 +64,22 @@ export const POINTS_BY_EVENT: Record<VendorPointsEvent, number> = {
  *  the vendor makes (`first_response_at`), never self-reported. */
 export const FAST_REPLY_HOURS = 24;
 
+/** The rules a vendor can actually go and DO, in the order the "how do I earn
+ *  points" panel lists them: cheapest and most controllable first.
+ *
+ *  Deliberately not the full event list. `admin_adjustment` is a correction, not
+ *  an action, and `referral_activated` has no vendor-facing surface yet: the
+ *  engine pays for it, but nothing lets a vendor refer anyone, and advertising a
+ *  way to earn that the product doesn't offer is worse than a shorter list. Add
+ *  it here the day the referral link ships. */
+export const EARNABLE_EVENTS = [
+  "profile_completeness",
+  "first_review",
+  "review_collected",
+  "fast_reply",
+  "repeat_booking",
+] as const satisfies readonly VendorPointsEvent[];
+
 /** Profile completeness is scored in 25% steps, so a vendor earns four times on
  *  the way to a finished profile instead of once at the very end. */
 export const PROFILE_MILESTONES = [25, 50, 75, 100] as const;
@@ -207,4 +223,9 @@ export interface VendorPointsStatus {
   progress: number;
   /** Most recent ledger entries, newest first: the "how did I earn this" list. */
   recent: VendorPointsEntry[];
+  /** Lifetime points per rule. The "how do I earn points" panel shows it beside
+   *  each rule, which is what turns a help text into an answer to the question a
+   *  vendor actually asks: "where did MY points come from". Every key is
+   *  present, zero included, so the UI never branches on undefined. */
+  earned_by_event: Record<VendorPointsEvent, number>;
 }

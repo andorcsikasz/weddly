@@ -22,6 +22,7 @@ import "../setup";
 
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
+  EARNABLE_EVENTS,
   MAX_REVIEW_POINTS_PER_MONTH,
   POINTS_BY_EVENT,
   VENDOR_TIERS,
@@ -378,6 +379,56 @@ describe("GET /api/vendor/points", () => {
     expect(r.data.perks).toBeTruthy();
     // Mirrors the server-side derivation exactly: no second implementation.
     expect(r.data.points).toBe(vendorPointsStatus(v.accountId).points);
+  });
+
+  test("earned_by_event breaks the total down per rule, zeros included", async () => {
+    const v = await bootstrapVendor("breakdown");
+    const author = await bootstrapAuthor("breakdown-reviewer@test.test");
+    createReview({
+      supplierId: v.listingId,
+      authorUserId: author.userId,
+      coupleId: null,
+      authorKind: "couple",
+      visitorId: null,
+      rating: 3,
+      body: "fine",
+      amountPaid: null,
+      amountCurrency: null,
+      amountNote: null,
+      published: true,
+      verified: true,
+      flagged: false,
+      tags: [],
+    });
+    processVendorEventOutbox();
+
+    const r = await req<VendorPointsStatus>("GET", "/api/vendor/points", undefined, {
+      token: v.token,
+    });
+    expect(r.status).toBe(200);
+    const byEvent = r.data.earned_by_event;
+
+    // Every rule the UI can render has a key, so the panel never branches on
+    // undefined for a vendor who hasn't earned that one yet.
+    for (const event of Object.keys(POINTS_BY_EVENT)) {
+      expect(typeof byEvent[event as keyof typeof byEvent]).toBe("number");
+    }
+    expect(byEvent.first_review).toBe(POINTS_BY_EVENT.first_review);
+    expect(byEvent.review_collected).toBe(POINTS_BY_EVENT.review_collected);
+    expect(byEvent.repeat_booking).toBe(0);
+    // The breakdown IS the total: a vendor adding up the panel must land on the
+    // hero number, or the panel is lying about where the points came from.
+    const summed = Object.values(byEvent).reduce((a, b) => a + b, 0);
+    expect(summed).toBe(r.data.points);
+  });
+
+  test("everything EARNABLE_EVENTS advertises is a rule that pays", async () => {
+    // The panel renders `+POINTS_BY_EVENT[event]` next to each line, so a rule
+    // worth 0 (or one the engine never awards) would advertise nothing.
+    for (const event of EARNABLE_EVENTS) {
+      expect(POINTS_BY_EVENT[event]).toBeGreaterThan(0);
+    }
+    expect(EARNABLE_EVENTS).not.toContain("admin_adjustment");
   });
 
   test("401 for anonymous, 403 for a couple-role user", async () => {

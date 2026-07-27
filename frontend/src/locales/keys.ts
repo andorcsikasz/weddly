@@ -982,6 +982,21 @@ export interface LocaleMessages {
       perk_search: string;
       perk_leads: string;
       perk_discount: string;
+      perk_badge: string;
+      /** Toggle that opens the earning rules. */
+      how_to_earn: string;
+      /** One line per rule in EARNABLE_EVENTS, keyed `earn_<event>`. The point
+       *  value is rendered from POINTS_BY_EVENT, never written into the copy.
+       *  `earn_fast_reply` receives `{hours}`. */
+      earn_profile_completeness: string;
+      earn_first_review: string;
+      earn_review_collected: string;
+      earn_fast_reply: string;
+      earn_repeat_booking: string;
+      /** Lifetime points from one rule. Receives `{n}`. */
+      earned_so_far: string;
+      /** Lead-in to the next tier's perks. Receives `{tier}`. */
+      next_unlocks: string;
     };
     dashboard: {
       page_title: string;
@@ -990,6 +1005,8 @@ export interface LocaleMessages {
       welcome: string;
       inquiries_total: string;
       inquiries_30d: string;
+      /** KPI label for profile opens in the trailing 30 days. */
+      views_30d: string;
       revenue_tracked: string;
       blocked_dates: string;
       upcoming_title: string;
@@ -1106,6 +1123,11 @@ export interface LocaleMessages {
       blocked_dates: string;
       status_empty: string;
       revenue_help: string;
+      /** Profile-open counters: KPI label, its tooltip, and the trailing-window
+       *  line under the funnel's first stage (receives `{n}`). */
+      views: string;
+      views_help: string;
+      views_recent: string;
       trend_title: string;
       trend_empty: string;
       range_7d: string;
