@@ -125,7 +125,11 @@ export default function VendorStatsPage() {
   const confirmedCount = stats.by_status.confirmed ?? 0;
   const funnelTop = Math.max(stats.views_total, stats.inquiries_total);
   const share = (n: number) => (funnelTop > 0 ? Math.round((n / funnelTop) * 100) : 0);
-  const rate = (n: number, of: number) => (of > 0 ? Math.round((n / of) * 100) : 0);
+  // Undefined, not 0, when the stage above is empty. Five inquiries against zero
+  // recorded views is an UNKNOWN rate, not a 0% one, and printing "0%" next to a
+  // real count reads as "nobody who saw you wrote" — the exact opposite of what
+  // happened. Vendors whose views predate the tracking split hit this.
+  const rate = (n: number, of: number) => (of > 0 ? Math.round((n / of) * 100) : undefined);
 
   return (
     <div className="flex animate-fade-in flex-col gap-5">
