@@ -1000,6 +1000,11 @@ export function VendorListingMockup({ className }: Common) {
         <clipPath id="vendor-cover-clip">
           <path d="M 16 0 Q 0 0 0 16 L 0 92 L 360 92 L 360 16 Q 360 0 344 0 Z" />
         </clipPath>
+        {/* Round crop for the profile badge. Same radius as the ring drawn on
+            top of it, so the photo stops exactly under the hairline. */}
+        <clipPath id="vendor-avatar-clip">
+          <circle cx="40" cy="92" r="22" />
+        </clipPath>
       </defs>
 
       {/* Card fill — no stroke; drop-shadow filter on the SVG element provides
@@ -1029,10 +1034,26 @@ export function VendorListingMockup({ className }: Common) {
         preserveAspectRatio="xMidYMid slice"
       />
 
-      {/* Logo badge — dark-mode aware */}
+      {/* Profile badge. The disc underneath is the backdrop the photo lands on
+          (and what shows while it loads), the photo fills it, and the hairline
+          ring goes on top so the edge stays crisp in both modes.
+
+          A portrait rather than a work shot: the badge renders at ~44px, and a
+          bouquet or a venue turns to mush at that size while a face still
+          resolves. Same placeholder convention as the cover above — swap the
+          href for a real vendor's photo before launch. */}
       <g className="text-white dark:text-umber-700">
         <circle cx="40" cy="92" r="22" fill="currentColor" />
       </g>
+      <image
+        href="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=176&h=176&fit=crop&crop=faces&q=80"
+        x="18"
+        y="70"
+        width="44"
+        height="44"
+        clipPath="url(#vendor-avatar-clip)"
+        preserveAspectRatio="xMidYMid slice"
+      />
       <g className="text-paper-300 dark:text-umber-600">
         <circle cx="40" cy="92" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
       </g>
