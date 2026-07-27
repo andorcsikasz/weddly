@@ -272,6 +272,19 @@ export default function SupplierDetailPage() {
     void refresh();
   }, [refresh]);
 
+  // Count a profile open. Keyed on the RESOLVED listing id (`v12` /
+  // `aranybastya`), not the route param: a pretty slug would land the event on
+  // an id no listing owns and get dropped by the ingest whitelist. Same event
+  // the public `/vendors/:id` page fires, so the vendor's reach number counts a
+  // logged-in couple opening the profile exactly like an anonymous visitor.
+  // Admins are skipped: moderation traffic would inflate the reach number we
+  // show the vendor. Fire-and-forget; a failed ping is never worth surfacing.
+  const viewedId = detail?.id;
+  useEffect(() => {
+    if (!viewedId || isAdmin) return;
+    supplierApi.recordEvents([{ supplier_id: viewedId, type: "view" }]).catch(() => undefined);
+  }, [viewedId, isAdmin]);
+
   // Wedding date (busy-calendar default month) + couple id (keys the saved
   // shortlist). Fetched once, best-effort.
   useEffect(() => {

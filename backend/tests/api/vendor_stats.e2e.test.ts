@@ -6,7 +6,8 @@
 // admin approve → claim start/verify/complete), then drives bookings through
 // the admin inquiry endpoints to assert the rollup: inquiry counts, status
 // breakdown, upcoming confirmed events, blocked-date count, listing
-// completeness, and tracked revenue (sum of recorded deposits).
+// completeness, tracked revenue (sum of recorded deposits), and the profile-view
+// counters the vendor's own funnel is built on.
 
 import "../setup";
 
@@ -316,6 +317,58 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     });
     expect(r.status).toBe(200);
     expect(r.data.reviews_recent).toBe(1);
+  });
+
+  test("views count profile opens only, scoped to the vendor's own listings", async () => {
+    wipeAll();
+    const mine = await bootstrapVendor("stats-views");
+    // A second claimed listing nobody should be credited for.
+    const { listingId: otherListing } = await makeApprovedListing(
+      "owner-stats-views-other@weddly.test",
+      "vendor-stats-views-other@weddly.test",
+      "Other Studio",
+    );
+
+    // Two profile opens on my listing, plus the noise that must NOT count:
+    // a directory-list impression, and a view on someone else's card.
+    const ingest = await req<{ recorded: number }>("POST", "/api/suppliers/events", {
+      events: [
+        { supplier_id: mine.listingId, type: "view" },
+        { supplier_id: mine.listingId, type: "view" },
+        { supplier_id: mine.listingId, type: "impression" },
+        { supplier_id: mine.listingId, type: "impression" },
+        { supplier_id: otherListing, type: "view" },
+      ],
+    });
+    expect(ingest.status).toBe(200);
+    expect(ingest.data.recorded).toBe(5);
+
+    // One more view, backdated past both trailing windows. Written straight to
+    // the table because the ingest always stamps "now".
+    db.prepare(
+      `INSERT INTO supplier_events (supplier_id, event_type, user_id, couple_id, created_at)
+       VALUES (?, 'view', NULL, NULL, ?)`,
+    ).run(mine.listingId, Date.now() - 40 * 86_400_000);
+
+    const r = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: mine.vendorToken,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.views_total).toBe(3);
+    expect(r.data.views_30d).toBe(2);
+    expect(r.data.views_7d).toBe(2);
+  });
+
+  test("a vendor with no events at all reports zero views", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("stats-views-empty");
+    const r = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: vendorToken,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.views_total).toBe(0);
+    expect(r.data.views_30d).toBe(0);
+    expect(r.data.views_7d).toBe(0);
   });
 
   test("anon → 401, couple-role → 403", async () => {

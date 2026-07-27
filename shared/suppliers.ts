@@ -579,11 +579,19 @@ export interface SupplierCountryCount {
 
 // ─── Visit analytics ────────────────────────────────────────────────────────
 
-/** Public-side telemetry events the admin directory aggregates. Kept
- *  intentionally small — three signals cover "did someone see this card"
- *  (view), "did they click through to the supplier's site" (website_click)
- *  and "did they pick up the phone" (phone_click). */
-export type SupplierEventType = "view" | "website_click" | "phone_click";
+/** Public-side telemetry events the admin directory aggregates.
+ *
+ *  `view` is a PROFILE OPEN: somebody landed on this supplier's own page
+ *  (`/vendors/{id}` publicly, `/app/suppliers/{id}` as a couple). `impression`
+ *  is the far cheaper signal of a card merely appearing in a directory list.
+ *  The two used to share the `view` type, which made "views" mean "how many
+ *  times the catalogue was loaded in this country": the same number for every
+ *  supplier in it, and useless the moment we show it to the vendor. Splitting
+ *  them is what lets `views_*` be quoted as "this many people opened your
+ *  profile". Rows written before the split are `view` regardless, so lifetime
+ *  counters carry some legacy impression noise; the trailing windows heal
+ *  themselves. */
+export type SupplierEventType = "view" | "impression" | "website_click" | "phone_click";
 
 export interface SupplierEventInput {
   supplier_id: string;
@@ -598,6 +606,10 @@ export interface SupplierAnalytics {
   views_total: number;
   views_30d: number;
   views_7d: number;
+  /** Directory-list appearances (see `SupplierEventType`). Counted separately
+   *  from views so a listing that nobody opens can't look popular. */
+  impressions_total: number;
+  impressions_30d: number;
   website_clicks_total: number;
   website_clicks_30d: number;
   phone_clicks_total: number;

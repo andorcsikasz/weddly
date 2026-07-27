@@ -1,16 +1,25 @@
 // Vendor stats — the analytics surface for a role='vendor' user at /vendor/stats.
 // Renders inside VendorShell. Reads the rollup from vendorStatsApi.get() and the
 // derived plan/feature flags from vendorBillingApi.get(). FREE-tier vendors see
-// the summary KPI numbers (inquiry counts, revenue tracked, blocked dates) plus a
-// graceful upgrade CTA in place of the detailed analytics; PRO-tier vendors
-// additionally see the inquiries-over-time comparison, the by-status donut, and
-// the upcoming events list.
+// the summary KPI numbers (profile views, inquiry counts, revenue tracked,
+// blocked dates) plus a graceful upgrade CTA in place of the detailed analytics;
+// PRO-tier vendors additionally see the inquiries-over-time comparison, the
+// by-status donut, and the views-to-inquiries-to-bookings funnel.
 // No real chart library - the donut and the trend bars are hand-rolled from
 // design tokens. The trend chart buckets the rollup's sparse per-day series
 // (stats.inquiries_by_day) into daily / weekly / monthly bars per the selected
 // range pill.
 
-import { BarChart3, CalendarClock, Inbox, Info, Lock, RefreshCw, TrendingUp } from "lucide-react";
+import {
+  BarChart3,
+  CalendarClock,
+  Eye,
+  Inbox,
+  Info,
+  Lock,
+  RefreshCw,
+  TrendingUp,
+} from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
@@ -105,10 +114,18 @@ export default function VendorStatsPage() {
     }));
   const statusTotal = statusSegments.reduce((sum, s) => sum + s.count, 0);
 
-  // Conversion: how many inquiries became confirmed bookings.
+  // Conversion: profile views to inquiries to confirmed bookings. Each stage's
+  // displayed percentage is its conversion from the stage ABOVE it; the bar
+  // length is its share of the funnel top.
+  //
+  // The top is max(views, inquiries), not views: view tracking is younger than
+  // the booking table, and a couple can arrive from a shared link we never
+  // counted, so inquiries can legitimately exceed views. Taking the max keeps
+  // the funnel monotonic instead of drawing a second bar longer than the first.
   const confirmedCount = stats.by_status.confirmed ?? 0;
-  const conversionRate =
-    stats.inquiries_total > 0 ? Math.round((confirmedCount / stats.inquiries_total) * 100) : 0;
+  const funnelTop = Math.max(stats.views_total, stats.inquiries_total);
+  const share = (n: number) => (funnelTop > 0 ? Math.round((n / funnelTop) * 100) : 0);
+  const rate = (n: number, of: number) => (of > 0 ? Math.round((n / of) * 100) : 0);
 
   return (
     <div className="flex animate-fade-in flex-col gap-5">
@@ -169,7 +186,11 @@ export default function VendorStatsPage() {
             </h2>
             {statusTotal === 0 ? (
               <div className="flex flex-col items-center gap-3 py-2">
-                <StatusDonut segments={[]} total={0} centerLabel={t("vendor.stats.inquiries")} />
+                <StatusDonut
+                  segments={[]}
+                  total={0}
+                  centerLabel={t("vendor.stats.unit_inquiries")}
+                />
                 <p className="text-center text-sm text-ink-500 dark:text-paper-400">
                   {t("vendor.stats.status_empty")}
                 </p>
@@ -179,7 +200,7 @@ export default function VendorStatsPage() {
                 <StatusDonut
                   segments={statusSegments}
                   total={statusTotal}
-                  centerLabel={t("vendor.stats.inquiries")}
+                  centerLabel={t("vendor.stats.unit_inquiries")}
                 />
                 {/* Legend rows deep-link into the client list pre-filtered to
                     that status. */}
@@ -225,10 +246,21 @@ export default function VendorStatsPage() {
               locale={locale}
               stages={[
                 {
+                  key: "views",
+                  label: t("vendor.stats.views"),
+                  value: stats.views_total,
+                  share: share(stats.views_total),
+                  sub: t("vendor.stats.views_recent", {
+                    n: stats.views_30d.toLocaleString(intlLocale(locale)),
+                  }),
+                  fill: "bg-chart-taupe",
+                },
+                {
                   key: "inquiries",
                   label: t("vendor.stats.inquiries"),
                   value: stats.inquiries_total,
-                  pct: 100,
+                  share: share(stats.inquiries_total),
+                  rate: rate(stats.inquiries_total, stats.views_total),
                   fill: "bg-steel-600 dark:bg-steel-500",
                   to: "/vendor/clients",
                 },
@@ -236,7 +268,8 @@ export default function VendorStatsPage() {
                   key: "confirmed",
                   label: t("vendor.stats.conversion_confirmed"),
                   value: confirmedCount,
-                  pct: conversionRate,
+                  share: share(confirmedCount),
+                  rate: rate(confirmedCount, stats.inquiries_total),
                   fill: "bg-sage-600 dark:bg-sage-500",
                   to: "/vendor/clients?status=confirmed",
                 },
@@ -246,7 +279,22 @@ export default function VendorStatsPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {/* Five cards on a three-column track: the last one spans the spare
+              column so neither the mobile nor the desktop row ends ragged. It
+              is the money card on purpose, since a formatted amount is the
+              widest value here. Views lead: on FREE the vendor cannot be
+              contacted directly, so "people are looking at you" is the number
+              that makes the upgrade card underneath mean something. */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 [&>*:last-child]:col-span-2">
+            <StatCard
+              icon={<Eye size={18} aria-hidden="true" />}
+              label={t("vendor.stats.views")}
+              value={<AnimatedNumber value={stats.views_total} />}
+              sub={t("vendor.stats.views_recent", {
+                n: stats.views_30d.toLocaleString(intlLocale(locale)),
+              })}
+              help={t("vendor.stats.views_help")}
+            />
             <StatCard
               icon={<Inbox size={18} aria-hidden="true" />}
               label={t("vendor.stats.inquiries")}
@@ -261,6 +309,12 @@ export default function VendorStatsPage() {
               to="/vendor/clients"
             />
             <StatCard
+              icon={<CalendarClock size={18} aria-hidden="true" />}
+              label={t("vendor.stats.blocked_dates")}
+              value={<AnimatedNumber value={stats.blocked_dates_count} />}
+              to="/vendor/calendar"
+            />
+            <StatCard
               icon={<BarChart3 size={18} aria-hidden="true" />}
               label={t("vendor.stats.revenue")}
               value={
@@ -270,12 +324,6 @@ export default function VendorStatsPage() {
                 />
               }
               help={t("vendor.stats.revenue_help")}
-            />
-            <StatCard
-              icon={<CalendarClock size={18} aria-hidden="true" />}
-              label={t("vendor.stats.blocked_dates")}
-              value={<AnimatedNumber value={stats.blocked_dates_count} />}
-              to="/vendor/calendar"
             />
           </div>
           <UpgradeAnalyticsCard
@@ -350,6 +398,10 @@ function StatCard({
 // itself is rotated -90deg so the first arc starts at 12 o'clock; the total sits
 // in the middle. An empty `segments` array renders just the muted base ring as a
 // skeleton-like placeholder.
+//
+// `centerLabel` wants the UNIT word ("megkeresés", "inquiries"), not the plural
+// heading: it sits directly under a numeral, where Hungarian takes the singular,
+// and the plural was wide enough to crowd the 128px ring.
 function StatusDonut({
   segments,
   total,
@@ -561,22 +613,29 @@ interface FunnelStage {
   label: string;
   /** Raw count for this stage. */
   value: number;
-  /** Bar length as a percent of the funnel top (0..100). Stage 1 is 100; later
-   *  stages carry their conversion share, so the bar lengths ARE the funnel. */
-  pct: number;
+  /** Bar length as a percent of the funnel top (0..100), so the bar lengths ARE
+   *  the funnel and the empty remainder of a track IS the drop-off. */
+  share: number;
+  /** Conversion from the stage ABOVE, shown next to the count. Omitted on the
+   *  first stage, which has nothing to convert from. Kept separate from
+   *  `share`: with three stages the interesting number is "how many of the
+   *  people who saw me wrote", not "how many of the top of the funnel". */
+  rate?: number;
+  /** Optional second line under the label, e.g. the trailing-30-day count. */
+  sub?: string;
   /** Tailwind fill classes (light + dark) for the bar. One hue per stage. */
   fill: string;
   /** Optional deep-link into the matching client list. */
   to?: string;
 }
 
-/** Conversion funnel: inquiries → confirmed bookings. Left-aligned bars whose
- *  length encodes each stage against the top of the funnel, so the empty
- *  remainder of a track shows the drop-off at a glance — one shape in place of
- *  three flat numbers. Magnitude → single hue per stage (not a categorical
- *  palette): counts live in text tokens, never on the fill, and every row is
- *  directly labeled so identity is never colour-alone. Rows deep-link like the
- *  old cells did. */
+/** Conversion funnel: profile views to inquiries to confirmed bookings. The
+ *  views stage is the honest top of the funnel: it answers "how many people
+ *  have seen me" and turns the two counts below it into a rate rather than a
+ *  pair of bare numbers. Magnitude means a single hue per stage (not a
+ *  categorical palette): counts live in text tokens, never on the fill, and
+ *  every row is directly labeled so identity is never colour-alone. Rows
+ *  deep-link into the matching client list where one exists. */
 function ConversionFunnel({
   stages,
   locale,
@@ -587,24 +646,31 @@ function ConversionFunnel({
   const nf = (n: number) => n.toLocaleString(intlLocale(locale));
   return (
     <ul className="flex flex-col gap-3">
-      {stages.map((s, i) => {
+      {stages.map((s) => {
         // Keep a sliver visible for a non-zero stage so a tiny count never
         // collapses to an invisible bar; a genuine zero stays empty.
-        const width = s.value > 0 ? Math.max(s.pct, 4) : 0;
+        const width = s.value > 0 ? Math.max(s.share, 4) : 0;
         const body = (
           <>
             <div className="mb-1 flex items-baseline justify-between gap-3">
-              <span className="text-sm font-medium text-ink-700 dark:text-paper-200">
-                {s.label}
+              <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                <span className="text-sm font-medium text-ink-700 dark:text-paper-200">
+                  {s.label}
+                </span>
+                {s.sub && (
+                  <span className="text-xs text-ink-500 tabular-nums dark:text-paper-400">
+                    {s.sub}
+                  </span>
+                )}
               </span>
-              <span className="flex items-baseline gap-1.5">
+              <span className="flex shrink-0 items-baseline gap-1.5">
                 <span className="text-sm font-semibold text-ink-900 tabular-nums dark:text-paper-50">
                   {nf(s.value)}
                 </span>
-                {/* Show the conversion share on every stage after the first. */}
-                {i > 0 && (
+                {/* Conversion from the stage above, where there is one. */}
+                {s.rate !== undefined && (
                   <span className="text-xs font-medium text-ink-500 tabular-nums dark:text-paper-400">
-                    {s.pct}%
+                    {s.rate}%
                   </span>
                 )}
               </span>

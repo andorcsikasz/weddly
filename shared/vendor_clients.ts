@@ -162,6 +162,13 @@ export interface VendorStats {
    *  oldest first; days with zero inquiries are omitted. Powers the stats
    *  trend chart + range filter. */
   inquiries_by_day: { date: string; count: number }[];
+  /** Profile opens across every listing this vendor account owns: the top of
+   *  the vendor's funnel, and the honest answer to "how many people have seen
+   *  me". `view` events only, so a card scrolling past in the directory does
+   *  NOT count (see SupplierEventType). Lifetime + the two trailing windows. */
+  views_total: number;
+  views_30d: number;
+  views_7d: number;
   blocked_dates_count: number;
   /** Published, non-deleted reviews on the vendor's listing from the last 30
    *  days. Feeds the header bell's "new review" row; the bell's own per-device

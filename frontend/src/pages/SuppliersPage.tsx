@@ -648,12 +648,17 @@ export default function SuppliersPage() {
           setSelectionState(readSelection(id));
           setSavedState(readSavedStore(id));
         }
-        // One-shot view ping per mount: tell the analytics ingest which
+        // One-shot IMPRESSION ping per mount: tell the analytics ingest which
         // directory cards this session actually sees. Scope it to the country
         // that's initially shown (the URL param if present, else the couple's
         // own country) so a session isn't credited views for the whole EU when
         // it only ever looked at one country. We swallow errors — the page
         // renders fine even if the ingest is down.
+        //
+        // NOT a `view`: this fires for every card in the country pool, so as a
+        // view it made "views" mean "catalogue page-loads", identical for every
+        // supplier in the country. Profile opens are pinged from the detail
+        // pages instead, which is what the vendor's own stats quote.
         const initialCountry = params.get("country") ?? couple.couple?.country ?? "";
         const initialScope = initialCountry && initialCountry !== "all" ? initialCountry : null;
         const shown = initialScope
@@ -661,7 +666,7 @@ export default function SuppliersPage() {
           : dir.suppliers;
         if (shown.length > 0) {
           supplierApi
-            .recordEvents(shown.map((s) => ({ supplier_id: s.id, type: "view" })))
+            .recordEvents(shown.map((s) => ({ supplier_id: s.id, type: "impression" })))
             .catch(() => undefined);
         }
       })

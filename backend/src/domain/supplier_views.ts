@@ -22,6 +22,7 @@ import { DIRECTORY } from "./suppliers_data";
 
 const VALID_EVENT_TYPES: ReadonlySet<SupplierEventType> = new Set([
   "view",
+  "impression",
   "website_click",
   "phone_click",
 ]);
@@ -95,6 +96,9 @@ export function aggregateAnalytics(): Map<string, SupplierAnalytics> {
       a.views_total++;
       if (r.created_at >= cut30) a.views_30d++;
       if (r.created_at >= cut7) a.views_7d++;
+    } else if (r.event_type === "impression") {
+      a.impressions_total++;
+      if (r.created_at >= cut30) a.impressions_30d++;
     } else if (r.event_type === "website_click") {
       a.website_clicks_total++;
       if (r.created_at >= cut30) a.website_clicks_30d++;
@@ -114,11 +118,45 @@ function emptyAnalytics(): SupplierAnalytics {
     views_total: 0,
     views_30d: 0,
     views_7d: 0,
+    impressions_total: 0,
+    impressions_30d: 0,
     website_clicks_total: 0,
     website_clicks_30d: 0,
     phone_clicks_total: 0,
     last_event_at: null,
   };
+}
+
+/** Profile-open counts for a specific set of listing ids, in the three windows
+ *  the vendor's own stats page quotes. Unlike `aggregateAnalytics`, which scans
+ *  the whole table to build the admin directory, this is one indexed lookup per
+ *  vendor request (`idx_supplier_events_supplier`): the vendor dashboard is a
+ *  hot path and must not pay for everyone else's events.
+ *
+ *  Deliberately counts `view` only: an `impression` means the vendor's card
+ *  scrolled past in a list, which is not "somebody looked at you". */
+export function viewCountsForListings(ids: string[]): {
+  total: number;
+  d30: number;
+  d7: number;
+} {
+  if (ids.length === 0) return { total: 0, d30: 0, d7: 0 };
+  const ts = now();
+  const placeholders = ids.map(() => "?").join(",");
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS total,
+              COALESCE(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END), 0) AS d30,
+              COALESCE(SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END), 0) AS d7
+         FROM supplier_events
+        WHERE event_type = 'view' AND supplier_id IN (${placeholders})`,
+    )
+    .get(ts - 30 * 24 * 60 * 60 * 1000, ts - 7 * 24 * 60 * 60 * 1000, ...ids) as {
+    total: number;
+    d30: number;
+    d7: number;
+  };
+  return { total: row.total, d30: row.d30, d7: row.d7 };
 }
 
 /** Roll several listings' analytics into one combined block. A vendor account
@@ -136,6 +174,8 @@ export function sumAnalytics(
     acc.views_total += a.views_total;
     acc.views_30d += a.views_30d;
     acc.views_7d += a.views_7d;
+    acc.impressions_total += a.impressions_total;
+    acc.impressions_30d += a.impressions_30d;
     acc.website_clicks_total += a.website_clicks_total;
     acc.website_clicks_30d += a.website_clicks_30d;
     acc.phone_clicks_total += a.phone_clicks_total;

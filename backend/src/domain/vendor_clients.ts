@@ -28,6 +28,7 @@ import { getVendorAccountByOwnerUserId, type VendorAccountRow } from "./vendor_a
 import { getVendorSub, toVendorBilling } from "./vendor_billing";
 import { getBookingById, type BookingRow } from "./supplier_bookings";
 import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "./listings";
+import { viewCountsForListings } from "./supplier_views";
 import type { Listing } from "@shared/listings";
 
 /** Resolve `requireAuth(ctx)` to the calling vendor's account, or throw the
@@ -400,6 +401,15 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
           .get(listing.id, nowMs - THIRTY_DAYS_MS) as { n: number }
       ).n
     : 0;
+  // Reach. Summed across EVERY listing the account owns (its own `v{N}` card
+  // plus anything it claimed), same rule as the admin vendor row: a vendor
+  // thinks in terms of "my profile", not one row per directory source.
+  const listingIds = (
+    db.prepare("SELECT id FROM listings WHERE vendor_account_id = ?").all(accountId) as {
+      id: string;
+    }[]
+  ).map((r) => r.id);
+  const views = viewCountsForListings(listingIds);
   const sub = getVendorSub(accountId);
   const billing = sub
     ? toVendorBilling(sub)
@@ -424,6 +434,9 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
     by_status: byStatus,
     upcoming,
     inquiries_by_day: inquiriesByDay,
+    views_total: views.total,
+    views_30d: views.d30,
+    views_7d: views.d7,
     blocked_dates_count: blocked.n,
     reviews_recent: reviewsRecent,
     listing_completeness: listingCompleteness(listing),
