@@ -33,6 +33,8 @@ import { startEmailWorker } from "./domain/emails/worker";
 import { startPurgeWorker } from "./domain/purge";
 import { startBackupWorker } from "./domain/backup";
 import { startGoogleCalendarWorker } from "./domain/google_calendar_worker";
+import { backfillVendorPoints } from "./domain/vendor_points";
+import { startVendorPointsWorker } from "./domain/vendor_points_worker";
 import { startWishlistImageBackfill } from "./domain/wishlist_image_backfill";
 import { startListingImageBackfill } from "./domain/listing_image_backfill";
 import { startListingGalleryBackfill } from "./domain/listing_gallery_backfill";
@@ -96,6 +98,7 @@ import { registerVendorListingRoutes } from "./routes/vendor_listing";
 import { registerVendorAccountRoutes } from "./routes/vendor_account";
 import { registerVendorAvailabilityRoutes } from "./routes/vendor_availability";
 import { registerVendorClientsRoutes } from "./routes/vendor_clients";
+import { registerVendorPointsRoutes } from "./routes/vendor_points";
 import { registerVendorStatsRoutes } from "./routes/vendor_stats";
 import { registerVendorTaskRoutes } from "./routes/vendor_tasks";
 import { registerPlannerBillingRoutes } from "./routes/planner_billing";
@@ -284,6 +287,7 @@ registerVendorAccountRoutes(router);
 registerVendorAvailabilityRoutes(router);
 registerVendorClientsRoutes(router);
 registerVendorStatsRoutes(router);
+registerVendorPointsRoutes(router);
 registerVendorTaskRoutes(router);
 registerVendorBillingRoutes(router);
 registerPlannerBillingRoutes(router);
@@ -823,6 +827,11 @@ if (process.env.NODE_ENV !== "test") {
   // Reconcile couples' Google Calendars whose events changed. No-op unless the
   // Google Calendar integration is configured (GOOGLE_CALENDAR_ENABLED).
   startGoogleCalendarWorker();
+  // Drain vendor domain events into the Weddly Points ledger, then replay what
+  // existing reviews / bookings / profiles would have earned. The backfill is
+  // idempotent (dedupe_key), so booting twice awards nothing twice.
+  startVendorPointsWorker();
+  backfillVendorPoints();
   // Tidy any abandoned demo couples left over from a previous boot — keeps
   // the table sparse even when /api/demo/start hasn't been hit in days.
   runDemoBootSweep();

@@ -19,6 +19,7 @@ import {
   SUPPLIER_REVIEW_TAGS,
 } from "@shared/suppliers";
 import { db, now } from "../db";
+import { emitVendorEventForSupplier } from "./vendor_points";
 import { shortenName } from "./verified_visitors";
 
 /** How a review's author is attributed. `admin` = editorial ("Weddly editors",
@@ -309,6 +310,9 @@ export function createReview(args: CreateReviewArgs): SupplierReview {
       for (const t of args.tags) stmt.run(reviewId, t);
     }
     recomputeSupplierAggregate(args.supplierId);
+    // Weddly Points: announce the collection, never the reward. The engine
+    // decides what a review is worth, and deliberately never sees the rating.
+    emitVendorEventForSupplier(args.supplierId, "review.created", { review_id: reviewId });
     return reviewId;
   });
   const reviewId = txn();

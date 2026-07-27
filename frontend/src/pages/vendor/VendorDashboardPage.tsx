@@ -23,6 +23,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
+import type { VendorPointsStatus } from "@shared/vendor_points";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { AnimatedNumber } from "../../components/AnimatedNumber";
 import {
@@ -30,7 +31,14 @@ import {
   SetupChecklist,
   SetupLinger,
 } from "../../components/VendorSetupProgress";
-import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/endpoints";
+import { ProgressRing } from "../../components/ProgressRing";
+import { TierBadge } from "../../components/TierBadge";
+import {
+  vendorBillingApi,
+  vendorListingApi,
+  vendorPointsApi,
+  vendorStatsApi,
+} from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useAuth } from "../../lib/auth";
 import { useT } from "../../lib/i18n";
@@ -59,6 +67,10 @@ export default function VendorDashboardPage() {
   // The listing-completeness percent the vendor last dismissed the alert at.
   // Re-shows the alert if the percent later changes (read from localStorage so
   // the dismissal survives reloads).
+  // Weddly Points. Loaded separately from stats + billing on purpose: the tier
+  // strip is a nice-to-have, and a points outage must not take the dashboard's
+  // real numbers down with it (a failed fetch just drops the strip).
+  const [points, setPoints] = useState<VendorPointsStatus | null>(null);
   const [dismissedPct, setDismissedPct] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const raw = window.localStorage.getItem(COMPLETENESS_DISMISS_KEY);
@@ -90,6 +102,22 @@ export default function VendorDashboardPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    vendorPointsApi
+      .get()
+      .then((p) => {
+        if (!cancelled) setPoints(p);
+      })
+      .catch(() => {
+        // Non-critical surface: no points strip is better than an error state
+        // on a dashboard whose real numbers loaded fine.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Best-effort business name + hero image for the greeting and action cards. A
   // vendor without a listing yet falls back to their account name, then the
@@ -200,6 +228,7 @@ export default function VendorDashboardPage() {
 
   return (
     <div className="flex animate-fade-in flex-col gap-5">
+      {points && <PointsStrip points={points} />}
       {/* Completeness alert strip - the full setup prompt, shown while the
           listing is incomplete and not collapsed. A live progress ring replaces
           the old static sparkle so the percent reads at a glance. SetupLinger
@@ -541,5 +570,66 @@ function DashboardSkeleton({ title }: { title: string }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Weddly Points strip: where the vendor stands and what the next tier is
+ *  worth. Read-only in phase 1 — nothing here can spend, claim or trigger
+ *  anything, it reports what the ledger already says.
+ *
+ *  Deliberately number-first: the points total is the hero figure, with the
+ *  ring carrying the "how far to the next tier" that a bare percentage in text
+ *  never communicates as well. The perks line is what stops the tier from
+ *  reading as a sticker — it names what the vendor gets, not that they are
+ *  special. */
+function PointsStrip({ points }: { points: VendorPointsStatus }) {
+  const { t } = useT();
+  const atTop = points.next_tier === null;
+  return (
+    <section className="flex flex-wrap items-center gap-4 rounded-2xl border border-paper-300 bg-white p-4 dark:border-umber-600 dark:bg-umber-900">
+      <ProgressRing
+        pct={points.progress * 100}
+        size={56}
+        stroke={5}
+        tone={atTop ? "complete" : "active"}
+        label={t("vendor.points.ring_label")}
+      >
+        <TrendingUp size={18} className="text-steel-600 dark:text-steel-300" aria-hidden="true" />
+      </ProgressRing>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <p className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+            {t("vendor.points.label")}
+          </p>
+          <TierBadge tier={points.tier} size="sm" />
+        </div>
+        <p className="font-grotesk text-3xl font-semibold leading-none text-ink-900 dark:text-paper-50">
+          <AnimatedNumber value={points.points} />
+        </p>
+        <p className="text-xs text-ink-500 dark:text-umber-300">
+          {atTop
+            ? t("vendor.points.at_top")
+            : t("vendor.points.to_next", {
+                points: String(points.points_to_next),
+                tier: t(`vendor.points.tier.${points.next_tier}`),
+              })}
+        </p>
+      </div>
+      {points.perks.profile_badge && (
+        <ul className="flex flex-col gap-1 text-xs text-ink-600 dark:text-umber-200">
+          {points.perks.search_boost > 0 && <li>{t("vendor.points.perk_search")}</li>}
+          {points.perks.extra_lead_credits > 0 && (
+            <li>{t("vendor.points.perk_leads", { n: String(points.perks.extra_lead_credits) })}</li>
+          )}
+          {points.perks.subscription_discount_pct > 0 && (
+            <li>
+              {t("vendor.points.perk_discount", {
+                pct: String(points.perks.subscription_discount_pct),
+              })}
+            </li>
+          )}
+        </ul>
+      )}
+    </section>
   );
 }

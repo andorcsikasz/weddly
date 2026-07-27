@@ -726,6 +726,21 @@ const es: LocaleMessages = {
       step_capacity: "Capacidad",
       step_packages: "Paquetes",
     },
+    points: {
+      label: "Puntos Weddly",
+      ring_label: "Progreso hasta el siguiente nivel",
+      to_next: "{points} puntos para {tier}",
+      at_top: "Estás en el nivel más alto",
+      tier: {
+        blue: "Azul",
+        gold: "Oro",
+        platinum: "Platino",
+        diamond: "Diamante",
+      },
+      perk_search: "Más arriba en las búsquedas",
+      perk_leads: "+{n} solicitudes gratuitas",
+      perk_discount: "{pct}% de descuento en tu suscripción",
+    },
     dashboard: {
       page_title: "Panel",
       page_body: "Un resumen de tus solicitudes, tus próximos eventos y tu ficha.",

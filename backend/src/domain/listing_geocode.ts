@@ -11,7 +11,7 @@
 // public fair-use geocoder (Photon/OSM, the same one the address autocomplete
 // uses), so the calls are throttled and driven by
 // `bun backend/scripts/geocode_listings.ts`. `geo_synced_at` records the last
-// attempt — including misses — so repeated runs walk forward instead of
+// attempt: including misses: so repeated runs walk forward instead of
 // hammering the same unresolvable address.
 
 import { suggestAddresses } from "../lib/address_suggest";
@@ -37,7 +37,7 @@ export interface GeocodeResult {
   attempted: number;
   /** Listings whose lat/lng we wrote. */
   placed: number;
-  /** Lookups with no usable answer — stamped and retried on a later run. */
+  /** Lookups with no usable answer: stamped and retried on a later run. */
   missed: number;
 }
 
@@ -66,7 +66,7 @@ function bareCity(city: string): string {
 
 /** Geocode up to `limit` un-placed listings. Never touches a row that already
  *  has coordinates, and only accepts a hit that lands in the town the listing
- *  claims — a wrong pin is worse than no pin, so an unverifiable answer leaves
+ *  claims: a wrong pin is worse than no pin, so an unverifiable answer leaves
  *  the row alone (it just keeps missing from the map). */
 export async function geocodeListings(limit: number): Promise<GeocodeResult> {
   const candidates = db
@@ -106,7 +106,7 @@ export async function geocodeListings(limit: number): Promise<GeocodeResult> {
       if (h.lat == null || h.lng == null) return false;
       if (anchor) return haversineKm(anchor.lat, anchor.lng, h.lat, h.lng) <= MAX_KM_FROM_TOWN;
       // A postcode-level hit carries no `city`, so the label is the fallback
-      // check — it always spells the settlement out.
+      // check: it always spells the settlement out.
       return normalize(h.city ?? h.label).includes(normalize(town));
     });
     const ts = now();

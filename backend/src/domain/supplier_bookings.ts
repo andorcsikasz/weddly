@@ -21,6 +21,7 @@ import {
 } from "@shared/vendor_availability";
 import { db, now } from "../db";
 import { isVendorEntitled, recordVendorLeadCredit } from "./vendor_billing";
+import { emitVendorEvent } from "./vendor_points";
 import { getVendorWeekdays } from "./vendor_availability_settings";
 
 const VALID_STATUSES: ReadonlySet<BookingStatus> = new Set([
@@ -363,11 +364,25 @@ export function listBookingsForCouple(coupleId: number): SupplierBooking[] {
 export function updateBookingStatus(id: number, status: BookingStatus): SupplierBooking | null {
   if (!VALID_STATUSES.has(status)) return null;
   const ts = now();
+  // `first_response_at` is write-once: COALESCE keeps the original stamp, so a
+  // vendor who later flips 'confirmed' → 'cancelled' can't reset the clock and
+  // re-earn the fast-reply award. `updated_at` moves as it always did.
   const info = db
-    .prepare("UPDATE supplier_bookings SET status = ?, updated_at = ? WHERE id = ?")
-    .run(status, ts, id);
+    .prepare(
+      `UPDATE supplier_bookings
+          SET status = ?, updated_at = ?, first_response_at = COALESCE(first_response_at, ?)
+        WHERE id = ?`,
+    )
+    .run(status, ts, ts, id);
   if (info.changes === 0) return null;
   const row = db.prepare("SELECT * FROM supplier_bookings WHERE id = ?").get(id) as BookingRow;
+  // Two separate facts, two separate events: how fast the vendor reacted, and
+  // whether this became a confirmed booking. The engine decides what each is
+  // worth (and the fast-reply rule re-reads the timestamps server-side).
+  emitVendorEvent(row.vendor_account_id, "booking.responded", { booking_id: id });
+  if (status === "confirmed") {
+    emitVendorEvent(row.vendor_account_id, "booking.confirmed", { booking_id: id });
+  }
   return toBooking(row);
 }
 

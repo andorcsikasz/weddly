@@ -2226,3 +2226,51 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_oncs_campaign_email ON onboarding_campaign
 CREATE INDEX IF NOT EXISTS idx_oncs_campaign_status ON onboarding_campaign_sends(campaign_id, status);
 CREATE INDEX IF NOT EXISTS idx_oncs_sent_at ON onboarding_campaign_sends(sent_at);
 CREATE INDEX IF NOT EXISTS idx_oncs_user ON onboarding_campaign_sends(user_id);
+
+-- ── Weddly Points: the vendor tier currency ─────────────────────────────────
+-- APPEND-ONLY ledger. The total, the tier and (from phase 2) quest progress are
+-- all derived by replaying these rows; there is deliberately no mutable counter
+-- anywhere, so a bug in the engine can be fixed and replayed rather than
+-- leaving a drifted number nobody can audit. Points rules + amounts live in
+-- shared/vendor_points.ts.
+--
+-- `dedupe_key` is what makes the engine safe to re-run: it is a stable
+-- description of the thing that earned the points ("review:412",
+-- "profile:75", "fast_reply:88"), so the retroactive backfill, a redelivered
+-- outbox event and a manual replay all collapse onto the same row instead of
+-- paying three times. Rows are never updated or deleted; an admin correction is
+-- a NEW row with negative points.
+CREATE TABLE IF NOT EXISTS vendor_points_ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL,                                    -- VendorPointsEvent
+  points INTEGER NOT NULL,                                     -- may be negative (admin_adjustment)
+  dedupe_key TEXT NOT NULL,                                    -- stable per earning occurrence
+  created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_points_dedupe
+  ON vendor_points_ledger(vendor_account_id, dedupe_key);
+CREATE INDEX IF NOT EXISTS idx_vendor_points_vendor
+  ON vendor_points_ledger(vendor_account_id, created_at DESC);
+
+-- Domain-event outbox: the "bus" for a single-service Bun app. Feature code
+-- (reviews, bookings, listing edits) only ever INSERTs here; the points engine
+-- worker is the sole consumer and the sole writer of the ledger. That is what
+-- keeps points logic out of unrelated features — a route emits "this happened",
+-- never "add 15 points".
+--
+-- Rows are kept after processing (processed_at set) as a replay log; the purge
+-- sweep trims them by age. `attempts` + `last_error` make a poisonous event
+-- visible instead of silently stalling the queue.
+CREATE TABLE IF NOT EXISTS vendor_event_outbox (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL,                                    -- 'review.created' | 'booking.confirmed' | …
+  payload_json TEXT,                                           -- small JSON: event-specific ids
+  created_at INTEGER NOT NULL,
+  processed_at INTEGER,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_vendor_outbox_pending
+  ON vendor_event_outbox(processed_at, id) WHERE processed_at IS NULL;

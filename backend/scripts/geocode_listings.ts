@@ -1,6 +1,6 @@
 // Put DB-backed listings (community submissions + registered vendors' own
 // cards) on the directory map by geocoding the address their submitter typed.
-// Curated entries are NOT touched here — their coords ship in
+// Curated entries are NOT touched here: their coords ship in
 // `suppliers_data.ts` (regenerate those with `scripts/geocode_directory.ts`).
 //
 // Usage:
@@ -16,7 +16,7 @@ import { geocodeListings } from "../src/domain/listing_geocode";
 
 const limit = Number.parseInt(process.argv[2] ?? "100", 10);
 if (!Number.isInteger(limit) || limit < 1) {
-  console.error(`Invalid limit "${process.argv[2]}" — pass a positive integer.`);
+  console.error(`Invalid limit "${process.argv[2]}": pass a positive integer.`);
   process.exit(1);
 }
 
@@ -26,6 +26,6 @@ console.log(
   `[geocode_listings] attempted ${r.attempted}, placed ${r.placed}, no usable hit ${r.missed}.`,
 );
 if (r.attempted === 0) {
-  console.log("[geocode_listings] nothing to do — every listing with an address is placed.");
+  console.log("[geocode_listings] nothing to do: every listing with an address is placed.");
 }
 process.exit(0);

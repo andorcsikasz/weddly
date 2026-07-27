@@ -14,10 +14,12 @@ import type { VendorListingStep } from "@shared/vendor_clients";
 import { listingCompletenessFor } from "@shared/vendor_clients";
 import { fireConfetti } from "../lib/confetti";
 import { useT } from "../lib/i18n";
+import { ProgressRing } from "./ProgressRing";
 
-/** Listing-setup completion ring. Pure tokenised SVG (no chart lib); it
- *  animates as the percent climbs and is shared by every surface that shows
- *  progress, so the number reads identically wherever it appears. */
+/** Listing-setup completion ring. Thin alias over the portal's single
+ *  {@link ProgressRing} — kept as a named export because half a dozen call
+ *  sites read better as "completeness ring", but there is deliberately only ONE
+ *  ring implementation now that tier and quest progress render the same shape. */
 export function CompletenessRing({
   pct,
   size = 20,
@@ -27,39 +29,7 @@ export function CompletenessRing({
   size?: number;
   stroke?: number;
 }) {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const clamped = Math.max(0, Math.min(100, pct));
-  const offset = circumference * (1 - clamped / 100);
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      aria-hidden="true"
-      className="-rotate-90 shrink-0"
-    >
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        strokeWidth={stroke}
-        className="stroke-steel-200 dark:stroke-steel-600/40"
-      />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        className="stroke-steel-600 transition-[stroke-dashoffset] duration-700 ease-out dark:stroke-steel-300"
-      />
-    </svg>
-  );
+  return <ProgressRing pct={pct} size={size} stroke={stroke} />;
 }
 
 // Completion choreography, in ms. A finished step doesn't just vanish: it ticks

@@ -702,6 +702,21 @@ const en: LocaleMessages = {
       step_capacity: "Capacity",
       step_packages: "Packages",
     },
+    points: {
+      label: "Weddly points",
+      ring_label: "Progress to the next tier",
+      to_next: "{points} points to {tier}",
+      at_top: "You're at the top tier",
+      tier: {
+        blue: "Blue",
+        gold: "Gold",
+        platinum: "Platinum",
+        diamond: "Diamond",
+      },
+      perk_search: "Higher in search",
+      perk_leads: "+{n} free inquiries",
+      perk_discount: "{pct}% off your subscription",
+    },
     dashboard: {
       page_title: "Dashboard",
       page_body: "An overview of your inquiries, upcoming events, and listing.",

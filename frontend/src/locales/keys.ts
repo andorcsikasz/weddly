@@ -937,6 +937,30 @@ export interface LocaleMessages {
       step_capacity: string;
       step_packages: string;
     };
+    /** Weddly Points: the vendor tier currency. Phase 1 is read-only — these
+     *  strings describe what the ledger already says, never an offer or a
+     *  claim the vendor has to act on. */
+    points: {
+      /** Small label above the hero number. */
+      label: string;
+      /** Accessible name of the tier progress ring. */
+      ring_label: string;
+      /** Receives `{points}` + `{tier}` — how far to the next tier. */
+      to_next: string;
+      /** Shown instead of `to_next` at the highest tier. */
+      at_top: string;
+      /** Tier identity names. Keyed by VendorTierKey. */
+      tier: {
+        blue: string;
+        gold: string;
+        platinum: string;
+        diamond: string;
+      };
+      /** Perk lines. `perk_leads` receives `{n}`, `perk_discount` `{pct}`. */
+      perk_search: string;
+      perk_leads: string;
+      perk_discount: string;
+    };
     dashboard: {
       page_title: string;
       page_body: string;

@@ -244,6 +244,7 @@ import type {
   VendorClientView,
   VendorStats,
 } from "@shared/vendor_clients";
+import type { VendorPointsStatus } from "@shared/vendor_points";
 import type {
   AdminVendorView,
   VendorAccount,
@@ -2683,6 +2684,13 @@ export const vendorClientsApi = {
 /** Vendor dashboard / stats rollup for the signed-in vendor's account. */
 export const vendorStatsApi = {
   get: () => apiFetch<VendorStats>("GET", "/api/vendor/stats"),
+};
+
+/** Weddly Points: the vendor's derived total, tier, perks and recent ledger.
+ *  Read-only by design — points are only ever written by the server-side engine
+ *  consuming domain events, never by a client call. */
+export const vendorPointsApi = {
+  get: () => apiFetch<VendorPointsStatus>("GET", "/api/vendor/points"),
 };
 
 /** Vendor billing snapshot + derived FREE/PRO plan + per-feature flags, plus

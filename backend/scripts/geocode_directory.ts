@@ -10,7 +10,7 @@
 // Why it exists: the directory map only ever drew entries that VENUE_COORDS (a
 // hand-kept table) covered, plus a town-centre fallback for the rest. That left
 // ~175 entries with no coordinate at all (invisible on the map) and stacked
-// every fallback entry of a town on one identical point — ~200 of them on the
+// every fallback entry of a town on one identical point: ~200 of them on the
 // Budapest centroid alone, where a single marker hid all but one.
 //
 // Two candidate groups, both requiring a street address on the entry:
@@ -109,7 +109,7 @@ for (const s of DIRECTORY) {
   const stacked = placed && (pointCounts.get(`${s.lat},${s.lng}`) ?? 0) > 1;
   // No address to work from: the town itself is the best honest answer, and
   // still beats being absent from the map. Only worth asking when the entry
-  // has no coordinate at all — a town-level entry that already resolved
+  // has no coordinate at all: a town-level entry that already resolved
   // through CITY_COORDS would just get the same answer back.
   if (!placed) candidates.push({ ...pick(s), reason: s.address ? "missing" : "town" });
   else if (stacked && s.address) candidates.push({ ...pick(s), reason: "stacked" });
@@ -160,7 +160,7 @@ for (const [i, c] of queue.entries()) {
     if (anchor) return haversineKm(anchor.lat, anchor.lng, h.lat, h.lng) <= MAX_KM_FROM_TOWN;
     // No town anchor to compare against: demand the geocoder agree on the town.
     // A postcode-level hit carries no `city`, so the label is the fallback
-    // check — it always spells the settlement out.
+    // check: it always spells the settlement out.
     const where = normalize(h.city ?? h.label);
     return where.includes(normalize(town));
   });

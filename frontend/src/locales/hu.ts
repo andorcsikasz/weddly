@@ -709,6 +709,21 @@ const hu: LocaleMessages = {
       step_capacity: "Férőhely",
       step_packages: "Csomagok",
     },
+    points: {
+      label: "Weddly pontok",
+      ring_label: "Haladás a következő szintig",
+      to_next: "Még {points} pont a(z) {tier} szintig",
+      at_top: "A legmagasabb szinten vagy",
+      tier: {
+        blue: "Kék",
+        gold: "Arany",
+        platinum: "Platina",
+        diamond: "Gyémánt",
+      },
+      perk_search: "Előrébb a keresésben",
+      perk_leads: "+{n} ingyenes megkeresés",
+      perk_discount: "{pct}% kedvezmény az előfizetésre",
+    },
     dashboard: {
       page_title: "Áttekintés",
       page_body: "Megkereséseid, közelgő eseményeid és a hirdetésed egy helyen.",

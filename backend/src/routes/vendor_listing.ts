@@ -72,6 +72,7 @@ import {
 } from "../domain/listings";
 import { getVendorAccountByOwnerUserId } from "../domain/vendor_accounts";
 import { getVendorSub, toVendorBilling } from "../domain/vendor_billing";
+import { emitVendorEvent } from "../domain/vendor_points";
 import { getUserById } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 
@@ -272,6 +273,9 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
     // 404 so the client retries on a fresh load.
     throw new HttpError(404, "Listing vanished mid-update");
   }
+  // Weddly Points: the engine re-reads completeness from the saved listing, so
+  // this only has to say "the profile moved", not what changed or what it earns.
+  emitVendorEvent(account.id, "profile.updated");
   addAuditLog({
     actor_user_id: account.owner_user_id,
     couple_id: null,

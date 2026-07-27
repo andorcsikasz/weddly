@@ -30,6 +30,7 @@ import { getListingById } from "../domain/listings";
 import { vendorCurrencyForLocale } from "@shared/vendor_billing";
 import { createVendorAccount } from "../domain/vendor_accounts";
 import { currentVendorOffer, initVendorBilling } from "../domain/vendor_billing";
+import { emitVendorEvent } from "../domain/vendor_points";
 import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
@@ -323,6 +324,11 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
 
     markClaimVerified(claim.id, newVendorAccountId);
     markOtherPendingClaimsCancelled(claim.listing_id, claim.id);
+    // Weddly Points: a claimed listing arrives already part-filled (name, city,
+    // contact, often a blurb), so the account is born owed its completeness
+    // milestones. Without this event they'd only land on the next profile edit
+    // or the next boot backfill.
+    emitVendorEvent(newVendorAccountId, "profile.updated");
   });
   try {
     tx();

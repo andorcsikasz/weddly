@@ -25,6 +25,7 @@ import {
 import { createVendorAccount } from "../domain/vendor_accounts";
 import { createVendorListing } from "../domain/listings";
 import { getVendorWaitlistById } from "../domain/vendor_waitlist";
+import { emitVendorEvent } from "../domain/vendor_points";
 import {
   expireStaleOnboarding,
   getOnboardingByToken,
@@ -166,6 +167,9 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
     });
 
     markOnboardingCompleted(row.id, newVendorAccountId);
+    // Weddly Points: the wizard just wrote the vendor's first real profile, so
+    // the completeness milestones are owed now rather than at their next edit.
+    emitVendorEvent(newVendorAccountId, "profile.updated");
     // Grant founding (free year) or trial — inside the tx so the cohort count
     // and the grant are consistent with the account creation.
     initVendorBilling(newVendorAccountId, currency, ts);

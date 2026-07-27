@@ -4,7 +4,7 @@
 // nothing ever resolved it to lat/lng.
 //
 // Runs against the deterministic Photon fixtures (ADDRESS_SUGGEST_FAKE=1, pinned
-// in tests/setup.ts), which answer with Budapest addresses — so a Budapest
+// in tests/setup.ts), which answer with Budapest addresses: so a Budapest
 // listing is the "placeable" case and any other town is the "refuse to guess"
 // case.
 
@@ -50,7 +50,7 @@ describe("geocodeListings", () => {
   });
 
   test("leaves a row alone when the hit is nowhere near the town it claims", async () => {
-    // The fixtures only know Budapest, so a Szeged address can't be verified —
+    // The fixtures only know Budapest, so a Szeged address can't be verified,
     // and a wrong pin is worse than no pin.
     insertListing("geotest-2", "Szeged", "Kárász utca 1");
 

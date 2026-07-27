@@ -1781,6 +1781,13 @@ addColumnIfMissing("supplier_bookings", "contract_value", "contract_value INTEGE
 addColumnIfMissing("supplier_bookings", "deposit_paid", "deposit_paid INTEGER");
 addColumnIfMissing("supplier_bookings", "stage", "stage TEXT");
 addColumnIfMissing("supplier_bookings", "vendor_notes", "vendor_notes TEXT");
+// When the vendor first reacted to this inquiry (any status change of their
+// own). Write-once: `updated_at` moves on every later edit, so it can't answer
+// "how fast did they reply" retroactively — this column starts measuring it
+// honestly from the day it lands. Feeds the `fast_reply` points rule
+// (shared/vendor_points.ts); NULL on every pre-existing row by design, and the
+// backfill deliberately awards nothing for those.
+addColumnIfMissing("supplier_bookings", "first_response_at", "first_response_at INTEGER");
 // Index on the payments table AFTER it exists (schema.sql) — every payment query
 // is scoped by booking, so the booking_id lookup is the hot path.
 db.exec(
