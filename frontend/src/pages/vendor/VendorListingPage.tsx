@@ -281,6 +281,11 @@ export default function VendorListingPage() {
   // on success (the server URL takes over) or failure (reverts to the saved
   // hero). Null the rest of the time.
   const [heroPreview, setHeroPreview] = useState<string | null>(null);
+  // Which description language the editor is showing. Starts on the language
+  // the vendor runs the app in — a vendor on the English interface writing into
+  // a Hungarian box would be the same mistake in the other direction — and
+  // falls back to HU for any locale that has no blurb column of its own.
+  const [blurbLang, setBlurbLang] = useState<"hu" | "en">(locale === "en" ? "en" : "hu");
   const [galleryBusy, setGalleryBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const heroInputRef = useRef<HTMLInputElement | null>(null);
@@ -926,9 +931,50 @@ export default function VendorListingPage() {
               id="vendor-section-description"
             >
               <legend className="font-semibold">{t("vendor_home.section_marketing")}</legend>
-              <label className="block" htmlFor="vendor-blurb-hu">
-                <span className="mb-1 flex items-center justify-between gap-2">
-                  <span className="field-label !mb-0">{t("vendor_home.label_blurb_hu")}</span>
+              {/* One language at a time. Both textareas stacked meant a vendor
+                  scrolled past a field they weren't writing in, twice, on every
+                  visit. Same pill toggle as the interface language in Settings;
+                  the dot marks a language that already has copy, which is the
+                  thing you lose by hiding the other one. */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div
+                  role="radiogroup"
+                  aria-label={t("vendor_home.blurb_lang_aria")}
+                  className="inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
+                >
+                  {(["hu", "en"] as const).map((l) => {
+                    const active = l === blurbLang;
+                    const filled = (l === "hu" ? form.blurb_hu : form.blurb_en).trim().length > 0;
+                    return (
+                      <button
+                        key={l}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setBlurbLang(l)}
+                        className={`inline-flex min-w-[84px] items-center justify-center gap-1.5 px-4 py-1.5 text-xs font-medium transition-colors ${
+                          active
+                            ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                            : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
+                        }`}
+                      >
+                        {t(`profile.account_locale_${l}`)}
+                        {filled && (
+                          <>
+                            <span
+                              aria-hidden="true"
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                active ? "bg-paper-50/70 dark:bg-ink-900/60" : "bg-sage-500"
+                              }`}
+                            />
+                            <span className="sr-only">{t("vendor_home.blurb_lang_filled")}</span>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {blurbLang === "hu" ? (
                   <TranslateButton
                     source="EN"
                     target="HU"
@@ -939,19 +985,7 @@ export default function VendorListingPage() {
                       setForm((prev) => (prev ? { ...prev, blurb_hu: text } : prev))
                     }
                   />
-                </span>
-                <textarea
-                  id="vendor-blurb-hu"
-                  className="input"
-                  rows={3}
-                  maxLength={2000}
-                  value={form.blurb_hu}
-                  onChange={onChange("blurb_hu")}
-                />
-              </label>
-              <label className="block" htmlFor="vendor-blurb-en">
-                <span className="mb-1 flex items-center justify-between gap-2">
-                  <span className="field-label !mb-0">{t("vendor_home.label_blurb_en")}</span>
+                ) : (
                   <TranslateButton
                     source="HU"
                     target="EN"
@@ -962,16 +996,29 @@ export default function VendorListingPage() {
                       setForm((prev) => (prev ? { ...prev, blurb_en: text } : prev))
                     }
                   />
-                </span>
+                )}
+              </div>
+              {blurbLang === "hu" ? (
+                <textarea
+                  id="vendor-blurb-hu"
+                  aria-label={t("vendor_home.label_blurb_hu")}
+                  className="input"
+                  rows={4}
+                  maxLength={2000}
+                  value={form.blurb_hu}
+                  onChange={onChange("blurb_hu")}
+                />
+              ) : (
                 <textarea
                   id="vendor-blurb-en"
+                  aria-label={t("vendor_home.label_blurb_en")}
                   className="input"
-                  rows={3}
+                  rows={4}
                   maxLength={2000}
                   value={form.blurb_en}
                   onChange={onChange("blurb_en")}
                 />
-              </label>
+              )}
             </fieldset>
 
             <fieldset

@@ -519,6 +519,8 @@ const es: LocaleMessages = {
     section_pricing_only: "Precios",
     label_blurb_hu: "Descripción (húngaro)",
     label_blurb_en: "Descripción (inglés)",
+    blurb_lang_aria: "Idioma de la descripción",
+    blurb_lang_filled: "ya rellenado",
     label_blurb_hint: "Hasta 2000 caracteres. Las parejas lo ven en la tarjeta de tu ficha.",
     label_city: "Ciudad",
     label_address: "Dirección postal",

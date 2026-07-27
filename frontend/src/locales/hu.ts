@@ -504,6 +504,8 @@ const hu: LocaleMessages = {
     section_pricing_only: "Ár",
     label_blurb_hu: "Leírás (magyar)",
     label_blurb_en: "Leírás (angol)",
+    blurb_lang_aria: "A leírás nyelve",
+    blurb_lang_filled: "már kitöltve",
     label_blurb_hint: "Legfeljebb 2000 karakter. A párok ezt látják a hirdetésed kártyáján.",
     label_city: "Város",
     label_address: "Cím",

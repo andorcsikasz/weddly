@@ -496,6 +496,8 @@ const en: LocaleMessages = {
     section_pricing_only: "Pricing",
     label_blurb_hu: "Description (Hungarian)",
     label_blurb_en: "Description (English)",
+    blurb_lang_aria: "Description language",
+    blurb_lang_filled: "already filled in",
     label_blurb_hint: "Up to 2000 characters. Couples see this on your listing card.",
     label_city: "City",
     label_address: "Street address",

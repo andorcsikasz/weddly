@@ -707,6 +707,10 @@ export interface LocaleMessages {
     section_pricing_only: string;
     label_blurb_hu: string;
     label_blurb_en: string;
+    /** The HU/EN switch above the single description textarea, and the
+     *  screen-reader name for the dot marking a language that has copy. */
+    blurb_lang_aria: string;
+    blurb_lang_filled: string;
     label_blurb_hint: string;
     label_city: string;
     label_address: string;
