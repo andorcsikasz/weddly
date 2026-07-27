@@ -967,6 +967,9 @@ const en: LocaleMessages = {
       data_delete_desc:
         "Deleting your vendor account also removes your listing. For now this goes through email: write to us and we permanently delete your data within 30 days.",
       data_delete_cta: "Request deletion by email",
+      data_delete_confirm_title: "Delete your account?",
+      data_delete_confirm_body:
+        "This opens your mail client with a deletion request. Our team processes it within 30 days, after which your listing and client data are gone for good.",
     },
     plan: {
       free_label: "Basic",

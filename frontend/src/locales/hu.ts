@@ -980,6 +980,9 @@ const hu: LocaleMessages = {
       data_delete_desc:
         "A szolgáltatói fiók törlése a hirdetésedet is eltávolítja. Jelenleg e-mailben intézzük: írj nekünk, és 30 napon belül véglegesen töröljük az adataidat.",
       data_delete_cta: "Törlés kérése e-mailben",
+      data_delete_confirm_title: "Biztosan törlöd a fiókodat?",
+      data_delete_confirm_body:
+        "Megnyitjuk a leveleződ egy törlési kéréssel. A csapatunk 30 napon belül feldolgozza, utána a hirdetésed és az ügyféladataid véglegesen eltűnnek.",
     },
     plan: {
       free_label: "Alap",

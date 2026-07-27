@@ -5,14 +5,30 @@
 
 import { Download, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useToast } from "../../components/ui";
+import { useConfirm, useToast } from "../../components/ui";
 import { vendorAccountApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 
 export default function VendorSettingsData() {
   const { t } = useT();
   const toast = useToast();
+  const confirm = useConfirm();
   const [exporting, setExporting] = useState(false);
+
+  /** The mail client opening is itself a soft confirmation, so this exists for
+   *  intent rather than safety: it states what deletion means (staff-processed,
+   *  30 days, irreversible) before the vendor is looking at a compose window
+   *  instead of at us. Nothing is destroyed either way. */
+  async function askThenMail(href: string) {
+    const ok = await confirm({
+      title: t("vendor.settings.data_delete_confirm_title"),
+      body: t("vendor.settings.data_delete_confirm_body"),
+      confirmLabel: t("vendor.settings.data_delete_cta"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (ok) window.location.href = href;
+  }
 
   async function handleExport() {
     setExporting(true);
@@ -71,12 +87,17 @@ export default function VendorSettingsData() {
         <p className="mt-1.5 text-sm text-ink-700 dark:text-umber-300">
           {t("vendor.settings.data_delete_desc")}
         </p>
-        <a
-          href={`mailto:${contactEmail}?subject=${encodeURIComponent(t("vendor.settings.data_delete_heading"))}`}
+        <button
+          type="button"
+          onClick={() =>
+            void askThenMail(
+              `mailto:${contactEmail}?subject=${encodeURIComponent(t("vendor.settings.data_delete_heading"))}`,
+            )
+          }
           className="btn-outline mt-4 inline-flex w-fit"
         >
           {t("vendor.settings.data_delete_cta")}
-        </a>
+        </button>
       </div>
     </div>
   );

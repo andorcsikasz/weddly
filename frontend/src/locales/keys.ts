@@ -1225,6 +1225,9 @@ export interface LocaleMessages {
       data_delete_heading: string;
       data_delete_desc: string;
       data_delete_cta: string;
+      /** Intent confirmation before the mailto opens. */
+      data_delete_confirm_title: string;
+      data_delete_confirm_body: string;
     };
     plan: {
       free_label: string;

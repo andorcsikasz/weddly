@@ -996,6 +996,9 @@ const es: LocaleMessages = {
       data_delete_desc:
         "Al eliminar tu cuenta de proveedor también se elimina tu ficha. Por ahora esto se hace por email: escríbenos y eliminaremos tus datos de forma permanente en un plazo de 30 días.",
       data_delete_cta: "Solicitar la eliminación por email",
+      data_delete_confirm_title: "¿Eliminar tu cuenta?",
+      data_delete_confirm_body:
+        "Se abrirá tu cliente de correo con una solicitud de eliminación. Nuestro equipo la procesa en un plazo de 30 días; después, tu ficha y los datos de tus clientes desaparecen definitivamente.",
     },
     plan: {
       free_label: "Básico",
