@@ -275,7 +275,7 @@ function PackageCard({
         {open || renaming ? (
           <input
             ref={renameRef}
-            className="min-w-0 flex-1 border-0 bg-transparent px-0 py-3 font-grotesk text-base font-semibold text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-0 dark:text-paper-50 dark:placeholder:text-umber-400"
+            className="-mx-2 min-w-0 flex-1 rounded-lg border-0 bg-transparent px-2 py-3 font-grotesk text-base font-semibold text-ink-900 transition-colors placeholder:text-ink-400 hover:bg-paper-50 focus:bg-paper-50 focus:outline-none focus:ring-0 dark:text-paper-50 dark:placeholder:text-umber-400 dark:hover:bg-umber-800/60 dark:focus:bg-umber-800/60"
             value={name}
             maxLength={PACKAGE_NAME_MAX}
             disabled={busy}
@@ -344,7 +344,7 @@ function PackageCard({
             onClick={() => setOpen(false)}
             aria-expanded={open}
             aria-controls={`pkg-body-${pkg.id}`}
-            aria-label={t("common.close")}
+            aria-label={t("a11y.close")}
             className="vp-btn-quiet shrink-0"
           >
             <ChevronDown size={16} aria-hidden />
