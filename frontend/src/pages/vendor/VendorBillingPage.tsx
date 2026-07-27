@@ -11,10 +11,10 @@
 // When Stripe isn't configured server-side (enabled=false) every money action
 // falls back to the honest support-mailto state, nothing fakes a payment.
 
-import { Check, CreditCard, Crown, Lock, Mail, RefreshCw, Sparkles } from "lucide-react";
+import { Check, CreditCard, Crown, Download, Lock, Mail, RefreshCw, Sparkles } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { type VendorBilling, vendorPrice } from "@shared/vendor_billing";
+import { type VendorBilling, type VendorBillingDetails, vendorPrice } from "@shared/vendor_billing";
 import type { VendorFeature, VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
 import { Skeleton } from "../../components/ui";
 import { vendorBillingApi } from "../../lib/endpoints";
@@ -45,6 +45,28 @@ const PRO_FEATURES: { feature: VendorFeature; label: TKey }[] = [
 
 type MoneyAction = "setup" | "checkout" | "portal";
 
+/** Stripe reports zero-decimal currencies (HUF, JPY, …) in whole units and
+ *  everything else in the minor unit. Only the currencies we bill in matter
+ *  here; anything unknown is treated as minor-unit, which is Stripe's default. */
+const ZERO_DECIMAL = new Set(["huf", "jpy", "krw"]);
+
+function formatInvoiceAmount(amount: number, currency: string, locale: string): string {
+  const major = ZERO_DECIMAL.has(currency.toLowerCase()) ? amount : amount / 100;
+  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : locale === "es" ? "es-ES" : "en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+    maximumFractionDigits: ZERO_DECIMAL.has(currency.toLowerCase()) ? 0 : 2,
+  }).format(major);
+}
+
+/** Stripe's invoice statuses, collapsed to the four we have copy for. */
+function invoiceStatusKey(status: string): "paid" | "open" | "void" | "draft" {
+  if (status === "paid") return "paid";
+  if (status === "open" || status === "uncollectible") return "open";
+  if (status === "void") return "void";
+  return "draft";
+}
+
 export default function VendorBillingPage() {
   const { t, locale } = useT();
   useDocumentTitle(t("vendor.billing.page_title"));
@@ -59,6 +81,10 @@ export default function VendorBillingPage() {
   const [errored, setErrored] = useState(false);
   const [busyAction, setBusyAction] = useState<MoneyAction | null>(null);
   const [actionFailed, setActionFailed] = useState(false);
+  // Card + invoices, read from Stripe. Best-effort and separate from the status
+  // fetch: a Stripe hiccup drops these two sections, it doesn't cost the vendor
+  // their plan page.
+  const [details, setDetails] = useState<VendorBillingDetails | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,6 +95,10 @@ export default function VendorBillingPage() {
       setPlan(res.plan);
       setFeatures(res.features);
       setEnabled(res.enabled);
+      vendorBillingApi
+        .details()
+        .then(setDetails)
+        .catch(() => setDetails(null));
     } catch {
       setErrored(true);
     } finally {
@@ -369,6 +399,97 @@ export default function VendorBillingPage() {
           </PlanColumn>
         </div>
       </section>
+
+      {/* Payment method + history. Only for a vendor Stripe actually knows: a
+          founding member who never reached checkout has no card and no
+          invoices, and an empty "no card on file" panel would read as a
+          missing setup step rather than as their free year. */}
+      {details?.billing_active && (
+        <section className="flex flex-col gap-4">
+          <h2 className="font-grotesk text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+            {t("vendor.billing.payment_title")}
+          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
+            {details.card ? (
+              <p className="flex items-center gap-2.5 text-sm text-ink-900 dark:text-paper-50">
+                <CreditCard
+                  size={18}
+                  aria-hidden="true"
+                  className="text-ink-400 dark:text-umber-300"
+                />
+                {/* Brand + last four is everything we are allowed to show, and
+                    everything a vendor needs to recognise the card. */}
+                <span className="font-medium capitalize">{details.card.brand}</span>
+                <span className="font-mono">•••• {details.card.last4}</span>
+                <span className="text-ink-500 tabular-nums dark:text-umber-300">
+                  {String(details.card.exp_month).padStart(2, "0")}/{details.card.exp_year % 100}
+                </span>
+              </p>
+            ) : (
+              <p className="text-sm text-ink-600 dark:text-paper-300">
+                {t("vendor.billing.payment_none")}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => void startMoneyAction("portal")}
+              disabled={busyAction !== null}
+              className="btn-ghost inline-flex w-fit items-center gap-2"
+            >
+              <CreditCard size={16} aria-hidden="true" />
+              <span>
+                {busyAction === "portal"
+                  ? t("vendor.billing.redirecting")
+                  : details.card
+                    ? t("vendor.billing.payment_change")
+                    : t("vendor.billing.payment_add")}
+              </span>
+            </button>
+          </div>
+
+          {details.invoices.length > 0 && (
+            <div className="overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 dark:border-umber-600 dark:bg-umber-900">
+              <ul className="divide-y divide-paper-200 dark:divide-umber-700">
+                {details.invoices.map((inv) => (
+                  <li
+                    key={inv.id}
+                    className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3"
+                  >
+                    <span className="text-sm text-ink-900 dark:text-paper-50">
+                      {formatDateMs(inv.created, locale)}
+                    </span>
+                    <span className="text-sm tabular-nums text-ink-700 dark:text-paper-200">
+                      {formatInvoiceAmount(inv.amount, inv.currency, locale)}
+                    </span>
+                    <span
+                      className={`text-xs font-medium ${
+                        inv.status === "paid"
+                          ? "text-sage-700 dark:text-sage-300"
+                          : "text-ink-500 dark:text-umber-300"
+                      }`}
+                    >
+                      {t(`vendor.billing.invoice_status_${invoiceStatusKey(inv.status)}`)}
+                    </span>
+                    {inv.pdf_url ? (
+                      <a
+                        href={inv.pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-steel-600 hover:text-steel-700 dark:text-steel-300"
+                      >
+                        <Download size={14} aria-hidden="true" />
+                        {t("vendor.billing.invoice_download")}
+                      </a>
+                    ) : (
+                      <span className="text-sm text-ink-400 dark:text-umber-400">—</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Manage: everyone on a Stripe record gets the hosted Billing Portal
           (card update, cancel, invoices). */}

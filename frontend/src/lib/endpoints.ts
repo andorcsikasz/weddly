@@ -2707,6 +2707,14 @@ export const vendorBillingApi = {
   /** Classic subscription Checkout: the lapsed-vendor recovery path. */
   checkout: () => apiFetch<{ url: string }>("POST", "/api/vendor/billing/checkout"),
   portal: () => apiFetch<{ url: string }>("POST", "/api/vendor/billing/portal"),
+  /** Masked card + invoice history, read straight from Stripe. Answers with an
+   *  empty `billing_active: false` payload rather than an error when there is
+   *  no Stripe customer yet, so the settings tab never has to handle a 503. */
+  details: () =>
+    apiFetch<import("@shared/vendor_billing").VendorBillingDetails>(
+      "GET",
+      "/api/vendor/billing/details",
+    ),
 };
 
 /** Supplier Outreach Inbox (P2.E v1). Couple-facing endpoints; the

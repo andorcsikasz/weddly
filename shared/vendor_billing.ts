@@ -253,3 +253,42 @@ export interface PublicVendorStats {
    *  Same shape (and same source) the authed vendor billing surface quotes. */
   offer: VendorOffer;
 }
+
+// ── Payment method + invoice history (Settings → Csomag) ────────────────────
+// Read-only projections of what Stripe already holds. Card details are never
+// entered, stored or edited in our UI — changing one goes through the hosted
+// Billing Portal — so this is the masked descriptor Stripe hands back plus the
+// invoice list it renders and hosts.
+
+export interface VendorPaymentCard {
+  /** "visa", "mastercard", … as Stripe reports it; rendered as-is. */
+  brand: string;
+  last4: string;
+  exp_month: number;
+  exp_year: number;
+}
+
+export interface VendorInvoiceRow {
+  id: string;
+  /** Stripe's invoice number, e.g. "B1F4C2A9-0003". Null while a draft. */
+  number: string | null;
+  /** Epoch ms (Stripe reports seconds; the mapper converts). */
+  created: number;
+  /** Stripe's smallest currency unit — cents for EUR, whole forint for HUF. */
+  amount: number;
+  /** Lowercase ISO code, as Stripe returns it. */
+  currency: string;
+  /** "paid" | "open" | "void" | "uncollectible" | "draft". */
+  status: string;
+  /** Stripe-hosted PDF and invoice page; null on a draft. */
+  pdf_url: string | null;
+  hosted_url: string | null;
+}
+
+export interface VendorBillingDetails {
+  card: VendorPaymentCard | null;
+  invoices: VendorInvoiceRow[];
+  /** False when Stripe isn't configured or the vendor has no customer yet —
+   *  the page then says "nothing to show" instead of implying a failure. */
+  billing_active: boolean;
+}

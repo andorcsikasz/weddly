@@ -21,6 +21,7 @@
 import type Stripe from "stripe";
 import {
   type VendorBilling,
+  type VendorBillingDetails,
   type VendorBillingStatus,
   VENDOR_FREE_LEAD_CREDITS,
   vendorCurrencyForLocale,
@@ -31,6 +32,10 @@ import { vendorFeatureFlags, vendorPlanFromEntitlement } from "@shared/vendor_pl
 import { isCurrency } from "@shared/currency";
 import type { Currency } from "@shared/types";
 import { CONFIG, STRIPE_ENABLED } from "../config";
+
+/** One page of history is what a settings tab needs; the Billing Portal holds
+ *  the rest. */
+const MAX_INVOICES = 12;
 import { claimStripeEvent, stripe } from "../domain/billing";
 import { getUserById } from "../domain/users";
 import { getVendorAccountById } from "../domain/vendor_accounts";
@@ -252,6 +257,61 @@ async function handlePortal(ctx: Ctx): Promise<Response> {
   return json({ url: session.url });
 }
 
+// ── GET /api/vendor/billing/details ─────────────────────────────────────────
+/** Read-only mirror of what Stripe holds for this vendor: the default card
+ *  descriptor and the invoice list. Nothing here is editable — "change card"
+ *  goes through the hosted Billing Portal — so this endpoint only ever reads.
+ *
+ *  Answers 200 with an empty, `billing_active: false` payload when Stripe is
+ *  unconfigured or the vendor has no customer yet (founding vendors never
+ *  reach checkout). A 503 would make the page special-case its own normal
+ *  state. An upstream Stripe failure degrades the same way rather than
+ *  failing the settings tab. */
+async function handleBillingDetails(ctx: Ctx): Promise<Response> {
+  const account = resolveVendorAccount(ctx);
+  const sub = getVendorSub(account.id);
+  const customerId = sub?.stripe_customer_id ?? null;
+  const empty: VendorBillingDetails = { card: null, invoices: [], billing_active: false };
+  if (!STRIPE_ENABLED || !customerId) return json(empty);
+
+  try {
+    const customer = await stripe().customers.retrieve(customerId, {
+      expand: ["invoice_settings.default_payment_method"],
+    });
+    let card: VendorBillingDetails["card"] = null;
+    if (!customer.deleted) {
+      const pm = customer.invoice_settings?.default_payment_method;
+      // Expanded → the object; unexpanded (or a non-card method) → skip rather
+      // than round-trip again for something we only display.
+      if (pm && typeof pm !== "string" && pm.card) {
+        card = {
+          brand: pm.card.brand,
+          last4: pm.card.last4,
+          exp_month: pm.card.exp_month,
+          exp_year: pm.card.exp_year,
+        };
+      }
+    }
+
+    const list = await stripe().invoices.list({ customer: customerId, limit: MAX_INVOICES });
+    const invoices = list.data.map((inv) => ({
+      id: inv.id ?? "",
+      number: inv.number ?? null,
+      // Stripe reports seconds; every other timestamp in this codebase is ms.
+      created: inv.created * 1000,
+      amount: inv.amount_paid || inv.amount_due,
+      currency: inv.currency,
+      status: inv.status ?? "draft",
+      pdf_url: inv.invoice_pdf ?? null,
+      hosted_url: inv.hosted_invoice_url ?? null,
+    }));
+    return json({ card, invoices, billing_active: true } satisfies VendorBillingDetails);
+  } catch (e) {
+    log.warn("vendor_billing.details_failed", { error: String(e) });
+    return json(empty);
+  }
+}
+
 // ── POST /api/vendor/billing/webhook ────────────────────────────────────────
 function resolveVendorId(obj: {
   metadata?: Stripe.Metadata | null;
@@ -339,6 +399,7 @@ async function handleWebhook(ctx: Ctx): Promise<Response> {
 
 export function registerVendorBillingRoutes(router: Router) {
   router.get("/api/vendor/billing", handleGetBilling, true);
+  router.get("/api/vendor/billing/details", handleBillingDetails, true);
   router.post("/api/vendor/billing/setup", handleSetup, true);
   router.post("/api/vendor/billing/checkout", handleCheckout, true);
   router.post("/api/vendor/billing/portal", handlePortal, true);

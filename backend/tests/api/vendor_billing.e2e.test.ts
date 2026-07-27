@@ -20,7 +20,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import type { VendorBilling, VendorOffer } from "@shared/vendor_billing";
+import type { VendorBilling, VendorBillingDetails, VendorOffer } from "@shared/vendor_billing";
 import {
   startOfNextUtcMonth,
   VENDOR_EARLY_CAP,
@@ -802,5 +802,42 @@ describe("vendor free-cohort ladder", () => {
     expect(r.data.offer.spots_left).toBe(VENDOR_FOUNDING_CAP - 1);
     expect(r.data.early_spots_left).toBe(VENDOR_EARLY_CAP);
     expect(r.data.billing.is_early_member).toBe(false);
+  });
+
+  // The details endpoint is the read-only mirror of Stripe (card + invoices).
+  // With STRIPE_SECRET_KEY unset — the test environment, and production until
+  // the vendor go-live — it must answer 200 with an empty, inactive payload
+  // rather than a 503 the settings tab would have to special-case.
+  test("GET /api/vendor/billing/details answers empty while Stripe is unconfigured", async () => {
+    wipeAll();
+    const listingId = await makeApprovedListing(
+      "owner-details@weddly.test",
+      "vendor-details@weddly.test",
+      "Details Co",
+    );
+    const { vendorToken } = await claimVendor(listingId, "vendor-details@weddly.test");
+
+    const r = await req<VendorBillingDetails>("GET", "/api/vendor/billing/details", undefined, {
+      token: vendorToken,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.billing_active).toBe(false);
+    expect(r.data.card).toBeNull();
+    expect(r.data.invoices).toEqual([]);
+  });
+
+  test("GET /api/vendor/billing/details needs a vendor session", async () => {
+    const anon = await req("GET", "/api/vendor/billing/details");
+    expect(anon.status).toBe(401);
+
+    const couple = await registerAndVerify({
+      email: `details-couple-${Date.now()}@weddly.test`,
+      password: "test1234",
+      full_name: "Couple Person",
+    });
+    const asCouple = await req("GET", "/api/vendor/billing/details", undefined, {
+      token: couple.data.token,
+    });
+    expect(asCouple.status).toBe(403);
   });
 });

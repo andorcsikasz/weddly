@@ -796,9 +796,13 @@ export interface LocaleMessages {
     capacity_min_label: string;
     capacity_max_label: string;
     capacity_invalid: string;
-    brand_locked_card_title: string;
-    brand_locked_card_body: string;
-    brand_locked_contact_cta: string;
+    /** Brand name field on the vendor listing editor. Self-serve since the
+     *  moderation freeze was lifted, behind a once-a-week cooldown —
+     *  `name_locked_until` carries the exact date the server will accept the
+     *  next rename. */
+    label_name: string;
+    label_name_help: string;
+    name_locked_until: string;
     autosave_saving: string;
     autosave_saved: string;
     autosave_unsaved: string;
@@ -1169,6 +1173,17 @@ export interface LocaleMessages {
       leads_exhausted_line: string;
       subscribe_cta: string;
       portal_cta: string;
+      /** Payment method + invoice history, read from Stripe. Card details are
+       *  never entered here; changing one goes to the hosted portal. */
+      payment_title: string;
+      payment_none: string;
+      payment_change: string;
+      payment_add: string;
+      invoice_download: string;
+      invoice_status_paid: string;
+      invoice_status_open: string;
+      invoice_status_void: string;
+      invoice_status_draft: string;
       redirecting: string;
       action_failed: string;
       feature_direct_messages: string;
