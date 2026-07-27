@@ -238,6 +238,7 @@ export function listDirectoryForAdmin(filters: AdminDirectoryFilters): SupplierD
 
 function matches(row: SupplierDirectoryAdminRow, f: AdminDirectoryFilters): boolean {
   if (f.source && f.source !== "all" && row.source !== f.source) return false;
+  if (f.contact === "no_email" && (row.contact_email ?? "").trim().length > 0) return false;
   if (f.status && f.status !== "all" && row.status !== f.status) return false;
   if (f.category && f.category !== "all" && row.category !== f.category) return false;
   if (f.city && f.city.trim().length > 0) {
@@ -271,6 +272,8 @@ export function parseDirectoryFilters(params: URLSearchParams): AdminDirectoryFi
   const out: AdminDirectoryFilters = {};
   const source = params.get("source");
   if (source === "curated" || source === "community" || source === "all") out.source = source;
+  const contact = params.get("contact");
+  if (contact === "no_email" || contact === "all") out.contact = contact;
   const status = params.get("status");
   if (
     status === "active" ||

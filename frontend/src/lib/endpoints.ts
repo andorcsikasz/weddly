@@ -3179,6 +3179,7 @@ export const adminSupplierApi = {
 function buildDirectoryQuery(f: AdminDirectoryFilters): string {
   const p = new URLSearchParams();
   if (f.source && f.source !== "all") p.set("source", f.source);
+  if (f.contact && f.contact !== "all") p.set("contact", f.contact);
   if (f.status && f.status !== "all") p.set("status", f.status);
   if (f.category && f.category !== "all") p.set("category", f.category);
   if (f.city && f.city.trim().length > 0) p.set("city", f.city.trim());

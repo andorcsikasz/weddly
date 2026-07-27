@@ -779,6 +779,12 @@ export interface SupplierDirectoryAdminRow {
  *  the metric windows). */
 export interface AdminDirectoryFilters {
   source?: "curated" | "community" | "all";
+  /** Contact coverage. "no_email" narrows to listings with no contact_email,
+   *  which is the set no outbound flow can reach: the claim-invite campaign
+   *  mails contact_email, so a listing without one can never be offered to its
+   *  owner and has to be chased by hand. Whole scraped batches arrive this way
+   *  (Google Maps publishes a phone and a website, never an address). */
+  contact?: "all" | "no_email";
   status?: "active" | "pending" | "awaiting_review" | "hidden" | "all";
   category?: SupplierCategory | "all";
   city?: string;

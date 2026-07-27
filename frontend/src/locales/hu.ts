@@ -5546,6 +5546,12 @@ const hu: LocaleMessages = {
     directory_filter_source_all: "Minden forrás",
     directory_filter_source_curated: "Curated",
     directory_filter_source_community: "Közösségi",
+    directory_filter_contact_label: "Kapcsolat",
+    directory_filter_contact_all: "Mind",
+    directory_filter_contact_no_email: "Nincs e-mail",
+    directory_no_email: "Nincs e-mail",
+    directory_no_email_tooltip:
+      "Nincs e-mail cím a hirdetésen, így az átvételi kampány nem tudja megkeresni. Csak kézzel érhető el.",
     directory_filter_status_label: "Állapot",
     directory_filter_category_label: "Kategória",
     directory_filter_category_all: "Minden kategória",

@@ -6250,6 +6250,14 @@ export interface LocaleMessages {
     directory_filter_source_all: string;
     directory_filter_source_curated: string;
     directory_filter_source_community: string;
+    /** Contact-coverage filter + the inline flag on a listing with no email:
+     *  the claim-invite campaign mails contact_email, so those rows can only be
+     *  chased by hand. */
+    directory_filter_contact_label: string;
+    directory_filter_contact_all: string;
+    directory_filter_contact_no_email: string;
+    directory_no_email: string;
+    directory_no_email_tooltip: string;
     directory_filter_status_label: string;
     directory_filter_category_label: string;
     directory_filter_category_all: string;

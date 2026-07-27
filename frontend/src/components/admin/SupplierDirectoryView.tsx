@@ -12,6 +12,7 @@ import {
   Eye,
   EyeOff,
   ImageDown,
+  MailX,
   RotateCcw,
   Search,
   Trash2,
@@ -335,6 +336,15 @@ export function SupplierDirectoryView() {
           ]}
         />
         <FilterSelect
+          label={t("admin.directory_filter_contact_label")}
+          value={filters.contact ?? "all"}
+          onChange={(v) => setFilter("contact", v as AdminDirectoryFilters["contact"])}
+          options={[
+            { value: "all", label: t("admin.directory_filter_contact_all") },
+            { value: "no_email", label: t("admin.directory_filter_contact_no_email") },
+          ]}
+        />
+        <FilterSelect
           label={t("admin.directory_filter_status_label")}
           value={filters.status ?? "all"}
           onChange={(v) => setFilter("status", v as AdminDirectoryFilters["status"])}
@@ -498,6 +508,19 @@ export function SupplierDirectoryView() {
                 <tr key={row.id} className="group hover:bg-paper-100 dark:hover:bg-umber-700/40">
                   <td className="px-3 py-2 font-medium text-neutral-900 dark:text-paper-50">
                     <span className="block">{row.name}</span>
+                    {/* No address to write to: the claim-invite campaign mails
+                        contact_email, so this row can only ever be chased by
+                        hand. Flagged inline as well as behind the filter,
+                        because it's the reason a listing sits unclaimed. */}
+                    {!row.contact_email && (
+                      <span
+                        title={t("admin.directory_no_email_tooltip")}
+                        className="mt-0.5 inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-blush-600 dark:text-blush-300"
+                      >
+                        <MailX size={11} aria-hidden />
+                        {t("admin.directory_no_email")}
+                      </span>
+                    )}
                     {row.website && (
                       <a
                         href={safeExternalHref(row.website)}

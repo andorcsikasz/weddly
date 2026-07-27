@@ -5593,6 +5593,12 @@ const es: LocaleMessages = {
     directory_filter_source_all: "Todos los orígenes",
     directory_filter_source_curated: "Curados",
     directory_filter_source_community: "Comunidad",
+    directory_filter_contact_label: "Contacto",
+    directory_filter_contact_all: "Todos",
+    directory_filter_contact_no_email: "Sin correo",
+    directory_no_email: "Sin correo",
+    directory_no_email_tooltip:
+      "El anuncio no tiene correo, así que la campaña de reclamación no puede contactarlo. Solo se llega a mano.",
     directory_filter_status_label: "Estado",
     directory_filter_category_label: "Categoría",
     directory_filter_category_all: "Todas las categorías",

@@ -5488,6 +5488,12 @@ const en: LocaleMessages = {
     directory_filter_source_all: "All sources",
     directory_filter_source_curated: "Curated",
     directory_filter_source_community: "Community",
+    directory_filter_contact_label: "Contact",
+    directory_filter_contact_all: "All",
+    directory_filter_contact_no_email: "No email",
+    directory_no_email: "No email",
+    directory_no_email_tooltip:
+      "No email address on the listing, so the claim-invite campaign can't reach it. Only reachable by hand.",
     directory_filter_status_label: "Status",
     directory_filter_category_label: "Category",
     directory_filter_category_all: "All categories",
