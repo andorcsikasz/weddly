@@ -43,8 +43,10 @@ import { Wordmark } from "./Wordmark";
 
 type VendorNavItem = { to: string; labelKey: string; icon: ReactNode; end?: boolean };
 
-// Billing is reachable through Settings (the Csomag tab) + the profile menu,
-// so the rail stays at six primary surfaces.
+// Six work surfaces, and only work surfaces. Settings is deliberately NOT one
+// of them: it is account housekeeping, not a place a vendor works, and it is
+// already one click away from the profile chip at the foot of the rail and the
+// profile menu in the header. Billing rides along inside it (the Csomag tab).
 const VENDOR_ITEMS: VendorNavItem[] = [
   {
     to: "/vendor",
@@ -57,7 +59,6 @@ const VENDOR_ITEMS: VendorNavItem[] = [
   { to: "/vendor/listing", labelKey: "vendor.nav.listing", icon: <Store size={18} /> },
   { to: "/vendor/stats", labelKey: "vendor.nav.stats", icon: <BarChart3 size={18} /> },
   { to: "/vendor/reviews", labelKey: "vendor.nav.reviews", icon: <Star size={18} /> },
-  { to: "/vendor/settings", labelKey: "vendor.nav.settings", icon: <Settings size={18} /> },
 ];
 
 // localStorage key for the desktop nav rail collapsed/expanded preference.
