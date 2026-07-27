@@ -61,7 +61,6 @@ import {
   Shirt,
   Sparkles,
   Speaker,
-  Star,
   Store,
   PenTool,
   StickyNote,
