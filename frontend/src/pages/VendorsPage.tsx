@@ -15,8 +15,10 @@
 //      vendor reads as marketing. The free window (founding / early) used to
 //      survive as a promise under the CTA and is gone too, so the page now
 //      fetches nothing and just states what a vendor gets.
-//      Same rule in the hero mockup: no invented business, rating or review
-//      count in the card preview.
+//      The hero mockup is the one place a NUMBER appears, and only as a
+//      placeholder: the card shows a rating and a price band because those are
+//      fields the vendor's real listing has. It still carries no review count,
+//      which is the value that would read as invented proof.
 //   4. ONE dominant call to action (signup), repeated once at the end. The
 //      demo launcher and the wrong-audience escape hatches are quiet text
 //      links; there is deliberately no "log in" link in the hero, because the
@@ -112,7 +114,13 @@ export default function VendorsPage() {
             </Link>
           </div>
         </div>
+        {/* The card is the pitch, so it gets the one line of copy that says
+            what it is. Above it, not below: read after the card it explains
+            something the visitor has already worked out. */}
         <div className="mx-auto w-full max-w-md lg:max-w-none">
+          <p className="mb-3 text-center text-sm text-ink-500 lg:text-left dark:text-umber-300">
+            {t("vendors.mockup_caption")}
+          </p>
           <VendorListingMockup className="h-auto w-full" />
         </div>
       </section>

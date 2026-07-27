@@ -1828,7 +1828,8 @@ const es: LocaleMessages = {
     mockup_drag_subtitle: "Veg · Acompañante 1",
     mockup_vendor_name: "Tu negocio",
     mockup_vendor_category: "Categoría · Ciudad",
-    mockup_vendor_cta: "Ver perfil",
+    mockup_vendor_rating: "4,9",
+    mockup_vendor_price: "$$",
     // ── Landing "try the demo" card, small tilted sticker on the right
     //    of the hero. Eyebrow + italic title + one button. The fairytale
     //    identity is the reveal once the visitor lands in /app. ─────────
@@ -1847,16 +1848,18 @@ const es: LocaleMessages = {
     couple_escape_link: "Para parejas",
     planner_escape_link: "Para wedding planners",
     hero_title: "Entra en la lista corta.",
-    closing_title: "La próxima temporada se reserva ahora.",
+    mockup_caption: "Así verán las parejas tu negocio",
+    closing_title: "La próxima temporada de bodas se decide ahora.",
     closing_cta: "Reserva tu plaza",
-    benefit_1_title: "Primero las solicitudes, después la factura",
+    benefit_1_title: "Primero llegan las solicitudes, la factura después",
     benefit_1_body:
-      "Acceso completo desde el primer día. La factura llega solo tras tres solicitudes reales.",
-    benefit_2_title: "El mismo día estás en la lista",
+      "Puedes usarlo todo desde el primer día y solo pagas tras tres solicitudes reales.",
+    benefit_2_title: "Puedes estar publicado el mismo día",
     benefit_2_body:
-      "Las solicitudes llegan a tu propio correo y tu respuesta va directa a la pareja.",
-    benefit_3_title: "Una lista corta, no un catálogo",
-    benefit_3_body: "La pareja ve una lista cuidada a mano para su ciudad y su nivel de precio.",
+      "Las solicitudes llegan a tu propio correo y respondes directamente a la pareja.",
+    benefit_3_title: "Una lista corta, no un catálogo interminable",
+    benefit_3_body:
+      "Las parejas solo ven proveedores seleccionados a mano que encajan con su ciudad y su presupuesto.",
     form_title: "Únete a la lista de espera",
     form_business_label: "Nombre del negocio",
     form_email_label: "Correo electrónico",
@@ -1961,7 +1964,7 @@ const es: LocaleMessages = {
     price_list_upload_cta: "Adjunta una lista de precios (PDF o imagen)",
     price_list_remove: "Quitar archivo",
     signup_cta: "Reserva tu plaza",
-    demo_cta: "Abrir una demo",
+    demo_cta: "Mira la demo",
     demo_loading: "Un momento…",
     demo_error: "No se pudo iniciar. Inténtalo de nuevo.",
   },

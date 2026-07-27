@@ -2106,11 +2106,15 @@ export interface LocaleMessages {
     mockup_table_uni: string;
     mockup_table_head: string;
     mockup_drag_subtitle: string;
-    /** Vendor card preview. Placeholders only: the card carries no invented
-     *  business name, rating or review count. */
+    /** Vendor card preview, ride-hailing layout: name + rating on one row,
+     *  category / city / price band on the next, no button. Every value is a
+     *  placeholder showing the SHAPE of the field, which is why the rating is
+     *  a bare number (`4,9` in HU, `4.9` in EN) with no review count beside it
+     *  and the price band is the same `$` repeat the real cards use. */
     mockup_vendor_name: string;
     mockup_vendor_category: string;
-    mockup_vendor_cta: string;
+    mockup_vendor_rating: string;
+    mockup_vendor_price: string;
   };
   vendors: {
     seo_title: string;
@@ -2126,6 +2130,8 @@ export interface LocaleMessages {
      *  and the free-window promise (founding / early) are all gone, so nothing
      *  sits between the headline and the button. */
     hero_title: string;
+    /** One line over the listing-card mockup, naming what the card is. */
+    mockup_caption: string;
     /** Closing band: headline and the single repeat of the CTA. No sub-line:
      *  it only repeated the hero microcopy. The headline must take a DIFFERENT
      *  angle from the hero title (it used to paraphrase it) — timing, not the

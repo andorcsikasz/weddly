@@ -1805,7 +1805,8 @@ const hu: LocaleMessages = {
     mockup_drag_subtitle: "Vega · +1",
     mockup_vendor_name: "A te vállalkozásod",
     mockup_vendor_category: "Kategória · Város",
-    mockup_vendor_cta: "Profil megtekintése",
+    mockup_vendor_rating: "4,9",
+    mockup_vendor_price: "$$",
     // ── Landing "try the demo" card, small tilted sticker on the right
     //    of the hero. Eyebrow + italic title + one button. The fairytale
     //    identity is the reveal once the visitor lands in /app. ─────────
@@ -1820,19 +1821,22 @@ const hu: LocaleMessages = {
     seo_description:
       "A párok itt választanak szolgáltatót. Vendéglista, büdzsé, ütemterv egy helyen, és amikor a te kategóriádra kerül a sor, egy rövid listáról választanak.",
     pill: "Korai hozzáférés",
-    wrong_audience: "Nem szolgáltató?",
+    wrong_audience: "Nem szolgáltató vagy?",
     couple_escape_link: "Pároknak",
     planner_escape_link: "Szervezőknek",
     hero_title: "Legyél a rövid listán.",
-    closing_title: "A jövő szezon most dől el.",
-    closing_cta: "Foglald a helyed",
-    benefit_1_title: "Előbb a megkeresés, aztán a számla",
+    mockup_caption: "Így látják majd a vállalkozásodat",
+    closing_title: "A következő esküvői szezon most dől el.",
+    closing_cta: "Foglald le a helyed",
+    benefit_1_title: "Előbb jönnek a megkeresések, csak utána a számla",
     benefit_1_body:
-      "Teljes hozzáférés az első naptól. A számla csak három valódi megkeresés után jön.",
-    benefit_2_title: "Aznap fent vagy a listán",
-    benefit_2_body: "A megkeresés a saját postaládádba fut be, a válaszod egyenesen a párhoz megy.",
-    benefit_3_title: "Rövid lista, nem katalógus",
-    benefit_3_body: "A pár kézzel gondozott listát lát a saját városában és árszintjén.",
+      "Már az első naptól mindent használhatsz, és csak három valódi megkeresés után kell fizetned.",
+    benefit_2_title: "Akár még aznap felkerülhetsz",
+    benefit_2_body:
+      "A megkeresések egyenesen a postaládádba érkeznek, te pedig közvetlenül a pároknak válaszolhatsz.",
+    benefit_3_title: "Rövid lista, nem végtelen katalógus",
+    benefit_3_body:
+      "A párok csak a városukhoz és a keretükhöz illő, gondosan válogatott szolgáltatókat látják.",
     form_title: "Iratkozzatok fel",
     form_business_label: "Vállalkozás neve",
     form_email_label: "E-mail",
@@ -1935,8 +1939,8 @@ const hu: LocaleMessages = {
     price_list_hint: "PDF vagy kép, max 10 MB. Segít megérteni az ajánlatod.",
     price_list_upload_cta: "Árajánlat csatolása (PDF vagy kép)",
     price_list_remove: "Fájl eltávolítása",
-    signup_cta: "Foglald a helyed",
-    demo_cta: "Demó megnyitása",
+    signup_cta: "Foglald le a helyed",
+    demo_cta: "Nézd meg a demót",
     demo_loading: "Egy pillanat…",
     demo_error: "Nem indult. Próbáld újra.",
   },

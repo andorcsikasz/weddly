@@ -21,6 +21,13 @@ import { intlLocale } from "../lib/format";
 
 type Common = { className?: string };
 
+/** Five-point star, centred on 0,0 (outer r 6.5, inner r 2.6), so it can be
+ *  dropped anywhere with a translate. Used for the rating glyph on the vendor
+ *  listing card, where a lucide icon can't go: these mockups are one inline
+ *  SVG each and every shape is hand-drawn. */
+const STAR_PATH =
+  "M 0 -6.5 L 1.53 -2.1 L 6.18 -2.01 L 2.47 0.8 L 3.82 5.26 L 0 2.6 L -3.82 5.26 L -2.47 0.8 L -6.18 -2.01 L -1.53 -2.1 Z";
+
 const TABLE_DEGS = [0, 60, 120, 180, 240, 300] as const;
 const HEAD_TABLE_X = [-18, -6, 6, 18] as const;
 const STATUS_DOT_OFFSETS = [0, 16, 32, 48, 64] as const;
@@ -967,15 +974,21 @@ export function SeatingMockup({ className }: Common) {
  *  the directory, used on VendorsPage to show vendors what their
  *  listing will look like.
  *
- *  It carries NO invented data: no business name, no star rating, no review
- *  count. Those read as a fabricated endorsement on a public page, and on a
- *  young marketplace they are also a promise we can't back. The card shows the
- *  empty template a vendor fills in ("Your business" / "Category · City"). */
+ *  Ride-hailing card layout: photo, then one row of name + rating, then one
+ *  muted row of category, city and price band. No "view profile" button — the
+ *  whole card is the affordance in the real directory, and a label under it
+ *  only repeats what the card already shows.
+ *
+ *  Every value is a TEMPLATE the vendor fills in ("Your business",
+ *  "Category · City"), including the rating: it's the shape of the field, not
+ *  a claim about anyone. The review COUNT stays out, since a specific tally is
+ *  the part that would read as invented proof. `$$` is the same price-band
+ *  symbol the real cards use ("$".repeat(price_band)). */
 export function VendorListingMockup({ className }: Common) {
   const { t } = useT();
   return (
     <svg
-      viewBox="0 0 360 232"
+      viewBox="0 0 360 196"
       role="img"
       aria-label={t("landing.mockup_aria_vendor")}
       className={className}
@@ -997,7 +1010,7 @@ export function VendorListingMockup({ className }: Common) {
         x="0"
         y="0"
         width="360"
-        height="232"
+        height="196"
         rx="16"
         className="text-white dark:text-umber-800"
         fill="currentColor"
@@ -1024,33 +1037,28 @@ export function VendorListingMockup({ className }: Common) {
         <circle cx="40" cy="92" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
       </g>
 
-      {/* Name + category, both placeholders the vendor replaces. */}
+      {/* Row 1 — name left, rating hard right. */}
       <g className="font-serif text-ink-900 dark:text-paper-100">
         <text x="20" y="150" fontSize="18" fill="currentColor">
           {t("landing.mockup_vendor_name")}
         </text>
       </g>
+      <g className="text-star">
+        <path d={STAR_PATH} transform="translate(306 145)" fill="currentColor" />
+      </g>
+      <g className="text-ink-900 font-sans dark:text-paper-100">
+        <text x="340" y="150" fontSize="13" fontWeight="600" fill="currentColor" textAnchor="end">
+          {t("landing.mockup_vendor_rating")}
+        </text>
+      </g>
+
+      {/* Row 2 — category, city and price band, all muted. */}
       <g className="text-ink-500 font-sans dark:text-umber-300">
         <text x="20" y="170" fontSize="10" fill="currentColor">
           {t("landing.mockup_vendor_category")}
         </text>
-      </g>
-
-      {/* CTA, full width now that the star row is gone, so the lower half of
-          the card doesn't read as half-empty. */}
-      <g className="text-umber-600 dark:text-paper-200">
-        <rect x="20" y="182" width="320" height="34" rx="17" fill="currentColor" />
-      </g>
-      <g className="text-white font-sans dark:text-ink-900">
-        <text
-          x="180"
-          y="204"
-          fontSize="11"
-          fontWeight="600"
-          fill="currentColor"
-          textAnchor="middle"
-        >
-          {t("landing.mockup_vendor_cta")}
+        <text x="340" y="170" fontSize="11" fontWeight="600" fill="currentColor" textAnchor="end">
+          {t("landing.mockup_vendor_price")}
         </text>
       </g>
     </svg>
