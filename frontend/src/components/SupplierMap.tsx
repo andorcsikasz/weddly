@@ -24,14 +24,26 @@
 import type { DirectorySupplier } from "@shared/suppliers";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { ArrowRight, Bookmark, BookmarkCheck, Heart } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { useNavigate } from "react-router-dom";
 import { categoryIcon } from "../lib/category_icons";
 import { useT } from "../lib/i18n";
+import type { SelectionMap } from "../lib/supplier_selection";
 import { safeExternalHref } from "../lib/url";
 
 type PlacedSupplier = DirectorySupplier & { lat: number; lng: number };
+
+/** Save (heart) + pick (bookmark) wiring, threaded down from SuppliersPage so
+ *  the map popup carries the same affordances as the grid/list cards. */
+interface CardActions {
+  saved: Set<string>;
+  selection: SelectionMap;
+  onToggleSave: (id: string) => void;
+  onTogglePick: (s: DirectorySupplier) => void;
+}
 
 /** Suppliers close enough at the CURRENT zoom to share one marker. */
 interface PinGroup {
@@ -81,8 +93,15 @@ function FitToPins({ pins }: { pins: { lat: number; lng: number }[] }) {
   return null;
 }
 
-export default function SupplierMap({ suppliers }: { suppliers: DirectorySupplier[] }) {
+export default function SupplierMap({
+  suppliers,
+  saved,
+  selection,
+  onToggleSave,
+  onTogglePick,
+}: { suppliers: DirectorySupplier[] } & CardActions) {
   const { t } = useT();
+  const actions: CardActions = { saved, selection, onToggleSave, onTogglePick };
 
   const placed = useMemo(
     () =>
@@ -105,7 +124,7 @@ export default function SupplierMap({ suppliers }: { suppliers: DirectorySupplie
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <PinLayer placed={placed} />
+        <PinLayer placed={placed} actions={actions} />
       </MapContainer>
       {suppliers.length > placed.length && (
         <p className="border-t border-paper-200 dark:border-umber-700 bg-paper-50 dark:bg-umber-800 px-4 py-2 text-xs text-ink-500 dark:text-umber-300">
@@ -121,7 +140,7 @@ export default function SupplierMap({ suppliers }: { suppliers: DirectorySupplie
  *  zooming in splits them apart again. Cheap enough to do in render: the whole
  *  directory is a few hundred points, and it saves pulling in a clustering
  *  plugin for the one screen that needs it. */
-function PinLayer({ placed }: { placed: PlacedSupplier[] }) {
+function PinLayer({ placed, actions }: { placed: PlacedSupplier[]; actions: CardActions }) {
   const map = useMap();
   const [zoom, setZoom] = useState(() => map.getZoom());
   useMapEvents({
@@ -153,6 +172,7 @@ function PinLayer({ placed }: { placed: PlacedSupplier[] }) {
         <SupplierPin
           key={g.key}
           group={g}
+          actions={actions}
           // A group whose members sit on DIFFERENT coordinates splits apart if
           // the user zooms in, so clicking it zooms (the cluster convention)
           // instead of dumping a hundred names into a popup. A group that is
@@ -168,7 +188,11 @@ function PinLayer({ placed }: { placed: PlacedSupplier[] }) {
 
 /** One marker: the category glyph of what stands there, plus a count badge when
  *  several suppliers share the spot. */
-function SupplierPin({ group, expandable }: { group: PinGroup; expandable: boolean }) {
+function SupplierPin({
+  group,
+  expandable,
+  actions,
+}: { group: PinGroup; expandable: boolean; actions: CardActions }) {
   const { t } = useT();
   const map = useMap();
   const first = group.items[0];
@@ -238,16 +262,16 @@ function SupplierPin({ group, expandable }: { group: PinGroup; expandable: boole
         {expandable ? null : (
           <Popup>
             {count === 1 ? (
-              <SupplierPopupCard supplier={first} />
+              <SupplierPopupCard supplier={first} actions={actions} />
             ) : (
-              <div className="max-h-64 w-56 overflow-y-auto pr-1">
+              <div className="max-h-64 w-60 overflow-y-auto pr-1">
                 <p className="pb-1 text-xs font-semibold text-ink-900">
                   {t("suppliers.map_group_count", { n: count })}
                 </p>
                 <ul className="divide-y divide-paper-200">
                   {group.items.map((s) => (
-                    <li key={s.id} className="py-1.5">
-                      <SupplierPopupCard supplier={s} compact />
+                    <li key={s.id} className="py-2">
+                      <SupplierPopupCard supplier={s} actions={actions} compact />
                     </li>
                   ))}
                 </ul>
@@ -264,30 +288,108 @@ function SupplierPin({ group, expandable }: { group: PinGroup; expandable: boole
  *  stays scannable. */
 function SupplierPopupCard({
   supplier: s,
+  actions,
   compact = false,
 }: {
   supplier: PlacedSupplier;
+  actions: CardActions;
   compact?: boolean;
 }) {
   const { t, locale } = useT();
+  const navigate = useNavigate();
+  const isSaved = actions.saved.has(s.id);
+  const isPicked = actions.selection[s.category] === s.id;
+  const priceBand = typeof s.price_band === "number" ? s.price_band : 0;
+  const openProfile = () => navigate(`/app/suppliers/${encodeURIComponent(s.id)}`);
+
   return (
-    <div className="space-y-1">
-      <p className="font-semibold text-ink-900">{s.name}</p>
-      <p className="text-xs text-ink-500">
-        {t(`suppliers.cat.${s.category}`)} · {s.city}
+    <div className={compact ? "w-full" : "w-64"}>
+      {/* Title row: the name is the tap target for the vendor's Weddly page
+          (the arrow hints it), with save (heart) + pick (bookmark) on the right. */}
+      <div className="flex items-start justify-between gap-2">
+        <button
+          type="button"
+          onClick={openProfile}
+          className="group -m-1 min-w-0 flex-1 rounded p-1 text-left"
+        >
+          <span className="flex items-center gap-1 font-semibold text-ink-900">
+            <span className="truncate group-hover:underline">{s.name}</span>
+            <ArrowRight
+              size={13}
+              aria-hidden
+              className="shrink-0 text-ink-400 transition group-hover:translate-x-0.5 group-hover:text-ink-700"
+            />
+          </span>
+        </button>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => actions.onToggleSave(s.id)}
+            aria-pressed={isSaved}
+            aria-label={t(isSaved ? "suppliers.unsave_aria" : "suppliers.save_aria")}
+            title={t(isSaved ? "suppliers.unsave_aria" : "suppliers.save_aria")}
+            className="grid h-7 w-7 place-items-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-blush-600"
+          >
+            <Heart
+              size={15}
+              aria-hidden
+              className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+            />
+          </button>
+          <button
+            type="button"
+            onClick={() => actions.onTogglePick(s)}
+            aria-pressed={isPicked}
+            aria-label={t(isPicked ? "suppliers.unpick_aria" : "suppliers.pick_aria")}
+            title={t(isPicked ? "suppliers.unpick_aria" : "suppliers.pick_aria")}
+            className="grid h-7 w-7 place-items-center rounded-full text-ink-400 transition hover:bg-paper-200 hover:text-sage-700"
+          >
+            {isPicked ? (
+              <BookmarkCheck size={15} aria-hidden className="fill-sage-200 text-sage-700" />
+            ) : (
+              <Bookmark size={15} aria-hidden />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Meta: category · city · price band ($). Rating slots in here once the
+          directory payload carries it. */}
+      <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-ink-500">
+        <span>{t(`suppliers.cat.${s.category}`)}</span>
+        <span aria-hidden className="text-paper-400">
+          ·
+        </span>
+        <span>{s.city}</span>
+        {priceBand > 0 && (
+          <>
+            <span aria-hidden className="text-paper-400">
+              ·
+            </span>
+            <span className="font-mono text-ink-600" title={t("suppliers.price_legend")}>
+              {"$".repeat(priceBand)}
+            </span>
+          </>
+        )}
       </p>
-      {!compact && s.address && <p className="text-xs text-ink-500">{s.address}</p>}
+
+      {!compact && s.address && <p className="mt-1 text-xs text-ink-400">{s.address}</p>}
       {!compact && (
-        <p className="pt-1 text-xs text-ink-700">{locale === "hu" ? s.blurb_hu : s.blurb_en}</p>
+        <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-ink-700">
+          {locale === "hu" ? s.blurb_hu : s.blurb_en}
+        </p>
       )}
-      <a
-        href={safeExternalHref(s.website)}
-        target="_blank"
-        rel="noreferrer noopener"
-        className="inline-block pt-1 text-xs font-medium text-blush-700 hover:text-blush-800"
-      >
-        {t("suppliers.visit_website")} →
-      </a>
+
+      {s.website && (
+        <a
+          href={safeExternalHref(s.website)}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="mt-2 inline-block text-xs font-medium text-ink-500 hover:text-ink-900"
+        >
+          {t("suppliers.visit_website")} ↗
+        </a>
+      )}
     </div>
   );
 }

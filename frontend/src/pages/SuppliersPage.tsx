@@ -1856,6 +1856,10 @@ export default function SuppliersPage() {
               >
                 <SupplierMap
                   suppliers={filtered.filter((s): s is DirectorySupplier => s.source !== "self")}
+                  saved={saved}
+                  selection={selection}
+                  onToggleSave={toggleSaved}
+                  onTogglePick={togglePicked}
                 />
               </Suspense>
             </div>
