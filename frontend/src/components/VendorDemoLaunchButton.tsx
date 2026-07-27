@@ -4,12 +4,13 @@
 // visitor into /vendor.
 //
 // Mirrors PlannerDemoLaunchButton: an inline secondary action beside the
-// /vendors hero CTA. `variant="quiet"` renders it as a plain text link so the
-// recruitment page can keep exactly one visually dominant button (the signup
-// CTA); the default outline button is kept for any surface that wants the demo
-// to read as a real alternative.
+// /vendors hero CTA. The outline button is the default and what /vendors uses
+// at `size="lg"`, so it stands shoulder to shoulder with the signup CTA: a
+// vendor who won't hand over an email will still click through a demo, and as
+// a text link this was too easy to miss. `variant="quiet"` keeps the plain
+// text-link rendering for any surface that wants exactly one visible button.
 
-import { ArrowRight, Loader2 } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
@@ -17,7 +18,15 @@ import { markCurrentSessionDemo } from "../lib/demoSession";
 import { demoApi } from "../lib/endpoints";
 import { contentLocale, useT } from "../lib/i18n";
 
-export function VendorDemoLaunchButton({ variant = "outline" }: { variant?: "outline" | "quiet" }) {
+export function VendorDemoLaunchButton({
+  variant = "outline",
+  size = "md",
+}: {
+  variant?: "outline" | "quiet";
+  /** "lg" matches `.btn-lg` (px-6 py-3 text-base) so the button lines up with a
+   *  `btn-primary btn-lg` next to it instead of sitting a few pixels short. */
+  size?: "md" | "lg";
+}) {
   const { t, locale } = useT();
   const navigate = useNavigate();
   const { setSession } = useAuth();
@@ -53,18 +62,22 @@ export function VendorDemoLaunchButton({ variant = "outline" }: { variant?: "out
         className={
           variant === "quiet"
             ? "inline-flex items-center gap-1.5 text-sm font-medium text-ink-600 underline-offset-2 hover:underline disabled:cursor-wait disabled:opacity-80 dark:text-umber-200"
-            : "btn btn-outline inline-flex items-center gap-2 px-6 py-3 text-sm disabled:cursor-wait disabled:opacity-80"
+            : `btn btn-outline inline-flex items-center gap-2 shadow-sm disabled:cursor-wait disabled:opacity-80 ${
+                size === "lg" ? "btn-lg" : "px-6 py-3 text-sm"
+              }`
         }
       >
         {busy ? (
           <>
-            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            <Loader2 size={size === "lg" ? 18 : 16} className="animate-spin" aria-hidden="true" />
             {t("vendors.demo_loading")}
           </>
         ) : (
           <>
+            {/* An eye, not an arrow: the arrow is the signup CTA's glyph and two
+                identical arrows side by side read as two of the same button. */}
+            {variant === "outline" && <Eye size={size === "lg" ? 18 : 16} aria-hidden="true" />}
             {t("vendors.demo_cta")}
-            {variant === "outline" && <ArrowRight size={16} aria-hidden="true" />}
           </>
         )}
       </button>

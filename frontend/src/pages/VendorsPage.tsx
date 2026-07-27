@@ -19,11 +19,14 @@
 //      placeholder: the card shows a rating and a price band because those are
 //      fields the vendor's real listing has. It still carries no review count,
 //      which is the value that would read as invented proof.
-//   4. ONE dominant call to action (signup), repeated once at the end. The
-//      demo launcher and the wrong-audience escape hatches are quiet text
-//      links; there is deliberately no "log in" link in the hero, because the
-//      header already carries one (icon on desktop, menu item on mobile) and a
-//      second one just competes with the signup button.
+//   4. ONE dominant call to action (signup), repeated once at the end, with
+//      the demo as a real outline button beside it in both places. The demo
+//      used to be a quiet text link and was too easy to miss: a vendor who
+//      won't hand over an email yet still clicks "see the demo", and that is
+//      the only path from this page into the product. The wrong-audience links
+//      stay quiet text; there is deliberately no "log in" link in the hero,
+//      because the header already carries one (icon on desktop, menu item on
+//      mobile) and a second one just competes with the signup button.
 
 import { ArrowLeft, ArrowRight, Gem, Inbox, Receipt, Share2, Store } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -85,21 +88,19 @@ export default function VendorsPage() {
           <h1 className="font-grotesk text-4xl font-semibold leading-[1.02] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
-          {/* Single dominant action. Everything else below it is a text link.
-              Nothing sits under the button any more: the effort claim and the
-              free-window promise both read as marketing next to a headline
-              that already says what the page is for. */}
-          <div className="mt-8">
+          {/* Two buttons, one dominant. Nothing sits under them any more: the
+              effort claim and the free-window promise both read as marketing
+              next to a headline that already says what the page is for.
+              Stacked full-width on mobile so neither is a small tap target. */}
+          <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center lg:justify-start">
             <Link
               to="/vendors/signup"
-              className="btn-primary btn-lg inline-flex items-center gap-2 shadow-sm"
+              className="btn-primary btn-lg inline-flex items-center justify-center gap-2 shadow-sm"
             >
               {t("vendors.signup_cta")}
               <ArrowRight size={18} aria-hidden />
             </Link>
-          </div>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 lg:justify-start">
-            <VendorDemoLaunchButton variant="quiet" />
+            <VendorDemoLaunchButton size="lg" />
           </div>
           {/* Wrong-audience escape hatch — one compact line, a size below the
               body copy so it never competes with the CTA (audit item 12). */}
@@ -234,14 +235,17 @@ function ClosingBand() {
           ))}
         </div>
       )}
-      <div className="mt-8">
+      {/* Same pair as the hero, same order. A visitor who scrolled the whole
+          page without signing up is exactly who the demo is for. */}
+      <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
         <Link
           to="/vendors/signup"
-          className="btn-primary btn-lg inline-flex items-center gap-2 shadow-sm"
+          className="btn-primary btn-lg inline-flex items-center justify-center gap-2 shadow-sm"
         >
           {t("vendors.closing_cta")}
           <ArrowRight size={18} aria-hidden />
         </Link>
+        <VendorDemoLaunchButton size="lg" />
       </div>
     </section>
   );
