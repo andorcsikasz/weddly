@@ -279,12 +279,14 @@ const upsertListingStmt = db.prepare(`
   INSERT INTO listings (
     id, source, vendor_account_id, category, name, city, address, website,
     contact_email, contact_phone, blurb_hu, blurb_en, price_band,
-    capacity_min, capacity_max, venue_style, lat, lng, submitter_type, status, content_hash,
+    capacity_min, capacity_max, venue_style, lat, lng, spoken_languages,
+    submitter_type, status, content_hash,
     created_at, updated_at
   ) VALUES (
     $id, $source, $vendor_account_id, $category, $name, $city, $address, $website,
     $contact_email, $contact_phone, $blurb_hu, $blurb_en, $price_band,
-    $capacity_min, $capacity_max, $venue_style, $lat, $lng, $submitter_type, $status, $content_hash,
+    $capacity_min, $capacity_max, $venue_style, $lat, $lng, $spoken_languages,
+    $submitter_type, $status, $content_hash,
     $created_at, $updated_at
   )
   ON CONFLICT(id) DO UPDATE SET
@@ -309,6 +311,13 @@ const upsertListingStmt = db.prepare(`
     venue_style       = excluded.venue_style,
     lat               = excluded.lat,
     lng               = excluded.lng,
+    -- COALESCE for the same reason as vendor_account_id above: a vendor who
+    -- claimed this listing sets their own spoken languages in the listing
+    -- editor, and the community sync path doesn't know about them at all. A
+    -- plain assignment would blank that on every re-sync. The cost is that a
+    -- curated entry can add languages but not clear them again — which is the
+    -- safe direction to be wrong in.
+    spoken_languages  = COALESCE(excluded.spoken_languages, listings.spoken_languages),
     submitter_type    = excluded.submitter_type,
     status            = excluded.status,
     content_hash      = excluded.content_hash,
@@ -340,6 +349,7 @@ function hashCuratedEntry(e: (typeof DIRECTORY)[number]): string {
     e.venue_style,
     e.lat,
     e.lng,
+    e.spoken_languages ?? null,
   ]);
   return createHash("sha256").update(payload).digest("hex").slice(0, 16);
 }
@@ -393,6 +403,9 @@ export function syncListingFromCommunityRow(row: CommunitySupplierRow): void {
     $venue_style: null,
     $lat: null,
     $lng: null,
+    // The submission form doesn't ask for spoken languages. NULL here leaves
+    // whatever a claiming vendor set intact (see the COALESCE on the upsert).
+    $spoken_languages: null,
     $submitter_type: row.submitter_type === "self" ? "self" : "user",
     $status: row.status,
     $content_hash: hashCommunityRow(row),
@@ -456,6 +469,9 @@ export function backfillListings(): { curated: number; community: number } {
         $venue_style: entry.venue_style,
         $lat: entry.lat,
         $lng: entry.lng,
+        $spoken_languages: entry.spoken_languages?.length
+          ? formatSpokenLanguages(entry.spoken_languages)
+          : null,
         $submitter_type: null,
         $status: "active",
         $content_hash: hashCuratedEntry(entry),

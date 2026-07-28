@@ -19587,6 +19587,474 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: null,
   },
+
+  // ── Photo / video / hosting / music, curated July 2026 ──────────────────
+  //
+  // Every field below was read off the business's own public website: contact
+  // details, base town, and the published package prices that set price_band
+  // (1 = budget … 5 = ultra-luxury). Where a business publishes no price the
+  // band stays null rather than being guessed — an invented band is worse than
+  // an absent one, because couples filter on it.
+  //
+  // `gallery_urls` point at each business's OWN portfolio images; the boot
+  // sweep in domain/listing_gallery_backfill.ts re-hosts them locally (our CSP
+  // img-src won't load an arbitrary vendor host) and DIRECTORY promotes [0] to
+  // the card hero. Stock library images were deliberately excluded: several of
+  // these sites are Webnode builds that serve template photography from a
+  // shared CDN (duyn491kcolsw.cloudfront.net), which is not the vendor's work
+  // and must never appear on their card as if it were.
+  {
+    id: "lazar-imre",
+    name: "Lázár Imre",
+    category: "photography",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Esküvői fotó és videó egy kézből, hogy a két anyag ugyanazt a hangulatot hozza. A csomagok a rövid, szertartásra szűkített kísérettől a teljes napos fotó-videó munkáig tartanak, drónfelvétellel, highlight filmmel és kérésre aznapi mini esküvői weboldallal. Budapest és környéke a bázis, de vidékre is utazik.",
+    blurb_en:
+      "Wedding photography and video from one hand, so both come back with the same look and feel. Packages run from a short ceremony-only shoot to full-day photo and video coverage, with drone footage, a highlight reel and an optional same-day mini wedding website. Based around Budapest and travels nationwide.",
+    website: "https://lazar-imre.hu/",
+    ...noContact,
+    gallery_urls: [
+      "https://lazar-imre.hu/assets/img/wedding/240622_21h2821-379.webp",
+      "https://lazar-imre.hu/assets/img/wedding/Story_cover/N%C3%A9z%C5%91k%C3%A9p2-250920_1735_21-24-2-2.webp",
+      "https://lazar-imre.hu/assets/img/wedding/Story/Viki_Laci_eskuvo_pocsmegyer/N%C3%A9z%C5%91k%C3%A9p1-250906_1531_01-3954-Edit-Edit.webp",
+      "https://lazar-imre.hu/assets/img/wedding/Story/Adriana_Laci_es_Artur_eskuvo-keresztelo/N%C3%A9z%C5%91k%C3%A9p1-250913_1239_06-1151-Enhanced-NR.webp",
+      "https://lazar-imre.hu/assets/img/wedding/Story/2025/Melinda&Tamas_eskuvo/N%C3%A9z%C5%91k%C3%A9p1-250808_1653_38-3290.webp",
+      "https://lazar-imre.hu/assets/img/wedding/Story/Anett_Attila_jegyesfotozas/N%C3%A9z%C5%91k%C3%A9p1-250706_1807_16-370.webp",
+    ],
+    source: "curated",
+    price_band: 3,
+  },
+  {
+    id: "karako-kristof-foto",
+    name: "Karakó Kristóf",
+    category: "photography",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Esküvői fotós, aki arra játszik, hogy a nagy napon a fotó legyen az utolsó, ami miatt aggódnotok kell. Az oldalán több teljes esküvői galéria található, köztük nemzetközileg is díjazott munkák, csomagajánlatok és páros visszajelzések.",
+    blurb_en:
+      "A wedding photographer whose pitch is that the photos should be the last thing you worry about on the day. His site carries several full wedding galleries, including internationally recognised work, alongside package deals and client reviews.",
+    website: "https://karakokristof-foto.hu/",
+    ...noContact,
+    contact_email: "info@karakokristof-foto.hu",
+    contact_phone: "+36 30 220 2966",
+    gallery_urls: [
+      "https://karakokristof-foto.hu/_userfiles_/karakokristoffoto/gallery/2026078075840-IMG-7063.jpg",
+      "https://karakokristof-foto.hu/_userfiles_/karakokristoffoto/gallery/2026078075835-IMG-7081.jpg",
+      "https://karakokristof-foto.hu/_userfiles_/karakokristoffoto/gallery/2026078075832-IMG-6864.jpg",
+      "https://karakokristof-foto.hu/_userfiles_/karakokristoffoto/gallery/2026078075838-IMG-6842.jpg",
+      "https://karakokristof-foto.hu/_userfiles_/karakokristoffoto/img/header_102181.jpg",
+    ],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "lajlaphoto",
+    name: "Lajlaphoto — Szabó-Lukács Leila",
+    category: "photography",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Fotós és egykori modell, aki szerint pont a modellmúltja miatt tudja feloldani azt, aki görcsösen áll a gép elé. Saját stúdióban és kint, természetes fényben is dolgozik, és nem képeket, hanem megmaradó emlékeket ígér.",
+    blurb_en:
+      "A photographer and former model who says her time in front of the camera is exactly what lets her put a nervous client at ease. She shoots both in her own studio and outdoors in natural light, and frames the job as making memories rather than images.",
+    website: "https://www.lajlaphoto.hu/eskuvoi-fotozas/",
+    ...noContact,
+    contact_email: "lajlaphoto@gmail.com",
+    contact_phone: "+36 30 857 4425",
+    gallery_urls: [
+      "https://www.lajlaphoto.hu/wp-content/uploads/2026/02/01-1.jpg",
+      "https://www.lajlaphoto.hu/wp-content/uploads/2026/02/02-1.jpg",
+      "https://www.lajlaphoto.hu/wp-content/uploads/2026/02/03-1.jpg",
+      "https://www.lajlaphoto.hu/wp-content/uploads/2026/02/04-1.jpg",
+      "https://www.lajlaphoto.hu/wp-content/uploads/2026/02/05-1.jpg",
+      "https://www.lajlaphoto.hu/wp-content/uploads/2026/02/06-1.jpg",
+    ],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "24frames",
+    name: "24Frames",
+    category: "photography",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Kétfős esküvői fotó- és videócsapat, akiket a 2024-es páros visszajelzések elsősorban a nyugodt, támogató jelenlétükért dicsérnek. Minden csomagban benne van a drónfelvétel, az oldalukon pedig élő dátumfoglaltság-kereső fut.",
+    blurb_en:
+      "A two-person wedding photo and video team whose 2024 reviews single out how calm and steadying they are to have around all day. Drone footage is included in every package, and their site runs a live date-availability checker.",
+    website: "https://24frames.hu/",
+    ...noContact,
+    contact_email: "info@24frames.hu",
+    contact_phone: "+36 20 226 8020",
+    gallery_urls: [
+      "https://24frames.hu/img/peti_fotok/fokepek/fokep_1.jpg",
+      "https://24frames.hu/img/peti_fotok/fokepek/fokep_11.JPG",
+      "https://24frames.hu/_kep.JPG",
+      "https://24frames.hu/img/index_eskuvok/0810_negyzet.jpg",
+      "https://24frames.hu/img/index_eskuvok/0914_negyzet.jpg",
+      "https://24frames.hu/img/index_eskuvok/0726_negyzet.jpg",
+    ],
+    source: "curated",
+    price_band: 4,
+  },
+  {
+    id: "our-big-moments",
+    name: "Our Big Moments",
+    category: "photography",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Tizenhárom év és több száz dokumentált esküvő van mögötte, a stílusa észrevétlen, megfigyelő fotózás. A folyamat része egy esküvő előtti egyeztetés és helyszínbejárás, két napon belül érkező ízelítő képek, és nagyjából két hét alatt a teljes, retusált galéria.",
+    blurb_en:
+      "Thirteen years and several hundred documented weddings behind them, working in an unobtrusive, observational style. The process includes a pre-wedding planning session and venue visit, sneak-peek photos within two days, and the full retouched gallery in about two weeks.",
+    // tasfozo.hu is a general photography portfolio — its homepage leads with
+    // landscape and street work, and the wedding brand lives at
+    // /ourbigmoments. Both the link and the gallery point there, so a couple
+    // lands on weddings rather than on mountain roads.
+    website: "https://tasfozo.hu/ourbigmoments",
+    ...noContact,
+    contact_email: "itsourbigmoments@gmail.com",
+    contact_phone: "+36 30 793 0173",
+    // ?format=1500w is Squarespace's own resize: the originals are 4-11 MB,
+    // over the 8 MB ceiling in lib/remote_image.ts, so the full-size URLs would
+    // silently fail to re-host and leave the card without a photo.
+    gallery_urls: [
+      "https://images.squarespace-cdn.com/content/v1/6955668f8c4ecd34aff34e3d/05bfa0a1-f5e6-4781-880f-ef336ac3f66f/5M5A9412.jpeg?format=1500w",
+      "https://images.squarespace-cdn.com/content/v1/6955668f8c4ecd34aff34e3d/02955d10-5438-4105-ba28-4dccdff4171e/5M5A4457.jpeg?format=1500w",
+      "https://images.squarespace-cdn.com/content/v1/6955668f8c4ecd34aff34e3d/12241540-320f-43a8-8254-e6c559542073/5M5A1460.jpeg?format=1500w",
+      "https://images.squarespace-cdn.com/content/v1/6955668f8c4ecd34aff34e3d/1c6bc938-9850-41b1-bf5e-78b0de6cd2d0/5M5A9792.jpeg?format=1500w",
+      "https://images.squarespace-cdn.com/content/v1/6955668f8c4ecd34aff34e3d/22cb4535-dcfb-4f57-b2b1-ca10d8789c72/5M5A2626.jpeg?format=1500w",
+    ],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "antal-laszlo-fenykepesz",
+    name: "Antal László Fényképész",
+    category: "photography",
+    city: "Hatvan",
+    address: "Hatvan, Dézsmaszéki u. 25.",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Hatvani fényképész, aki esküvőt, jegyességet, családi, baba- és portréfotózást vállal Hatvanban és Heves megyében. Az oldalán sok névvel vállalt páros visszajelzés szerepel, amelyek főleg a türelmét és a fotózás közbeni oldott stílusát emelik ki.",
+    blurb_en:
+      "A Hatvan-based photographer covering weddings, engagements, family, baby and portrait sessions across Hatvan and Heves county. His site carries a long run of named couple testimonials, most of them about how patient and easygoing he is on a shoot.",
+    website: "https://antallaszlo.hu/",
+    ...noContact,
+    contact_email: "info@antallaszlo.hu",
+    contact_phone: "+36 30 884 7960",
+    gallery_urls: [
+      "https://antallaszlo.hu/portfolio/250816cjeskuvo/_MG_0652.jpg",
+      "https://antallaszlo.hu/portfolio/250816cjeskuvo/_MG_0702.jpg",
+      "https://antallaszlo.hu/portfolio/250816cjeskuvo/_MG_0774.jpg",
+      "https://antallaszlo.hu/portfolio/250816cjeskuvo/_MG_0813.jpg",
+      "https://antallaszlo.hu/portfolio/250816cjeskuvo/_MG_0886.jpg",
+      "https://antallaszlo.hu/portfolio/250816cjeskuvo/_MG_0905.jpg",
+    ],
+    source: "curated",
+    price_band: 2,
+  },
+  {
+    id: "ceremonia-by-kiss",
+    name: "Ceremónia by Kiss — Kiss Ádám",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Ceremóniamester, aki a saját stílusát elegánsnak, de fiatalosnak írja le, és külföldi vendégek előtt magyarul és angolul is levezeti a napot. Nemzetközi utascsoportok kíséréséből és rendezvénycateringből hozott háttérrel dolgozik, és van egy bejáratott szolgáltatói köre, akiket rendszeresen ajánl.",
+    blurb_en:
+      "A wedding MC who describes his style as elegant but young, and can host the day in Hungarian or English when there are international guests. He works off a background in leading international travel groups and in event catering, and keeps a trusted circle of vendors he regularly recommends.",
+    website: "https://ceremoniabykiss.hu/",
+    ...noContact,
+    contact_email: "ceremoniabykiss@gmail.com",
+    contact_phone: "+36 30 307 0312",
+    spoken_languages: ["hu", "en"],
+    gallery_urls: [
+      "https://ceremoniabykiss.hu/assets/images/image01.jpg",
+      "https://ceremoniabykiss.hu/assets/images/image02.jpg",
+      "https://ceremoniabykiss.hu/assets/images/image03.jpg",
+      "https://ceremoniabykiss.hu/assets/images/card.jpg",
+    ],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "molli-photography",
+    name: "Molli Photography",
+    category: "photography",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Budapesti esküvői fotós három lépcsős csomagkínálattal. A bronz a szertartás napjára szűkített fotózás, a legnagyobb csomag pedig a készülődéstől a lakodalomig végigkíséri a napot.",
+    blurb_en:
+      "A Budapest wedding photographer working with three tiered packages. Bronze is a ceremony-day shoot; the top package follows the whole day from getting ready through to the reception party.",
+    website: "https://molli-photography.hu/",
+    ...noContact,
+    contact_email: "telek.molly@gmail.com",
+    contact_phone: "+36 30 382 6061",
+    gallery_urls: [
+      "https://7b8b56ee53.clvaw-cdnwnd.com/5abaebd02a507815b8fb87233c92d855/200000109-2c3e12c3e2/IMG_2794%20%281%29.jpeg?ph=7b8b56ee53",
+      "https://7b8b56ee53.clvaw-cdnwnd.com/5abaebd02a507815b8fb87233c92d855/200000067-30f9930f9e/IMG_1813ff.jpeg?ph=7b8b56ee53",
+      "https://7b8b56ee53.clvaw-cdnwnd.com/5abaebd02a507815b8fb87233c92d855/200000153-24b9824b9a/IMG_0123.jpeg?ph=7b8b56ee53",
+      "https://7b8b56ee53.clvaw-cdnwnd.com/5abaebd02a507815b8fb87233c92d855/200000113-9657c9657e/IMG_9447.jpeg?ph=7b8b56ee53",
+    ],
+    source: "curated",
+    price_band: 2,
+  },
+  {
+    id: "chipy-foto",
+    name: "Chipy Fotó — Török Nándor",
+    category: "photography",
+    city: "Kápolnásnyék",
+    address: "2475 Kápolnásnyék, Kossuth Lajos út 2.",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Kápolnásnyéki fotós, aki a rövid, csak kreatív fotózástól a teljes napos, két fotóssal dolgozó esküvői kíséretig mindent vállal. A csomagok hangsúlyosan rejtett költség nélküli szerződésre épülnek, és jár hozzájuk ingyenes jegyesfotózás és egy vászonkép is.",
+    blurb_en:
+      "A Kápolnásnyék photographer covering everything from a short creative-only session to full two-photographer wedding-day coverage. The packages are built around a no-hidden-fee contract and throw in a free engagement shoot and a canvas print.",
+    website: "https://chipyfoto.hu/",
+    ...noContact,
+    contact_email: "info@chipyfoto.hu",
+    contact_phone: "+36 30 363 1621",
+    gallery_urls: [
+      "https://c88e60386a.clvaw-cdnwnd.com/0c66fcad13373ca9fdcac95cc5b120e8/200000005-607896078c/CHIP1752.jpeg?ph=c88e60386a",
+      "https://c88e60386a.clvaw-cdnwnd.com/0c66fcad13373ca9fdcac95cc5b120e8/200000006-5d2925d294/CHIP2030.jpeg?ph=c88e60386a",
+      "https://c88e60386a.clvaw-cdnwnd.com/0c66fcad13373ca9fdcac95cc5b120e8/200000007-6c49a6c49c/CHIP2383.jpeg?ph=c88e60386a",
+    ],
+    source: "curated",
+    price_band: 3,
+  },
+  {
+    id: "bakos-tamas",
+    name: "Bakos Tamás",
+    category: "photography",
+    city: "Gyöngyös",
+    address: "3200 Gyöngyös, Kócsag út 18.",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Gyöngyösi esküvői fotós. Az oldala szinte teljesen képes, alig van rajta szöveg, így a szolgáltatásait a portfólió mutatja be; az elérhetőség és a cím a kapcsolat oldalról származik.",
+    blurb_en:
+      "A Gyöngyös-based wedding photographer. His site is almost entirely visual with very little text, so the portfolio is the service description; contact details and address come from his contact page.",
+    website: "https://bakostamas.hu/",
+    ...noContact,
+    contact_email: "mail@bakostamas.hu",
+    contact_phone: "+36 20 372 0639",
+    gallery_urls: [
+      "https://bakostamas.hu/wp-content/uploads/2023/01/alma.jpg",
+      "https://bakostamas.hu/wp-content/uploads/2022/01/IMG_5674ff.jpg",
+      "https://bakostamas.hu/wp-content/uploads/2022/01/IMG_0189-1_kicsi.jpg",
+      "https://bakostamas.hu/wp-content/uploads/2022/01/IMG_6427-1_kicsi.jpg",
+      "https://bakostamas.hu/wp-content/uploads/2022/01/IMG_4265_kicsi.jpg",
+    ],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "papai-zoltan-photo",
+    name: "Pápai Zoltán Photo",
+    category: "photography",
+    city: "Tata",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Esküvői fotó- és filmcsapat, amely nemrég külön wedding content creatorral bővült: a kulisszák mögötti Reels- és TikTok-anyag 24-48 órán belül megérkezik. Hangsúlyt fektet a prémium géppark adta egyenletes minőségre gyenge fényben is, és van egy tágabb ajánlói köre videósokból, ceremóniamesterekből, dekoratőrökből és DJ-kből.",
+    blurb_en:
+      "A wedding photo and film team that recently added a dedicated content creator, so behind-the-scenes Reels and TikTok clips land within 24-48 hours. He leans on premium bodies and glass for consistent quality in low light, and keeps a wider referral network of videographers, MCs, decorators and DJs.",
+    // /eskuvok/ rather than the homepage: the front page is his general
+    // portfolio (street and lifestyle work under the FINECUT brand) and leads
+    // with a self-portrait, so crawling it gave a card that showed everything
+    // except a wedding.
+    website: "https://www.papaizoltanphoto.hu/eskuvok/",
+    ...noContact,
+    contact_email: "info@papaizoltanphoto.hu",
+    contact_phone: "+36 20 251 6765",
+    gallery_urls: [
+      "https://www.papaizoltanphoto.hu/wp-content/uploads/2020/09/26-of-32-www.papaizoltanphoto.hu_.jpg",
+      "https://www.papaizoltanphoto.hu/wp-content/uploads/2020/09/8-of-32-www.papaizoltanphoto.hu_.jpg",
+      "https://www.papaizoltanphoto.hu/wp-content/uploads/2020/09/15-of-52-www.papaizoltanphoto.hu-DSC_6273-Edit_.jpg",
+      "https://www.papaizoltanphoto.hu/wp-content/uploads/2020/09/9-of-52-www.papaizoltanphoto.hu-DSCF8142_.jpg",
+    ],
+    source: "curated",
+    price_band: 3,
+  },
+  {
+    id: "borsos-marcell",
+    name: "Borsos Marcell",
+    category: "photography",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Esküvői fotós, akinek a munkája a feltűnésmentesen elkapott, beállítás nélküli pillanatokra épül, e mellé jönnek a tudatosan komponált páros portrék és a drónfelvételek. Tizenöt év edzői múltból váltott a fotózásra, 2020-tól főállásban.",
+    blurb_en:
+      "A wedding photographer whose work is built on candid, unposed moments caught without drawing attention, alongside deliberately composed couple portraits and drone aerials. He came to photography from fifteen years of fitness coaching and went full-time in 2020.",
+    // Deep-linked to /eskuvo on purpose: he also shoots fitness, dogs and real
+    // estate, and the homepage mixes all four. Crawling it for photos produced
+    // a drone shot of a house and a gym portrait — accurate to the site,
+    // useless to a couple. Every gallery URL below is from the wedding page.
+    website: "https://www.borsosmarcell.hu/eskuvo",
+    ...noContact,
+    contact_email: "info@borsosmarcell.hu",
+    contact_phone: "+36 30 554 2102",
+    gallery_urls: [
+      "https://static.wixstatic.com/media/f3d76f_103ae4b2f9e845948f927cc2f01a80ef~mv2.jpg",
+      "https://static.wixstatic.com/media/f3d76f_380185547fe34efbaa0875d050f4630b~mv2.jpg",
+      "https://static.wixstatic.com/media/f3d76f_12c6a26042854a3485a28cc469ac4913~mv2.jpg",
+      "https://static.wixstatic.com/media/f3d76f_5ec633bb3d1d4987a7d100d41ceeb446~mv2.jpg",
+    ],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "vento-lento",
+    name: "Vento Lento",
+    category: "live_music",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Országosan turnézó élőzenekar képzett hivatásos zenészekből, akik az esküvő teljes zenei kíséretét viszik a szertartás hangosításától a hajnalig tartó bulizenéig. Nem fix blokkokban gondolkodnak: a szetteket ahhoz igazítják, ameddig a vendégek a táncparketten maradnak.",
+    blurb_en:
+      "A nationally touring live band of trained professional musicians covering a wedding's whole musical arc, from ceremony sound to an open-ended dance party. They deliberately don't work in fixed blocks, stretching the sets to however long the guests keep dancing.",
+    website: "https://ventolento.hu/",
+    ...noContact,
+    contact_email: "szepesvariadel@gmail.com",
+    contact_phone: "+36 30 206 7181",
+    gallery_urls: [
+      "https://ventolento.hu/wp-content/uploads/DS5_0663.jpg",
+      "https://ventolento.hu/wp-content/uploads/2015/09/vento_lento_esk%C3%BCv%C5%91i_zenekar_11.jpg",
+      "https://ventolento.hu/wp-content/uploads/vento-lento-eskuvoi-zenekar-party-zenekar-m%C3%A1solat-edit.jpg",
+    ],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "tamasi-robert",
+    name: "Tamási Róbert",
+    category: "photography",
+    city: "Mátészalka",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Mátészalkai esküvői fotós, aki végigveszi a párral az egész napot: készülődés, first look, szertartás, vacsora, buli. Az oldalán a feldolgozás menetét is részletezi, a válogatástól a színkorrekción át a retusálásig.",
+    blurb_en:
+      "A Mátészalka wedding photographer who walks couples through the whole shape of the day: getting ready, first look, ceremony, dinner, party. His site also spells out the post-production process, from culling through colour correction to retouching.",
+    website: "https://tamasirobert.hu/",
+    ...noContact,
+    contact_email: "tamasirobert.photo@gmail.com",
+    gallery_urls: [
+      "https://static.wixstatic.com/media/8314fb_d6fd7a1d766d40baa42b36915802a71b~mv2.jpg",
+      "https://static.wixstatic.com/media/8314fb_b90c5538f65b49efa069f4319f7d98cc~mv2.jpg",
+      "https://static.wixstatic.com/media/8314fb_79c8bd28c2a14abf9058f58144b18f9d~mv2.jpg",
+    ],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "jekkel-daniel",
+    name: "Jekkel Dániel",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Ceremóniamester és műsorvezető tíz év tapasztalattal és több mint 130 levezetett esküvővel, százszázalékos pozitív visszajelzési aránnyal. Esküvőkön kívül általános rendezvény-műsorvezetést és sportbemondást is vállal; a páros értékelések főleg azt emelik ki, milyen gyorsan kapcsol, ha valami nem a terv szerint alakul.",
+    blurb_en:
+      "A wedding MC and host with ten years behind him and over 130 weddings, at a 100% positive feedback rate. Outside weddings he works as a general event emcee and sports announcer, and the reviews keep coming back to how fast he thinks when something goes off plan.",
+    website: "https://www.jekkeldaniel.hu/",
+    ...noContact,
+    contact_email: "daniel.jekkel@gmail.com",
+    contact_phone: "+36 30 683 0131",
+    gallery_urls: [
+      "https://www.jekkeldaniel.hu/wp-content/uploads/2023/10/Jekkel-Daniel-ceremoniamester-15.jpg",
+      "https://www.jekkeldaniel.hu/wp-content/uploads/2023/10/Jekkel-Daniel-ceremoniamester-17.jpg",
+      "https://www.jekkeldaniel.hu/wp-content/uploads/2020/07/A_ZS_2019_10_12-262.jpg",
+      "https://www.jekkeldaniel.hu/wp-content/uploads/2020/09/86725672_2803506346352944_2646827386330415104_o.jpg",
+      "https://www.jekkeldaniel.hu/wp-content/uploads/2019/06/57080989_2124381917852581_1753860271962587136_n.jpg",
+    ],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "livienlens",
+    name: "LivienLens",
+    category: "photography",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Esküvői fotós stúdió. Az oldalán szinte csak galéria és aktuális akciók vannak, érdemi bemutatkozó szöveg nélkül, így a munkát a képek beszélik el.",
+    blurb_en:
+      "A wedding photography studio. Its site is almost entirely galleries and current promotions with no real about text, so the work speaks through the pictures.",
+    website: "https://livienlens.hu/",
+    ...noContact,
+    contact_email: "livien@livienlens.hu",
+    contact_phone: "+36 30 720 1833",
+    gallery_urls: [
+      "https://livienlens.hu/wp-content/uploads/2025/07/MG_9097-masolat-3-scaled.jpg",
+      "https://livienlens.hu/wp-content/uploads/2025/07/MG_9076-masolat-3-scaled.jpg",
+      "https://livienlens.hu/wp-content/uploads/2025/07/MG_9093-masolat-3-scaled.jpg",
+      "https://livienlens.hu/wp-content/uploads/2025/07/MG_9164-masolat-4-1-scaled.jpg",
+      "https://livienlens.hu/wp-content/uploads/2025/07/MG_9068-masolat-3-scaled.jpg",
+      "https://livienlens.hu/wp-content/uploads/2025/07/MG_9135-masolat-4-2-scaled.jpg",
+    ],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "lehenaphoto",
+    name: "Lehenaphoto — Sónyák Réka",
+    category: "photography",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "2018 óta fotózó fotós Budapesten és Szabolcs-Szatmár-Bereg megyében, esküvővel, portréval, kismamafotózással, állatokkal és koncertekkel. Azt tűzte ki célul, hogy ne csak a látványt, hanem a pillanat érzését is elkapja, hogy újra és újra át lehessen élni.",
+    blurb_en:
+      "Shooting since 2018 across Budapest and Szabolcs-Szatmár-Bereg county, covering weddings, portraits, maternity, pets and concerts. Her stated aim is to catch not just how a moment looked but how it felt, so it can be lived again.",
+    website: "https://lehenaphoto.hu/fotogaleria/",
+    ...noContact,
+    contact_email: "lehenaphoto@gmail.com",
+    // From the /fotogaleria wedding set, not the homepage: her front page
+    // leads with architecture, a macro insect shot and a self-portrait, all
+    // genuinely hers and none of it what a couple is shopping for.
+    gallery_urls: [
+      "https://af0cdd7ccf.clvaw-cdnwnd.com/ef0c3592b7bd6aa81017b5d902389ffa/200000097-1997119972/Beatrix%C3%A9s%C3%81kos%20%2847%29-6.jpeg?ph=af0cdd7ccf",
+      "https://af0cdd7ccf.clvaw-cdnwnd.com/ef0c3592b7bd6aa81017b5d902389ffa/200000096-2776627767/Beatrix%C3%A9s%C3%81kos%20%2843%29-9.jpeg?ph=af0cdd7ccf",
+      "https://af0cdd7ccf.clvaw-cdnwnd.com/ef0c3592b7bd6aa81017b5d902389ffa/200000100-dca90dca92/DSC_0134-6.jpeg?ph=af0cdd7ccf",
+      "https://af0cdd7ccf.clvaw-cdnwnd.com/ef0c3592b7bd6aa81017b5d902389ffa/200000176-167aa167ab/DSC_5143.jpeg?ph=af0cdd7ccf",
+      "https://af0cdd7ccf.clvaw-cdnwnd.com/ef0c3592b7bd6aa81017b5d902389ffa/200000174-c1f29c1f2a/DSC_5074.jpeg?ph=af0cdd7ccf",
+    ],
+    source: "curated",
+    price_band: null,
+  },
 ];
 
 // ── Country scoping ───────────────────────────────────────────────────────
@@ -19689,6 +20157,7 @@ const GEOCODED_COORDS: Record<string, { lat: number; lng: number }> = {
   "andy-wedding": { lat: 46.963358, lng: 17.869101 },
   "angyalok-sutodeje": { lat: 46.718902, lng: 17.167098 },
   "anna-karolina-eskuvo-es": { lat: 47.163645, lng: 19.342613 },
+  "antal-laszlo-fenykepesz": { lat: 47.669128, lng: 19.655195 },
   "aracsi-cukraszda": { lat: 46.970899, lng: 17.894071 },
   "aranyalma-cukraszda": { lat: 47.188844, lng: 18.406751 },
   aranybastya: { lat: 47.50148, lng: 19.03248 },
@@ -19700,6 +20169,7 @@ const GEOCODED_COORDS: Record<string, { lat: number; lng: number }> = {
   "az-eljegyzesi-gyuru-webshop": { lat: 47.473506, lng: 19.046408 },
   "azzurra-event": { lat: 47.468636, lng: 19.0561 },
   "b-event-wedding-eskuvo-es-rendezvenyszervezes": { lat: 47.805127, lng: 18.75713 },
+  "bakos-tamas": { lat: 47.775171, lng: 19.913924 },
   "balatoni-alomeskuvok-nivegy-eskuvo": { lat: 46.924789, lng: 17.667537 },
   "bali-tibor-portre-rendezveny-fotos": { lat: 48.096068, lng: 19.800564 },
   "bano-birtok": { lat: 46.576056, lng: 17.824492 },
@@ -19728,6 +20198,7 @@ const GEOCODED_COORDS: Record<string, { lat: number; lng: number }> = {
   "casa-blanca-ekszer": { lat: 48.103057, lng: 20.783584 },
   "ceremoniamester-harsfai-istvan": { lat: 47.628324, lng: 17.73952 },
   "chimera-ekszer": { lat: 47.919266, lng: 20.369753 },
+  "chipy-foto": { lat: 47.260489, lng: 18.714376 },
   "cintia-events-in": { lat: 47.5189, lng: 19.110859 },
   "clara-decor-eskuvo-es-rendezveny-dekoracio": { lat: 47.189574, lng: 18.402862 },
   "click-glance-ekszerhaz-csak-idopontfoglalassal": { lat: 47.560057, lng: 19.091499 },
@@ -19785,10 +20256,6 @@ const GEOCODED_COORDS: Record<string, { lat: number; lng: number }> = {
   "feeling-music": { lat: 47.519101, lng: 19.070792 },
   "feil-karikagyurugyarto": { lat: 47.477995, lng: 19.094639 },
   "feszek-cukraszda-zsambek": { lat: 47.545474, lng: 18.718006 },
-  "finda-ekszer-bejelentkezes-szukseges-ekszereink-megrendelesr": {
-    lat: 47.210158,
-    lng: 18.467272,
-  },
   "finom-cukraszda": { lat: 47.083712, lng: 17.90287 },
   "finta-rendezvenyhaz": { lat: 47.375311, lng: 18.910752 },
   "flow-in-love": { lat: 47.652833, lng: 18.969538 },
@@ -19933,10 +20400,6 @@ const GEOCODED_COORDS: Record<string, { lat: number; lng: number }> = {
   "splendor-ekszer": { lat: 47.51245, lng: 18.930828 },
   "stoki-cukraszda": { lat: 47.092073, lng: 17.925938 },
   "stop-cukraszda": { lat: 47.569008, lng: 18.407114 },
-  "studio-progress-nemesacel-karikagyuru-egyedi-eljegyzesi-gyur": {
-    lat: 47.488887,
-    lng: 19.074304,
-  },
   "sug-art-by-juhos-joci": { lat: 47.677747, lng: 18.777964 },
   "sweet-mor": { lat: 47.371718, lng: 18.207869 },
   "szablya-akos-ceremoniamester": { lat: 47.590612, lng: 18.89103 },
@@ -19951,6 +20414,7 @@ const GEOCODED_COORDS: Record<string, { lat: number; lng: number }> = {
   "szivarvany-eskuvo-eskuvoszervezes": { lat: 47.630301, lng: 19.519046 },
   "szt-hubertusz-fakapolna-miklosvar": { lat: 46.629398, lng: 18.285033 },
   "szucsne-mihalik-monika-szertartasvezeto": { lat: 48.123553, lng: 21.41139 },
+  "tamasi-robert": { lat: 47.953911, lng: 22.320848 },
   "the-kitchen-caters": { lat: 47.497031, lng: 19.052083 },
   "the-perfect-day-event-eskuvo-es-rendezvenyszervezes": { lat: 47.513474, lng: 18.935132 },
   "time-2-selfie": { lat: 47.396919, lng: 19.202329 },

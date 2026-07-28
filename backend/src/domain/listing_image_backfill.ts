@@ -18,6 +18,7 @@
 //    opening dozens of simultaneous outbound fetches.
 
 import { db, now } from "../db";
+import { seededGalleryIds } from "./listing_gallery_backfill";
 import { fetchLinkPreview, fetchPageImageCandidates } from "../lib/link_preview";
 import { fetchRemoteImage } from "../lib/remote_image";
 import { log } from "../lib/logger";
@@ -68,8 +69,26 @@ interface BackfillRow {
 }
 
 /** Rows eligible for an auto hero: active, not vendor-owned, with a website but
- *  no hero and never previously attempted. Exported for tests. */
+ *  no hero and never previously attempted.
+ *
+ *  A listing that ships a CURATED gallery seed is held back until the gallery
+ *  sweep has had its turn (`gallery_checked_at` stamped). Both sweeps start
+ *  unawaited at boot and race, and this one used to win — so a hand-picked
+ *  seed[0] lost the hero slot to whatever the site happens to serve as its
+ *  og:image. In practice that meant a "my three careers" collage for one
+ *  photographer and a conference-stage photo for a wedding MC: accurate to the
+ *  homepage, wrong for the card. The seed is the stronger signal, so it goes
+ *  first. If the gallery sweep comes back empty, `gallery_checked_at` is
+ *  stamped anyway and the next boot lets og:image fill in — the hold-back
+ *  delays this sweep, it never cancels it.
+ *
+ *  Exported for tests. */
 export function listListingsNeedingHeroBackfill(limit: number): BackfillRow[] {
+  const seeded = seededGalleryIds();
+  const holdBack =
+    seeded.length > 0
+      ? `AND (gallery_checked_at IS NOT NULL OR id NOT IN (${seeded.map(() => "?").join(",")}))`
+      : "";
   return db
     .prepare(
       `SELECT id, website FROM listings
@@ -79,10 +98,11 @@ export function listListingsNeedingHeroBackfill(limit: number): BackfillRow[] {
            AND status = 'active'
            AND website IS NOT NULL
            AND TRIM(website) != ''
+           ${holdBack}
          ORDER BY id ASC
          LIMIT ?`,
     )
-    .all(limit) as BackfillRow[];
+    .all(...seeded, limit) as BackfillRow[];
 }
 
 /** Resolve a listing's website → og:image → download bytes → store under

@@ -52,6 +52,13 @@ const SEED_GALLERY_BY_ID: Map<string, string[]> = (() => {
   return m;
 })();
 
+/** Listing ids that ship a curated gallery seed. The hero sweep reads this to
+ *  stay off them until this sweep has had its turn — see
+ *  `listListingsNeedingHeroBackfill`. */
+export function seededGalleryIds(): string[] {
+  return [...SEED_GALLERY_BY_ID.keys()];
+}
+
 const markCheckedStmt = db.prepare("UPDATE listings SET gallery_checked_at = ? WHERE id = ?");
 // Promote seed[0] to the hero for a venue that never resolved one. Also stamps
 // hero_checked_at so the hero sweep treats the row as settled. Deliberately does
