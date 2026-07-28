@@ -53,8 +53,7 @@ export function searchPublicVendors(rawQuery: string): PublicVendorSearchResult 
     // Registered vendors first among equals (they can actually answer), then
     // the ones the outside world rates well, then the ones we can show a photo
     // of. All three are tiny next to a match-quality tier.
-    const bonus =
-      (r.source === "claimed" ? 4 : 0) + (r.google_rating ?? 0) * 0.6 + (r.has_photo ? 1 : 0);
+    const bonus = (r.verified ? 4 : 0) + (r.google_rating ?? 0) * 0.6 + (r.has_photo ? 1 : 0);
     suggestions.push({
       kind: "vendor",
       score: base + bonus,

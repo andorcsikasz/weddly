@@ -124,11 +124,13 @@ async function handleList(ctx: Ctx): Promise<Response> {
   const community = listActiveCommunitySuppliers((cat as SupplierCategory | null) ?? null);
   let allBase: DirectorySupplierBase[] = [...curated, ...community.map(toDirectorySupplierBase)];
 
-  // Registered vendors' own standalone listings (self-serve signup / admin
-  // convert-to-vendor). Not country-scoped (like community) so a vendor stays
-  // visible to every couple. Dedupe by id: a vendor who CLAIMED a curated /
-  // community entry already appears via that entry (same id), so only the
-  // self-serve `v{N}` cards are genuinely new here.
+  // Every listing a vendor account owns — self-serve `v{N}` cards AND curated /
+  // community entries a vendor has claimed. Not country-scoped (like community)
+  // so a registered vendor stays visible to every couple. Dedupe by id: an
+  // in-scope claimed curated entry already came through above under the same id,
+  // so what this actually adds is the vendor whose entry the country filter just
+  // dropped — the case that used to make a verified Austrian venue invisible to
+  // every couple whose wedding wasn't in Austria.
   const seenIds = new Set(allBase.map((b) => b.id));
   const claimed = listActiveClaimedListingsForDirectory((cat as SupplierCategory | null) ?? null);
   for (const c of claimed) {
@@ -615,8 +617,8 @@ function handlePublicShowcase(ctx: Ctx): Response {
     const aHome = preferCountry && a.country === preferCountry ? 1 : 0;
     const bHome = preferCountry && b.country === preferCountry ? 1 : 0;
     if (aHome !== bHome) return bHome - aHome;
-    const aClaimed = a.source === "claimed" ? 1 : 0;
-    const bClaimed = b.source === "claimed" ? 1 : 0;
+    const aClaimed = a.verified ? 1 : 0;
+    const bClaimed = b.verified ? 1 : 0;
     if (aClaimed !== bClaimed) return bClaimed - aClaimed;
     const aRated = a.google_rating ?? -1;
     const bRated = b.google_rating ?? -1;
@@ -635,7 +637,7 @@ function handlePublicShowcase(ctx: Ctx): Response {
       city: r.city,
       hero_image_url: r.hero_image_url,
       country: r.country,
-      verified: r.source === "claimed",
+      verified: r.verified,
     });
     byCat.set(r.category, list);
   }
@@ -687,7 +689,7 @@ function handlePublicShowcase(ctx: Ctx): Response {
           city: row.city,
           hero_image_url: row.hero_image_url,
           country: row.country,
-          verified: row.source === "claimed",
+          verified: row.verified,
           // Rounded to the kilometre: these are straight-line distances between
           // town centroids, and a decimal would claim a precision we don't have.
           distance_km: Math.max(1, Math.round(km)),

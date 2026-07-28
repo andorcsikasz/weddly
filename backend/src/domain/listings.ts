@@ -169,14 +169,22 @@ export function toVendorAccount(row: VendorAccountRow): VendorAccount {
   };
 }
 
-// ── Registered-vendor ('claimed') directory cards ──────────────────────────
+// ── Registered-vendor (verified) directory cards ───────────────────────────
 //
 // The public directory (routes/suppliers.ts) merges the static curated list +
 // active community submissions. A vendor's OWN standalone listing (self-serve
 // signup or admin convert-to-vendor: id `v{N}`, source='claimed') isn't in
 // either set, so these helpers surface them there too — the "active suppliers
-// show up among the vendors" behaviour. Country is taken from the owning
-// vendor account (default HU); suspended owners + demo accounts are dropped.
+// show up among the vendors" behaviour. Suspended owners + demo accounts are
+// dropped.
+//
+// OWNERSHIP, NOT ORIGIN, is what makes a listing verified here. `source` is
+// the row's ORIGIN and the curated re-sync owns that column: claiming a curated
+// entry sets `vendor_account_id` and deliberately leaves `source='curated'`
+// (the next `backfillListings` pass would overwrite it anyway). So gating on
+// `source = 'claimed'` silently meant "self-serve signups only" and dropped
+// every vendor who took over a curated/community card — they went missing from
+// the directory the moment the country scope excluded their curated entry.
 
 /** ListingRow joined to its owner's country + legal company name for the
  *  directory card mapper. */
@@ -189,8 +197,7 @@ const CLAIMED_DIRECTORY_FROM = `
   FROM listings l
   JOIN vendor_accounts va ON va.id = l.vendor_account_id
   JOIN users u ON u.id = va.owner_user_id
- WHERE l.source = 'claimed'
-   AND l.status = 'active'
+ WHERE l.status = 'active'
    AND u.status = 'active'
    AND u.email NOT LIKE '%@demo.weddly.local'`;
 
@@ -201,7 +208,15 @@ function claimedListingToDirectoryBase(row: ClaimedDirectoryRow): DirectorySuppl
     company_name: row.owner_company_name,
     category: row.category as SupplierCategory,
     city: row.city,
-    country: (row.owner_country ?? "HU").toUpperCase(),
+    // A self-serve listing has no location but the one its owner registered,
+    // so it inherits the account's country. A CLAIMED curated/community entry
+    // has a real street address we already know, and that beats wherever the
+    // person who took it over happens to be incorporated — otherwise a Salzburg
+    // venue whose owner registered from Budapest would file itself under HU.
+    country:
+      row.source === "claimed"
+        ? (row.owner_country ?? "HU").toUpperCase()
+        : curatedCountry(row.id, row.city),
     blurb_hu: row.blurb_hu ?? "",
     blurb_en: row.blurb_en ?? "",
     website: row.website ?? "",
@@ -511,9 +526,14 @@ export interface ShowcaseVendorRow {
   category: SupplierCategory;
   city: string;
   hero_image_url: string;
-  /** 'curated' | 'community' | 'claimed'. `claimed` is the directory's
-   *  verified-vendor signal (the business itself is on Weddly). */
+  /** Row ORIGIN: 'curated' | 'community' | 'claimed'. Drives the country
+   *  derivation only — for "is this a verified vendor?" read `verified`. */
   source: string;
+  /** The business itself is on Weddly: a vendor account owns this row. Derived
+   *  from ownership rather than `source`, because a vendor who claimed a
+   *  curated entry keeps `source='curated'` forever (the curated re-sync owns
+   *  that column) and would otherwise render as an unclaimed card. */
+  verified: boolean;
   /** ISO 3166-1 alpha-2, uppercase. Derived, not stored — see below. */
   country: string;
   /** Google Places average, or null when never resolved (no API key, a miss,
@@ -542,16 +562,21 @@ export function listShowcaseCandidates(): ShowcaseVendorRow[] {
   const rows = db
     .prepare(
       `SELECT l.id, l.name, l.category, l.city, l.hero_image_url, l.source, l.created_at,
-              l.google_rating, l.lat, l.lng, va.country AS owner_country
+              l.google_rating, l.lat, l.lng, va.country AS owner_country,
+              (l.vendor_account_id IS NOT NULL) AS owned
          FROM listings l
          LEFT JOIN vendor_accounts va ON va.id = l.vendor_account_id
         WHERE l.hero_image_url IS NOT NULL AND l.hero_image_url != ''
           AND l.status = 'active'
           AND l.id NOT IN (SELECT supplier_id FROM curated_supplier_overrides)`,
     )
-    .all() as (Omit<ShowcaseVendorRow, "country"> & { owner_country: string | null })[];
-  return rows.map(({ owner_country, ...r }) => ({
+    .all() as (Omit<ShowcaseVendorRow, "country" | "verified"> & {
+    owner_country: string | null;
+    owned: 0 | 1;
+  })[];
+  return rows.map(({ owner_country, owned, ...r }) => ({
     ...r,
+    verified: owned === 1,
     country:
       r.source === "claimed" && owner_country
         ? owner_country.toUpperCase()
@@ -564,7 +589,10 @@ export interface SearchListingRow {
   name: string;
   category: SupplierCategory;
   city: string;
+  /** Row ORIGIN. For "is this a verified vendor?" read `verified`. */
   source: string;
+  /** A vendor account owns this row — see `ShowcaseVendorRow.verified`. */
+  verified: boolean;
   country: string;
   google_rating: number | null;
   /** 1 when the listing carries a real hero photo. The browse teaser only
@@ -582,15 +610,20 @@ export function listSearchCandidates(): SearchListingRow[] {
     .prepare(
       `SELECT l.id, l.name, l.category, l.city, l.source, l.google_rating,
               CASE WHEN l.hero_image_url IS NOT NULL AND l.hero_image_url != '' THEN 1 ELSE 0 END AS has_photo,
-              va.country AS owner_country
+              va.country AS owner_country,
+              (l.vendor_account_id IS NOT NULL) AS owned
          FROM listings l
          LEFT JOIN vendor_accounts va ON va.id = l.vendor_account_id
         WHERE l.status = 'active'
           AND l.id NOT IN (SELECT supplier_id FROM curated_supplier_overrides)`,
     )
-    .all() as (Omit<SearchListingRow, "country"> & { owner_country: string | null })[];
-  return rows.map(({ owner_country, ...r }) => ({
+    .all() as (Omit<SearchListingRow, "country" | "verified"> & {
+    owner_country: string | null;
+    owned: 0 | 1;
+  })[];
+  return rows.map(({ owner_country, owned, ...r }) => ({
     ...r,
+    verified: owned === 1,
     country:
       r.source === "claimed" && owner_country
         ? owner_country.toUpperCase()
@@ -1121,7 +1154,7 @@ export function findVisibleDirectoryMatch(opts: {
         `SELECT id, name, city, source FROM listings
           WHERE status = 'active' AND website IS NOT NULL AND website != ''
             AND LOWER(website) LIKE ?
-          ORDER BY (source = 'claimed') DESC, (source = 'curated') DESC
+          ORDER BY (vendor_account_id IS NOT NULL) DESC, (source = 'curated') DESC
           LIMIT 1`,
       )
       .get(`%${host}%`) as DirectoryMatch | undefined;

@@ -11,6 +11,32 @@ import { db, now } from "../../src/db";
 import { req, wipeAll } from "../helpers";
 
 let seq = 0;
+/** Lazily-minted owner for the claimed fixtures. "Verified" is derived from
+ *  OWNERSHIP, not from `source`, so a claimed row with no vendor account is not
+ *  a state the product can produce by signing up — it's what a vendor→planner
+ *  conversion leaves behind, and that orphan is deliberately NOT verified. */
+let ownerAccountId: number | null = null;
+function vendorAccountId(): number {
+  if (ownerAccountId !== null) return ownerAccountId;
+  const userId = Number(
+    db
+      .prepare(
+        `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+         VALUES ('showcase-owner@weddly.test', 'x', 'Owner', 'active', 'vendor', 1, ?, ?)`,
+      )
+      .run(now(), now()).lastInsertRowid,
+  );
+  ownerAccountId = Number(
+    db
+      .prepare(
+        `INSERT INTO vendor_accounts (owner_user_id, display_name, contact_email, country, created_at, updated_at)
+         VALUES (?, 'Showcase Owner', 'showcase-owner@weddly.test', 'HU', ?, ?)`,
+      )
+      .run(userId, now(), now()).lastInsertRowid,
+  );
+  return ownerAccountId;
+}
+
 function insertListing(opts: {
   id?: string;
   source?: string;
@@ -23,13 +49,15 @@ function insertListing(opts: {
   city?: string;
 }): string {
   const id = opts.id ?? `v${++seq}`;
+  const source = opts.source ?? "claimed";
   db.prepare(
     `INSERT INTO listings
-       (id, source, category, name, city, status, hero_image_url, content_hash, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, '', ?, ?)`,
+       (id, source, vendor_account_id, category, name, city, status, hero_image_url, content_hash, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?)`,
   ).run(
     id,
-    opts.source ?? "claimed",
+    source,
+    source === "claimed" ? vendorAccountId() : null,
     opts.category,
     opts.name,
     opts.city ?? "Budapest",
@@ -56,6 +84,9 @@ beforeEach(() => {
   // empty listings table and let it insert exactly what it asserts on.
   db.exec("DELETE FROM listings");
   seq = 0;
+  // wipeAll drops users (and cascades vendor_accounts), so the cached id from
+  // the previous test no longer resolves — mint a fresh one on next use.
+  ownerAccountId = null;
 });
 
 describe("public vendor showcase", () => {
@@ -130,6 +161,20 @@ describe("public vendor showcase", () => {
     // Curated entries are never "verified" — nobody from the business signed up.
     expect(curated?.verified).toBe(false);
     expect(curated?.country).toBe("IT");
+  });
+
+  // The other half of "verified means owned": a vendor→planner conversion
+  // releases the directory card (`vendor_account_id = NULL`) but leaves
+  // source='claimed' behind. That orphan kept its blue check and its
+  // verified-first ranking for as long as the flag read `source`.
+  test("a released listing with no owner is not verified", async () => {
+    const id = insertListing({ source: "claimed", category: "nails", name: "Ex Vendor" });
+    db.prepare("UPDATE listings SET vendor_account_id = NULL WHERE id = ?").run(id);
+
+    const r = await getShowcase();
+    const card = r.data.categories.flatMap((c) => c.vendors).find((v) => v.id === id);
+    expect(card).toBeDefined();
+    expect(card?.verified).toBe(false);
   });
 
   test("reports every country in the sample with its count", async () => {

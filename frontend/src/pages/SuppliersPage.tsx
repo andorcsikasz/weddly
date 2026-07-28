@@ -661,8 +661,10 @@ export default function SuppliersPage() {
         // pages instead, which is what the vendor's own stats quote.
         const initialCountry = params.get("country") ?? couple.couple?.country ?? "";
         const initialScope = initialCountry && initialCountry !== "all" ? initialCountry : null;
+        // Same rule as `scopedItems`, so a verified vendor riding along on the
+        // country exemption is credited the impression it actually got.
         const shown = initialScope
-          ? dir.suppliers.filter((s) => s.country === initialScope)
+          ? dir.suppliers.filter((s) => s.country === initialScope || s.source === "claimed")
           : dir.suppliers;
         if (shown.length > 0) {
           supplierApi
@@ -837,23 +839,48 @@ export default function SuppliersPage() {
     [coupleId, saved, toast, t],
   );
 
+  // True for a card that is only in the list because it is verified — the
+  // country being browsed is not its own. DIY entries carry no country and are
+  // never out of scope. Every caller below either demotes or drops these.
+  const isOutOfScope = useCallback(
+    (s: { source: string; country?: string }) =>
+      countryScope !== null &&
+      s.source !== "self" &&
+      s.country !== undefined &&
+      s.country !== countryScope,
+    [countryScope],
+  );
+
   // Directory rows scoped to the picked country. Everything downstream — the
   // result list, the chain/sub-category counts, the city autocomplete, and the
   // search suggestions — reads from this so the country scope is applied once
   // and consistently across grid + map. "Mind"/All leaves the full set through.
+  //
+  // Verified vendors are exempt: a registered vendor is a business that is
+  // actually ON Weddly, and the API deliberately leaves claimed listings
+  // un-scoped for exactly that reason. Scoping them away here undid that — a
+  // verified Austrian venue existed in the payload and was thrown out by the
+  // client before it could ever render. They ride along and sort last (see
+  // `isOutOfScope` in the comparators), so the exemption buys the vendor
+  // visibility without letting a Salzburg venue open a Hungarian venue list.
   const scopedItems = useMemo(
-    () => (countryScope ? items.filter((s) => s.country === countryScope) : items),
+    () =>
+      countryScope
+        ? items.filter((s) => s.country === countryScope || s.source === "claimed")
+        : items,
     [items, countryScope],
   );
 
   // Cities derived from the scoped list, so the town autocomplete only offers
   // cities that belong to the selected country (no "Budapest" while browsing
-  // Romania). Sorted alphabetically by locale rules.
+  // Romania). The out-of-country verified cards are excluded here specifically:
+  // they belong in the results, but "Antibes, FR" has no business in a
+  // Hungarian couple's town picker. Sorted alphabetically by locale rules.
   const cities = useMemo(() => {
     const set = new Set<string>();
-    for (const s of scopedItems) if (s.city) set.add(s.city);
+    for (const s of scopedItems) if (s.city && !isOutOfScope(s)) set.add(s.city);
     return Array.from(set).sort((a, b) => a.localeCompare(b, locale === "hu" ? "hu" : "en"));
-  }, [scopedItems, locale]);
+  }, [scopedItems, locale, isOutOfScope]);
 
   // Google-style suggestions for the free-text bar: a short mixed list of
   // matching towns, categories, and supplier names. Selecting a row routes to
@@ -1077,18 +1104,30 @@ export default function SuppliersPage() {
     const sorted = [...out];
     const collator = (a: { name: string }, b: { name: string }) =>
       a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en");
+    // The verified vendors that survived the country scope without belonging to
+    // it sink below every in-scope card, in EVERY sort mode — including alpha
+    // and price, where the verified tier doesn't apply and an out-of-country
+    // venue would otherwise land wherever its name or price band put it. They
+    // stay findable at the end of the list; they never answer "show me venues".
+    // 0 when both sides agree, so it composes as a leading tie-break.
+    const scopeTier = (
+      a: { source: string; country?: string },
+      b: { source: string; country?: string },
+    ) => (isOutOfScope(a) ? 1 : 0) - (isOutOfScope(b) ? 1 : 0);
     // When the free-text query is a known town, "top" (the default sort)
     // becomes nearest-first — a distance badge without reordering buries
     // the closest venue behind high-vote far ones. An explicit price/alpha
     // pick still wins; this only redefines the default.
     const proximityTown = nearbyTownLabel(queryNorm);
     if (sortMode === "alpha") {
-      sorted.sort(collator);
+      sorted.sort((a, b) => scopeTier(a, b) || collator(a, b));
     } else if (sortMode === "top" && proximityTown) {
       sorted.sort((a, b) => {
         const aSelf = a.source === "self" ? 1 : 0;
         const bSelf = b.source === "self" ? 1 : 0;
         if (aSelf !== bSelf) return bSelf - aSelf;
+        const scope = scopeTier(a, b);
+        if (scope !== 0) return scope;
         if (a.source !== "self" && b.source !== "self") {
           const ad = distanceKmForQuery(queryNorm, a.city, { lat: a.lat, lng: a.lng });
           const bd = distanceKmForQuery(queryNorm, b.city, { lat: b.lat, lng: b.lng });
@@ -1120,6 +1159,8 @@ export default function SuppliersPage() {
       const bandOf = (s: (typeof sorted)[number]): number | null =>
         "price_band" in s ? (s.price_band ?? null) : null;
       sorted.sort((a, b) => {
+        const scope = scopeTier(a, b);
+        if (scope !== 0) return scope;
         const ab = bandOf(a);
         const bb = bandOf(b);
         const aHas = ab != null ? 1 : 0;
@@ -1133,6 +1174,8 @@ export default function SuppliersPage() {
         const aSelf = a.source === "self" ? 1 : 0;
         const bSelf = b.source === "self" ? 1 : 0;
         if (aSelf !== bSelf) return bSelf - aSelf;
+        const scope = scopeTier(a, b);
+        if (scope !== 0) return scope;
         if (a.source !== "self" && b.source !== "self") {
           // Verified accounts lead the directory. A claimed card is a business
           // that is actually ON Weddly: the details are maintained by the owner,
@@ -1877,7 +1920,13 @@ export default function SuppliersPage() {
                 }
               >
                 <SupplierMap
-                  suppliers={filtered.filter((s): s is DirectorySupplier => s.source !== "self")}
+                  // Out-of-country verified vendors are dropped rather than
+                  // demoted here: a map has no "further down the list", and one
+                  // pin in Antibes would zoom a Hungarian couple's map out to
+                  // half of Europe to fit it.
+                  suppliers={filtered.filter(
+                    (s): s is DirectorySupplier => s.source !== "self" && !isOutOfScope(s),
+                  )}
                   saved={saved}
                   selection={selection}
                   onToggleSave={toggleSaved}

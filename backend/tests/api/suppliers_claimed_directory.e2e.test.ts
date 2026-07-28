@@ -7,9 +7,10 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
+import type { PublicVendorShowcase } from "@shared/suppliers";
 import { db } from "../../src/db";
 import { createVendorListing } from "../../src/domain/listings";
-import { DIRECTORY } from "../../src/domain/suppliers_data";
+import { curatedCountry, DIRECTORY } from "../../src/domain/suppliers_data";
 import { getUserByEmail } from "../../src/domain/users";
 import { convertUserToVendor } from "../../src/domain/vendor_conversion";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
@@ -20,6 +21,7 @@ interface DirectoryItem {
   id: string;
   name: string;
   source: string;
+  country: string;
   submitter_type: string | null;
   vendor_account_id: number | null;
 }
@@ -303,6 +305,109 @@ describe("a claimed CURATED listing surfaces as verified", () => {
       // Curated listings survive wipeAll, so detach to avoid leaking the claim
       // into a later test in this file.
       db.prepare("UPDATE listings SET vendor_account_id = NULL WHERE id = ?").run(curatedId);
+    }
+  });
+});
+
+// Regression: a couple only sees curated entries in their OWN country, and the
+// "claimed listings are never country-scoped" rescue queried `source='claimed'`
+// — which a claimed curated row never becomes. So a verified Austrian venue was
+// dropped by the country filter and nothing put it back: invisible to every
+// couple whose wedding wasn't in Austria (the Kavalierhaus Klessheim report).
+describe("a verified vendor outside the couple's country", () => {
+  /** First curated entry that isn't Hungarian, so the HU country scope is
+   *  guaranteed to exclude it. */
+  function foreignCuratedId(): string {
+    const hit = DIRECTORY.find((s) => curatedCountry(s.id, s.city) !== "HU");
+    if (!hit) throw new Error("no non-HU curated entry to claim");
+    return hit.id;
+  }
+
+  async function claimCurated(id: string, email: string): Promise<number> {
+    const reg = await registerAndVerify({
+      email,
+      password: "supersafe123",
+      full_name: "Foreign Owner",
+    });
+    db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(
+      reg.data.user.id,
+    );
+    const account = createVendorAccount({
+      ownerUserId: reg.data.user.id,
+      displayName: "Foreign Venue Co",
+      contactEmail: email,
+      // The claim flow registers the business's own country, which is NOT what
+      // the card's country should come from — the curated street address is.
+      onboardingDone: false,
+    });
+    db.prepare("UPDATE listings SET vendor_account_id = ? WHERE id = ?").run(account.id, id);
+    return account.id;
+  }
+
+  test("stays visible under a country scope it doesn't belong to, exactly once", async () => {
+    wipeAll();
+    const curatedId = foreignCuratedId();
+    const expectedCountry = curatedCountry(
+      curatedId,
+      DIRECTORY.find((s) => s.id === curatedId)!.city,
+    );
+    const accountId = await claimCurated(curatedId, "foreign-claim@weddly.test");
+
+    try {
+      const hu = await req<{ suppliers: DirectoryItem[] }>("GET", "/api/suppliers?country=HU");
+      const hits = hu.data.suppliers.filter((s) => s.id === curatedId);
+      expect(hits).toHaveLength(1);
+      expect(hits[0]?.source).toBe("claimed");
+      expect(hits[0]?.vendor_account_id).toBe(accountId);
+      // It rides along on the verified exemption, but it must still declare the
+      // country it is actually in — that's what the frontend sorts it last by.
+      expect(hits[0]?.country).toBe(expectedCountry);
+
+      // And it isn't duplicated in its own scope, where the curated path
+      // already supplied it.
+      const home = await req<{ suppliers: DirectoryItem[] }>(
+        "GET",
+        `/api/suppliers?country=${expectedCountry}`,
+      );
+      expect(home.data.suppliers.filter((s) => s.id === curatedId)).toHaveLength(1);
+    } finally {
+      db.prepare("UPDATE listings SET vendor_account_id = NULL WHERE id = ?").run(curatedId);
+    }
+  });
+
+  test("an UNclaimed foreign curated entry is still country-scoped away", async () => {
+    wipeAll();
+    const curatedId = foreignCuratedId();
+    const hu = await req<{ suppliers: DirectoryItem[] }>("GET", "/api/suppliers?country=HU");
+    expect(hu.data.suppliers.some((s) => s.id === curatedId)).toBe(false);
+  });
+
+  test("the browse teaser badges a claimed curated listing as verified", async () => {
+    wipeAll();
+    const curatedId = foreignCuratedId();
+    const country = curatedCountry(curatedId, DIRECTORY.find((s) => s.id === curatedId)!.city);
+    await claimCurated(curatedId, "foreign-teaser@weddly.test");
+    // The teaser only samples photographed listings.
+    db.prepare("UPDATE listings SET hero_image_url = ? WHERE id = ?").run(
+      "https://img.example/foreign.jpg",
+      curatedId,
+    );
+
+    try {
+      const r = await req<PublicVendorShowcase>(
+        "GET",
+        `/api/public/vendor-showcase?country=${country}`,
+      );
+      expect(r.status).toBe(200);
+      const card = r.data.categories.flatMap((c) => c.vendors).find((v) => v.id === curatedId);
+      expect(card).toBeDefined();
+      // Was false: the flag read the stored origin, so a real registered vendor
+      // rendered as an unclaimed curated card and lost the verified-first tier.
+      expect(card?.verified).toBe(true);
+    } finally {
+      db.prepare(
+        "UPDATE listings SET vendor_account_id = NULL, hero_image_url = NULL WHERE id = ?",
+      ).run(curatedId);
     }
   });
 });

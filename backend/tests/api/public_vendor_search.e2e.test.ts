@@ -12,6 +12,31 @@ import { backfillListings } from "../../src/domain/listings";
 import { req, wipeAll } from "../helpers";
 
 let seq = 0;
+/** Lazily-minted owner for the claimed fixtures — the typeahead's "registered
+ *  vendor" boost is derived from OWNERSHIP, not from `source`, so a claimed row
+ *  needs a real vendor account to earn it. */
+let ownerAccountId: number | null = null;
+function vendorAccountId(): number {
+  if (ownerAccountId !== null) return ownerAccountId;
+  const userId = Number(
+    db
+      .prepare(
+        `INSERT INTO users (email, password_hash, full_name, status, role, verified_email, created_at, updated_at)
+         VALUES ('search-owner@weddly.test', 'x', 'Owner', 'active', 'vendor', 1, ?, ?)`,
+      )
+      .run(now(), now()).lastInsertRowid,
+  );
+  ownerAccountId = Number(
+    db
+      .prepare(
+        `INSERT INTO vendor_accounts (owner_user_id, display_name, contact_email, country, created_at, updated_at)
+         VALUES (?, 'Search Owner', 'search-owner@weddly.test', 'HU', ?, ?)`,
+      )
+      .run(userId, now(), now()).lastInsertRowid,
+  );
+  return ownerAccountId;
+}
+
 function insertListing(opts: {
   id?: string;
   source?: string;
@@ -22,13 +47,15 @@ function insertListing(opts: {
   city?: string;
 }): string {
   const id = opts.id ?? `v${++seq}`;
+  const source = opts.source ?? "curated";
   db.prepare(
     `INSERT INTO listings
-       (id, source, category, name, city, status, hero_image_url, content_hash, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, '', ?, ?)`,
+       (id, source, vendor_account_id, category, name, city, status, hero_image_url, content_hash, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?)`,
   ).run(
     id,
-    opts.source ?? "curated",
+    source,
+    source === "claimed" ? vendorAccountId() : null,
     opts.category,
     opts.name,
     opts.city ?? "Budapest",
@@ -53,6 +80,8 @@ beforeEach(() => {
   // leaked fixture would answer these queries instead of the ones inserted here.
   db.exec("DELETE FROM listings");
   seq = 0;
+  // wipeAll drops users (cascading vendor_accounts), so re-mint on next use.
+  ownerAccountId = null;
 });
 
 // Emptying `listings` is a whole-table delete, curated rows included, and the
