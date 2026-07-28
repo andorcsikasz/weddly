@@ -200,7 +200,7 @@ export default function VendorDashboardPage() {
   }
 
   return (
-    <div className="flex animate-fade-in flex-col gap-5">
+    <div className="flex animate-fade-in flex-col gap-8">
       {/* Completeness alert strip - the full setup prompt, shown while the
           listing is incomplete and not collapsed. A live progress ring replaces
           the old static sparkle so the percent reads at a glance. SetupLinger
@@ -355,7 +355,7 @@ export default function VendorDashboardPage() {
       </div>
 
       {/* Upcoming events preview + smart action cards */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <section className="lg:col-span-2 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 font-grotesk text-lg font-semibold tracking-[-0.01em] text-ink-900 dark:text-paper-50">
@@ -467,7 +467,7 @@ function KpiCard({
   // destination is a chevron rather than a labelled link. The whole cell is the
   // hit area, so naming it twice was the old card's compensation for looking
   // static.
-  const frame = "group flex flex-col gap-1 px-4 py-4 sm:px-5";
+  const frame = "group flex flex-col gap-1 px-4 py-5 sm:px-5";
   if (!to) return <div className={frame}>{body}</div>;
   return (
     <Link
@@ -514,7 +514,7 @@ function ActionCard({ to, icon, title, body, tone }: ActionCardProps) {
 
 function DashboardSkeleton({ title }: { title: string }) {
   return (
-    <div className="flex flex-col gap-5" aria-busy="true">
+    <div className="flex flex-col gap-8" aria-busy="true">
       <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
         {title}
       </h1>
@@ -537,7 +537,7 @@ function DashboardSkeleton({ title }: { title: string }) {
         ))}
       </div>
       {/* Upcoming + actions */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 lg:col-span-2 dark:border-umber-600 dark:bg-umber-900">
           <Skeleton variant="line" width="35%" height={12} />
           <SkeletonText lines={4} />

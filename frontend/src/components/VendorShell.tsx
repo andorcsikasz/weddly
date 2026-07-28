@@ -524,7 +524,11 @@ export function VendorShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 pb-12 pt-6 sm:px-6 lg:flex-row lg:px-8 xl:max-w-screen-2xl xl:px-10">
+      {/* The gap widens only from lg, where this flex turns into a real
+          sidebar-plus-content row. On mobile it is a vertical stack of the
+          wrapped nav tabs above the page, and 32px there would just push
+          content down a screen that has no height to spare. */}
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 pb-12 pt-6 sm:px-6 lg:flex-row lg:gap-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
         {/* Left rail on desktop (collapsible icon rail); horizontal scroller on
             mobile. The width animates between expanded (14rem) and collapsed
             (4rem); collapse applies to lg+ only. */}
