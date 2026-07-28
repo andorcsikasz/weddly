@@ -1870,7 +1870,7 @@ const hu: LocaleMessages = {
     wrong_audience: "Nem szolgáltató vagy?",
     couple_escape_link: "Pároknak",
     planner_escape_link: "Szervezőknek",
-    hero_title: "Legyél egy kattintásra.",
+    hero_title: "Egy kattintásra a pároktól.",
     closing_title: "A következő esküvői szezon most dől el.",
     closing_cta: "Foglald le a helyed",
     benefit_1_title: "Előbb jönnek a megkeresések, csak utána a számla",
