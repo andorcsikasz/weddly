@@ -1099,6 +1099,13 @@ export default function SuppliersPage() {
           const bHas = bd != null ? 1 : 0;
           if (aHas !== bHas) return bHas - aHas;
           if (ad != null && bd != null && ad !== bd) return ad - bd;
+          // Verified leads here too, but UNDER distance: this mode exists
+          // because the couple named a town, and burying the nearest venue
+          // behind a verified one two counties over answers a question they
+          // didn't ask.
+          const aClaimedNear = a.source === "claimed" ? 1 : 0;
+          const bClaimedNear = b.source === "claimed" ? 1 : 0;
+          if (aClaimedNear !== bClaimedNear) return bClaimedNear - aClaimedNear;
           if (b.votes_score !== a.votes_score) return b.votes_score - a.votes_score;
           // Equal net votes: the photographed vendor leads the imageless one.
           const aImg = a.hero_image_url ? 1 : 0;
@@ -1127,6 +1134,16 @@ export default function SuppliersPage() {
         const bSelf = b.source === "self" ? 1 : 0;
         if (aSelf !== bSelf) return bSelf - aSelf;
         if (a.source !== "self" && b.source !== "self") {
+          // Verified accounts lead the directory. A claimed card is a business
+          // that is actually ON Weddly: the details are maintained by the owner,
+          // the enquiry goes into their inbox and gets answered in-app. An
+          // unclaimed curated card is a phone number we typed in. Votes can't
+          // express that — almost nothing has any — so it has to be its own
+          // tier rather than a tie-break, the same order the public
+          // /vendors/browse teaser already uses.
+          const aClaimed = a.source === "claimed" ? 1 : 0;
+          const bClaimed = b.source === "claimed" ? 1 : 0;
+          if (aClaimed !== bClaimed) return bClaimed - aClaimed;
           if (b.votes_score !== a.votes_score) return b.votes_score - a.votes_score;
           // Equal net votes: a real uploaded hero photo makes the card far more
           // clickable, so the photographed vendor leads the imageless one.
