@@ -5802,6 +5802,28 @@ export interface LocaleMessages {
       provision_submit: string;
       provision_success: string;
       provision_email_taken: string;
+      /** "A user suggested these planners" batch invite: paste a list, preview
+       *  what was parsed, then provision + mail every row. */
+      invite_batch_cta: string;
+      invite_batch_title: string;
+      invite_batch_intro: string;
+      invite_batch_placeholder: string;
+      invite_batch_locale: string;
+      invite_batch_locale_auto: string;
+      invite_batch_preview: string;
+      invite_batch_send: string;
+      invite_batch_parsed: string;
+      invite_batch_empty: string;
+      invite_batch_col_name: string;
+      invite_batch_col_email: string;
+      invite_batch_col_phone: string;
+      invite_batch_col_status: string;
+      invite_batch_status_ready: string;
+      invite_batch_status_sent: string;
+      invite_batch_status_existing: string;
+      invite_batch_status_opted_out: string;
+      invite_batch_status_failed: string;
+      invite_batch_done: string;
       resend_activation: string;
       resend_success: string;
       plan: string;

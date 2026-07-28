@@ -2040,6 +2040,34 @@ export interface AdminProvisionPlannerInput {
   category: string;
 }
 
+/** Fate of one row in a "suggested planner" invite batch.
+ *   - `ready`     dry run only: parsed, free address, would be invited
+ *   - `sent`      account provisioned + invite mailed
+ *   - `existing`  the address already belongs to an account, left untouched
+ *   - `opted_out` address is on the suppression list, no account created
+ *   - `failed`    provisioning or sending errored, see `error` */
+export type PlannerInviteRowStatus = "ready" | "sent" | "existing" | "opted_out" | "failed";
+
+/** One parsed line of the pasted planner list, plus what happened to it. */
+export interface PlannerInviteRow {
+  email: string;
+  full_name: string;
+  business_name: string;
+  phone: string | null;
+  /** Language the invite renders in, per row, so one paste can mix countries. */
+  locale: "hu" | "en";
+  status: PlannerInviteRowStatus;
+  /** Id of the provisioned account, `null` on a dry run or a skip. */
+  user_id: number | null;
+  error: string | null;
+}
+
+/** Result of previewing or running a planner invite batch. */
+export interface PlannerInviteBatchResult {
+  dry_run: boolean;
+  rows: PlannerInviteRow[];
+}
+
 /** Public view of a planner activation token, shown on the activation landing
  *  page so the invitee sees what was registered in their name before going
  *  live. Resolved by the secret token, so surfacing the email is safe. */

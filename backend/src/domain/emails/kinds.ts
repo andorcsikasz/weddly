@@ -55,6 +55,7 @@ export type EmailKind =
   | "planner_waitlist_decision" // admin-edited planner triage reply (accepted / under_review / rejected)
   | "planner_provisioned" // admin pre-registered a planner account (2-year comp), activation link inside
   | "planner_onboarding_invite" // admin approved a /planners applicant, activation link + pre-filled onboarding inside
+  | "planner_suggested_invite" // cold invite to a planner a Weddly user named: their account is already provisioned, one click takes it over
   | "visitor_verify" // confirm a verified-visitor's email so they can suggest suppliers + write reviews (no account)
   | "community_supplier_verify" // sent to a community-submitted listing's contact_email to publish
   | "community_supplier_published" // admin approved the listing, it's now live
@@ -248,6 +249,11 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // and the activation link inside is how they open their planner account
   // (details pre-filled from their application). Must always deliver.
   planner_onboarding_invite: "transactional",
+  // Outreach, deliberately, even though the recipient does have a (dormant)
+  // account by the time this lands: they never asked for it. Cold mail must
+  // honour `email_optouts` and carry the one-click suppression header, and the
+  // recipient must be told plainly that ignoring it costs them nothing.
+  planner_suggested_invite: "outreach",
   // Transactional: the recipient just asked us to verify their own email so
   // they can contribute (suggest suppliers / write reviews). Their action, their
   // address — must always deliver, like any other confirm-your-email link.

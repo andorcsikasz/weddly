@@ -28,6 +28,10 @@ import {
   verifyCampaignPixelToken,
 } from "../domain/vendor_campaign";
 import { getOnboardingSendById, verifyOnboardingOptOutToken } from "../domain/onboarding_campaign";
+import {
+  retireInvitedPlanner,
+  verifyPlannerInviteOptOutToken,
+} from "../domain/planner_invite_batch";
 import { getInviteSendById, verifyInviteOptOutToken } from "../domain/personal_invite_campaign";
 import {
   getReviewSendById,
@@ -231,6 +235,43 @@ function handleOnboardingOptOutPost(ctx: Ctx): Response {
 /** Static HTML, deliberately bilingual: this page is reached from a cold mail
  *  in either language and costs nothing to render both ways. No user input is
  *  interpolated, so there is nothing to escape. */
+// ── Suggested-planner invites ───────────────────────────────────────────────
+// No campaign row behind these, so the token signs the provisioned user id
+// directly. Opting out is also an erasure here: the account only exists because
+// we opened it for them, so `retireInvitedPlanner` scrubs it on the way out
+// (unless they already activated it, in which case they own it and it stays).
+
+function handlePlannerInviteOptOut(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const userId = verifyPlannerInviteOptOutToken(token);
+  const email = userId != null ? retireInvitedPlanner(userId) : null;
+  if (email) addOptOut(email, "planner_suggested_invite");
+  return new Response(plannerOptOutHtml(email != null), {
+    status: email ? 200 : 404,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+function handlePlannerInviteOptOutPost(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const userId = verifyPlannerInviteOptOutToken(token);
+  const email = userId != null ? retireInvitedPlanner(userId) : null;
+  if (email) addOptOut(email, "planner_suggested_invite");
+  return new Response(null, { status: 204 });
+}
+
+/** The claim-campaign confirmation talks about a listing staying up, which is
+ *  wrong here: what we hold is an account we opened, and it is gone. */
+function plannerOptOutHtml(success: boolean): string {
+  const title = success ? "Rendben / Done" : "Érvénytelen link / Invalid link";
+  const body = success
+    ? `<p>Nem írunk többet erre a címre, és az előkészített szervezői fiókot is töröltük.</p>
+       <p style="color:#7a7065;">We won't email this address again, and the planner account we had prepared is deleted.</p>`
+    : `<p>Ez a link nem érvényes.</p>
+       <p style="color:#7a7065;">This link is no longer valid. Reply to the email and a human will sort it out.</p>`;
+  return optOutPage(title, body);
+}
+
 function optOutHtml(success: boolean): string {
   const title = success ? "Rendben / Done" : "Érvénytelen link / Invalid link";
   const body = success
@@ -238,6 +279,12 @@ function optOutHtml(success: boolean): string {
        <p style="color:#7a7065;">We won't email this address again. Your listing stays up; reply to the email if you'd like it removed entirely.</p>`
     : `<p>Ez a link nem érvényes.</p>
        <p style="color:#7a7065;">This link is no longer valid. Reply to the email and a human will sort it out.</p>`;
+  return optOutPage(title, body);
+}
+
+/** Shared chrome for every opt-out confirmation. Standalone HTML (no SPA, no
+ *  JS): the recipient may open it from a mail client's in-app browser. */
+function optOutPage(title: string, body: string): string {
   return `<!doctype html>
 <html lang="hu"><head><meta charset="utf-8" /><title>${title}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -306,4 +353,10 @@ export function registerEmailTrackRoutes(router: Router): void {
   router.post("/api/emails/optout-onboarding/:token", handleOnboardingOptOutPost);
   router.get("/onboarding-optout/:token", handleOnboardingOptOut);
   router.post("/onboarding-optout/:token", handleOnboardingOptOutPost);
+
+  // Suggested-planner invite opt-out (List-Unsubscribe target + footer link).
+  router.get("/api/emails/optout-planner/:token", handlePlannerInviteOptOut);
+  router.post("/api/emails/optout-planner/:token", handlePlannerInviteOptOutPost);
+  router.get("/planner-optout/:token", handlePlannerInviteOptOut);
+  router.post("/planner-optout/:token", handlePlannerInviteOptOutPost);
 }

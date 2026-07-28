@@ -38,6 +38,14 @@ export interface ProvisionPlannerInput {
   fullName: string;
   businessName: string;
   category: string;
+  /** Pins `users.locale` at creation. The activation mail is the first thing
+   *  this account ever receives, and `send.ts` resolves its language from that
+   *  column, so a planner invited off a Hungarian list must not get the
+   *  bilingual fallback. Re-pinned from the real UI locale at activation. */
+  locale?: "hu" | "en" | null;
+  /** Public business phone, when we have one. Pre-fills the planner profile so
+   *  the onboarding wizard opens with something already in it. */
+  phone?: string | null;
 }
 
 /** Create the dormant planner account + the first activation token, returning the
@@ -71,23 +79,40 @@ export async function provisionPlanner(
         `INSERT INTO users
            (email, password_hash, full_name, status, role, verified_email,
             password_set, user_type, business_name, planner_category,
-            created_at, updated_at)
-         VALUES (?, ?, ?, 'active', 'owner', 0, 0, 'planner', ?, ?, ?, ?)`,
+            planner_phone, locale, created_at, updated_at)
+         VALUES (?, ?, ?, 'active', 'owner', 0, 0, 'planner', ?, ?, ?, ?, ?, ?)`,
       )
-      .run(email, placeholderHash, input.fullName, input.businessName, input.category, ts, ts);
+      .run(
+        email,
+        placeholderHash,
+        input.fullName,
+        input.businessName,
+        input.category,
+        input.phone?.trim() || null,
+        input.locale ?? null,
+        ts,
+        ts,
+      );
     const userId = Number(result.lastInsertRowid);
 
     if (grantComp) {
       // 2-year comp, admin-granted: founding status keeps the shared entitlement
       // math happy, is_founding_member=0 keeps the 25 founding slots untouched.
-      // Currency defaults to the null-locale pick and is re-pinned at activation
-      // once the planner's real UI locale is known.
+      // Currency follows the locale we were given (null keeps the historical
+      // default) and is re-pinned at activation once the planner's real UI
+      // locale is known.
       db.prepare(
         `INSERT INTO planner_subscriptions
            (user_id, subscription_status, trial_ends_at, founding_until,
             is_founding_member, currency, created_at, updated_at)
          VALUES (?, 'founding', NULL, ?, 0, ?, ?, ?)`,
-      ).run(userId, ts + PLANNER_FOUNDING_DURATION_MS, plannerCurrencyForLocale(null), ts, ts);
+      ).run(
+        userId,
+        ts + PLANNER_FOUNDING_DURATION_MS,
+        plannerCurrencyForLocale(input.locale ?? null),
+        ts,
+        ts,
+      );
     }
 
     db.prepare(

@@ -10,6 +10,7 @@ import type {
   AdminPlannerPending,
   AdminPlannerView,
   AdminPlannerWaitlistDetail,
+  PlannerInviteRow,
   PlannerPlan,
 } from "@shared/types";
 import { intlLocale } from "../lib/format";
@@ -346,6 +347,198 @@ function ProvisionPlannerDialog({
         />
         {error && <p className="field-error">{error}</p>}
       </form>
+    </Dialog>
+  );
+}
+
+/** Status → pill tone for one row of an invite batch. */
+const INVITE_STATUS_TONE: Record<PlannerInviteRow["status"], PillTone> = {
+  ready: "paper",
+  sent: "sage",
+  existing: "muted",
+  opted_out: "muted",
+  failed: "blush",
+};
+
+/** "Ajánlott szervezők meghívása": paste the list somebody handed us, preview
+ *  what the parser made of it, then provision a dormant account per row and
+ *  mail the take-over invite. Preview first is the whole point, cold mail has
+ *  no undo, so the admin sees every parsed name and address before anything
+ *  leaves the building. */
+function InvitePlannersDialog({
+  open,
+  onClose,
+  onSent,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const [text, setText] = useState("");
+  const [locale, setLocale] = useState<"auto" | "hu" | "en">("auto");
+  const [rows, setRows] = useState<PlannerInviteRow[] | null>(null);
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setText("");
+    setLocale("auto");
+    setRows(null);
+    setSent(false);
+    setError(null);
+  }, [open]);
+
+  // Any edit invalidates the preview: sending rows the admin never saw is
+  // exactly the mistake the preview step exists to prevent.
+  function editText(next: string) {
+    setText(next);
+    setRows(null);
+    setSent(false);
+  }
+
+  async function run(dryRun: boolean) {
+    if (busy || text.trim().length === 0) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await adminPlannerMgmtApi.inviteBatch({
+        text,
+        dry_run: dryRun,
+        ...(locale === "auto" ? {} : { locale }),
+      });
+      setRows(res.rows);
+      if (!dryRun) {
+        setSent(true);
+        const count = res.rows.filter((r) => r.status === "sent").length;
+        toast.success(t("admin.planners.invite_batch_done", { sent: count }));
+        onSent();
+      } else if (res.rows.length === 0) {
+        setError(t("admin.planners.invite_batch_empty"));
+      }
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const previewed = rows !== null && rows.length > 0;
+  const sendable = previewed && !sent && rows.some((r) => r.status === "ready");
+
+  return (
+    <Dialog
+      open={open}
+      title={t("admin.planners.invite_batch_title")}
+      onClose={onClose}
+      role="dialog"
+      closeOnBackdrop
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} disabled={busy}>
+            {sent ? t("common.done") : t("common.cancel")}
+          </Button>
+          {!sent && (
+            <Button
+              variant={sendable ? "primary" : "outline"}
+              onClick={() => void run(!previewed)}
+              disabled={text.trim().length === 0}
+              loading={busy}
+              loadingLabel={t("common.loading")}
+              leftIcon={sendable ? <Send size={15} /> : <Eye size={15} />}
+            >
+              {sendable
+                ? t("admin.planners.invite_batch_send")
+                : t("admin.planners.invite_batch_preview")}
+            </Button>
+          )}
+        </>
+      }
+    >
+      <p className="mb-4 text-sm text-ink-600 dark:text-umber-300">
+        {t("admin.planners.invite_batch_intro")}
+      </p>
+      <textarea
+        value={text}
+        onChange={(e) => editText(e.target.value)}
+        placeholder={t("admin.planners.invite_batch_placeholder")}
+        rows={8}
+        className="input w-full font-mono text-xs"
+        aria-label={t("admin.planners.invite_batch_title")}
+      />
+      <label className="mt-3 block text-sm">
+        <span className="mb-1 block text-ink-600 dark:text-umber-300">
+          {t("admin.planners.invite_batch_locale")}
+        </span>
+        <select
+          value={locale}
+          onChange={(e) => {
+            setLocale(e.target.value as "auto" | "hu" | "en");
+            setRows(null);
+          }}
+          className="input w-full"
+        >
+          <option value="auto">{t("admin.planners.invite_batch_locale_auto")}</option>
+          <option value="hu">Magyar</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+
+      {error && <p className="field-error mt-3">{error}</p>}
+
+      {previewed && (
+        <div className="mt-4">
+          <p className="mb-2 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-400">
+            {t("admin.planners.invite_batch_parsed", { count: rows.length })}
+          </p>
+          <div className="overflow-x-auto rounded-xl ring-1 ring-ink-100 dark:ring-umber-700">
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-400">
+                <tr>
+                  <th className="px-3 py-2">{t("admin.planners.invite_batch_col_name")}</th>
+                  <th className="px-3 py-2">{t("admin.planners.invite_batch_col_email")}</th>
+                  <th className="px-3 py-2">{t("admin.planners.invite_batch_col_phone")}</th>
+                  <th className="px-3 py-2">{t("admin.planners.invite_batch_col_status")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.email} className="border-t border-ink-100 dark:border-umber-700">
+                    <td className="px-3 py-2">
+                      {r.full_name}
+                      {r.business_name !== r.full_name && (
+                        <span className="block text-xs text-ink-500 dark:text-umber-400">
+                          {r.business_name}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs">
+                      {r.email}
+                      <span className="ml-1 uppercase text-ink-400 dark:text-umber-500">
+                        {r.locale}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-xs">{r.phone ?? ""}</td>
+                    <td className="px-3 py-2">
+                      <Pill tone={INVITE_STATUS_TONE[r.status]}>
+                        {t(`admin.planners.invite_batch_status_${r.status}`)}
+                      </Pill>
+                      {r.error && (
+                        <span className="block text-xs text-blush-700 dark:text-blush-300">
+                          {r.error}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </Dialog>
   );
 }
@@ -830,6 +1023,7 @@ export default function AdminPlannersPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
   const [provisionOpen, setProvisionOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -868,14 +1062,24 @@ export default function AdminPlannersPage() {
         }
         subtitle={t("admin.planners.subtitle")}
         actions={
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<UserPlus size={15} />}
-            onClick={() => setProvisionOpen(true)}
-          >
-            {t("admin.planners.provision_cta")}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<MailPlus size={15} />}
+              onClick={() => setInviteOpen(true)}
+            >
+              {t("admin.planners.invite_batch_cta")}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<UserPlus size={15} />}
+              onClick={() => setProvisionOpen(true)}
+            >
+              {t("admin.planners.provision_cta")}
+            </Button>
+          </div>
         }
       />
 
@@ -883,6 +1087,12 @@ export default function AdminPlannersPage() {
         open={provisionOpen}
         onClose={() => setProvisionOpen(false)}
         onCreated={() => void load()}
+      />
+
+      <InvitePlannersDialog
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onSent={() => void load()}
       />
 
       <StatFilter

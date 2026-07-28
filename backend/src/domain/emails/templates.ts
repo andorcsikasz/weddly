@@ -2885,8 +2885,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     // The stock outreach footer says "you have no account with us", which this
     // mail's own first sentence contradicts. Say the true version instead.
     whyLine: {
-      hu: "Ezt a Weddly esküvőtervezőtől kaptad, mert egy felhasználónk ajánlott téged. A fiókod alszik, amíg nem élesíted, és ha figyelmen kívül hagyod ezt a levelet, nem történik semmi.",
-      en: "You're getting this from Weddly, a wedding-planning app, because one of our users recommended you. The account stays asleep until you activate it, and if you ignore this email, nothing happens.",
+      hu: "Ezt a Weddly esküvőtervezőtől kaptad, mert egy felhasználónk ajánlott téged. A fiók addig alszik, amíg nem élesíted.",
+      en: "You're getting this from Weddly, a wedding-planning app, because one of our users recommended you. The account stays asleep until you activate it.",
     },
     hu: {
       preheader: "Egy felhasználónk javasolta a nevedet. A fiók kész, egy kattintás átvenni.",
@@ -2897,7 +2897,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         // No sentence-final period after the date: a Hungarian formatted date
         // already ends in one ("2028. július 28."), and adding ours makes it two.
         `Tarts velünk az első fejezettől: a következő két évben a vendégünk vagy, minden funkcióval. A vendégidőszak vége: ${p.guestUntil}`,
-        `Az adatokról őszintén: a nevedet, az e-mail-címedet és a telefonszámodat nyilvánosan, üzleti elérhetőségként közzétett forrásból gyűjtöttük, és kizárólag ezt a megkeresést szolgálják. Harmadik félnek nem adjuk tovább, a fiók pedig alszik, amíg te nem élesíted. Az adatkezelés jogalapja a GDPR 6. cikk (1) f) pontja szerinti jogos érdek, és minden jogod megvan vele szemben: kérheted az adataid másolatát, javítását, korlátozását vagy törlését, és bármikor tiltakozhatsz. Írj a ${CONFIG.supportEmail} címre, vagy kattints lent a "Töröljetek a listáról" linkre, és az elkészített fiókkal együtt mindent törlünk. Részletek: ${CONFIG.frontendBaseUrl}/privacy`,
+        // The data note is the price of writing to someone who never asked. It
+        // names the source, the purpose and the legal basis, and it lists the
+        // rights in full, but it does NOT advertise the way out: the link is
+        // there for whoever wants it (see feedback on negative email copy).
+        `Az adatokról őszintén: a nevedet, az e-mail-címedet és a telefonszámodat nyilvánosan, üzleti elérhetőségként közzétett forrásból gyűjtöttük, és kizárólag ezt a megkeresést szolgálják. Harmadik félnek nem adjuk tovább. Az adatkezelés jogalapja a GDPR 6. cikk (1) f) pontja szerinti jogos érdek, és minden jogod megvan vele szemben: az adataid másolatát, javítását, korlátozását vagy törlését bármikor kérheted, és tiltakozhatsz a kezelésük ellen. Egy levél a ${CONFIG.supportEmail} címre elég, ember olvassa. Részletek: ${CONFIG.frontendBaseUrl}/privacy`,
       ],
       cta: "Fiók átvétele",
       ctaSubtext: "Egy kattintás, egy jelszó. A link 30 napig él, és egyszer használható.",
@@ -2905,7 +2909,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       secondaryLinks: [
         { label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl },
         { label: "Adatkezelési tájékoztató", url: `${CONFIG.frontendBaseUrl}/privacy` },
-        { label: "Töröljetek a listáról", url: p.optOutUrl },
+        { label: "Leiratkozás", url: p.optOutUrl },
       ],
     },
     en: {
@@ -2915,7 +2919,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         `One of our users put your name forward when we went looking for wedding planners for Weddly. That was enough for us: the planner account for **${p.businessName}** is set up and waiting for you.`,
         "On Weddly the couple and the planner look at the same screen: guest list, seating, budget, RSVP, timeline, tasks. Every client you have runs from one dashboard, so you never have to dig through your inbox to find where a wedding stands.",
         `Come along from the first chapter: for the next two years you are our guest, with everything unlocked. Your guest period runs until ${p.guestUntil}.`,
-        `Straight talk about the data: your name, email address and phone number came from publicly published business contact details, and they serve this one message. We pass nothing to third parties, and the account stays asleep until you activate it. We process it under the legitimate-interest basis of Article 6(1)(f) GDPR, and every right you have against that stands: you can ask for a copy, a correction, a restriction or an erasure of your data, and you can object at any time. Write to ${CONFIG.supportEmail}, or click "Take me off the list" below and everything goes, the prepared account included. Details: ${CONFIG.frontendBaseUrl}/privacy`,
+        `Straight talk about the data: your name, email address and phone number came from publicly published business contact details, and they serve this one message. We pass nothing to third parties. We process it under the legitimate-interest basis of Article 6(1)(f) GDPR, and every right you have against that stands: you can ask for a copy, a correction, a restriction or an erasure of your data at any time, and you can object to the processing. One line to ${CONFIG.supportEmail} is enough, a human reads it. Details: ${CONFIG.frontendBaseUrl}/privacy`,
       ],
       cta: "Take over your account",
       ctaSubtext: "One click, one password. The link is valid for 30 days and can be used once.",
@@ -2923,7 +2927,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       secondaryLinks: [
         { label: "What is Weddly?", url: CONFIG.frontendBaseUrl },
         { label: "Privacy policy", url: `${CONFIG.frontendBaseUrl}/privacy` },
-        { label: "Take me off the list", url: p.optOutUrl },
+        { label: "Unsubscribe", url: p.optOutUrl },
       ],
     },
   }),

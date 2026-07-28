@@ -8,9 +8,11 @@
 // created dormant with a 2-year free comp and the planner receives an emailed
 // activation link (domain/planner_provisioning.ts).
 
+import type { PlannerInviteBatchResult } from "@shared/types";
 import { CONFIG } from "../config";
 import { db } from "../db";
 import { sendKind } from "../domain/emails";
+import { runPlannerInviteBatch } from "../domain/planner_invite_batch";
 import {
   type PlannerProfileRow,
   plannerProfileMissing,
@@ -148,6 +150,44 @@ async function handleProvision(ctx: Ctx): Promise<Response> {
     after: { email: emailRaw, business_name: businessName, category },
   });
   return json({ ok: true, user_id: userId }, { status: 201 });
+}
+
+// "Someone recommended these planners" batch. The admin pastes the list they
+// were handed, previews what the parser made of it (`dry_run`), then runs it.
+// Everything interesting lives in domain/planner_invite_batch.ts; this handler
+// is the auth + input boundary.
+async function handleInviteBatch(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const body = await readJson<{ text?: unknown; dry_run?: unknown; locale?: unknown }>(ctx.req);
+  if (typeof body.text !== "string" || body.text.trim().length === 0) {
+    throw new HttpError(400, "`text` is required");
+  }
+  if (body.text.length > 100_000) throw new HttpError(400, "List is too long");
+  const dryRun = body.dry_run !== false;
+  // Absent/"auto" leaves the language to the per-row guess (HU phone or .hu
+  // address); an explicit value forces the whole batch.
+  const locale = body.locale === "hu" || body.locale === "en" ? body.locale : null;
+
+  const rows = await runPlannerInviteBatch(body.text, { dryRun, locale });
+
+  if (!dryRun) {
+    const sent = rows.filter((r) => r.status === "sent");
+    addAuditLog({
+      actor_user_id: admin.id,
+      couple_id: null,
+      action: "admin.planner_invite_batch",
+      target_kind: "user",
+      target_id: null,
+      after: {
+        parsed: rows.length,
+        sent: sent.length,
+        emails: sent.map((r) => r.email),
+      },
+    });
+  }
+
+  const result: PlannerInviteBatchResult = { dry_run: dryRun, rows };
+  return json(result);
 }
 
 async function handleResendActivation(ctx: Ctx): Promise<Response> {
@@ -365,6 +405,7 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
 export function registerAdminPlannerRoutes(router: Router) {
   router.get("/api/admin/planners", handleList, true);
   router.post("/api/admin/planners/provision", handleProvision, true);
+  router.post("/api/admin/planners/invite-batch", handleInviteBatch, true);
   router.post("/api/admin/planners/pending/:id/send-invite", handleSendInvite, true);
   router.post("/api/admin/planners/:id/resend-activation", handleResendActivation, true);
   router.post("/api/admin/planners/:id/suspend", handleSuspend, true);

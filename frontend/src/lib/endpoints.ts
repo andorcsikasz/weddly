@@ -64,6 +64,7 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
   PlannerClientView,
+  PlannerInviteBatchResult,
   PlannerClientCrm,
   PlannerClientNote,
   PlannerBoardStatus,
@@ -2224,6 +2225,11 @@ export const adminPlannerMgmtApi = {
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/planners/${id}`),
   provision: (body: AdminProvisionPlannerInput) =>
     apiFetch<{ ok: true; user_id: number }>("POST", "/api/admin/planners/provision", body),
+  /** "A user suggested these planners": paste a list, get back one row per
+   *  parsed address. `dry_run` previews the parse without creating an account
+   *  or sending anything; `locale` omitted lets each row pick its own. */
+  inviteBatch: (body: { text: string; dry_run: boolean; locale?: "hu" | "en" }) =>
+    apiFetch<PlannerInviteBatchResult>("POST", "/api/admin/planners/invite-batch", body),
   resendActivation: (id: number) =>
     apiFetch<{ ok: true }>("POST", `/api/admin/planners/${id}/resend-activation`, {}),
   /** Approve an accepted waitlist applicant and open their planner account
