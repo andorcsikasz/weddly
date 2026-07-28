@@ -139,6 +139,7 @@ export function DemoOverlay() {
         <div
           role="status"
           aria-live="polite"
+          data-banner
           className="sticky top-0 z-30 border-b border-sage-300 bg-sage-100 px-4 py-2 text-sm text-ink-800 dark:border-sage-700/60 dark:bg-sage-900/40 dark:text-paper-100"
         >
           <div className="mx-auto flex max-w-7xl items-center gap-3 sm:gap-4">

@@ -1846,3 +1846,53 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   isolation: isolate;
   z-index: 0;
 }
+
+/* Banner stack — the strips above the workspace header (demo band, verify
+   nudge, billing band) used to run as a stack of full-bleed stripes, which
+   read as one striped block rather than as separate messages. They now sit
+   like sheets in a folder: the first one keeps full width and lies on top,
+   every one after it tucks its top edge underneath and peeks out a little
+   narrower, so three of them still parse at a glance.
+
+   Ordering is plain DOM order via the sibling combinator, so a banner that
+   no-ops (they all render null when idle) simply drops out of the stack and
+   the next one becomes the front sheet. The hook is [data-banner] rather
+   than a wrapper element on purpose: the demo band is position:sticky and
+   a wrapper would become its containing block, unpinning it as soon as the
+   stack scrolled out of view.
+
+   Each banner carries its own `relative` (or `sticky`) class, and this block
+   deliberately never sets `position` itself: it loads after the Tailwind
+   utilities, so a `position: relative` here would beat `sticky` on the demo
+   band and unpin it. */
+[data-banner] {
+  z-index: 30;
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+  box-shadow: 0 6px 14px -8px rgba(37, 28, 20, 0.4);
+}
+/* Second sheet down and every one after it. The negative margin slides the
+   overlap under the sheet above; the matching padding puts the content back
+   where it was, so the folder costs no extra height. */
+[data-banner] ~ [data-banner] {
+  z-index: 20;
+  margin-top: -1rem;
+  padding-top: 1rem;
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+}
+[data-banner] ~ [data-banner] ~ [data-banner] {
+  z-index: 10;
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+@media (min-width: 640px) {
+  [data-banner] ~ [data-banner] {
+    margin-left: 0.75rem;
+    margin-right: 0.75rem;
+  }
+  [data-banner] ~ [data-banner] ~ [data-banner] {
+    margin-left: 1.5rem;
+    margin-right: 1.5rem;
+  }
+}

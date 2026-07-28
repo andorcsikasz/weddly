@@ -67,7 +67,10 @@ export function VerifyEmailBanner() {
   }
 
   return (
-    <div className="border-b border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100">
+    <div
+      data-banner
+      className="relative border-b border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100"
+    >
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 text-sm sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
         <Mail size={16} className="shrink-0" aria-hidden="true" />
         <p className="flex-1 min-w-[14rem]">
