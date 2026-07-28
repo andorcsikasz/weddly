@@ -1549,8 +1549,7 @@ const en: LocaleMessages = {
     merge_success: "You're in, welcome to the new workspace.",
   },
   newsletter: {
-    title: "Wedding planning, in your inbox",
-    body: "Tips, checklists and product news, roughly one or two emails a month. No spam, no shared addresses.",
+    title: "Get on our mail list",
     email_placeholder: "email@example.com",
     consent: "I agree to receive the Weddly newsletter at this address. Details:",
     consent_link: "privacy policy",

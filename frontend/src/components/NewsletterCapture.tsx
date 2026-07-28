@@ -53,12 +53,11 @@ export function NewsletterCapture({ source }: { source: string }) {
         </div>
       ) : (
         <form onSubmit={submit} noValidate={false}>
+          {/* One line, no supporting paragraph: the cadence-and-no-spam
+              reassurance read as filler above a field that explains itself. */}
           <h3 className="font-grotesk text-2xl font-semibold leading-[1.05] tracking-tight text-umber-900 dark:text-paper-50 sm:text-3xl lg:text-4xl">
             {t("newsletter.title")}
           </h3>
-          <p className="mt-2 font-grotesk text-sm leading-relaxed text-umber-700 dark:text-umber-200">
-            {t("newsletter.body")}
-          </p>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
             <input
               type="email"

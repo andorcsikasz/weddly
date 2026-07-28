@@ -1900,7 +1900,6 @@ export interface LocaleMessages {
    *  landing pages the emailed links point at. */
   newsletter: {
     title: string;
-    body: string;
     email_placeholder: string;
     /** Checkbox label; consent_link is the trailing privacy-policy anchor. */
     consent: string;

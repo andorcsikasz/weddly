@@ -1569,8 +1569,7 @@ const hu: LocaleMessages = {
     merge_success: "Csatlakoztál, üdv az új munkaterületen.",
   },
   newsletter: {
-    title: "Esküvőtervezés, levélben",
-    body: "Tippek, ellenőrzőlisták és termékújdonságok, nagyjából havi egy-két levél. Se spam, se továbbadott cím.",
+    title: "Kerülj fel a levelezőlistánkra",
     email_placeholder: "email@pelda.hu",
     consent: "Hozzájárulok, hogy a Wēddly hírlevelet küldjön erre a címre. Részletek:",
     consent_link: "adatkezelési tájékoztató",
