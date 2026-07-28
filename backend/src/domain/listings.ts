@@ -114,6 +114,66 @@ function toVenueStyle(raw: string | null): VenueStyle | null {
   return raw !== null && (VENUE_STYLES as string[]).includes(raw) ? (raw as VenueStyle) : null;
 }
 
+// ── Imported-profile teaser ────────────────────────────────────────────────
+
+/** The fields an imported, unclaimed profile must not surface publicly. Shaped
+ *  as a loose bag rather than a concrete DTO so the one helper below can cover
+ *  the directory card, the detail payload and the share-card meta, which are
+ *  three different types that happen to share these keys. */
+export interface RedactableProfile {
+  blurb_hu?: string | null;
+  blurb_en?: string | null;
+  contact_phone?: string | null;
+  /** The second published line, where a business runs one. "No phone" has to
+   *  mean no phone, so it goes with the first. */
+  contact_phone_alt?: string | null;
+  price_band?: number | null;
+  gallery_urls?: string[] | null;
+  hero_image_url?: string | null;
+}
+
+/**
+ * Cut an IMPORTED profile down to a teaser while it is still unclaimed:
+ * one photo, no bio, no price, no phone.
+ *
+ * The distinction this enforces is about consent, not about quality. An entry
+ * we assembled ourselves from what a business publishes on its own website is
+ * untouched. An entry whose bio, photos, price and phone were lifted from the
+ * profile that business built on ANOTHER platform is different — they wrote
+ * that for someone else's directory, and republishing all of it here before
+ * they have accepted anything is not ours to do. One photo and the facts
+ * (name, town, category, website) is enough for a couple to recognise them and
+ * for the business to be findable; the rest waits for the claim.
+ *
+ * Claiming is the acceptance: the moment `vendor_account_id` is set the vendor
+ * owns the card and every field returns, including anything they have since
+ * edited themselves.
+ *
+ * MUST be applied server-side, at the read boundary — hiding these in the
+ * frontend would still ship the bio and phone number in the JSON and in the
+ * SSR HTML, which is the same publication with an extra step.
+ */
+export function redactUnclaimedImport<T extends RedactableProfile>(
+  card: T,
+  gate: { profile_imported: boolean; vendor_account_id: number | null },
+): T {
+  if (!gate.profile_imported || gate.vendor_account_id !== null) return card;
+  return {
+    ...card,
+    // "" rather than null: the DTO types these as strings on the card shape and
+    // callers concatenate them. Empty reads as "no bio" everywhere.
+    ...(card.blurb_hu !== undefined ? { blurb_hu: "" } : {}),
+    ...(card.blurb_en !== undefined ? { blurb_en: "" } : {}),
+    ...(card.contact_phone !== undefined ? { contact_phone: null } : {}),
+    ...(card.contact_phone_alt !== undefined ? { contact_phone_alt: null } : {}),
+    ...(card.price_band !== undefined ? { price_band: null } : {}),
+    // One picture, and specifically the one already chosen as the card face.
+    ...(card.gallery_urls !== undefined
+      ? { gallery_urls: card.hero_image_url ? [card.hero_image_url] : [] }
+      : {}),
+  };
+}
+
 export function toListing(row: ListingRow): Listing {
   return {
     id: row.id,
@@ -280,13 +340,13 @@ const upsertListingStmt = db.prepare(`
     id, source, vendor_account_id, category, name, city, address, website,
     contact_email, contact_phone, blurb_hu, blurb_en, price_band,
     capacity_min, capacity_max, venue_style, lat, lng, spoken_languages,
-    submitter_type, status, content_hash,
+    profile_imported, submitter_type, status, content_hash,
     created_at, updated_at
   ) VALUES (
     $id, $source, $vendor_account_id, $category, $name, $city, $address, $website,
     $contact_email, $contact_phone, $blurb_hu, $blurb_en, $price_band,
     $capacity_min, $capacity_max, $venue_style, $lat, $lng, $spoken_languages,
-    $submitter_type, $status, $content_hash,
+    $profile_imported, $submitter_type, $status, $content_hash,
     $created_at, $updated_at
   )
   ON CONFLICT(id) DO UPDATE SET
@@ -318,6 +378,7 @@ const upsertListingStmt = db.prepare(`
     -- curated entry can add languages but not clear them again — which is the
     -- safe direction to be wrong in.
     spoken_languages  = COALESCE(excluded.spoken_languages, listings.spoken_languages),
+    profile_imported  = excluded.profile_imported,
     submitter_type    = excluded.submitter_type,
     status            = excluded.status,
     content_hash      = excluded.content_hash,
@@ -350,6 +411,7 @@ function hashCuratedEntry(e: (typeof DIRECTORY)[number]): string {
     e.lat,
     e.lng,
     e.spoken_languages ?? null,
+    e.profile_imported === true,
   ]);
   return createHash("sha256").update(payload).digest("hex").slice(0, 16);
 }
@@ -406,6 +468,9 @@ export function syncListingFromCommunityRow(row: CommunitySupplierRow): void {
     // The submission form doesn't ask for spoken languages. NULL here leaves
     // whatever a claiming vendor set intact (see the COALESCE on the upsert).
     $spoken_languages: null,
+    // A community submission is somebody typing a supplier into our own form,
+    // not a profile lifted off another platform.
+    $profile_imported: 0,
     $submitter_type: row.submitter_type === "self" ? "self" : "user",
     $status: row.status,
     $content_hash: hashCommunityRow(row),
@@ -472,6 +537,7 @@ export function backfillListings(): { curated: number; community: number } {
         $spoken_languages: entry.spoken_languages?.length
           ? formatSpokenLanguages(entry.spoken_languages)
           : null,
+        $profile_imported: entry.profile_imported === true ? 1 : 0,
         $submitter_type: null,
         $status: "active",
         $content_hash: hashCuratedEntry(entry),
@@ -690,6 +756,10 @@ export function createVendorListing(input: {
     $venue_style: null,
     $lat: null,
     $lng: null,
+    $spoken_languages: null,
+    // A vendor listing themselves on Weddly: the content is theirs and they
+    // are here by definition, so nothing to gate.
+    $profile_imported: 0,
     $submitter_type: "self",
     $status: "active",
     $content_hash: null,

@@ -1660,6 +1660,13 @@ addColumnIfMissing("listings", "google_synced_at", "google_synced_at INTEGER");
 // run; NULL means "never asked". Curated rows get their coords from
 // suppliers_data.ts instead and never enter that script's candidate set.
 addColumnIfMissing("listings", "geo_synced_at", "geo_synced_at INTEGER");
+// 1 when this card's content was imported from the business's own profile on
+// another platform, rather than assembled from what they publish themselves.
+// While such a listing is unclaimed the public surfaces redact it down to a
+// teaser (one photo, no bio, no price, no phone) — see `redactUnclaimedImport`
+// in domain/listings.ts. Written by the curated re-sync from
+// `profile_imported` in suppliers_data.ts; 0 for everything else.
+addColumnIfMissing("listings", "profile_imported", "profile_imported INTEGER NOT NULL DEFAULT 0");
 // Vendor opt-in: hide the tail of the public-page address + contact email from
 // anonymous visitors (a reason to register — same gate as the always-on phone
 // mask). Off by default, so existing listings show full contact exactly as

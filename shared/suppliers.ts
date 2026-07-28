@@ -561,6 +561,21 @@ export interface DirectorySupplierBase {
   submitter_type: "user" | "self" | null;
   /** 1 = $, 5 = $$$$$. Null for entries that haven't been priced yet. */
   price_band: 1 | 2 | 3 | 4 | 5 | null;
+  /**
+   * This card's content was IMPORTED from the business's own profile on
+   * another platform, rather than assembled by us from what they publish on
+   * their own site. That is a different consent posture: they wrote that bio,
+   * uploaded those photos and set that price for somebody else's directory.
+   *
+   * So until they claim the listing here, the public surfaces show a teaser —
+   * one photo, no bio, no price, no phone (see `redactUnclaimedImport`). The
+   * moment `vendor_account_id` is set they have accepted the profile and
+   * everything shows.
+   *
+   * Absent/false on entries we built ourselves from public web data, which
+   * are unaffected.
+   */
+  profile_imported?: boolean;
   /** When a vendor has claimed this listing (P2.C flow), the FK to their
    *  `vendor_accounts` row. Null on unclaimed curated + community entries.
    *  Frontend uses `vendor_account_id == null` AS the "is claimable?" test —

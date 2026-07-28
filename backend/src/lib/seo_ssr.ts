@@ -778,18 +778,32 @@ export function lookupVendorPageMeta(pathname: string | null | undefined): Vendo
   // og:image with no fallback behind it.
   // Use the resolved base's canonical id (`v{N}`) — `idRaw` may be the pretty
   // `magyar-foto-v12` form, which wouldn't match the listings/photos rows.
-  const listing = db.prepare("SELECT hero_image_url FROM listings WHERE id = ?").get(base.id) as
-    | { hero_image_url: string | null }
+  const listing = db
+    .prepare(
+      "SELECT hero_image_url, vendor_account_id, profile_imported FROM listings WHERE id = ?",
+    )
+    .get(base.id) as
+    | {
+        hero_image_url: string | null;
+        vendor_account_id: number | null;
+        profile_imported: number;
+      }
     | undefined;
   let heroImageUrl = firstNonBlank(listing?.hero_image_url, base.hero_image_url);
   if (!heroImageUrl) {
     heroImageUrl = firstNonBlank(listListingPhotos(base.id)[0]?.url);
   }
+  // The share card and the SSR <meta description> are public HTML, so an
+  // imported profile that nobody has claimed must not put its bio there
+  // either — redacting it in the API and then baking it into the page source
+  // would publish it just the same, and to crawlers at that. The photo and the
+  // name/town stay: that's the one picture the teaser is allowed.
+  const redacted = listing?.profile_imported === 1 && listing.vendor_account_id === null;
   return {
     name: base.name,
     city: base.city,
-    blurbHu: base.blurb_hu,
-    blurbEn: base.blurb_en,
+    blurbHu: redacted ? "" : base.blurb_hu,
+    blurbEn: redacted ? "" : base.blurb_en,
     heroImageUrl,
     publicId: vendorPublicId(base.id, base.name),
   };

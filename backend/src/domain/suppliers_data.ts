@@ -2984,6 +2984,7 @@ const RAW_DIRECTORY: (Omit<
     website: "https://www.eskuvo.dj/en/contact/",
     ...noContact,
     source: "curated",
+    profile_imported: true,
     price_band: 4,
   },
   {
@@ -14894,6 +14895,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "mellorevent@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -14919,6 +14921,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "eskuvoi.video.filmetek@gmail.com",
     contact_phone: "+36307278694",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -14939,6 +14942,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "info@hocusproduction.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -14962,6 +14966,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "eskuvo@eventunikorn.hu",
     contact_phone: "+36203618385",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -14985,6 +14990,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "info@djatis.hu",
     contact_phone: "+36202358933",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15012,6 +15018,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "atiigenetek@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15040,6 +15047,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "mayanpeti@gmail.com",
     contact_phone: "+36205397541",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15068,6 +15076,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "monikaszertartasvezeto@gmail.com",
     contact_phone: "+36709497351",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15096,6 +15105,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "hello@szabomgabor.hu",
     contact_phone: "+36303205239",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15121,6 +15131,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "galcsek1@gmail.com",
     contact_phone: "+36307259979",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15146,6 +15157,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "gergoszakaly@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15174,6 +15186,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "mfantoly@gmail.com",
     contact_phone: "+36703716824",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15201,6 +15214,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "ktothmarcsiphotographer@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15222,6 +15236,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "csaba@kusnyerik.hu",
     contact_phone: "+36302988584",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15249,6 +15264,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "nf.videostudio@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15274,6 +15290,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "istvan.toth@stevexmedia.hu",
     contact_phone: "+36209751090",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15299,6 +15316,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "istvan.harsfai@gmail.com",
     contact_phone: "+36305588510",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15327,6 +15345,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "info@djeskuvo.hu",
     contact_phone: "+36204500499",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15350,6 +15369,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "livemagnes@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15378,6 +15398,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "petroemokefoto@gmail.com",
     contact_phone: "+36302940803",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15406,6 +15427,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "info@zefferfoto.hu",
     contact_phone: "+36307299593",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15434,6 +15456,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "macsailoretta@gmail.com",
     contact_phone: "+36308505554",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15462,6 +15485,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "hello@gnagyrita.hu",
     contact_phone: "+36705520041",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15489,6 +15513,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "miliselfiebox@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15510,6 +15535,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "mjriostudio@gmail.com",
     contact_phone: "+36302734143",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15531,6 +15557,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "muszkats@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15552,6 +15579,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "thomas.palmer.dj@gmail.com",
     contact_phone: "+36308810691",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15580,6 +15608,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "kissdobokata@gmail.com",
     contact_phone: "+36203760647",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15608,6 +15637,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "rigolaca65@gmail.com",
     contact_phone: "+36302013869",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15636,6 +15666,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "farkasbszabina@gmail.com",
     contact_phone: "+36204319740",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15659,6 +15690,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "picme.kapcsolat@gmail.com",
     contact_phone: "+36303770001",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15685,6 +15717,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "szatmarifoto@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15712,6 +15745,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "evatanciskolaja@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15739,6 +15773,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "oz.event.dj@gmail.com",
     contact_phone: "+36203622306",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15758,6 +15793,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "coolsped.weddings.and.events@gmail.com",
     contact_phone: "+36305235358",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15784,6 +15820,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "pecsieskuvodj@gmail.com",
     contact_phone: "+36202250206",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15811,6 +15848,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "csaba.kaloz.photography@gmail.com",
     contact_phone: "+36304578897",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15836,6 +15874,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "steiglerzita@gmail.com",
     contact_phone: "+36308350182",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15861,6 +15900,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "sweetdreams.rendezveny@gmail.com",
     contact_phone: "+36706704009",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15888,6 +15928,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "panyokibence@gmail.com",
     contact_phone: "+36309492747",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15910,6 +15951,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "v.meriem09@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15933,6 +15975,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "vesanyi7@gmail.com",
     contact_phone: "+36202433504",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15958,6 +16001,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "zenesz.szekeres.lajos@gmail.com",
     contact_phone: "+36302503278",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -15985,6 +16029,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "szeretethangjatelefon@gmail.com",
     contact_phone: "+36306171543",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16012,6 +16057,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "hello@ktchn.hu",
     contact_phone: "+36306324204",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16040,6 +16086,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "hello@premiumselfie.hu",
     contact_phone: "+36306171543",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16060,6 +16107,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "kissvinczelaura@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16088,6 +16136,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "sommerszilvia@hotmail.com",
     contact_phone: "+36203205253",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16116,6 +16165,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "aszepszertartas@gmail.com",
     contact_phone: "+36702222987",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16142,6 +16192,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "matyas.jillek@gmail.com",
     contact_phone: "+36309779501",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16170,6 +16221,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "balitiborfotos@gmail.com",
     contact_phone: "+36706390728",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16197,6 +16249,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "kaposztalajos@gmail.com",
     contact_phone: "+36209466727",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16225,6 +16278,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "info@karolyifoto.hu",
     contact_phone: "+36203799814",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16253,6 +16307,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "rauchzsofi@gmail.com",
     contact_phone: "+36305843000",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16280,6 +16335,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "megoldas.eskuvore@gmail.com",
     contact_phone: "+36209745916",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16308,6 +16364,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "faceartsmink@gmail.com",
     contact_phone: "+36203855509",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16336,6 +16393,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "info@richmonde-eskuvo.com",
     contact_phone: "+36309934995",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16364,6 +16422,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "dobosattilafoto@gmail.com",
     contact_phone: "+36304074105",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16392,6 +16451,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "info@dekorduo.hu",
     contact_phone: "+36703212364",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16420,6 +16480,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "kehikarikatura@gmail.com",
     contact_phone: "+36205690665",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16447,6 +16508,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "info@latvanyosnyitotanc.hu",
     contact_phone: "+36305511256",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16472,6 +16534,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "demeter.csillu@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16500,6 +16563,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "info@partyrobot.hu",
     contact_phone: "+36305511256",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16523,6 +16587,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "info@time2selfie.hu",
     contact_phone: "+36305511256",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16551,6 +16616,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "noemimagyar@gmail.com",
     contact_phone: "+36709041705",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16579,6 +16645,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "alomcake02@gmail.com",
     contact_phone: "+36706603312",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16607,6 +16674,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "zsuzsicm@gmail.com",
     contact_phone: "+36703671777",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16635,6 +16703,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "inczekissl@gmail.com",
     contact_phone: "+36306842214",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16663,6 +16732,7 @@ const RAW_DIRECTORY: (Omit<
     contact_email: "info@vordenphoto.hu",
     contact_phone: "+36703945557",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16683,6 +16753,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "pannabagolyphoto@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   {
@@ -16709,6 +16780,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "jantaszregi@gmail.com",
     source: "curated",
+    profile_imported: true,
     price_band: null,
   },
   // ── Rosemary partner venues (July 2026) ───────────────────────────────
@@ -20470,6 +20542,7 @@ export const DIRECTORY: DirectorySupplierBase[] = RAW_DIRECTORY.map((s) => {
     ...withCoords,
     country: curatedCountry(s.id, s.city),
     venue_style: s.venue_style ?? null,
+    profile_imported: s.profile_imported === true,
     submitter_type: null,
     vendor_account_id: null,
     gallery_urls: s.gallery_urls ?? null,

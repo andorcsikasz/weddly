@@ -41,6 +41,7 @@ import {
   listListingPhotos,
   listListingVideos,
   listShowcaseCandidates,
+  redactUnclaimedImport,
   type ShowcaseVendorRow,
 } from "../domain/listings";
 import { maskAddressForPublic, maskEmailForPublic } from "../domain/contact_mask";
@@ -161,18 +162,23 @@ async function handleList(ctx: Ctx): Promise<Response> {
     const placeholders = ids.map(() => "?").join(",");
     const rows = db
       .prepare(
-        `SELECT id, vendor_account_id, hero_image_url, source FROM listings WHERE id IN (${placeholders})`,
+        `SELECT id, vendor_account_id, hero_image_url, source, profile_imported
+           FROM listings WHERE id IN (${placeholders})`,
       )
       .all(...ids) as Array<{
       id: string;
       vendor_account_id: number | null;
       hero_image_url: string | null;
       source: string;
+      profile_imported: number;
     }>;
     const byListing = new Map(rows.map((r) => [r.id, r] as const));
-    for (const b of allBase) {
-      const row = byListing.get(b.id);
+    for (let i = 0; i < allBase.length; i++) {
+      const row = byListing.get(allBase[i]!.id);
       if (row === undefined) continue;
+      // Copy before overlaying: `allBase` holds the shared static DIRECTORY
+      // objects, and the redaction below must not be able to reach them.
+      const b = { ...allBase[i]! };
       b.vendor_account_id = row.vendor_account_id;
       b.hero_image_url = row.hero_image_url;
       // A vendor-owned listing IS claimed — surface it as such even on a
@@ -184,6 +190,15 @@ async function handleList(ctx: Ctx): Promise<Response> {
         row.vendor_account_id !== null
           ? "claimed"
           : (row.source as "curated" | "community" | "claimed");
+      b.profile_imported = row.profile_imported === 1;
+      // An imported profile nobody has claimed yet shows as a teaser: the card
+      // keeps its photo, name, town and category and loses the bio, the price
+      // band and the phone number. Replaces the element because `allBase` can
+      // hold the shared static DIRECTORY object, which must never be mutated.
+      allBase[i] = redactUnclaimedImport(b, {
+        profile_imported: b.profile_imported,
+        vendor_account_id: b.vendor_account_id,
+      });
     }
   }
 
@@ -332,18 +347,21 @@ function buildSupplierDetail(
   // claims the listing.
   const listing = db
     .prepare(
-      "SELECT vendor_account_id, hero_image_url, spoken_languages FROM listings WHERE id = ?",
+      `SELECT vendor_account_id, hero_image_url, spoken_languages, profile_imported
+         FROM listings WHERE id = ?`,
     )
     .get(supplierId) as
     | {
         vendor_account_id: number | null;
         hero_image_url: string | null;
         spoken_languages: string | null;
+        profile_imported: number;
       }
     | undefined;
   if (listing) {
     base.vendor_account_id = listing.vendor_account_id;
     base.hero_image_url = listing.hero_image_url;
+    base.profile_imported = listing.profile_imported === 1;
     // Always reflect the listing's current languages, even on a claimed curated
     // slug whose static base carried none.
     base.spoken_languages = parseSpokenLanguages(listing.spoken_languages);
@@ -391,16 +409,29 @@ function buildSupplierDetail(
   const reviewsSummary = getReviewSummary(supplierId);
   const availability = getAvailability(supplierId);
 
+  // Teaser gate for an imported profile nobody has claimed: bio, price band,
+  // phone and every photo past the first come off here, on the shared assembly
+  // both the in-app detail page and the anonymous public profile go through.
+  const gate = {
+    profile_imported: directory.profile_imported === true,
+    vendor_account_id: directory.vendor_account_id,
+  };
+  const gated = redactUnclaimedImport(directory, gate);
+  const redacted = gate.profile_imported && gate.vendor_account_id === null;
+
   return {
-    ...directory,
+    ...gated,
     reviews_summary: reviewsSummary,
     bookable: availability.bookable,
     next_available: availability.next_available,
     // Reference-video reel, in vendor drag order. Empty for the unclaimed
     // majority; the detail page renders a lazy click-to-play grid when present.
     videos: listListingVideos(supplierId),
-    // Price offers / packages (árajánlat). Empty for the unclaimed majority.
-    packages: listListingPackages(supplierId),
+    // Price offers / packages (árajánlat). Empty for the unclaimed majority,
+    // and force-empty on a redacted import: packages ARE pricing, so leaving
+    // them would put back through the side door exactly what the price band
+    // just took out.
+    packages: redacted ? [] : listListingPackages(supplierId),
     // `comments_count` stays admin-only — it's a moderation signal, not a
     // couple-facing fact — so it's gated by the caller.
     ...(opts.includeCommentsCount ? { comments_count: countNonDeletedComments(supplierId) } : {}),
