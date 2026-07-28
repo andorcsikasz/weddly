@@ -3824,6 +3824,16 @@ export interface LocaleMessages {
     section_requests_subtitle: string;
     add_gift: string;
     add_request: string;
+    /** CTA inside an empty section. Deliberately worded differently from
+     *  add_gift / add_request: two buttons with the same accessible name in one
+     *  section is a screen-reader coin toss. */
+    add_first_gift: string;
+    add_first_request: string;
+    /** Header meta counts, each receiving `{count}`. */
+    count_gifts: string;
+    count_requests: string;
+    /** aria-label for an item's outbound shop link; receives `{host}`. */
+    open_link: string;
     /** Empty states per section. */
     gifts_empty: string;
     requests_empty: string;
@@ -3864,6 +3874,8 @@ export interface LocaleMessages {
     reorder_down: string;
     /** Publish toggle in the editor header: share the list on the guest page. */
     publish_title: string;
+    /** Short visible label beside the toggle; publish_title is its aria-label. */
+    publish_short: string;
     /** Toggle state labels. */
     publish_on: string;
     publish_off: string;

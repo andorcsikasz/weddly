@@ -14,30 +14,13 @@
 import { minorUnitFactor } from "@shared/currency";
 import type { Currency } from "@shared/types";
 import type { WishlistContributorsResult, WishlistEntry } from "@shared/wishlist";
-import {
-  Camera,
-  ExternalLink,
-  HandHeart,
-  HeartHandshake,
-  Loader2,
-  Music2,
-  PenLine,
-  Users,
-} from "lucide-react";
+import { ExternalLink, HeartHandshake, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { GiftArtTile } from "./GiftArt";
 import { weddingWebsiteApi } from "../lib/endpoints";
 import { currencySymbol, formatMoney, formatNumber } from "../lib/format";
 import type { Locale } from "../lib/i18n";
 import { useToast } from "./ui";
-
-function requestIconFor(title: string): typeof HandHeart {
-  const s = title.toLowerCase();
-  if (/photo|fot[oó]|k[eé]p|childhood|gyerek/.test(s)) return Camera;
-  if (/letter|lev[eé]l|handwritten|k[eé]zzel|pen|ír/.test(s)) return PenLine;
-  if (/song|dal|ének|music|zen[eé]|playlist/.test(s)) return Music2;
-  if (/time|id[oő]|together|egy[uü]tt|spend|quality/.test(s)) return Users;
-  return HandHeart;
-}
 
 function formatAmount(minor: number, currency: Currency, locale: Locale): string {
   return formatMoney(minor / minorUnitFactor(currency), currency, locale);
@@ -80,7 +63,7 @@ function ProgressBlock({
         aria-valuemax={100}
       >
         <div
-          className="h-full rounded-full bg-emerald-500 transition-[width] dark:bg-emerald-400"
+          className="h-full rounded-full bg-sage-500 transition-[width] dark:bg-sage-400"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -115,7 +98,7 @@ function ContributorBreakdown({
 
   if (result.remaining_minor !== null && result.remaining_minor <= 0) {
     return (
-      <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+      <p className="text-xs font-medium text-sage-700 dark:text-sage-300">
         {t("guest_portal.wishlist_pledge_contributors_funded")}
       </p>
     );
@@ -298,6 +281,9 @@ export function GuestWishlistCard({
         boxShadow: "var(--wt-card-shadow, none)",
       }}
     >
+      {/* Every card gets a picture: the link's resolved og:image when there is
+          one, otherwise the drawn motif — a deck where half the rows have a
+          thumbnail and half have nothing looks broken, not minimal. */}
       {entry.image_url ? (
         <img
           src={entry.image_url}
@@ -305,19 +291,14 @@ export function GuestWishlistCard({
           loading="lazy"
           className="h-16 w-16 shrink-0 rounded-lg border border-paper-200 object-cover dark:border-umber-700"
         />
-      ) : entry.kind === "request" ? (
-        (() => {
-          const Icon = requestIconFor(entry.title);
-          return (
-            <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center text-ink-700 dark:text-paper-200"
-              aria-hidden
-            >
-              <Icon size={22} />
-            </span>
-          );
-        })()
-      ) : null}
+      ) : (
+        <GiftArtTile
+          seed={entry.title}
+          kind={entry.kind === "request" ? "request" : "gift"}
+          dense
+          className="h-16 w-16 shrink-0 rounded-lg border border-paper-200 dark:border-umber-700"
+        />
+      )}
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="text-sm font-medium text-ink-900 dark:text-paper-50">{entry.title}</div>
         {entry.description && (
@@ -485,7 +466,7 @@ export function GuestWishlistCard({
             {pledgeState === "pledged" && (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-1.5">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-50 px-3 py-1 text-xs font-medium text-sage-800 dark:bg-sage-900/30 dark:text-sage-300">
                     <HeartHandshake size={13} aria-hidden />
                     {t("guest_portal.wishlist_pledge_success")}
                   </span>
@@ -547,7 +528,7 @@ export function GuestWishlistCard({
               aria-pressed={simpleActive}
               className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 simpleActive
-                  ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+                  ? "bg-sage-50 text-sage-800 dark:bg-sage-900/30 dark:text-sage-300"
                   : "border border-paper-300 text-ink-700 hover:bg-paper-100 dark:border-umber-700 dark:text-paper-100 dark:hover:bg-umber-800"
               }`}
               style={{ minHeight: 44 }}
