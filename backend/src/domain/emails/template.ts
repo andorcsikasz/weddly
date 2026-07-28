@@ -68,6 +68,13 @@ export interface RenderInput {
   /** When set, a 1×1 transparent tracking pixel is appended to the HTML body.
    *  Only used for guest_invite emails, see routes/email_track.ts. */
   trackingPixelUrl?: string;
+  /** Replaces the per-category "why am I getting this" footer line. Exists for
+   *  the one shape the category map can't describe: cold outreach to someone
+   *  who DOES have an account, because we opened it for them
+   *  (`planner_suggested_invite`). The stock outreach line claims they have no
+   *  account, which the body of that mail contradicts on the first read. Use
+   *  sparingly, the whole point of the category line is that it's uniform. */
+  whyLine?: { hu: string; en: string };
 }
 
 export interface RenderedEmail {
@@ -157,7 +164,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   return { html, text, fallbackSubject };
 
   function renderText(
-    { ctaUrl, category, unsubscribeToken }: RenderInput,
+    { ctaUrl, category, unsubscribeToken, whyLine }: RenderInput,
     blocks: PickedBlock[],
   ): string {
     const lines: string[] = [];
@@ -189,7 +196,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       }
       lines.push("");
     });
-    lines.push(footerText(blocks, category, unsubscribeToken));
+    lines.push(footerText(blocks, category, unsubscribeToken, whyLine));
     return lines.join("\n");
   }
 
@@ -197,15 +204,19 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     blocks: PickedBlock[],
     category: EmailCategory,
     unsubscribeToken?: string,
+    whyOverride?: { hu: string; en: string },
   ): string {
     const bilingual = blocks.length > 1;
     const onlyEn = blocks.length === 1 && blocks[0]?.locale === "en";
-    const why = whyLineFor(category, bilingual, onlyEn);
+    const why = whyLineFor(category, bilingual, onlyEn, whyOverride);
+    // Bare label, no question in front of it: the link stays present and
+    // functional (compliance + the List-Unsubscribe header), but the copy never
+    // asks the reader whether they'd like to leave.
     const unsubLabel = bilingual
-      ? "Nem kérsz emlékeztetőket? Leiratkozás / Don't want updates? Unsubscribe"
+      ? "Leiratkozás / Unsubscribe"
       : onlyEn
-        ? "Don't want updates? Unsubscribe"
-        : "Nem kérsz emlékeztetőket? Leiratkozás";
+        ? "Unsubscribe"
+        : "Leiratkozás";
     const out: string[] = ["---", why];
     out.push("Weddly · tryweddly.com");
     out.push(SOCIAL.map((s) => `${s.name}: ${s.href}`).join(" · "));
@@ -218,7 +229,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   }
 
   function renderHtml(
-    { ctaUrl, category, plainCtaUrl, unsubscribeToken, trackingPixelUrl }: RenderInput,
+    { ctaUrl, category, plainCtaUrl, unsubscribeToken, trackingPixelUrl, whyLine }: RenderInput,
     blocks: PickedBlock[],
   ): string {
     const preheader = capPreheader(
@@ -237,7 +248,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         `<tr><td style="padding:18px 40px 0 40px;"><div style="border-top:1px solid ${COLOR.divider};font-size:0;line-height:0;height:1px;">&nbsp;</div></td></tr>`,
       );
 
-    const footer = renderFooter(blocks, category, unsubscribeToken);
+    const footer = renderFooter(blocks, category, unsubscribeToken, whyLine);
     // `<html lang>` follows the first block so screen-reader pronunciation
     // matches the language the body opens in.
     const htmlLang = blocks[0]?.locale ?? "hu";
@@ -419,10 +430,11 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     blocks: PickedBlock[],
     category: EmailCategory,
     unsubscribeToken?: string,
+    whyOverride?: { hu: string; en: string },
   ): string {
     const bilingual = blocks.length > 1;
     const onlyEn = blocks.length === 1 && blocks[0]?.locale === "en";
-    const why = whyLineForHtml(category, bilingual, onlyEn);
+    const why = whyLineForHtml(category, bilingual, onlyEn, whyOverride);
     const unsubLabel = bilingual
       ? "Leiratkozás / Unsubscribe"
       : onlyEn
@@ -662,8 +674,8 @@ const WHY_LINE_TEXT: Record<EmailCategory, { hu: string; en: string; bilingual: 
       "Ezt a fiókoddal kapcsolatban kaptad. / You're getting this because it's about your Weddly account.",
   },
   outreach: {
-    hu: "Ezt a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk, ha figyelmen kívül hagyod, nem történik semmi.",
-    en: "You're getting this from Weddly, a wedding-planning app. You don't have an account with us, if you ignore this, nothing happens.",
+    hu: "Ezt a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk, és ettől a levéltől nem is jön létre.",
+    en: "You're getting this from Weddly, a wedding-planning app. You don't have an account with us, and this email doesn't create one.",
     bilingual:
       "Ezt a Weddly esküvőtervezőtől kaptad, nincs fiókod nálunk. / You're getting this from Weddly, a wedding-planning app, you don't have an account with us.",
   },
@@ -685,21 +697,43 @@ const WHY_LINE_HTML: Record<EmailCategory, { hu: string; en: string; bilingual: 
       "Ezt a levelet a fiókoddal kapcsolatban kaptad. / You got this email because it concerns your Weddly account.",
   },
   outreach: {
-    hu: "Ezt a levelet a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk, ha figyelmen kívül hagyod, nem történik semmi.",
-    en: "You're receiving this from Weddly, a wedding-planning app. You don't have an account with us, if you ignore this, nothing happens.",
+    hu: "Ezt a levelet a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk, és ettől a levéltől nem is jön létre.",
+    en: "You're receiving this from Weddly, a wedding-planning app. You don't have an account with us, and this email doesn't create one.",
     bilingual:
       "Ezt a levelet a Weddly-től kaptad, és nincs fiókod nálunk. / You're receiving this from Weddly and you don't have an account with us.",
   },
 };
 
-function whyLineFor(category: EmailCategory, bilingual: boolean, onlyEn: boolean): string {
-  const lines = WHY_LINE_TEXT[category];
+/** Resolve the footer's "why am I getting this" line, honouring a per-kind
+ *  override. An override has no separate bilingual string: the kinds that need
+ *  one render single-language anyway, and stacking both languages is the
+ *  fallback shape, so we join them the same way the category map does. */
+function pickWhy(
+  lines: { hu: string; en: string; bilingual: string },
+  bilingual: boolean,
+  onlyEn: boolean,
+  override?: { hu: string; en: string },
+): string {
+  if (override)
+    return bilingual ? `${override.hu} / ${override.en}` : onlyEn ? override.en : override.hu;
   if (bilingual) return lines.bilingual;
   return onlyEn ? lines.en : lines.hu;
 }
 
-function whyLineForHtml(category: EmailCategory, bilingual: boolean, onlyEn: boolean): string {
-  const lines = WHY_LINE_HTML[category];
-  if (bilingual) return lines.bilingual;
-  return onlyEn ? lines.en : lines.hu;
+function whyLineFor(
+  category: EmailCategory,
+  bilingual: boolean,
+  onlyEn: boolean,
+  override?: { hu: string; en: string },
+): string {
+  return pickWhy(WHY_LINE_TEXT[category], bilingual, onlyEn, override);
+}
+
+function whyLineForHtml(
+  category: EmailCategory,
+  bilingual: boolean,
+  onlyEn: boolean,
+  override?: { hu: string; en: string },
+): string {
+  return pickWhy(WHY_LINE_HTML[category], bilingual, onlyEn, override);
 }

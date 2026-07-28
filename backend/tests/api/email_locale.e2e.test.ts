@@ -110,8 +110,11 @@ describe("renderEmail: recipient locale branching", () => {
       unsubscribeToken: "tok123",
       recipientLocale: "hu",
     });
-    expect(hu.text).toContain("Nem kérsz emlékeztetőket? Leiratkozás");
-    expect(hu.text).not.toContain("Don't want updates? Unsubscribe");
+    expect(hu.text).toContain("Leiratkozás");
+    expect(hu.text).not.toContain("Unsubscribe");
+    // The link stays, the invitation to use it does not: no "don't want these?"
+    // question in front of the label, in either language.
+    expect(hu.text).not.toContain("Nem kérsz emlékeztetőket");
 
     const en = renderEmail({
       hu: HU,
@@ -121,8 +124,9 @@ describe("renderEmail: recipient locale branching", () => {
       unsubscribeToken: "tok123",
       recipientLocale: "en",
     });
-    expect(en.text).toContain("Don't want updates? Unsubscribe");
-    expect(en.text).not.toContain("Nem kérsz emlékeztetőket?");
+    expect(en.text).toContain("Unsubscribe");
+    expect(en.text).not.toContain("Don't want updates");
+    expect(en.text).not.toContain("Leiratkozás");
     expect(en.html).toContain("Unsubscribe");
     expect(en.html).not.toContain("Leiratkozás");
   });

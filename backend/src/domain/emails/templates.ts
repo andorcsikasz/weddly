@@ -550,6 +550,26 @@ export interface PlannerOnboardingInvitePayload {
   freeUntilEn: string;
 }
 
+/** Cold invite to a wedding planner a Weddly user named. The account is already
+ *  provisioned (dormant) when this goes out, so the CTA is a real take-over, not
+ *  a sign-up form. Rendered single-language off `locale`, which also picks the
+ *  subject: a Hungarian subject line on a planner who works in English reads as
+ *  spam. */
+export interface PlannerSuggestedInvitePayload {
+  /** Person we greet. Falls back to the business name when the list only had one. */
+  plannerName: string;
+  /** Business the account was opened under. */
+  businessName: string;
+  /** Full activation URL with the single-use token. One click to take over. */
+  activateUrl: string;
+  /** Address-level suppression link, rendered as a secondary link. Clicking it
+   *  also retires the dormant account, which is what the data note promises. */
+  optOutUrl: string;
+  /** Human date the guest window runs until, already formatted for `locale`. */
+  guestUntil: string;
+  locale: "hu" | "en";
+}
+
 export interface CommunitySupplierVerifyPayload {
   /** Business / listing name surfaced in the email body. */
   supplierName: string;
@@ -842,6 +862,7 @@ export type KindPayload = {
   planner_waitlist_decision: PlannerWaitlistDecisionPayload;
   planner_provisioned: PlannerProvisionedPayload;
   planner_onboarding_invite: PlannerOnboardingInvitePayload;
+  planner_suggested_invite: PlannerSuggestedInvitePayload;
   community_supplier_verify: CommunitySupplierVerifyPayload;
   community_supplier_published: CommunitySupplierPublishedPayload;
   community_supplier_rejected: CommunitySupplierRejectedPayload;
@@ -894,6 +915,7 @@ export function buildEmail<K extends EmailKind>(
     recipientLocale: context.recipientLocale,
     primaryLocaleHint: context.primaryLocaleHint,
     trackingPixelUrl: context.trackingPixelUrl,
+    whyLine: built.whyLine,
   });
   return { subject: built.subject, rendered, replyTo: built.replyTo };
 }
@@ -915,6 +937,9 @@ interface RawTemplate {
   /** When true, skip UTM tagging on the CTA (single-use account links stay
    *  clean). */
   noUtm?: boolean;
+  /** Overrides the footer's per-category "why am I getting this" line. See
+   *  `RenderInput.whyLine`, only `planner_suggested_invite` needs it. */
+  whyLine?: { hu: string; en: string };
 }
 
 type Builder<K extends EmailKind> = (payload: KindPayload[K], ctx: BuildContext) => RawTemplate;
@@ -1866,7 +1891,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         "Csak észbe kaptunk: regisztráltál a Weddly-n, de még nem fejezted be az alap beállítást.",
         "Pár perc az egész, pár adat (nevek, dátum, vendégszám), és máris kapsz egy szabható költségvetést, vendéglistát és ülésrend-vázat.",
-        "Ha most nem alkalmas, leiratkozhatsz az emlékeztetőkről a levél alján.",
+        "Semmi sincs kőbe vésve: amit most beírsz, később bármikor módosíthatod.",
       ],
       cta: "Befejezem a tervező beállítását",
     },
@@ -1875,7 +1900,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         "Quick reminder: you signed up for Weddly but haven't finished the initial setup yet.",
         "It only takes a few minutes, a few facts (names, date, guest count) and we'll seed a budget, guest list, and seating skeleton for you.",
-        "If now's not a good time, you can opt out of these reminders from the footer below.",
+        "Nothing is set in stone: whatever you enter now, you can change later.",
       ],
       cta: "Finish my planner",
     },
@@ -1890,7 +1915,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         "Egy hete regisztráltál a Weddly-n, de a terveződ még üres.",
         "Pár perc az egész: pár adat (nevek, dátum, vendégszám), és máris kapsz egy szabható költségvetést, vendéglistát és ülésrend-vázat.",
-        "Ha most nem alkalmas, leiratkozhatsz az emlékeztetőkről a levél alján.",
+        "Kezdd akár a vendéglistával, a többi ráér. Bármit átírhatsz később.",
       ],
       cta: "Elkezdem a tervezést",
     },
@@ -1899,7 +1924,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         "It's been a week since you joined Weddly, and your planner is still empty.",
         "A few minutes is all it takes: a few facts (names, date, guest count), and we'll seed a budget, guest list, and seating skeleton you can shape.",
-        "If now's not a good time, you can opt out of these reminders from the footer below.",
+        "Start with the guest list if you like, the rest can wait. You can rewrite any of it later.",
       ],
       cta: "Start planning",
     },
@@ -1946,8 +1971,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ],
         cta: "Megnézem, mi újság",
         ctaSubtext: "Egyenesen a tervezőtökbe visz.",
-        footnote:
-          "Folyamatosan fejlesztjük az oldalt. Ha most nem alkalmas, a levél alján egy kattintással leiratkozhatsz.",
+        footnote: "Folyamatosan fejlesztjük az oldalt, szóval legközelebb is lesz mit mutatnunk.",
       },
       en: {
         preheader: `${couplePrefix}everything is where you left it. Plus a few new things.`,
@@ -1961,7 +1985,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         cta: "See what's new",
         ctaSubtext: "Takes you straight into your planner.",
         footnote:
-          "We're improving Weddly constantly. If now isn't a good time, you can opt out from the footer below.",
+          "We're improving Weddly constantly, so there'll be something new to show you next time too.",
       },
     };
   },
@@ -2656,14 +2680,14 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           preheader: "Rövid emlékeztető: a profilod még nincs kész.",
           intro: "Nem húzzuk az időd, csak egy emlékeztető: a profilod még nincs teljesen kész.",
           missingLead: "Ennyi van hátra:",
-          close: "Fejezd be, amikor ráérsz, és utána nem zavarunk ezzel többet.",
+          close: "Fejezd be, amikor ráérsz, pár perc az egész, és kész a profilod.",
           cta: "Befejezés",
         },
         en: {
           preheader: "Quick reminder: your profile isn't finished.",
           intro: "We'll keep it short, just a reminder that your profile isn't quite finished.",
           missingLead: "This is what's left:",
-          close: "Finish it whenever suits you, and we'll stop nudging about it.",
+          close: "Finish it whenever suits you, a few minutes and your profile is complete.",
           cta: "Finish up",
         },
       },
@@ -2838,6 +2862,69 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ctaSubtext: "The link is valid for 30 days and can be used once.",
       footnote:
         "If you didn't apply, there's nothing to do: without opening it the account never goes live.",
+    },
+  }),
+
+  // Cold invite to a planner a Weddly user named. Two things separate it from
+  // planner_provisioned (the admin-in-person kind): the recipient never asked
+  // for anything, and the account already exists in their name when the mail
+  // lands. So the copy has to carry its own justification, which is what the
+  // data paragraph is for: where the address came from, what the account is
+  // doing there, and how to make all of it disappear in one click. That
+  // paragraph is load-bearing, not decoration; do not trim it to tighten the
+  // mail. Single-language render off `locale` for the same reason the claim
+  // campaign does it: a HU subject to a planner working in English reads as spam.
+  planner_suggested_invite: (p) => ({
+    subject:
+      p.locale === "hu"
+        ? "Ajánlottak titeket: itt a Weddly szervezői fiókotok"
+        : "You came recommended: your Weddly planner account is ready",
+    ctaUrl: p.activateUrl,
+    plainCtaUrl: true,
+    noUtm: true,
+    // The stock outreach footer says "you have no account with us", which this
+    // mail's own first sentence contradicts. Say the true version instead.
+    whyLine: {
+      hu: "Ezt a Weddly esküvőtervezőtől kaptad, mert egy felhasználónk ajánlott téged. A fiókod alszik, amíg nem élesíted, és ha figyelmen kívül hagyod ezt a levelet, nem történik semmi.",
+      en: "You're getting this from Weddly, a wedding-planning app, because one of our users recommended you. The account stays asleep until you activate it, and if you ignore this email, nothing happens.",
+    },
+    hu: {
+      preheader: "Egy felhasználónk javasolta a nevedet. A fiók kész, egy kattintás átvenni.",
+      greeting: `Szia ${p.plannerName}!`,
+      paragraphs: [
+        `Egy felhasználónk javasolta a nevedet, amikor esküvőszervezőket kerestünk a Weddlyre. Ennyi elég is volt: elkészítettük a **${p.businessName}** szervezői fiókját, és rád vár.`,
+        "A Weddlyn a pár és a szervező ugyanazt a felületet nézi: vendéglista, ülésrend, költségvetés, RSVP, idővonal, feladatok. Az összes ügyfeled egy vezérlőpultról megy, és nem a levelezésben kell keresned, hol tart egy esküvő.",
+        // No sentence-final period after the date: a Hungarian formatted date
+        // already ends in one ("2028. július 28."), and adding ours makes it two.
+        `Tarts velünk az első fejezettől: a következő két évben a vendégünk vagy, minden funkcióval. A vendégidőszak vége: ${p.guestUntil}`,
+        `Az adatokról őszintén: a nevedet, az e-mail-címedet és a telefonszámodat nyilvánosan, üzleti elérhetőségként közzétett forrásból gyűjtöttük, és kizárólag ezt a megkeresést szolgálják. Harmadik félnek nem adjuk tovább, a fiók pedig alszik, amíg te nem élesíted. Az adatkezelés jogalapja a GDPR 6. cikk (1) f) pontja szerinti jogos érdek, és minden jogod megvan vele szemben: kérheted az adataid másolatát, javítását, korlátozását vagy törlését, és bármikor tiltakozhatsz. Írj a ${CONFIG.supportEmail} címre, vagy kattints lent a "Töröljetek a listáról" linkre, és az elkészített fiókkal együtt mindent törlünk. Részletek: ${CONFIG.frontendBaseUrl}/privacy`,
+      ],
+      cta: "Fiók átvétele",
+      ctaSubtext: "Egy kattintás, egy jelszó. A link 30 napig él, és egyszer használható.",
+      footnote: "Ha nem te intézed a szervezést, add tovább a kollégádnak.",
+      secondaryLinks: [
+        { label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl },
+        { label: "Adatkezelési tájékoztató", url: `${CONFIG.frontendBaseUrl}/privacy` },
+        { label: "Töröljetek a listáról", url: p.optOutUrl },
+      ],
+    },
+    en: {
+      preheader: "A Weddly user put your name forward. The account is ready to take over.",
+      greeting: `Hi ${p.plannerName},`,
+      paragraphs: [
+        `One of our users put your name forward when we went looking for wedding planners for Weddly. That was enough for us: the planner account for **${p.businessName}** is set up and waiting for you.`,
+        "On Weddly the couple and the planner look at the same screen: guest list, seating, budget, RSVP, timeline, tasks. Every client you have runs from one dashboard, so you never have to dig through your inbox to find where a wedding stands.",
+        `Come along from the first chapter: for the next two years you are our guest, with everything unlocked. Your guest period runs until ${p.guestUntil}.`,
+        `Straight talk about the data: your name, email address and phone number came from publicly published business contact details, and they serve this one message. We pass nothing to third parties, and the account stays asleep until you activate it. We process it under the legitimate-interest basis of Article 6(1)(f) GDPR, and every right you have against that stands: you can ask for a copy, a correction, a restriction or an erasure of your data, and you can object at any time. Write to ${CONFIG.supportEmail}, or click "Take me off the list" below and everything goes, the prepared account included. Details: ${CONFIG.frontendBaseUrl}/privacy`,
+      ],
+      cta: "Take over your account",
+      ctaSubtext: "One click, one password. The link is valid for 30 days and can be used once.",
+      footnote: "Not the person who runs the planning? Pass it to whoever does.",
+      secondaryLinks: [
+        { label: "What is Weddly?", url: CONFIG.frontendBaseUrl },
+        { label: "Privacy policy", url: `${CONFIG.frontendBaseUrl}/privacy` },
+        { label: "Take me off the list", url: p.optOutUrl },
+      ],
     },
   }),
 
@@ -3021,7 +3108,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         { label: "Kezelés a fiókodban", url: p.dashboardUrl },
       ],
       footnote:
-        "Néhány csillag, rengeteg bizalom. Ha most nem alkalmas, nyugodtan hagyd figyelmen kívül ezt a levelet.",
+        "Néhány csillag, rengeteg bizalom. A link bármikor elküldhető, akár egy régebbi páratoknak is.",
     },
     en: {
       preheader: "Reviews are now open to anyone. Ask a few past clients for some stars.",
@@ -3038,7 +3125,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         { label: "Send by email", url: p.mailtoUrl },
         { label: "Manage in your dashboard", url: p.dashboardUrl },
       ],
-      footnote: "A few stars, a lot of trust. Not a good time? Just ignore this email.",
+      footnote:
+        "A few stars, a lot of trust. Send the link whenever you like, even to a client from years back.",
     },
   }),
   // The single 7-day nudge, only to vendors who neither clicked nor opened the
@@ -3097,7 +3185,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Kezdés",
       ctaSubtext: "Egy perc az egész.",
-      footnote: "Ha most nem aktuális, hagyd figyelmen kívül ezt a levelet. Leiratkozás lent.",
+      footnote: "Kérdésed van? Válaszolj erre a levélre, minden sort elolvasunk.",
     },
     en: {
       preheader: "Guest list, seating, budget, RSVP. In one place.",
@@ -3109,7 +3197,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Get started",
       ctaSubtext: "Takes a minute.",
-      footnote: "Not the right time? Just ignore this email. Unsubscribe below.",
+      footnote: "Questions? Just reply to this email, we read every line.",
     },
   }),
   // Admin re-engagement blast to a registered couple who never onboarded. Warm,
@@ -3127,12 +3215,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         "Regisztráltál a **Weddly**-re, de az alap beállítást még nem fejezted be, így a tervező egyelőre üres.",
         "Pár perc az egész: pár adat (nevek, dátum, vendégszám), és máris a kezedben egy szabható **költségvetés**, **vendéglista** online RSVP-vel és egy **ülésrend-vázlat**. Minden egy nyugodt helyen, magyarul.",
-        "Ha most nem alkalmas, semmi gond, lentről egy kattintással leiratkozhatsz.",
+        "Nem kell mindent egyszerre eldöntenetek: ami most még nincs meg, azt később pótolhatjátok.",
       ],
       cta: "Befejezem a beállítást",
       ctaSubtext: "2 perc az egész.",
       footnote:
-        "Ezt azért kaptad, mert van egy Weddly-fiókod, de még nem kezdtél esküvőt tervezni. Leiratkozás lent.",
+        "Ezt azért kaptad, mert van egy Weddly-fiókod. Kérdésed van? Válaszolj erre a levélre.",
     },
     en: {
       preheader: "You signed up, but your planner is still empty. A few facts and you're set.",
@@ -3140,12 +3228,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         "You signed up for **Weddly**, but you haven't finished the initial setup, so your planner is still empty.",
         "It only takes a few minutes: a few facts (names, date, guest count) and you'll have a flexible **budget**, a **guest list** with online RSVP, and a **seating skeleton** ready to shape. Everything in one calm place.",
-        "Not the right time? No problem, you can unsubscribe with one click below.",
+        "You don't have to decide everything at once: anything missing today can be filled in later.",
       ],
       cta: "Finish setup",
       ctaSubtext: "Takes 2 minutes.",
       footnote:
-        "You're getting this because you have a Weddly account but haven't started a wedding yet. Unsubscribe below.",
+        "You're getting this because you have a Weddly account. Questions? Just reply to this email.",
     },
   }),
 
@@ -3166,8 +3254,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Elkezdem most",
       ctaSubtext: "2 perc az egész.",
-      footnote:
-        "Ez az utolsó emlékeztetőnk. Ha most nem aktuális, iratkozz le lent, nem zavarunk többet.",
+      footnote: "A helyed megvár, akkor is, ha csak jövő héten jutsz hozzá.",
     },
     en: {
       preheader: "You started a few days ago. Your planner is one click from ready.",
@@ -3178,8 +3265,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Start now",
       ctaSubtext: "Takes 2 minutes.",
-      footnote:
-        "This is our last reminder. If now is not the time, unsubscribe below and we won't email again.",
+      footnote: "Your spot will wait, even if you only get to it next week.",
     },
   }),
 
@@ -3713,7 +3799,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Ha te voltál, erősítsd meg az alábbi gombbal. Ha nem, nincs teendőd: e nélkül a kattintás nélkül erre a címre nem küldünk több levelet.",
       ],
       cta: "Feliratkozás megerősítése",
-      footnote: "A link 7 napig érvényes. Minden levelünkben lesz egykattintásos leiratkozás.",
+      footnote: "A link 7 napig érvényes. Nagyjából havi egy-két levél, semmi több.",
     },
     en: {
       greeting: "Hi there,",
@@ -3722,7 +3808,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "If that was you, confirm below. If not, do nothing: without this click we won't send anything else to this address.",
       ],
       cta: "Confirm subscription",
-      footnote: "The link is valid for 7 days. Every email includes a one-click unsubscribe.",
+      footnote: "The link is valid for 7 days. Roughly one or two emails a month, nothing more.",
     },
   }),
 
