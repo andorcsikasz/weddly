@@ -1677,7 +1677,6 @@ const hu: LocaleMessages = {
     phase_aftermath_title: "Utána",
     phase_aftermath_body: "Galéria, köszönőkártyák, értékelések. Hamarosan.",
     audience_title: "Találd meg a neked szóló utat",
-    audience_sub: "A Wēddly háromféle úton segít. Találd meg a sajátodat.",
     card_couples_title: "Pároknak",
     card_couples_body:
       "Hozzátok létre a közös felületeteket, és tervezzétek végig az esküvőt a saját tempótokban.",
@@ -1685,7 +1684,9 @@ const hu: LocaleMessages = {
     card_vendors_title: "Szolgáltatóknak",
     card_vendors_body:
       "Kerüljetek be a válogatott címjegyzékünkbe, és érjétek el a most tervező párokat.",
-    card_vendors_cta: "Csatlakozz a várólistához",
+    card_vendors_cta: "Hirdesd a vállalkozásod",
+    card_planners_title: "Szervezőknek",
+    card_planners_cta: "Kezeld a párjaidat",
     card_guests_title: "Vendég vagy?",
     card_guests_body: "Írd be a meghívódon szereplő kódot, és válaszolj pár perc alatt.",
     card_guests_cta: "Add meg a kódodat",
@@ -1730,7 +1731,7 @@ const hu: LocaleMessages = {
     footer_legal_subscription: "Szolgáltatói ÁSZF",
     footer_about_link: "Rólunk",
     footer_planners: "Szervezőknek",
-    footer_planners_waitlist: "Várólista",
+    footer_planners_waitlist: "Jelentkezés",
     nav_planners: "szervezőknek",
     footer_band_prompt: "Nem esküvőt szervezel?",
     footer_band_cta: "Vendég vagyok, van meghívókódom",

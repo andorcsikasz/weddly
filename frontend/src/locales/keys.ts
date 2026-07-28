@@ -2016,13 +2016,14 @@ export interface LocaleMessages {
     phase_aftermath_title: string;
     phase_aftermath_body: string;
     audience_title: string;
-    audience_sub: string;
     card_couples_title: string;
     card_couples_body: string;
     card_couples_cta: string;
     card_vendors_title: string;
     card_vendors_body: string;
     card_vendors_cta: string;
+    card_planners_title: string;
+    card_planners_cta: string;
     card_guests_title: string;
     card_guests_body: string;
     card_guests_cta: string;

@@ -579,6 +579,14 @@ export default function LandingPage() {
               ctaLabel={t("landing.card_vendors_cta")}
               to="/vendors"
             />
+            {/* Planners are a paid product with their own portal, so they get
+                their own row rather than being folded in with vendors. */}
+            <AudienceRow
+              icon={<ClipboardList size={20} strokeWidth={1.5} />}
+              row={t("landing.card_planners_title")}
+              ctaLabel={t("landing.card_planners_cta")}
+              to="/planners"
+            />
             <AudienceRow
               icon={<Mail size={20} strokeWidth={1.5} />}
               row={t("landing.card_guests_title")}
@@ -1746,20 +1754,33 @@ function AudienceRow({
   // than the old CTA-only link. `whitespace-nowrap` keeps long HU labels
   // ("Tovább a regisztrációhoz") on one line; the CTA stays visible at
   // every viewport so mobile never sees an ambiguous lone arrow.
+  //
+  // `flex-wrap` below sm is what pays for that promise: a one-word HU label
+  // ("Szolgáltatóknak") can't hyphenate and the CTA can't wrap, so on a 360px
+  // viewport the two used to print straight through each other. Wrapping drops
+  // the CTA onto its own line instead. Locked to nowrap from sm up, where the
+  // pair always fits and the right-aligned CTA is the point of the ledger.
   const className =
-    "group flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/50 sm:gap-5 sm:py-5";
+    "group flex w-full flex-wrap items-center gap-x-4 gap-y-1 py-4 text-left transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/50 sm:flex-nowrap sm:gap-x-5 sm:py-5";
   const inner = (
     <>
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-umber-600 text-white dark:bg-umber-400 dark:text-umber-900 sm:h-10 sm:w-10">
+      {/* Black disc, not the umber brown the rest of the page uses: on the
+          white ledger it reads as ink on paper, which is the register this
+          section wants. Inverts to a white disc on the dark background. */}
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black sm:h-10 sm:w-10">
         {icon}
       </span>
       {/* Row label is the audience name ("For couples", "For vendors"),
           which acts as the section title for that row — h3 so screen
           readers get a heading landmark, not just running prose. */}
-      <h3 className="min-w-0 flex-1 font-grotesk text-base font-medium leading-snug text-umber-900 dark:text-paper-50 sm:text-lg">
+      {/* `flex-auto`, not `flex-1`: a 0% basis makes the row's hypothetical
+          width 0, so the line never wraps and the label just prints through
+          the CTA. An auto basis measures the text, which is what lets the
+          wrap above fire. */}
+      <h3 className="min-w-0 flex-auto font-grotesk text-base font-medium leading-snug text-black dark:text-paper-50 sm:text-lg">
         {row}
       </h3>
-      <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-grotesk text-sm font-medium text-umber-800 transition-colors group-hover:text-umber-500 dark:text-paper-200 dark:group-hover:text-umber-300 sm:text-base">
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-grotesk text-sm font-medium text-black transition-colors group-hover:text-black/55 dark:text-paper-200 dark:group-hover:text-white sm:text-base">
         <span>{ctaLabel}</span>
         <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">
           →
