@@ -7,8 +7,8 @@
 // correctly as plain strings. Same string is rendered as the "Verzió:"
 // eyebrow on Privacy/Terms so end users can see what they accepted.
 
-export const PRIVACY_VERSION = "2026-06-13";
-export const TERMS_VERSION = "2026-05-18";
+export const PRIVACY_VERSION = "2026-07-28";
+export const TERMS_VERSION = "2026-07-28";
 
 /** Standalone notice on the vendor waitlist form covering the free-beta /
  *  future-paid-tier disclosure. Bumped separately from the privacy/terms

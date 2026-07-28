@@ -58,6 +58,12 @@ function SubscriptionBodyForLocale({
       <H2>{strings.acceptance_title}</H2>
       <p>{strings.acceptance_body}</p>
 
+      <H2>{strings.unclaimed_title}</H2>
+      <p>{strings.unclaimed_body}</p>
+
+      <H2>{strings.ratings_title}</H2>
+      <p>{strings.ratings_body}</p>
+
       <H2>{strings.fees_title}</H2>
       <p>{strings.fees_body}</p>
 

@@ -7855,6 +7855,11 @@ export interface LocaleMessages {
     data_categories_profile: string;
     data_categories_workspace: string;
     data_categories_analytics: string;
+    /** Fifth bucket: the supplier directory. Most of it is legal-person
+     *  data (outside the GDPR entirely, recital 14), but sole traders make
+     *  it personal data often enough that it needs its own bullet and its
+     *  own Art. 14 chapter below. */
+    data_categories_directory: string;
     /** Article 6 GDPR — legal-basis-per-purpose breakdown. The four bullets
      *  cover the bases Weddly actually relies on; we don't claim ones we
      *  don't use (no public-interest task, no vital interest). */
@@ -7869,6 +7874,26 @@ export interface LocaleMessages {
      *  even though they never registered with us. */
     guest_data_title: string;
     guest_data_body: string;
+    /** The OTHER Article 14 case, and the one that actually generates
+     *  complaints: businesses listed in the directory who never registered.
+     *  Kept as separate paragraphs rather than one wall of text because
+     *  each answers a different question a listed vendor asks, in order:
+     *  where did you get this, is it even personal data, on what basis do
+     *  you publish it, what about my name/trademark/photos, why am I
+     *  reading this here instead of in a letter, and what can I do. */
+    directory_listings_title: string;
+    directory_listings_intro: string;
+    directory_listings_source: string;
+    directory_listings_scope: string;
+    directory_listings_basis: string;
+    directory_listings_ip: string;
+    directory_listings_art14: string;
+    directory_listings_rights_intro: string;
+    directory_listings_rights_correction: string;
+    directory_listings_rights_claim: string;
+    directory_listings_rights_contact: string;
+    directory_listings_rights_objection: string;
+    directory_listings_decision: string;
     retention_title: string;
     retention_body: string;
     rights_title: string;
@@ -7969,6 +7994,29 @@ export interface LocaleMessages {
     proc_supplier_purpose: string;
     proc_supplier_basis: string;
     proc_supplier_retention: string;
+    /** Directory entries that exist without an account. Carries a `source`
+     *  line the other proc blocks don't need, because Art. 14(2)(f) requires
+     *  naming where third-party data came from. */
+    proc_directory_title: string;
+    proc_directory_data: string;
+    proc_directory_source: string;
+    proc_directory_purpose: string;
+    proc_directory_basis: string;
+    proc_directory_retention: string;
+    /** Cold outreach to those listings (claim + review invites). Disclosed
+     *  as its own activity because it is the part a listed business
+     *  actually notices, and because Grtv. §6 deserves a straight answer. */
+    proc_outreach_title: string;
+    proc_outreach_data: string;
+    proc_outreach_purpose: string;
+    proc_outreach_basis: string;
+    proc_outreach_retention: string;
+    /** Reviews and public Q&A, reviewer-side processing. */
+    proc_reviews_title: string;
+    proc_reviews_data: string;
+    proc_reviews_purpose: string;
+    proc_reviews_basis: string;
+    proc_reviews_retention: string;
     vendor_transfer_title: string;
     vendor_transfer_body: string;
     cookies_necessary_label: string;
@@ -8024,6 +8072,17 @@ export interface LocaleMessages {
     dsa_contact: string;
     directory_title: string;
     directory_body: string;
+    /** How an entry gets into the directory, and what it does NOT mean
+     *  (no partnership, no endorsement, no fee). Pairs with the privacy
+     *  policy's Art. 14 chapter, which carries the legal detail. */
+    directory_listing_policy_title: string;
+    directory_listing_policy_body: string;
+    /** Consumer-review transparency (Fttv. / Omnibus Directive
+     *  2019/2161): who may review, what the Verified badge does and does
+     *  not prove, and that we never claim every review is from a
+     *  confirmed customer. */
+    reviews_title: string;
+    reviews_body: string;
     /** Liability limitation appropriate for a free beta. */
     liability_title: string;
     liability_body: string;
@@ -8057,6 +8116,16 @@ export interface LocaleMessages {
     scope_body: string;
     acceptance_title: string;
     acceptance_body: string;
+    /** Sits right after acceptance because it is the mirror image of it:
+     *  what applies to a business that is IN the directory but has never
+     *  accepted anything. Answers "you listed me without asking" with the
+     *  legal basis and a concrete, dated remedy path. */
+    unclaimed_title: string;
+    unclaimed_body: string;
+    /** Reviews on a listing the vendor has not claimed, and the vendor's
+     *  remedies (flag, right of reply after claiming). */
+    ratings_title: string;
+    ratings_body: string;
     fees_title: string;
     fees_body: string;
     billing_title: string;
@@ -9557,6 +9626,16 @@ export interface LocaleMessages {
     footerVendors: string;
     footerAbout: string;
     nextAvailable: string;
+    /** Shown only on listings nobody has claimed. This is the "appropriate
+     *  measure" GDPR Art. 14(5)(b) asks for when the information cannot be
+     *  delivered to each data subject individually: the notice sits on the
+     *  page carrying their data, and links to the policy chapter, the free
+     *  claim flow, and a human address. */
+    ownerNoticeTitle: string;
+    ownerNoticeBody: string;
+    ownerNoticeClaim: string;
+    ownerNoticeContact: string;
+    ownerNoticePrivacy: string;
   };
   vendorBrowse: {
     title: string;

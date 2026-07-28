@@ -6795,7 +6795,7 @@ const en: LocaleMessages = {
       "How Weddly handles your data: categories collected, retention, GDPR rights, cookies and third-party services.",
     page_title: "Privacy policy",
     last_updated_label: "Last updated",
-    last_updated_date: "2026-05-18",
+    last_updated_date: "2026-07-28",
     intro:
       "This Privacy Policy provides detailed, transparent information to visitors, registered users, newsletter subscribers, and listed service providers about how their personal data is processed by Weddly. The following laws apply: EU Regulation 2016/679 (GDPR); the Hungarian Information Self-Determination and Freedom of Information Act (Infotv., Act CXII of 2011); the Electronic Commerce Act (Ektv., Act CVIII of 2001); and the Commercial Advertising Act (Grtv., Act XLVIII of 2008).",
     controller_title: "Who controls your data",
@@ -6812,6 +6812,8 @@ const en: LocaleMessages = {
       "Wedding workspace, the dates, budget categories, guest list, RSVPs, seating layout and supplier notes you add. Each change is recorded in an append-only audit log so you can see who edited what.",
     data_categories_analytics:
       "Analytics and attribution, at sign-up, server-side only, we record three derived data points on your account so we can see where our users come from: a country code (computed from your IP at the moment of registration, after which the IP is immediately discarded and never stored), the campaign parameters that brought you here (UTM), and your device type (mobile / tablet / desktop). We do this under legitimate interest (GDPR Art. 6(1)(f)) and you can object at any time at hello@tryweddly.com. No third-party analytics script loads and we set no tracking cookies.",
+    data_categories_directory:
+      'Supplier directory, the name, service category, town and address, website, publicly published business contact details and estimated price and capacity band of the businesses listed in the directory. Most of this is not personal data at all, because it belongs to a legal person. Where it can be linked to a natural person (a sole trader, a business trading under its owner\'s name), the chapter "Businesses listed without an account" below explains where it came from, on what basis we publish it, and how to have it corrected, taken over or objected to.',
     legal_bases_title: "Legal bases for processing (GDPR Art. 6)",
     legal_bases_intro:
       "Every processing activity we run is based on one of the legal grounds in Art. 6(1) GDPR. The ones we rely on are:",
@@ -6826,6 +6828,31 @@ const en: LocaleMessages = {
     guest_data_title: "Guest and third-party data (GDPR Art. 14)",
     guest_data_body:
       "If you arrived on Weddly as a guest (because a couple inviting you to their wedding added you to their guest list), Art. 14 requires us to tell you where your data came from. Your name, email, phone number and any dietary information were entered by the couple inviting you, they are the data controller for that information, and Weddly acts as a processor on their behalf for hosting it. If you want your data deleted or corrected, either ask the couple directly, or email hello@tryweddly.com and we'll relay the request on your behalf.",
+    directory_listings_title: "Businesses listed without an account (GDPR Art. 14)",
+    directory_listings_intro:
+      'The Weddly supplier directory also contains wedding businesses that never registered with us. It is a curated, factual index, not a partner list: an entry on its own does not imply cooperation, endorsement or any contractual relationship between us, and it carries no payment obligation whatsoever. Businesses that have registered and manage their own profile carry a "Verified" mark; the ones that have not, do not.',
+    directory_listings_source:
+      "Where the data comes from, and what we publish. We work exclusively from publicly accessible sources: the business's own website and social page, public company and sole-trader registers, public map and address data, the business's own submission, or a recommendation from one of our users. We publish the business name, service category, town and address, website, the business email address and phone number the business itself has published, an estimated price and capacity band, and a short factual summary written by us. We process no private or special-category data and we collect nothing from behind a login. Where a picture appears on an entry it always comes from the business's own public website: we either embed it directly from there, or we store the website's own sharing preview image (og:image) at card size. We remove any picture immediately on request, without assessment.",
+    directory_listings_scope:
+      "When this is not personal data. Recital (14) GDPR states that the Regulation does not cover the processing of personal data which concerns legal persons, including the name, the legal form and the contact details of the legal person. Company data is also public by operation of law: under §10(2) of Hungarian Act V of 2006 on company publicity, court company proceedings and voluntary liquidation, the data in the company register and the company documents are public in full, and anyone may inspect them without having to demonstrate an interest. Displaying the name, seat and published business contact details of a Kft., Bt. or Zrt. in a neutral, factual way is therefore not processing of your personal data, and it does not require the business's prior consent.",
+    directory_listings_basis:
+      "When it is personal data, and on what basis. Where the business is a sole trader or trades under its owner's name, the business contact details can be linked to a natural person and are therefore personal data. The legal basis is then Art. 6(1)(f) GDPR, the legitimate interests of the controller and of the couples using the service. The balancing test in short: our interest is a complete and usable wedding-supplier directory, which is the substance of the service itself and which helps couples make informed choices; the data relates purely to the professional, commercial sphere and was published by the business precisely so that clients would get in touch, so its display stays within the reasonable expectations of the data subject; the interference is minimal, because we do no profiling, process no special-category data, and publish nothing beyond what is already public; and the safeguards are the correction, take-over, contact-suppression and objection routes set out below. We will send the full balancing assessment on request to hello@tryweddly.com.",
+    directory_listings_ip:
+      "Name, trademark, photographs. Under §1(3) of Hungarian Act LXXVI of 1999 on copyright, protection attaches to a work on the basis of the individual, original character flowing from the author's intellectual activity; a company name and factual business data (address, phone number, category, capacity) do not meet that threshold, so displaying them is not a copyright-relevant use. Under §15(1)(c) of Act XI of 1997 on the protection of trademarks and geographical indications, the proprietor of a trademark may not prohibit another party from using the mark, in accordance with honest business practice, for the purpose of identifying or referring to the proprietor's own goods or services; a directory entry is exactly that kind of referential use: we print the name to identify the business, not to distinguish our own service. Any photograph on an entry comes from the business's own freely accessible website, typically the image the business itself designated as the sharing preview for that site; we use it solely to identify the business, at card size, and nowhere else. We remove it immediately on request, without asking for reasons and without assessment.",
+    directory_listings_art14:
+      "Why you are reading this here. We did not obtain this data from you, we obtained it from public sources, and we have no direct relationship with most of the businesses in the directory. Art. 14(5)(b) GDPR provides that where individual notification would involve a disproportionate effort, the information must instead be made publicly available. That is what this chapter is: every unclaimed directory page links to it, and where a business has a public business email address, we usually also write to it directly.",
+    directory_listings_rights_intro:
+      "What you can do if your business appears in the directory. A single email to hello@tryweddly.com is enough for any of these:",
+    directory_listings_rights_correction:
+      "Rectification (Art. 16), we correct inaccurate or outdated data, usually within a few working days.",
+    directory_listings_rights_claim:
+      'Take over the profile, you can claim the entry free of charge. From then on you edit its content and it carries the "Verified" mark. Claiming in itself creates no payment obligation, the profile stays live and editable for free; a fee only arises if you later expressly subscribe to a paid plan (see the Vendor Subscription Terms).',
+    directory_listings_rights_contact:
+      "Stop all contact, you can ask us never to write again. The suppression is address-level, permanent and applies to every campaign we run; after it, we send nothing at all beyond a reply to your own message.",
+    directory_listings_rights_objection:
+      "Objection (Art. 21(1)), you may object to the entry as a whole or to any element of it. We examine every objection individually, we do not answer with a template.",
+    directory_listings_decision:
+      "How we decide an objection. We give a substantive answer without undue delay and in any event within 30 days. We remove the email address, the phone number, the description and the photograph on request, without assessment. We delete the entire entry where the business has ceased trading, where it does not serve the wedding market, where the data relates to a natural person and the objection is well founded after individual assessment, and in every case where we cannot demonstrate compelling legitimate grounds overriding your interests. We always give reasons for the decision, and we tell you that you may also turn to the Hungarian supervisory authority (NAIH) or to a court.",
     retention_title: "How long we keep your data",
     retention_body:
       "Active workspaces are kept for as long as you want them. If you pause your workspace from the Profile page, we keep everything for 30 days in case you change your mind, then permanently delete it. You can cancel the pause any time before the 30 days are up.",
@@ -6889,7 +6916,7 @@ const en: LocaleMessages = {
       'The full list is in the "Subprocessors" section above. We do not share your data with advertisers, data brokers or social platforms.',
     email_compliance_title: "Email communications (Hungarian Grtv. §6, ePrivacy)",
     email_compliance_body:
-      "We send two kinds of email. (1) Transactional: account verification, password reset, partner invite, email-change confirmation, RSVP receipts to guests, and reminders about your own upcoming wedding, sent under the contract-performance basis (Art. 6(1)(b) GDPR) and not unsubscribable while your account is active. (2) Product newsletter (planning tips, feature announcements, roughly one or two emails a month): sent only to recipients who explicitly opted in on the website AND confirmed via the emailed link (double opt-in), in compliance with §6 of the Hungarian Grtv. For the newsletter we store the email address, the chosen language, the source of the signup and the consent timestamp; every newsletter carries a one-click unsubscribe link, and unsubscribing keeps only a suppression record so we never email that address again. The sender is always identifiable (operator name + link to the imprint in the footer).",
+      'We send three kinds of email. (1) Transactional: account verification, password reset, partner invite, email-change confirmation, RSVP receipts to guests, and reminders about your own upcoming wedding, sent under the contract-performance basis (Art. 6(1)(b) GDPR) and not unsubscribable while your account is active. (2) Product newsletter (planning tips, feature announcements, roughly one or two emails a month): sent only to recipients who explicitly opted in on the website AND confirmed via the emailed link (double opt-in), in compliance with §6 of the Hungarian Grtv. For the newsletter we store the email address, the chosen language, the source of the signup and the consent timestamp. (3) Directory notices to businesses: sent under legitimate interest to the public business address of a business listed in the directory without an account, about that business\'s own entry (see "Directory notices sent to businesses" above). In all three cases the sender is identifiable (operator name + link to the imprint in the footer); every message in categories (2) and (3) carries a one-click unsubscribe link, and unsubscribing keeps only a suppression record so we never email that address again.',
     automated_decisions_title: "Automated decision-making (GDPR Art. 22)",
     automated_decisions_body:
       "Weddly does not take decisions based solely on automated processing that would produce legal effects on you or similarly significantly affect you. The supplier ranking, the cost-planning estimator, the seating helper, they're all algorithms, but each is a suggestion you accept or override.",
@@ -6989,6 +7016,35 @@ const en: LocaleMessages = {
       "Legal basis: GDPR Art. 6(1)(b) (contract performance), Art. 6(1)(c) (legal obligation, particularly invoicing), Art. 6(1)(f) (legitimate interest, business contact management and records).",
     proc_supplier_retention:
       "Retention: while the partner relationship is active; thereafter until the applicable statutory accounting period expires.",
+    proc_directory_title: "Directory entries for businesses listed without an account",
+    proc_directory_data:
+      "Data processed: the business name, service category, town and address, website, the business email address and phone number published by the business itself, an estimated price and capacity band, a short factual summary written by us, and the sharing preview image of the business's own website.",
+    proc_directory_source:
+      "Source of the data: the business's own public website and social page, public company and sole-trader registers, public map and address data, the business's own submission, or a recommendation from a user. We collect nothing from behind a login.",
+    proc_directory_purpose:
+      "Purpose: maintaining a complete and usable wedding-supplier directory for couples, and making it possible for a business to take over and edit its own profile free of charge.",
+    proc_directory_basis:
+      "Legal basis: where the entry is legal-person data, the processing falls outside the scope of the GDPR (see recital (14) and §10(2) of Act V of 2006); where it can be linked to a natural person, Art. 6(1)(f) GDPR, the legitimate interests of the controller and of couples, supported by a documented balancing assessment.",
+    proc_directory_retention:
+      "Retention: for as long as the entry appears in the directory. On a well-founded objection or deletion request we delete it immediately after the assessment; we keep the request itself and our answer for 5 years for accountability and for the enforcement of legal claims.",
+    proc_outreach_title: "Directory notices sent to businesses",
+    proc_outreach_data:
+      "Data processed: the business email address published by the business, the id of the entry it belongs to, the time of sending, opening and clicking, and the fact and time of any unsubscribe.",
+    proc_outreach_purpose:
+      "Purpose: telling a business that an entry about it is live in the directory, and offering it the chance to take the entry over free of charge, have it corrected, or object to it. This is also the practical vehicle for the information required by Art. 14 GDPR.",
+    proc_outreach_basis:
+      "Legal basis: Art. 6(1)(f) GDPR. The message goes to a business address and concerns the recipient's own entry, so we do not treat it as consent-based direct marketing addressed to a natural person within the meaning of §6 of Hungarian Act XLVIII of 2008 on commercial advertising. Where a message also contains an offer relating to our own (later chargeable) service, we send it to business addresses only, and every message carries one-click unsubscribe, both in the footer and in an RFC 8058 List-Unsubscribe header.",
+    proc_outreach_retention:
+      "Retention and limits: at most one reminder per campaign. After an unsubscribe or a written request we send no further campaign mail to that address ever again; the suppression is address-level, permanent and applies across all campaigns. We keep the send log for as long as we need it to demonstrate compliance and to enforce or defend legal claims, and at most for 5 years from the close of the campaign. We keep the suppression record indefinitely, because that record is precisely what prevents any further contact.",
+    proc_reviews_title: "Reviews and public questions",
+    proc_reviews_data:
+      "Data processed: the star rating, the review text, the chosen tags, the optional amount paid, the reviewer's displayed name, the email address on their account (never published) and the time of the review.",
+    proc_reviews_purpose:
+      "Purpose: publishing couples' experiences in the directory so that other couples can make informed choices, and filtering out false or unlawful reviews.",
+    proc_reviews_basis:
+      "Legal basis: for publication, Art. 6(1)(a) GDPR, the reviewer's freely given consent; for moderation and abuse filtering, Art. 6(1)(f), legitimate interest.",
+    proc_reviews_retention:
+      "Retention: until the review is withdrawn or the entry is deleted. A reviewer can edit or delete their own review at any time.",
     vendor_transfer_title: "Data transfer to wedding service providers",
     vendor_transfer_body:
       "If you initiate contact with a specific partner from the supplier directory (e.g. send a quote request), the Controller may share the contact details you provided (name, email address, phone number) with that partner for the purpose of fulfilling your request. The legal basis is GDPR Art. 6(1)(b), preparation of a contract at the data subject's request. Only the minimum data necessary for fulfilment is transferred.",
@@ -7002,7 +7058,7 @@ const en: LocaleMessages = {
       "The short open-beta terms of service for Weddly: free to use, no SLA, hosted in Hungary.",
     page_title: "Terms of service",
     last_updated_label: "Last updated",
-    last_updated_date: "2026-05-18",
+    last_updated_date: "2026-07-28",
     intro:
       "Weddly is an open beta. These terms are deliberately short, once we leave beta we'll publish a fuller version and email everyone first.",
     beta_title: "Open beta",
@@ -7036,6 +7092,12 @@ const en: LocaleMessages = {
     directory_title: "Supplier directory",
     directory_body:
       "The supplier directory is free to browse during the open beta. You may not scrape, resell or republish it, it is a curated collection protected by copyright. After the beta ends we will introduce a paid model for suppliers (subscription and/or featured placement); the detailed terms are set out in the Vendor Subscription Terms (ÁSZF), which are in force. Fees are not active during the beta; before any fees take effect, every supplier will receive a dedicated email at least 30 days in advance with the final pricing.",
+    directory_listing_policy_title: "How a supplier gets into the directory",
+    directory_listing_policy_body:
+      'The directory is a curated index. An entry arises in one of three ways: we add it from publicly accessible, factual business data, one of our users recommends it, or the supplier submits it themselves. An entry on its own implies no partnership, no endorsement and no contract, and it creates no payment obligation: a business that has not claimed its profile owes us nothing. Suppliers who have registered and manage their own profile carry a "Verified" mark; the others do not. Under Hungarian and EU law, displaying factual business data in a neutral way is as a rule not conditional on the business\'s prior consent (recital (14) GDPR; §10(2) of Act V of 2006 on company publicity; §1(3) of Act LXXVI of 1999 on copyright; §15(1)(c) of Act XI of 1997 on trademarks). The precise legal basis, the balancing assessment and the objection procedure are set out in the "Businesses listed without an account" chapter of the Privacy Policy. Corrections, a free take-over of the profile, permanent suppression of all contact, or deletion of the entry can be requested at hello@tryweddly.com; we give a reasoned answer without undue delay and in any event within 30 days.',
+    reviews_title: "Reviews",
+    reviews_body:
+      'Anyone with a verified email address may leave one review per supplier. We do not commission reviews, we do not pay for them, and we do not filter them by star rating: an unfavourable review is shown exactly like a favourable one. The "Verified" mark on a review means the reviewer also recorded that supplier in their own wedding planning (as a cost-plan line or a chosen supplier), so they demonstrably had contact with them; the absence of the mark does not mean the review is untrue, only that we hold no such proof. We do not claim, and cannot claim, that every review comes from a confirmed customer. Reviews can also appear on a supplier who has not claimed their profile; the supplier gets a public right of reply once they claim it. We remove false, abusive or unlawful reviews on notice (see the Notice and action section), but we do not remove a lawful review, however unfavourable, on request.',
     liability_title: "Limitation of liability",
     liability_body:
       'Weddly is provided during the beta on an "as is" basis, free of charge, without any express or implied warranty (in particular: fitness for a particular purpose, uninterrupted operation, error-free behaviour). We do not limit liability that cannot be excluded under Hungarian law (intentional acts, gross negligence, harm to life, bodily integrity or health). For every other type of damage, including indirect, consequential and loss-of-profit damages, our liability is limited to the narrowest extent permitted by Hungarian law. Your statutory rights as a consumer (e.g. warranty rights) are not affected by this limitation.',
@@ -7053,12 +7115,12 @@ const en: LocaleMessages = {
     en_section_label: "English",
   },
   subscription_terms: {
-    seo_title: "Vendor subscription terms (ÁSZF) v1.0 · Weddly",
+    seo_title: "Vendor subscription terms (ÁSZF) v1.1 · Weddly",
     seo_description:
       "Weddly's vendor ÁSZF: fees, billing, renewal, liability, ranking, complaints, Hungarian and EU law.",
     page_title: "Vendor subscription terms (ÁSZF)",
     last_updated_label: "Version",
-    last_updated_date: "1.0 · effective 2026-06-15",
+    last_updated_date: "1.1 · effective 2026-07-28",
     intro:
       "These General Terms and Conditions (ÁSZF) govern Weddly's vendor subscription. They become part of the contract between the parties when the Vendor expressly accepts them by clicking 'I accept' during registration. Under §6:78(2) of the Hungarian Civil Code, the following clauses are expressly highlighted and accepted with separate attention: the limitation of liability, automatic renewal, fee changes, unilateral amendment of the ÁSZF, jurisdiction, and the disclosure of sponsored placements.",
     operator_title: "Operator and contracting parties",
@@ -7070,6 +7132,12 @@ const en: LocaleMessages = {
     acceptance_title: "Contract formation and acceptance",
     acceptance_body:
       "The contract is formed by the Vendor's registration: by completing the registration form and submitting it, the Vendor expressly and click-based accepts the current version of the ÁSZF and the Privacy Policy, including the highlighted clauses (the form states this directly above the submit action, with links to both documents). By registering, the Vendor also declares that they are contracting in a business capacity (Hungarian Civil Code §8:1(1)(4)) or, exceptionally, as a consumer (§8:1(1)(3)). The Operator logs the acceptance (timestamp, version identifiers of the ÁSZF and Privacy Policy, IP address, user-agent) and may rely on the log in case of dispute. The obligation to pay fees arises only when the Vendor confirms a paid plan (see the Fees and pricing section). While the Vendor remains on the free plan, no fees are due; the other provisions of the ÁSZF still apply.",
+    unclaimed_title: "Directory entries listed without an account (unclaimed)",
+    unclaimed_body:
+      'The Weddly directory also contains businesses that have not registered and have not claimed their profile. An entry on its own creates no contract between the Vendor and the Operator, no payment obligation, and no partnership or endorsement; this ÁSZF applies to a business only from the moment it claims the profile or registers. An entry contains only publicly accessible, factual business data (name, service category, town and address, website, the business contact details published by the business itself, an estimated price and capacity band, a short factual summary, and the sharing preview image of the business\'s own website). Under applicable Hungarian and EU law, displaying such data in a neutral way is as a rule not conditional on the business\'s prior consent; this is supported among others by §10(2) of Act V of 2006 on company publicity, court company proceedings and voluntary liquidation, recital (14) GDPR, §1(3) of Act LXXVI of 1999 on copyright, and §15(1)(c) of Act XI of 1997 on the protection of trademarks and geographical indications. The business concerned may at any time request correction of the data, a free take-over of the profile, permanent suppression of all contact, or object to the listing, at hello@tryweddly.com. We examine every request individually and give a reasoned answer without undue delay and in any event within 30 days; contact details, the description and any photograph are removed on request without assessment. The full procedure and the information required by Art. 14 GDPR are set out in the "Businesses listed without an account" chapter of the Privacy Policy.',
+    ratings_title: "Reviews and the Vendor's remedies",
+    ratings_body:
+      'Couples may write reviews on a directory entry even before the Vendor has claimed the profile. The Operator does not commission or pay for reviews and does not re-rank them by star rating; the "Verified" mark means only that the reviewer also recorded the supplier in their own planning, not that the Operator verified performance. Once the Vendor claims the profile, it gains a public right of reply to every review about it. The Vendor may report any review at hello@tryweddly.com; a review containing false statements of fact, abuse, or an infringement of a third-party right or of this ÁSZF is removed under the procedure in the Content moderation section, with a statement of reasons attached to the decision. The Operator does not remove lawful reviews, however unfavourable, and the existence or absence of a Vendor subscription does not influence the display of reviews in either direction.',
     fees_title: "Fees and pricing",
     fees_body:
       "The plans and prices are detailed in the Pricing annex, which forms an integral part of the ÁSZF and is available as a downloadable PDF during registration and at all times in the Vendor's account. On the effective date, basic listing in the public directory (Beta tier) is free; paid plans will be announced to Vendors by separate email at least 30 days before launch, and any paid plan is activated only by the Vendor's express, click-based confirmation. The pricing in effect at the start of the term applies to new subscriptions. For existing subscriptions, the Operator may change the price at most once per calendar year, with at least 60 days' prior email notice before the next billing cycle. The annual price increase shall not exceed the consumer price index (CPI) for the previous year, as published by the Hungarian Central Statistical Office (KSH), plus 10 percentage points, unless the Operator launches a new feature or plan expressly accepted by the Vendor. Before the increase takes effect, the Vendor may terminate the contract free of charge with a pro-rata refund.",
@@ -8682,6 +8750,12 @@ const en: LocaleMessages = {
     footerVendors: "Vendors",
     footerAbout: "About",
     nextAvailable: "Next available: {date}",
+    ownerNoticeTitle: "Is this your business?",
+    ownerNoticeBody:
+      "We compiled this entry from publicly accessible business data, and nobody has claimed it yet. You can take it over free of charge, ask us to correct or delete the details, or ask us never to write to you again.",
+    ownerNoticeClaim: "Claim this profile",
+    ownerNoticeContact: "Request a correction or removal",
+    ownerNoticePrivacy: "Why is this here?",
   },
   vendorBrowse: {
     title: "Browse wedding vendors",

@@ -17,6 +17,7 @@ import { REVIEW_BODY_MAX_CHARS, showsCapacity } from "@shared/suppliers";
 import { BadgeCheck, ExternalLink, Globe, Mail, MapPin, Phone, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { ClaimListingModal } from "../components/ClaimListingModal";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { ReviewSpendFields } from "../components/ReviewSpendFields";
 import { ReviewSpendLine } from "../components/ReviewSpendLine";
@@ -273,6 +274,10 @@ export default function PublicVendorPage() {
   const [data, setData] = useState<PublicVendorPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Owner-side claim dialog, opened from the unclaimed-listing notice below.
+  // Anonymous-friendly: the modal mails the listing's own contact address, so
+  // a business owner who found this page on Google needs no account first.
+  const [claimOpen, setClaimOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -533,6 +538,45 @@ export default function PublicVendorPage() {
           </aside>
         </div>
 
+        {/* Owner notice. Only on listings nobody has claimed, because that
+            is exactly the case where the business never gave us anything and
+            has no account to find any of this in. GDPR Art. 14(5)(b) lets us
+            publish the information instead of writing to every listed
+            business individually, but only if it is genuinely reachable from
+            where their data appears, so it sits on the page itself and links
+            to the policy chapter, the free claim flow, and a human address. */}
+        {detail.vendor_account_id === null && (
+          <section className="mt-14 rounded-2xl border border-paper-200 bg-paper-100/60 px-6 py-6 dark:border-umber-700 dark:bg-umber-800/40">
+            <h2 className="text-base font-semibold text-ink-900 dark:text-paper-50">
+              {t("publicVendor.ownerNoticeTitle")}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-600 dark:text-umber-200">
+              {t("publicVendor.ownerNoticeBody")}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+              <button
+                type="button"
+                onClick={() => setClaimOpen(true)}
+                className="rounded-full bg-ink-900 px-4 py-2 text-xs font-semibold text-paper-50 transition hover:bg-ink-800 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-200"
+              >
+                {t("publicVendor.ownerNoticeClaim")}
+              </button>
+              <a
+                href="mailto:hello@tryweddly.com"
+                className="text-ink-600 underline underline-offset-4 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
+              >
+                {t("publicVendor.ownerNoticeContact")}
+              </a>
+              <Link
+                to="/privacy#directory-listings"
+                className="text-ink-600 underline underline-offset-4 hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
+              >
+                {t("publicVendor.ownerNoticePrivacy")}
+              </Link>
+            </div>
+          </section>
+        )}
+
         {/* Conversion band */}
         <section className="mt-14 overflow-hidden rounded-2xl bg-ink-900 px-6 py-10 text-center dark:bg-umber-800">
           <h2 className="text-2xl font-bold text-paper-50 sm:text-3xl">
@@ -563,6 +607,12 @@ export default function PublicVendorPage() {
           </Link>
         </nav>
       </footer>
+
+      <ClaimListingModal
+        listingId={claimOpen ? detail.id : null}
+        listingName={detail.name}
+        onClose={() => setClaimOpen(false)}
+      />
     </div>
   );
 }

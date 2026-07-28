@@ -321,8 +321,20 @@ function Page({ children }: { children: ReactNode }) {
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
-    if (hash) return;
-    window.scrollTo(0, 0);
+    if (!hash) {
+      window.scrollTo(0, 0);
+      return;
+    }
+    // The browser only resolves a hash on a full page load, so on a
+    // client-side navigation into `/privacy#directory-listings` nothing
+    // moves unless we do it. rAF gives the incoming route one frame to
+    // mount its headings before we look for the target.
+    const raf = requestAnimationFrame(() => {
+      const target = document.getElementById(hash.slice(1));
+      if (target) target.scrollIntoView();
+      else window.scrollTo(0, 0);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [pathname, hash]);
   return null;
 }

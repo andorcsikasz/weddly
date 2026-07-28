@@ -127,9 +127,12 @@ export function LegalSection({
   );
 }
 
-export function H2({ children }: { children: ReactNode }) {
+export function H2({ children, id }: { children: ReactNode; id?: string }) {
   return (
-    <h2 className="mt-10 font-grotesk text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl">
+    <h2
+      id={id}
+      className="mt-10 scroll-mt-24 font-grotesk text-2xl text-ink-900 dark:text-paper-50 sm:text-3xl"
+    >
       {children}
     </h2>
   );
@@ -196,6 +199,7 @@ function PrivacyBodyForLocale({
         <li>{strings.data_categories_profile}</li>
         <li>{strings.data_categories_workspace}</li>
         <li>{strings.data_categories_analytics}</li>
+        <li>{strings.data_categories_directory}</li>
       </ul>
 
       <H2>{strings.proc_activities_title}</H2>
@@ -257,6 +261,31 @@ function PrivacyBodyForLocale({
         <p>{strings.proc_supplier_retention}</p>
       </ProcBlock>
 
+      <H3>{strings.proc_directory_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_directory_data}</p>
+        <p>{strings.proc_directory_source}</p>
+        <p>{strings.proc_directory_purpose}</p>
+        <p>{strings.proc_directory_basis}</p>
+        <p>{strings.proc_directory_retention}</p>
+      </ProcBlock>
+
+      <H3>{strings.proc_outreach_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_outreach_data}</p>
+        <p>{strings.proc_outreach_purpose}</p>
+        <p>{strings.proc_outreach_basis}</p>
+        <p>{strings.proc_outreach_retention}</p>
+      </ProcBlock>
+
+      <H3>{strings.proc_reviews_title}</H3>
+      <ProcBlock>
+        <p>{strings.proc_reviews_data}</p>
+        <p>{strings.proc_reviews_purpose}</p>
+        <p>{strings.proc_reviews_basis}</p>
+        <p>{strings.proc_reviews_retention}</p>
+      </ProcBlock>
+
       <H2>{strings.legal_bases_title}</H2>
       <p>{strings.legal_bases_intro}</p>
       <ul className="ml-5 list-disc space-y-2">
@@ -268,6 +297,26 @@ function PrivacyBodyForLocale({
 
       <H2>{strings.guest_data_title}</H2>
       <p>{strings.guest_data_body}</p>
+
+      {/* The second Art. 14 case: businesses we listed from public sources.
+          Anchored so the notice on an unclaimed listing page can link
+          straight at it. Art. 14(5)(b) only works if the information is
+          actually reachable from where the data is published. */}
+      <H2 id="directory-listings">{strings.directory_listings_title}</H2>
+      <p>{strings.directory_listings_intro}</p>
+      <p>{strings.directory_listings_source}</p>
+      <p>{strings.directory_listings_scope}</p>
+      <p>{strings.directory_listings_basis}</p>
+      <p>{strings.directory_listings_ip}</p>
+      <p>{strings.directory_listings_art14}</p>
+      <p>{strings.directory_listings_rights_intro}</p>
+      <ul className="ml-5 list-disc space-y-2">
+        <li>{strings.directory_listings_rights_correction}</li>
+        <li>{strings.directory_listings_rights_claim}</li>
+        <li>{strings.directory_listings_rights_contact}</li>
+        <li>{strings.directory_listings_rights_objection}</li>
+      </ul>
+      <p>{strings.directory_listings_decision}</p>
 
       <H2>{strings.retention_title}</H2>
       <p>{strings.retention_body}</p>

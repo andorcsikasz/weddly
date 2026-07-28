@@ -70,6 +70,12 @@ function TermsBodyForLocale({
       <H2>{strings.directory_title}</H2>
       <p>{strings.directory_body}</p>
 
+      <H2>{strings.directory_listing_policy_title}</H2>
+      <p>{strings.directory_listing_policy_body}</p>
+
+      <H2>{strings.reviews_title}</H2>
+      <p>{strings.reviews_body}</p>
+
       <H2>{strings.liability_title}</H2>
       <p>{strings.liability_body}</p>
 
