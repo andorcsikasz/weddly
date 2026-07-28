@@ -1816,6 +1816,7 @@ const es: LocaleMessages = {
     block_guests_bullet_2: "Filtra por estado, menú y acompañante",
     block_guests_bullet_3: "Exportación CSV, cuando quieras",
     block_guests_bullet_4: "Compartido en tu propia web de boda",
+    block_guests_cta: "Soy invitado",
     block_seating_eyebrow: "Mesas",
     block_seating_title: "Arrástralo.\nCámbialo.\nImprímelo.",
     block_seating_body:

@@ -37,9 +37,6 @@ import { LazyMount } from "../components/LazyMount";
 const BudgetMockup = lazyWithReload(() =>
   import("../components/mockups").then((m) => ({ default: m.BudgetMockup })),
 );
-const GuestListMockup = lazyWithReload(() =>
-  import("../components/mockups").then((m) => ({ default: m.GuestListMockup })),
-);
 const SeatingMockup = lazyWithReload(() =>
   import("../components/mockups").then((m) => ({ default: m.SeatingMockup })),
 );
@@ -474,10 +471,10 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════ 04 · Guests — TWO-COLUMN ════════════════════════
-          Title + bullets on the left, GuestListMockup on the right so the
+          Title + bullets on the left, the illustration on the right so the
           whole block fits inside one viewport. Mobile stacks (title,
-          bullets, mockup) — the mockup is wide and reads better below the
-          copy at narrow widths. */}
+          bullets, CTA, picture) — the picture is wide and reads better below
+          the copy at narrow widths. */}
       <section className="relative bg-paper-100/70 dark:bg-umber-900/70">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-16">
           <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12">
@@ -495,11 +492,29 @@ export default function LandingPage() {
                 </IconRow>
                 <IconRow icon={<Globe size={16} />}>{t("landing.block_guests_bullet_4")}</IconRow>
               </ul>
+              {/* A guest who mislaid their invite link searches the couple's
+                  wedding and lands here, not on their own RSVP page. /rsvp is
+                  the lookup that gets them there, and this block is where they
+                  are already reading about that link. Outline, not primary:
+                  the page's one loud ask stays "register". */}
+              <Link to="/rsvp" className="btn-outline btn-lifted btn-landing mt-8 inline-flex">
+                {t("landing.block_guests_cta")}
+              </Link>
             </div>
             <div>
-              <LazyMount aspectRatio={MOCKUP_AR_FEATURE}>
-                <GuestListMockup className="h-auto w-full" />
-              </LazyMount>
+              {/* Decorative: the heading and bullets carry the meaning, so this
+                  stays out of the accessibility tree. width/height are the real
+                  pixels so the row reserves its space before the file lands. */}
+              <img
+                src="/guests-illustration.jpg"
+                alt=""
+                aria-hidden="true"
+                width={1200}
+                height={773}
+                loading="lazy"
+                decoding="async"
+                className="h-auto w-full rounded-3xl ring-1 ring-paper-300 dark:ring-umber-700"
+              />
             </div>
           </div>
         </div>

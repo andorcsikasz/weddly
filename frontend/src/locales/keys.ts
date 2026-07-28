@@ -2131,6 +2131,10 @@ export interface LocaleMessages {
     block_guests_bullet_2: string;
     block_guests_bullet_3: string;
     block_guests_bullet_4: string;
+    /** Guest-side escape hatch on the RSVP block: a guest who lost their
+     *  invite link ends up on the landing page, and /rsvp is the lookup
+     *  that gets them to their own page. */
+    block_guests_cta: string;
     block_seating_eyebrow: string;
     block_seating_title: string;
     block_seating_body: string;
