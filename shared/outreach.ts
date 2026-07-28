@@ -69,10 +69,20 @@ export interface CreateOutreachCampaignInput {
  *  cap the longer-term volume. */
 export const OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP = 5;
 
-/** Soft cap on campaigns per couple per rolling 7-day window. Hits a 429
- *  with `code: "campaign_rate_limited"` when the couple tries to create the
- *  4th campaign in a week. */
-export const OUTREACH_CAMPAIGNS_PER_WEEK_CAP = 3;
+/** Soft cap on RECIPIENTS (not campaigns) per couple per rolling 7-day
+ *  window. Hits a 429 with `code: "campaign_rate_limited"` when the batch
+ *  would push the couple past it.
+ *
+ *  This used to count campaigns, capped at 3 — which was the wrong unit and
+ *  bit real couples. The supplier detail page's "Send inquiry" CTA opens the
+ *  composer with ONE vendor attached, so the natural way to use the product
+ *  (message vendors one at a time as you find them) burned a whole campaign
+ *  per vendor and hit the wall on the 4th. Meanwhile a couple who batched 5
+ *  recipients per campaign was allowed 15 mails on the same budget. Counting
+ *  what we actually send makes the limit mean the same thing either way, and
+ *  20/week comfortably covers a real shopping week while still bounding what
+ *  one workspace can do to our sending reputation. */
+export const OUTREACH_MESSAGES_PER_WEEK_CAP = 20;
 
 export const OUTREACH_SUBJECT_MAX_LEN = 200;
 export const OUTREACH_BODY_MAX_LEN = 5000;

@@ -12,6 +12,13 @@
 // inbox), so the in-app /app/outreach surface is "sent history" only —
 // no replies appear in the in-app thread yet, which is communicated to
 // the user via the UI copy.
+//
+// Sending is also the couple-facing INQUIRY path: a recipient whose listing
+// is claimed by an entitled vendor gets a `supplier_bookings` row so the
+// message shows up in their Weddly client list, dashboard and stats — not
+// only in whatever inbox `listings.contact_email` points at. See
+// `deliverInquiryFromOutreach`. The two vendor-side hops below mirror the
+// admin booking route.
 
 import type { OutreachCampaign, OutreachCampaignDetail } from "@shared/outreach";
 import { getCoupleForUser } from "../domain/couples";
@@ -24,6 +31,8 @@ import {
 import { db } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { addAuditLog } from "../lib/audit";
+import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
+import { ensureVendorScheduledSubscription } from "./vendor_billing";
 
 interface OutreachHealth {
   /** Build stage marker. Bumps to "v1" with the send + list + detail
@@ -68,7 +77,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   }
   const raw = await readJson<unknown>(ctx.req);
   const input = parseCreateInput(raw);
-  const detail = createCampaign(couple, input);
+  const { detail, inquiries } = createCampaign(couple, input);
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,
@@ -78,9 +87,21 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     after: {
       supplier_ids: detail.messages.map((m) => m.supplier_id),
       message_count: detail.messages.length,
+      inquiry_count: inquiries.length,
       subject: detail.subject,
     },
   });
+  // Vendor-side side effects for every recipient the message actually reached
+  // in-app. Same two hops the admin booking route runs, and for the same
+  // reason: this request is the COUPLE's, so the owning vendor is resolved off
+  // the inquiry rather than the session.
+  for (const inquiry of inquiries) {
+    markVendorCalendarDirty(inquiry.vendorAccountId);
+    // Freemium: a delivered lead can spend the vendor's last free credit, which
+    // schedules their first payment. Only a genuinely new inquiry does that —
+    // a follow-up on an open one costs nothing.
+    if (inquiry.isNew) void ensureVendorScheduledSubscription(inquiry.vendorAccountId);
+  }
   return json(detail, { status: 201 });
 }
 

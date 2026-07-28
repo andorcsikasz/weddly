@@ -29,6 +29,7 @@ import { InfoHint } from "./InfoHint";
 import {
   type CreateOutreachCampaignInput,
   OUTREACH_BODY_MAX_LEN,
+  OUTREACH_MESSAGES_PER_WEEK_CAP,
   OUTREACH_SUBJECT_MAX_LEN,
   OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP,
   type OutreachCampaign,
@@ -451,7 +452,7 @@ export function ComposeDialog({
       const code = err instanceof ApiError ? (err.detail as { code?: string })?.code : undefined;
       const message =
         code === "campaign_rate_limited"
-          ? t("outreach.err_rate_limited")
+          ? t("outreach.err_rate_limited", { max: OUTREACH_MESSAGES_PER_WEEK_CAP })
           : code === "supplier_cap_exceeded"
             ? t("outreach.err_too_many_suppliers", { max: cap })
             : code === "supplier_not_found"

@@ -357,6 +357,23 @@ export default function VendorClientDetailPage() {
         />
       </section>
 
+      {/* What the couple wrote. Deliberately outside the PRO block: the point
+          of a lead is reading what was asked, and a vendor who can see the
+          client at all can see their message. Read-only — the vendor's own
+          scratchpad is the CRM notes field below. */}
+      {detail.inquiry_message ? (
+        <section className="card space-y-2">
+          <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
+            {t("vendor.clients.inquiry_message_title")}
+          </h2>
+          {/* whitespace-pre-wrap keeps the couple's own line breaks; the value
+              is rendered as text, never as markup. */}
+          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink-700 dark:text-paper-200">
+            {detail.inquiry_message}
+          </p>
+        </section>
+      ) : null}
+
       {/* CRM editor — PRO. */}
       {canEditCrm ? (
         <section className="card space-y-5">

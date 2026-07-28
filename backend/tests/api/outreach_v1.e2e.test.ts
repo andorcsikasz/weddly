@@ -2,8 +2,8 @@
 //
 //   POST   /api/outreach/campaigns       — couple-initiated cold outreach
 //                                          to a shortlisted vendor (up to 5
-//                                          suppliers per campaign, 3
-//                                          campaigns per rolling 7 days)
+//                                          suppliers per campaign, 20
+//                                          recipients per rolling 7 days)
 //   GET    /api/outreach/campaigns       — the couple's recent campaigns
 //   GET    /api/outreach/campaigns/:id   — campaign + messages + replies
 //
@@ -16,7 +16,7 @@ import "../setup";
 
 import { describe, expect, test } from "bun:test";
 import {
-  OUTREACH_CAMPAIGNS_PER_WEEK_CAP,
+  OUTREACH_MESSAGES_PER_WEEK_CAP,
   OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP,
   type OutreachCampaign,
   type OutreachCampaignDetail,
@@ -153,12 +153,14 @@ describe("POST /api/outreach/campaigns — happy path + validation", () => {
     expect(count.n).toBe(0);
   });
 
-  test("4th campaign in 7 days → 429 with code=campaign_rate_limited", async () => {
+  test("the weekly cap counts RECIPIENTS, not campaigns", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("outreach-rate@weddly.test");
-    // Burn the per-week cap. Each campaign hits one supplier, well under
-    // the per-campaign supplier cap.
-    for (let i = 0; i < OUTREACH_CAMPAIGNS_PER_WEEK_CAP; i++) {
+    // The cap that used to live here was 3 CAMPAIGNS, which meant the normal
+    // one-vendor-at-a-time flow (what the supplier page's Send inquiry CTA
+    // does) died on the 4th message. Four single-recipient campaigns must go
+    // through now.
+    for (let i = 0; i < 4; i++) {
       const r = await req<OutreachCampaignDetail>(
         "POST",
         "/api/outreach/campaigns",
@@ -170,6 +172,30 @@ describe("POST /api/outreach/campaigns — happy path + validation", () => {
         { token },
       );
       expect(r.status).toBe(201);
+    }
+    // Burn the rest of the budget in bulk, then confirm the next message trips.
+    const sent = db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM outreach_messages m
+           JOIN outreach_campaigns c ON c.id = m.campaign_id
+          WHERE c.couple_id = (SELECT id FROM couples ORDER BY id DESC LIMIT 1)`,
+      )
+      .get() as { n: number };
+    let remaining = OUTREACH_MESSAGES_PER_WEEK_CAP - sent.n;
+    while (remaining > 0) {
+      const batch = Math.min(remaining, OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP);
+      const r = await req<OutreachCampaignDetail>(
+        "POST",
+        "/api/outreach/campaigns",
+        {
+          subject: "Fill",
+          body_template: "Body",
+          supplier_ids: SUPPLIERS_WITH_EMAIL.slice(0, batch),
+        },
+        { token },
+      );
+      expect(r.status).toBe(201);
+      remaining -= batch;
     }
     const overflow = await req<{ detail?: { code?: string } }>(
       "POST",
@@ -183,6 +209,41 @@ describe("POST /api/outreach/campaigns — happy path + validation", () => {
     );
     expect(overflow.status).toBe(429);
     expect(overflow.data.detail?.code).toBe("campaign_rate_limited");
+  });
+
+  test("a batch that would OVERSHOOT the cap is refused whole, not truncated", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("outreach-overshoot@weddly.test");
+    // Spend all but two of the week's budget…
+    let spent = 0;
+    while (spent < OUTREACH_MESSAGES_PER_WEEK_CAP - 2) {
+      const batch = Math.min(
+        OUTREACH_MESSAGES_PER_WEEK_CAP - 2 - spent,
+        OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP,
+      );
+      const r = await req(
+        "POST",
+        "/api/outreach/campaigns",
+        {
+          subject: "Fill",
+          body_template: "Body",
+          supplier_ids: SUPPLIERS_WITH_EMAIL.slice(0, batch),
+        },
+        { token },
+      );
+      expect(r.status).toBe(201);
+      spent += batch;
+    }
+    // …then ask for three. Partially sending would leave the couple thinking
+    // every vendor on the chip list was contacted.
+    const r = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/outreach/campaigns",
+      { subject: "Three", body_template: "Body", supplier_ids: SUPPLIERS_WITH_EMAIL.slice(0, 3) },
+      { token },
+    );
+    expect(r.status).toBe(429);
+    expect(r.data.detail?.code).toBe("campaign_rate_limited");
   });
 
   test("empty subject → 400", async () => {

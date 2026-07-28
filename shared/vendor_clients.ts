@@ -59,6 +59,11 @@ export interface VendorClientPayment {
  *  schedule. */
 export interface VendorClientDetail extends VendorClientView {
   vendor_notes: string | null;
+  /** What the COUPLE actually wrote when they reached out, newest message
+   *  last. Read-only on the vendor side (their own scratchpad is
+   *  `vendor_notes`). Without this the vendor sees a name and a date and has
+   *  no idea what was asked. */
+  inquiry_message: string | null;
   couple_contact_email: string | null;
   payments: VendorClientPayment[];
 }

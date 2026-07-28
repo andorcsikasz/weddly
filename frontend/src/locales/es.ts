@@ -817,6 +817,7 @@ const es: LocaleMessages = {
       view: "Ver",
       back_to_clients: "Volver a clientes",
       no_event_date: "Sin fecha",
+      inquiry_message_title: "Su mensaje",
       detail_title: "Cliente",
       status_label: "Estado de la solicitud",
       status_requested: "Solicitada",
@@ -1192,7 +1193,7 @@ const es: LocaleMessages = {
       "¡Hola!\n\nEstamos buscando los proveedores adecuados para nuestra boda el {date} ({guests} invitados). ¿Podríais enviarnos una breve presentación y algunas referencias o vuestro portafolio?\n\n¡Gracias!",
     err_no_suppliers: "Añade al menos un proveedor.",
     err_too_many_suppliers: "Puedes enviar a un máximo de {max} proveedores a la vez.",
-    err_rate_limited: "Demasiado seguido: máximo 3 campañas cada 7 días.",
+    err_rate_limited: "Ya son muchos: máximo {max} proveedores contactados cada 7 días.",
     err_supplier_not_found: "Uno o más IDs no están en el directorio.",
     err_supplier_no_email: "Uno o más proveedores no tienen email público.",
     err_supplier_no_contact:

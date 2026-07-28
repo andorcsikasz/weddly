@@ -111,6 +111,7 @@ export function toVendorClientDetail(row: BookingRow): VendorClientDetail {
   return {
     ...base,
     vendor_notes: vendorNotes,
+    inquiry_message: row.notes,
     couple_contact_email: coupleContactEmail(row.couple_id),
     payments: listPaymentsForBooking(row.id),
   };

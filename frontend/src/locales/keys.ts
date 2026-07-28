@@ -1073,6 +1073,8 @@ export interface LocaleMessages {
       view: string;
       back_to_clients: string;
       no_event_date: string;
+      /** Heading over the couple's own inquiry text on the client detail page. */
+      inquiry_message_title: string;
       detail_title: string;
       status_label: string;
       status_requested: string;

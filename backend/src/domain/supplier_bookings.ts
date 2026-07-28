@@ -303,7 +303,13 @@ export interface CreateBookingArgs {
  *  credits when they're inside the lead window (see domain/vendor_billing.ts).
  *  Caller is responsible for rate-limiting via lib/rate_limit. */
 export function createBooking(args: CreateBookingArgs): SupplierBooking {
-  if (!isIsoDate(args.eventDate)) {
+  // "" is the explicit "no date picked yet" value — a couple whose
+  // `wedding_date_goal` is a season or a year has no scalar `wedding_date`,
+  // and refusing their inquiry over it would be worse than carrying the gap.
+  // `event_date` is NOT NULL, and every consumer already treats a non-ISO
+  // value as unknown (the CRM and dashboard render "no date yet", the Google
+  // Calendar push and the upcoming list filter on ISO_DATE).
+  if (args.eventDate !== "" && !isIsoDate(args.eventDate)) {
     throw new Error("event_date must be valid YYYY-MM-DD");
   }
   const listing = getListingFor(args.supplierId);
@@ -338,6 +344,93 @@ export function createBooking(args: CreateBookingArgs): SupplierBooking {
   recordVendorLeadCredit(listing.vendor_account_id, ts);
   const row = db.prepare("SELECT * FROM supplier_bookings WHERE id = ?").get(id) as BookingRow;
   return toBooking(row);
+}
+
+// ── Couple-initiated delivery (outreach → vendor inbox) ───────────────────
+
+/** One inquiry the outreach send pipeline put in front of a real vendor
+ *  account. `isNew` distinguishes a fresh lead from a follow-up appended to an
+ *  inquiry that's already open, which is what keeps the route layer from
+ *  re-running the first-lead billing hop on every message. */
+export interface DeliveredInquiry {
+  bookingId: number;
+  vendorAccountId: number;
+  supplierId: string;
+  isNew: boolean;
+}
+
+/** How much of a couple's message thread we keep on the inquiry row. Long
+ *  enough for a real back-and-forth, bounded so a scripted sender can't grow
+ *  one row without limit. Trimmed from the FRONT so the newest message — the
+ *  one the vendor is being notified about — always survives. */
+const INQUIRY_NOTES_MAX_LEN = 8000;
+
+/** Deliver a couple's outreach message into the vendor's Weddly inbox.
+ *
+ *  Returns null when there is nothing to deliver INTO: an unclaimed listing
+ *  (no account) or a vendor on the FREE plan (direct inquiries are PRO). Both
+ *  still receive the outreach email — the same fallback the public profile
+ *  uses — so the couple is never silently dropped.
+ *
+ *  A second message to a vendor the couple already has an OPEN inquiry with
+ *  appends to that inquiry instead of opening a new one. Two rows for one
+ *  conversation would split the vendor's CRM thread, and — because every
+ *  delivered inquiry spends one of the vendor's free lead credits — would
+ *  charge them twice for the same couple. */
+export function deliverInquiryFromOutreach(args: {
+  supplierId: string;
+  coupleId: number;
+  /** ISO 'YYYY-MM-DD', or "" when the couple has no date yet. */
+  eventDate: string;
+  message: string;
+  at: number;
+}): DeliveredInquiry | null {
+  const listing = getListingFor(args.supplierId);
+  if (!listing || listing.vendor_account_id === null) return null;
+  if (!isVendorEntitled(listing.vendor_account_id)) return null;
+
+  const open = db
+    .prepare(
+      `SELECT * FROM supplier_bookings
+        WHERE couple_id = ? AND supplier_id = ? AND status IN ('requested', 'vendor_seen')
+        ORDER BY created_at DESC
+        LIMIT 1`,
+    )
+    .get(args.coupleId, args.supplierId) as BookingRow | undefined;
+
+  if (open) {
+    const thread = [open.notes ?? "", args.message]
+      .filter((s) => s.trim().length > 0)
+      .join("\n\n—\n\n");
+    const notes =
+      thread.length > INQUIRY_NOTES_MAX_LEN ? thread.slice(-INQUIRY_NOTES_MAX_LEN) : thread;
+    // Backfill the date if the couple has since picked one; never overwrite a
+    // date already on the row with a blank.
+    const eventDate = args.eventDate !== "" ? args.eventDate : open.event_date;
+    db.prepare(
+      "UPDATE supplier_bookings SET notes = ?, event_date = ?, updated_at = ? WHERE id = ?",
+    ).run(notes, eventDate, args.at, open.id);
+    return {
+      bookingId: open.id,
+      vendorAccountId: listing.vendor_account_id,
+      supplierId: args.supplierId,
+      isNew: false,
+    };
+  }
+
+  const booking = createBooking({
+    supplierId: args.supplierId,
+    coupleId: args.coupleId,
+    eventDate: args.eventDate,
+    notes: args.message.slice(0, INQUIRY_NOTES_MAX_LEN),
+    amountHuf: null,
+  });
+  return {
+    bookingId: booking.id,
+    vendorAccountId: listing.vendor_account_id,
+    supplierId: args.supplierId,
+    isNew: true,
+  };
 }
 
 export function getBookingById(id: number): BookingRow | null {

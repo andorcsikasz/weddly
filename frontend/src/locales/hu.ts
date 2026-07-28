@@ -798,6 +798,7 @@ const hu: LocaleMessages = {
       view: "Megnyitás",
       back_to_clients: "Vissza az ügyfelekhez",
       no_event_date: "Nincs dátum",
+      inquiry_message_title: "Az üzenetük",
       detail_title: "Ügyfél",
       status_label: "Megkeresés állapota",
       status_requested: "Beérkezett",
@@ -1174,7 +1175,7 @@ const hu: LocaleMessages = {
       "Sziasztok!\n\nA(z) {date} napra tervezett esküvőnkhöz ({guests} fő) keressük a megfelelő szolgáltatókat. Be tudnátok mutatkozni, és küldenétek pár referenciát vagy portfóliót?\n\nKöszönjük!",
     err_no_suppliers: "Adj hozzá legalább egy szolgáltatót.",
     err_too_many_suppliers: "Egyszerre legfeljebb {max} szolgáltatónak küldhetsz.",
-    err_rate_limited: "Túl gyakori: heti legfeljebb 3 körlevél mehet ki.",
+    err_rate_limited: "Most már sok: 7 naponta legfeljebb {max} szolgáltatót kereshetsz meg.",
     err_supplier_not_found: "Egy vagy több ID nem található a katalógusban.",
     err_supplier_no_email: "Egy vagy több szolgáltatónak nincs publikus e-mail címe.",
     err_supplier_no_contact:

@@ -21,7 +21,7 @@
 import type { CreateOutreachCampaignInput } from "@shared/outreach";
 import {
   OUTREACH_BODY_MAX_LEN,
-  OUTREACH_CAMPAIGNS_PER_WEEK_CAP,
+  OUTREACH_MESSAGES_PER_WEEK_CAP,
   OUTREACH_SUBJECT_MAX_LEN,
   OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP,
   type OutreachCampaign,
@@ -33,8 +33,11 @@ import {
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { HttpError } from "../lib/http";
+import { log } from "../lib/logger";
 import { sendKind } from "./emails";
 import { isOptedOut } from "./emails/optouts";
+import { deliverInquiryFromOutreach, type DeliveredInquiry } from "./supplier_bookings";
+import { localeForCountry, resolveListingCountry } from "./vendor_campaign";
 
 /** Subset of `Couple` / `CoupleRow` the outreach send pipeline actually
  *  reads. Decoupled so the route handler can pass either shape without a
@@ -105,19 +108,28 @@ function parseSupplierIds(raw: unknown): string[] {
 
 // ── Rate limiting ─────────────────────────────────────────────────────────
 
-/** Throws 429 when the couple has already created
- *  `OUTREACH_CAMPAIGNS_PER_WEEK_CAP` (or more) campaigns in the last
- *  rolling 7 days. Counts DB rows directly so a restart doesn't reset
- *  the limit. */
-function assertWithinWeeklyCap(coupleId: number): void {
+/** Throws 429 when this batch would push the couple past
+ *  `OUTREACH_MESSAGES_PER_WEEK_CAP` RECIPIENTS in the last rolling 7 days.
+ *  Counts DB rows directly so a restart doesn't reset the limit.
+ *
+ *  Counts messages, not campaigns: the supplier detail page's "Send inquiry"
+ *  CTA composes to a single vendor, so a campaign-based cap punished the
+ *  normal one-vendor-at-a-time flow (3 vendors a week) while letting a
+ *  batched sender through with 5× the volume. See the constant's comment. */
+function assertWithinWeeklyCap(coupleId: number, incoming: number): void {
   const sevenDaysAgo = now() - 7 * 24 * 60 * 60 * 1000;
   const row = db
-    .prepare("SELECT COUNT(*) AS n FROM outreach_campaigns WHERE couple_id = ? AND created_at >= ?")
+    .prepare(
+      `SELECT COUNT(*) AS n
+         FROM outreach_messages m
+         JOIN outreach_campaigns c ON c.id = m.campaign_id
+        WHERE c.couple_id = ? AND m.created_at >= ?`,
+    )
     .get(coupleId, sevenDaysAgo) as { n: number };
-  if (row.n >= OUTREACH_CAMPAIGNS_PER_WEEK_CAP) {
+  if (row.n + incoming > OUTREACH_MESSAGES_PER_WEEK_CAP) {
     throw new HttpError(
       429,
-      `Outreach limit reached (max ${OUTREACH_CAMPAIGNS_PER_WEEK_CAP} campaigns per 7 days)`,
+      `Outreach limit reached (max ${OUTREACH_MESSAGES_PER_WEEK_CAP} messages per 7 days)`,
       { code: "campaign_rate_limited" },
     );
   }
@@ -209,6 +221,14 @@ interface SupplierContact {
   id: string;
   name: string;
   email: string;
+  /** `listings.source` — 'curated' | 'community' | 'claimed'. Feeds the
+   *  country → language resolution for the outbound mail. */
+  source: string;
+  city: string;
+  /** Non-null when a Weddly vendor has claimed this listing. That's the whole
+   *  difference between "we mailed a business" and "a vendor got a lead in
+   *  their Weddly inbox" — see `deliverInquiries` below. */
+  vendorAccountId: number | null;
 }
 
 /** Look up the couple owner's user row — used as the Reply-To address on
@@ -246,8 +266,18 @@ function getCoupleOwner(coupleId: number): OwnerRow {
 function resolveSupplierContacts(supplierIds: string[]): SupplierContact[] {
   const placeholders = supplierIds.map(() => "?").join(",");
   const rows = db
-    .prepare(`SELECT id, name, contact_email FROM listings WHERE id IN (${placeholders})`)
-    .all(...supplierIds) as Array<{ id: string; name: string; contact_email: string | null }>;
+    .prepare(
+      `SELECT id, name, contact_email, source, city, vendor_account_id
+         FROM listings WHERE id IN (${placeholders})`,
+    )
+    .all(...supplierIds) as Array<{
+    id: string;
+    name: string;
+    contact_email: string | null;
+    source: string;
+    city: string;
+    vendor_account_id: number | null;
+  }>;
   const byId = new Map(rows.map((r) => [r.id, r] as const));
   const out: SupplierContact[] = [];
   const missingEmail: string[] = [];
@@ -272,7 +302,14 @@ function resolveSupplierContacts(supplierIds: string[]): SupplierContact[] {
       suppressed.push(id);
       continue;
     }
-    out.push({ id, name: row.name, email: row.contact_email });
+    out.push({
+      id,
+      name: row.name,
+      email: row.contact_email,
+      source: row.source,
+      city: row.city,
+      vendorAccountId: row.vendor_account_id,
+    });
   }
   if (notFound.length > 0) {
     throw new HttpError(400, `Unknown supplier ids: ${notFound.join(", ")}`, {
@@ -292,17 +329,127 @@ function resolveSupplierContacts(supplierIds: string[]): SupplierContact[] {
   return out;
 }
 
+/** The recipient's own language, for the outbound mail. A CLAIMED listing has
+ *  a real Weddly account behind it, so their `users.locale` is the truth; an
+ *  unclaimed one falls back to the directory's country → language rule (the
+ *  same one the claim-invite campaign uses). Returning null keeps the legacy
+ *  bilingual HU+EN stack, which is only right when we genuinely don't know. */
+function recipientLocaleFor(contact: SupplierContact): "hu" | "en" | null {
+  if (contact.vendorAccountId !== null) {
+    const row = db
+      .prepare(
+        `SELECT u.locale AS locale
+           FROM vendor_accounts va
+           JOIN users u ON u.id = va.owner_user_id
+          WHERE va.id = ?`,
+      )
+      .get(contact.vendorAccountId) as { locale: string | null } | undefined;
+    const raw = row?.locale?.toLowerCase();
+    if (raw) return raw === "hu" || raw.startsWith("hu-") || raw.startsWith("hu_") ? "hu" : "en";
+    // Claimed but no locale captured (legacy account) — fall through to the
+    // listing's country rather than guessing.
+  }
+  return localeForCountry(
+    resolveListingCountry({ id: contact.id, source: contact.source, city: contact.city }),
+  );
+}
+
+/** Where the mail's button should land the recipient. A claimed vendor has the
+ *  inquiry waiting in their Weddly CRM, so send them there. An unclaimed
+ *  business has no account and no client list — pointing them at a couple-app
+ *  URL (which is what v1 did, `/app/outreach`, a route that no longer even
+ *  exists) is a dead end; the vendor landing page is the only thing that
+ *  means anything to them. */
+function outreachCtaUrlFor(contact: SupplierContact): string {
+  return contact.vendorAccountId !== null
+    ? `${CONFIG.frontendBaseUrl}/vendor/clients`
+    : `${CONFIG.frontendBaseUrl}/vendors`;
+}
+
+export interface CreateCampaignResult {
+  detail: OutreachCampaignDetail;
+  /** Recipients whose listing is claimed by an entitled Weddly vendor, so the
+   *  message also landed in their in-app client list. The route layer needs
+   *  these to fire the vendor-side side effects (calendar sync, billing). */
+  inquiries: DeliveredInquiry[];
+}
+
+/** Put the couple's message in front of every recipient who actually has a
+ *  Weddly vendor account, as a `supplier_bookings` inquiry.
+ *
+ *  This is the seam that was missing. Outreach used to be email-ONLY: it wrote
+ *  `outreach_messages` and sent mail to `listings.contact_email`, and nothing
+ *  else. But every vendor-facing surface — the `/vendor` dashboard counters,
+ *  the `/vendor/clients` CRM, the `/vendor/stats` conversion panel, the vendor
+ *  Google Calendar — reads `supplier_bookings`, whose only writer was the
+ *  admin-only `POST /api/suppliers/:id/bookings`. So a couple could send an
+ *  inquiry, see it in their own sent history, and the vendor's account would
+ *  correctly report zero inquiries forever. The mail was the entire delivery
+ *  mechanism, and a mail that lands in a shared info@ inbox is not a lead the
+ *  vendor can see, answer, or be measured on.
+ *
+ *  Unclaimed listings are skipped by design (no account to deliver into) and
+ *  so are FREE-plan vendors, because direct inquiries are a PRO feature — both
+ *  still get the email, which is the same fallback the public profile uses. */
+function deliverInquiries(
+  coupleId: number,
+  contacts: SupplierContact[],
+  input: CreateOutreachCampaignInput,
+  ts: number,
+): DeliveredInquiry[] {
+  const eventDate = coupleWeddingDate(coupleId);
+  const out: DeliveredInquiry[] = [];
+  for (const contact of contacts) {
+    if (contact.vendorAccountId === null) continue;
+    try {
+      const delivered = deliverInquiryFromOutreach({
+        supplierId: contact.id,
+        coupleId,
+        eventDate,
+        message: `${input.subject}\n\n${input.body_template}`,
+        at: ts,
+      });
+      if (delivered) out.push(delivered);
+    } catch (e) {
+      // A vendor-side delivery failure must never cost the couple their mail:
+      // the campaign rows are already committed and the email is what the
+      // recipient reads either way. Log and carry on.
+      log.error("outreach.inquiry_delivery_failed", e, {
+        couple_id: coupleId,
+        supplier_id: contact.id,
+      });
+    }
+  }
+  return out;
+}
+
+/** The couple's wedding date for the inquiry row, or "" when they haven't
+ *  picked one (a `wedding_date_goal` of "summer 2027" leaves the scalar NULL).
+ *  Empty rather than invented: `event_date` is NOT NULL, the vendor CRM and
+ *  dashboard already render a falsy date as "no date yet", and both the
+ *  Google Calendar push and the upcoming-events list filter on a well-formed
+ *  ISO date — so a blank passes through every consumer as "unknown", which is
+ *  the truth, instead of parking a fake wedding on the vendor's calendar. */
+function coupleWeddingDate(coupleId: number): string {
+  const row = db.prepare("SELECT wedding_date FROM couples WHERE id = ?").get(coupleId) as
+    | { wedding_date: string | null }
+    | undefined;
+  return row?.wedding_date ?? "";
+}
+
 /** Create + fire a campaign. Inserts the campaign row, one message per
- *  resolved supplier, kicks off a `supplier_outreach` email each (fire-
- *  and-forget — the mailer logs failures into `email_log` for later
- *  introspection). Returns the freshly-inserted campaign so the route
- *  handler can echo it back to the client. */
+ *  resolved supplier, delivers an in-app inquiry to every claimed recipient,
+ *  and kicks off a `supplier_outreach` email each (fire-and-forget — the
+ *  mailer logs failures into `email_log` for later introspection). Returns
+ *  the freshly-inserted campaign so the route handler can echo it back to
+ *  the client, plus the inquiries it delivered so the route can run the
+ *  vendor-side side effects. */
 export function createCampaign(
   couple: OutreachCouple,
   input: CreateOutreachCampaignInput,
-): OutreachCampaignDetail {
-  assertWithinWeeklyCap(couple.id);
+): CreateCampaignResult {
   const contacts = resolveSupplierContacts(input.supplier_ids);
+  assertWithinWeeklyCap(couple.id, contacts.length);
   const owner = getCoupleOwner(couple.id);
   const ts = now();
 
@@ -337,6 +484,11 @@ export function createCampaign(
     return { campaignId: cRow.id, messages: messageRows };
   })();
 
+  // Land the message inside the product for every recipient who has an
+  // account there. Runs BEFORE the mail so a claimed vendor who opens the
+  // link in the mail already finds the lead waiting in their client list.
+  const inquiries = deliverInquiries(couple.id, contacts, input, ts);
+
   // Fire the outbound mail per message. `sendKind` is fire-and-forget;
   // failures land in `email_log`. We flip status to "sent" optimistically
   // — a transient mailer failure won't surface in the in-app UI until
@@ -359,11 +511,12 @@ export function createCampaign(
         supplierName: contact.name,
         subject: input.subject,
         body: input.body_template,
-        outreachUrl: `${CONFIG.frontendBaseUrl}/app/outreach`,
+        outreachUrl: outreachCtaUrlFor(contact),
       },
       {
         user: null,
         guest: { email: contact.email, full_name: contact.name },
+        guestLocale: recipientLocaleFor(contact),
         couple_id: couple.id,
       },
     );
@@ -374,9 +527,12 @@ export function createCampaign(
     .get(inserted.campaignId) as CampaignRow;
   const messages = inserted.messages.map((m, i) => toMessage(m, contacts[i]!.name));
   return {
-    ...toCampaign(campaignRow, messages.length),
-    messages,
-    replies: [],
+    detail: {
+      ...toCampaign(campaignRow, messages.length),
+      messages,
+      replies: [],
+    },
+    inquiries,
   };
 }
 

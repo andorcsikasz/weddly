@@ -790,6 +790,7 @@ const en: LocaleMessages = {
       view: "View",
       back_to_clients: "Back to clients",
       no_event_date: "No date",
+      inquiry_message_title: "Their message",
       detail_title: "Client",
       status_label: "Inquiry status",
       status_requested: "Requested",
@@ -1160,7 +1161,7 @@ const en: LocaleMessages = {
       "Hi!\n\nWe're looking for the right vendors for our wedding on {date} ({guests} guests). Could you send a short intro and a few references or your portfolio?\n\nThanks!",
     err_no_suppliers: "Add at least one vendor.",
     err_too_many_suppliers: "You can send to at most {max} vendors at once.",
-    err_rate_limited: "Too frequent: max 3 campaigns per 7 days.",
+    err_rate_limited: "Too many for now: max {max} vendors messaged per 7 days.",
     err_supplier_not_found: "One or more IDs aren't in the directory.",
     err_supplier_no_email: "One or more vendors have no public email.",
     err_supplier_no_contact:
