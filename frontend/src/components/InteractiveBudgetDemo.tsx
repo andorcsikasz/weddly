@@ -5,7 +5,8 @@
 // count + total budget into the onboarding draft.
 
 import { ChevronDown } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
 import { Link } from "react-router-dom";
 import { scaleFromEur } from "@shared/currency";
 import type { Currency } from "@shared/types";
@@ -117,6 +118,104 @@ function stashDraft(guests: number, budget: number) {
   }
 }
 
+// ── Count-up on first view ──────────────────────────────────────────────────
+// The breakdown is the moment the demo makes its point, so the figures ramp
+// from zero the first time a visitor actually looks at them. Once per browser
+// session, not once per page view: a visitor who bounces between the landing
+// and /eszkozok has already seen the trick, and replaying it every time reads
+// as a page that can't sit still.
+
+const COUNTUP_SESSION_KEY = "weddly.demo_countup_played";
+const COUNTUP_MS = 1100;
+
+// Backstop for the case sessionStorage throws (private mode, blocked storage):
+// the module lives as long as the tab does, so the animation still runs at most
+// once per load rather than on every remount.
+let countUpPlayedThisLoad = false;
+
+function countUpAlreadyPlayed(): boolean {
+  if (countUpPlayedThisLoad) return true;
+  if (typeof window === "undefined") return true;
+  try {
+    return window.sessionStorage.getItem(COUNTUP_SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markCountUpPlayed(): void {
+  countUpPlayedThisLoad = true;
+  try {
+    window.sessionStorage.setItem(COUNTUP_SESSION_KEY, "1");
+  } catch {
+    // Storage unavailable — the module flag above is the whole guard then.
+  }
+}
+
+/**
+ * Progress ramp from 0 to 1, started the first time `ref`'s element scrolls
+ * into view. Returns 1 straight away on a later visit in the same session,
+ * when the visitor asked for reduced motion, and when there is no
+ * IntersectionObserver, so the figures are simply correct rather than absent.
+ *
+ * Point it at an element that is hidden while the numbers are hidden (on
+ * phones the breakdown list starts collapsed). A `display:none` element never
+ * intersects, so the ramp waits for the visitor to open it instead of playing
+ * to nobody.
+ */
+function useCountUpOnView(ref: RefObject<HTMLElement | null>): number {
+  const [progress, setProgress] = useState(() => (countUpAlreadyPlayed() ? 1 : 0));
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || startedRef.current) return;
+    if (countUpAlreadyPlayed()) {
+      setProgress(1);
+      return;
+    }
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduced || typeof IntersectionObserver === "undefined") {
+      markCountUpPlayed();
+      setProgress(1);
+      return;
+    }
+
+    let raf = 0;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        observer.disconnect();
+        startedRef.current = true;
+        markCountUpPlayed();
+        const startedAt = performance.now();
+        const tick = (nowMs: number) => {
+          const linear = Math.min(1, (nowMs - startedAt) / COUNTUP_MS);
+          if (linear < 1) {
+            // easeOutCubic: quick off the mark, then settles onto the figure
+            // rather than snapping to it.
+            setProgress(1 - (1 - linear) ** 3);
+            raf = requestAnimationFrame(tick);
+          } else {
+            setProgress(1);
+          }
+        };
+        raf = requestAnimationFrame(tick);
+      },
+      // A third of the card in view: enough that the visitor is looking at it,
+      // little enough that a tall card on a short phone still triggers.
+      { threshold: 0.35 },
+    );
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [ref]);
+
+  return progress;
+}
+
 export function InteractiveBudgetDemo({
   vendorTeaser = false,
 }: {
@@ -165,6 +264,12 @@ export function InteractiveBudgetDemo({
   }, [budget, demoRows]);
 
   const perGuest = guests === 0 ? 0 : Math.round(budget / guests);
+
+  // Ramp the breakdown figures (and their bars) up from zero on first sight.
+  // Applied as a multiplier rather than a second copy of the numbers, so a
+  // visitor who grabs a slider mid-ramp keeps getting live figures.
+  const breakdownRef = useRef<HTMLUListElement | null>(null);
+  const countUp = useCountUpOnView(breakdownRef);
 
   const signupHref = `/signup?guests=${guests}&budget=${budget}`;
 
@@ -286,7 +391,10 @@ export function InteractiveBudgetDemo({
                 />
               </span>
             </button>
-            <ul className={`mt-4 space-y-2.5 sm:block ${breakdownOpen ? "" : "hidden"}`}>
+            <ul
+              ref={breakdownRef}
+              className={`mt-4 space-y-2.5 sm:block ${breakdownOpen ? "" : "hidden"}`}
+            >
               {rows.map((row) => (
                 <li key={row.i18nKey}>
                   <div className="flex items-center justify-between gap-3">
@@ -294,13 +402,19 @@ export function InteractiveBudgetDemo({
                       {t(row.i18nKey)}
                     </span>
                     <span className="font-grotesk text-sm tabular-nums text-umber-800 dark:text-paper-100">
-                      {formatMoney(row.amount, currency, locale)}
+                      {formatMoney(Math.round(row.amount * countUp), currency, locale)}
                     </span>
                   </div>
                   <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
+                    {/* The width transition is what smooths a slider drag. It
+                        would only lag behind the count-up, which already
+                        drives the width every frame, so it stays off until
+                        the ramp finishes. */}
                     <div
-                      className="h-full rounded-full bg-umber-400 transition-[width] duration-300 ease-out"
-                      style={{ width: `${row.pct}%` }}
+                      className={`h-full rounded-full bg-umber-400 ${
+                        countUp === 1 ? "transition-[width] duration-300 ease-out" : ""
+                      }`}
+                      style={{ width: `${row.pct * countUp}%` }}
                     />
                   </div>
                 </li>
@@ -316,7 +430,7 @@ export function InteractiveBudgetDemo({
                   {t("landing.demo_total_label")}
                 </span>
                 <span className="font-grotesk text-lg tabular-nums text-umber-900 dark:text-paper-50">
-                  {formatMoney(budget, currency, locale)}
+                  {formatMoney(Math.round(budget * countUp), currency, locale)}
                 </span>
               </div>
             </div>
