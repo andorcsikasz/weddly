@@ -430,16 +430,17 @@ function PublicFooter() {
     // closes the cream page. The `dark` class on the element (Tailwind's
     // class strategy is descendant-based, so it styles the subtree, not itself)
     // flips every child's `dark:` variant on, which is why the links, borders,
-    // social icons and the who-are-you band all read correctly on umber-900
-    // without a single duplicated colour.
-    <footer className="dark mt-16 bg-umber-900 font-grotesk sm:mt-24">
+    // social icons and the who-are-you band all read correctly on umber-950
+    // without a single duplicated colour. One tone for the whole slab, band
+    // included — the two-shade split read as a seam rather than a section.
+    <footer className="dark mt-16 bg-umber-950 font-grotesk sm:mt-24">
       {/* Band: who-are-you. Hidden on audience pages (/planners, /vendors)
        *  which already have their own escape-route sections immediately above
        *  the footer — showing it again here would be a duplicate. On the
        *  vendor page the "I'm a vendor" button loops to the same page, so
        *  we swap it for a couples CTA instead. */}
       {!isAudiencePage && (
-        <div className="bg-paper-50 dark:bg-umber-950">
+        <div>
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-4 py-5 sm:flex-row sm:flex-wrap sm:justify-center sm:px-6 sm:py-8">
             <span className="font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-umber-600 dark:text-umber-300">
               {t("landing.footer_band_prompt")}
