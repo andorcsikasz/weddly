@@ -3170,9 +3170,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
   // The founder's own contacts, introduced to Weddly with a "you (or someone you
   // love) is getting married" angle and a register CTA. Weddly is the voice the
-  // whole way through (never "I"/"me"), Uber-tight, and there is no discount /
-  // "free" framing. Outreach category, so the footer carries the one-click
-  // unsubscribe. Personalised by first name.
+  // whole way through (never "I"/"me", and NEVER signed with a personal name),
+  // Uber-tight, and there is no discount / "free" framing. Outreach category, so
+  // the footer carries the one-click unsubscribe. Personalised by first name.
   personal_invite: (p) => ({
     subject:
       p.locale === "hu"
@@ -3188,7 +3188,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "A célunk egyszerű: a Weddly legyen az esküvőszervezés digitális otthona. Egy közös tér, ahol a párok átláthatóan, gyorsan és valóban együtt tervezhetik meg életük egyik legfontosabb napját.",
         "Ha te vagy valaki a környezetedben éppen esküvőt szervez, érdemes kipróbálni a Weddlyt.",
         "Ismersz jegyespárt? Küldd tovább nekik ezt a levelet. Lehet, hogy éppen ezzel teszed sokkal egyszerűbbé az esküvőszervezésüket.",
-        "Üdv, Andor",
       ],
       cta: "Kezdés",
       ctaSubtext: "Egy perc az egész.",
@@ -3203,7 +3202,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Our goal is simple: let Weddly be the digital home of wedding planning. One shared space where couples can plan one of the most important days of their lives clearly, quickly and genuinely together.",
         "If you, or someone around you, is planning a wedding, Weddly is worth a try.",
         "Know an engaged couple? Forward this email to them. It might be the thing that makes their planning far simpler.",
-        "Best, Andor",
       ],
       cta: "Get started",
       ctaSubtext: "Takes a minute.",
