@@ -479,10 +479,6 @@ function pixelUrl(sendId: number): string {
   return `${CONFIG.frontendBaseUrl}/api/emails/track/review-campaign?t=${makeReviewPixelToken(sendId)}`;
 }
 
-function optOutUrl(sendId: number): string {
-  return `${CONFIG.frontendBaseUrl}/review-optout/${makeReviewOptOutToken(sendId)}`;
-}
-
 /** Pre-filled share affordances the vendor taps to forward their link to a past
  *  client. WhatsApp and a mailto draft both work from inside an email client
  *  with no clipboard JS. */
@@ -547,7 +543,6 @@ async function sendOne(
       guest: { email: target.email, full_name: target.listing_name },
       guestLocale: target.locale,
       trackingPixelUrl: pixelUrl(sendId),
-      listUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/api/emails/optout-review/${makeReviewOptOutToken(sendId)}`,
     },
   );
 
@@ -659,7 +654,6 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
         guest: { email: row.email, full_name: businessName },
         guestLocale: locale,
         trackingPixelUrl: pixelUrl(row.id),
-        listUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/api/emails/optout-review/${makeReviewOptOutToken(row.id)}`,
       },
     );
     // Stamp regardless of outcome: one-shot nudge, no retrying a bouncing

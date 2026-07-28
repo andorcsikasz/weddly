@@ -456,10 +456,6 @@ export function registerUrl(slug: string): string {
   return `${CONFIG.frontendBaseUrl}/?utm_source=invite&utm_medium=email&utm_campaign=${encodeURIComponent(slug)}`;
 }
 
-function optOutUrl(sendId: number): string {
-  return `${CONFIG.frontendBaseUrl}/api/emails/optout-invite/${makeInviteOptOutToken(sendId)}`;
-}
-
 /** Send one invite for an already-seeded 'queued' row. Never throws: a single
  *  bad address must not abort the batch. Returns the resulting status. */
 async function sendOne(
@@ -479,7 +475,6 @@ async function sendOne(
       user: null,
       guest: { email: row.email, full_name: row.name || row.email },
       guestLocale: locale,
-      listUnsubscribeUrl: optOutUrl(row.id),
     },
   );
   if (result.status === "skipped_opt_out") {

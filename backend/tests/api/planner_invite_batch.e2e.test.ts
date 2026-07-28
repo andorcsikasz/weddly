@@ -338,12 +338,11 @@ describe("planner invite email", () => {
     plannerName: "Koncsár Andi",
     businessName: "Szellő Lovastanya",
     activateUrl: "https://tryweddly.com/planner/activate/tok",
-    optOutUrl: "https://tryweddly.com/planner-optout/1.sig",
     guestUntil: "2028. július 28.",
     locale: "hu" as const,
   };
 
-  test("HU render carries the recommendation, the CTA, the data notice and the way out", () => {
+  test("HU render carries the recommendation, the CTA and the data notice", () => {
     const built = buildEmail("planner_suggested_invite", payload, {
       recipientName: "Koncsár Andi",
       recipientLocale: "hu",
@@ -357,9 +356,13 @@ describe("planner invite email", () => {
     // Activation link, untagged: a single-use account link must stay clean.
     expect(text).toContain(payload.activateUrl);
     expect(html).not.toContain("utm_campaign");
-    // The way out is reachable in both renderings, not just the HTML one, but
-    // it is a bare label: the body copy never points at it.
-    expect(text).toContain(payload.optOutUrl);
+    // No unsubscribe link, by owner decision (2026-07-28). The objection path
+    // this mail names is the reply address in the data notice, and that
+    // sentence is the reason the assertion below is not just cosmetic.
+    expect(text).not.toContain("Leiratkozás");
+    expect(text).not.toContain("planner-optout");
+    expect(text).toContain("tiltakozhatsz a kezelésük ellen");
+    expect(text).toContain("hello@tryweddly.com");
     expect(text).not.toContain("kattints lent");
     // The stock outreach footer would claim they have no account. This one
     // doesn't have to lie.
@@ -375,7 +378,8 @@ describe("planner invite email", () => {
     expect(built.subject).toContain("recommended");
     const { text } = built.rendered;
     expect(text).toContain("Article 6(1)(f) GDPR");
-    expect(text).toContain("Unsubscribe:");
+    expect(text).toContain("you can object to the processing");
+    expect(text).not.toContain("Unsubscribe");
     expect(text).not.toContain("Szia");
   });
 

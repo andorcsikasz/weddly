@@ -411,10 +411,6 @@ function onboardingUrl(slug: string, reminder: boolean): string {
   return `${CONFIG.frontendBaseUrl}/onboarding?${params.toString()}`;
 }
 
-function optOutUrl(sendId: number): string {
-  return `${CONFIG.frontendBaseUrl}/api/emails/optout-onboarding/${makeOnboardingOptOutToken(sendId)}`;
-}
-
 /** Send one row's initial nudge (reminder=false) or its reminder (reminder=true)
  *  and stamp the row. Never throws — a delivery failure is recorded, not raised.
  *  A reminder ALWAYS stamps reminder_sent_at afterwards (one attempt only), so a
@@ -433,7 +429,6 @@ async function sendOne(
       user: null,
       guest: { email: row.email, full_name: row.name || row.email },
       guestLocale: locale,
-      listUnsubscribeUrl: optOutUrl(row.id),
     },
   );
   const status = result.status;

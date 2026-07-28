@@ -324,13 +324,11 @@ export async function inviteSuggestedPlanner(
       plannerName: row.fullName,
       businessName: row.businessName,
       activateUrl: `${CONFIG.frontendBaseUrl}/planner/activate/${token}`,
-      optOutUrl: `${CONFIG.frontendBaseUrl}/planner-optout/${makePlannerInviteOptOutToken(userId)}`,
       guestUntil: guestUntilLabel(sub?.founding_until ?? now(), locale),
       locale,
     },
     {
       user: { id: userId, email, full_name: row.fullName },
-      listUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/api/emails/optout-planner/${makePlannerInviteOptOutToken(userId)}`,
     },
   );
 

@@ -21,12 +21,13 @@ describe("email integrity scan", () => {
   });
 });
 
-// No email of ours talks the reader out of being here. The unsubscribe link and
-// the List-Unsubscribe header stay exactly where they are (compliance, and
-// Gmail's bulk-sender rules), but body copy never points at them, never invites
-// the reader to ignore the mail, and never mentions deleting an account as an
-// option. "If this wasn't you, ignore this" on a security/verify mail is a
-// different thing and stays: it is anti-phishing copy, not an exit sign.
+// No email of ours talks the reader out of being here. On LIFECYCLE mail the
+// unsubscribe link and the List-Unsubscribe header stay exactly where they are,
+// but body copy never points at them, never invites the reader to ignore the
+// mail, and never mentions deleting an account as an option. "If this wasn't
+// you, ignore this" on a security/verify mail is a different thing and stays:
+// it is anti-phishing copy, not an exit sign. Campaign mail carries neither the
+// link nor the header any more, which the describe block at the bottom guards.
 describe("email copy: nothing that talks the reader out of staying", () => {
   const BANNED: Array<{ pattern: RegExp; why: string }> = [
     { pattern: /leiratkozhat/i, why: "offers the reader an unsubscribe" },
@@ -69,4 +70,38 @@ describe("email copy: nothing that talks the reader out of staying", () => {
       expect(hits.length).toBe(0);
     });
   }
+});
+
+// Campaign (outreach) mail offers no way out at all, by owner decision on
+// 2026-07-28: no unsubscribe link in the body, and no List-Unsubscribe header
+// for a mail client to build its own button from. That header used to be fed by
+// a caller-supplied `listUnsubscribeUrl` on SendTarget, so the guard here is
+// that the field is gone AND that both header writes still sit inside the
+// lifecycle-only branch. What deliberately stays: `email_optouts` suppression
+// (the addresses that already opted out must never be mailed again) and the
+// `/api/emails/optout-*` routes, because mail already delivered links to them.
+describe("campaign mail offers no exit", () => {
+  const emailsDir = join(import.meta.dir, "..", "..", "src", "domain", "emails");
+  const stripComments = (src: string): string =>
+    src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  test("only lifecycle mail attaches List-Unsubscribe", () => {
+    const src = stripComments(readFileSync(join(emailsDir, "send.ts"), "utf8"));
+    // The whole campaign path went through this one field.
+    expect(src).not.toContain("listUnsubscribeUrl");
+    // Both writes, and only those two, live under the lifecycle guard.
+    const writes = [...src.matchAll(/extraHeaders\["List-Unsubscribe(?:-Post)?"\]/g)];
+    expect(writes.length).toBe(2);
+    const guard = /if \(category === "lifecycle" && unsubscribeToken\) \{([\s\S]*?)\n {2}\}/.exec(
+      src,
+    );
+    expect(guard).not.toBeNull();
+    expect(guard?.[1]).toContain('extraHeaders["List-Unsubscribe"]');
+    expect(guard?.[1]).toContain('extraHeaders["List-Unsubscribe-Post"]');
+  });
+
+  test("no template renders an opt-out link", () => {
+    const src = stripComments(readFileSync(join(emailsDir, "templates.ts"), "utf8"));
+    expect(src).not.toContain("optOutUrl");
+  });
 });

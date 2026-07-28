@@ -562,9 +562,6 @@ export interface PlannerSuggestedInvitePayload {
   businessName: string;
   /** Full activation URL with the single-use token. One click to take over. */
   activateUrl: string;
-  /** Address-level suppression link, rendered as a secondary link. Clicking it
-   *  also retires the dormant account, which is what the data note promises. */
-  optOutUrl: string;
   /** Human date the guest window runs until, already formatted for `locale`. */
   guestUntil: string;
   locale: "hu" | "en";
@@ -619,8 +616,6 @@ export interface VendorClaimCampaignPayload {
   city: string;
   /** Tracked redirect that lands on the claim form in one click. */
   inviteUrl: string;
-  /** Address-level suppression link, rendered as a secondary link. */
-  optOutUrl: string;
   monthlyVisitors: number;
   /** Free months the live offer grants, 12 or 3. 0 when both cohorts are full,
    *  in which case the copy drops the free-window sentence entirely rather than
@@ -2899,8 +2894,10 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         `Tarts velünk az első fejezettől: a következő két évben a vendégünk vagy, minden funkcióval. A vendégidőszak vége: ${p.guestUntil}`,
         // The data note is the price of writing to someone who never asked. It
         // names the source, the purpose and the legal basis, and it lists the
-        // rights in full, but it does NOT advertise the way out: the link is
-        // there for whoever wants it (see feedback on negative email copy).
+        // rights in full. Since 2026-07-28 the reply-to-us address is the whole
+        // of the objection path: the unsubscribe link that used to sit in the
+        // secondary links is gone, by owner decision, so this sentence is the
+        // only exit the mail names and must stay exactly as concrete as it is.
         `Az adatokról őszintén: a nevedet, az e-mail-címedet és a telefonszámodat nyilvánosan, üzleti elérhetőségként közzétett forrásból gyűjtöttük, és kizárólag ezt a megkeresést szolgálják. Harmadik félnek nem adjuk tovább. Az adatkezelés jogalapja a GDPR 6. cikk (1) f) pontja szerinti jogos érdek, és minden jogod megvan vele szemben: az adataid másolatát, javítását, korlátozását vagy törlését bármikor kérheted, és tiltakozhatsz a kezelésük ellen. Egy levél a ${CONFIG.supportEmail} címre elég, ember olvassa. Részletek: ${CONFIG.frontendBaseUrl}/privacy`,
       ],
       cta: "Fiók átvétele",
@@ -2909,7 +2906,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       secondaryLinks: [
         { label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl },
         { label: "Adatkezelési tájékoztató", url: `${CONFIG.frontendBaseUrl}/privacy` },
-        { label: "Leiratkozás", url: p.optOutUrl },
       ],
     },
     en: {
@@ -2927,7 +2923,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       secondaryLinks: [
         { label: "What is Weddly?", url: CONFIG.frontendBaseUrl },
         { label: "Privacy policy", url: `${CONFIG.frontendBaseUrl}/privacy` },
-        { label: "Unsubscribe", url: p.optOutUrl },
       ],
     },
   }),

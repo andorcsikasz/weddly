@@ -96,13 +96,6 @@ export interface SendTarget {
    * caller is responsible for signing whatever token it embeds.
    */
   trackingPixelUrl?: string;
-  /**
-   * RFC 8058 one-click unsubscribe target for mail that is NOT lifecycle and
-   * therefore has no `email_preferences` token, i.e. cold outreach to an
-   * address with no account. Gmail's bulk-sender rules want the header on any
-   * high-volume send regardless of our internal category.
-   */
-  listUnsubscribeUrl?: string;
 }
 
 interface SendResult {
@@ -255,6 +248,15 @@ async function sendKindInner<K extends EmailKind>(
   // for any sender > 5k recipients/day. The header URL points at the backend
   // endpoint (no JS, returns a tiny HTML confirmation on GET, flips the flag
   // silently on POST) so Gmail's auto-unsubscribe bot can complete in one hit.
+  //
+  // LIFECYCLE ONLY, by owner decision (2026-07-28). Campaign mail used to carry
+  // the same pair via a caller-supplied `listUnsubscribeUrl`; that branch is
+  // gone, so no outreach send advertises a way out any more. Note what did NOT
+  // change: `email_optouts` is still consulted before every send, so the
+  // addresses that already opted out stay suppressed for good, and the
+  // `/api/emails/optout-*` routes stay up because mail already sitting in
+  // inboxes links to them.
+  //
   // Per-kind `replyTo` overrides land in the same map — supplier_outreach
   // sets it to the couple owner's email so a vendor's reply lands in the
   // couple's inbox instead of `CONFIG.supportEmail`.
@@ -262,11 +264,6 @@ async function sendKindInner<K extends EmailKind>(
   if (category === "lifecycle" && unsubscribeToken) {
     extraHeaders["List-Unsubscribe"] =
       `<${CONFIG.frontendBaseUrl}/api/unsubscribe/${unsubscribeToken}>`;
-    extraHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
-  } else if (target.listUnsubscribeUrl) {
-    // Cold outreach: the recipient has no preferences row to hold a token, so
-    // the caller supplies its own suppression endpoint.
-    extraHeaders["List-Unsubscribe"] = `<${target.listUnsubscribeUrl}>`;
     extraHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
   }
   if (built.replyTo) {

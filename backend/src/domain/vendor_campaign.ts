@@ -468,10 +468,6 @@ function pixelUrl(sendId: number): string {
   return `${CONFIG.frontendBaseUrl}/api/emails/track/campaign?t=${makeCampaignPixelToken(sendId)}`;
 }
 
-function optOutUrl(sendId: number): string {
-  return `${CONFIG.frontendBaseUrl}/email-optout/${makeCampaignOptOutToken(sendId)}`;
-}
-
 /** Free-window promise for the invite copy, in months. The claim itself calls
  *  `initVendorBilling`, which re-resolves the tier at that moment, so a mail
  *  sent on the last founding slot can promise a year that the claim no longer
@@ -525,7 +521,6 @@ async function sendOne(
       categoryLabel: supplierCategoryLabel(target.category, target.locale),
       city: target.city,
       inviteUrl: inviteUrl(claim.token),
-      optOutUrl: optOutUrl(sendId),
       monthlyVisitors: VENDOR_CAMPAIGN_MONTHLY_VISITORS,
       freeMonths: offerMonths(),
       locale: target.locale,
@@ -535,7 +530,6 @@ async function sendOne(
       guest: { email: target.email, full_name: target.listing_name },
       guestLocale: target.locale,
       trackingPixelUrl: pixelUrl(sendId),
-      listUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/api/emails/optout/${makeCampaignOptOutToken(sendId)}`,
     },
   );
 
@@ -642,7 +636,6 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
         categoryLabel: supplierCategoryLabel(row.category, locale),
         city: displayCity(listing.city),
         inviteUrl: inviteUrl(row.claim_token as string),
-        optOutUrl: optOutUrl(row.id),
         monthlyVisitors: VENDOR_CAMPAIGN_MONTHLY_VISITORS,
         freeMonths: offerMonths(),
         locale,
@@ -652,7 +645,6 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
         guest: { email: row.email, full_name: listing.name },
         guestLocale: locale,
         trackingPixelUrl: pixelUrl(row.id),
-        listUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/api/emails/optout/${makeCampaignOptOutToken(row.id)}`,
       },
     );
     // Stamp regardless of outcome: this is a one-shot nudge, and retrying a
