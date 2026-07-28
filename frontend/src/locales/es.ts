@@ -439,6 +439,10 @@ const es: LocaleMessages = {
       "Ya existe una cuenta con este correo. Ponte en contacto con el equipo de Weddly.",
     form_err_already_claimed: "Otra persona acaba de reclamar esta ficha.",
     success_toast: "¡Bienvenido a Weddly! La ficha es tuya.",
+    planner_title: "Tu sitio está en el lado de organización",
+    planner_body:
+      "{name} aparece como wedding planner, y los planners tienen otra cuenta en Weddly: planificas junto a la pareja en su espacio de trabajo en vez de anunciarte en el catálogo de proveedores. Regístrate ahí y vincularemos esta ficha contigo.",
+    planner_cta: "Registrarme como wedding planner",
   },
   vendor_activate: {
     page_title: "Activa tu cuenta de proveedor",
@@ -4786,6 +4790,10 @@ const es: LocaleMessages = {
         sentToast: "Solicitud de reclamación enviada",
         sentBody:
           "Enviamos un enlace de confirmación al correo de contacto de la ficha y se avisó al equipo de administración.",
+        plannerTitle: "¿Es tuyo este negocio de organización?",
+        plannerBody:
+          "Los wedding planners tienen su propia cuenta en Weddly: planificas junto a la pareja en su espacio de trabajo en vez de anunciarte en el catálogo de proveedores. Regístrate ahí y vincularemos esta ficha contigo.",
+        plannerCta: "Registrarme como wedding planner",
       },
       hero: {
         noPhotoYet: "Todavía no hay fotos",
@@ -5037,6 +5045,16 @@ const es: LocaleMessages = {
       reviews_tooltip: "{n} reseñas públicas",
       remind: "Enviar recordatorio",
       remind_success: "Recordatorio enviado.",
+      to_planner: "Pasar al lado de organización",
+      to_planner_confirm_title: "¿Pasar al lado de organización?",
+      to_planner_confirm_body:
+        "{name} pasa a ser una cuenta de wedding planner. No se deshace con un clic.",
+      to_planner_keeps: "El acceso no cambia: entra igual, pero aterriza en el espacio de planner.",
+      to_planner_releases:
+        "La ficha del catálogo vuelve a estar sin reclamar y las parejas conservan sus solicitudes.",
+      to_planner_deletes:
+        "Se borra la cuenta de proveedor y con ella el calendario, las tareas, los pagos de clientes y los puntos.",
+      to_planner_success: "Pasó al lado de organización.",
       subscription: "Suscripción",
       plan: "Plan",
       plan_free: "Gratis",

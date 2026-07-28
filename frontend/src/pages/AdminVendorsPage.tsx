@@ -21,6 +21,7 @@ import {
   Bird,
   CalendarClock,
   Check,
+  ClipboardList,
   Clock,
   CreditCard,
   DollarSign,
@@ -509,6 +510,38 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
     void run(() => adminVendorMgmtApi.remindIncomplete(vendor.id), "admin.vendors.remind_success");
   }
 
+  // Reroute to the planner side. Confirms hard: this deletes the vendor account
+  // (and with it availability / tasks / payments), so the dialog spells out what
+  // survives and what doesn't rather than asking "are you sure?".
+  async function handleConvertToPlanner() {
+    const ok = await confirm({
+      title: t("admin.vendors.to_planner_confirm_title"),
+      body: (
+        <div className="space-y-2 text-sm">
+          <p>{t("admin.vendors.to_planner_confirm_body", { name: vendor.display_name })}</p>
+          <ul className="list-disc space-y-1 pl-5 text-ink-600 dark:text-umber-200">
+            <li>{t("admin.vendors.to_planner_keeps")}</li>
+            <li>{t("admin.vendors.to_planner_releases")}</li>
+            <li>{t("admin.vendors.to_planner_deletes")}</li>
+          </ul>
+        </div>
+      ),
+      confirmLabel: t("admin.vendors.to_planner"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    void run(
+      () => adminVendorMgmtApi.convertToPlanner(vendor.id),
+      "admin.vendors.to_planner_success",
+    );
+  }
+
+  // A vendor sitting in the planner category is the mis-route this action
+  // exists for, so their button is labelled louder. It stays available on every
+  // active vendor: the category is only a hint, the admin knows the real case.
+  const looksLikePlanner = vendor.categories.includes("wedding_planner");
+
   // Localized names of the still-empty listing sections, for the "incomplete"
   // badge tooltip. Order follows the object key order (photos → availability).
   const missingLabels = vendor.listing_missing
@@ -793,6 +826,24 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
                     {busy ? <Loader2 size={15} className="animate-spin" /> : <BellRing size={15} />}
                   </button>
                 )}
+                <button
+                  type="button"
+                  className={
+                    looksLikePlanner
+                      ? `${iconBtnClass} !border-blush-300 !text-blush-700 dark:!border-blush-500 dark:!text-blush-300`
+                      : iconBtnClass
+                  }
+                  onClick={handleConvertToPlanner}
+                  disabled={busy}
+                  aria-label={t("admin.vendors.to_planner")}
+                  title={t("admin.vendors.to_planner")}
+                >
+                  {busy ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <ClipboardList size={15} />
+                  )}
+                </button>
                 <button
                   type="button"
                   className={iconBtnClass}

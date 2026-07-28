@@ -669,6 +669,13 @@ export interface VendorClaimApprovedPayload {
   managerUrl: string;
 }
 
+export interface VendorMovedToPlannerPayload {
+  /** The business name their vendor account carried, so they recognise it. */
+  businessName: string;
+  /** Where their account lives now, typically /planner. */
+  plannerUrl: string;
+}
+
 export interface SupplierOutreachPayload {
   /** "Mia & Lucas", couple's display name. Used in the From label and the
    *  opening line so the vendor knows who's writing. */
@@ -849,6 +856,7 @@ export type KindPayload = {
   vendor_claim_verify: VendorClaimVerifyPayload;
   vendor_claim_admin_alert: VendorClaimAdminAlertPayload;
   vendor_claim_approved: VendorClaimApprovedPayload;
+  vendor_moved_to_planner: VendorMovedToPlannerPayload;
   supplier_outreach: SupplierOutreachPayload;
   planner_access_requested: PlannerAccessRequestedPayload;
   planner_message: PlannerMessagePayload;
@@ -3353,6 +3361,34 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Questions or anything off? Reply to this email, a human reads it.",
       ],
       cta: "Manage your listing",
+    },
+  }),
+
+  // An admin moved a mis-routed vendor account over to the planner side. Sent
+  // because the alternative is silent: their vendor dashboard is simply gone at
+  // the next sign-in. Framed as "we put you in the right place", not as a
+  // downgrade, and it never mentions the mistake being ours or theirs.
+  vendor_moved_to_planner: (p, ctx) => ({
+    subject: `A fiókod átkerült a szervezői oldalra / Your account moved to the planner side`,
+    ctaUrl: p.plannerUrl,
+    hu: {
+      preheader: `${p.businessName}: mostantól szervezői fiók.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `A ${p.businessName} fiókját átraktuk a Weddly szervezői oldalára, mert az esküvőszervezés nálunk külön eszközkészletet kap.`,
+        "A belépésed változatlan: ugyanaz az e-mail cím és jelszó. Belépés után a szervezői felület fogad, ahol a párokkal közös munkaterületen dolgozol, nem katalógusban hirdetsz.",
+        "Ha kérdésed van vagy mégis szolgáltatóként hirdetnél, válaszolj erre az e-mailre, emberek olvassák.",
+      ],
+      cta: "Szervezői felület",
+    },
+    en: {
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `We moved ${p.businessName} over to the planner side of Weddly, where wedding planning gets its own toolset.`,
+        "Your sign-in is unchanged: same email, same password. Next time you log in you'll land on the planner workspace, where you plan alongside couples instead of advertising in the catalog.",
+        "Questions, or you'd rather be listed as a supplier after all? Reply to this email, a human reads it.",
+      ],
+      cta: "Open the planner workspace",
     },
   }),
 

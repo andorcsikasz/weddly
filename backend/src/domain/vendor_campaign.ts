@@ -19,7 +19,7 @@
 // opens, and why sends are keyed by address rather than by listing.
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { supplierCategoryLabel } from "@shared/suppliers";
+import { isVendorSelfServeBlocked, supplierCategoryLabel } from "@shared/suppliers";
 import {
   type CreateVendorCampaignInput,
   type UpdateVendorCampaignInput,
@@ -266,6 +266,9 @@ export function updateCampaign(id: number, patch: UpdateVendorCampaignInput): Ve
  *    - already written to in THIS campaign: one mail per address
  *    - an address that already has a `users` row: claim-complete refuses those
  *      with 409 email_taken, so the invite would dead-end at the form
+ *    - wedding planners: the mail's whole promise is "take over your vendor
+ *      profile", and claim now refuses their category. Inviting them was how a
+ *      planner ended up holding a vendor account in the first place.
  *
  *  The country filter is applied in TS rather than SQL because country is
  *  derived from the id + city, not stored on the row. */
@@ -296,6 +299,7 @@ function eligibleTargets(opts: {
   const seen = new Set<string>();
   for (const row of rows) {
     if (out.length >= opts.limit) break;
+    if (isVendorSelfServeBlocked(row.category)) continue;
     const email = normalizeEmail(row.contact_email);
     // Two listings can share one inbox (a venue group, a studio with a second
     // brand). The UNIQUE index would reject the second insert anyway; skipping

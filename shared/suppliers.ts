@@ -261,6 +261,31 @@ export const SUPPLIER_GROUPS: SupplierGroupDef[] = [
   { id: "transport", categories: ["transport"] },
 ];
 
+/** Categories that exist in the taxonomy but must never mint a VENDOR account
+ *  through a self-serve door.
+ *
+ *  A wedding planner is a different product relationship: they don't sell a
+ *  service out of the catalog, they get invited into the couple's workspace and
+ *  plan alongside them, on their own subscription and their own app shell. So
+ *  `wedding_planner` stays a perfectly good DIRECTORY category (curated entries,
+ *  community suggestions, the `/app/suppliers` chain, admin edits) while every
+ *  funnel that ends in `users.role='vendor'` refuses it and points at
+ *  `/planners` instead: signup, listing-claim, and the cold claim-invite
+ *  campaign that hands out claim links.
+ *
+ *  This lives here, next to the taxonomy, because the rule is a property of the
+ *  category — a copy of it in one route is exactly how a planner ends up in the
+ *  vendor funnel through the door nobody patched. */
+export const VENDOR_SELF_SERVE_BLOCKED_CATEGORIES: ReadonlySet<string> = new Set<string>([
+  "wedding_planner",
+]);
+
+/** True when this category may NOT be self-registered / self-claimed as a vendor.
+ *  Tolerates any string so callers can pass a raw DB column. */
+export function isVendorSelfServeBlocked(category: string | null | undefined): boolean {
+  return category != null && VENDOR_SELF_SERVE_BLOCKED_CATEGORIES.has(category);
+}
+
 /** What a guest-count range MEANS for a category, or null when the question is
  *  meaningless there.
  *

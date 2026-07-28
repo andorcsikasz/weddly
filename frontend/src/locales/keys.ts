@@ -630,6 +630,13 @@ export interface LocaleMessages {
     form_err_email_taken: string;
     form_err_already_claimed: string;
     success_toast: string;
+    /** Shown instead of the password form when the listing's category is a
+     *  wedding planner's — they get an account on the planner side, not a
+     *  vendor one. */
+    planner_title: string;
+    /** Receives `{name}` — listing display name. */
+    planner_body: string;
+    planner_cta: string;
   };
   /** Vendor onboarding "activate" screen — the accepted-waitlist → live vendor
    *  flow. Reached via /vendor/activate/:token from the accept email. No card:
@@ -5394,6 +5401,12 @@ export interface LocaleMessages {
         sending: string;
         sentToast: string;
         sentBody: string;
+        /** Wedding-planner listings get the planner signup here instead of the
+         *  claim button: claiming would mint a vendor account, which the API
+         *  refuses for this category. */
+        plannerTitle: string;
+        plannerBody: string;
+        plannerCta: string;
       };
       /** Hero-image fallback copy when the listing has no photo yet. */
       hero: {
@@ -5676,6 +5689,17 @@ export interface LocaleMessages {
       reviews_tooltip: string;
       remind: string;
       remind_success: string;
+      /** "Move to the planner side" — the repair for a wedding planner who came
+       *  in through a vendor door. The confirm spells out what survives and what
+       *  the vendor-account delete takes with it. */
+      to_planner: string;
+      to_planner_confirm_title: string;
+      /** Receives `{name}` — the vendor's display name. */
+      to_planner_confirm_body: string;
+      to_planner_keeps: string;
+      to_planner_releases: string;
+      to_planner_deletes: string;
+      to_planner_success: string;
       subscription: string;
       plan: string;
       plan_free: string;

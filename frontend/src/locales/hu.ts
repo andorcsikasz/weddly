@@ -425,6 +425,10 @@ const hu: LocaleMessages = {
       "Ezzel az email címmel már létezik fiók. Lépj kapcsolatba a Weddly csapatával.",
     form_err_already_claimed: "Ezt a hirdetést időközben átvette valaki.",
     success_toast: "Üdvözlünk a Weddly-n! A hirdetés már a tiéd.",
+    planner_title: "Te a szervezői oldalra tartozol",
+    planner_body:
+      "A(z) {name} esküvőszervezőként szerepel nálunk, a szervezők pedig más fiókot kapnak a Weddly-n: nem a szolgáltatói katalógusban hirdetsz, hanem a pár munkaterületén dolgozol velük együtt. Regisztrálj ott, a hirdetést pedig hozzád kötjük.",
+    planner_cta: "Regisztráció szervezőként",
   },
   vendor_activate: {
     page_title: "Aktiváld a vendor fiókod",
@@ -4738,6 +4742,10 @@ const hu: LocaleMessages = {
         sentToast: "Az igénylés elindult",
         sentBody:
           "Megerősítő linket küldtünk a hirdetés címére, és az adminok is megkapták a kérést.",
+        plannerTitle: "A tiéd ez a szervezői profil?",
+        plannerBody:
+          "Az esküvőszervezők saját fiókot kapnak a Weddly-n: nem a szolgáltatói katalógusban hirdetsz, hanem a pár munkaterületén dolgozol velük együtt. Regisztrálj ott, a hirdetést pedig hozzád kötjük.",
+        plannerCta: "Regisztráció szervezőként",
       },
       hero: {
         noPhotoYet: "Még nincs feltöltött fotó",
@@ -4988,6 +4996,16 @@ const hu: LocaleMessages = {
       reviews_tooltip: "{n} nyilvános értékelés",
       remind: "Emlékeztető küldése",
       remind_success: "Emlékeztető elküldve.",
+      to_planner: "Átteszem szervezőnek",
+      to_planner_confirm_title: "Átteszed a szervezői oldalra?",
+      to_planner_confirm_body:
+        "A(z) {name} szervezői fiók lesz. Egy kattintással nem lehet visszacsinálni.",
+      to_planner_keeps: "A belépés ugyanaz marad, csak a szervezői felületen köt ki.",
+      to_planner_releases:
+        "A katalógushirdetés visszakerül átvehető állapotba, a párok megkeresései megmaradnak.",
+      to_planner_deletes:
+        "A szolgáltatói fiók törlődik, vele a naptár, a feladatok, az ügyfélfizetések és a pontok.",
+      to_planner_success: "Átkerült a szervezői oldalra.",
       subscription: "Előfizetés",
       plan: "Csomag",
       plan_free: "Ingyenes",

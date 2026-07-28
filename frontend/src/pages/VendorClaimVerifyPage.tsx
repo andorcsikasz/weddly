@@ -42,7 +42,11 @@ type State =
   | { kind: "invalid" }
   | { kind: "expired" }
   | { kind: "cancelled" }
-  | { kind: "already_verified" };
+  | { kind: "already_verified" }
+  /** The listing is a wedding planner's: claiming it would mint a vendor
+   *  account, which is the wrong product for them. Sends them to /planners
+   *  instead of failing. Reachable from links minted before the guard existed. */
+  | { kind: "planner"; view: ClaimVerifyView };
 
 export default function VendorClaimVerifyPage() {
   const { token = "" } = useParams<{ token: string }>();
@@ -66,7 +70,8 @@ export default function VendorClaimVerifyPage() {
       .verify(token)
       .then((res) => {
         if (cancelled) return;
-        if (res.claim.status === "expired") setState({ kind: "expired" });
+        if (res.claim.blocked === "planner") setState({ kind: "planner", view: res.claim });
+        else if (res.claim.status === "expired") setState({ kind: "expired" });
         else if (res.claim.status === "cancelled") setState({ kind: "cancelled" });
         else if (res.claim.status === "verified") setState({ kind: "already_verified" });
         else setState({ kind: "form", view: res.claim });
@@ -141,6 +146,23 @@ export default function VendorClaimVerifyPage() {
                 <Skeleton variant="line" height={12} width="85%" />
                 <Skeleton variant="line" height={12} width="55%" />
               </div>
+            </>
+          ) : state.kind === "planner" ? (
+            <>
+              <h1 className="text-2xl">{t("vendor_claim.planner_title")}</h1>
+              <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">
+                {t("vendor_claim.planner_body", { name: state.view.listing_name })}
+              </p>
+              <p className="mt-6">
+                <Link to="/planners" className="btn-primary w-full justify-center">
+                  {t("vendor_claim.planner_cta")}
+                </Link>
+              </p>
+              <p className="mt-3 text-center">
+                <Link to="/" className="btn-ghost">
+                  {t("vendor_claim.page_home")}
+                </Link>
+              </p>
             </>
           ) : state.kind === "form" || state.kind === "completing" ? (
             <>

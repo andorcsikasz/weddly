@@ -420,6 +420,10 @@ const en: LocaleMessages = {
     form_err_email_taken: "An account already exists with this email. Contact the Weddly team.",
     form_err_already_claimed: "Someone else just claimed this listing.",
     success_toast: "Welcome to Weddly! The listing is yours.",
+    planner_title: "You belong on the planner side",
+    planner_body:
+      "{name} is listed as a wedding planner, and planners get a different account on Weddly: you plan alongside the couple in their workspace instead of advertising in the supplier catalog. Sign up there and we'll link this listing to you.",
+    planner_cta: "Sign up as a planner",
   },
   vendor_activate: {
     page_title: "Activate your vendor account",
@@ -4686,6 +4690,10 @@ const en: LocaleMessages = {
         sentToast: "Claim request sent",
         sentBody:
           "We emailed a confirmation link to the listing's contact address, and the admin team was notified.",
+        plannerTitle: "Is this your planner business?",
+        plannerBody:
+          "Wedding planners get their own account on Weddly: you plan alongside the couple in their workspace instead of advertising in the supplier catalog. Sign up there and we'll link this listing to you.",
+        plannerCta: "Sign up as a planner",
       },
       hero: {
         noPhotoYet: "No photos yet",
@@ -4936,6 +4944,16 @@ const en: LocaleMessages = {
       reviews_tooltip: "{n} public reviews",
       remind: "Send reminder",
       remind_success: "Reminder sent.",
+      to_planner: "Move to the planner side",
+      to_planner_confirm_title: "Move to the planner side?",
+      to_planner_confirm_body:
+        "{name} becomes a planner account. This can't be undone in one click.",
+      to_planner_keeps: "Same email and password, they just land on the planner workspace.",
+      to_planner_releases:
+        "The directory listing goes back to unclaimed, and couples keep their inquiries.",
+      to_planner_deletes:
+        "The vendor account goes, and with it availability, tasks, client payments and points.",
+      to_planner_success: "Moved to the planner side.",
       subscription: "Subscription",
       plan: "Plan",
       plan_free: "Free",

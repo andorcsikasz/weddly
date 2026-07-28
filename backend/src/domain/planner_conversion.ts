@@ -15,6 +15,7 @@
 
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
+import { HttpError } from "../lib/http";
 import { grantPlannerAccount, plannerPlanMaxClients, waitlistPlanToPlannerPlan } from "./planner";
 import { initPlannerBilling } from "./planner_billing";
 import { getUserById, isAdminEmail } from "./users";
@@ -127,6 +128,127 @@ export function convertUserToPlanner(userId: number): { seeded: boolean } {
   const row = user ? getLatestAcceptedWaitlistSeedRowByEmail(user.email) : null;
   if (row) seedPlannerProfileFromWaitlist(userId, row);
   return { seeded: !!row };
+}
+
+/** What a vendor→planner reroute did, so the admin sees the blast radius rather
+ *  than an "ok: true" that hides a deleted calendar. */
+export interface VendorToPlannerResult {
+  user_id: number;
+  /** Listings handed back to the directory as unclaimed entries. */
+  listings_released: number;
+  /** Couple inquiries that survived, unlinked (supplier_bookings is SET NULL). */
+  bookings_unlinked: number;
+  /** Vendor-side rows the cascade removed: availability, tasks, payments,
+   *  points, calendar link. Zero for the case this was built for (a planner who
+   *  never used the vendor tools), non-zero is the admin's warning. */
+  vendor_rows_deleted: number;
+  /** Planner profile fields filled from an accepted /planners application. */
+  seeded_from_waitlist: boolean;
+}
+
+/** Move a mis-routed VENDOR account over to the planner side — the repair for
+ *  someone who came in through a vendor door (self-serve signup, or a listing
+ *  claim on a `wedding_planner` directory entry) when their business is
+ *  planning. Admin-only and deliberate: the two account kinds are separate
+ *  aggregates, so this is a move, not a flag.
+ *
+ *  What survives: the person's login (same email, same password, still verified
+ *  — they simply land on the planner shell next time), their directory card
+ *  (released back to unclaimed, so the public page keeps working and a future
+ *  admin can re-point it), and every couple's inquiry row.
+ *
+ *  What goes: the `vendor_accounts` row and everything the FK cascade owns —
+ *  vendor subscription, availability, tasks, client payments, points, calendar
+ *  connection. Keeping it would leave a zombie: `role` no longer passes the
+ *  vendor gate, yet the listing would still advertise a bookable account.
+ *
+ *  Billing restarts on the planner side via `initPlannerBilling` (founding
+ *  while slots remain, else the standard trial) — the same grant a genuine
+ *  applicant gets, not a comp. */
+export function convertVendorToPlanner(vendorAccountId: number): VendorToPlannerResult {
+  const account = db
+    .prepare(
+      "SELECT id, owner_user_id, display_name, company_name FROM vendor_accounts WHERE id = ?",
+    )
+    .get(vendorAccountId) as
+    | { id: number; owner_user_id: number; display_name: string; company_name: string | null }
+    | undefined;
+  if (!account) throw new HttpError(404, "Vendor not found");
+
+  const user = getUserById(account.owner_user_id);
+  if (!user) throw new HttpError(404, "Vendor owner not found");
+  if (isAdminEmail(user.email)) throw new HttpError(400, "Cannot convert an admin account");
+
+  const ts = now();
+  const businessName = (account.company_name?.trim() || account.display_name.trim()).slice(0, 120);
+
+  const move = db.transaction((): Omit<VendorToPlannerResult, "seeded_from_waitlist"> => {
+    // Count what the cascade is about to take, BEFORE it happens — after the
+    // DELETE the rows are gone and the report would read "nothing happened".
+    const vendorRows = countVendorOwnedRows(vendorAccountId);
+    const bookings = (
+      db
+        .prepare("SELECT COUNT(*) AS n FROM supplier_bookings WHERE vendor_account_id = ?")
+        .get(vendorAccountId) as { n: number }
+    ).n;
+
+    // Release the directory cards first: they outlive the account (curated and
+    // community entries were public before anyone claimed them) and the FK
+    // would only null this column out anyway.
+    const released = db
+      .prepare(
+        "UPDATE listings SET vendor_account_id = NULL, updated_at = ? WHERE vendor_account_id = ?",
+      )
+      .run(ts, vendorAccountId).changes;
+
+    // `role` is single-valued, so leaving 'vendor' would keep them out of the
+    // planner shell. business_name only fills when empty — a planner who
+    // already typed their own keeps it.
+    db.prepare(
+      `UPDATE users
+          SET role = 'owner',
+              business_name = COALESCE(NULLIF(business_name, ''), ?),
+              updated_at = ?
+        WHERE id = ?`,
+    ).run(businessName, ts, account.owner_user_id);
+
+    db.prepare("DELETE FROM vendor_accounts WHERE id = ?").run(vendorAccountId);
+
+    return {
+      user_id: account.owner_user_id,
+      listings_released: released,
+      bookings_unlinked: bookings,
+      vendor_rows_deleted: vendorRows,
+    };
+  });
+
+  const moved = move();
+  // Outside the tx: grantPlannerAccount + initPlannerBilling open their own, and
+  // the seed reads the users row we just wrote.
+  const { seeded } = convertUserToPlanner(account.owner_user_id);
+  return { ...moved, seeded_from_waitlist: seeded };
+}
+
+/** Vendor-side rows that `DELETE FROM vendor_accounts` cascades away. Counted so
+ *  the admin action can report real data loss instead of implying none. */
+function countVendorOwnedRows(vendorAccountId: number): number {
+  const tables = [
+    "vendor_subscriptions",
+    "vendor_unavailable_dates",
+    "vendor_availability_settings",
+    "vendor_client_payments",
+    "vendor_tasks",
+    "vendor_google_calendar_connections",
+    "vendor_points_ledger",
+  ];
+  let total = 0;
+  for (const table of tables) {
+    const row = db
+      .prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE vendor_account_id = ?`)
+      .get(vendorAccountId) as { n: number } | undefined;
+    total += row?.n ?? 0;
+  }
+  return total;
 }
 
 /** Boot reconciler: heal every accepted planner applicant who currently holds a

@@ -10,12 +10,14 @@ import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { purgeOneUser } from "../domain/purge";
 import { setVendorListingCategory } from "../domain/listings";
+import { convertVendorToPlanner } from "../domain/planner_conversion";
+import { sendKind } from "../domain/emails/send";
 import {
   isVendorListingIncomplete,
   sendVendorIncompleteReminder,
   vendorListingMissing,
 } from "../domain/vendor_profile";
-import { getUserByEmail, setUserStatus } from "../domain/users";
+import { getUserByEmail, getUserById, setUserStatus } from "../domain/users";
 import { requireAdmin } from "../domain/users";
 import {
   getVendorAccountById,
@@ -79,6 +81,59 @@ function handleSuspend(ctx: Ctx): Response {
 
 function handleReactivate(ctx: Ctx): Response {
   return setVendorStatus(ctx, "active");
+}
+
+/** Reroute a mis-routed vendor to the planner side (KEZELÉS → Szolgáltatók →
+ *  "Átteszem szervezőnek"). The motivating case is a wedding planner who came in
+ *  through a vendor door — self-serve signup before the category was blocked, or
+ *  a claim on a `wedding_planner` directory entry — and has been running the
+ *  wrong product ever since.
+ *
+ *  Non-destructive where it counts: same login, the directory card is released
+ *  back to unclaimed rather than deleted, and couples keep their inquiry rows.
+ *  The vendor-side operational data (availability, tasks, payments, points) does
+ *  go with the account, so the response reports the counts and the admin UI
+ *  shows them in the confirm step. */
+async function handleConvertToPlanner(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+  const account = getVendorAccountById(id);
+  if (!account) throw new HttpError(404, "Vendor not found");
+
+  const owner = getUserById(account.owner_user_id);
+  if (!owner) throw new HttpError(404, "Vendor owner not found");
+  if (owner.user_type === "planner") {
+    throw new HttpError(409, "Already a planner", { code: "already_planner" });
+  }
+
+  const result = convertVendorToPlanner(id);
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "admin.vendor_convert_to_planner",
+    target_kind: "user",
+    target_id: account.owner_user_id,
+    before: { vendor_account_id: id, display_name: account.display_name },
+    after: {
+      listings_released: result.listings_released,
+      bookings_unlinked: result.bookings_unlinked,
+      vendor_rows_deleted: result.vendor_rows_deleted,
+    },
+  });
+
+  // Tell them, or their vendor dashboard just vanishes on the next sign-in with
+  // no explanation. Fire-and-forget: a mailer hiccup must not fail the move.
+  void sendKind(
+    "vendor_moved_to_planner",
+    {
+      businessName: account.display_name,
+      plannerUrl: `${CONFIG.frontendBaseUrl}/planner`,
+    },
+    { user: { id: owner.id, email: owner.email, full_name: owner.full_name ?? "" } },
+  );
+
+  return json({ ok: true, ...result });
 }
 
 function handleDelete(ctx: Ctx): Response {
@@ -347,6 +402,7 @@ export function registerAdminVendorRoutes(router: Router) {
   router.post("/api/admin/vendors/:id/suspend", handleSuspend, true);
   router.post("/api/admin/vendors/:id/reactivate", handleReactivate, true);
   router.post("/api/admin/vendors/:id/remind-incomplete", handleRemindIncomplete, true);
+  router.post("/api/admin/vendors/:id/convert-to-planner", handleConvertToPlanner, true);
   router.patch("/api/admin/vendors/:id", handleUpdate, true);
   router.delete("/api/admin/vendors/:id", handleDelete, true);
   router.patch("/api/admin/vendors/onboarding/:id", handleUpdateOnboarding, true);

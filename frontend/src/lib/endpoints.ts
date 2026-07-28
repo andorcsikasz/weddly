@@ -2163,6 +2163,18 @@ export const adminVendorMgmtApi = {
       `/api/admin/vendors/${id}/remind-incomplete`,
       {},
     ),
+  /** Reroute a mis-routed vendor to the planner side: same login, listing
+   *  released back to unclaimed, vendor account (and its availability / tasks /
+   *  payments) removed. The counts come back so the UI can report what moved. */
+  convertToPlanner: (id: number) =>
+    apiFetch<{
+      ok: true;
+      user_id: number;
+      listings_released: number;
+      bookings_unlinked: number;
+      vendor_rows_deleted: number;
+      seeded_from_waitlist: boolean;
+    }>("POST", `/api/admin/vendors/${id}/convert-to-planner`, {}),
   update: (
     id: number,
     body: {

@@ -13,6 +13,7 @@
 
 import type { ClaimVerifyView, CompleteClaimInput, StartClaimInput } from "@shared/vendor_claim";
 import type { AuthSession } from "@shared/types";
+import { isVendorSelfServeBlocked } from "@shared/suppliers";
 import { hashPassword } from "../auth/password";
 import { issueSession } from "../auth/session";
 import { CONFIG } from "../config";
@@ -150,6 +151,15 @@ async function handleStart(ctx: Ctx): Promise<Response> {
   if (listing.vendor_account_id !== null) {
     throw new HttpError(409, "Listing already claimed", { code: "already_claimed" });
   }
+  // A planner listing is a directory card, not a vendor business: claiming it
+  // would mint `users.role='vendor'` for someone whose whole product is the
+  // planner workspace. Refuse before the mail goes out and point them at the
+  // door that fits — see VENDOR_SELF_SERVE_BLOCKED_CATEGORIES.
+  if (isVendorSelfServeBlocked(listing.category)) {
+    throw new HttpError(409, "Wedding planners sign up through the planner flow at /planners", {
+      code: "planner_use_planner_flow",
+    });
+  }
   if (!listing.contact_email) {
     throw new HttpError(409, "Listing has no contact email on file", {
       code: "no_contact_email",
@@ -219,6 +229,11 @@ function handleVerify(ctx: Ctx): Response {
     status: (claim.status as ClaimVerifyView["status"]) ?? "pending",
     expires_at: claim.expires_at,
     offer: currentVendorOffer(),
+    // Read-only, so this stays a 200 with the listing name intact: claims minted
+    // before the category guard (the cold invite campaign handed out links for
+    // planner listings) still resolve, and the page swaps the password form for
+    // "you belong in the planner flow" rather than dead-ending on an error.
+    blocked: isVendorSelfServeBlocked(listing.category) ? "planner" : null,
   };
   return json({ claim: view });
 }
@@ -245,6 +260,14 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
 
   const listing = getListingById(claim.listing_id);
   if (!listing) throw new HttpError(410, "Listing no longer exists");
+  // Second gate, for the tokens the first one can't reach: a claim minted before
+  // this guard existed (or before an admin re-categorised the listing) must not
+  // still be able to mint a vendor account.
+  if (isVendorSelfServeBlocked(listing.category)) {
+    throw new HttpError(409, "Wedding planners sign up through the planner flow at /planners", {
+      code: "planner_use_planner_flow",
+    });
+  }
   if (listing.vendor_account_id !== null) {
     // Pre-tx detection of "another claim already won". Cancel every pending
     // sibling so the email links rendered in inboxes don't lead to a token

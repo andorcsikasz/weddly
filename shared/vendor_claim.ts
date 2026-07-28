@@ -48,6 +48,10 @@ export interface ClaimVerifyView {
    *  Lets the page make the same promise the invite email made instead of
    *  hardcoding "one year" after the founding cohort has filled up. */
   offer: VendorOffer;
+  /** Set when the listing's category can never become a vendor account
+   *  (`"planner"` today). The page renders the "sign up as a planner instead"
+   *  panel; completing the claim would 409 anyway. */
+  blocked: "planner" | null;
 }
 
 /** POST /api/vendor/claim/start — anonymous, body shape. */

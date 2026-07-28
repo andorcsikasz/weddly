@@ -364,6 +364,10 @@ const STUBS: KindPayload = {
     listingName: "Bloom Studio",
     managerUrl: `${BASE_URL}/vendor`,
   },
+  vendor_moved_to_planner: {
+    businessName: "Ivory & Oak Weddings",
+    plannerUrl: `${BASE_URL}/planner`,
+  },
   supplier_outreach: {
     coupleDisplayName: "Mia & Lucas",
     coupleReplyEmail: "mia@example.com",

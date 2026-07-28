@@ -13,7 +13,11 @@
 
 import { randomBytes } from "node:crypto";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
-import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
+import {
+  isVendorSelfServeBlocked,
+  SUPPLIER_GROUPS,
+  type SupplierCategory,
+} from "@shared/suppliers";
 import type { AuthSession } from "@shared/types";
 import { vendorCurrencyForLocale } from "@shared/vendor_billing";
 import { hashPassword } from "../auth/password";
@@ -48,15 +52,6 @@ const VALID_CATEGORIES: ReadonlySet<string> = new Set([
   ...SUPPLIER_GROUPS.flatMap((g) => g.categories),
   "other",
 ]);
-
-/** Categories that exist in the taxonomy but are NOT self-selectable through
- *  vendor signup, because they are a different product relationship. A
- *  `wedding_planner` is a workspace COLLABORATOR the couple invites via the
- *  dedicated /planners flow, not a directory listing you cold-contact. Letting
- *  a planner self-register as a vendor is exactly the leak that seeds planner
- *  cards into the vendor catalog. The category stays valid everywhere else
- *  (admin-register, curated seed listings, the couple directory). */
-const SELF_SERVE_BLOCKED_CATEGORIES: ReadonlySet<string> = new Set(["wedding_planner"]);
 
 interface VendorRegisterBody {
   email?: unknown;
@@ -116,7 +111,7 @@ function parseCategory(raw: unknown): SupplierCategory {
   if (typeof raw !== "string" || !VALID_CATEGORIES.has(raw)) {
     throw new HttpError(400, "Pick a valid category");
   }
-  if (SELF_SERVE_BLOCKED_CATEGORIES.has(raw)) {
+  if (isVendorSelfServeBlocked(raw)) {
     throw new HttpError(400, "Wedding planners sign up through the planner flow at /planners", {
       code: "planner_use_planner_flow",
     });

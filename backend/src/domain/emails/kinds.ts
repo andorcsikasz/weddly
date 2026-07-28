@@ -72,6 +72,7 @@ export type EmailKind =
   | "vendor_claim_verify" // P2.C, sent to a listing's contact_email when someone clicks "this is mine"
   | "vendor_claim_admin_alert" // heads-up to admins the moment someone starts a listing claim
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
+  | "vendor_moved_to_planner" // admin rerouted a mis-routed vendor account to the planner side
   | "supplier_outreach" // P2.E, couple-initiated cold outreach to a shortlisted vendor
   | "planner_access_requested" // a planner asked a couple for workspace access, couple decides
   | "planner_message" // free-form planner → couple message (user-entered subject + body)
@@ -291,6 +292,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // password, clicked through), this is the success confirmation closing
   // that loop. They now have a Weddly vendor account.
   vendor_claim_approved: "transactional",
+  // Transactional: their account just changed kind. The vendor dashboard is
+  // gone on their next sign-in, so this is the only thing standing between the
+  // move and a support mail asking what happened. Never opt-out.
+  vendor_moved_to_planner: "transactional",
   // Outreach: the recipient is a shortlisted vendor; the couple initiated
   // the message via /app/outreach but the vendor has no Weddly account.
   // Reply-To is the couple's own email, so a reply goes straight to them
