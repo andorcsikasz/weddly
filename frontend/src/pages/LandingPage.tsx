@@ -43,7 +43,7 @@ const SeatingMockup = lazyWithReload(() =>
 const SubmitSupplierModal = lazyWithReload(() =>
   import("../components/SubmitSupplierModal").then((m) => ({ default: m.SubmitSupplierModal })),
 );
-import { DemoLaunchCard } from "../components/DemoLaunchCard";
+import { DemoLaunchButton } from "../components/DemoLaunchButton";
 import { NewsletterCapture } from "../components/NewsletterCapture";
 import { VendorSearchBar } from "../components/VendorSearchBar";
 import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
@@ -279,18 +279,23 @@ export default function LandingPage() {
         {/* Content layer */}
         <div className="hero-content-wrap">
           <div className="mx-auto flex min-h-[75svh] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
-            <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-14">
+            <div className="grid items-start gap-8 lg:items-center lg:gap-14">
               <div>
                 <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                   {t("landing.hero_title")}
                 </h1>
-                <div className="mt-4 max-w-[18ch] sm:mt-6 sm:max-w-md">
+                {/* Signup + demo sit side by side: sign up, or look around
+                    first. Stacked full-width on phones, inline from sm up.
+                    The phone width is 17rem rather than the h1's measure so
+                    "Demó indítása" + its arrow stay on one line. */}
+                <div className="mt-4 flex max-w-[17rem] flex-wrap items-center gap-3 sm:mt-6 sm:max-w-md">
                   <Link
                     to="/signup"
                     className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
                   >
                     {t("landing.cta_signup")}
                   </Link>
+                  <DemoLaunchButton className="w-full whitespace-nowrap sm:w-auto" />
                 </div>
                 {/* Role escape-hatch chips: icon-only pills that reveal their
                  *  label on hover/focus. Same three audiences (+ icons) as the
@@ -338,9 +343,6 @@ export default function LandingPage() {
                     </span>
                   </button>
                 </div>
-              </div>
-              <div className="mt-6 flex justify-end lg:mt-0 lg:justify-end">
-                <DemoLaunchCard />
               </div>
             </div>
           </div>
