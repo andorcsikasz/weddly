@@ -278,24 +278,27 @@ export default function LandingPage() {
 
         {/* Content layer */}
         <div className="hero-content-wrap">
-          <div className="mx-auto flex min-h-[75svh] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
+          {/* The phone min-height carries the same +5rem the CTA row adds to its
+              top margin below: content and box grow together, so the centred
+              headline stays put and only the buttons travel down, off the
+              couple's faces. */}
+          <div className="mx-auto flex min-h-[calc(75svh+5rem)] max-w-7xl flex-col justify-center px-4 pt-20 pb-8 sm:min-h-[calc(100dvh-3.5rem)] sm:justify-center sm:px-6 sm:pt-24 lg:pt-28 lg:pb-8">
             <div className="grid items-start gap-8 lg:items-center lg:gap-14">
               <div>
                 <h1 className="max-w-[18ch] whitespace-pre-line font-grotesk text-4xl font-semibold leading-[1] tracking-tight text-umber-900 dark:text-paper-50 sm:max-w-[14ch] sm:whitespace-normal sm:text-7xl sm:leading-[0.96] lg:text-8xl">
                   {t("landing.hero_title")}
                 </h1>
                 {/* Signup + demo sit side by side: sign up, or look around
-                    first. Stacked full-width on phones, inline from sm up.
-                    The phone width is 17rem rather than the h1's measure so
-                    "Demó indítása" + its arrow stay on one line. */}
-                <div className="mt-4 flex max-w-[17rem] flex-wrap items-center gap-3 sm:mt-6 sm:max-w-md">
-                  <Link
-                    to="/signup"
-                    className="btn-primary btn-lifted btn-landing btn-lg w-full sm:w-auto"
-                  >
+                    first. Stacked on phones, inline from sm up. On phones each
+                    button is only as wide as its own label — a full-width slab
+                    masks the couple behind it, and the photo is the point. The
+                    row also sits 5rem lower there (paired with the wrapper's
+                    min-height above) so it lands below their faces. */}
+                <div className="mt-24 flex max-w-[17rem] flex-col items-start gap-3 sm:mt-6 sm:max-w-md sm:flex-row sm:flex-wrap sm:items-center">
+                  <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg w-auto">
                     {t("landing.cta_signup")}
                   </Link>
-                  <DemoLaunchButton className="w-full whitespace-nowrap sm:w-auto" />
+                  <DemoLaunchButton className="w-auto whitespace-nowrap" />
                 </div>
                 {/* Role escape-hatch chips: icon-only pills that reveal their
                  *  label on hover/focus. Same three audiences (+ icons) as the
