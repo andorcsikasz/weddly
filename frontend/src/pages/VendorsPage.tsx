@@ -35,6 +35,7 @@ import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { VendorDemoLaunchButton } from "../components/VendorDemoLaunchButton";
+import { VendorSearchBar } from "../components/VendorSearchBar";
 import { useToast } from "../components/ui";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -88,11 +89,18 @@ export default function VendorsPage() {
           <h1 className="font-grotesk text-4xl font-semibold leading-[1.02] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
             {t("vendors.hero_title")}
           </h1>
+          {/* The directory's own front door, the same box the couples landing
+              opens with, sitting between the headline and the CTAs. A vendor
+              reading "be one click away" can check that click for themselves:
+              type the business name and either find the listing waiting to be
+              claimed or land in the open directory they are about to join.
+              Full column width, so it measures out against the headline. */}
+          <VendorSearchBar className="mt-8 text-left" />
           {/* Two buttons, one dominant. Nothing sits under them any more: the
               effort claim and the free-window promise both read as marketing
               next to a headline that already says what the page is for.
               Stacked full-width on mobile so neither is a small tap target. */}
-          <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center lg:justify-start">
+          <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center lg:justify-start">
             <Link
               to="/vendors/signup"
               className="btn-primary btn-lg inline-flex items-center justify-center gap-2 shadow-sm"
