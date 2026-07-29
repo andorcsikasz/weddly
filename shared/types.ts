@@ -51,6 +51,12 @@ export interface User {
    *  localStorage mirror for when the write can't land. Only gates the
    *  AUTOMATIC popup — the profile-menu entry is always available. */
   share_prompt_seen_at: UnixMs | null;
+  /** Workspace nav destinations this user has opened at least once, as their
+   *  own route paths ("/app/guests"). The sidebar mutes everything not in here
+   *  and marks it with a dot, so a couple can see at a glance which parts of
+   *  the workspace they have never tried. Union-only, server-side so it
+   *  survives a new device (POST /api/auth/nav-visited). */
+  visited_nav: string[];
   created_at: UnixMs;
 }
 

@@ -61,6 +61,10 @@ export interface UserRow {
    *  Write-once (see routes/auth.ts) — it is the one-shot latch for the
    *  automatic popup, not a dismissal counter. */
   share_prompt_seen_at?: number | null;
+  /** JSON array of workspace nav paths the user has opened at least once
+   *  ("/app/guests", …). Null on pre-feature rows = nothing explored yet.
+   *  Written by POST /api/auth/nav-visited, union-only. */
+  visited_nav?: string | null;
 }
 
 /** Email-allowlist admin check. Source of truth is the `ADMIN_EMAILS` env var
@@ -88,8 +92,49 @@ export function toUser(row: UserRow): User {
     has_apple: Boolean(row.apple_sub),
     user_type: row.user_type === "planner" ? "planner" : "couple",
     share_prompt_seen_at: row.share_prompt_seen_at ?? null,
+    visited_nav: parseVisitedNav(row.visited_nav),
     created_at: row.created_at,
   };
+}
+
+/** A nav destination is stored as its own route path, so the rail can compare
+ *  against `NavItem.to` with no extra mapping table. Anything that isn't an
+ *  /app path is refused rather than stored — the column is user-writable and
+ *  ends up in the DTO, so it stays a closed shape. */
+const NAV_PATH_RE = /^\/app(\/[a-z0-9-]{1,32}){0,2}$/;
+/** Hard ceiling on the stored set. The couple rail has ~15 destinations; the
+ *  cap only exists so a scripted client can't grow the row without bound. */
+const VISITED_NAV_MAX = 40;
+
+/** Tolerant reader: a malformed / hand-edited value reads as "nothing visited"
+ *  rather than throwing on a `/api/auth/me` that has nothing to do with it. */
+export function parseVisitedNav(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((p): p is string => typeof p === "string" && NAV_PATH_RE.test(p));
+  } catch {
+    return [];
+  }
+}
+
+/** Union `path` into the user's visited set. Union-only and idempotent: two
+ *  tabs landing on the same page, or a device replaying an old path, can only
+ *  ever add. Returns false when the path is not a nav path we store. */
+export function recordVisitedNav(userId: number, path: string): boolean {
+  if (!NAV_PATH_RE.test(path)) return false;
+  const row = getUserById(userId);
+  if (!row) return false;
+  const current = parseVisitedNav(row.visited_nav);
+  if (current.includes(path)) return true;
+  const next = [...current, path].slice(-VISITED_NAV_MAX);
+  db.prepare("UPDATE users SET visited_nav = ?, updated_at = ? WHERE id = ?").run(
+    JSON.stringify(next),
+    now(),
+    userId,
+  );
+  return true;
 }
 
 /** Coerce a raw DB locale value into the shape the frontend expects. We

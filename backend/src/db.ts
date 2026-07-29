@@ -1558,6 +1558,16 @@ addColumnIfMissing("users", "planner_plan_notify", "planner_plan_notify INTEGER 
 // correct "never shown" reading.
 addColumnIfMissing("users", "share_prompt_seen_at", "share_prompt_seen_at INTEGER");
 
+// JSON array of the workspace nav destinations this user has actually opened
+// ("/app/guests", "/app/seating", …). Drives the rail's "not explored yet"
+// treatment: a destination the couple has never opened stays muted and carries
+// a small dot until they land on it once. Server-side rather than
+// localStorage-only for the same reason as the share latch above — a new device
+// must not re-mark a workspace the couple has used for months as unexplored.
+// NULL on every pre-feature row, which reads as "explored nothing yet"; those
+// couples get one pass of dots and clear them by using the app.
+addColumnIfMissing("users", "visited_nav", "visited_nav TEXT");
+
 // Public reference codes for the two principal parties — organisers (couples)
 // get "O" + 5 digits, vendors get "V" + 5 digits. New rows are assigned a code
 // at creation time (routes/couples.ts onboarding, domain/vendor_accounts.create);

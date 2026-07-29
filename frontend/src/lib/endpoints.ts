@@ -507,6 +507,11 @@ export const authApi = {
    *  fires again for this ACCOUNT, on any device. Write-once server-side; safe
    *  to call more than once. */
   markSharePromptSeen: () => apiFetch<{ user: User }>("POST", "/api/auth/share-prompt-seen", {}),
+  /** Union one workspace nav destination into `users.visited_nav`, which is
+   *  what clears the sidebar's "not explored yet" dot. Union-only server-side,
+   *  so firing it twice (two tabs, a replayed navigation) is harmless. */
+  markNavVisited: (path: string) =>
+    apiFetch<{ user: User }>("POST", "/api/auth/nav-visited", { path }),
   forgot: (email: string) => apiFetch<{ ok: true }>("POST", "/api/auth/forgot", { email }),
   reset: (token: string, password: string) =>
     apiFetch<{ ok: true }>("POST", "/api/auth/reset", { token, password }),

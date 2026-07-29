@@ -2108,6 +2108,8 @@ const hu: LocaleMessages = {
     tab_seating: "Ültetés",
     tab_suppliers: "Szállító",
     tab_more: "Több",
+    // Sidebar marker on a destination the couple has never opened.
+    unexplored: "Még nem jártál itt",
     more_sheet_title: "További funkciók",
     sidebar_collapse: "Oldalsáv összecsukása",
     sidebar_expand: "Oldalsáv kinyitása",

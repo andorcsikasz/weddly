@@ -2512,6 +2512,7 @@ export interface LocaleMessages {
     tab_suppliers: string;
     /** Mobile bottom nav "more" button — opens a sheet with the remaining flows. */
     tab_more: string;
+    unexplored: string;
     more_sheet_title: string;
     /** Aria-labels for the desktop sidebar collapse toggle. Pair shown on the
      *  small chevron button that narrows the rail to icons-only. */

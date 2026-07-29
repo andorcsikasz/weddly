@@ -2083,6 +2083,8 @@ const en: LocaleMessages = {
     tab_seating: "Seats",
     tab_suppliers: "Vendors",
     tab_more: "More",
+    // Sidebar marker on a destination the couple has never opened.
+    unexplored: "You haven't been here yet",
     more_sheet_title: "More",
     sidebar_collapse: "Collapse sidebar",
     sidebar_expand: "Expand sidebar",

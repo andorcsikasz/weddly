@@ -20,7 +20,13 @@ import {
   rateLimit,
   recordLoginFailure,
 } from "../lib/rate_limit";
-import { getUserByEmail, getUserById, toUser, type UserRow } from "../domain/users";
+import {
+  getUserByEmail,
+  getUserById,
+  recordVisitedNav,
+  toUser,
+  type UserRow,
+} from "../domain/users";
 import { sendVerificationLink } from "./email_verify";
 
 interface RegisterBody {
@@ -340,6 +346,20 @@ function handleSharePromptSeen(ctx: Ctx): Response {
   return json({ user: toUser(fresh) });
 }
 
+/** Mark one workspace nav destination as visited. Union-only, so it is safe to
+ *  fire on every navigation and safe to race with a second tab — the rail calls
+ *  it once per destination and ignores the response, treating its own optimistic
+ *  state as authoritative until the next `/api/auth/me`. */
+async function handleNavVisited(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const body = await readJson<{ path?: unknown }>(ctx.req);
+  if (typeof body.path !== "string") throw new HttpError(400, "path is required");
+  if (!recordVisitedNav(userId, body.path)) throw new HttpError(400, "Unknown nav path");
+  const fresh = getUserById(userId);
+  if (!fresh) throw new HttpError(404, "User not found");
+  return json({ user: toUser(fresh) });
+}
+
 export function registerAuthRoutes(router: Router) {
   router.post("/api/auth/register", handleRegister);
   router.post("/api/auth/login", handleLogin);
@@ -348,4 +368,5 @@ export function registerAuthRoutes(router: Router) {
   router.get("/api/auth/me", handleMe, true);
   router.post("/api/auth/locale", handleSetLocale, true);
   router.post("/api/auth/share-prompt-seen", handleSharePromptSeen, true);
+  router.post("/api/auth/nav-visited", handleNavVisited, true);
 }

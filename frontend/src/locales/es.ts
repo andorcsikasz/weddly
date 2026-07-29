@@ -2137,6 +2137,8 @@ const es: LocaleMessages = {
     tab_seating: "Mesas",
     tab_suppliers: "Proveedores",
     tab_more: "Más",
+    // Sidebar marker on a destination the couple has never opened.
+    unexplored: "Todavía no has estado aquí",
     more_sheet_title: "Más",
     sidebar_collapse: "Contraer barra lateral",
     sidebar_expand: "Expandir barra lateral",

@@ -391,6 +391,74 @@ const ADMIN_ITEMS: AdminNavItem[] = [
   },
 ];
 
+/** Longest nav destination that owns `pathname`, or null for a route that
+ *  isn't in the rail at all (/app/profile, /app/onboarding …). Longest-match
+ *  so a nested route (/app/vendors/12) credits its parent entry, while
+ *  neighbours that share a prefix in text only (/app/guests vs
+ *  /app/guest-page) never credit each other. */
+function matchNavDestination(pathname: string): string | null {
+  let best: string | null = null;
+  for (const item of ITEMS) {
+    // The dashboard is the one exact-match entry — every /app/* path would
+    // otherwise be "inside" it.
+    if (item.to === "/app") {
+      if (pathname === "/app") return "/app";
+      continue;
+    }
+    if (pathname === item.to || pathname.startsWith(`${item.to}/`)) {
+      if (best === null || item.to.length > best.length) best = item.to;
+    }
+  }
+  return best;
+}
+
+/** Which parts of the workspace this couple has actually opened.
+ *
+ *  The rail mutes a destination the couple has never visited and marks it with
+ *  a small dot, so the sidebar doubles as a map of what is still unexplored —
+ *  the point being that half of Weddly's surfaces (seating, logistics, design,
+ *  wishlist) are never discovered otherwise. Landing on a page is what clears
+ *  it: no "dismiss", no counter.
+ *
+ *  State is optimistic and union-only. The write is fire-and-forget because a
+ *  failed one costs a dot that reappears on the next device, not correctness. */
+function useExploredNav(enabled: boolean): Set<string> {
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  const [visited, setVisited] = useState<Set<string>>(() => new Set(user?.visited_nav ?? []));
+  const accountRef = useRef<number | null>(user?.id ?? null);
+
+  // Adopt whatever the server knows. A different account replaces the set; the
+  // same account MERGES, so an optimistic mark made while /api/auth/me was
+  // still in flight doesn't get rolled back by the stale response.
+  useEffect(() => {
+    const fromServer = user?.visited_nav ?? [];
+    const accountId = user?.id ?? null;
+    setVisited((prev) => {
+      if (accountRef.current !== accountId) {
+        accountRef.current = accountId;
+        return new Set(fromServer);
+      }
+      const next = new Set(prev);
+      for (const path of fromServer) next.add(path);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [user]);
+
+  useEffect(() => {
+    if (!enabled || !user) return;
+    const destination = matchNavDestination(pathname);
+    if (!destination || visited.has(destination)) return;
+    setVisited((prev) => new Set(prev).add(destination));
+    void authApi.markNavVisited(destination).catch(() => {
+      /* offline or a lapsed session — the local set still hides the dot for
+         this session, and the server re-asserts on the next /api/auth/me */
+    });
+  }, [enabled, pathname, user, visited]);
+
+  return visited;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useT();
   const location = useLocation();
@@ -650,6 +718,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const coupleItems = ITEMS;
   const displayItems = inAdminView ? ADMIN_ITEMS : coupleItems;
+
+  // The explore nudge is for couples in their own workspace. A planner sitting
+  // in a client's workspace and an admin in the moderation rail would otherwise
+  // carry dots they have no reason to clear.
+  const nudgeExplore = !inAdminView && user?.user_type === "couple";
+  const explored = useExploredNav(nudgeExplore);
+  // The dashboard is never marked: it is where every session lands, so a dot on
+  // it would nudge nobody — and it is the one row the floating collapse toggle
+  // sits on top of.
+  const isUnexplored = (to: string) => nudgeExplore && to !== "/app" && !explored.has(to);
+  // Phone: the "More" button inherits a dot when anything behind it is still
+  // unexplored — the sheet is where most of the undiscovered surfaces live.
+  const moreHasUnexplored =
+    !inAdminView && coupleItems.some((item) => !item.tabKey && isUnexplored(item.to));
 
   return (
     // `overflow-x-clip` clamps any stray-wide descendant at the viewport edge so
@@ -912,6 +994,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                             label={t(item.labelKey)}
                             collapsed={sidebarCollapsed}
                             darkActive={itemGroup === "guest"}
+                            unexplored={isUnexplored(item.to)}
+                            unexploredLabel={t("nav.unexplored")}
                           />
                         </div>
                       );
@@ -967,6 +1051,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   icon={item.icon}
                   variant={inAdminView ? "admin" : "default"}
                   badgeCount={badgeCount}
+                  unexplored={isUnexplored(item.to)}
                 >
                   {t(item.tabKey ?? item.labelKey)}
                 </BottomLink>
@@ -982,7 +1067,15 @@ export function AppShell({ children }: { children: ReactNode }) {
               moreOpen ? "text-ink-900 dark:text-paper-50" : "text-ink-500 dark:text-umber-200"
             }`}
           >
-            <MoreHorizontal size={18} aria-hidden="true" />
+            <span className="relative inline-flex">
+              <MoreHorizontal size={18} aria-hidden="true" />
+              {moreHasUnexplored && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-1.5 -top-1 h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300"
+                />
+              )}
+            </span>
             <span className="truncate">{t("nav.tab_more")}</span>
           </button>
         </div>
@@ -999,6 +1092,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           closeLabel={t("a11y.close")}
           onClose={() => setMoreOpen(false)}
           translate={t}
+          isUnexplored={isUnexplored}
+          unexploredLabel={t("nav.unexplored")}
         />
       )}
 
@@ -1125,6 +1220,8 @@ function SideLink({
   label,
   collapsed,
   darkActive,
+  unexplored,
+  unexploredLabel,
 }: {
   to: string;
   icon: ReactNode;
@@ -1135,6 +1232,14 @@ function SideLink({
    *  link, which the couple asked to stay visually "dark" / set apart from
    *  the rest of the rail. */
   darkActive?: boolean;
+  /** The couple has never opened this destination. Renders the row muted with
+   *  a small brass dot, which is the whole nudge: the rail reads as a map of
+   *  what is still unexplored, and a single visit clears it. Deliberately NOT
+   *  a disabled look — hover restores full ink, so it never reads as locked. */
+  unexplored?: boolean;
+  /** Translated "not opened yet", appended to the accessible name so the dot
+   *  isn't a sighted-only signal. */
+  unexploredLabel?: string;
 }) {
   // Base classes describe the icon-only shape used at md (tablet) and at
   // lg+ when `collapsed` is true. The expanded variant keeps the same fixed
@@ -1157,7 +1262,7 @@ function SideLink({
     <NavLink
       to={to}
       end={to === "/app"}
-      aria-label={label}
+      aria-label={unexplored && unexploredLabel ? `${label} — ${unexploredLabel}` : label}
       className={({ isActive }) => {
         const active = darkActive
           ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
@@ -1165,10 +1270,14 @@ function SideLink({
         // Collapsed rows stay the fixed `w-9` icon square (base shape); at lg+
         // every row fills the rail so hover + active share one box size.
         const width = collapsed ? "" : "lg:w-auto";
+        // Unvisited rows sit one tone back (label AND icon, both currentColor)
+        // and come forward on hover, so the muting reads as "not been here"
+        // rather than "not available".
+        const idle = unexplored
+          ? "text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-paper-200/50 dark:hover:bg-umber-800 dark:hover:text-paper-200"
+          : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800";
         return `group/sl relative flex items-center rounded-xl text-sm transition-colors ${shape} ${width} ${
-          isActive
-            ? active
-            : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800"
+          isActive ? active : idle
         }`;
       }}
     >
@@ -1185,6 +1294,25 @@ function SideLink({
       >
         {label}
       </span>
+      {/* Unexplored marker. Two placements, one state: a corner dot on the
+          icon while the rail is icon-only (tablet + collapsed laptop), and a
+          trailing dot at the end of the row once the label is out. */}
+      {unexplored && (
+        <>
+          <span
+            aria-hidden="true"
+            className={`absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300${
+              collapsed ? "" : " lg:hidden"
+            }`}
+          />
+          {!collapsed && (
+            <span
+              aria-hidden="true"
+              className="ml-auto hidden h-1.5 w-1.5 shrink-0 rounded-full bg-umber-400 lg:block dark:bg-umber-300"
+            />
+          )}
+        </>
+      )}
       {/* Custom tooltip — visible on hover when the label is not shown.
           At lg+ expanded (!collapsed) the label itself is visible, so hide it. */}
       <span
@@ -1291,12 +1419,18 @@ function MoreSheet({
   closeLabel,
   onClose,
   translate,
+  isUnexplored,
+  unexploredLabel,
 }: {
   items: NavItem[];
   title: string;
   closeLabel: string;
   onClose: () => void;
   translate: (key: string) => string;
+  /** Same predicate the rail uses — a tile the couple has never opened keeps
+   *  the muted label + dot here too, since on a phone the sheet IS the rail. */
+  isUnexplored?: (to: string) => boolean;
+  unexploredLabel?: string;
 }) {
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -1341,23 +1475,38 @@ function MoreSheet({
           </button>
         </div>
         <ul className="grid grid-cols-3 gap-2">
-          {items.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                className={({ isActive }) =>
-                  `flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border px-2 text-center text-xs ${
-                    isActive
-                      ? "border-ink-900 bg-ink-900/5 text-ink-900 dark:border-paper-100 dark:bg-paper-100/10 dark:text-paper-50"
-                      : "border-paper-300 text-ink-700 hover:bg-paper-200 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800"
-                  }`
-                }
-              >
-                {item.icon}
-                <span className="truncate">{translate(item.labelKey)}</span>
-              </NavLink>
-            </li>
-          ))}
+          {items.map((item) => {
+            const fresh = isUnexplored?.(item.to) === true;
+            const label = translate(item.labelKey);
+            return (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  aria-label={
+                    fresh && unexploredLabel ? `${label} — ${unexploredLabel}` : undefined
+                  }
+                  className={({ isActive }) =>
+                    `relative flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border px-2 text-center text-xs ${
+                      isActive
+                        ? "border-ink-900 bg-ink-900/5 text-ink-900 dark:border-paper-100 dark:bg-paper-100/10 dark:text-paper-50"
+                        : fresh
+                          ? "border-paper-300 text-ink-400 hover:bg-paper-200 dark:border-umber-700 dark:text-paper-200/50 dark:hover:bg-umber-800"
+                          : "border-paper-300 text-ink-700 hover:bg-paper-200 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800"
+                    }`
+                  }
+                >
+                  {fresh && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300"
+                    />
+                  )}
+                  {item.icon}
+                  <span className="truncate">{label}</span>
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>,
@@ -1371,6 +1520,7 @@ function BottomLink({
   children,
   variant = "default",
   badgeCount,
+  unexplored,
 }: {
   to: string;
   icon: ReactNode;
@@ -1379,6 +1529,9 @@ function BottomLink({
   /** Same red index as the desktop AdminSideLink. Anchors top-right of
    *  the icon so it sits above the label like a notification dot. */
   badgeCount?: number;
+  /** Never-opened destination — the small brass dot from the sidebar, so the
+   *  phone bar tells the same story as the rail. */
+  unexplored?: boolean;
 }) {
   // Light mode: admin variant is koromfekete neutral, default stays navy. Dark mode flips to
   // a cream / blush palette so the labels actually read against the
@@ -1410,6 +1563,12 @@ function BottomLink({
           >
             {badgeCount > 9 ? "9+" : badgeCount}
           </span>
+        ) : null}
+        {unexplored && !badgeCount ? (
+          <span
+            aria-hidden="true"
+            className="absolute -right-1.5 -top-1 h-1.5 w-1.5 rounded-full bg-umber-400 dark:bg-umber-300"
+          />
         ) : null}
       </span>
       <span className="truncate">{children}</span>
