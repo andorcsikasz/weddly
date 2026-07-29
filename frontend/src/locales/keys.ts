@@ -3906,12 +3906,6 @@ export interface LocaleMessages {
     /** Empty states per section. */
     gifts_empty: string;
     requests_empty: string;
-    /** Label + example quick-add chips for the requests section. */
-    request_examples_label: string;
-    request_example_letter: string;
-    request_example_photo: string;
-    request_example_song: string;
-    request_example_time: string;
     description_label: string;
     description_placeholder: string;
     target_amount_label: string;

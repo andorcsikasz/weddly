@@ -38,22 +38,18 @@ import {
   ArrowUp,
   ArrowUpRight,
   Banknote,
-  Camera,
   Gift,
   Globe,
-  HandHeart,
+  Heart,
   LayoutGrid,
   Loader2,
   MoreHorizontal,
-  Music2,
   PackageCheck,
-  PenLine,
   Plus,
   Rows3,
   Sparkles,
   Tag,
   Trash2,
-  Users,
   X,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
@@ -150,8 +146,6 @@ interface DrawerInit {
   /** For "create new": which kind the dialog opens on (gifts vs requests
    *  section add buttons). Ignored when editing an existing item. */
   presetKind?: WishlistKind;
-  /** For "create new": prefilled title (request example quick-add chips). */
-  presetTitle?: string;
 }
 
 /** Before / after the wedding day. "before" shows the gift wishlist + requests;
@@ -164,16 +158,12 @@ const PHASE_STORAGE_KEY = "weddly.wishlist.phase";
 type WishlistView = "list" | "cards";
 const VIEW_STORAGE_KEY = "weddly.wishlist.view";
 
-/** Example request prompts shown as quick-add chips on the empty requests
- *  section — they prefill the dialog title, nothing is persisted until saved
- *  (no fake seed data). */
-const REQUEST_EXAMPLES = [
-  { key: "request_example_letter", Icon: PenLine },
-  { key: "request_example_photo", Icon: Camera },
-  { key: "request_example_song", Icon: Music2 },
-  { key: "request_example_time", Icon: Users },
-] as const;
-
+// The four quick-add example chips that used to sit on the empty requests
+// section are gone (owner decision, 2026-07-30). They were four pre-written
+// wishes presented as buttons, which is a menu to pick from rather than a
+// prompt to think from, and the couple's own answer is the entire point of the
+// section. The ideas survive as examples in the dialog's title placeholder,
+// where they suggest without offering to fill the field in.
 /** A gift with a rough price AND at least one guest chipping in shows the soft
  *  pledge bar. With nobody in yet there is nothing to plot — an empty track
  *  reading "0 Ft / 400 000 Ft" on every card was noise, so it stays hidden
@@ -1602,32 +1592,7 @@ export default function WishlistEditorPage() {
                     ctaLabel={t("wishlist_editor.add_request")}
                     square
                     onCta={() => setEditing({ item: null, presetKind: "request" })}
-                  >
-                    {/* Prompts, not seed data: a chip prefills the dialog
-                        title and nothing is written until the couple saves. */}
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {REQUEST_EXAMPLES.map(({ key, Icon }) => {
-                        const label = t(`wishlist_editor.${key}`);
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() =>
-                              setEditing({
-                                item: null,
-                                presetKind: "request",
-                                presetTitle: label,
-                              })
-                            }
-                            className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 font-serif text-sm italic text-ink-700 transition-colors hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500"
-                          >
-                            <Icon size={12} aria-hidden />
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </EmptySection>
+                  />
                 ) : (
                   // Denser than the gift grid on purpose: a request is a line
                   // of text, and at gift size two of them filled a screen and
@@ -1744,7 +1709,7 @@ function WishlistItemDialog({
   const { t, locale } = useT();
   const toast = useToast();
   const existing = init.item;
-  const [title, setTitle] = useState(existing?.title ?? init.presetTitle ?? "");
+  const [title, setTitle] = useState(existing?.title ?? "");
   const [kind, setKind] = useState<WishlistKind>(existing?.kind ?? init.presetKind ?? "gift");
   const [description, setDescription] = useState(existing?.description ?? "");
   // Per-item currency. Defaults to the couple's site currency; the couple can
@@ -1775,7 +1740,7 @@ function WishlistItemDialog({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Whether the couple has typed a title themselves. A resolved link title only
   // fills an untouched field, so we never overwrite what they wrote.
-  const titleTouchedRef = useRef<boolean>(Boolean(existing?.title ?? init.presetTitle));
+  const titleTouchedRef = useRef<boolean>(Boolean(existing?.title));
 
   function handleUrlChange(newUrl: string) {
     setUrl(newUrl);
@@ -1881,7 +1846,10 @@ function WishlistItemDialog({
   // What the item will look like on the guest page: the resolved photo, or the
   // drawn motif this exact title will get. Showing it here is the honest answer
   // to "why does my item have no picture" — it has one, we drew it.
-  const previewSeed = title.trim() || t("wishlist_editor.title_label");
+  // Deliberately NOT falling back to the field label: seeding the motif with
+  // the word "Title" drew an arbitrary object for an empty form, and a
+  // different one per locale. Blank seed -> GiftArt's neutral ornament.
+  const previewSeed = title.trim();
 
   return (
     <div
@@ -1957,11 +1925,13 @@ function WishlistItemDialog({
 
           <FormRow label={t("wishlist_editor.kind_label")}>
             {/* Segmented control rather than a native <select> so each type
-                carries its icon (a gift box vs the request hand-heart) — the
-                same glyphs used on the cards and the guest page. */}
+                carries its icon: a gift box against a plain heart. HandHeart
+                (a hand cupping a heart) was six strokes inside 16px and went to
+                mush on the filled active state, which is where it spends half
+                its life. It read as a scribble, not a gesture. */}
             <div className="grid grid-cols-2 gap-2">
               {WISHLIST_KINDS.map((k) => {
-                const Icon = k === "request" ? HandHeart : Gift;
+                const Icon = k === "request" ? Heart : Gift;
                 const active = kind === k;
                 return (
                   <button

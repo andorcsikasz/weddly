@@ -35,6 +35,12 @@ const GIFT_POOL: readonly Motif[] = ["parcel", "bow", "sprig", "coupes", "trip",
 /** Requests are gestures, not boxed things — a parcel would misdescribe them. */
 const REQUEST_POOL: readonly Motif[] = ["letter", "note", "rings", "camera", "sprig"];
 
+/** Nothing typed yet. A sprig is ornament rather than a named object, so the
+ *  live tile in the add-a-wish dialog decorates the empty field instead of
+ *  announcing a wish the couple has not made. An envelope there read as "a
+ *  letter", which is a specific answer to a question still being asked. */
+const NEUTRAL_MOTIF: Motif = "sprig";
+
 /** Keyword → motif, checked before the hash. Hungarian and English both, since
  *  a couple types the title in their own language. Order matters: the first
  *  match wins, so the more specific patterns come first. */
@@ -64,6 +70,11 @@ function hash(s: string): number {
 }
 
 export function motifFor(seed: string, kind: "gift" | "request"): Motif {
+  // A blank seed has no wish behind it to draw. Hashing one anyway is worse
+  // than it sounds: the dialog used to seed the tile with its own field LABEL,
+  // so the empty form drew whatever "Title" hashes to, and the Hungarian build
+  // drew whatever "Cím" hashes to: a different picture for the same nothing.
+  if (seed.trim() === "") return NEUTRAL_MOTIF;
   const pool = kind === "request" ? REQUEST_POOL : GIFT_POOL;
   for (const [re, motif] of KEYWORD_MOTIFS) {
     if (re.test(seed)) {
