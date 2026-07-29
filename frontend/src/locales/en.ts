@@ -759,8 +759,6 @@ const en: LocaleMessages = {
       hero_label: "Inquiries in the last 30 days",
       hero_hint: "New couples reaching out through Weddly",
       actions_title: "Recommended next steps",
-      action_finish_title: "Finish your listing ({pct}%)",
-      action_finish_body: "Complete profiles rank higher in search.",
       action_upcoming_title: "You have {count} upcoming events",
       action_upcoming_body: "Review the details and prep for the big day.",
       action_allset_title: "You are all set",
@@ -3036,6 +3034,11 @@ const en: LocaleMessages = {
       map_confirm_body:
         "Anyone with your page link will see the precise venue on a map, not just confirmed guests.",
       map_confirm_cta: "Show it",
+      venue_layout_label: "Venue and map",
+      venue_layout: {
+        stacked: "Stacked",
+        side: "Side by side",
+      },
     },
     print_preview: {
       sample_name: "Guest name",
@@ -3443,6 +3446,7 @@ const en: LocaleMessages = {
     progress_fully_funded: "Funded!",
     reorder_up: "Move up",
     reorder_down: "Move down",
+    item_menu: "Actions",
     publish_title: "Share on your guest page",
     publish_short: "Guest page",
     publish_on: "Visible to confirmed guests",
@@ -8757,7 +8761,7 @@ const en: LocaleMessages = {
     browseCta: "Browse vendors",
     bandTitle: "Plan your wedding with Weddly",
     bandBody: "Budget, guest list, seating and vendors, in one shared workspace for both of you.",
-    bandCta: "Start free",
+    bandCta: "Get started",
     footerHome: "Home",
     footerVendors: "Vendors",
     footerAbout: "About",

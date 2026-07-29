@@ -1040,9 +1040,6 @@ export interface LocaleMessages {
       hero_label: string;
       hero_hint: string;
       actions_title: string;
-      /** Receives `{pct}` - listing completeness percentage. */
-      action_finish_title: string;
-      action_finish_body: string;
       /** Receives `{count}` - number of upcoming events. */
       action_upcoming_title: string;
       action_upcoming_body: string;
@@ -3426,6 +3423,13 @@ export interface LocaleMessages {
       map_confirm_title: string;
       map_confirm_body: string;
       map_confirm_cta: string;
+      /** "Venue and map" layout picker: stacked, or side by side
+       *  with a square map. Only offered while the map is on. */
+      venue_layout_label: string;
+      venue_layout: {
+        stacked: string;
+        side: string;
+      };
     };
     /** Instant print-card preview (right column on the Print tab). */
     print_preview: {
@@ -3891,9 +3895,12 @@ export interface LocaleMessages {
     pledged_count: string;
     /** Shown in the progress caption when the target is fully covered. */
     progress_fully_funded: string;
-    /** Aria-labels / tooltips for the up/down reorder buttons. */
+    /** Aria-labels / tooltips for the up/down reorder entries. */
     reorder_up: string;
     reorder_down: string;
+    /** Accessible name of the "…" button on an item, which holds reorder +
+     *  delete. Every item carries one, so it never names the item itself. */
+    item_menu: string;
     /** Publish toggle in the editor header: share the list on the guest page. */
     publish_title: string;
     /** Short visible label beside the toggle; publish_title is its aria-label. */

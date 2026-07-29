@@ -767,8 +767,6 @@ const hu: LocaleMessages = {
       hero_label: "Megkeresések az elmúlt 30 napban",
       hero_hint: "Új párok, akik a Weddlyn keresztül kerestek meg",
       actions_title: "Ajánlott következő lépések",
-      action_finish_title: "Fejezd be a hirdetésed ({pct}%)",
-      action_finish_body: "A teljes profilok előrébb kerülnek a keresésben.",
       action_upcoming_title: "{count} közelgő eseményed van",
       action_upcoming_body: "Nézd át a részleteket és készülj a nagy napra.",
       action_allset_title: "Minden készen áll",
@@ -3069,6 +3067,11 @@ const hu: LocaleMessages = {
       map_confirm_body:
         "A pontos helyszín térképen bárkinek látszik, akinek megvan az oldal linkje, nem csak a visszajelzett vendégeknek.",
       map_confirm_cta: "Megmutatom",
+      venue_layout_label: "Helyszín és térkép",
+      venue_layout: {
+        stacked: "Egymás alatt",
+        side: "Egymás mellett",
+      },
     },
     print_preview: {
       sample_name: "Vendég neve",
@@ -3483,6 +3486,7 @@ const hu: LocaleMessages = {
     progress_fully_funded: "Teljesítve!",
     reorder_up: "Feljebb",
     reorder_down: "Lejjebb",
+    item_menu: "Műveletek",
     publish_title: "Megosztás a vendégoldalon",
     publish_short: "Vendégoldal",
     publish_on: "Látható a visszajelzett vendégeknek",
@@ -8829,7 +8833,7 @@ const hu: LocaleMessages = {
     bandTitle: "Tervezd meg az esküvődet a Weddly-vel",
     bandBody:
       "Költségvetés, vendéglista, ültetés, szolgáltatók, egy közös felületen, mindkettőtöknek.",
-    bandCta: "Kezdés ingyen",
+    bandCta: "Kezdd el",
     footerHome: "Főoldal",
     footerVendors: "Szolgáltatók",
     footerAbout: "Rólunk",

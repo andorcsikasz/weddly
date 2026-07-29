@@ -786,8 +786,6 @@ const es: LocaleMessages = {
       hero_label: "Solicitudes en los últimos 30 días",
       hero_hint: "Parejas nuevas que contactan a través de Weddly",
       actions_title: "Próximos pasos recomendados",
-      action_finish_title: "Termina tu ficha ({pct}%)",
-      action_finish_body: "Los perfiles completos aparecen más arriba en las búsquedas.",
       action_upcoming_title: "Tienes {count} eventos próximos",
       action_upcoming_body: "Revisa los detalles y prepárate para el gran día.",
       action_allset_title: "Ya está todo listo",
@@ -3103,6 +3101,11 @@ const es: LocaleMessages = {
       map_confirm_body:
         "Cualquiera con el enlace de tu página verá el lugar exacto en un mapa, no solo los invitados confirmados.",
       map_confirm_cta: "Mostrarla",
+      venue_layout_label: "Lugar y mapa",
+      venue_layout: {
+        stacked: "Uno debajo del otro",
+        side: "Uno al lado del otro",
+      },
     },
     print_preview: {
       sample_name: "Nombre del invitado",
@@ -3524,6 +3527,7 @@ const es: LocaleMessages = {
     progress_fully_funded: "¡Financiado!",
     reorder_up: "Subir",
     reorder_down: "Bajar",
+    item_menu: "Acciones",
     publish_title: "Comparte en tu página de la boda",
     publish_short: "Página de invitados",
     publish_on: "Visible para invitados confirmados",
@@ -8910,7 +8914,7 @@ const es: LocaleMessages = {
     bandTitle: "Organiza tu boda con Weddly",
     bandBody:
       "Presupuesto, lista de invitados, distribución de mesas y proveedores, en un espacio de trabajo compartido para los dos.",
-    bandCta: "Empezar gratis",
+    bandCta: "Empezar",
     footerHome: "Inicio",
     footerVendors: "Proveedores",
     footerAbout: "Acerca de",
