@@ -354,7 +354,7 @@ export default function AdminVendorReviewCampaignPage() {
           )}
 
           {selected != null && (
-            <div className="flex flex-col gap-4 rounded-2xl bg-paper-200 p-4 ring-2 ring-ink-900 dark:bg-umber-800 dark:ring-umber-600">
+            <div className="flex flex-col gap-4 rounded-2xl bg-white p-4 ring-2 ring-ink-900 dark:bg-umber-800 dark:ring-umber-600">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{selected.slug}</span>
