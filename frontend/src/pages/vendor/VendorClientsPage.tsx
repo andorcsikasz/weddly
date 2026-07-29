@@ -17,6 +17,7 @@ import {
   type LucideIcon,
   MailOpen,
   Search,
+  Share2,
   Undo2,
   UserPlus,
   X,
@@ -27,7 +28,8 @@ import type { Currency } from "@shared/types";
 import type { VendorClientView } from "@shared/vendor_clients";
 import { isVendorFeatureEnabled, type VendorPlan } from "@shared/vendor_plan";
 import { Skeleton } from "../../components/ui";
-import { vendorBillingApi, vendorClientsApi } from "../../lib/endpoints";
+import { VendorShareDialog } from "../../components/VendorShareDialog";
+import { vendorBillingApi, vendorClientsApi, vendorListingApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
 import { useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
@@ -167,10 +169,32 @@ function GhostTable() {
 }
 
 // Zero-clients state: a warm causal mini-flow (listing -> inquiry -> client)
-// plus a single CTA back to the listing editor. There is no public listing URL
-// to share (the supplier page is auth-gated under /app), so no copy-link here.
+// plus two CTAs — finish the listing, and share the public page it produces.
+// The step medallions and the share button carry the portal's `steel`, per
+// owner direction 2026-07-29: the flow is a diagram of what happens on its own,
+// not something to click, so blush would over-promise; blush stays on the one
+// primary action. The share button opens the same VendorShareDialog as the
+// header icon, so there is exactly one share surface in the portal.
 function EmptyClients() {
   const { t } = useT();
+  // Best-effort: a vendor whose listing hasn't resolved (or who has none) gets
+  // no share button, which is exactly when there is no public page to pass on.
+  const [listing, setListing] = useState<{ id: string; name: string } | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    vendorListingApi
+      .me()
+      .then((view) => {
+        if (!cancelled) setListing({ id: view.listing.id, name: view.listing.name });
+      })
+      .catch(() => {
+        /* no listing yet — the share CTA simply stays absent */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const steps = [
     { Icon: Search, label: t("vendor.clients.empty_step_1") },
     { Icon: MailOpen, label: t("vendor.clients.empty_step_2") },
@@ -186,7 +210,7 @@ function EmptyClients() {
         {steps.map(({ Icon, label }, i) => (
           <Fragment key={label}>
             <div className="flex items-center gap-3 sm:w-32 sm:flex-col sm:gap-2 sm:text-center">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush-50 text-blush-600 dark:bg-blush-500/15 dark:text-blush-300">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-steel-100 text-steel-700 dark:bg-steel-700/30 dark:text-steel-200">
                 <Icon size={20} aria-hidden="true" />
               </span>
               <span className="text-sm text-ink-700 dark:text-paper-200">{label}</span>
@@ -200,13 +224,34 @@ function EmptyClients() {
         ))}
       </div>
 
-      <Link
-        to="/vendor/listing"
-        className="btn btn-sm mt-6 inline-flex items-center gap-1.5 bg-blush-500 text-white hover:bg-blush-600"
-      >
-        {t("vendor.clients.empty_cta_listing")}
-        <ArrowRight size={15} aria-hidden="true" />
-      </Link>
+      <div className="mt-6 flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center">
+        <Link
+          to="/vendor/listing"
+          className="btn btn-sm inline-flex items-center justify-center gap-1.5 bg-blush-500 text-white hover:bg-blush-600"
+        >
+          {t("vendor.clients.empty_cta_listing")}
+          <ArrowRight size={15} aria-hidden="true" />
+        </Link>
+        {listing && (
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            className="btn btn-sm inline-flex items-center justify-center gap-1.5 bg-steel-700 text-white hover:bg-steel-800"
+          >
+            <Share2 size={15} aria-hidden="true" />
+            {t("vendor.clients.empty_cta_share")}
+          </button>
+        )}
+      </div>
+
+      {listing && (
+        <VendorShareDialog
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          listingId={listing.id}
+          listingName={listing.name}
+        />
+      )}
     </div>
   );
 }

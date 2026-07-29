@@ -990,7 +990,7 @@ export interface LocaleMessages {
         blue: string;
         gold: string;
         platinum: string;
-        diamond: string;
+        black: string;
       };
       /** Perk lines. `perk_leads` receives `{n}`, `perk_discount` `{pct}`. */
       perk_search: string;
@@ -1006,11 +1006,17 @@ export interface LocaleMessages {
       earn_first_review: string;
       earn_review_collected: string;
       earn_fast_reply: string;
-      earn_repeat_booking: string;
+      earn_booking_confirmed: string;
       /** Lifetime points from one rule. Receives `{n}`. */
       earned_so_far: string;
       /** Lead-in to the next tier's perks. Receives `{tier}`. */
       next_unlocks: string;
+      /** The vendor's place in their own category. Receives `{rank}`,
+       *  `{total}` and `{category}`. The category label comes from
+       *  `suppliers.cat.<key>`, never written into this string. */
+      rank_position: string;
+      /** How far behind the vendor immediately above. Receives `{points}`. */
+      rank_gap: string;
     };
     dashboard: {
       page_title: string;
@@ -1058,6 +1064,7 @@ export interface LocaleMessages {
       empty_step_2: string;
       empty_step_3: string;
       empty_cta_listing: string;
+      empty_cta_share: string;
       /** Free-text search over the already-fetched client list (client-side;
        *  composes with the status pills). */
       search_placeholder: string;
@@ -4931,6 +4938,9 @@ export interface LocaleMessages {
     self_pill: string;
     self_pill_tooltip: string;
     verified_vendor: string;
+    /** Same badge, drawn as an outline: registered vendor whose listing setup
+     *  isn't finished yet (no photos, no price…). See `<VerifiedBadge>`. */
+    verified_vendor_incomplete: string;
     /** Short label for the verified-only filter toggle in the country/price row. */
     verified_filter: string;
     /** Chip that opens the scoping-filter dialog (country / price / guests). */
@@ -5017,6 +5027,23 @@ export interface LocaleMessages {
     diy_action_edit_aria: string;
     diy_action_delete_aria: string;
     diy_price_display: string;
+    /** "This vendor is already on Weddly" — shown under the name field of any
+     *  form that can mint a private supplier row, when what the couple typed
+     *  matches a directory listing. See DirectoryTwinNotice. */
+    twin: {
+      /** Loose (prefix / contained) match: an offer, the form still saves. */
+      title: string;
+      /** Exact name match: the save is held until they choose. */
+      blocking_title: string;
+      /** Why the listed entry is the better one to pick. */
+      body: string;
+      /** Adopt the listing instead of creating a private copy. */
+      use: string;
+      /** Escape hatch out of the block: "this is a different vendor". */
+      different: string;
+      /** Confirmation after adopting. `{name}` = the listing's name. */
+      adopted_toast: string;
+    };
     /** Free-text search input above the chain. */
     search_label: string;
     search_placeholder: string;
@@ -5414,9 +5441,6 @@ export interface LocaleMessages {
       /** aria-label / title for the price-band dot row — receives `{band}`
        *  (1..5) and `{max}` (always 5). */
       priceBandAria: string;
-      /** Spoken label for the verified-checkmark glyph next to the supplier
-       *  name. Shown only on claimed listings (vendor_account_id !== null). */
-      verifiedAria: string;
       /** Bottom-of-page CTA section that lets the listing owner request the
        *  claim. Renders only on unclaimed listings. The button uses an
        *  armed-confirmation pattern (first click arms, second click fires)
@@ -9473,6 +9497,9 @@ export interface LocaleMessages {
     view_profile: string;
     /** Tooltip/aria on the azure "verified" badge next to a planner's name. */
     verified: string;
+    /** Same badge, drawn as an outline: verified account, profile still
+     *  half-filled. See `<VerifiedBadge>`. */
+    verified_incomplete: string;
     /** Full planner detail page (/app/planners/:id). */
     back: string;
     about_label: string;
