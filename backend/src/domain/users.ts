@@ -73,6 +73,28 @@ export function isAdminEmail(email: string): boolean {
   return CONFIG.adminEmails.includes(email.trim().toLowerCase());
 }
 
+/** How many outreach messages this user's workspace has actually sent. Drives
+ *  one thing: the sidebar only grows an Outreach row once the couple has used
+ *  it (OUTREACH_NAV_UNLOCK_SENT), so a rail that is already long doesn't carry
+ *  a destination most couples never open.
+ *
+ *  Counts what LEFT (`sent_at IS NOT NULL`), not what was queued: a message
+ *  sitting in the queue hasn't reached a vendor, and a bounce did. 0 for a
+ *  user with no workspace. Cheap enough to ride the user DTO — `toUser` maps
+ *  one user at a time (login, /me, session mint), never a list. */
+function outreachSentCount(coupleId: number | null): number {
+  if (coupleId === null) return 0;
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS n
+         FROM outreach_messages m
+         JOIN outreach_campaigns c ON c.id = m.campaign_id
+        WHERE c.couple_id = ? AND m.sent_at IS NOT NULL`,
+    )
+    .get(coupleId) as { n: number };
+  return row.n;
+}
+
 export function toUser(row: UserRow): User {
   return {
     id: row.id,
@@ -93,6 +115,7 @@ export function toUser(row: UserRow): User {
     user_type: row.user_type === "planner" ? "planner" : "couple",
     share_prompt_seen_at: row.share_prompt_seen_at ?? null,
     visited_nav: parseVisitedNav(row.visited_nav),
+    outreach_sent: outreachSentCount(row.couple_id),
     created_at: row.created_at,
   };
 }

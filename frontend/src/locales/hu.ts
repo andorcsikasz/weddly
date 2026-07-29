@@ -60,6 +60,9 @@ const hu: LocaleMessages = {
     logistics_title: "Logisztika · Wēddly",
     logistics_description:
       "Szállás és transzfer beosztás drag and drop módon, minden vendéget a helyére.",
+    outreach_title: "Megkeresések · Wēddly",
+    outreach_description:
+      "Írj a kiszemelt szolgáltatóknak, és kövesd egy helyen, kinek mit küldtél.",
     planning_title: "Tervezés · Wēddly",
     planning_description:
       "Feladatok, ötletek és az esküvői napi programterv egy helyen, gyorsan rögzíthető, később könnyen átrendezhető.",
@@ -2098,6 +2101,7 @@ const hu: LocaleMessages = {
     logistics: "Logisztika",
     schedule: "Programterv",
     suppliers: "Szolgáltatók",
+    outreach: "Megkeresések",
     planning: "Tervezés",
     timeline: "Idővonal",
     honeymoon: "Nászút",

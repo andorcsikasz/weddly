@@ -60,6 +60,8 @@ export interface LocaleMessages {
     logistics_description: string;
     planning_title: string;
     planning_description: string;
+    outreach_title: string;
+    outreach_description: string;
     admin_suppliers_title: string;
     admin_suppliers_description: string;
     admin_feedback_title: string;
@@ -2503,6 +2505,10 @@ export interface LocaleMessages {
     /** Day-of run-of-show timeline page — sidebar only. */
     schedule: string;
     suppliers: string;
+    /** Vendor outreach inbox. The rail only carries it once the couple has
+     *  sent OUTREACH_NAV_UNLOCK_SENT messages; before that the inbox lives
+     *  under the directory on /app/vendors. */
+    outreach: string;
     /** Free-form planning surface (tasks / ideas / wedding-day schedule). */
     planning: string;
     /** Gantt-style timeline + point-of-contact panel — sidebar only. */

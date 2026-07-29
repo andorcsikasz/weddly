@@ -59,6 +59,9 @@ const en: LocaleMessages = {
     logistics_title: "Logistics · Weddly",
     logistics_description:
       "Drag-and-drop accommodation + transfer assignment for every wedding guest.",
+    outreach_title: "Outreach · Weddly",
+    outreach_description:
+      "Write to shortlisted vendors and follow what you have sent, all from one inbox.",
     planning_title: "Planning · Weddly",
     planning_description:
       "Tasks, ideas, and your wedding-day timeline in one place, quick to capture, easy to reorder.",
@@ -2072,6 +2075,7 @@ const en: LocaleMessages = {
     logistics: "Logistics",
     schedule: "Schedule",
     suppliers: "Suppliers",
+    outreach: "Outreach",
     planning: "Planning",
     timeline: "Timeline",
     honeymoon: "Honeymoon",

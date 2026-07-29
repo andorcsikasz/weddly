@@ -86,6 +86,7 @@ const RsvpPage = lazyWithReload(() => import("./pages/RsvpPage"));
 const SchedulePage = lazyWithReload(() => import("./pages/SchedulePage"));
 const SeatingPage = lazyWithReload(() => import("./pages/SeatingPage"));
 const SuppliersPage = lazyWithReload(() => import("./pages/SuppliersPage"));
+const OutreachPage = lazyWithReload(() => import("./pages/OutreachPage"));
 const SupplierDetailPage = lazyWithReload(() => import("./pages/SupplierDetailPage"));
 const PlannerDetailPage = lazyWithReload(() => import("./pages/PlannerDetailPage"));
 const PublicVendorPage = lazyWithReload(() => import("./pages/PublicVendorPage"));
@@ -990,10 +991,18 @@ export default function App() {
             }
           />
           <Route path="suppliers" element={<Navigate to="/app/vendors" replace />} />
-          {/* Outreach Inbox now lives as a section on /app/vendors — the
-            legacy URL keeps redirecting so emailed deep-links + bookmarks
-            still land on the same workspace. */}
-          <Route path="outreach" element={<Navigate to="/app/vendors" replace />} />
+          {/* Outreach Inbox. It is ALSO a section at the bottom of
+            /app/vendors, which is where a couple meets it while shortlisting;
+            this destination is what the rail points at once they have sent
+            enough messages to have an inbox worth returning to. */}
+          <Route
+            path="outreach"
+            element={
+              <Page>
+                <OutreachPage />
+              </Page>
+            }
+          />
           <Route
             path="planning"
             element={

@@ -40,6 +40,7 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
+import { OUTREACH_NAV_UNLOCK_SENT } from "@shared/outreach";
 import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { isCurrentSessionDemo } from "../lib/demoSession";
@@ -119,6 +120,17 @@ const ITEMS: NavItem[] = [
     labelKey: "nav.suppliers",
     tabKey: "nav.tab_suppliers",
     icon: <Store size={18} />,
+    group: "planning",
+  },
+  // Outreach is EARNED, not given: the row appears once the couple has sent
+  // OUTREACH_NAV_UNLOCK_SENT messages (see `coupleItems` below). Until then the
+  // inbox lives where it is discovered, under the directory on /app/vendors,
+  // and the rail stays as short as it can be. No tabKey on purpose — the phone
+  // bottom bar keeps its five core flows and this shows up in the More sheet.
+  {
+    to: "/app/outreach",
+    labelKey: "nav.outreach",
+    icon: <Send size={18} />,
     group: "planning",
   },
   // Free-form planning surface — desktop-only so the mobile bottom nav stays
@@ -716,7 +728,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     // still receive the prompt.
   }, [user, inAdminView]);
 
-  const coupleItems = ITEMS;
+  // The rail carries Outreach only for a couple who is actually running one.
+  // The count rides the session user, so this costs no request; a couple who
+  // crosses the threshold sees the row on their next /api/auth/me, wearing the
+  // unvisited dot like any other destination they have never opened.
+  const outreachEarned = (user?.outreach_sent ?? 0) >= OUTREACH_NAV_UNLOCK_SENT;
+  const coupleItems = outreachEarned ? ITEMS : ITEMS.filter((i) => i.to !== "/app/outreach");
   const displayItems = inAdminView ? ADMIN_ITEMS : coupleItems;
 
   // The explore nudge is for couples in their own workspace. A planner sitting

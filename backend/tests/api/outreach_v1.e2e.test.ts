@@ -17,6 +17,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import {
   OUTREACH_MESSAGES_PER_WEEK_CAP,
+  OUTREACH_NAV_UNLOCK_SENT,
   OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP,
   type OutreachCampaign,
   type OutreachCampaignDetail,
@@ -518,5 +519,61 @@ describe("GDPR purge cascades outreach tables", () => {
       )
       .get(coupleId) as { n: number };
     expect(orphanMessages.n).toBe(0);
+  });
+});
+
+// The workspace rail grows an Outreach row once the couple is actually running
+// one (OUTREACH_NAV_UNLOCK_SENT). The signal rides the session user so the rail
+// needs no request of its own; what it counts is messages that LEFT.
+describe("outreach_sent on the session user", () => {
+  test("starts at zero and follows what has been sent", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("outreach-navcount@weddly.test");
+
+    const before = await req<{ user: { outreach_sent: number } }>(
+      "GET",
+      "/api/auth/me",
+      undefined,
+      { token },
+    );
+    expect(before.data.user.outreach_sent).toBe(0);
+
+    const created = await req<OutreachCampaignDetail>(
+      "POST",
+      "/api/outreach/campaigns",
+      {
+        subject: "Two of us, June 2027",
+        body_template: "Hello, are you free on 14 June 2027? Thank you, Mia & Lucas",
+        supplier_ids: SUPPLIERS_WITH_EMAIL.slice(0, OUTREACH_NAV_UNLOCK_SENT),
+      },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    expect(created.data.messages.length).toBe(OUTREACH_NAV_UNLOCK_SENT);
+
+    const after = await req<{ user: { outreach_sent: number } }>("GET", "/api/auth/me", undefined, {
+      token,
+    });
+    expect(after.data.user.outreach_sent).toBe(OUTREACH_NAV_UNLOCK_SENT);
+  });
+
+  test("a queued message doesn't count — only one that left", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("outreach-navqueued@weddly.test");
+    const ts = Date.now();
+    db.prepare(
+      "INSERT INTO outreach_campaigns (couple_id, subject, body_template, created_at) VALUES (?, 'S', 'B', ?)",
+    ).run(coupleId, ts);
+    const campaignId = (db.prepare("SELECT last_insert_rowid() AS id").get() as { id: number }).id;
+    db.prepare(
+      `INSERT INTO outreach_messages
+         (campaign_id, supplier_id, supplier_email, sent_at, status, reply_token, created_at)
+       VALUES (?, 'x-supplier', 'x@example.com', NULL, 'queued', 'tok-queued-1', ?)`,
+    ).run(campaignId, ts);
+
+    const me = await req<{ user: { outreach_sent: number } }>("GET", "/api/auth/me", undefined, {
+      token,
+    });
+    expect(me.data.user.outreach_sent).toBe(0);
   });
 });
