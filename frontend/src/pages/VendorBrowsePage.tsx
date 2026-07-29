@@ -26,14 +26,7 @@ import type {
   SupplierCategory,
   SupplierCountryCount,
 } from "@shared/suppliers";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
-  MapPin,
-  X,
-} from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CountryPicker } from "../components/CountryPicker";
