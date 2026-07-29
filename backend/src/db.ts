@@ -486,6 +486,25 @@ addColumnIfMissing("couple_suppliers", "lng", "lng REAL");
 addColumnIfMissing("couple_suppliers", "contact_email", "contact_email TEXT");
 addColumnIfMissing("couple_suppliers", "contact_phone", "contact_phone TEXT");
 
+// The directory listing this private row IS. Two ways it gets set: the couple
+// adopted a listing that already existed (the repair path on a duplicate card),
+// or the row named a business Weddly didn't list yet and we published it to the
+// community directory. Either way the row stops being a second card for the
+// same business — every surface renders it from the listing. NULL is the
+// ordinary private entry (mum's cooking) that has no listing and wants none.
+addColumnIfMissing("couple_suppliers", "listing_id", "listing_id TEXT");
+
+// The other answer to "is this the business we already list?". `listing_id` records
+// a yes; this records a no, given by a couple who was shown the listing and said
+// theirs is a different business (folding drops the town, so two real venues can
+// share a name). Without it the card would re-offer the same listing on every
+// load, nagging about a question they already settled.
+addColumnIfMissing(
+  "couple_suppliers",
+  "not_listed_confirmed",
+  "not_listed_confirmed INTEGER NOT NULL DEFAULT 0",
+);
+
 // Admin-only freeform notes on community-submitted suppliers. Turns the
 // admin moderation page into a real CRM — moderators can jot triage notes
 // ("emailed the venue, awaiting reply", "looks like dupe of Crystal Hall")
@@ -2029,6 +2048,18 @@ addColumnIfMissing("personal_invite_campaign_sends", "opened_at", "opened_at INT
 addColumnIfMissing("personal_invite_campaign_sends", "clicked_at", "clicked_at INTEGER");
 addColumnIfMissing("onboarding_campaign_sends", "opened_at", "opened_at INTEGER");
 addColumnIfMissing("onboarding_campaign_sends", "clicked_at", "clicked_at INTEGER");
+
+// ── Which outreach messages actually reached a vendor's Weddly inbox ─────────
+// An outreach message and the `supplier_bookings` inquiry it delivers had no
+// link between them, and the absence cost us three ways. The couple was told
+// "sent" whether the vendor found it in their client list or only in a shared
+// info@ inbox. A vendor who claimed their listing AFTER being messaged had no
+// way to be handed the earlier leads, because nothing knew which messages had
+// been delivered. And the July 2026 window where outreach wrote no inquiry row
+// at all could only be repaired by a backfill that had no way to tell an
+// already-delivered message from a pending one, i.e. no way to be idempotent.
+// One nullable column answers all three.
+addColumnIfMissing("outreach_messages", "booking_id", "booking_id INTEGER");
 
 // Reserved system user that anchors the NOT-NULL author FK for verified-visitor
 // content (see above). Login-disabled (status='suspended' and password_hash that

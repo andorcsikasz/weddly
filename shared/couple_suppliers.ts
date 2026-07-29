@@ -3,8 +3,26 @@
 // couple uses these to mark categories they're handling in-house (mum cooking,
 // friend DJ-ing, etc.) so the directory page reflects their plan and the
 // budget page shows the cost alongside booked vendors.
+//
+// A row that names a real BUSINESS is the exception, and `listing_id` is how it
+// stops being a second card for something Weddly already shows: it binds the row
+// to a directory listing, either one that existed all along or one we published
+// on the couple's behalf. See the field's own note.
 
 import type { SupplierCategory } from "./suppliers";
+
+/** The directory listing a private row turned out to name. Carried on the DTO
+ *  so ANY surface — the directory page, the planning board, the guest-page
+ *  venue picker — can offer to switch to it, rather than each one loading and
+ *  folding the whole directory to work it out for itself. */
+export interface CoupleSupplierDirectoryMatch {
+  /** Public directory id (`v12`, `c5`, or a curated slug). */
+  id: string;
+  name: string;
+  city: string | null;
+  category: SupplierCategory;
+  hero_image_url: string | null;
+}
 
 export interface CoupleSupplier {
   id: string;
@@ -46,6 +64,16 @@ export interface CoupleSupplier {
   lng: number | null;
   contact_email: string | null;
   contact_phone: string | null;
+  /** The directory listing this row stands for, once it has one. Set by the
+   *  adopt path (the couple confirmed their row is a business Weddly already
+   *  lists) or by the publish path (the business was new, so we listed it).
+   *  Every surface renders such a row FROM the listing, which is what keeps one
+   *  business to one card. Null for an ordinary private entry. */
+  listing_id: string | null;
+  /** A listing whose name folds to this row's, when the row isn't bound to one
+   *  yet. The repair affordance: "this is already on Weddly, switch to it".
+   *  Always null once `listing_id` is set — the question is answered. */
+  directory_match: CoupleSupplierDirectoryMatch | null;
   created_at: number;
   updated_at: number;
 }
@@ -101,6 +129,11 @@ export interface CreateCoupleSupplierInput extends CoupleSupplierPlaceInput {
   paid?: boolean;
   probability?: number | null;
   next_step?: string | null;
+  /** The server refuses a name that folds to a listing it already carries, so
+   *  the row can't become a second card for one business. Send this ONLY when
+   *  the couple was shown the match and answered "this is a different vendor" —
+   *  two real businesses can share a name in two different towns. */
+  confirm_not_listed?: boolean;
 }
 
 export interface UpdateCoupleSupplierInput extends CoupleSupplierPlaceInput {

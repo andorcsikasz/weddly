@@ -44,6 +44,7 @@ import {
   type FocusEvent as ReactFocusEvent,
   type FormEvent,
   type ReactNode,
+  useCallback,
   useEffect,
   useId,
   useMemo,
@@ -53,13 +54,16 @@ import {
 import { Link } from "react-router-dom";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { DecisionsPanel } from "./DecisionsPanel";
-import { ApiError } from "../lib/api";
+import { alreadyListedName, ApiError } from "../lib/api";
 import {
   type PlanningPromptTags,
   coupleApi,
   coupleSupplierApi,
   planningApi,
+  supplierApi,
 } from "../lib/endpoints";
+import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
+import { setSelection } from "../lib/supplier_selection";
 import { formatHuf, maxIsoDate, todayIso } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import {
@@ -302,6 +306,20 @@ export default function PlanningPage() {
   const [vendorsFetched, setVendorsFetched] = useState(false);
   const [vendorModalOpen, setVendorModalOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<CoupleSupplier | null>(null);
+  // The directory, for the vendor modal's "already on Weddly?" check. Fetched
+  // the first time that modal opens rather than on page load: /app/planning is
+  // a task board and most visits never open it, so the whole listing payload
+  // would be paid for nothing. A failure degrades to no check.
+  const [directory, setDirectory] = useState<DirectorySupplier[]>([]);
+  const directoryRequested = useRef(false);
+  const loadDirectory = useCallback(() => {
+    if (directoryRequested.current) return;
+    directoryRequested.current = true;
+    supplierApi
+      .list(undefined, "all")
+      .then((r) => setDirectory(r.suppliers))
+      .catch(() => undefined);
+  }, []);
 
   // Priority filter for the tasks tab: 0 = show everything, 1 = important
   // only (priority === 1), 2 = SOS only (priority === 2). The two levels are
@@ -385,11 +403,16 @@ export default function PlanningPage() {
   // names when set, else the generic bride / groom role labels. Best-effort:
   // a failed fetch just leaves the datalist with the typed-history suggestions.
   const [partnerNames, setPartnerNames] = useState<string[]>([]);
+  // Needed to record a directory pick when the couple adopts a listing instead
+  // of adding their own row. Null until the fetch lands, which just means the
+  // adopt action isn't offered yet.
+  const [coupleId, setCoupleId] = useState<number | null>(null);
   useEffect(() => {
     coupleApi
       .current()
       .then((r) => {
         if (!r.couple) return;
+        setCoupleId(r.couple.id);
         setWeddingDate(r.couple.wedding_date ?? null);
         const bride = r.couple.bride_name?.trim() || t("planning.assignee_bride");
         const groom = r.couple.groom_name?.trim() || t("planning.assignee_groom");
@@ -718,6 +741,7 @@ export default function PlanningPage() {
     next_step: string | null;
     probability: number | null;
     price_huf: number | null;
+    confirm_not_listed?: boolean;
   }) {
     try {
       const r = await coupleSupplierApi.create({
@@ -726,12 +750,33 @@ export default function PlanningPage() {
         next_step: input.next_step,
         probability: input.probability,
         price_huf: input.price_huf,
+        confirm_not_listed: input.confirm_not_listed,
       });
       setVendors((prev) => [...prev, r.supplier]);
     } catch (e) {
+      // The modal's own notice only knows the directory it managed to load; the
+      // server knows all of it. Steer to the listing rather than showing a raw
+      // "Already on Weddly: X" from the API.
+      const listed = alreadyListedName(e);
+      if (listed !== null) {
+        toast.info(t("suppliers.submit.err_already_listed", { name: listed }));
+        throw e;
+      }
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
       throw e;
     }
+  }
+
+  // The couple was about to add a pipeline row for a business Weddly already
+  // lists. Record it as their pick for its category instead: that is the same
+  // "this is our vendor" state the directory page writes, and it carries the
+  // listing's photos, address and reviews, which a private row never would.
+  // No pipeline row is created, so there is nothing to keep in sync with it.
+  function onAdoptVendor(supplier: DirectorySupplier) {
+    if (coupleId === null) return;
+    setSelection(coupleId, supplier.category, supplier.id);
+    toast.success(t("suppliers.twin.adopted_toast", { name: supplier.name }));
+    setVendorModalOpen(false);
   }
 
   async function onUpdateVendor(
@@ -1160,6 +1205,7 @@ export default function PlanningPage() {
                 onToggleTaskDone={onToggleDone}
                 onPatchTask={onPatch}
                 onAddVendor={() => {
+                  loadDirectory();
                   setEditingVendor(null);
                   setVendorModalOpen(true);
                 }}
@@ -1279,6 +1325,8 @@ export default function PlanningPage() {
       {vendorModalOpen && (
         <VendorModal
           vendor={editingVendor}
+          directory={directory}
+          onUseExisting={coupleId === null ? undefined : onAdoptVendor}
           onClose={() => setVendorModalOpen(false)}
           onCreate={onCreateVendor}
           onUpdate={onUpdateVendor}
@@ -3174,19 +3222,27 @@ function VendorKanbanCard({
   );
 }
 
-import { SUPPLIER_GROUPS } from "@shared/suppliers";
+import { type DirectorySupplier, SUPPLIER_GROUPS, findSupplierTwins } from "@shared/suppliers";
 
 // Derived from the single taxonomy source so the DIY picker can't drift.
 const VALID_CATEGORIES = SUPPLIER_GROUPS.flatMap((g) => g.categories);
 
 function VendorModal({
   vendor,
+  directory,
+  onUseExisting,
   onClose,
   onCreate,
   onUpdate,
   onDelete,
 }: {
   vendor: CoupleSupplier | null;
+  /** Directory entries the typed name is checked against. Empty (or still
+   *  loading) disables the check, so the form keeps its old behaviour. */
+  directory: readonly DirectorySupplier[];
+  /** Record the listing as the couple's pick instead of creating a row. Absent
+   *  until the couple id resolves, which leaves the notice informational. */
+  onUseExisting?: (supplier: DirectorySupplier) => void;
   onClose: () => void;
   onCreate: (input: {
     name: string;
@@ -3194,6 +3250,7 @@ function VendorModal({
     next_step: string | null;
     probability: number | null;
     price_huf: number | null;
+    confirm_not_listed?: boolean;
   }) => Promise<void>;
   onUpdate: (
     id: string,
@@ -3223,6 +3280,19 @@ function VendorModal({
   );
   const [nextStepError, setNextStepError] = useState(false);
   const [saving, setSaving] = useState(false);
+  // "I know, it's a different vendor" — cleared whenever the name or category
+  // changes, so a fresh answer gets a fresh check.
+  const [twinOverride, setTwinOverride] = useState(false);
+
+  // Edit mode skips the check: the row exists already, and re-offering the
+  // listing every time the couple opens it to move a next step would nag.
+  const twins =
+    isEdit || directory.length === 0
+      ? []
+      : findSupplierTwins(name, category as DirectorySupplier["category"], directory, 3);
+  // An exact match holds the save; a loose one is only an offer. With nothing
+  // to adopt with, nothing blocks.
+  const twinBlocks = !twinOverride && twins.some((tw) => tw.exact) && Boolean(onUseExisting);
 
   async function handleSave() {
     const trimmedNextStep = nextStep.trim();
@@ -3230,6 +3300,8 @@ function VendorModal({
       setNextStepError(true);
       return;
     }
+    // The notice is on screen with both ways out; refuse quietly.
+    if (twinBlocks) return;
     setNextStepError(false);
     setSaving(true);
     const input = {
@@ -3243,7 +3315,9 @@ function VendorModal({
       if (isEdit) {
         await onUpdate(vendor.id, input);
       } else {
-        await onCreate(input);
+        // The server checks the whole directory; `twinOverride` is the couple's
+        // answer to the notice above and the only thing that gets past it.
+        await onCreate({ ...input, confirm_not_listed: twinOverride });
       }
       onClose();
     } catch {
@@ -3289,7 +3363,7 @@ function VendorModal({
               type="button"
               className="btn-primary"
               onClick={handleSave}
-              disabled={saving || !name.trim()}
+              disabled={saving || !name.trim() || twinBlocks}
             >
               {saving ? t("common.loading") : t("planning.board_vendor_save")}
             </button>
@@ -3306,12 +3380,25 @@ function VendorModal({
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              setTwinOverride(false);
+            }}
             autoFocus
             maxLength={200}
             className="w-full rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-900 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
           />
         </label>
+
+        {twins.length > 0 && onUseExisting && (
+          <DirectoryTwinNotice
+            twins={twins}
+            blocking={twinBlocks}
+            busy={saving}
+            onUse={onUseExisting}
+            onDismiss={() => setTwinOverride(true)}
+          />
+        )}
 
         {/* Category */}
         <label className="block">
@@ -3320,7 +3407,11 @@ function VendorModal({
           </span>
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              // Twins are category-scoped, so switching category re-asks.
+              setTwinOverride(false);
+            }}
             className="w-full rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-900 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
           >
             {VALID_CATEGORIES.map((cat) => (

@@ -98,6 +98,7 @@ import {
   supplierApi,
   supplierCostApi,
 } from "../lib/endpoints";
+import { ApiError } from "../lib/api";
 import type { BudgetLine, Currency, PlannerDirectoryEntry } from "@shared/types";
 import type { CoupleSupplierCost } from "@shared/supplier_costs";
 import { SupplierCompareDialog } from "../components/SupplierCompareDialog";
@@ -267,6 +268,10 @@ export default function SuppliersPage() {
    *  state cleanly. */
   const [currency, setCurrency] = useState<Currency>("HUF");
   const [targetGuestCount, setTargetGuestCount] = useState<number | null>(null);
+  // The couple's wedding day, and the listings known to be taken on whichever
+  // day the date filter is pointing at.
+  const [weddingDate, setWeddingDate] = useState<string | null>(null);
+  const [unavailableIds, setUnavailableIds] = useState<ReadonlySet<string>>(() => new Set());
   // Wedding-venue pin (couple.location_lat/lng). Feeds the comparison dialog's
   // distance row — null until the couple sets a venue in onboarding/settings.
   const [coupleLocation, setCoupleLocation] = useState<{
@@ -406,6 +411,21 @@ export default function SuppliersPage() {
     return Number.isInteger(n) && n > 0 ? n : null;
   })();
 
+  // The date the couple is shopping FOR. Defaults to the wedding day, because
+  // that is the question behind every supplier search, and stays editable
+  // because the second question is usually a different day: the welcome dinner,
+  // a shortlisted alternative date, an engagement shoot. `?date=` only appears
+  // in the URL once it differs from the wedding day, same rule as `?country=`,
+  // so the resting state keeps a clean URL.
+  const dateFilter = params.get("date") ?? weddingDate;
+  const dateIsWedding = weddingDate !== null && dateFilter === weddingDate;
+  function setDateFilter(next: string | null) {
+    const p = new URLSearchParams(params);
+    if (!next || next === weddingDate) p.delete("date");
+    else p.set("date", next);
+    setParams(p, { replace: true });
+  }
+
   // Country scope lives in the URL (`?country=`) so it survives refresh and is
   // shareable, just like city / guests / view. Absent → the couple's own
   // country (localised default); an ISO code scopes to it; "all" drops the
@@ -421,6 +441,29 @@ export default function SuppliersPage() {
     else p.set("country", next);
     setParams(p, { replace: true });
   }
+
+  // Who is taken on the chosen day. Refetched when the day changes; the
+  // catalogue itself is never refetched, which is the whole reason this is a
+  // separate endpoint. A failure clears the set rather than keeping a stale one:
+  // hiding a supplier because of an answer we no longer trust is the worse error.
+  useEffect(() => {
+    if (!dateFilter) {
+      setUnavailableIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    supplierApi
+      .unavailableOn(dateFilter)
+      .then((r) => {
+        if (!cancelled) setUnavailableIds(new Set(r.supplier_ids));
+      })
+      .catch(() => {
+        if (!cancelled) setUnavailableIds(new Set());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateFilter]);
 
   function setQuery(next: string) {
     const p = new URLSearchParams(params);
@@ -583,12 +626,17 @@ export default function SuppliersPage() {
   // here, it's mirrored from the budget page. Country only counts when it is
   // NOT the couple's own country, which is the resting state.
   const scopeFilterCount =
-    (countrySelection !== (coupleCountry || "all") ? 1 : 0) + (priceBand !== null ? 1 : 0);
+    (countrySelection !== (coupleCountry || "all") ? 1 : 0) +
+    (priceBand !== null ? 1 : 0) +
+    // Same rule as country: the resting state (the wedding day) isn't a filter
+    // the couple set, so it doesn't earn a number on the chip.
+    (dateFilter !== null && !dateIsWedding ? 1 : 0);
   function clearScopeFilters() {
     const p = new URLSearchParams(params);
     p.delete("country");
     p.delete("price");
     p.delete("price_max");
+    p.delete("date");
     setParams(p, { replace: true });
   }
 
@@ -633,6 +681,7 @@ export default function SuppliersPage() {
         const id = couple.couple?.id ?? null;
         setCoupleId(id);
         setTargetGuestCount(couple.couple?.target_guest_count ?? null);
+        setWeddingDate(couple.couple?.wedding_date ?? null);
         if (couple.couple) {
           setCurrency(couple.couple.currency ?? "HUF");
           setCoupleCountry(couple.couple.country ?? "");
@@ -762,6 +811,42 @@ export default function SuppliersPage() {
     },
     [coupleId, selection, toast, t],
   );
+
+  // The repair action for a duplicate that already exists: a private row the
+  // couple created before anything checked the directory, standing beside the
+  // real listing for the same business. One click binds the row to the listing
+  // and moves the pick there, so the card becomes the listing's — with its
+  // photo, address and reviews. Nothing is deleted: the row keeps the couple's
+  // notes, price and payment schedule, it just stops being its own business.
+  const repairDuplicate = useCallback(
+    async (entry: CoupleSupplier) => {
+      const match = entry.directory_match;
+      if (!match || coupleId === null) return;
+      try {
+        const r = await coupleSupplierApi.adopt(entry.id);
+        setCoupleSuppliers((prev) => prev.map((p) => (p.id === entry.id ? r.supplier : p)));
+        // The server already moved the pick row; this mirrors it into local +
+        // cross-tab state so the listing's card flips without a refetch.
+        setSelectionState(setSelection(coupleId, match.category, r.listing_id));
+        setHighlightId(r.listing_id);
+        toast.success(t("suppliers.twin.adopted_toast", { name: match.name }));
+      } catch (err) {
+        toast.error(err instanceof ApiError ? err.message : t("common.error_generic"));
+      }
+    },
+    [coupleId, toast, t],
+  );
+
+  // Listings the couple's own rows are bound to. A bound row is NOT drawn as a
+  // second card — the listing's card represents it (and carries its edit
+  // pencil), which is the whole point of the binding. Keyed by listing id.
+  const boundByListingId = useMemo(() => {
+    const m = new Map<string, CoupleSupplier>();
+    for (const s of coupleSuppliers) {
+      if (s.listing_id) m.set(s.listing_id, s);
+    }
+    return m;
+  }, [coupleSuppliers]);
 
   // "Magam szervezem" — the couple decides to organize the wedding themselves
   // instead of hiring a planner. Recorded as a sentinel pick on the
@@ -1054,6 +1139,13 @@ export default function SuppliersPage() {
         return guestsFilter >= min && guestsFilter <= max;
       });
     }
+    // Date: subtractive only. `unavailableIds` holds the listings with a real
+    // reason on file for being taken that day; everyone else is unknown, not
+    // free, and stays in the list. An empty set (nothing loaded yet, or a
+    // catalogue of unclaimed entries) therefore hides nothing.
+    if (unavailableIds.size > 0) {
+      dir = dir.filter((s) => !unavailableIds.has(s.id));
+    }
     const q = queryNorm;
     if (q) {
       // Bidirectional metro expansion: the query may EITHER be the
@@ -1085,9 +1177,18 @@ export default function SuppliersPage() {
     // so they don't belong in the saved-list summary either way. Verified-only
     // is registered vendors only, so DIY rows are likewise excluded.
     let mine = showSavedOnly || showVerifiedOnly ? [] : coupleSuppliers;
+    // One business, one card. A row bound to a listing we actually loaded is
+    // represented BY that listing's card (which carries its edit pencil), so
+    // drawing it here as well would put the duplicate back. A bound row whose
+    // listing isn't in the payload — still pending moderation, or scoped out by
+    // country — keeps its own card, otherwise the couple's own vendor would
+    // vanish from their own list.
+    const loadedIds = new Set(items.map((it) => it.id));
+    mine = mine.filter((s) => !(s.listing_id && loadedIds.has(s.listing_id)));
     if (showPickedOnly) {
       const pickedIds = new Set(Object.values(selection));
-      mine = mine.filter((s) => pickedIds.has(s.id));
+      // A bound row's pick points at its LISTING, not at the row id.
+      mine = mine.filter((s) => pickedIds.has(s.listing_id ?? s.id));
     }
     if (q) {
       mine = mine.filter((s) => normalize(`${s.name} ${s.notes ?? ""}`).includes(q));
@@ -1095,6 +1196,7 @@ export default function SuppliersPage() {
     return [...mine, ...dir];
   }, [
     scopedItems,
+    items,
     coupleSuppliers,
     cityFilter,
     showSavedOnly,
@@ -1104,6 +1206,7 @@ export default function SuppliersPage() {
     selection,
     priceBand,
     guestsFilter,
+    unavailableIds,
     query,
     gazetteerReady,
     geoResolved,
@@ -1995,7 +2098,10 @@ export default function SuppliersPage() {
                   const Icon = CATEGORY_ICON[s.category];
                   const isHighlighted = s.id === highlightId;
                   const isSaved = s.source !== "self" && saved.has(s.id);
-                  const isPicked = selection[s.category] === s.id;
+                  // A bound private row holds its pick under the LISTING's id, so
+                  // ask about that when there is one.
+                  const pickIdentity = s.source === "self" ? (s.listing_id ?? s.id) : s.id;
+                  const isPicked = selection[s.category] === pickIdentity;
                   const isCompared = compareIds.includes(s.id);
                   const compareCapReached = compareIds.length >= COMPARE_MAX;
                   if (s.source === "self") {
@@ -2003,6 +2109,10 @@ export default function SuppliersPage() {
                       setDiyEditing(s);
                       setDiyOpen(true);
                     };
+                    // The row turned out to name a business Weddly lists. Offered
+                    // right on the card, because a duplicate that already exists
+                    // is the one case the create-time check can never catch.
+                    const match = s.directory_match;
                     if (viewMode === "line") {
                       return (
                         <article
@@ -2046,6 +2156,16 @@ export default function SuppliersPage() {
                               )}
                             </p>
                           </div>
+                          {match && (
+                            <button
+                              type="button"
+                              onClick={() => repairDuplicate(s)}
+                              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-blush-300 bg-blush-50 px-3 text-xs font-medium text-blush-700 transition hover:border-blush-500 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
+                            >
+                              <Sparkles size={12} aria-hidden />
+                              {t("suppliers.twin.use")}
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={openEdit}
@@ -2061,69 +2181,92 @@ export default function SuppliersPage() {
                       );
                     }
                     return (
+                      // The couple's own entry wears the SAME card as a listing:
+                      // hero block on top, name + price on one line, one tight
+                      // meta line under it. It used to be a short sage panel with
+                      // a monogram, which beside a full directory card read as a
+                      // broken or lesser thing rather than as their own vendor.
+                      // The sage body tint and the "Yours" pill are the only marks
+                      // of difference left, and the pill is the one that speaks.
                       <article
                         key={s.id}
                         data-supplier-id={s.id}
-                        className={`card !p-4 relative flex h-full flex-col border-sage-400 !bg-sage-50/60 dark:border-sage-400/40 dark:!bg-sage-400/15 ${
-                          isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""
-                        }`}
+                        className={`card !p-0 relative flex h-full flex-col overflow-hidden ${
+                          isPicked ? "border-2 border-sage-500 dark:border-sage-400/60" : ""
+                        } ${isHighlighted ? "ring-2 ring-blush-400 ring-offset-2" : ""}`}
                       >
-                        <button
-                          type="button"
-                          onClick={openEdit}
-                          aria-label={t("suppliers.diy_action_edit_aria")}
-                          className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-sage-600 transition hover:bg-sage-100 hover:text-sage-800 dark:text-sage-300 dark:hover:bg-sage-400/20 dark:hover:text-sage-200"
-                        >
-                          <Pencil size={14} aria-hidden />
-                        </button>
-                        <div className="flex items-start gap-3 pr-8">
-                          {/* Same DIY supplier card as above (expanded layout) — no
-                        listings join, monogram fallback only. */}
-                          <Avatar name={s.name} />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="truncate text-base font-semibold">{s.name}</h3>
+                        <div className="relative h-40 w-full shrink-0 bg-paper-200 dark:bg-umber-700">
+                          {/* The couple can't upload a photo for their own row
+                          (hero images are a vendor's to set), so this is always
+                          the category badge — the same placeholder a listing
+                          without a photo shows, not a lesser one. */}
+                          <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+                            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-paper-50 text-ink-400 shadow-sm dark:bg-umber-800 dark:text-umber-300">
+                              <Icon size={24} aria-hidden />
+                            </span>
+                            <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-300">
+                              {t(`suppliers.cat.${s.category}`)}
+                            </span>
+                          </div>
+                          <div className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/95 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/90">
+                            <button
+                              type="button"
+                              onClick={openEdit}
+                              aria-label={t("suppliers.diy_action_edit_aria")}
+                              className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-500 transition hover:bg-paper-200 hover:text-sage-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-sage-300"
+                            >
+                              <Pencil size={13} aria-hidden />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex flex-1 flex-col bg-sage-50/60 px-4 pb-3 pt-2.5 dark:bg-sage-400/15">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                              <h3 className="min-w-0 truncate text-base font-semibold">{s.name}</h3>
                               <span className="shrink-0 rounded-full border border-sage-300 bg-sage-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-700 dark:border-sage-400/40 dark:bg-sage-400/20 dark:text-sage-300">
                                 {t("suppliers.diy_pill")}
                               </span>
                             </div>
-                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-500 dark:text-umber-300">
-                              <span className="inline-flex items-center gap-1 uppercase tracking-wide">
-                                <Icon size={12} aria-hidden />
-                                {t(`suppliers.cat.${s.category}`)}
+                            {s.price_huf !== null && s.price_huf > 0 && (
+                              <span className="shrink-0 whitespace-nowrap text-xs font-medium text-sage-700 dark:text-sage-300">
+                                {formatMoney(s.price_huf, currency, locale === "hu" ? "hu" : "en")}
                               </span>
-                              {s.price_huf !== null && s.price_huf > 0 && (
-                                <>
-                                  <span aria-hidden className="text-paper-400 dark:text-umber-300">
-                                    ·
-                                  </span>
-                                  <span className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-sage-700 dark:text-sage-300">
-                                    <Wallet size={12} aria-hidden />
-                                    {formatMoney(
-                                      s.price_huf,
-                                      currency,
-                                      locale === "hu" ? "hu" : "en",
-                                    )}
-                                  </span>
-                                </>
-                              )}
-                            </p>
+                            )}
                           </div>
-                        </div>
-                        {s.notes && (
-                          <p className="mt-2 line-clamp-3 text-sm text-ink-700 dark:text-paper-100">
-                            {s.notes}
+                          <p className="mt-0.5 flex min-w-0 items-center gap-x-1.5 truncate text-xs text-ink-500 dark:text-umber-300">
+                            <Icon size={12} className="shrink-0" aria-hidden />
+                            <span className="uppercase tracking-wide">
+                              {t(`suppliers.cat.${s.category}`)}
+                            </span>
+                            {s.city && (
+                              <>
+                                <span aria-hidden className="text-paper-400 dark:text-umber-300">
+                                  ·
+                                </span>
+                                <span className="uppercase tracking-wide">{s.city}</span>
+                              </>
+                            )}
                           </p>
-                        )}
-                        <div className="mt-auto flex items-center justify-end gap-2 pt-3">
-                          <button
-                            type="button"
-                            onClick={openEdit}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-sage-300 bg-sage-50 px-3 py-1.5 text-xs font-medium text-sage-700 transition hover:border-sage-500 hover:bg-sage-100 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 dark:hover:border-sage-400/60 dark:hover:bg-sage-400/20"
-                          >
-                            <Pencil size={13} aria-hidden />
-                            {t("suppliers.diy_modal_edit")}
-                          </button>
+                          {s.notes && (
+                            <p className="mt-1.5 line-clamp-2 text-xs text-ink-700 dark:text-paper-100">
+                              {s.notes}
+                            </p>
+                          )}
+                          {match && (
+                            <button
+                              type="button"
+                              onClick={() => repairDuplicate(s)}
+                              className="mt-auto flex w-full items-center gap-2 rounded-xl border border-blush-300 bg-blush-50 px-3 py-2 text-left text-xs text-blush-800 transition hover:border-blush-500 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-200"
+                            >
+                              <Sparkles size={13} className="shrink-0" aria-hidden />
+                              <span className="min-w-0 flex-1">
+                                <span className="block font-semibold">
+                                  {t("suppliers.twin.title")}
+                                </span>
+                                <span className="block truncate">{t("suppliers.twin.body")}</span>
+                              </span>
+                            </button>
+                          )}
                         </div>
                       </article>
                     );
@@ -2344,11 +2487,32 @@ export default function SuppliersPage() {
                             </span>
                           </div>
                         )}
-                        {/* Top-right: pick + save */}
+                        {/* Top-right: pick + save, and the couple's own pencil when
+                        one of their rows is bound to this listing — that row holds
+                        their price, notes and payment schedule, and this card is
+                        now the only place it appears. */}
                         <div
                           className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-xl bg-paper-50/95 px-1 py-1 backdrop-blur-sm dark:bg-umber-800/90"
                           onClick={(e) => e.stopPropagation()}
                         >
+                          {(() => {
+                            const bound = boundByListingId.get(s.id);
+                            if (!bound) return null;
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDiyEditing(bound);
+                                  setDiyOpen(true);
+                                }}
+                                aria-label={t("suppliers.diy_action_edit_aria")}
+                                title={t("suppliers.diy_modal_edit")}
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-sage-700 transition hover:bg-sage-100 dark:text-sage-300 dark:hover:bg-sage-400/20"
+                              >
+                                <Pencil size={13} aria-hidden />
+                              </button>
+                            );
+                          })()}
                           <button
                             type="button"
                             onClick={() => togglePicked(s)}

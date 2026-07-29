@@ -70,6 +70,18 @@ export class ApiError extends Error {
   }
 }
 
+/** The listing named by a `409 already_listed` refusal, or null for any other
+ *  error. Every form that records a vendor by name can hit this — the server
+ *  checks the whole directory on create, not just the slice the page loaded —
+ *  so the "point at the real listing instead" branch is written once. */
+export function alreadyListedName(err: unknown): string | null {
+  if (!(err instanceof ApiError) || err.status !== 409) return null;
+  const detail = err.detail && typeof err.detail === "object" ? err.detail : {};
+  if ((detail as { code?: string }).code !== "already_listed") return null;
+  const existing = (detail as { existing?: { name?: string } }).existing;
+  return existing?.name ?? "";
+}
+
 export function getToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEY);

@@ -1764,6 +1764,16 @@ export const supplierApi = {
       qs ? `/api/suppliers?${qs}` : "/api/suppliers",
     );
   },
+  /** Listing ids KNOWN to be taken on `date` (a whole-day block, or a weekday
+   *  the vendor doesn't work). Everything absent from the list is unknown, not
+   *  free — see the domain helper. Separate from `list` on purpose: the
+   *  catalogue is fetched once and filtered client-side, so changing the date
+   *  must not refetch it. */
+  unavailableOn: (date: string) =>
+    apiFetch<{ date: string; supplier_ids: string[] }>(
+      "GET",
+      `/api/suppliers/unavailable?date=${encodeURIComponent(date)}`,
+    ),
   submitCommunity: (body: SubmitCommunitySupplierInput) =>
     apiFetch<{ supplier: DirectorySupplier }>("POST", "/api/suppliers/community", body),
   /** Live "is this supplier already on Weddly?" lookup for the recommend form.
@@ -1996,13 +2006,27 @@ export const supplierBookingApi = {
 
 export const coupleSupplierApi = {
   list: () => apiFetch<{ suppliers: CoupleSupplier[] }>("GET", "/api/couple-suppliers"),
+  /** 201 with `listing_id` set when the entry named a business Weddly didn't
+   *  carry and we published it to the directory; 409 `already_listed` (detail
+   *  carries `existing`) when it named one we do. */
   create: (body: CreateCoupleSupplierInput) =>
-    apiFetch<{ supplier: CoupleSupplier }>("POST", "/api/couple-suppliers", body),
+    apiFetch<{ supplier: CoupleSupplier; listing_id: string | null }>(
+      "POST",
+      "/api/couple-suppliers",
+      body,
+    ),
   update: (id: string, body: UpdateCoupleSupplierInput) =>
     apiFetch<{ supplier: CoupleSupplier }>(
       "PATCH",
       `/api/couple-suppliers/${encodeURIComponent(id)}`,
       body,
+    ),
+  /** Bind an existing private row to the listing it duplicates (the server
+   *  re-derives which one) and move the category pick there. */
+  adopt: (id: string) =>
+    apiFetch<{ supplier: CoupleSupplier; listing_id: string }>(
+      "POST",
+      `/api/couple-suppliers/${encodeURIComponent(id)}/adopt`,
     ),
   remove: (id: string) =>
     apiFetch<{ ok: true }>("DELETE", `/api/couple-suppliers/${encodeURIComponent(id)}`),

@@ -14,9 +14,11 @@
 // forward-looking only.
 
 import { randomBytes } from "node:crypto";
-import type { CoupleSupplier } from "@shared/couple_suppliers";
+import type { CoupleSupplier, CoupleSupplierDirectoryMatch } from "@shared/couple_suppliers";
 import { SUPPLIER_TO_BUDGET, type SupplierCategory } from "@shared/suppliers";
 import { db, now } from "../db";
+import { insertCommunitySupplier } from "./community_suppliers";
+import { findDirectoryTwinByName } from "./listings";
 import { listForSupplier, recomputePaidState } from "./supplier_installments";
 
 interface Row {
@@ -36,8 +38,20 @@ interface Row {
   lng: number | null;
   contact_email: string | null;
   contact_phone: string | null;
+  listing_id: string | null;
+  not_listed_confirmed: number;
   created_at: number;
   updated_at: number;
+}
+
+/** The listing this row already stands for, or the one it looks like.
+ *
+ *  A row that has answered the question asks nothing further: `listing_id` is a
+ *  yes, `not_listed_confirmed` is a no, and re-offering the listing either way
+ *  would be nagging about something the couple settled. */
+function directoryMatchFor(r: Row): CoupleSupplierDirectoryMatch | null {
+  if (r.listing_id || r.not_listed_confirmed === 1) return null;
+  return findDirectoryTwinByName(r.name, r.category as SupplierCategory);
 }
 
 function toDto(r: Row): CoupleSupplier {
@@ -59,6 +73,8 @@ function toDto(r: Row): CoupleSupplier {
     lng: r.lng,
     contact_email: r.contact_email,
     contact_phone: r.contact_phone,
+    listing_id: r.listing_id,
+    directory_match: directoryMatchFor(r),
     created_at: r.created_at,
     updated_at: r.updated_at,
   };
@@ -149,6 +165,12 @@ interface InsertInput extends PlaceFields {
   notes: string | null;
   price_huf: number | null;
   paid: boolean;
+  /** The directory listing this row stands for, when the caller already knows
+   *  it (it published one, or the couple adopted an existing one). */
+  listing_id?: string | null;
+  /** The couple was shown a same-name listing and said theirs is a different
+   *  business. Stops the card asking again. */
+  not_listed_confirmed?: boolean;
 }
 
 export function insert(coupleId: number, input: InsertInput): CoupleSupplier {
@@ -176,8 +198,9 @@ export function insert(coupleId: number, input: InsertInput): CoupleSupplier {
     db.prepare(
       `INSERT INTO couple_suppliers
        (id, couple_id, name, category, notes, price_huf, paid, budget_line_id,
-        city, address, lat, lng, contact_email, contact_phone, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        city, address, lat, lng, contact_email, contact_phone, listing_id,
+        not_listed_confirmed, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       coupleId,
@@ -193,6 +216,8 @@ export function insert(coupleId: number, input: InsertInput): CoupleSupplier {
       input.lng,
       input.contact_email,
       input.contact_phone,
+      input.listing_id ?? null,
+      input.not_listed_confirmed ? 1 : 0,
       ts,
       ts,
     );
@@ -313,6 +338,131 @@ export function deleteById(id: string, coupleId: number): boolean {
       .run(id, coupleId);
   })();
   return result.changes > 0;
+}
+
+// ── Directory binding ───────────────────────────────────────────────────────
+//
+// A private row that names a real business gets bound to a `listings` id, and
+// from then on every surface renders it FROM that listing. Two ways in:
+//
+//   adoptDirectoryListing — the business was already listed and the couple's row
+//     was a second card for it. Nothing is destroyed: the row keeps its notes,
+//     price, mirrored budget line and payment schedule (installments FK to it and
+//     have no home on the listing side), it just stops being its own business.
+//     The category PICK moves to the listing, which is what turns the couple's
+//     bare name into the listing's photos, address and reviews.
+//
+//   publishAsCommunityListing — the business was NOT listed, so we list it. The
+//     row lands in the ordinary community queue, which is also what makes it
+//     reachable by the claim-invite campaign (it targets unclaimed active
+//     listings with a contact email), so the vendor gets pulled into the flow
+//     instead of living forever inside one couple's workspace.
+
+/** Bind a private row to a listing and move its category pick there. Returns
+ *  the updated row, or null when the row doesn't exist. */
+export function bindListing(
+  id: string,
+  coupleId: number,
+  listingId: string,
+): CoupleSupplier | null {
+  const ts = now();
+  db.transaction(() => {
+    db.prepare(
+      "UPDATE couple_suppliers SET listing_id = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
+    ).run(listingId, ts, id, coupleId);
+    // The pick is what the rest of the app reads as "this is our vendor for this
+    // category", so it has to follow the binding — otherwise the couple's chosen
+    // venue is still their private row and the listing stays an also-ran.
+    db.prepare(
+      "UPDATE couple_picks SET supplier_id = ? WHERE couple_id = ? AND supplier_id = ?",
+    ).run(listingId, coupleId, id);
+  })();
+  return getById(id, coupleId);
+}
+
+/** Carry a bound row's price over to the per-couple cost row that directory
+ *  suppliers use, so the money shows on the listing's own detail page too. The
+ *  mirrored budget line stays where it is — this is an addition, not a move, and
+ *  a cost row that already exists is left alone rather than overwritten. */
+export function mirrorPriceToListingCost(coupleId: number, listingId: string, row: Row): void {
+  if (row.price_huf === null || row.price_huf <= 0) return;
+  const ts = now();
+  db.prepare(
+    `INSERT INTO couple_supplier_costs
+       (couple_id, supplier_id, planned_huf, actual_huf, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(couple_id, supplier_id) DO NOTHING`,
+  ).run(coupleId, listingId, row.price_huf, row.paid === 1 ? row.price_huf : 0, row.notes, ts, ts);
+}
+
+/** Enough of a business to be a directory card? Name and category alone are not:
+ *  a row with no location can't be rendered as a card, can't be found by anyone
+ *  searching a town, and can't be invited. That floor is also what keeps the
+ *  genuinely private rows private — "Anyu főztje" and "Béla bácsi a zenén" are
+ *  typed into a form that collects no address, phone or email at all, so they
+ *  never reach this bar and are never published. */
+export function isPublishableToDirectory(input: {
+  city: string | null;
+  address: string | null;
+}): boolean {
+  return Boolean(input.city?.trim() || input.address?.trim());
+}
+
+/** List a private row as a community submission and bind the row to it. The
+ *  submission lands 'pending' like every other community entry: the admin queue
+ *  is what stands between a logged-in couple and the public directory, and
+ *  releasing it from there is also what sends the vendor their verify mail.
+ *  Returns the new listing id, or null when the row isn't publishable. */
+export function publishAsCommunityListing(
+  coupleId: number,
+  submitterUserId: number,
+  row: Row,
+): string | null {
+  if (!isPublishableToDirectory(row)) return null;
+
+  // Somebody may have added this business a moment ago and it is still sitting in
+  // the moderation queue — invisible to the create guard, which only asks about
+  // live listings. Join that row rather than putting a second copy behind it: one
+  // business is one listing no matter how many couples booked it.
+  const queued = findDirectoryTwinByName(row.name, row.category as SupplierCategory, {
+    includePending: true,
+  });
+  if (queued) {
+    bindListing(row.id, coupleId, queued.id);
+    mirrorPriceToListingCost(coupleId, queued.id, row);
+    return queued.id;
+  }
+
+  const communityId = insertCommunitySupplier(submitterUserId, {
+    category: row.category as SupplierCategory,
+    // 'user' rather than 'self': a couple recommending a vendor they booked is
+    // exactly the "a user suggested you" case the claim invite is written for.
+    submitter_type: "user",
+    name: row.name,
+    city: row.city?.trim() ?? "",
+    address: row.address?.trim() ?? null,
+    website: "",
+    contact_email: row.contact_email?.trim() ?? null,
+    contact_phone: row.contact_phone?.trim() ?? null,
+    // The couple's notes are private to them; a public blurb is the vendor's own
+    // words to write once they claim the listing.
+    blurb: "",
+    price_band: null,
+  });
+  const listingId = `c${communityId}`;
+  bindListing(row.id, coupleId, listingId);
+  mirrorPriceToListingCost(coupleId, listingId, row);
+  return listingId;
+}
+
+/** Raw row read, for callers that need the pre-DTO columns (the adopt + publish
+ *  paths, which work off `listing_id` and the money columns). */
+export function getRowById(id: string, coupleId: number): Row | null {
+  return (
+    (db
+      .prepare("SELECT * FROM couple_suppliers WHERE id = ? AND couple_id = ?")
+      .get(id, coupleId) as Row | undefined) ?? null
+  );
 }
 
 /** Used by couple purge — drops every DIY supplier for a couple. Linked

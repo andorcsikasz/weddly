@@ -34,12 +34,15 @@ import type { ListingPackage } from "@shared/listing_packages";
 import type { ListingVideo, VideoProvider } from "@shared/listing_videos";
 import {
   type DirectorySupplierBase,
+  foldSupplierName,
   formatSpokenLanguages,
   parseSpokenLanguages,
+  SUPPLIER_TWIN_MIN_CHARS,
   type SupplierCategory,
   type VenueStyle,
   VENUE_STYLES,
 } from "@shared/suppliers";
+import { isCuratedPubliclyVisible } from "./curated_overrides";
 
 export interface ListingRow {
   id: string;
@@ -1264,4 +1267,90 @@ export function findVisibleDirectoryMatch(opts: {
     if (byNameCity) return byNameCity;
   }
   return null;
+}
+
+/** One publicly visible listing whose name is the same business as `name`, by
+ *  `foldSupplierName` (no diacritics, no case, no legal form). Null when the
+ *  directory doesn't know the business.
+ *
+ *  This is the backstop under every form a couple can type a vendor name into.
+ *  The three client-side forms ask `findSupplierTwins` first, which is friendlier
+ *  (it shows the listing before the save), but they can only ask about the slice
+ *  of the directory they happen to have loaded, and a fourth form added later
+ *  would ask nothing at all. This answers off the full table, on the server,
+ *  from the one endpoint all of them post to.
+ *
+ *  Same-category first: a venue is compared against venues. A cross-category
+ *  exact name match still counts, because a couple filing "Hertelendy Kastély"
+ *  under Catering has mis-categorised the place, not found a second one. */
+export function findDirectoryTwinByName(
+  name: string,
+  category: SupplierCategory,
+  opts: { includePending?: boolean } = {},
+): DirectoryTwin | null {
+  const folded = foldSupplierName(name);
+  if (folded.length < SUPPLIER_TWIN_MIN_CHARS) return null;
+  // `includePending` widens the question from "is this on the site?" to "does a
+  // row for this business exist at all?", which is what the publish path needs:
+  // the second couple to add the same new vendor should join the listing already
+  // waiting in the moderation queue, not put another copy behind it.
+  const statuses = opts.includePending ? ["active", "pending"] : ["active"];
+  const statusSql = statuses.map(() => "?").join(", ");
+
+  // Category-scoped scan: the largest category (venues) is a few hundred rows,
+  // and folding has to happen in TS — SQLite has no diacritic folding.
+  const inCategory = db
+    .prepare(
+      `SELECT id, name, city, category, hero_image_url, source FROM listings
+        WHERE status IN (${statusSql}) AND category = ?`,
+    )
+    .all(...statuses, category) as DirectoryTwinRow[];
+  const hit = inCategory.find((r) => foldSupplierName(r.name) === folded);
+  if (hit) return visibleTwin(hit);
+
+  // Mis-categorised: plain lower-case equality across every category. Cheaper
+  // than folding the whole table, and a mis-filed name is normally typed the
+  // same way it is listed.
+  const crossCategory = db
+    .prepare(
+      `SELECT id, name, city, category, hero_image_url, source FROM listings
+        WHERE status IN (${statusSql}) AND LOWER(name) = LOWER(?) LIMIT 4`,
+    )
+    .all(...statuses, name.trim()) as DirectoryTwinRow[];
+  for (const row of crossCategory) {
+    const twin = visibleTwin(row);
+    if (twin) return twin;
+  }
+  return null;
+}
+
+export interface DirectoryTwin {
+  id: string;
+  name: string;
+  city: string | null;
+  category: SupplierCategory;
+  hero_image_url: string | null;
+}
+
+interface DirectoryTwinRow {
+  id: string;
+  name: string;
+  city: string;
+  category: string;
+  hero_image_url: string | null;
+  source: string;
+}
+
+/** A curated row can be suppressed by an admin override that lives in its own
+ *  table rather than on `listings.status`, so "active" isn't the whole answer
+ *  for curated ids. Returns null for a hidden one. */
+function visibleTwin(row: DirectoryTwinRow): DirectoryTwin | null {
+  if (row.source === "curated" && !isCuratedPubliclyVisible(row.id)) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    city: row.city || null,
+    category: row.category as SupplierCategory,
+    hero_image_url: row.hero_image_url,
+  };
 }

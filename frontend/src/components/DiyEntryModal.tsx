@@ -18,7 +18,7 @@ import { findSupplierTwins, SUPPLIER_GROUPS } from "@shared/suppliers";
 import type { Currency } from "@shared/types";
 import { Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ApiError } from "../lib/api";
+import { alreadyListedName, ApiError } from "../lib/api";
 import { coupleSupplierApi } from "../lib/endpoints";
 import { formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -184,6 +184,9 @@ export function DiyEntryModal({
         notes: form.notes.trim() || null,
         price_huf: priceParsed,
         paid: paidEffective,
+        // The couple looked at the listing and said theirs is a different
+        // business, so the server's own check must let this through.
+        confirm_not_listed: twinOverride,
       };
       const res = editing
         ? await coupleSupplierApi.update(editing.id, body)
@@ -191,6 +194,14 @@ export function DiyEntryModal({
       onSaved(res.supplier);
       onClose();
     } catch (err) {
+      // The server checks the whole directory, not just the slice this page
+      // loaded, so a name that got past the notice above can still be a listing.
+      const listed = alreadyListedName(err);
+      if (listed !== null) {
+        toast.info(t("suppliers.submit.err_already_listed", { name: listed }));
+        onClose();
+        return;
+      }
       const msg = err instanceof ApiError ? err.message : t("common.error_generic");
       toast.error(msg);
     } finally {

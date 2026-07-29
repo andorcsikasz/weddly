@@ -5,6 +5,7 @@
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import { getCoupleForUser } from "../domain/couples";
 import * as domain from "../domain/couple_suppliers";
+import { findDirectoryTwinByName } from "../domain/listings";
 import * as installments from "../domain/supplier_installments";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
@@ -26,6 +27,9 @@ interface Body {
   lng?: unknown;
   contact_email?: unknown;
   contact_phone?: unknown;
+  /** "I know it looks like that listing, mine is a different business." Set only
+   *  by a form whose user was SHOWN the match and said so — see handleCreate. */
+  confirm_not_listed?: unknown;
 }
 
 interface ParsedFields {
@@ -168,6 +172,28 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     throw new HttpError(400, "name and category required");
   }
 
+  // A business Weddly already lists must not get a second, blank card. This is
+  // the backstop under every form that posts here — the DIY modal, the guest-page
+  // venue picker, the planning pipeline, and whatever is added next. Each of them
+  // also asks the same question client-side before submitting (friendlier: the
+  // listing is shown with a "use this one" button), but they can only ask about
+  // the slice of the directory they loaded, so the authoritative answer is here.
+  //
+  // `confirm_not_listed` is the way through, and it has to exist: folding drops
+  // the town, so two genuinely different businesses that share a name (a Malom
+  // Étterem in Szentendre and another in Eger) fold to the same string. The forms
+  // send it only after showing the match and having the couple answer "this is a
+  // different vendor" — so what the guard actually stops is the SILENT duplicate,
+  // never a couple who looked at the listing and said no.
+  const confirmedDifferent = body.confirm_not_listed === true;
+  const twin = confirmedDifferent ? null : findDirectoryTwinByName(parsed.name, parsed.category);
+  if (twin) {
+    throw new HttpError(409, `Already on Weddly: ${twin.name}`, {
+      code: "already_listed",
+      existing: twin,
+    });
+  }
+
   const created = domain.insert(couple.id, {
     name: parsed.name,
     category: parsed.category,
@@ -180,6 +206,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     lng: parsed.lng ?? null,
     contact_email: parsed.contact_email ?? null,
     contact_phone: parsed.contact_phone ?? null,
+    not_listed_confirmed: confirmedDifferent,
   });
 
   addAuditLog({
@@ -197,7 +224,29 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     },
   });
 
-  return json({ supplier: created }, { status: 201 });
+  // The business is new to Weddly, so list it. A couple who books a vendor we
+  // don't carry is the best possible source of directory growth, and until now
+  // that vendor sat in one workspace where nobody else could ever find them.
+  // Lands 'pending' in the ordinary community queue — the admin gate is what
+  // stops a logged-in couple publishing whatever they like, and releasing it
+  // from there is also what mails the vendor their claim link.
+  const row = domain.getRowById(created.id, couple.id);
+  const listingId = row ? domain.publishAsCommunityListing(couple.id, userId, row) : null;
+  if (listingId) {
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "couple_supplier.published",
+      target_kind: "couple_supplier",
+      target_id: null,
+      note: created.id,
+      after: { listing_id: listingId, name: created.name, category: created.category },
+    });
+  }
+
+  // Re-read so the response carries the binding the publish just made.
+  const fresh = listingId ? (domain.getById(created.id, couple.id) ?? created) : created;
+  return json({ supplier: fresh, listing_id: listingId }, { status: 201 });
 }
 
 async function handleUpdate(ctx: Ctx): Promise<Response> {
@@ -241,6 +290,49 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   });
 
   return json({ supplier: updated });
+}
+
+/** "This row of mine is a business you already list — use that instead."
+ *
+ *  The repair path for a duplicate that exists already, which the create guard
+ *  can only prevent going forward. Deliberately NON-destructive: the row keeps
+ *  its notes, price, mirrored budget line and payment schedule (installments FK
+ *  to it, and a directory listing has nowhere to put them), it just stops being
+ *  its own business — the category pick moves to the listing and every surface
+ *  renders the row from there. The target isn't the caller's choice: the server
+ *  re-derives the match, so a bad id can't bind a couple to the wrong vendor. */
+function handleAdopt(ctx: Ctx): Response {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const id = ctx.params.id;
+  if (!id) throw new HttpError(400, "Invalid id");
+
+  const existing = domain.getById(id, couple.id);
+  if (!existing) throw new HttpError(404, "Supplier not found");
+  if (existing.listing_id) {
+    // Already bound — idempotent, so a double-click is a no-op rather than a 400.
+    return json({ supplier: existing, listing_id: existing.listing_id });
+  }
+  const match = existing.directory_match;
+  if (!match) throw new HttpError(409, "No directory listing matches this entry");
+
+  const updated = domain.bindListing(id, couple.id, match.id);
+  if (!updated) throw new HttpError(404, "Supplier not found");
+  const row = domain.getRowById(id, couple.id);
+  if (row) domain.mirrorPriceToListingCost(couple.id, match.id, row);
+
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "couple_supplier.adopted",
+    target_kind: "couple_supplier",
+    target_id: null,
+    note: id,
+    after: { listing_id: match.id, listing_name: match.name },
+  });
+
+  return json({ supplier: updated, listing_id: match.id });
 }
 
 function handleDelete(ctx: Ctx): Response {
@@ -419,6 +511,7 @@ export function registerCoupleSupplierRoutes(router: Router) {
   router.get("/api/couple-suppliers", handleList, true);
   router.post("/api/couple-suppliers", handleCreate, true);
   router.patch("/api/couple-suppliers/:id", handleUpdate, true);
+  router.post("/api/couple-suppliers/:id/adopt", handleAdopt, true);
   router.delete("/api/couple-suppliers/:id", handleDelete, true);
   router.post("/api/couple-suppliers/:id/installments", handleCreateInstallment, true);
   router.patch("/api/couple-suppliers/:id/installments/:iid", handleUpdateInstallment, true);

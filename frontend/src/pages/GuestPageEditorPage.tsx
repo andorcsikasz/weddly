@@ -9,7 +9,7 @@ import type { CoupleBilling } from "@shared/billing";
 import type { Couple, Household } from "@shared/types";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { CouplePick } from "@shared/picks";
-import type { DirectorySupplier } from "@shared/suppliers";
+import { type DirectorySupplier, findSupplierTwins } from "@shared/suppliers";
 import { toPublicDesign } from "@shared/design";
 import type { PublicWeddingScheduleEntry, PublicWeddingWebsiteView } from "@shared/wedding_website";
 import type { ScheduleEvent } from "@shared/schedule";
@@ -46,10 +46,11 @@ import {
 } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { WeddingSiteView } from "../components/WeddingSiteView";
+import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, Switch, useConfirm, useToast } from "../components/ui";
 import type { VenueLocationValue } from "../components/VenueLocationPicker";
-import { ApiError } from "../lib/api";
+import { alreadyListedName, ApiError } from "../lib/api";
 import {
   billingApi,
   coupleApi,
@@ -182,6 +183,24 @@ type VenueVendor = {
   lng: number | null;
   source: "self" | "directory";
 };
+
+/** Map a DIRECTORY venue to the picker's row shape. Used when the couple was
+ *  about to add a venue by hand and it turned out to be one Weddly already
+ *  lists: adopting it gets them the listing's own address, phone and pin
+ *  instead of the blank fields their private copy would have had. */
+function directorySupplierToVenueVendor(d: DirectorySupplier): VenueVendor {
+  return {
+    id: d.id,
+    name: d.name,
+    city: d.city ?? "",
+    address: d.address ?? "",
+    phone: d.contact_phone ?? "",
+    email: d.contact_email ?? "",
+    lat: d.lat,
+    lng: d.lng,
+    source: "directory",
+  };
+}
 
 /** Map a freshly-created DIY venue supplier to the picker's row shape. */
 function coupleSupplierToVenueVendor(s: CoupleSupplier): VenueVendor {
@@ -324,10 +343,15 @@ function VenuePicker({
  *  later through the same form. */
 function AddVenueForm({
   initialName,
+  directory,
   onCancel,
   onCreated,
 }: {
   initialName: string;
+  /** Directory venues the typed name is checked against, so a couple about to
+   *  hand-add "Hertelendy Kastély" is steered to the real listing instead of
+   *  minting a blank private copy of it. Empty disables the check. */
+  directory: readonly DirectorySupplier[];
   onCancel: () => void;
   onCreated: (v: VenueVendor) => void;
 }) {
@@ -343,8 +367,15 @@ function AddVenueForm({
     lng: null,
   });
   const [saving, setSaving] = useState(false);
+  // "I know, it's a different venue" — reset on every name change so a fresh
+  // name gets a fresh check.
+  const [twinOverride, setTwinOverride] = useState(false);
 
-  const canSave = name.trim().length > 0 && !saving;
+  // Everything here is a venue, so the category is fixed rather than chosen.
+  const twins = directory.length === 0 ? [] : findSupplierTwins(name, "venue", directory, 3);
+  const twinBlocks = !twinOverride && twins.some((tw) => tw.exact);
+
+  const canSave = name.trim().length > 0 && !saving && !twinBlocks;
 
   async function submit() {
     if (!canSave) return;
@@ -359,9 +390,20 @@ function AddVenueForm({
         lng: loc.lng,
         contact_email: email.trim() || null,
         contact_phone: phone.trim() || null,
+        // Said "this is a different venue" to the notice above — the server runs
+        // the same check against every listing, so it has to hear that too.
+        confirm_not_listed: twinOverride,
       });
       onCreated(coupleSupplierToVenueVendor(r.supplier));
     } catch (err) {
+      // The notice above only knows the venues this page loaded; the server
+      // checks all of them. Same steer, just later.
+      const listed = alreadyListedName(err);
+      if (listed !== null) {
+        toast.info(t("suppliers.submit.err_already_listed", { name: listed }));
+        onCancel();
+        return;
+      }
       toast.error(
         err instanceof ApiError ? err.message : t("wedding_site_editor.save_error_generic"),
       );
@@ -381,12 +423,28 @@ function AddVenueForm({
           type="text"
           className="input"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setTwinOverride(false);
+          }}
           placeholder={t("wedding_site_editor.venue_placeholder")}
           maxLength={120}
           autoComplete="off"
         />
       </div>
+
+      {twins.length > 0 && (
+        <DirectoryTwinNotice
+          twins={twins}
+          blocking={twinBlocks}
+          busy={saving}
+          // Adopting skips the private row entirely: the listing becomes the
+          // couple's venue pick and the guest page takes its address, phone and
+          // pin, which is the whole reason to prefer it.
+          onUse={(d) => onCreated(directorySupplierToVenueVendor(d))}
+          onDismiss={() => setTwinOverride(true)}
+        />
+      )}
 
       <Suspense
         fallback={
@@ -638,6 +696,9 @@ export default function GuestPageEditorPage() {
   // one (the `venue`-category pick). Loaded in its own effect so a supplier-API
   // hiccup never blocks the main couple/schedule/household load.
   const [venueVendors, setVenueVendors] = useState<VenueVendor[]>([]);
+  // The directory's venues, kept from the same fetch that resolves the pick.
+  // Feeds the add-form's "already on Weddly?" check.
+  const [directoryVenues, setDirectoryVenues] = useState<DirectorySupplier[]>([]);
   const [venuePickId, setVenuePickId] = useState<string | null>(null);
   // List ↔ add-a-venue mode inside the venue dialog, and a busy flag while a
   // selection is being persisted.
@@ -784,6 +845,7 @@ export default function GuestPageEditorPage() {
       supplierApi.list("venue").catch(() => ({ suppliers: [] as DirectorySupplier[] })),
     ]).then(([pR, csR, dR]) => {
       if (cancelled) return;
+      setDirectoryVenues(dR.suppliers);
       const out: VenueVendor[] = [];
       const seen = new Set<string>();
       const push = (v: VenueVendor) => {
@@ -2036,6 +2098,7 @@ export default function GuestPageEditorPage() {
             // Prefill the name only when there are no vendors yet AND the couple
             // has a free-typed venue to carry forward (the legacy-row case).
             initialName={venueVendors.length === 0 ? venueName.trim() : ""}
+            directory={directoryVenues}
             onCancel={() => setVenueMode("list")}
             onCreated={handleVenueCreated}
           />
