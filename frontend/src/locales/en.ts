@@ -32,12 +32,12 @@ const en: LocaleMessages = {
   seo: {
     home_title: "Weddly · your whole wedding in one shared workspace",
     home_description:
-      "Budget, guest list, RSVP links, visual seating and printable cards live together in one shared workspace. Set up in minutes and spend the time you save on each other. Free throughout the open beta.",
+      "Budget, guest list, RSVP links, visual seating and printable cards live together in one shared workspace. Set up in minutes and spend the time you save on each other.",
     login_title: "Sign in · Weddly",
     login_description: "Sign in to your Weddly couple workspace.",
     register_title: "Create your couple workspace · Weddly",
     register_description:
-      "Open one shared workspace for both of you and start planning in minutes. Free throughout the open beta.",
+      "Open one shared workspace for both of you and start planning in minutes.",
     invite_title: "Join your couple workspace · Weddly",
     invite_description: "Your partner invited you to plan the wedding together.",
     dashboard_title: "Dashboard · Weddly",
@@ -195,41 +195,41 @@ const en: LocaleMessages = {
     title: "Subscription",
     subtitle: "Your plan, billing and invoices.",
     plan_label: "Current plan",
-    plan_trialing: "Free trial",
-    plan_founding: "First 200",
+    plan_trialing: "Trial",
+    plan_founding: "Our guests",
     plan_active: "Active subscription",
     plan_past_due: "Payment needed",
     plan_canceled: "Canceled",
     plan_none: "No active plan",
-    status_trialing: "Your free trial runs until {date}. Add a card any time to keep going.",
-    status_founding: "You're one of our first 200 couples, so Weddly is free for you until {date}.",
+    status_trialing: "Your trial runs until {date}. Add a card any time to keep going.",
+    status_founding: "You're our guests until {date}, with everything unlocked.",
     status_active: "Thanks for subscribing. Your plan renews on {date}.",
     status_past_due:
       "Your last payment didn't go through. Update your card to restore full access.",
     status_lapsed:
-      "Your free period has ended, so the workspace is read-only. Your data is safe, and a subscription brings editing right back.",
+      "Your access has ended, so the workspace is read-only. Your data is safe, and a subscription brings editing right back.",
     status_trialing_short: "Trial until {date}",
-    status_founding_short: "Free until {date}",
+    status_founding_short: "Our guest until {date}",
     status_active_short: "Renews {date}",
     status_past_due_short: "Your card was declined",
     status_lapsed_short: "Read-only mode",
     price_line: "{price} / month",
     price_period: "/ month",
-    founding_spots: "{n} of 200 spots left",
+    founding_spots: "{n} spots left",
     subscribe_cta: "Subscribe",
     manage_cta: "Manage subscription",
     opening: "Opening…",
     card_on_file: "Card on file",
     card_expires: "expires {date}",
-    disabled_note: "Online payment isn't live yet. We'll email you before your free period ends.",
+    disabled_note: "Online payment isn't live yet. We'll email you before your access ends.",
     error_generic: "Something went wrong. Please try again.",
     banner_title: "Read-only mode",
     banner_body:
-      "Your free period has ended, so your workspace is read-only for now. Your data is safe, and a subscription brings editing right back.",
+      "Your access has ended, so your workspace is read-only for now. Your data is safe, and a subscription brings editing right back.",
     banner_cta: "Subscribe",
-    founding_banner_title: "You're in the first 200 🎉",
+    founding_banner_title: "You're our guests 🎉",
     founding_banner_body:
-      "You're one of our first 200 couples, so Weddly is free for you until your wedding day. Enjoy the full platform.",
+      "You're our guests until your wedding day, with everything unlocked. Enjoy the full platform.",
     solo_banner_title: "Invite your partner",
     solo_banner_body:
       "Come along from the first chapter: with both of you on board you are our guests until your wedding day, everything unlocked. Invite your partner.",
@@ -431,11 +431,10 @@ const en: LocaleMessages = {
     form_title: "You're in, {name}.",
     form_intro: "We've accepted you onto Weddly. Set a password and your listing is live.",
     founding_badge: "Founding member · {left}/{cap} spots left",
-    founding_note: "The first 100 vendors get a full year with us for free.",
+    founding_note: "The first 100 vendors are our guests for a full year.",
     early_badge: "Early access · {left}/{cap} spots left",
-    early_note:
-      "We're giving 300 vendors three months of free access, and there are still spots open.",
-    cohort_full_note: "The free spots are gone. You start with a 3-day trial, then €10/month.",
+    early_note: "300 vendors are our guests for three months, and there are still spots open.",
+    cohort_full_note: "The guest spots are gone. You start with a 3-day trial, then €10/month.",
     form_name_label: "Full name",
     form_password_label: "Password",
     form_password_hint: "At least 8 characters.",
@@ -455,11 +454,11 @@ const en: LocaleMessages = {
   planner_activate: {
     page_title: "Activate your planner account",
     page_body:
-      "Your profile is ready on Weddly with 2 years of free access. Activate it in a minute.",
+      "Your profile is ready on Weddly, and you are our guest for two years. Activate it in a minute.",
     title: "Activate your planner account",
     intro: "Hi {name}! We've set up the planner profile for {business} on Weddly in your name.",
     email_line: "The account belongs to this email address: {email}",
-    free_line: "As a gift you get 2 years of completely free access, until {date}.",
+    free_line: "As a gift you get two years of full access, until {date}.",
     submit: "Activate account",
     legal_prefix: "By activating you accept the ",
     error_title: "This link doesn't work",
@@ -725,7 +724,7 @@ const en: LocaleMessages = {
         diamond: "Diamond",
       },
       perk_search: "Higher in search",
-      perk_leads: "+{n} free inquiries",
+      perk_leads: "+{n} extra inquiries",
       perk_discount: "{pct}% off your subscription",
       perk_badge: "Badge on your profile",
       how_to_earn: "How do you earn points?",
@@ -904,7 +903,7 @@ const en: LocaleMessages = {
       upgrade_value:
         "Unlock direct inquiries from couples, the availability calendar, the full client CRM, payment tracking, and advanced stats.",
       upgrade_cta: "Upgrade to Pro",
-      trial_expired_line: "Your free tryout has ended.",
+      trial_expired_line: "Your tryout has ended.",
       add_card_title: "Add your card, your first inquiries are on us",
       add_card_body:
         "Save a card to stay on Pro. Nothing is charged until we've delivered your first {total} direct inquiries. Your payments only start the month after the third one arrives.",
@@ -1615,7 +1614,7 @@ const en: LocaleMessages = {
     // FAQPage JSON-LD).
     closing_title: "Two minutes\nto set up.",
     closing_body:
-      "Free throughout the open beta, with the freedom to pause the workspace whenever life gets busy.",
+      "Yours throughout the open beta, with the freedom to pause the workspace whenever life gets busy.",
     // ── Soft-Modern redesign additions ───────────────────────────────
     nav_how: "How it works",
     nav_suppliers: "Suppliers",
@@ -1739,7 +1738,7 @@ const en: LocaleMessages = {
     founders_joined_caption: "couples already in",
     founders_left_caption: "left",
     founders_body:
-      "The first 200 couples to register use Weddly free until the very last moment of their wedding: budget, guest list, RSVP, seating, all in one place. You're our guests.",
+      "You're our guests until the very last moment of your wedding: budget, guest list, RSVP, seating, all in one place.",
     founders_note:
       "We're setting the table for two hundred couples. Take a seat while there's room.",
     founders_cta: "Register",
@@ -2751,7 +2750,7 @@ const en: LocaleMessages = {
     gallery_link_note: "Any link: Pixieset, Google Drive, Dropbox, your own site.",
     shared_gallery_teaser: "Guest photos and your pro gallery in one place, sorted automatically.",
     film_settings_name_placeholder: "Film name, e.g. Anna & Ben, Summer 2026",
-    film_price_free: "Free",
+    film_price_free: "Included",
     film_not_set: "Not set",
     film_anonymous: "Guest",
     film_participants_joined: "{{n}} joined",
@@ -6357,7 +6356,7 @@ const en: LocaleMessages = {
     thanks_email_hint:
       "A confirmation email is on its way, if it doesn't arrive in a few minutes, check spam too.",
     thanks_open_site: "Open the wedding page →",
-    thanks_plan_your_own: "Planning your own wedding? Try Weddly free →",
+    thanks_plan_your_own: "Planning your own wedding? Try Weddly →",
     redirect_hint: "Opening the wedding page in {n}s…",
     add_to_calendar_section: "Save the date",
     add_to_google_calendar: "Google Calendar",
@@ -7640,7 +7639,7 @@ const en: LocaleMessages = {
     popup_body:
       "Maybe the prince won't arrive on a white horse, but your happily ever after starts now.",
     popup_cta: "Sign up",
-    popup_microcopy: "Free during the open beta.",
+    popup_microcopy: "Currently in open beta.",
   },
   // ── Planner-side demo (Fairy Godmother Weddings sandbox) ──────────────
   planner_demo: {
@@ -7651,7 +7650,7 @@ const en: LocaleMessages = {
     popup_title: "Every couple. One workspace.",
     popup_body: "Your new workspace as a wedding planner.",
     popup_cta: "Apply as a Wedding Planner",
-    popup_microcopy: "Free during the open beta.",
+    popup_microcopy: "Currently in open beta.",
   },
   // ── Vendor-side demo (Gingy's Wedding Cakes sandbox) ───────────────────
   vendor_demo: {
@@ -7687,7 +7686,7 @@ const en: LocaleMessages = {
         "The 3% contingency isn't luxury. About 70% of weddings have at least one major line item move in the last six weeks, keeping a buffer means you don't make those decisions under pressure.",
       cta_h2: "Continue in Weddly",
       cta_body:
-        "The calculator's numbers carry into your workspace, per-category editing, real-time sync with your partner, full audit log of every change. Free throughout the open beta.",
+        "The calculator's numbers carry into your workspace, per-category editing, real-time sync with your partner, full audit log of every change.",
       cta_button: "Open your workspace",
       faq_h2: "Calculator questions",
     },
@@ -7762,7 +7761,7 @@ const en: LocaleMessages = {
       page_eyebrow: "Tools · Seating chart maker",
       page_h1: "Wedding seating chart maker",
       page_intro:
-        "A canvas, tables, guests, drag guests onto tables and Weddly exports a printable seating chart at A4, A6 (place cards) and A3 (entrance display) sizes. Goes straight to the printer at exact mm. Free during the open beta.",
+        "A canvas, tables, guests, drag guests onto tables and Weddly exports a printable seating chart at A4, A6 (place cards) and A3 (entrance display) sizes. Goes straight to the printer at exact mm.",
       what_h2: "What you get",
       what_body:
         "An interactive canvas where you place tables (round, rectangular, head table) and drag guests from your list to seats. The canvas flags conflicts, if two guests can't stand each other, or if a round table is exceeding sensible capacity.",
@@ -7890,7 +7889,7 @@ const en: LocaleMessages = {
       "Active couple = a wedding actively managed within the current calendar year.",
     billing_monthly: "Monthly",
     billing_annual: "Annual",
-    billing_save: "4 months free",
+    billing_save: "Save 4 months",
     plan_annual_billed: "billed annually",
     plan_basic_name: "Basic",
     plan_basic_price: "7,900 Ft",
@@ -7982,7 +7981,7 @@ const en: LocaleMessages = {
     placeholder_message:
       "Tell us what you'd expect from a planner tool, what's missing for you now…",
     label_early_bird: "I'd like to be an early tester",
-    early_bird_body: "In exchange for feedback, I get 2 years of free access.",
+    early_bird_body: "In exchange for feedback, I get two years of full access.",
     privacy_consent_prefix: "I have read and accept the",
     privacy_link: "privacy policy",
     privacy_consent_suffix: ". Your data is used solely for this waitlist.",
@@ -8001,7 +8000,7 @@ const en: LocaleMessages = {
     vendor_link: "Sign up as a vendor",
     meta_title: "For wedding planners · Weddly",
     meta_description:
-      "Join the Weddly planner beta: all your couples in one workspace, with 2 years free for early testers.",
+      "Join the Weddly planner beta: all your couples in one workspace, with two years of full access for early testers.",
     already_have_access: "Already have access?",
     login_link: "Log in",
     success_next_intro: "Next step:",
@@ -8033,12 +8032,12 @@ const en: LocaleMessages = {
     beta_badge: "25 spots",
     beta_eyebrow: "Beta programme",
     beta_title: "Join the first 25 planners",
-    beta_body: "The first 25 sign-ups get 2 years of free access.",
+    beta_body: "The first 25 sign-ups are our guests for two years.",
     beta_step_1_title: "Fill in the form",
     beta_step_1_body: "",
     beta_step_2_title: "We get in touch",
     beta_step_2_body: "",
-    beta_step_3_title: "2 years free",
+    beta_step_3_title: "Two years of full access",
     beta_step_3_body: "",
     step_label_contact: "Contact",
     form_title: "Sign up",
@@ -8346,7 +8345,7 @@ const en: LocaleMessages = {
     plan_premium_tagline: "Premium",
     plan_active_badge: "Active plan",
     plan_coming_soon:
-      "The first 25 planners get 2 years free; after that your chosen plan starts a 3-day trial.",
+      "The first 25 planners are our guests for two years; after that your chosen plan starts a 3-day trial.",
     step4_title: "Add your first client",
     step4_body: "Invite your first couple by email. You can skip this step.",
     first_client_label: "Client email address",
@@ -8553,8 +8552,8 @@ const en: LocaleMessages = {
     feat_references: "Public reference profile",
     feat_priority_support: "Priority support",
     price_per_month: "{price}/mo",
-    founding_spots: "{n} of 25 free founding spots left",
-    state_founding: "Founding member · free until {date}",
+    founding_spots: "{n} of 25 founding spots left",
+    state_founding: "Founding member · our guest until {date}",
     state_trial: "Trial · {days} days left",
     state_active: "Active subscription",
     state_past_due: "Payment issue · update your card",
@@ -8783,7 +8782,7 @@ const en: LocaleMessages = {
     empty: "The directory is filling up, check back soon.",
     convert_title: "See the full directory",
     convert_sub:
-      "This is just a taste. Create a free account to browse every vendor, save favourites and contact them directly by phone, email or Instagram.",
+      "This is just a taste. Create an account to browse every vendor, save favourites and contact them directly by phone, email or Instagram.",
     vendor_prompt: "Are you a vendor? Get listed",
     nav_categories: "Categories",
     city_filter_clear: "Clear the city filter",
