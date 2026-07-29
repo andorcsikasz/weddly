@@ -198,7 +198,7 @@ export function VendorListingVideos({
                 onDrop={() => onDrop(i)}
                 className={`group relative rounded-lg ${
                   overIndex === i && dragIndex !== null && dragIndex !== i
-                    ? "ring-2 ring-steel-400"
+                    ? "ring-2 ring-blush-400"
                     : ""
                 } ${dragIndex === i ? "opacity-50" : ""}`}
               >
@@ -286,7 +286,7 @@ export function VendorListingVideos({
                         type="button"
                         onClick={() => void onSaveEdit(v.id)}
                         disabled={!draftValid}
-                        className="btn bg-steel-600 px-3 py-1 text-xs text-white hover:bg-steel-700 disabled:opacity-50"
+                        className="btn bg-blush-500 px-3 py-1 text-xs text-white hover:bg-blush-600 disabled:opacity-50"
                       >
                         {t("vendor_home.videos_edit_save")}
                       </button>
@@ -331,7 +331,7 @@ export function VendorListingVideos({
               type="button"
               onClick={() => void onAdd()}
               disabled={!draftValid}
-              className="btn inline-flex shrink-0 items-center gap-1.5 bg-steel-600 text-white hover:bg-steel-700 disabled:opacity-50"
+              className="btn inline-flex shrink-0 items-center gap-1.5 bg-blush-500 text-white hover:bg-blush-600 disabled:opacity-50"
             >
               <Plus size={16} aria-hidden />
               {t("vendor_home.videos_add")}

@@ -234,9 +234,9 @@ export default function VendorSettingsCompany() {
       {/* Pointer to the full public-card editor */}
       <Link
         to="/vendor/listing"
-        className="flex items-center gap-2 rounded-xl border border-paper-300 px-4 py-3 text-sm text-ink-700 transition-colors hover:bg-steel-50 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-steel-600/15"
+        className="flex items-center gap-2 rounded-xl border border-paper-300 px-4 py-3 text-sm text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-blush-500/15"
       >
-        <Store size={16} aria-hidden="true" className="text-steel-700 dark:text-steel-300" />
+        <Store size={16} aria-hidden="true" className="text-ink-400 dark:text-paper-400" />
         <span>{t("vendor.settings.company_listing_link")}</span>
       </Link>
     </div>

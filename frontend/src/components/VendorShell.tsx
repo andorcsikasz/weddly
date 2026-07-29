@@ -163,13 +163,21 @@ function VendorNotificationBell({
               onClick={() => setOpen(false)}
               className={rowClass}
             >
-              <Inbox size={15} className="shrink-0 text-blush-500" aria-hidden="true" />
+              <Inbox
+                size={15}
+                className="shrink-0 text-ink-400 dark:text-paper-400"
+                aria-hidden="true"
+              />
               <span>{t("vendor.notif.new_inquiries", { count: String(newInquiries) })}</span>
             </Link>
           )}
           {upcomingWeek > 0 && (
             <Link to="/vendor" role="menuitem" onClick={() => setOpen(false)} className={rowClass}>
-              <CalendarClock size={15} className="shrink-0 text-steel-500" aria-hidden="true" />
+              <CalendarClock
+                size={15}
+                className="shrink-0 text-ink-400 dark:text-paper-400"
+                aria-hidden="true"
+              />
               <span>{t("vendor.notif.upcoming_week", { count: String(upcomingWeek) })}</span>
             </Link>
           )}
@@ -180,7 +188,11 @@ function VendorNotificationBell({
               onClick={() => setOpen(false)}
               className={rowClass}
             >
-              <Star size={15} className="shrink-0 text-sage-500" aria-hidden="true" />
+              <Star
+                size={15}
+                className="shrink-0 text-ink-400 dark:text-paper-400"
+                aria-hidden="true"
+              />
               <span>{t("vendor.notif.new_reviews", { count: String(newReviews) })}</span>
             </Link>
           )}
@@ -245,7 +257,7 @@ function VendorProfileMenu({
   }, [location.pathname]);
 
   const itemClass =
-    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-steel-50 dark:text-paper-100 dark:hover:bg-umber-700";
+    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700";
 
   return (
     <div ref={ref} className="relative">
@@ -292,7 +304,7 @@ function VendorProfileMenu({
                 <CreditCard size={16} aria-hidden="true" />
                 <span>{t("vendor.shell.menu_plan")}</span>
               </span>
-              <span className="text-xs font-medium text-steel-700 dark:text-steel-300">
+              <span className="text-xs font-medium text-ink-500 dark:text-paper-400">
                 {t(plan === "pro" ? "vendor.plan.pro_label" : "vendor.plan.free_label")}
               </span>
             </Link>
@@ -572,7 +584,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
                 collapsed ? t("vendor.nav.expand_sidebar") : t("vendor.nav.collapse_sidebar")
               }
               title={collapsed ? t("vendor.nav.expand_sidebar") : t("vendor.nav.collapse_sidebar")}
-              className={`mb-1 hidden shrink-0 items-center gap-3 rounded-xl py-2 text-sm text-ink-600 transition-colors hover:bg-steel-50 lg:flex dark:text-paper-300 dark:hover:bg-steel-600/15 ${
+              className={`mb-1 hidden shrink-0 items-center gap-3 rounded-xl py-2 text-sm text-ink-600 transition-colors hover:bg-paper-100 lg:flex dark:text-paper-300 dark:hover:bg-umber-800 ${
                 collapsed ? "justify-center px-0" : "px-3"
               }`}
             >
@@ -580,13 +592,13 @@ export function VendorShell({ children }: { children: ReactNode }) {
                 <PanelLeftOpen
                   size={18}
                   aria-hidden="true"
-                  className="text-steel-700 dark:text-steel-300"
+                  className="text-ink-400 dark:text-paper-400"
                 />
               ) : (
                 <PanelLeftClose
                   size={18}
                   aria-hidden="true"
-                  className="text-steel-700 dark:text-steel-300"
+                  className="text-ink-400 dark:text-paper-400"
                 />
               )}
               <span className={collapsed ? "hidden" : ""}>{t("vendor.nav.collapse_sidebar")}</span>
@@ -605,8 +617,11 @@ export function VendorShell({ children }: { children: ReactNode }) {
                     `relative flex shrink-0 items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition-colors ${
                       collapsed ? "lg:justify-center lg:px-0 px-3" : "px-3"
                     } ${
+                      // The accent marks WHERE YOU ARE and nothing else in this
+                      // rail. A tinted pill rather than a solid one: the label
+                      // is what you read, the colour only has to say "this row".
                       isActive
-                        ? "bg-steel-500 text-white [&_svg]:text-white"
+                        ? "bg-blush-50 text-blush-700 dark:bg-blush-500/15 dark:text-blush-200 [&_svg]:text-blush-600 dark:[&_svg]:text-blush-300"
                         : "text-ink-800 hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800 [&_svg]:text-ink-400 dark:[&_svg]:text-paper-400"
                     }`
                   }

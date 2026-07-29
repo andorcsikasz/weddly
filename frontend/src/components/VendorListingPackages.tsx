@@ -334,7 +334,7 @@ function PackageCard({
           </>
         )}
         {dirty && (
-          <span className="shrink-0 rounded-full bg-steel-500/12 px-2.5 py-1 text-[11px] font-semibold text-steel-700 dark:bg-steel-500/20 dark:text-steel-200">
+          <span className="shrink-0 rounded-full bg-blush-500/12 px-2.5 py-1 text-[11px] font-semibold text-ink-500 dark:bg-blush-400/20 dark:text-paper-300">
             {t("vendor_home.packages_unsaved")}
           </span>
         )}
@@ -413,7 +413,7 @@ function PackageCard({
                   href={pkg.pdf_url}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-steel-700 hover:underline dark:text-steel-300"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-500 hover:underline dark:text-paper-400"
                 >
                   <FileText size={15} aria-hidden />
                   {pkg.pdf_name ?? t("vendor_home.packages_pdf_label")}

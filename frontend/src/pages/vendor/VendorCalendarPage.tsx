@@ -122,7 +122,7 @@ function formatDay(iso: string, locale: Locale): string {
 function pillColor(kind: CalEvent["kind"]): string {
   switch (kind) {
     case "booked":
-      return "bg-steel-100 text-steel-800 hover:brightness-95 dark:bg-steel-900/60 dark:text-steel-100";
+      return "bg-paper-100 text-ink-700 hover:brightness-95 dark:bg-umber-800 dark:text-paper-100";
     case "pending":
       return "bg-amber-100 text-amber-800 hover:brightness-95 dark:bg-amber-900/40 dark:text-amber-100";
     case "blocked":
@@ -277,7 +277,7 @@ function YearView({
             <button
               type="button"
               onClick={() => onPickMonth(m)}
-              className="mb-2 font-grotesk text-base font-medium capitalize text-umber-800 hover:text-steel-700 dark:text-paper-200 dark:hover:text-steel-300"
+              className="mb-2 font-grotesk text-base font-medium capitalize text-umber-800 hover:text-blush-700 dark:text-paper-200 dark:hover:text-blush-300"
             >
               {monthName(m)}
             </button>
@@ -307,8 +307,8 @@ function YearView({
                     <span
                       className={`flex h-6 w-6 items-center justify-center rounded-full ${
                         isToday
-                          ? "bg-steel-600 text-paper-50 dark:bg-steel-400 dark:text-umber-900"
-                          : "hover:bg-steel-50 dark:hover:bg-umber-800"
+                          ? "bg-blush-500 text-paper-50 dark:bg-blush-400 dark:text-umber-900"
+                          : "hover:bg-paper-100 dark:hover:bg-umber-800"
                       }`}
                     >
                       {d.getDate()}
@@ -316,7 +316,7 @@ function YearView({
                     {evs && inMonth && !isToday && (
                       <span
                         className={`absolute bottom-0 h-1 w-1 rounded-full ${
-                          hasBooked ? "bg-steel-500" : "bg-amber-500"
+                          hasBooked ? "bg-blush-500" : "bg-amber-500"
                         }`}
                       />
                     )}
@@ -406,7 +406,7 @@ function MonthView({
               <span
                 className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
                   isToday
-                    ? "bg-steel-600 font-semibold text-paper-50 dark:bg-steel-400 dark:text-umber-900"
+                    ? "bg-blush-500 font-semibold text-paper-50 dark:bg-blush-400 dark:text-umber-900"
                     : inMonth
                       ? "text-umber-700 dark:text-paper-200"
                       : "text-umber-300 dark:text-umber-600"
@@ -559,7 +559,7 @@ function TimeGridView({
               <div
                 className={`mx-auto mt-0.5 flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
                   isToday
-                    ? "bg-steel-600 text-paper-50 dark:bg-steel-400 dark:text-umber-900"
+                    ? "bg-blush-500 text-paper-50 dark:bg-blush-400 dark:text-umber-900"
                     : "text-umber-800 dark:text-paper-100"
                 }`}
               >
@@ -701,14 +701,14 @@ function ScheduleView({
   // text, which a bare colour dot never allowed.
   const glyphColor = (kind: CalEvent["kind"]) =>
     kind === "booked"
-      ? "text-steel-600 dark:text-steel-300"
+      ? "text-blush-600 dark:text-paper-400"
       : kind === "pending"
         ? "text-amber-500"
         : kind === "blocked"
           ? "text-blush-500"
           : "text-moss-500";
   const rowClass =
-    "flex w-full items-center gap-4 border-b border-paper-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-steel-50 dark:border-umber-800 dark:hover:bg-steel-900/20";
+    "flex w-full items-center gap-4 border-b border-paper-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-paper-100 dark:border-umber-800 dark:hover:bg-umber-800";
   return (
     <div className="overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
       {upcoming.map((ev, i) => {
@@ -953,7 +953,7 @@ function TasksBoard({
         />
         <button
           type="submit"
-          className="btn bg-steel-600 text-white hover:bg-steel-700"
+          className="btn bg-blush-500 text-white hover:bg-blush-600"
           disabled={createBusy || newTitle.trim().length === 0}
         >
           {t("vendor_calendar.task_add")}
@@ -995,7 +995,7 @@ function TasksBoard({
                 }}
                 className={`rounded-2xl border p-3 transition-colors ${
                   dragOverLane === lane
-                    ? "border-steel-400 bg-steel-50 dark:border-steel-600 dark:bg-steel-900/20"
+                    ? "border-blush-400 bg-blush-50 dark:border-blush-400/40 dark:bg-blush-500/10"
                     : "border-paper-200 bg-paper-50/60 dark:border-umber-800 dark:bg-umber-950/40"
                 }`}
               >
@@ -1119,7 +1119,7 @@ function DayBlockEditor({
             type="button"
             onClick={save}
             disabled={busy || (mode === "hours" && !validRange)}
-            className="btn bg-steel-600 text-white hover:bg-steel-700 disabled:opacity-50"
+            className="btn bg-blush-500 text-white hover:bg-blush-600 disabled:opacity-50"
           >
             {t("vendor_calendar.block_save")}
           </button>
@@ -1654,7 +1654,7 @@ export default function VendorCalendarPage() {
           {/* Legend */}
           <div className="mt-4 flex flex-wrap gap-4 text-xs text-umber-500 dark:text-umber-400">
             <span className="flex items-center gap-1.5">
-              <Heart size={12} className="text-steel-600 dark:text-steel-300" aria-hidden="true" />
+              <Heart size={12} className="text-blush-600 dark:text-paper-400" aria-hidden="true" />
               {t("vendor_calendar.legend_booked")}
             </span>
             <span className="flex items-center gap-1.5">
@@ -1691,7 +1691,7 @@ export default function VendorCalendarPage() {
               </div>
               <Link
                 to="/vendor/settings/billing"
-                className="btn w-fit bg-steel-600 text-white hover:bg-steel-700"
+                className="btn w-fit bg-blush-500 text-white hover:bg-blush-600"
               >
                 {t("vendor.upgrade.cta")}
               </Link>

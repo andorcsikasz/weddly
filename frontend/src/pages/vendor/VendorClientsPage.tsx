@@ -54,7 +54,7 @@ const VOID_STATUSES: ReadonlySet<string> = new Set(["declined", "cancelled", "ex
 // and there is no hover, so the label is rendered inline next to the icon.
 const STATUS_ICON: Record<string, { Icon: LucideIcon; tone: string }> = {
   requested: { Icon: Inbox, tone: "text-amber-600 dark:text-amber-300" },
-  vendor_seen: { Icon: Eye, tone: "text-steel-600 dark:text-steel-300" },
+  vendor_seen: { Icon: Eye, tone: "text-blush-600 dark:text-paper-400" },
   confirmed: { Icon: CircleCheck, tone: "text-sage-700 dark:text-sage-300" },
   declined: { Icon: CircleX, tone: "text-red-600 dark:text-red-300" },
   cancelled: { Icon: Undo2, tone: "text-ink-400 dark:text-umber-400" },
@@ -108,7 +108,7 @@ function ProCell({ locked, children }: { locked: boolean; children: React.ReactN
 function UpgradeNudge() {
   const { t } = useT();
   return (
-    <div className="mb-4 flex flex-col gap-3 rounded-xl border border-steel-200 bg-steel-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-steel-600/30 dark:bg-steel-600/15">
+    <div className="mb-4 flex flex-col gap-3 rounded-xl border border-paper-300 bg-paper-100 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-umber-700 dark:bg-blush-500/15">
       <div className="min-w-0">
         <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
           {t("vendor.upgrade.title")}
@@ -119,7 +119,7 @@ function UpgradeNudge() {
       </div>
       <Link
         to="/vendor/billing"
-        className="btn btn-sm shrink-0 self-start bg-steel-600 text-white hover:bg-steel-700 sm:self-auto"
+        className="btn btn-sm shrink-0 self-start bg-blush-500 text-white hover:bg-blush-600 sm:self-auto"
       >
         {t("vendor.upgrade.cta")}
       </Link>
@@ -134,10 +134,10 @@ function GhostTable() {
   const { t } = useT();
   return (
     <div
-      className="overflow-hidden rounded-xl border border-steel-200 dark:border-steel-800"
+      className="overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700"
       aria-hidden="true"
     >
-      <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-steel-200 bg-steel-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-steel-800 sm:grid dark:border-steel-800 dark:bg-steel-900 dark:text-steel-200">
+      <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-paper-300 bg-paper-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-700 sm:grid dark:border-umber-700 dark:bg-umber-850 dark:text-paper-300">
         <span>{t("vendor.clients.col_couple")}</span>
         <span>{t("vendor.clients.col_event_date")}</span>
         <span className="text-center">{t("vendor.clients.col_status")}</span>
@@ -186,13 +186,13 @@ function EmptyClients() {
         {steps.map(({ Icon, label }, i) => (
           <Fragment key={label}>
             <div className="flex items-center gap-3 sm:w-32 sm:flex-col sm:gap-2 sm:text-center">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center">
-                <Icon size={20} aria-hidden="true" className="text-steel-700 dark:text-steel-300" />
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush-50 text-blush-600 dark:bg-blush-500/15 dark:text-blush-300">
+                <Icon size={20} aria-hidden="true" />
               </span>
               <span className="text-sm text-ink-700 dark:text-paper-200">{label}</span>
             </div>
             {i < steps.length - 1 && (
-              <span className="flex h-8 items-center justify-center text-steel-400 dark:text-steel-500">
+              <span className="flex h-8 items-center justify-center text-ink-300 dark:text-ink-400">
                 <ArrowRight size={16} aria-hidden="true" className="rotate-90 sm:rotate-0" />
               </span>
             )}
@@ -202,7 +202,7 @@ function EmptyClients() {
 
       <Link
         to="/vendor/listing"
-        className="btn btn-sm mt-6 inline-flex items-center gap-1.5 bg-steel-600 text-white hover:bg-steel-700"
+        className="btn btn-sm mt-6 inline-flex items-center gap-1.5 bg-blush-500 text-white hover:bg-blush-600"
       >
         {t("vendor.clients.empty_cta_listing")}
         <ArrowRight size={15} aria-hidden="true" />
@@ -317,7 +317,7 @@ export default function VendorClientsPage() {
   const pillBase =
     "rounded-full border border-paper-300 px-3 py-1 text-xs transition-colors dark:border-umber-700";
   const pillActive =
-    "bg-steel-600 text-white border-steel-600 hover:bg-steel-700 dark:border-steel-600";
+    "bg-blush-500 text-white border-blush-500 hover:bg-blush-600 dark:border-blush-500";
   const pillInactive =
     "text-ink-700 hover:bg-paper-100 dark:text-paper-200 dark:hover:bg-umber-800";
 
@@ -357,7 +357,7 @@ export default function VendorClientsPage() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("vendor.clients.search_placeholder")}
               aria-label={t("vendor.clients.search_placeholder")}
-              className="w-full rounded-xl border border-paper-300 bg-white py-2 pl-9 pr-9 text-sm text-ink-900 placeholder:text-ink-400 focus:border-steel-500 focus:outline-none focus:ring-2 focus:ring-steel-200 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-50 dark:placeholder:text-umber-300 dark:focus:ring-steel-800"
+              className="w-full rounded-xl border border-paper-300 bg-white py-2 pl-9 pr-9 text-sm text-ink-900 placeholder:text-ink-400 focus:border-blush-400 focus:outline-none focus:ring-2 focus:ring-paper-300 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-50 dark:placeholder:text-umber-300 dark:focus:ring-blush-400/30"
             />
             {query && (
               <button
@@ -397,8 +397,8 @@ export default function VendorClientsPage() {
           </div>
 
           {/* Grid "table" — header on sm+, Link rows that navigate to detail. */}
-          <div className="overflow-hidden rounded-xl border border-steel-200 dark:border-steel-800">
-            <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-steel-200 bg-steel-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-steel-800 sm:grid dark:border-steel-800 dark:bg-steel-900 dark:text-steel-200">
+          <div className="overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700">
+            <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-paper-300 bg-paper-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-700 sm:grid dark:border-umber-700 dark:bg-umber-850 dark:text-paper-300">
               <span>{t("vendor.clients.col_couple")}</span>
               <span>{t("vendor.clients.col_event_date")}</span>
               <span className="text-center">{t("vendor.clients.col_status")}</span>
@@ -411,7 +411,7 @@ export default function VendorClientsPage() {
                 <li key={c.id}>
                   <Link
                     to={`/vendor/clients/${c.id}`}
-                    className="grid grid-cols-1 gap-1 px-4 py-3 transition-colors hover:bg-steel-50 focus:outline-none focus-visible:bg-steel-50 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3 dark:hover:bg-umber-700 dark:focus-visible:bg-umber-700"
+                    className="grid grid-cols-1 gap-1 px-4 py-3 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:bg-paper-100 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3 dark:hover:bg-umber-700 dark:focus-visible:bg-umber-700"
                   >
                     <span
                       className="truncate font-medium text-ink-900 dark:text-paper-50"

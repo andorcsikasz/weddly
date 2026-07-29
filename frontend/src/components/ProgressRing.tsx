@@ -5,7 +5,9 @@
 // Colour semantics are fixed and must not be mixed, because the whole point of
 // a colour system is that a vendor learns it once:
 //
-//   active   → steel (the slate blue): in progress, the default
+//   active   → blush (the terracotta accent): in progress, the default. It is
+//              the portal's one interactive colour, and progress IS the thing
+//              the vendor is being asked to act on.
 //   complete → sage: earned, finished, nothing left to do
 //   warning  → amber: needs attention, at risk, expiring
 //
@@ -17,13 +19,13 @@ import type { ReactNode } from "react";
 export type ProgressTone = "active" | "complete" | "warning";
 
 const TRACK: Record<ProgressTone, string> = {
-  active: "stroke-steel-200 dark:stroke-steel-600/40",
+  active: "stroke-paper-200 dark:stroke-umber-700",
   complete: "stroke-sage-100 dark:stroke-sage-900/50",
   warning: "stroke-amber-100 dark:stroke-amber-900/40",
 };
 
 const ARC: Record<ProgressTone, string> = {
-  active: "stroke-steel-600 dark:stroke-steel-300",
+  active: "stroke-blush-500 dark:stroke-blush-400",
   complete: "stroke-sage-600 dark:stroke-sage-400",
   warning: "stroke-amber-500 dark:stroke-amber-400",
 };

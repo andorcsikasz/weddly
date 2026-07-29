@@ -64,7 +64,7 @@ export default function VendorSettingsLayout() {
     <div className="mx-auto max-w-2xl py-2">
       {/* Hero */}
       <div className="flex items-center gap-4">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-steel-600 text-lg font-semibold uppercase text-paper-50">
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blush-500 text-lg font-semibold uppercase text-paper-50">
           {view ? initialsOf(displayName) : "?"}
         </span>
         <div className="min-w-0">
@@ -81,7 +81,7 @@ export default function VendorSettingsLayout() {
               {t("vendor.settings.badge_vendor")}
             </span>
             {view?.account.vendor_code && (
-              <span className="rounded-md bg-steel-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-steel-700 dark:bg-steel-600/20 dark:text-steel-300">
+              <span className="rounded-md bg-paper-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-ink-500 dark:bg-blush-500/20 dark:text-paper-400">
                 {view.account.vendor_code}
               </span>
             )}

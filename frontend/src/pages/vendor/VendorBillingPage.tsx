@@ -236,7 +236,7 @@ export default function VendorBillingPage() {
       {/* Lead window meter: how many of the free inquiries have been
           delivered, and when the first payment lands once they're spent. */}
       {status === "lead_window" && (
-        <section className="flex flex-col gap-3 rounded-2xl border border-steel-200 bg-steel-50 p-5 dark:border-steel-600/30 dark:bg-steel-600/15">
+        <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-100 p-5 dark:border-umber-700 dark:bg-blush-500/15">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
               {t("vendor.billing.lead_meter_title")}
@@ -265,12 +265,12 @@ export default function VendorBillingPage() {
       {/* Card wall: trial running or just expired, no card yet. The single
           most important CTA on this page. */}
       {showAddCard && (
-        <section className="flex flex-col gap-4 rounded-2xl border border-steel-200 bg-steel-50 p-5 dark:border-steel-600/30 dark:bg-steel-600/15">
+        <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-100 p-5 dark:border-umber-700 dark:bg-blush-500/15">
           <div className="flex items-start gap-3">
             <CreditCard
               size={20}
               aria-hidden="true"
-              className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
+              className="mt-0.5 shrink-0 text-ink-400 dark:text-paper-400"
             />
             <div className="flex flex-col gap-0.5">
               <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
@@ -304,12 +304,12 @@ export default function VendorBillingPage() {
       {/* Recovery: canceled subscription or exhausted free leads without a
           successful payment: classic subscribe-now Checkout. */}
       {showResubscribe && (
-        <section className="flex flex-col gap-4 rounded-2xl border border-steel-200 bg-steel-50 p-5 dark:border-steel-600/30 dark:bg-steel-600/15">
+        <section className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-100 p-5 dark:border-umber-700 dark:bg-blush-500/15">
           <div className="flex items-start gap-3">
             <Sparkles
               size={20}
               aria-hidden="true"
-              className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
+              className="mt-0.5 shrink-0 text-ink-400 dark:text-paper-400"
             />
             <div className="flex flex-col gap-0.5">
               <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
@@ -384,7 +384,7 @@ export default function VendorBillingPage() {
                   // Billing not wired server-side: honest support mailto.
                   <a
                     href={`mailto:${contactEmail}?subject=${encodeURIComponent(t("vendor.billing.upgrade_cta"))}`}
-                    className="btn w-full justify-center bg-steel-600 text-white hover:bg-steel-700"
+                    className="btn w-full justify-center bg-blush-500 text-white hover:bg-blush-600"
                   >
                     <Crown size={16} aria-hidden="true" />
                     <span>{t("vendor.billing.upgrade_cta")}</span>
@@ -475,7 +475,7 @@ export default function VendorBillingPage() {
                         href={inv.pdf_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-steel-600 hover:text-steel-700 dark:text-steel-300"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-blush-600 hover:text-blush-700 dark:text-paper-400"
                       >
                         <Download size={14} aria-hidden="true" />
                         {t("vendor.billing.invoice_download")}
@@ -517,11 +517,11 @@ export default function VendorBillingPage() {
       {/* Billing not configured server-side: keep the calm expectation-setting
           note instead of dead buttons. */}
       {!enabled && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-steel-200 bg-steel-50 p-4 dark:border-steel-600/30 dark:bg-steel-600/15">
+        <div className="flex items-start gap-2.5 rounded-2xl border border-paper-300 bg-paper-100 p-4 dark:border-umber-700 dark:bg-blush-500/15">
           <Mail
             size={18}
             aria-hidden="true"
-            className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
+            className="mt-0.5 shrink-0 text-ink-400 dark:text-paper-400"
           />
           <p className="text-sm text-ink-700 dark:text-paper-200">
             {t("vendor.billing.payment_portal_note")}
@@ -552,7 +552,7 @@ function MoneyButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`btn ${fullWidth ? "w-full justify-center" : "w-fit"} bg-steel-600 text-white hover:bg-steel-700 disabled:opacity-60`}
+      className={`btn ${fullWidth ? "w-full justify-center" : "w-fit"} bg-blush-500 text-white hover:bg-blush-600 disabled:opacity-60`}
     >
       <Crown size={16} aria-hidden="true" />
       <span>{busy ? busyLabel : label}</span>
@@ -569,7 +569,7 @@ function LeadMeter({ used, total }: { used: number; total: number }) {
           key={`lead-${i + 1}`}
           className={
             i < used
-              ? "h-2 flex-1 rounded-full bg-steel-600 dark:bg-steel-400"
+              ? "h-2 flex-1 rounded-full bg-blush-500 dark:bg-blush-400"
               : "h-2 flex-1 rounded-full bg-paper-300 dark:bg-umber-700"
           }
         />
@@ -583,7 +583,7 @@ function PlanBadge({ isPro, label }: { isPro: boolean; label: string }) {
     <span
       className={
         isPro
-          ? "inline-flex items-center gap-1.5 rounded-full bg-steel-600 px-3 py-1 text-xs font-semibold text-white dark:bg-steel-600"
+          ? "inline-flex items-center gap-1.5 rounded-full bg-blush-500 px-3 py-1 text-xs font-semibold text-white dark:bg-blush-500"
           : "inline-flex items-center gap-1.5 rounded-full bg-paper-200 px-3 py-1 text-xs font-semibold text-ink-700 dark:bg-umber-800 dark:text-paper-200"
       }
     >
@@ -616,7 +616,7 @@ function PlanColumn({
     <div
       className={
         accent
-          ? "flex flex-col gap-3 rounded-2xl border-2 border-steel-300 bg-paper-50 p-5 dark:border-steel-500/50 dark:bg-umber-900"
+          ? "flex flex-col gap-3 rounded-2xl border-2 border-blush-300 bg-paper-50 p-5 dark:border-blush-400/50 dark:bg-umber-900"
           : "flex flex-col gap-3 rounded-2xl border-2 border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900"
       }
     >
@@ -628,7 +628,7 @@ function PlanColumn({
           </span>
         </div>
         {active && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-steel-600 px-2.5 py-1 text-xs font-semibold text-white">
+          <span className="inline-flex items-center gap-1 rounded-full bg-blush-500 px-2.5 py-1 text-xs font-semibold text-white">
             <Check size={12} aria-hidden="true" />
             <span>{youAreHere}</span>
           </span>

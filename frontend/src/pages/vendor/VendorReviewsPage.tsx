@@ -212,8 +212,10 @@ export default function VendorReviewsPage() {
       )}
 
       {items.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-600 dark:bg-umber-900">
-          <Star size={24} aria-hidden="true" className="text-paper-300 dark:text-umber-600" />
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-10 text-center dark:border-umber-700 dark:bg-umber-900">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blush-50 text-blush-600 dark:bg-blush-500/15 dark:text-blush-300">
+            <Star size={20} aria-hidden="true" />
+          </span>
           <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
             {t("vendor.reviews.empty_title")}
           </p>

@@ -83,7 +83,7 @@ export function VendorPointsRail({ collapsed }: { collapsed: boolean }) {
         onClick={() => setOpen(true)}
         title={`${t("vendor.points.label")}: ${points.points}`}
         aria-label={`${t("vendor.points.label")}: ${points.points}. ${t("vendor.points.how_to_earn")}`}
-        className={`flex w-full shrink-0 flex-col gap-1.5 rounded-xl py-2 text-left transition-colors hover:bg-steel-50 dark:hover:bg-steel-600/15 ${
+        className={`flex w-full shrink-0 flex-col gap-1.5 rounded-xl py-2 text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-800 ${
           collapsed ? "px-3 lg:items-center lg:px-0" : "px-3"
         }`}
       >

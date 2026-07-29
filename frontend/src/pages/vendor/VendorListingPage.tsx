@@ -150,7 +150,7 @@ function BillingBanner({
 
   const cls = warn
     ? "border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/10 dark:text-blush-200"
-    : "border-steel-200 bg-steel-50 text-ink-700 dark:border-steel-600/40 dark:bg-steel-600/15 dark:text-steel-100";
+    : "border-paper-300 bg-paper-100 text-ink-700 dark:border-umber-700 dark:bg-blush-500/15 dark:text-paper-100";
   return (
     <div
       className={`mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3.5 py-2 text-sm ${cls}`}
@@ -615,7 +615,7 @@ export default function VendorListingPage() {
               <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
                 <span
                   aria-hidden="true"
-                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-steel-500 dark:bg-steel-300"
+                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-blush-500 dark:bg-blush-400"
                 />
                 {t("vendor_home.autosave_saving")}
               </span>
@@ -636,7 +636,7 @@ export default function VendorListingPage() {
               <span className="inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-300">
                 <span
                   aria-hidden="true"
-                  className="h-1.5 w-1.5 rounded-full bg-steel-400 dark:bg-steel-400"
+                  className="h-1.5 w-1.5 rounded-full bg-ink-300 dark:bg-paper-400"
                 />
                 {t("vendor_home.autosave_unsaved")}
               </span>
@@ -699,7 +699,7 @@ export default function VendorListingPage() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t("vendor_home.preview_open")}
-              className="block rounded-2xl transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-steel-400"
+              className="block rounded-2xl transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-blush-400"
             >
               <VendorListingPreview
                 name={view.listing.name}
@@ -720,7 +720,7 @@ export default function VendorListingPage() {
             <button
               type="button"
               onClick={() => setShareOpen(true)}
-              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-blush-600 transition-colors hover:text-blush-700 dark:text-blush-300 dark:hover:text-blush-200"
             >
               <Share2 size={14} aria-hidden="true" />
               {t("vendor.share.action")}
@@ -819,8 +819,8 @@ export default function VendorListingPage() {
                 onDrop={onHeroDrop}
                 className={`relative flex aspect-[3/2] cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed text-center transition ${
                   dragOver
-                    ? "border-steel-400 bg-steel-50 dark:border-steel-500 dark:bg-steel-600/15"
-                    : "border-paper-300 bg-paper-50 hover:border-steel-400 dark:border-umber-600 dark:bg-umber-900 dark:hover:border-steel-500"
+                    ? "border-blush-400 bg-blush-50 dark:border-blush-400 dark:bg-blush-500/10"
+                    : "border-paper-300 bg-paper-50 hover:border-paper-400 dark:border-umber-600 dark:bg-umber-900 dark:hover:border-paper-400"
                 }`}
               >
                 {effectiveHeroUrl ? (
@@ -914,7 +914,7 @@ export default function VendorListingPage() {
                     type="button"
                     onClick={() => galleryInputRef.current?.click()}
                     disabled={galleryBusy}
-                    className="flex aspect-[3/2] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-paper-300 text-ink-500 transition hover:border-steel-400 hover:text-steel-600 dark:border-umber-700 dark:text-umber-300 dark:hover:border-steel-500"
+                    className="flex aspect-[3/2] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-paper-300 text-ink-500 transition hover:border-paper-400 hover:text-blush-600 dark:border-umber-700 dark:text-umber-300 dark:hover:border-paper-400"
                   >
                     <Plus size={18} aria-hidden="true" />
                     <span className="text-xs font-medium">
@@ -1163,8 +1163,8 @@ export default function VendorListingPage() {
                         disabled={priceLocked}
                         className={`flex items-center justify-center rounded-xl border px-2.5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60 ${
                           active
-                            ? "border-steel-600 bg-steel-600 text-white"
-                            : "border-steel-200 bg-paper-50 text-ink-600 hover:border-steel-400 dark:border-steel-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-steel-500"
+                            ? "border-blush-500 bg-blush-500 text-white"
+                            : "border-paper-300 bg-paper-50 text-ink-600 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-900 dark:text-umber-200 dark:hover:border-paper-400"
                         }`}
                       >
                         <span className="inline-flex items-center gap-0.5" aria-hidden="true">
@@ -1175,7 +1175,7 @@ export default function VendorListingPage() {
                                 g <= lvl
                                   ? active
                                     ? "text-sm font-semibold text-white"
-                                    : "text-sm font-semibold text-steel-600 dark:text-steel-300"
+                                    : "text-sm font-semibold text-blush-600 dark:text-paper-400"
                                   : active
                                     ? "text-sm font-semibold text-white/40"
                                     : "text-sm font-semibold text-paper-300 dark:text-umber-700"
@@ -1230,8 +1230,8 @@ export default function VendorListingPage() {
                       <div
                         className={`h-full rounded-full ${
                           track.invalid
-                            ? "bg-blush-400 dark:bg-blush-400"
-                            : "bg-steel-400 dark:bg-steel-500"
+                            ? "bg-amber-500 dark:bg-amber-400"
+                            : "bg-blush-500 dark:bg-blush-400"
                         }`}
                         style={{
                           marginLeft: `${track.left}%`,
@@ -1276,7 +1276,7 @@ export default function VendorListingPage() {
                           }
                           className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                             on
-                              ? "border-steel-500 bg-steel-50 text-steel-800 dark:border-steel-400 dark:bg-steel-400/15 dark:text-steel-200"
+                              ? "border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-500/15 dark:text-blush-200"
                               : "border-paper-300 text-ink-600 hover:border-ink-400 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500"
                           }`}
                         >
@@ -1303,7 +1303,7 @@ export default function VendorListingPage() {
               </Link>
               <button
                 type="submit"
-                className="btn bg-steel-600 text-white hover:bg-steel-700"
+                className="btn bg-blush-500 text-white hover:bg-blush-600"
                 disabled={saving}
               >
                 {saving ? t("vendor_home.saving") : t("vendor_home.save")}
@@ -1344,7 +1344,7 @@ export default function VendorListingPage() {
               className={
                 view.listing.status === "active"
                   ? "btn btn-outline"
-                  : "btn bg-steel-600 text-white hover:bg-steel-700"
+                  : "btn bg-blush-500 text-white hover:bg-blush-600"
               }
             >
               {visibilityBusy
@@ -1381,7 +1381,7 @@ export default function VendorListingPage() {
           </div>
           <Link
             to="/vendor/billing"
-            className="btn w-fit bg-steel-600 text-white hover:bg-steel-700"
+            className="btn w-fit bg-blush-500 text-white hover:bg-blush-600"
           >
             {t("vendor.upgrade.cta")}
           </Link>
@@ -1397,7 +1397,7 @@ export default function VendorListingPage() {
             <h2 className="font-semibold">{t("vendor_home.section_availability")}</h2>
             <Link
               to="/vendor/calendar"
-              className="inline-flex items-center gap-1 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+              className="inline-flex items-center gap-1 text-sm font-medium text-blush-600 transition-colors hover:text-blush-700 dark:text-blush-300 dark:hover:text-blush-200"
             >
               <span>{t("vendor_home.availability_open_calendar")}</span>
               <ArrowRight size={15} aria-hidden="true" />
@@ -1419,7 +1419,7 @@ export default function VendorListingPage() {
             </div>
             <button
               type="submit"
-              className="btn bg-steel-600 text-white hover:bg-steel-700"
+              className="btn bg-blush-500 text-white hover:bg-blush-600"
               disabled={availBusy || newDate.trim().length === 0}
             >
               {t("vendor_home.availability_add")}

@@ -229,12 +229,12 @@ export default function VendorDashboardPage() {
 
       {/* Upgrade banner — only on the FREE tier. */}
       {isFree && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-steel-200 bg-steel-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-steel-600/30 dark:bg-steel-600/15">
+        <div className="flex flex-col gap-3 rounded-2xl border border-paper-300 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-umber-700">
           <div className="flex items-start gap-3">
             <Sparkles
               size={18}
               aria-hidden="true"
-              className="mt-0.5 shrink-0 text-steel-700 dark:text-steel-300"
+              className="mt-0.5 shrink-0 text-ink-400 dark:text-paper-400"
             />
             <div className="flex flex-col gap-0.5">
               <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
@@ -245,7 +245,7 @@ export default function VendorDashboardPage() {
           </div>
           <Link
             to="/vendor/billing"
-            className="shrink-0 self-start rounded-xl bg-steel-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-steel-700 sm:self-auto"
+            className="shrink-0 self-start rounded-xl bg-blush-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blush-600 sm:self-auto"
           >
             {t("vendor.upgrade.cta")}
           </Link>
@@ -256,7 +256,7 @@ export default function VendorDashboardPage() {
       <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-2 text-sm text-ink-500 dark:text-paper-400">
-            <TrendingUp size={15} aria-hidden="true" className="text-steel-500" />
+            <TrendingUp size={15} aria-hidden="true" className="text-ink-400 dark:text-paper-400" />
             {t("vendor.dashboard.hero_label")}
           </span>
           <span className="font-grotesk text-6xl font-semibold leading-none tracking-[-0.03em] text-ink-900 tabular-nums sm:text-7xl dark:text-paper-50">
@@ -268,7 +268,7 @@ export default function VendorDashboardPage() {
         </div>
         <Link
           to="/vendor/clients"
-          className="inline-flex h-11 shrink-0 items-center gap-1.5 self-start rounded-xl bg-ink-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-ink-800 sm:self-auto dark:bg-paper-50 dark:text-ink-900 dark:hover:bg-paper-100"
+          className="inline-flex h-11 shrink-0 items-center gap-1.5 self-start rounded-xl bg-blush-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-blush-600 sm:self-auto"
         >
           <span>{t("vendor.dashboard.view_clients")}</span>
           <ArrowRight size={15} aria-hidden="true" />
@@ -323,12 +323,16 @@ export default function VendorDashboardPage() {
         >
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 font-grotesk text-lg font-semibold tracking-[-0.01em] text-ink-900 dark:text-paper-50">
-              <CalendarClock size={18} aria-hidden="true" className="text-steel-500" />
+              <CalendarClock
+                size={18}
+                aria-hidden="true"
+                className="text-ink-400 dark:text-paper-400"
+              />
               <span>{t("vendor.dashboard.upcoming_title")}</span>
             </h2>
             <Link
               to="/vendor/clients"
-              className="inline-flex items-center gap-1 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+              className="inline-flex items-center gap-1 text-sm font-medium text-blush-600 transition-colors hover:text-blush-700 dark:text-blush-300 dark:hover:text-blush-200"
             >
               <span>{t("vendor.dashboard.view_clients")}</span>
               <ArrowRight size={15} aria-hidden="true" />
@@ -458,7 +462,7 @@ type ActionCardProps = {
 
 function ActionCard({ to, icon, title, body, tone }: ActionCardProps) {
   const accent =
-    tone === "sage" ? "text-sage-600 dark:text-sage-300" : "text-steel-700 dark:text-steel-300";
+    tone === "sage" ? "text-sage-600 dark:text-sage-300" : "text-ink-400 dark:text-paper-400";
   return (
     <Link
       to={to}

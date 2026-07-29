@@ -167,7 +167,7 @@ export default function VendorStatsPage() {
                     onClick={() => setRange(key)}
                     className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                       range === key
-                        ? "bg-steel-600 text-white"
+                        ? "bg-blush-500 text-white"
                         : "text-ink-600 hover:bg-paper-200 dark:text-paper-300 dark:hover:bg-umber-800"
                     }`}
                   >
@@ -242,7 +242,7 @@ export default function VendorStatsPage() {
               <TrendingUp
                 size={18}
                 aria-hidden="true"
-                className="text-steel-700 dark:text-steel-300"
+                className="text-ink-400 dark:text-paper-400"
               />
               <span>{t("vendor.stats.conversion_title")}</span>
             </h2>
@@ -265,7 +265,7 @@ export default function VendorStatsPage() {
                   value: stats.inquiries_total,
                   share: share(stats.inquiries_total),
                   rate: rate(stats.inquiries_total, stats.views_total),
-                  fill: "bg-steel-600 dark:bg-steel-500",
+                  fill: "bg-blush-500 dark:bg-blush-400",
                   to: "/vendor/clients",
                 },
                 {
@@ -360,7 +360,7 @@ function StatCard({
   const body = (
     <>
       <div className="flex items-center gap-2 text-ink-500 dark:text-paper-400">
-        <span className="text-steel-700 dark:text-steel-300">{icon}</span>
+        <span className="text-ink-400 dark:text-paper-400">{icon}</span>
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
         {help ? (
           // Styled hover/focus tooltip — the native title attr is unreliable
@@ -391,7 +391,7 @@ function StatCard({
   return (
     <Link
       to={to}
-      className={`${frame} transition-colors hover:border-steel-300 hover:bg-paper-100 dark:hover:border-steel-600 dark:hover:bg-umber-800`}
+      className={`${frame} transition-colors hover:border-paper-400 hover:bg-paper-100 dark:hover:border-umber-600 dark:hover:bg-umber-800`}
     >
       {body}
     </Link>
@@ -583,7 +583,7 @@ function TrendChart({
           {buckets.map((b, i) => (
             <div key={`${b.label}-${i}`} className="group relative flex h-full flex-1 items-end">
               <div
-                className="w-full rounded-t bg-steel-600 transition-colors group-hover:bg-steel-700 dark:bg-steel-400 dark:group-hover:bg-steel-300"
+                className="w-full rounded-t bg-blush-500 transition-colors group-hover:bg-blush-600 dark:bg-blush-400 dark:group-hover:bg-blush-300"
                 style={{ height: `${Math.max((b.count / max) * 100, b.count > 0 ? 3 : 0)}%` }}
               />
               {/* Full-column hover target + tooltip. */}
@@ -694,7 +694,7 @@ function ConversionFunnel({
           <li key={s.key}>
             <Link
               to={s.to}
-              className="block rounded-lg transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-steel-400"
+              className="block rounded-lg transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400"
             >
               {body}
             </Link>
@@ -717,9 +717,11 @@ function UpgradeAnalyticsCard({
   cta: string;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-dashed border-steel-200 bg-steel-50 p-5 dark:border-steel-600/30 dark:bg-steel-600/15">
-      <div className="flex items-center gap-2 text-ink-900 dark:text-paper-50">
-        <Lock size={18} aria-hidden="true" className="text-steel-700 dark:text-steel-300" />
+    <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-100 p-5 dark:border-umber-700 dark:bg-umber-800">
+      <div className="flex items-center gap-3 text-ink-900 dark:text-paper-50">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush-50 text-blush-600 dark:bg-blush-500/15 dark:text-blush-300">
+          <Lock size={20} aria-hidden="true" />
+        </span>
         <h2 className="font-grotesk text-lg font-semibold text-ink-900 dark:text-paper-50">
           {title}
         </h2>
