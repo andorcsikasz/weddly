@@ -1258,6 +1258,27 @@ function SideLink({
    *  isn't a sighted-only signal. */
   unexploredLabel?: string;
 }) {
+  // Where the hover label should sit, in viewport coordinates, or null when the
+  // row isn't hovered. It has to be a PORTAL, not an absolutely-positioned span
+  // inside the row: the rail's scroll box is `overflow-y-auto`, and CSS turns
+  // the other axis into `auto` as well, so a label parked at `left-full` was
+  // clipped a few pixels past the icon — the collapsed rail showed a black stub
+  // where a word should be. Nothing inside that box can escape it.
+  const [tip, setTip] = useState<{ top: number; left: number } | null>(null);
+  // Anything that moves the icon out from under the label (the rail scrolling
+  // inside itself on a short viewport, a resize) hides it rather than leaving it
+  // floating beside the wrong row. Capture phase, because the scroll happens on
+  // an inner box and never bubbles to window.
+  useEffect(() => {
+    if (!tip) return;
+    const clear = () => setTip(null);
+    window.addEventListener("scroll", clear, true);
+    window.addEventListener("resize", clear);
+    return () => {
+      window.removeEventListener("scroll", clear, true);
+      window.removeEventListener("resize", clear);
+    };
+  }, [tip]);
   // Base classes describe the icon-only shape used at md (tablet) and at
   // lg+ when `collapsed` is true. The expanded variant keeps the same fixed
   // `h-9` height and just grows its width to fit the label — so every row is
@@ -1280,6 +1301,11 @@ function SideLink({
       to={to}
       end={to === "/app"}
       aria-label={unexplored && unexploredLabel ? `${label} — ${unexploredLabel}` : label}
+      onMouseEnter={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setTip({ top: r.top + r.height / 2, left: r.right + 10 });
+      }}
+      onMouseLeave={() => setTip(null)}
       className={({ isActive }) => {
         const active = darkActive
           ? "stationery-dark text-paper-100 dark:!bg-blush-400 dark:!text-umber-900 dark:!bg-none"
@@ -1293,7 +1319,9 @@ function SideLink({
         const idle = unexplored
           ? "text-ink-400 hover:bg-paper-200 hover:text-ink-700 dark:text-paper-200/50 dark:hover:bg-umber-800 dark:hover:text-paper-200"
           : "text-ink-700 hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800";
-        return `group/sl relative flex items-center rounded-xl text-sm transition-colors ${shape} ${width} ${
+        // `relative` still anchors the unexplored dot; the hover label is
+        // portalled and no longer needs a hover group here.
+        return `relative flex items-center rounded-xl text-sm transition-colors ${shape} ${width} ${
           isActive ? active : idle
         }`;
       }}
@@ -1330,13 +1358,25 @@ function SideLink({
           )}
         </>
       )}
-      {/* Custom tooltip — visible on hover when the label is not shown.
-          At lg+ expanded (!collapsed) the label itself is visible, so hide it. */}
-      <span
-        className={`pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 whitespace-nowrap rounded-md bg-ink-900 px-2 py-1 text-xs font-medium text-white opacity-0 shadow-md transition-opacity group-hover/sl:opacity-100 dark:bg-umber-950${!collapsed ? " lg:hidden" : ""}`}
-      >
-        {label}
-      </span>
+      {/* Hover label for the icon-only rail, mounted on <body> so no ancestor's
+          overflow can clip it. The lg-expanded rail shows the real label, so the
+          media query still hides this one there — same rule as before, it just
+          lives on a fixed-position node now. */}
+      {tip !== null &&
+        createPortal(
+          <span
+            // Purely visual: the row's aria-label already carries the name, so
+            // announcing it again from <body> would just double it up.
+            aria-hidden="true"
+            style={{ top: tip.top, left: tip.left }}
+            className={`pointer-events-none fixed z-50 -translate-y-1/2 whitespace-nowrap rounded-md bg-ink-900 px-2 py-1 text-xs font-medium text-white shadow-md dark:bg-umber-950${
+              !collapsed ? " lg:hidden" : ""
+            }`}
+          >
+            {label}
+          </span>,
+          document.body,
+        )}
     </NavLink>
   );
 }
