@@ -1,8 +1,9 @@
-// Honeymoon planner — three header tiles (nights / destination / budget) over
-// a slider-driven cost grid. Destination + dates live on `couples`; the
-// destination field is autocompleted against /api/places/search (Nominatim
-// proxy). Cost cards mirror `budget_lines` rows in the `honeymoon` category,
-// so a slider drag here shows up on /app/budget and vice versa.
+// Honeymoon planner — a full-bleed photo of where the couple is going, a
+// three-segment trip bar overlapping its bottom edge, then a slider-driven
+// cost grid. Destination + dates live on `couples`; the destination field is
+// autocompleted against /api/places/search (Nominatim proxy). Cost cards
+// mirror `budget_lines` rows in the `honeymoon` category, so a slider drag
+// here shows up on /app/budget and vice versa.
 
 import type {
   BudgetLine,
@@ -18,6 +19,7 @@ import {
   BedDouble,
   Briefcase,
   Calendar,
+  Camera,
   Check,
   ChevronDown,
   ChevronUp,
@@ -33,6 +35,7 @@ import {
   MapPin,
   Plane,
   Plus,
+  RotateCcw,
   ShieldCheck,
   Smartphone,
   Trash2,
@@ -44,6 +47,7 @@ import {
 import {
   type ComponentType,
   type KeyboardEvent,
+  type ReactNode,
   Suspense,
   useEffect,
   useLayoutEffect,
@@ -199,6 +203,33 @@ function formatDateShort(iso: string | null, locale: Locale): string {
     day: "numeric",
     year: "numeric",
   }).format(d);
+}
+
+/** Day + month only. The trip bar has about 110px per segment on a phone, and
+ *  the year is already implied by the countdown sitting on the photo above. */
+function formatDayMonth(iso: string | null, locale: Locale): string {
+  if (!iso) return "";
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat(intlLocale(locale), { month: "short", day: "numeric" }).format(d);
+}
+
+type Countdown =
+  | { kind: "future"; days: number }
+  | { kind: "today" }
+  | { kind: "ongoing" }
+  | { kind: "past"; days: number };
+
+/** Where the couple is on the trip: counting down, leaving today, away, or
+ *  back. Null until a start date exists. */
+function tripCountdown(start: string | null, end: string | null): Countdown | null {
+  const toStart = daysToStart(start);
+  if (toStart === null) return null;
+  if (toStart > 0) return { kind: "future", days: toStart };
+  if (toStart === 0) return { kind: "today" };
+  const toEnd = daysToStart(end);
+  if (toEnd !== null && toEnd >= 0) return { kind: "ongoing" };
+  return { kind: "past", days: Math.abs(toStart) };
 }
 
 /* ─── Slider helpers ───────────────────────────────────────────────────── */
@@ -422,6 +453,17 @@ export default function HoneymoonPage() {
   const tripReady = Boolean(
     couple?.honeymoon_destination && couple?.honeymoon_start_date && couple?.honeymoon_end_date,
   );
+  const countdown = useMemo(
+    () => tripCountdown(couple?.honeymoon_start_date ?? null, couple?.honeymoon_end_date ?? null),
+    [couple?.honeymoon_start_date, couple?.honeymoon_end_date],
+  );
+  // Cheapest live offer. It rides the trip bar's flight segment so the number
+  // is on the page instead of behind a toggle nobody presses.
+  const bestOffer = useMemo(() => {
+    const offers = flightEstimate?.offers ?? [];
+    if (offers.length === 0) return null;
+    return offers.reduce((min, o) => (o.price < min.price ? o : min), offers[0]!);
+  }, [flightEstimate]);
 
   /* ─── Trip-detail saves (destination + dates) ─────────────────────── */
 
@@ -616,10 +658,52 @@ export default function HoneymoonPage() {
 
   return (
     <>
-      <header className="mb-6 flex items-center gap-2">
-        <h1 className="font-grotesk">{t("honeymoon.title")}</h1>
-        <InfoHint text={t("honeymoon.sub")} />
-      </header>
+      {/* The photo is the page header. No title row above it: the sidebar
+          already says "Honeymoon" and a picture of where you are going says
+          the rest. Bleeds edge to edge (and up under the shell's top padding)
+          on a phone; sits inside the content column from sm up, where the
+          sidebar shares the row. */}
+      <section
+        data-tour-target="honeymoon-tiles"
+        className="-mx-4 -mt-6 mb-8 sm:mx-0 sm:mt-0 sm:mb-10"
+      >
+        <TripHero
+          destination={couple?.honeymoon_destination ?? null}
+          customCoverPath={couple?.honeymoon_cover_path ?? null}
+          countdown={countdown}
+          loaded={loaded}
+          onSaveDestination={(v) => saveTrip({ honeymoon_destination: v })}
+          onCoupleChange={setCouple}
+          onCoverReset={() =>
+            setCouple((prev) => (prev ? { ...prev, honeymoon_cover_path: null } : prev))
+          }
+        />
+        <TripBar
+          start={couple?.honeymoon_start_date ?? null}
+          end={couple?.honeymoon_end_date ?? null}
+          nights={nights}
+          locale={locale}
+          loaded={loaded}
+          currency={currency}
+          planned={totals.planned}
+          actual={totals.actual}
+          lineCount={honeymoonLines.length}
+          tripReady={tripReady}
+          flightOpen={flightSectionOpen}
+          flightLoading={flightLoading}
+          bestOffer={bestOffer}
+          onFlightToggle={() => {
+            setFlightSectionOpen((prev) => {
+              const next = !prev;
+              if (next && !flightSearched && !flightLoading) void loadFlightEstimate();
+              return next;
+            });
+          }}
+          onSaveDates={(start, end) =>
+            saveTrip({ honeymoon_start_date: start, honeymoon_end_date: end })
+          }
+        />
+      </section>
 
       {honeymoonBeforeWedding && couple?.wedding_date && couple?.honeymoon_start_date && (
         <section
@@ -645,59 +729,8 @@ export default function HoneymoonPage() {
         </section>
       )}
 
-      {/* 1+2 mobile layout: the countdown tile gets a full row on mobile
-          (the date range + "122 days to go" pill needs the horizontal
-          room — at 1/3 width on a 393px phone they wrap or truncate),
-          then Destination + Budget share row 2 in a 2-col grid. On sm+
-          the three tiles become equal peers. Saves ~120px of vertical
-          chrome vs the prior single-column stack. */}
-      <section data-tour-target="honeymoon-tiles" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="col-span-2 flex sm:col-span-1">
-          <DaysTile
-            start={couple?.honeymoon_start_date ?? null}
-            end={couple?.honeymoon_end_date ?? null}
-            nights={nights}
-            locale={locale}
-            loaded={loaded}
-            onSave={(start, end) =>
-              saveTrip({ honeymoon_start_date: start, honeymoon_end_date: end })
-            }
-          />
-        </div>
-        <DestinationTile
-          value={couple?.honeymoon_destination ?? null}
-          loaded={loaded}
-          onSave={(v) => saveTrip({ honeymoon_destination: v })}
-          tripReady={tripReady}
-          flightLoading={flightLoading}
-          flightSectionOpen={flightSectionOpen}
-          onFlightToggle={() => {
-            setFlightSectionOpen((prev) => {
-              const next = !prev;
-              if (next && !flightSearched && !flightLoading) void loadFlightEstimate();
-              return next;
-            });
-          }}
-        />
-        <BudgetSummaryTile
-          planned={totals.planned}
-          actual={totals.actual}
-          count={honeymoonLines.length}
-          locale={locale}
-          loaded={loaded}
-          currency={currency}
-        />
-      </section>
-
-      <DestinationCoverPhoto
-        destination={couple?.honeymoon_destination ?? null}
-        customCoverPath={couple?.honeymoon_cover_path ?? null}
-        onUploaded={(c) => setCouple(c)}
-        onReset={() => setCouple((prev) => (prev ? { ...prev, honeymoon_cover_path: null } : prev))}
-      />
-
-      {/* Flight estimate section — hidden until the plane icon on the WHERE
-       *  tile is toggled on. Auto-fetches on first open; stays cached until
+      {/* Flight estimate section — hidden until the plane segment of the trip
+       *  bar is toggled on. Auto-fetches on first open; stays cached until
        *  destination or dates change. */}
       {tripReady &&
         flightSectionOpen &&
@@ -836,234 +869,114 @@ export default function HoneymoonPage() {
   );
 }
 
-/* ─── Tiles ────────────────────────────────────────────────────────────── */
-
-function DaysTile({
-  start,
-  end,
-  nights,
-  locale,
-  loaded,
-  onSave,
-}: {
-  start: string | null;
-  end: string | null;
-  nights: number | null;
-  locale: Locale;
-  loaded: boolean;
-  onSave: (start: string | null, end: string | null) => Promise<void>;
-}) {
-  const { t } = useT();
-  const toast = useToast();
-  const [editing, setEditing] = useState(false);
-  const [draftStart, setDraftStart] = useState<string>(start ?? "");
-  const [draftEnd, setDraftEnd] = useState<string>(end ?? "");
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setDraftStart(start ?? "");
-    setDraftEnd(end ?? "");
-  }, [start, end]);
-
-  useEffect(() => {
-    if (!editing) return;
-    function handler(e: MouseEvent) {
-      if (!wrapperRef.current?.contains(e.target as Node)) commit();
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-    // commit reads draft state; we want the latest values via closure
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, draftStart, draftEnd]);
-
-  async function commit() {
-    const nextStart = draftStart === "" ? null : draftStart;
-    let nextEnd = draftEnd === "" ? null : draftEnd;
-    // Return < depart is almost always a typo. Refuse the save and revert
-    // the end draft to whatever was last persisted so the user sees the
-    // inconsistency cleared rather than a silent rollback.
-    if (nextStart && nextEnd && nextEnd < nextStart) {
-      toast.error(t("honeymoon.end_before_start"));
-      setDraftEnd(end ?? "");
-      nextEnd = end;
-    }
-    setEditing(false);
-    if (nextStart === start && nextEnd === end) return;
-    await onSave(nextStart, nextEnd);
-  }
-
-  const dateRange = useMemo(() => {
-    if (!start && !end) return null;
-    const s = formatDateShort(start, locale);
-    const e = formatDateShort(end, locale);
-    if (s && e) return `${s} → ${e}`;
-    return s || e;
-  }, [start, end, locale]);
-
-  // Countdown to honeymoon start. We also compute "ended N days ago" / "now
-  // travelling" so the pill stays informative on every leg of the trip.
-  const countdown = useMemo(() => {
-    const dToStart = daysToStart(start);
-    if (dToStart === null) return null;
-    if (dToStart > 0) return { kind: "future" as const, days: dToStart };
-    if (dToStart === 0) return { kind: "today" as const };
-    const dToEnd = daysToStart(end);
-    if (dToEnd !== null && dToEnd >= 0) return { kind: "ongoing" as const };
-    return { kind: "past" as const, days: Math.abs(dToStart) };
-  }, [start, end]);
-
-  return (
-    <div ref={wrapperRef} className="card stationery-ink relative flex h-full w-full flex-col !p-4">
-      {/* Header strip: the icon IS the label (the name lives in `title` + the
-          edit button's aria-label), and the countdown sits opposite it as a
-          pill. Two day-counts stacked as sibling lines read as one number
-          contradicting the other — "30 nap" over "Még 314 nap" — so the trip
-          length stays the hero and the countdown moves out of the stack. */}
-      <div className="flex items-start justify-between gap-2 text-paper-200">
-        <span title={t("honeymoon.tile_days")} className="inline-flex">
-          <Calendar size={14} aria-hidden="true" />
-        </span>
-        {countdown && (
-          <span className="-mt-0.5 shrink-0 rounded-full bg-paper-50/10 px-2 py-0.5 text-[11px] leading-tight text-paper-200">
-            {countdown.kind === "future" &&
-              t("honeymoon.countdown_future", { count: countdown.days })}
-            {countdown.kind === "today" && t("honeymoon.countdown_today")}
-            {countdown.kind === "ongoing" && t("honeymoon.countdown_ongoing")}
-            {countdown.kind === "past" && t("honeymoon.countdown_past", { count: countdown.days })}
-          </span>
-        )}
-      </div>
-
-      {editing ? (
-        <div className="mt-3 space-y-2">
-          <label className="block">
-            <span className="text-[11px] uppercase tracking-wide text-paper-200">
-              {t("honeymoon.start_label")}
-            </span>
-            <input
-              type="date"
-              className="input mt-1 h-11 min-h-0 py-1 text-base sm:h-9 sm:text-sm"
-              value={draftStart}
-              min={todayIso()}
-              onChange={(e) => {
-                const v = e.target.value;
-                setDraftStart(v);
-                // Keep the range valid: if the new depart is past the
-                // current return, pull the return forward to match. Also
-                // make sure the return never lands in the past.
-                const floor = maxIsoDate(v || todayIso(), todayIso());
-                if (draftEnd && draftEnd < floor) setDraftEnd(floor);
-              }}
-              autoFocus
-            />
-          </label>
-          <label className="block">
-            <span className="text-[11px] uppercase tracking-wide text-paper-200">
-              {t("honeymoon.end_label")}
-            </span>
-            <input
-              type="date"
-              className="input mt-1 h-11 min-h-0 py-1 text-base sm:h-9 sm:text-sm"
-              value={draftEnd}
-              onChange={(e) => setDraftEnd(e.target.value)}
-              min={maxIsoDate(draftStart || todayIso(), todayIso())}
-            />
-          </label>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="flex w-full flex-1 flex-col items-center justify-center text-center"
-          aria-label={t("honeymoon.edit_dates")}
-        >
-          {nights !== null ? (
-            <span className="flex items-baseline justify-center">
-              <span className="font-grotesk text-3xl font-semibold leading-none tabular-nums text-paper-50">
-                {nights}
-              </span>
-              <span className="ml-2 text-sm text-paper-200">
-                {t("honeymoon.day", { count: nights })}
-              </span>
-            </span>
-          ) : loaded ? (
-            // No dates yet: keep the slot at the same visual size as a filled
-            // number by making the CTA the prominent serif line (responsive,
-            // matching the budget tile) instead of a thin "-" + small caption.
-            <span className="font-grotesk text-lg font-semibold leading-none text-paper-50 sm:text-2xl md:text-3xl">
-              {t("honeymoon.set_dates_cta")}
-            </span>
-          ) : null}
-          {dateRange && <p className="mt-1 text-xs text-paper-300">{dateRange}</p>}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function DestinationCoverPhoto({
+/* ─── Hero ─────────────────────────────────────────────────────────────
+ * A full-height photo of the destination with the place name set over it and
+ * nothing else but glass icons. Everything that used to be a labelled tile is
+ * either an icon here (its name lives in title + aria-label) or a segment of
+ * the trip bar below.
+ *
+ * The photo comes from /api/honeymoon/destination-photo, which walks the
+ * saved Nominatim breadcrumb outward — venue → city → region → country — and
+ * returns the first rung it can find a picture of, plus which rung that was.
+ * So a couple who saved a church address in Rome gets Rome rather than the
+ * empty gradient the old strip fell back to. A couple's own upload always
+ * wins over whatever the wikis had.
+ */
+function TripHero({
   destination,
   customCoverPath,
-  onUploaded,
-  onReset,
+  countdown,
+  loaded,
+  onSaveDestination,
+  onCoupleChange,
+  onCoverReset,
 }: {
   destination: string | null;
   customCoverPath: string | null;
-  onUploaded: (couple: Couple) => void;
-  onReset: () => void;
+  countdown: Countdown | null;
+  loaded: boolean;
+  onSaveDestination: (v: string | null) => Promise<void>;
+  onCoupleChange: (couple: Couple) => void;
+  onCoverReset: () => void;
 }) {
-  const { t } = useT();
-  const [autoUrl, setAutoUrl] = useState<string | null>(null);
+  const { t, locale } = useT();
+  const [auto, setAuto] = useState<{ url: string; matched: string | null } | null>(null);
+  const [imgReady, setImgReady] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (customCoverPath || !destination) {
-      setAutoUrl(null);
+      setAuto(null);
       return;
     }
-    const city = (destination.split(",")[0] ?? destination).trim();
     let cancelled = false;
+    setAuto(null);
+    // Send the WHOLE breadcrumb, not its first segment — the fallback ladder
+    // is the server's job and it needs the rungs to walk.
     honeymoonApi
-      .destinationPhoto(city)
+      .destinationPhoto(destination, locale)
       .then((r) => {
-        if (!cancelled) setAutoUrl(r.photo_url);
+        if (cancelled || !r.photo_url) return;
+        setAuto({ url: r.photo_url, matched: r.matched });
       })
       .catch(() => {
-        if (!cancelled) setAutoUrl(null);
+        if (!cancelled) setAuto(null);
       });
     return () => {
       cancelled = true;
     };
-  }, [destination, customCoverPath]);
+  }, [destination, customCoverPath, locale]);
 
-  const photoUrl = customCoverPath ?? autoUrl;
-  if (!destination || !photoUrl) return null;
+  const photoUrl = customCoverPath ?? auto?.url ?? null;
+  useEffect(() => {
+    setImgReady(false);
+  }, [photoUrl]);
 
-  const city = (destination.split(",")[0] ?? destination).trim();
+  // Nominatim breadcrumbs run to five or six segments; the headline is the
+  // first one (the city or venue the couple actually picked). The full string
+  // stays in the title attribute and is what the autocomplete pre-fills.
+  const headline = destination
+    ? (destination.split(",")[0] ?? destination).trim() || destination
+    : null;
+  // Worth saying only when the picture is of a different rung than the
+  // headline: a shot of Rome captioned with a church name is a small lie.
+  const photoOf =
+    !customCoverPath &&
+    auto?.matched &&
+    headline &&
+    auto.matched.toLowerCase() !== headline.toLowerCase()
+      ? auto.matched
+      : null;
 
   async function handleFile(file: File) {
     if (uploading) return;
     setUploading(true);
     try {
       const result = await honeymoonApi.uploadCover(file);
-      onUploaded(result.couple);
+      onCoupleChange(result.couple);
     } catch {
-      // silently ignore
+      // Silent — the hero keeps whatever it was already showing.
     } finally {
       setUploading(false);
     }
   }
 
   async function handleReset() {
-    await honeymoonApi.deleteCover();
-    onReset();
+    const ok = await honeymoonApi.deleteCover().catch(() => null);
+    if (ok) onCoverReset();
   }
 
   return (
     <div
-      className={`group relative mt-3 h-40 overflow-hidden rounded-2xl${dragging ? " ring-2 ring-blush-400" : ""}`}
+      className={`relative isolate overflow-hidden bg-umber-900 sm:rounded-3xl ${
+        destination
+          ? "h-[64svh] min-h-[400px] max-h-[620px]"
+          : "h-[42svh] min-h-[260px] max-h-[360px]"
+      }${dragging ? " ring-2 ring-paper-50" : ""}`}
       onDragOver={(e) => {
         e.preventDefault();
         setDragging(true);
@@ -1076,40 +989,127 @@ function DestinationCoverPhoto({
         if (file) void handleFile(file);
       }}
     >
-      <img src={photoUrl} alt={city} className="h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-t from-ink-900/50 to-transparent" />
-      <p className="absolute bottom-3 left-4 font-grotesk text-sm font-semibold text-paper-50">
-        {city}
-      </p>
-
+      {/* Base layer under every photo: a warm dusk gradient, so a slow image
+          fades in over something intentional rather than over flat black. */}
       <div
-        className={`absolute inset-0 flex flex-col items-center justify-center gap-2 bg-ink-900/60 transition-opacity${dragging || uploading ? " opacity-100" : " opacity-0 group-hover:opacity-100"}`}
-      >
-        {uploading ? (
-          <span className="font-grotesk text-sm text-paper-50">
-            {t("honeymoon.cover_uploading")}
+        aria-hidden="true"
+        className="absolute inset-0 bg-gradient-to-br from-umber-500 via-umber-700 to-umber-950"
+      />
+      {photoUrl && (
+        <img
+          key={photoUrl}
+          src={photoUrl}
+          alt={headline ?? ""}
+          onLoad={() => setImgReady(true)}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+            imgReady ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      )}
+      {/* Two scrims: one under the glass buttons at the top, one carrying the
+          headline at the bottom. Kept separate so the middle of the photo,
+          which is the part worth looking at, stays untouched. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-ink-900/55 to-transparent"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ink-900/95 via-ink-900/55 to-transparent"
+      />
+
+      {/* Top row: where you are in the trip on the left, actions on the right.
+          Every action is an icon; the words live in title + aria-label. */}
+      <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-4 sm:p-5">
+        {countdown ? (
+          <span className="rounded-full bg-ink-900/45 px-3 py-1 text-xs font-medium text-paper-50 backdrop-blur-sm">
+            {countdown.kind === "future" &&
+              t("honeymoon.countdown_future", { count: countdown.days })}
+            {countdown.kind === "today" && t("honeymoon.countdown_today")}
+            {countdown.kind === "ongoing" && t("honeymoon.countdown_ongoing")}
+            {countdown.kind === "past" && t("honeymoon.countdown_past", { count: countdown.days })}
           </span>
-        ) : dragging ? (
-          <span className="font-grotesk text-sm text-paper-50">{t("honeymoon.cover_drag")}</span>
         ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="rounded-lg bg-paper-50/20 px-3 py-1.5 font-grotesk text-sm font-medium text-paper-50 backdrop-blur-sm hover:bg-paper-50/30"
-            >
-              {t("honeymoon.cover_upload")}
-            </button>
-            {customCoverPath && (
-              <button
-                type="button"
-                onClick={() => void handleReset()}
-                className="font-grotesk text-xs text-paper-200 underline hover:text-paper-50"
-              >
-                {t("honeymoon.cover_reset")}
-              </button>
+          <span />
+        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {destination && (
+            <GlassButton
+              label={t("honeymoon.show_on_map")}
+              onClick={() => setMapOpen(true)}
+              icon={<MapIcon size={16} aria-hidden="true" />}
+            />
+          )}
+          {customCoverPath && (
+            <GlassButton
+              label={t("honeymoon.cover_reset")}
+              onClick={() => void handleReset()}
+              icon={<RotateCcw size={16} aria-hidden="true" />}
+            />
+          )}
+          <GlassButton
+            label={uploading ? t("honeymoon.cover_uploading") : t("honeymoon.cover_upload")}
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            icon={
+              uploading ? (
+                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Camera size={16} aria-hidden="true" />
+              )
+            }
+          />
+        </div>
+      </div>
+
+      {/* Bottom: the destination name, sized as the page's actual headline.
+          Clicking it opens the autocomplete in place. */}
+      <div className="absolute inset-x-0 bottom-0 p-4 pb-7 sm:p-6 sm:pb-9">
+        {editing ? (
+          <div className="max-w-xl">
+            <DestinationAutocomplete
+              initial={destination ?? ""}
+              onCancel={() => setEditing(false)}
+              onCommit={async (next) => {
+                setEditing(false);
+                if (next === destination) return;
+                await onSaveDestination(next);
+              }}
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            aria-label={t("honeymoon.edit_destination")}
+            className="block max-w-full text-left"
+          >
+            {headline ? (
+              <>
+                {/* `!text-paper-50` is load-bearing: index.css paints every
+                    h1/h2 inside [data-app-shell] umber-900 in light mode, and
+                    that selector outranks a plain text-* utility. Without the
+                    bang the headline renders near-black on the photo. */}
+                <h1
+                  title={destination ?? undefined}
+                  className="line-clamp-2 font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight !text-paper-50 [text-shadow:0_2px_18px_rgba(16,12,8,0.55)] sm:text-6xl lg:text-7xl"
+                >
+                  {headline}
+                </h1>
+                {photoOf && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-paper-200/90">
+                    <Camera size={12} aria-hidden="true" />
+                    {t("honeymoon.photo_of", { place: photoOf })}
+                  </p>
+                )}
+              </>
+            ) : (
+              <span className="inline-flex items-center gap-2.5 rounded-full bg-paper-50 px-5 py-2.5 font-grotesk text-base font-semibold text-ink-900 shadow-pop">
+                <Compass size={18} aria-hidden="true" />
+                {loaded ? t("honeymoon.destination_empty_cta") : ""}
+              </span>
             )}
-          </>
+          </button>
         )}
       </div>
 
@@ -1124,126 +1124,41 @@ function DestinationCoverPhoto({
           e.target.value = "";
         }}
       />
+
+      {mapOpen && destination && (
+        <Suspense fallback={null}>
+          <HoneymoonMapModal destination={destination} onClose={() => setMapOpen(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }
 
-function DestinationTile({
-  value,
-  loaded,
-  onSave,
-  tripReady,
-  flightLoading,
-  flightSectionOpen,
-  onFlightToggle,
+/** Circular frosted control for the hero's photo overlay. Icon only — the
+ *  name is carried by title + aria-label, which is what keeps the picture
+ *  readable underneath. */
+function GlassButton({
+  label,
+  icon,
+  onClick,
+  disabled,
 }: {
-  value: string | null;
-  loaded: boolean;
-  onSave: (v: string | null) => Promise<void>;
-  tripReady: boolean;
-  flightLoading: boolean;
-  flightSectionOpen: boolean;
-  onFlightToggle: () => void;
+  label: string;
+  icon: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
 }) {
-  const { t } = useT();
-  const [editing, setEditing] = useState(false);
-  const [mapOpen, setMapOpen] = useState(false);
-
   return (
-    <div className="card stationery-ink relative flex h-full flex-col !p-4">
-      {/* Icon only, same as the other two tiles: the destination name under it
-          says what this is far better than the word "Hova" above it. The two
-          triggers ride this row rather than the tile's bottom corners, where
-          they used to be absolutely positioned: on a half-width mobile tile
-          the centred destination name ran straight through both of them. */}
-      <div className="flex items-start justify-between gap-2 text-paper-200">
-        <span title={t("honeymoon.tile_destination")} className="inline-flex">
-          <MapPin size={14} aria-hidden="true" />
-        </span>
-        {value && !editing && (
-          <div className="-mt-1 flex shrink-0 items-center gap-1">
-            {tripReady && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onFlightToggle();
-                }}
-                aria-pressed={flightSectionOpen}
-                className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
-                  flightSectionOpen
-                    ? "border-blush-300 bg-paper-50 text-blush-700 hover:bg-paper-100"
-                    : "border-paper-50/20 bg-paper-50/10 text-paper-100 hover:border-blush-300 hover:bg-paper-50 hover:text-blush-700"
-                }`}
-                aria-label={t("honeymoon.flight_estimate_search")}
-                title={t("honeymoon.flight_estimate_search")}
-              >
-                {flightLoading && flightSectionOpen ? (
-                  <Loader2 size={13} className="animate-spin" aria-hidden="true" />
-                ) : (
-                  <Plane size={13} aria-hidden="true" />
-                )}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setMapOpen(true);
-              }}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-paper-50/20 bg-paper-50/10 text-paper-100 transition hover:border-blush-300 hover:bg-paper-50 hover:text-blush-700"
-              aria-label={t("honeymoon.show_on_map")}
-              title={t("honeymoon.show_on_map")}
-            >
-              <MapIcon size={13} aria-hidden="true" />
-            </button>
-          </div>
-        )}
-      </div>
-      {editing ? (
-        <DestinationAutocomplete
-          initial={value ?? ""}
-          onCancel={() => setEditing(false)}
-          onCommit={async (next) => {
-            setEditing(false);
-            if (next === value) return;
-            await onSave(next);
-          }}
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="flex flex-1 w-full items-center justify-center"
-          aria-label={t("honeymoon.edit_destination")}
-        >
-          {value ? (
-            // The destination string is often Nominatim's full breadcrumb
-            // ("Málaga, Málaga-Costa del Sol, Malaga, Andalúzia, Spanyolország") —
-            // crop the displayed text to the first comma-separated segment so
-            // the tile shows the headline (city / venue) only. The full
-            // string stays in `value` (and the title tooltip) and is what the
-            // autocomplete pre-fills when the user clicks to edit.
-            <span
-              className="line-clamp-2 font-grotesk text-xl font-semibold text-paper-50 sm:text-2xl"
-              title={value}
-            >
-              {(value.split(",")[0] ?? value).trim() || value}
-            </span>
-          ) : (
-            <span className="text-sm text-paper-200">
-              {loaded ? t("honeymoon.destination_empty_cta") : ""}
-            </span>
-          )}
-        </button>
-      )}
-
-      {mapOpen && value && (
-        <Suspense fallback={null}>
-          <HoneymoonMapModal destination={value} onClose={() => setMapOpen(false)} />
-        </Suspense>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-paper-50/25 bg-ink-900/35 text-paper-50 backdrop-blur-sm transition hover:bg-paper-50 hover:text-ink-900 disabled:opacity-60"
+    >
+      {icon}
+    </button>
   );
 }
 
@@ -1420,57 +1335,276 @@ function DestinationAutocomplete({
   );
 }
 
-function BudgetSummaryTile({
-  planned,
-  actual,
-  count,
+/* ─── Trip bar ─────────────────────────────────────────────────────────
+ * Three segments overlapping the bottom edge of the photo: how long you are
+ * away, what the trip is budgeted at, what the flights cost. Each is a number
+ * with an icon over it — no field labels, because a calendar over "30 nap"
+ * over "jún. 8. → júl. 8." does not need the word "dates" as well.
+ */
+function TripBar({
+  start,
+  end,
+  nights,
   locale,
   loaded,
   currency,
+  planned,
+  actual,
+  lineCount,
+  tripReady,
+  flightOpen,
+  flightLoading,
+  bestOffer,
+  onFlightToggle,
+  onSaveDates,
 }: {
-  planned: number;
-  actual: number;
-  count: number;
+  start: string | null;
+  end: string | null;
+  nights: number | null;
   locale: Locale;
   loaded: boolean;
   currency: Currency;
+  planned: number;
+  actual: number;
+  lineCount: number;
+  tripReady: boolean;
+  flightOpen: boolean;
+  flightLoading: boolean;
+  /** Cheapest live offer, or null before a search / on a miss. */
+  bestOffer: FlightOffer | null;
+  onFlightToggle: () => void;
+  onSaveDates: (start: string | null, end: string | null) => Promise<void>;
 }) {
   const { t } = useT();
+  const [editingDates, setEditingDates] = useState(false);
+
+  const dateRange =
+    start || end
+      ? [formatDayMonth(start, locale), formatDayMonth(end, locale)].filter(Boolean).join(" → ")
+      : null;
+
   return (
-    <Link
-      to="/app/budget"
-      aria-label={t("honeymoon.tile_budget")}
-      className="card stationery-ink relative flex h-full flex-col overflow-hidden !p-4"
-    >
-      <div className="flex items-center gap-2 text-paper-200">
-        <span title={t("honeymoon.tile_budget")} className="inline-flex">
-          <Wallet size={14} aria-hidden="true" />
-        </span>
-      </div>
-      <div className="flex flex-1 flex-col justify-center">
-        <div className="flex items-baseline justify-center gap-2">
-          {/* Mobile (half-width cell after the 1+2 layout) needs a smaller
-              value font — text-3xl was clipping "HUF 320,000" at both edges
-              because the centered flex item overflowed the ~115px content
-              area. text-lg fits with room to spare; text-2xl/3xl restore
-              the hero feel at sm+/md+ widths where the cell is wider. */}
-          <span className="font-grotesk text-lg font-semibold leading-none tabular-nums text-paper-50 sm:text-2xl md:text-3xl">
-            {loaded ? formatMoney(planned, currency, locale) : ""}
-          </span>
+    <div className="relative z-10 -mt-7 px-4 sm:px-6">
+      <div className="overflow-hidden rounded-2xl border border-paper-200 bg-white shadow-pop dark:border-umber-600 dark:bg-umber-800">
+        <div className="grid grid-cols-3 divide-x divide-paper-200 dark:divide-umber-700">
+          <TripStat
+            icon={<Calendar size={15} aria-hidden="true" />}
+            label={t("honeymoon.tile_days")}
+            value={
+              nights !== null
+                ? `${nights} ${t("honeymoon.day", { count: nights })}`
+                : loaded
+                  ? t("honeymoon.set_dates_cta")
+                  : ""
+            }
+            hint={dateRange}
+            muted={nights === null}
+            active={editingDates}
+            onClick={() => setEditingDates((v) => !v)}
+            actionLabel={t("honeymoon.edit_dates")}
+          />
+          <TripStat
+            icon={<Wallet size={15} aria-hidden="true" />}
+            label={t("honeymoon.tile_budget")}
+            value={loaded ? formatMoney(planned, currency, locale) : ""}
+            // No hint at all on an empty budget: "0 Ft" already says there is
+            // nothing here, and the longer sentence only truncated.
+            hint={
+              actual > 0
+                ? t("honeymoon.budget_actual_inline", {
+                    actual: formatMoney(actual, currency, locale),
+                  })
+                : lineCount > 0
+                  ? t("honeymoon.budget_lines_count", { count: lineCount })
+                  : null
+            }
+            to="/app/budget"
+            actionLabel={t("honeymoon.tile_budget")}
+          />
+          <TripStat
+            icon={
+              flightLoading ? (
+                <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Plane size={15} aria-hidden="true" />
+              )
+            }
+            label={t("honeymoon.flight_estimate_title")}
+            // Once a search has landed, the cheapest fare IS the label. Before
+            // that the segment is the button that runs the search. Both use
+            // the one-word form: "Repjegy becslés" truncated at a third of a
+            // 393px phone.
+            value={
+              bestOffer ? `~ ${formatOfferPrice(bestOffer, locale)}` : t("honeymoon.flight_short")
+            }
+            hint={bestOffer ? t("honeymoon.flight_short") : null}
+            muted={!bestOffer}
+            active={flightOpen}
+            disabled={!tripReady}
+            onClick={onFlightToggle}
+            actionLabel={t("honeymoon.flight_estimate_search")}
+          />
         </div>
-        <p className="mt-1 text-center text-xs text-paper-300">
-          {actual > 0
-            ? t("honeymoon.budget_actual_inline", {
-                actual: formatMoney(actual, currency, locale),
-              })
-            : count === 0
-              ? loaded
-                ? t("honeymoon.budget_no_lines")
-                : ""
-              : t("honeymoon.budget_lines_count", { count })}
-        </p>
+
+        {editingDates && (
+          <DateRangeRow
+            start={start}
+            end={end}
+            onClose={() => setEditingDates(false)}
+            onSave={onSaveDates}
+          />
+        )}
       </div>
-    </Link>
+    </div>
+  );
+}
+
+/** One segment of the trip bar. Renders as a link when `to` is set, otherwise
+ *  a button; `label` never paints, it is the accessible name behind the icon. */
+function TripStat({
+  icon,
+  label,
+  value,
+  hint,
+  to,
+  onClick,
+  disabled,
+  muted,
+  active,
+  actionLabel,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  hint?: string | null;
+  to?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  muted?: boolean;
+  active?: boolean;
+  actionLabel: string;
+}) {
+  const body = (
+    <>
+      <span
+        aria-hidden="true"
+        className={
+          active ? "text-blush-700 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"
+        }
+      >
+        {icon}
+      </span>
+      <span
+        className={`mt-1 block max-w-full truncate font-grotesk text-sm font-semibold leading-tight tabular-nums sm:text-base ${
+          muted ? "text-ink-500 dark:text-umber-200" : "text-ink-900 dark:text-paper-50"
+        }`}
+      >
+        {value}
+      </span>
+      {hint && (
+        <span className="mt-0.5 block max-w-full truncate text-[11px] leading-tight text-ink-500 dark:text-umber-300">
+          {hint}
+        </span>
+      )}
+    </>
+  );
+  const cls = `flex min-w-0 flex-col items-center px-2 py-3 text-center transition ${
+    disabled ? "cursor-not-allowed opacity-45" : "hover:bg-paper-50 dark:hover:bg-umber-700/50"
+  }`;
+
+  if (to) {
+    return (
+      <Link to={to} aria-label={actionLabel} title={label} className={cls}>
+        {body}
+      </Link>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={actionLabel}
+      aria-pressed={active}
+      title={label}
+      className={cls}
+    >
+      {body}
+    </button>
+  );
+}
+
+/** Depart / return pickers, opened by the trip bar's first segment. Each pick
+ *  saves on the spot — an explicit Save button for two date fields is one tap
+ *  of ceremony too many. Picking a departure after the current return drags
+ *  the return along rather than leaving the range inverted. */
+function DateRangeRow({
+  start,
+  end,
+  onSave,
+  onClose,
+}: {
+  start: string | null;
+  end: string | null;
+  onSave: (start: string | null, end: string | null) => Promise<void>;
+  onClose: () => void;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (!wrapperRef.current?.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  const floor = maxIsoDate(start || todayIso(), todayIso());
+
+  return (
+    <div
+      ref={wrapperRef}
+      className="flex items-center gap-2 border-t border-paper-200 px-3 py-3 dark:border-umber-700"
+    >
+      <input
+        type="date"
+        className="input h-11 min-h-0 flex-1 py-1 text-base sm:h-9 sm:text-sm"
+        value={start ?? ""}
+        min={todayIso()}
+        aria-label={t("honeymoon.start_label")}
+        onChange={(e) => {
+          const next = e.target.value || null;
+          // Keep the range valid: a departure past the current return pulls
+          // the return forward with it.
+          const nextFloor = maxIsoDate(next || todayIso(), todayIso());
+          const nextEnd = end && end < nextFloor ? nextFloor : end;
+          void onSave(next, nextEnd);
+        }}
+        autoFocus
+      />
+      <span aria-hidden="true" className="shrink-0 text-ink-400 dark:text-umber-300">
+        →
+      </span>
+      <input
+        type="date"
+        className="input h-11 min-h-0 flex-1 py-1 text-base sm:h-9 sm:text-sm"
+        value={end ?? ""}
+        min={floor}
+        aria-label={t("honeymoon.end_label")}
+        onChange={(e) => {
+          const next = e.target.value || null;
+          // Return before departure is almost always a typo, so refuse it
+          // rather than persisting an inverted range.
+          if (next && start && next < start) {
+            toast.error(t("honeymoon.end_before_start"));
+            return;
+          }
+          void onSave(start, next);
+        }}
+      />
+    </div>
   );
 }
 

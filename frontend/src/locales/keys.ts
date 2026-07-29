@@ -2903,6 +2903,11 @@ export interface LocaleMessages {
     cover_upload: string;
     cover_drag: string;
     cover_reset: string;
+    /** Caption when the auto photo is of a broader place than the headline,
+     *  e.g. a Rome shot under a saved church address. */
+    /** One-word form of flight_estimate_title, for the trip bar segment. */
+    flight_short: string;
+    photo_of: string;
     cover_uploading: string;
   };
   /** Honeymoon travel-safety block — Hungarian Konzuli Szolgálat (KonzInfo)

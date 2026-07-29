@@ -2612,6 +2612,8 @@ const es: LocaleMessages = {
     cover_upload: "Subir foto",
     cover_drag: "Suelta la foto aquí",
     cover_reset: "Restablecer a automático",
+    flight_short: "Vuelos",
+    photo_of: "Foto: {place}",
     cover_uploading: "Subiendo…",
   },
   travel_safety: {

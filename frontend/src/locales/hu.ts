@@ -2583,6 +2583,8 @@ const hu: LocaleMessages = {
     cover_upload: "Fotó feltöltése",
     cover_drag: "Húzz ide egy fotót",
     cover_reset: "Visszaállítás automatikusra",
+    flight_short: "Repjegy",
+    photo_of: "Fotó: {place}",
     cover_uploading: "Feltöltés…",
   },
   travel_safety: {

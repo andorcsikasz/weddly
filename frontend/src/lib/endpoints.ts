@@ -1051,10 +1051,17 @@ export const honeymoonApi = {
         ? `/api/honeymoon/konzinfo?destination=${encodeURIComponent(destination)}`
         : "/api/honeymoon/konzinfo",
     ),
-  destinationPhoto: (destination: string) =>
-    apiFetch<{ photo_url: string | null }>(
+  /** Cover photo for the saved destination. Pass the WHOLE Nominatim
+   *  breadcrumb, not just its first segment: the server walks it outward
+   *  (venue → city → region → country) and `matched` names the rung the
+   *  picture is actually of. `lang` picks which wiki gets asked first, since
+   *  the breadcrumb is saved in whatever language the couple searched in. */
+  destinationPhoto: (destination: string, lang?: string) =>
+    apiFetch<{ photo_url: string | null; matched: string | null }>(
       "GET",
-      `/api/honeymoon/destination-photo?destination=${encodeURIComponent(destination)}`,
+      `/api/honeymoon/destination-photo?destination=${encodeURIComponent(destination)}${
+        lang ? `&lang=${encodeURIComponent(lang)}` : ""
+      }`,
     ),
   uploadCover: async (file: File): Promise<{ couple: Couple }> => {
     const form = new FormData();

@@ -1453,6 +1453,12 @@ addColumnIfMissing("photo_uploads", "hidden_at", "hidden_at INTEGER");
 addColumnIfMissing("photo_uploads", "source", "source TEXT NOT NULL DEFAULT 'guest'");
 db.exec("UPDATE photo_uploads SET source = 'couple' WHERE device_id = 'couple'");
 addColumnIfMissing("couples", "honeymoon_cover_path", "honeymoon_cover_path TEXT");
+// Which rung of the destination breadcrumb the cached photo is actually of.
+// The cache is keyed by the full saved destination as well as by the place
+// that won, so this is what lets the hero caption say "Roma" when the couple
+// saved a church address in Rome. NULL on rows cached before the ladder, and
+// on the empty-path rows that remember a miss.
+addColumnIfMissing("destination_photo_cache", "matched", "matched TEXT");
 addColumnIfMissing("planner_waitlist", "selected_plan", "selected_plan TEXT");
 addColumnIfMissing("planner_waitlist", "website", "website TEXT");
 addColumnIfMissing("planner_waitlist", "weddings_per_year", "weddings_per_year INTEGER");
