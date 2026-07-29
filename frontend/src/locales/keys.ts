@@ -3717,6 +3717,11 @@ export interface LocaleMessages {
     useful_field_getting_there: string;
     useful_field_transfer: string;
     useful_field_accommodation: string;
+    useful_suggestion_parking: string;
+    useful_suggestion_getting_there: string;
+    useful_suggestion_transfer: string;
+    useful_suggestion_accommodation: string;
+    useful_suggestion_apply: string;
     useful_field_other_label: string;
     useful_field_other_placeholder: string;
     /** Date editor sheet (click the hero date) + schedule sheet (click the

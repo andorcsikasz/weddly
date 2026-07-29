@@ -3361,14 +3361,23 @@ const es: LocaleMessages = {
     intro_suggestion_applied: "Sugerencia aplicada, puedes editarla en el área de texto de abajo.",
     useful_info_label: "Conviene saber",
     useful_info_placeholder: "Aparcamiento: ...\nCómo llegar: ...\nAlojamiento: ...",
-    useful_info_hint:
-      "Aparcamiento, cómo llegar, alojamiento y todo lo que conviene saber. Se muestra en la página de la boda.",
+    // The fields carry greyed examples; this line is the only place that
+    // says out loud that they are examples and not the couple's own words.
+    useful_info_hint: "El texto gris es solo un ejemplo. Escribid el vuestro.",
     useful_field_parking: "Aparcamiento",
     useful_field_getting_there: "Cómo llegar",
     useful_field_transfer: "Transporte",
     useful_field_accommodation: "Alojamiento",
+    // Greyed examples in the Good-to-know fields. Insertable one by one
+    // (the wand button), never bulk-filled: they are plausible facts about
+    // somebody else's wedding.
+    useful_suggestion_parking: "Aparcamiento gratuito en el lugar, para unos 30 coches.",
+    useful_suggestion_getting_there: "Al final del pueblo a la izquierda, los carteles os llevan.",
+    useful_suggestion_transfer: "El autobús sale a las 16:00 de la plaza y vuelve a medianoche.",
+    useful_suggestion_accommodation: "12 habitaciones en el lugar y casas rurales en el pueblo.",
+    useful_suggestion_apply: "Usar este ejemplo",
     useful_field_other_label: "Cualquier otra cosa",
-    useful_field_other_placeholder: "Cualquier otra cosa que sea bueno que sepan tus invitados.",
+    useful_field_other_placeholder: "La ceremonia es en el jardín, mejor tacón ancho.",
     date_panel_title: "Fecha de la boda",
     date_panel_hint: "Esto también actualiza la fecha en tu panel.",
     schedule_panel_title: "Programa",

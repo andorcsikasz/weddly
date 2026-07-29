@@ -32,6 +32,7 @@ import {
   MapPin,
   Trash2,
   Upload,
+  Wand2,
 } from "lucide-react";
 import {
   type ChangeEvent,
@@ -75,10 +76,26 @@ const VenueLocationPicker = lazyWithReload(() => import("../components/VenueLoca
  *  whole band when empty) shows exactly the rows the couple filled, with no
  *  schema change. */
 const USEFUL_INFO_FIELDS = [
-  { key: "parking", labelKey: "guest_page_editor.useful_field_parking" },
-  { key: "getting_there", labelKey: "guest_page_editor.useful_field_getting_there" },
-  { key: "transfer", labelKey: "guest_page_editor.useful_field_transfer" },
-  { key: "accommodation", labelKey: "guest_page_editor.useful_field_accommodation" },
+  {
+    key: "parking",
+    labelKey: "guest_page_editor.useful_field_parking",
+    suggestionKey: "guest_page_editor.useful_suggestion_parking",
+  },
+  {
+    key: "getting_there",
+    labelKey: "guest_page_editor.useful_field_getting_there",
+    suggestionKey: "guest_page_editor.useful_suggestion_getting_there",
+  },
+  {
+    key: "transfer",
+    labelKey: "guest_page_editor.useful_field_transfer",
+    suggestionKey: "guest_page_editor.useful_suggestion_transfer",
+  },
+  {
+    key: "accommodation",
+    labelKey: "guest_page_editor.useful_field_accommodation",
+    suggestionKey: "guest_page_editor.useful_suggestion_accommodation",
+  },
 ] as const;
 
 type UsefulInfoKey = (typeof USEFUL_INFO_FIELDS)[number]["key"];
@@ -516,6 +533,46 @@ function CoverPositioner({
         </span>
       </div>
     </div>
+  );
+}
+
+/** Turns the greyed example in a field into real, editable text.
+ *
+ *  Icon-only, and only while the field is empty: the placeholder already shows
+ *  what would land there, so a labelled "Insert suggestion" button would be the
+ *  same sentence twice. It disappears the moment the couple types, because from
+ *  then on the only thing it could do is overwrite their own words.
+ *
+ *  Deliberately per-field rather than one "fill everything": the suggestions are
+ *  plausible-sounding facts about a wedding that isn't theirs, and a single tap
+ *  that publishes five of those to the guest page is a trap. One tap, one field,
+ *  one decision. */
+function SuggestionButton({
+  show,
+  label,
+  onApply,
+  align = "center",
+}: {
+  show: boolean;
+  label: string;
+  onApply: () => void;
+  /** `top` for the multi-line box, where vertical centring would park the
+   *  button in the middle of the couple's paragraph. */
+  align?: "center" | "top";
+}) {
+  if (!show) return null;
+  return (
+    <button
+      type="button"
+      onClick={onApply}
+      aria-label={label}
+      title={label}
+      className={`absolute right-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100 dark:focus-visible:ring-paper-100 ${
+        align === "top" ? "top-1.5" : "top-1/2 -translate-y-1/2"
+      }`}
+    >
+      <Wand2 size={14} aria-hidden="true" />
+    </button>
   );
 }
 
@@ -1802,6 +1859,9 @@ export default function GuestPageEditorPage() {
           </button>
         }
       >
+        {/* One line, not a paragraph: every field already carries its own greyed
+            example, so the only thing left to say is that those examples are
+            ours and not theirs. */}
         <p className="mb-3 text-xs text-ink-500 dark:text-umber-300">
           {t("guest_page_editor.useful_info_hint")}
         </p>
@@ -1814,14 +1874,29 @@ export default function GuestPageEditorPage() {
               >
                 {t(f.labelKey)}
               </label>
-              <input
-                id={`guest-page-useful-${f.key}`}
-                type="text"
-                className="input flex-1"
-                value={usefulFields[f.key]}
-                onChange={(e) => setUsefulFields((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                maxLength={500}
-              />
+              <div className="relative flex-1">
+                <input
+                  id={`guest-page-useful-${f.key}`}
+                  type="text"
+                  className="input w-full pr-9"
+                  value={usefulFields[f.key]}
+                  onChange={(e) =>
+                    setUsefulFields((prev) => ({ ...prev, [f.key]: e.target.value }))
+                  }
+                  placeholder={t(f.suggestionKey)}
+                  maxLength={500}
+                />
+                <SuggestionButton
+                  show={usefulFields[f.key].trim() === ""}
+                  label={t("guest_page_editor.useful_suggestion_apply")}
+                  onApply={() => {
+                    setUsefulFields((prev) => ({ ...prev, [f.key]: t(f.suggestionKey) }));
+                    // Same toast the welcome-note suggestions use: "added, now
+                    // edit it" is exactly what has to land here too.
+                    toast.info(t("guest_page_editor.intro_suggestion_applied"));
+                  }}
+                />
+              </div>
             </div>
           ))}
           <div className="mt-1">
@@ -1831,15 +1906,26 @@ export default function GuestPageEditorPage() {
             >
               {t("guest_page_editor.useful_field_other_label")}
             </label>
-            <textarea
-              id="guest-page-useful-other"
-              className="input"
-              rows={3}
-              value={usefulOther}
-              onChange={(e) => setUsefulOther(e.target.value)}
-              placeholder={t("guest_page_editor.useful_field_other_placeholder")}
-              maxLength={4000}
-            />
+            <div className="relative">
+              <textarea
+                id="guest-page-useful-other"
+                className="input w-full pr-9"
+                rows={3}
+                value={usefulOther}
+                onChange={(e) => setUsefulOther(e.target.value)}
+                placeholder={t("guest_page_editor.useful_field_other_placeholder")}
+                maxLength={4000}
+              />
+              <SuggestionButton
+                show={usefulOther.trim() === ""}
+                label={t("guest_page_editor.useful_suggestion_apply")}
+                onApply={() => {
+                  setUsefulOther(t("guest_page_editor.useful_field_other_placeholder"));
+                  toast.info(t("guest_page_editor.intro_suggestion_applied"));
+                }}
+                align="top"
+              />
+            </div>
           </div>
         </div>
       </Dialog>

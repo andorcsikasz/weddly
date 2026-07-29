@@ -3321,14 +3321,25 @@ const hu: LocaleMessages = {
     intro_suggestion_applied: "Szöveg hozzáadva, szerkeszd az alábbi mezőben.",
     useful_info_label: "Hasznos infók",
     useful_info_placeholder: "Parkolás: ...\nMegközelítés: ...\nSzállás: ...",
-    useful_info_hint:
-      "Parkolás, megközelítés, szállás és minden, amit jó tudni. A vendégoldalon jelenik meg.",
+    // The fields carry greyed examples; this line is the only place that
+    // says out loud that they are examples and not the couple's own words.
+    useful_info_hint: "Csak példa, ami itt szürkén látszik. Írjátok át a sajátotokra.",
     useful_field_parking: "Parkolás",
     useful_field_getting_there: "Megközelítés",
     useful_field_transfer: "Transzfer",
     useful_field_accommodation: "Szállás",
+    // Greyed examples in the Good-to-know fields. Insertable one by one
+    // (the wand button), never bulk-filled: they are plausible facts about
+    // somebody else's wedding.
+    useful_suggestion_parking: "Ingyenes parkoló a helyszínen, kb. 30 autónak.",
+    useful_suggestion_getting_there: "A 7-es főútról a falu végén balra, tábla jelzi az utat.",
+    useful_suggestion_transfer: "Busz indul 16:00-kor a Deák térről, éjfélkor hoz vissza.",
+    useful_suggestion_accommodation:
+      "A helyszínen 12 szoba foglalható, a faluban panziók is vannak.",
+    useful_suggestion_apply: "Példa beszúrása",
     useful_field_other_label: "Egyéb tudnivaló",
-    useful_field_other_placeholder: "Bármi más, amit jó tudni a vendégeknek.",
+    useful_field_other_placeholder:
+      "A szertartás a kertben lesz, érdemes vastag sarkú cipőt hozni.",
     date_panel_title: "Az esküvő dátuma",
     date_panel_hint: "Ezzel az áttekintő oldal (irányítópult) dátuma is frissül.",
     schedule_panel_title: "A nap menete",
