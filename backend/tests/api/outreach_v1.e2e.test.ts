@@ -410,8 +410,19 @@ describe("GET /api/outreach/campaigns/:id — detail view", () => {
   });
 });
 
-describe("supplier_outreach email builder sets Reply-To to the couple owner", () => {
-  test("buildEmail exposes the couple's address as replyTo so sendEmail overrides the default", () => {
+describe("supplier_outreach email carries as much as the recipient needs", () => {
+  const BASE = {
+    coupleDisplayName: "Mia & Lucas",
+    coupleReplyEmail: "anna.bence@example.test",
+    coupleReplyName: "Anna",
+    supplierName: "Etyeki Kúria",
+    subject: "June 14, 2027",
+    body: "Are you free that weekend? About 110 guests.",
+    eventDate: "2027-06-14",
+    sentAt: Date.parse("2026-07-29T12:32:00Z"),
+  } as const;
+
+  test("claim mode carries the message + sets Reply-To to the couple owner", () => {
     // Direct builder unit test — the dispatcher (`send.ts`) plumbs
     // `built.replyTo` into the outgoing headers map, where it overrides
     // the global `CONFIG.supportEmail` Reply-To default. Without this the
@@ -419,23 +430,59 @@ describe("supplier_outreach email builder sets Reply-To to the couple owner", ()
     // couple's, which silently breaks the entire outreach feature loop.
     const built = buildEmail(
       "supplier_outreach",
-      {
-        coupleDisplayName: "Mia & Lucas",
-        coupleReplyEmail: "anna.bence@example.test",
-        coupleReplyName: "Anna",
-        supplierName: "Etyeki Kúria",
-        subject: "June 14, 2027",
-        body: "Are you free that weekend? About 110 guests.",
-        outreachUrl: "https://weddly.hu/app/outreach",
-      },
-      {
-        recipientName: "Etyeki Kúria",
-      },
+      { ...BASE, mode: "claim", outreachUrl: "https://weddly.hu/vendors/etyeki-kuria" },
+      { recipientName: "Etyeki Kúria" },
     );
     expect(built.replyTo).toBe("anna.bence@example.test");
+    // Nobody has claimed the listing, so this mail is the only place the
+    // message exists. It must ship in full.
+    expect(built.rendered.text).toContain("About 110 guests");
     // Footer fallback still surfaces the address in the body so a client
     // that strips Reply-To gives the vendor a copyable address.
     expect(built.rendered.text).toContain("anna.bence@example.test");
+  });
+
+  test("account mode (FREE plan, no in-app lead) also carries the message", () => {
+    const built = buildEmail(
+      "supplier_outreach",
+      { ...BASE, mode: "account", outreachUrl: "https://weddly.hu/vendor" },
+      { recipientName: "Etyeki Kúria" },
+    );
+    expect(built.replyTo).toBe("anna.bence@example.test");
+    expect(built.rendered.text).toContain("About 110 guests");
+  });
+
+  test("in_account mode notifies without the body or a Reply-To", () => {
+    // The lead is sitting in their client list, so the mail is a pointer to
+    // it, not a copy of it: answering happens in the product, where the thread
+    // is kept. Leaking the body here would split the conversation across a
+    // channel we can't see, and a Reply-To would invite exactly that.
+    const built = buildEmail(
+      "supplier_outreach",
+      { ...BASE, mode: "in_account", outreachUrl: "https://weddly.hu/vendor/clients" },
+      { recipientName: "Etyeki Kúria" },
+    );
+    expect(built.replyTo).toBeUndefined();
+    expect(built.rendered.text).not.toContain("About 110 guests");
+    expect(built.rendered.text).not.toContain("anna.bence@example.test");
+    // The facts a vendor decides on before opening anything: what it's about
+    // and whether the date is even free.
+    expect(built.rendered.text).toContain("June 14, 2027");
+    expect(built.rendered.text).toContain("2027");
+  });
+
+  test("a couple with no wedding date yet says so rather than inventing one", () => {
+    const built = buildEmail(
+      "supplier_outreach",
+      {
+        ...BASE,
+        eventDate: "",
+        mode: "in_account",
+        outreachUrl: "https://weddly.hu/vendor/clients",
+      },
+      { recipientName: "Etyeki Kúria" },
+    );
+    expect(built.rendered.text).toContain("not set yet");
   });
 });
 

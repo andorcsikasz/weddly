@@ -36,6 +36,7 @@ import { HttpError } from "../lib/http";
 import { log } from "../lib/logger";
 import { sendKind } from "./emails";
 import { isOptedOut } from "./emails/optouts";
+import type { SupplierOutreachMode } from "./emails/templates";
 import { deliverInquiryFromOutreach, type DeliveredInquiry } from "./supplier_bookings";
 import { localeForCountry, resolveListingCountry } from "./vendor_campaign";
 
@@ -354,16 +355,29 @@ function recipientLocaleFor(contact: SupplierContact): "hu" | "en" | null {
   );
 }
 
-/** Where the mail's button should land the recipient. A claimed vendor has the
- *  inquiry waiting in their Weddly CRM, so send them there. An unclaimed
- *  business has no account and no client list — pointing them at a couple-app
- *  URL (which is what v1 did, `/app/outreach`, a route that no longer even
- *  exists) is a dead end; the vendor landing page is the only thing that
- *  means anything to them. */
-function outreachCtaUrlFor(contact: SupplierContact): string {
-  return contact.vendorAccountId !== null
-    ? `${CONFIG.frontendBaseUrl}/vendor/clients`
-    : `${CONFIG.frontendBaseUrl}/vendors`;
+/** How much of the message the recipient's mail has to carry, which is decided
+ *  by whether they can read it anywhere else.
+ *
+ *  `deliverInquiries` is the authority: it returns exactly the recipients the
+ *  inquiry actually reached in-app, so a FREE-plan vendor (direct inquiries are
+ *  PRO) correctly resolves to `account` and gets the full text, even though
+ *  they do have a Weddly account. Deriving this from `vendorAccountId` alone
+ *  would send them a notification pointing at a lead they cannot open. */
+function outreachModeFor(contact: SupplierContact, deliveredTo: Set<string>): SupplierOutreachMode {
+  if (deliveredTo.has(contact.id)) return "in_account";
+  return contact.vendorAccountId !== null ? "account" : "claim";
+}
+
+/** Where the mail's button should land the recipient. Straight to the inquiry
+ *  when it is in their client list; to the dashboard when they have an account
+ *  but this lead did not land in it; and otherwise to their OWN public profile,
+ *  which carries the claim notice. Pointing an unclaimed business at a
+ *  couple-app URL (which is what v1 did, `/app/outreach`, a route that no
+ *  longer even exists) was a dead end. */
+function outreachCtaUrlFor(contact: SupplierContact, mode: SupplierOutreachMode): string {
+  if (mode === "in_account") return `${CONFIG.frontendBaseUrl}/vendor/clients`;
+  if (mode === "account") return `${CONFIG.frontendBaseUrl}/vendor`;
+  return `${CONFIG.frontendBaseUrl}/vendors/${contact.id}`;
 }
 
 export interface CreateCampaignResult {
@@ -396,8 +410,8 @@ function deliverInquiries(
   contacts: SupplierContact[],
   input: CreateOutreachCampaignInput,
   ts: number,
+  eventDate: string,
 ): DeliveredInquiry[] {
-  const eventDate = coupleWeddingDate(coupleId);
   const out: DeliveredInquiry[] = [];
   for (const contact of contacts) {
     if (contact.vendorAccountId === null) continue;
@@ -486,8 +500,11 @@ export function createCampaign(
 
   // Land the message inside the product for every recipient who has an
   // account there. Runs BEFORE the mail so a claimed vendor who opens the
-  // link in the mail already finds the lead waiting in their client list.
-  const inquiries = deliverInquiries(couple.id, contacts, input, ts);
+  // link in the mail already finds the lead waiting in their client list —
+  // and so the mail knows which recipients it must carry the full text to.
+  const eventDate = coupleWeddingDate(couple.id);
+  const inquiries = deliverInquiries(couple.id, contacts, input, ts, eventDate);
+  const deliveredTo = new Set(inquiries.map((i) => i.supplierId));
 
   // Fire the outbound mail per message. `sendKind` is fire-and-forget;
   // failures land in `email_log`. We flip status to "sent" optimistically
@@ -502,6 +519,7 @@ export function createCampaign(
     );
     messageRow.sent_at = ts;
     messageRow.status = "sent";
+    const mode = outreachModeFor(contact, deliveredTo);
     void sendKind(
       "supplier_outreach",
       {
@@ -511,7 +529,10 @@ export function createCampaign(
         supplierName: contact.name,
         subject: input.subject,
         body: input.body_template,
-        outreachUrl: outreachCtaUrlFor(contact),
+        outreachUrl: outreachCtaUrlFor(contact, mode),
+        mode,
+        eventDate,
+        sentAt: ts,
       },
       {
         user: null,

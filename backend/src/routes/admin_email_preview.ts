@@ -373,6 +373,10 @@ const STUBS: KindPayload = {
     businessName: "Ivory & Oak Weddings",
     plannerUrl: `${BASE_URL}/planner`,
   },
+  // Previewed in `in_account` mode, the notification one: the `account` and
+  // `claim` modes render the couple's message verbatim (so what they look like
+  // is whatever the couple typed) and differ from each other only in where the
+  // button points. This is the variant Weddly actually writes.
   supplier_outreach: {
     coupleDisplayName: "Mia & Lucas",
     coupleReplyEmail: "mia@example.com",
@@ -380,7 +384,10 @@ const STUBS: KindPayload = {
     supplierName: "Bloom Studio",
     subject: "Florals for our September wedding",
     body: "Hi, we came across your portfolio and love your work.\n\nWe're planning a 80-person garden wedding on September 12, 2026 and are looking for a florist for ceremony + reception. Would you be available, and could you share your packages?",
-    outreachUrl: `${BASE_URL}/app/outreach`,
+    outreachUrl: `${BASE_URL}/vendor/clients`,
+    mode: "in_account",
+    eventDate: "2026-09-12",
+    sentAt: Date.parse("2026-06-14T10:30:00Z"),
   },
   planner_access_requested: {
     plannerLabel: "Eventful Studio",

@@ -691,24 +691,56 @@ export interface VendorMovedToPlannerPayload {
   plannerUrl: string;
 }
 
+/** How the recipient can act on this message, which decides how much of it the
+ *  mail carries.
+ *
+ *  - `in_account` — the inquiry is sitting in their Weddly client list. The
+ *    mail is a NOTIFICATION: who wrote, about what, for which date, when. The
+ *    message itself stays in the product, which is where the vendor answers it
+ *    and where every other lead they have already lives.
+ *  - `account` — they have a Weddly vendor account, but this inquiry did not
+ *    land in it (FREE plan, direct inquiries are PRO). The mail has to carry
+ *    the message, because nothing else will show it to them.
+ *  - `claim` — nobody has claimed the listing, so there is no account at all.
+ *    Same full message, and the CTA is their own profile, where the claim
+ *    notice is.
+ *
+ *  The rule behind the split: never withhold a message from someone who has no
+ *  other way to read it. Only `in_account` is a teaser, and only because the
+ *  full text is one click away behind their own login. */
+export type SupplierOutreachMode = "in_account" | "account" | "claim";
+
 export interface SupplierOutreachPayload {
   /** "Mia & Lucas", couple's display name. Used in the From label and the
    *  opening line so the vendor knows who's writing. */
   coupleDisplayName: string;
   /** Couple owner's email. Lands in the Reply-To header so the vendor's
-   *  reply goes straight to the couple's inbox (v1 has no inbound webhook). */
+   *  reply goes straight to the couple's inbox — on the two modes where the
+   *  mail IS the channel. `in_account` deliberately doesn't set it. */
   coupleReplyEmail: string;
   /** Couple owner's full name. Surfaces in the closing line of the email. */
   coupleReplyName: string;
   /** Vendor business name. Renders in the greeting + the subject line. */
   supplierName: string;
-  /** Subject line the couple typed in /app/outreach. */
+  /** Subject line the couple typed in the composer. Doubles as the "topic"
+   *  fact in the notification mode, so it's the one piece of the couple's
+   *  own words that always ships. */
   subject: string;
-  /** Body text the couple typed in /app/outreach. Plain text, newlines
-   *  preserved by the renderer. */
+  /** Body text the couple typed. Plain text, newlines preserved by the
+   *  renderer. Rendered on `account` / `claim` only. */
   body: string;
-  /** Where the couple can find the campaign in-app, footer link. */
+  /** Where the CTA lands: the inquiry in their client list, their vendor
+   *  dashboard, or their public profile with the claim notice. */
   outreachUrl: string;
+  /** See `SupplierOutreachMode`. */
+  mode: SupplierOutreachMode;
+  /** Couple's wedding date, ISO `YYYY-MM-DD`, or `""` when they haven't
+   *  picked one. The single most useful fact a vendor needs before opening
+   *  anything: is that date even free? */
+  eventDate: string;
+  /** When the couple sent it, epoch ms. Renders as a date + time so a vendor
+   *  reading a day later knows how warm the lead is. */
+  sentAt: number;
 }
 
 export interface PlannerAccessRequestedPayload {
@@ -981,6 +1013,37 @@ function localeSubject(locale: RecipientLocale | undefined, hu: string, en: stri
   if (locale === "hu") return hu;
   if (locale === "en") return en;
   return `${hu} / ${en}`;
+}
+
+/** `2027-05-29` → "2027. május 29." / "29 May 2027". Formatted in UTC on
+ *  purpose: the value is a calendar date, not an instant, and letting the
+ *  server's zone parse it shifts the day back for anyone west of UTC. */
+function isoDateLabel(iso: string, locale: "hu" | "en"): string {
+  const parsed = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return iso;
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(parsed);
+}
+
+/** Epoch ms → "2026. július 29. 14:32" / "29 July 2026, 14:32". Rendered in
+ *  the launch market's zone (the same fallback `countryToTimeZone(null)` uses)
+ *  rather than the server's, which in production is UTC and would read an hour
+ *  behind every recipient we have. Returns "" for a value `Intl` would throw
+ *  on, so a bad timestamp costs the line rather than the whole email. */
+function timestampLabel(ms: number, locale: "hu" | "en"): string {
+  if (!Number.isFinite(ms)) return "";
+  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : "en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Budapest",
+  }).format(new Date(ms));
 }
 
 const BUILDERS: { [K in EmailKind]: Builder<K> } = {
@@ -3480,15 +3543,63 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
 
-  // Couple-initiated cold outreach to a shortlisted vendor. The body is
-  // free text the couple typed in /app/outreach; we wrap it in a Weddly
-  // header + footer and stamp the couple's own email in the Reply-To
-  // (handled at the mailer layer via the per-kind headers hook v1.5; v1
-  // includes the address in the body footer so the vendor can copy it
-  // manually if their client doesn't honour Reply-To). The first
-  // paragraph names the couple + acknowledges the cold-reach so the
-  // vendor doesn't read it as automated spam.
+  // A couple wrote to a shortlisted vendor. What the mail carries depends on
+  // whether the recipient has another way to read the message — see
+  // `SupplierOutreachMode`:
+  //
+  //   in_account → the inquiry is in their Weddly client list, so this is a
+  //     NOTIFICATION: who, what topic, which date, when. No message body and
+  //     no Reply-To, because answering happens in the product, where the
+  //     thread is kept and the rest of their leads already live.
+  //   account / claim → nothing else will show them the message, so the mail
+  //     carries it in full and the couple's address goes in the Reply-To (and
+  //     in the closing line, for the few clients that strip the header).
+  //
+  // Only the destination of the button differs between the last two: a vendor
+  // with an account goes to their dashboard, an unclaimed business to its own
+  // public profile, where the claim notice is.
   supplier_outreach: (p) => {
+    const dateHu = p.eventDate ? isoDateLabel(p.eventDate, "hu") : "";
+    const dateEn = p.eventDate ? isoDateLabel(p.eventDate, "en") : "";
+    const sentHu = timestampLabel(p.sentAt, "hu");
+    const sentEn = timestampLabel(p.sentAt, "en");
+
+    if (p.mode === "in_account") {
+      // The facts a vendor decides on before opening anything: is that date
+      // free, what is it about, and how warm is it. An unknown date is stated
+      // rather than dropped, because "no date yet" is itself a useful answer.
+      const huParas = [
+        `**${p.coupleDisplayName}** érdeklődik nálatok a Weddly-n keresztül.`,
+        `**Téma:** ${p.subject}`,
+        `**Esküvő időpontja:** ${dateHu || "még nincs kitűzve"}`,
+        ...(sentHu ? [`**Beérkezett:** ${sentHu}`] : []),
+        "Az üzenet az ügyfeleid között vár. Ott tudsz válaszolni rá, és ott marad a többi érdeklődés mellett.",
+      ];
+      const enParas = [
+        `**${p.coupleDisplayName}** got in touch through Weddly.`,
+        `**Topic:** ${p.subject}`,
+        `**Wedding date:** ${dateEn || "not set yet"}`,
+        ...(sentEn ? [`**Received:** ${sentEn}`] : []),
+        "The message is waiting in your client list. Reply there and it stays with the rest of your inquiries.",
+      ];
+      return {
+        subject: `${p.coupleDisplayName}, ${p.subject}`,
+        ctaUrl: p.outreachUrl,
+        hu: {
+          preheader: `${p.subject}${dateHu ? ` · ${dateHu}` : ""}`,
+          greeting: `Szia ${p.supplierName}!`,
+          paragraphs: huParas,
+          cta: "Érdeklődés megnyitása",
+        },
+        en: {
+          preheader: `${p.subject}${dateEn ? ` · ${dateEn}` : ""}`,
+          greeting: `Hi ${p.supplierName},`,
+          paragraphs: enParas,
+          cta: "Open the inquiry",
+        },
+      };
+    }
+
     // Plain-text body uses real newlines; the renderer escapes them into
     // <br>s on the HTML side via per-paragraph splitting.
     const bodyParas = p.body
@@ -3497,11 +3608,13 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       .filter((s) => s.length > 0);
     const huParas: string[] = [
       `${p.coupleDisplayName} vagyunk a Weddly-n, és érdeklődnénk a szolgáltatásotok iránt.`,
+      ...(dateHu ? [`**Esküvő időpontja:** ${dateHu}`] : []),
       ...bodyParas,
       `Ha bármi felmerül, közvetlenül erre az e-mail címre válaszolhatsz: ${p.coupleReplyEmail}, ${p.coupleReplyName}.`,
     ];
     const enParas: string[] = [
       `We're ${p.coupleDisplayName}, planning our wedding with Weddly, and reaching out about your services.`,
+      ...(dateEn ? [`**Wedding date:** ${dateEn}`] : []),
       ...bodyParas,
       `Reply directly to this email and it'll land in our inbox: ${p.coupleReplyEmail}, ${p.coupleReplyName}.`,
     ];
@@ -3509,23 +3622,24 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       subject: `${p.coupleDisplayName}, ${p.subject}`,
       ctaUrl: p.outreachUrl,
       // Reply-To override sends the vendor's reply straight to the couple
-      // owner's inbox instead of CONFIG.supportEmail. v1 has no inbound
-      // webhook, so this header IS the entire reply pipeline: any plumbing
-      // change here without the matching DNS work would silently drop
-      // replies. The footer line in the body also surfaces the address so
-      // a client that strips Reply-To (a few legacy webmails do) still
-      // gives the vendor a way to copy + paste the right destination.
+      // owner's inbox instead of CONFIG.supportEmail. There is no inbound
+      // webhook, so on these two modes this header IS the entire reply
+      // pipeline: any plumbing change here without the matching DNS work
+      // would silently drop replies. The closing line also surfaces the
+      // address so a client that strips Reply-To (a few legacy webmails do)
+      // still gives the vendor something to copy.
       replyTo: p.coupleReplyEmail,
       hu: {
         preheader: p.subject,
         greeting: `Szia ${p.supplierName}!`,
         paragraphs: huParas,
-        cta: "Weddly-n keresztül érdeklődnek",
+        cta: p.mode === "claim" ? "Megnézem a profilomat" : "Weddly fiók megnyitása",
       },
       en: {
+        preheader: p.subject,
         greeting: `Hi ${p.supplierName},`,
         paragraphs: enParas,
-        cta: "Sent via Weddly",
+        cta: p.mode === "claim" ? "See your profile" : "Open your Weddly account",
       },
     };
   },
