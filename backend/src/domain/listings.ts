@@ -253,7 +253,12 @@ interface ClaimedDirectoryRow extends ListingRow {
   owner_company_name: string | null;
 }
 
-const CLAIMED_DIRECTORY_FROM = `
+/** The claimed-listing pool, as a FROM + WHERE fragment callers append their own
+ *  `AND …` to. Exported because the Weddly Points category ranking
+ *  (`vendorCategoryRank`) has to count exactly the vendors a couple can see: a
+ *  place measured against suspended owners and demo rows is a place against
+ *  nobody. One definition, so the leaderboard can't drift from the directory. */
+export const CLAIMED_DIRECTORY_FROM = `
   FROM listings l
   JOIN vendor_accounts va ON va.id = l.vendor_account_id
   JOIN users u ON u.id = va.owner_user_id
