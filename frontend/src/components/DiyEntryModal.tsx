@@ -3,10 +3,18 @@
 // DJ-ing) or via an informal arrangement that doesn't belong in the public
 // directory. Setting `price_huf` causes the backend to mirror the value into
 // a locked budget line; clearing it removes the line.
+//
+// Before it creates anything it checks the directory (`findSupplierTwins`):
+// a couple typing a business that Weddly already lists should USE that entry,
+// not mint a private copy of it that carries none of the photos, address or
+// reviews. An exact name match holds the save until they either adopt the
+// listing or say it's a different vendor. The guest-page editor's venue picker
+// and the vendor pipeline on /app/planning ask the same question their own way.
+// See DirectoryTwinNotice.
 
 import type { CoupleSupplier, SupplierInstallment } from "@shared/couple_suppliers";
-import type { SupplierCategory } from "@shared/suppliers";
-import { SUPPLIER_GROUPS } from "@shared/suppliers";
+import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
+import { findSupplierTwins, SUPPLIER_GROUPS } from "@shared/suppliers";
 import type { Currency } from "@shared/types";
 import { Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -14,6 +22,7 @@ import { ApiError } from "../lib/api";
 import { coupleSupplierApi } from "../lib/endpoints";
 import { formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { DirectoryTwinNotice } from "./DirectoryTwinNotice";
 import { Button, Dialog, FieldError, HelperText, TextField, useConfirm, useToast } from "./ui";
 
 type Props = {
@@ -25,6 +34,13 @@ type Props = {
   currency?: Currency;
   /** Pre-fills the category when opening fresh. Ignored in edit mode. */
   defaultCategory?: SupplierCategory | null;
+  /** The directory (curated + community + claimed) the typed name is checked
+   *  against. Empty disables the check entirely, so a page that hasn't loaded
+   *  the directory keeps the old behaviour instead of blocking on nothing. */
+  directory?: readonly DirectorySupplier[];
+  /** Adopt a directory entry instead of creating a private row. When absent
+   *  the twin notice stays informational (nothing to adopt with). */
+  onUseExisting?: (supplier: DirectorySupplier) => void;
   onSaved: (supplier: CoupleSupplier) => void;
   onDeleted?: (id: string) => void;
 };
@@ -71,6 +87,8 @@ export function DiyEntryModal({
   editing,
   currency = "HUF",
   defaultCategory,
+  directory,
+  onUseExisting,
   onSaved,
   onDeleted,
 }: Props) {
@@ -81,6 +99,9 @@ export function DiyEntryModal({
   const [errors, setErrors] = useState<Partial<Record<ErrorKey, string>>>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // "I know, it's a different vendor" — set by the notice's escape hatch, and
+  // reset whenever the name changes so a fresh name gets a fresh check.
+  const [twinOverride, setTwinOverride] = useState(false);
   // The live supplier in edit mode — kept in sync as the payment schedule is
   // mutated so its installments + derived `paid` flag stay current without
   // closing the modal. Null in create mode (the schedule needs a saved row).
@@ -93,10 +114,23 @@ export function DiyEntryModal({
     setErrors({});
     setForm(editing ? fromSupplier(editing) : emptyForm(defaultCategory));
     setLive(editing ?? null);
+    setTwinOverride(false);
   }, [open, editing, defaultCategory]);
 
   const installments = live?.installments ?? [];
   const hasSchedule = installments.length > 0;
+
+  // Directory matches for what's typed. Edit mode skips the check: the row
+  // already exists, and re-offering the listing every time the couple opens a
+  // saved entry to add an instalment would be nagging, not helping.
+  const twins = useMemo(() => {
+    if (editing || !directory || directory.length === 0) return [];
+    return findSupplierTwins(form.name, form.category || null, directory, 3);
+  }, [editing, directory, form.name, form.category]);
+  const hasExactTwin = twins.some((tw) => tw.exact);
+  // An exact match holds the save; a loose one is only an offer. Without an
+  // adopt handler there is nothing to steer to, so nothing blocks.
+  const twinBlocks = hasExactTwin && !twinOverride && Boolean(onUseExisting);
 
   function applyLive(supplier: CoupleSupplier) {
     setLive(supplier);
@@ -134,6 +168,9 @@ export function DiyEntryModal({
     e.preventDefault();
     if (saving) return;
     if (!validate()) return;
+    // The notice is already on screen with the listing and its two ways out,
+    // so refuse quietly rather than duplicating the explanation in a toast.
+    if (twinBlocks) return;
     setSaving(true);
     try {
       const priceParsed = form.price.trim() ? Math.round(Number(form.price)) : null;
@@ -210,7 +247,7 @@ export function DiyEntryModal({
             type="submit"
             form="diy-entry-form"
             variant="primary"
-            disabled={saving || deleting}
+            disabled={saving || deleting || twinBlocks}
           >
             {saving ? t("suppliers.diy_modal_submitting") : t("suppliers.diy_modal_submit")}
           </Button>
@@ -226,10 +263,28 @@ export function DiyEntryModal({
           label={t("suppliers.diy_modal_name_label")}
           placeholder={t("suppliers.diy_modal_name_placeholder")}
           value={form.name}
-          onChange={(e) => setField("name", e.target.value)}
+          onChange={(e) => {
+            setField("name", e.target.value);
+            // A new name is a new question — drop any earlier "it's a
+            // different vendor" verdict so the check runs again.
+            setTwinOverride(false);
+          }}
           errorText={errors.name}
           required
         />
+
+        {twins.length > 0 && onUseExisting && (
+          <DirectoryTwinNotice
+            twins={twins}
+            blocking={twinBlocks}
+            busy={saving || deleting}
+            onUse={(s) => {
+              onUseExisting(s);
+              onClose();
+            }}
+            onDismiss={() => setTwinOverride(true)}
+          />
+        )}
 
         <div className="block">
           <label htmlFor="diy-category" className="field-label">
@@ -242,7 +297,11 @@ export function DiyEntryModal({
             id="diy-category"
             className="input"
             value={form.category}
-            onChange={(e) => setField("category", e.target.value as SupplierCategory)}
+            onChange={(e) => {
+              setField("category", e.target.value as SupplierCategory);
+              // Twins are category-scoped, so switching category re-asks too.
+              setTwinOverride(false);
+            }}
             aria-invalid={errors.category ? true : undefined}
           >
             <option value="" disabled>

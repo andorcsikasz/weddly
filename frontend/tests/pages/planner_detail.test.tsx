@@ -82,6 +82,9 @@ beforeEach(() => {
     weddings_per_year: 20,
     avatar_url: null,
     verified: true,
+    // Business name, city, bio and styles are all filled in below, so the
+    // badge this fixture stands for is the solid one.
+    profile_complete: true,
     link_status: "none",
     availability: "Free dates for 2027 Q3.",
     reference_links: ["https://www.instagram.com/evelineskuvoszervezes"],

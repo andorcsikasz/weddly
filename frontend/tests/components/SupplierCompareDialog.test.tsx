@@ -37,6 +37,9 @@ function makeSupplier(over: Partial<DirectorySupplier> = {}): DirectorySupplier 
     gallery_urls: null,
     votes_score: 0,
     user_vote: 0,
+    // Unclaimed curated entry (`vendor_account_id: null`), which is never
+    // "complete" — the vendor checklist has no meaning without an account.
+    listing_complete: false,
     ...over,
   };
 }
