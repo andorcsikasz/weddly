@@ -16,6 +16,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { _preloadHuForTests, I18nProvider } from "@/lib/i18n";
 import { WeddingSiteView } from "@/components/WeddingSiteView";
+import { ToastProvider } from "@/components/ui";
 import { DEFAULT_DESIGN, toPublicDesign } from "@shared/design";
 import type { PublicWeddingWebsiteView } from "@shared/wedding_website";
 
@@ -89,7 +90,12 @@ function emptyView(): PublicWeddingWebsiteView {
 function renderView(node: React.ReactElement) {
   return render(
     <MemoryRouter>
-      <I18nProvider>{node}</I18nProvider>
+      {/* The wishlist block calls useToast when a guest marks a gift, so the
+          provider is part of the component's real environment, not just this
+          test's scaffolding. */}
+      <ToastProvider>
+        <I18nProvider>{node}</I18nProvider>
+      </ToastProvider>
     </MemoryRouter>,
   );
 }
@@ -139,12 +145,32 @@ describe("WeddingSiteView — live mode", () => {
     expect(screen.getByText("Espresso machine")).toBeInTheDocument();
   });
 
-  it("renders the hero name with color:inherit so dark-bg styles stay legible", () => {
+  // The hero renders through one of two branches and they colour the names
+  // differently on purpose, so both get pinned. Sharing one assertion is what
+  // let the on-photo branch ship silently past this file.
+  it("renders the photo-less hero name with color:inherit so dark-bg styles stay legible", () => {
     // Without inline color:inherit the global `h1 { color: ink.900 }` wins and a
     // dark-background style (e.g. Black Tie) paints the names dark-on-dark.
-    renderView(<WeddingSiteView view={filledView()} household={null} tier="public" locale="hu" />);
+    renderView(
+      <WeddingSiteView
+        view={filledView({ cover_image_url: null })}
+        household={null}
+        tier="public"
+        locale="hu"
+      />,
+    );
     const h1 = screen.getByRole("heading", { name: "Mia & Lucas", level: 1 });
     expect(h1.style.color).toBe("inherit");
+  });
+
+  it("paints the hero name white when it sits directly on a cover photo", () => {
+    // With a cover photo the names sit ON it, so the colour follows the photo
+    // rather than the palette: a dark theme over a dark photo would otherwise be
+    // unreadable. Tone sampling can't run in happy-dom, and its null result
+    // deliberately takes the dark-photo branch, the one that pairs with a scrim.
+    renderView(<WeddingSiteView view={filledView()} household={null} tier="public" locale="hu" />);
+    const h1 = screen.getByRole("heading", { name: "Mia & Lucas", level: 1 });
+    expect(h1.style.color).toBe("#ffffff");
   });
 
   it("applies the couple's cover focal point as object-position on the hero image", () => {
