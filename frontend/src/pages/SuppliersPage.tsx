@@ -479,7 +479,7 @@ export default function SuppliersPage() {
     let alive = true;
     const tid = window.setTimeout(() => {
       placesApi
-        .search(term, coupleCountry || undefined)
+        .search(term, { country: coupleCountry || undefined, lang: locale })
         .then(({ places }) => {
           if (!alive) return;
           const hit = places.find((p) => p.lat != null && p.lng != null);
@@ -493,7 +493,7 @@ export default function SuppliersPage() {
       alive = false;
       window.clearTimeout(tid);
     };
-  }, [cityInput, query, coupleCountry, gazetteerReady]);
+  }, [cityInput, query, coupleCountry, gazetteerReady, locale]);
   // Drop every "narrowing" filter (search text, city, category chain, price,
   // guests) plus the sibling shortlist toggle. The saved / picked chips are
   // meant to surface the user's full marked set in one tap, so any leftover

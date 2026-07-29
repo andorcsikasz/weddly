@@ -617,7 +617,7 @@ export default function GuestPageEditorPage() {
     if (!query) return;
     setPinSeeding(true);
     try {
-      const r = await placesApi.search(query);
+      const r = await placesApi.search(query, { lang: locale });
       const hit = r.places.find((p) => p.lat != null && p.lng != null);
       if (hit && hit.lat != null && hit.lng != null) {
         const { lat, lng, locality } = hit;
@@ -628,7 +628,7 @@ export default function GuestPageEditorPage() {
     } finally {
       setPinSeeding(false);
     }
-  }, [couple]);
+  }, [couple, locale]);
 
   // Deep-link `?edit=venue` (the design page's "add venue location" prompt) opens
   // the pin editor once the couple has loaded, then strips the param so a refresh

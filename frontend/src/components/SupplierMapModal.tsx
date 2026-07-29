@@ -84,7 +84,10 @@ export default function SupplierMapModal({
 
         let hit: Coords | null = null;
         for (const query of queries) {
-          const r = await placesApi.search(query, cc);
+          // No `lang` here on purpose: this call is used for its coordinates
+          // only, and re-geocoding on a locale flip would spend a Nominatim
+          // call to move the pin nowhere.
+          const r = await placesApi.search(query, { country: cc });
           if (cancelled) return;
           const first = r.places[0];
           if (first && first.lat !== null && first.lng !== null) {

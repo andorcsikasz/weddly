@@ -754,13 +754,13 @@ export default function HoneymoonPage() {
 
       <section data-tour-target="honeymoon-costs" className="mt-12">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <div>
+          {/* The empty state's own card already says "start with a category"
+              and the chips name the categories, so the subtitle that used to
+              sit here was the third explanation of one thing. It moves behind
+              the info hint, same pattern as the page title. */}
+          <div className="flex items-center gap-2">
             <h2 className="font-grotesk">{t("honeymoon.costs_title")}</h2>
-            {honeymoonLines.length === 0 && (
-              <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
-                {t("honeymoon.costs_sub")}
-              </p>
-            )}
+            <InfoHint text={t("honeymoon.costs_sub")} />
           </div>
           {honeymoonLines.length > 0 && (
             <PresetChips
@@ -914,11 +914,22 @@ function DaysTile({
 
   return (
     <div ref={wrapperRef} className="card stationery-ink relative flex h-full w-full flex-col !p-4">
-      <div className="flex items-center gap-2 text-paper-200">
-        <Calendar size={14} aria-hidden="true" />
-        <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
-          {t("honeymoon.tile_days")}
-        </span>
+      {/* Header strip: the icon IS the label (the name lives in `title` + the
+          edit button's aria-label), and the countdown sits opposite it as a
+          pill. Two day-counts stacked as sibling lines read as one number
+          contradicting the other — "30 nap" over "Még 314 nap" — so the trip
+          length stays the hero and the countdown moves out of the stack. */}
+      <div className="flex items-start justify-between gap-2 text-paper-200">
+        <Calendar size={14} aria-hidden="true" title={t("honeymoon.tile_days")} />
+        {countdown && (
+          <span className="-mt-0.5 shrink-0 rounded-full bg-paper-50/10 px-2 py-0.5 text-[11px] leading-tight text-paper-200">
+            {countdown.kind === "future" &&
+              t("honeymoon.countdown_future", { count: countdown.days })}
+            {countdown.kind === "today" && t("honeymoon.countdown_today")}
+            {countdown.kind === "ongoing" && t("honeymoon.countdown_ongoing")}
+            {countdown.kind === "past" && t("honeymoon.countdown_past", { count: countdown.days })}
+          </span>
+        )}
       </div>
 
       {editing ? (
@@ -982,16 +993,6 @@ function DaysTile({
             </span>
           ) : null}
           {dateRange && <p className="mt-1 text-xs text-paper-300">{dateRange}</p>}
-          {countdown && (
-            <p className="mt-1 text-[11px] text-paper-300">
-              {countdown.kind === "future" &&
-                t("honeymoon.countdown_future", { count: countdown.days })}
-              {countdown.kind === "today" && t("honeymoon.countdown_today")}
-              {countdown.kind === "ongoing" && t("honeymoon.countdown_ongoing")}
-              {countdown.kind === "past" &&
-                t("honeymoon.countdown_past", { count: countdown.days })}
-            </p>
-          )}
         </button>
       )}
     </div>
@@ -1148,11 +1149,10 @@ function DestinationTile({
 
   return (
     <div className="card stationery-ink relative flex h-full flex-col !p-4">
+      {/* Icon only, same as the other two tiles: the destination name under it
+          says what this is far better than the word "Hova" above it. */}
       <div className="flex items-center gap-2 text-paper-200">
-        <MapPin size={14} aria-hidden="true" />
-        <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
-          {t("honeymoon.tile_destination")}
-        </span>
+        <MapPin size={14} aria-hidden="true" title={t("honeymoon.tile_destination")} />
       </div>
       {editing ? (
         <DestinationAutocomplete
@@ -1254,7 +1254,7 @@ function DestinationAutocomplete({
   onCommit: (value: string | null) => Promise<void>;
   onCancel: () => void;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const [draft, setDraft] = useState(initial);
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [highlight, setHighlight] = useState(-1);
@@ -1275,7 +1275,7 @@ function DestinationAutocomplete({
     const myId = ++requestId.current;
     const handle = setTimeout(async () => {
       try {
-        const r = await placesApi.search(q);
+        const r = await placesApi.search(q, { lang: locale });
         // Discard stale responses — only the latest typed query wins.
         if (myId !== requestId.current) return;
         setSuggestions(r.places);
@@ -1287,7 +1287,7 @@ function DestinationAutocomplete({
       }
     }, 300);
     return () => clearTimeout(handle);
-  }, [draft]);
+  }, [draft, locale]);
 
   // Click-outside closes the dropdown AND commits whatever's typed — same
   // pattern as DaysTile so the tile feels uniform.
@@ -1432,13 +1432,11 @@ function BudgetSummaryTile({
   return (
     <Link
       to="/app/budget"
+      aria-label={t("honeymoon.tile_budget")}
       className="card stationery-ink relative flex h-full flex-col overflow-hidden !p-4"
     >
       <div className="flex items-center gap-2 text-paper-200">
-        <Wallet size={14} aria-hidden="true" />
-        <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide">
-          {t("honeymoon.tile_budget")}
-        </span>
+        <Wallet size={14} aria-hidden="true" title={t("honeymoon.tile_budget")} />
       </div>
       <div className="flex flex-1 flex-col justify-center">
         <div className="flex items-baseline justify-center gap-2">
@@ -1798,13 +1796,18 @@ function TravelSafetyBlock({
           aria-hidden="true"
           className="shrink-0 text-ink-900 dark:text-paper-50"
         />
+        {/* Collapsed, this row is one line: the title carries it, and the
+            "what is this" sentence only appears once the block is open, where
+            it is context rather than a second headline. */}
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-umber-300">
+          <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
             {t("travel_safety.title")}
           </p>
-          <p className="mt-0.5 truncate text-sm text-ink-700 dark:text-paper-100">
-            {t("travel_safety.intro")}
-          </p>
+          {!collapsed && (
+            <p className="mt-0.5 truncate text-sm text-ink-500 dark:text-umber-300">
+              {t("travel_safety.intro")}
+            </p>
+          )}
         </div>
         {collapsed ? (
           <ChevronDown
@@ -2655,12 +2658,10 @@ function HoneymoonTodoSection({
         </div>
       </div>
       {items.length === 0 ? (
-        <div className="card !p-4">
-          <p className="text-sm text-ink-700 dark:text-paper-100">
-            {t("honeymoon.todo_empty_body")}
-          </p>
-          <div className="mt-3">{addForm}</div>
-        </div>
+        // Empty state is the input, nothing else. The paragraph that used to
+        // sit above it explained where the wand lives while the wand button
+        // was already in this section's header, two rows up.
+        <div className="card !p-4">{addForm}</div>
       ) : (
         <div className="card p-0">
           <ul className="divide-y divide-paper-200 dark:divide-umber-700">

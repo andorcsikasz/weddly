@@ -46,6 +46,23 @@ export interface PlaceSuggestion {
  *  Csárda" — the settlement it sits in is demoted to `locality`). */
 type SearchKind = "place" | "venue";
 
+/** Nominatim `accept-language` for the caller's UI locale. OSM carries a
+ *  `name:<lang>` tag for most places, so this header is what decides whether
+ *  the Croatia suggestion reads "Horvátország" or "Croatia": the old hardcoded
+ *  "hu,en" handed a Hungarian label to an English interface. EN is the default
+ *  (as everywhere in the product) and rides along behind hu/es so a place with
+ *  no translated name falls back to English rather than its endonym. */
+export function acceptLanguage(lang: string | null): string {
+  switch (lang) {
+    case "hu":
+      return "hu,en";
+    case "es":
+      return "es,en";
+    default:
+      return "en";
+  }
+}
+
 function localityOf(r: NominatimResult): string | null {
   const a = r.address;
   return a?.city ?? a?.town ?? a?.village ?? null;
@@ -100,7 +117,7 @@ async function handleSearch(ctx: Ctx): Promise<Response> {
   url.searchParams.set("format", "json");
   url.searchParams.set("addressdetails", "1");
   url.searchParams.set("limit", "5");
-  url.searchParams.set("accept-language", "hu,en");
+  url.searchParams.set("accept-language", acceptLanguage(params.get("lang")));
   // Optional country bias — when the caller scopes the search to a country
   // (e.g. the venue-name field passing the couple's country) we restrict
   // Nominatim to that country so a HU couple isn't offered cross-border places.

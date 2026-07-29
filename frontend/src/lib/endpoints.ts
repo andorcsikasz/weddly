@@ -1018,13 +1018,18 @@ export const moodboardApi = {
 export const placesApi = {
   /** `kind: "venue"` keeps the POI name as the headline (e.g. "Sári Csárda")
    *  instead of collapsing the result to its settlement — used by the
-   *  venue-name field. The honeymoon destination picker omits it. */
-  search: (q: string, country?: string, kind?: "venue") => {
+   *  venue-name field. The honeymoon destination picker omits it.
+   *  `lang` is the caller's UI locale: OSM place names are localised, so a
+   *  missing `lang` would offer "Horvátország" to an English interface. Pass
+   *  `useT().locale` from anywhere the result is shown to the user. */
+  search: (q: string, opts?: { country?: string; kind?: "venue"; lang?: string }) => {
+    const country = opts?.country;
     const cc = country && /^[a-z]{2}$/i.test(country) ? `&country=${country.toLowerCase()}` : "";
-    const k = kind === "venue" ? "&kind=venue" : "";
+    const k = opts?.kind === "venue" ? "&kind=venue" : "";
+    const lang = opts?.lang ? `&lang=${encodeURIComponent(opts.lang)}` : "";
     return apiFetch<{ places: PlaceSuggestion[] }>(
       "GET",
-      `/api/places/search?q=${encodeURIComponent(q)}${cc}${k}`,
+      `/api/places/search?q=${encodeURIComponent(q)}${cc}${k}${lang}`,
     );
   },
 };

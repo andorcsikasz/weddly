@@ -23,7 +23,7 @@ interface HoneymoonMapModalProps {
 }
 
 export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMapModalProps) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const titleId = useId();
   const [coords, setCoords] = useState<Coords | null>(null);
   const [label, setLabel] = useState<string>(destination);
@@ -40,7 +40,7 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
     setState("loading");
     (async () => {
       try {
-        const r = await placesApi.search(destination);
+        const r = await placesApi.search(destination, { lang: locale });
         if (cancelled) return;
         const first = r.places[0];
         if (first && first.lat !== null && first.lng !== null) {
@@ -57,7 +57,7 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
     return () => {
       cancelled = true;
     };
-  }, [destination]);
+  }, [destination, locale]);
 
   // ESC closes; scroll-lock the page behind. Empty deps — listener mounts /
   // unmounts with the modal, onCloseRef keeps the callback current.
