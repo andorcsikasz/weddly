@@ -57,6 +57,27 @@ const UPSTREAM_TIMEOUT_MS = 6_000;
 // Santorini while leaving the already-popular Bali and Paris working.
 const DOWNLOAD_TIMEOUT_MS = 25_000;
 
+// HONEYMOON_PHOTO_FAKE=1 answers from a deterministic stub so the E2E suite
+// never touches Wikimedia (mirrors GOOGLE_PLACES_FAKE / DEEPL_FAKE /
+// ADDRESS_SUGGEST_FAKE in tests/setup.ts). This is not politeness: a live
+// ladder is up to four wikis per rung, Wikimedia 429s a burst, and the stalled
+// sockets dragged unrelated suites over their 5s timeout when the whole suite
+// ran. It also makes the ladder itself assertable, which the network never was.
+function fakeMode(): boolean {
+  return process.env.HONEYMOON_PHOTO_FAKE === "1";
+}
+
+// Place names the stub "has a photo of", lowercased. Deliberately a CITY and a
+// COUNTRY and nothing between them, so a test can prove the walk skips the
+// venue, skips the districts, and stops at the first rung that answers.
+const FAKE_PHOTO_PLACES = new Set(["róma", "roma", "rome", "bali", "santorini", "magyarország"]);
+
+function fakePhotoUrl(place: string): string | null {
+  return FAKE_PHOTO_PLACES.has(place.trim().toLowerCase())
+    ? `https://upload.wikimedia.example/${citySlug(place)}.jpg`
+    : null;
+}
+
 // Patterns in filenames that mean the file is NOT a travel photo.
 // Includes audio/video extensions, historical/cartographic content, satellite
 // imagery, OSM renders, administrative graphics, and non-image media.
@@ -224,6 +245,7 @@ function wikiHosts(lang: string): string[] {
  *  titles resolved in a single batched Commons call, so this is two round
  *  trips regardless of how many hosts are in play. */
 export async function resolveDestinationPhoto(place: string, lang: string): Promise<string | null> {
+  if (fakeMode()) return fakePhotoUrl(place);
   const hosts = wikiHosts(lang);
   const perHost = await Promise.all(hosts.map((h) => wikiFileTitles(h, place)));
   // Host priority survives the flatten: every title from the first host comes
@@ -288,6 +310,17 @@ export function photoCandidates(destination: string): string[] {
 }
 
 const DEST_PHOTO_DIR = "destination-photos";
+/** Smallest valid JPEG. Only the fake path writes it, so the cached-object
+ *  checks in the handler exercise the same storage calls as production. */
+const ONE_PIXEL_JPEG = new Uint8Array([
+  0xff, 0xd8, 0xff, 0xdb, 0x00, 0x43, 0x00, 0x03, 0x02, 0x02, 0x02, 0x02, 0x02, 0x03, 0x02, 0x02,
+  0x02, 0x03, 0x03, 0x03, 0x03, 0x04, 0x06, 0x04, 0x04, 0x04, 0x04, 0x04, 0x08, 0x06, 0x06, 0x05,
+  0x06, 0x09, 0x08, 0x0a, 0x0a, 0x09, 0x08, 0x09, 0x09, 0x0a, 0x0c, 0x0f, 0x0c, 0x0a, 0x0b, 0x0e,
+  0x0b, 0x09, 0x09, 0x0d, 0x11, 0x0d, 0x0e, 0x0f, 0x10, 0x10, 0x11, 0x10, 0x0a, 0x0c, 0x12, 0x13,
+  0x12, 0x10, 0x13, 0x0f, 0x10, 0x10, 0x10, 0xff, 0xc9, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01,
+  0x01, 0x01, 0x11, 0x00, 0xff, 0xcc, 0x00, 0x06, 0x00, 0x10, 0x10, 0x05, 0xff, 0xda, 0x00, 0x08,
+  0x01, 0x01, 0x00, 0x00, 0x3f, 0x00, 0xd2, 0xcf, 0x20, 0xff, 0xd9,
+]);
 /** A destination we found nothing for is remembered as a miss for this long.
  *  Without it, every page load for a couple whose destination is a church or
  *  a hamlet re-walks the whole ladder against Wikimedia. */
@@ -319,6 +352,15 @@ function writePhotoCache(key: string, localPath: string, matched: string | null)
  *  shares one file. */
 async function downloadAndCache(place: string, remoteUrl: string): Promise<string | null> {
   try {
+    if (fakeMode()) {
+      // Write a real (one-pixel) object so `storage.exists` on the next read
+      // behaves exactly as it does in production.
+      const key = `${DEST_PHOTO_DIR}/${citySlug(place)}.jpg`;
+      await storage.write(key, ONE_PIXEL_JPEG);
+      const localPath = `/uploads/${key}`;
+      writePhotoCache(cityKey(place), localPath, place);
+      return localPath;
+    }
     // WIKI_UA matters as much here as on the metadata calls: Wikimedia
     // rate-limits User-Agent-less traffic to upload.wikimedia.org with a 429,
     // which this function used to swallow as a plain "no photo".

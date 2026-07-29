@@ -53,12 +53,25 @@ describe("honeymoon photo — destination candidates", () => {
 
 // ─── Endpoint contract ────────────────────────────────────────────────────
 //
-// Resolution itself talks to Wikivoyage/Wikipedia/Commons, which no test
-// should depend on, so these cover the parts that don't: auth, the response
-// shape, and the negative cache that keeps those upstreams off the critical
-// path. The two cases that do reach out use names guaranteed to 404, and
-// `fetchJson` swallows a transport failure into the same null, so the outcome
-// is identical on a machine with no network at all.
+// Resolution talks to Wikivoyage/Wikipedia/Commons, so `HONEYMOON_PHOTO_FAKE=1`
+// (pinned in tests/setup.ts) swaps it for a stub that "has a photo of" a
+// handful of places. That is what makes the ladder assertable: against the
+// live wikis every rung answers, so a test could never prove the walk reached
+// the city rather than stopping at the church.
+
+type PhotoResponse = { photo_url: string | null; matched: string | null };
+
+async function photoFor(token: string, destination: string) {
+  return req<PhotoResponse>(
+    "GET",
+    `/api/honeymoon/destination-photo?destination=${encodeURIComponent(destination)}&lang=hu`,
+    undefined,
+    { token },
+  );
+}
+
+const freshCouple = () =>
+  bootstrapCouple(`hmphoto-${Date.now()}-${Math.random().toString(36).slice(2)}@weddly.test`);
 
 describe("honeymoon photo — endpoint", () => {
   test("requires a session", async () => {
@@ -66,8 +79,8 @@ describe("honeymoon photo — endpoint", () => {
     expect(r.status).toBe(401);
   });
 
-  test("an absent or blank destination answers null without touching the network", async () => {
-    const { token } = await bootstrapCouple(`hmphoto-${Date.now()}-${Math.random()}@weddly.test`);
+  test("an absent or blank destination answers null", async () => {
+    const { token } = await freshCouple();
     for (const q of ["", "?destination=", "?destination=%20%20"]) {
       const r = await req("GET", `/api/honeymoon/destination-photo${q}`, undefined, { token });
       expect(r.status).toBe(200);
@@ -75,43 +88,56 @@ describe("honeymoon photo — endpoint", () => {
     }
   });
 
-  test("a resolved photo is served straight from the cache, keyed by the FULL destination", async () => {
-    const { token } = await bootstrapCouple(`hmphoto-${Date.now()}-${Math.random()}@weddly.test`);
-    const destination = "Fictional Chapel, Ulica Testowa, Testville, Testonia";
-    // Stand in for a previous resolution: the ladder landed on "Testville"
-    // and both the winning rung and the whole breadcrumb were remembered.
-    db.run(
-      `INSERT OR REPLACE INTO destination_photo_cache (city, local_path, matched, fetched_at)
-       VALUES (?, ?, ?, strftime('%s','now'))`,
-      [destination.toLowerCase(), "/uploads/destination-photos/testville.jpg", "Testville"],
-    );
+  test("a city resolves on the first rung and says so", async () => {
+    const { token } = await freshCouple();
+    const r = await photoFor(token, "Bali, Indonézia");
+    expect(r.status).toBe(200);
+    expect(r.data.matched).toBe("Bali");
+    expect(r.data.photo_url).toBe("/uploads/destination-photos/bali.jpg");
+  });
 
-    const r = await req(
-      "GET",
-      `/api/honeymoon/destination-photo?destination=${encodeURIComponent(destination)}`,
-      undefined,
-      { token },
+  test("a venue with no photo falls through to the CITY, not to the country", async () => {
+    // The whole point of the ladder. The stub has Róma and Magyarország but
+    // nothing between, so a result of "Róma" proves the walk skipped the
+    // church and the districts and stopped at the first rung that answered.
+    const { token } = await freshCouple();
+    const r = await photoFor(
+      token,
+      "Chiesa di San Girolamo dei Croati, Via Tomacelli, Campo Marzio, Municipio Roma I, Róma, Roma Capitale, Lazio, Olaszország",
     );
     expect(r.status).toBe(200);
-    // The stored object does not exist on disk, so the route evicts the row
-    // and re-resolves rather than serving a 404 image. Either way it must
-    // answer the documented shape and never throw.
-    expect(r.data).toHaveProperty("photo_url");
-    expect(r.data).toHaveProperty("matched");
+    expect(r.data.matched).toBe("Róma");
+    expect(r.data.photo_url).toBe("/uploads/destination-photos/r-ma.jpg");
+  });
+
+  test("the full destination string is cached, so a repeat is one row read", async () => {
+    const { token } = await freshCouple();
+    const destination = "Valami Kápolna, Fő utca, Szentbékkálla, Magyarország";
+    const first = await photoFor(token, destination);
+    expect(first.data.matched).toBe("Magyarország");
+    const firstUrl = first.data.photo_url;
+    expect(firstUrl).toBeTruthy();
+
+    // Both ends of the ladder are remembered: the rung that won (shared with
+    // every other couple going there) and this couple's whole breadcrumb.
+    const byFull = db
+      .query<{ local_path: string; matched: string | null }, [string]>(
+        "SELECT local_path, matched FROM destination_photo_cache WHERE city = ?",
+      )
+      .get(destination.toLowerCase());
+    expect(byFull?.matched).toBe("Magyarország");
+    expect(byFull?.local_path).toBe(firstUrl as string);
+
+    const second = await photoFor(token, destination);
+    expect(second.data).toEqual(first.data);
   });
 
   test("a miss is remembered, so the wikis are not re-walked on every page load", async () => {
-    const { token } = await bootstrapCouple(`hmphoto-${Date.now()}-${Math.random()}@weddly.test`);
-    // A name no wiki can have an article for; the ladder is one rung deep.
-    const destination = `Zzz${Date.now()}qqx`;
-    const r = await req(
-      "GET",
-      `/api/honeymoon/destination-photo?destination=${encodeURIComponent(destination)}`,
-      undefined,
-      { token },
-    );
+    const { token } = await freshCouple();
+    const destination = "Nowhereton, Nowhereshire, Nowhereland";
+    const r = await photoFor(token, destination);
     expect(r.status).toBe(200);
-    expect((r.data as { photo_url: string | null }).photo_url).toBeNull();
+    expect(r.data.photo_url).toBeNull();
 
     const cached = db
       .query<{ local_path: string }, [string]>(

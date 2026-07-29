@@ -142,6 +142,13 @@ process.env.DEEPL_FAKE = "1";
 process.env.GOOGLE_PLACES_API_KEY = "test-places-key";
 process.env.GOOGLE_PLACES_FAKE = "1";
 
+// Honeymoon destination photo: no key gates this one, so the fake flag is the
+// whole switch. It matters more than the others because the live path is a
+// ladder of up to four wikis PER breadcrumb rung on an ordinary page load —
+// left unfaked it burned tens of seconds and dragged unrelated suites past
+// their 5s timeout when the whole suite ran.
+process.env.HONEYMOON_PHOTO_FAKE = "1";
+
 // Wipe the test DB before the server boots — every run starts clean. Target
 // the SAME path the server is about to open (DB_PATH, resolved above), NOT the
 // hardcoded default: a worktree-parallel run overrides it via BUN_TEST_DB_PATH,
