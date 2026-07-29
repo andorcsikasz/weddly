@@ -640,20 +640,40 @@ function PublicHero({
       </div>
     );
   }
+  // No photos yet. This is the FIRST thing a couple sees on a profile the
+  // business has not filled in, so it has to look like a decision rather than
+  // an absence: the stationery hairline texture the rest of the product uses,
+  // a monogram in the accent, and the category set as a caption. The old
+  // version was a dashed upload-box outline, which is editor furniture that
+  // had no business on a public page.
   return (
     <div
       role="img"
       aria-label={detail.name}
-      className="flex aspect-[16/9] w-full items-center justify-center rounded-2xl border-2 border-dashed border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800/60"
+      className="stationery flex aspect-[16/9] w-full items-center justify-center rounded-2xl border border-paper-300 dark:border-umber-700"
     >
-      <div className="flex flex-col items-center gap-3 text-center">
-        <Wordmark size="lg" className="text-ink-700 dark:text-paper-100" />
-        <div className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
+      <div className="flex flex-col items-center gap-3 px-6 text-center">
+        <span
+          aria-hidden="true"
+          className="flex h-16 w-16 items-center justify-center rounded-full border border-blush-200 bg-paper-50/80 font-grotesk text-xl font-semibold uppercase tracking-wide text-blush-600 dark:border-blush-400/30 dark:bg-umber-900/60 dark:text-blush-300"
+        >
+          {monogramOf(detail.name)}
+        </span>
+        <Wordmark size="md" className="text-ink-700 dark:text-paper-100" />
+        <div className="text-[11px] uppercase tracking-[0.22em] text-ink-500 dark:text-umber-300">
           {t(`suppliers.cat.${detail.category}`)}
         </div>
       </div>
     </div>
   );
+}
+
+/** Up to two initials from a business name, for the no-photo monogram. */
+function monogramOf(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "W";
+  if (words.length === 1) return (words[0] ?? "").slice(0, 2);
+  return ((words[0] ?? "")[0] ?? "") + ((words[1] ?? "")[0] ?? "");
 }
 
 function PublicBlurb({
