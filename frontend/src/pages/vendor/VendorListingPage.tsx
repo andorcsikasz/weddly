@@ -2,8 +2,9 @@
 // Lifted from the legacy standalone pages/VendorHomePage.tsx: the full-page
 // <Shell> chrome and the standalone role-redirect are dropped here because the
 // shell layout (VendorShellLayout) and RequireVendorAuth own those concerns.
-// Everything else is preserved: listing-field PATCH, hero upload/delete,
-// availability block/unblock, and the founding/trial/lapsed billing banner.
+// Everything else is preserved: listing-field PATCH, hero upload/delete and
+// availability block/unblock. The founding/trial/lapsed plan banner is NOT:
+// plan state belongs to the profile's Billing tab, which says it in full.
 //
 // Editable fields mirror the backend's `VendorListingEditInput`: marketing
 // copy (blurb_hu / blurb_en), public contact (email, phone, website),
@@ -54,7 +55,6 @@ import {
   SPOKEN_LANGUAGE_OPTIONS,
   speaksLanguages,
 } from "@shared/suppliers";
-import type { VendorBilling } from "@shared/vendor_billing";
 import { listingChecklistFor } from "@shared/vendor_clients";
 import { AddressAutocomplete } from "../../components/AddressAutocomplete";
 import { SetupProgressPanel } from "../../components/VendorSetupProgress";
@@ -118,61 +118,6 @@ function formatBlockedDate(iso: string, locale: Locale): string {
     day: "numeric",
     timeZone: "UTC",
   }).format(d);
-}
-
-/** Founding / trial / lapsed billing banner. Entitled-founding + entitled-trial
- *  are reassuring (free until {date}); a lapsed vendor gets the warning tone
- *  (listing hidden, data preserved). A paying subscriber sees nothing. */
-function BillingBanner({
-  billing,
-  locale,
-  t,
-}: {
-  billing: VendorBilling;
-  locale: Locale;
-  t: (path: string, vars?: Record<string, string | number>) => string;
-}) {
-  const fmtDate = (ms: number | null): string =>
-    ms == null
-      ? ""
-      : new Intl.DateTimeFormat(intlLocale(locale), {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }).format(new Date(ms));
-
-  let warn = false;
-  let text: string;
-  if (!billing.entitled) {
-    warn = true;
-    text = t("vendor_home.billing_lapsed");
-  } else if (billing.reason === "founding") {
-    text = t("vendor_home.billing_founding", { date: fmtDate(billing.founding_until) });
-  } else if (billing.reason === "trialing") {
-    text = t("vendor_home.billing_trial", { date: fmtDate(billing.trial_ends_at) });
-  } else if (billing.reason === "lead_window") {
-    text = t("vendor_home.billing_lead_window", {
-      used: String(billing.lead_credits_used),
-      total: String(billing.lead_credits_total),
-    });
-  } else {
-    return null; // subscribed / active → no banner
-  }
-
-  const cls = warn
-    ? "border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/10 dark:text-blush-200"
-    : "border-paper-300 bg-paper-100 text-ink-700 dark:border-umber-700 dark:bg-blush-500/15 dark:text-paper-100";
-  return (
-    <div
-      className={`mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3.5 py-2 text-sm ${cls}`}
-      role="status"
-    >
-      <span>{text}</span>
-      <Link to="/vendor/billing" className="font-medium underline underline-offset-2">
-        {warn ? t("vendor_home.billing_lapsed_cta") : t("vendor.settings.tab_billing")}
-      </Link>
-    </div>
-  );
 }
 
 function viewToForm(view: VendorListingView): FormState {
@@ -708,7 +653,11 @@ export default function VendorListingPage() {
         </div>
       )}
 
-      {view?.billing && <BillingBanner billing={view.billing} locale={locale} t={t} />}
+      {/* No plan banner here. Which plan the vendor is on, what it costs and
+          when it renews is one subject, and it lives on the profile's Billing
+          tab (/vendor/settings/billing) where every state is spelled out with
+          its actions. Repeating a line of it above the listing form put plan
+          talk on a page about the listing, and the two could only drift. */}
 
       {form && view && (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
