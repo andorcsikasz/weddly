@@ -771,6 +771,18 @@ const es: LocaleMessages = {
       page_title: "Panel",
       page_body: "Un resumen de tus solicitudes, tus próximos eventos y tu ficha.",
       welcome: "Bienvenido, {name}",
+      greeting: {
+        morning: "Buenos días, {name}",
+        afternoon: "Buenas tardes, {name}",
+        evening: "Buenas noches, {name}",
+        // Deliberately not "¿todavía despierto?": the adjective carries gender
+        // and we don't know the reader's.
+        night: "¿Aún por aquí, {name}?",
+        christmas: "Feliz Navidad, {name}",
+        new_year: "Feliz Año Nuevo, {name}",
+        valentines: "Feliz San Valentín, {name}",
+        easter: "Felices Pascuas, {name}",
+      },
       inquiries_total: "Solicitudes totales",
       inquiries_30d: "Últimos 30 días",
       views_30d: "Visitas al perfil (30 días)",

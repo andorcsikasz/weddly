@@ -608,6 +608,18 @@ export interface DirectorySupplier extends DirectorySupplierBase {
   votes_score: number;
   /** The logged-in user's own vote on this entry. 0 if anonymous or no vote yet. */
   user_vote: -1 | 0 | 1;
+  /** The vendor has finished every step of their listing setup — the same
+   *  checklist as their own completeness ring (`listingChecklistFor`), so the
+   *  badge a couple sees and the % the vendor sees can never disagree.
+   *
+   *  This is what FILLS the verified check: a registered vendor whose listing
+   *  is still missing photos or a price wears the badge as an outline. The
+   *  business is really on Weddly either way, so the check is never withheld;
+   *  the solid one just means "and the profile is finished".
+   *
+   *  Always `false` on unclaimed curated/community entries, which wear no
+   *  badge at all — the vendor checklist has no meaning for them. */
+  listing_complete: boolean;
 }
 
 /** One entry in the `/api/suppliers` country picker: an ISO alpha-2 code and
@@ -672,6 +684,9 @@ export interface PublicShowcaseVendor {
   /** Registered Weddly vendor (`source === "claimed"`) — the same blue-check
    *  rule the in-app directory uses, so the badge means one thing everywhere. */
   verified: boolean;
+  /** Listing setup finished — fills the check. See
+   *  {@link DirectorySupplier.listing_complete}; same rule, same checklist. */
+  listing_complete: boolean;
   /** Kilometres from the filtered town, rounded. Only set on entries in the
    *  `nearby` block, where "40 km away" is the fact that makes the card usable;
    *  absent on the in-town results, whose distance from themselves is noise. */
@@ -757,6 +772,105 @@ export function searchScore(label: string, foldedQuery: string): number {
  *  That suffix is a storage detail — never show it, never search it. */
 export function cityDisplayName(city: string): string {
   return city.replace(/,\s*[A-Za-z]{2}\s*$/, "").trim();
+}
+
+// ─── Directory twins ────────────────────────────────────────────────────────
+//
+// A couple can record a vendor as a private entry (`couple_suppliers`, the
+// "Saját" cards) from three places: the DIY modal on /app/suppliers, the venue
+// picker in the guest-page editor, and the vendor pipeline on /app/planning.
+// None of them looked at the directory first, so typing a name that is already
+// listed produced two cards for one business: the couple's private copy sitting
+// beside the real listing, with none of its photos, address, contact details or
+// reviews. The helpers below are the shared "is this already on Weddly?"
+// question all three forms now ask before they create a row.
+//
+// What "use the listed one instead" DOES differs per surface, which is why the
+// adopt action is a callback rather than something these helpers perform: the
+// DIY modal and the planning pipeline record a category pick, while the
+// guest-page editor also copies the listing's address, phone and map pin onto
+// the couple, because that is what its venue block renders.
+
+/** Below this many characters we don't go looking for a twin — "DJ" or "Zsu"
+ *  matches a large slice of the directory and every suggestion would be noise. */
+export const SUPPLIER_TWIN_MIN_CHARS = 3;
+/** A non-exact (prefix / contained) hit needs a longer query still: "kastely"
+ *  is contained in dozens of venue names and means nothing on its own. */
+const TWIN_LOOSE_MIN_CHARS = 6;
+
+/** Legal forms couples type or omit at random. Dropped before comparing so
+ *  "Hertelendy Kastély Kft." is the same place as "Hertelendy Kastély". Only
+ *  unambiguous ones are listed: "co", "as" and "kg" are also ordinary words. */
+const NAME_LEGAL_FORM = /\b(kft|bt|zrt|nyrt|kkt|gmbh|sro|ltd|llc|inc)\b/g;
+
+/** Fold a business name down to what two people would agree is "the same name":
+ *  no diacritics, no case, no legal form, no punctuation, single spaces. */
+export function foldSupplierName(s: string): string {
+  return foldForSearch(s)
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(NAME_LEGAL_FORM, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** True when two names denote the same business under `foldSupplierName`. */
+export function isSameSupplierName(a: string, b: string): boolean {
+  const folded = foldSupplierName(a);
+  return folded.length > 0 && folded === foldSupplierName(b);
+}
+
+/** A directory entry that looks like the vendor the couple is typing in. */
+export interface SupplierTwin<T> {
+  supplier: T;
+  /** The names fold to the same string — certainly the same business, so the
+   *  form steers to it rather than merely offering it. */
+  exact: boolean;
+}
+
+/** The minimum a candidate needs for `findSupplierTwins`. Kept structural
+ *  rather than `DirectorySupplier` so a page can pass its own row shape. */
+export interface TwinCandidate {
+  id: string;
+  name: string;
+  category: SupplierCategory;
+}
+
+/** Directory entries that look like the business `name` describes, best first.
+ *
+ *  `category` narrows the search — a venue is compared against venues. Cross-
+ *  category hits are still returned, but only on an exact name match, because
+ *  a couple filing "Hertelendy Kastély" under Catering has mis-categorised the
+ *  same place rather than found a second one. */
+export function findSupplierTwins<T extends TwinCandidate>(
+  name: string,
+  category: SupplierCategory | null,
+  directory: readonly T[],
+  limit = 4,
+): SupplierTwin<T>[] {
+  const q = foldSupplierName(name);
+  if (q.length < SUPPLIER_TWIN_MIN_CHARS) return [];
+  const scored: { twin: SupplierTwin<T>; score: number }[] = [];
+  for (const s of directory) {
+    const c = foldSupplierName(s.name);
+    if (!c) continue;
+    const sameCategory = category === null || s.category === category;
+    if (c === q) {
+      scored.push({ twin: { supplier: s, exact: true }, score: sameCategory ? 100 : 90 });
+      continue;
+    }
+    // Everything below is a guess, so it applies only inside the category the
+    // couple chose, and only to a query long enough to mean something.
+    if (!sameCategory || q.length < TWIN_LOOSE_MIN_CHARS) continue;
+    if (c.startsWith(q) || q.startsWith(c)) {
+      scored.push({ twin: { supplier: s, exact: false }, score: 70 });
+    } else if (` ${c} `.includes(` ${q} `)) {
+      scored.push({ twin: { supplier: s, exact: false }, score: 50 });
+    }
+  }
+  scored.sort(
+    (a, b) => b.score - a.score || a.twin.supplier.name.localeCompare(b.twin.supplier.name),
+  );
+  return scored.slice(0, limit).map((r) => r.twin);
 }
 
 /** One row in the typeahead. `kind` decides where picking it goes:

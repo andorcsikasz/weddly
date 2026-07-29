@@ -49,6 +49,7 @@ import { getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
 import { countNonDeletedComments, listCommentsForSupplier } from "../domain/supplier_comments";
 import { getAvailability } from "../domain/supplier_bookings";
 import { isAdminEmail } from "../domain/users";
+import { completeListingIds } from "../domain/vendor_clients";
 import { db } from "../db";
 import { haversineKm } from "../lib/geo";
 import { lookupCountry } from "../lib/geoip";
@@ -63,11 +64,13 @@ function withVotes(
   base: DirectorySupplierBase,
   scores: Map<string, number>,
   coupleVotes: Map<string, VoteValue> | null,
+  completeIds: ReadonlySet<string>,
 ): DirectorySupplier {
   return {
     ...base,
     votes_score: scores.get(base.id) ?? 0,
     user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
+    listing_complete: completeIds.has(base.id),
   };
 }
 
@@ -202,7 +205,19 @@ async function handleList(ctx: Ctx): Promise<Response> {
     }
   }
 
-  return json({ suppliers: allBase.map((b) => withVotes(b, scores, coupleVotes)), countries });
+  // Which of the claimed cards have a finished listing — the difference between
+  // a solid verified check and a hollow one. Asked only about claimed entries:
+  // the rest wear no badge, and keeping the id list the size of the vendor
+  // roster (not the catalogue) is what makes this one extra query instead of a
+  // second pass over every curated row.
+  const completeIds = completeListingIds(
+    allBase.filter((b) => b.vendor_account_id !== null).map((b) => b.id),
+  );
+
+  return json({
+    suppliers: allBase.map((b) => withVotes(b, scores, coupleVotes, completeIds)),
+    countries,
+  });
 }
 
 interface VoteBody {
@@ -404,6 +419,10 @@ function buildSupplierDetail(
     ...base,
     votes_score: scores.get(base.id) ?? 0,
     user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
+    // Solid check vs hollow one. Only a claimed listing is asked — nothing else
+    // renders a badge, and the checklist is the vendor's, not the catalogue's.
+    listing_complete:
+      base.vendor_account_id !== null && completeListingIds([base.id]).has(base.id),
   };
 
   const reviewsSummary = getReviewSummary(supplierId);
@@ -620,6 +639,10 @@ function handlePublicShowcase(ctx: Ctx): Response {
   const preferCountry = requestedCountry ?? viewerCountry;
 
   const candidates = listShowcaseCandidates();
+  // Solid-vs-hollow check per card, resolved once for the whole page. Only the
+  // registered vendors are asked: everything else in the sample is a curated or
+  // community row that wears no badge at all.
+  const completeIds = completeListingIds(candidates.filter((r) => r.verified).map((r) => r.id));
 
   // Chips are counted over the WHOLE eligible set, before the country filter,
   // so picking a country never removes the way back to the others.
@@ -669,6 +692,7 @@ function handlePublicShowcase(ctx: Ctx): Response {
       hero_image_url: r.hero_image_url,
       country: r.country,
       verified: r.verified,
+      listing_complete: completeIds.has(r.id),
     });
     byCat.set(r.category, list);
   }
@@ -721,6 +745,7 @@ function handlePublicShowcase(ctx: Ctx): Response {
           hero_image_url: row.hero_image_url,
           country: row.country,
           verified: row.verified,
+          listing_complete: completeIds.has(row.id),
           // Rounded to the kilometre: these are straight-line distances between
           // town centroids, and a decimal would claim a precision we don't have.
           distance_km: Math.max(1, Math.round(km)),

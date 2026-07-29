@@ -6,13 +6,14 @@
 
 import { countryName } from "@shared/country_list";
 import type { PlannerDirectoryEntry, PlannerEventInput } from "@shared/types";
-import { BadgeCheck, Check, Clock, ExternalLink, Loader2, Sparkles } from "lucide-react";
+import { Check, Clock, ExternalLink, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { couplePlannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useToast } from "./ui";
+import { VerifiedBadge } from "./VerifiedBadge";
 
 /** Fire-and-forget directory analytics beacon (card impressions + click-
  *  throughs). Best-effort by design: a failed send never disrupts the couple. */
@@ -114,13 +115,7 @@ export function PlannerCard({
               {planner.business_name || planner.full_name}
             </button>
             {planner.verified && (
-              <span
-                className="inline-flex shrink-0 items-center"
-                title={t("planner_directory.verified")}
-                aria-label={t("planner_directory.verified")}
-              >
-                <BadgeCheck size={14} aria-hidden className="fill-verified stroke-white" />
-              </span>
+              <VerifiedBadge size={14} kind="planner" complete={planner.profile_complete} />
             )}
             {planner.website && (
               <a

@@ -30,6 +30,7 @@ import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { AnimatedNumber } from "../../components/AnimatedNumber";
+import { VerifiedBadge } from "../../components/VerifiedBadge";
 import {
   SetupLinger,
   SetupProgressChip,
@@ -37,6 +38,7 @@ import {
 } from "../../components/VendorSetupProgress";
 import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
+import { greetingKeyFor } from "../../lib/greeting";
 import { useAuth } from "../../lib/auth";
 import { useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
@@ -147,6 +149,11 @@ export default function VendorDashboardPage() {
   // Tortaműhely" reads like two names glued together. The business name still
   // owns the shell header + profile chip.
   const greetingName = user?.full_name ?? businessName ?? t("vendor.nav.brand_fallback");
+  // And greet them at the hour they're actually reading it. Resolved on every
+  // render rather than pinned in state: a vendor who leaves the dashboard open
+  // through the evening should not still be told good afternoon at 9pm, and any
+  // navigation re-renders this. See lib/greeting.ts for what the day can say.
+  const greeting = t(`vendor.dashboard.greeting.${greetingKeyFor()}`, { name: greetingName });
 
   if (loading || redirecting) {
     return <DashboardSkeleton title={t("vendor.dashboard.page_title")} />;
@@ -226,10 +233,15 @@ export default function VendorDashboardPage() {
         />
       )}
 
-      {/* Greeting */}
+      {/* Greeting. The verified check rides beside the name here for the same
+          reason it does on the public card: this vendor IS a registered Weddly
+          account, so the badge is theirs from day one — it just stays hollow
+          until the listing checklist above is finished, which is the vendor's
+          own preview of how the badge looks to a couple right now. */}
       <header>
-        <h1 className="font-grotesk text-3xl font-semibold leading-[1.05] tracking-[-0.02em] text-ink-900 sm:text-4xl dark:text-paper-50">
-          {t("vendor.dashboard.welcome", { name: greetingName })}
+        <h1 className="inline-flex flex-wrap items-center gap-x-2 font-grotesk text-3xl font-semibold leading-[1.05] tracking-[-0.02em] text-ink-900 sm:text-4xl dark:text-paper-50">
+          <span>{greeting}</span>
+          <VerifiedBadge size={26} complete={completenessDone} />
         </h1>
       </header>
 

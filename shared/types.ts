@@ -252,6 +252,13 @@ export interface PlannerDirectoryEntry {
   /** Admin-granted trust badge. True → the card + detail render a "verified"
    *  badge. Editorial signal, never derived automatically. */
   verified: boolean;
+  /** The planner has filled in every public-profile field we ask for (business
+   *  name, city, bio, styles — the same set the "complete your profile" nudge
+   *  chases). This is what FILLS the verified badge: a verified planner with a
+   *  half-written card still gets the check, drawn as an outline. Mirrors
+   *  `DirectorySupplier.listing_complete` on the vendor side so one badge means
+   *  one thing across the product. */
+  profile_complete: boolean;
   /** Link state relative to the requesting couple: 'invited' = this couple
    *  already invited them (pending on the planner side); 'requested' = the
    *  planner asked this couple for access (pending on the couple side);

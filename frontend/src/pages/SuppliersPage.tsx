@@ -81,6 +81,7 @@ import { OutreachInbox } from "../components/OutreachInbox";
 import { PlannerCard } from "../components/PlannerDirectoryRail";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
 import { SupplierCountryFilter } from "../components/SupplierCountryFilter";
+import { VerifiedBadge } from "../components/VerifiedBadge";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
 import { Button, Dialog, Skeleton, SmartImage, useToast } from "../components/ui";
 import {
@@ -738,6 +739,26 @@ export default function SuppliersPage() {
       const next = setSelection(coupleId, cat, isPicked ? null : supplier.id);
       setSelectionState(next);
       if (!isPicked) celebrateSelection(cat, selection, next);
+    },
+    [coupleId, selection, toast, t],
+  );
+
+  // Adopt a directory listing instead of minting a private "Saját" copy of it.
+  // Offered wherever the couple types a vendor name that is already on Weddly
+  // (the DIY modal's twin notice, and the repair action on an existing
+  // duplicate card). The listing becomes their pick for its category, so they
+  // get its photos, address and reviews rather than a bare name.
+  const adoptDirectorySupplier = useCallback(
+    (supplier: DirectorySupplier) => {
+      if (coupleId === null) {
+        toast.info(t("suppliers.save_no_couple"));
+        return;
+      }
+      const next = setSelection(coupleId, supplier.category, supplier.id);
+      setSelectionState(next);
+      setHighlightId(supplier.id);
+      celebrateSelection(supplier.category, selection, next);
+      toast.success(t("suppliers.twin.adopted_toast", { name: supplier.name }));
     },
     [coupleId, selection, toast, t],
   );
@@ -2139,7 +2160,9 @@ export default function SuppliersPage() {
                             ) : (
                               <h3 className="truncate text-sm font-semibold">{s.name}</h3>
                             )}
-                            {s.source === "claimed" && <VerifiedBadge t={t} />}
+                            {s.source === "claimed" && (
+                              <VerifiedBadge complete={s.listing_complete} />
+                            )}
                             {s.source === "community" && s.submitter_type === "self" && (
                               <span
                                 className="hidden shrink-0 items-center gap-1 rounded-full border border-sage-300 bg-sage-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sage-800 dark:border-sage-400/40 dark:bg-sage-400/15 dark:text-sage-300 sm:inline-flex"
@@ -2372,7 +2395,9 @@ export default function SuppliersPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex min-w-0 flex-1 items-center gap-1">
                             <h3 className="min-w-0 truncate text-base font-semibold">{s.name}</h3>
-                            {s.source === "claimed" && <VerifiedBadge t={t} />}
+                            {s.source === "claimed" && (
+                              <VerifiedBadge complete={s.listing_complete} />
+                            )}
                           </div>
                           {s.price_band !== null && (
                             <span
@@ -2582,6 +2607,11 @@ export default function SuppliersPage() {
         editing={diyEditing}
         currency={currency}
         defaultCategory={activeCat ?? null}
+        // The unfiltered directory, deliberately not `filtered` — a venue the
+        // couple already booked is a twin whether or not it survives the city
+        // chip and price band they happen to have set.
+        directory={items}
+        onUseExisting={adoptDirectorySupplier}
         onClose={() => {
           setDiyOpen(false);
           setDiyEditing(null);
@@ -2843,23 +2873,6 @@ function Avatar({
 function PriceBandDots({ band }: { band: number }) {
   const filled = Math.max(0, Math.min(5, band));
   return <span className="font-mono">{"$".repeat(filled)}</span>;
-}
-
-/** Twitter/Instagram-style blue verified check, shown next to a registered
- *  vendor's name (source === "claimed"): the business itself is on Weddly, as
- *  opposed to a curated/editorial or community-tipped entry. Uses the azure
- *  `verified` token (#1fa6e1) so it reads as the familiar social "verified"
- *  blue across light + dark. */
-function VerifiedBadge({ t }: { t: (key: string) => string }) {
-  return (
-    <span
-      className="inline-flex shrink-0 items-center"
-      title={t("suppliers.verified_vendor")}
-      aria-label={t("suppliers.verified_vendor")}
-    >
-      <BadgeCheck size={15} aria-hidden className="fill-verified stroke-white" />
-    </span>
-  );
 }
 
 /** Small "~45 km" hint that slots into the supplier card's meta row

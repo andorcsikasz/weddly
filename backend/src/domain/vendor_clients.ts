@@ -12,6 +12,7 @@ import type {
   VendorClientDetail,
   VendorClientPayment,
   VendorClientView,
+  VendorListingChecklistInput,
   VendorListingStep,
   VendorStats,
 } from "@shared/vendor_clients";
@@ -344,6 +345,54 @@ export function listingChecklist(listing: Listing | null): VendorListingStep[] {
 export function listingCompleteness(listing: Listing | null): number {
   if (!listing) return 0;
   return listingCompletenessFor(listingChecklist(listing));
+}
+
+/** Which of these listings have finished the whole setup checklist — the batch
+ *  form of `listingCompleteness(...) === 100`, for the directory views that
+ *  render a page of cards at once and decide per card whether the verified
+ *  check is solid or hollow.
+ *
+ *  Three queries total regardless of how many ids come in (the columns, then
+ *  the two counts grouped), because the per-listing form does two COUNTs each
+ *  and a directory page is hundreds of cards.
+ *
+ *  Callers pass only CLAIMED listing ids: an unclaimed entry wears no badge, so
+ *  its completeness is a question nobody asks, and skipping it keeps the
+ *  placeholder list the size of the vendor roster rather than the catalogue. */
+export function completeListingIds(ids: string[]): Set<string> {
+  const complete = new Set<string>();
+  if (ids.length === 0) return complete;
+  const placeholders = ids.map(() => "?").join(",");
+  const rows = db
+    .prepare(
+      `SELECT id, category, hero_image_url, blurb_hu, blurb_en, city, contact_email,
+              contact_phone, price_band, capacity_min, capacity_max
+         FROM listings WHERE id IN (${placeholders})`,
+    )
+    .all(...ids) as Array<{ id: string } & Omit<VendorListingChecklistInput, "photo_count" | "package_count">>;
+  if (rows.length === 0) return complete;
+  const countBy = (table: "listing_photos" | "listing_packages") =>
+    new Map(
+      (
+        db
+          .prepare(
+            `SELECT listing_id, COUNT(*) AS n FROM ${table}
+              WHERE listing_id IN (${placeholders}) GROUP BY listing_id`,
+          )
+          .all(...ids) as Array<{ listing_id: string; n: number }>
+      ).map((r) => [r.listing_id, r.n] as const),
+    );
+  const photos = countBy("listing_photos");
+  const packages = countBy("listing_packages");
+  for (const row of rows) {
+    const steps = listingChecklistFor({
+      ...row,
+      photo_count: photos.get(row.id) ?? 0,
+      package_count: packages.get(row.id) ?? 0,
+    });
+    if (listingCompletenessFor(steps) >= 100) complete.add(row.id);
+  }
+  return complete;
 }
 
 /** Build the vendor dashboard / stats payload. Counts come from the vendor's

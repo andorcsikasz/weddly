@@ -11,7 +11,6 @@ import { countryName } from "@shared/country_list";
 import { intlLocale } from "../lib/format";
 import type { PlannerDirectoryDetail, PlannerDirectoryEntry } from "@shared/types";
 import {
-  BadgeCheck,
   Check,
   ChevronLeft,
   Clock,
@@ -27,6 +26,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AvailabilityCalendar } from "../components/AvailabilityCalendar";
 import { hrefFor, plannerInitials, plannerStyleLabel } from "../components/PlannerDirectoryRail";
 import { useToast } from "../components/ui";
+import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ApiError } from "../lib/api";
 import { couplePlannerApi } from "../lib/endpoints";
 import { type Locale, useT } from "../lib/i18n";
@@ -219,11 +219,7 @@ export default function PlannerDetailPage() {
             <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50 sm:text-4xl">
               <span>{detail.business_name || detail.full_name}</span>
               {detail.verified && (
-                <BadgeCheck
-                  size={28}
-                  aria-label={t("planner_directory.verified")}
-                  className="shrink-0 fill-verified stroke-white"
-                />
+                <VerifiedBadge size={28} kind="planner" complete={detail.profile_complete} />
               )}
             </h1>
 

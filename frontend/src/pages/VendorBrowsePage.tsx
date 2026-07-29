@@ -29,7 +29,6 @@ import type {
 import {
   ArrowRight,
   ArrowUpRight,
-  BadgeCheck,
   ChevronLeft,
   ChevronRight,
   MapPin,
@@ -38,6 +37,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CountryPicker } from "../components/CountryPicker";
+import { VerifiedBadge } from "../components/VerifiedBadge";
 import { Wordmark } from "../components/Wordmark";
 import { CATEGORY_ICON } from "../lib/category_icons";
 import { supplierApi } from "../lib/endpoints";
@@ -200,7 +200,7 @@ function VendorCard({
   distanceLabel,
   hero,
   verified,
-  verifiedLabel,
+  listingComplete,
 }: {
   id: string;
   name: string;
@@ -213,7 +213,8 @@ function VendorCard({
   hero: string;
   /** Registered Weddly vendor — same blue check as the in-app directory. */
   verified: boolean;
-  verifiedLabel: string;
+  /** Listing setup finished — fills the check in. See `<VerifiedBadge>`. */
+  listingComplete: boolean;
 }) {
   return (
     <Link
@@ -240,13 +241,7 @@ function VendorCard({
       </div>
       <p className="mt-2.5 flex items-center gap-1 text-[15px] font-semibold tracking-tight text-ink-900 dark:text-paper-100">
         <span className="truncate">{name}</span>
-        {verified && (
-          <BadgeCheck
-            size={15}
-            aria-label={verifiedLabel}
-            className="shrink-0 fill-verified stroke-white"
-          />
-        )}
+        {verified && <VerifiedBadge complete={listingComplete} />}
       </p>
       {/* One muted line, no pin icon: city, category, and (nearby only) how far
           it is from the town that was filtered for. */}
@@ -357,7 +352,7 @@ function CategoryRow({
               }
               hero={v.hero_image_url}
               verified={v.verified}
-              verifiedLabel={t("suppliers.verified_vendor")}
+              listingComplete={v.listing_complete}
             />
           </div>
         ))}

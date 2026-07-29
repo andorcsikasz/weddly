@@ -23,7 +23,6 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowUpRight,
-  BadgeCheck,
   BedDouble,
   Bookmark,
   BookmarkCheck,
@@ -88,6 +87,7 @@ import { Pill } from "../components/admin";
 import { ClaimListingModal } from "../components/ClaimListingModal";
 import { ComposeDialog } from "../components/OutreachInbox";
 import { ReportSupplierDialog } from "../components/ReportSupplierDialog";
+import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewSpendFields } from "../components/ReviewSpendFields";
 import { ReviewSpendLine } from "../components/ReviewSpendLine";
 import { ReviewTagPicker } from "../components/ReviewTagPicker";
@@ -443,11 +443,7 @@ export default function SupplierDetailPage() {
             <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50 sm:text-4xl">
               <span>{detail.name}</span>
               {detail.vendor_account_id !== null && (
-                <BadgeCheck
-                  size={28}
-                  aria-label={t("suppliers.detail.verifiedAria")}
-                  className="shrink-0 fill-verified stroke-white"
-                />
+                <VerifiedBadge size={28} complete={detail.listing_complete} />
               )}
             </h1>
             {detail.company_name && detail.company_name !== detail.name && (

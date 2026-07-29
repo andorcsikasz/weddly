@@ -1023,8 +1023,25 @@ export interface LocaleMessages {
     dashboard: {
       page_title: string;
       page_body: string;
-      /** Receives `{name}` — vendor / business name. */
+      /** Receives `{name}` — vendor / business name. Kept as the fallback the
+       *  greeting below degrades to; nothing renders it today. */
       welcome: string;
+      /** The dashboard's opening line, picked by `greetingKeyFor(new Date())`
+       *  in `lib/greeting.ts`. Every key receives `{name}`, and the set must
+       *  stay in lockstep with `GreetingKey` there. Holiday lines are shared
+       *  across all locales by design: `locale` is the reader's language, not
+       *  the country their business is in. */
+      greeting: {
+        morning: string;
+        afternoon: string;
+        evening: string;
+        /** Past 22:00. Warm, never a comment on how hard they're working. */
+        night: string;
+        christmas: string;
+        new_year: string;
+        valentines: string;
+        easter: string;
+      };
       inquiries_total: string;
       inquiries_30d: string;
       /** KPI label for profile opens in the trailing 30 days. */

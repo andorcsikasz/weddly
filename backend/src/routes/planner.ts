@@ -6,6 +6,7 @@ import { sniffUploadedImage } from "../lib/image_sniff";
 import { keyFromUploadUrl, storage } from "../lib/storage";
 import { getCoupleById, toCouple } from "../domain/couples";
 import { sendKind } from "../domain/emails/send";
+import { isPlannerProfileComplete } from "../domain/planner_profile";
 import {
   addPlannerPackage,
   blockPlannerDate,
@@ -1859,6 +1860,12 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
     weddings_per_year: r.planner_weddings_per_year,
     avatar_url: r.planner_avatar_url,
     verified: r.planner_verified === 1,
+    profile_complete: isPlannerProfileComplete({
+      business_name: r.business_name,
+      planner_city: r.planner_city,
+      planner_bio: r.planner_bio,
+      planner_styles: r.planner_styles,
+    }),
     link_status:
       r.link_state === "active"
         ? "active"
@@ -1970,6 +1977,12 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
     weddings_per_year: r.planner_weddings_per_year,
     avatar_url: r.planner_avatar_url,
     verified: r.planner_verified === 1,
+    profile_complete: isPlannerProfileComplete({
+      business_name: r.business_name,
+      planner_city: r.planner_city,
+      planner_bio: r.planner_bio,
+      planner_styles: r.planner_styles,
+    }),
     link_status: linkStatusOf(r.link_state, r.link_initiated_by),
     availability: r.planner_availability,
     reference_links: referenceLinks.length ? referenceLinks : null,

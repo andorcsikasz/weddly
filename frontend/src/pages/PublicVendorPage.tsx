@@ -14,7 +14,7 @@ import type {
   SupplierReview,
 } from "@shared/suppliers";
 import { REVIEW_BODY_MAX_CHARS, showsCapacity } from "@shared/suppliers";
-import { BadgeCheck, ExternalLink, Globe, Mail, MapPin, Phone, Star, Users } from "lucide-react";
+import { ExternalLink, Globe, Mail, MapPin, Phone, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ClaimListingModal } from "../components/ClaimListingModal";
@@ -22,6 +22,7 @@ import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { ReviewSpendFields } from "../components/ReviewSpendFields";
 import { ReviewSpendLine } from "../components/ReviewSpendLine";
 import { VendorGallery } from "../components/VendorGallery";
+import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ReviewTagPicker } from "../components/ReviewTagPicker";
 import { VendorPackageGrid } from "../components/VendorPackageCards";
 import { LazyVideoPlayer } from "../components/VideoEmbed";
@@ -392,11 +393,7 @@ export default function PublicVendorPage() {
             <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
               <span>{detail.name}</span>
               {detail.vendor_account_id !== null && (
-                <BadgeCheck
-                  size={28}
-                  aria-label={t("suppliers.detail.verifiedAria")}
-                  className="shrink-0 fill-verified stroke-white"
-                />
+                <VerifiedBadge size={28} complete={detail.listing_complete} />
               )}
             </h1>
             {detail.company_name && detail.company_name !== detail.name && (

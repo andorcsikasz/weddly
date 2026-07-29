@@ -15,11 +15,12 @@
 //     an empty / failed fetch drops the whole block.
 
 import type { PublicVendorShowcase, PublicShowcaseVendor } from "@shared/suppliers";
-import { ArrowUpRight, BadgeCheck } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { VerifiedBadge } from "./VerifiedBadge";
 
 /** Under this many photographed listings the count argues against us, so the
  *  line runs without it. The rail itself still shows real vendors. */
@@ -121,13 +122,7 @@ export function VendorDirectoryTeaser({
             </div>
             <p className="mt-2 flex items-center gap-1 text-sm font-semibold tracking-tight text-ink-900 dark:text-paper-100">
               <span className="truncate">{v.name}</span>
-              {v.verified && (
-                <BadgeCheck
-                  size={14}
-                  aria-label={t("suppliers.verified_vendor")}
-                  className="shrink-0 fill-verified stroke-white"
-                />
-              )}
+              {v.verified && <VerifiedBadge size={14} complete={v.listing_complete} />}
             </p>
             <p className="truncate text-xs text-ink-500 dark:text-umber-300">
               {v.city

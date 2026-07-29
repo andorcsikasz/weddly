@@ -23,7 +23,12 @@ export interface PlannerProfileRow {
  *  + `city` are the directory-blocking pair (a card can't list without them);
  *  `bio` + `styles` are the softer "makes the card convincing" fields the email
  *  also nudges. */
-export function plannerProfileMissing(row: PlannerProfileRow): {
+export function plannerProfileMissing(
+  row: Pick<
+    PlannerProfileRow,
+    "business_name" | "planner_city" | "planner_bio" | "planner_styles"
+  >,
+): {
   businessName: boolean;
   city: boolean;
   bio: boolean;
@@ -43,6 +48,25 @@ export function plannerProfileMissing(row: PlannerProfileRow): {
     bio: blank(row.planner_bio),
     styles: !hasStyles,
   };
+}
+
+/** True when the planner has filled in every public-profile field the nudge
+ *  asks for. This is what FILLS the verified badge on the planner card and
+ *  detail page: the admin's trust signal is never withheld, but a card that is
+ *  still missing its bio or styles wears the check as an outline. Reuses the
+ *  nudge's own definition of "missing" so the email and the badge can't drift.
+ *
+ *  The vendor-side counterpart is `completeListingIds` / the listing checklist,
+ *  and both feed one `<VerifiedBadge complete>` in the frontend, so a hollow
+ *  check means the same thing wherever a couple meets it. */
+export function isPlannerProfileComplete(
+  row: Pick<
+    PlannerProfileRow,
+    "business_name" | "planner_city" | "planner_bio" | "planner_styles"
+  >,
+): boolean {
+  const m = plannerProfileMissing(row);
+  return !m.businessName && !m.city && !m.bio && !m.styles;
 }
 
 /** True when the planner can't even be listed in the directory yet (missing the
