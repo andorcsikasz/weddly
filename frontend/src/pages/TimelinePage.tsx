@@ -468,7 +468,8 @@ function PocCard({
         <ul className="divide-y divide-paper-200 p-0 dark:divide-umber-700" aria-hidden="true">
           {[0, 1, 2].map((i) => (
             <li key={i} className="flex items-center gap-3 px-5 py-3">
-              <Skeleton variant="circle" width={40} />
+              {/* Matches the bare 18px glyph the rows now render, not the old disc. */}
+              <Skeleton variant="circle" width={18} />
               <div className="flex-1 space-y-1.5">
                 <Skeleton variant="block" width="40%" height={14} rounded="md" />
                 <Skeleton variant="block" width="60%" height={11} rounded="md" />
@@ -545,51 +546,42 @@ function PocRow({
     ? "sm:border-l-2 sm:border-transparent"
     : "sm:border-l-2 sm:border-paper-200 dark:sm:border-umber-700";
 
-  const phonePill = supplier?.phone ? (
-    <a
-      href={`tel:${supplier.phone.replace(/\s+/g, "")}`}
-      className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
-    >
-      <Phone size={11} aria-hidden="true" />
-      <span>{supplier.phone}</span>
+  // Bare glyph + value, no pill. A filled capsule around every contact detail
+  // made three of them read as three buttons competing with the supplier's own
+  // name; the hover colour is enough to say "this is tappable".
+  const actionClass =
+    "inline-flex items-center gap-1 rounded transition-colors hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100";
+
+  // A missing phone or email renders NOTHING. The old placeholder — an icon
+  // next to a dash — occupied a whole control to say "there is nothing here",
+  // which is the one thing the couple can already see.
+  const phoneAction = supplier?.phone ? (
+    <a href={`tel:${supplier.phone.replace(/\s+/g, "")}`} className={actionClass}>
+      <Phone size={12} aria-hidden="true" />
+      <span className="tabular-nums">{supplier.phone}</span>
     </a>
-  ) : (
-    <span
-      className="inline-flex items-center gap-1 rounded-full bg-paper-100/60 px-2 py-0.5 text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
-      aria-label={t("suppliers.no_phone")}
-      title={t("suppliers.no_phone")}
-    >
-      <Phone size={11} aria-hidden="true" />
-      <span>-</span>
-    </span>
-  );
-  const emailPill = supplier?.email ? (
-    <a
-      href={`mailto:${supplier.email}`}
-      className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
-    >
-      <Mail size={11} aria-hidden="true" />
-      <span className="truncate max-w-[140px]">{supplier.email}</span>
+  ) : null;
+  const emailAction = supplier?.email ? (
+    // The pill's 140px cap clipped most addresses to "info@thekitchencaters…"
+    // even on a row with half its width empty. Wider from sm up, and the title
+    // covers the phone case where it still has to truncate.
+    <a href={`mailto:${supplier.email}`} title={supplier.email} className={actionClass}>
+      <Mail size={12} aria-hidden="true" />
+      <span className="truncate max-w-[140px] sm:max-w-[260px]">{supplier.email}</span>
     </a>
-  ) : (
-    <span
-      className="inline-flex items-center gap-1 rounded-full bg-paper-100/60 px-2 py-0.5 text-ink-400 dark:bg-umber-700/40 dark:text-umber-300"
-      aria-label={t("suppliers.no_email")}
-      title={t("suppliers.no_email")}
-    >
-      <Mail size={11} aria-hidden="true" />
-      <span>-</span>
-    </span>
-  );
-  const websitePill = supplier?.website ? (
+  ) : null;
+  // Website is the one whose value is a URL nobody wants to read, so the glyph
+  // stands alone and the label moves into the tooltip.
+  const websiteAction = supplier?.website ? (
     <a
       href={safeExternalHref(supplier.website)}
       target="_blank"
       rel="noreferrer noopener"
-      className="inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 transition-shadow hover:bg-paper-200 hover:ring-1 hover:ring-blush-300 dark:bg-umber-700 dark:hover:bg-umber-700/80 dark:hover:ring-blush-400/40"
+      aria-label={t("suppliers.visit_website")}
+      title={t("suppliers.visit_website")}
+      className={actionClass}
     >
-      <Globe size={11} aria-hidden="true" />
-      <span>{t("suppliers.visit_website")}</span>
+      <Globe size={12} aria-hidden="true" />
     </a>
   ) : null;
 
@@ -598,9 +590,14 @@ function PocRow({
       id={`poc-${pick.supplier_id}`}
       className={`flex w-64 shrink-0 snap-start items-start gap-3 rounded-2xl border border-paper-300 px-3 py-3 transition-colors sm:w-auto sm:items-center sm:rounded-none sm:border-0 sm:px-5 sm:hover:bg-paper-100/40 dark:border-umber-700 dark:sm:hover:bg-umber-900/40 ${railClass}`}
     >
-      <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-800 ring-1 ring-paper-300 sm:mt-0 dark:bg-umber-700 dark:text-paper-100 dark:ring-umber-700">
-        <Icon size={18} aria-hidden="true" />
-      </span>
+      {/* Bare category glyph — no disc, no ring. The circle was a 40px badge
+          carrying an 18px icon, so it read as the loudest thing in a row whose
+          subject is the supplier's name. */}
+      <Icon
+        size={18}
+        aria-hidden="true"
+        className="mt-0.5 shrink-0 text-ink-400 sm:mt-0 dark:text-umber-300"
+      />
       <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-4">
         <div className="min-w-0 sm:flex sm:min-w-0 sm:flex-1 sm:items-baseline sm:gap-3">
           {supplier?.linkable ? (
@@ -619,10 +616,10 @@ function PocRow({
             {t(`suppliers.cat.${category}`)}
           </p>
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-700 sm:mt-0 sm:flex-nowrap sm:justify-end dark:text-paper-100">
-          {emailPill}
-          {websitePill}
-          {phonePill}
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-ink-500 sm:mt-0 sm:flex-nowrap sm:justify-end dark:text-umber-300">
+          {emailAction}
+          {websiteAction}
+          {phoneAction}
         </div>
       </div>
     </li>
