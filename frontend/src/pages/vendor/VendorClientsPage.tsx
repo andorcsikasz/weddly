@@ -210,8 +210,8 @@ function EmptyClients() {
         {steps.map(({ Icon, label }, i) => (
           <Fragment key={label}>
             <div className="flex items-center gap-3 sm:w-32 sm:flex-col sm:gap-2 sm:text-center">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-steel-100 text-steel-700 dark:bg-steel-700/30 dark:text-steel-200">
-                <Icon size={20} aria-hidden="true" />
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center text-steel-600 dark:text-steel-300">
+                <Icon size={22} strokeWidth={1.5} aria-hidden="true" />
               </span>
               <span className="text-sm text-ink-700 dark:text-paper-200">{label}</span>
             </div>

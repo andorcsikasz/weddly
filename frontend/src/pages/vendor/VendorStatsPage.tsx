@@ -722,9 +722,12 @@ function UpgradeAnalyticsCard({
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-100 p-5 dark:border-umber-700 dark:bg-umber-800">
       <div className="flex items-center gap-3 text-ink-900 dark:text-paper-50">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush-50 text-blush-600 dark:bg-blush-500/15 dark:text-blush-300">
-          <Lock size={20} aria-hidden="true" />
-        </span>
+        <Lock
+          size={20}
+          strokeWidth={1.5}
+          aria-hidden="true"
+          className="shrink-0 text-steel-600 dark:text-steel-300"
+        />
         <h2 className="font-grotesk text-lg font-semibold text-ink-900 dark:text-paper-50">
           {title}
         </h2>

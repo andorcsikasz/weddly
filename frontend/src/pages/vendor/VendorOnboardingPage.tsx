@@ -595,7 +595,7 @@ export default function VendorOnboardingPage() {
         {step === 3 && (
           <div className="card animate-fade-in-up text-center">
             <div
-              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-sage-100 ring-2 ring-sage-400 dark:bg-sage-900 dark:ring-sage-600"
+              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full ring-2 ring-sage-400 dark:ring-sage-600"
               aria-hidden="true"
             >
               <svg
