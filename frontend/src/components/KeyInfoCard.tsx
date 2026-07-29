@@ -43,6 +43,7 @@ import {
   Speaker,
   PenTool,
   StickyNote,
+  Store,
   Tent,
   UserRound,
   Wine,
@@ -55,6 +56,7 @@ import { coupleApi, coupleSupplierApi, picksApi, supplierApi } from "../lib/endp
 import { useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { setSelection } from "../lib/supplier_selection";
+import { foldVenueName, venueDetachedFromPick, venueVendorHref } from "../lib/venue_link";
 import { Dialog, Skeleton, useToast } from "./ui";
 
 // Lazy so the OpenStreetMap embed bundle only loads when a couple opens the
@@ -72,15 +74,24 @@ import { CATEGORY_ICON } from "../lib/category_icons";
 const MAX_CONTACTS = 4;
 const STORAGE_KEY = "weddly.dashboard.keyinfo";
 
+/** Shared shape for the two header controls (all-vendors, collapse). Open, they
+ *  sit on the blush cap and go white-on-accent; collapsed, they sit on the card
+ *  surface and keep the usual ink treatment. Slightly smaller when open, since
+ *  that row's whole point is to be thin. */
+function headerIconClass(open: boolean): string {
+  const base =
+    "inline-flex shrink-0 items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100";
+  // Open, they sit on the blush wash and shrink (that row's whole point is to be
+  // thin), so the hover fill deepens the wash instead of adding a second colour.
+  return open
+    ? `${base} h-7 w-7 text-blush-700 hover:bg-blush-500/20 hover:text-blush-800 dark:text-blush-200 dark:hover:bg-blush-500/25 dark:hover:text-blush-100`
+    : `${base} h-8 w-8 text-ink-500 hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50`;
+}
+
 /** Diacritic-folded lower-case, for the venue autocomplete match. Mirrors the
  *  helper in BookedSupplierCard (the "Már foglaltam" flow) so typing folds the
  *  same way here. */
-function fold(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
-}
+const fold = foldVenueName;
 
 type VenueInfo = {
   name: string;
@@ -168,8 +179,7 @@ function resolveVenue(
   // wrong place, so we DETACH from the pick: the row behaves like a free-text
   // venue (typed values only, geocoded map, hub link). The couple can re-link
   // via the edit dialog's autocomplete. Name comparison is diacritic-folded.
-  const detachedFromPick =
-    Boolean(f.venue_name) && picked != null && fold(f.venue_name) !== fold(picked.name);
+  const detachedFromPick = venueDetachedFromPick(f.venue_name, picked?.name);
   const effPicked = detachedFromPick ? undefined : picked;
 
   const name = f.venue_name || effPicked?.name || diy?.name || null;
@@ -344,9 +354,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
   // Where the venue row links to: an effectively-linked directory venue opens
   // its own vendor card; any other venue (DIY / free-text / detached) falls back
   // to the vendors hub. Mirrors the supplier-row behaviour.
-  const venueLinkTo = linkedDir
-    ? `/app/suppliers/${encodeURIComponent(linkedDir.id)}`
-    : "/app/vendors";
+  const venueLinkTo = venueVendorHref(linkedDir?.id);
   // Venue-category directory vendors, offered as autocomplete suggestions in
   // the edit dialog ("primarily suggest venue vendors").
   const venueOptions = useMemo(
@@ -400,25 +408,64 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
 
   return (
     <section className="card mb-6 p-0" data-tour-target="dashboard-keyinfo">
-      <header className="flex items-center justify-between gap-2 border-b border-paper-200 px-5 py-2.5 dark:border-umber-700">
-        <h2 className="flex items-center gap-2.5 font-grotesk text-base font-medium tracking-tight text-ink-900 dark:text-paper-50">
-          <span className="inline-block h-4 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
+      {/* The header carries its own title ONLY while collapsed, where the strip
+          is all there is to identify. Open, the venue row underneath says what
+          this is far better than a label does, so the text gives way to a thin
+          blush cap and the row shrinks to its controls: roughly 12px back on
+          the header, plus the ~22px the "all vendors" link used to spend on a
+          row of its own below. The heading stays in the accessibility tree
+          either way (sr-only when open), so the document outline is unchanged. */}
+      <header
+        className={
+          open
+            ? "flex items-center justify-between gap-2 rounded-t-2xl bg-blush-500/10 px-3 py-0.5 dark:bg-blush-500/15"
+            : "flex items-center justify-between gap-2 border-b border-paper-200 px-5 py-2.5 dark:border-umber-700"
+        }
+      >
+        {/* A solid blush wash across the whole strip read as an alert banner
+            rather than a header, so the accent stays a marker and the strip
+            only carries a wash of it. */}
+        <h2
+          className={
+            open
+              ? "sr-only"
+              : "flex items-center gap-2.5 font-grotesk text-base font-medium tracking-tight text-ink-900 dark:text-paper-50"
+          }
+        >
+          {!open && (
+            <span className="inline-block h-4 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
+          )}
           {t("dashboard.keyinfo_title")}
         </h2>
+        {/* Open, the sr-only heading is out of flow, so this marker is what
+            holds the left end of the strip and keeps the accent legible. */}
+        {open && (
+          <span className="inline-block h-3.5 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
+        )}
         {/* Edit lives on the venue row (with the map/call actions), not up here. */}
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label={t("dashboard.keyinfo_title")}
-          className="-my-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
-        >
-          <ChevronDown
-            size={16}
-            aria-hidden="true"
-            className={`transition-transform ${open ? "" : "-rotate-90"}`}
-          />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <Link
+            to="/app/vendors"
+            aria-label={t("dashboard.keyinfo_all_suppliers")}
+            title={t("dashboard.keyinfo_all_suppliers")}
+            className={headerIconClass(open)}
+          >
+            <Store size={15} aria-hidden="true" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-label={t("dashboard.keyinfo_title")}
+            className={headerIconClass(open)}
+          >
+            <ChevronDown
+              size={16}
+              aria-hidden="true"
+              className={`transition-transform ${open ? "" : "-rotate-90"}`}
+            />
+          </button>
+        </div>
       </header>
 
       {open && (
@@ -526,19 +573,9 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
               )}
 
               {/* ── Suppliers ─────────────────────────────────────────── */}
+              {/* "Összes szolgáltató" is no longer a row here: it moved into the
+                  header as the Store icon, which buys back the line it spent. */}
               <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-700">
-                {contacts.length > 0 && (
-                  <div className="mb-1 flex items-center justify-end">
-                    <Link
-                      to="/app/vendors"
-                      className="inline-flex items-center gap-1 text-xs font-medium text-ink-600 transition-colors hover:text-blush-700 dark:text-umber-200 dark:hover:text-blush-300"
-                    >
-                      <span>{t("dashboard.keyinfo_all_suppliers")}</span>
-                      <ChevronRight size={14} aria-hidden="true" />
-                    </Link>
-                  </div>
-                )}
-
                 {shownContacts.length === 0 ? (
                   <Link
                     to="/app/vendors"
