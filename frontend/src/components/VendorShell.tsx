@@ -539,8 +539,12 @@ export function VendorShell({ children }: { children: ReactNode }) {
         >
           {/* Mobile: wrap the tabs across rows so none get pushed off-screen
               (a horizontal scroller silently clipped the later tabs with no
-              affordance). Desktop: the vertical, sticky rail. */}
-          <nav className="flex flex-wrap gap-1 lg:sticky lg:top-20 lg:flex-col lg:flex-nowrap lg:gap-0.5 lg:overflow-visible">
+              affordance). Desktop: the vertical, sticky rail.
+              The row gap is deliberately wider than the column gap: once the
+              tabs wrap (roughly 660-700px, a tablet or a narrowed window) a
+              4px gap left the second row sitting on the first, and the points
+              block landed against the last tab with nothing between them. */}
+          <nav className="flex flex-wrap gap-x-1 gap-y-2 lg:sticky lg:top-20 lg:flex-col lg:flex-nowrap lg:gap-0.5 lg:overflow-visible">
             {/* Collapse toggle at the TOP of the rail - desktop only. */}
             <button
               type="button"

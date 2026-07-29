@@ -73,8 +73,11 @@ export function VendorPointsRail({ collapsed }: { collapsed: boolean }) {
         tier: t(`vendor.points.tier.${points.next_tier}`),
       });
 
+  // basis-full keeps the block on its own row until the rail turns vertical at
+  // lg. As a plain flex item it wrapped in beside the last tab, so around
+  // 660-700px the score sat 4px from "Vélemények" and read as another tab.
   return (
-    <div className="mt-1 border-t border-paper-300 pt-1 dark:border-umber-700">
+    <div className="mt-4 w-full basis-full border-t border-paper-300 pt-2 lg:mt-1 lg:w-auto lg:basis-auto lg:pt-1 dark:border-umber-700">
       <button
         type="button"
         onClick={() => setOpen(true)}
