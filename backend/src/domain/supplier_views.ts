@@ -38,6 +38,11 @@ export function recordSupplierEvents(
   if (events.length === 0) return 0;
 
   const validIds = knownSupplierIds();
+  // A vendor checking their own page is not reach. The listing editor and the
+  // reviews page both link to the live `/vendors/:id`, and that page counts a
+  // view like any other, so a vendor who previews their profile a few times a
+  // week watches "Megtekintés (30 nap)" climb on nobody but themselves.
+  const ownIds = userId === null ? EMPTY_IDS : listingIdsOwnedBy(userId);
   const ts = now();
   const insert = db.prepare(
     `INSERT INTO supplier_events (supplier_id, event_type, user_id, couple_id, created_at)
@@ -49,12 +54,32 @@ export function recordSupplierEvents(
       if (!e || typeof e.supplier_id !== "string" || typeof e.type !== "string") continue;
       if (!VALID_EVENT_TYPES.has(e.type)) continue;
       if (!validIds.has(e.supplier_id)) continue;
+      if (ownIds.has(e.supplier_id)) continue;
       insert.run(e.supplier_id, e.type, userId, coupleId, ts);
       written++;
     }
   });
   tx(events);
   return written;
+}
+
+const EMPTY_IDS: ReadonlySet<string> = new Set();
+
+/** Public ids of every listing this user owns through their vendor account.
+ *  Empty for anonymous visitors and for couples, which is the common case and
+ *  costs one indexed lookup that misses. A vendor can own several listings
+ *  (their own `v{N}` card plus anything they have claimed), so this is a set
+ *  rather than a single id. */
+function listingIdsOwnedBy(userId: number): ReadonlySet<string> {
+  const rows = db
+    .prepare(
+      `SELECT l.id
+         FROM listings l
+         JOIN vendor_accounts va ON va.id = l.vendor_account_id
+        WHERE va.owner_user_id = ?`,
+    )
+    .all(userId) as { id: string }[];
+  return new Set(rows.map((r) => r.id));
 }
 
 /** Returns the set of public supplier ids the directory currently exposes —

@@ -359,6 +359,48 @@ describe("vendor stats — GET /api/vendor/stats", () => {
     expect(r.data.views_7d).toBe(2);
   });
 
+  test("the vendor's own visits to their own listing never count", async () => {
+    wipeAll();
+    const mine = await bootstrapVendor("stats-selfview");
+    const other = await makeApprovedListing(
+      "owner-stats-selfview-other@weddly.test",
+      "vendor-stats-selfview-other@weddly.test",
+      "Rival Studio",
+    );
+
+    // What the preview link does: the vendor opens their live page while
+    // signed in, so the ingest carries their token.
+    const self = await req<{ recorded: number }>(
+      "POST",
+      "/api/suppliers/events",
+      {
+        events: [
+          { supplier_id: mine.listingId, type: "view" },
+          { supplier_id: mine.listingId, type: "website_click" },
+          // Someone else's card in the same batch still counts: only the
+          // vendor's OWN listings are suppressed, not their whole session.
+          { supplier_id: other.listingId, type: "view" },
+        ],
+      },
+      { token: mine.vendorToken },
+    );
+    expect(self.status).toBe(200);
+    expect(self.data.recorded).toBe(1);
+
+    // A visitor viewing the same listing is unaffected.
+    const visitor = await req<{ recorded: number }>("POST", "/api/suppliers/events", {
+      events: [{ supplier_id: mine.listingId, type: "view" }],
+    });
+    expect(visitor.data.recorded).toBe(1);
+
+    const r = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: mine.vendorToken,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.views_total).toBe(1);
+    expect(r.data.views_30d).toBe(1);
+  });
+
   test("a vendor with no events at all reports zero views", async () => {
     wipeAll();
     const { vendorToken } = await bootstrapVendor("stats-views-empty");
