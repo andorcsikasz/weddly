@@ -232,7 +232,7 @@ const en: LocaleMessages = {
       "You're one of our first 200 couples, so Weddly is free for you until your wedding day. Enjoy the full platform.",
     solo_banner_title: "Invite your partner",
     solo_banner_body:
-      "The first 200 couples use Weddly free until their wedding day. Invite your partner so you can keep planning together, free.",
+      "Come along from the first chapter: with both of you on board you are our guests until your wedding day, everything unlocked. Invite your partner.",
     solo_banner_cta: "Invite partner",
     planner_managed_banner_title: "Your planner is managing the wedding",
     planner_managed_banner_body:
@@ -1737,8 +1737,8 @@ const en: LocaleMessages = {
     counter_rsvps_label: "RSVPs received",
     founders_title: "This time, you're the guests",
     founders_promise:
-      "A gift from Weddly: the first 200 couples plan free, right up to their wedding day.",
-    founders_seats_label: "early bird free spots",
+      "A gift from Weddly: come along from the first chapter and you're our guests right up to your wedding day.",
+    founders_seats_label: "early bird spots",
     founders_joined_caption: "couples already in",
     founders_left_caption: "left",
     founders_body:
@@ -1751,7 +1751,7 @@ const en: LocaleMessages = {
     founders_share_copied: "Link copied. Pass it on.",
     founders_share_title: "Weddly, wedding planning in one place",
     founders_share_text:
-      "I'm using Weddly to plan our wedding: budget, guests, RSVP, seating, all in one place. They're welcoming the first 200 couples as guests. Thought of you 💍",
+      "I'm using Weddly to plan our wedding: budget, guests, RSVP, seating, all in one place. They're welcoming the early couples as their guests. Thought of you 💍",
     product_eyebrow: "What's inside",
     product_title: "The pieces you'll actually use",
     block_budget_eyebrow: "Live budget",
@@ -1791,23 +1791,23 @@ const en: LocaleMessages = {
     t3_name: "Kata & Marci",
     t3_meta: "Szeged · composite from beta interviews",
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
-    pricing_title: "Free for the first 200 couples.",
+    pricing_title: "You're our guest for 18 months.",
     pricing_body:
-      "Sign up among the first 200 couples and Weddly stays free through your whole planning, up to 18 months. After that it's 7 € a month, with a two-week free trial and every feature included.",
+      "Come along from the first chapter: for the next eighteen months you're our guest, everything unlocked. After that it's 7 € a month, with two weeks to try it and every feature included.",
     pricing_amount: "7",
     pricing_amount_decimal: "",
     pricing_amount_sub: "/ month",
     pricing_early_note: "Monthly, cancel anytime · no annual lock-in.",
     pricing_value_note: "Low-cortisol wedding planning, for the price of a BigMac menu.",
-    pricing_after: "Free for 18 months for the first 200 couples.",
+    pricing_after: "You're our guest for 18 months.",
     pricing_after_detail:
-      "We'd love to help make planning your wedding easier. If you and your partner both register among the first 200 couples, we won't charge you a thing for 18 months.",
+      "We'd love to help make planning your wedding easier. Come along with your partner and you're both our guests for eighteen months, everything unlocked.",
     pricing_bullet_1: "2 weeks to try it, on us",
     pricing_bullet_2: "Every feature open to couples",
     pricing_bullet_3: "CSV / PDF export, included",
     pricing_bullet_4: "Pause any time · 30-day grace",
-    pricing_bullet_referral: "Referrals: 1 free month per invited couple, 2 per vendor",
-    pricing_v2_note: "Once the first 200 spots fill, new couples start the 2-week free trial.",
+    pricing_bullet_referral: "Referrals: 1 month on us per invited couple, 2 per vendor",
+    pricing_v2_note: "Once the early spots fill, new couples start with the 2-week trial.",
     mockup_aria_budget: "Live budget mockup",
     mockup_aria_guests: "Guest list and RSVP mockup",
     mockup_aria_seating: "Seating canvas mockup",

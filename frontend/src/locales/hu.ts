@@ -234,7 +234,7 @@ const hu: LocaleMessages = {
       "Az első 200 párunk egyike vagytok, így a Weddly az esküvőtök napjáig ingyenes. Használjátok a teljes platformot.",
     solo_banner_title: "Hívd meg a párod",
     solo_banner_body:
-      "Az első 200 pár az esküvője napjáig ingyen használhatja a Weddly-t. Hívd meg a párod, hogy együtt, ingyen tervezzetek tovább.",
+      "Tarts velünk az első fejezettől: ha ketten vagytok fent, az esküvőtök napjáig a vendégünk vagytok, teljes hozzáféréssel. Hívd meg a párod.",
     solo_banner_cta: "Pár meghívása",
     planner_managed_banner_title: "Az esküvőtöket a tervező kezeli",
     planner_managed_banner_body:
@@ -1761,8 +1761,9 @@ const hu: LocaleMessages = {
     counter_couples_label: "Tervezgető pár",
     counter_rsvps_label: "Beérkezett RSVP",
     founders_title: "Ezúttal ti vagytok a vendégek",
-    founders_promise: "Ajándék a Wēddlytől: az első 200 pár az esküvője napjáig ingyen tervez.",
-    founders_seats_label: "early bird ingyenes hely",
+    founders_promise:
+      "Ajándék a Wēddlytől: tartsatok velünk az első fejezettől, és az esküvőtök napjáig a vendégeink vagytok.",
+    founders_seats_label: "early bird hely",
     founders_joined_caption: "pár már foglalt",
     founders_left_caption: "még szabad",
     founders_body:
@@ -1774,7 +1775,7 @@ const hu: LocaleMessages = {
     founders_share_copied: "Link a vágólapon. Adjátok tovább.",
     founders_share_title: "Wēddly, az egész esküvő egy helyen",
     founders_share_text:
-      "A Wēddlyvel tervezzük az esküvőnket: költségvetés, vendégek, RSVP, ültetés, minden egy helyen. Az első 200 párt vendégül látják. Rátok gondoltam 💍",
+      "A Wēddlyvel tervezzük az esküvőnket: költségvetés, vendégek, RSVP, ültetés, minden egy helyen. Az induló párokat vendégül látják. Rátok gondoltam 💍",
     product_eyebrow: "Mit tartalmaz",
     product_title: "Azok az elemek, amiket valóban használni fogtok",
     block_budget_eyebrow: "Élő költségvetés",
@@ -1814,24 +1815,24 @@ const hu: LocaleMessages = {
     t3_name: "Kata & Marci",
     t3_meta: "Szeged · béta-interjúkból összeállítva",
     // ── Round 3: árak + miért Wēddly + mockup feliratok ───────────────
-    pricing_title: "Az első 200 párnak ingyenes.",
+    pricing_title: "18 hónapig a vendégünk vagytok.",
     pricing_body:
-      "Legyetek az első 200 pár között, és a Wēddly végig ingyenes marad a tervezésetek alatt, akár 18 hónapig. Utána 2 490 Ft havonta, 2 hét ingyenes próbával, minden funkcióval.",
+      "Tartsatok velünk az első fejezettől: a következő másfél évben a vendégünk vagytok, teljes hozzáféréssel. Utána 2 490 Ft havonta, 2 hét próbaidővel, minden funkcióval.",
     pricing_amount: "2 490",
     pricing_amount_decimal: "",
     pricing_amount_sub: "/ hó",
     pricing_early_note: "Havidíj, bármikor lemondható · nincs éves elköteleződés.",
     pricing_value_note: "Low-cortisol esküvőszervezés egy BigMac menü áráért.",
-    pricing_after: "Az első 200 párnak 18 hónapig ingyenes.",
+    pricing_after: "18 hónapig a vendégünk vagytok.",
     pricing_after_detail:
-      "Szeretnénk segíteni, hogy könnyebb legyen az esküvőtök szervezése. Ha a pároddal mindketten regisztráltok az első 200 pár között, 18 hónapig semmilyen költséget nem számolunk fel nektek.",
+      "Szeretnénk segíteni, hogy könnyebb legyen az esküvőtök szervezése. Ha a pároddal együtt tartotok velünk, másfél éven át a vendégeink vagytok, teljes hozzáféréssel.",
     pricing_bullet_1: "2 hét próbaidő, a vendégünk vagy",
     pricing_bullet_2: "Minden funkció elérhető a pároknak",
     pricing_bullet_3: "Korlátlan CSV- és PDF-export",
     pricing_bullet_4: "Bármikor szüneteltethető · 30 nap türelmi idő",
     pricing_bullet_referral:
-      "Ajánlói program: meghívott pár után 1, szolgáltató után 2 hónap ingyen",
-    pricing_v2_note: "Ha betelik a 200 hely, az új párok a 2 hetes ingyenes próbával kezdenek.",
+      "Ajánlói program: meghívott pár után 1, szolgáltató után 2 hónap ajándékba",
+    pricing_v2_note: "Ha betelnek az induló helyek, az új párok a 2 hetes próbaidővel kezdenek.",
     mockup_aria_budget: "Élő költségvetés-előnézet",
     mockup_aria_guests: "Vendéglista és RSVP előnézet",
     mockup_aria_seating: "Ültetésrend-előnézet",

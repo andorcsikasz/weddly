@@ -241,7 +241,7 @@ const es: LocaleMessages = {
       "Eres una de nuestras primeras 200 parejas, así que Weddly es gratis para ti hasta el día de tu boda. Disfruta de toda la plataforma.",
     solo_banner_title: "Invita a tu pareja",
     solo_banner_body:
-      "Las primeras 200 parejas usan Weddly gratis hasta el día de su boda. Invita a tu pareja para seguir planificando juntos, gratis.",
+      "Acompáñanos desde el primer capítulo: si estáis los dos, sois nuestros invitados hasta el día de vuestra boda, con todo incluido. Invita a tu pareja.",
     solo_banner_cta: "Invitar a mi pareja",
     planner_managed_banner_title: "Tu wedding planner está gestionando la boda",
     planner_managed_banner_body:
@@ -1784,8 +1784,8 @@ const es: LocaleMessages = {
     counter_rsvps_label: "Confirmaciones recibidas",
     founders_title: "Esta vez, los invitados sois vosotros",
     founders_promise:
-      "Un regalo de Weddly: las primeras 200 parejas planean gratis, hasta el mismísimo día de su boda.",
-    founders_seats_label: "plazas gratis para madrugadores",
+      "Un regalo de Weddly: acompáñanos desde el primer capítulo y sois nuestros invitados hasta el mismísimo día de vuestra boda.",
+    founders_seats_label: "plazas para madrugadores",
     founders_joined_caption: "parejas ya dentro",
     founders_left_caption: "restantes",
     founders_body:
@@ -1798,7 +1798,7 @@ const es: LocaleMessages = {
     founders_share_copied: "Enlace copiado. Pásalo.",
     founders_share_title: "Weddly, planear la boda en un solo lugar",
     founders_share_text:
-      "Estoy usando Weddly para planear nuestra boda: presupuesto, invitados, confirmaciones, mesas, todo en un solo lugar. Están recibiendo a las primeras 200 parejas como invitadas. Pensé en ti 💍",
+      "Estoy usando Weddly para planear nuestra boda: presupuesto, invitados, confirmaciones, mesas, todo en un solo lugar. Están recibiendo como invitadas a las primeras parejas. Pensé en ti 💍",
     product_eyebrow: "Qué incluye",
     product_title: "Las piezas que de verdad vas a usar",
     block_budget_eyebrow: "Presupuesto en vivo",
@@ -1839,24 +1839,25 @@ const es: LocaleMessages = {
     t3_name: "Kata y Marci",
     t3_meta: "Szeged · composición de entrevistas de la beta",
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
-    pricing_title: "Gratis para las primeras 200 parejas.",
+    pricing_title: "Sois nuestros invitados 18 meses.",
     pricing_body:
-      "Regístrate entre las primeras 200 parejas y Weddly seguirá siendo gratis durante toda vuestra planificación, hasta 18 meses. Después son 7 € al mes, con dos semanas de prueba gratuita y todas las funciones incluidas.",
+      "Acompáñanos desde el primer capítulo: durante los próximos dieciocho meses sois nuestros invitados, con todo incluido. Después son 7 € al mes, con dos semanas para probarlo y todas las funciones incluidas.",
     pricing_amount: "7",
     pricing_amount_decimal: "",
     pricing_amount_sub: "/ mes",
     pricing_early_note: "Mensual, cancela cuando quieras · sin compromiso anual.",
     pricing_value_note: "Planear la boda sin estrés, por el precio de un menú BigMac.",
-    pricing_after: "Gratis durante 18 meses para las primeras 200 parejas.",
+    pricing_after: "Sois nuestros invitados 18 meses.",
     pricing_after_detail:
-      "Nos encantaría ayudarte a que planear tu boda sea más fácil. Si tu pareja y tú os registráis entre las primeras 200 parejas, no te cobraremos nada durante 18 meses.",
+      "Nos encantaría ayudarte a que planear tu boda sea más fácil. Venid los dos y sois nuestros invitados durante dieciocho meses, con todo incluido.",
     pricing_bullet_1: "2 semanas para probarlo, por nuestra cuenta",
     pricing_bullet_2: "Todas las funciones abiertas para las parejas",
     pricing_bullet_3: "Exportación CSV / PDF, incluida",
     pricing_bullet_4: "Pausa cuando quieras · 30 días de cortesía",
-    pricing_bullet_referral: "Recomendaciones: 1 mes gratis por pareja invitada, 2 por proveedor",
+    pricing_bullet_referral:
+      "Recomendaciones: 1 mes de regalo por pareja invitada, 2 por proveedor",
     pricing_v2_note:
-      "Cuando se llenen las primeras 200 plazas, las nuevas parejas empiezan con la prueba gratuita de 2 semanas.",
+      "Cuando se llenen las plazas iniciales, las nuevas parejas empiezan con la prueba de 2 semanas.",
     mockup_aria_budget: "Maqueta del presupuesto en vivo",
     mockup_aria_guests: "Maqueta de la lista de invitados y confirmaciones",
     mockup_aria_seating: "Maqueta del lienzo de mesas",

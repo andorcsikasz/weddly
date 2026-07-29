@@ -1649,7 +1649,10 @@ function CostRow({
   }
 
   return (
-    <li className="group grid items-center gap-x-3 gap-y-1 px-4 py-1.5 sm:grid-cols-[14rem_minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:gap-y-0 sm:py-2 grid-cols-[minmax(0,1fr)_auto_auto]">
+    // Label column is a range, not a fixed 14rem: a preset row ("Utazás") wastes
+    // most of a fixed column, while a renamed or seeded one ("Nászút, Bali
+    // (szállás)") got cut mid-word with room to spare on the same screen.
+    <li className="group grid items-center gap-x-3 gap-y-1 px-4 py-1.5 sm:grid-cols-[minmax(8rem,20rem)_minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:gap-y-0 sm:py-2 grid-cols-[minmax(0,1fr)_auto_auto]">
       {/* Icon + label — col 1 on both layouts. */}
       <div className="col-start-1 row-start-1 flex items-center gap-2.5 min-w-0">
         <Icon size={18} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden="true" />
