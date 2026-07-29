@@ -72,6 +72,49 @@ describe("email copy: nothing that talks the reader out of staying", () => {
   }
 });
 
+// The offer is hospitality, never a price of zero. "Ingyen" / "free" / "gratis"
+// makes the product read as a giveaway, and the cap number ("the first 200")
+// turns a welcome into a queue, so outbound copy says who we are hosting and
+// for how long instead. Same rule the locale files follow.
+describe("email copy: the offer is hospitality, not a price of zero", () => {
+  const BANNED: Array<{ pattern: RegExp; why: string }> = [
+    { pattern: /ingyen/i, why: "says the price is zero" },
+    { pattern: /\bfree\b/i, why: "says the price is zero" },
+    { pattern: /\bgratis\b/i, why: "says the price is zero" },
+    { pattern: /bankkártya nélkül/i, why: "leads with what the reader avoids paying" },
+    { pattern: /no card (needed|required)/i, why: "leads with what the reader avoids paying" },
+    { pattern: /(első|az első) 200/i, why: "fronts the cap instead of the welcome" },
+    { pattern: /first 200/i, why: "fronts the cap instead of the welcome" },
+  ];
+  // `freeUntilHu` / `freeUntilEn` are payload FIELD names, and "free-text" /
+  // "free-form" describe an input, not a price. Both are code, not copy.
+  const NOT_COPY = /freeUntil|free-(text|form)|free window|UTM-free/i;
+  const STRING_LITERAL = /"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\]|\\.)*)`/g;
+  const stripComments = (src: string): string =>
+    src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  test("templates.ts never prices the offer at zero", () => {
+    const src = stripComments(
+      readFileSync(
+        join(import.meta.dir, "..", "..", "src", "domain", "emails", "templates.ts"),
+        "utf8",
+      ),
+    );
+    const hits: string[] = [];
+    for (const m of src.matchAll(STRING_LITERAL)) {
+      const literal = m[1] ?? m[2] ?? "";
+      if (NOT_COPY.test(literal)) continue;
+      for (const { pattern, why } of BANNED) {
+        if (pattern.test(literal)) hits.push(`  ${why}: "${literal.slice(0, 120)}"`);
+      }
+    }
+    if (hits.length > 0) {
+      throw new Error(`Email copy prices the offer at zero:\n${hits.join("\n")}`);
+    }
+    expect(hits.length).toBe(0);
+  });
+});
+
 // Campaign (outreach) mail offers no way out at all, by owner decision on
 // 2026-07-28: no unsubscribe link in the body, and no List-Unsubscribe header
 // for a mail client to build its own button from. That header used to be fed by

@@ -1263,7 +1263,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         paragraphs: [
           `${p.inviterName} elkezdte tervezni az esküvőt a Weddly-n, és meghívott, hogy csatlakozz hozzá.${coupleSuffixHu}`,
           "Egy közös munkamenetben dolgoztok: vendéglista, ülésrend, költségvetés, RSVP linkek, nyomtatható helykártyák és asztalterv. Minden valós időben szinkronban, semmi táblázat-pingpong, semmi „melyik a legfrissebb verzió”.",
-          "A nyilvános béta alatt ingyenes, és semmilyen szállítóhoz nem köt; az adatok a tiétek maradnak.",
+          "A nyilvános béta alatt bárki használhatja, és semmilyen szállítóhoz nem köt; az adatok a tiétek maradnak.",
         ],
         cta: "Csatlakozom a tervezéshez",
         ctaSubtext: "A link 7 napig érvényes.",
@@ -1274,7 +1274,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         paragraphs: [
           `${p.inviterName} started planning your wedding on Weddly and invited you to join.${coupleSuffixEn}`,
           'One shared workspace covers guest list, seating chart, budget, RSVP links, printable place cards and table plans, in real-time sync. No more spreadsheet ping-pong or "which version was the latest?".',
-          "Free during the open beta, no vendor lock-in, your data stays yours.",
+          "Open to everyone during the public beta, no vendor lock-in, your data stays yours.",
         ],
         cta: "Join the workspace",
         ctaSubtext: "Link valid for 7 days.",
@@ -1402,23 +1402,22 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const coupleEn = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
     const variants = [
       {
-        subject:
-          "A 200 ingyenes helyből még van néhány szabad / A few of the 200 free places are open",
+        subject: "Még van néhány szabad alapító hely / A few founding places are still open",
         hu: {
-          preheader: "Az esküvőtök napjáig ingyen, ha mindketten fent vagytok.",
+          preheader: "Az esküvőtök napjáig a vendégeink vagytok, ha mindketten fent vagytok.",
           paragraphs: [
-            "Az első 200 pár, aki **ketten** költözik be a Weddly-re, az esküvője napjáig ingyen tervez nálunk. A 200 helyből még **van néhány szabad**.",
+            "Az alapító párok, akik **ketten** költöznek be a Weddly-re, az esküvőjük napjáig a vendégeink. A helyekből még **van néhány szabad**.",
             `Nálatok egyetlen feltétel hiányzik: a munkaterületen${coupleHu} egyelőre csak te vagy fent. Amint a párod is regisztrál és belép, a hely a tiétek, és az előfizetés nálatok ki sem nyílik.`,
-            "Hamarosan indul a 2. fázis a fizetős csomagokkal, úgyhogy ne maradjatok le: foglaljátok le most az alapító helyeteket, és az esküvőtök napjáig ingyen tervezhettek, akár 18 hónapon át.",
+            "Hamarosan indul a 2. fázis a fizetős csomagokkal, úgyhogy ne maradjatok le: foglaljátok le most az alapító helyeteket, és az esküvőtök napjáig a vendégeink vagytok, akár 18 hónapon át.",
             "A lenti gombbal beléphetsz és elküldheted neki a meghívót. Vagy másold ki a gomb alatti linket, és küldd el neki ott, ahol amúgy is beszéltek.",
           ],
           cta: "Belépés és meghívás",
         },
         en: {
           paragraphs: [
-            "The first 200 couples who move in **together** plan on Weddly free until their wedding day. **Some** of those 200 places are still open.",
+            "Founding couples who move in **together** are our guests until their wedding day. **Some** of those places are still open.",
             `You're one step short: right now you're the only one on the workspace${coupleEn}. The moment your partner registers and signs in, the place is yours, and the subscription never starts for you.`,
-            "We're about to start phase 2 with paid accounts, so don't miss this: claim your founding place now and the two of you plan free until your wedding day, up to 18 months.",
+            "We're about to start phase 2 with paid accounts, so don't miss this: claim your founding place now and the two of you are our guests until your wedding day, up to 18 months.",
             "The button below signs you in and takes you to the invite form. Or copy the link underneath it and send it wherever the two of you actually talk.",
           ],
           cta: "Sign in and invite",
@@ -1427,9 +1426,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       {
         subject: "Az alapító helyetekhez a párod is kell / Your founding place needs both of you",
         hu: {
-          preheader: "A 200 helyből még van szabad, és csak a teljes párok kapják meg.",
+          preheader: "Van még szabad alapító hely, és csak a teljes párok kapják meg.",
           paragraphs: [
-            "Emlékeztető: a 200 alapító helyből **még van szabad**, de csak azok a párok kapják meg, akik **ketten** vannak fent a munkaterületen.",
+            "Emlékeztető: az alapító helyekből **még van szabad**, de csak azok a párok kapják meg, akik **ketten** vannak fent a munkaterületen.",
             "Nálatok ez annyit jelent, hogy a vőlegényednek vagy a menyasszonyodnak is regisztrálnia kell. Utána az esküvőtök napjáig nem fizettek semmit, akármeddig húzódik a tervezés.",
             "Ez amúgy sem csak a számláról szól: a vendéglista, az ülésrend és a költségvetés akkor működik jól, ha mindketten ugyanazt az egy verziót szerkesztitek.",
           ],
@@ -1437,7 +1436,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         },
         en: {
           paragraphs: [
-            "A reminder: **some** of the 200 founding places are still open, but they only go to couples with **both** partners on the workspace.",
+            "A reminder: **some** founding places are still open, but they only go to couples with **both** partners on the workspace.",
             "For you that means your fiancé needs to register too. After that you pay nothing until your wedding day, however long the planning runs.",
             "And it was never really about the invoice: the guest list, the seating and the budget only work properly when you're both editing the same single version.",
           ],
@@ -1449,16 +1448,16 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         hu: {
           preheader: "Több levelet nem küldünk erről.",
           paragraphs: [
-            "Ez az utolsó emlékeztetőnk az alapító helyetekről. A 200-ból **még van szabad**.",
-            "Ha a párod is regisztrál a munkaterületre, az esküvőtök napjáig ingyen tervezhettek. Ha nem, az is teljesen rendben van: a terveződ marad, minden adatoddal együtt, csak a szokásos előfizetéssel.",
+            "Ez az utolsó emlékeztetőnk az alapító helyetekről. **Még van szabad**.",
+            "Ha a párod is regisztrál a munkaterületre, az esküvőtök napjáig a vendégeink vagytok. Ha nem, az is teljesen rendben van: a terveződ marad, minden adatoddal együtt, csak a szokásos előfizetéssel.",
             "Több levelet erről nem küldünk.",
           ],
           cta: "Meghívó küldése",
         },
         en: {
           paragraphs: [
-            "This is our last reminder about your founding place. **Some** of the 200 are still left.",
-            "If your partner registers on the workspace, the two of you plan free until your wedding day. If not, that's genuinely fine: your planner stays exactly as it is, just on the normal subscription.",
+            "This is our last reminder about your founding place. **Some** are still left.",
+            "If your partner registers on the workspace, the two of you are our guests until your wedding day. If not, that's genuinely fine: your planner stays exactly as it is, just on the normal subscription.",
             "We won't email you about this again.",
           ],
           cta: "Send the invite",
@@ -1662,16 +1661,16 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   free_access_granted: (p, ctx) => ({
-    subject: "Ajándék: ingyenes Weddly-hozzáférés / A gift: free Weddly access",
+    subject: "Ajándék: teljes Weddly-hozzáférés / A gift: full Weddly access",
     ctaUrl: CONFIG.frontendBaseUrl,
     hu: {
-      preheader: "Megajándékoztunk titeket ingyenes Weddly-hozzáféréssel.",
+      preheader: "Megajándékoztunk titeket teljes Weddly-hozzáféréssel.",
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
         p.workspaceName
-          ? `Jó hír: a(z) **${p.workspaceName}** munkaterületeteket megajándékoztuk ingyenes Weddly-hozzáféréssel.`
-          : "Jó hír: a munkaterületeteket megajándékoztuk ingyenes Weddly-hozzáféréssel.",
-        "Mostantól minden funkció korlátozás nélkül elérhető, vendéglista, ülésrend, költségvetés, RSVP és nyomtatható meghívók. Nincs teendőtök, fizetni sem kell.",
+          ? `Jó hír: a(z) **${p.workspaceName}** munkaterületeteken mostantól a vendégeink vagytok.`
+          : "Jó hír: a munkaterületeteken mostantól a vendégeink vagytok.",
+        "Mostantól minden funkció korlátozás nélkül elérhető, vendéglista, ülésrend, költségvetés, RSVP és nyomtatható meghívók. Nincs teendőtök.",
         "Ha bármi kérdés van, válaszolj erre az e-mailre.",
       ],
       cta: "Weddly megnyitása",
@@ -1680,9 +1679,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
         p.workspaceName
-          ? `Good news: we've gifted your **${p.workspaceName}** workspace free access to Weddly.`
-          : "Good news: we've gifted your workspace free access to Weddly.",
-        "Every feature is now unlocked, guest list, seating plan, budget, RSVP, and printable stationery. There's nothing to do and nothing to pay.",
+          ? `Good news: on your **${p.workspaceName}** workspace you are now our guests.`
+          : "Good news: on your workspace you are now our guests.",
+        "Every feature is now unlocked, guest list, seating plan, budget, RSVP, and printable stationery. There's nothing to do.",
         "If anything's unclear, just reply to this email.",
       ],
       cta: "Open Weddly",
@@ -2799,11 +2798,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     subject: "Elkészült a szervezői fiókod / Your planner account is ready",
     ctaUrl: p.activateUrl,
     hu: {
-      preheader: `${p.businessName} profilja aktiválásra vár, 2 év ingyenes hozzáféréssel.`,
+      preheader: `${p.businessName} profilja aktiválásra vár, két év teljes hozzáféréssel.`,
       greeting: `Szia ${p.plannerName}!`,
       paragraphs: [
         `Jó hírünk van: elkészítettük neked a(z) **${p.businessName}**${p.category ? ` (${p.category})` : ""} szervezői profilját a Weddly-n.`,
-        `Ajándékba **2 év teljesen ingyenes hozzáférést** kapsz (érvényes eddig: ${p.freeUntilHu}). Nincs apró betű: a lenti gombbal élesíted a fiókot, beállítasz egy jelszót, és már használhatod is.`,
+        `Ajándékba **két év teljes hozzáférést** kapsz (érvényes eddig: ${p.freeUntilHu}). Nincs apró betű: a lenti gombbal élesíted a fiókot, beállítasz egy jelszót, és már használhatod is.`,
         `Az élesítéssel elfogadod az Általános Szerződési Feltételeket (${CONFIG.frontendBaseUrl}/terms) és az Adatkezelési tájékoztatót (${CONFIG.frontendBaseUrl}/privacy). Mindkettőt a gomb után is megtalálod, mielőtt véglegesítenél.`,
       ],
       cta: "Fiók élesítése",
@@ -2815,7 +2814,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Hi ${p.plannerName},`,
       paragraphs: [
         `Good news: we've set up the planner profile for **${p.businessName}**${p.category ? ` (${p.category})` : ""} on Weddly in your name.`,
-        `As a gift you get **2 years of completely free access**, until ${p.freeUntilEn}. No fine print: hit the button below to activate the account, set a password, and you're in.`,
+        `As a gift you get **two years of full access**, until ${p.freeUntilEn}. No fine print: hit the button below to activate the account, set a password, and you're in.`,
         `By activating you accept the Terms of Service (${CONFIG.frontendBaseUrl}/terms) and the Privacy Policy (${CONFIG.frontendBaseUrl}/privacy). Both are shown again on the activation page before you confirm.`,
       ],
       cta: "Activate account",
@@ -2838,7 +2837,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         `Köszönjük a jelentkezésed a Weddly tervezői programjába. Átnéztük és **jóváhagytuk** a(z) **${p.businessName}** profilját.`,
         "Már csak egy lépés van hátra: nyisd meg a fiókod a lenti gombbal, és állíts be egy jelszót. Az onboardingot **előre kitöltöttük a jelentkezésed adataival**, csak át kell nézned.",
-        `A hozzáférés ingyenes eddig: ${p.freeUntilHu}. Nincs apró betű.`,
+        `A vendégünk vagy eddig: ${p.freeUntilHu}. Nincs apró betű.`,
         `A fiók megnyitásával elfogadod az Általános Szerződési Feltételeket (${CONFIG.frontendBaseUrl}/terms) és az Adatkezelési tájékoztatót (${CONFIG.frontendBaseUrl}/privacy). Mindkettőt a gomb után is megtalálod, mielőtt véglegesítenél.`,
       ],
       cta: "Fiók megnyitása",
@@ -2850,7 +2849,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         `Thanks for applying to the Weddly planner programme. We have reviewed and **approved** the profile for **${p.businessName}**.`,
         "One step left: open your account with the button below and set a password. We have **pre-filled your onboarding with the details from your application**, so you just need to review them.",
-        `Your access is free until ${p.freeUntilEn}. No fine print.`,
+        `You are our guest until ${p.freeUntilEn}. No fine print.`,
         `By opening the account you accept the Terms of Service (${CONFIG.frontendBaseUrl}/terms) and the Privacy Policy (${CONFIG.frontendBaseUrl}/privacy). Both are shown again on the activation page before you confirm.`,
       ],
       cta: "Open your account",
