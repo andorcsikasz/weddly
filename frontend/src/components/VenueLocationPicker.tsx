@@ -111,12 +111,15 @@ export default function VenueLocationPicker({
 
   return (
     <div className="flex flex-col gap-2">
+      {/* The instruction rides in the field it describes, rather than as a
+          sentence under the map explaining what the map already affords. */}
       <AddressAutocomplete
         id="venue-address"
         label={t("venue_picker.address_label")}
         value={value.address}
         onChange={(v) => onChange({ ...value, address: v })}
         onPick={onPickAddress}
+        placeholder={t("venue_picker.address_placeholder")}
         maxLength={300}
       />
       <div
@@ -152,7 +155,6 @@ export default function VenueLocationPicker({
           )}
         </MapContainer>
       </div>
-      <p className="text-xs text-ink-500 dark:text-umber-300">{t("venue_picker.map_hint")}</p>
     </div>
   );
 }

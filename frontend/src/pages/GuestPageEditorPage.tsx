@@ -294,10 +294,17 @@ function VenuePicker({
   );
 }
 
-/** Add-a-venue form (rendered inside the venue dialog when "Add" is chosen):
- *  name + a map-picked address (both required) + optional contact email/phone.
+/** Add-a-venue form (rendered inside the venue dialog when "Add" is chosen).
  *  Creates a DIY "venue" couple-supplier and hands it back so the parent can
- *  select it. The Leaflet map picker is lazy so its bundle only loads here. */
+ *  select it. The Leaflet map picker is lazy so its bundle only loads here.
+ *
+ *  THE NAME IS THE ONLY REQUIREMENT. Address, map pin, email and phone are all
+ *  nullable on `couple_suppliers` and the create endpoint takes them as null,
+ *  so gating Save on a placed pin was a client-side invention: a couple who
+ *  knows only "Hertelendy Kastély" could not record their own venue, and the
+ *  dead Save button never said which field was holding it. Everything past the
+ *  name refines the entry — the map marker, the one-tap call — and can arrive
+ *  later through the same form. */
 function AddVenueForm({
   initialName,
   onCancel,
@@ -320,12 +327,7 @@ function AddVenueForm({
   });
   const [saving, setSaving] = useState(false);
 
-  const canSave =
-    name.trim().length > 0 &&
-    loc.address.trim().length > 0 &&
-    loc.lat !== null &&
-    loc.lng !== null &&
-    !saving;
+  const canSave = name.trim().length > 0 && !saving;
 
   async function submit() {
     if (!canSave) return;
@@ -379,10 +381,15 @@ function AddVenueForm({
         <VenueLocationPicker value={loc} onChange={setLoc} />
       </Suspense>
 
+      {/* Both marked optional, because they always were — the couple just had
+          no way to know, so an empty pair read as an unfinished form. */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div>
           <label htmlFor="add-venue-email" className="field-label">
             {t("venue_picker.email_label")}
+            <span className="ml-1.5 font-normal normal-case tracking-normal text-ink-400 dark:text-umber-300">
+              {t("common.optional")}
+            </span>
           </label>
           <input
             id="add-venue-email"
@@ -397,6 +404,9 @@ function AddVenueForm({
         <div>
           <label htmlFor="add-venue-phone" className="field-label">
             {t("venue_picker.phone_label")}
+            <span className="ml-1.5 font-normal normal-case tracking-normal text-ink-400 dark:text-umber-300">
+              {t("common.optional")}
+            </span>
           </label>
           <input
             id="add-venue-phone"

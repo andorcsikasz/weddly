@@ -315,8 +315,8 @@ const hu: LocaleMessages = {
     name_label: "Helyszín neve",
     address_label: "Cím",
     address_placeholder: "Keress rá, vagy koppints a térképre",
-    email_label: "Kapcsolattartó e-mail",
-    phone_label: "Kapcsolattartó telefon",
+    email_label: "E-mail",
+    phone_label: "Telefon",
     save_cta: "Helyszín mentése",
   },
   wedding_site_editor: {

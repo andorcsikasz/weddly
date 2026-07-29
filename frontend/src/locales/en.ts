@@ -312,8 +312,8 @@ const en: LocaleMessages = {
     name_label: "Venue name",
     address_label: "Address",
     address_placeholder: "Search, or tap the map",
-    email_label: "Contact email",
-    phone_label: "Contact phone",
+    email_label: "Email",
+    phone_label: "Phone",
     save_cta: "Save venue",
   },
   wedding_site_editor: {

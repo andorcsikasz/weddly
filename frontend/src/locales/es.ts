@@ -323,8 +323,8 @@ const es: LocaleMessages = {
     name_label: "Nombre del lugar",
     address_label: "Dirección",
     address_placeholder: "Busca, o toca el mapa",
-    email_label: "Correo de contacto",
-    phone_label: "Teléfono de contacto",
+    email_label: "Correo",
+    phone_label: "Teléfono",
     save_cta: "Guardar lugar",
   },
   wedding_site_editor: {
