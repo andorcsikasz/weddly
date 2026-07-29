@@ -12,6 +12,7 @@ import {
   CalendarDays,
   ChevronDown,
   CreditCard,
+  ExternalLink,
   Home,
   Inbox,
   LayoutDashboard,
@@ -479,6 +480,23 @@ export function VendorShell({ children }: { children: ReactNode }) {
             <Wordmark size="sm" />
           </Link>
           <div className="flex items-center gap-1">
+            {/* "See my page as a couple sees it" is the same task on every
+                screen, so it lives here rather than being re-invented per page:
+                it used to be a text link on Hirdetésem and a second one inside
+                the Vélemények empty state, and existed nowhere else. New tab,
+                so an editor full of unsaved changes survives the trip. */}
+            {listing && (
+              <Link
+                to={`/vendors/${listing.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={HEADER_ICON_BTN}
+                aria-label={t("vendor_home.preview_open")}
+                title={t("vendor_home.preview_open")}
+              >
+                <ExternalLink size={18} aria-hidden="true" />
+              </Link>
+            )}
             {/* Share the public profile. Sits with the other header actions
                 because "send someone my Weddly page" is not a task that belongs
                 to any one page — it used to exist only on Vélemények, pointed

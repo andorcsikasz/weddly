@@ -23,17 +23,7 @@ import {
   useState,
 } from "react";
 import { intlLocale } from "../../lib/format";
-import {
-  ArrowRight,
-  Check,
-  ExternalLink,
-  Hourglass,
-  Lock,
-  MoveVertical,
-  Plus,
-  Share2,
-  X,
-} from "lucide-react";
+import { ArrowRight, Check, Hourglass, Lock, MoveVertical, Plus, Share2, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { InfoHint } from "../../components/InfoHint";
 import { VendorShareDialog } from "../../components/VendorShareDialog";
@@ -723,21 +713,14 @@ export default function VendorListingPage() {
                 }
               />
             </Link>
-            <Link
-              to={`/vendors/${view.listing.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
-            >
-              <ExternalLink size={14} aria-hidden="true" />
-              {t("vendor_home.preview_open")}
-            </Link>
-            {/* Right under the card it shares: the preview answers "what does
-                my page look like", this answers "send it to someone". */}
+            {/* No "open the preview" link under the card: the card itself is
+                that link, and the header carries the same action on every
+                screen. What stays is the one thing the header cannot say from
+                here — send this page to someone. */}
             <button
               type="button"
               onClick={() => setShareOpen(true)}
-              className="ml-4 mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
+              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
             >
               <Share2 size={14} aria-hidden="true" />
               {t("vendor.share.action")}
