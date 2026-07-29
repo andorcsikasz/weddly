@@ -1037,6 +1037,8 @@ const en: LocaleMessages = {
     nav_prev: "Previous",
     nav_next: "Next",
     today: "Today",
+    // Aria-label for the calendar view picker (Day / Week / Month …).
+    view_label: "Calendar view",
     view_day: "Day",
     view_4day: "4 days",
     view_week: "Week",

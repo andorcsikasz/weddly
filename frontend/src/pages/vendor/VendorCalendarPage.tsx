@@ -22,7 +22,6 @@
 
 import {
   CalendarDays,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -58,6 +57,7 @@ import { DateField } from "../../components/ui/DateField";
 import { Dialog } from "../../components/ui/Dialog";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { useToast } from "../../components/ui/ToastProvider";
+import { ViewSelect } from "../../components/ui/ViewSelect";
 import {
   vendorAvailabilityApi,
   vendorBillingApi,
@@ -774,56 +774,23 @@ const VIEW_KEYS: Record<CalView, string> = {
   schedule: "vendor_calendar.view_schedule",
 };
 
+/** Thin wrapper over the shared `ViewSelect` — this control WAS the local
+ *  implementation until the couple Timeline needed the same picker for its
+ *  day/week/month/quarter range; it now lives in `components/ui` and the vendor
+ *  side keeps only its option list and the steel tone. */
 function ViewDropdown({ view, onChange }: { view: CalView; onChange: (v: CalView) => void }) {
   const { t } = useT();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onPointer = (e: PointerEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointer);
-    return () => document.removeEventListener("pointerdown", onPointer);
-  }, [open]);
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 px-3.5 py-1.5 text-sm text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800"
-      >
-        {t(VIEW_KEYS[view] as Parameters<typeof t>[0])}
-        <ChevronDown size={15} aria-hidden="true" />
-      </button>
-      {open && (
-        <div
-          role="menu"
-          className="absolute right-0 z-50 mt-2 w-44 origin-top-right rounded-xl border border-paper-300 bg-white p-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
-        >
-          {VIEW_ORDER.map((v) => (
-            <button
-              key={v}
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onChange(v);
-                setOpen(false);
-              }}
-              className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                v === view
-                  ? "bg-steel-100 text-steel-800 dark:bg-steel-900/60 dark:text-steel-100"
-                  : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
-              }`}
-            >
-              {t(VIEW_KEYS[v] as Parameters<typeof t>[0])}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <ViewSelect
+      value={view}
+      options={VIEW_ORDER.map((v) => ({
+        value: v,
+        label: t(VIEW_KEYS[v] as Parameters<typeof t>[0]),
+      }))}
+      onChange={onChange}
+      ariaLabel={t("vendor_calendar.view_label")}
+      tone="steel"
+    />
   );
 }
 

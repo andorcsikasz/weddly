@@ -1325,6 +1325,7 @@ export interface LocaleMessages {
     nav_prev: string;
     nav_next: string;
     today: string;
+    view_label: string;
     view_day: string;
     view_4day: string;
     view_week: string;

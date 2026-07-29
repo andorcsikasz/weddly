@@ -15,6 +15,7 @@ export { SmartImage } from "./SmartImage";
 export { Switch } from "./Switch";
 export { TagChip } from "./TagChip";
 export { TextField } from "./TextField";
+export { ViewSelect, type ViewSelectOption, type ViewSelectTone } from "./ViewSelect";
 export {
   type ToastInput,
   type ToastKind,

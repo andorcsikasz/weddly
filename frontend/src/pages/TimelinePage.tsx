@@ -54,7 +54,7 @@ import { Link } from "react-router-dom";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Skeleton, useConfirm, useToast } from "../components/ui";
+import { Skeleton, useConfirm, useToast, ViewSelect } from "../components/ui";
 import CalendarBoard from "./timeline/CalendarBoard";
 import DayView from "./timeline/DayView";
 import GanttView, { computeAllRange } from "./timeline/GanttView";
@@ -702,14 +702,17 @@ function ChartCard({
   }, [mode, currentDate, locale, tasks, today, weddingDate]);
 
   function renderToolbar(opts: { showExpand: boolean }) {
+    // gap-2 matches the vendor calendar toolbar, where the same view pill sits
+    // next to its neighbours — gap-1 was tuned for the five bare text chips
+    // this replaced and left the pill touching the expand button.
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <ChartModeSwitch mode={mode} onModeChange={onModeChange} />
         {opts.showExpand && (
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
             aria-label={t("timeline.expand_label")}
             title={t("timeline.expand_label")}
           >
@@ -874,10 +877,14 @@ interface ViewSupplier {
   website: string | null;
 }
 
-/** Inline mode selector — minimal text buttons, no pill background, so the
- *  chart header reads as part of the card chrome instead of a control bar.
- *  Labels use the standard chart-app shorthand (1W / 1M / 3M / ALL) so the
- *  control stays compact in both locales; the full label is on the title. */
+/** Range selector — the vendor calendar's view picker (`ViewSelect`), same pill
+ *  trigger and menu, in the workspace's warm tone.
+ *
+ *  It replaced a row of 1D / 1W / 1M / 3M / ALL chips. Those read as a stock
+ *  charting widget rather than as this app, and the shorthand asked the couple
+ *  to decode five abbreviations to find out what they were even looking at —
+ *  the pill now just says "Hét". One fewer control vocabulary in the product,
+ *  and the header regains the width the five chips used. */
 function ChartModeSwitch({
   mode,
   onModeChange,
@@ -886,41 +893,20 @@ function ChartModeSwitch({
   onModeChange: (mode: ChartMode) => void;
 }) {
   const { t } = useT();
-  const options: ReadonlyArray<{ value: ChartMode; short: string; full: string }> = [
-    { value: "day", short: "1D", full: t("timeline.view_day") },
-    { value: "week", short: "1W", full: t("timeline.view_week") },
-    { value: "month", short: "1M", full: t("timeline.view_month") },
-    { value: "quarter", short: "3M", full: t("timeline.view_quarter") },
-    { value: "all", short: "ALL", full: t("timeline.view_all") },
+  const options: ReadonlyArray<{ value: ChartMode; label: string }> = [
+    { value: "day", label: t("timeline.view_day") },
+    { value: "week", label: t("timeline.view_week") },
+    { value: "month", label: t("timeline.view_month") },
+    { value: "quarter", label: t("timeline.view_quarter") },
+    { value: "all", label: t("timeline.view_all") },
   ];
   return (
-    <div
-      role="radiogroup"
-      aria-label={t("timeline.view_aria")}
-      className="flex items-center gap-0.5 font-grotesk text-sm tracking-wide tabular-nums"
-    >
-      {options.map((opt) => {
-        const active = opt.value === mode;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={opt.full}
-            title={opt.full}
-            onClick={() => onModeChange(opt.value)}
-            className={`min-h-tap rounded-md px-2 pb-0.5 pt-1 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100 ${
-              active
-                ? "border-b-2 border-blush-500 text-umber-900 dark:text-paper-50"
-                : "border-b-2 border-transparent text-umber-500 hover:text-umber-800 dark:text-umber-400 dark:hover:text-paper-200"
-            }`}
-          >
-            {opt.short}
-          </button>
-        );
-      })}
-    </div>
+    <ViewSelect
+      value={mode}
+      options={options}
+      onChange={onModeChange}
+      ariaLabel={t("timeline.view_aria")}
+    />
   );
 }
 

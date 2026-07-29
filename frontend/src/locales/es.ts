@@ -1068,6 +1068,8 @@ const es: LocaleMessages = {
     nav_prev: "Anterior",
     nav_next: "Siguiente",
     today: "Hoy",
+    // Aria-label for the calendar view picker (Día / Semana / Mes …).
+    view_label: "Vista del calendario",
     view_day: "Día",
     view_4day: "4 días",
     view_week: "Semana",

@@ -1050,6 +1050,8 @@ const hu: LocaleMessages = {
     nav_prev: "Előző",
     nav_next: "Következő",
     today: "Ma",
+    // Aria-label for the calendar view picker (Nap / Hét / Hónap …).
+    view_label: "Naptárnézet",
     view_day: "Nap",
     view_4day: "4 nap",
     view_week: "Hét",
