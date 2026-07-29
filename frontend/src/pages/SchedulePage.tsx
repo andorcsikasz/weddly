@@ -212,6 +212,11 @@ export default function SchedulePage() {
   // The directory vendor behind the couple's venue pick, or null when they
   // picked a DIY venue / nothing. Only the header's venue link needs it.
   const [venueVendor, setVenueVendor] = useState<DirectorySupplier | null>(null);
+  // Whether that lookup has settled. Until it has we can't know where the venue
+  // label should point, and a link that resolves to the hub for its first
+  // moment would send an early click to the wrong page — so the label stays
+  // plain text until we know the answer.
+  const [venueResolved, setVenueResolved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -254,6 +259,8 @@ export default function SchedulePage() {
       setVenueVendor(dir ?? null);
     } catch {
       // ignore — venue label links to the hub
+    } finally {
+      setVenueResolved(true);
     }
   }
 
@@ -467,6 +474,7 @@ export default function SchedulePage() {
           events={sortedEvents}
           locale={locale}
           venueVendor={venueVendor}
+          venueResolved={venueResolved}
           onShowTimeline={() => setViewMode("timeline")}
           timelineActive={viewMode === "timeline"}
         />
@@ -833,6 +841,7 @@ function ScheduleSummaryCard({
   events,
   locale,
   venueVendor,
+  venueResolved,
   onShowTimeline,
   timelineActive,
 }: {
@@ -840,6 +849,7 @@ function ScheduleSummaryCard({
   events: ScheduleEvent[];
   locale: Locale;
   venueVendor: DirectorySupplier | null;
+  venueResolved: boolean;
   onShowTimeline: () => void;
   timelineActive: boolean;
 }) {
@@ -881,15 +891,18 @@ function ScheduleSummaryCard({
           <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">
             {dateLabel}
             {dateLabel && venue && " · "}
-            {venue && (
-              <Link
-                to={venueHref}
-                title={t("schedule.summary_venue_link")}
-                className="rounded-sm underline decoration-ink-300 underline-offset-2 transition-colors hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:decoration-umber-500 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100"
-              >
-                {venue}
-              </Link>
-            )}
+            {venue &&
+              (venueResolved ? (
+                <Link
+                  to={venueHref}
+                  title={t("schedule.summary_venue_link")}
+                  className="rounded-sm underline decoration-ink-300 underline-offset-2 transition-colors hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:decoration-umber-500 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100"
+                >
+                  {venue}
+                </Link>
+              ) : (
+                venue
+              ))}
           </p>
         )}
       </div>
