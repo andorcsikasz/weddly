@@ -19,15 +19,29 @@ function at(year: number, month: number, day: number, hour = 9): Date {
 }
 
 describe("greetingKeyFor: time of day", () => {
-  // An ordinary Monday in June, nowhere near a holiday.
+  // An ordinary Monday in June, nowhere near a holiday, walked hour by hour so
+  // a band can neither swallow its neighbour nor
+  // leave a gap. Bands: 05-08 early, 08-11 morning, 11-14 midday, 14-17
+  // afternoon, 17-19 early evening, 19-22 evening, 22-05 night.
   const cases: [number, GreetingKey][] = [
     [0, "night"],
     [4, "night"],
-    [5, "morning"],
-    [11, "morning"],
-    [12, "afternoon"],
-    [17, "afternoon"],
-    [18, "evening"],
+    [5, "early"],
+    [6, "early"],
+    [7, "early"],
+    [8, "morning"],
+    [9, "morning"],
+    [10, "morning"],
+    [11, "midday"],
+    [12, "midday"],
+    [13, "midday"],
+    [14, "afternoon"],
+    [15, "afternoon"],
+    [16, "afternoon"],
+    [17, "early_evening"],
+    [18, "early_evening"],
+    [19, "evening"],
+    [20, "evening"],
     [21, "evening"],
     [22, "night"],
     [23, "night"],
@@ -39,10 +53,10 @@ describe("greetingKeyFor: time of day", () => {
   }
 
   it("changes at the top of the hour, not somewhere inside it", () => {
-    const almostNoon = new Date(2026, 5, 1, 11, 59, 59);
-    const noon = new Date(2026, 5, 1, 12, 0, 0);
-    expect(greetingKeyFor(almostNoon)).toBe("morning");
-    expect(greetingKeyFor(noon)).toBe("afternoon");
+    expect(greetingKeyFor(new Date(2026, 5, 1, 10, 59, 59))).toBe("morning");
+    expect(greetingKeyFor(new Date(2026, 5, 1, 11, 0, 0))).toBe("midday");
+    expect(greetingKeyFor(new Date(2026, 5, 1, 21, 59, 59))).toBe("evening");
+    expect(greetingKeyFor(new Date(2026, 5, 1, 22, 0, 0))).toBe("night");
   });
 });
 
@@ -91,8 +105,11 @@ describe("greetingKeyFor: holidays", () => {
 
 describe("greetingKeyFor: copy", () => {
   const KEYS: GreetingKey[] = [
+    "early",
     "morning",
+    "midday",
     "afternoon",
+    "early_evening",
     "evening",
     "night",
     "christmas",

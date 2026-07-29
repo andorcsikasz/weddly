@@ -772,12 +772,13 @@ const es: LocaleMessages = {
       page_body: "Un resumen de tus solicitudes, tus próximos eventos y tu ficha.",
       welcome: "Bienvenido, {name}",
       greeting: {
+        early: "Has madrugado, {name}",
         morning: "Buenos días, {name}",
+        midday: "¿Todo listo para hoy, {name}?",
         afternoon: "Buenas tardes, {name}",
+        early_evening: "Hola, {name}",
         evening: "Buenas noches, {name}",
-        // Deliberately not "¿todavía despierto?": the adjective carries gender
-        // and we don't know the reader's.
-        night: "¿Aún por aquí, {name}?",
+        night: "Bienvenido al turno de noche, {name}",
         christmas: "Feliz Navidad, {name}",
         new_year: "Feliz Año Nuevo, {name}",
         valentines: "Feliz San Valentín, {name}",

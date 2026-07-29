@@ -22,8 +22,11 @@
 
 /** The i18n key suffix under `vendor.dashboard.greeting.*`. */
 export type GreetingKey =
+  | "early"
   | "morning"
+  | "midday"
   | "afternoon"
+  | "early_evening"
   | "evening"
   | "night"
   | "christmas"
@@ -81,15 +84,23 @@ function holidayFor(date: Date): GreetingKey | null {
 
 /** Time of day, from the reader's own clock.
  *
- *  The boundaries are set where the WORD changes, not where the clock is tidy:
- *  5am is morning even though it is dark, 6pm is evening even though it is
- *  bright in June, and past 10pm nobody says good evening to somebody still at
- *  their desk. */
+ *  Seven bands rather than the obvious four, because the obvious four give a
+ *  vendor the same three sentences forever. The extra ones sit at the edges
+ *  where "good morning" starts to sound wrong: 6am is not a morning greeting,
+ *  it is a remark about being up; noon is neither morning nor afternoon; 5pm is
+ *  too early for good evening and too late for good afternoon, so it just says
+ *  hello.
+ *
+ *  Bands are half-open [start, end) on the hour, and 22:00-04:59 wraps
+ *  midnight. */
 function timeOfDay(date: Date): GreetingKey {
   const hour = date.getHours();
   if (hour >= 22 || hour < 5) return "night";
-  if (hour < 12) return "morning";
-  if (hour < 18) return "afternoon";
+  if (hour < 8) return "early";
+  if (hour < 11) return "morning";
+  if (hour < 14) return "midday";
+  if (hour < 17) return "afternoon";
+  if (hour < 19) return "early_evening";
   return "evening";
 }
 

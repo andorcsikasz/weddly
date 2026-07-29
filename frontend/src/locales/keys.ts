@@ -1032,10 +1032,19 @@ export interface LocaleMessages {
        *  across all locales by design: `locale` is the reader's language, not
        *  the country their business is in. */
       greeting: {
+        /** 05:00-07:59. */
+        early: string;
+        /** 08:00-10:59. */
         morning: string;
+        /** 11:00-13:59, the band that is neither morning nor afternoon. */
+        midday: string;
+        /** 14:00-16:59. */
         afternoon: string;
+        /** 17:00-18:59, too early for good evening. */
+        early_evening: string;
+        /** 19:00-21:59. */
         evening: string;
-        /** Past 22:00. Warm, never a comment on how hard they're working. */
+        /** 22:00-04:59. */
         night: string;
         christmas: string;
         new_year: string;
