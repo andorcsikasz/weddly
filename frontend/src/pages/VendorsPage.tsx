@@ -155,10 +155,10 @@ export default function VendorsPage() {
         </div>
       </section>
 
-      <ClosingBand />
-
       {/* Recommend-a-supplier prompt — two ways to help: register the vendor
-          yourself (verify email, no account needed) or pass the link on. */}
+          yourself (verify email, no account needed) or pass the link on. It sits
+          ABOVE the closing band on purpose: it is the secondary ask, aimed at a
+          visitor who isn't the vendor, so it must not be what the page ends on. */}
       <section className="mx-auto max-w-3xl px-4 pb-12 sm:px-6">
         <div className="card flex flex-col items-start gap-5 !p-6 sm:flex-row sm:items-center sm:justify-between sm:!p-8">
           <div className="min-w-0">
@@ -193,6 +193,8 @@ export default function VendorsPage() {
         onSubmitted={() => setRegisterOpen(false)}
         visitor
       />
+
+      <ClosingBand />
 
       {/* Back to landing */}
       <section className="mx-auto max-w-2xl px-4 pb-12 text-center sm:px-6">
