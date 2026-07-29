@@ -5513,6 +5513,9 @@ export interface LocaleMessages {
         bodyPlaceholder: string;
         tagsLabel: string;
         publishedLabel: string;
+        /** Admin composer: post in the editorial voice, or as the admin's own
+         *  account on the same terms as any other reviewer. */
+        asEditorialLabel: string;
         submit: string;
         submitted: string;
         /** Placeholder in the composer's free-text ("+1") tag input. */

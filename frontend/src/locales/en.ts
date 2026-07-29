@@ -4757,6 +4757,7 @@ const en: LocaleMessages = {
         bodyPlaceholder: "What's worth knowing? (optional)",
         tagsLabel: "Tags (max {max})",
         publishedLabel: "Publish this review",
+        asEditorialLabel: "Write as Weddly editors",
         submit: "Submit",
         submitted: "Review saved",
         customTagPlaceholder: "Add your own",

@@ -851,14 +851,19 @@ function ReviewsSection({
   const [amount, setAmount] = useState<number | null>(null);
   const [amountNote, setAmountNote] = useState("");
   const [published, setPublished] = useState(false);
+  // Which voice an admin is writing in. Editorial by default (that is what the
+  // composer has always been for), but an admin who actually hired this
+  // supplier can post under their own name instead, and then the review is an
+  // ordinary one: live immediately, no draft lever.
+  const [asEditorial, setAsEditorial] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
     if (rating === 0) return; // guard: button is also disabled but be defensive
     setSubmitting(true);
     try {
-      // `published` is an admin (editorial) lever; couple reviews go live
-      // immediately server-side, and sending the field would 403.
+      // `published` is an editorial lever only; every non-editorial review goes
+      // live immediately server-side, and sending the field would 403.
       await reviewApi.create(supplierId, {
         rating,
         body: body.trim() || null,
@@ -868,7 +873,8 @@ function ReviewsSection({
         // with no workspace falls back to the locale guess.
         amount_currency: currency ?? localeCurrency(locale as Locale),
         amount_note: amountNote.trim() || null,
-        ...(isAdmin ? { published } : {}),
+        ...(isAdmin ? { as_editorial: asEditorial } : {}),
+        ...(isAdmin && asEditorial ? { published } : {}),
       });
       setBody("");
       setTags([]);
@@ -960,18 +966,32 @@ function ReviewsSection({
             t={t}
           />
           <ReviewTagPicker value={tags} onChange={setTags} category={category} t={t} />
-          <div className="flex items-center justify-between">
-            {/* Draft/publish is an editorial (admin) lever; couple reviews go
-                live immediately, so they get no checkbox to wonder about. */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Two admin-only levers, and the second depends on the first: the
+                editorial voice is a choice (an admin who hired this supplier
+                writes as themselves), and draft/publish only means anything for
+                an editorial row, since every other review goes live at once. */}
             {isAdmin ? (
-              <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-umber-200">
-                <input
-                  type="checkbox"
-                  checked={published}
-                  onChange={(e) => setPublished(e.target.checked)}
-                />
-                {t("suppliers.detail.reviews.publishedLabel")}
-              </label>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-umber-200">
+                  <input
+                    type="checkbox"
+                    checked={asEditorial}
+                    onChange={(e) => setAsEditorial(e.target.checked)}
+                  />
+                  {t("suppliers.detail.reviews.asEditorialLabel")}
+                </label>
+                {asEditorial && (
+                  <label className="inline-flex items-center gap-2 text-sm text-ink-700 dark:text-umber-200">
+                    <input
+                      type="checkbox"
+                      checked={published}
+                      onChange={(e) => setPublished(e.target.checked)}
+                    />
+                    {t("suppliers.detail.reviews.publishedLabel")}
+                  </label>
+                )}
+              </div>
             ) : (
               <span />
             )}

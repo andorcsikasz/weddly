@@ -294,3 +294,63 @@ describe("open reviews — verified visitors (Google)", () => {
     expect(garbage.status).toBe(401);
   });
 });
+
+// Being staff is a role, not an identity: an admin who actually hired a
+// supplier has to be able to say so under their own name. Editorial stays the
+// default, so the seeded "Weddly editors" workflow is untouched.
+describe("an admin choosing their own voice", () => {
+  test("as_editorial:false posts an ordinary, live review under their own name", async () => {
+    const sid = "c-admin-self";
+    const created = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 5, body: "Best pizza in town", as_editorial: false },
+      { token: adminToken },
+    );
+    expect(created.status).toBe(201);
+    expect(created.data.editorial).toBe(false);
+    // Ordinary terms: live at once, no verified badge without engagement proof.
+    expect(created.data.published).toBe(true);
+    expect(created.data.verified).toBe(false);
+    expect(created.data.author.display_name).not.toBe("Weddly editors");
+
+    // And it dedups like anyone else's — one review per person per supplier.
+    const dup = await req(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 4, as_editorial: false },
+      { token: adminToken },
+    );
+    expect(dup.status).toBe(409);
+  });
+
+  test("a low own-name rating from an admin flags for moderation like any other", async () => {
+    const sid = "c-admin-self-low";
+    const created = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 1, as_editorial: false },
+      { token: adminToken },
+    );
+    expect(created.status).toBe(201);
+    const row = db
+      .prepare("SELECT flagged, author_kind FROM supplier_reviews WHERE id = ?")
+      .get(created.data.id) as { flagged: number; author_kind: string };
+    expect(row.flagged).toBe(1);
+    expect(row.author_kind).not.toBe("admin");
+  });
+
+  test("omitting the flag keeps the editorial voice and the draft lever", async () => {
+    const sid = "c-admin-default";
+    const created = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 5 },
+      { token: adminToken },
+    );
+    expect(created.status).toBe(201);
+    expect(created.data.editorial).toBe(true);
+    expect(created.data.published).toBe(false); // draft until the admin publishes
+    expect(created.data.author.display_name).toBe("Weddly editors");
+  });
+});

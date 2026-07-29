@@ -4811,6 +4811,7 @@ const hu: LocaleMessages = {
         bodyPlaceholder: "Mit érdemes tudni róluk? (opcionális)",
         tagsLabel: "Címkék (max. {max})",
         publishedLabel: "Publikus értékelés",
+        asEditorialLabel: "Írás a Weddly szerkesztőség nevében",
         submit: "Beküldés",
         submitted: "Értékelés mentve",
         customTagPlaceholder: "Saját címke",

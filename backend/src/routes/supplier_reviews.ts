@@ -200,7 +200,13 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   let published: boolean;
   let verified: boolean;
   let flagged: boolean;
-  if (isAdmin) {
+  // An admin is also a person, and being staff shouldn't mean every supplier
+  // they ever hire gets reviewed in the editorial voice. `as_editorial: false`
+  // drops them into the ordinary path (own name, live immediately, verified
+  // only with engagement proof). Editorial stays the default so the seeded
+  // "Weddly editors" workflow is unchanged by this.
+  const asEditorial = isAdmin && body.as_editorial !== false;
+  if (asEditorial) {
     // Editorial voice: couple_id stays null ("Weddly editors"), draft/publish
     // is the admin's call. Never verified-badged, never auto-flagged.
     coupleId = null;

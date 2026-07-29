@@ -4858,6 +4858,7 @@ const es: LocaleMessages = {
         bodyPlaceholder: "¿Qué merece la pena saber? (opcional)",
         tagsLabel: "Etiquetas (máx. {max})",
         publishedLabel: "Publicar esta reseña",
+        asEditorialLabel: "Escribir como el equipo de Weddly",
         submit: "Enviar",
         submitted: "Reseña guardada",
         customTagPlaceholder: "Añade la tuya",
