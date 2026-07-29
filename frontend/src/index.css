@@ -1062,8 +1062,11 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   /* Left content zone + smooth bottom dissolve into the page background.
      Radial center sits a touch lower (54% vs 46%) so the cream mass anchors
      around the title rather than the top third. The linear-gradient(to top)
-     layer fades the photo's bottom edge softly into paper-50 instead of
-     ending abruptly. */
+     layer fades the photo's bottom edge softly out.
+     That bottom layer ends on OPAQUE WHITE, not on cream at 98%: the section
+     under the hero is `bg-white`, so a fade that stops on paper-50 (or stops
+     2% short of opaque) meets it as a visible hairline across the full width.
+     The dissolve has to land on the exact colour of what follows. */
   .hero-overlay {
     position: absolute;
     inset: 0;
@@ -1071,9 +1074,10 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     background:
       linear-gradient(
         to top,
-        rgba(251, 250, 246, 0.98) 0%,
-        rgba(251, 250, 246, 0.55) 9%,
-        rgba(251, 250, 246, 0) 20%
+        rgba(255, 255, 255, 1) 0%,
+        rgba(255, 255, 255, 0.9) 5%,
+        rgba(255, 255, 255, 0.5) 12%,
+        rgba(255, 255, 255, 0) 24%
       ),
       radial-gradient(
         ellipse 64% 76% at 18% 54%,
@@ -1098,13 +1102,18 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
          card and below) — mirrors the desktop "text on cream, photo peeking"
          read in a single-column layout. The first layer is a bottom dissolve:
          the photo's lower edge fades back into paper-50 so it blends into the
-         budget section below instead of hard-cutting at the section boundary. */
+         budget section below instead of hard-cutting at the section boundary.
+         Same rule as the base overlay: it ends on opaque white because the
+         next section is white, and it starts fading a third of the way up so
+         the handover is long enough to read as haze rather than as an edge. */
       background:
         linear-gradient(
           to top,
-          rgba(251, 250, 246, 0.98) 0%,
-          rgba(251, 250, 246, 0.7) 7%,
-          rgba(251, 250, 246, 0) 17%
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.94) 6%,
+          rgba(255, 255, 255, 0.66) 14%,
+          rgba(255, 255, 255, 0.28) 24%,
+          rgba(255, 255, 255, 0) 34%
         ),
         linear-gradient(
           180deg,
@@ -1118,11 +1127,15 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   .dark .hero-overlay {
     background:
+      /* Dark's dissolve lands on umber-900 (#1a1410) — the dark background of
+         the section below — not on the paper-900 the wash layers use, which
+         is four times lighter and drew the same hairline in reverse. */
       linear-gradient(
         to top,
-        rgba(58, 51, 36, 0.98) 0%,
-        rgba(58, 51, 36, 0.55) 9%,
-        rgba(58, 51, 36, 0) 20%
+        rgba(26, 20, 16, 1) 0%,
+        rgba(26, 20, 16, 0.9) 5%,
+        rgba(26, 20, 16, 0.5) 12%,
+        rgba(26, 20, 16, 0) 24%
       ),
       radial-gradient(
         ellipse 64% 76% at 18% 54%,
