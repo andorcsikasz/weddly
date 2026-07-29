@@ -679,9 +679,12 @@ function ConversionFunnel({
                 )}
               </span>
             </div>
-            <div className="h-8 w-full overflow-hidden rounded-lg bg-paper-200 dark:bg-umber-800">
+            {/* Thin track. A full-width 32px slab read as a filled panel rather
+                than a measurement, and it was three times heavier than every
+                other progress bar in the app (1 to 4px). */}
+            <div className="h-3 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800">
               <div
-                className={`h-full rounded-lg ${s.fill} transition-[width] duration-700 ease-out`}
+                className={`h-full rounded-full ${s.fill} transition-[width] duration-700 ease-out`}
                 style={{ width: `${width}%` }}
               />
             </div>
