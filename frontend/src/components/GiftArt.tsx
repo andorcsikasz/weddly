@@ -384,7 +384,11 @@ export function GiftArtTile({
 }) {
   return (
     <span
-      className={`relative block overflow-hidden bg-paper-100 dark:bg-umber-850 ${className}`}
+      // The ground is the theme's SURFACE tone, not a shade below it: the tile
+      // is often the only thing separating a picture-led card from the page
+      // (the wishlist grid draws no border around it), and umber-850 sat close
+      // enough to the umber-900 page that a drawn item read as a hole in it.
+      className={`relative block overflow-hidden bg-paper-100 dark:bg-umber-800 ${className}`}
       aria-hidden
     >
       <GiftArt seed={seed} kind={kind} dense={dense} className="absolute inset-0 h-full w-full" />

@@ -34,15 +34,17 @@ import { CURRENCIES, type Currency } from "@shared/types";
 import type { UpsertWishlistItemInput, WishlistItem, WishlistKind } from "@shared/wishlist";
 import { WISHLIST_KINDS, WISHLIST_MAX_DESC_LEN, WISHLIST_MAX_TITLE_LEN } from "@shared/wishlist";
 import {
+  ArrowDown,
+  ArrowUp,
   ArrowUpRight,
   Banknote,
   Camera,
-  ChevronDown,
-  ChevronUp,
   Gift,
+  Globe,
   HandHeart,
   LayoutGrid,
   Loader2,
+  MoreHorizontal,
   Music2,
   PackageCheck,
   PenLine,
@@ -57,14 +59,7 @@ import {
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { GiftArtTile } from "../components/GiftArt";
 import { InfoHint } from "../components/InfoHint";
-import {
-  SegmentedControl,
-  Skeleton,
-  SmartImage,
-  Switch,
-  useConfirm,
-  useToast,
-} from "../components/ui";
+import { SegmentedControl, Skeleton, SmartImage, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, guestApi, householdApi, receivedGiftApi, wishlistApi } from "../lib/endpoints";
 import { currencySymbol, formatMoney, formatNumber } from "../lib/format";
@@ -169,10 +164,6 @@ const PHASE_STORAGE_KEY = "weddly.wishlist.phase";
 type WishlistView = "list" | "cards";
 const VIEW_STORAGE_KEY = "weddly.wishlist.view";
 
-/** The collapsible sections on the page. */
-type SectionKey = "gifts" | "requests" | "received";
-const COLLAPSE_STORAGE_KEY = "weddly.wishlist.collapsed";
-
 /** Example request prompts shown as quick-add chips on the empty requests
  *  section — they prefill the dialog title, nothing is persisted until saved
  *  (no fake seed data). */
@@ -261,69 +252,124 @@ interface ItemViewProps {
   onMoveDown: () => void;
 }
 
-/** Reorder + delete. Editing is the item's own click target, so there is no
- *  pencil here: a card you can click to edit does not also need a button that
- *  does the same thing. */
-function ItemActions({
+/** The glass treatment shared by everything that floats over an item's
+ *  picture: the price chip and the "…" button. Light enough that the photo
+ *  under it still reads, opaque enough that a busy photo can't eat the text. */
+const GLASS =
+  "border border-paper-200/70 bg-paper-50/90 backdrop-blur-sm dark:border-umber-600/60 dark:bg-umber-950/80";
+
+/** Reorder + delete, behind ONE control. Three icon buttons pinned to every
+ *  item was the loudest thing in a grid of pictures — and on touch, where
+ *  there is no hover to hide them behind, they sat on every card at all times.
+ *  Editing is the item's own click target, so the menu carries no "edit". */
+function ItemMenu({
   t,
   onDelete,
   index,
   totalCount,
   onMoveUp,
   onMoveDown,
-  tone = "plain",
+  tone = "glass",
 }: Pick<ItemViewProps, "t" | "onDelete" | "index" | "totalCount" | "onMoveUp" | "onMoveDown"> & {
-  /** `glass` floats the cluster over a photo (card view); `plain` sits it on
+  /** `glass` floats the trigger over a photo (card view); `plain` sits it on
    *  the row background (list view). */
   tone?: "glass" | "plain";
 }) {
-  const btn =
-    "inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors disabled:pointer-events-none disabled:opacity-25";
-  const quiet =
-    tone === "glass"
-      ? "text-ink-500 hover:bg-ink-900/10 hover:text-ink-900 dark:text-paper-200 dark:hover:bg-paper-50/10 dark:hover:text-paper-50"
-      : "text-ink-400 hover:bg-paper-200 hover:text-ink-800 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-50";
-  const danger =
-    tone === "glass"
-      ? "text-blush-700 hover:bg-blush-100/70 dark:text-blush-300 dark:hover:bg-blush-400/20"
-      : "text-blush-700 hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15";
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointer(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const entry =
+    "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors disabled:pointer-events-none disabled:opacity-35";
+
   return (
+    // The trigger hides until the item is hovered / focused (desktop) and
+    // stays put on touch, where there is no hover. `open` overrides that:
+    // otherwise moving the pointer away would fade an open menu out from
+    // under the couple while it was still taking clicks.
     <span
-      className={
-        tone === "glass"
-          ? "flex items-center gap-0.5 rounded-full border border-paper-200/70 bg-paper-50/85 p-0.5 shadow-soft backdrop-blur-sm dark:border-umber-600/60 dark:bg-umber-900/80"
-          : "flex items-center gap-0.5"
-      }
+      ref={ref}
+      className={`relative inline-flex transition-opacity ${
+        open ? "" : "sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+      }`}
     >
       <button
         type="button"
-        aria-label={t("wishlist_editor.reorder_up")}
-        title={t("wishlist_editor.reorder_up")}
-        className={`${btn} ${quiet}`}
-        onClick={onMoveUp}
-        disabled={index === 0}
+        aria-label={t("wishlist_editor.item_menu")}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+          tone === "glass"
+            ? `${GLASS} text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50`
+            : "text-ink-400 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
+        }`}
       >
-        <ChevronUp size={14} />
+        <MoreHorizontal size={16} />
       </button>
-      <button
-        type="button"
-        aria-label={t("wishlist_editor.reorder_down")}
-        title={t("wishlist_editor.reorder_down")}
-        className={`${btn} ${quiet}`}
-        onClick={onMoveDown}
-        disabled={index === totalCount - 1}
-      >
-        <ChevronDown size={14} />
-      </button>
-      <button
-        type="button"
-        aria-label={t("common.remove")}
-        title={t("common.remove")}
-        className={`${btn} ${danger}`}
-        onClick={onDelete}
-      >
-        <Trash2 size={14} />
-      </button>
+      {open && (
+        <span
+          role="menu"
+          className="absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-paper-200 bg-paper-50 py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            disabled={index === 0}
+            onClick={() => {
+              setOpen(false);
+              onMoveUp();
+            }}
+            className={`${entry} text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700`}
+          >
+            <ArrowUp size={14} aria-hidden />
+            {t("wishlist_editor.reorder_up")}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={index === totalCount - 1}
+            onClick={() => {
+              setOpen(false);
+              onMoveDown();
+            }}
+            className={`${entry} text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700`}
+          >
+            <ArrowDown size={14} aria-hidden />
+            {t("wishlist_editor.reorder_down")}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onDelete();
+            }}
+            className={`${entry} text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15`}
+          >
+            <Trash2 size={14} aria-hidden />
+            {t("common.remove")}
+          </button>
+        </span>
+      )}
     </span>
   );
 }
@@ -348,9 +394,12 @@ function ShopLink({ url, t, className = "" }: { url: string; t: Translate; class
   );
 }
 
-/** Card view: picture on top at 4:5, then the title, the rough amount, and the
- *  pledge bar once someone is in. */
-function WishlistCardItem({
+/** Card view. The picture is the tile: no frame around it, no card behind it,
+ *  nothing between the grid and the thing the couple wants. The price rides on
+ *  the picture as a chip (a storefront quotes the price on the shelf, not in a
+ *  caption), the title sits under it, and one muted line carries either the
+ *  shop or the couple's own note. */
+function GiftTile({
   item,
   currency,
   locale,
@@ -364,63 +413,66 @@ function WishlistCardItem({
 }: ItemViewProps) {
   const cur = item.currency ?? currency;
   return (
-    <li className="group relative flex flex-col overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft transition duration-300 hover:-translate-y-0.5 hover:shadow-pop dark:border-umber-600 dark:bg-umber-800 dark:shadow-none dark:hover:border-umber-500">
+    <li className="group relative flex flex-col">
       <button
         type="button"
         onClick={onEdit}
         aria-label={t("common.edit")}
-        className="relative block aspect-[4/5] w-full overflow-hidden bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-300 dark:bg-umber-850"
+        className="relative block aspect-[4/3] w-full overflow-hidden rounded-2xl bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 focus-visible:ring-offset-2 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
       >
         <ItemPicture item={item} zoom />
+        {item.target_amount_minor !== null && (
+          <span
+            className={`absolute bottom-2.5 left-2.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums text-ink-900 dark:text-paper-50 ${GLASS}`}
+          >
+            {formatMoney(minorToWhole(item.target_amount_minor, cur), cur, locale)}
+          </span>
+        )}
       </button>
-      <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
+      <div className="mt-2.5 flex items-start gap-1.5">
         <button
           type="button"
           onClick={onEdit}
           aria-label={t("common.edit")}
-          className="block text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink-300"
+          className="min-w-0 flex-1 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400"
         >
           <span className="line-clamp-2 block font-grotesk text-[0.95rem] font-medium leading-snug text-ink-900 dark:text-paper-50">
             {item.title}
           </span>
-          {item.target_amount_minor !== null && (
-            <span className="mt-1 block tabular-nums text-sm text-ink-600 dark:text-umber-200">
-              {formatMoney(minorToWhole(item.target_amount_minor, cur), cur, locale)}
-            </span>
-          )}
-          {item.description && (
-            <span className="mt-1.5 line-clamp-2 block text-xs leading-relaxed text-ink-500 dark:text-umber-300">
-              {item.description}
-            </span>
-          )}
         </button>
-        <div className="mt-auto pt-2.5">
-          {item.url && <ShopLink url={item.url} t={t} />}
-          {itemHasBar(item) && (
-            <div className={item.url ? "mt-2.5" : ""}>
-              <PledgeBar item={item} currency={currency} locale={locale} t={t} />
-            </div>
-          )}
+        <span className="-mt-0.5 shrink-0">
+          <ItemMenu
+            t={t}
+            onDelete={onDelete}
+            index={index}
+            totalCount={totalCount}
+            onMoveUp={onMoveUp}
+            onMoveDown={onMoveDown}
+            tone="plain"
+          />
+        </span>
+      </div>
+      {/* One muted line, not three: the shop if the wish points at one, the
+          couple's own note otherwise. The full note lives in the dialog. */}
+      {item.url ? (
+        <ShopLink url={item.url} t={t} className="mt-0.5" />
+      ) : item.description ? (
+        <p className="mt-0.5 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
+          {item.description}
+        </p>
+      ) : null}
+      {itemHasBar(item) && (
+        <div className="mt-2">
+          <PledgeBar item={item} currency={currency} locale={locale} t={t} />
         </div>
-      </div>
-      {/* Hover-revealed on desktop, always there on touch (no hover to reveal). */}
-      <div className="absolute right-2.5 top-2.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-        <ItemActions
-          t={t}
-          onDelete={onDelete}
-          index={index}
-          totalCount={totalCount}
-          onMoveUp={onMoveUp}
-          onMoveDown={onMoveDown}
-          tone="glass"
-        />
-      </div>
+      )}
     </li>
   );
 }
 
-/** List view: a dense row. Same information, a tenth of the height — for a
- *  couple who has thirty items and wants to scan, not browse. */
+/** List view: a dense row. Same information, a fraction of the height — for a
+ *  couple who has thirty items and wants to scan, not browse. No card around
+ *  it either; a hairline between rows and hover colour are enough. */
 function WishlistRow({
   item,
   currency,
@@ -435,7 +487,7 @@ function WishlistRow({
 }: ItemViewProps) {
   const cur = item.currency ?? currency;
   return (
-    <li className="group flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-paper-100/70 sm:px-4 dark:hover:bg-umber-700/50">
+    <li className="group flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-paper-100/70 dark:hover:bg-umber-800/60">
       {/* The title button does NOT grow: the shop link has to sit right beside
           the title instead of drifting to the far edge of an empty row. */}
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -443,17 +495,17 @@ function WishlistRow({
           type="button"
           onClick={onEdit}
           aria-label={t("common.edit")}
-          className="flex min-w-0 items-center gap-3.5 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
+          className="flex min-w-0 items-center gap-3.5 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400"
         >
-          <span className="relative block h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-paper-200 bg-paper-100 dark:border-umber-700 dark:bg-umber-850">
+          <span className="relative block h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-paper-100 dark:bg-umber-800">
             <ItemPicture item={item} dense />
           </span>
-          <span className="flex min-w-0 flex-col gap-0.5">
-            <span className="truncate font-grotesk text-sm font-medium text-ink-900 dark:text-paper-50">
+          <span className="min-w-0">
+            <span className="block truncate font-grotesk text-sm font-medium text-ink-900 dark:text-paper-50">
               {item.title}
             </span>
             {item.target_amount_minor !== null && (
-              <span className="tabular-nums text-xs text-ink-500 dark:text-umber-300">
+              <span className="block tabular-nums text-xs text-ink-500 dark:text-umber-300">
                 {formatMoney(minorToWhole(item.target_amount_minor, cur), cur, locale)}
               </span>
             )}
@@ -470,23 +522,25 @@ function WishlistRow({
           <PledgeBar item={item} currency={currency} locale={locale} t={t} />
         </div>
       )}
-      <div className="shrink-0 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-        <ItemActions
+      <div className="shrink-0">
+        <ItemMenu
           t={t}
           onDelete={onDelete}
           index={index}
           totalCount={totalCount}
           onMoveUp={onMoveUp}
           onMoveDown={onMoveDown}
+          tone="plain"
         />
       </div>
     </li>
   );
 }
 
-/** A personal request — a letter, a childhood photo, a song. No money, so no
- *  price and no bar; the title is set in the display serif because these are
- *  the sentimental half of the list and they should not look like SKUs. */
+/** A personal request — a letter, a childhood photo, a song. Same tile shape
+ *  as a gift so the page reads as one storefront, but square rather than 4:3,
+ *  no price chip, and the title set in the display serif: these are the
+ *  sentimental half of the list and they should not look like SKUs. */
 function RequestTile({
   item,
   t,
@@ -498,119 +552,145 @@ function RequestTile({
   onMoveDown,
 }: Omit<ItemViewProps, "currency" | "locale">) {
   return (
-    <li className="group flex items-center gap-3.5 rounded-2xl border border-paper-300 bg-white px-3.5 py-3 shadow-soft transition duration-300 hover:-translate-y-0.5 hover:shadow-pop dark:border-umber-600 dark:bg-umber-800 dark:shadow-none dark:hover:border-umber-500">
+    <li className="group relative flex flex-col">
       <button
         type="button"
         onClick={onEdit}
         aria-label={t("common.edit")}
-        className="flex min-w-0 flex-1 items-center gap-3.5 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 focus-visible:ring-offset-2"
+        className="block aspect-square w-full overflow-hidden rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900"
       >
         <GiftArtTile
           seed={item.title}
           kind="request"
-          dense
-          className="h-12 w-12 shrink-0 rounded-xl border border-paper-200 dark:border-umber-700"
+          className="h-full w-full transition-transform duration-700 group-hover:scale-[1.03]"
         />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-serif text-lg italic leading-snug text-ink-900 dark:text-paper-50">
+      </button>
+      <div className="mt-2.5 flex items-start gap-1.5">
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label={t("common.edit")}
+          className="min-w-0 flex-1 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400"
+        >
+          <span className="line-clamp-2 block font-serif text-base italic leading-snug text-ink-900 dark:text-paper-50">
             {item.title}
           </span>
-          {item.description && (
-            <span className="mt-0.5 block truncate text-xs text-ink-500 dark:text-umber-300">
-              {item.description}
-            </span>
-          )}
+        </button>
+        <span className="-mt-0.5 shrink-0">
+          <ItemMenu
+            t={t}
+            onDelete={onDelete}
+            index={index}
+            totalCount={totalCount}
+            onMoveUp={onMoveUp}
+            onMoveDown={onMoveDown}
+            tone="plain"
+          />
         </span>
-      </button>
-      <div className="shrink-0 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-        <ItemActions
-          t={t}
-          onDelete={onDelete}
-          index={index}
-          totalCount={totalCount}
-          onMoveUp={onMoveUp}
-          onMoveDown={onMoveDown}
-        />
       </div>
+      {item.description && (
+        <p className="mt-0.5 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
+          {item.description}
+        </p>
+      )}
     </li>
   );
 }
 
-/** Section head: an eyebrow label that doubles as the collapse toggle, the item
- *  count beside it, the explanation behind an "i", and the section's actions on
- *  the right. The count and the hint sit OUTSIDE the button so the toggle's
- *  accessible name stays exactly the section title. */
+/** Section head: the section's name at reading size with its count beside it,
+ *  the explanation behind an "i", and the section's own controls on the right.
+ *  No collapse chevron — a page with one section per phase has nothing to
+ *  collapse away from. */
 function SectionHead({
   title,
   count,
   hint,
-  open,
-  onToggle,
   actions,
 }: {
   title: string;
   count?: number;
   hint?: string;
-  open: boolean;
-  onToggle: () => void;
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-3.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
       <div className="flex items-center gap-2">
-        <h2 className="m-0">
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={open}
-            className="-ml-1 flex items-center gap-1.5 rounded-lg px-1 py-0.5 font-grotesk text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-ink-500 transition-colors hover:text-ink-900 dark:text-umber-200 dark:hover:text-paper-50"
-          >
-            <ChevronDown
-              size={14}
-              aria-hidden
-              className={`shrink-0 transition-transform ${open ? "" : "-rotate-90"}`}
-            />
-            {title}
-          </button>
+        <h2 className="m-0 font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+          {title}
         </h2>
         {count !== undefined && count > 0 && (
-          <span className="tabular-nums text-[0.7rem] text-ink-400 dark:text-umber-400">
-            {count}
-          </span>
+          <span className="tabular-nums text-sm text-ink-400 dark:text-umber-400">{count}</span>
         )}
         {hint && <InfoHint text={hint} />}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex items-center gap-1.5">{actions}</div>}
     </div>
   );
 }
 
-/** Empty section: the drawn art at full size, one line of copy, one CTA. The
- *  CTA's label differs from the header's add button on purpose — two buttons
- *  with the same accessible name in one section is a screen-reader coin toss. */
+/** Rows breathe more than columns: with no card around a tile, a title needs
+ *  air under it before the next row's picture starts, or the two read as one
+ *  block. Requests run denser than gifts on purpose — a request is a line of
+ *  text, and at gift size two of them filled a screen and claimed to be the
+ *  more important half of the page. */
+const GIFT_GRID =
+  "grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8 lg:grid-cols-3 xl:grid-cols-4";
+const REQUEST_GRID =
+  "grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-6 lg:grid-cols-4 xl:grid-cols-6";
+
+/** The last cell of every grid: add another one, in the shape of the thing it
+ *  adds. It replaces the section header's add button, so the page carries one
+ *  add affordance per list instead of two, and it lands where the eye already
+ *  is after scanning the row. */
+function AddTile({
+  label,
+  square = false,
+  onClick,
+}: {
+  label: string;
+  /** Match the request grid's 1:1 cells rather than a gift's 4:3. */
+  square?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <li className="flex flex-col">
+      <button
+        type="button"
+        onClick={onClick}
+        className={`flex w-full flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-paper-400 text-ink-500 transition-colors hover:border-ink-400 hover:bg-paper-100/60 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:bg-umber-850 dark:hover:text-paper-50 ${
+          square ? "aspect-square" : "aspect-[4/3]"
+        }`}
+      >
+        <Plus size={22} aria-hidden />
+        <span className="font-grotesk text-sm font-medium">{label}</span>
+      </button>
+    </li>
+  );
+}
+
+/** Empty section: the prompt, then the same add tile the filled grid ends
+ *  with, so "how do I add one" has exactly one answer on this page. */
 function EmptySection({
-  seed,
-  kind,
   body,
   ctaLabel,
+  square = false,
   onCta,
   children,
 }: {
-  seed: string;
-  kind: "gift" | "request";
   body: string;
   ctaLabel: string;
+  square?: boolean;
   onCta: () => void;
   children?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center overflow-hidden rounded-2xl border border-paper-300 bg-white px-6 py-7 text-center shadow-soft dark:border-umber-600 dark:bg-umber-800 dark:shadow-none">
-      <GiftArtTile seed={seed} kind={kind} className="h-28 w-28 rounded-2xl" />
-      <p className="mt-4 max-w-sm text-sm text-ink-600 dark:text-umber-200">{body}</p>
-      <button type="button" className="btn-outline btn-sm mt-4" onClick={onCta}>
-        <Plus size={15} />
-        {ctaLabel}
-      </button>
+    <div>
+      <p className="mb-3 max-w-md text-sm text-ink-500 dark:text-umber-300">{body}</p>
+      {/* Same grid as the filled section, so the tile the couple clicks is the
+          size the thing they are about to add will be. */}
+      <ul className={square ? REQUEST_GRID : GIFT_GRID}>
+        <AddTile label={ctaLabel} square={square} onClick={onCta} />
+      </ul>
       {children}
     </div>
   );
@@ -1193,28 +1273,6 @@ export default function WishlistEditorPage() {
   const [households, setHouseholds] = useState<Household[]>([]);
   const [received, setReceived] = useState<ReceivedGift[]>([]);
 
-  // Per-section collapse state, persisted per device. Default: all expanded.
-  const [collapsed, setCollapsed] = useState<Record<SectionKey, boolean>>(() => {
-    const base = { gifts: false, requests: false, received: false };
-    try {
-      const raw = localStorage.getItem(COLLAPSE_STORAGE_KEY);
-      return raw ? { ...base, ...(JSON.parse(raw) as Partial<Record<SectionKey, boolean>>) } : base;
-    } catch {
-      return base;
-    }
-  });
-  function toggleSection(key: SectionKey) {
-    setCollapsed((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      try {
-        localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Private-mode / disabled storage: the in-memory state still toggles.
-      }
-      return next;
-    });
-  }
-
   // Publish toggle: flips `couples.wishlist_published`. When on, confirmed
   // guests see the gift + request decks on the guest page (with the warm
   // intro); when off the server omits them entirely. Optimistic with a
@@ -1361,7 +1419,7 @@ export default function WishlistEditorPage() {
 
   return (
     <>
-      <header className="mb-7 border-b border-paper-200 pb-5 dark:border-umber-700/70">
+      <header className="mb-6">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
           <div className="min-w-0">
             <span className="flex items-start gap-1">
@@ -1385,7 +1443,7 @@ export default function WishlistEditorPage() {
               </p>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <SegmentedControl<WishlistPhase>
               ariaLabel={t("wishlist_editor.title")}
               value={phase}
@@ -1406,24 +1464,29 @@ export default function WishlistEditorPage() {
               ]}
             />
             {couple && phase === "before" && (
-              <span
+              // Published or not is one bit, so it is one control: a pill that
+              // is filled when the list is on the guest page and outlined when
+              // it is not. A label plus a switch inside a pill was three
+              // things saying the same thing.
+              <button
+                type="button"
+                onClick={() => void togglePublish()}
+                disabled={publishing}
+                aria-pressed={couple.wishlist_published}
                 title={
                   couple.wishlist_published
                     ? t("wishlist_editor.publish_on")
                     : t("wishlist_editor.publish_off")
                 }
-                className="inline-flex items-center gap-2.5 rounded-full border border-paper-300 bg-paper-50 py-1 pl-3.5 pr-1.5 dark:border-umber-700 dark:bg-umber-800"
+                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 disabled:opacity-60 ${
+                  couple.wishlist_published
+                    ? "bg-ink-900 text-paper-50 hover:bg-ink-800 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200"
+                    : "border border-paper-300 bg-paper-50 text-ink-600 hover:border-ink-400 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:text-paper-50"
+                }`}
               >
-                <span className="text-sm font-medium text-ink-700 dark:text-paper-100">
-                  {t("wishlist_editor.publish_short")}
-                </span>
-                <Switch
-                  checked={couple.wishlist_published}
-                  onChange={() => void togglePublish()}
-                  label={t("wishlist_editor.publish_title")}
-                  disabled={publishing}
-                />
-              </span>
+                <Globe size={14} aria-hidden />
+                {t("wishlist_editor.publish_short")}
+              </button>
             )}
           </div>
         </div>
@@ -1440,71 +1503,64 @@ export default function WishlistEditorPage() {
                 <SectionHead
                   title={t("wishlist_editor.section_gifts_title")}
                   count={gifts.length}
-                  open={!collapsed.gifts}
-                  onToggle={() => toggleSection("gifts")}
                   actions={
-                    <>
-                      {gifts.length > 0 && (
-                        // Single toggle: shows the icon of the *other* layout
-                        // and flips to it on click.
-                        <button
-                          type="button"
-                          aria-label={
-                            view === "list"
-                              ? t("wishlist_editor.view_cards")
-                              : t("wishlist_editor.view_list")
-                          }
-                          title={
-                            view === "list"
-                              ? t("wishlist_editor.view_cards")
-                              : t("wishlist_editor.view_list")
-                          }
-                          onClick={() => changeView(view === "list" ? "cards" : "list")}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
-                        >
-                          {view === "list" ? <LayoutGrid size={16} /> : <Rows3 size={16} />}
-                        </button>
-                      )}
+                    gifts.length > 0 ? (
+                      // Single toggle: shows the icon of the *other* layout
+                      // and flips to it on click.
                       <button
                         type="button"
-                        className="btn-primary btn-sm"
-                        onClick={() => setEditing({ item: null, presetKind: "gift" })}
+                        aria-label={
+                          view === "list"
+                            ? t("wishlist_editor.view_cards")
+                            : t("wishlist_editor.view_list")
+                        }
+                        title={
+                          view === "list"
+                            ? t("wishlist_editor.view_cards")
+                            : t("wishlist_editor.view_list")
+                        }
+                        onClick={() => changeView(view === "list" ? "cards" : "list")}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50"
                       >
-                        <Plus size={15} />
-                        {t("wishlist_editor.add_gift")}
+                        {view === "list" ? <LayoutGrid size={16} /> : <Rows3 size={16} />}
                       </button>
-                    </>
+                    ) : undefined
                   }
                 />
-                {!collapsed.gifts &&
-                  (gifts.length === 0 ? (
-                    <EmptySection
-                      seed="wishlist-gifts-empty"
-                      kind="gift"
-                      body={t("wishlist_editor.gifts_empty")}
-                      ctaLabel={t("wishlist_editor.add_first_gift")}
-                      onCta={() => setEditing({ item: null, presetKind: "gift" })}
+                {gifts.length === 0 ? (
+                  <EmptySection
+                    body={t("wishlist_editor.gifts_empty")}
+                    ctaLabel={t("wishlist_editor.add_gift")}
+                    onCta={() => setEditing({ item: null, presetKind: "gift" })}
+                  />
+                ) : view === "cards" ? (
+                  // Rows breathe more than columns: with no card around a
+                  // tile, a title needs air under it before the next row's
+                  // picture starts, or the two read as one block.
+                  <ul className={GIFT_GRID}>
+                    {gifts.map((item, idx) => (
+                      <GiftTile
+                        key={item.id}
+                        item={item}
+                        currency={currency}
+                        locale={locale}
+                        t={t}
+                        onEdit={() => setEditing({ item })}
+                        onDelete={() => void onDelete(item)}
+                        index={idx}
+                        totalCount={gifts.length}
+                        onMoveUp={() => void handleMoveItem(item.id, "up")}
+                        onMoveDown={() => void handleMoveItem(item.id, "down")}
+                      />
+                    ))}
+                    <AddTile
+                      label={t("wishlist_editor.add_gift")}
+                      onClick={() => setEditing({ item: null, presetKind: "gift" })}
                     />
-                  ) : view === "cards" ? (
-                    <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-                      {gifts.map((item, idx) => (
-                        <WishlistCardItem
-                          key={item.id}
-                          item={item}
-                          currency={currency}
-                          locale={locale}
-                          t={t}
-                          onEdit={() => setEditing({ item })}
-                          onDelete={() => void onDelete(item)}
-                          index={idx}
-                          totalCount={gifts.length}
-                          onMoveUp={() => void handleMoveItem(item.id, "up")}
-                          onMoveDown={() => void handleMoveItem(item.id, "down")}
-                        />
-                      ))}
-                    </ul>
-                  ) : (
-                    <ul className="divide-y divide-paper-200 overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft dark:divide-umber-700 dark:border-umber-600 dark:bg-umber-800 dark:shadow-none">
+                  </ul>
+                ) : (
+                  <>
+                    <ul className="divide-y divide-paper-200 dark:divide-umber-800">
                       {gifts.map((item, idx) => (
                         <WishlistRow
                           key={item.id}
@@ -1521,7 +1577,16 @@ export default function WishlistEditorPage() {
                         />
                       ))}
                     </ul>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => setEditing({ item: null, presetKind: "gift" })}
+                      className="mt-2 inline-flex items-center gap-2 rounded-xl px-2 py-2 font-grotesk text-sm font-medium text-ink-500 transition-colors hover:bg-paper-100/70 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-umber-300 dark:hover:bg-umber-800/60 dark:hover:text-paper-50"
+                    >
+                      <Plus size={16} aria-hidden />
+                      {t("wishlist_editor.add_gift")}
+                    </button>
+                  </>
+                )}
               </section>
 
               {/* ── Requests (personal, no money) ───────────────────────── */}
@@ -1530,70 +1595,64 @@ export default function WishlistEditorPage() {
                   title={t("wishlist_editor.section_requests_title")}
                   count={requests.length}
                   hint={t("wishlist_editor.section_requests_subtitle")}
-                  open={!collapsed.requests}
-                  onToggle={() => toggleSection("requests")}
-                  actions={
-                    <button
-                      type="button"
-                      className="btn-outline btn-sm"
-                      onClick={() => setEditing({ item: null, presetKind: "request" })}
-                    >
-                      <Plus size={15} />
-                      {t("wishlist_editor.add_request")}
-                    </button>
-                  }
                 />
-                {!collapsed.requests &&
-                  (requests.length === 0 ? (
-                    <EmptySection
-                      seed="wishlist-requests-empty"
-                      kind="request"
-                      body={t("wishlist_editor.requests_empty")}
-                      ctaLabel={t("wishlist_editor.add_first_request")}
-                      onCta={() => setEditing({ item: null, presetKind: "request" })}
-                    >
-                      {/* Prompts, not seed data: a chip prefills the dialog
-                          title and nothing is written until the couple saves. */}
-                      <div className="mt-5 flex flex-wrap items-center justify-center gap-1.5">
-                        {REQUEST_EXAMPLES.map(({ key, Icon }) => {
-                          const label = t(`wishlist_editor.${key}`);
-                          return (
-                            <button
-                              key={key}
-                              type="button"
-                              onClick={() =>
-                                setEditing({
-                                  item: null,
-                                  presetKind: "request",
-                                  presetTitle: label,
-                                })
-                              }
-                              className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 font-serif text-sm italic text-ink-700 transition-colors hover:border-paper-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-900/60 dark:text-paper-100 dark:hover:border-umber-500"
-                            >
-                              <Icon size={12} aria-hidden />
-                              {label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </EmptySection>
-                  ) : (
-                    <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      {requests.map((item, idx) => (
-                        <RequestTile
-                          key={item.id}
-                          item={item}
-                          t={t}
-                          onEdit={() => setEditing({ item })}
-                          onDelete={() => void onDelete(item)}
-                          index={idx}
-                          totalCount={requests.length}
-                          onMoveUp={() => void handleMoveItem(item.id, "up")}
-                          onMoveDown={() => void handleMoveItem(item.id, "down")}
-                        />
-                      ))}
-                    </ul>
-                  ))}
+                {requests.length === 0 ? (
+                  <EmptySection
+                    body={t("wishlist_editor.requests_empty")}
+                    ctaLabel={t("wishlist_editor.add_request")}
+                    square
+                    onCta={() => setEditing({ item: null, presetKind: "request" })}
+                  >
+                    {/* Prompts, not seed data: a chip prefills the dialog
+                        title and nothing is written until the couple saves. */}
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                      {REQUEST_EXAMPLES.map(({ key, Icon }) => {
+                        const label = t(`wishlist_editor.${key}`);
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() =>
+                              setEditing({
+                                item: null,
+                                presetKind: "request",
+                                presetTitle: label,
+                              })
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1.5 font-serif text-sm italic text-ink-700 transition-colors hover:border-ink-400 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500"
+                          >
+                            <Icon size={12} aria-hidden />
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </EmptySection>
+                ) : (
+                  // Denser than the gift grid on purpose: a request is a line
+                  // of text, and at gift size two of them filled a screen and
+                  // claimed to be the more important half of the page.
+                  <ul className={REQUEST_GRID}>
+                    {requests.map((item, idx) => (
+                      <RequestTile
+                        key={item.id}
+                        item={item}
+                        t={t}
+                        onEdit={() => setEditing({ item })}
+                        onDelete={() => void onDelete(item)}
+                        index={idx}
+                        totalCount={requests.length}
+                        onMoveUp={() => void handleMoveItem(item.id, "up")}
+                        onMoveDown={() => void handleMoveItem(item.id, "down")}
+                      />
+                    ))}
+                    <AddTile
+                      label={t("wishlist_editor.add_request")}
+                      square
+                      onClick={() => setEditing({ item: null, presetKind: "request" })}
+                    />
+                  </ul>
+                )}
               </section>
             </>
           )}
@@ -1605,16 +1664,14 @@ export default function WishlistEditorPage() {
                 title={t("wishlist_editor.section_received_title")}
                 count={received.length}
                 hint={t("wishlist_editor.section_received_subtitle")}
-                open={!collapsed.received}
-                onToggle={() => toggleSection("received")}
                 actions={
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-paper-50 px-3 py-1 text-xs text-ink-500 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-300">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
                     <PackageCheck size={13} aria-hidden />
                     {t("wishlist_editor.received_private_badge")}
                   </span>
                 }
               />
-              {!collapsed.received && couple && (
+              {couple && (
                 <ReceivedGiftsTable
                   initialItems={received}
                   guests={guests}
@@ -1657,17 +1714,11 @@ export default function WishlistEditorPage() {
  *  reflow when the data lands. */
 function WishlistSkeleton() {
   return (
-    <ul
-      className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4"
-      aria-hidden="true"
-    >
+    <ul className={GIFT_GRID} aria-hidden="true">
       {[0, 1, 2, 3].map((i) => (
-        <li
-          key={i}
-          className="overflow-hidden rounded-2xl border border-paper-300 bg-white dark:border-umber-600 dark:bg-umber-800"
-        >
-          <Skeleton variant="block" className="aspect-[4/5] w-full" />
-          <div className="space-y-2 px-4 pb-4 pt-3">
+        <li key={i}>
+          <Skeleton variant="block" className="aspect-[4/3] w-full" rounded="2xl" />
+          <div className="mt-2.5 space-y-2">
             <Skeleton variant="block" height={14} width="72%" rounded="md" />
             <Skeleton variant="block" height={11} width="40%" rounded="md" />
           </div>
