@@ -41,6 +41,7 @@ See [docs/blueprint.md](./docs/blueprint.md#domain-primitives-v1) for the full t
 - **Money is integer Forint.** No floats. `formatHuf(cents)` for display.
 - **Audit log is append-only.** Never UPDATE or DELETE rows in `audit_log`.
 - **Schema is additive only.** New columns via `addColumnIfMissing(table, column, ddl)` in `db.ts`.
+- **The sidebar marks what the couple has never opened.** `users.visited_nav` (JSON array of `/app/...` paths, union-only via `POST /api/auth/nav-visited`) drives the muted label + brass dot on every unvisited rail row, phone tab, and More-sheet tile; landing on the page clears it. Server-side rather than localStorage for the same reason as `share_prompt_seen_at` — a new device must not re-nudge a couple who has used the workspace for months. The dashboard is never marked, and planners-in-a-client-workspace / the admin rail are excluded. Adding a nav destination needs nothing extra: `matchNavDestination` in `AppShell.tsx` derives the key from `ITEMS`. Covered by `backend/tests/api/nav_visited.e2e.test.ts`.
 
 ## Auth
 
