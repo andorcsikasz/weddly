@@ -193,7 +193,9 @@ describe("verified couple reviews (Phase 3)", () => {
     const draft = await req<SupplierReview>(
       "POST",
       reviewsUrl(sid),
-      { rating: 5, body: "Editorial take", published: false },
+      // `as_editorial` is opt-in: without it an admin now posts an ordinary,
+      // live review under their own name, and `published` means nothing.
+      { rating: 5, body: "Editorial take", as_editorial: true, published: false },
       { token: adminToken },
     );
     expect(draft.status).toBe(201);

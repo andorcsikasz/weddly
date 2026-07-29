@@ -165,6 +165,10 @@ interface MessageRow {
   sent_at: number | null;
   status: string;
   reply_token: string;
+  /** The `supplier_bookings` row this message was delivered into, or null when
+   *  it was email-only (unclaimed listing). Also the idempotency key for the
+   *  claim-time replay and the one-off backfill. */
+  booking_id: number | null;
   created_at: number;
 }
 
@@ -202,6 +206,7 @@ function toMessage(row: MessageRow, supplierName: string): OutreachMessage {
     sent_at: row.sent_at,
     status: toMessageStatus(row.status),
     reply_token: row.reply_token,
+    delivery: row.booking_id === null ? "email_only" : "in_account",
     created_at: row.created_at,
   };
 }
@@ -476,7 +481,8 @@ export function createCampaign(
     `INSERT INTO outreach_messages
        (campaign_id, supplier_id, supplier_email, sent_at, status, reply_token, created_at)
      VALUES (?, ?, ?, ?, 'queued', ?, ?)
-     RETURNING id, campaign_id, supplier_id, supplier_email, sent_at, status, reply_token, created_at`,
+     RETURNING id, campaign_id, supplier_id, supplier_email, sent_at, status, reply_token,
+               booking_id, created_at`,
   );
 
   const inserted = db.transaction(() => {
@@ -505,6 +511,17 @@ export function createCampaign(
   const eventDate = coupleWeddingDate(couple.id);
   const inquiries = deliverInquiries(couple.id, contacts, input, ts, eventDate);
   const deliveredTo = new Set(inquiries.map((i) => i.supplierId));
+  // Record WHICH inquiry each message became. Read back by the couple's sent
+  // history ("in their client list" vs "emailed only") and by the claim-time
+  // replay, which must not re-deliver a message that already landed.
+  const bookingBySupplier = new Map(inquiries.map((i) => [i.supplierId, i.bookingId]));
+  const stampBooking = db.prepare("UPDATE outreach_messages SET booking_id = ? WHERE id = ?");
+  for (const row of inserted.messages) {
+    const bookingId = bookingBySupplier.get(row.supplier_id);
+    if (bookingId === undefined) continue;
+    stampBooking.run(bookingId, row.id);
+    row.booking_id = bookingId;
+  }
 
   // Fire the outbound mail per message. `sendKind` is fire-and-forget;
   // failures land in `email_log`. We flip status to "sent" optimistically
@@ -611,4 +628,64 @@ export function getCampaignDetail(
     messages,
     replies,
   };
+}
+
+// ── Handing over the leads that arrived before the account did ───────────────
+
+/** Deliver every outreach message for `listingId` that never reached a Weddly
+ *  inbox, now that one exists. Returns how many landed.
+ *
+ *  A vendor's `supplier_bookings.vendor_account_id` is resolved once, at insert.
+ *  Claim-then-inquire therefore works and inquire-then-claim silently did not:
+ *  the couples who wrote to a business BEFORE it joined were the whole reason it
+ *  was worth joining, and their messages were exactly the ones the new portal
+ *  reported as zero. That is the worst possible first impression, and it is
+ *  precisely the cohort the claim-invite campaign converts.
+ *
+ *  Idempotent via `outreach_messages.booking_id`: a message that already landed
+ *  is skipped, so this is safe to call on every claim and safe to re-run as a
+ *  backfill. Failures are logged per message and never abort the rest: a claim
+ *  must not fail because one old lead couldn't be replayed. */
+export function replayOutreachForListing(listingId: string): number {
+  const pending = db
+    .prepare(
+      `SELECT m.id, m.supplier_id, c.couple_id, c.subject, c.body_template, m.created_at
+         FROM outreach_messages m
+         JOIN outreach_campaigns c ON c.id = m.campaign_id
+        WHERE m.supplier_id = ? AND m.booking_id IS NULL
+        ORDER BY m.created_at ASC`,
+    )
+    .all(listingId) as {
+    id: number;
+    supplier_id: string;
+    couple_id: number;
+    subject: string;
+    body_template: string;
+    created_at: number;
+  }[];
+  if (pending.length === 0) return 0;
+
+  const stamp = db.prepare("UPDATE outreach_messages SET booking_id = ? WHERE id = ?");
+  let landed = 0;
+  for (const msg of pending) {
+    try {
+      const delivered = deliverInquiryFromOutreach({
+        supplierId: msg.supplier_id,
+        coupleId: msg.couple_id,
+        eventDate: coupleWeddingDate(msg.couple_id),
+        message: `${msg.subject}\n\n${msg.body_template}`,
+        // The ORIGINAL send time, not now: the vendor's CRM should show when the
+        // couple actually wrote, and a lead backdated honestly is also a lead
+        // whose age tells them how overdue the reply is.
+        at: msg.created_at,
+      });
+      if (!delivered) continue;
+      stamp.run(delivered.bookingId, msg.id);
+      landed++;
+    } catch (e) {
+      log.error("outreach.replay_failed", e, { listing_id: listingId, message_id: msg.id });
+    }
+  }
+  if (landed > 0) log.info("outreach.replayed", { listing_id: listingId, landed });
+  return landed;
 }

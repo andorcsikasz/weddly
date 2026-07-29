@@ -4510,6 +4510,8 @@ const hu: LocaleMessages = {
     price_filter_help: "Kattints a maximum árszintre",
     price_filter_band_aria: "Árszint legfeljebb {n}",
     guests_filter_label: "Vendégszám",
+    date_filter_label: "Dátum",
+    date_filter_not_wedding: "Nem az esküvő napja. Koppints a visszaállításhoz.",
     guests_filter_placeholder: "pl. 120",
     guests_filter_help: "Csak olyan helyszínek, ahol elférnek",
     guests_filter_clear: "Törlés",
@@ -4797,7 +4799,8 @@ const hu: LocaleMessages = {
       cta: {
         sendInquiry: "Megkeresés küldése",
         inquireDisabled: "A szolgáltatónak nincs publikus e-mail címe",
-        inquireSent: "Megkeresés elküldve",
+        inquireSent: "Megkeresés elküldve, a Weddly fiókjában is látja",
+        inquireSentEmail: "Megkeresés elküldve e-mailben",
         save: "Mentés",
         savedActive: "Mentve",
         share: "Megosztás",

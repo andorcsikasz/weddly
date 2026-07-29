@@ -4556,6 +4556,8 @@ const es: LocaleMessages = {
     price_filter_help: "Haz clic en el nivel máximo",
     price_filter_band_aria: "Hasta el nivel de precio {n}",
     guests_filter_label: "Invitados",
+    date_filter_label: "Fecha",
+    date_filter_not_wedding: "No es el día de tu boda. Toca para volver a él.",
     guests_filter_placeholder: "p. ej. 120",
     guests_filter_help: "Mostrar solo los lugares que caben",
     guests_filter_clear: "Borrar",
@@ -4844,7 +4846,8 @@ const es: LocaleMessages = {
       cta: {
         sendInquiry: "Enviar consulta",
         inquireDisabled: "Este proveedor no tiene correo público",
-        inquireSent: "Consulta enviada",
+        inquireSent: "Consulta enviada, y está en su bandeja de Weddly",
+        inquireSentEmail: "Consulta enviada por correo",
         save: "Guardar",
         savedActive: "Guardado",
         share: "Compartir",

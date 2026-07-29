@@ -26,6 +26,13 @@ export interface OutreachMessage {
    *  campaign + couple. v1 doesn't yet consume this — the token is
    *  reserved so v1.5 can ship without a schema migration. */
   reply_token: string;
+  /** Where the message actually landed. `in_account` = the recipient is a
+   *  Weddly vendor and the inquiry is sitting in their client list, so someone
+   *  is looking at it; `email_only` = it went to their inbox and nothing more,
+   *  because the listing is unclaimed. The couple is shown the difference: one
+   *  undifferentiated "sent" was how an inquiry that reached nobody's dashboard
+   *  looked exactly like one that did. */
+  delivery: "in_account" | "email_only";
   created_at: number;
 }
 

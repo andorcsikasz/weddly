@@ -5174,6 +5174,11 @@ export interface LocaleMessages {
     /** Guest-count input — filters venues whose capacity range covers the value.
      *  Suppliers without a declared capacity pass through. */
     guests_filter_label: string;
+    /** The day the couple is shopping for. Seeded with the wedding date. */
+    date_filter_label: string;
+    /** Tooltip + aria on the marker shown when the date is NOT the wedding
+     *  day. The marker is also the one-tap way back, so the copy says so. */
+    date_filter_not_wedding: string;
     guests_filter_placeholder: string;
     guests_filter_help: string;
     guests_filter_clear: string;
@@ -5499,6 +5504,7 @@ export interface LocaleMessages {
         sendInquiry: string;
         inquireDisabled: string;
         inquireSent: string;
+        inquireSentEmail: string;
         save: string;
         savedActive: string;
         /** Share the vendor with someone outside Weddly (native share sheet

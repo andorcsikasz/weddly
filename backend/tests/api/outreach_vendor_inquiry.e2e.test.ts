@@ -11,17 +11,20 @@
 // a message, watch it land in their own sent history, and the vendor's account
 // would honestly report zero inquiries, forever.
 //
-// What's asserted here is the seam: a claimed + entitled recipient gets a real
-// inquiry with the couple's message on it, an unclaimed or FREE-plan recipient
-// deliberately does not (they still get the mail), and a follow-up message
-// joins the open inquiry instead of opening a second one.
+// What's asserted here is the seam: a claimed recipient gets a real inquiry
+// with the couple's message on it whatever their PLAN, an unclaimed one gets
+// only the mail (there is no account to deliver into) but is handed the lead the
+// moment they claim, a follow-up joins the open inquiry instead of opening a
+// second one, and the couple is told which of those actually happened.
 
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
+import type { OutreachCampaignDetail } from "@shared/outreach";
 import type { VendorClientDetail, VendorClientView } from "@shared/vendor_clients";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
+import { replayOutreachForListing } from "../../src/domain/outreach";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
@@ -187,7 +190,7 @@ describe("outreach → vendor inbox", () => {
     // Subject AND body — a lead the vendor can answer, not just a name.
     expect(detail.data.inquiry_message).toContain("Photo for Sept 12");
     expect(detail.data.inquiry_message).toContain("About 80 guests");
-  });
+  }, 30000);
 
   test("a follow-up joins the open inquiry instead of opening a second one", async () => {
     wipeAll();
@@ -218,14 +221,13 @@ describe("outreach → vendor inbox", () => {
     );
     expect(detail.data.inquiry_message).toContain("Original question");
     expect(detail.data.inquiry_message).toContain("Following up");
-  });
+  }, 30000);
 
-  test("a FREE-plan vendor gets the mail but no in-app inquiry (direct inquiries are PRO)", async () => {
+  test("a FREE-plan vendor's lead is RECORDED, not thrown away", async () => {
     wipeAll();
-    const { listingId, accountId } = await bootstrapVendor("freeplan");
+    const { vendorToken, listingId, accountId } = await bootstrapVendor("freeplan");
     // Claiming grants a sub (founding / early / trial), so drop this one out of
-    // entitlement the way a lapse does — that's the FREE tier, where direct
-    // inquiries are gated exactly like the availability calendar.
+    // entitlement the way a lapse does, which is the FREE tier.
     db.prepare(
       `UPDATE vendor_subscriptions
           SET subscription_status = 'canceled', founding_until = NULL,
@@ -236,15 +238,121 @@ describe("outreach → vendor inbox", () => {
 
     expect(await sendOutreach(token, [listingId], "Hello", "Are you available?")).toBe(201);
 
-    expect(bookingsFor(listingId)).toHaveLength(0);
-    // The campaign still went out — the email is the fallback channel, same as
-    // the public profile's website redirect.
+    // The entitlement check used to sit HERE, at creation, and returned null, so
+    // so the lead was not deferred, it was destroyed, unrecoverable even if the
+    // vendor subscribed an hour later, while the couple was told "sent" and the
+    // vendor was mailed a link to a dashboard where it did not exist. The PRO
+    // gate belongs on `bookable` (the date-picker booking), not on writing down
+    // a message that has already been emailed.
+    expect(bookingsFor(listingId)).toHaveLength(1);
+    // And the basic client list is FREE by design, so they can read it.
+    const list = await req<{ clients: VendorClientView[] }>(
+      "GET",
+      "/api/vendor/clients",
+      undefined,
+      { token: vendorToken },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.clients).toHaveLength(1);
+
     const msgs = db
       .prepare("SELECT status FROM outreach_messages WHERE supplier_id = ?")
       .all(listingId) as Array<{ status: string }>;
     expect(msgs).toHaveLength(1);
     expect(msgs[0]?.status).toBe("sent");
-  });
+  }, 30000);
+
+  test("the couple is told which recipients it actually reached in-app", async () => {
+    wipeAll();
+    const { listingId, accountId } = await bootstrapVendor("delivery");
+    initVendorBilling(accountId, "EUR");
+    const { token } = await bootstrapCouple("couple-delivery@weddly.test");
+    // One claimed recipient, one curated entry nobody owns.
+    const unclaimed = "budapest-congress-center";
+
+    const sent = await req<OutreachCampaignDetail>(
+      "POST",
+      "/api/outreach/campaigns",
+      {
+        subject: "Two of you",
+        body_template: "Are you free?",
+        supplier_ids: [listingId, unclaimed],
+      },
+      { token },
+    );
+    expect(sent.status).toBe(201);
+
+    // One undifferentiated "sent" was how an inquiry that reached nobody's
+    // dashboard looked exactly like one that did.
+    const byId = new Map(sent.data.messages.map((m) => [m.supplier_id, m.delivery]));
+    expect(byId.get(listingId)).toBe("in_account");
+    expect(byId.get(unclaimed)).toBe("email_only");
+  }, 30000);
+
+  // Four argon2 hashes in one test (two couples, an admin, the vendor's own
+  // password), so it needs more than the 5s default on a loaded machine.
+  test("claiming a listing hands over the leads that arrived before the account did", async () => {
+    wipeAll();
+    // The message goes out FIRST, while the listing is still unclaimed: the
+    // ordering the claim-invite campaign creates by design, and the one that
+    // used to lose the lead permanently because supplier_bookings.
+    // vendor_account_id is resolved once, at insert.
+    const contactEmail = "vendor-replay@weddly.test";
+    const listingId = await makeApprovedListing(
+      "owner-replay@weddly.test",
+      contactEmail,
+      "Replay Studio",
+    );
+    const { token, coupleId } = await bootstrapCouple("couple-replay@weddly.test");
+    expect(
+      await sendOutreach(token, [listingId], "Before you joined", "Are you free in Sept?"),
+    ).toBe(201);
+    expect(bookingsFor(listingId)).toHaveLength(0);
+
+    // Now the vendor claims it.
+    const start = await req("POST", "/api/vendor/claim/start", {
+      listing_id: listingId,
+      claimant_email: "claimer-replay@gmail.test",
+    });
+    expect(start.status).toBe(200);
+    const claim = db
+      .prepare(
+        "SELECT token FROM listing_claims WHERE listing_id = ? AND email_sent_to = ? ORDER BY id DESC LIMIT 1",
+      )
+      .get(listingId, contactEmail) as { token: string } | undefined;
+    await req("POST", `/api/vendor/claim/verify/${claim?.token}`, {});
+    const complete = await req<{ token: string }>("POST", "/api/vendor/claim/complete", {
+      token: claim?.token,
+      password: "vendorpass123",
+      full_name: "Vendor Replay",
+    });
+    expect(complete.status).toBe(201);
+
+    // Their brand-new portal opens on the couples who were already waiting,
+    // instead of on "no inquiries yet".
+    const list = await req<{ clients: VendorClientView[] }>(
+      "GET",
+      "/api/vendor/clients",
+      undefined,
+      { token: complete.data.token },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.clients).toHaveLength(1);
+    expect(list.data.clients[0]?.couple_id).toBe(coupleId);
+
+    const detail = await req<VendorClientDetail>(
+      "GET",
+      `/api/vendor/clients/${list.data.clients[0]!.id}`,
+      undefined,
+      { token: complete.data.token },
+    );
+    expect(detail.data.inquiry_message).toContain("Are you free in Sept?");
+
+    // Idempotent: the replay is keyed on outreach_messages.booking_id, so a
+    // second pass (another claim, a backfill re-run) can't duplicate the lead.
+    expect(replayOutreachForListing(listingId)).toBe(0);
+    expect(bookingsFor(listingId)).toHaveLength(1);
+  }, 30000);
 
   test("an unclaimed listing gets the mail and nothing else", async () => {
     wipeAll();
@@ -282,5 +390,5 @@ describe("outreach → vendor inbox", () => {
     // Blank, not invented — the CRM renders it as "no date yet" and the
     // Google Calendar push skips anything that isn't a well-formed ISO date.
     expect(list.data.clients[0]?.event_date).toBe("");
-  });
+  }, 30000);
 });

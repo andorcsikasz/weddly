@@ -126,6 +126,14 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     return json(booking, { status: 201 });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
+    // Two different refusals, and they used to share one message that named
+    // only the first. An operator debugging a claimed vendor on the FREE plan
+    // was told the listing was unclaimed, i.e. the opposite of the truth.
+    if (msg.startsWith("booking_free_plan")) {
+      throw new HttpError(409, "Vendor is on the FREE plan, direct booking is PRO", {
+        code: "booking_free_plan",
+      });
+    }
     if (msg.startsWith("booking_unavailable")) {
       throw new HttpError(409, "Supplier is not claimed — booking unavailable", {
         code: "booking_unavailable",

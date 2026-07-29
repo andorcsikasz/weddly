@@ -47,7 +47,7 @@ import {
 import { maskAddressForPublic, maskEmailForPublic } from "../domain/contact_mask";
 import { getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
 import { countNonDeletedComments, listCommentsForSupplier } from "../domain/supplier_comments";
-import { getAvailability } from "../domain/supplier_bookings";
+import { getAvailability, isIsoDate, listingIdsUnavailableOn } from "../domain/supplier_bookings";
 import { isAdminEmail } from "../domain/users";
 import { completeListingIds } from "../domain/vendor_clients";
 import { db } from "../db";
@@ -220,6 +220,22 @@ async function handleList(ctx: Ctx): Promise<Response> {
   });
 }
 
+/** `GET /api/suppliers/unavailable?date=YYYY-MM-DD` — the listing ids known to
+ *  be taken that day.
+ *
+ *  Deliberately NOT a parameter on the list endpoint: `/api/suppliers` is
+ *  fetched once and every filter on the directory page is applied client-side,
+ *  so folding the date in would turn each change of the date into a refetch of
+ *  the whole catalogue. This is the small half of the answer, so the page can
+ *  keep filtering locally. */
+function handleUnavailable(ctx: Ctx): Response {
+  const date = ctx.url.searchParams.get("date") ?? "";
+  // A malformed date returns an empty set rather than a 400: the caller is a
+  // filter, and hiding nothing is the correct behaviour for "we don't know".
+  if (!isIsoDate(date)) return json({ date, supplier_ids: [] });
+  return json({ date, supplier_ids: listingIdsUnavailableOn(date) });
+}
+
 interface VoteBody {
   value?: unknown;
 }
@@ -356,6 +372,15 @@ function buildSupplierDetail(
   // static DIRECTORY object, and mutating that would leak one request's
   // overlay into every later request.
   const base = { ...resolved };
+  // EVERY lookup below keys on the CANONICAL id, never on the `supplierId` the
+  // caller passed. `resolveSupplierBase` accepts the pretty form as well as the
+  // bare one ("weddly-v67" → "v67"), and the pretty form is precisely what the
+  // Share button copies and what the vendor sends to couples. Keying the
+  // follow-up queries on the raw param served that link a hollow page: no
+  // gallery, no videos, no packages, no Q&A, no rating summary, and
+  // `bookable: false`, so the vendor's own listing read as abandoned on the one
+  // URL they hand out.
+  const id = base.id;
 
   // Overlay vendor_account_id + hero from listings (same shape the list view
   // uses). Curated entries default to null and only flip when the vendor
@@ -365,7 +390,7 @@ function buildSupplierDetail(
       `SELECT vendor_account_id, hero_image_url, spoken_languages, profile_imported
          FROM listings WHERE id = ?`,
     )
-    .get(supplierId) as
+    .get(id) as
     | {
         vendor_account_id: number | null;
         hero_image_url: string | null;
@@ -396,7 +421,7 @@ function buildSupplierDetail(
   // backfill (domain/listing_gallery_backfill) that re-hosts the seed images.
   // When nothing is cached yet the strip collapses to the hero alone — one
   // clean image, never a row of broken icons.
-  const uploadedPhotos = listListingPhotos(supplierId);
+  const uploadedPhotos = listListingPhotos(id);
   base.gallery_urls = [
     ...(base.hero_image_url ? [base.hero_image_url] : []),
     ...uploadedPhotos.map((p) => p.url),
@@ -424,8 +449,8 @@ function buildSupplierDetail(
     listing_complete: base.vendor_account_id !== null && completeListingIds([base.id]).has(base.id),
   };
 
-  const reviewsSummary = getReviewSummary(supplierId);
-  const availability = getAvailability(supplierId);
+  const reviewsSummary = getReviewSummary(id);
+  const availability = getAvailability(id);
 
   // Teaser gate for an imported profile nobody has claimed: bio, price band,
   // phone and every photo past the first come off here, on the shared assembly
@@ -444,15 +469,15 @@ function buildSupplierDetail(
     next_available: availability.next_available,
     // Reference-video reel, in vendor drag order. Empty for the unclaimed
     // majority; the detail page renders a lazy click-to-play grid when present.
-    videos: listListingVideos(supplierId),
+    videos: listListingVideos(id),
     // Price offers / packages (árajánlat). Empty for the unclaimed majority,
     // and force-empty on a redacted import: packages ARE pricing, so leaving
     // them would put back through the side door exactly what the price band
     // just took out.
-    packages: redacted ? [] : listListingPackages(supplierId),
+    packages: redacted ? [] : listListingPackages(id),
     // `comments_count` stays admin-only — it's a moderation signal, not a
     // couple-facing fact — so it's gated by the caller.
-    ...(opts.includeCommentsCount ? { comments_count: countNonDeletedComments(supplierId) } : {}),
+    ...(opts.includeCommentsCount ? { comments_count: countNonDeletedComments(id) } : {}),
   };
 }
 
@@ -521,17 +546,20 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
     }
   }
 
-  const reviews = listReviewsForSupplier(supplierId, {
+  // `detail.id` is the canonical id, not the URL's. A pretty share link
+  // ("/vendors/weddly-v67") must read the same reviews, Q&A and calendar as the
+  // bare one, or the link the vendor hands out is the one that looks empty.
+  const reviews = listReviewsForSupplier(detail.id, {
     limit: 50,
     cursor: null,
     includeUnpublished: false,
   });
-  const comments = listCommentsForSupplier(supplierId, {
+  const comments = listCommentsForSupplier(detail.id, {
     limit: 50,
     cursor: null,
     visibilities: PUBLIC_VISIBILITIES,
   });
-  const availability = getAvailability(supplierId);
+  const availability = getAvailability(detail.id);
 
   const payload: PublicVendorPageData = {
     detail,
@@ -793,8 +821,11 @@ async function handleRedirect(ctx: Ctx): Promise<Response> {
   const coupleId = ctx.userId ? (getCoupleForUser(ctx.userId)?.id ?? null) : null;
   // Reuse the existing suppliers event ingest path. Single event so the
   // counter increments in the same Map the admin directory reads from.
+  // `base.id`, not the URL's: a click arriving on the pretty form would
+  // otherwise bank the event under an id `viewCountsForListings` never asks
+  // about, so the vendor's own share link would report no demand at all.
   recordSupplierEventsSafe(
-    [{ supplier_id: supplierId, type: "website_click" }],
+    [{ supplier_id: base.id, type: "website_click" }],
     ctx.userId ?? null,
     coupleId,
   );
@@ -860,9 +891,10 @@ function handlePublicSearch(ctx: Ctx): Response {
 
 export function registerSupplierRoutes(router: Router) {
   router.get("/api/suppliers", handleList);
-  // Registered before the `:supplier_id` route so "name-check" isn't parsed as
+  // Registered before the `:supplier_id` route so neither of these is parsed as
   // a supplier id.
   router.get("/api/suppliers/name-check", handleNameCheck);
+  router.get("/api/suppliers/unavailable", handleUnavailable);
   router.get("/api/suppliers/:supplier_id", handleDetail, true);
   // Public, unauthenticated vendor page payload (the shareable surface).
   router.get("/api/public/vendors/:supplier_id", handlePublicDetail);

@@ -1207,12 +1207,14 @@ export interface CreateReviewBody {
   /** Optional short "what you got for the price" caption. */
   amount_note?: string | null;
   published?: boolean;
-  /** Admin only, and the only way an admin gets to be a person here. An admin's
-   *  review defaults to the editorial voice ("Weddly editors", draft/publish
-   *  theirs to control); `false` posts it as their own account instead, on the
-   *  same terms as anyone else's — live immediately, verified only with
-   *  engagement proof, flagged when it is 1-2 stars. Ignored for everyone else,
-   *  who never had the choice to begin with. */
+  /** Admin only, and the only way an admin gets to write in Weddly's voice
+   *  rather than their own. `true` posts as the editorial "Weddly editors"
+   *  (couple_id null, draft/publish theirs to control via `published`);
+   *  omitted or `false` posts under their own account on the same terms as
+   *  anyone else's: live immediately, verified only with engagement proof,
+   *  flagged when it is 1-2 stars. Deliberately opt-IN: an omitted field used
+   *  to mean editorial, which made every admin review an invisible draft.
+   *  Ignored for everyone else, who never had the choice to begin with. */
   as_editorial?: boolean;
 }
 

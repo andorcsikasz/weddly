@@ -437,31 +437,39 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
   const blocked = db
     .prepare("SELECT COUNT(*) AS n FROM vendor_unavailable_dates WHERE vendor_account_id = ?")
     .get(accountId) as { n: number };
-  // Reviews land on the LISTING (supplier_reviews.supplier_id is the listing id),
-  // so an account with no listing yet simply has none. Only published,
-  // non-deleted rows count — a vendor should never be pinged about a review a
-  // couple can't see.
-  const listing = getListingByVendorAccountId(accountId);
-  const reviewsRecent = listing
-    ? (
-        db
-          .prepare(
-            `SELECT COUNT(*) AS n FROM supplier_reviews
-              WHERE supplier_id = ? AND published = 1 AND deleted_at IS NULL
-                AND created_at >= ?`,
-          )
-          .get(listing.id, nowMs - THIRTY_DAYS_MS) as { n: number }
-      ).n
-    : 0;
-  // Reach. Summed across EVERY listing the account owns (its own `v{N}` card
-  // plus anything it claimed), same rule as the admin vendor row: a vendor
-  // thinks in terms of "my profile", not one row per directory source.
+  // EVERY listing the account owns (its own `v{N}` card plus anything it
+  // claimed), because a vendor thinks in terms of "my profile", not one row per
+  // directory source. Same rule the admin vendor row already used for its
+  // counts, and the reason this list is resolved once here: the review counter
+  // below used to take `getListingByVendorAccountId`, i.e. `ORDER BY updated_at
+  // DESC LIMIT 1`, so a two-listing vendor was told about reviews on whichever
+  // card they had most recently edited and silently not about the other.
   const listingIds = (
     db.prepare("SELECT id FROM listings WHERE vendor_account_id = ?").all(accountId) as {
       id: string;
     }[]
   ).map((r) => r.id);
+  // Reviews land on the LISTING (supplier_reviews.supplier_id is the listing id),
+  // so an account with no listing yet simply has none. Only published,
+  // non-deleted rows count — a vendor should never be pinged about a review a
+  // couple can't see.
+  const reviewsRecent =
+    listingIds.length === 0
+      ? 0
+      : (
+          db
+            .prepare(
+              `SELECT COUNT(*) AS n FROM supplier_reviews
+                WHERE supplier_id IN (${listingIds.map(() => "?").join(", ")})
+                  AND published = 1 AND deleted_at IS NULL
+                  AND created_at >= ?`,
+            )
+            .get(...listingIds, nowMs - THIRTY_DAYS_MS) as { n: number }
+        ).n;
   const views = viewCountsForListings(listingIds);
+  // The setup checklist is genuinely about ONE card, the profile the vendor
+  // edits, so it keeps the single-listing lookup on purpose.
+  const listing = getListingByVendorAccountId(accountId);
   const sub = getVendorSub(accountId);
   const billing = sub
     ? toVendorBilling(sub)

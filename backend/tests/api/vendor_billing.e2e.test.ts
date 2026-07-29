@@ -564,7 +564,10 @@ describe("vendor billing: freemium feature gates", () => {
       { token: adminToken },
     );
     expect(create.status).toBe(409);
-    expect(create.data.detail?.code).toBe("booking_unavailable");
+    // The refusal names the actual reason. Both cases used to answer
+    // `booking_unavailable` / "Supplier is not claimed", so an operator looking
+    // at a claimed vendor on the FREE plan was told the opposite of the truth.
+    expect(create.data.detail?.code).toBe("booking_free_plan");
   });
 
   test("an entitled vendor stays bookable", async () => {

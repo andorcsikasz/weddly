@@ -15,6 +15,7 @@ import {
   REVIEW_AMOUNT_NOTE_MAX_CHARS,
   REVIEW_BODY_MAX_CHARS,
 } from "@shared/suppliers";
+import { canonicalListingId } from "@shared/vendor_slug";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { rateLimit } from "../lib/rate_limit";
@@ -136,13 +137,35 @@ function resolveAmountCurrency(amount: number | null, raw: unknown): Currency | 
   return isCurrency(raw) ? raw : "EUR";
 }
 
+/** The supplier id from the path, CANONICALISED. The single place this route
+ *  learns which supplier it is talking about.
+ *
+ *  `supplier_reviews.supplier_id` is a bare TEXT column with no FK, so whatever
+ *  string arrives becomes the key forever. That matters because the pretty
+ *  share form is what every "collect reviews" link carries: `VendorShareDialog`
+ *  and `VendorReviewsPage` both build `/vendors/{name}-v12`, and the vendor's
+ *  past client rates them from exactly there. Keyed raw, that review lands on
+ *  `"magyar-foto-v12"` while the listing is `"v12"`: invisible to the vendor's
+ *  own reviews page, to the aggregate, to the admin counters and to Weddly
+ *  Points, yet visible on the page it was written from, which is what makes it
+ *  so hard to notice.
+ *
+ *  Deliberately NOT an existence check: a review may legitimately be keyed to a
+ *  curated slug that lives in code rather than in `listings`, and 404-ing an
+ *  unknown id here would be a wider behavioural change than this bug needs. */
+function pathSupplierId(ctx: Ctx): string {
+  const raw = ctx.params.supplier_id?.trim();
+  if (!raw) throw new HttpError(400, "supplier_id required");
+  if (raw.length > 80) throw new HttpError(400, "supplier_id too long");
+  return canonicalListingId(raw) ?? raw;
+}
+
 async function handleList(ctx: Ctx): Promise<Response> {
   // Reads are open to any authed viewer now that the detail page serves
   // couples. Admins see every review (including unpublished drafts) for
   // moderation; couples see only published rows.
   const { userId, isAdmin } = viewerIsAdmin(ctx);
-  const supplierId = ctx.params.supplier_id?.trim();
-  if (!supplierId) throw new HttpError(400, "supplier_id required");
+  const supplierId = pathSupplierId(ctx);
 
   const cursorRaw = ctx.url.searchParams.get("cursor");
   const cursor = cursorRaw ? Number.parseInt(cursorRaw, 10) : null;
@@ -183,9 +206,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     refillRate: 1,
   });
 
-  const supplierId = ctx.params.supplier_id?.trim();
-  if (!supplierId) throw new HttpError(400, "supplier_id required");
-  if (supplierId.length > 80) throw new HttpError(400, "supplier_id too long");
+  const supplierId = pathSupplierId(ctx);
 
   const body = await readJson<Partial<CreateReviewBody>>(ctx.req);
   const rating = parseRating(body.rating);
@@ -201,17 +222,28 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
   let verified: boolean;
   let flagged: boolean;
   // An admin is also a person, and being staff shouldn't mean every supplier
-  // they ever hire gets reviewed in the editorial voice. `as_editorial: false`
-  // drops them into the ordinary path (own name, live immediately, verified
-  // only with engagement proof). Editorial stays the default so the seeded
-  // "Weddly editors" workflow is unchanged by this.
-  const asEditorial = isAdmin && body.as_editorial !== false;
+  // they ever hire gets reviewed in the editorial voice. The editorial voice is
+  // therefore OPT-IN (`as_editorial: true`); everything else drops into the
+  // ordinary path (own name, live immediately, verified only with engagement
+  // proof).
+  //
+  // It used to be opt-OUT, and that was a trap: `as_editorial !== false` meant
+  // any caller that simply omitted the field (`RateVendorsPage`'s one-tap star,
+  // any future client) turned an admin's ordinary 5 stars into "Weddly editors"
+  // AND, via the draft default below, into an unpublished row. Since `published`
+  // gates the supplier list, the aggregate, the admin counters and the vendor's
+  // own /vendor/reviews page all at once, the review existed and was visible to
+  // nobody but its admin author. Opt-in makes the safe case the default one.
+  const asEditorial = isAdmin && body.as_editorial === true;
   if (asEditorial) {
     // Editorial voice: couple_id stays null ("Weddly editors"), draft/publish
     // is the admin's call. Never verified-badged, never auto-flagged.
     coupleId = null;
     authorKind = "admin";
-    published = typeof body.published === "boolean" ? body.published : false;
+    // Live unless explicitly drafted. A draft has no queue anywhere in admin
+    // (`listFlaggedReviews` filters `flagged = 1`, not `published = 0`), so a
+    // draft nobody asked for is a review that silently never surfaces.
+    published = typeof body.published === "boolean" ? body.published : true;
     verified = false;
     flagged = false;
   } else {
@@ -302,9 +334,7 @@ async function handleVisitorCreate(ctx: Ctx): Promise<Response> {
   rateLimit(ctx.clientIp, "visitor_review.create.ip", { capacity: 5, refillRate: 1 / 60 });
   rateLimit(`visitor:${visitor.id}`, "visitor_review.create", { capacity: 5, refillRate: 1 / 300 });
 
-  const supplierId = ctx.params.supplier_id?.trim();
-  if (!supplierId) throw new HttpError(400, "supplier_id required");
-  if (supplierId.length > 80) throw new HttpError(400, "supplier_id too long");
+  const supplierId = pathSupplierId(ctx);
 
   const body = await readJson<Partial<CreateReviewBody>>(ctx.req);
   const rating = parseRating(body.rating);

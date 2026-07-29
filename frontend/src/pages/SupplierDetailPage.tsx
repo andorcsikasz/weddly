@@ -749,9 +749,20 @@ export default function SupplierDetailPage() {
         <ComposeDialog
           initialSuppliers={[{ id: detail.id, name: detail.name, city: detail.city }]}
           onClose={() => setComposeOpen(false)}
-          onSent={() => {
+          onSent={(campaign) => {
             setComposeOpen(false);
-            toast.success(t("suppliers.detail.cta.inquireSent"));
+            // Say which of the two actually happened. An unclaimed listing only
+            // ever gets an email, and calling that "sent" the same way as a
+            // lead sitting in a vendor's client list is how a couple ends up
+            // waiting on a reply from a dashboard nobody owns.
+            const landed = campaign.messages.some((m) => m.delivery === "in_account");
+            toast.success(
+              t(
+                landed
+                  ? "suppliers.detail.cta.inquireSent"
+                  : "suppliers.detail.cta.inquireSentEmail",
+              ),
+            );
           }}
         />
       )}
@@ -850,12 +861,15 @@ function ReviewsSection({
   const [tags, setTags] = useState<string[]>([]);
   const [amount, setAmount] = useState<number | null>(null);
   const [amountNote, setAmountNote] = useState("");
-  const [published, setPublished] = useState(false);
-  // Which voice an admin is writing in. Editorial by default (that is what the
-  // composer has always been for), but an admin who actually hired this
-  // supplier can post under their own name instead, and then the review is an
-  // ordinary one: live immediately, no draft lever.
-  const [asEditorial, setAsEditorial] = useState(true);
+  // The draft lever, and it only exists for an editorial post. Checked, because
+  // an unpublished review is invisible to the vendor, to the aggregate and to
+  // every admin counter, and nothing anywhere queues it for a second look.
+  const [published, setPublished] = useState(true);
+  // Which voice an admin is writing in. Their OWN by default: staff hire
+  // suppliers like everyone else, and that review should behave like everyone
+  // else's: live immediately, no draft lever. Ticking the box opts into the
+  // "Weddly editors" voice for a genuinely editorial entry.
+  const [asEditorial, setAsEditorial] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
@@ -881,7 +895,7 @@ function ReviewsSection({
       setAmount(null);
       setAmountNote("");
       setRating(0);
-      setPublished(false);
+      setPublished(true);
       toast.success(t("suppliers.detail.reviews.submitted"));
       await onChange();
     } catch (e) {

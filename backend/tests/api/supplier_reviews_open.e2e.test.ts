@@ -296,8 +296,9 @@ describe("open reviews — verified visitors (Google)", () => {
 });
 
 // Being staff is a role, not an identity: an admin who actually hired a
-// supplier has to be able to say so under their own name. Editorial stays the
-// default, so the seeded "Weddly editors" workflow is untouched.
+// supplier has to be able to say so under their own name, and that is the
+// DEFAULT. The editorial voice is opt-in, because an omitted flag used to mean
+// "Weddly editors, unpublished", i.e. a review visible to nobody but its author.
 describe("an admin choosing their own voice", () => {
   test("as_editorial:false posts an ordinary, live review under their own name", async () => {
     const sid = "c-admin-self";
@@ -340,7 +341,10 @@ describe("an admin choosing their own voice", () => {
     expect(row.author_kind).not.toBe("admin");
   });
 
-  test("omitting the flag keeps the editorial voice and the draft lever", async () => {
+  // The regression that hid a real 5-star review from the vendor it was about:
+  // every caller that doesn't mention the flag (RateVendorsPage's one-tap star,
+  // any future client) must get an ordinary, LIVE review.
+  test("omitting the flag posts an ordinary live review, not an editorial draft", async () => {
     const sid = "c-admin-default";
     const created = await req<SupplierReview>(
       "POST",
@@ -349,8 +353,113 @@ describe("an admin choosing their own voice", () => {
       { token: adminToken },
     );
     expect(created.status).toBe(201);
+    expect(created.data.editorial).toBe(false);
+    expect(created.data.published).toBe(true);
+    expect(created.data.author.display_name).not.toBe("Weddly editors");
+  });
+
+  test("as_editorial:true still opts into the editorial voice, live by default", async () => {
+    const sid = "c-admin-editorial";
+    const created = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 5, body: "An editors' pick.", as_editorial: true },
+      { token: adminToken },
+    );
+    expect(created.status).toBe(201);
     expect(created.data.editorial).toBe(true);
-    expect(created.data.published).toBe(false); // draft until the admin publishes
     expect(created.data.author.display_name).toBe("Weddly editors");
+    // Live unless the admin explicitly asks for a draft: an unpublished row has
+    // no queue anywhere in admin, so a silent draft is a lost review.
+    expect(created.data.published).toBe(true);
+  });
+
+  test("as_editorial:true with published:false still parks an explicit draft", async () => {
+    const sid = "c-admin-editorial-draft";
+    const created = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 5, as_editorial: true, published: false },
+      { token: adminToken },
+    );
+    expect(created.status).toBe(201);
+    expect(created.data.editorial).toBe(true);
+    expect(created.data.published).toBe(false);
+  });
+
+  // The reported bug, from the side that noticed it. An admin rated a supplier
+  // 5 stars and the vendor's portal showed nothing, because the admin's own
+  // read passes `includeUnpublished: true`, so the author saw their review
+  // sitting right there (with a small "Draft" pill) while every other reader,
+  // the vendor included, got an empty list. Two viewers, one endpoint, opposite
+  // answers, no error anywhere.
+  test("a review an admin writes is visible to everyone else, not just to them", async () => {
+    const sid = "c-admin-visible-to-vendor";
+    const created = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(sid),
+      { rating: 5, body: "They were wonderful on the day." },
+      { token: adminToken },
+    );
+    expect(created.status).toBe(201);
+
+    // `readerToken` is an ordinary verified user with no workspace, exactly the
+    // privilege level /vendor/reviews reads at.
+    const asReader = await req<ReviewListResponse>("GET", reviewsUrl(sid), undefined, {
+      token: readerToken,
+    });
+    expect(asReader.status).toBe(200);
+    expect(asReader.data.items.map((r) => r.id)).toContain(created.data.id);
+    // And it counts, so the aggregate, the admin vendor row and the vendor's
+    // notification bell all agree with the page.
+    expect(asReader.data.summary.reviews_count).toBe(1);
+  });
+});
+
+// Reviews are keyed by a bare TEXT `supplier_id` with no FK, so whatever string
+// arrives becomes the key forever. The pretty share form is what every "collect
+// reviews" link carries, which made this the likeliest way to lose one.
+describe("supplier id canonicalisation", () => {
+  test("a review posted to the pretty share id lands on the listing itself", async () => {
+    const bare = "v4242";
+    const pretty = "magyar-foto-v4242";
+    const created = await req<SupplierReview>(
+      "POST",
+      reviewsUrl(pretty),
+      { rating: 5, body: "Found them through their own link." },
+      { token: readerToken },
+    );
+    expect(created.status).toBe(201);
+
+    // Stored against the listing id, not the URL slug. Keyed raw, this review
+    // was invisible to /vendor/reviews, to supplier_aggregates, to the admin
+    // counters and to Weddly Points, while still showing on the page it was
+    // written from: self-consistently lost.
+    const row = db
+      .prepare("SELECT supplier_id FROM supplier_reviews WHERE id = ?")
+      .get(created.data.id) as { supplier_id: string };
+    expect(row.supplier_id).toBe(bare);
+
+    // Both spellings therefore read the same review.
+    for (const id of [bare, pretty]) {
+      const list = await req<ReviewListResponse>("GET", reviewsUrl(id), undefined, {
+        token: readerToken,
+      });
+      expect(list.status).toBe(200);
+      expect(list.data.items.map((r) => r.id)).toContain(created.data.id);
+    }
+  });
+
+  test("one review per person per supplier survives the two spellings", async () => {
+    await req("POST", reviewsUrl("v4343"), { rating: 5 }, { token: readerToken });
+    // Without canonicalisation the pretty form was a different key, so the
+    // partial unique index never fired and one person could rate twice.
+    const dup = await req(
+      "POST",
+      reviewsUrl("studio-nev-v4343"),
+      { rating: 1 },
+      { token: readerToken },
+    );
+    expect(dup.status).toBe(409);
   });
 });

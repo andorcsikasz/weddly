@@ -584,3 +584,52 @@ describe("vendor pretty public id (name-based slug)", () => {
     }
   });
 });
+
+// The SSR canonical above always pointed at the pretty URL, so the pretty URL is
+// what gets crawled, shared and pasted into a client's inbox. The JSON behind it
+// was answering a different question: `buildSupplierDetail` resolved the id
+// correctly and then keyed every follow-up lookup on the RAW path segment, so
+// the one link a vendor actually hands out served a hollow page: no packages,
+// no Q&A, no rating summary, no availability, `bookable: false`.
+describe("the pretty share URL serves the same page as the bare id", () => {
+  test("packages, reviews, availability and bookable all survive the pretty form", async () => {
+    wipeAll();
+    const id = await seedClaimedVendorNoHero("pretty@weddly.test", "Great Tide Kft.");
+    const pretty = vendorPublicId(id, "Great Tide Kft.");
+    expect(pretty).not.toBe(id);
+    expect(canonicalListingId(pretty)).toBe(id);
+
+    // Give the listing the things a claimed vendor has, so an empty answer is
+    // unambiguously wrong rather than merely unfurnished.
+    const vendorLogin = await req<{ token: string }>("POST", "/api/auth/login", {
+      email: "pretty@weddly.test",
+      password: "supersafe123",
+    });
+    const pkg = await req(
+      "POST",
+      "/api/vendor/listing/me/packages",
+      { name: "Full day", price_text: "450 000 Ft", description: "Ten hours of coverage" },
+      { token: vendorLogin.data.token },
+    );
+    expect(pkg.status).toBe(201);
+
+    type Detail = {
+      detail: { id: string; bookable: boolean; packages: unknown[] };
+      availability: { bookable: boolean };
+    };
+    const bare = await req<Detail>("GET", `/api/public/vendors/${encodeURIComponent(id)}`);
+    const viaPretty = await req<Detail>("GET", `/api/public/vendors/${encodeURIComponent(pretty)}`);
+
+    expect(bare.status).toBe(200);
+    expect(viaPretty.status).toBe(200);
+    // Same listing, therefore the same payload. The pretty form is a spelling,
+    // not a different vendor.
+    expect(viaPretty.data.detail.id).toBe(bare.data.detail.id);
+    expect(viaPretty.data.detail.packages.length).toBe(bare.data.detail.packages.length);
+    expect(viaPretty.data.detail.packages.length).toBeGreaterThan(0);
+    // `bookable` is the one that reads as "this business is gone" to a couple.
+    expect(viaPretty.data.detail.bookable).toBe(bare.data.detail.bookable);
+    expect(viaPretty.data.detail.bookable).toBe(true);
+    expect(viaPretty.data.availability.bookable).toBe(true);
+  }, 30000);
+});

@@ -23,6 +23,7 @@ import { db, now } from "../db";
 import { isVendorEntitled, recordVendorLeadCredit } from "./vendor_billing";
 import { emitVendorEvent } from "./vendor_points";
 import { getVendorWeekdays } from "./vendor_availability_settings";
+import { isoWeekday } from "@shared/vendor_availability";
 
 const VALID_STATUSES: ReadonlySet<BookingStatus> = new Set([
   "requested",
@@ -123,6 +124,64 @@ export function listBlockedDays(vendorAccountId: number): VendorBlockedDay[] {
     )
     .all(vendorAccountId) as Array<{ blocked_date: string; blocked_hours: string | null }>;
   return rows.map((r) => ({ date: r.blocked_date, hours: parseBlockedHours(r.blocked_hours) }));
+}
+
+/** Listings we KNOW are taken on `date`, for the directory's date filter.
+ *
+ *  The inverse question ("who is free?") is unanswerable and would be dishonest
+ *  to answer: an unclaimed curated entry has no calendar here, and a vendor who
+ *  keeps theirs on paper looks identical to one with a genuinely empty diary. So
+ *  this returns only the listings with a real reason on file — a whole-day block
+ *  on that date, or a weekday the vendor has said they don't work — and the
+ *  filter removes exactly those, leaving everything unknown in the list.
+ *
+ *  Vendors without the PRO entitlement are excluded for the same reason
+ *  `getAvailability` blanks them: their calendar isn't a surface they're paying
+ *  for, so we don't publish conclusions from it.
+ *
+ *  Both queries are keyed to one date, so this stays two small scans however big
+ *  the catalogue gets. */
+export function listingIdsUnavailableOn(date: string): string[] {
+  const weekday = isoWeekday(date);
+  const rows = db
+    .prepare(
+      `SELECT l.id AS id, l.vendor_account_id AS vendor_account_id
+         FROM listings l
+        WHERE l.vendor_account_id IS NOT NULL
+          AND (
+            EXISTS (SELECT 1 FROM vendor_unavailable_dates d
+                     WHERE d.vendor_account_id = l.vendor_account_id
+                       AND d.blocked_date = ? AND d.blocked_hours IS NULL
+                       AND d.is_available = 0)
+            OR EXISTS (SELECT 1 FROM vendor_availability_settings s
+                        WHERE s.vendor_account_id = l.vendor_account_id
+                          AND s.weekdays IS NOT NULL AND s.weekdays != '')
+          )`,
+    )
+    .all(date) as Array<{ id: string; vendor_account_id: number }>;
+
+  const out: string[] = [];
+  // The weekday pattern can't be decided in SQL (it is a JSON array), and the
+  // entitlement check is a function, so the narrowed set is finished in JS. The
+  // set is small by construction: only vendors with a block on this exact day or
+  // a weekly pattern at all.
+  for (const row of rows) {
+    if (!isVendorEntitled(row.vendor_account_id)) continue;
+    const blocked = db
+      .prepare(
+        `SELECT 1 FROM vendor_unavailable_dates
+          WHERE vendor_account_id = ? AND blocked_date = ?
+            AND blocked_hours IS NULL AND is_available = 0`,
+      )
+      .get(row.vendor_account_id, date);
+    if (blocked) {
+      out.push(row.id);
+      continue;
+    }
+    const weekdays = getVendorWeekdays(row.vendor_account_id);
+    if (weekdays !== null && !weekdays.includes(weekday)) out.push(row.id);
+  }
+  return out;
 }
 
 /** Dates blocked for the WHOLE day (blocked_hours IS NULL) — the set that makes
@@ -294,6 +353,12 @@ export interface CreateBookingArgs {
   eventDate: string;
   notes: string | null;
   amountHuf: number | null;
+  /** Record the inquiry even when the vendor is on the FREE plan. Set by the
+   *  outreach path, where the couple's message has already gone out by email
+   *  and dropping the row would delete a real lead rather than defer it. The
+   *  admin booking route leaves it off: that surface represents "this couple
+   *  booked", which genuinely is PRO. */
+  allowUnentitled?: boolean;
 }
 
 /** Insert a booking inquiry. Throws when the supplier is unclaimed (v1
@@ -316,8 +381,8 @@ export function createBooking(args: CreateBookingArgs): SupplierBooking {
   if (!listing || listing.vendor_account_id === null) {
     throw new Error("booking_unavailable: supplier is not claimed");
   }
-  if (!isVendorEntitled(listing.vendor_account_id)) {
-    throw new Error("booking_unavailable: vendor is not accepting direct inquiries");
+  if (!args.allowUnentitled && !isVendorEntitled(listing.vendor_account_id)) {
+    throw new Error("booking_free_plan: vendor is not accepting direct inquiries");
   }
   const ts = now();
   const info = db
@@ -359,6 +424,11 @@ export interface DeliveredInquiry {
   isNew: boolean;
 }
 
+/** Why a recipient's inquiry did or didn't reach their Weddly inbox. The couple
+ *  is told this per recipient, so "sent" can never again mean four different
+ *  things ("in their client list", "emailed only", "nobody home"). */
+export type InquiryOutcome = "in_account" | "email_only";
+
 /** How much of a couple's message thread we keep on the inquiry row. Long
  *  enough for a real back-and-forth, bounded so a scripted sender can't grow
  *  one row without limit. Trimmed from the FRONT so the newest message — the
@@ -367,10 +437,18 @@ const INQUIRY_NOTES_MAX_LEN = 8000;
 
 /** Deliver a couple's outreach message into the vendor's Weddly inbox.
  *
- *  Returns null when there is nothing to deliver INTO: an unclaimed listing
- *  (no account) or a vendor on the FREE plan (direct inquiries are PRO). Both
- *  still receive the outreach email — the same fallback the public profile
- *  uses — so the couple is never silently dropped.
+ *  Returns null only when there is genuinely nothing to deliver INTO: an
+ *  unclaimed listing, i.e. no Weddly account exists. Those still receive the
+ *  outreach email, the same fallback the public profile uses.
+ *
+ *  It does NOT consult entitlement, and that is the point. It used to, and a
+ *  FREE-plan vendor's lead was therefore never written down at all, not
+ *  deferred but DESTROYED, unrecoverable even if they subscribed an hour later,
+ *  while the couple was told "sent" and the vendor was mailed a link to a
+ *  dashboard where the lead did not exist. The PRO gate belongs on `bookable`
+ *  (the couple's date-picker booking, see `getAvailability`), not here: outreach
+ *  is a message the couple is sending by email regardless, and the basic client
+ *  list is FREE by design, so the vendor can actually read what arrives.
  *
  *  A second message to a vendor the couple already has an OPEN inquiry with
  *  appends to that inquiry instead of opening a new one. Two rows for one
@@ -387,7 +465,6 @@ export function deliverInquiryFromOutreach(args: {
 }): DeliveredInquiry | null {
   const listing = getListingFor(args.supplierId);
   if (!listing || listing.vendor_account_id === null) return null;
-  if (!isVendorEntitled(listing.vendor_account_id)) return null;
 
   const open = db
     .prepare(
@@ -424,6 +501,9 @@ export function deliverInquiryFromOutreach(args: {
     eventDate: args.eventDate,
     notes: args.message.slice(0, INQUIRY_NOTES_MAX_LEN),
     amountHuf: null,
+    // A message the couple has already emailed gets recorded whatever the
+    // vendor's plan. See this function's header.
+    allowUnentitled: true,
   });
   return {
     bookingId: booking.id,

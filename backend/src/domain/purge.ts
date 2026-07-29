@@ -18,6 +18,7 @@ import { purgeStaleVendorDemos } from "./vendor_demo_seed";
 import { purgeExpiredPendingSignups } from "./pending_signups";
 import { sendKind } from "./emails";
 import { listFlagsDueForPurge, markFlagPurged } from "./user_flags";
+import { recomputeSupplierAggregate } from "./reviews";
 
 export function purgeOneCouple(
   coupleId: number,
@@ -114,6 +115,10 @@ export function purgeOneCouple(
   // must be atomic. A mid-sweep crash that left guests/seating deleted but
   // the couples row still 'active' (or PII half-scrubbed) is both a data-
   // integrity and a GDPR-compliance hazard, so we commit-or-rollback as one.
+  // Suppliers whose rating cache this purge invalidates. Filled inside the
+  // transaction (the rows have to be read before they're deleted), consumed
+  // after it commits.
+  let affectedSupplierIds: string[] = [];
   const applyPurge = db.transaction(() => {
     db.prepare(
       "DELETE FROM seat_assignments WHERE table_id IN (SELECT id FROM seating_tables WHERE couple_id = ?)",
@@ -168,6 +173,17 @@ export function purgeOneCouple(
     // couple's users, and booking inquiries. Editorial reviews (couple_id NULL)
     // belong to admins, not to this workspace, so they stay untouched.
     // supplier_review_tags cascades via FK ON DELETE CASCADE.
+    //
+    // Note WHICH suppliers lose a review first: `supplier_aggregates` is a
+    // denormalised cache with no trigger and no backfill worker, so a purge that
+    // just deletes the rows leaves every affected supplier publishing the old
+    // count and average until some unrelated review write on that same supplier
+    // happens to recompute it. Recomputed after the transaction commits.
+    affectedSupplierIds = (
+      db
+        .prepare("SELECT DISTINCT supplier_id FROM supplier_reviews WHERE couple_id = ?")
+        .all(coupleId) as { supplier_id: string }[]
+    ).map((r) => r.supplier_id);
     db.prepare("DELETE FROM supplier_reviews WHERE couple_id = ?").run(coupleId);
     if (exclusiveIds.length > 0) {
       db.prepare(
@@ -301,6 +317,17 @@ export function purgeOneCouple(
     });
   });
   applyPurge();
+
+  // Re-derive the rating cache for every supplier this couple had reviewed.
+  // Outside the transaction: a stale aggregate is a display bug, and it must
+  // never be able to roll back an erasure that has already succeeded.
+  for (const supplierId of affectedSupplierIds) {
+    try {
+      recomputeSupplierAggregate(supplierId);
+    } catch (e) {
+      log.error("purge.aggregate_recompute_failed", e, { couple_id: coupleId, supplierId });
+    }
+  }
 
   // Best-effort removal of this couple's uploaded files (photos, moodboard,
   // cover, budget docs, honeymoon cover). Outside the DB transaction — a leaked

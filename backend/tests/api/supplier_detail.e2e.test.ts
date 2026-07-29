@@ -62,13 +62,22 @@ describe("supplier reviews (admin v1)", () => {
     const create = await req<{ id: number; rating: number; tags: string[]; editorial: boolean }>(
       "POST",
       `/api/suppliers/${encodeURIComponent(sid)}/reviews`,
-      { rating: 4, body: "Solid choice.", tags: ["parking", "english_speaking"], published: true },
+      {
+        rating: 4,
+        body: "Solid choice.",
+        tags: ["parking", "english_speaking"],
+        published: true,
+        // The editorial voice is opt-IN. Omitted, an admin now posts under their
+        // own name, which is the safe default, because an omitted flag used to
+        // mean "Weddly editors, unpublished", i.e. a review nobody but its
+        // author could see.
+        as_editorial: true,
+      },
       { token },
     );
     expect(create.status).toBe(201);
     expect(create.data.rating).toBe(4);
     expect(create.data.tags.sort()).toEqual(["english_speaking", "parking"]);
-    // Admin author has no couple → couple_id NULL → editorial flag set.
     expect(create.data.editorial).toBe(true);
 
     const list = await req<{

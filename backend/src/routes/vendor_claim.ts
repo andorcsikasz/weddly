@@ -28,6 +28,8 @@ import {
   markOtherPendingClaimsCancelled,
 } from "../domain/listing_claims";
 import { getListingById } from "../domain/listings";
+import { replayOutreachForListing } from "../domain/outreach";
+import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
 import { vendorCurrencyForLocale } from "@shared/vendor_billing";
 import { createVendorAccount } from "../domain/vendor_accounts";
 import { currentVendorOffer, initVendorBilling } from "../domain/vendor_billing";
@@ -379,6 +381,15 @@ async function handleComplete(ctx: Ctx): Promise<Response> {
   // to EUR, the claim flow carries no locale; the vendor can pay in EUR
   // regardless of country.
   initVendorBilling(newVendorAccountId, vendorCurrencyForLocale(null), ts);
+
+  // Hand over the couples who wrote to this business BEFORE it had an account.
+  // Those messages are the reason claiming is worth anything, and until now the
+  // brand-new portal opened on "no inquiries" while their mail sat in an inbox
+  // nobody had connected to Weddly. Runs after initVendorBilling so the account
+  // is a fully-formed vendor by the time the leads arrive; idempotent, and never
+  // able to fail the claim.
+  const replayed = replayOutreachForListing(claim.listing_id);
+  if (replayed > 0) markVendorCalendarDirty(newVendorAccountId);
 
   addAuditLog({
     actor_user_id: newUserId,

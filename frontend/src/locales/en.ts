@@ -4457,6 +4457,8 @@ const en: LocaleMessages = {
     price_filter_help: "Click the maximum level",
     price_filter_band_aria: "Up to price level {n}",
     guests_filter_label: "Guests",
+    date_filter_label: "Date",
+    date_filter_not_wedding: "Not your wedding day. Tap to go back to it.",
     guests_filter_placeholder: "e.g. 120",
     guests_filter_help: "Only show venues that fit",
     guests_filter_clear: "Clear",
@@ -4743,7 +4745,8 @@ const en: LocaleMessages = {
       cta: {
         sendInquiry: "Send inquiry",
         inquireDisabled: "This supplier has no public email",
-        inquireSent: "Inquiry sent",
+        inquireSent: "Inquiry sent, and it is in their Weddly inbox",
+        inquireSentEmail: "Inquiry emailed to them",
         save: "Save",
         savedActive: "Saved",
         share: "Share",
