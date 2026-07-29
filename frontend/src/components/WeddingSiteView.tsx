@@ -1182,13 +1182,18 @@ export function WeddingSiteView({
       ) : null}
 
       {/* ── Confirmed-tier unlocked block = the gift list. Live: the server
-          only populates `view.wishlist` at the confirmed tier, so "non-null and
-          non-empty → render" is the documented payload contract (and lets the
-          design editor feed the block real/sample entries at any tier).
-          Preview: always shown, labelled "unlocks after RSVP"; clicking opens
-          the wishlist editor. ── */}
-      {(isPreview ||
-        (view.wishlist !== null && view.wishlist.length > 0 && !sectionHidden("wishlist"))) && (
+          only populates `view.wishlist` at the confirmed tier AND only when the
+          couple published the list, so "non-null and non-empty → render" is the
+          documented payload contract (and lets the design editor feed the block
+          real/sample entries at any tier). Preview: always shown, labelled
+          "unlocks after RSVP"; clicking opens the wishlist editor.
+
+          Deliberately NOT gated on `sectionHidden("wishlist")` as well: the
+          publish toggle on /app/wishlist and the section switch on /app/design
+          were two controls for one idea, and they drifted apart in both
+          directions. `couples.wishlist_published` is the one that decides,
+          because it is the one the server enforces. ── */}
+      {(isPreview || (view.wishlist !== null && view.wishlist.length > 0)) && (
         <Band
           ariaLive={isPreview ? undefined : "polite"}
           onEdit={isPreview ? e.onEditPostRsvp : undefined}

@@ -224,6 +224,9 @@ export default function DesignPage() {
   // Read-only (lapsed plan) is surfaced once, then saving is disabled so the
   // couple can still explore the picker + preview without a toast on every tap.
   const [readOnly, setReadOnly] = useState(false);
+  // Gift-list publish PATCH in flight. It rides the couple row, not the design
+  // blob, so it can't use the debounced design auto-save.
+  const [wishlistBusy, setWishlistBusy] = useState(false);
   // Which top-level tab is showing: the Style kit pickers, or the Cards &
   // printables download hub. Both share the same persisted design blob.
   // Which surface this is editing is driven by the URL: /app/design/website vs
@@ -572,6 +575,32 @@ export default function DesignPage() {
       return { ...d, web: { ...d.web, hiddenSections } };
     });
   }
+  // The gift list is the one section that is NOT a design-level hide: it flips
+  // `couples.wishlist_published`, the same flag the toggle on /app/wishlist
+  // writes and the only one the server gates the payload on. It used to have a
+  // hidden-section entry of its own here, which meant two switches for one idea
+  // and a design preview that could disagree with the live page in either
+  // direction. Optimistic with a rollback, mirroring the wishlist editor.
+  async function toggleWishlist() {
+    if (!couple || wishlistBusy || readOnly) return;
+    const next = !couple.wishlist_published;
+    setWishlistBusy(true);
+    setCouple({ ...couple, wishlist_published: next });
+    try {
+      const r = await coupleApi.update({ wishlist_published: next });
+      setCouple(r.couple);
+    } catch (err) {
+      setCouple((prev) => (prev ? { ...prev, wishlist_published: !next } : prev));
+      if (err instanceof ApiError && err.status === 402) {
+        setReadOnly(true);
+        toast.error(t("design.save_blocked"));
+      } else {
+        toast.error(t("design.save_error"));
+      }
+    } finally {
+      setWishlistBusy(false);
+    }
+  }
   // The venue map is opt-IN (not a hideable section): turning it on reveals the
   // exact venue to ANYONE with the page link, not just confirmed guests, so
   // enabling needs the couple's venue coords and an explicit confirm. Disabling
@@ -697,7 +726,14 @@ export default function DesignPage() {
   // Null when a stored blob carries a corner/shadow combination the editor no
   // longer offers, so no tile shows a selection ring it hasn't earned.
   const activeCardFeel = getCardFeel(design.web);
-  const hiddenCount = design.web.hiddenSections.length;
+  // Sections shown, out of all of them. The gift list is counted from the
+  // couple's publish flag rather than the design blob (see toggleWishlist), so
+  // its slug never contributes to `hiddenSections` any more.
+  const wishlistOn = couple?.wishlist_published ?? false;
+  const shownSectionCount =
+    WEBSITE_SECTIONS.filter(
+      (s) => s.slug !== "wishlist" && !design.web.hiddenSections.includes(s.slug),
+    ).length + (wishlistOn ? 1 : 0);
   // The monogram chips preview the couple's REAL initials; a sample "A & B"
   // covers the not-yet-named case so the chips never render empty.
   const monogramSpecimen = (slug: (typeof MONOGRAM_SEPARATORS)[number]["slug"]) =>
@@ -945,7 +981,15 @@ export default function DesignPage() {
             location_radius_km: couple.location_radius_km,
             post_rsvp_content: null,
             schedule: previewSchedule.length > 0 ? previewSchedule : sampleSchedule,
-            wishlist: previewWishlist.length > 0 ? previewWishlist : sampleWishlist,
+            // Null when the list is unpublished, exactly as the server answers
+            // for a guest: the preview has to agree with the guest page about
+            // whether the block exists at all, and that flag is the only thing
+            // that decides it.
+            wishlist: couple.wishlist_published
+              ? previewWishlist.length > 0
+                ? previewWishlist
+                : sampleWishlist
+              : null,
             design: toPublicDesign(design),
             fetched_at: Date.now(),
           }
@@ -1513,7 +1557,7 @@ export default function DesignPage() {
                           label={t("design.tune.sections")}
                           value={
                             <span className="text-sm tabular-nums text-ink-500 dark:text-umber-300">
-                              {WEBSITE_SECTIONS.length - hiddenCount} / {WEBSITE_SECTIONS.length}
+                              {shownSectionCount} / {WEBSITE_SECTIONS.length}
                             </span>
                           }
                           open={openRow === "sections"}
@@ -1527,7 +1571,13 @@ export default function DesignPage() {
                         >
                           <ul className="divide-y divide-paper-200 overflow-hidden rounded-xl border border-paper-300 bg-white dark:divide-umber-700 dark:border-umber-700 dark:bg-umber-800">
                             {WEBSITE_SECTIONS.map((sec) => {
-                              const hidden = design.web.hiddenSections.includes(sec.slug);
+                              // The gift list reads its own publish flag, not
+                              // the design blob — one switch, shared with
+                              // /app/wishlist.
+                              const isWishlist = sec.slug === "wishlist";
+                              const hidden = isWishlist
+                                ? !wishlistOn
+                                : design.web.hiddenSections.includes(sec.slug);
                               return (
                                 <li
                                   key={sec.slug}
@@ -1544,7 +1594,10 @@ export default function DesignPage() {
                                   </span>
                                   <Switch
                                     checked={!hidden}
-                                    onChange={() => toggleSection(sec.slug)}
+                                    onChange={() =>
+                                      isWishlist ? void toggleWishlist() : toggleSection(sec.slug)
+                                    }
+                                    disabled={isWishlist && wishlistBusy}
                                     label={t(sec.nameKey)}
                                   />
                                 </li>

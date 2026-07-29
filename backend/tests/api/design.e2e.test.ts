@@ -614,7 +614,10 @@ describe("design: website-only `web` sub-object", () => {
     );
     expect(r.status).toBe(200);
     expect(r.data.couple.design.web.buttonStyle).toBe("outline");
-    expect(r.data.couple.design.web.hiddenSections.sort()).toEqual(["schedule", "wishlist"]);
+    // "wishlist" is accepted (an older bundle still sends it) but dropped on
+    // store: the gift list answers to `couples.wishlist_published` alone, and a
+    // second switch here is exactly the drift that flag was collapsed onto.
+    expect(r.data.couple.design.web.hiddenSections.sort()).toEqual(["schedule"]);
 
     // The public payload exposes them for the guest renderer.
     db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(couple.id);
@@ -625,7 +628,8 @@ describe("design: website-only `web` sub-object", () => {
       wedding: { design: { website_button_style: string; website_hidden_sections: string[] } };
     }>("GET", `/api/public/wedding/${encodeURIComponent(slug)}`);
     expect(pub.data.wedding.design.website_button_style).toBe("outline");
-    expect(pub.data.wedding.design.website_hidden_sections).toContain("wishlist");
+    expect(pub.data.wedding.design.website_hidden_sections).toContain("schedule");
+    expect(pub.data.wedding.design.website_hidden_sections).not.toContain("wishlist");
 
     const badBtn = await req(
       "PATCH",

@@ -745,6 +745,51 @@ export function backfillPartnerPropagation(ts: number = now()): number {
   return owners.length;
 }
 
+/** Collapse the gift list's two switches onto the one the server enforces.
+ *
+ *  The list had a publish toggle on /app/wishlist (`couples.wishlist_published`,
+ *  which is what actually decides whether the payload carries the entries) and
+ *  a section switch on /app/design (the `"wishlist"` slug in
+ *  `design.web.hiddenSections`, a render-time hide). Two switches for one idea
+ *  drift: published-but-hidden showed the couple a gift block in the design
+ *  preview that no guest could ever see, and hidden-but-published did the
+ *  reverse. The design side is retired, so any stored slug has to go somewhere.
+ *
+ *  It converges DOWN: a couple who hid the section sees nothing on the guest
+ *  page today, and they keep seeing nothing (`wishlist_published = 0`).
+ *  Converging up would publish a gift list to confirmed guests on the strength
+ *  of a toggle the couple used to hide it.
+ *
+ *  Idempotent — only rows still carrying the slug are touched, and the write
+ *  removes it. Returns the number of couples reconciled, for the boot log. */
+export function reconcileWishlistSectionFlag(): number {
+  const rows = db
+    .prepare(
+      `SELECT id, design_json FROM couples
+        WHERE design_json IS NOT NULL AND design_json LIKE '%"wishlist"%'`,
+    )
+    .all() as { id: number; design_json: string }[];
+  let changed = 0;
+  for (const row of rows) {
+    let parsed: { web?: { hiddenSections?: unknown } };
+    try {
+      parsed = JSON.parse(row.design_json) as { web?: { hiddenSections?: unknown } };
+    } catch {
+      continue; // unparseable blob: resolveDesign already treats it as defaults
+    }
+    const web = parsed?.web;
+    const hidden = web?.hiddenSections;
+    if (!web || !Array.isArray(hidden) || !hidden.includes("wishlist")) continue;
+    web.hiddenSections = hidden.filter((s) => s !== "wishlist");
+    db.prepare("UPDATE couples SET design_json = ?, wishlist_published = 0 WHERE id = ?").run(
+      JSON.stringify(parsed),
+      row.id,
+    );
+    changed++;
+  }
+  return changed;
+}
+
 export interface CoupleMembershipView {
   couple_id: number;
   display_name: string;

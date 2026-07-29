@@ -557,3 +557,52 @@ describe("group gift coordination", () => {
     expect(r.data.total_pledged_minor).toBe(180000);
   });
 });
+
+// The gift list used to answer to two switches: the publish toggle on
+// /app/wishlist (couples.wishlist_published, the flag the payload is gated on)
+// and a "wishlist" entry in the design blob's hiddenSections, which only hid
+// the rendered block. They drifted, so the design one is retired. The boot
+// reconciliation collapses the stored state onto the surviving flag, and it
+// converges DOWN: hidden today means hidden after.
+describe("wishlist section flag — one switch, not two", () => {
+  test("a hidden section unpublishes the list and drops the slug", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("wishlist-section-flag@weddly.test");
+    db.prepare("UPDATE couples SET wishlist_published = 1, design_json = ? WHERE id = ?").run(
+      JSON.stringify({ web: { hiddenSections: ["schedule", "wishlist"] } }),
+      coupleId,
+    );
+
+    const { reconcileWishlistSectionFlag } = await import("../../src/domain/couples");
+    expect(reconcileWishlistSectionFlag()).toBe(1);
+
+    const row = db
+      .prepare("SELECT wishlist_published, design_json FROM couples WHERE id = ?")
+      .get(coupleId) as { wishlist_published: number; design_json: string };
+    expect(row.wishlist_published).toBe(0);
+    const hidden = (JSON.parse(row.design_json) as { web: { hiddenSections: string[] } }).web
+      .hiddenSections;
+    // Only the wishlist slug goes; the other sections keep their hide.
+    expect(hidden).toEqual(["schedule"]);
+
+    // Idempotent: nothing left to reconcile on the next boot.
+    expect(reconcileWishlistSectionFlag()).toBe(0);
+  });
+
+  test("a published list with no hidden slug is left alone", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("wishlist-section-keep@weddly.test");
+    db.prepare("UPDATE couples SET wishlist_published = 1, design_json = ? WHERE id = ?").run(
+      JSON.stringify({ web: { hiddenSections: ["intro"] } }),
+      coupleId,
+    );
+
+    const { reconcileWishlistSectionFlag } = await import("../../src/domain/couples");
+    expect(reconcileWishlistSectionFlag()).toBe(0);
+
+    const row = db.prepare("SELECT wishlist_published FROM couples WHERE id = ?").get(coupleId) as {
+      wishlist_published: number;
+    };
+    expect(row.wishlist_published).toBe(1);
+  });
+});

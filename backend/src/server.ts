@@ -131,7 +131,7 @@ import { registerSupplierRoutes } from "./routes/suppliers";
 import { registerSupplierTaxonomyRoutes } from "./routes/supplier_taxonomy";
 import { retireLegacyTaxonomy, seedSupplierTaxonomy } from "./domain/supplier_taxonomy";
 import { backfillListings } from "./domain/listings";
-import { backfillPartnerPropagation } from "./domain/couples";
+import { backfillPartnerPropagation, reconcileWishlistSectionFlag } from "./domain/couples";
 import { seedDoNotContact } from "./domain/emails/optouts";
 import { ensureDefaultSchedules } from "./domain/campaign_schedules";
 import { reconcileOrphanCouples } from "./domain/orphan_reconcile";
@@ -174,6 +174,14 @@ seedDoNotContact();
 {
   const owners = backfillPartnerPropagation();
   log.info("partners.backfill", { owners });
+}
+// The gift list is one switch now (couples.wishlist_published), so retire the
+// second one: any couple still carrying the "wishlist" slug in their design's
+// hidden-sections list has it stripped and their publish flag pinned to the
+// state their guests already see (off). Idempotent, no-op after the first pass.
+{
+  const reconciled = reconcileWishlistSectionFlag();
+  if (reconciled > 0) log.info("wishlist.section_flag_reconcile", { reconciled });
 }
 // Put every founding verdict on the workspace that can actually spend it. Runs
 // AFTER partners.backfill so an anchor that just gained its partner_b_id is

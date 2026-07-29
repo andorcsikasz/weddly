@@ -2424,6 +2424,11 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       }
       // hiddenSections is the authoritative full list (replace, not merge):
       // every entry must be a known section slug. Deduped on store.
+      //
+      // "wishlist" is still ACCEPTED (an older bundle may send it) but never
+      // stored: the gift list answers to `wishlist_published` alone now, and
+      // letting the slug back in would re-create the second switch that
+      // reconcileWishlistSectionFlag exists to retire.
       if ("hiddenSections" in w) {
         const v = w.hiddenSections;
         if (
@@ -2432,7 +2437,9 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         ) {
           throw new HttpError(400, "design.web.hiddenSections must be valid section slugs");
         }
-        next.web.hiddenSections = [...new Set(v as WebsiteSectionSlug[])];
+        next.web.hiddenSections = [...new Set(v as WebsiteSectionSlug[])].filter(
+          (s) => s !== "wishlist",
+        );
       }
       if ("imageTreatment" in w) {
         const v = w.imageTreatment;
