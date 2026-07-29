@@ -4,6 +4,7 @@
 // last-minute date shift doesn't rewrite every row.
 
 import type { CoupleSupplier } from "@shared/couple_suppliers";
+import type { DirectorySupplier } from "@shared/suppliers";
 import { intlLocale } from "../lib/format";
 import type { ScheduleEvent, UpsertScheduleEventInput } from "@shared/schedule";
 import type { Couple } from "@shared/types";
@@ -53,6 +54,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { Link } from "react-router-dom";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
@@ -60,8 +62,10 @@ import {
   coupleApi,
   coupleSupplierApi,
   fetchPdfBlob,
+  picksApi,
   scheduleApi,
   schedulePdfUrl,
+  supplierApi,
 } from "../lib/endpoints";
 import { contentLocale, type Locale, useT } from "../lib/i18n";
 import {
@@ -70,6 +74,7 @@ import {
   localizeKnownLabel,
 } from "../lib/schedule_templates";
 import { useDocumentMeta } from "../lib/seo";
+import { venueDetachedFromPick, venueVendorHref } from "../lib/venue_link";
 
 interface DrawerInit {
   /** Existing event being edited, or `null` for "create new". */
@@ -204,6 +209,9 @@ export default function SchedulePage() {
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [suppliers, setSuppliers] = useState<CoupleSupplier[]>([]);
   const [couple, setCouple] = useState<Couple | null>(null);
+  // The directory vendor behind the couple's venue pick, or null when they
+  // picked a DIY venue / nothing. Only the header's venue link needs it.
+  const [venueVendor, setVenueVendor] = useState<DirectorySupplier | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -235,6 +243,17 @@ export default function SchedulePage() {
       setCouple(c.couple);
     } catch {
       // ignore — summary card stays hidden
+    }
+    // The venue pick + venue-category directory turn the header's venue label
+    // into a link to that vendor's card. Best-effort and last: without them the
+    // label still renders, it just falls back to the vendors hub.
+    try {
+      const [p, d] = await Promise.all([picksApi.list(), supplierApi.list("venue")]);
+      const pick = (p.picks ?? []).find((x) => x.category === "venue");
+      const dir = pick ? (d.suppliers ?? []).find((s) => s.id === pick.supplier_id) : undefined;
+      setVenueVendor(dir ?? null);
+    } catch {
+      // ignore — venue label links to the hub
     }
   }
 
@@ -447,6 +466,7 @@ export default function SchedulePage() {
           couple={couple}
           events={sortedEvents}
           locale={locale}
+          venueVendor={venueVendor}
           onShowTimeline={() => setViewMode("timeline")}
           timelineActive={viewMode === "timeline"}
         />
@@ -812,12 +832,14 @@ function ScheduleSummaryCard({
   couple,
   events,
   locale,
+  venueVendor,
   onShowTimeline,
   timelineActive,
 }: {
   couple: Couple;
   events: ScheduleEvent[];
   locale: Locale;
+  venueVendor: DirectorySupplier | null;
   onShowTimeline: () => void;
   timelineActive: boolean;
 }) {
@@ -837,7 +859,14 @@ function ScheduleSummaryCard({
       }).format(date)
     : null;
   const venue = [couple.venue_name, couple.venue_city].filter(Boolean).join(", ");
-  const subtitle = [dateLabel, venue].filter(Boolean).join(" · ");
+  // The venue is where the whole day happens, so its name is the one label here
+  // worth following: it opens the vendor's card (rates, phone, map) rather than
+  // making the couple go hunt for it in the directory. A venue we can't tie to
+  // a directory entry — DIY, free-text, or renamed off a stale pick — still
+  // links, just to the vendors hub.
+  const venueHref = venueVendorHref(
+    venueDetachedFromPick(couple.venue_name, venueVendor?.name) ? null : venueVendor?.id,
+  );
   const guests = couple.target_guest_count;
 
   return (
@@ -848,7 +877,21 @@ function ScheduleSummaryCard({
             {couple.display_name}
           </p>
         )}
-        {subtitle && <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">{subtitle}</p>}
+        {(dateLabel || venue) && (
+          <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">
+            {dateLabel}
+            {dateLabel && venue && " · "}
+            {venue && (
+              <Link
+                to={venueHref}
+                title={t("schedule.summary_venue_link")}
+                className="rounded-sm underline decoration-ink-300 underline-offset-2 transition-colors hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:decoration-umber-500 dark:hover:text-blush-300 dark:focus-visible:ring-paper-100"
+              >
+                {venue}
+              </Link>
+            )}
+          </p>
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <button

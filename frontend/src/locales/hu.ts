@@ -3561,6 +3561,7 @@ const hu: LocaleMessages = {
     gap_label: "{n} perc szünet",
     summary_events: "{count} program",
     summary_guests: "~{count} vendég",
+    summary_venue_link: "Helyszín megnyitása",
     guest_visible_badge: "Vendégeknek látható",
   },
   guests: {

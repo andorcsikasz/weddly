@@ -3997,6 +3997,10 @@ export interface LocaleMessages {
     summary_events: string;
     /** Day-summary card. Receives `{count}` — expected guest headcount. */
     summary_guests: string;
+    /** Tooltip on the day-summary card's venue name, which links to that
+     *  vendor's card (or the vendors hub when the venue isn't a directory
+     *  entry). */
+    summary_venue_link: string;
     /** Timeline-row badge on key-moment beats — these surface on the public
      *  wedding site, so the badge tells the couple "guests can see this". */
     guest_visible_badge: string;

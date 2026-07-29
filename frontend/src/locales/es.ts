@@ -3604,6 +3604,7 @@ const es: LocaleMessages = {
     gap_label: "{n} min de margen",
     summary_events: "{count} eventos",
     summary_guests: "~{count} invitados",
+    summary_venue_link: "Abrir el lugar",
     guest_visible_badge: "Los invitados pueden verlo",
   },
   guests: {

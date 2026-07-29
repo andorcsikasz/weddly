@@ -3523,6 +3523,7 @@ const en: LocaleMessages = {
     gap_label: "{n} min gap",
     summary_events: "{count} events",
     summary_guests: "~{count} guests",
+    summary_venue_link: "Open the venue",
     guest_visible_badge: "Guests can see this",
   },
   guests: {
