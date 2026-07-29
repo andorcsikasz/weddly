@@ -24,10 +24,7 @@ export interface PlannerProfileRow {
  *  `bio` + `styles` are the softer "makes the card convincing" fields the email
  *  also nudges. */
 export function plannerProfileMissing(
-  row: Pick<
-    PlannerProfileRow,
-    "business_name" | "planner_city" | "planner_bio" | "planner_styles"
-  >,
+  row: Pick<PlannerProfileRow, "business_name" | "planner_city" | "planner_bio" | "planner_styles">,
 ): {
   businessName: boolean;
   city: boolean;
@@ -60,10 +57,7 @@ export function plannerProfileMissing(
  *  and both feed one `<VerifiedBadge complete>` in the frontend, so a hollow
  *  check means the same thing wherever a couple meets it. */
 export function isPlannerProfileComplete(
-  row: Pick<
-    PlannerProfileRow,
-    "business_name" | "planner_city" | "planner_bio" | "planner_styles"
-  >,
+  row: Pick<PlannerProfileRow, "business_name" | "planner_city" | "planner_bio" | "planner_styles">,
 ): boolean {
   const m = plannerProfileMissing(row);
   return !m.businessName && !m.city && !m.bio && !m.styles;

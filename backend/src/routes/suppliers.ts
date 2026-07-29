@@ -421,8 +421,7 @@ function buildSupplierDetail(
     user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
     // Solid check vs hollow one. Only a claimed listing is asked — nothing else
     // renders a badge, and the checklist is the vendor's, not the catalogue's.
-    listing_complete:
-      base.vendor_account_id !== null && completeListingIds([base.id]).has(base.id),
+    listing_complete: base.vendor_account_id !== null && completeListingIds([base.id]).has(base.id),
   };
 
   const reviewsSummary = getReviewSummary(supplierId);

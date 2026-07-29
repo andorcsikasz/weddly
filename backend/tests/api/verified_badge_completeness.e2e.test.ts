@@ -42,7 +42,9 @@ async function seedVendor(
     password: "supersafe123",
     full_name: "Vendor Owner",
   });
-  db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(reg.data.user.id);
+  db.prepare("UPDATE users SET role = 'vendor', couple_id = NULL WHERE id = ?").run(
+    reg.data.user.id,
+  );
   const account = createVendorAccount({
     ownerUserId: reg.data.user.id,
     displayName: name,
@@ -139,9 +141,9 @@ describe("verified badge — the fill comes from listing completeness", () => {
     const full = await seedVendor("teaser-full@weddly.test", "Full Studio", "photography");
     // The showcase only samples listings that have a hero photo, so the
     // unfinished one needs its cover (and nothing else) to be comparable.
-    db.prepare("UPDATE listings SET hero_image_url = '/uploads/listings/hero.webp' WHERE id = ?").run(
-      bare.listingId,
-    );
+    db.prepare(
+      "UPDATE listings SET hero_image_url = '/uploads/listings/hero.webp' WHERE id = ?",
+    ).run(bare.listingId);
     finishListing(full.listingId);
 
     const res = await req<PublicVendorShowcase>("GET", "/api/public/vendor-showcase");
@@ -178,9 +180,11 @@ async function seedPlanner(email: string, full: boolean): Promise<number> {
       WHERE id = ?`,
   ).run(userId);
   if (full) {
-    db.prepare(
-      "UPDATE users SET planner_bio = ?, planner_styles = ? WHERE id = ?",
-    ).run("We plan calm, editorial weddings.", JSON.stringify(["editorial"]), userId);
+    db.prepare("UPDATE users SET planner_bio = ?, planner_styles = ? WHERE id = ?").run(
+      "We plan calm, editorial weddings.",
+      JSON.stringify(["editorial"]),
+      userId,
+    );
   }
   return userId;
 }
@@ -221,9 +225,9 @@ describe("verified badge — the planner twin", () => {
       undefined,
       { token },
     );
-    expect(
-      list.data.planners.find((p) => p.planner_user_id === plannerId)?.profile_complete,
-    ).toBe(true);
+    expect(list.data.planners.find((p) => p.planner_user_id === plannerId)?.profile_complete).toBe(
+      true,
+    );
 
     const detail = await req<PlannerDirectoryDetail>(
       "GET",

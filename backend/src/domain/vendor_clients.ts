@@ -369,7 +369,9 @@ export function completeListingIds(ids: string[]): Set<string> {
               contact_phone, price_band, capacity_min, capacity_max
          FROM listings WHERE id IN (${placeholders})`,
     )
-    .all(...ids) as Array<{ id: string } & Omit<VendorListingChecklistInput, "photo_count" | "package_count">>;
+    .all(...ids) as Array<
+    { id: string } & Omit<VendorListingChecklistInput, "photo_count" | "package_count">
+  >;
   if (rows.length === 0) return complete;
   const countBy = (table: "listing_photos" | "listing_packages") =>
     new Map(
