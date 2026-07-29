@@ -1112,13 +1112,22 @@ export default function VendorListingPage() {
               id="vendor-section-contact"
             >
               <legend className="font-semibold">{t("vendor_home.section_contact")}</legend>
-              <TextField
+              {/* Both location fields are typeaheads over the geocoder. The city
+                  is the string couples filter the directory by, so it has to be
+                  one spelling per town (the same reason vendor onboarding asks
+                  for it this way) — free typing still stands, the suggestions
+                  are an accelerator. Picking a street address fills the city
+                  too, so the usual order costs one gesture. */}
+              <AddressAutocomplete
                 id="vendor-city"
+                kind="city"
                 label={t("vendor_home.label_city")}
                 value={form.city}
-                onChange={onChange("city")}
+                onChange={(v) => setForm((prev) => (prev ? { ...prev, city: v } : prev))}
+                onPick={() => {}}
                 maxLength={80}
                 required
+                disabled={saving}
               />
               <AddressAutocomplete
                 id="vendor-address"
