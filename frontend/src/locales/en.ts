@@ -3022,6 +3022,8 @@ const en: LocaleMessages = {
         dried_flowers: "Dried flowers",
         eucalyptus: "Eucalyptus",
         eucalyptus_light: "Sunlit eucalyptus",
+        wedding_cake: "Wedding cake",
+        ceremony_aisle: "Sunlit ceremony",
       },
       card_radius: { sharp: "Sharp", soft: "Soft", full: "Round" },
       shadow: { none: "None", soft: "Soft", pop: "Pop" },

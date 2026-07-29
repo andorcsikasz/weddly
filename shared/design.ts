@@ -787,7 +787,9 @@ export type CuratedPhotoSlug =
   | "candle_still"
   | "dried_flowers"
   | "eucalyptus"
-  | "eucalyptus_light";
+  | "eucalyptus_light"
+  | "wedding_cake"
+  | "ceremony_aisle";
 
 export const CURATED_SITE_PHOTOS: readonly {
   slug: CuratedPhotoSlug;
@@ -831,6 +833,21 @@ export const CURATED_SITE_PHOTOS: readonly {
     slug: "eucalyptus_light",
     file: "10-eucalyptus-light.jpg",
     nameKey: "design.web.photo_art.eucalyptus_light",
+  },
+  // 11-12 fill the two subjects the first ten never covered: the cake and the
+  // ceremony itself. Sourced people-free like the rest — a stock couple on a
+  // couple's OWN wedding page reads as a placeholder nobody removed.
+  // 11: Felix Manuel Almonte Ulloa via Unsplash (Unsplash License).
+  {
+    slug: "wedding_cake",
+    file: "11-wedding-cake.jpg",
+    nameKey: "design.web.photo_art.wedding_cake",
+  },
+  // 12: Feyza Yıldırım via Pexels (Pexels License).
+  {
+    slug: "ceremony_aisle",
+    file: "12-ceremony-aisle.jpg",
+    nameKey: "design.web.photo_art.ceremony_aisle",
   },
 ];
 

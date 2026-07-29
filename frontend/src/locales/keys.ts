@@ -3411,6 +3411,8 @@ export interface LocaleMessages {
         dried_flowers: string;
         eucalyptus: string;
         eucalyptus_light: string;
+        wedding_cake: string;
+        ceremony_aisle: string;
       };
       card_radius: { sharp: string; soft: string; full: string };
       shadow: { none: string; soft: string; pop: string };

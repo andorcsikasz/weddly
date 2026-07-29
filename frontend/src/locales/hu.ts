@@ -3054,6 +3054,8 @@ const hu: LocaleMessages = {
         dried_flowers: "Szárazvirágok",
         eucalyptus: "Eukaliptusz",
         eucalyptus_light: "Eukaliptusz napfényben",
+        wedding_cake: "Esküvői torta",
+        ceremony_aisle: "Napfényes ceremónia",
       },
       card_radius: { sharp: "Éles", soft: "Lágy", full: "Erős" },
       shadow: { none: "Nincs", soft: "Lágy", pop: "Erős" },
