@@ -84,18 +84,29 @@ export default function VendorsPage() {
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-10 sm:px-6 sm:pt-20 sm:pb-14 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-16">
         <div className="text-center lg:text-left">
-          {/* The headline is short enough to carry real display size now that
-              no badge sits above it. */}
-          <h1 className="font-grotesk text-4xl font-semibold leading-[1.02] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
-            {t("vendors.hero_title")}
-          </h1>
-          {/* The directory's own front door, the same box the couples landing
-              opens with, sitting between the headline and the CTAs. A vendor
-              reading "be one click away" can check that click for themselves:
-              type the business name and either find the listing waiting to be
-              claimed or land in the open directory they are about to join.
-              Full column width, so it measures out against the headline. */}
-          <VendorSearchBar className="mt-8 text-left" />
+          {/* Headline and search box are ONE measure. `w-fit` sizes this
+              wrapper to its widest max-content child, which here is the
+              unwrapped headline, so the box below ends exactly where "away."
+              does instead of running the last 40px out to the column edge.
+              fit-content caps at the available width, so a longer locale that
+              has to wrap simply gets the full column back.
+
+              lg-only on purpose: below it the column is centred and the CTAs
+              under the box are full-width slabs, so a box measured to a small
+              headline would sit narrower than everything around it. */}
+          <div className="lg:w-fit">
+            {/* The headline is short enough to carry real display size now that
+                no badge sits above it. */}
+            <h1 className="font-grotesk text-4xl font-semibold leading-[1.02] tracking-tight text-ink-900 sm:text-6xl dark:text-paper-50">
+              {t("vendors.hero_title")}
+            </h1>
+            {/* The directory's own front door, the same box the couples landing
+                opens with, sitting between the headline and the CTAs. A vendor
+                reading "be one click away" can check that click for themselves:
+                type the business name and either find the listing waiting to be
+                claimed or land in the open directory they are about to join. */}
+            <VendorSearchBar className="mt-8 text-left" />
+          </div>
           {/* Two buttons, one dominant. Nothing sits under them any more: the
               effort claim and the free-window promise both read as marketing
               next to a headline that already says what the page is for.
