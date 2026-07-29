@@ -1026,6 +1026,8 @@ export interface LocaleMessages {
       upcoming_title: string;
       no_upcoming: string;
       view_clients: string;
+      /** Opens the vendor's own public listing page in a new tab. */
+      open_preview: string;
       /** Names where the tile goes, so a whole-card Link is legible as one. */
       open_calendar: string;
       view_listing: string;

@@ -16,6 +16,7 @@ import {
   CalendarOff,
   CheckCircle2,
   ChevronRight,
+  ExternalLink,
   Eye,
   Inbox,
   RefreshCw,
@@ -51,6 +52,10 @@ export default function VendorDashboardPage() {
   const [stats, setStats] = useState<VendorStats | null>(null);
   const [plan, setPlan] = useState<VendorPlan | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
+  // Listing id for the "Open preview" action next to the hero CTA. Null until
+  // the listing resolves (and for an account that has none), which is exactly
+  // when there is no public page to open.
+  const [listingId, setListingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
   // A self-serve vendor who hasn't finished the signup wizard is bounced into
@@ -107,6 +112,7 @@ export default function VendorDashboardPage() {
           return;
         }
         setBusinessName(view.account.display_name);
+        setListingId(view.listing.id);
       })
       .catch(() => {
         /* no listing/account yet — greeting falls back below */
@@ -266,13 +272,32 @@ export default function VendorDashboardPage() {
             {t("vendor.dashboard.hero_hint")}
           </span>
         </div>
-        <Link
-          to="/vendor/clients"
-          className="inline-flex h-11 shrink-0 items-center gap-1.5 self-start rounded-xl bg-blush-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-blush-600 sm:self-auto"
-        >
-          <span>{t("vendor.dashboard.view_clients")}</span>
-          <ArrowRight size={15} aria-hidden="true" />
-        </Link>
+        {/* Two actions, one primary. "Open preview" stacks above the CTA on a
+            phone and sits beside it from sm up. It points at the PUBLIC
+            /vendors/:id route and opens in a new tab, same as the header icon
+            and the listing-editor preview card, so the dashboard isn't lost.
+            Outline rather than a second blush fill: the portal keeps one
+            interactive colour and one primary per surface. */}
+        <div className="flex flex-col gap-2 self-start sm:flex-row sm:items-center sm:self-auto">
+          {listingId && (
+            <Link
+              to={`/vendors/${listingId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-paper-300 px-5 text-sm font-semibold text-ink-700 transition-colors hover:border-ink-900 hover:bg-paper-100 dark:border-umber-700 dark:text-paper-200 dark:hover:border-paper-200 dark:hover:bg-umber-800"
+            >
+              <ExternalLink size={15} aria-hidden="true" />
+              <span>{t("vendor.dashboard.open_preview")}</span>
+            </Link>
+          )}
+          <Link
+            to="/vendor/clients"
+            className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-blush-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-blush-600"
+          >
+            <span>{t("vendor.dashboard.view_clients")}</span>
+            <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        </div>
       </section>
 
       {/* Secondary KPIs — each opens the surface behind the number. */}
