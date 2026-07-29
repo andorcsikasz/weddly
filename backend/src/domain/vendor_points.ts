@@ -23,10 +23,12 @@
 
 import {
   FAST_REPLY_HOURS,
+  MAX_BOOKING_POINTS_PER_MONTH,
   MAX_REFERRAL_POINTS_PER_MONTH,
   MAX_REVIEW_POINTS_PER_MONTH,
   POINTS_BY_EVENT,
   PROFILE_MILESTONES,
+  type VendorCategoryRank,
   type VendorPointsEntry,
   type VendorPointsEvent,
   type VendorPointsStatus,
@@ -38,7 +40,7 @@ import {
 import { db, now } from "../db";
 import { log } from "../lib/logger";
 import { listingCompleteness } from "./vendor_clients";
-import { getListingByVendorAccountId, getListingById } from "./listings";
+import { CLAIMED_DIRECTORY_FROM, getListingByVendorAccountId, getListingById } from "./listings";
 
 /** Domain events the outbox carries. Named after what HAPPENED, never after
  *  what it should pay: a producer that knows the reward is a producer that
@@ -110,9 +112,9 @@ function award(
 }
 
 /** Monthly ceilings, checked against the ledger so a replay can't slip past
- *  them. Only the two farmable rules are capped; profile milestones cap
- *  themselves (there are four, ever) and repeat bookings need a real second
- *  booking from a real couple. */
+ *  them. Only the farmable rules are capped; profile milestones cap themselves
+ *  (there are four, ever) and a fast reply is worth too little to be worth
+ *  manufacturing. */
 function withinCap(
   vendorAccountId: number,
   eventType: VendorPointsEvent,
@@ -124,7 +126,9 @@ function withinCap(
       ? MAX_REFERRAL_POINTS_PER_MONTH
       : eventType === "review_collected"
         ? MAX_REVIEW_POINTS_PER_MONTH
-        : null;
+        : eventType === "booking_confirmed"
+          ? MAX_BOOKING_POINTS_PER_MONTH
+          : null;
   if (cap === null) return true;
   const monthStart = Date.UTC(
     new Date(atMs).getUTCFullYear(),
@@ -204,26 +208,29 @@ function applyFastReply(vendorAccountId: number, bookingId: number): void {
   award(vendorAccountId, "fast_reply", `fast_reply:${bookingId}`, undefined, row.first_response_at);
 }
 
-/** A confirmed booking from a couple who had already confirmed one before. The
- *  FIRST confirmation earns nothing here: that is the marketplace working, not
- *  a loyalty signal. */
-function applyRepeatBooking(vendorAccountId: number, bookingId: number): void {
+/** An inquiry that became a wedding: the couple confirmed the booking.
+ *
+ *  This rule replaced `repeat_booking`, which paid only when a couple who had
+ *  already booked this vendor booked them AGAIN. For a wedding supplier that is
+ *  close to a rule that never fires — the customer marries once — so the
+ *  rulebook was advertising 40 points nobody could earn, and the biggest thing a
+ *  vendor can do on Weddly (actually close the business the marketplace sent
+ *  them) paid nothing at all. It is now the most valuable repeatable rule in the
+ *  table, capped monthly because it is also the most worth faking.
+ *
+ *  Keyed by booking id, so re-confirming a booking that was cancelled and
+ *  revived pays once. `status` is re-read here rather than trusted from the
+ *  event: the outbox row only says the booking was confirmed at the time it was
+ *  written. */
+function applyBookingConfirmed(vendorAccountId: number, bookingId: number): void {
   const booking = db
-    .prepare("SELECT couple_id, created_at FROM supplier_bookings WHERE id = ?")
-    .get(bookingId) as { couple_id: number; created_at: number } | undefined;
-  if (!booking) return;
-  const earlier = db
-    .prepare(
-      `SELECT COUNT(*) AS n FROM supplier_bookings
-        WHERE vendor_account_id = ? AND couple_id = ? AND status = 'confirmed' AND id != ?
-          AND created_at < ?`,
-    )
-    .get(vendorAccountId, booking.couple_id, bookingId, booking.created_at) as { n: number };
-  if (earlier.n === 0) return;
+    .prepare("SELECT status, created_at FROM supplier_bookings WHERE id = ?")
+    .get(bookingId) as { status: string; created_at: number } | undefined;
+  if (booking?.status !== "confirmed") return;
   award(
     vendorAccountId,
-    "repeat_booking",
-    `repeat_booking:${bookingId}`,
+    "booking_confirmed",
+    `booking_confirmed:${bookingId}`,
     undefined,
     booking.created_at,
   );
@@ -258,7 +265,7 @@ function applyEvent(row: OutboxRow): void {
     }
     case "booking.confirmed": {
       const bookingId = Number(payload.booking_id);
-      if (Number.isFinite(bookingId)) applyRepeatBooking(vendorId, bookingId);
+      if (Number.isFinite(bookingId)) applyBookingConfirmed(vendorId, bookingId);
       break;
     }
     case "profile.updated":
@@ -359,7 +366,7 @@ export function backfillVendorPoints(): { vendors: number; awarded: number } {
       .all(account.id) as { id: number }[];
     for (const b of confirmed) {
       const before = ledgerCount(account.id);
-      applyRepeatBooking(account.id, b.id);
+      applyBookingConfirmed(account.id, b.id);
       awarded += ledgerCount(account.id) - before;
     }
   }
@@ -409,6 +416,53 @@ function pointsByEvent(vendorAccountId: number): Record<VendorPointsEvent, numbe
   return totals;
 }
 
+/** The vendor's place among the other vendors in their own category.
+ *
+ *  The pool is the PUBLIC directory pool (`CLAIMED_DIRECTORY_FROM`: active
+ *  listing, active owner, no demo rows) rather than "every vendor_accounts row
+ *  with this category", because a place counted against listings no couple can
+ *  reach is a place against nobody. Unclaimed curated/community entries are out
+ *  by construction: they have no account, so they have no points to be ranked
+ *  by.
+ *
+ *  Ties share a place (`1 + how many are strictly ahead`), and the whole pool is
+ *  read into memory rather than ranked in SQL: a category holds tens of claimed
+ *  vendors, not thousands, and the JS is the version a reader can check.
+ *
+ *  Returns null when the ranking would say nothing: no listing, a listing that
+ *  isn't live, or a category this vendor is alone in. */
+export function vendorCategoryRank(vendorAccountId: number): VendorCategoryRank | null {
+  const listing = getListingByVendorAccountId(vendorAccountId);
+  if (!listing) return null;
+  // DISTINCT, not GROUP BY: a vendor holding two listings in one category must
+  // count as one competitor, and the correlated total keeps the ledger sum from
+  // fanning out across those rows.
+  const pool = db
+    .prepare(
+      `SELECT DISTINCT l.vendor_account_id AS id,
+              (SELECT COALESCE(SUM(g.points), 0)
+                 FROM vendor_points_ledger g
+                WHERE g.vendor_account_id = l.vendor_account_id) AS points
+         ${CLAIMED_DIRECTORY_FROM} AND l.category = ?`,
+    )
+    .all(listing.category) as { id: number; points: number }[];
+  if (pool.length < 2) return null;
+
+  const mine = pool.find((row) => row.id === vendorAccountId);
+  if (!mine) return null; // listing hidden / owner suspended: no standing to show
+  const ahead = pool.filter((row) => row.points > mine.points);
+  const nearest = ahead.reduce<number | null>(
+    (best, row) => (best === null || row.points < best ? row.points : best),
+    null,
+  );
+  return {
+    category: listing.category,
+    rank: ahead.length + 1,
+    total: pool.length,
+    points_to_climb: nearest === null ? null : nearest - mine.points,
+  };
+}
+
 /** Everything the dashboard needs, all derived. */
 export function vendorPointsStatus(vendorAccountId: number): VendorPointsStatus {
   const points = vendorPointsTotal(vendorAccountId);
@@ -432,5 +486,6 @@ export function vendorPointsStatus(vendorAccountId: number): VendorPointsStatus 
     progress: tierProgress(points),
     recent,
     earned_by_event: pointsByEvent(vendorAccountId),
+    category_rank: vendorCategoryRank(vendorAccountId),
   };
 }

@@ -23,8 +23,10 @@ import "../setup";
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
   EARNABLE_EVENTS,
+  MAX_BOOKING_POINTS_PER_MONTH,
   MAX_REVIEW_POINTS_PER_MONTH,
   POINTS_BY_EVENT,
+  PROFILE_MILESTONES,
   VENDOR_TIERS,
   type VendorPointsStatus,
   nextTierForPoints,
@@ -34,6 +36,7 @@ import {
 import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { createReview } from "../../src/domain/reviews";
+import { updateBookingStatus } from "../../src/domain/supplier_bookings";
 import {
   backfillVendorPoints,
   emitVendorEvent,
@@ -128,6 +131,26 @@ async function bootstrapAuthor(email: string): Promise<{ token: string; userId: 
   return { token, userId: row.id };
 }
 
+/** A pending inquiry against the vendor's listing. Inserted straight, not
+ *  through `createBooking`: this suite is about what the ENGINE pays for, and
+ *  the public booking route drags in the PRO entitlement gate and the lead-credit
+ *  meter, neither of which has anything to say about points. */
+function insertBooking(
+  v: { accountId: number; listingId: string },
+  coupleId: number,
+  eventDate = "2027-05-01",
+): number {
+  const ts = now();
+  const info = db
+    .prepare(
+      `INSERT INTO supplier_bookings
+         (supplier_id, couple_id, vendor_account_id, event_date, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'requested', ?, ?)`,
+    )
+    .run(v.listingId, coupleId, v.accountId, eventDate, ts, ts);
+  return Number(info.lastInsertRowid);
+}
+
 /** Points the vendor holds for one event type: the assertion that actually
  *  matters when a rule is supposed to have fired exactly once. */
 function pointsFor(accountId: number, eventType: string): number {
@@ -168,6 +191,55 @@ describe("Weddly Points: tier maths (pure)", () => {
     if (!gold) return;
     expect(tierProgress(0)).toBe(0);
     expect(tierProgress(gold.min_points / 2)).toBeCloseTo(0.5, 5);
+  });
+
+  // The reason the thresholds are what they are. A tier table is easy to edit
+  // and its consequences are invisible until a vendor has spent a year not
+  // arriving anywhere, so the calibration is asserted rather than left in a
+  // comment: raise the top rung past what the rules can actually pay and this
+  // test says so on the spot.
+  test("a committed vendor reaches the top tier inside two years", () => {
+    // The modelled vendor, straight from the VENDOR_TIERS doc block: finishes
+    // the profile once, lands a first review once, then every month collects
+    // one review, answers three inquiries inside the day, and books a wedding
+    // through Weddly every second month.
+    const oneTime =
+      PROFILE_MILESTONES.length * POINTS_BY_EVENT.profile_completeness +
+      POINTS_BY_EVENT.first_review;
+    const perMonth =
+      POINTS_BY_EVENT.review_collected +
+      3 * POINTS_BY_EVENT.fast_reply +
+      0.5 * POINTS_BY_EVENT.booking_confirmed;
+    const top = VENDOR_TIERS[VENDOR_TIERS.length - 1];
+    expect(top).toBeTruthy();
+    if (!top) return;
+
+    const monthsToTop = (top.min_points - oneTime) / perMonth;
+    expect(monthsToTop).toBeLessThanOrEqual(24);
+    // And not trivially reachable either: a top tier a vendor stumbles into in
+    // a season is a participation sticker, and every perk below it stops
+    // meaning anything.
+    expect(monthsToTop).toBeGreaterThan(12);
+
+    // Each rung lands inside the run-up to the one above it, so the ladder has
+    // no dead year in the middle.
+    const monthsFor = (points: number) => (points - oneTime) / perMonth;
+    expect(monthsFor(VENDOR_TIERS[1]?.min_points ?? 0)).toBeLessThanOrEqual(3);
+    expect(monthsFor(VENDOR_TIERS[2]?.min_points ?? 0)).toBeLessThanOrEqual(12);
+  });
+
+  test("every rung above the floor is worth more than the one below it", () => {
+    // Perks are the only reason to climb. A rung that gives no more than the
+    // one under it is a rung nobody has a reason to reach.
+    for (let i = 1; i < VENDOR_TIERS.length; i++) {
+      const below = VENDOR_TIERS[i - 1];
+      const here = VENDOR_TIERS[i];
+      if (!below || !here) continue;
+      expect(here.min_points).toBeGreaterThan(below.min_points);
+      const sum = (t: typeof here) =>
+        t.perks.search_boost + t.perks.extra_lead_credits + t.perks.subscription_discount_pct;
+      expect(sum(here)).toBeGreaterThan(sum(below));
+    }
   });
 });
 
@@ -332,6 +404,71 @@ describe("Weddly Points: ledger + engine", () => {
     expect(pointsFor(v.accountId, "review_collected")).toBe(MAX_REVIEW_POINTS_PER_MONTH);
   });
 
+  // The rule that replaced `repeat_booking`. A wedding is bought once, so
+  // "the same couple books you again" paid practically nobody; what a vendor
+  // can actually do is close the business Weddly sent them.
+  test("a confirmed booking pays, an unanswered one doesn't, and it pays once", async () => {
+    const v = await bootstrapVendor("booked");
+    const { coupleId } = await bootstrapCouple("booked-couple@test.test");
+    const bookingId = insertBooking(v, coupleId);
+
+    // Still 'requested': the marketplace hasn't produced anything yet.
+    processVendorEventOutbox();
+    expect(pointsFor(v.accountId, "booking_confirmed")).toBe(0);
+
+    updateBookingStatus(bookingId, "confirmed");
+    processVendorEventOutbox();
+    expect(pointsFor(v.accountId, "booking_confirmed")).toBe(POINTS_BY_EVENT.booking_confirmed);
+
+    // Re-delivery, and a cancel/re-confirm round trip, both collapse onto the
+    // one occurrence: the dedupe key is the booking, not the transition.
+    emitVendorEvent(v.accountId, "booking.confirmed", { booking_id: bookingId });
+    updateBookingStatus(bookingId, "cancelled");
+    updateBookingStatus(bookingId, "confirmed");
+    processVendorEventOutbox();
+    expect(pointsFor(v.accountId, "booking_confirmed")).toBe(POINTS_BY_EVENT.booking_confirmed);
+  });
+
+  test("the engine re-reads the booking, so a confirmation that was undone pays nothing", async () => {
+    const v = await bootstrapVendor("undone");
+    const { coupleId } = await bootstrapCouple("undone-couple@test.test");
+    const bookingId = insertBooking(v, coupleId);
+
+    // Confirmed, then cancelled before the worker got to the queue. The outbox
+    // row only records that it WAS confirmed; the status is the truth.
+    updateBookingStatus(bookingId, "confirmed");
+    updateBookingStatus(bookingId, "cancelled");
+    processVendorEventOutbox();
+    expect(pointsFor(v.accountId, "booking_confirmed")).toBe(0);
+  });
+
+  test("booking points stop at the monthly cap", async () => {
+    const v = await bootstrapVendor("bookcap");
+    const { coupleId } = await bootstrapCouple("bookcap-couple@test.test");
+    // Twice the cap's worth of confirmations inside one month.
+    const wanted = 2 * Math.ceil(MAX_BOOKING_POINTS_PER_MONTH / POINTS_BY_EVENT.booking_confirmed);
+    for (let i = 0; i < wanted; i++) {
+      updateBookingStatus(insertBooking(v, coupleId), "confirmed");
+    }
+    processVendorEventOutbox();
+    expect(pointsFor(v.accountId, "booking_confirmed")).toBe(MAX_BOOKING_POINTS_PER_MONTH);
+  });
+
+  test("the retired repeat-booking rule pays nothing and is off the rulebook", async () => {
+    const v = await bootstrapVendor("legacy");
+    const { coupleId } = await bootstrapCouple("legacy-couple@test.test");
+    // Two confirmed bookings from the SAME couple: the old rule's trigger.
+    updateBookingStatus(insertBooking(v, coupleId), "confirmed");
+    updateBookingStatus(insertBooking(v, coupleId), "confirmed");
+    processVendorEventOutbox();
+
+    expect(pointsFor(v.accountId, "repeat_booking")).toBe(0);
+    expect(POINTS_BY_EVENT.repeat_booking).toBe(0);
+    expect(EARNABLE_EVENTS as readonly string[]).not.toContain("repeat_booking");
+    // The type still carries it, so historic rows keep a home in the breakdown.
+    expect(Object.keys(POINTS_BY_EVENT)).toContain("repeat_booking");
+  });
+
   test("an unknown event is consumed, not retried forever", async () => {
     const v = await bootstrapVendor("unknown");
     db.prepare(
@@ -429,6 +566,51 @@ describe("GET /api/vendor/points", () => {
       expect(POINTS_BY_EVENT[event]).toBeGreaterThan(0);
     }
     expect(EARNABLE_EVENTS).not.toContain("admin_adjustment");
+  });
+
+  test("the category rank places the vendor against the vendors couples can see", async () => {
+    // Both bootstrap into `photography`, so they are each other's pool.
+    const ahead = await bootstrapVendor("rank-ahead");
+    const behind = await bootstrapVendor("rank-behind");
+    const { adjustVendorPoints } = await import("../../src/domain/vendor_points");
+    adjustVendorPoints(ahead.accountId, 120, "ahead");
+
+    const leader = vendorPointsStatus(ahead.accountId).category_rank;
+    const trailer = vendorPointsStatus(behind.accountId).category_rank;
+    expect(leader?.rank).toBe(1);
+    expect(leader?.total).toBe(2);
+    expect(leader?.category).toBe("photography");
+    // Nobody above the leader, so there is no gap to quote.
+    expect(leader?.points_to_climb).toBeNull();
+    expect(trailer?.rank).toBe(2);
+    // The gap is what DRAWS LEVEL, and drawing level shares the place.
+    expect(trailer?.points_to_climb).toBe(
+      vendorPointsTotal(ahead.accountId) - vendorPointsTotal(behind.accountId),
+    );
+
+    // A tie shares the place rather than breaking on an arbitrary column.
+    adjustVendorPoints(behind.accountId, trailer?.points_to_climb ?? 0, "level");
+    expect(vendorPointsStatus(behind.accountId).category_rank?.rank).toBe(1);
+    expect(vendorPointsStatus(ahead.accountId).category_rank?.rank).toBe(1);
+
+    // A suspended owner is out of the public directory, so they are out of the
+    // ranking too: a place counted against a listing no couple can reach is a
+    // place against nobody.
+    db.prepare(
+      "UPDATE users SET status = 'suspended' WHERE id = (SELECT owner_user_id FROM vendor_accounts WHERE id = ?)",
+    ).run(ahead.accountId);
+    expect(vendorPointsStatus(behind.accountId).category_rank).toBeNull();
+  });
+
+  test("the rank rides along on the HTTP status", async () => {
+    const v = await bootstrapVendor("rank-http");
+    await bootstrapVendor("rank-http-peer");
+    const r = await req<VendorPointsStatus>("GET", "/api/vendor/points", undefined, {
+      token: v.token,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.category_rank?.total).toBe(2);
+    expect(r.data.category_rank?.rank).toBeGreaterThanOrEqual(1);
   });
 
   test("401 for anonymous, 403 for a couple-role user", async () => {

@@ -41,7 +41,15 @@ export type VendorPointsEvent =
   | "fast_reply"
   /** A referred vendor activated (finished onboarding AND got a first booking). */
   | "referral_activated"
-  /** A couple who already booked this vendor confirmed another booking. */
+  /** A couple confirmed a booking with this vendor: an inquiry that became a
+   *  wedding. The single most valuable thing a vendor can do here. */
+  | "booking_confirmed"
+  /** LEGACY, never awarded. A wedding is a once-in-a-lifetime purchase, so "the
+   *  same couple books you again" fired for practically nobody and sat in the
+   *  rulebook advertising an unreachable 40 points. Superseded by
+   *  `booking_confirmed`. The member stays because the string is persisted in
+   *  the ledger and a handful of rows may exist; dropping it would orphan them
+   *  out of `earned_by_event` and make the breakdown stop summing to the total. */
   | "repeat_booking"
   /** Manual admin correction. Can be negative; never emitted by the engine. */
   | "admin_adjustment";
@@ -55,7 +63,8 @@ export const POINTS_BY_EVENT: Record<VendorPointsEvent, number> = {
   first_review: 50,
   fast_reply: 5,
   referral_activated: 150,
-  repeat_booking: 40,
+  booking_confirmed: 60,
+  repeat_booking: 0, // legacy, see the event union
   admin_adjustment: 0,
 };
 
@@ -77,7 +86,7 @@ export const EARNABLE_EVENTS = [
   "first_review",
   "review_collected",
   "fast_reply",
-  "repeat_booking",
+  "booking_confirmed",
 ] as const satisfies readonly VendorPointsEvent[];
 
 /** Profile completeness is scored in 25% steps, so a vendor earns four times on
@@ -95,10 +104,16 @@ export const MAX_REFERRAL_POINTS_PER_MONTH = 3 * 150;
 /** Review-collection points per calendar month. A busy venue does maybe a dozen
  *  weddings a month; twenty reviews in thirty days is a farm, not a business. */
 export const MAX_REVIEW_POINTS_PER_MONTH = 10 * 15;
+/** Confirmed-booking points per calendar month. This is the most valuable rule
+ *  in the table, so it is also the most worth faking: a vendor with a friendly
+ *  couple account could confirm bookings all afternoon. Six a month is more
+ *  weddings than all but the largest venues actually take, and the cap costs an
+ *  honest vendor nothing. */
+export const MAX_BOOKING_POINTS_PER_MONTH = 6 * 60;
 
 // ── Tiers ──────────────────────────────────────────────────────────────────
 
-export type VendorTierKey = "blue" | "gold" | "platinum" | "diamond";
+export type VendorTierKey = "blue" | "gold" | "platinum" | "black";
 
 /** What a tier actually GIVES. Every field is enforced somewhere real; adding a
  *  cosmetic-only field here is how a tier system becomes a sticker. */
@@ -123,7 +138,27 @@ export interface VendorTier {
 }
 
 /** Ascending by min_points. `blue` is the entry tier every vendor starts in, so
- *  its threshold must stay 0: `tierForPoints` relies on it as the floor. */
+ *  its threshold must stay 0: `tierForPoints` relies on it as the floor.
+ *
+ *  THE THRESHOLDS ARE A TIMELINE, not round numbers picked for looks. The top
+ *  of a ladder nobody can climb is worse than no ladder: it tells a vendor the
+ *  program is decoration. So the table is calibrated against what a real vendor
+ *  earns, and the arithmetic below is the thing to re-run before touching a
+ *  number here.
+ *
+ *  A committed vendor — one review collected a month, three inquiries answered
+ *  inside the day, a wedding booked through Weddly every second month — earns
+ *  15 + 15 + 30 = 60 points a month, after a one-time 90 for finishing the
+ *  profile (40) and landing a first review (50). That gives:
+ *
+ *    Gold      150   month 1      finish the profile, get one review
+ *    Platinum  600   month ~9     a season of steady work
+ *    Black    1500   month ~23    two wedding seasons
+ *
+ *  A busy vendor (two reviews, six fast replies, a booking a month = 120/mo)
+ *  reaches Black around month 12; a vendor who logs in twice a year never does,
+ *  which is the point. Black is deliberately the LAST rung: it exists to be
+ *  reached inside two years, not to be admired from below forever. */
 export const VENDOR_TIERS: readonly VendorTier[] = [
   {
     key: "blue",
@@ -137,7 +172,7 @@ export const VENDOR_TIERS: readonly VendorTier[] = [
   },
   {
     key: "gold",
-    min_points: 250,
+    min_points: 150,
     perks: {
       search_boost: 1,
       extra_lead_credits: 1,
@@ -147,7 +182,7 @@ export const VENDOR_TIERS: readonly VendorTier[] = [
   },
   {
     key: "platinum",
-    min_points: 750,
+    min_points: 600,
     perks: {
       search_boost: 2,
       extra_lead_credits: 3,
@@ -156,8 +191,8 @@ export const VENDOR_TIERS: readonly VendorTier[] = [
     },
   },
   {
-    key: "diamond",
-    min_points: 2000,
+    key: "black",
+    min_points: 1500,
     perks: {
       search_boost: 3,
       extra_lead_credits: 5,
@@ -209,6 +244,27 @@ export interface VendorPointsEntry {
   created_at: number;
 }
 
+/** Where a vendor stands among the other vendors in their own category.
+ *
+ *  Derived, like everything else here, and deliberately NOT a stored standing:
+ *  a leaderboard row that outlives the points it was computed from is a
+ *  leaderboard that lies the moment somebody else earns a point. */
+export interface VendorCategoryRank {
+  /** The category ranked in, as a SupplierCategory key. The label is the
+   *  frontend's job (`suppliers.cat.<key>`), so the rank travels in every
+   *  locale without the API picking one. */
+  category: string;
+  /** 1-based place. Ties SHARE it: two vendors on 40 points are both third,
+   *  and the next one down is fifth. Breaking a tie on an arbitrary column
+   *  would tell one of them they are behind for a reason they can't act on. */
+  rank: number;
+  /** Vendors in the pool, this one included. */
+  total: number;
+  /** Points that would draw level with the vendor immediately above (which is
+   *  enough to share their place). null at the top of the category. */
+  points_to_climb: number | null;
+}
+
 /** `GET /api/vendor/points`. Everything here is derived from the ledger at read
  *  time; no field is stored. */
 export interface VendorPointsStatus {
@@ -228,4 +284,8 @@ export interface VendorPointsStatus {
    *  vendor actually asks: "where did MY points come from". Every key is
    *  present, zero included, so the UI never branches on undefined. */
   earned_by_event: Record<VendorPointsEvent, number>;
+  /** Standing inside the vendor's own category. null when there is nothing to
+   *  rank: no listing yet, or a category this vendor is alone in, where
+   *  "1st of 1" is a fact about the market and not about the vendor. */
+  category_rank: VendorCategoryRank | null;
 }

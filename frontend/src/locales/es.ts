@@ -607,8 +607,9 @@ const es: LocaleMessages = {
     capacity_max_label: "Invitados máx.",
     capacity_invalid: "El mínimo no puede ser mayor que el máximo.",
     label_name: "Nombre de marca",
-    label_name_help:
-      "Es el nombre que las parejas ven en el catálogo. Se puede cambiar una vez por semana.",
+    name_change_warning:
+      "Una vez guardado, el nombre de marca no se puede cambiar durante {days} días.",
+    name_change_confirm: "Guardar nombre",
     name_locked_until:
       "El nombre de marca se puede cambiar una vez por semana. Próximo cambio: {date}.",
     autosave_saving: "Guardando...",

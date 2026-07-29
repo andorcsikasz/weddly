@@ -27,17 +27,29 @@ import { ProgressRing } from "./ProgressRing";
 import { TierBadge } from "./TierBadge";
 import { Dialog } from "./ui/Dialog";
 
-/** Where each earning rule sends a vendor who wants to act on it. `null` means
- *  the rule isn't something a vendor can go and do in one click (a repeat
- *  booking is a couple's decision), so the row stays a plain, unlinked line
- *  rather than pretending a button exists for it. */
+/** Where each earning rule sends a vendor who wants to act on it. `null` would
+ *  mean a rule nothing in the portal can act on; every rule currently has a
+ *  home, and a new one that doesn't should stay an unlinked line rather than
+ *  pretend a button exists for it. */
 const EARN_ROUTE: Record<(typeof EARNABLE_EVENTS)[number], string | null> = {
   profile_completeness: "/vendor/listing",
   first_review: "/vendor/reviews",
   review_collected: "/vendor/reviews",
   fast_reply: "/vendor/clients",
-  repeat_booking: null,
+  booking_confirmed: "/vendor/clients",
 };
+
+type Translate = (path: string, vars?: Record<string, string | number>) => string;
+
+/** The category's own name, falling back to the raw key. A rank under
+ *  "photography" still reads; a rank under "suppliers.cat.photography" does
+ *  not, and a category added to the taxonomy before its labels land shouldn't
+ *  take the whole block down with it. */
+function categoryLabel(t: Translate, category: string): string {
+  const key = `suppliers.cat.${category}`;
+  const label = t(key);
+  return label === key ? category : label;
+}
 
 export function VendorPointsRail({ collapsed }: { collapsed: boolean }) {
   const { t } = useT();
@@ -72,6 +84,14 @@ export function VendorPointsRail({ collapsed }: { collapsed: boolean }) {
         points: String(points.points_to_next),
         tier: t(`vendor.points.tier.${points.next_tier}`),
       });
+  const rank = points.category_rank;
+  const rankLine = rank
+    ? t("vendor.points.rank_position", {
+        rank: String(rank.rank),
+        total: String(rank.total),
+        category: categoryLabel(t, rank.category),
+      })
+    : null;
 
   // basis-full keeps the block on its own row until the rail turns vertical at
   // lg. As a plain flex item it wrapped in beside the last tab, so around
@@ -82,7 +102,16 @@ export function VendorPointsRail({ collapsed }: { collapsed: boolean }) {
         type="button"
         onClick={() => setOpen(true)}
         title={`${t("vendor.points.label")}: ${points.points}`}
-        aria-label={`${t("vendor.points.label")}: ${points.points}. ${t("vendor.points.how_to_earn")}`}
+        // The place is rendered as "#3 / 42" plus a bare category label, which
+        // is right for a 224px rail and useless read aloud, so the screen
+        // reader gets the sentence instead of the shorthand.
+        aria-label={[
+          `${t("vendor.points.label")}: ${points.points}`,
+          rankLine,
+          t("vendor.points.how_to_earn"),
+        ]
+          .filter(Boolean)
+          .join(". ")}
         className={`flex w-full shrink-0 flex-col gap-1.5 rounded-xl py-2 text-left transition-colors hover:bg-paper-100 dark:hover:bg-umber-800 ${
           collapsed ? "px-3 lg:items-center lg:px-0" : "px-3"
         }`}
@@ -122,6 +151,32 @@ export function VendorPointsRail({ collapsed }: { collapsed: boolean }) {
             </span>
           </span>
         </span>
+
+        {/* The standing, under the score and deliberately the biggest number in
+            the block: the total says how much, the place says how much
+            compared to whom, which is the question a vendor actually asks. Set
+            in neutral ink, never blush: the portal's one interactive colour
+            marks what a vendor can act on, and a rank is a fact about them.
+            Hidden on the collapsed rail with everything else but the ring. */}
+        {rank && (
+          <span
+            className={`flex w-full flex-col gap-0.5 border-t border-paper-200 pt-2 dark:border-umber-700 ${
+              collapsed ? "lg:hidden" : ""
+            }`}
+          >
+            <span className="flex items-baseline gap-1">
+              <span className="font-grotesk text-2xl font-semibold leading-none tracking-[-0.03em] tabular-nums text-ink-900 dark:text-paper-50">
+                #{rank.rank}
+              </span>
+              <span className="font-grotesk text-xs font-medium leading-none tabular-nums text-ink-400 dark:text-umber-300">
+                / {rank.total}
+              </span>
+            </span>
+            <span className="truncate text-[11px] leading-tight text-ink-500 dark:text-umber-300">
+              {categoryLabel(t, rank.category)}
+            </span>
+          </span>
+        )}
       </button>
 
       <VendorPointsDialog
@@ -129,6 +184,7 @@ export function VendorPointsRail({ collapsed }: { collapsed: boolean }) {
         onClose={() => setOpen(false)}
         points={points}
         status={status}
+        rankLine={rankLine}
       />
     </div>
   );
@@ -147,11 +203,13 @@ function VendorPointsDialog({
   onClose,
   points,
   status,
+  rankLine,
 }: {
   open: boolean;
   onClose: () => void;
   points: VendorPointsStatus;
   status: string;
+  rankLine: string | null;
 }) {
   const { t } = useT();
 
@@ -192,6 +250,23 @@ function VendorPointsDialog({
             <TierBadge tier={points.tier} size="sm" />
           </span>
           <span className="text-sm text-ink-500 dark:text-paper-400">{status}</span>
+          {/* The place, spelled out here where there is room for the sentence
+              the rail can only abbreviate, and followed by the one number that
+              turns it into something to act on: how far the vendor above is. */}
+          {rankLine && (
+            <span className="flex flex-wrap items-baseline gap-x-2 text-sm text-ink-500 dark:text-paper-400">
+              <span className="font-grotesk font-semibold text-ink-900 dark:text-paper-50">
+                {rankLine}
+              </span>
+              {points.category_rank?.points_to_climb != null && (
+                <span>
+                  {t("vendor.points.rank_gap", {
+                    points: String(points.category_rank.points_to_climb),
+                  })}
+                </span>
+              )}
+            </span>
+          )}
         </div>
 
         {/* Full-bleed rows on hairlines, the whole width tappable: the same list

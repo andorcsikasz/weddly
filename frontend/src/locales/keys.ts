@@ -813,10 +813,12 @@ export interface LocaleMessages {
     /** Brand name field on the vendor listing editor. Self-serve since the
      *  moderation freeze was lifted, behind a once-a-week cooldown —
      *  `name_locked_until` carries the exact date the server will accept the
-     *  next rename. */
+     *  next rename, and `name_change_warning` states the cooldown BEFORE the
+     *  rename is saved, since saving it is what spends the week. */
     label_name: string;
-    label_name_help: string;
     name_locked_until: string;
+    name_change_warning: string;
+    name_change_confirm: string;
     autosave_saving: string;
     autosave_saved: string;
     autosave_unsaved: string;

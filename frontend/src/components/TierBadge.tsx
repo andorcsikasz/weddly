@@ -3,7 +3,9 @@
 //
 // The entry tier wears the portal's own slate blue rather than a colour of its
 // own, because "Blue" is where everybody starts and a loud badge for the
-// default state is noise. Gold/Platinum/Diamond earn their own metal.
+// default state is noise. Gold and Platinum earn their own metal, and Black is
+// the only one that fills solid: it is the last rung, and the ladder should be
+// visibly darker and quieter the higher it goes, not louder.
 //
 // Tiers are NOT semantic colours: they are identity. The sage/amber meanings
 // (complete / needs attention) stay reserved for state, so a Gold badge must
@@ -17,8 +19,8 @@ const TIER_CLASS: Record<VendorTierKey, string> = {
   gold: "bg-star/15 text-paper-900 ring-star/40 dark:bg-star/15 dark:text-star dark:ring-star/30",
   platinum:
     "bg-ink-100 text-ink-700 ring-ink-200 dark:bg-paper-200/15 dark:text-paper-100 dark:ring-paper-200/25",
-  diamond:
-    "bg-verified/10 text-verified ring-verified/30 dark:bg-verified/15 dark:text-verified dark:ring-verified/35",
+  black:
+    "bg-ink-900 text-paper-100 ring-ink-900 dark:bg-ink-950 dark:text-paper-100 dark:ring-paper-200/30",
 };
 
 export function TierBadge({
