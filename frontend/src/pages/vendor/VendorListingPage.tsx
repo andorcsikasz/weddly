@@ -23,13 +23,24 @@ import {
   useState,
 } from "react";
 import { intlLocale } from "../../lib/format";
-import { ArrowRight, Check, Hourglass, Lock, MoveVertical, Plus, Share2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  Hourglass,
+  Lock,
+  MoveVertical,
+  Plus,
+  Share2,
+  X,
+} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { InfoHint } from "../../components/InfoHint";
 import { VendorShareDialog } from "../../components/VendorShareDialog";
 import {
   blockedHoursLabel,
   type ListingPhoto,
+  LISTING_NAME_COOLDOWN_DAYS,
   MAX_LISTING_PHOTOS,
   listingNameLockedUntil,
   priceBandLockedUntil,
@@ -186,8 +197,16 @@ function viewToForm(view: VendorListingView): FormState {
 /** Coerce a controlled-form string back to the wire shape: empty → null,
  *  number columns → Number(). Returns the diff vs. the freshly-loaded view
  *  so the PATCH only carries fields the user actually touched — keeps
- *  audit-log noise low and the network payload tight. */
-function formToPatch(form: FormState, baseline: VendorListingView): VendorListingEditInput {
+ *  audit-log noise low and the network payload tight.
+ *
+ *  `includeName` is false for the autosave pass: a rename starts a 7-day
+ *  cooldown, so it may only leave on a deliberate save (see the brand-name
+ *  fieldset), never a second after the last keystroke. */
+function formToPatch(
+  form: FormState,
+  baseline: VendorListingView,
+  opts?: { includeName?: boolean },
+): VendorListingEditInput {
   const patch: VendorListingEditInput = {};
   const baseStr = viewToForm(baseline);
   const setNullable = (key: StringFormKey & keyof VendorListingEditInput): void => {
@@ -199,7 +218,9 @@ function formToPatch(form: FormState, baseline: VendorListingView): VendorListin
   // through setNullable (which would send `null` for a blanked field). An empty
   // name is simply not sent — the server would 400 and the vendor would lose
   // the rest of the save with it.
-  if (form.name !== baseStr.name && form.name.trim().length > 0) patch.name = form.name.trim();
+  if ((opts?.includeName ?? true) && form.name !== baseStr.name && form.name.trim().length > 0) {
+    patch.name = form.name.trim();
+  }
   if (form.city !== baseStr.city) patch.city = form.city.trim();
   setNullable("address");
   setNullable("website");
@@ -502,20 +523,22 @@ export default function VendorListingPage() {
   // everyone else.
   const speaksLang = speaksLanguages(view?.listing.category);
 
-  // Dirty = the form diverges from the last-loaded view. Saveable = passes the
-  // client guard. Autosave fires only when BOTH hold; the explicit Save button
-  // shares the same routine as a manual fallback.
-  const dirty = form && view ? Object.keys(formToPatch(form, view)).length > 0 : false;
+  // Dirty = the form diverges from the last-loaded view, MINUS the brand name,
+  // which is never part of the autosave pass. Saveable = passes the client
+  // guard. Autosave fires only when BOTH hold; the explicit Save button shares
+  // the same routine as a manual fallback and does carry the name.
+  const dirty =
+    form && view ? Object.keys(formToPatch(form, view, { includeName: false })).length > 0 : false;
   const saveable = form ? isFormSaveable(form, capacityKind != null) : false;
 
   const runSave = useCallback(
     async (mode: "auto" | "manual") => {
       if (!form || !view || saving) return;
       if (!isFormSaveable(form, capacityKind != null)) return;
-      if (Object.keys(formToPatch(form, view)).length === 0) return;
+      const patch = formToPatch(form, view, { includeName: mode === "manual" });
+      if (Object.keys(patch).length === 0) return;
       setSaving(true);
       try {
-        const patch = formToPatch(form, view);
         const next = await vendorListingApi.patch(patch);
         setView(next);
         if (mode === "manual") {
@@ -588,6 +611,19 @@ export default function VendorListingPage() {
         day: "numeric",
       }).format(new Date(nameLockedUntil))
     : null;
+  // A typed-but-unsaved rename. It is what the cooldown warning hangs off: the
+  // vendor sees the consequence while the old name is still the live one, and
+  // nothing leaves the browser until they confirm.
+  const namePending =
+    !nameLocked &&
+    form != null &&
+    view != null &&
+    form.name.trim().length > 0 &&
+    form.name.trim() !== view.listing.name;
+  const revertName = () => {
+    if (!view) return;
+    setForm((prev) => (prev ? { ...prev, name: view.listing.name } : prev));
+  };
   const priceLockedUntil = view ? priceBandLockedUntil(view.listing.price_band_changed_at) : null;
   const priceLocked = priceLockedUntil !== null && priceLockedUntil > Date.now();
   const priceUnlockDate = priceLocked
@@ -760,27 +796,55 @@ export default function VendorListingPage() {
                 support, which made every typo a ticket. The vendor owns it now;
                 the once-a-week cooldown is what keeps the catalogue stable, and
                 while it's running the field is disabled with the exact unlock
-                date rather than letting the vendor type into a 409. */}
-            <fieldset className="card space-y-1.5 p-4" disabled={saving || heroBusy}>
+                date rather than letting the vendor type into a 409.
+
+                The field carries no border of its own: a bordered box holding
+                one bordered box read as a form inside a form, and the card's
+                legend already says what the line is. The only copy under it is
+                conditional — the unlock date while locked, the cooldown warning
+                once a rename is pending. Nothing at rest. */}
+            <fieldset className="card space-y-2 p-4" disabled={saving || heroBusy}>
               <legend className="font-semibold">{t("vendor_home.label_name")}</legend>
-              {nameLocked && nameUnlockDate ? (
-                <p className="inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-200">
-                  <Lock size={12} aria-hidden="true" />
-                  {t("vendor_home.name_locked_until", { date: nameUnlockDate })}
-                </p>
-              ) : (
-                <p className="text-xs text-ink-600 dark:text-umber-200">
-                  {t("vendor_home.label_name_help")}
-                </p>
-              )}
               <input
-                className="input"
+                className="block min-h-tap w-full border-0 border-b border-paper-300 bg-transparent px-0 py-2 text-lg font-medium text-ink-900 focus:border-blush-500 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-ink-500 dark:border-umber-700 dark:text-paper-50 dark:focus:border-blush-400"
                 value={form.name}
                 onChange={onChange("name")}
                 disabled={nameLocked}
                 maxLength={120}
                 aria-label={t("vendor_home.label_name")}
               />
+              {nameLocked && nameUnlockDate && (
+                <p className="inline-flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-200">
+                  <Lock size={12} aria-hidden="true" />
+                  {t("vendor_home.name_locked_until", { date: nameUnlockDate })}
+                </p>
+              )}
+              {/* The rest of the form autosaves; this one asks first, because
+                  saving it is what spends the next 7 days. */}
+              {namePending && (
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  <p className="inline-flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+                    <AlertTriangle size={12} aria-hidden="true" />
+                    {t("vendor_home.name_change_warning", { days: LISTING_NAME_COOLDOWN_DAYS })}
+                  </p>
+                  <span className="flex shrink-0 items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={revertName}
+                      className="text-xs font-medium text-ink-500 transition-colors hover:text-ink-700 dark:text-paper-400 dark:hover:text-paper-200"
+                    >
+                      {t("common.cancel")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void runSave("manual")}
+                      className="rounded-lg bg-blush-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blush-600"
+                    >
+                      {t("vendor_home.name_change_confirm")}
+                    </button>
+                  </span>
+                </div>
+              )}
             </fieldset>
 
             <fieldset
