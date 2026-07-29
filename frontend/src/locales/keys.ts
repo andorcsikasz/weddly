@@ -516,7 +516,9 @@ export interface LocaleMessages {
     add_title: string;
     name_label: string;
     address_label: string;
-    map_hint: string;
+    /** Placeholder on the address field — it carries the "search or tap the
+     *  map" instruction that used to be a sentence under the map. */
+    address_placeholder: string;
     email_label: string;
     phone_label: string;
     save_cta: string;
@@ -1030,7 +1032,6 @@ export interface LocaleMessages {
       /** Receives `{pct}` - listing completeness percentage. */
       completeness_alert: string;
       completeness_alert_body: string;
-      complete_now: string;
       /** Compact label on the collapsed setup-progress chip. */
       completeness_chip: string;
       /** Aria-label for the chip that reopens the full setup guidance. */
@@ -1039,8 +1040,6 @@ export interface LocaleMessages {
       hero_label: string;
       hero_hint: string;
       actions_title: string;
-      action_cover_title: string;
-      action_cover_body: string;
       /** Receives `{pct}` - listing completeness percentage. */
       action_finish_title: string;
       action_finish_body: string;

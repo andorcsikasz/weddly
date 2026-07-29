@@ -1,25 +1,27 @@
 // Vendor dashboard — the home surface for a role='vendor' user at /vendor.
 // Renders inside VendorShell. Greets the vendor by business name, then acts as a
-// command center: a completeness alert strip, a hero "last 30 days" inquiries
-// number with secondary KPIs, contextual smart-action cards derived from the
-// real fetched data, and a preview of upcoming Weddly-sourced bookings. FREE-tier
-// vendors see a graceful upgrade banner; nothing here is PRO-gated.
+// command center: the setup panel while the listing is unfinished, a hero
+// "last 30 days" inquiries number with secondary KPIs, a preview of upcoming
+// Weddly-sourced bookings, and — only once setup is done — the contextual
+// action cards. FREE-tier vendors see a graceful upgrade banner; nothing here
+// is PRO-gated.
+//
+// Exactly one surface recommends work at a time. The old layout ran the setup
+// checklist as a tinted alert at the top AND repeated its first step as a card
+// under "Ajánlott következő lépések", in a different visual language.
 
 import {
   ArrowRight,
   CalendarClock,
   CalendarOff,
   CheckCircle2,
-  ChevronDown,
   ChevronRight,
   Eye,
-  Image as ImageIcon,
   Inbox,
   RefreshCw,
   Sparkles,
   TrendingUp,
   Wallet,
-  X,
 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -28,9 +30,9 @@ import type { VendorPlan } from "@shared/vendor_plan";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { AnimatedNumber } from "../../components/AnimatedNumber";
 import {
-  CompletenessRing,
-  SetupChecklist,
   SetupLinger,
+  SetupProgressChip,
+  VendorSetupPanel,
 } from "../../components/VendorSetupProgress";
 import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
@@ -49,9 +51,6 @@ export default function VendorDashboardPage() {
   const [stats, setStats] = useState<VendorStats | null>(null);
   const [plan, setPlan] = useState<VendorPlan | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
-  // Captured from the listing view so the smart-action cards can suggest a cover
-  // photo when the hero image is still missing.
-  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
   // A self-serve vendor who hasn't finished the signup wizard is bounced into
@@ -93,9 +92,9 @@ export default function VendorDashboardPage() {
     void load();
   }, [load]);
 
-  // Best-effort business name + hero image for the greeting and action cards. A
-  // vendor without a listing yet falls back to their account name, then the
-  // generic brand label - never blocks the dashboard.
+  // Best-effort business name for the greeting. A vendor without a listing yet
+  // falls back to their account name, then the generic brand label - never
+  // blocks the dashboard.
   useEffect(() => {
     let cancelled = false;
     vendorListingApi
@@ -108,7 +107,6 @@ export default function VendorDashboardPage() {
           return;
         }
         setBusinessName(view.account.display_name);
-        setHeroImageUrl(view.listing.hero_image_url);
       })
       .catch(() => {
         /* no listing/account yet — greeting falls back below */
@@ -170,94 +168,56 @@ export default function VendorDashboardPage() {
   const completenessCollapsed = !completenessDone && dismissedPct === pct;
 
   // Smart action cards derived from the real, fetched data - no invented signals.
+  // They only appear once the listing is finished: while it isn't, the setup
+  // panel at the top of the page is the recommendation, and a card saying "add
+  // a cover photo" next to a checklist row saying "Borítókép" was one task
+  // wearing two costumes.
   const actions: ActionCardProps[] = [];
-  if (heroImageUrl == null) {
-    actions.push({
-      to: "/vendor/listing",
-      icon: <ImageIcon size={18} aria-hidden="true" />,
-      title: t("vendor.dashboard.action_cover_title"),
-      body: t("vendor.dashboard.action_cover_body"),
-      tone: "steel",
-    });
-  }
-  if (stats.upcoming.length > 0) {
-    actions.push({
-      to: "/vendor/clients",
-      icon: <CalendarClock size={18} aria-hidden="true" />,
-      title: t("vendor.dashboard.action_upcoming_title", { count: String(stats.upcoming.length) }),
-      body: t("vendor.dashboard.action_upcoming_body"),
-      tone: "steel",
-    });
-  }
-  if (actions.length === 0) {
-    actions.push({
-      to: "/vendor/listing",
-      icon: <CheckCircle2 size={18} aria-hidden="true" />,
-      title: t("vendor.dashboard.action_allset_title"),
-      body: t("vendor.dashboard.action_allset_body"),
-      tone: "sage",
-    });
+  if (completenessDone) {
+    if (stats.upcoming.length > 0) {
+      actions.push({
+        to: "/vendor/clients",
+        icon: <CalendarClock size={18} aria-hidden="true" />,
+        title: t("vendor.dashboard.action_upcoming_title", {
+          count: String(stats.upcoming.length),
+        }),
+        body: t("vendor.dashboard.action_upcoming_body"),
+        tone: "steel",
+      });
+    } else {
+      actions.push({
+        to: "/vendor/listing",
+        icon: <CheckCircle2 size={18} aria-hidden="true" />,
+        title: t("vendor.dashboard.action_allset_title"),
+        body: t("vendor.dashboard.action_allset_body"),
+        tone: "sage",
+      });
+    }
   }
 
   return (
     <div className="flex animate-fade-in flex-col gap-8">
-      {/* Completeness alert strip - the full setup prompt, shown while the
-          listing is incomplete and not collapsed. A live progress ring replaces
-          the old static sparkle so the percent reads at a glance. SetupLinger
-          keeps it up for the last step's tick-strike-fade + confetti instead of
-          yanking the strip away the instant the listing hits 100%. */}
+      {/* The setup surface, and the ONLY place the dashboard recommends
+          listing work. SetupLinger keeps it up for the last step's
+          tick-strike-fade + confetti instead of yanking it away the instant the
+          listing hits 100%. */}
       {!completenessCollapsed && (
         <SetupLinger complete={completenessDone}>
-          <div className="flex items-start gap-3 rounded-2xl border border-steel-200 bg-steel-50 p-4 dark:border-steel-600/30 dark:bg-steel-600/15">
-            <CompletenessRing pct={pct} size={36} stroke={4} />
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <p className="text-sm font-medium text-ink-900 dark:text-paper-50">
-                {t("vendor.dashboard.completeness_alert", { pct: String(pct) })}
-              </p>
-              <p className="text-sm text-ink-600 dark:text-paper-300">
-                {t("vendor.dashboard.completeness_alert_body")}
-              </p>
-              <SetupChecklist steps={stats.listing_steps} />
-              <Link
-                to="/vendor/listing"
-                className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-steel-600 transition-colors hover:text-steel-700 dark:text-steel-300 dark:hover:text-steel-200"
-              >
-                <span>{t("vendor.dashboard.complete_now")}</span>
-                <ArrowRight size={15} aria-hidden="true" />
-              </Link>
-            </div>
-            <button
-              type="button"
-              onClick={() => dismissCompleteness(pct)}
-              aria-label={t("vendor.dashboard.dismiss")}
-              className="-m-1 shrink-0 rounded-lg p-1 text-ink-500 transition-colors hover:bg-steel-100 hover:text-ink-900 dark:text-paper-400 dark:hover:bg-steel-600/20 dark:hover:text-paper-50"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
-          </div>
+          <VendorSetupPanel
+            steps={stats.listing_steps}
+            pct={pct}
+            onDismiss={() => dismissCompleteness(pct)}
+            dismissLabel={t("vendor.dashboard.dismiss")}
+          />
         </SetupLinger>
       )}
 
-      {/* Collapsed setup progress: a small, persistent, reopenable chip. Keeps
-          the % visible and one click from the full guidance, instead of the old
-          dismiss-and-it-is-gone behaviour. */}
       {completenessCollapsed && (
-        <button
-          type="button"
-          onClick={expandCompleteness}
-          aria-label={t("vendor.dashboard.completeness_expand")}
-          className="inline-flex items-center gap-2 self-start rounded-full border border-steel-200 bg-steel-50 py-1.5 pl-2 pr-3.5 text-sm text-ink-700 transition-colors hover:bg-steel-100 dark:border-steel-600/30 dark:bg-steel-600/15 dark:text-paper-200 dark:hover:bg-steel-600/25"
-        >
-          <CompletenessRing pct={pct} />
-          <span className="font-medium">
-            {t("vendor.dashboard.completeness_chip", { pct: String(pct) })}
-          </span>
-          <ChevronDown
-            size={15}
-            aria-hidden="true"
-            className="text-steel-500 dark:text-steel-300"
-          />
-        </button>
+        <SetupProgressChip
+          pct={pct}
+          onExpand={expandCompleteness}
+          label={t("vendor.dashboard.completeness_expand")}
+        />
       )}
 
       {/* Greeting */}
@@ -354,9 +314,13 @@ export default function VendorDashboardPage() {
         />
       </div>
 
-      {/* Upcoming events preview + smart action cards */}
+      {/* Upcoming events preview + smart action cards. With no cards to show
+          (an unfinished listing), upcoming takes the whole width rather than
+          leaving a third of the row empty. */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <section className="lg:col-span-2 flex flex-col gap-2">
+        <section
+          className={`flex flex-col gap-2 ${actions.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}`}
+        >
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 font-grotesk text-lg font-semibold tracking-[-0.01em] text-ink-900 dark:text-paper-50">
               <CalendarClock size={18} aria-hidden="true" className="text-steel-500" />
@@ -406,16 +370,18 @@ export default function VendorDashboardPage() {
           )}
         </section>
 
-        <section className="flex flex-col gap-2">
-          <h2 className="font-grotesk text-lg font-semibold tracking-[-0.01em] text-ink-900 dark:text-paper-50">
-            {t("vendor.dashboard.actions_title")}
-          </h2>
-          <div className="flex flex-col divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
-            {actions.map((action) => (
-              <ActionCard key={`${action.title}-${action.to}`} {...action} />
-            ))}
-          </div>
-        </section>
+        {actions.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <h2 className="font-grotesk text-lg font-semibold tracking-[-0.01em] text-ink-900 dark:text-paper-50">
+              {t("vendor.dashboard.actions_title")}
+            </h2>
+            <div className="flex flex-col divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
+              {actions.map((action) => (
+                <ActionCard key={`${action.title}-${action.to}`} {...action} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

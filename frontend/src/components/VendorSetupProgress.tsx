@@ -1,14 +1,20 @@
-// Vendor listing-setup progress, shared by the two surfaces that show it: the
-// dashboard's completeness alert (+ its collapsed chip) and the sticky column
-// of the listing editor. Both render the SAME ring and the SAME checklist rows
-// off `VendorStats.listing_steps` / `listingChecklistFor`, so a vendor never
-// sees two different answers to "how far along am I".
+// Vendor listing-setup progress: ONE ring, ONE row style, everywhere the
+// question "how far along am I" is asked. The dashboard panel (+ its collapsed
+// chip) and the sticky column of the listing editor both render off
+// `VendorStats.listing_steps` / `listingChecklistFor`.
+//
+// The rows deliberately use the portal's list anatomy — full-bleed lines on
+// hairlines, label left, chevron right — the same one the dashboard's upcoming
+// events and the points rulebook use. Before this, setup was a tinted alert box
+// with circle bullets while the dashboard recommended the SAME work again as
+// hairline cards two screens down: one task, two visual languages, and the
+// vendor had to notice they were the same thing.
 //
 // The rules themselves live in shared/vendor_clients.ts — this file is purely
 // presentation.
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { Circle, CircleCheck } from "lucide-react";
+import { ChevronDown, ChevronRight, Circle, CircleCheck, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { VendorListingStep } from "@shared/vendor_clients";
 import { listingCompletenessFor } from "@shared/vendor_clients";
@@ -131,7 +137,7 @@ export function SetupChecklist({ steps }: { steps: VendorListingStep[] }) {
   if (rows.length === 0) return null;
 
   return (
-    <ul className="mt-1.5 flex flex-col gap-0.5">
+    <ul className="flex flex-col divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
       {rows.map((step) => {
         const stage = exiting[step.key];
         const leaving = stage !== undefined;
@@ -144,33 +150,33 @@ export function SetupChecklist({ steps }: { steps: VendorListingStep[] }) {
             style={
               collapsing
                 ? { maxHeight: 0, opacity: 0, transform: "translateX(6px)" }
-                : { maxHeight: "2.5rem", opacity: 1 }
+                : { maxHeight: "3.5rem", opacity: 1 }
             }
           >
             <Link
               to={`/vendor/listing#vendor-section-${step.key}`}
-              className="-mx-1.5 flex items-center gap-2 rounded-lg px-1.5 py-1 text-sm transition-colors hover:bg-steel-100 dark:hover:bg-steel-600/25"
+              className="group -mx-2 flex items-center gap-3 px-2 py-3 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800"
               // Mid-exit the row is a receipt, not a destination.
               tabIndex={leaving ? -1 : undefined}
             >
               {leaving ? (
                 <CircleCheck
-                  size={15}
+                  size={16}
                   aria-hidden="true"
                   className="shrink-0 animate-tick-pop text-sage-600 dark:text-sage-400"
                 />
               ) : (
                 <Circle
-                  size={15}
+                  size={16}
                   aria-hidden="true"
-                  className="shrink-0 text-steel-400 dark:text-steel-500"
+                  className="shrink-0 text-ink-300 dark:text-paper-400"
                 />
               )}
               {/* The strike is a pseudo-free overlay rule that sweeps left to
                   right, rather than `line-through` snapping on in one frame. */}
               <span
-                className={`relative ${
-                  ticked ? "text-ink-500 dark:text-paper-400" : "text-ink-700 dark:text-paper-200"
+                className={`relative min-w-0 flex-1 font-medium ${
+                  ticked ? "text-ink-500 dark:text-paper-400" : "text-ink-900 dark:text-paper-50"
                 } transition-colors duration-200`}
               >
                 {t(`vendor.setup.step_${step.key}`)}
@@ -180,6 +186,11 @@ export function SetupChecklist({ steps }: { steps: VendorListingStep[] }) {
                   style={{ width: "100%", transform: `scaleX(${ticked ? 1 : 0})` }}
                 />
               </span>
+              <ChevronRight
+                size={16}
+                aria-hidden="true"
+                className="shrink-0 text-ink-300 transition-transform group-hover:translate-x-0.5 dark:text-paper-400"
+              />
             </Link>
           </li>
         );
@@ -227,12 +238,85 @@ export function SetupProgressPanel({ steps }: { steps: VendorListingStep[] }) {
   const visible = useSetupLinger(pct >= 100);
   if (!visible) return null;
   return (
-    <section className="mt-3 rounded-2xl border border-steel-200 bg-steel-50 p-4 dark:border-steel-600/30 dark:bg-steel-600/15">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
+    <section className="mt-3">
+      <h2 className="flex items-center gap-2 pb-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
         <CompletenessRing pct={pct} size={22} stroke={3} />
         {t("vendor.setup.panel_title", { pct: String(pct) })}
       </h2>
       <SetupChecklist steps={steps} />
     </section>
+  );
+}
+
+/** THE setup surface for the dashboard: ring, headline, the remaining work as
+ *  rows, and a dismiss that collapses it to {@link SetupProgressChip} rather
+ *  than hiding it. This is the only place the dashboard recommends listing
+ *  work — the "next steps" cards below it take over once there is none left,
+ *  so the same task is never proposed twice in two shapes. */
+export function VendorSetupPanel({
+  steps,
+  pct,
+  onDismiss,
+  dismissLabel,
+}: {
+  steps: VendorListingStep[];
+  pct: number;
+  onDismiss: () => void;
+  dismissLabel: string;
+}) {
+  const { t } = useT();
+  return (
+    <section className="flex flex-col">
+      <div className="flex items-start gap-3 pb-3">
+        <CompletenessRing pct={pct} size={36} stroke={4} />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <h2 className="font-grotesk text-lg font-semibold tracking-[-0.01em] text-ink-900 dark:text-paper-50">
+            {t("vendor.dashboard.completeness_alert", { pct: String(pct) })}
+          </h2>
+          <p className="text-sm text-ink-500 dark:text-paper-400">
+            {t("vendor.dashboard.completeness_alert_body")}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label={dismissLabel}
+          title={dismissLabel}
+          className="-m-1 shrink-0 rounded-lg p-1 text-ink-400 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-paper-400 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+        >
+          <X size={16} aria-hidden="true" />
+        </button>
+      </div>
+      <SetupChecklist steps={steps} />
+    </section>
+  );
+}
+
+/** The dismissed state: a small, persistent, reopenable chip. The percent is
+ *  never lost while the listing is unfinished, which is why dismissing
+ *  collapses rather than hides. */
+export function SetupProgressChip({
+  pct,
+  onExpand,
+  label,
+}: {
+  pct: number;
+  onExpand: () => void;
+  label: string;
+}) {
+  const { t } = useT();
+  return (
+    <button
+      type="button"
+      onClick={onExpand}
+      aria-label={label}
+      className="inline-flex items-center gap-2 self-start rounded-full border border-paper-300 py-1.5 pl-2 pr-3.5 text-sm text-ink-700 transition-colors hover:bg-paper-100 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800"
+    >
+      <CompletenessRing pct={pct} />
+      <span className="font-medium">
+        {t("vendor.dashboard.completeness_chip", { pct: String(pct) })}
+      </span>
+      <ChevronDown size={15} aria-hidden="true" className="text-ink-400 dark:text-paper-400" />
+    </button>
   );
 }
