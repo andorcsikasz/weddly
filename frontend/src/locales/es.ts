@@ -2562,9 +2562,6 @@ const es: LocaleMessages = {
     todo_sub_count: "{done} de {total} completadas",
     todo_sub_empty: "Aún no hay tareas de luna de miel",
     todo_manage_link: "Gestionar en Planificación →",
-    todo_empty_body:
-      "Abre la varita de planificación y añade a tu lista el grupo Luna de miel: pasaportes, vuelos, seguro, equipaje.",
-    todo_empty_cta: "Abrir Planificación",
     todo_check_aria: "Marcar como completada",
     todo_uncheck_aria: "Marcar como no completada",
     todo_add_placeholder: "Añadir una tarea de luna de miel…",
@@ -2600,9 +2597,6 @@ const es: LocaleMessages = {
     costs_title: "Costes",
     costs_sub:
       "Añade líneas para tu gasto previsto. Los cambios también aparecen en el Presupuesto.",
-    costs_empty_title: "Aún no hay costes",
-    costs_empty_body:
-      "Empieza con una categoría: viaje, alojamiento, comida, actividades. Puedes editar el importe previsto en cualquier momento.",
     costs_empty_short: "Empieza con una categoría:",
     cost_actual_inline: "Gastado: {actual}",
     slider_aria: "{label} importe previsto",

@@ -920,7 +920,9 @@ function DaysTile({
           contradicting the other — "30 nap" over "Még 314 nap" — so the trip
           length stays the hero and the countdown moves out of the stack. */}
       <div className="flex items-start justify-between gap-2 text-paper-200">
-        <Calendar size={14} aria-hidden="true" title={t("honeymoon.tile_days")} />
+        <span title={t("honeymoon.tile_days")} className="inline-flex">
+          <Calendar size={14} aria-hidden="true" />
+        </span>
         {countdown && (
           <span className="-mt-0.5 shrink-0 rounded-full bg-paper-50/10 px-2 py-0.5 text-[11px] leading-tight text-paper-200">
             {countdown.kind === "future" &&
@@ -1150,9 +1152,53 @@ function DestinationTile({
   return (
     <div className="card stationery-ink relative flex h-full flex-col !p-4">
       {/* Icon only, same as the other two tiles: the destination name under it
-          says what this is far better than the word "Hova" above it. */}
-      <div className="flex items-center gap-2 text-paper-200">
-        <MapPin size={14} aria-hidden="true" title={t("honeymoon.tile_destination")} />
+          says what this is far better than the word "Hova" above it. The two
+          triggers ride this row rather than the tile's bottom corners, where
+          they used to be absolutely positioned: on a half-width mobile tile
+          the centred destination name ran straight through both of them. */}
+      <div className="flex items-start justify-between gap-2 text-paper-200">
+        <span title={t("honeymoon.tile_destination")} className="inline-flex">
+          <MapPin size={14} aria-hidden="true" />
+        </span>
+        {value && !editing && (
+          <div className="-mt-1 flex shrink-0 items-center gap-1">
+            {tripReady && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFlightToggle();
+                }}
+                aria-pressed={flightSectionOpen}
+                className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
+                  flightSectionOpen
+                    ? "border-blush-300 bg-paper-50 text-blush-700 hover:bg-paper-100"
+                    : "border-paper-50/20 bg-paper-50/10 text-paper-100 hover:border-blush-300 hover:bg-paper-50 hover:text-blush-700"
+                }`}
+                aria-label={t("honeymoon.flight_estimate_search")}
+                title={t("honeymoon.flight_estimate_search")}
+              >
+                {flightLoading && flightSectionOpen ? (
+                  <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Plane size={13} aria-hidden="true" />
+                )}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMapOpen(true);
+              }}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-paper-50/20 bg-paper-50/10 text-paper-100 transition hover:border-blush-300 hover:bg-paper-50 hover:text-blush-700"
+              aria-label={t("honeymoon.show_on_map")}
+              title={t("honeymoon.show_on_map")}
+            >
+              <MapIcon size={13} aria-hidden="true" />
+            </button>
+          </div>
+        )}
       </div>
       {editing ? (
         <DestinationAutocomplete
@@ -1189,45 +1235,6 @@ function DestinationTile({
               {loaded ? t("honeymoon.destination_empty_cta") : ""}
             </span>
           )}
-        </button>
-      )}
-
-      {/* Corner triggers — only when a destination is set and not in edit mode. */}
-      {value && !editing && tripReady && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onFlightToggle();
-          }}
-          aria-pressed={flightSectionOpen}
-          className={`absolute bottom-3 left-3 inline-flex h-8 w-8 items-center justify-center rounded-full border shadow-soft transition ${
-            flightSectionOpen
-              ? "border-blush-300 bg-paper-50 text-blush-700 hover:bg-paper-100"
-              : "border-paper-50/20 bg-paper-50/10 text-paper-100 hover:border-blush-300 hover:bg-paper-50 hover:text-blush-700"
-          }`}
-          aria-label={t("honeymoon.flight_estimate_search")}
-          title={t("honeymoon.flight_estimate_search")}
-        >
-          {flightLoading && flightSectionOpen ? (
-            <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-          ) : (
-            <Plane size={14} aria-hidden="true" />
-          )}
-        </button>
-      )}
-      {value && !editing && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setMapOpen(true);
-          }}
-          className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-paper-50/20 bg-paper-50/10 text-paper-100 shadow-soft transition hover:border-blush-300 hover:bg-paper-50 hover:text-blush-700"
-          aria-label={t("honeymoon.show_on_map")}
-          title={t("honeymoon.show_on_map")}
-        >
-          <MapIcon size={14} aria-hidden="true" />
         </button>
       )}
 
@@ -1436,7 +1443,9 @@ function BudgetSummaryTile({
       className="card stationery-ink relative flex h-full flex-col overflow-hidden !p-4"
     >
       <div className="flex items-center gap-2 text-paper-200">
-        <Wallet size={14} aria-hidden="true" title={t("honeymoon.tile_budget")} />
+        <span title={t("honeymoon.tile_budget")} className="inline-flex">
+          <Wallet size={14} aria-hidden="true" />
+        </span>
       </div>
       <div className="flex flex-1 flex-col justify-center">
         <div className="flex items-baseline justify-center gap-2">

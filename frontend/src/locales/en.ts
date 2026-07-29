@@ -2503,9 +2503,6 @@ const en: LocaleMessages = {
     todo_sub_count: "{done} of {total} done",
     todo_sub_empty: "No honeymoon tasks yet",
     todo_manage_link: "Manage in Planning →",
-    todo_empty_body:
-      "Open the planning wand and drop the Honeymoon group, passports, flights, insurance, packing, onto your list.",
-    todo_empty_cta: "Open Planning",
     todo_check_aria: "Mark as done",
     todo_uncheck_aria: "Mark as not done",
     todo_add_placeholder: "Add a honeymoon task…",
@@ -2540,9 +2537,6 @@ const en: LocaleMessages = {
     budget_lines_count_other: "{count} items",
     costs_title: "Costs",
     costs_sub: "Add lines for your planned spend. Changes appear in the Budget too.",
-    costs_empty_title: "No costs yet",
-    costs_empty_body:
-      "Start with a category, travel, accommodation, food, activities. You can edit the planned amount any time.",
     costs_empty_short: "Start with a category:",
     cost_actual_inline: "Spent: {actual}",
     slider_aria: "{label} planned amount",

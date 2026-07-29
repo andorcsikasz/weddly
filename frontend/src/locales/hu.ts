@@ -2533,9 +2533,6 @@ const hu: LocaleMessages = {
     todo_sub_count: "{done} / {total} kész",
     todo_sub_empty: "Még nincs nászúti teendő",
     todo_manage_link: "Szerkesztés a Tervezésben →",
-    todo_empty_body:
-      "Nyisd meg a tervezés varázspálcáját, és kapcsold be a Nászút csoportot, útlevél, repjegy, biztosítás, csomagolás.",
-    todo_empty_cta: "Tervezés megnyitása",
     todo_check_aria: "Jelölés késznek",
     todo_uncheck_aria: "Visszajelölés",
     todo_add_placeholder: "Új nászúti teendő…",
@@ -2571,9 +2568,6 @@ const hu: LocaleMessages = {
     costs_title: "Költségek",
     costs_sub:
       "Adj hozzá tételeket a tervezett kiadásokhoz. A változások a Költségvetésben is megjelennek.",
-    costs_empty_title: "Még nincs költség",
-    costs_empty_body:
-      "Kezdd egy kategóriával, utazás, szállás, étkezés, programok. A tervezett összeget bármikor szerkesztheted.",
     costs_empty_short: "Kezdd egy kategóriával:",
     cost_actual_inline: "Eddig: {actual}",
     slider_aria: "{label} tervezett összeg",
