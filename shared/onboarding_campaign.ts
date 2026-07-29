@@ -38,6 +38,11 @@ export interface OnboardingCampaignSend {
   status: OnboardingCampaignSendStatus;
   error: string | null;
   sent_at: number | null;
+  /** Tracking pixel on either wave. Inflated upward by Apple MPP + the Gmail
+   *  image proxy. */
+  opened_at: number | null;
+  /** Click redirect on either wave. The trustworthy signal of the two. */
+  clicked_at: number | null;
   reminded: boolean;
   converted: boolean; // the targeted user now has a workspace
   created_at: number;
@@ -50,6 +55,10 @@ export interface OnboardingCampaignStats {
   failed: number;
   skipped: number;
   reminded: number; // send rows that also got the reminder wave
+  /** Pixel loads. A ceiling, not a readership number. */
+  opened: number;
+  /** Click-redirect hits, across both the initial nudge and the reminder. */
+  clicked: number;
   hu: number;
   en: number;
   converted: number; // targeted users who have since onboarded

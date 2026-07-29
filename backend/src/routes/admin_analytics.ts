@@ -2407,10 +2407,10 @@ interface CampaignAggRow {
 }
 
 /** Per-family aggregate SQL. Each yields one row per campaign with the same
- *  column names; only the conversion predicate and the tracking columns a
- *  family actually has differ (personal-invite has no pixel or click redirect,
- *  onboarding has no click tracking), and a missing signal reads as 0 rather
- *  than being faked. */
+ *  column names; only the conversion predicate differs now that all four
+ *  families carry the same `opened_at` / `clicked_at` pair. Personal-invite has
+ *  no reminder wave, so its `reminded` is a real 0 rather than a missing
+ *  signal. */
 const CAMPAIGN_AGG_SQL: Record<CampaignFamily, string> = {
   vendor_claim: `
     SELECT c.id, c.slug, c.status, c.started_at, c.created_at,
@@ -2441,8 +2441,8 @@ const CAMPAIGN_AGG_SQL: Record<CampaignFamily, string> = {
   personal_invite: `
     SELECT c.id, c.slug, c.status, c.started_at, c.created_at,
            SUM(CASE WHEN s.status = 'sent' THEN 1 ELSE 0 END) AS sent,
-           0 AS opened,
-           0 AS clicked,
+           SUM(CASE WHEN s.opened_at IS NOT NULL THEN 1 ELSE 0 END) AS opened,
+           SUM(CASE WHEN s.clicked_at IS NOT NULL THEN 1 ELSE 0 END) AS clicked,
            0 AS reminded,
            SUM(CASE WHEN EXISTS (SELECT 1 FROM users u
                                   WHERE LOWER(TRIM(u.email)) = s.email) THEN 1 ELSE 0 END) AS converted,
@@ -2453,8 +2453,8 @@ const CAMPAIGN_AGG_SQL: Record<CampaignFamily, string> = {
   onboarding: `
     SELECT c.id, c.slug, c.status, c.started_at, c.created_at,
            SUM(CASE WHEN s.status = 'sent' THEN 1 ELSE 0 END) AS sent,
-           0 AS opened,
-           0 AS clicked,
+           SUM(CASE WHEN s.opened_at IS NOT NULL THEN 1 ELSE 0 END) AS opened,
+           SUM(CASE WHEN s.clicked_at IS NOT NULL THEN 1 ELSE 0 END) AS clicked,
            SUM(CASE WHEN s.reminder_sent_at IS NOT NULL THEN 1 ELSE 0 END) AS reminded,
            SUM(CASE WHEN EXISTS (SELECT 1 FROM users u
                                   WHERE u.id = s.user_id AND u.couple_id IS NOT NULL)

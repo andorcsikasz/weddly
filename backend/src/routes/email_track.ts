@@ -27,12 +27,26 @@ import {
   verifyCampaignOptOutToken,
   verifyCampaignPixelToken,
 } from "../domain/vendor_campaign";
-import { getOnboardingSendById, verifyOnboardingOptOutToken } from "../domain/onboarding_campaign";
+import {
+  getOnboardingSendById,
+  markOnboardingCampaignClicked,
+  markOnboardingCampaignOpened,
+  verifyOnboardingClickToken,
+  verifyOnboardingOptOutToken,
+  verifyOnboardingPixelToken,
+} from "../domain/onboarding_campaign";
 import {
   retireInvitedPlanner,
   verifyPlannerInviteOptOutToken,
 } from "../domain/planner_invite_batch";
-import { getInviteSendById, verifyInviteOptOutToken } from "../domain/personal_invite_campaign";
+import {
+  getInviteSendById,
+  markInviteCampaignClicked,
+  markInviteCampaignOpened,
+  verifyInviteClickToken,
+  verifyInviteOptOutToken,
+  verifyInvitePixelToken,
+} from "../domain/personal_invite_campaign";
 import {
   getReviewSendById,
   markReviewCampaignClicked,
@@ -178,9 +192,17 @@ function handleReviewOptOutPost(ctx: Ctx): Response {
 }
 
 // ── Personal-invite campaign ────────────────────────────────────────────────
-// No click/pixel tracking on this family (conversion is UTM + a users-row join),
-// so the only public route is the opt-out, reached from the mail footer and the
-// RFC 8058 List-Unsubscribe header.
+// Pixel + click redirect, same shape as the two vendor families. The redirect
+// hands over to the same UTM'd register URL the mail used to link directly, so
+// conversion attribution is untouched and the tracking is purely additive: if
+// the stamp fails the recipient still lands where they were going.
+
+function handlePersonalInviteRedirect(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const sendId = verifyInviteClickToken(token);
+  const dest = sendId != null ? markInviteCampaignClicked(sendId) : null;
+  return Response.redirect(dest ?? CONFIG.frontendBaseUrl, 302);
+}
 
 function inviteOptOutEmailFromToken(token: string): string | null {
   const sendId = verifyInviteOptOutToken(token);
@@ -206,8 +228,19 @@ function handleInviteOptOutPost(ctx: Ctx): Response {
 }
 
 // ── Onboarding re-engagement campaign ───────────────────────────────────────
-// Same as personal-invite: no click/pixel tracking (conversion is UTM + an
-// onboarded-ness join), only an opt-out reached from the footer + List-Unsubscribe.
+// Pixel + click redirect as above. The click token also carries WHICH wave was
+// clicked, because the destination's `utm_content` differs between the initial
+// nudge and the reminder and we would otherwise attribute every click to the
+// first one.
+
+function handleOnboardingRedirect(ctx: Ctx): Response {
+  const token = (ctx.params as { token?: string }).token ?? "";
+  const parsed = verifyOnboardingClickToken(token);
+  const dest = parsed ? markOnboardingCampaignClicked(parsed.sendId, parsed.reminder) : null;
+  // A dead token still belongs at the onboarding form: this audience has an
+  // account and no workspace, which is exactly what that page is for.
+  return Response.redirect(dest ?? `${CONFIG.frontendBaseUrl}/onboarding`, 302);
+}
 
 function onboardingOptOutEmailFromToken(token: string): string | null {
   const sendId = verifyOnboardingOptOutToken(token);
@@ -342,13 +375,27 @@ export function registerEmailTrackRoutes(router: Router): void {
   router.get("/review-optout/:token", handleReviewOptOut);
   router.post("/review-optout/:token", handleReviewOptOutPost);
 
-  // Personal-invite campaign opt-out (List-Unsubscribe target + footer link).
+  // Personal-invite campaign: pixel, click redirect, opt-out.
+  router.get("/api/emails/track/invite-campaign", (ctx) => {
+    const sendId = verifyInvitePixelToken(ctx.url.searchParams.get("t") ?? "");
+    if (sendId != null) markInviteCampaignOpened(sendId);
+    return pixelResponse();
+  });
+  router.get("/r/invite/:token", handlePersonalInviteRedirect);
+  // Opt-out (List-Unsubscribe target + footer link).
   router.get("/api/emails/optout-invite/:token", handleInviteOptOut);
   router.post("/api/emails/optout-invite/:token", handleInviteOptOutPost);
   router.get("/invite-optout/:token", handleInviteOptOut);
   router.post("/invite-optout/:token", handleInviteOptOutPost);
 
-  // Onboarding re-engagement campaign opt-out (List-Unsubscribe target + footer link).
+  // Onboarding re-engagement campaign: pixel, click redirect, opt-out.
+  router.get("/api/emails/track/onboarding-campaign", (ctx) => {
+    const sendId = verifyOnboardingPixelToken(ctx.url.searchParams.get("t") ?? "");
+    if (sendId != null) markOnboardingCampaignOpened(sendId);
+    return pixelResponse();
+  });
+  router.get("/r/onboarding/:token", handleOnboardingRedirect);
+  // Opt-out (List-Unsubscribe target + footer link).
   router.get("/api/emails/optout-onboarding/:token", handleOnboardingOptOut);
   router.post("/api/emails/optout-onboarding/:token", handleOnboardingOptOutPost);
   router.get("/onboarding-optout/:token", handleOnboardingOptOut);

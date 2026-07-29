@@ -14,9 +14,12 @@
 //   - one row per ADDRESS per campaign (keyed by email)
 //   - paced by a rolling-24h daily_cap: even a warm personal note shares the
 //     sending reputation that verify + RSVP mail depend on
-//   - conversion is attributed without click-tracking: the CTA carries a UTM the
-//     signup-acquisition capture reads, and `registered` is computed live from
-//     whether the address gained a `users` row after we wrote to it.
+//   - conversion is attributed independently of the tracking: the CTA still
+//     lands on a UTM the signup-acquisition capture reads, and `registered` is
+//     computed live from whether the address gained a `users` row after we wrote
+//     to it. Opens and clicks were added later and explain the MIDDLE of that
+//     funnel: 0% registered with healthy clicks is a landing-page problem, the
+//     same 0% with no clicks is a subject-line problem.
 
 export type PersonalInviteCampaignStatus = "paused" | "running" | "done";
 export type PersonalInviteCampaignSendStatus = "queued" | "sent" | "failed" | "skipped";
@@ -51,6 +54,10 @@ export interface PersonalInviteCampaignSend {
   status: PersonalInviteCampaignSendStatus;
   error: string | null;
   sent_at: number | null;
+  /** Tracking pixel. Inflated upward by Apple MPP + the Gmail image proxy. */
+  opened_at: number | null;
+  /** Click redirect. The trustworthy engagement signal of the two. */
+  clicked_at: number | null;
   registered: boolean;
   created_at: number;
 }
@@ -67,6 +74,11 @@ export interface PersonalInviteCampaignStats {
    *  check the language detection before launching. */
   hu: number;
   en: number;
+  /** Pixel loads. Read as a ceiling, never as a readership number: Apple Mail
+   *  Privacy Protection and the Gmail image proxy pre-fetch it. */
+  opened: number;
+  /** Click-redirect hits. The signal to actually steer on. */
+  clicked: number;
   /** Sends whose address now has a `users` row. */
   registered: number;
   sent_last_24h: number;

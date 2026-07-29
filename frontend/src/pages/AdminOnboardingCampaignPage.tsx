@@ -386,10 +386,15 @@ export default function AdminOnboardingCampaignPage() {
                 <Skeleton variant="block" height={44} rounded="md" />
               ) : (
                 <>
-                  <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+                  {/* Sent → opened → clicked → converted, left to right, so the
+                      funnel reads in one pass. Opens and clicks cover BOTH
+                      waves: the row is the person, not the mail. */}
+                  <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-7">
                     <Stat value={stats.total} label={t("admin.onbcamp_stat_total")} />
                     <Stat value={stats.queued} label={t("admin.onbcamp_stat_queued")} />
                     <Stat value={stats.sent} label={t("admin.campaign_stat_sent")} />
+                    <Stat value={stats.opened} label={t("admin.campaign_stat_opened")} />
+                    <Stat value={stats.clicked} label={t("admin.campaign_stat_clicked")} />
                     <Stat value={stats.converted} label={t("admin.onbcamp_stat_converted")} />
                     <Stat value={stats.reminded} label={t("admin.onbcamp_stat_reminded")} />
                     <Stat value={stats.failed} label={t("admin.campaign_stat_failed")} muted />

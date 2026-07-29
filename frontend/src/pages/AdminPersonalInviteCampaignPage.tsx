@@ -413,10 +413,16 @@ export default function AdminPersonalInviteCampaignPage() {
                 <Skeleton variant="block" height={44} rounded="md" />
               ) : (
                 <>
-                  <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+                  {/* Sent → opened → clicked → registered, left to right: the
+                      funnel reads in one pass, and the two middle numbers are
+                      what separate a subject-line problem from a landing-page
+                      one. */}
+                  <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-8">
                     <Stat value={stats.total} label={t("admin.pinvite_stat_total")} />
                     <Stat value={stats.queued} label={t("admin.pinvite_stat_queued")} />
                     <Stat value={stats.sent} label={t("admin.campaign_stat_sent")} />
+                    <Stat value={stats.opened} label={t("admin.campaign_stat_opened")} />
+                    <Stat value={stats.clicked} label={t("admin.campaign_stat_clicked")} />
                     <Stat value={stats.registered} label={t("admin.pinvite_stat_registered")} />
                     <Stat
                       value={`${stats.hu} / ${stats.en}`}

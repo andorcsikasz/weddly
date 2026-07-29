@@ -10,7 +10,10 @@ import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
 import {
   getCampaignRow,
+  listSends,
+  makeOnboardingClickToken,
   makeOnboardingOptOutToken,
+  makeOnboardingPixelToken,
   sendCampaignBatch,
   sendCampaignReminders,
   syncTargets,
@@ -329,5 +332,107 @@ describe("onboarding campaign: conversion stat", () => {
       { token: adminToken },
     );
     expect(detail.data.stats.converted).toBe(1);
+  });
+});
+
+// Opens + clicks. This family also shipped blind: `converted` told us whether it
+// worked, nothing told us why it didn't.
+describe("onboarding campaign: open + click tracking", () => {
+  async function oneSentRow(slug: string): Promise<number> {
+    insertUser({ email: `${slug}@weddly.test` });
+    const camp = await createCampaign(slug);
+    syncTargets(camp.id);
+    const row = getCampaignRow(camp.id);
+    if (!row) throw new Error("campaign vanished");
+    await sendCampaignBatch(row, 100);
+    const send = listSends(camp.id, 10)[0];
+    if (!send) throw new Error("no send row");
+    return send.id;
+  }
+
+  test("the pixel stamps opened once and ignores a forged token", async () => {
+    const sendId = await oneSentRow("track-pixel");
+    const before = db
+      .prepare("SELECT opened_at FROM onboarding_campaign_sends WHERE id = ?")
+      .get(sendId) as { opened_at: number | null };
+    expect(before.opened_at).toBeNull();
+
+    expect(
+      await raw(`/api/emails/track/onboarding-campaign?t=${makeOnboardingPixelToken(sendId)}`),
+    ).toBe(200);
+    const first = (
+      db.prepare("SELECT opened_at FROM onboarding_campaign_sends WHERE id = ?").get(sendId) as {
+        opened_at: number | null;
+      }
+    ).opened_at;
+    expect(first).toBeGreaterThan(0);
+
+    // Re-fetch by the mail client must not move it, and a forged token still
+    // answers with a pixel while stamping nothing.
+    await raw(`/api/emails/track/onboarding-campaign?t=${makeOnboardingPixelToken(sendId)}`);
+    expect(await raw(`/api/emails/track/onboarding-campaign?t=${sendId}.deadbeef`)).toBe(200);
+    const after = db
+      .prepare("SELECT opened_at FROM onboarding_campaign_sends WHERE id = ?")
+      .get(sendId) as { opened_at: number };
+    expect(after.opened_at).toBe(first as number);
+  });
+
+  test("the click token carries which wave was clicked", async () => {
+    const sendId = await oneSentRow("track-click");
+
+    const initial = await fetch(`${BASE}/r/onboarding/${makeOnboardingClickToken(sendId, false)}`, {
+      redirect: "manual",
+    });
+    await initial.text();
+    expect(initial.status).toBe(302);
+    const dest = initial.headers.get("location") ?? "";
+    expect(dest).toContain("/onboarding?");
+    expect(dest).toContain("utm_campaign=track-click");
+    // Attributing every click to the first mail would make the reminder look
+    // like it never worked.
+    expect(dest).toContain("utm_content=initial");
+
+    const reminder = await fetch(`${BASE}/r/onboarding/${makeOnboardingClickToken(sendId, true)}`, {
+      redirect: "manual",
+    });
+    await reminder.text();
+    expect(reminder.headers.get("location") ?? "").toContain("utm_content=reminder");
+
+    // One person, one click stamp: the row is the recipient, not the mail.
+    const row = db
+      .prepare("SELECT clicked_at FROM onboarding_campaign_sends WHERE id = ?")
+      .get(sendId) as { clicked_at: number | null };
+    expect(row.clicked_at).toBeGreaterThan(0);
+  });
+
+  test("the stats surface both counters", async () => {
+    const sendId = await oneSentRow("track-stats");
+    const campaignId = (
+      db.prepare("SELECT campaign_id FROM onboarding_campaign_sends WHERE id = ?").get(sendId) as {
+        campaign_id: number;
+      }
+    ).campaign_id;
+
+    await raw(`/api/emails/track/onboarding-campaign?t=${makeOnboardingPixelToken(sendId)}`);
+    const click = await fetch(`${BASE}/r/onboarding/${makeOnboardingClickToken(sendId, false)}`, {
+      redirect: "manual",
+    });
+    await click.text();
+
+    const detail = await req<OnboardingCampaignDetail>(
+      "GET",
+      `/api/admin/onboarding-campaigns/${campaignId}`,
+      undefined,
+      { token: adminToken },
+    );
+    expect(detail.data.stats.opened).toBe(1);
+    expect(detail.data.stats.clicked).toBe(1);
+  });
+
+  test("an unknown click token still lands on the onboarding form", async () => {
+    const res = await fetch(`${BASE}/r/onboarding/999999.deadbeef`, { redirect: "manual" });
+    await res.text();
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location") ?? "").toContain("/onboarding");
   });
 });

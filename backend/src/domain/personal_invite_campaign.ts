@@ -121,6 +121,10 @@ function verifyInviteToken(purpose: string, token: string): number | null {
 
 export const makeInviteOptOutToken = (sendId: number) => makeInviteToken("optout", sendId);
 export const verifyInviteOptOutToken = (t: string) => verifyInviteToken("optout", t);
+export const makeInvitePixelToken = (sendId: number) => makeInviteToken("pixel", sendId);
+export const verifyInvitePixelToken = (t: string) => verifyInviteToken("pixel", t);
+export const makeInviteClickToken = (sendId: number) => makeInviteToken("click", sendId);
+export const verifyInviteClickToken = (t: string) => verifyInviteToken("click", t);
 
 // ── Campaign CRUD ─────────────────────────────────────────────────────────────
 
@@ -366,6 +370,8 @@ interface SendRow {
   status: string;
   error: string | null;
   sent_at: number | null;
+  opened_at: number | null;
+  clicked_at: number | null;
   created_at: number;
 }
 
@@ -391,6 +397,8 @@ export function campaignStats(campaign: CampaignRow): PersonalInviteCampaignStat
          SUM(CASE WHEN s.status = 'skipped' THEN 1 ELSE 0 END) AS skipped,
          SUM(CASE WHEN s.locale = 'hu' THEN 1 ELSE 0 END) AS hu,
          SUM(CASE WHEN s.locale = 'en' THEN 1 ELSE 0 END) AS en,
+         SUM(CASE WHEN s.opened_at  IS NOT NULL THEN 1 ELSE 0 END) AS opened,
+         SUM(CASE WHEN s.clicked_at IS NOT NULL THEN 1 ELSE 0 END) AS clicked,
          SUM(CASE WHEN ${REGISTERED_EXISTS} THEN 1 ELSE 0 END) AS registered,
          SUM(CASE WHEN s.sent_at IS NOT NULL AND s.sent_at >= ? THEN 1 ELSE 0 END) AS sent_last_24h
        FROM personal_invite_campaign_sends s
@@ -405,6 +413,8 @@ export function campaignStats(campaign: CampaignRow): PersonalInviteCampaignStat
     skipped: agg.skipped ?? 0,
     hu: agg.hu ?? 0,
     en: agg.en ?? 0,
+    opened: agg.opened ?? 0,
+    clicked: agg.clicked ?? 0,
     registered: agg.registered ?? 0,
     sent_last_24h: agg.sent_last_24h ?? 0,
   };
@@ -434,6 +444,8 @@ export function listSends(campaignId: number, limit: number): PersonalInviteCamp
     status: toSendStatus(row.status),
     error: row.error,
     sent_at: row.sent_at,
+    opened_at: row.opened_at,
+    clicked_at: row.clicked_at,
     registered: row.registered === 1,
     created_at: row.created_at,
   }));
@@ -449,11 +461,52 @@ export function getInviteSendById(sendId: number): SendRow | null {
 
 // ── Sending ────────────────────────────────────────────────────────────────────
 
-/** The register CTA, carrying a UTM the signup-acquisition capture reads so a
- *  signup that came from this campaign is attributable without any click
- *  redirect. */
+/** The register CTA, carrying a UTM the signup-acquisition capture reads. It
+ *  stays the final destination: the click redirect below only stamps the row and
+ *  hands over to this, so attribution keeps working exactly as it did and does
+ *  not depend on the tracking surviving. */
 export function registerUrl(slug: string): string {
   return `${CONFIG.frontendBaseUrl}/?utm_source=invite&utm_medium=email&utm_campaign=${encodeURIComponent(slug)}`;
+}
+
+/** The tracked CTA the recipient actually gets. Same host as the destination, so
+ *  it doesn't read as a third-party tracker in a personal note. */
+function clickUrl(sendId: number): string {
+  return `${CONFIG.frontendBaseUrl}/r/invite/${makeInviteClickToken(sendId)}`;
+}
+
+function pixelUrl(sendId: number): string {
+  return `${CONFIG.frontendBaseUrl}/api/emails/track/invite-campaign?t=${makeInvitePixelToken(sendId)}`;
+}
+
+// ── Tracking write-backs ─────────────────────────────────────────────────────
+// Both are first-wins (COALESCE): the metric is "did this person engage", not
+// how many times a mail client re-fetched the image.
+
+export function markInviteCampaignOpened(sendId: number, ts: number = now()): void {
+  db.prepare(
+    "UPDATE personal_invite_campaign_sends SET opened_at = COALESCE(opened_at, ?) WHERE id = ?",
+  ).run(ts, sendId);
+}
+
+/** Stamp the click and return where to send them. The destination is rebuilt
+ *  from the send's own campaign slug rather than stored on the row, so a
+ *  campaign renamed after a send still lands on the right UTM. Returns null for
+ *  an unknown send so the route can fall back rather than dead-end. */
+export function markInviteCampaignClicked(sendId: number, ts: number = now()): string | null {
+  const row = db
+    .prepare(
+      `SELECT c.slug AS slug
+         FROM personal_invite_campaign_sends s
+         JOIN personal_invite_campaigns c ON c.id = s.campaign_id
+        WHERE s.id = ?`,
+    )
+    .get(sendId) as { slug: string } | undefined;
+  if (!row) return null;
+  db.prepare(
+    "UPDATE personal_invite_campaign_sends SET clicked_at = COALESCE(clicked_at, ?) WHERE id = ?",
+  ).run(ts, sendId);
+  return registerUrl(row.slug);
 }
 
 /** Send one invite for an already-seeded 'queued' row. Never throws: a single
@@ -468,13 +521,14 @@ async function sendOne(
     "personal_invite",
     {
       name: row.name,
-      ctaUrl: registerUrl(campaign.slug),
+      ctaUrl: clickUrl(row.id),
       locale,
     },
     {
       user: null,
       guest: { email: row.email, full_name: row.name || row.email },
       guestLocale: locale,
+      trackingPixelUrl: pixelUrl(row.id),
     },
   );
   if (result.status === "skipped_opt_out") {

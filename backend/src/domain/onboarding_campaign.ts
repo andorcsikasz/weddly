@@ -95,6 +95,26 @@ function verifyOnbToken(purpose: string, token: string): number | null {
 
 export const makeOnboardingOptOutToken = (sendId: number) => makeOnbToken("optout", sendId);
 export const verifyOnboardingOptOutToken = (t: string) => verifyOnbToken("optout", t);
+export const makeOnboardingPixelToken = (sendId: number) => makeOnbToken("pixel", sendId);
+export const verifyOnboardingPixelToken = (t: string) => verifyOnbToken("pixel", t);
+
+/** The click token carries WHICH wave was clicked, because this family sends two
+ *  mails to the same row and the destination's `utm_content` differs. Two HMAC
+ *  purposes rather than a field in the token: a reminder token can then never be
+ *  replayed as an initial one, and the shape stays `<id>.<sig>` like every other
+ *  token here. */
+export const makeOnboardingClickToken = (sendId: number, reminder: boolean) =>
+  makeOnbToken(reminder ? "click_reminder" : "click", sendId);
+
+export function verifyOnboardingClickToken(
+  token: string,
+): { sendId: number; reminder: boolean } | null {
+  const initial = verifyOnbToken("click", token);
+  if (initial != null) return { sendId: initial, reminder: false };
+  const reminder = verifyOnbToken("click_reminder", token);
+  if (reminder != null) return { sendId: reminder, reminder: true };
+  return null;
+}
 
 // ── Campaign CRUD ─────────────────────────────────────────────────────────────
 
@@ -314,6 +334,8 @@ interface SendRow {
   error: string | null;
   sent_at: number | null;
   reminder_sent_at: number | null;
+  opened_at: number | null;
+  clicked_at: number | null;
   created_at: number;
 }
 
@@ -338,6 +360,8 @@ export function campaignStats(campaign: CampaignRow): OnboardingCampaignStats {
          SUM(CASE WHEN s.reminder_sent_at IS NOT NULL THEN 1 ELSE 0 END) AS reminded,
          SUM(CASE WHEN s.locale = 'hu' THEN 1 ELSE 0 END) AS hu,
          SUM(CASE WHEN s.locale = 'en' THEN 1 ELSE 0 END) AS en,
+         SUM(CASE WHEN s.opened_at  IS NOT NULL THEN 1 ELSE 0 END) AS opened,
+         SUM(CASE WHEN s.clicked_at IS NOT NULL THEN 1 ELSE 0 END) AS clicked,
          SUM(CASE WHEN ${CONVERTED_EXISTS} THEN 1 ELSE 0 END) AS converted,
          SUM(CASE WHEN s.sent_at IS NOT NULL AND s.sent_at >= ? THEN 1 ELSE 0 END) AS sent_last_24h
        FROM onboarding_campaign_sends s
@@ -354,6 +378,8 @@ export function campaignStats(campaign: CampaignRow): OnboardingCampaignStats {
     reminded: agg.reminded ?? 0,
     hu: agg.hu ?? 0,
     en: agg.en ?? 0,
+    opened: agg.opened ?? 0,
+    clicked: agg.clicked ?? 0,
     converted: agg.converted ?? 0,
     sent_last_24h: agg.sent_last_24h ?? 0,
     eligible_unsynced: eligibleUnsyncedCount(campaign.id),
@@ -386,6 +412,8 @@ export function listSends(campaignId: number, limit: number): OnboardingCampaign
     status: toSendStatus(r.status),
     error: r.error,
     sent_at: r.sent_at,
+    opened_at: r.opened_at,
+    clicked_at: r.clicked_at,
     reminded: r.reminder_sent_at !== null,
     converted: Boolean(r.converted),
     created_at: r.created_at,
@@ -401,6 +429,8 @@ export function getOnboardingSendById(sendId: number): SendRow | null {
 
 // ── Sending (the paced sweep primitives) ──────────────────────────────────────
 
+/** The real destination. Still the final URL after the click redirect, so the
+ *  UTM attribution the acquisition capture reads is unchanged. */
 function onboardingUrl(slug: string, reminder: boolean): string {
   const params = new URLSearchParams({
     utm_source: "onboarding_campaign",
@@ -409,6 +439,49 @@ function onboardingUrl(slug: string, reminder: boolean): string {
     utm_content: reminder ? "reminder" : "initial",
   });
   return `${CONFIG.frontendBaseUrl}/onboarding?${params.toString()}`;
+}
+
+/** The tracked CTA the recipient gets, on our own host. */
+function clickUrl(sendId: number, reminder: boolean): string {
+  return `${CONFIG.frontendBaseUrl}/r/onboarding/${makeOnboardingClickToken(sendId, reminder)}`;
+}
+
+function pixelUrl(sendId: number): string {
+  return `${CONFIG.frontendBaseUrl}/api/emails/track/onboarding-campaign?t=${makeOnboardingPixelToken(sendId)}`;
+}
+
+// ── Tracking write-backs ─────────────────────────────────────────────────────
+// One row carries BOTH waves, so `opened_at` / `clicked_at` mean "engaged with
+// either mail we sent this person". Deliberately not split per wave: the row is
+// the person, the reminder gate is `converted`, not clicks, and two more columns
+// would buy a breakdown nobody is going to act on.
+
+export function markOnboardingCampaignOpened(sendId: number, ts: number = now()): void {
+  db.prepare(
+    "UPDATE onboarding_campaign_sends SET opened_at = COALESCE(opened_at, ?) WHERE id = ?",
+  ).run(ts, sendId);
+}
+
+/** Stamp the click and return where to send them, rebuilt from the send's own
+ *  campaign slug plus which wave was clicked. Null for an unknown send. */
+export function markOnboardingCampaignClicked(
+  sendId: number,
+  reminder: boolean,
+  ts: number = now(),
+): string | null {
+  const row = db
+    .prepare(
+      `SELECT c.slug AS slug
+         FROM onboarding_campaign_sends s
+         JOIN onboarding_campaigns c ON c.id = s.campaign_id
+        WHERE s.id = ?`,
+    )
+    .get(sendId) as { slug: string } | undefined;
+  if (!row) return null;
+  db.prepare(
+    "UPDATE onboarding_campaign_sends SET clicked_at = COALESCE(clicked_at, ?) WHERE id = ?",
+  ).run(ts, sendId);
+  return onboardingUrl(row.slug, reminder);
 }
 
 /** Send one row's initial nudge (reminder=false) or its reminder (reminder=true)
@@ -424,9 +497,10 @@ async function sendOne(
   const locale: "hu" | "en" = row.locale === "en" ? "en" : "hu";
   const result = await sendKind(
     reminder ? "onboarding_campaign_reminder" : "onboarding_campaign",
-    { name: row.name, ctaUrl: onboardingUrl(campaign.slug, reminder), locale },
+    { name: row.name, ctaUrl: clickUrl(row.id, reminder), locale },
     {
       user: null,
+      trackingPixelUrl: pixelUrl(row.id),
       guest: { email: row.email, full_name: row.name || row.email },
       guestLocale: locale,
     },

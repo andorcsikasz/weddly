@@ -2015,6 +2015,21 @@ addColumnIfMissing("vendor_claim_campaigns", "ended_at", "ended_at INTEGER");
 addColumnIfMissing("vendor_review_campaigns", "started_at", "started_at INTEGER");
 addColumnIfMissing("vendor_review_campaigns", "ended_at", "ended_at INTEGER");
 
+// ── Open + click tracking on the two campaigns that shipped without it ───────
+// The vendor claim + review families carried a pixel and a click redirect from
+// the start; personal-invite and onboarding were sent blind, attributed only by
+// the conversion join at the far end (a users row appeared / the couple
+// onboarded). That answers "did it work" and nothing about WHY it didn't: a
+// campaign at 0% conversion with 40% clicks is bad copy on the landing page, and
+// the same campaign with 2% clicks is a bad subject line, and until now those
+// two looked identical. Same column names and same semantics as the vendor
+// tables, so every reader (admin console, cross-family analytics) treats all
+// four families alike.
+addColumnIfMissing("personal_invite_campaign_sends", "opened_at", "opened_at INTEGER");
+addColumnIfMissing("personal_invite_campaign_sends", "clicked_at", "clicked_at INTEGER");
+addColumnIfMissing("onboarding_campaign_sends", "opened_at", "opened_at INTEGER");
+addColumnIfMissing("onboarding_campaign_sends", "clicked_at", "clicked_at INTEGER");
+
 // Reserved system user that anchors the NOT-NULL author FK for verified-visitor
 // content (see above). Login-disabled (status='suspended' and password_hash that
 // can never verify); verified_email=1 + password_set=0 so no unverified-account

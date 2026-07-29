@@ -26,7 +26,9 @@ import {
   getCampaignRow,
   isOptedOut,
   listSends,
+  makeInviteClickToken,
   makeInviteOptOutToken,
+  makeInvitePixelToken,
   sendCampaignBatch,
 } from "../../src/domain/personal_invite_campaign";
 import { registerAndVerify, req, wipeAll } from "../helpers";
@@ -270,5 +272,74 @@ describe("personal-invite campaign", () => {
     const sends = listSends(campaign.id, 100);
     expect(sends.find((s) => s.email === "guy@x.de")?.locale).toBe("en");
     expect(sends.find((s) => s.email === "bela@csv.test")?.locale).toBe("hu");
+  });
+
+  // Opens + clicks. The family shipped blind, attributed only by the users-row
+  // join at the far end, so a campaign that converted nobody could not be told
+  // apart from one nobody opened.
+  test("the pixel stamps opened once, and only for a signed token", async () => {
+    const campaign = await createCampaign("friends-pixel");
+    await req(
+      "POST",
+      `/api/admin/personal-invite/campaigns/${campaign.id}/import`,
+      { contacts: [{ name: "P", email: "p@pixel.test" }] },
+      { token },
+    );
+    await sendCampaignBatch(getCampaignRow(campaign.id)!, 100, now());
+    const sendId = listSends(campaign.id, 10)[0]?.id as number;
+    expect(sendId).toBeGreaterThan(0);
+    expect(listSends(campaign.id, 10)[0]?.opened_at).toBeNull();
+
+    const hit = await raw(`/api/emails/track/invite-campaign?t=${makeInvitePixelToken(sendId)}`);
+    expect(hit.status).toBe(200);
+    const first = listSends(campaign.id, 10)[0]?.opened_at;
+    expect(first).toBeGreaterThan(0);
+
+    // First open wins: a mail client re-fetching the image is not a second
+    // reader, so the timestamp must not move.
+    await raw(`/api/emails/track/invite-campaign?t=${makeInvitePixelToken(sendId)}`);
+    expect(listSends(campaign.id, 10)[0]?.opened_at).toBe(first as number);
+
+    // A forged token still gets a pixel back (never leak which ids exist) but
+    // stamps nothing.
+    const forged = await raw(`/api/emails/track/invite-campaign?t=${sendId}.deadbeef`);
+    expect(forged.status).toBe(200);
+  });
+
+  test("the CTA redirect stamps the click and lands on the UTM'd register URL", async () => {
+    const campaign = await createCampaign("friends-click");
+    await req(
+      "POST",
+      `/api/admin/personal-invite/campaigns/${campaign.id}/import`,
+      { contacts: [{ name: "C", email: "c@click.test" }] },
+      { token },
+    );
+    await sendCampaignBatch(getCampaignRow(campaign.id)!, 100, now());
+    const sendId = listSends(campaign.id, 10)[0]?.id as number;
+
+    const res = await fetch(`${BASE}/r/invite/${makeInviteClickToken(sendId)}`, {
+      redirect: "manual",
+    });
+    expect(res.status).toBe(302);
+    const dest = res.headers.get("location") ?? "";
+    // The tracking must not cost the attribution that was already working.
+    expect(dest).toContain("utm_source=invite");
+    expect(dest).toContain("utm_campaign=friends-click");
+    expect(listSends(campaign.id, 10)[0]?.clicked_at).toBeGreaterThan(0);
+
+    const detail = await req<PersonalInviteCampaignDetail>(
+      "GET",
+      `/api/admin/personal-invite/campaigns/${campaign.id}`,
+      undefined,
+      { token },
+    );
+    expect(detail.data.stats.clicked).toBe(1);
+    expect(detail.data.stats.opened).toBe(0);
+  });
+
+  test("an unknown click token redirects home rather than dead-ending", async () => {
+    const res = await fetch(`${BASE}/r/invite/999999.deadbeef`, { redirect: "manual" });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBeTruthy();
   });
 });
