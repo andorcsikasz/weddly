@@ -729,6 +729,13 @@ export type WebsiteSectionSlug = "intro" | "schedule" | "useful_info" | "wishlis
 /** Photo rendering on the guest page. "grayscale" desaturates cover/venue
  *  imagery for the black-and-white editorial look; "none" is full colour. */
 export type ImageTreatmentSlug = "none" | "grayscale";
+/** How the venue block stacks its name and its map. "stacked" is the classic
+ *  full-width map under the venue name; "side" puts the two next to each other
+ *  on a wide screen, where the map goes SQUARE because a 16:9 strip next to a
+ *  short text column reads as a banner rather than a place. Below the breakpoint
+ *  "side" degrades to "stacked" on its own — two 160px columns are worse than
+ *  one of each. */
+export type VenueLayoutSlug = "stacked" | "side";
 
 export const CARD_RADII: readonly { slug: CardRadiusSlug; nameKey: string; css: string }[] = [
   { slug: "sharp", nameKey: "design.web.card_radius.sharp", css: "0.375rem" },
@@ -766,6 +773,11 @@ export const WEBSITE_SECTIONS: readonly { slug: WebsiteSectionSlug; nameKey: str
 export const IMAGE_TREATMENTS: readonly { slug: ImageTreatmentSlug; nameKey: string }[] = [
   { slug: "none", nameKey: "design.web.image_treatment.none" },
   { slug: "grayscale", nameKey: "design.web.image_treatment.grayscale" },
+];
+
+export const VENUE_LAYOUTS: readonly { slug: VenueLayoutSlug; nameKey: string }[] = [
+  { slug: "stacked", nameKey: "design.web.venue_layout.stacked" },
+  { slug: "side", nameKey: "design.web.venue_layout.side" },
 ];
 
 /** Curated, people-free background photos a couple can drop into a guest-page
@@ -925,6 +937,9 @@ export const VALID_WEBSITE_SECTIONS: ReadonlySet<WebsiteSectionSlug> = new Set(
 export const VALID_IMAGE_TREATMENTS: ReadonlySet<ImageTreatmentSlug> = new Set(
   IMAGE_TREATMENTS.map((i) => i.slug),
 );
+export const VALID_VENUE_LAYOUTS: ReadonlySet<VenueLayoutSlug> = new Set(
+  VENUE_LAYOUTS.map((v) => v.slug),
+);
 
 /** Website-only options (guest page chrome). Always fully populated on the
  *  resolved design; absent in legacy blobs (filled from DEFAULT_DESIGN.web). */
@@ -945,6 +960,9 @@ export interface DesignWebsiteOptions {
    *  face until the couple explicitly flips this. The public-wedding endpoint
    *  reads it server-side to decide whether to expose the coordinates. */
   venueMap: boolean;
+  /** Venue name over the map, or the two side by side (square map). Only ever
+   *  visible when `venueMap` is on and the couple has coordinates. */
+  venueLayout: VenueLayoutSlug;
 }
 
 /** Resolve a card-radius slug to its CSS length; never throws. */
@@ -981,6 +999,7 @@ export const DEFAULT_DESIGN: CoupleDesign = {
     imageTreatment: "none",
     ornaments: true,
     venueMap: false,
+    venueLayout: "stacked",
   },
 };
 
@@ -1080,6 +1099,10 @@ export function resolveDesign(input: CoupleDesignInput | null | undefined): Coup
       ornaments:
         typeof i.web?.ornaments === "boolean" ? i.web.ornaments : DEFAULT_DESIGN.web.ornaments,
       venueMap: typeof i.web?.venueMap === "boolean" ? i.web.venueMap : DEFAULT_DESIGN.web.venueMap,
+      venueLayout:
+        i.web?.venueLayout && VALID_VENUE_LAYOUTS.has(i.web.venueLayout)
+          ? i.web.venueLayout
+          : DEFAULT_DESIGN.web.venueLayout,
     },
   };
 }
@@ -1123,6 +1146,8 @@ export interface PublicDesign {
   /** Draw the intermediate ornament dividers between sections, or omit them
    *  for a cleaner page. */
   website_ornaments: boolean;
+  /** Venue name over the map, or side by side with a square map. */
+  website_venue_layout: VenueLayoutSlug;
 }
 
 /** Build the public, presentation-only payload from a resolved design. */
@@ -1163,6 +1188,7 @@ export function toPublicDesign(design: CoupleDesign): PublicDesign {
     website_hidden_sections: design.web.hiddenSections,
     website_image_treatment: design.web.imageTreatment,
     website_ornaments: design.web.ornaments,
+    website_venue_layout: design.web.venueLayout,
   };
 }
 

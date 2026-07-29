@@ -42,6 +42,7 @@ interface CoupleDesign {
     imageTreatment: string;
     ornaments: boolean;
     venueMap: boolean;
+    venueLayout: string;
   };
 }
 
@@ -169,6 +170,7 @@ describe("design: default resolution", () => {
         imageTreatment: "none",
         ornaments: true,
         venueMap: false,
+        venueLayout: "stacked",
       },
     });
   });
@@ -546,7 +548,58 @@ describe("design: website-only `web` sub-object", () => {
       imageTreatment: "none",
       ornaments: true,
       venueMap: false,
+      venueLayout: "stacked",
     });
+  });
+
+  test("web.venueLayout round-trips, reaches the public payload, and rejects junk", async () => {
+    wipeAll();
+    const token = await registerVerified("design-venue-layout@weddly.test");
+    const { couple } = await onboard(token);
+    // Stacked is the default: the layout only becomes a choice once a couple
+    // deliberately picks the side-by-side square.
+    expect(couple.design.web.venueLayout).toBe("stacked");
+
+    const side = await req<{ couple: { design: CoupleDesign } }>(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { venueLayout: "side" } } },
+      { token },
+    );
+    expect(side.status).toBe(200);
+    expect(side.data.couple.design.web.venueLayout).toBe("side");
+
+    // Round-trips on a fresh read.
+    const me = await req<{ couple: { design: CoupleDesign } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(me.data.couple.design.web.venueLayout).toBe("side");
+
+    // The guest page renders off the public payload, so the choice has to
+    // survive that projection or the picker does nothing visible.
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(couple.id);
+    const slug = (
+      db.prepare("SELECT slug FROM couples WHERE id = ?").get(couple.id) as { slug: string }
+    ).slug;
+    const pub = await req<{ wedding: { design: { website_venue_layout: string } } }>(
+      "GET",
+      `/api/public/wedding/${encodeURIComponent(slug)}`,
+    );
+    expect(pub.status).toBe(200);
+    expect(pub.data.wedding.design.website_venue_layout).toBe("side");
+
+    // An unknown slug is refused rather than silently coerced, so a stale
+    // client can't park the guest page on a layout that doesn't exist.
+    const bad = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { venueLayout: "diagonal" } } },
+      { token },
+    );
+    expect(bad.status).toBe(400);
   });
 
   test("button style + hidden sections round-trip; invalid values 400", async () => {

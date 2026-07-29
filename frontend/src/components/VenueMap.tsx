@@ -25,17 +25,23 @@ export default function VenueMap({
   accent,
   filter,
   label,
+  square = false,
 }: {
   lat: number;
   lng: number;
   accent: string;
   filter?: string;
   label?: string;
+  /** Square instead of the 300px-tall strip. Used by the side-by-side venue
+   *  layout, where a wide strip next to a short text column reads as a banner
+   *  rather than a place. Height follows the column width via aspect-ratio, so
+   *  the map keeps its shape at every breakpoint. */
+  square?: boolean;
 }) {
   return (
     <div
       className="overflow-hidden rounded-2xl"
-      style={{ height: 300, filter }}
+      style={square ? { aspectRatio: "1 / 1", filter } : { height: 300, filter }}
       role="img"
       aria-label={label}
     >

@@ -62,7 +62,9 @@ import {
   VALID_SEPARATORS,
   VALID_SHADOWS,
   VALID_STYLES,
+  VALID_VENUE_LAYOUTS,
   VALID_WEBSITE_SECTIONS,
+  type VenueLayoutSlug,
   type WebsiteSectionSlug,
 } from "@shared/design";
 import { normalizeMealMenuInput, parseMealMenu } from "@shared/meals";
@@ -2457,6 +2459,16 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         }
         next.web.venueMap = v;
       }
+      // Venue name over the map, or the two side by side with a square map.
+      // Purely presentational (unlike venueMap above, which gates the pin), so
+      // it is accepted whether or not the couple has coordinates yet.
+      if ("venueLayout" in w) {
+        const v = w.venueLayout;
+        if (typeof v !== "string" || !VALID_VENUE_LAYOUTS.has(v as VenueLayoutSlug)) {
+          throw new HttpError(400, "design.web.venueLayout is invalid");
+        }
+        next.web.venueLayout = v as VenueLayoutSlug;
+      }
     }
     const changed =
       next.style !== prev.style ||
@@ -2478,6 +2490,7 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
       next.web.imageTreatment !== prev.web.imageTreatment ||
       next.web.ornaments !== prev.web.ornaments ||
       next.web.venueMap !== prev.web.venueMap ||
+      next.web.venueLayout !== prev.web.venueLayout ||
       JSON.stringify(next.web.hiddenSections) !== JSON.stringify(prev.web.hiddenSections);
     if (changed) {
       updates.push({ col: "design_json", val: JSON.stringify(next) });

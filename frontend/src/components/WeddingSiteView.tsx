@@ -38,6 +38,7 @@ import { pickKeyMoments } from "@shared/schedule";
 import { formatDate, isPlausibleDateIso, localeCurrency } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
+import { mapPinUrl } from "../lib/map_link";
 import { GuestWishlistCard } from "./GuestWishlistCard";
 import { OrnamentDivider, headingTreatmentCss } from "./ornaments";
 import { WeddingCountdown } from "./WeddingCountdown";
@@ -501,6 +502,14 @@ export function WeddingSiteView({
   const introInline = isPreview && Boolean(inlineEdit?.intro);
   const venueInline = isPreview && Boolean(inlineEdit?.venue);
 
+  // Side-by-side venue layout. Gated on actually HAVING a pin: without one the
+  // "map" column is empty, and a two-column band with nothing in the right half
+  // is worse than the stacked default the couple started from.
+  const sideVenue =
+    view.design.website_venue_layout === "side" &&
+    view.location_lat !== null &&
+    view.location_lng !== null;
+
   // Tier gates on the live page; in preview we author everything, so the
   // post-RSVP block is shown as a labelled locked preview regardless of tier.
   const showInvitedExtras = tier === "invited" || tier === "confirmed";
@@ -885,7 +894,6 @@ export function WeddingSiteView({
                   <div className="mx-auto mt-4 flex max-w-xl flex-col gap-1.5 text-left">
                     {introSuggestions.map((s, i) => (
                       <button
-                        // biome-ignore lint/suspicious/noArrayIndexKey: static suggestion list
                         key={i}
                         type="button"
                         onClick={() => inlineEdit.intro?.(s)}
@@ -1011,83 +1019,118 @@ export function WeddingSiteView({
         <Band
           onEdit={isPreview && !venueInline ? e.onEditVenue : undefined}
           hint={editHint}
-          className="text-center"
+          className={sideVenue ? "text-center md:text-left" : "text-center"}
         >
-          <Eyebrow>{t("wedding_site.location_eyebrow")}</Eyebrow>
-          {(() => {
-            const venue = splitVenue(view.venue_name, view.venue_city);
-            // Commit name + city as a pair so editing one half never drops the
-            // other (the displayed split may have derived the city from a
-            // "Name, City" venue_name with no separate venue_city set).
-            const commitVenue = inlineEdit?.venue;
-            if (venueInline && commitVenue) {
-              return (
-                <>
-                  <Heading className="mt-2" treatment={headingTreatment}>
-                    <InlineText
-                      value={venue.name ?? ""}
-                      onCommit={(name) => commitVenue(name, venue.city ?? "")}
-                      className="text-3xl tracking-tight sm:text-4xl"
-                      placeholder={t("wedding_site_editor.venue_label")}
-                      ariaLabel={t("wedding_site_editor.venue_label")}
-                    />
-                  </Heading>
-                  <p className="mt-1.5 text-base tracking-wide" style={{ opacity: 0.7 }}>
-                    <InlineText
-                      value={venue.city ?? ""}
-                      onCommit={(city) => commitVenue(venue.name ?? "", city)}
-                      className="text-base tracking-wide"
-                      placeholder={t("wedding_site_editor.venue_city_label")}
-                      ariaLabel={t("wedding_site_editor.venue_city_label")}
-                    />
-                  </p>
-                </>
-              );
+          {/* `side` splits this band into "who/where" and "the map" columns from
+              md up; below that it falls back to the stacked order on its own,
+              because two ~160px columns serve nobody. `items-center` keeps the
+              short text column optically centred against the square map. */}
+          <div
+            className={
+              sideVenue
+                ? "grid gap-6 md:grid-cols-2 md:items-center md:gap-10 md:text-left"
+                : undefined
             }
-            return (
-              <>
-                <Heading className="mt-2" treatment={headingTreatment}>
-                  {venue.name}
-                </Heading>
-                {venue.city ? (
-                  <p className="mt-1.5 text-base tracking-wide" style={{ opacity: 0.7 }}>
-                    {venue.city}
-                  </p>
-                ) : null}
-              </>
-            );
-          })()}
-          <div className="mt-4 flex justify-center">{hairline}</div>
-          {view.location_lat !== null && view.location_lng !== null ? (
-            <>
-              {/* Embedded venue map — lazy + Suspense so Leaflet only loads in
-                  a real browser (null fallback under happy-dom). The outbound
-                  link below stays as the "open full map" caption. */}
-              <div className="mt-5">
-                <Suspense fallback={null}>
-                  <VenueMap
-                    lat={view.location_lat}
-                    lng={view.location_lng}
-                    accent="var(--wt-accent)"
-                    filter={venueMapFilter(view.design.ornament)}
-                    label={t("wedding_site.venue_map_label")}
-                  />
-                </Suspense>
+          >
+            <div>
+              <Eyebrow>{t("wedding_site.location_eyebrow")}</Eyebrow>
+              {(() => {
+                const venue = splitVenue(view.venue_name, view.venue_city);
+                // Commit name + city as a pair so editing one half never drops the
+                // other (the displayed split may have derived the city from a
+                // "Name, City" venue_name with no separate venue_city set).
+                const commitVenue = inlineEdit?.venue;
+                if (venueInline && commitVenue) {
+                  return (
+                    <>
+                      <Heading className="mt-2" treatment={headingTreatment}>
+                        <InlineText
+                          value={venue.name ?? ""}
+                          onCommit={(name) => commitVenue(name, venue.city ?? "")}
+                          className="text-3xl tracking-tight sm:text-4xl"
+                          placeholder={t("wedding_site_editor.venue_label")}
+                          ariaLabel={t("wedding_site_editor.venue_label")}
+                        />
+                      </Heading>
+                      <p className="mt-1.5 text-base tracking-wide" style={{ opacity: 0.7 }}>
+                        <InlineText
+                          value={venue.city ?? ""}
+                          onCommit={(city) => commitVenue(venue.name ?? "", city)}
+                          className="text-base tracking-wide"
+                          placeholder={t("wedding_site_editor.venue_city_label")}
+                          ariaLabel={t("wedding_site_editor.venue_city_label")}
+                        />
+                      </p>
+                    </>
+                  );
+                }
+                return (
+                  <>
+                    <Heading className="mt-2" treatment={headingTreatment}>
+                      {venue.name}
+                    </Heading>
+                    {venue.city ? (
+                      <p className="mt-1.5 text-base tracking-wide" style={{ opacity: 0.7 }}>
+                        {venue.city}
+                      </p>
+                    ) : null}
+                  </>
+                );
+              })()}
+              <div className={`mt-4 flex justify-center${sideVenue ? " md:justify-start" : ""}`}>
+                {hairline}
               </div>
-              <p className="mt-4">
-                <a
-                  className="btn-outline inline-flex items-center gap-2"
-                  href={`https://www.openstreetmap.org/?mlat=${view.location_lat}&mlon=${view.location_lng}#map=17/${view.location_lat}/${view.location_lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(ev) => ev.stopPropagation()}
-                >
-                  <MapPin size={15} aria-hidden />
-                  {t("wedding_site.confirmed_open_map")}
-                </a>
-              </p>
-            </>
-          ) : null}
+              {/* In `side` the CTA belongs to the text column, under the name,
+                  so the map column stays a single clean square. */}
+              {sideVenue && view.location_lat !== null && view.location_lng !== null ? (
+                <p className="mt-5">
+                  <a
+                    className="btn-outline inline-flex items-center gap-2"
+                    href={mapPinUrl(view.location_lat, view.location_lng, view.venue_name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(ev) => ev.stopPropagation()}
+                  >
+                    <MapPin size={15} aria-hidden />
+                    {t("wedding_site.confirmed_open_map")}
+                  </a>
+                </p>
+              ) : null}
+            </div>
+            {view.location_lat !== null && view.location_lng !== null ? (
+              <div>
+                {/* Embedded venue map — lazy + Suspense so Leaflet only loads in
+                    a real browser (null fallback under happy-dom). The outbound
+                    link stays as the "open full map" caption. */}
+                <div className={sideVenue ? "" : "mt-5"}>
+                  <Suspense fallback={null}>
+                    <VenueMap
+                      lat={view.location_lat}
+                      lng={view.location_lng}
+                      accent="var(--wt-accent)"
+                      filter={venueMapFilter(view.design.ornament)}
+                      label={t("wedding_site.venue_map_label")}
+                      square={sideVenue}
+                    />
+                  </Suspense>
+                </div>
+                {sideVenue ? null : (
+                  <p className="mt-4">
+                    <a
+                      className="btn-outline inline-flex items-center gap-2"
+                      href={mapPinUrl(view.location_lat, view.location_lng, view.venue_name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(ev) => ev.stopPropagation()}
+                    >
+                      <MapPin size={15} aria-hidden />
+                      {t("wedding_site.confirmed_open_map")}
+                    </a>
+                  </p>
+                )}
+              </div>
+            ) : null}
+          </div>
         </Band>
       ) : isPreview ? (
         <Band className="text-center">

@@ -38,6 +38,7 @@ import {
   STYLE_PRESETS,
   type StylePresetSlug,
   toPublicDesign,
+  VENUE_LAYOUTS,
   WEBSITE_SECTIONS,
   type WebsiteSectionSlug,
 } from "@shared/design";
@@ -1588,6 +1589,45 @@ export default function DesignPage() {
                                 label={t("design.web.map_label")}
                               />
                             </li>
+                            {/* How the venue name and the map sit together. Only
+                                offered once the map is actually on: with no map
+                                there is nothing to lay out beside the name. */}
+                            {design.web.venueMap && (
+                              <li className="flex min-h-tap items-center justify-between gap-3 px-3 py-2">
+                                <span className="block min-w-0 text-sm text-ink-900 dark:text-paper-50">
+                                  {t("design.web.venue_layout_label")}
+                                </span>
+                                <div
+                                  className="flex shrink-0 items-center gap-0.5 rounded-full border border-paper-300 p-0.5 dark:border-umber-700"
+                                  role="group"
+                                  aria-label={t("design.web.venue_layout_label")}
+                                >
+                                  {VENUE_LAYOUTS.map((vl) => {
+                                    const active = design.web.venueLayout === vl.slug;
+                                    return (
+                                      <button
+                                        key={vl.slug}
+                                        type="button"
+                                        onClick={() =>
+                                          setDesign((d) => ({
+                                            ...d,
+                                            web: { ...d.web, venueLayout: vl.slug },
+                                          }))
+                                        }
+                                        aria-pressed={active}
+                                        className={`rounded-full px-3 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                                          active
+                                            ? "bg-ink-900 text-paper-50 dark:bg-paper-100 dark:text-umber-900"
+                                            : "text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                                        }`}
+                                      >
+                                        {t(vl.nameKey)}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </li>
+                            )}
                           </ul>
                         </TuneRow>
                       </div>
