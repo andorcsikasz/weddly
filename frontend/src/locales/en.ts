@@ -2654,7 +2654,6 @@ const en: LocaleMessages = {
     edit_dates: "Edit dates",
     edit_destination: "Edit destination",
     set_dates_cta: "Set the dates",
-    destination_placeholder: "e.g. Bali, Tuscany, Santorini",
     destination_empty_cta: "Add a destination",
     show_on_map: "Show on map",
     map_not_found: "We couldn't pin this on the map. Try a more specific address.",

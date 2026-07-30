@@ -2716,7 +2716,6 @@ const es: LocaleMessages = {
     edit_dates: "Editar fechas",
     edit_destination: "Editar destino",
     set_dates_cta: "Establecer las fechas",
-    destination_placeholder: "p. ej. Bali, Toscana, Santorini",
     destination_empty_cta: "Añadir un destino",
     show_on_map: "Ver en el mapa",
     map_not_found: "No hemos podido ubicarlo en el mapa. Prueba con una dirección más concreta.",

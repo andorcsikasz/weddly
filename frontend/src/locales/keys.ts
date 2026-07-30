@@ -3054,7 +3054,6 @@ export interface LocaleMessages {
     edit_dates: string;
     edit_destination: string;
     set_dates_cta: string;
-    destination_placeholder: string;
     destination_empty_cta: string;
     /** Aria-label + tooltip for the small map icon in the destination tile. */
     show_on_map: string;

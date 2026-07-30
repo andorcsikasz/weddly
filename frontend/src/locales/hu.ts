@@ -2686,7 +2686,6 @@ const hu: LocaleMessages = {
     edit_dates: "Dátumok szerkesztése",
     edit_destination: "Úti cél szerkesztése",
     set_dates_cta: "Add meg a dátumokat",
-    destination_placeholder: "pl. Bali, Toscana, Santorini",
     destination_empty_cta: "Add meg az úti célt",
     show_on_map: "Mutasd a térképen",
     map_not_found: "Nem találtuk meg ezt a helyet a térképen. Próbálj pontosabb címet.",

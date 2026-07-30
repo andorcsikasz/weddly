@@ -973,7 +973,9 @@ function TripHero({
   return (
     <div
       className={`relative isolate overflow-hidden bg-umber-900 sm:rounded-3xl ${
-        destination
+        // `editing` takes the tall shape too: the picker's list opens upward
+        // inside this box, and the empty-state height has no room for it.
+        destination || editing
           ? "h-[64svh] min-h-[400px] max-h-[620px]"
           : "h-[42svh] min-h-[260px] max-h-[360px]"
       }${dragging ? " ring-2 ring-paper-50" : ""}`}
@@ -1066,17 +1068,15 @@ function TripHero({
           Clicking it opens the autocomplete in place. */}
       <div className="absolute inset-x-0 bottom-0 p-4 pb-7 sm:p-6 sm:pb-9">
         {editing ? (
-          <div className="max-w-xl">
-            <DestinationAutocomplete
-              initial={destination ?? ""}
-              onCancel={() => setEditing(false)}
-              onCommit={async (next) => {
-                setEditing(false);
-                if (next === destination) return;
-                await onSaveDestination(next);
-              }}
-            />
-          </div>
+          <DestinationAutocomplete
+            initial={destination ?? ""}
+            onCancel={() => setEditing(false)}
+            onCommit={async (next) => {
+              setEditing(false);
+              if (next === destination) return;
+              await onSaveDestination(next);
+            }}
+          />
         ) : (
           <button
             type="button"
@@ -1272,16 +1272,22 @@ function DestinationAutocomplete({
   }
 
   return (
-    <div ref={wrapperRef} className="relative mt-3">
+    <div ref={wrapperRef} className="relative">
+      {/* Typed at the exact scale of the headline it replaces (same font,
+          size and shadow as the <h1> above), so committing a name doesn't
+          resize the thing you were just looking at. The only chrome is an
+          underline — a boxed field over a photo reads as a form. */}
       <input
         type="text"
-        className="input h-10 min-h-0 w-full text-base"
+        className="w-full border-0 border-b-2 border-paper-50/40 bg-transparent p-0 pb-1 font-grotesk text-4xl font-semibold leading-[1.05] tracking-tight text-paper-50 caret-paper-50 outline-none [text-shadow:0_2px_18px_rgba(16,12,8,0.55)] placeholder:text-paper-100/45 focus:border-paper-50/85 focus:outline-none focus:ring-0 sm:text-6xl lg:text-7xl"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         onKeyDown={onKey}
         maxLength={200}
-        placeholder={t("honeymoon.destination_placeholder")}
+        // The old "e.g. Bali, Tuscany, Santorini" placeholder was written for a
+        // small field; at headline size it runs off the photo. One word does.
+        placeholder={t("honeymoon.tile_destination")}
         aria-label={t("honeymoon.tile_destination")}
         aria-autocomplete="list"
         aria-expanded={open}
@@ -1289,9 +1295,13 @@ function DestinationAutocomplete({
         autoFocus
       />
       {open && suggestions.length > 0 && (
+        /* Opens UPWARD, over the photo. Downward it fell outside the hero's
+           `overflow-hidden` and underneath the trip bar (which overlaps the
+           hero's bottom edge with z-10), so the list was invisible exactly
+           when it mattered. */
         <ul
           role="listbox"
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-80 overflow-y-auto rounded-xl border border-paper-300 bg-white py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+          className="absolute bottom-full left-0 right-0 z-30 mb-3 max-h-64 max-w-xl overflow-y-auto rounded-xl border border-paper-300 bg-white py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
         >
           {suggestions.map((s, i) => (
             <li key={`${s.primary}-${i}`}>
