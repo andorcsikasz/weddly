@@ -129,7 +129,10 @@ describe("imported profiles are redacted until claimed", () => {
     const card = await cardFor(OWN_RESEARCH_ID, token);
     expect(card).toBeTruthy();
     expect(card?.blurb_hu).toBeTruthy();
-    expect(card?.contact_phone).toBeTruthy();
+    // The catalogue carries no contact VALUES for anyone any more (see
+    // supplier_contact_privacy.e2e.test.ts), so "the phone survived the teaser
+    // gate" is now asked of the flag the card kept.
+    expect(card?.has_contact_phone).toBe(true);
     expect(card?.price_band).not.toBeNull();
   });
 
@@ -170,7 +173,7 @@ describe("imported profiles are redacted until claimed", () => {
     const card = await cardFor(IMPORTED_ID, token);
     expect(card).toBeTruthy();
     expect(card?.blurb_hu).toBeTruthy();
-    expect(card?.contact_phone).toBeTruthy();
+    expect(card?.has_contact_phone).toBe(true);
 
     const detail = await req<SupplierDetail>("GET", `/api/suppliers/${IMPORTED_ID}`, undefined, {
       token,

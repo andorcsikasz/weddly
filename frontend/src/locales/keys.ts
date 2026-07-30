@@ -5144,6 +5144,11 @@ export interface LocaleMessages {
     sub: string;
     contact_email: string;
     visit_website: string;
+    /** Phone button on a directory card before the number is fetched, and
+     *  after a failed fetch. The number is never in the catalogue payload —
+     *  it is asked for at the moment somebody means to call. */
+    phone_reveal: string;
+    phone_failed: string;
     /** Tooltip on any vendor NAME that links to its directory card from outside
      *  the directory — the message threads and the outreach recipient list. */
     open_card: string;

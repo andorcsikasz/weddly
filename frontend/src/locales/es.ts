@@ -4526,6 +4526,8 @@ const es: LocaleMessages = {
     sub: "Lista seleccionada. Contacta con ellos directamente; las reservas llegan en la v2.",
     contact_email: "Correo electrónico",
     visit_website: "Sitio web",
+    phone_reveal: "Ver el teléfono",
+    phone_failed: "No ha funcionado, inténtalo de nuevo",
     open_card: "Ver el perfil del proveedor",
     no_website: "No hay sitio web registrado",
     no_phone: "No hay teléfono registrado",

@@ -47,6 +47,7 @@ import {
   Hand,
   Heart,
   Lightbulb,
+  Loader2,
   Mail,
   MapPin,
   PartyPopper,
@@ -2406,9 +2407,9 @@ export default function SuppliersPage() {
                             <span className="hidden md:inline">{t("suppliers.visit_website")}</span>
                             <span className="md:hidden">→</span>
                           </a>
-                          {s.contact_phone && (
+                          {s.has_contact_phone && (
                             <PhoneReveal
-                              phone={s.contact_phone}
+                              supplierId={s.id}
                               onCall={() => trackSupplierClick(s.id, "phone_click")}
                               iconOnly
                             />
@@ -3248,31 +3249,68 @@ function ReportButton({ onReport, t }: { onReport: () => void; t: (key: string) 
 /** Phone CTA that hides the digits behind a click. First tap reveals the
  *  number alongside the icon and arms the tel: href; the next tap dials.
  *  Two-step pattern keeps the card scannable without burying the contact. */
+/** Click to get a vendor's number, then click again to dial it.
+ *
+ *  The number is NOT in the catalogue response any more, and this component is
+ *  why that costs nothing in the UI: the card knows a phone exists
+ *  (`has_contact_phone`) and asks for the digits only when someone means to
+ *  call. Before, the whole directory arrived with every number attached and
+ *  this component merely declined to draw them — the value sat in the JSON, and
+ *  in this button's own `title`, for anyone who opened devtools.
+ *
+ *  A failed fetch (offline, or the per-user quota spent) leaves the button in
+ *  its unrevealed state with an error tooltip rather than pretending to have a
+ *  number: a dead `tel:` link is worse than a button that says try again. */
 function PhoneReveal({
-  phone,
+  supplierId,
   onCall,
   iconOnly,
 }: {
-  phone: string;
+  supplierId: string;
   onCall: () => void;
   /** List view's tight action cluster collapses the number even when revealed. */
   iconOnly?: boolean;
 }) {
-  const [revealed, setRevealed] = useState(false);
-  if (!revealed) {
+  const { t } = useT();
+  const [phone, setPhone] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  async function reveal() {
+    if (loading) return;
+    setLoading(true);
+    setFailed(false);
+    try {
+      const r = await supplierApi.contact(supplierId);
+      const value = r.contact_phone || r.contact_phone_alt;
+      if (value) setPhone(value);
+      else setFailed(true);
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (phone === null) {
     return (
       <button
         type="button"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          setRevealed(true);
+          void reveal();
         }}
+        disabled={loading}
         className="btn-outline btn-sm"
-        aria-label={phone}
-        title={phone}
+        aria-label={t(failed ? "suppliers.phone_failed" : "suppliers.phone_reveal")}
+        title={t(failed ? "suppliers.phone_failed" : "suppliers.phone_reveal")}
       >
-        <Phone size={14} aria-hidden />
+        {loading ? (
+          <Loader2 size={14} aria-hidden className="animate-spin" />
+        ) : (
+          <Phone size={14} aria-hidden />
+        )}
       </button>
     );
   }

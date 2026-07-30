@@ -64,7 +64,10 @@ function supplier(id: string, name: string, installments: SupplierInstallment[])
   };
 }
 
-function setup(suppliers: CoupleSupplier[], onMarkPaid = mock(async (_supplierId: string, _installmentId: number) => {})) {
+function setup(
+  suppliers: CoupleSupplier[],
+  onMarkPaid = mock(async (_supplierId: string, _installmentId: number) => {}),
+) {
   const view = render(
     <I18nProvider>
       <PaymentsDuePanel suppliers={suppliers} currency="HUF" locale="en" onMarkPaid={onMarkPaid} />

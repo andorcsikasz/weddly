@@ -11,6 +11,7 @@ import type {
   PublicVendorPageData,
   PublicVendorShowcase,
   SupplierCategory,
+  SupplierContact,
   SupplierCountryCount,
   SupplierDetail,
   SupplierEventInput,
@@ -54,6 +55,7 @@ import { db } from "../db";
 import { haversineKm } from "../lib/geo";
 import { lookupCountry } from "../lib/geoip";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
+import { log } from "../lib/logger";
 import { rateLimit } from "../lib/rate_limit";
 
 const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set(
@@ -68,6 +70,19 @@ function withVotes(
 ): DirectorySupplier {
   return {
     ...base,
+    // The catalogue arrives in ONE response, so a contact detail on this object
+    // is a contact detail multiplied by a thousand: the list used to hand any
+    // caller, session or not, 503 mailboxes and 538 phone numbers in a single
+    // unauthenticated GET. What the list may say is that a contact EXISTS (the
+    // card's phone button, the compare dialog's channel row); the value itself
+    // comes one listing at a time from `/api/suppliers/:id/contact`, which needs
+    // a session and spends from a per-user quota. Nulled here rather than at the
+    // mappers so there is exactly one place to audit.
+    has_contact_email: Boolean(base.contact_email),
+    has_contact_phone: Boolean(base.contact_phone || base.contact_phone_alt),
+    contact_email: null,
+    contact_phone: null,
+    contact_phone_alt: null,
     votes_score: scores.get(base.id) ?? 0,
     user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
     listing_complete: completeIds.has(base.id),
@@ -75,6 +90,12 @@ function withVotes(
 }
 
 async function handleList(ctx: Ctx): Promise<Response> {
+  // The whole catalogue in one response is the cheapest thing on the server to
+  // ask for repeatedly and the most expensive to serve. Generous enough that a
+  // couple flipping between the directory, the dashboard and the timeline never
+  // notices (each of those pages fetches it once), tight enough that a scraper
+  // pulling it in a loop stops.
+  rateLimit(ctx.clientIp, "suppliers.list", { capacity: 40, refillRate: 0.2 });
   const cat = ctx.url.searchParams.get("category");
   // Optional geo proximity filter: `?near_lat=&near_lng=&radius_km=`. All three
   // must parse to finite numbers to activate; partial / malformed input keeps
@@ -442,6 +463,12 @@ function buildSupplierDetail(
   const coupleVotes = couple ? getCoupleVotesMap(couple.id) : null;
   const directory: DirectorySupplier = {
     ...base,
+    // The detail page IS allowed to carry the contact (one listing, one caller,
+    // one rate-limited request), so unlike the list these keep their values.
+    // The flags travel with them so a card built from a detail response answers
+    // "is there a phone here" the same way a card built from the list does.
+    has_contact_email: Boolean(base.contact_email),
+    has_contact_phone: Boolean(base.contact_phone || base.contact_phone_alt),
     votes_score: scores.get(base.id) ?? 0,
     user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
     // Solid check vs hollow one. Only a claimed listing is asked — nothing else
@@ -481,11 +508,65 @@ function buildSupplierDetail(
   };
 }
 
+/** The per-user allowance both surfaces that can yield ONE vendor's contact
+ *  details spend from: the detail payload and the contact endpoint. Shared on
+ *  purpose, so a scraper can't take the quota twice by alternating between them.
+ *
+ *  Sized against how a couple actually browses. Opening 60 vendor pages in a
+ *  sitting is a thorough evening; after that the bucket refills at roughly one
+ *  a minute, which no human notices and which turns "harvest the catalogue"
+ *  from one request into somewhere north of a day of patient, logged-in,
+ *  attributable requests. The key is the USER, not the IP: a scraper behind a
+ *  hundred addresses still has one account.
+ *
+ *  A tripped bucket is worth seeing, so it logs — the interesting event is not
+ *  one 429, it is the same user id producing them all evening. */
+function spendContactQuota(userId: number): void {
+  try {
+    rateLimit(`u${userId}`, "vendor.contact", { capacity: 60, refillRate: 1 / 60 });
+  } catch (e) {
+    log.warn("vendor.contact.quota_exceeded", { userId });
+    throw e;
+  }
+}
+
+/** GET /api/suppliers/:supplier_id/contact — one listing's published contact
+ *  details, and the only place in the product that returns them in full.
+ *
+ *  Split off the list (which now carries `has_contact_*` flags and nothing else)
+ *  because the list is the entire catalogue in one response: the contact fields
+ *  on it handed any caller, with or without a session, every vendor's mailbox
+ *  and phone number in a single GET. Here it is one listing per request, behind
+ *  a session and the shared per-user quota. */
+async function handleContact(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  spendContactQuota(userId);
+  const supplierId = ctx.params.supplier_id?.trim();
+  if (!supplierId) throw new HttpError(400, "supplier_id required");
+
+  // Through the same assembly as the detail page, so an unclaimed imported
+  // profile's redaction (which takes the phone off the teaser) applies here too
+  // rather than being bypassed by the narrower endpoint.
+  const detail = buildSupplierDetail(supplierId, {
+    viewerUserId: userId,
+    includeCommentsCount: false,
+  });
+  if (!detail) throw new HttpError(404, "Unknown supplier");
+
+  const payload: SupplierContact = {
+    contact_email: detail.contact_email,
+    contact_phone: detail.contact_phone,
+    contact_phone_alt: detail.contact_phone_alt ?? null,
+  };
+  return json(payload);
+}
+
 /** GET /api/suppliers/:supplier_id — detail-page payload. Requires auth (the
  *  in-app detail page serves couples + admins). Admins additionally get the
  *  `comments_count` moderation signal. */
 async function handleDetail(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
+  spendContactQuota(userId);
   const supplierId = ctx.params.supplier_id?.trim();
   if (!supplierId) throw new HttpError(400, "supplier_id required");
 
@@ -529,10 +610,19 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
   // route). Masked server-side so the hidden characters never leave the server;
   // a logged-in viewer gets everything in full.
   //
-  //  - Phone is ALWAYS masked for anonymous visitors (first five digits kept).
-  //  - Address + email tails are masked only when the vendor opted in
-  //    (`hide_contact_public` on their claimed listing). Website is left as-is —
-  //    its raw URL is already hidden behind the tracked /r/supplier redirect.
+  //  - Phone AND email are ALWAYS masked for an anonymous visitor. The email
+  //    mask used to be opt-in (`hide_contact_public`), which meant that for the
+  //    vendors who had not opted in — nearly all of them — the shareable page
+  //    published a working mailbox to anyone who loaded it, in a payload a
+  //    crawler can read as easily as a person. A visitor gets the shape of a
+  //    contact ("in•••@greattide.hu", "+36 70 6** ****"), which is the reason to
+  //    register; the characters themselves never leave the server.
+  //  - The ADDRESS stays under the vendor's own `hide_contact_public` switch: a
+  //    business address is a published fact, it is what puts the listing on the
+  //    map, and hiding it by default would break the one thing a visitor
+  //    scouting venues actually needs.
+  //  - Website is left as-is — its raw URL already goes through the tracked
+  //    /r/supplier redirect.
   if (ctx.userId === null) {
     if (detail.contact_phone) {
       detail.contact_phone = maskPhoneForAnonymous(detail.contact_phone);
@@ -540,9 +630,9 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
     if (detail.contact_phone_alt) {
       detail.contact_phone_alt = maskPhoneForAnonymous(detail.contact_phone_alt);
     }
-    if (listingContactHidden(detail.id)) {
-      if (detail.contact_email) detail.contact_email = maskEmailForPublic(detail.contact_email);
-      if (detail.address) detail.address = maskAddressForPublic(detail.address);
+    if (detail.contact_email) detail.contact_email = maskEmailForPublic(detail.contact_email);
+    if (detail.address && listingContactHidden(detail.id)) {
+      detail.address = maskAddressForPublic(detail.address);
     }
   }
 
@@ -895,6 +985,7 @@ export function registerSupplierRoutes(router: Router) {
   // a supplier id.
   router.get("/api/suppliers/name-check", handleNameCheck);
   router.get("/api/suppliers/unavailable", handleUnavailable);
+  router.get("/api/suppliers/:supplier_id/contact", handleContact, true);
   router.get("/api/suppliers/:supplier_id", handleDetail, true);
   // Public, unauthenticated vendor page payload (the shareable surface).
   router.get("/api/public/vendors/:supplier_id", handlePublicDetail);

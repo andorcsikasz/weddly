@@ -183,7 +183,11 @@ function resolveVenue(
   const name = f.venue_name || effPicked?.name || diy?.name || null;
   const address = f.venue_address || effPicked?.address || null;
   const city = f.venue_city || effPicked?.city || null;
-  const phone = f.venue_phone || effPicked?.contact_phone || null;
+  // The number rides on the PICK now, not on the catalogue row (see
+  // `CouplePick.contact_phone`). Gated on `effPicked` so a couple who typed a
+  // different venue name over their old pick doesn't keep dialling the old
+  // vendor, which is the whole point of the detach above.
+  const phone = f.venue_phone || (effPicked ? (venuePick?.contact_phone ?? null) : null) || null;
 
   if (!name && !address) return null;
 
@@ -382,7 +386,10 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           id: dir.id,
           name: dir.name,
           category: dir.category,
-          phone: dir.contact_phone,
+          // Off the PICK, not off the catalogue row: `/api/suppliers` carries no
+          // contact values any more, and the picks payload resolves the number
+          // for the couple's own picks precisely so this row survives.
+          phone: p.contact_phone ?? null,
           linkable: true,
         });
         continue;
@@ -689,7 +696,12 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                 label={t("dashboard.keyinfo_field_venue_phone")}
                 type="tel"
                 value={draft.venue_phone}
-                placeholder={placeholderVenue?.contact_phone ?? ""}
+                // The catalogue row carries no number, so the hint is the phone
+                // already resolved for the venue row above (which comes off the
+                // pick). While the dialog is showing a freshly-picked vendor
+                // there is nothing to hint with yet, and an empty placeholder is
+                // the honest version of that.
+                placeholder={pendingVenue ? "" : (venue?.phone ?? "")}
                 onChange={(v) => setDraft({ ...draft, venue_phone: v })}
               />
             </fieldset>

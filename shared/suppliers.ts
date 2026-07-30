@@ -602,8 +602,23 @@ export interface DirectorySupplierBase {
 
 /** Wire shape returned by `/api/suppliers`. Adds per-request vote info on top
  *  of the static fields, so the frontend can render score + the current
- *  user's own vote without a second round-trip. */
+ *  user's own vote without a second round-trip.
+ *
+ *  **`contact_email`, `contact_phone` and `contact_phone_alt` are ALWAYS null
+ *  here**, whoever is asking. The list is the whole catalogue in one response,
+ *  so shipping contact details on it means one request hands over every
+ *  vendor's mailbox and phone — which is exactly what it used to do, without a
+ *  session and without a rate limit. A contact is fetched one listing at a time
+ *  from `/api/suppliers/:id/contact`, which needs a session, spends from a
+ *  per-user quota and is refused outright to anonymous callers. The two
+ *  booleans below are what the list is allowed to say about contact: whether
+ *  there is one, never what it is. */
 export interface DirectorySupplier extends DirectorySupplierBase {
+  /** This listing publishes an email address. The value is NOT on this object;
+   *  ask `/api/suppliers/:id/contact` for it. */
+  has_contact_email: boolean;
+  /** This listing publishes a phone number (either line). Same rule. */
+  has_contact_phone: boolean;
   /** Net up/down score (sum of +1/-1 across all users). 0 when no one's voted. */
   votes_score: number;
   /** The logged-in user's own vote on this entry. 0 if anonymous or no vote yet. */
@@ -1401,6 +1416,19 @@ export interface SupplierDetail extends DirectorySupplier {
    *  publish these, so `[]` for the unclaimed majority. Rendered as a card
    *  grid with the optional PDF download. */
   packages: ListingPackage[];
+}
+
+/** `GET /api/suppliers/:id/contact` — one listing's published contact details,
+ *  the only endpoint in the product that hands them over in full.
+ *
+ *  Session required, and every call spends from a per-user quota shared with the
+ *  detail endpoint, so harvesting the directory costs one rate-limited request
+ *  per vendor instead of riding along free on the list. Anonymous callers get
+ *  401 and never see anything but the masked teaser on the public page. */
+export interface SupplierContact {
+  contact_email: string | null;
+  contact_phone: string | null;
+  contact_phone_alt: string | null;
 }
 
 /** Everything the PUBLIC, unauthenticated vendor page (`/vendors/:id`) needs

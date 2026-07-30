@@ -22,6 +22,7 @@ import {
   type OutreachCampaignDetail,
 } from "@shared/outreach";
 import { db } from "../../src/db";
+import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { addOptOut } from "../../src/domain/emails/optouts";
 import { buildEmail } from "../../src/domain/emails/templates";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
@@ -104,17 +105,21 @@ describe("POST /api/outreach/campaigns — happy path + validation", () => {
   test("supplier without contact_email → 400 with code=supplier_no_email", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("outreach-noemail@weddly.test");
-    // `normafa-rendezvenyhaz` is curated but ships with `contact_email:
-    // null` (the `...noContact` spread default), so it surfaces the
-    // missing-email branch without polluting the test with a special
-    // listing seed.
+    // Any curated entry that still ships with `contact_email: null` (the
+    // `...noContact` spread default) surfaces the missing-email branch without
+    // a special listing seed. Picked from the catalogue rather than named:
+    // contact addresses are being researched and filled in continuously, and a
+    // hardcoded id quietly stops testing anything the day its business gets an
+    // address (which is exactly what happened to `normafa-rendezvenyhaz`).
+    const noEmail = DIRECTORY.find((s) => !s.contact_email);
+    if (!noEmail) throw new Error("every curated entry now has an email; pick another fixture");
     const r = await req<{ detail?: { code?: string } }>(
       "POST",
       "/api/outreach/campaigns",
       {
         subject: "Hi",
         body_template: "Hi",
-        supplier_ids: ["normafa-rendezvenyhaz"],
+        supplier_ids: [noEmail.id],
       },
       { token },
     );

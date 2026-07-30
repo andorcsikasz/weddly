@@ -572,12 +572,18 @@ export function SupplierCompareDialog({
                   icon: <MapPin size={12} aria-hidden />,
                   label: t("suppliers.compare.contact_website"),
                 });
-              if (s.contact_email)
+              {
+                /* Which channels EXIST, which is all this row ever showed: the
+                   labels are "e-mail" and "telefon", never the values. The
+                   catalogue stopped shipping the values themselves, so the two
+                   flags are what the row reads now. */
+              }
+              if (s.has_contact_email)
                 channels.push({
                   icon: <Mail size={12} aria-hidden />,
                   label: t("suppliers.compare.contact_email"),
                 });
-              if (s.contact_phone)
+              if (s.has_contact_phone)
                 channels.push({
                   icon: <Phone size={12} aria-hidden />,
                   label: t("suppliers.compare.contact_phone"),

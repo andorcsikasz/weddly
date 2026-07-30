@@ -4480,6 +4480,8 @@ const hu: LocaleMessages = {
     sub: "Válogatott lista. Velük közvetlenül egyeztess; foglalni v2-ben tudtok majd.",
     contact_email: "E-mail",
     visit_website: "Weboldal",
+    phone_reveal: "Telefonszám mutatása",
+    phone_failed: "Most nem sikerült, próbáld újra",
     open_card: "Szolgáltató profilja",
     no_website: "Nincs megadva weboldal",
     no_phone: "Nincs megadva telefonszám",

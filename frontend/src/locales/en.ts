@@ -4427,6 +4427,8 @@ const en: LocaleMessages = {
     sub: "Curated list. Reach out to them directly; booking arrives in v2.",
     contact_email: "Email",
     visit_website: "Website",
+    phone_reveal: "Show phone number",
+    phone_failed: "That didn't work, try again",
     open_card: "View vendor profile",
     no_website: "No website on file",
     no_phone: "No phone on file",

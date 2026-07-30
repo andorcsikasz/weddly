@@ -176,6 +176,7 @@ import type {
   SupplierBooking,
   SupplierCategory,
   SupplierComment,
+  SupplierContact,
   SupplierCountryCount,
   SupplierDetail,
   SupplierDirectoryAdminRow,
@@ -1861,6 +1862,13 @@ export const supplierApi = {
       qs ? `/api/suppliers?${qs}` : "/api/suppliers",
     );
   },
+  /** One listing's published contact details. The catalogue response carries
+   *  only `has_contact_email` / `has_contact_phone`, never the values, so this
+   *  is what a "call them" affordance asks for at the moment it is clicked.
+   *  Signed-in only, and it spends from a per-user quota shared with the detail
+   *  endpoint — which is what stops the directory being copied wholesale. */
+  contact: (id: string) =>
+    apiFetch<SupplierContact>("GET", `/api/suppliers/${encodeURIComponent(id)}/contact`),
   /** Listing ids KNOWN to be taken on `date` (a whole-day block, or a weekday
    *  the vendor doesn't work). Everything absent from the list is unknown, not
    *  free — see the domain helper. Separate from `list` on purpose: the

@@ -184,18 +184,32 @@ type VenueVendor = {
   source: "self" | "directory";
 };
 
+/** One listing's contact details, or blanks. The catalogue response carries no
+ *  contact values any more (only `has_contact_*`), so the venue the couple
+ *  actually chose is asked for by itself. A failure degrades to empty fields,
+ *  which the couple can type over, rather than blocking the picker. */
+async function venueContactFields(id: string): Promise<{ phone: string; email: string }> {
+  try {
+    const c = await supplierApi.contact(id);
+    return { phone: c.contact_phone ?? "", email: c.contact_email ?? "" };
+  } catch {
+    return { phone: "", email: "" };
+  }
+}
+
 /** Map a DIRECTORY venue to the picker's row shape. Used when the couple was
  *  about to add a venue by hand and it turned out to be one Weddly already
  *  lists: adopting it gets them the listing's own address, phone and pin
  *  instead of the blank fields their private copy would have had. */
-function directorySupplierToVenueVendor(d: DirectorySupplier): VenueVendor {
+async function directorySupplierToVenueVendor(d: DirectorySupplier): Promise<VenueVendor> {
+  const contact = await venueContactFields(d.id);
   return {
     id: d.id,
     name: d.name,
     city: d.city ?? "",
     address: d.address ?? "",
-    phone: d.contact_phone ?? "",
-    email: d.contact_email ?? "",
+    phone: contact.phone,
+    email: contact.email,
     lat: d.lat,
     lng: d.lng,
     source: "directory",
@@ -441,7 +455,9 @@ function AddVenueForm({
           // Adopting skips the private row entirely: the listing becomes the
           // couple's venue pick and the guest page takes its address, phone and
           // pin, which is the whole reason to prefer it.
-          onUse={(d) => onCreated(directorySupplierToVenueVendor(d))}
+          onUse={(d) => {
+            void directorySupplierToVenueVendor(d).then(onCreated);
+          }}
           onDismiss={() => setTwinOverride(true)}
         />
       )}
@@ -843,7 +859,7 @@ export default function GuestPageEditorPage() {
       picksApi.list().catch(() => ({ picks: [] as CouplePick[] })),
       coupleSupplierApi.list().catch(() => ({ suppliers: [] as CoupleSupplier[] })),
       supplierApi.list("venue").catch(() => ({ suppliers: [] as DirectorySupplier[] })),
-    ]).then(([pR, csR, dR]) => {
+    ]).then(async ([pR, csR, dR]) => {
       if (cancelled) return;
       setDirectoryVenues(dR.suppliers);
       const out: VenueVendor[] = [];
@@ -859,13 +875,17 @@ export default function GuestPageEditorPage() {
       if (venuePick) {
         const d = dR.suppliers.find((s) => s.id === venuePick.supplier_id);
         if (d) {
+          // One contact fetch, for the one venue this couple picked. The
+          // catalogue above no longer carries phone or email on its rows.
+          const contact = await venueContactFields(d.id);
+          if (cancelled) return;
           push({
             id: d.id,
             name: d.name,
             city: d.city ?? "",
             address: d.address ?? "",
-            phone: d.contact_phone ?? "",
-            email: d.contact_email ?? "",
+            phone: contact.phone,
+            email: contact.email,
             lat: d.lat,
             lng: d.lng,
             source: "directory",

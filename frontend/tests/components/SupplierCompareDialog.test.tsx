@@ -21,8 +21,12 @@ function makeSupplier(over: Partial<DirectorySupplier> = {}): DirectorySupplier 
     blurb_hu: "",
     blurb_en: "",
     website: "",
+    // Always null on a catalogue row now; the flags are what the compare
+    // dialog's contact-channel row reads.
     contact_email: null,
     contact_phone: null,
+    has_contact_email: false,
+    has_contact_phone: false,
     address: null,
     capacity_min: null,
     capacity_max: null,

@@ -295,7 +295,7 @@ interface ContactDetail {
   detail: { address: string | null; contact_email: string | null; contact_phone: string | null };
 }
 
-describe("vendor opt-in: hide address + email tail from the public", () => {
+describe("what an anonymous visitor may read off a vendor page", () => {
   const CONTACT_EMAIL = "info@greattide.hu";
   const ADDRESS = "Attila út 35";
   const PHONE = "06706361792";
@@ -343,7 +343,7 @@ describe("vendor opt-in: hide address + email tail from the public", () => {
     expect(r.status).toBe(400);
   });
 
-  test("off by default: anonymous visitor still gets the full address + email", async () => {
+  test("off by default: the address stays public, the email + phone do not", async () => {
     const { id } = await seedVendorWithContact({
       loginEmail: "hide-off@weddly.test",
       name: "Great Tide",
@@ -353,13 +353,19 @@ describe("vendor opt-in: hide address + email tail from the public", () => {
     });
     const r = await req<ContactDetail>("GET", `/api/public/vendors/${encodeURIComponent(id)}`);
     expect(r.status).toBe(200);
+    // The address is what puts a venue on the map and is a published business
+    // fact, so it stays under the vendor's own switch.
     expect(r.data.detail.address).toBe(ADDRESS);
-    expect(r.data.detail.contact_email).toBe(CONTACT_EMAIL);
-    // Phone is masked regardless of the toggle.
+    // Email and phone are masked for an anonymous visitor whatever the vendor
+    // chose. The opt-in used to gate the email, which meant that for the vendors
+    // who never touched the switch — nearly all of them — the shareable page
+    // published a working mailbox to every crawler that loaded it.
+    expect(r.data.detail.contact_email).toBe("in•••@greattide.hu");
+    expect(r.data.detail.contact_email).not.toContain("fo@");
     expect(r.data.detail.contact_phone).toBe("06706******");
   });
 
-  test("enabled: anonymous visitor gets the address + email tail masked", async () => {
+  test("enabled: the address tail is masked too", async () => {
     const { id, token } = await seedVendorWithContact({
       loginEmail: "hide-on@weddly.test",
       name: "Great Tide",
