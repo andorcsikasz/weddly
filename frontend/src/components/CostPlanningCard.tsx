@@ -677,8 +677,19 @@ export function CostPlanningCard({
               ariaLabel={t("budget.slider_min_aria")}
               readOnly={!onBoundsChange || countLocked}
             />
-            {/* Midpoint of bounds, snapped to 5 — the geometric centre of the slider. */}
-            <span className="stat-num">{formatNumber(midCount, locale)}</span>
+            {/* Midpoint of the bounds, snapped to 5 — a scale tick, not a
+                number the couple set. It used to render at the same size and
+                colour as the two editable bounds either side of it, so the
+                three read as one unlabelled triple and invited the question
+                "which of these is our headcount?" (the answer is the big
+                figure above). Demoted and hidden from screen readers, which
+                get min/max from the two inputs' own labels. */}
+            <span
+              className="stat-num text-[10px] text-ink-300 dark:text-umber-500"
+              aria-hidden="true"
+            >
+              {formatNumber(midCount, locale)}
+            </span>
             <CountInput
               value={maxCount}
               min={minCount + 5}
@@ -747,26 +758,31 @@ export function CostPlanningCard({
       <div className="mt-4 border-t border-paper-200 pt-3 dark:border-umber-700">
         <div className="flex items-baseline justify-between">
           <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400 dark:text-umber-400">
-            {/* The bold headline figure below is ALWAYS totalPlanned (actual is
-                only the small "{actual} /" prefix), so the label names planned.
-                It used to flip to "Total actual" once any actual spend existed,
-                which mislabelled the planned figure as actual. */}
+            {/* The headline figure is ALWAYS totalPlanned, so the label names
+                planned. It used to flip to "Total actual" once any actual spend
+                existed, which mislabelled the planned figure as actual. */}
             {t("budget.total_planned")}
           </span>
           <span
             data-testid="cost-planning-total"
             className={`stat-num font-grotesk text-xl font-semibold tracking-tight ${overCap ? "text-blush-700 dark:text-blush-300" : "text-ink-900 dark:text-paper-50"}`}
           >
-            {totalActual > 0 && (
-              <span
-                className={`text-sm ${overCap ? "text-blush-400 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"}`}
-              >
-                {formatMoney(totalActual, currency, locale)} /{" "}
-              </span>
-            )}
             {formatMoney(totalPlanned, currency, locale)}
           </span>
         </div>
+        {/* Actual spend used to ride the headline as an unlabelled "{actual} /"
+            prefix, which made the pair read as one ratio nobody could name (and
+            the label above named only the second half of it). It now takes the
+            same shape as the cap row below: its own name, its own number, at
+            every width. */}
+        {totalActual > 0 && (
+          <div className="mt-1 flex items-baseline justify-between text-[11px]">
+            <span className="text-ink-400 dark:text-umber-300">{t("budget.total_actual")}</span>
+            <span className="stat-num text-ink-500 dark:text-umber-200">
+              {formatMoney(totalActual, currency, locale)}
+            </span>
+          </div>
+        )}
         {/* Always render the cap row — when the couple hasn't set a ceiling
          *  during onboarding, the value slot stays empty (with a dash
          *  placeholder) so the layout doesn't shift and the user can click
@@ -1038,8 +1054,18 @@ function CategoryRowInner({
   // hand those 2.5rem back to the slider — a noticeable gain in the bar
   // chart's effective length on a 360 px viewport. The actual spend is
   // still visible in the budget table and reappears on `sm:` widths.
+  // Names both halves of the pair on hover / for assistive tech. The slash is
+  // dense enough to scan but says nothing about which number is which, and a
+  // per-row visible label would cost more width than the pair itself.
+  const pairTitle =
+    actual > 0
+      ? t("budget.amount_pair_title", {
+          actual: formatMoney(actual, currency, locale),
+          planned: formatMoney(liveDisplay, currency, locale),
+        })
+      : undefined;
   const amountInner = (
-    <span className="flex flex-col items-end leading-tight">
+    <span className="flex flex-col items-end leading-tight" title={pairTitle}>
       <span className="whitespace-nowrap">
         {actual > 0 && (
           <span className="hidden text-ink-400 sm:inline dark:text-umber-300">
@@ -1364,7 +1390,17 @@ function CustomRowInner({
         )}
       </div>
       <span className="stat-num block text-right text-xs text-ink-700 dark:text-paper-100">
-        <span className="flex flex-col items-end leading-tight">
+        <span
+          className="flex flex-col items-end leading-tight"
+          title={
+            line.actual_huf > 0
+              ? t("budget.amount_pair_title", {
+                  actual: formatMoney(line.actual_huf, currency, locale),
+                  planned: formatMoney(liveDisplay, currency, locale),
+                })
+              : undefined
+          }
+        >
           <span className="whitespace-nowrap">
             {line.actual_huf > 0 && (
               <span className="hidden text-ink-400 sm:inline dark:text-umber-300">

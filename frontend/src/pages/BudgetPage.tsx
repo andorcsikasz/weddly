@@ -42,6 +42,7 @@ import {
 import { CurrencySelect } from "../components/CurrencySelect";
 import { IncomeSection } from "../components/IncomeSection";
 import { InfoHint } from "../components/InfoHint";
+import { PaymentsDuePanel } from "../components/PaymentsDuePanel";
 import { Dialog, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
@@ -941,27 +942,29 @@ export default function BudgetPage() {
   // "recovered vs spent" report.
   const totalSpentHuf = useMemo(() => lines.reduce((a, l) => a + l.actual_huf, 0), [lines]);
 
-  // "Payments due" roll-up — flattens every supplier's payment schedule into
-  // paid-so-far / outstanding / next-due / due-in-30-days. This is the thing
-  // that replaces the couple's "by when, how much" spreadsheet.
-  const payments = useMemo(() => {
-    const all = coupleSuppliers.flatMap((s) =>
-      s.installments.map((i) => ({ ...i, supplierName: s.name })),
-    );
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() + 30);
-    const cutoffIso = cutoff.toISOString().slice(0, 10);
-    const unpaid = all.filter((i) => !i.paid);
-    const paidSum = all.filter((i) => i.paid).reduce((a, i) => a + i.amount_huf, 0);
-    const outstanding = unpaid.reduce((a, i) => a + i.amount_huf, 0);
-    const dueSoon = unpaid
-      .filter((i) => i.due_date && i.due_date <= cutoffIso)
-      .reduce((a, i) => a + i.amount_huf, 0);
-    const next =
-      unpaid.filter((i) => i.due_date).sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))[0] ??
-      null;
-    return { count: all.length, paidSum, outstanding, dueSoon, next };
-  }, [coupleSuppliers]);
+  // Whether a single amount has been entered anywhere yet. Onboarding seeds no
+  // budget lines on purpose, so a fresh couple lands on fifteen category rows
+  // reading zero — which looks like a broken page rather than an empty one.
+  // Drives the lines section's sub-line copy (see `lines_all_zero`).
+  const hasAnyAmount = useMemo(
+    () => lines.some((l) => l.planned_huf > 0 || l.actual_huf > 0 || l.paid_huf > 0),
+    [lines],
+  );
+
+  /** Record a supplier installment as paid straight from the payments panel.
+   *  The server recomputes the mirrored budget line's actual amount from the
+   *  paid installments, so this needs a full refresh rather than a local
+   *  patch — the budget table above changes too. */
+  async function markInstallmentPaid(supplierId: string, installmentId: number) {
+    try {
+      await coupleSupplierApi.updateInstallment(supplierId, installmentId, { paid: true });
+      await refresh();
+      publish("budget:changed");
+      toast.success(t("budget.payments_marked_paid"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
 
   return (
     <>
@@ -983,66 +986,12 @@ export default function BudgetPage() {
         </div>
       </header>
 
-      {payments.count > 0 && (
-        <section
-          aria-label={t("budget.payments_due_title")}
-          className="mb-6 rounded-2xl border border-paper-300 dark:border-umber-700 bg-paper-50 dark:bg-ink-800 px-4 py-3"
-        >
-          <div className="mb-2 flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-              {t("budget.payments_due_title")}
-            </h2>
-            <InfoHint text={t("budget.payments_due_sub")} />
-          </div>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
-            <div>
-              <dt className="text-xs text-ink-500 dark:text-umber-300">
-                {t("budget.payments_paid")}
-              </dt>
-              <dd className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-                {formatMoney(payments.paidSum, currency, locale === "hu" ? "hu" : "en")}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-ink-500 dark:text-umber-300">
-                {t("budget.payments_outstanding")}
-              </dt>
-              <dd className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-                {formatMoney(payments.outstanding, currency, locale === "hu" ? "hu" : "en")}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-ink-500 dark:text-umber-300">
-                {t("budget.payments_due_30")}
-              </dt>
-              <dd className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-                {formatMoney(payments.dueSoon, currency, locale === "hu" ? "hu" : "en")}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-ink-500 dark:text-umber-300">
-                {t("budget.payments_next")}
-              </dt>
-              <dd className="text-sm font-semibold text-ink-900 dark:text-paper-50">
-                {payments.next ? (
-                  <>
-                    {new Date(`${payments.next.due_date}T00:00:00`).toLocaleDateString(
-                      intlLocale(locale),
-                    )}
-                    <span className="ml-1 font-normal text-ink-500 dark:text-umber-300">
-                      · {payments.next.supplierName}
-                    </span>
-                  </>
-                ) : (
-                  <span className="font-normal text-ink-400 dark:text-umber-300">
-                    {t("budget.payments_none_dated")}
-                  </span>
-                )}
-              </dd>
-            </div>
-          </dl>
-        </section>
-      )}
+      <PaymentsDuePanel
+        suppliers={coupleSuppliers}
+        currency={currency}
+        locale={locale}
+        onMarkPaid={markInstallmentPaid}
+      />
 
       <CostPlanningCard
         lines={lines}
@@ -1069,7 +1018,13 @@ export default function BudgetPage() {
       <section data-tour-target="budget-lines" className="mt-8">
         <div className="mb-3">
           <h2 className="font-grotesk tracking-tight leading-tight">{t("budget.lines_title")}</h2>
-          <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">{t("budget.lines_sub")}</p>
+          {/* Before a single amount exists, the table is fifteen zero rows and
+              "edit each line" is advice about nothing. Say where the numbers
+              come from instead — the sliders above are the only edit surface
+              for planned amounts. */}
+          <p className="mt-0.5 text-sm text-ink-500 dark:text-umber-300">
+            {t(hasAnyAmount ? "budget.lines_sub" : "budget.lines_all_zero")}
+          </p>
         </div>
 
         {/* Mobile: each line is a stacked card so the planned/actual inputs

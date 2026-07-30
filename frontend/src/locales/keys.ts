@@ -4616,8 +4616,26 @@ export interface LocaleMessages {
     payments_due_30: string;
     payments_next: string;
     payments_none_dated: string;
+    /** Collapsible bucket headings under the roll-up. `payments_due_30` doubles
+     *  as the 30-day bucket's heading. Cut by a rolling 7 / 30 days rather than
+     *  a calendar week, which no single label can state unambiguously. */
+    payments_group_overdue: string;
+    payments_group_7: string;
+    payments_group_later: string;
+    /** Installments with no due date ("balance on the day"). */
+    payments_group_undated: string;
+    payments_group_paid: string;
+    /** "{n} days late" on an overdue row — the direction indicator that keeps
+     *  the bucket from relying on colour alone. */
+    payments_overdue_by: string;
+    /** Aria-label + tooltip on the per-row mark-paid tick. */
+    payments_mark_paid_aria: string;
+    payments_marked_paid: string;
     lines_title: string;
     lines_sub: string;
+    /** Replaces `lines_sub` while every amount is still zero — onboarding seeds
+     *  no lines, so the table's first impression is fifteen zero rows. */
+    lines_all_zero: string;
     lines_empty: string;
     /** Label for the totals row at the bottom of the budget lines table. */
     lines_totals_label: string;
@@ -4651,6 +4669,9 @@ export interface LocaleMessages {
     add_template_help: string;
     edit_planned_aria: string;
     per_guest_unit: string;
+    /** Tooltip naming both halves of a row's "actual / planned" pair. The slash
+     *  is dense enough to scan but says nothing about which number is which. */
+    amount_pair_title: string;
     /** Aria-label on the category toggle button when the row is unfrozen. */
     freeze_aria: string;
     /** Aria-label on the category toggle button when the row is frozen. */
