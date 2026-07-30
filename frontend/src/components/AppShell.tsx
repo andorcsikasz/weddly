@@ -40,7 +40,6 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
-import { OUTREACH_NAV_UNLOCK_SENT } from "@shared/outreach";
 import type { AdminSidebarBadges } from "@shared/types";
 import { useAuth } from "../lib/auth";
 import { isCurrentSessionDemo } from "../lib/demoSession";
@@ -122,20 +121,14 @@ const ITEMS: NavItem[] = [
     icon: <Store size={18} />,
     group: "planning",
   },
-  // Outreach is EARNED, not given: the row appears once the couple has sent
-  // OUTREACH_NAV_UNLOCK_SENT messages (see `coupleItems` below). Until then the
-  // inbox lives where it is discovered, under the directory on /app/vendors,
-  // and the rail stays as short as it can be. No tabKey on purpose — the phone
-  // bottom bar keeps its five core flows and this shows up in the More sheet.
-  {
-    to: "/app/outreach",
-    labelKey: "nav.outreach",
-    icon: <Send size={18} />,
-    group: "planning",
-  },
-  // Vendor conversations. Unlike outreach this is NOT earned: a vendor can
-  // write to a couple who has sent exactly one inquiry, and a reply nobody can
-  // find is the bug this whole surface exists to fix.
+  // ONE row for everything the couple and a vendor say to each other: the
+  // replies (threads) and the sent history (outreach campaigns) are two tabs of
+  // /app/messages, not two rail rows. They were split, and the split asked the
+  // couple to know which of two inboxes a given conversation lived in — while
+  // the outreach half was additionally EARNED, so the rail changed shape under
+  // them. Composing still starts where a vendor is shortlisted (/app/vendors,
+  // the vendor's own page); this is where it comes back. No tabKey on purpose —
+  // the phone bottom bar keeps its core flows and this shows in the More sheet.
   {
     to: "/app/messages",
     labelKey: "nav.messages",
@@ -737,13 +730,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     // still receive the prompt.
   }, [user, inAdminView]);
 
-  // The rail carries Outreach only for a couple who is actually running one.
-  // The count rides the session user, so this costs no request; a couple who
-  // crosses the threshold sees the row on their next /api/auth/me, wearing the
-  // unvisited dot like any other destination they have never opened.
-  const outreachEarned = (user?.outreach_sent ?? 0) >= OUTREACH_NAV_UNLOCK_SENT;
-  const coupleItems = outreachEarned ? ITEMS : ITEMS.filter((i) => i.to !== "/app/outreach");
-  const displayItems = inAdminView ? ADMIN_ITEMS : coupleItems;
+  const displayItems = inAdminView ? ADMIN_ITEMS : ITEMS;
 
   // The explore nudge is for couples in their own workspace. A planner sitting
   // in a client's workspace and an admin in the moderation rail would otherwise
@@ -757,7 +744,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Phone: the "More" button inherits a dot when anything behind it is still
   // unexplored — the sheet is where most of the undiscovered surfaces live.
   const moreHasUnexplored =
-    !inAdminView && coupleItems.some((item) => !item.tabKey && isUnexplored(item.to));
+    !inAdminView && ITEMS.some((item) => !item.tabKey && isUnexplored(item.to));
 
   return (
     // `overflow-x-clip` clamps any stray-wide descendant at the viewport edge so
@@ -1112,7 +1099,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           items={
             inAdminView
               ? (displayItems.filter((item) => !item.tabKey) as NavItem[])
-              : coupleItems.filter((item) => !item.tabKey)
+              : ITEMS.filter((item) => !item.tabKey)
           }
           title={t("nav.more_sheet_title")}
           closeLabel={t("a11y.close")}

@@ -86,7 +86,6 @@ const RsvpPage = lazyWithReload(() => import("./pages/RsvpPage"));
 const SchedulePage = lazyWithReload(() => import("./pages/SchedulePage"));
 const SeatingPage = lazyWithReload(() => import("./pages/SeatingPage"));
 const SuppliersPage = lazyWithReload(() => import("./pages/SuppliersPage"));
-const OutreachPage = lazyWithReload(() => import("./pages/OutreachPage"));
 const MessagesPage = lazyWithReload(() => import("./pages/MessagesPage"));
 const SupplierDetailPage = lazyWithReload(() => import("./pages/SupplierDetailPage"));
 const PlannerDetailPage = lazyWithReload(() => import("./pages/PlannerDetailPage"));
@@ -1003,20 +1002,15 @@ export default function App() {
             }
           />
           <Route path="suppliers" element={<Navigate to="/app/vendors" replace />} />
-          {/* Outreach Inbox. It is ALSO a section at the bottom of
-            /app/vendors, which is where a couple meets it while shortlisting;
-            this destination is what the rail points at once they have sent
-            enough messages to have an inbox worth returning to. */}
-          <Route
-            path="outreach"
-            element={
-              <Page>
-                <OutreachPage />
-              </Page>
-            }
-          />
-          {/* The couple's half of the vendor conversations. Two paths, one
-            page: the list, or one thread. */}
+          {/* The outreach inbox is now the second tab of /app/messages — it and
+            the vendor replies are one surface. The old destination redirects
+            rather than 404s: it is in the rail's visited history, in bookmarks,
+            and in a couple of code comments. (It also still lives as a section
+            at the bottom of /app/vendors, where a couple meets it while
+            shortlisting.) */}
+          <Route path="outreach" element={<Navigate to="/app/messages?tab=outreach" replace />} />
+          {/* The couple's half of the vendor conversations, plus what they sent.
+            Two paths, one page: the tabbed list, or one thread. */}
           <Route
             path="messages"
             element={

@@ -60,9 +60,6 @@ const hu: LocaleMessages = {
     logistics_title: "Logisztika · Wēddly",
     logistics_description:
       "Szállás és transzfer beosztás drag and drop módon, minden vendéget a helyére.",
-    outreach_title: "Megkeresések · Wēddly",
-    outreach_description:
-      "Írj a kiszemelt szolgáltatóknak, és kövesd egy helyen, kinek mit küldtél.",
     planning_title: "Tervezés · Wēddly",
     planning_description:
       "Feladatok, ötletek és az esküvői napi programterv egy helyen, gyorsan rögzíthető, később könnyen átrendezhető.",
@@ -1291,12 +1288,15 @@ const hu: LocaleMessages = {
   },
   messages: {
     page_title: "Üzenetek",
-    page_body: "A beszélgetéseid azokkal a szolgáltatókkal, akiket megkerestél.",
+    page_body: "A beszélgetéseid a szolgáltatókkal, és minden megkeresés, amit kiküldtél.",
     empty_body:
       "Még nincs beszélgetésed. Küldj egy megkeresést, és a szolgáltató válasza itt jelenik meg.",
     empty_cta: "Szolgáltatók böngészése",
     you: "Te",
     back: "Vissza az üzenetekhez",
+    tabs_aria: "Üzenetek nézetei",
+    tab_threads: "Beszélgetések",
+    tab_outreach: "Megkeresések",
   },
   change_email: {
     page_title: "Új e-mail cím megerősítése",
@@ -2202,7 +2202,6 @@ const hu: LocaleMessages = {
     logistics: "Logisztika",
     schedule: "Programterv",
     suppliers: "Szolgáltatók",
-    outreach: "Megkeresések",
     messages: "Üzenetek",
     planning: "Tervezés",
     timeline: "Idővonal",

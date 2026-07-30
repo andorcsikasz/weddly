@@ -59,9 +59,6 @@ const en: LocaleMessages = {
     logistics_title: "Logistics · Weddly",
     logistics_description:
       "Drag-and-drop accommodation + transfer assignment for every wedding guest.",
-    outreach_title: "Outreach · Weddly",
-    outreach_description:
-      "Write to shortlisted vendors and follow what you have sent, all from one inbox.",
     planning_title: "Planning · Weddly",
     planning_description:
       "Tasks, ideas, and your wedding-day timeline in one place, quick to capture, easy to reorder.",
@@ -1278,11 +1275,14 @@ const en: LocaleMessages = {
   },
   messages: {
     page_title: "Messages",
-    page_body: "Your conversations with the vendors you contacted.",
+    page_body: "Your conversations with vendors, and everything you have sent them.",
     empty_body: "No conversations yet. Send an inquiry and the vendor's reply lands here.",
     empty_cta: "Browse vendors",
     you: "You",
     back: "Back to messages",
+    tabs_aria: "Message views",
+    tab_threads: "Conversations",
+    tab_outreach: "Outreach",
   },
   change_email: {
     page_title: "Confirm your new email",
@@ -2176,7 +2176,6 @@ const en: LocaleMessages = {
     logistics: "Logistics",
     schedule: "Schedule",
     suppliers: "Suppliers",
-    outreach: "Outreach",
     messages: "Messages",
     planning: "Planning",
     timeline: "Timeline",

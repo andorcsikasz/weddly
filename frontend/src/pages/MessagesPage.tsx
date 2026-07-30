@@ -1,25 +1,40 @@
-// /app/messages: the couple's side of the vendor conversations.
+// /app/messages: everything the couple and a vendor say to each other.
 //
-// This is the surface the outreach email has been promising since v1 ("it is in
-// their Weddly inbox"): until now a couple could send an inquiry and then watch
-// a frozen "Sent" chip forever, because a vendor's reply left the product as
-// ordinary email. The thread is the same object the vendor sees on their client
-// card, rendered by the same component.
+// The conversations half is the surface the outreach email has been promising
+// since v1 ("it is in their Weddly inbox"): until then a couple could send an
+// inquiry and watch a frozen "Sent" chip forever, because a vendor's reply left
+// the product as ordinary email. The thread is the same object the vendor sees
+// on their client card, rendered by the same component.
 //
-// One screen, two states: the list, or one thread with a back link. A two-pane
-// layout would buy nothing here, most couples have a handful of vendors, and
-// the phone is where this gets read.
+// The outreach half (what the couple SENT, by campaign) used to be its own rail
+// row at /app/outreach. Two rows meant the couple had to know which of two
+// inboxes a given vendor conversation lived in, and the outreach row was
+// additionally earned at three sent messages, so the rail changed shape under
+// them. Both are now tabs here, `?tab=outreach` deep-links the second one, and
+// /app/outreach redirects to it.
+//
+// Three states, one screen: the thread list, one thread with a back link, or
+// the outreach history. A two-pane layout would buy nothing, most couples have
+// a handful of vendors, and the phone is where this gets read.
 
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ArrowLeft, MessageCircle, Send } from "lucide-react";
 import type { BookingMessage, CoupleVendorThreadPreview } from "@shared/booking_messages";
 import { BookingThreadPanel } from "../components/BookingThreadPanel";
+import { OutreachInbox } from "../components/OutreachInbox";
 import { Skeleton } from "../components/ui";
 import { bookingMessagesApi } from "../lib/endpoints";
 import { formatDateMs } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
+
+const TABS = [
+  { key: "threads", labelKey: "messages.tab_threads", icon: MessageCircle },
+  { key: "outreach", labelKey: "messages.tab_outreach", icon: Send },
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
 
 function ThreadList() {
   const { t, locale } = useT();
@@ -155,8 +170,11 @@ function ThreadView({ bookingId }: { bookingId: number }) {
 export default function MessagesPage() {
   const { t } = useT();
   const { bookingId } = useParams<{ bookingId: string }>();
+  const [params, setParams] = useSearchParams();
   useDocumentMeta("seo.messages_title", "seo.messages_description");
   const parsed = Number(bookingId);
+  const openThread = bookingId != null && Number.isFinite(parsed);
+  const tab: TabKey = params.get("tab") === "outreach" ? "outreach" : "threads";
 
   return (
     <div className="animate-fade-in">
@@ -166,7 +184,46 @@ export default function MessagesPage() {
         </h1>
         <p className="mt-0.5 text-sm text-ink-600 dark:text-umber-200">{t("messages.page_body")}</p>
       </header>
-      {bookingId && Number.isFinite(parsed) ? <ThreadView bookingId={parsed} /> : <ThreadList />}
+      {/* One thread is a detail view, not a third tab: it has its own back link
+          and the tab row above it would offer to leave a conversation the couple
+          just opened. Same tab visual language as /app/planning. */}
+      {openThread ? (
+        <ThreadView bookingId={parsed} />
+      ) : (
+        <>
+          <nav
+            role="tablist"
+            aria-label={t("messages.tabs_aria")}
+            className="mb-4 inline-flex gap-1 rounded-2xl border border-ink-900 bg-paper-100/50 p-1 dark:border-umber-700 dark:bg-umber-700/60"
+          >
+            {TABS.map(({ key, labelKey, icon: Icon }) => {
+              const active = key === tab;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => {
+                    // Replace, don't push: flipping a tab is not a step the back
+                    // button should have to walk through.
+                    setParams(key === "outreach" ? { tab: "outreach" } : {}, { replace: true });
+                  }}
+                  className={`flex items-center gap-2 rounded-xl px-4 py-1.5 text-sm leading-none transition-colors ${
+                    active
+                      ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-umber-900 dark:text-paper-50"
+                      : "text-ink-600 hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
+                  }`}
+                >
+                  <Icon size={16} aria-hidden="true" />
+                  {t(labelKey)}
+                </button>
+              );
+            })}
+          </nav>
+          {tab === "outreach" ? <OutreachInbox variant="tab" /> : <ThreadList />}
+        </>
+      )}
     </div>
   );
 }

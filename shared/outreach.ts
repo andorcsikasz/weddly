@@ -91,13 +91,5 @@ export const OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP = 5;
  *  one workspace can do to our sending reputation. */
 export const OUTREACH_MESSAGES_PER_WEEK_CAP = 20;
 
-/** Sent messages after which the workspace rail grows its own Outreach row.
- *  Below it the inbox lives where it is discovered — under the directory on
- *  /app/vendors, next to the vendors being written to. Three is "this couple
- *  is running a shortlist", not "they tried it once", which is the point at
- *  which a permanent nav destination earns its place on a rail that already
- *  has a dozen. */
-export const OUTREACH_NAV_UNLOCK_SENT = 3;
-
 export const OUTREACH_SUBJECT_MAX_LEN = 200;
 export const OUTREACH_BODY_MAX_LEN = 5000;

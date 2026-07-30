@@ -60,8 +60,6 @@ export interface LocaleMessages {
     logistics_description: string;
     planning_title: string;
     planning_description: string;
-    outreach_title: string;
-    outreach_description: string;
     admin_suppliers_title: string;
     admin_suppliers_description: string;
     admin_feedback_title: string;
@@ -1640,7 +1638,8 @@ export interface LocaleMessages {
     file_too_large: string;
     unsupported_file: string;
   };
-  /** The couple's thread list + single thread at /app/messages. */
+  /** /app/messages — the couple's thread list, a single thread, and (second
+   *  tab) the outreach history that used to live at /app/outreach. */
   messages: {
     page_title: string;
     page_body: string;
@@ -1649,6 +1648,10 @@ export interface LocaleMessages {
     /** Prefix on the last-message preview when the couple wrote it. */
     you: string;
     back: string;
+    /** Tab row over the two halves of the surface. */
+    tabs_aria: string;
+    tab_threads: string;
+    tab_outreach: string;
   };
   /** Page reached from the email_change_verify confirm link. */
   change_email: {
@@ -2641,12 +2644,9 @@ export interface LocaleMessages {
     /** Day-of run-of-show timeline page — sidebar only. */
     schedule: string;
     suppliers: string;
-    /** Vendor outreach inbox. The rail only carries it once the couple has
-     *  sent OUTREACH_NAV_UNLOCK_SENT messages; before that the inbox lives
-     *  under the directory on /app/vendors. */
-    outreach: string;
-    /** Vendor conversations. Unlike outreach the rail always carries it: one
-     *  inquiry is enough for a vendor to write back. */
+    /** Vendor conversations AND the outreach the couple sent — one rail row,
+     *  two tabs of /app/messages. Always carried: one inquiry is enough for a
+     *  vendor to write back. */
     messages: string;
     /** Free-form planning surface (tasks / ideas / wedding-day schedule). */
     planning: string;

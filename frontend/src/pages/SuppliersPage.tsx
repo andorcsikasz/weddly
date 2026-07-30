@@ -2660,8 +2660,9 @@ export default function SuppliersPage() {
 
       {/* Outreach Inbox — the "shop → message" flow lives on the same
           page as the directory so couples can shortlist + reach out
-          without leaving. Previously lived at /app/outreach; that URL
-          now redirects here. */}
+          without leaving. The same component is the Megkeresések tab of
+          /app/messages, which is where the rail points; /app/outreach
+          redirects there. */}
       <OutreachInbox />
 
       {/* The scoping filters that used to sit in a boxed row above the chain.

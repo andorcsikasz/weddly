@@ -57,11 +57,6 @@ export interface User {
    *  the workspace they have never tried. Union-only, server-side so it
    *  survives a new device (POST /api/auth/nav-visited). */
   visited_nav: string[];
-  /** Outreach messages this user's workspace has sent (0 without a workspace).
-   *  The sidebar earns its Outreach row at `OUTREACH_NAV_UNLOCK_SENT`, so the
-   *  count is here rather than behind a fetch the rail would have to make on
-   *  every page. */
-  outreach_sent: number;
   created_at: UnixMs;
 }
 

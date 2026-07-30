@@ -1,7 +1,9 @@
 // Supplier Outreach Inbox — couple-initiated cold mail to shortlisted
-// vendors. Originally a standalone /app/outreach page; now embedded as
-// a section at the bottom of /app/vendors so the "shop → message" flow
-// stays on one screen.
+// vendors. It has TWO mounts and no page of its own: a section at the bottom of
+// /app/vendors, so the "shop → message" flow stays on one screen, and the
+// Megkeresések tab of /app/messages, where sent history sits beside the replies
+// it produced. `variant` is the only difference between them. (It used to also
+// be a standalone /app/outreach page; that URL now redirects to the tab.)
 //
 // v1 scope:
 //   - campaigns list (newest first), counted by message_count
@@ -46,7 +48,16 @@ import { coupleApi, outreachApi, supplierApi } from "../lib/endpoints";
 import { formatDate, intlLocale } from "../lib/format";
 import { useT } from "../lib/i18n";
 
-export function OutreachInbox() {
+/** Where the inbox is being rendered.
+ *  - `section` — a band at the bottom of /app/vendors, under the directory it
+ *    shares a page with, so it needs its own h2 and top margin to read as a
+ *    separate thing.
+ *  - `tab` — the Megkeresések tab of /app/messages. The page header and the tab
+ *    label already name it twice; a third h2 would be noise, so only the
+ *    one-line "what this is" survives. */
+export type OutreachInboxVariant = "section" | "tab";
+
+export function OutreachInbox({ variant = "section" }: { variant?: OutreachInboxVariant } = {}) {
   const { t, locale } = useT();
   const toast = useToast();
 
@@ -94,27 +105,56 @@ export function OutreachInbox() {
     [locale],
   );
 
+  const isTab = variant === "tab";
+
   return (
-    <section aria-labelledby="outreach-section-heading" className="mt-10">
+    <section aria-labelledby="outreach-section-heading" className={isTab ? undefined : "mt-10"}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
+          {/* The heading stays in the tree either way so the section keeps its
+              accessible name; in tab mode the tab itself is the visible label. */}
           <h2
             id="outreach-section-heading"
-            className="flex items-center gap-2 font-grotesk text-2xl"
+            className={isTab ? "sr-only" : "flex items-center gap-2 font-grotesk text-2xl"}
           >
             {t("outreach.heading")}
             {/* The "replies land in your own inbox" note used to be a full-width
                 banner; tuck it behind a mail glyph so the header stays light. */}
-            <InfoHint
-              icon={Mail}
-              text={t("outreach.reply_note")}
-              label={t("outreach.reply_note")}
-            />
+            {!isTab && (
+              <InfoHint
+                icon={Mail}
+                text={t("outreach.reply_note")}
+                label={t("outreach.reply_note")}
+              />
+            )}
           </h2>
-          <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
+          <p
+            className={`flex items-center gap-2 text-sm text-ink-600 dark:text-umber-200 ${
+              isTab ? "" : "mt-1"
+            }`}
+          >
             {t("outreach.subheading", { max: OUTREACH_SUPPLIERS_PER_CAMPAIGN_CAP })}
+            {isTab && (
+              <InfoHint
+                icon={Mail}
+                text={t("outreach.reply_note")}
+                label={t("outreach.reply_note")}
+              />
+            )}
           </p>
         </div>
+        {/* Compose used to exist only inside the empty state, so the couple who
+            had already sent one round had no way back to the composer from here
+            — they had to go find a vendor card. */}
+        {campaigns.length > 0 && (
+          <button
+            type="button"
+            className="btn-accent inline-flex shrink-0 items-center gap-1"
+            onClick={() => setComposing(true)}
+          >
+            <Plus size={16} aria-hidden /> {t("outreach.new_campaign")}
+          </button>
+        )}
       </div>
 
       {loading ? (

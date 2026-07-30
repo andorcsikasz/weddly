@@ -61,9 +61,6 @@ const es: LocaleMessages = {
     logistics_title: "Logística · Weddly",
     logistics_description:
       "Asignación de alojamiento y traslados con arrastrar y soltar para cada invitado de la boda.",
-    outreach_title: "Contactos · Weddly",
-    outreach_description:
-      "Escribe a los proveedores preseleccionados y sigue lo que has enviado desde una bandeja.",
     planning_title: "Planificación · Weddly",
     planning_description:
       "Tareas, ideas y el cronograma del día de la boda en un solo lugar; rápido de anotar, fácil de reordenar.",
@@ -1311,12 +1308,15 @@ const es: LocaleMessages = {
   },
   messages: {
     page_title: "Mensajes",
-    page_body: "Tus conversaciones con los proveedores que has contactado.",
+    page_body: "Tus conversaciones con proveedores y todo lo que les has enviado.",
     empty_body:
       "Aún no hay conversaciones. Envía una solicitud y la respuesta del proveedor llegará aquí.",
     empty_cta: "Ver proveedores",
     you: "Tú",
     back: "Volver a mensajes",
+    tabs_aria: "Vistas de mensajes",
+    tab_threads: "Conversaciones",
+    tab_outreach: "Contactos",
   },
   change_email: {
     page_title: "Confirma tu nuevo email",
@@ -2233,7 +2233,6 @@ const es: LocaleMessages = {
     logistics: "Logística",
     schedule: "Programa",
     suppliers: "Proveedores",
-    outreach: "Contactos",
     messages: "Mensajes",
     planning: "Planificación",
     timeline: "Cronograma",
