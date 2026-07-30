@@ -47,6 +47,7 @@ import {
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
+import { SupplierNameAutocomplete } from "../components/SupplierNameAutocomplete";
 import { InfoHint } from "../components/InfoHint";
 import { Dialog, Switch, useConfirm, useToast } from "../components/ui";
 import type { VenueLocationValue } from "../components/VenueLocationPicker";
@@ -428,24 +429,27 @@ function AddVenueForm({
 
   return (
     <div className="flex flex-col gap-3">
-      <div>
-        <label htmlFor="add-venue-name" className="field-label">
-          {t("venue_picker.name_label")}
-        </label>
-        <input
-          id="add-venue-name"
-          type="text"
-          className="input"
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            setTwinOverride(false);
-          }}
-          placeholder={t("wedding_site_editor.venue_placeholder")}
-          maxLength={120}
-          autoComplete="off"
-        />
-      </div>
+      {/* Typing a name searches the venues the couple can already choose from,
+          because the best outcome of this form is that it is never submitted:
+          a picked listing arrives with its address, pin and phone, while a
+          hand-typed one starts blank and has to be filled in by hand. The
+          duplicate warning below still runs, and still has the last word. */}
+      <SupplierNameAutocomplete
+        id="add-venue-name"
+        label={t("venue_picker.name_label")}
+        value={name}
+        options={directory}
+        onChange={(v) => {
+          setName(v);
+          setTwinOverride(false);
+        }}
+        onPick={(d) => {
+          void directorySupplierToVenueVendor(d).then(onCreated);
+        }}
+        placeholder={t("wedding_site_editor.venue_placeholder")}
+        maxLength={120}
+        hint={t("venue_picker.suggestion_hint")}
+      />
 
       {twins.length > 0 && (
         <DirectoryTwinNotice
