@@ -4775,6 +4775,8 @@ const en: LocaleMessages = {
         deleteConfirmTitle: "Delete this review?",
         deleteConfirmBody: "Soft delete, the row stays, just hidden.",
         verifiedBadge: "Verified couple",
+        menu: "Review options",
+        deleteAction: "Delete review",
         eligibilityHint:
           "Confirm your email to leave a review. Couples who worked with this supplier (in your cost plan or as a category pick) also earn the Verified badge.",
         alreadyReviewedNote: "You've already reviewed this supplier, thank you!",

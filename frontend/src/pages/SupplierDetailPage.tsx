@@ -55,6 +55,7 @@ import {
   Shirt,
   Sparkles,
   Speaker,
+  MoreVertical,
   Star,
   PenTool,
   StickyNote,
@@ -1040,29 +1041,19 @@ function ReviewsSection({
                     {r.author.display_name}
                   </span>
                   {r.editorial && <Pill tone="violet">Editorial</Pill>}
-                  {/* "Verified" is now the engagement-proof badge only — an open
-                      community/visitor review (verified=false) wears no badge,
-                      so the label keeps meaning "actually worked with them". */}
-                  {!r.editorial && r.verified && (
-                    <Pill tone="sage">{t("suppliers.detail.reviews.verifiedBadge")}</Pill>
-                  )}
+                  {/* No "Verified couple" badge. The stars, the name and the
+                      words are the review; a second pill restating that the
+                      author is a real customer is chrome, and on a card that
+                      already carries a rating, a date and a tag row it was the
+                      loudest thing on it. `verified` still rides the DTO for
+                      ranking and for the vendor's own view. */}
                   {!r.published && <Pill tone="blush">Draft</Pill>}
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-ink-500 dark:text-umber-300">
                     {formatDate(r.created_at, locale)}
                   </span>
-                  {(isAdmin || r.own) && (
-                    <button
-                      type="button"
-                      onClick={() => remove(r.id)}
-                      aria-label={t("common.delete")}
-                      title={t("common.delete")}
-                      className="text-ink-400 hover:text-rose-600 dark:text-umber-400"
-                    >
-                      <Trash2 size={14} aria-hidden />
-                    </button>
-                  )}
+                  {(isAdmin || r.own) && <ReviewMenu t={t} onDelete={() => remove(r.id)} />}
                 </div>
               </div>
               {r.body && (
@@ -1088,6 +1079,74 @@ function ReviewsSection({
         </ul>
       )}
     </section>
+  );
+}
+
+/** The one destructive action on a review, behind an overflow trigger.
+ *
+ *  A bare trash icon pinned to the card put "delete" one stray tap from
+ *  happening and, being the only glyph in the row, read as the card's primary
+ *  control. Behind the dots it costs one deliberate tap, says what it does in
+ *  words, and leaves the card as rating + name + words. The confirm dialog
+ *  stays: the menu makes the action findable, not cheaper. */
+function ReviewMenu({
+  t,
+  onDelete,
+}: {
+  t: (k: string, vars?: Record<string, string | number>) => string;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointer(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <span ref={ref} className="relative inline-flex">
+      <button
+        type="button"
+        aria-label={t("suppliers.detail.reviews.menu")}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-cream-100 hover:text-ink-900 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-cream-50"
+      >
+        <MoreVertical size={16} strokeWidth={1.5} aria-hidden />
+      </button>
+      {open && (
+        <span
+          role="menu"
+          className="absolute right-0 top-full z-30 mt-1 w-max overflow-hidden rounded-lg border border-ink-200/60 bg-white py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onDelete();
+            }}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm font-medium text-blush-700 transition-colors hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+          >
+            <Trash2 size={16} strokeWidth={1.5} aria-hidden />
+            {t("suppliers.detail.reviews.deleteAction")}
+          </button>
+        </span>
+      )}
+    </span>
   );
 }
 

@@ -4829,6 +4829,8 @@ const hu: LocaleMessages = {
         deleteConfirmTitle: "Törlöd ezt az értékelést?",
         deleteConfirmBody: "Soft delete, a sor megmarad, csak elrejtjük.",
         verifiedBadge: "Igazolt pár",
+        menu: "Vélemény műveletek",
+        deleteAction: "Vélemény törlése",
         eligibilityHint:
           "Erősítsd meg az e-mail címed az értékeléshez. Aki tényleg dolgozott a szolgáltatóval (költségtervben vagy kategóriaválasztásként), az Igazolt jelvényt is kap.",
         alreadyReviewedNote: "Már értékeltétek ezt a szolgáltatót, köszönjük!",

@@ -4876,6 +4876,8 @@ const es: LocaleMessages = {
         deleteConfirmTitle: "¿Eliminar esta reseña?",
         deleteConfirmBody: "Borrado leve, la fila se queda, solo oculta.",
         verifiedBadge: "Pareja verificada",
+        menu: "Opciones de la reseña",
+        deleteAction: "Eliminar reseña",
         eligibilityHint:
           "Confirma tu correo para dejar una reseña. Las parejas que trabajaron con este proveedor (en tu plan de costes o como elección de categoría) también obtienen la insignia de Verificado.",
         alreadyReviewedNote: "Ya has reseñado a este proveedor, ¡gracias!",

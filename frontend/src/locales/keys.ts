@@ -5544,6 +5544,11 @@ export interface LocaleMessages {
         /** Badge on couple-authored reviews — the engagement-proof gate makes
          *  every couple review a verified one. */
         verifiedBadge: string;
+        /** Aria-label on the per-review overflow trigger. The menu carries the
+         *  destructive action, so the trash icon no longer sits on the card. */
+        menu: string;
+        /** The one entry behind that trigger. */
+        deleteAction: string;
         /** Shown instead of the composer when the viewer's couple has no
          *  engagement proof for this supplier yet. */
         eligibilityHint: string;
