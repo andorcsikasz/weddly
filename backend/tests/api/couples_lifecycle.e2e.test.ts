@@ -6,6 +6,7 @@ import { req, wipeAll, registerAndVerify, bootstrapCouple } from "../helpers";
 import { issueSession } from "../../src/auth/session";
 import { db } from "../../src/db";
 import { lookupDestinationIata } from "../../src/domain/destination_iata";
+import { MAX_QUERY_CHARS } from "../../src/routes/places";
 
 // All tests in this file run sequentially (no parallelism), and each test
 // starts with wipeAll() so couple_id and user_id sequences reset cleanly.
@@ -1719,10 +1720,16 @@ describe("couples_lifecycle: places search proxy", () => {
     expect(lastStatus).toBe(429);
   });
 
-  test("oversized query (>100 chars) returns 400", async () => {
+  // Measured off the route's own MAX_QUERY_CHARS rather than a literal: the cap
+  // was 100 until a Nominatim breadcrumb ("...137 characters of home address")
+  // legitimately exceeded it and it moved to 200, at which point a hardcoded 101
+  // was asserting a 400 the route had stopped returning. One past the exported
+  // constant can't go stale the next time the number moves.
+  test("oversized query (> MAX_QUERY_CHARS) returns 400", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("places-big@weddly.test");
-    const r = await req("GET", `/api/places/search?q=${"x".repeat(101)}`, undefined, { token });
+    const q = "x".repeat(MAX_QUERY_CHARS + 1);
+    const r = await req("GET", `/api/places/search?q=${q}`, undefined, { token });
     expect(r.status).toBe(400);
   });
 });
