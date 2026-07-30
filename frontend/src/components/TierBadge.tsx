@@ -23,6 +23,35 @@ const TIER_CLASS: Record<VendorTierKey, string> = {
     "bg-ink-900 text-paper-100 ring-ink-900 dark:bg-ink-950 dark:text-paper-100 dark:ring-paper-200/30",
 };
 
+/** The same four identities as `stroke-*` pairs, for the tier ring that sits
+ *  beside the badge (`ProgressRing`'s trackClass/arcClass). They live HERE
+ *  rather than in the ring so a rebalanced tier palette moves both at once —
+ *  a ring in last season's gold next to this season's badge is the one way this
+ *  can look broken.
+ *
+ *  Gold is the only tier whose two themes take different hues: `star` (#FFD000)
+ *  is what the badge wears on dark umber, and a 3px stroke of it on white paper
+ *  is very nearly invisible, so light mode uses the brass the couple sidebar's
+ *  own dot uses. The other three ride their badge's family directly. */
+export const TIER_RING: Record<VendorTierKey, { track: string; arc: string }> = {
+  blue: {
+    track: "stroke-steel-100 dark:stroke-steel-600/30",
+    arc: "stroke-steel-600 dark:stroke-steel-200",
+  },
+  gold: {
+    track: "stroke-umber-100 dark:stroke-star/20",
+    arc: "stroke-umber-400 dark:stroke-star",
+  },
+  platinum: {
+    track: "stroke-ink-100 dark:stroke-paper-200/20",
+    arc: "stroke-ink-400 dark:stroke-paper-200",
+  },
+  black: {
+    track: "stroke-ink-200 dark:stroke-paper-200/25",
+    arc: "stroke-ink-900 dark:stroke-paper-50",
+  },
+};
+
 export function TierBadge({
   tier,
   size = "md",

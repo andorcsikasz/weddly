@@ -11,6 +11,12 @@
 //   complete → sage: earned, finished, nothing left to do
 //   warning  → amber: needs attention, at risk, expiring
 //
+// One ring shows IDENTITY rather than state — Weddly Points tier progress, whose
+// arc has to be the tier's own colour or it contradicts the badge sitting 12px
+// to its right. That one passes trackClass/arcClass (from `TIER_RING`) and opts
+// out of the table above; it is the same exception TierBadge already is to the
+// portal's one-interactive-colour rule, and for the same reason: a tier is data.
+//
 // Pure tokenised SVG, no chart library. The arc animates on value change; a
 // ring that snaps reads as a redraw rather than as progress.
 
@@ -35,6 +41,8 @@ export function ProgressRing({
   size = 20,
   stroke = 3,
   tone = "active",
+  trackClass,
+  arcClass,
   label,
   children,
 }: {
@@ -43,6 +51,11 @@ export function ProgressRing({
   size?: number;
   stroke?: number;
   tone?: ProgressTone;
+  /** Tailwind `stroke-*` classes that replace the tone's colours, for the one
+   *  identity ring (see the header note). Pass BOTH or neither: an arc on a
+   *  track from another palette is worse than either alone. */
+  trackClass?: string;
+  arcClass?: string;
   /** Accessible description. Without it the ring is decorative (aria-hidden),
    *  which is correct when an adjacent number already says the same thing. */
   label?: string;
@@ -69,7 +82,7 @@ export function ProgressRing({
         r={radius}
         fill="none"
         strokeWidth={stroke}
-        className={TRACK[tone]}
+        className={trackClass ?? TRACK[tone]}
       />
       <circle
         cx={size / 2}
@@ -80,7 +93,7 @@ export function ProgressRing({
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={offset}
-        className={`${ARC[tone]} transition-[stroke-dashoffset] duration-700 ease-out`}
+        className={`${arcClass ?? ARC[tone]} transition-[stroke-dashoffset] duration-700 ease-out`}
       />
     </svg>
   );

@@ -34,7 +34,7 @@ import {
 import { vendorPointsApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { ProgressRing } from "./ProgressRing";
-import { TierBadge } from "./TierBadge";
+import { TIER_RING, TierBadge } from "./TierBadge";
 import { Dialog } from "./ui/Dialog";
 
 /** Where each earning rule sends a vendor who wants to act on it. `null` would
@@ -164,7 +164,6 @@ export function VendorPointsRail({
   const [open, setOpen] = useState(false);
 
   if (!points) return null;
-  const atTop = points.next_tier === null;
   const { status, rankLine } = pointsCopy(t, points);
   const rank = points.category_rank;
 
@@ -204,11 +203,17 @@ export function VendorPointsRail({
             column: the row is w-full, so without it the ring sits at the left
             edge of a 64px rail while every nav icon above it is centred. */}
         <span className={`flex w-full items-center gap-3 ${collapsed ? "lg:justify-center" : ""}`}>
+          {/* The arc wears the TIER's colour, not the portal's progress blush:
+              it sits 12px from the tier badge, and two different colours for
+              one fact read as two facts. At the top tier there is no separate
+              "complete" tone to switch to either — the ring is a full circle in
+              Black, which says it better than sage did. */}
           <ProgressRing
             pct={points.progress * 100}
             size={34}
             stroke={3}
-            tone={atTop ? "complete" : "active"}
+            trackClass={TIER_RING[points.tier].track}
+            arcClass={TIER_RING[points.tier].arc}
             label={t("vendor.points.ring_label")}
           >
             <span className="font-grotesk text-[11px] font-semibold tabular-nums leading-none text-ink-900 dark:text-paper-100">
