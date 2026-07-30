@@ -3,6 +3,7 @@ import "../setup";
 import { PRIVACY_VERSION } from "@shared/legal";
 import type { PlannerInvitation } from "@shared/types";
 import { db } from "../../src/db";
+import { buildEmail } from "../../src/domain/emails/templates";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Register + verify a plain user; returns their token + id + email. */
@@ -79,6 +80,66 @@ describe("planner waitlist auto-accept", () => {
     expect(stats.status).toBe(200);
     expect(stats.data.stats.plan).toBe("starter");
     expect(stats.data.stats.max_clients).toBe(4);
+  });
+
+  test("an anonymous submit from an address that already has an account promotes THAT account", async () => {
+    // The applicant registered months ago and applies logged out (different
+    // device, cleared cookies). Reading the session instead of the address
+    // used to leave them un-promoted AND mailed "register with this same
+    // email" — a signup that can only 409 on their own address.
+    const { email } = await registerVerified("returning@weddly.test");
+    expect(isPlanner(email)).toBe(false);
+
+    const r = await submitWaitlist(email);
+    expect(r.status).toBe(201);
+    expect(isPlanner(email)).toBe(true);
+
+    // The confirmation is bound to the account it found, not sent as guest mail.
+    const log = db
+      .prepare("SELECT kind, user_id FROM email_log WHERE to_email = ? ORDER BY id DESC LIMIT 1")
+      .get(email) as { kind: string; user_id: number | null } | undefined;
+    expect(log?.kind).toBe("planner_waitlist_received");
+    expect(log?.user_id).not.toBeNull();
+  });
+
+  test("a vendor's address is NOT flipped by the public form", async () => {
+    // A vendor needs convertVendorToPlanner (the user_type flip alone leaves a
+    // vendor_accounts row advertising a bookable business), so the public form
+    // hands them to sign-in and leaves the account for an admin.
+    const { email } = await registerVerified("vendorish@weddly.test");
+    db.prepare("UPDATE users SET role = 'vendor' WHERE LOWER(email) = ?").run(email.toLowerCase());
+
+    const r = await submitWaitlist(email);
+    expect(r.status).toBe(201);
+    expect(isPlanner(email)).toBe(false);
+  });
+
+  test("the confirmation mail's CTA follows the applicant's real next step", () => {
+    const signup = buildEmail(
+      "planner_waitlist_received",
+      { plannerName: "Kata", nextStep: "register" },
+      { recipientName: "Kata", recipientLocale: "en" },
+    ).rendered.html;
+    expect(signup).toContain("/signup");
+    expect(signup).toContain("Create your account");
+
+    const dashboard = buildEmail(
+      "planner_waitlist_received",
+      { plannerName: "Kata", nextStep: "planner_dashboard" },
+      { recipientName: "Kata", recipientLocale: "en" },
+    ).rendered.html;
+    expect(dashboard).toContain("/app/planner");
+    expect(dashboard).not.toContain("/signup");
+    // The stock outreach footer would claim they have no account.
+    expect(dashboard).not.toContain("You don't have an account with us");
+
+    const signIn = buildEmail(
+      "planner_waitlist_received",
+      { plannerName: "Kata", nextStep: "sign_in" },
+      { recipientName: "Kata", recipientLocale: "en" },
+    ).rendered.html;
+    expect(signIn).toContain("/login");
+    expect(signIn).not.toContain("/signup");
   });
 
   test("a brand-new signup whose email is on the waitlist auto-promotes at register", async () => {

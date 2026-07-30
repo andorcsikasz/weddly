@@ -427,7 +427,7 @@ const STUBS: KindPayload = {
   },
   planner_waitlist_received: {
     plannerName: "Anna",
-    hasAccount: false,
+    nextStep: "register",
   },
   planner_access_invite: {
     plannerName: "Anna",

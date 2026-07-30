@@ -8134,11 +8134,12 @@ const en: LocaleMessages = {
     submitting: "Sending…",
     success_title: "We've got your registration!",
     success_body:
-      "We've sent a confirmation email. One step left: create an account with this same email address and the planner workspace is yours right away.",
+      "We've sent a confirmation email with your next step. If you don't have a Weddly account yet, create one with this same email address and the planner workspace is yours right away.",
     success_body_authed:
       "Your planner account is active. Fill in your profile to appear in the planner directory couples browse.",
     success_cta_signup: "Create my account",
     success_cta_dashboard: "Open planner dashboard",
+    success_have_account: "Already have an account with this address?",
     success_plan: "Selected plan:",
     back_home: "Back to homepage",
     not_a_planner: "Not a wedding planner?",

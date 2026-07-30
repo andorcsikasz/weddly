@@ -8274,11 +8274,12 @@ const es: LocaleMessages = {
     submitting: "Enviando…",
     success_title: "¡Hemos recibido tu registro!",
     success_body:
-      "Te hemos enviado un correo de confirmación. Solo queda un paso: crea una cuenta con este mismo correo electrónico y el espacio de trabajo para planners será tuyo al instante.",
+      "Te hemos enviado un correo de confirmación con el siguiente paso. Si aún no tienes una cuenta de Weddly, créala con este mismo correo electrónico y el espacio de trabajo para planners será tuyo al instante.",
     success_body_authed:
       "Tu cuenta de planner está activa. Completa tu perfil para aparecer en el directorio de planners que consultan las parejas.",
     success_cta_signup: "Crear mi cuenta",
     success_cta_dashboard: "Abrir el panel de planner",
+    success_have_account: "¿Ya tienes una cuenta con esta dirección?",
     success_plan: "Plan seleccionado:",
     back_home: "Volver a la página de inicio",
     not_a_planner: "¿No eres wedding planner?",

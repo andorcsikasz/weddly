@@ -9101,6 +9101,9 @@ export interface LocaleMessages {
     success_body_authed: string;
     success_cta_signup: string;
     success_cta_dashboard: string;
+    /** Sign-in escape under the success CTA, for an applicant who turns out to
+     *  already have an account (the page can't know, the mail can). */
+    success_have_account: string;
     success_plan: string;
     back_home: string;
     not_a_planner: string;

@@ -8203,11 +8203,12 @@ const hu: LocaleMessages = {
     submitting: "Küldés…",
     success_title: "Megkaptuk a jelentkezésedet!",
     success_body:
-      "Küldtünk egy megerősítő e-mailt. Már csak egy lépés: regisztrálj ugyanezzel az e-mail címmel, és a szervező munkaterület azonnal a tiéd.",
+      "Küldtünk egy megerősítő e-mailt a következő lépéssel. Ha még nincs Weddly-fiókod, regisztrálj ugyanezzel az e-mail címmel, és a szervező munkaterület azonnal a tiéd.",
     success_body_authed:
       "A szervezői fiókod aktív. Töltsd ki a profilod, hogy megjelenj a pároknak szóló szervezői ajánlóban.",
     success_cta_signup: "Fiók létrehozása",
     success_cta_dashboard: "Tervező felület megnyitása",
+    success_have_account: "Ezzel a címmel már van fiókod?",
     success_plan: "Kiválasztott csomag:",
     back_home: "Vissza a főoldalra",
     not_a_planner: "Nem esküvőszervező vagy?",

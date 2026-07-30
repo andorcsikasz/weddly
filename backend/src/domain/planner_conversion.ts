@@ -229,6 +229,30 @@ export function convertVendorToPlanner(vendorAccountId: number): VendorToPlanner
   return { ...moved, seeded_from_waitlist: seeded };
 }
 
+/** Enough of a `users` row to answer `canAutoConvertToPlanner`. */
+export interface PlannerConvertCandidate {
+  email: string;
+  role: string;
+  status: string;
+}
+
+/** May this existing account be flipped to a planner with no admin looking at
+ *  it — the question the self-serve `/planners` form has to answer about the
+ *  address it was handed. Same fence `backfillWaitlistPlannerConversions`
+ *  draws in SQL, kept here so the two can't drift:
+ *    - a VENDOR needs `convertVendorToPlanner` (the flip alone leaves a zombie
+ *      `vendor_accounts` row still advertising a bookable business),
+ *    - an ADMIN's own shell must not change under them,
+ *    - a suspended or demo account is not one we hand new surface to.
+ *  An account that is ALREADY a planner passes: the grant is idempotent, and
+ *  the point is to send them to their dashboard instead of a second signup. */
+export function canAutoConvertToPlanner(user: PlannerConvertCandidate): boolean {
+  if (user.role === "vendor") return false;
+  if (user.status === "suspended") return false;
+  if (user.email.toLowerCase().endsWith("@demo.weddly.local")) return false;
+  return !isAdminEmail(user.email);
+}
+
 /** Vendor-side rows that `DELETE FROM vendor_accounts` cascades away. Counted so
  *  the admin action can report real data loss instead of implying none. */
 function countVendorOwnedRows(vendorAccountId: number): number {

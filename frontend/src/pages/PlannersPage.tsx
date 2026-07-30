@@ -475,8 +475,13 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
             {t("planners.success_next_intro")}
           </p>
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-5">
-            {/* The grant is applied at REGISTER time for signed-out applicants,
-                so the primary CTA must carry them to signup, not the landing. */}
+            {/* The grant is applied at REGISTER time for an applicant with no
+                account, so the primary CTA carries them to signup. This screen
+                deliberately does NOT ask the server whether the typed address
+                already has an account: on an anonymous form that answer is an
+                enumeration oracle. The confirmation mail resolves it instead
+                (see planner_waitlist_received's nextStep) and the sign-in line
+                below is the escape for someone who already registered. */}
             <Link
               to={user ? "/app/planner" : "/signup"}
               className="btn-primary px-5 py-2.5 text-sm"
@@ -539,15 +544,19 @@ function RegistrationForm({ initialPlan }: { initialPlan: Plan | "" }) {
               </div>
             </div>
           </div>
-          <p className="mt-5 text-sm text-umber-500 dark:text-umber-400">
-            {t("planners.already_have_access")}{" "}
-            <Link
-              to="/login"
-              className="font-medium text-umber-800 underline hover:text-umber-900 dark:text-paper-200 dark:hover:text-paper-50"
-            >
-              {t("planners.login_link")}
-            </Link>
-          </p>
+          {/* Only for a signed-out applicant: the signed-in one is already
+              past this door, and the primary CTA above is their dashboard. */}
+          {!user && (
+            <p className="mt-5 text-sm text-umber-500 dark:text-umber-400">
+              {t("planners.success_have_account")}{" "}
+              <Link
+                to="/login"
+                className="font-medium text-umber-800 underline hover:text-umber-900 dark:text-paper-200 dark:hover:text-paper-50"
+              >
+                {t("planners.login_link")}
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     );

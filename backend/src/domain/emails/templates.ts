@@ -825,13 +825,25 @@ export interface PlannerEmailInvitePayload {
   replyToEmail?: string;
 }
 
+/** Where the /planners confirmation mail has to send this applicant.
+ *  - `register`: no Weddly account owns this address, so the grant lands when
+ *    they sign up with it (CTA → /signup).
+ *  - `planner_dashboard`: the address already has an account and it now holds
+ *    the planner grant, so there is nothing to register (CTA → /app/planner,
+ *    which routes on to onboarding until that's done).
+ *  - `sign_in`: the address has an account we deliberately don't flip on a
+ *    public form (vendor, admin, suspended), so the only honest CTA is their
+ *    own front door while a human sorts the planner side out. */
+export type PlannerWaitlistNextStep = "register" | "planner_dashboard" | "sign_in";
+
 export interface PlannerWaitlistReceivedPayload {
   /** Applicant's name, used in the greeting. */
   plannerName: string;
-  /** Whether the applicant was signed in when applying. Signed-in applicants
-   *  already hold the planner grant (CTA → dashboard); signed-out ones must
-   *  register with the SAME email to receive it (CTA → signup). */
-  hasAccount: boolean;
+  /** Resolved from the ACCOUNT that owns the applied-with address, never from
+   *  whether the applicant happened to be signed in: telling someone who
+   *  registered months ago to "register with this same email" funnels them
+   *  into a signup that can only 409 on their own address. */
+  nextStep: PlannerWaitlistNextStep;
 }
 
 export interface PlannerAccessInvitePayload {
@@ -3878,41 +3890,79 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   // Confirmation for the /planners application. Doubles as the funnel's most
-  // important nudge: a signed-out applicant only becomes a planner when they
-  // register with the SAME email, so the CTA must carry them to signup.
+  // important nudge, which is why the CTA follows `nextStep` rather than the
+  // session: an applicant who already registered months ago must be sent to
+  // their own account, not through a second signup that can only 409.
   planner_waitlist_received: (p) => ({
     subject: "Megkaptuk a jelentkezésed / Application received · Weddly",
-    ctaUrl: p.hasAccount
-      ? `${CONFIG.frontendBaseUrl}/app/planner`
-      : `${CONFIG.frontendBaseUrl}/signup`,
+    ctaUrl:
+      p.nextStep === "register"
+        ? `${CONFIG.frontendBaseUrl}/signup`
+        : p.nextStep === "planner_dashboard"
+          ? `${CONFIG.frontendBaseUrl}/app/planner`
+          : `${CONFIG.frontendBaseUrl}/login`,
+    // The stock outreach footer states "you don't have an account with us",
+    // which both account branches contradict two lines above it.
+    whyLine:
+      p.nextStep === "register"
+        ? undefined
+        : {
+            hu: "Ezt a levelet azért kaptad, mert ezzel a címmel jelentkeztél a Weddly tervezői programjába.",
+            en: "You're getting this because you applied to the Weddly planner programme with this address.",
+          },
     hu: {
-      preheader: "A szervezői hozzáférésed készen áll.",
+      preheader:
+        p.nextStep === "sign_in"
+          ? "Ezzel a címmel már van Weddly-fiókod."
+          : "A szervezői hozzáférésed készen áll.",
       greeting: `Szia ${p.plannerName}!`,
-      paragraphs: p.hasAccount
-        ? [
-            "Köszönjük a jelentkezésed a Weddly tervezői programjába. A szervezői fiókod aktív, beléphetsz a tervező felületre.",
-            "Töltsd ki a profilod (vállalkozásnév és város), hogy megjelenj a pároknak szóló szervezői ajánlóban, és érkezhessenek a megkeresések.",
-          ]
-        : [
-            "Köszönjük a jelentkezésed a Weddly tervezői programjába. A hozzáférésed készen áll.",
-            "Már csak egy lépés van hátra: regisztrálj **ugyanezzel az e-mail címmel**, és a fiókod automatikusan szervezői fiókként jön létre.",
-            "Ezután töltsd ki a profilod (vállalkozásnév és város), hogy megjelenj a pároknak szóló szervezői ajánlóban.",
-          ],
-      cta: p.hasAccount ? "Tervező felület megnyitása" : "Fiók létrehozása",
+      paragraphs:
+        p.nextStep === "planner_dashboard"
+          ? [
+              "Köszönjük a jelentkezésed a Weddly tervezői programjába. A szervezői hozzáférésed a **meglévő fiókodon** aktív, tehát nem kell újra regisztrálnod.",
+              "Lépj be, és a felület végigvezet a profilod beállításán (vállalkozásnév és város), hogy megjelenj a pároknak szóló szervezői ajánlóban.",
+            ]
+          : p.nextStep === "sign_in"
+            ? [
+                "Köszönjük a jelentkezésed a Weddly tervezői programjába. Ezzel az e-mail címmel **már van fiókod**, tehát nem kell újra regisztrálnod.",
+                "Lépj be a meglévő fiókodba. A szervezői hozzáférést kézzel nyitjuk meg ezen a fiókon, és jelzünk, amint kész.",
+              ]
+            : [
+                "Köszönjük a jelentkezésed a Weddly tervezői programjába. A hozzáférésed készen áll.",
+                "Már csak egy lépés van hátra: regisztrálj **ugyanezzel az e-mail címmel**, és a fiókod automatikusan szervezői fiókként jön létre.",
+                "Ezután töltsd ki a profilod (vállalkozásnév és város), hogy megjelenj a pároknak szóló szervezői ajánlóban.",
+              ],
+      cta:
+        p.nextStep === "planner_dashboard"
+          ? "Belépés a tervező felületre"
+          : p.nextStep === "sign_in"
+            ? "Belépés a fiókba"
+            : "Fiók létrehozása",
     },
     en: {
       greeting: `Hi ${p.plannerName},`,
-      paragraphs: p.hasAccount
-        ? [
-            "Thanks for applying to the Weddly planner programme. Your planner account is active and your dashboard is ready.",
-            "Fill in your profile (business name and city) to appear in the planner directory couples browse, so inquiries can start coming in.",
-          ]
-        : [
-            "Thanks for applying to the Weddly planner programme. Your access is ready.",
-            "One step left: create an account with **this same email address** and it will automatically be set up as a planner account.",
-            "Then fill in your profile (business name and city) to appear in the planner directory couples browse.",
-          ],
-      cta: p.hasAccount ? "Open planner dashboard" : "Create your account",
+      paragraphs:
+        p.nextStep === "planner_dashboard"
+          ? [
+              "Thanks for applying to the Weddly planner programme. Your planner access is live on **the account you already have**, so there is nothing to register.",
+              "Sign in and the app walks you through your profile (business name and city) so you appear in the planner directory couples browse.",
+            ]
+          : p.nextStep === "sign_in"
+            ? [
+                "Thanks for applying to the Weddly planner programme. This email address **already has a Weddly account**, so there is nothing to register.",
+                "Sign in to the account you have. We'll open the planner side on it by hand and let you know once it's ready.",
+              ]
+            : [
+                "Thanks for applying to the Weddly planner programme. Your access is ready.",
+                "One step left: create an account with **this same email address** and it will automatically be set up as a planner account.",
+                "Then fill in your profile (business name and city) to appear in the planner directory couples browse.",
+              ],
+      cta:
+        p.nextStep === "planner_dashboard"
+          ? "Open planner dashboard"
+          : p.nextStep === "sign_in"
+            ? "Sign in"
+            : "Create your account",
     },
   }),
 

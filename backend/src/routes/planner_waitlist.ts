@@ -6,9 +6,11 @@ import { PRIVACY_VERSION } from "@shared/legal";
 import type { PlannerWaitlistOutcome } from "@shared/planner_waitlist";
 import { db } from "../db";
 import { sendKind } from "../domain/emails/send";
+import type { PlannerWaitlistNextStep } from "../domain/emails/templates";
 import { grantPlannerAccount } from "../domain/planner";
 import { initPlannerBilling } from "../domain/planner_billing";
-import { requireAdmin } from "../domain/users";
+import { canAutoConvertToPlanner } from "../domain/planner_conversion";
+import { getUserByEmail, getUserById, requireAdmin } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { log } from "../lib/logger";
 import { rateLimit } from "../lib/rate_limit";
@@ -191,23 +193,35 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
       now,
     ) as PlannerWaitlistRow;
 
-  // If the applicant is already signed in, grant the planner account right
-  // away so they can head straight to onboarding. A logged-out applicant gets
-  // promoted at register time (handleRegister joins the waitlist by email).
-  if (ctx.userId) {
-    grantPlannerAccount(ctx.userId);
-    initPlannerBilling(ctx.userId);
+  // Who is applying: the session when there is one, otherwise THE ACCOUNT THAT
+  // OWNS THE ADDRESS. Being signed in is not the same question as having an
+  // account, and answering the first one told a planner who registered months
+  // ago to "register with this same email" — a signup that can only 409 on
+  // their own address. A matched account gets the grant here, exactly like a
+  // signed-in one; only the mail's next step differs.
+  const account = ctx.userId ? getUserById(ctx.userId) : getUserByEmail(email);
+  const granted = account !== null && canAutoConvertToPlanner(account);
+  if (account && granted) {
+    grantPlannerAccount(account.id);
+    initPlannerBilling(account.id);
   }
+  // Deliberately grant-only, no `seedPlannerProfileFromWaitlist`: the plan and
+  // client cap stay at the default until the planner confirms one in
+  // onboarding, which prefills from this very row.
+  const nextStep: PlannerWaitlistNextStep = !account
+    ? "register"
+    : granted
+      ? "planner_dashboard"
+      : "sign_in";
 
-  // Confirm receipt and carry the applicant to their actual next step. For a
-  // logged-out applicant that step is REGISTERING with this same email (the
-  // grant happens at register time); without this mail the success screen is
-  // the only place that ever tells them, and it's gone once they navigate away.
+  // Confirm receipt and carry the applicant to their actual next step. Without
+  // this mail the success screen is the only place that ever tells them, and
+  // it's gone once they navigate away.
   void sendKind(
     "planner_waitlist_received",
-    { plannerName: full_name, hasAccount: Boolean(ctx.userId) },
-    ctx.userId
-      ? { user: { id: ctx.userId, email, full_name } }
+    { plannerName: full_name, nextStep },
+    account
+      ? { user: { id: account.id, email, full_name } }
       : { user: null, guest: { email, full_name } },
   );
 
