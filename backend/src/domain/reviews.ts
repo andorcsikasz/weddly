@@ -18,6 +18,7 @@ import {
   normaliseCustomReviewTag,
   SUPPLIER_REVIEW_TAGS,
 } from "@shared/suppliers";
+import { PLANNER_REVIEW_PREFIX } from "@shared/planner_reviews";
 import { db, now } from "../db";
 import { emitVendorEventForSupplier } from "./vendor_points";
 import { shortenName } from "./verified_visitors";
@@ -191,7 +192,12 @@ export function listReviewsForSupplier(
 }
 
 /** Admin moderation queue: flagged (low-rating open) reviews, newest first,
- *  across all suppliers. Best-effort supplier name via the listings join. */
+ *  across every review subject. The name is best-effort and resolved from BOTH
+ *  namespaces — a `listings` row for a supplier, a planner account for a
+ *  `planner:{id}` subject. Planner reviews reached this queue the moment they
+ *  existed (the filter is `flagged = 1` and nothing else), so without the
+ *  second join a moderator would be asked to judge a 1-star review of a
+ *  business the row could not name. */
 export function listFlaggedReviews(opts: {
   limit: number;
   cursor: number | null;
@@ -209,12 +215,15 @@ export function listFlaggedReviews(opts: {
            u.full_name AS author_full_name,
            c.display_name AS couple_display_name,
            vv.full_name AS visitor_name,
-           l.name AS supplier_name
+           COALESCE(l.name, NULLIF(TRIM(COALESCE(pu.business_name, '')), ''), pu.full_name)
+             AS supplier_name
       FROM supplier_reviews r
       LEFT JOIN users u ON u.id = r.author_user_id
       LEFT JOIN couples c ON c.id = r.couple_id
       LEFT JOIN verified_visitors vv ON vv.id = r.author_visitor_id
       LEFT JOIN listings l ON l.id = r.supplier_id
+      LEFT JOIN users pu
+        ON ('${PLANNER_REVIEW_PREFIX}' || pu.id) = r.supplier_id AND pu.user_type = 'planner'
      WHERE r.flagged = 1
        AND r.deleted_at IS NULL${cursorClause}
      ORDER BY r.id DESC

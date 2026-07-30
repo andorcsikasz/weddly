@@ -1967,27 +1967,35 @@ export const supplierApi = {
     ),
 };
 
+/** Reviews are keyed by SUBJECT, not by supplier: `/api/suppliers/:id/reviews`
+ *  and `/api/planners/:id/reviews` are the same handlers behind two id
+ *  namespaces (backend routes/supplier_reviews.ts). One client, two bases, so
+ *  the composer component can take the api as data. */
+function reviewClientFor(base: (subjectId: string) => string) {
+  return {
+    list: (subjectId: string, opts?: { cursor?: string | null; limit?: number }) => {
+      const qs = new URLSearchParams();
+      if (opts?.cursor) qs.set("cursor", opts.cursor);
+      if (opts?.limit) qs.set("limit", String(opts.limit));
+      const tail = qs.toString() ? `?${qs.toString()}` : "";
+      return apiFetch<ReviewListResponse>("GET", `${base(subjectId)}${tail}`);
+    },
+    create: (subjectId: string, body: CreateReviewBody) =>
+      apiFetch<SupplierReview>("POST", base(subjectId), body),
+  };
+}
+
 export const reviewApi = {
-  list: (supplierId: string, opts?: { cursor?: string | null; limit?: number }) => {
-    const qs = new URLSearchParams();
-    if (opts?.cursor) qs.set("cursor", opts.cursor);
-    if (opts?.limit) qs.set("limit", String(opts.limit));
-    const tail = qs.toString() ? `?${qs.toString()}` : "";
-    return apiFetch<ReviewListResponse>(
-      "GET",
-      `/api/suppliers/${encodeURIComponent(supplierId)}/reviews${tail}`,
-    );
-  },
-  create: (supplierId: string, body: CreateReviewBody) =>
-    apiFetch<SupplierReview>(
-      "POST",
-      `/api/suppliers/${encodeURIComponent(supplierId)}/reviews`,
-      body,
-    ),
+  ...reviewClientFor((id) => `/api/suppliers/${encodeURIComponent(id)}/reviews`),
+  // Edit + delete key on the review row, so one pair serves every subject.
   update: (reviewId: number, body: Partial<CreateReviewBody>) =>
     apiFetch<SupplierReview>("PATCH", `/api/reviews/${reviewId}`, body),
   remove: (reviewId: number) => apiFetch<{ ok: true }>("DELETE", `/api/reviews/${reviewId}`),
 };
+
+export const plannerReviewApi = reviewClientFor(
+  (id) => `/api/planners/${encodeURIComponent(id)}/reviews`,
+);
 
 // Verified-visitor device token — an email-verified party with NO Weddly login.
 // Stored under a DISTINCT key from the session token (weddly.token) so the app

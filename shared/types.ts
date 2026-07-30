@@ -5,6 +5,7 @@ import type { CoupleBilling } from "./billing";
 import type { CoupleDesign } from "./design";
 import type { ListingPackage } from "./listing_packages";
 import type { TimelineEmailEscalation } from "./notifications";
+import type { ReviewSummary } from "./suppliers";
 
 export type UnixMs = number;
 /** Integer Forint. Treat as a whole-number currency unit. */
@@ -196,6 +197,8 @@ export interface PlannerProfile {
   portfolio: PlannerPortfolioItem[];
   /** Published price offers (árajánlat), max MAX_LISTING_PACKAGES. */
   packages: ListingPackage[];
+  /** What the couple-facing profile is still missing, for the portal nudge. */
+  checklist: PlannerProfileChecklist;
   waitlist_prefill: PlannerWaitlistPrefill | null;
 }
 
@@ -259,6 +262,12 @@ export interface PlannerDirectoryEntry {
    *  `DirectorySupplier.listing_complete` on the vendor side so one badge means
    *  one thing across the product. */
   profile_complete: boolean;
+  /** Published-review average, or null below the cold-start floor the vendor
+   *  cards use (a single 1-star is not a reputation). Same shape and the same
+   *  threshold as `DirectorySupplier.rating`, because it IS the same aggregate
+   *  table — a planner is just another review subject. */
+  rating: number | null;
+  reviews_count: number;
   /** Link state relative to the requesting couple: 'invited' = this couple
    *  already invited them (pending on the planner side); 'requested' = the
    *  planner asked this couple for access (pending on the couple side);
@@ -293,6 +302,32 @@ export interface PlannerDirectoryDetail extends PlannerDirectoryEntry {
   /** The requesting couple's wedding date, so the busy calendar can open on the
    *  relevant month. Null when the couple hasn't set one. */
   wedding_date: string | null;
+  /** Full rating breakdown (average, count, 1-5 histogram, top tags) for the
+   *  reviews section. The card only carries the average; this is what the
+   *  detail page renders under it. */
+  reviews_summary: ReviewSummary;
+}
+
+/** What the planner's own portal chases: the public profile a couple actually
+ *  meets. The first four are the directory-listing fields (`profile_complete`
+ *  / the verified badge is exactly `!businessName && !city && !bio && !styles`);
+ *  the last three are the SHOWCASE — a photo, a price package, a kept calendar.
+ *
+ *  The showcase is deliberately NOT folded into `profile_complete`: that flag
+ *  fills the admin's verified badge, and quietly raising its bar would hollow
+ *  out the check on every planner who earned it under the old rule. This is a
+ *  nudge, and it exists because a profile can pass every text field and still
+ *  render as a monogram tile with three empty sections under it. */
+export interface PlannerProfileChecklist {
+  business_name: boolean;
+  city: boolean;
+  bio: boolean;
+  styles: boolean;
+  has_photo: boolean;
+  has_package: boolean;
+  /** Either half of the availability block: a kept blocked-date calendar or the
+   *  free-text note. Both draw the same section for a couple. */
+  has_availability: boolean;
 }
 
 // ─── Admin dashboard (users + couples directory) ─────────────────────────────

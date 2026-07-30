@@ -10,7 +10,9 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import type { ReactNode } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import PlannerDetailPage from "@/pages/PlannerDetailPage";
+import { ConfirmDialogProvider } from "@/components/ui/ConfirmDialogProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
+import { AuthProvider } from "@/lib/auth";
 import { I18nProvider } from "@/lib/i18n";
 
 type Method = "GET" | "POST" | "DELETE";
@@ -19,6 +21,12 @@ type Call = { url: string; method: Method };
 const realFetch = globalThis.fetch;
 const calls: Call[] = [];
 let detail: PlannerDirectoryDetail;
+let reviewsPayload: {
+  items: unknown[];
+  can_review: boolean;
+  already_reviewed: boolean;
+  nextCursor: null;
+};
 
 function jsonResponse(status: number, payload: unknown): Response {
   return new Response(JSON.stringify(payload), {
@@ -32,6 +40,7 @@ function installFetch() {
     const url = typeof input === "string" ? input : input.toString();
     const method = ((init?.method ?? "GET").toUpperCase() as Method) ?? "GET";
     calls.push({ url, method });
+    if (url.includes("/reviews")) return jsonResponse(200, reviewsPayload);
     if (url.includes("/api/couples/planner-directory/")) return jsonResponse(200, detail);
     if (url.includes("/api/couples/planner-invite")) return jsonResponse(200, { ok: true });
     return jsonResponse(200, {});
@@ -51,11 +60,15 @@ function Providers({ children }: { children: ReactNode }) {
   return (
     <MemoryRouter initialEntries={["/app/planners/5"]}>
       <I18nProvider>
-        <ToastProvider>
-          <Routes>
-            <Route path="/app/planners/:plannerUserId" element={children} />
-          </Routes>
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <ConfirmDialogProvider>
+              <Routes>
+                <Route path="/app/planners/:plannerUserId" element={children} />
+              </Routes>
+            </ConfirmDialogProvider>
+          </ToastProvider>
+        </AuthProvider>
       </I18nProvider>
     </MemoryRouter>
   );
@@ -105,7 +118,16 @@ beforeEach(() => {
     unavailable_dates: [],
     next_available: null,
     wedding_date: null,
+    rating: null,
+    reviews_count: 0,
+    reviews_summary: {
+      avg_rating: null,
+      reviews_count: 0,
+      histogram: [0, 0, 0, 0, 0],
+      top_tags: [],
+    },
   };
+  reviewsPayload = { items: [], can_review: false, already_reviewed: false, nextCursor: null };
   installFetch();
 });
 
@@ -137,6 +159,55 @@ describe("PlannerDetailPage", () => {
     ).toBeGreaterThan(0);
     // The old raw-key bug must be gone.
     expect(screen.queryByText("common.close")).not.toBeInTheDocument();
+  });
+
+  it("shows the star rating and the reviews a planner has collected", async () => {
+    // Three published reviews is the cold-start floor, so this is the first
+    // state in which an average may be shown at all.
+    detail.rating = 4.3;
+    detail.reviews_count = 3;
+    detail.reviews_summary = {
+      avg_rating: 4.3,
+      reviews_count: 3,
+      histogram: [0, 0, 1, 0, 2],
+      top_tags: [],
+    };
+    reviewsPayload = {
+      items: [
+        {
+          id: 11,
+          supplier_id: "planner:5",
+          rating: 5,
+          body: "She kept the whole day calm.",
+          tags: [],
+          amount_paid: null,
+          amount_currency: null,
+          amount_note: null,
+          author: { display_name: "Mia & Lucas" },
+          editorial: false,
+          verified: true,
+          published: true,
+          own: false,
+          created_at: 1_760_000_000_000,
+        },
+      ],
+      can_review: false,
+      already_reviewed: false,
+      nextCursor: null,
+    };
+
+    render(
+      <Providers>
+        <PlannerDetailPage />
+      </Providers>,
+    );
+    await flush();
+
+    // It asked the planner-scoped review endpoint, not a supplier one.
+    expect(calls.some((c) => c.url.includes("/api/planners/5/reviews"))).toBe(true);
+    // The header average, and the review itself.
+    expect(screen.getAllByText("4.3").length).toBeGreaterThan(0);
+    expect(screen.getByText("She kept the whole day calm.")).toBeInTheDocument();
   });
 
   it("the Felkérés CTA posts an invite and flips to the invited state", async () => {

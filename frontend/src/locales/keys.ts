@@ -9605,6 +9605,16 @@ export interface LocaleMessages {
     tabs_aria: string;
     tab_account: string;
     tab_offerings: string;
+    /** Public-profile nudge on the planner dashboard: the showcase sections a
+     *  couple meets (photos / packages / availability) that this planner has
+     *  not filled in yet. Deliberately separate from the getting-started
+     *  checklist, which is dismissible and about the account. */
+    nudge_title: string;
+    nudge_body: string;
+    nudge_cta: string;
+    nudge_photo: string;
+    nudge_package: string;
+    nudge_availability: string;
     tab_subscription: string;
     tab_data: string;
     subscription_heading: string;

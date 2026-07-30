@@ -8649,6 +8649,13 @@ const en: LocaleMessages = {
     tabs_aria: "Profile sections",
     tab_account: "Account",
     tab_offerings: "Offerings",
+    nudge_title: "Your public profile",
+    nudge_body:
+      "These sections only appear to couples once they have something in them. While they are empty, your profile is a name and a monogram.",
+    nudge_cta: "Fill it in",
+    nudge_photo: "Upload at least one photo of your work",
+    nudge_package: "Publish at least one price package",
+    nudge_availability: "Mark the dates you are free",
     tab_subscription: "Subscription",
     tab_data: "Data",
     subscription_heading: "Subscription",

@@ -8718,6 +8718,13 @@ const hu: LocaleMessages = {
     tabs_aria: "Profil szekciók",
     tab_account: "Fiók",
     tab_offerings: "Ajánlatok",
+    nudge_title: "A nyilvános profilod",
+    nudge_body:
+      "Ezek a részek csak akkor jelennek meg a pároknak, ha van bennük tartalom. Amíg üresek, a profilod egy név és egy monogram.",
+    nudge_cta: "Kitöltöm",
+    nudge_photo: "Tölts fel legalább egy fotót a munkáidról",
+    nudge_package: "Adj meg legalább egy árajánlatot",
+    nudge_availability: "Jelöld be, mikor vagy szabad",
     tab_subscription: "Előfizetés",
     tab_data: "Adatok",
     subscription_heading: "Előfizetés",

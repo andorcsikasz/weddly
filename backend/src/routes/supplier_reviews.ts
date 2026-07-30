@@ -15,6 +15,7 @@ import {
   REVIEW_AMOUNT_NOTE_MAX_CHARS,
   REVIEW_BODY_MAX_CHARS,
 } from "@shared/suppliers";
+import { plannerReviewSubjectId } from "@shared/planner_reviews";
 import { canonicalListingId } from "@shared/vendor_slug";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
@@ -30,8 +31,26 @@ import {
   softDeleteReview,
   updateReview,
 } from "../domain/reviews";
+import { plannerAccountExists, plannerHasClientLink } from "../domain/planner_reviews";
 import { getUserByEmail, getUserById, viewerIsAdmin } from "../domain/users";
 import { requireVerifiedVisitor } from "../domain/verified_visitors";
+
+/** What a review is ABOUT. `supplier_reviews.supplier_id` is bare TEXT with no
+ *  FK, which is exactly what lets a second kind of subject share this whole
+ *  stack: the aggregate, the tags, the histogram, the admin flagged queue,
+ *  edit and delete all key on that string and never ask what it points at.
+ *
+ *  So a subject is just its id plus the one rule that genuinely differs
+ *  between kinds — what counts as having worked together. Everything below
+ *  this line is written once and serves both. */
+interface ReviewSubject {
+  id: string;
+  /** Engagement proof → the "Verified" badge, and with it the path where a low
+   *  rating is NOT auto-flagged. */
+  hasProof: (coupleId: number) => boolean;
+}
+
+type SubjectResolver = (ctx: Ctx) => ReviewSubject;
 
 /** Engagement proof: the couple actually worked with (or committed to) this
  *  supplier — it's in their cost plan or is their category pick. This is the
@@ -160,12 +179,32 @@ function pathSupplierId(ctx: Ctx): string {
   return canonicalListingId(raw) ?? raw;
 }
 
-async function handleList(ctx: Ctx): Promise<Response> {
+const supplierSubject: SubjectResolver = (ctx) => {
+  const id = pathSupplierId(ctx);
+  return { id, hasProof: (coupleId) => hasEngagementProof(coupleId, id) };
+};
+
+/** A planner subject. Unlike a supplier id this IS existence-checked: a planner
+ *  id is a `users` row rather than a slug that may live in code, so an unknown
+ *  one would otherwise seed an aggregate for a profile nobody can open. */
+const plannerSubject: SubjectResolver = (ctx) => {
+  const plannerUserId = Number.parseInt(ctx.params.planner_user_id ?? "", 10);
+  if (!Number.isInteger(plannerUserId) || plannerUserId < 1) {
+    throw new HttpError(400, "planner_user_id required");
+  }
+  if (!plannerAccountExists(plannerUserId)) throw new HttpError(404, "Planner not found");
+  return {
+    id: plannerReviewSubjectId(plannerUserId),
+    hasProof: (coupleId) => plannerHasClientLink(plannerUserId, coupleId),
+  };
+};
+
+async function handleList(ctx: Ctx, subject: ReviewSubject): Promise<Response> {
   // Reads are open to any authed viewer now that the detail page serves
   // couples. Admins see every review (including unpublished drafts) for
   // moderation; couples see only published rows.
   const { userId, isAdmin } = viewerIsAdmin(ctx);
-  const supplierId = pathSupplierId(ctx);
+  const supplierId = subject.id;
 
   const cursorRaw = ctx.url.searchParams.get("cursor");
   const cursor = cursorRaw ? Number.parseInt(cursorRaw, 10) : null;
@@ -199,14 +238,14 @@ async function handleList(ctx: Ctx): Promise<Response> {
   });
 }
 
-async function handleCreate(ctx: Ctx): Promise<Response> {
+async function handleCreate(ctx: Ctx, subject: ReviewSubject): Promise<Response> {
   const { userId, isAdmin } = viewerIsAdmin(ctx);
   rateLimit(`user:${userId}`, "supplier_reviews.create", {
     capacity: 20,
     refillRate: 1,
   });
 
-  const supplierId = pathSupplierId(ctx);
+  const supplierId = subject.id;
 
   const body = await readJson<Partial<CreateReviewBody>>(ctx.req);
   const rating = parseRating(body.rating);
@@ -262,7 +301,7 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
     if (couple) {
       coupleId = couple.id;
       authorKind = "couple";
-      verified = hasEngagementProof(couple.id, supplierId);
+      verified = subject.hasProof(couple.id);
       flagged = !verified && rating <= 2;
     } else {
       coupleId = null;
@@ -327,14 +366,14 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
  *  and replays the device token on X-Visitor-Token. Review goes live
  *  immediately; a 1-2 star rating is flagged for admin moderation. Deduped to
  *  one review per visitor per supplier by idx_supplier_reviews_visitor_unique. */
-async function handleVisitorCreate(ctx: Ctx): Promise<Response> {
+async function handleVisitorCreate(ctx: Ctx, subject: ReviewSubject): Promise<Response> {
   const visitor = requireVerifiedVisitor(ctx);
   // Anonymous principal — rate-limit both the IP and the attested identity
   // (the stronger key; shared NAT weakens IP-only limits).
   rateLimit(ctx.clientIp, "visitor_review.create.ip", { capacity: 5, refillRate: 1 / 60 });
   rateLimit(`visitor:${visitor.id}`, "visitor_review.create", { capacity: 5, refillRate: 1 / 300 });
 
-  const supplierId = pathSupplierId(ctx);
+  const supplierId = subject.id;
 
   const body = await readJson<Partial<CreateReviewBody>>(ctx.req);
   const rating = parseRating(body.rating);
@@ -453,12 +492,48 @@ async function handleDelete(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
+/** Bind a subject-shaped handler to one resolver, so the route table reads as
+ *  "this path, that subject" and the handlers stay written once. */
+const withSubject =
+  (resolve: SubjectResolver, handler: (ctx: Ctx, subject: ReviewSubject) => Promise<Response>) =>
+  (ctx: Ctx) =>
+    handler(ctx, resolve(ctx));
+
 export function registerSupplierReviewRoutes(router: Router) {
-  router.get("/api/suppliers/:supplier_id/reviews", handleList, true);
-  router.post("/api/suppliers/:supplier_id/reviews", handleCreate, true);
+  router.get("/api/suppliers/:supplier_id/reviews", withSubject(supplierSubject, handleList), true);
+  router.post(
+    "/api/suppliers/:supplier_id/reviews",
+    withSubject(supplierSubject, handleCreate),
+    true,
+  );
   // Public: verified visitors compose here (auth is the X-Visitor-Token device
   // token, resolved inside via requireVerifiedVisitor — NOT a session).
-  router.post("/api/public/suppliers/:supplier_id/reviews", handleVisitorCreate);
+  router.post(
+    "/api/public/suppliers/:supplier_id/reviews",
+    withSubject(supplierSubject, handleVisitorCreate),
+  );
+
+  // Planner accounts, same three surfaces. A planner is a review subject like
+  // any other; only `plannerSubject` differs (see ReviewSubject above), which
+  // is why there is no second copy of the composer, the moderation rules or
+  // the aggregate here.
+  router.get(
+    "/api/planners/:planner_user_id/reviews",
+    withSubject(plannerSubject, handleList),
+    true,
+  );
+  router.post(
+    "/api/planners/:planner_user_id/reviews",
+    withSubject(plannerSubject, handleCreate),
+    true,
+  );
+  router.post(
+    "/api/public/planners/:planner_user_id/reviews",
+    withSubject(plannerSubject, handleVisitorCreate),
+  );
+
+  // Edit + delete key on the review row, so they never needed a subject and
+  // serve both kinds unchanged.
   router.patch("/api/reviews/:review_id", handleUpdate, true);
   router.delete("/api/reviews/:review_id", handleDelete, true);
 }

@@ -6,7 +6,8 @@ import { sniffUploadedImage } from "../lib/image_sniff";
 import { keyFromUploadUrl, storage } from "../lib/storage";
 import { getCoupleById, toCouple } from "../domain/couples";
 import { sendKind } from "../domain/emails/send";
-import { isPlannerProfileComplete } from "../domain/planner_profile";
+import { isPlannerProfileComplete, plannerProfileMissing } from "../domain/planner_profile";
+import { plannerReviewSummary } from "../domain/planner_reviews";
 import {
   addPlannerPackage,
   blockPlannerDate,
@@ -33,6 +34,7 @@ import {
   toPlannerInvitation,
 } from "../domain/planner_invitations";
 import { COUNTRIES } from "@shared/country_list";
+import { PLANNER_REVIEW_PREFIX } from "@shared/planner_reviews";
 import {
   MAX_LISTING_PACKAGES,
   PACKAGE_DESCRIPTION_MAX,
@@ -48,6 +50,7 @@ import type {
   PlannerPlan,
   PlannerPortfolioItem,
   PlannerProfile,
+  PlannerProfileChecklist,
   PlannerWaitlistPrefill,
 } from "@shared/types";
 
@@ -1031,6 +1034,38 @@ function toPlannerProfileBase(
     planner_availability: row.planner_availability,
     portfolio: listPortfolio(userId),
     packages: listPlannerPackages(userId),
+    checklist: plannerProfileChecklist(row, userId),
+  };
+}
+
+/** What a couple actually meets on the profile. The first four mirror the
+ *  directory-listing fields the verified badge already measures; the last three
+ *  are the showcase sections, which render only when they have content — so a
+ *  planner can fill in every text field and still publish a page that is a
+ *  monogram tile over three collapsed sections. Computed server-side because
+ *  the blocked-date calendar lives outside the profile payload. */
+function plannerProfileChecklist(row: PlannerUserRow, userId: number): PlannerProfileChecklist {
+  const missing = plannerProfileMissing({
+    business_name: row.business_name,
+    planner_city: row.planner_city,
+    planner_bio: row.planner_bio,
+    planner_styles: row.planner_styles,
+  });
+  const has = (sql: string) => ((db.prepare(sql).get(userId) as { n: number }).n ?? 0) > 0;
+  return {
+    business_name: !missing.businessName,
+    city: !missing.city,
+    bio: !missing.bio,
+    styles: !missing.styles,
+    has_photo: has(
+      "SELECT COUNT(*) AS n FROM planner_portfolio WHERE planner_user_id = ? AND image_url IS NOT NULL",
+    ),
+    has_package: has("SELECT COUNT(*) AS n FROM planner_packages WHERE planner_user_id = ?"),
+    // Either half of the availability block counts: a kept calendar OR the
+    // free-text note. Both render the same section to the couple.
+    has_availability:
+      Boolean(row.planner_availability?.trim()) ||
+      has("SELECT COUNT(*) AS n FROM planner_unavailable_dates WHERE planner_user_id = ?"),
   };
 }
 
@@ -1798,6 +1833,12 @@ async function handleListLinkedPlanners(ctx: Ctx): Promise<Response> {
  *  user id so the directory can't be scraped for addresses. Each row carries
  *  the link state relative to THIS couple so the rail can render the right
  *  action (request / pending / approve / linked). */
+/** SQL that reproduces `plannerReviewSubjectId(u.id)` inline, so the directory
+ *  can join the review aggregate in one pass. Built from the shared constant
+ *  rather than a literal, so the id format has exactly one definition. The
+ *  prefix is `[a-z:]` only, so there is nothing here to escape. */
+const PLANNER_SUBJECT_SQL = `('${PLANNER_REVIEW_PREFIX}' || u.id)`;
+
 async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
   const { coupleId } = requireCoupleAuth(ctx);
   const rows = db
@@ -1805,10 +1846,16 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
       `SELECT u.id, u.full_name, u.business_name, u.planner_bio, u.planner_city,
               u.planner_country, u.planner_website, u.planner_styles, u.planner_km_radius,
               u.planner_weddings_per_year, u.planner_avatar_url, u.planner_verified,
-              pc.status AS link_state, pc.initiated_by AS link_initiated_by
+              pc.status AS link_state, pc.initiated_by AS link_initiated_by,
+              sa.avg_rating AS avg_rating, sa.reviews_count AS reviews_count
          FROM users u
          LEFT JOIN planner_clients pc
            ON pc.planner_user_id = u.id AND pc.couple_id = ?
+         -- One join instead of a summary call per card. The aggregate already
+         -- stores NULL below the cold-start floor, so the card's "no rating
+         -- yet" case needs no threshold logic of its own.
+         LEFT JOIN supplier_aggregates sa
+           ON sa.supplier_id = ${PLANNER_SUBJECT_SQL}
         WHERE u.user_type = 'planner'
           AND u.status = 'active'
           AND u.verified_email = 1
@@ -1844,6 +1891,8 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
     planner_verified: number;
     link_state: string | null;
     link_initiated_by: string | null;
+    avg_rating: number | null;
+    reviews_count: number | null;
   }>;
 
   const planners: PlannerDirectoryEntry[] = rows.map((r) => ({
@@ -1866,6 +1915,8 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
       planner_bio: r.planner_bio,
       planner_styles: r.planner_styles,
     }),
+    rating: r.avg_rating,
+    reviews_count: r.reviews_count ?? 0,
     link_status:
       r.link_state === "active"
         ? "active"
@@ -1964,6 +2015,8 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
     .map((s) => s.trim())
     .filter(Boolean);
 
+  const summary = plannerReviewSummary(r.id);
+
   const detail: PlannerDirectoryDetail = {
     planner_user_id: r.id,
     business_name: r.business_name ?? "",
@@ -1994,6 +2047,9 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
     unavailable_dates: listPlannerBlockedDates(r.id),
     next_available: plannerNextAvailable(r.id),
     wedding_date: coupleRow?.wedding_date ?? null,
+    rating: summary.avg_rating,
+    reviews_count: summary.reviews_count,
+    reviews_summary: summary,
   };
   return json(detail);
 }

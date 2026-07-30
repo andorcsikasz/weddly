@@ -21,14 +21,19 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import type { SupplierReview } from "@shared/suppliers";
+import type { Couple } from "@shared/types";
 import { AvailabilityCalendar } from "../components/AvailabilityCalendar";
 import { hrefFor, plannerInitials, plannerStyleLabel } from "../components/PlannerDirectoryRail";
+import { ReviewsSection } from "../components/ReviewsSection";
+import { StarRow } from "../components/StarRow";
 import { useToast } from "../components/ui";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ApiError } from "../lib/api";
-import { couplePlannerApi } from "../lib/endpoints";
+import { useAuth } from "../lib/auth";
+import { coupleApi, couplePlannerApi, plannerReviewApi } from "../lib/endpoints";
 import { type Locale, useT } from "../lib/i18n";
 
 type LinkStatus = PlannerDirectoryEntry["link_status"];
@@ -50,12 +55,33 @@ export default function PlannerDetailPage() {
   const { t, locale } = useT();
   const toast = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [detail, setDetail] = useState<PlannerDirectoryDetail | null>(null);
   const [status, setStatus] = useState<LinkStatus>("none");
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [reviews, setReviews] = useState<SupplierReview[]>([]);
+  const [canReview, setCanReview] = useState(false);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
+  const [couple, setCouple] = useState<Couple | null>(null);
+
+  /** Detail + reviews together: posting a review changes both the list and the
+   *  average in the header, so they refetch as one. */
+  const refresh = useCallback(async () => {
+    const [d, rs] = await Promise.all([
+      couplePlannerApi.plannerDetail(id),
+      plannerReviewApi.list(String(id)).catch(() => null),
+    ]);
+    setDetail(d);
+    setStatus(d.link_status);
+    // Defaults rather than a truthiness check: reviews are a secondary block,
+    // and a malformed or empty payload must not blank the profile behind them.
+    setReviews(rs?.items ?? []);
+    setCanReview(rs?.can_review ?? false);
+    setAlreadyReviewed(rs?.already_reviewed ?? false);
+  }, [id]);
 
   useEffect(() => {
     if (!Number.isInteger(id) || id < 1) {
@@ -65,13 +91,7 @@ export default function PlannerDetailPage() {
     }
     let cancelled = false;
     setLoading(true);
-    couplePlannerApi
-      .plannerDetail(id)
-      .then((d) => {
-        if (cancelled) return;
-        setDetail(d);
-        setStatus(d.link_status);
-      })
+    refresh()
       .catch(() => {
         if (!cancelled) setFailed(true);
       })
@@ -81,7 +101,16 @@ export default function PlannerDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, refresh]);
+
+  // The reviewing couple's currency, so a shared "what it cost" amount is
+  // stored in the money they actually paid rather than the interface language.
+  useEffect(() => {
+    void coupleApi
+      .current()
+      .then((r) => setCouple(r.couple ?? null))
+      .catch(() => undefined);
+  }, []);
 
   async function act(fn: () => Promise<unknown>, next: LinkStatus) {
     setBusy(true);
@@ -137,6 +166,17 @@ export default function PlannerDetailPage() {
     .filter(Boolean)
     .join(" · ");
   const heroImage = detail.portfolio.find((p) => p.image_url)?.image_url ?? null;
+
+  // Same cold-start floor and the same decimal comma as the vendor header —
+  // it is the same aggregate row, so it should read identically.
+  const ratingAvg = detail.reviews_summary.avg_rating;
+  const ratingCount = detail.reviews_summary.reviews_count;
+  const ratingDisplay =
+    ratingAvg !== null && ratingCount >= 3
+      ? locale === "hu"
+        ? ratingAvg.toFixed(1).replace(".", ",")
+        : ratingAvg.toFixed(1)
+      : null;
 
   /** The "Felkérés" consent CTA — same states as the card. `block` stretches it
    *  to full width for the sidebar; the header keeps it inline. */
@@ -216,12 +256,39 @@ export default function PlannerDetailPage() {
               {t("suppliers.cat.wedding_planner")}
               {meta ? ` · ${meta}` : ""}
             </div>
-            <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50 sm:text-4xl">
+            <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
               <span>{detail.business_name || detail.full_name}</span>
               {detail.verified && (
                 <VerifiedBadge size={28} kind="planner" complete={detail.profile_complete} />
               )}
             </h1>
+
+            {/* Rating row, in the header where the vendor page keeps it. */}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {ratingDisplay !== null && ratingAvg !== null ? (
+                <span className="inline-flex items-center gap-2 text-sm">
+                  <StarRow
+                    value={Math.round(ratingAvg)}
+                    size={16}
+                    ariaLabel={t("suppliers.detail.starsAria", {
+                      rating: ratingDisplay,
+                      max: 5,
+                    })}
+                  />
+                  <span className="font-medium text-ink-900 dark:text-paper-50">
+                    {ratingDisplay}
+                  </span>
+                  <span className="text-ink-500 dark:text-umber-300">·</span>
+                  <span className="text-ink-600 dark:text-umber-200">
+                    {t("suppliers.detail.reviewsCount", { n: ratingCount })}
+                  </span>
+                </span>
+              ) : (
+                <span className="text-sm italic text-ink-500 dark:text-umber-300">
+                  {t("suppliers.detail.info.ratingEmpty")}
+                </span>
+              )}
+            </div>
 
             {/* Capacity + website chips */}
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-600 dark:text-umber-200">
@@ -252,7 +319,7 @@ export default function PlannerDetailPage() {
           {/* About / bio */}
           {detail.bio && (
             <section className="mb-10">
-              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                 {t("planner_directory.about_label")}
               </h2>
               <p className="whitespace-pre-line leading-relaxed text-ink-700 dark:text-paper-100">
@@ -264,7 +331,7 @@ export default function PlannerDetailPage() {
           {/* Styles */}
           {detail.styles?.length ? (
             <section className="mb-10">
-              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                 {t("planner_directory.styles_label")}
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -285,7 +352,7 @@ export default function PlannerDetailPage() {
               planner added at least one. */}
           {detail.packages.length > 0 && (
             <section className="mb-10">
-              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                 {t("planner_directory.pricing_label")}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -294,7 +361,7 @@ export default function PlannerDetailPage() {
                     key={p.id}
                     className="flex flex-col rounded-xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-700 dark:bg-umber-800"
                   >
-                    <h3 className="text-base font-semibold text-ink-900 dark:text-cream-50">
+                    <h3 className="text-base font-semibold text-ink-900 dark:text-paper-50">
                       {p.name}
                     </h3>
                     {p.price_text && (
@@ -329,7 +396,7 @@ export default function PlannerDetailPage() {
               note. Hidden entirely when neither is set. */}
           {(detail.unavailable_dates.length > 0 || detail.availability) && (
             <section className="mb-10">
-              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                 {t("planner_directory.availability_label")}
               </h2>
               {detail.unavailable_dates.length > 0 && (
@@ -358,7 +425,7 @@ export default function PlannerDetailPage() {
           {/* References — portfolio grid + external links */}
           {detail.portfolio.length > 0 || detail.reference_links?.length ? (
             <section className="mb-10">
-              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                 {t("planner_directory.references_label")}
               </h2>
               {detail.portfolio.length > 0 && (
@@ -403,6 +470,24 @@ export default function PlannerDetailPage() {
               ) : null}
             </section>
           ) : null}
+
+          {/* Reviews — the same component, composer and moderation rules as a
+              vendor's, over the same aggregate table. What differs is who gets
+              the "verified" badge: for a planner it is an accepted client link,
+              which is a stronger proof than either supplier signal because both
+              sides agreed to it inside the product. */}
+          <ReviewsSection
+            subject={{ kind: "planner", id }}
+            reviews={reviews}
+            avg={ratingAvg}
+            count={ratingCount}
+            canReview={canReview}
+            alreadyReviewed={alreadyReviewed}
+            category="wedding_planner"
+            currency={couple?.currency ?? null}
+            isAdmin={user?.is_admin ?? false}
+            onChange={refresh}
+          />
         </main>
 
         {/* ─── SIDEBAR ──────────────────────────────────────────────────── */}

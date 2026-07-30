@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import { couplePlannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { StarRow } from "./StarRow";
 import { useToast } from "./ui";
 import { VerifiedBadge } from "./VerifiedBadge";
 
@@ -135,6 +136,23 @@ export function PlannerCard({
             )}
           </div>
           {meta && <p className="truncate text-xs text-ink-500 dark:text-umber-300">{meta}</p>}
+          {/* Rating, on the same line as the town. `rating` is already null
+              below the cold-start floor server-side, so a planner with one
+              review shows no stars rather than a 5.0 nobody should trust. */}
+          {planner.rating !== null && (
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-600 dark:text-umber-200">
+              <StarRow
+                value={Math.round(planner.rating)}
+                size={11}
+                ariaLabel={t("suppliers.detail.starsAria", {
+                  rating: planner.rating.toFixed(1),
+                  max: 5,
+                })}
+              />
+              <span className="font-medium">{planner.rating.toFixed(1)}</span>
+              <span className="text-ink-400 dark:text-umber-400">({planner.reviews_count})</span>
+            </p>
+          )}
         </div>
       </div>
 

@@ -8795,6 +8795,13 @@ const es: LocaleMessages = {
     tabs_aria: "Secciones del perfil",
     tab_account: "Cuenta",
     tab_offerings: "Servicios",
+    nudge_title: "Tu perfil público",
+    nudge_body:
+      "Estas secciones solo aparecen para las parejas cuando tienen contenido. Mientras estén vacías, tu perfil es un nombre y un monograma.",
+    nudge_cta: "Completar",
+    nudge_photo: "Sube al menos una foto de tu trabajo",
+    nudge_package: "Publica al menos un paquete de precios",
+    nudge_availability: "Marca las fechas en las que estás libre",
     tab_subscription: "Suscripción",
     tab_data: "Datos",
     subscription_heading: "Suscripción",

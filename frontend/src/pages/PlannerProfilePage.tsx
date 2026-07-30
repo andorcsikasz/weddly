@@ -32,6 +32,15 @@ export default function PlannerProfilePage() {
     planner_availability: null,
     portfolio: [],
     packages: [],
+    checklist: {
+      business_name: false,
+      city: false,
+      bio: false,
+      styles: false,
+      has_photo: false,
+      has_package: false,
+      has_availability: false,
+    },
     waitlist_prefill: null,
   });
   const [loading, setLoading] = useState(true);

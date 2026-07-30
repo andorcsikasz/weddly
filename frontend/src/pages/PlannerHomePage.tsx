@@ -20,9 +20,11 @@ import { Link, Navigate, useSearchParams } from "react-router-dom";
 import type {
   PlannerClientView,
   PlannerInviteView,
+  PlannerProfileChecklist,
   PlannerStats,
   PlannerTaskRow,
 } from "@shared/types";
+import { PlannerProfileNudge } from "../components/PlannerProfileNudge";
 import { useConfirm } from "../components/ui";
 import { plannerApi } from "../lib/endpoints";
 import { useAuth } from "../lib/auth";
@@ -726,6 +728,7 @@ export default function PlannerHomePage() {
   const [tasks, setTasks] = useState<PlannerTaskRow[]>([]);
   const [invites, setInvites] = useState<PlannerInviteView[]>([]);
   const [stats, setStats] = useState<PlannerStats | null>(null);
+  const [checklist, setChecklist] = useState<PlannerProfileChecklist | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   // "?timing=overdue|week" deep-links the task list pre-filtered (the stats
@@ -803,13 +806,17 @@ export default function PlannerHomePage() {
       plannerApi.listInvites(),
       plannerApi.stats(),
       plannerApi.listInbox(),
+      plannerApi.getProfile(),
     ])
-      .then(([cr, tr, ir, sr, mr]) => {
+      .then(([cr, tr, ir, sr, mr, pr]) => {
         if (cr.status === "fulfilled") setClients(cr.value.clients);
         if (tr.status === "fulfilled") setTasks(tr.value.tasks);
         if (ir.status === "fulfilled") setInvites(ir.value.invites);
         if (sr.status === "fulfilled") setStats(sr.value.stats);
         if (mr.status === "fulfilled") setHasThreads(mr.value.threads.length > 0);
+        // The profile is only here for the public-profile nudge, so a failure
+        // must not raise the dashboard's retry banner.
+        if (pr.status === "fulfilled") setChecklist(pr.value.checklist);
         if ([cr, tr, ir, sr, mr].some((r) => r.status === "rejected")) setLoadError(true);
       })
       .finally(() => setLoading(false));
@@ -940,6 +947,11 @@ export default function PlannerHomePage() {
         {showChecklist && (
           <GettingStartedChecklist steps={checklistSteps} onDismiss={dismissChecklist} />
         )}
+
+        {/* Sits UNDER the getting-started list and outlives it: that one is
+            dismissible and about setting the account up, this one is about what
+            a couple sees and stays until the profile is actually finished. */}
+        {!loading && checklist && <PlannerProfileNudge checklist={checklist} />}
 
         {/* KPI strip */}
         {stats && (
