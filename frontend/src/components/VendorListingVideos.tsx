@@ -13,7 +13,7 @@
 // and an inline validated URL field.
 
 import { type DragEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, GripVertical, Pencil, Play, Plus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, GripVertical, Pencil, Play, Plus, X, Youtube } from "lucide-react";
 import type { VendorListingView } from "@shared/listings";
 import {
   type ListingVideo,
@@ -306,10 +306,16 @@ export function VendorListingVideos({
         </ul>
       )}
 
-      {/* Add row — hidden at the cap. Doubles as the empty-state CTA. */}
+      {/* Add row — hidden at the cap. Doubles as the empty-state CTA.
+          The field and the button shared one row, and on a phone that left the
+          field about 200px: "Illeszd be a YouTube-linket" was cut off mid-word,
+          which is the one instruction this control has to give. They stack
+          below sm, and the button drops to a square glyph — a YouTube mark over
+          a plus says "add a YouTube video" at a fifth of the width, with the
+          sentence kept on aria-label + title. */}
       {!atCap && editingId === null && (
         <div className="space-y-1.5">
-          <div className="flex flex-wrap items-start gap-2">
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-start">
             <div className="min-w-0 flex-1">
               <input
                 ref={addInputRef}
@@ -331,10 +337,15 @@ export function VendorListingVideos({
               type="button"
               onClick={() => void onAdd()}
               disabled={!draftValid}
-              className="btn inline-flex shrink-0 items-center gap-1.5 bg-blush-500 text-white hover:bg-blush-600 disabled:opacity-50"
+              aria-label={t("vendor_home.videos_add")}
+              title={t("vendor_home.videos_add")}
+              className="btn inline-flex shrink-0 items-center justify-center gap-1.5 self-end bg-blush-500 !px-3 text-white hover:bg-blush-600 disabled:opacity-50 sm:self-auto sm:!px-4"
             >
-              <Plus size={16} aria-hidden />
-              {t("vendor_home.videos_add")}
+              <span className="relative inline-flex items-center">
+                <Youtube size={18} aria-hidden />
+                <Plus size={11} strokeWidth={3} aria-hidden className="-ml-0.5 -mt-2" />
+              </span>
+              <span className="hidden sm:inline">{t("vendor_home.videos_add_short")}</span>
             </button>
           </div>
         </div>

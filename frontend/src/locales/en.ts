@@ -529,6 +529,8 @@ const en: LocaleMessages = {
     hero_replace: "Replace photo",
     hero_delete: "Remove photo",
     hero_uploading: "Uploading…",
+    upload_progress: "Uploading {pct}%",
+    upload_done: "Done",
     hero_upload_success: "Hero image updated.",
     hero_upload_failed: "Couldn't upload, JPG, PNG or WebP, max 4 MB.",
     hero_delete_success: "Hero image removed.",

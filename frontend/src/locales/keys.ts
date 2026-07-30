@@ -758,6 +758,10 @@ export interface LocaleMessages {
     hero_replace: string;
     hero_delete: string;
     hero_uploading: string;
+    /** Ring label while bytes are going up. Receives `{pct}` (0-100). */
+    upload_progress: string;
+    /** Accessible name of the success tick that replaces the ring. */
+    upload_done: string;
     hero_upload_success: string;
     hero_upload_failed: string;
     hero_delete_success: string;

@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { InfoHint } from "../../components/InfoHint";
+import { type UploadState, UploadStateOverlay } from "../../components/UploadStateOverlay";
 import { VendorShareDialog } from "../../components/VendorShareDialog";
 import {
   blockedHoursLabel,
@@ -68,12 +69,25 @@ import { useToast } from "../../components/ui/ToastProvider";
 import { vendorAvailabilityApi, vendorListingApi } from "../../lib/endpoints";
 import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
-import { Skeleton, SkeletonText } from "../../components/ui";
+import { Skeleton, SkeletonText, SmartImage } from "../../components/ui";
 import VendorListingPreview from "./VendorListingPreview";
 
 /** Visual price-band scale shown in the editor. Each level maps to the same
  *  "1".."5" string the backend stores; the labels/descriptions are i18n keys. */
 const PRICE_LEVELS = [1, 2, 3, 4, 5] as const;
+
+/** How long the success tick stays on an upload frame. Long enough to be seen
+ *  on the way past, short enough that it never becomes part of the layout. */
+const DONE_BADGE_MS = 1600;
+
+/** A picked photo waiting for (or failing) its turn in the gallery queue. */
+type GalleryQueueItem = {
+  id: string;
+  file: File;
+  status: "waiting" | "uploading" | "failed";
+  /** 0..1 while `status === "uploading"`. */
+  pct: number;
+};
 
 /** Form state mirrors the backend's editable fields with every value coerced
  *  to string for the controlled inputs — empty string maps back to `null`
@@ -248,12 +262,38 @@ export default function VendorListingPage() {
   // on success (the server URL takes over) or failure (reverts to the saved
   // hero). Null the rest of the time.
   const [heroPreview, setHeroPreview] = useState<string | null>(null);
+  // Live upload state drawn ON the cover frame (ring → tick → alert+retry).
+  // Null means "nothing to report", which is every moment except the seconds
+  // around an upload.
+  const [heroState, setHeroState] = useState<UploadState | null>(null);
+  // The file behind a failed frame, so its retry glyph re-sends rather than
+  // re-opening the picker.
+  const heroRetryFile = useRef<File | null>(null);
+  // Owns the object-URL's lifetime. A retry mints a second blob for the same
+  // file, so revoking on replacement (and on unmount) is what keeps a retried
+  // upload from leaking one per attempt.
+  const heroBlobUrl = useRef<string | null>(null);
+  const setHeroBlob = useCallback((url: string | null) => {
+    if (heroBlobUrl.current) URL.revokeObjectURL(heroBlobUrl.current);
+    heroBlobUrl.current = url;
+    setHeroPreview(url);
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (heroBlobUrl.current) URL.revokeObjectURL(heroBlobUrl.current);
+    };
+  }, []);
   // Which description language the editor is showing. Starts on the language
   // the vendor runs the app in — a vendor on the English interface writing into
   // a Hungarian box would be the same mistake in the other direction — and
   // falls back to HU for any locale that has no blurb column of its own.
   const [blurbLang, setBlurbLang] = useState<"hu" | "en">(locale === "en" ? "en" : "hu");
   const [galleryBusy, setGalleryBusy] = useState(false);
+  // Picked-but-not-yet-stored photos, one placeholder tile each. Survives its
+  // own upload only when it fails, so a failed tile is what the retry glyph
+  // hangs off.
+  const [galleryQueue, setGalleryQueue] = useState<GalleryQueueItem[]>([]);
+  const gallerySeq = useRef(0);
   const [shareOpen, setShareOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const heroInputRef = useRef<HTMLInputElement | null>(null);
@@ -315,27 +355,45 @@ export default function VendorListingPage() {
   const uploadHeroFile = async (file: File) => {
     if (heroBusy) return;
     if (!file.type.startsWith("image/")) {
-      toast.error(t("vendor_home.hero_upload_failed"));
+      setHeroState({ kind: "error" });
       return;
     }
     // Show the picked file the instant it's chosen, before the upload finishes,
-    // so the preview reacts immediately. Revoked in `finally` either way.
-    const localUrl = URL.createObjectURL(file);
-    setHeroPreview(localUrl);
+    // so the preview reacts immediately. Revoked once the frame stops using it.
+    setHeroBlob(URL.createObjectURL(file));
     setHeroBusy(true);
+    setHeroState({ kind: "uploading", pct: 0 });
+    // Kept so the retry glyph on a failed frame re-sends THIS file rather than
+    // re-opening the picker and asking the vendor to find it again.
+    heroRetryFile.current = file;
     try {
-      const next = await vendorListingApi.uploadHero(file);
+      const next = await vendorListingApi.uploadHero(file, (f) =>
+        setHeroState({ kind: "uploading", pct: f }),
+      );
       setView(next);
-      toast.success(t("vendor_home.hero_upload_success"));
+      // The tick sits on the frame that changed, which is where the vendor is
+      // already looking; a toast in the opposite corner said the same thing
+      // 400px away. It clears itself.
+      setHeroState({ kind: "done" });
+      heroRetryFile.current = null;
+      window.setTimeout(() => setHeroState(null), DONE_BADGE_MS);
+      // The server URL takes over now, so stop referencing the blob.
+      setHeroBlob(null);
     } catch {
-      toast.error(t("vendor_home.hero_upload_failed"));
+      // The blob STAYS on failure: the frame keeps showing what the vendor
+      // picked, under the alert, so "retry" is visibly about that photo.
+      setHeroState({ kind: "error" });
     } finally {
       setHeroBusy(false);
-      // Success → the server URL on `view` takes over; failure → fall back to
-      // the previous saved hero. Either way stop referencing the blob and free it.
-      setHeroPreview(null);
-      URL.revokeObjectURL(localUrl);
     }
+  };
+
+  /** Retry glyph on a failed cover frame. */
+  const retryHero = () => {
+    const file = heroRetryFile.current;
+    if (!file) return;
+    setHeroState(null);
+    void uploadHeroFile(file);
   };
 
   const onHeroPick = (e: ChangeEvent<HTMLInputElement>) => {
@@ -356,27 +414,64 @@ export default function VendorListingPage() {
 
   // Gallery uploads run sequentially so a multi-select lands in pick order and
   // the server cap (409 gallery_full) stops the batch cleanly.
-  const onGalleryPick = async (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []).filter((f) => f.type.startsWith("image/"));
-    e.target.value = "";
+  //
+  // Every picked file gets a tile the moment it is picked: the one in flight
+  // shows its percentage, the ones behind it wait as skeletons, and a failure
+  // leaves its own tile behind with a retry glyph. Before this, a
+  // twelve-photo multi-select was one boolean and a single toast at the end,
+  // so "did it take my photos" had no answer for the minute it took.
+  const runGalleryQueue = async (files: File[]) => {
     if (files.length === 0 || galleryBusy) return;
+    const batch: GalleryQueueItem[] = files.map((file) => ({
+      id: `q${gallerySeq.current++}`,
+      file,
+      status: "waiting",
+      pct: 0,
+    }));
+    const patch = (id: string, next: Partial<GalleryQueueItem>) =>
+      setGalleryQueue((q) => q.map((x) => (x.id === id ? { ...x, ...next } : x)));
+    setGalleryQueue((q) => [...q, ...batch]);
     setGalleryBusy(true);
     try {
-      for (const file of files) {
-        const next = await vendorListingApi.uploadPhoto(file);
-        setView(next);
+      for (const item of batch) {
+        patch(item.id, { status: "uploading", pct: 0 });
+        try {
+          const next = await vendorListingApi.uploadPhoto(item.file, (pct) =>
+            patch(item.id, { pct }),
+          );
+          setView(next);
+          // Drop the placeholder as its real thumbnail lands, so the two are
+          // never both on screen.
+          setGalleryQueue((q) => q.filter((x) => x.id !== item.id));
+        } catch (err) {
+          const status = (err as { status?: number } | undefined)?.status;
+          // The cap is the one failure a frame can't explain: it is about the
+          // gallery, not about this photo, and it ends the batch.
+          if (status === 409) {
+            setGalleryQueue((q) => q.filter((x) => !batch.some((b) => b.id === x.id)));
+            toast.error(t("vendor_home.gallery_full", { max: String(MAX_LISTING_PHOTOS) }));
+            return;
+          }
+          patch(item.id, { status: "failed" });
+        }
       }
-      toast.success(t("vendor_home.gallery_upload_success"));
-    } catch (err) {
-      const status = (err as { status?: number } | undefined)?.status;
-      toast.error(
-        status === 409
-          ? t("vendor_home.gallery_full", { max: String(MAX_LISTING_PHOTOS) })
-          : t("vendor_home.gallery_upload_failed"),
-      );
     } finally {
       setGalleryBusy(false);
     }
+  };
+
+  const onGalleryPick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []).filter((f) => f.type.startsWith("image/"));
+    e.target.value = "";
+    await runGalleryQueue(files);
+  };
+
+  /** Retry glyph on a failed gallery tile — re-sends that one file. */
+  const retryGalleryItem = (id: string) => {
+    const item = galleryQueue.find((q) => q.id === id);
+    if (!item || galleryBusy) return;
+    setGalleryQueue((q) => q.filter((x) => x.id !== id));
+    void runGalleryQueue([item.file]);
   };
 
   const onGalleryDelete = async (photoId: number) => {
@@ -838,23 +933,37 @@ export default function VendorListingPage() {
               >
                 {effectiveHeroUrl ? (
                   <>
-                    <img
-                      src={effectiveHeroUrl}
-                      alt={t("vendor_home.hero_current_alt")}
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                    <span className="relative z-10 rounded-lg bg-ink-900/55 px-3 py-1.5 text-xs font-medium text-paper-50">
-                      {heroBusy
-                        ? t("vendor_home.hero_uploading")
-                        : t("vendor_home.hero_dropzone_replace")}
+                    {/* SmartImage, not a bare <img>: the saved cover comes back
+                        from R2 on every load and a tinted empty box is
+                        indistinguishable from "you have no cover" for the
+                        second or two that takes. The shimmer says which one it
+                        is. A just-picked blob settles synchronously and never
+                        flashes it. */}
+                    {/* The absolute positioning lives on a wrapper span rather
+                        than on SmartImage's own: its wrapper is `relative`, and
+                        Tailwind emits `.relative` after `.absolute`, so passing
+                        `absolute` down there silently loses and the frame
+                        collapses to the image's intrinsic size. */}
+                    <span className="absolute inset-0">
+                      <SmartImage
+                        src={effectiveHeroUrl}
+                        alt={t("vendor_home.hero_current_alt")}
+                        wrapperClassName="h-full w-full"
+                        className="h-full w-full object-cover"
+                      />
                     </span>
+                    {/* The prompt to replace steps aside while the frame is
+                        reporting: two labels on one photo is one too many. */}
+                    {heroState === null && (
+                      <span className="relative z-10 rounded-lg bg-ink-900/55 px-3 py-1.5 text-xs font-medium text-paper-50">
+                        {t("vendor_home.hero_dropzone_replace")}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <div className="px-4 py-4">
                     <p className="text-sm font-medium text-ink-700 dark:text-umber-100">
-                      {heroBusy
-                        ? t("vendor_home.hero_uploading")
-                        : t("vendor_home.hero_dropzone_cta")}
+                      {t("vendor_home.hero_dropzone_cta")}
                     </p>
                     <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
                       {t("vendor_home.hero_dropzone_hint")}
@@ -863,6 +972,16 @@ export default function VendorListingPage() {
                       {t("vendor_home.hero_size_hint")}
                     </p>
                   </div>
+                )}
+                {heroState && (
+                  <UploadStateOverlay
+                    state={heroState}
+                    onRetry={heroState.kind === "error" ? retryHero : undefined}
+                    retryLabel={t("network.retry")}
+                    progressLabel={(pct) => t("vendor_home.upload_progress", { pct: String(pct) })}
+                    doneLabel={t("vendor_home.upload_done")}
+                    errorLabel={t("vendor_home.hero_upload_failed")}
+                  />
                 )}
               </div>
               {/* The dropzone itself is the upload control; the zone is cut to
@@ -922,7 +1041,42 @@ export default function VendorListingPage() {
                     }}
                   />
                 ))}
-                {(view.photos?.length ?? 0) < MAX_LISTING_PHOTOS && (
+                {/* One tile per picked file, from the moment it is picked. The
+                    one in flight carries its percentage, the rest wait as
+                    skeletons, and a failure keeps its tile with a retry glyph
+                    instead of vanishing into a toast. */}
+                {galleryQueue.map((item) => (
+                  <div
+                    key={item.id}
+                    className="relative aspect-[3/2] overflow-hidden rounded-lg bg-paper-200 dark:bg-umber-800"
+                  >
+                    {item.status === "waiting" ? (
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-0 skeleton motion-safe:animate-shimmer"
+                      />
+                    ) : (
+                      <UploadStateOverlay
+                        compact
+                        state={
+                          item.status === "failed"
+                            ? { kind: "error" }
+                            : { kind: "uploading", pct: item.pct }
+                        }
+                        onRetry={
+                          item.status === "failed" ? () => retryGalleryItem(item.id) : undefined
+                        }
+                        retryLabel={t("network.retry")}
+                        progressLabel={(pct) =>
+                          t("vendor_home.upload_progress", { pct: String(pct) })
+                        }
+                        doneLabel={t("vendor_home.upload_done")}
+                        errorLabel={t("vendor_home.gallery_upload_failed")}
+                      />
+                    )}
+                  </div>
+                ))}
+                {(view.photos?.length ?? 0) + galleryQueue.length < MAX_LISTING_PHOTOS && (
                   <button
                     type="button"
                     onClick={() => galleryInputRef.current?.click()}
@@ -930,9 +1084,7 @@ export default function VendorListingPage() {
                     className="flex aspect-[3/2] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-paper-300 text-ink-500 transition hover:border-paper-400 hover:text-blush-600 dark:border-umber-700 dark:text-umber-300 dark:hover:border-paper-400"
                   >
                     <Plus size={18} aria-hidden="true" />
-                    <span className="text-xs font-medium">
-                      {galleryBusy ? t("vendor_home.hero_uploading") : t("vendor_home.gallery_add")}
-                    </span>
+                    <span className="text-xs font-medium">{t("vendor_home.gallery_add")}</span>
                   </button>
                 )}
               </div>
@@ -1589,14 +1741,20 @@ function GalleryTile({
         if (n !== before) onCommit(n);
       }}
     >
-      <img
-        src={photo.url}
-        alt=""
-        loading="lazy"
-        draggable={false}
-        className="pointer-events-none h-full w-full object-cover"
-        style={{ objectPosition: `50% ${pos}%` }}
-      />
+      {/* Shimmers until the pixels actually arrive: the tile is drag-to-reframe,
+          so a vendor can be pushing a photo around before it has decoded, and
+          a tinted empty box gives no clue whether it is loading or broken. */}
+      <span className="pointer-events-none absolute inset-0">
+        <SmartImage
+          src={photo.url}
+          alt=""
+          loading="lazy"
+          draggable={false}
+          wrapperClassName="h-full w-full"
+          className="h-full w-full object-cover"
+          style={{ objectPosition: `50% ${pos}%` }}
+        />
+      </span>
       {/* Reframe hint — hover/focus only, so a settled gallery stays clean. */}
       <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/55 to-transparent px-1 py-1 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
         <MoveVertical size={11} aria-hidden="true" />

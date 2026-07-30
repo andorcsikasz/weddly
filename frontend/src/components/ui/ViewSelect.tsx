@@ -1,7 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-export type ViewSelectOption<T extends string> = { value: T; label: string };
+export type ViewSelectOption<T extends string> = {
+  value: T;
+  label: string;
+  /** Optional glyph. When every option carries one the trigger can drop its
+   *  label on a narrow screen (see `compact`) and still say what you are
+   *  looking at, which a bare chevron cannot. */
+  icon?: ReactNode;
+};
 
 /** Which fill the selected row in the menu wears. Mirrors `SegmentedTone`:
  *  `ink` is the app-wide default (warm, matches the couple workspace), `steel`
@@ -33,6 +40,7 @@ export function ViewSelect<T extends string>({
   ariaLabel,
   tone = "ink",
   className,
+  compact = false,
 }: {
   value: T;
   options: ReadonlyArray<ViewSelectOption<T>>;
@@ -40,6 +48,10 @@ export function ViewSelect<T extends string>({
   ariaLabel: string;
   tone?: ViewSelectTone;
   className?: string;
+  /** Below sm, show the current option's icon alone. Only meaningful when the
+   *  options carry icons; the label is still announced via `title` and the
+   *  trigger's aria-label, and the menu always spells every option out. */
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -74,10 +86,16 @@ export function ViewSelect<T extends string>({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={ariaLabel}
-        className="inline-flex items-center gap-1.5 rounded-full border border-paper-300 px-3.5 py-1.5 text-sm text-ink-700 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+        aria-label={current ? `${ariaLabel}: ${current.label}` : ariaLabel}
+        title={current?.label}
+        className={`inline-flex items-center gap-1.5 rounded-full border border-paper-300 py-1.5 text-sm text-ink-700 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100 ${
+          compact ? "px-2.5 sm:px-3.5" : "px-3.5"
+        }`}
       >
-        {current?.label ?? ""}
+        {current?.icon}
+        {current ? (
+          <span className={compact ? "hidden sm:inline" : undefined}>{current.label}</span>
+        ) : null}
         <ChevronDown size={15} aria-hidden="true" />
       </button>
       {open && (
@@ -95,13 +113,14 @@ export function ViewSelect<T extends string>({
                 onChange(opt.value);
                 setOpen(false);
               }}
-              className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                 opt.value === value
                   ? TONE_ACTIVE[tone]
                   : "text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700"
               }`}
             >
-              {opt.label}
+              {opt.icon}
+              <span>{opt.label}</span>
             </button>
           ))}
         </div>

@@ -554,6 +554,8 @@ const es: LocaleMessages = {
     hero_replace: "Reemplazar foto",
     hero_delete: "Quitar foto",
     hero_uploading: "Subiendo…",
+    upload_progress: "Subiendo {pct}%",
+    upload_done: "Listo",
     hero_upload_success: "Imagen principal actualizada.",
     hero_upload_failed: "No se pudo subir; JPG, PNG o WebP, máx. 4 MB.",
     hero_delete_success: "Imagen principal eliminada.",

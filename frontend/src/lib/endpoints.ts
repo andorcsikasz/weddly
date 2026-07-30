@@ -277,6 +277,68 @@ import type {
 } from "@shared/outreach";
 import { ApiError, apiFetch, getToken } from "./api";
 
+/** Fraction of the request body sent so far, 0..1. Only meaningful while the
+ *  bytes are still going up; the server's own work after that is invisible from
+ *  here, which is why a caller should treat 1 as "sent", not "finished". */
+export type UploadProgress = (fraction: number) => void;
+
+/** Multipart upload over XHR, which is the only browser API that reports how
+ *  much of the body has gone out. `fetch` cannot: a 6 MB photo on hotel wifi
+ *  spends twenty seconds in a promise that says nothing, and a spinner that
+ *  cannot move is indistinguishable from one that is stuck.
+ *
+ *  Errors carry the same `ApiError` shape as `uploadMultipart` so a caller can
+ *  branch on `detail.code` / `status` (e.g. 409 gallery_full) either way. */
+function uploadMultipartWithProgress<T>(
+  method: "POST" | "PATCH",
+  path: string,
+  form: FormData,
+  onProgress?: UploadProgress,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, path);
+    const token = getToken();
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    if (onProgress) {
+      xhr.upload.onprogress = (e) => {
+        // `lengthComputable` is false for a chunked body; reporting 0 forever
+        // would be worse than the indeterminate spinner the caller falls back
+        // to, so leave the last value alone.
+        if (e.lengthComputable && e.total > 0) onProgress(e.loaded / e.total);
+      };
+    }
+    const fail = (status: number, message: string, parsed: unknown) =>
+      reject(
+        new ApiError(
+          status,
+          status >= 500 ? "server_error" : "client_error",
+          message,
+          parsed as { code?: string; message?: string } | null,
+        ),
+      );
+    xhr.onload = () => {
+      const text = xhr.responseText;
+      let parsed: { code?: string; message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(parsed as T);
+        return;
+      }
+      fail(xhr.status, parsed?.message ?? text ?? "Upload failed", parsed);
+    };
+    // A dropped connection has no status; 0 keeps it out of the 4xx/5xx
+    // branches a caller might switch on.
+    xhr.onerror = () => fail(0, "Upload failed", null);
+    xhr.onabort = () => fail(0, "Upload aborted", null);
+    xhr.send(form);
+  });
+}
+
 /** Multipart upload helper — JSON-shaped `apiFetch` can't send FormData, so we
  *  call fetch directly with the same Bearer auth (the browser sets the
  *  multipart Content-Type + boundary). Mirrors the per-endpoint upload blocks. */
@@ -2610,44 +2672,32 @@ export const vendorListingApi = {
    *  it and posts FormData directly. The route accepts JPEG/PNG/WebP up to
    *  4 MB; the server enforces the constraints + writes a cache-busted URL
    *  back into the returned view. */
-  uploadHero: async (file: File): Promise<VendorListingView> => {
+  uploadHero: (file: File, onProgress?: UploadProgress): Promise<VendorListingView> => {
     const form = new FormData();
     form.append("file", file);
-    const token = getToken();
-    const res = await fetch("/api/vendor/listing/me/hero", {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: form,
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      let parsed: { code?: string; message?: string } | null = null;
-      try {
-        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
-      } catch {
-        parsed = null;
-      }
-      // The route's content-validation rejections (400 / 413 / 415) map to
-      // `client_error`; any 5xx is `server_error`. Both share the same
-      // user-facing toast in VendorHomePage; only the code matters for any
-      // future branching.
-      throw new ApiError(
-        res.status,
-        res.status >= 500 ? "server_error" : "client_error",
-        parsed?.message ?? text ?? "Upload failed",
-        parsed,
-      );
-    }
-    return JSON.parse(text) as VendorListingView;
+    // XHR rather than fetch so the editor can draw a real percentage. The
+    // route's content-validation rejections (400 / 413 / 415) map to
+    // `client_error`; any 5xx is `server_error`.
+    return uploadMultipartWithProgress<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/hero",
+      form,
+      onProgress,
+    );
   },
   deleteHero: () => apiFetch<VendorListingView>("DELETE", "/api/vendor/listing/me/hero"),
   /** Portfolio gallery upload — same multipart pipeline + constraints as the
    *  hero (JPEG/PNG/WebP, 4 MB); 409 code 'gallery_full' at the cap. The
    *  returned view carries the refreshed `photos` array. */
-  uploadPhoto: (file: File): Promise<VendorListingView> => {
+  uploadPhoto: (file: File, onProgress?: UploadProgress): Promise<VendorListingView> => {
     const form = new FormData();
     form.append("file", file);
-    return uploadMultipart<VendorListingView>("POST", "/api/vendor/listing/me/photos", form);
+    return uploadMultipartWithProgress<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/photos",
+      form,
+      onProgress,
+    );
   },
   /** Vertical focal point for one gallery photo (object-position %, 0..100).
    *  Fires on drag release in the editor; the server clamps, so an over-drag

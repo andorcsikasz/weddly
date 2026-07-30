@@ -538,6 +538,8 @@ const hu: LocaleMessages = {
     hero_replace: "Fotó cseréje",
     hero_delete: "Fotó eltávolítása",
     hero_uploading: "Töltődik…",
+    upload_progress: "Feltöltés {pct}%",
+    upload_done: "Kész",
     hero_upload_success: "Borítókép frissítve.",
     hero_upload_failed: "Nem sikerült feltölteni, JPG, PNG vagy WebP, max 4 MB.",
     hero_delete_success: "Borítókép eltávolítva.",
