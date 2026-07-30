@@ -31,6 +31,7 @@ import { db, now } from "../../src/db";
 import { runCampaignSweep } from "../../src/domain/emails/worker";
 import { backfillListings } from "../../src/domain/listings";
 import {
+  eligibleCampaignEmails,
   getCampaignRow,
   isOptedOut,
   makeCampaignOptOutToken,
@@ -660,6 +661,27 @@ describe("vendor claim-invite campaign", () => {
       expect(asCouple.status).toBe(403);
       const anon = await req(method, path, method === "GET" ? undefined : {});
       expect(anon.status).toBe(401);
+    }
+  });
+});
+
+describe("vendor campaign — held-back addresses are never targeted", () => {
+  test("no target carries a flagged listing's address", async () => {
+    // The whole reason `contact_email_flag` exists. A group help desk or an
+    // address that may belong to someone else must not receive a
+    // "claim your business profile" invite, and this is the query that decides.
+    const flagged = db
+      .prepare(
+        `SELECT id, contact_email FROM listings
+          WHERE contact_email_flag IS NOT NULL AND contact_email IS NOT NULL`,
+      )
+      .all() as Array<{ id: string; contact_email: string }>;
+    expect(flagged.length).toBeGreaterThan(0);
+
+    const eligible = new Set(eligibleCampaignEmails().map((e) => e.toLowerCase()));
+    expect(eligible.size).toBeGreaterThan(0); // the query works at all
+    for (const row of flagged) {
+      expect(eligible.has(row.contact_email.trim().toLowerCase())).toBe(false);
     }
   });
 });

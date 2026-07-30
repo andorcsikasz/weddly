@@ -287,6 +287,11 @@ function eligibleTargets(opts: {
           AND l.status = 'active'
           AND l.contact_email IS NOT NULL
           AND TRIM(l.contact_email) != ''
+          -- Held back pending a human check: a group help desk, a museum's
+          -- staff address, an address that may not be this business's at all.
+          -- Bulk collection produces these, and a claim-your-profile invite is
+          -- the worst possible thing to send to one.
+          AND l.contact_email_flag IS NULL
           AND LOWER(TRIM(l.contact_email)) NOT IN (SELECT email FROM email_optouts)
           AND LOWER(TRIM(l.contact_email)) NOT IN (
                 SELECT email FROM vendor_claim_campaign_sends WHERE campaign_id = ?)

@@ -668,6 +668,9 @@ const RAW_DIRECTORY: (Omit<
     // The museum's general address, not an events desk: the castle publishes
     // no wedding-specific one, so a couple writing here will be forwarded.
     contact_email: "muzeologusok@kiralyikastely.hu",
+    // The museum's staff address: it reaches curators, not an events desk,
+    // so it must not receive a claim-your-business invite.
+    contact_email_flag: "generic",
     source: "curated",
     price_band: 4,
   },
@@ -868,6 +871,9 @@ const RAW_DIRECTORY: (Omit<
     // A named person (Kiss-Orosz Kata) rather than a role address, because
     // that is what the castle publishes as its booking contact.
     contact_email: "kiss.orosz.kata@atk.hun-ren.hu",
+    // A public research institute's address for a named employee. Fine for a
+    // couple's question, wrong for outreach, so it is held back from both.
+    contact_email_flag: "generic",
     contact_phone: "+36 30 200 7988",
     source: "curated",
     price_band: 3,
@@ -2698,6 +2704,9 @@ const RAW_DIRECTORY: (Omit<
     // A personal address that does not match the brand name; it is what the
     // site publishes, so it is recorded as-is rather than guessed at.
     contact_email: "kocsordeenes@gmail.com",
+    // A personal address whose name matches neither the brand nor its owner
+    // on the site; worth a look before anything sends to it.
+    contact_email_flag: "unverified",
     source: "curated",
     price_band: 5,
   },
@@ -3628,6 +3637,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Custom cake inquiry form.",
     website: "https://caketogobudapest.hu/kapcsolat/",
     ...noContact,
+    contact_email: "rendeles@caketogobudapest.hu",
     source: "curated",
     price_band: 3,
   },
@@ -3643,6 +3653,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Custom cakes and delivery.",
     website: "https://szivemcsucsketorta.hu/?lang=en",
     ...noContact,
+    contact_email: "rendeles@szivemcsucsketorta.hu",
     source: "curated",
     price_band: 3,
   },
@@ -3694,6 +3705,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Bespoke tent rental with fast quotes for events.",
     website: "https://satorszerviz.hu/",
     ...noContact,
+    contact_email: "satorszerviz@gmail.com",
     source: "curated",
     price_band: 4,
   },
@@ -3984,6 +3996,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "LED walls, projection, L-Acoustics and specialist AV since 2004.",
     website: "https://www.avadvice.hu/",
     ...noContact,
+    contact_email: "event@avadvice.hu",
     source: "curated",
     price_band: 4,
   },
@@ -4018,6 +4031,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Exclusive Budapest and Szeged showrooms, by appointment only.",
     website: "https://karikagyurugyarto.hu/",
     ...noContact,
+    contact_email: "info@karikagyurugyarto.hu",
     source: "curated",
     price_band: 5,
   },
@@ -4067,6 +4081,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "27+ paired ring models; many entries around 24,990 HUF/pair.",
     website: "https://jegygyurubolt.hu/",
     ...noContact,
+    contact_email: "info@jegygyurubolt.hu",
     source: "curated",
     price_band: 1,
   },
@@ -4082,6 +4097,10 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Specialist store for diamond and gemstone rings, hand-crafted gold pieces.",
     website: "https://www.gyemantgyuru.hu/",
     ...noContact,
+    // Domain does not match the brand (hbnekszer.hu for Gyémántgyűrű Kft.),
+    // so it needs checking against the site before anything mails it.
+    contact_email: "kiraly@hbnekszer.hu",
+    contact_email_flag: "unverified",
     source: "curated",
     price_band: 5,
   },
@@ -4097,6 +4116,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Custom-only rings with personal in-studio consultation.",
     website: "https://www.karikagyuruspecialista.hu/",
     ...noContact,
+    contact_email: "info@karikagyuruspecialista.hu",
     source: "curated",
     price_band: 4,
   },
@@ -4129,6 +4149,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Multi-store network with Gerstner wedding-ring design.",
     website: "https://www.schmuckekszer.hu/",
     ...noContact,
+    contact_email: "kapcsolat@schmuckekszer.hu",
     contact_phone: "+36 76 320 028",
     source: "curated",
     price_band: 3,
@@ -4182,6 +4203,10 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Online-bookable Budapest nail salon.",
     website: "https://luxnailbar.salonic.hu/contact",
     ...noContact,
+    // An accentless, initials-only local part that reads like a mistyped or
+    // second-hand address rather than a business mailbox.
+    contact_email: "szcs.nkltt@gmail.com",
+    contact_email_flag: "unverified",
     contact_phone: "+36 30 160 4050",
     source: "curated",
     price_band: 3,
@@ -4388,6 +4413,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Custom, non-template wedding sites; published 49,000 HUF package.",
     website: "https://eskuvoi-weboldal-keszites.hu/",
     ...noContact,
+    contact_email: "admin@eskuvoi-weboldal-keszites.hu",
     source: "curated",
     price_band: 2,
   },
@@ -4535,6 +4561,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "10+ years experience, 6000+ couples; online and in-showroom ordering.",
     website: "https://eskuvoi.meghivo.hu/",
     ...noContact,
+    contact_email: "info@webalbum.hu",
     source: "curated",
     price_band: 4,
   },
@@ -4550,6 +4577,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Cohesive graphic design from invites to seating cards.",
     website: "https://edmo-design.hu/",
     ...noContact,
+    contact_email: "designedmo@gmail.com",
     source: "curated",
     price_band: 3,
   },
@@ -4647,6 +4675,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Wax-sealed, embossed and premium-paper invites and accessories.",
     website: "https://www.vinczemill.hu/meghivok/",
     ...noContact,
+    contact_email: "info@vinczemill.hu",
     source: "curated",
     price_band: 4,
   },
@@ -8219,7 +8248,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en:
       "Renaissance lakeside hotel with formal gardens, grand salons and exceptional lake views for refined destination celebrations.",
     website: "https://www.villadeste.com/",
-    contact_email: null,
+    contact_email: "reservations@villadeste.it",
     contact_phone: "+39 031 3481",
     lat: null,
     lng: null,
@@ -8617,7 +8646,10 @@ const RAW_DIRECTORY: (Omit<
     blurb_en:
       "Hilltop castle estate with vineyards, restored farmhouses and sweeping views across the Tuscan countryside.",
     website: "https://www.belmond.com/hotels/europe/italy/tuscany/belmond-castello-di-casole/",
-    contact_email: null,
+    // Belmond's ONE global help desk, published by four of their hotels alike,
+    // so it reaches a group contact centre and never this property.
+    contact_email: "help@belmond.com",
+    contact_email_flag: "generic",
     contact_phone: "+39 0577 961501",
     lat: null,
     lng: null,
@@ -8697,7 +8729,10 @@ const RAW_DIRECTORY: (Omit<
     blurb_en:
       "Clifftop former palace with panoramic sea views, terraced gardens and one of Ravello’s most iconic infinity pools.",
     website: "https://www.belmond.com/hotels/europe/italy/amalfi-coast/belmond-hotel-caruso/",
-    contact_email: null,
+    // Belmond's ONE global help desk, published by four of their hotels alike,
+    // so it reaches a group contact centre and never this property.
+    contact_email: "help@belmond.com",
+    contact_email_flag: "generic",
     contact_phone: "+39 089 858801",
     lat: null,
     lng: null,
@@ -9064,7 +9099,10 @@ const RAW_DIRECTORY: (Omit<
     blurb_en:
       "Legendary Giudecca hotel with lagoon gardens, terraces and panoramic views toward St Mark’s Square.",
     website: "https://www.belmond.com/hotels/europe/italy/venice/belmond-hotel-cipriani/",
-    contact_email: null,
+    // Belmond's ONE global help desk, published by four of their hotels alike,
+    // so it reaches a group contact centre and never this property.
+    contact_email: "help@belmond.com",
+    contact_email_flag: "generic",
     contact_phone: "+39 041 240801",
     lat: null,
     lng: null,
@@ -9192,7 +9230,10 @@ const RAW_DIRECTORY: (Omit<
     blurb_en:
       "Historic Taormina hotel beside the Greek Theatre, with gardens and panoramic views of Etna and the coast.",
     website: "https://www.belmond.com/hotels/europe/italy/taormina/belmond-grand-hotel-timeo/",
-    contact_email: null,
+    // Belmond's ONE global help desk, published by four of their hotels alike,
+    // so it reaches a group contact centre and never this property.
+    contact_email: "help@belmond.com",
+    contact_email_flag: "generic",
     contact_phone: "+39 0942 6270200",
     lat: null,
     lng: null,
@@ -9410,7 +9451,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en:
       "A five-star mountain resort in the Valbona Valley with dramatic alpine scenery, contemporary comfort and secluded destination appeal.",
     website: "https://valbonaresort.al/en/",
-    contact_email: null,
+    contact_email: "info@valbonaresort.al",
     contact_phone: null,
     lat: null,
     lng: null,
@@ -11811,6 +11852,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Bridal boutique in Ajka.",
     website: "http://www.latulipe.hu/",
     ...noContact,
+    contact_email: "info@latulipe.hu",
     source: "curated",
     price_band: null,
   },
@@ -12443,6 +12485,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Wedding and event planner in Budapest.",
     website: "https://rekadanko.events/",
     ...noContact,
+    contact_email: "hello@rekadanko.events",
     source: "curated",
     price_band: null,
     gallery_urls: [

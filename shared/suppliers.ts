@@ -523,6 +523,23 @@ export interface DirectorySupplierBase {
   blurb_en: string;
   website: string;
   contact_email: string | null;
+  /** Why this listing's `contact_email` must NOT be used yet. Null on almost
+   *  every listing, and null is what "usable" means.
+   *
+   *  A flagged address is still STORED and still visible to an admin, because
+   *  losing it would mean researching the business again. What it stops is the
+   *  two ways an address gets used without a human looking at it first: the
+   *  claim-invite campaign skips the listing entirely, and every couple-facing
+   *  exit reports the listing as having no email, so nobody writes to it by
+   *  hand either.
+   *
+   *  This exists because bulk-collected addresses are not uniformly good. Four
+   *  Belmond hotels publish ONE global `help@belmond.com`; a state castle
+   *  publishes the desk of its museum staff; and a bulk pass will sooner or
+   *  later produce an address belonging to somebody else entirely. Mailing any
+   *  of those a "claim your business profile" invite is at best noise and at
+   *  worst a stranger's inbox. */
+  contact_email_flag?: ContactEmailFlag | null;
   contact_phone: string | null;
   /** Second published number, when a business runs one line for the venue/hotel
    *  desk and another for events. `contact_phone` stays the one to call about a
@@ -935,6 +952,10 @@ export interface SupplierDirectoryAdminRow {
   address: string | null;
   website: string;
   contact_email: string | null;
+  /** Set when the address is held back from use; see the field of the same name
+   *  on `DirectorySupplierBase`. The admin table is the ONE surface that shows
+   *  both the address and the reason, because it is the surface that fixes it. */
+  contact_email_flag: ContactEmailFlag | null;
   contact_phone: string | null;
   price_band: 1 | 2 | 3 | 4 | 5 | null;
   status: "active" | "pending" | "awaiting_review" | "hidden";
@@ -980,6 +1001,21 @@ export interface AdminDirectoryFilters {
   to?: number | null;
 }
 
+/** Why an address is held back from use. Two reasons, because they call for
+ *  two different actions from whoever reviews the queue:
+ *
+ *   • `generic`     the address is real but does not reach THIS listing's owner:
+ *                   a group help desk, a chain's head office, a museum's staff
+ *                   address. The fix is finding the property's own address, or
+ *                   accepting that it has none.
+ *   • `unverified`  the address may not belong to this business at all: a
+ *                   domain that does not match the brand, a local part that
+ *                   looks mistyped. The fix is checking it against the site.
+ */
+export const CONTACT_EMAIL_FLAGS = ["generic", "unverified"] as const;
+
+export type ContactEmailFlag = (typeof CONTACT_EMAIL_FLAGS)[number];
+
 /** The four holes worth filtering a catalogue of 1000 businesses by, each one
  *  the reason some flow cannot run:
  *
@@ -994,8 +1030,19 @@ export interface AdminDirectoryFilters {
  *   • `no_hero`    the card renders as an empty grey tile in the directory,
  *                  which is the single most visible quality problem a couple
  *                  meets.
+ *   • `flagged_email` it HAS an address, but one held back from use pending a
+ *                  human check (see `contact_email_flag`). A gap in reachability
+ *                  terms: nothing may write to it, so the business is as
+ *                  unreachable as one with no address, and this is the queue
+ *                  for fixing that.
  */
-export const DIRECTORY_GAPS = ["no_email", "no_phone", "no_website", "no_hero"] as const;
+export const DIRECTORY_GAPS = [
+  "no_email",
+  "no_phone",
+  "no_website",
+  "no_hero",
+  "flagged_email",
+] as const;
 
 export type DirectoryGap = (typeof DIRECTORY_GAPS)[number];
 
@@ -1416,6 +1463,31 @@ export interface SupplierDetail extends DirectorySupplier {
    *  publish these, so `[]` for the unclaimed majority. Rendered as a card
    *  grid with the optional PDF download. */
   packages: ListingPackage[];
+}
+
+/** One page of the PUBLIC directory (`GET /api/public/vendors`).
+ *
+ *  The visitor-facing browser shows the same catalogue a signed-in couple sees,
+ *  because a directory that hides half of itself is not a directory: a vendor's
+ *  own share link would outrank the page that is supposed to list them. What a
+ *  visitor does NOT get is any contact value — the cards carry
+ *  `has_contact_email` / `has_contact_phone` like every other list, and the
+ *  characters themselves need an account (see `SupplierContact`).
+ *
+ *  Paginated rather than dumped: `offset` + `limit`, with `total` so the page
+ *  can say "1024 vendors" and a crawler can walk the pages. */
+export interface PublicDirectoryPage {
+  vendors: DirectorySupplier[];
+  /** Matches for the active filter, not the page size. */
+  total: number;
+  /** Echo of the applied window, so the client never has to guess what it got. */
+  offset: number;
+  limit: number;
+  /** Facets for the filter UI, each counted against the OTHER active filters so
+   *  a chip never offers a combination that returns nothing. */
+  categories: { category: SupplierCategory; count: number }[];
+  cities: { city: string; count: number }[];
+  countries: SupplierCountryCount[];
 }
 
 /** `GET /api/suppliers/:id/contact` — one listing's published contact details,

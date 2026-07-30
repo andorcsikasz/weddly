@@ -10,6 +10,7 @@ import type {
   PublicShowcaseVendor,
   PublicVendorPageData,
   PublicVendorShowcase,
+  PublicDirectoryPage,
   SupplierCategory,
   SupplierContact,
   SupplierCountryCount,
@@ -78,7 +79,9 @@ function withVotes(
     // comes one listing at a time from `/api/suppliers/:id/contact`, which needs
     // a session and spends from a per-user quota. Nulled here rather than at the
     // mappers so there is exactly one place to audit.
-    has_contact_email: Boolean(base.contact_email),
+    // A held-back address counts as no address here: the card must not offer
+    // a mail affordance for a mailbox nothing is allowed to write to.
+    has_contact_email: Boolean(base.contact_email) && base.contact_email_flag == null,
     has_contact_phone: Boolean(base.contact_phone || base.contact_phone_alt),
     contact_email: null,
     contact_phone: null,
@@ -89,64 +92,28 @@ function withVotes(
   };
 }
 
-async function handleList(ctx: Ctx): Promise<Response> {
-  // The whole catalogue in one response is the cheapest thing on the server to
-  // ask for repeatedly and the most expensive to serve. Generous enough that a
-  // couple flipping between the directory, the dashboard and the timeline never
-  // notices (each of those pages fetches it once), tight enough that a scraper
-  // pulling it in a loop stops.
-  rateLimit(ctx.clientIp, "suppliers.list", { capacity: 40, refillRate: 0.2 });
-  const cat = ctx.url.searchParams.get("category");
-  // Optional geo proximity filter: `?near_lat=&near_lng=&radius_km=`. All three
-  // must parse to finite numbers to activate; partial / malformed input keeps
-  // the legacy un-filtered behaviour so the URL stays back-compat. Frontend
-  // opt-in only — the UI doesn't expose the toggle yet (the curated catalogue
-  // is HU-only, so EU couples would get empty sets), but the backend is ready
-  // for the "Near my venue" filter once non-HU listings populate.
-  const nearLatRaw = ctx.url.searchParams.get("near_lat");
-  const nearLngRaw = ctx.url.searchParams.get("near_lng");
-  const radiusKmRaw = ctx.url.searchParams.get("radius_km");
-  const nearLat = nearLatRaw !== null ? Number.parseFloat(nearLatRaw) : Number.NaN;
-  const nearLng = nearLngRaw !== null ? Number.parseFloat(nearLngRaw) : Number.NaN;
-  const radiusKm = radiusKmRaw !== null ? Number.parseFloat(radiusKmRaw) : Number.NaN;
-  const hasGeoFilter =
-    Number.isFinite(nearLat) &&
-    Number.isFinite(nearLng) &&
-    Number.isFinite(radiusKm) &&
-    radiusKm > 0;
-
-  // Country scoping: a couple only sees curated venues in the country their
-  // wedding is in (set at onboarding, defaults "HU"). So a Hungarian couple
-  // never gets offered a Croatian/Austrian/etc. venue. Anonymous callers and
-  // users without a workspace see the full catalogue. Community submissions
-  // are left unscoped (all HU today) so a couple's own recs stay visible.
-  const couple = ctx.userId ? getCoupleForUser(ctx.userId) : null;
+/** Assemble the catalogue: curated + community + claimed, with the `listings`
+ *  overlay (claim state, hero, imported-teaser redaction) applied.
+ *
+ *  Extracted so the in-app directory and the PUBLIC browser are the same
+ *  catalogue rather than two hand-kept copies of one. They differ in what they
+ *  do with it (the app scopes to the couple's country and overlays their votes;
+ *  the public browser filters, ranks and paginates), never in what is in it: a
+ *  vendor visible to a signed-in couple and invisible to a visitor would be a
+ *  listing whose own share link outranks it.
+ *
+ *  `country: null` means no scoping at all. */
+function assembleDirectoryBase(opts: {
+  category: SupplierCategory | null;
+  country: string | null;
+  geo?: { lat: number; lng: number; radiusKm: number } | null;
+}): DirectorySupplierBase[] {
   // Drop curated entries an admin has hidden or deleted (moderation overrides).
   const overrides = curatedOverrideMap();
   const visible = overrides.size > 0 ? DIRECTORY.filter((s) => !overrides.has(s.id)) : DIRECTORY;
-
-  // Distinct curated countries + their counts, so the frontend can render a
-  // country picker (defaults to the couple's own country, with an "all"
-  // escape hatch). Sorted by count desc so the biggest catalogue leads.
-  const countryCounts = new Map<string, number>();
-  for (const s of visible) countryCounts.set(s.country, (countryCounts.get(s.country) ?? 0) + 1);
-  const countries = [...countryCounts.entries()]
-    .map(([code, count]) => ({ code, count }))
-    .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
-
-  // `?country=` overrides the couple-derived default: a valid alpha-2 code
-  // scopes to that country, `all` disables scoping (full catalogue), and an
-  // absent/invalid value falls back to the couple's onboarding country.
-  const countryParam = ctx.url.searchParams.get("country");
-  const countryFilter =
-    countryParam === "all"
-      ? null
-      : countryParam && /^[A-Za-z]{2}$/.test(countryParam)
-        ? countryParam.toUpperCase()
-        : (couple?.country ?? null);
-  const scoped = countryFilter ? visible.filter((s) => s.country === countryFilter) : visible;
-  const curated = cat ? scoped.filter((s) => s.category === cat) : scoped;
-  const community = listActiveCommunitySuppliers((cat as SupplierCategory | null) ?? null);
+  const scoped = opts.country ? visible.filter((s) => s.country === opts.country) : visible;
+  const curated = opts.category ? scoped.filter((s) => s.category === opts.category) : scoped;
+  const community = listActiveCommunitySuppliers(opts.category);
   let allBase: DirectorySupplierBase[] = [...curated, ...community.map(toDirectorySupplierBase)];
 
   // Every listing a vendor account owns — self-serve `v{N}` cards AND curated /
@@ -157,23 +124,17 @@ async function handleList(ctx: Ctx): Promise<Response> {
   // dropped — the case that used to make a verified Austrian venue invisible to
   // every couple whose wedding wasn't in Austria.
   const seenIds = new Set(allBase.map((b) => b.id));
-  const claimed = listActiveClaimedListingsForDirectory((cat as SupplierCategory | null) ?? null);
-  for (const c of claimed) {
+  for (const c of listActiveClaimedListingsForDirectory(opts.category)) {
     if (!seenIds.has(c.id)) allBase.push(c);
   }
 
-  if (hasGeoFilter) {
+  const geo = opts.geo;
+  if (geo) {
     allBase = allBase.filter((s) => {
       if (s.lat == null || s.lng == null) return false;
-      return haversineKm(nearLat, nearLng, s.lat, s.lng) <= radiusKm;
+      return haversineKm(geo.lat, geo.lng, s.lat, s.lng) <= geo.radiusKm;
     });
   }
-
-  const scores = getScoresMap();
-  // user_vote is now per-couple — both partners see the same "+1" once either
-  // casts it. Anonymous callers and signed-in users without a workspace get
-  // `user_vote: 0` everywhere.
-  const coupleVotes = couple ? getCoupleVotesMap(couple.id) : null;
 
   // Overlay `vendor_account_id` + `hero_image_url` from the unified `listings`
   // table. Both curated and community entries default to null at the mapper
@@ -225,6 +186,76 @@ async function handleList(ctx: Ctx): Promise<Response> {
       });
     }
   }
+
+  return allBase;
+}
+
+async function handleList(ctx: Ctx): Promise<Response> {
+  // The whole catalogue in one response is the cheapest thing on the server to
+  // ask for repeatedly and the most expensive to serve. Generous enough that a
+  // couple flipping between the directory, the dashboard and the timeline never
+  // notices (each of those pages fetches it once), tight enough that a scraper
+  // pulling it in a loop stops.
+  rateLimit(ctx.clientIp, "suppliers.list", { capacity: 40, refillRate: 0.2 });
+  const cat = ctx.url.searchParams.get("category");
+  // Optional geo proximity filter: `?near_lat=&near_lng=&radius_km=`. All three
+  // must parse to finite numbers to activate; partial / malformed input keeps
+  // the legacy un-filtered behaviour so the URL stays back-compat. Frontend
+  // opt-in only — the UI doesn't expose the toggle yet (the curated catalogue
+  // is HU-only, so EU couples would get empty sets), but the backend is ready
+  // for the "Near my venue" filter once non-HU listings populate.
+  const nearLatRaw = ctx.url.searchParams.get("near_lat");
+  const nearLngRaw = ctx.url.searchParams.get("near_lng");
+  const radiusKmRaw = ctx.url.searchParams.get("radius_km");
+  const nearLat = nearLatRaw !== null ? Number.parseFloat(nearLatRaw) : Number.NaN;
+  const nearLng = nearLngRaw !== null ? Number.parseFloat(nearLngRaw) : Number.NaN;
+  const radiusKm = radiusKmRaw !== null ? Number.parseFloat(radiusKmRaw) : Number.NaN;
+  const hasGeoFilter =
+    Number.isFinite(nearLat) &&
+    Number.isFinite(nearLng) &&
+    Number.isFinite(radiusKm) &&
+    radiusKm > 0;
+
+  // Country scoping: a couple only sees curated venues in the country their
+  // wedding is in (set at onboarding, defaults "HU"). So a Hungarian couple
+  // never gets offered a Croatian/Austrian/etc. venue. Anonymous callers and
+  // users without a workspace see the full catalogue. Community submissions
+  // are left unscoped (all HU today) so a couple's own recs stay visible.
+  const couple = ctx.userId ? getCoupleForUser(ctx.userId) : null;
+  const overrides = curatedOverrideMap();
+  const visible = overrides.size > 0 ? DIRECTORY.filter((s) => !overrides.has(s.id)) : DIRECTORY;
+
+  // Distinct curated countries + their counts, so the frontend can render a
+  // country picker (defaults to the couple's own country, with an "all"
+  // escape hatch). Sorted by count desc so the biggest catalogue leads.
+  const countryCounts = new Map<string, number>();
+  for (const s of visible) countryCounts.set(s.country, (countryCounts.get(s.country) ?? 0) + 1);
+  const countries = [...countryCounts.entries()]
+    .map(([code, count]) => ({ code, count }))
+    .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code));
+
+  // `?country=` overrides the couple-derived default: a valid alpha-2 code
+  // scopes to that country, `all` disables scoping (full catalogue), and an
+  // absent/invalid value falls back to the couple's onboarding country.
+  const countryParam = ctx.url.searchParams.get("country");
+  const countryFilter =
+    countryParam === "all"
+      ? null
+      : countryParam && /^[A-Za-z]{2}$/.test(countryParam)
+        ? countryParam.toUpperCase()
+        : (couple?.country ?? null);
+
+  const allBase = assembleDirectoryBase({
+    category: (cat as SupplierCategory | null) ?? null,
+    country: countryFilter,
+    geo: hasGeoFilter ? { lat: nearLat, lng: nearLng, radiusKm } : null,
+  });
+
+  const scores = getScoresMap();
+  // user_vote is now per-couple — both partners see the same "+1" once either
+  // casts it. Anonymous callers and signed-in users without a workspace get
+  // `user_vote: 0` everywhere.
+  const coupleVotes = couple ? getCoupleVotesMap(couple.id) : null;
 
   // Which of the claimed cards have a finished listing — the difference between
   // a solid verified check and a hollow one. Asked only about claimed entries:
@@ -467,8 +498,12 @@ function buildSupplierDetail(
     // one rate-limited request), so unlike the list these keep their values.
     // The flags travel with them so a card built from a detail response answers
     // "is there a phone here" the same way a card built from the list does.
-    has_contact_email: Boolean(base.contact_email),
+    has_contact_email: Boolean(base.contact_email) && base.contact_email_flag == null,
     has_contact_phone: Boolean(base.contact_phone || base.contact_phone_alt),
+    // Held back from every couple-facing surface, not merely from outreach:
+    // an address we are unsure of is one a couple should not write to either.
+    // The admin catalogue reads the row directly and still shows it.
+    contact_email: base.contact_email_flag == null ? base.contact_email : null,
     votes_score: scores.get(base.id) ?? 0,
     user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
     // Solid check vs hollow one. Only a claimed listing is asked — nothing else
@@ -554,6 +589,8 @@ async function handleContact(ctx: Ctx): Promise<Response> {
   if (!detail) throw new HttpError(404, "Unknown supplier");
 
   const payload: SupplierContact = {
+    // Already nulled by buildSupplierDetail when the address is flagged; kept
+    // explicit here because this is the endpoint that hands the value out.
     contact_email: detail.contact_email,
     contact_phone: detail.contact_phone,
     contact_phone_alt: detail.contact_phone_alt ?? null,
@@ -656,6 +693,122 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
     reviews: reviews.items,
     comments: comments.items,
     availability,
+  };
+  return json(payload);
+}
+
+/** Page size for the public browser. 24 fills a 4-across grid six rows deep
+ *  and keeps a page under ~60 kB; 48 is the ceiling a caller may ask for. */
+const PUBLIC_PAGE_SIZE = 24;
+const PUBLIC_PAGE_MAX = 48;
+
+/** Rank for the public browser, best-first:
+ *    1. has a photograph — a card without one is a dead end for a visitor who
+ *       came to look at venues, so photographed listings lead. Never HIDDEN
+ *       though: "show every vendor" means every vendor is reachable.
+ *    2. claimed by a real Weddly vendor — they answer inquiries.
+ *    3. finished listing, then name, so the order is stable across pages
+ *       (an unstable sort duplicates and drops rows as the visitor paginates).
+ */
+function publicBrowseRank(a: DirectorySupplier, b: DirectorySupplier): number {
+  const photo = (s: DirectorySupplier) => (s.hero_image_url || s.gallery_urls?.length ? 0 : 1);
+  if (photo(a) !== photo(b)) return photo(a) - photo(b);
+  const claimed = (s: DirectorySupplier) => (s.vendor_account_id !== null ? 0 : 1);
+  if (claimed(a) !== claimed(b)) return claimed(a) - claimed(b);
+  const complete = (s: DirectorySupplier) => (s.listing_complete ? 0 : 1);
+  if (complete(a) !== complete(b)) return complete(a) - complete(b);
+  return a.name.localeCompare(b.name);
+}
+
+/** GET /api/public/vendors — the whole directory, for anybody.
+ *
+ *  The visitor's browser and the couple's directory list the SAME catalogue.
+ *  The teaser endpoint below still exists for the landing rails, but a visitor
+ *  who wants to browse is no longer shown six cards per category and a wall:
+ *  they get all of it, filterable, paginated, and every card links to a public
+ *  vendor page that is in the sitemap. That is the useful-browser half; it is
+ *  also the SEO half, since it gives crawlers a path into every listing.
+ *
+ *  What a visitor still does not get is a contact value. The cards carry the
+ *  `has_contact_*` flags like every other list and nothing more, so opening the
+ *  catalogue to the public did not re-open the contact book with it. */
+async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
+  rateLimit(ctx.clientIp, "public.directory", { capacity: 60, refillRate: 1 });
+
+  const catParam = ctx.url.searchParams.get("category");
+  const category =
+    catParam && VALID_CATEGORIES.has(catParam as SupplierCategory)
+      ? (catParam as SupplierCategory)
+      : null;
+  const countryParam = ctx.url.searchParams.get("country");
+  const country =
+    countryParam && /^[A-Za-z]{2}$/.test(countryParam) ? countryParam.toUpperCase() : null;
+  const cityParam = (ctx.url.searchParams.get("city") ?? "").trim();
+  const qParam = (ctx.url.searchParams.get("q") ?? "").trim();
+
+  const limitRaw = Number.parseInt(ctx.url.searchParams.get("limit") ?? "", 10);
+  const limit = Number.isFinite(limitRaw)
+    ? Math.min(PUBLIC_PAGE_MAX, Math.max(1, limitRaw))
+    : PUBLIC_PAGE_SIZE;
+  const offsetRaw = Number.parseInt(ctx.url.searchParams.get("offset") ?? "", 10);
+  const offset = Number.isFinite(offsetRaw) && offsetRaw > 0 ? offsetRaw : 0;
+
+  // Country is applied during assembly (it is what the catalogue is indexed
+  // by); category is NOT, because the category facet has to count the other
+  // categories in the same country to fill the filter row.
+  const base = assembleDirectoryBase({ category: null, country });
+  const scores = getScoresMap();
+  const completeIds = completeListingIds(
+    base.filter((b) => b.vendor_account_id !== null).map((b) => b.id),
+  );
+  const cards = base.map((b) => withVotes(b, scores, null, completeIds));
+
+  // Free-text match over the fields a visitor would type: the business name and
+  // the town. Folded so "Fotó" finds "foto" and vice versa.
+  const q = qParam ? foldForSearch(qParam) : "";
+  const cityFolded = cityParam ? foldForSearch(cityParam) : "";
+  const matchesText = (s: DirectorySupplier) =>
+    !q || foldForSearch(s.name).includes(q) || foldForSearch(s.city).includes(q);
+  const matchesCity = (s: DirectorySupplier) => !cityFolded || foldForSearch(s.city) === cityFolded;
+
+  // Facets are counted against the OTHER active filters, so picking a category
+  // never leaves a city chip that returns nothing (and vice versa).
+  const categoryCounts = new Map<SupplierCategory, number>();
+  for (const s of cards) {
+    if (!matchesCity(s) || !matchesText(s)) continue;
+    categoryCounts.set(s.category, (categoryCounts.get(s.category) ?? 0) + 1);
+  }
+  const cityCounts = new Map<string, number>();
+  for (const s of cards) {
+    if (category && s.category !== category) continue;
+    if (!matchesText(s)) continue;
+    if (!s.city.trim()) continue;
+    cityCounts.set(s.city, (cityCounts.get(s.city) ?? 0) + 1);
+  }
+  const countryCounts = new Map<string, number>();
+  for (const s of assembleDirectoryBase({ category: null, country: null })) {
+    countryCounts.set(s.country, (countryCounts.get(s.country) ?? 0) + 1);
+  }
+
+  const filtered = cards
+    .filter((s) => (!category || s.category === category) && matchesCity(s) && matchesText(s))
+    .sort(publicBrowseRank);
+
+  const payload: PublicDirectoryPage = {
+    vendors: filtered.slice(offset, offset + limit),
+    total: filtered.length,
+    offset,
+    limit,
+    categories: [...categoryCounts.entries()]
+      .map(([c, count]) => ({ category: c, count }))
+      .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category)),
+    cities: [...cityCounts.entries()]
+      .map(([city, count]) => ({ city, count }))
+      .sort((a, b) => b.count - a.count || a.city.localeCompare(b.city))
+      .slice(0, 60),
+    countries: [...countryCounts.entries()]
+      .map(([code, count]) => ({ code, count }))
+      .sort((a, b) => b.count - a.count || a.code.localeCompare(b.code)),
   };
   return json(payload);
 }
@@ -990,6 +1143,7 @@ export function registerSupplierRoutes(router: Router) {
   // Public, unauthenticated vendor page payload (the shareable surface).
   router.get("/api/public/vendors/:supplier_id", handlePublicDetail);
   // Public "browse teaser" — photos-only directory sample, capped per category.
+  router.get("/api/public/vendors", handlePublicDirectory);
   router.get("/api/public/vendor-showcase", handlePublicShowcase);
   // Public typeahead over vendor names + cities (categories are client-side).
   router.get("/api/public/vendor-search", handlePublicSearch);

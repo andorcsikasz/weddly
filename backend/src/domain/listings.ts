@@ -346,13 +346,13 @@ export function getClaimedDirectoryBaseById(id: string): DirectorySupplierBase |
 const upsertListingStmt = db.prepare(`
   INSERT INTO listings (
     id, source, vendor_account_id, category, name, city, address, website,
-    contact_email, contact_phone, blurb_hu, blurb_en, price_band,
+    contact_email, contact_email_flag, contact_phone, blurb_hu, blurb_en, price_band,
     capacity_min, capacity_max, venue_style, lat, lng, spoken_languages,
     profile_imported, submitter_type, status, content_hash,
     created_at, updated_at
   ) VALUES (
     $id, $source, $vendor_account_id, $category, $name, $city, $address, $website,
-    $contact_email, $contact_phone, $blurb_hu, $blurb_en, $price_band,
+    $contact_email, $contact_email_flag, $contact_phone, $blurb_hu, $blurb_en, $price_band,
     $capacity_min, $capacity_max, $venue_style, $lat, $lng, $spoken_languages,
     $profile_imported, $submitter_type, $status, $content_hash,
     $created_at, $updated_at
@@ -370,6 +370,7 @@ const upsertListingStmt = db.prepare(`
     address           = excluded.address,
     website           = excluded.website,
     contact_email     = excluded.contact_email,
+    contact_email_flag = excluded.contact_email_flag,
     contact_phone     = excluded.contact_phone,
     blurb_hu          = excluded.blurb_hu,
     blurb_en          = excluded.blurb_en,
@@ -409,6 +410,7 @@ function hashCuratedEntry(e: (typeof DIRECTORY)[number]): string {
     e.address ?? null,
     e.website,
     e.contact_email,
+    e.contact_email_flag ?? null,
     e.contact_phone,
     e.blurb_hu,
     e.blurb_en,
@@ -461,6 +463,7 @@ export function syncListingFromCommunityRow(row: CommunitySupplierRow): void {
     $address: row.address,
     $website: row.website,
     $contact_email: row.contact_email,
+    $contact_email_flag: null,
     $contact_phone: row.contact_phone,
     $blurb_hu: row.blurb,
     $blurb_en: row.blurb,
@@ -533,6 +536,7 @@ export function backfillListings(): { curated: number; community: number } {
         $address: entry.address ?? null,
         $website: entry.website,
         $contact_email: entry.contact_email,
+        $contact_email_flag: entry.contact_email_flag ?? null,
         $contact_phone: entry.contact_phone,
         $blurb_hu: entry.blurb_hu,
         $blurb_en: entry.blurb_en,
@@ -790,6 +794,7 @@ export function createVendorListing(input: {
     $address: input.address ?? null,
     $website: input.website ?? null,
     $contact_email: input.contactEmail,
+    $contact_email_flag: null,
     $contact_phone: input.contactPhone ?? null,
     $blurb_hu: null,
     $blurb_en: null,

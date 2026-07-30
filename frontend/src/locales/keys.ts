@@ -6728,6 +6728,12 @@ export interface LocaleMessages {
     directory_gap_no_phone: string;
     directory_gap_no_website: string;
     directory_gap_no_hero: string;
+    directory_gap_flagged_email: string;
+    /** Badge on a row whose address is held back, and the two reasons, keyed
+     *  `directory_email_flag_<ContactEmailFlag>`. */
+    directory_email_flag: string;
+    directory_email_flag_generic: string;
+    directory_email_flag_unverified: string;
     /** Overflow chip holding the rarely-set dimensions. */
     directory_filter_more: string;
     /** The word after the headline count when nothing is filtering. */

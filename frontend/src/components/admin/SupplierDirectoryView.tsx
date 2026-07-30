@@ -19,6 +19,7 @@ import {
   MailX,
   MapPin,
   Search,
+  ShieldAlert,
   SlidersHorizontal,
   Trash2,
   UserX,
@@ -619,6 +620,21 @@ export function SupplierDirectoryView() {
                       >
                         <MailX size={11} aria-hidden />
                         {t("admin.directory_no_email")}
+                      </span>
+                    )}
+                    {/* A held-back address. Shown, not hidden: this row IS the
+                        work queue, and an admin cannot fix an address they
+                        cannot see. The reason is the tooltip because it is a
+                        sentence, and the row has no width for one. */}
+                    {row.contact_email_flag && (
+                      <span
+                        title={`${row.contact_email} — ${t(
+                          `admin.directory_email_flag_${row.contact_email_flag}`,
+                        )}`}
+                        className="mt-0.5 inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300"
+                      >
+                        <ShieldAlert size={11} aria-hidden />
+                        {t("admin.directory_email_flag")}
                       </span>
                     )}
                     {row.website && (

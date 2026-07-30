@@ -10,10 +10,11 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import type {
-  AdminDirectoryFacets,
-  DirectoryGap,
-  SupplierDirectoryAdminRow,
+import {
+  type AdminDirectoryFacets,
+  DIRECTORY_GAPS,
+  type DirectoryGap,
+  type SupplierDirectoryAdminRow,
 } from "@shared/suppliers";
 import { registerAndVerify, req, wipeAll } from "../helpers";
 
@@ -49,6 +50,7 @@ const HAS_GAP: Record<DirectoryGap, (r: SupplierDirectoryAdminRow) => boolean> =
   no_phone: (r) => !r.contact_phone?.trim(),
   no_website: (r) => !r.website?.trim(),
   no_hero: (r) => !r.hero_image_url?.trim(),
+  flagged_email: (r) => r.contact_email_flag != null,
 };
 
 describe("admin directory — contact filter", () => {
@@ -92,7 +94,7 @@ describe("admin directory — gap toggles", () => {
     const token = await adminToken();
     const all = await directory(token, "");
 
-    for (const gap of ["no_email", "no_phone", "no_website", "no_hero"] as DirectoryGap[]) {
+    for (const gap of DIRECTORY_GAPS) {
       const rows = await directory(token, `?gaps=${gap}`);
       expect(rows.every(HAS_GAP[gap])).toBe(true);
       expect(rows.length).toBe(all.filter(HAS_GAP[gap]).length);
@@ -147,7 +149,7 @@ describe("admin directory — facet counts", () => {
     const token = await adminToken();
     const { facets, suppliers } = await fetchDirectory(token, "");
     expect(facets.base_total).toBe(suppliers.length);
-    for (const gap of ["no_email", "no_phone", "no_website", "no_hero"] as DirectoryGap[]) {
+    for (const gap of DIRECTORY_GAPS) {
       expect(facets.gaps[gap]).toBe((await directory(token, `?gaps=${gap}`)).length);
     }
   });
@@ -175,5 +177,41 @@ describe("admin directory — facet counts", () => {
     expect(venues.facets.gaps.no_email).toBe(
       (await directory(token, "?category=venue&gaps=no_email")).length,
     );
+  });
+});
+
+// ── Held-back addresses ────────────────────────────────────────────────────
+// `contact_email_flag` exists so a bulk-collected address that reaches a group
+// help desk, a museum's staff, or possibly a stranger cannot be used before a
+// human looks at it. Two rules, and both are silent when they break: the
+// campaign would mail it, or a couple would.
+
+describe("admin directory — held-back contact addresses", () => {
+  test("the flagged set is non-empty and every one of them still HAS an address", async () => {
+    const token = await adminToken();
+    const flagged = await directory(token, "?gaps=flagged_email");
+    expect(flagged.length).toBeGreaterThan(0);
+    // The point of the flag: the address is kept, just not used. A flag that
+    // dropped the address would make the queue unworkable.
+    expect(flagged.every((r) => Boolean(r.contact_email?.trim()))).toBe(true);
+    expect(flagged.every((r) => r.contact_email_flag != null)).toBe(true);
+  });
+
+  test("a flagged listing is NOT in the no-email set: they are different queues", async () => {
+    const token = await adminToken();
+    const flagged = await directory(token, "?gaps=flagged_email");
+    const noEmail = await directory(token, "?gaps=no_email");
+    const noEmailIds = new Set(noEmail.map((r) => r.id));
+    expect(flagged.some((r) => noEmailIds.has(r.id))).toBe(false);
+  });
+
+  test("the four Belmond hotels share one help desk and are all held back", async () => {
+    const token = await adminToken();
+    const all = await directory(token, "");
+    const belmond = all.filter((r) => r.contact_email === "help@belmond.com");
+    expect(belmond.length).toBeGreaterThan(1);
+    // One mailbox serving several listings is the definition of the `generic`
+    // reason, so none of them may be mailed as if it were the property.
+    expect(belmond.every((r) => r.contact_email_flag === "generic")).toBe(true);
   });
 });

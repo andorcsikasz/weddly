@@ -243,6 +243,7 @@ export function listDirectoryForAdmin(filters: AdminDirectoryFilters): SupplierD
       address: s.address,
       website: s.website,
       contact_email: s.contact_email,
+      contact_email_flag: s.contact_email_flag ?? null,
       contact_phone: s.contact_phone,
       price_band: s.price_band,
       status: ov?.status === "hidden" ? "hidden" : "active",
@@ -274,6 +275,9 @@ export function listDirectoryForAdmin(filters: AdminDirectoryFilters): SupplierD
       // admin directory deliberately surfaces it — moderators triage with
       // the real address visible.
       contact_email: c.contact_email,
+      // A community row is self-published: the submitter typed their own
+      // address, so there is no scraped address to hold back.
+      contact_email_flag: null,
       contact_phone: base.contact_phone,
       price_band: base.price_band,
       status: (c.status as SupplierDirectoryAdminRow["status"]) ?? "active",
@@ -344,6 +348,8 @@ function hasGap(row: SupplierDirectoryAdminRow, gap: DirectoryGap): boolean {
       return (row.website ?? "").trim().length === 0;
     case "no_hero":
       return (row.hero_image_url ?? "").trim().length === 0;
+    case "flagged_email":
+      return row.contact_email_flag != null;
   }
 }
 
