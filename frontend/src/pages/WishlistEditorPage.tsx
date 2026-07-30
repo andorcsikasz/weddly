@@ -15,6 +15,26 @@
 //    explanatory paragraphs moved into `InfoHint` tooltips (see
 //    feedback_uber_like_minimal_copy) so the items own the page.
 //
+// Uber-like pass (2026-07-30, owner direction "change style and icons to be
+// Uber like"). The rules, so a later edit doesn't drift back:
+//  - ONE radius: `rounded-lg` (8px) on every surface — tile, thumbnail, menu,
+//    dialog, ledger row. The 16px pill-ish corners read as soft/editorial; a
+//    single tight radius is what makes a grid look engineered.
+//  - The card is Uber Eats' anatomy: picture, then a BOLD title, then one grey
+//    meta line. The price left the floating glass chip on the photo and became
+//    the first thing in that meta line, because a price set in the type
+//    hierarchy is read faster than one set in a badge, and the chip was the
+//    only surface on the page needing a blur + a translucent border.
+//  - Icons are ONE stroke weight (`ICON_STROKE` = 1.5) and one geometric
+//    vocabulary. Anything decorative or clever went: the tabs carry no icons at
+//    all (Uber's tab bars are type), `Globe` for "published" became `Eye`/
+//    `EyeOff` (the state is visibility, so the icon should be the eye that is
+//    open or shut), `PackageCheck` became `Lock` on the private badge, `Rows3`
+//    became `List`, `Sparkles` became `Ticket`.
+//  - Colour is monochrome + one accent. The pledge bar is ink, not sage: on a
+//    page whose every other surface is neutral, a green bar was the loudest
+//    thing on it and it was measuring a soft intention, not a payment.
+//
 // IMPORTANT: no money ever moves in-app. `target_amount_minor` is purely the
 // couple's informational "this is roughly what it costs". We store + send it
 // as integer MINOR units (HUF has no minor unit → whole forint; EUR/USD are
@@ -38,17 +58,18 @@ import {
   ArrowUp,
   ArrowUpRight,
   Banknote,
+  Eye,
+  EyeOff,
   Gift,
-  Globe,
   Heart,
   LayoutGrid,
+  List,
   Loader2,
+  Lock,
   MoreHorizontal,
-  PackageCheck,
   Plus,
-  Rows3,
-  Sparkles,
   Tag,
+  Ticket,
   Trash2,
   X,
 } from "lucide-react";
@@ -64,6 +85,21 @@ import { useDocumentMeta } from "../lib/seo";
 
 /** The `t()` function, threaded into the item components as a prop. */
 type Translate = (key: string, vars?: Record<string, string | number>) => string;
+
+/** One stroke weight for every icon on the page. Lucide's default 2 reads
+ *  chunky next to a tight grotesk, and a page that mixes weights looks like it
+ *  borrowed its icons from two places. */
+const ICON_STROKE = 1.5;
+
+/** The single corner radius. Named rather than repeated so it stays single. */
+const R = "rounded-lg";
+
+/** The hairline that gives a tile its edge. `GiftArtTile` paints its ground in
+ *  paper-100 — which is EXACTLY the app shell's light background — so a drawn
+ *  item had no boundary at all in light mode and the grid read as art floating
+ *  on the page. A photo tile needs it too: a white product shot on cream loses
+ *  its right edge the same way. Inset, so it doesn't grow the tile. */
+const EDGE = "ring-1 ring-inset ring-paper-300 dark:ring-umber-700";
 
 /** Minor units → the whole-unit number the couple typed (and we render via
  *  formatMoney, which expects whole units). */
@@ -179,7 +215,10 @@ function itemHasBar(item: WishlistItem): boolean {
 
 /** GoFundMe-style soft-pledge progress for a group gift: how much guests have
  *  said they'll chip in toward the rough amount, plus the helper count. No
- *  money moves — purely a coordination signal. */
+ *  money moves — purely a coordination signal.
+ *
+ *  Monochrome by direction: the fill is ink on a paper track. Green here read
+ *  as a payment bar clearing, which is exactly the thing this page never does. */
 function PledgeBar({
   item,
   currency,
@@ -199,20 +238,20 @@ function PledgeBar({
   return (
     <span className="block">
       <span
-        className="flex h-1 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700"
+        className="flex h-[3px] w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
         aria-valuemax={100}
       >
         <span
-          className="h-full rounded-full bg-sage-500 transition-[width] duration-500 dark:bg-sage-400"
+          className="h-full rounded-full bg-ink-900 transition-[width] duration-500 dark:bg-paper-100"
           style={{ width: `${pct}%` }}
         />
       </span>
       <span className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-2 text-[11px] text-ink-500 dark:text-umber-300">
         {fullyFunded ? (
-          <span className="font-medium tabular-nums text-sage-700 dark:text-sage-300">
+          <span className="font-semibold tabular-nums text-ink-900 dark:text-paper-50">
             {t("wishlist_editor.progress_fully_funded")}
           </span>
         ) : (
@@ -242,12 +281,6 @@ interface ItemViewProps {
   onMoveDown: () => void;
 }
 
-/** The glass treatment shared by everything that floats over an item's
- *  picture: the price chip and the "…" button. Light enough that the photo
- *  under it still reads, opaque enough that a busy photo can't eat the text. */
-const GLASS =
-  "border border-paper-200/70 bg-paper-50/90 backdrop-blur-sm dark:border-umber-600/60 dark:bg-umber-950/80";
-
 /** Reorder + delete, behind ONE control. Three icon buttons pinned to every
  *  item was the loudest thing in a grid of pictures — and on touch, where
  *  there is no hover to hide them behind, they sat on every card at all times.
@@ -259,12 +292,7 @@ function ItemMenu({
   totalCount,
   onMoveUp,
   onMoveDown,
-  tone = "glass",
-}: Pick<ItemViewProps, "t" | "onDelete" | "index" | "totalCount" | "onMoveUp" | "onMoveDown"> & {
-  /** `glass` floats the trigger over a photo (card view); `plain` sits it on
-   *  the row background (list view). */
-  tone?: "glass" | "plain";
-}) {
+}: Pick<ItemViewProps, "t" | "onDelete" | "index" | "totalCount" | "onMoveUp" | "onMoveDown">) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
 
@@ -285,7 +313,7 @@ function ItemMenu({
   }, [open]);
 
   const entry =
-    "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors disabled:pointer-events-none disabled:opacity-35";
+    "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-35";
 
   return (
     // The trigger hides until the item is hovered / focused (desktop) and
@@ -307,18 +335,14 @@ function ItemMenu({
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-          tone === "glass"
-            ? `${GLASS} text-ink-700 hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50`
-            : "text-ink-400 hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
-        }`}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50"
       >
-        <MoreHorizontal size={16} />
+        <MoreHorizontal size={18} strokeWidth={ICON_STROKE} />
       </button>
       {open && (
         <span
           role="menu"
-          className="absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-paper-200 bg-paper-50 py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+          className={`absolute right-0 top-full z-30 mt-1 w-44 overflow-hidden border border-paper-200 bg-paper-50 py-1 shadow-pop dark:border-umber-700 dark:bg-umber-800 ${R}`}
         >
           <button
             type="button"
@@ -330,7 +354,7 @@ function ItemMenu({
             }}
             className={`${entry} text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700`}
           >
-            <ArrowUp size={14} aria-hidden />
+            <ArrowUp size={16} strokeWidth={ICON_STROKE} aria-hidden />
             {t("wishlist_editor.reorder_up")}
           </button>
           <button
@@ -343,7 +367,7 @@ function ItemMenu({
             }}
             className={`${entry} text-ink-700 hover:bg-paper-100 dark:text-paper-100 dark:hover:bg-umber-700`}
           >
-            <ArrowDown size={14} aria-hidden />
+            <ArrowDown size={16} strokeWidth={ICON_STROKE} aria-hidden />
             {t("wishlist_editor.reorder_down")}
           </button>
           <button
@@ -355,7 +379,7 @@ function ItemMenu({
             }}
             className={`${entry} text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15`}
           >
-            <Trash2 size={14} aria-hidden />
+            <Trash2 size={16} strokeWidth={ICON_STROKE} aria-hidden />
             {t("common.remove")}
           </button>
         </span>
@@ -376,19 +400,19 @@ function ShopLink({ url, t, className = "" }: { url: string; t: Translate; class
       onClick={(e) => e.stopPropagation()}
       title={url}
       aria-label={t("wishlist_editor.open_link", { host: hostLabel(url) })}
-      className={`inline-flex max-w-full items-center gap-1 text-xs text-ink-500 underline-offset-2 transition-colors hover:text-ink-900 hover:underline dark:text-umber-300 dark:hover:text-paper-50 ${className}`}
+      className={`inline-flex max-w-full items-center gap-0.5 text-[0.8125rem] text-ink-500 underline-offset-2 transition-colors hover:text-ink-900 hover:underline dark:text-umber-300 dark:hover:text-paper-50 ${className}`}
     >
       <span className="truncate">{hostLabel(url)}</span>
-      <ArrowUpRight size={12} className="shrink-0" aria-hidden />
+      <ArrowUpRight size={13} strokeWidth={ICON_STROKE} className="shrink-0" aria-hidden />
     </a>
   );
 }
 
-/** Card view. The picture is the tile: no frame around it, no card behind it,
- *  nothing between the grid and the thing the couple wants. The price rides on
- *  the picture as a chip (a storefront quotes the price on the shelf, not in a
- *  caption), the title sits under it, and one muted line carries either the
- *  shop or the couple's own note. */
+/** Card view, built on Uber Eats' card anatomy: picture, bold title, one grey
+ *  meta line. The price sits at the head of that meta line rather than in a
+ *  glass chip on the photo — a price carried by the type hierarchy is read
+ *  faster than one carried by a badge, and the chip needed a blur + a
+ *  translucent border to survive whatever photo the shop's og:image gave us. */
 function GiftTile({
   item,
   currency,
@@ -402,31 +426,28 @@ function GiftTile({
   onMoveDown,
 }: ItemViewProps) {
   const cur = item.currency ?? currency;
+  const price =
+    item.target_amount_minor !== null
+      ? formatMoney(minorToWhole(item.target_amount_minor, cur), cur, locale)
+      : null;
   return (
     <li className="group relative flex flex-col">
       <button
         type="button"
         onClick={onEdit}
         aria-label={t("common.edit")}
-        className="relative block aspect-[4/3] w-full overflow-hidden rounded-2xl bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 focus-visible:ring-offset-2 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
+        className={`relative block aspect-[4/3] w-full overflow-hidden bg-paper-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 dark:bg-umber-800 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900 ${R} ${EDGE}`}
       >
         <ItemPicture item={item} zoom />
-        {item.target_amount_minor !== null && (
-          <span
-            className={`absolute bottom-2.5 left-2.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums text-ink-900 dark:text-paper-50 ${GLASS}`}
-          >
-            {formatMoney(minorToWhole(item.target_amount_minor, cur), cur, locale)}
-          </span>
-        )}
       </button>
       <div className="mt-2.5 flex items-start gap-1.5">
         <button
           type="button"
           onClick={onEdit}
           aria-label={t("common.edit")}
-          className="min-w-0 flex-1 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400"
+          className={`min-w-0 flex-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 dark:focus-visible:ring-paper-100 ${R}`}
         >
-          <span className="line-clamp-2 block font-grotesk text-[0.95rem] font-medium leading-snug text-ink-900 dark:text-paper-50">
+          <span className="line-clamp-2 block font-grotesk text-[0.95rem] font-semibold leading-snug tracking-[-0.01em] text-ink-900 dark:text-paper-50">
             {item.title}
           </span>
         </button>
@@ -438,19 +459,31 @@ function GiftTile({
             totalCount={totalCount}
             onMoveUp={onMoveUp}
             onMoveDown={onMoveDown}
-            tone="plain"
           />
         </span>
       </div>
-      {/* One muted line, not three: the shop if the wish points at one, the
-          couple's own note otherwise. The full note lives in the dialog. */}
-      {item.url ? (
-        <ShopLink url={item.url} t={t} className="mt-0.5" />
-      ) : item.description ? (
-        <p className="mt-0.5 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
-          {item.description}
+      {/* ONE meta line: price, then the shop the wish points at, or the
+          couple's own note when it points nowhere. The full note lives in the
+          dialog. The dot separator is the only punctuation the line gets. */}
+      {(price || item.url || item.description) && (
+        <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[0.8125rem] text-ink-500 dark:text-umber-300">
+          {price && (
+            <span className="shrink-0 font-medium tabular-nums text-ink-900 dark:text-paper-50">
+              {price}
+            </span>
+          )}
+          {price && (item.url || item.description) && (
+            <span className="shrink-0 text-ink-300 dark:text-umber-600" aria-hidden>
+              ·
+            </span>
+          )}
+          {item.url ? (
+            <ShopLink url={item.url} t={t} />
+          ) : item.description ? (
+            <span className="truncate">{item.description}</span>
+          ) : null}
         </p>
-      ) : null}
+      )}
       {itemHasBar(item) && (
         <div className="mt-2">
           <PledgeBar item={item} currency={currency} locale={locale} t={t} />
@@ -477,7 +510,9 @@ function WishlistRow({
 }: ItemViewProps) {
   const cur = item.currency ?? currency;
   return (
-    <li className="group flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-paper-100/70 dark:hover:bg-umber-800/60">
+    <li
+      className={`group flex items-center gap-3 px-2 py-3 transition-colors hover:bg-paper-100/70 dark:hover:bg-umber-800/60 ${R}`}
+    >
       {/* The title button does NOT grow: the shop link has to sit right beside
           the title instead of drifting to the far edge of an empty row. */}
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -485,17 +520,19 @@ function WishlistRow({
           type="button"
           onClick={onEdit}
           aria-label={t("common.edit")}
-          className="flex min-w-0 items-center gap-3.5 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400"
+          className={`flex min-w-0 items-center gap-3.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 dark:focus-visible:ring-paper-100 ${R}`}
         >
-          <span className="relative block h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-paper-100 dark:bg-umber-800">
+          <span
+            className={`relative block h-12 w-12 shrink-0 overflow-hidden bg-paper-100 dark:bg-umber-800 ${R} ${EDGE}`}
+          >
             <ItemPicture item={item} dense />
           </span>
           <span className="min-w-0">
-            <span className="block truncate font-grotesk text-sm font-medium text-ink-900 dark:text-paper-50">
+            <span className="block truncate font-grotesk text-sm font-semibold tracking-[-0.01em] text-ink-900 dark:text-paper-50">
               {item.title}
             </span>
             {item.target_amount_minor !== null && (
-              <span className="block tabular-nums text-xs text-ink-500 dark:text-umber-300">
+              <span className="block text-[0.8125rem] tabular-nums text-ink-500 dark:text-umber-300">
                 {formatMoney(minorToWhole(item.target_amount_minor, cur), cur, locale)}
               </span>
             )}
@@ -520,7 +557,6 @@ function WishlistRow({
           totalCount={totalCount}
           onMoveUp={onMoveUp}
           onMoveDown={onMoveDown}
-          tone="plain"
         />
       </div>
     </li>
@@ -528,9 +564,14 @@ function WishlistRow({
 }
 
 /** A personal request — a letter, a childhood photo, a song. Same tile shape
- *  as a gift so the page reads as one storefront, but square rather than 4:3,
- *  no price chip, and the title set in the display serif: these are the
- *  sentimental half of the list and they should not look like SKUs. */
+ *  as a gift so the page reads as one storefront, but square rather than 4:3
+ *  and carrying no money.
+ *
+ *  The title used to be set in the display serif, italic, to mark these as the
+ *  sentimental half of the list. It went with the Uber pass: two type voices in
+ *  one scroll is the thing that makes a page look assembled rather than
+ *  designed, and the square crop plus the drawn motif already say "not a SKU"
+ *  without a second family doing it again. */
 function RequestTile({
   item,
   t,
@@ -547,7 +588,7 @@ function RequestTile({
         type="button"
         onClick={onEdit}
         aria-label={t("common.edit")}
-        className="block aspect-square w-full overflow-hidden rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-umber-900"
+        className={`block aspect-square w-full overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900 ${R} ${EDGE}`}
       >
         <GiftArtTile
           seed={item.title}
@@ -560,9 +601,9 @@ function RequestTile({
           type="button"
           onClick={onEdit}
           aria-label={t("common.edit")}
-          className="min-w-0 flex-1 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400"
+          className={`min-w-0 flex-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 dark:focus-visible:ring-paper-100 ${R}`}
         >
-          <span className="line-clamp-2 block font-serif text-base italic leading-snug text-ink-900 dark:text-paper-50">
+          <span className="line-clamp-2 block font-grotesk text-[0.95rem] font-semibold leading-snug tracking-[-0.01em] text-ink-900 dark:text-paper-50">
             {item.title}
           </span>
         </button>
@@ -574,12 +615,11 @@ function RequestTile({
             totalCount={totalCount}
             onMoveUp={onMoveUp}
             onMoveDown={onMoveDown}
-            tone="plain"
           />
         </span>
       </div>
       {item.description && (
-        <p className="mt-0.5 line-clamp-1 text-xs text-ink-500 dark:text-umber-300">
+        <p className="mt-1 line-clamp-1 text-[0.8125rem] text-ink-500 dark:text-umber-300">
           {item.description}
         </p>
       )}
@@ -603,13 +643,15 @@ function SectionHead({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
       <div className="flex items-center gap-2">
-        <h2 className="m-0 font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+        <h2 className="m-0 font-grotesk text-xl font-bold tracking-[-0.02em] text-ink-900 dark:text-paper-50">
           {title}
         </h2>
         {count !== undefined && count > 0 && (
-          <span className="tabular-nums text-sm text-ink-400 dark:text-umber-400">{count}</span>
+          <span className="text-xl font-bold tabular-nums tracking-[-0.02em] text-ink-300 dark:text-umber-600">
+            {count}
+          </span>
         )}
         {hint && <InfoHint text={hint} />}
       </div>
@@ -643,16 +685,21 @@ function AddTile({
   onClick: () => void;
 }) {
   return (
+    // A filled grey field with a solid black disc, not a dashed outline: a
+    // dashed border is the drop-zone idiom, and this is a button. It also puts
+    // the one black mark on the page exactly where the next action is.
     <li className="flex flex-col">
       <button
         type="button"
         onClick={onClick}
-        className={`flex w-full flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-paper-400 text-ink-500 transition-colors hover:border-ink-400 hover:bg-paper-100/60 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:bg-umber-850 dark:hover:text-paper-50 ${
+        className={`group/add flex w-full flex-col items-center justify-center gap-2 bg-paper-200 text-ink-700 transition-colors hover:bg-paper-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 dark:bg-umber-800 dark:text-paper-100 dark:hover:bg-umber-700 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900 ${R} ${
           square ? "aspect-square" : "aspect-[4/3]"
         }`}
       >
-        <Plus size={22} aria-hidden />
-        <span className="font-grotesk text-sm font-medium">{label}</span>
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-ink-900 text-paper-50 transition-transform duration-200 group-hover/add:scale-105 dark:bg-paper-100 dark:text-umber-900">
+          <Plus size={18} strokeWidth={2} aria-hidden />
+        </span>
+        <span className="font-grotesk text-sm font-semibold tracking-[-0.01em]">{label}</span>
       </button>
     </li>
   );
@@ -675,7 +722,7 @@ function EmptySection({
 }) {
   return (
     <div>
-      <p className="mb-3 max-w-md text-sm text-ink-500 dark:text-umber-300">{body}</p>
+      <p className="mb-4 max-w-md text-[0.9375rem] text-ink-500 dark:text-umber-300">{body}</p>
       {/* Same grid as the filled section, so the tile the couple clicks is the
           size the thing they are about to add will be. */}
       <ul className={square ? REQUEST_GRID : GIFT_GRID}>
@@ -843,7 +890,7 @@ function FromCombobox({
       {open && (
         <div
           role="listbox"
-          className="absolute left-0 top-full z-50 mt-0.5 max-h-56 w-max min-w-full overflow-y-auto rounded-xl border border-paper-200 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+          className={`absolute left-0 top-full z-50 mt-0.5 max-h-56 w-max min-w-full overflow-y-auto border border-paper-200 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800 ${R}`}
         >
           {/* Unassign option */}
           <button
@@ -914,10 +961,14 @@ function FromCombobox({
  *  always at least 5 rows and always 2 trailing empties, so there's room to
  *  keep typing. Each row persists on blur (create / update / delete) with the
  *  same optimistic-concurrency contract as the wishlist. */
+// One glyph per category, all four the same geometric family. `Sparkles` used
+// to stand for an experience: three twinkles is decoration, not a category, and
+// it was the only icon on the page that didn't describe an object. A ticket is
+// the thing an experience actually arrives as.
 const CATEGORY_ICONS: Record<ReceivedGiftCategory, typeof Gift> = {
   gift: Gift,
   money: Banknote,
-  experience: Sparkles,
+  experience: Ticket,
   voucher: Tag,
 };
 
@@ -1075,8 +1126,9 @@ function ReceivedGiftsTable({
 
   const cellInput =
     "w-full bg-transparent py-2.5 text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none dark:text-paper-50 dark:placeholder:text-umber-400";
-  const rowBubble =
-    "flex items-center gap-3 rounded-2xl border border-paper-200 bg-paper-50 px-4 shadow-sm transition-colors focus-within:border-paper-400 dark:border-umber-700 dark:bg-ink-800 dark:focus-within:border-umber-500";
+  // Flat, hairlined, one radius, no shadow: an Uber form row is a bordered
+  // rectangle that darkens its border on focus, not a floating bubble.
+  const rowBubble = `flex items-center gap-3 border border-paper-200 bg-paper-50 px-4 transition-colors focus-within:border-ink-900 dark:border-umber-700 dark:bg-ink-800 dark:focus-within:border-paper-100 ${R}`;
   const colHead =
     "font-grotesk text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-ink-400 dark:text-umber-400";
 
@@ -1121,7 +1173,8 @@ function ReceivedGiftsTable({
               {/* Category picker with icon */}
               <div className="flex w-32 shrink-0 items-center gap-1.5">
                 <CatIcon
-                  size={14}
+                  size={16}
+                  strokeWidth={ICON_STROKE}
                   className="shrink-0 text-ink-400 dark:text-umber-400"
                   aria-hidden
                 />
@@ -1149,7 +1202,8 @@ function ReceivedGiftsTable({
                 <div className="w-36 shrink-0">
                   <div className="flex items-center gap-1">
                     <Banknote
-                      size={13}
+                      size={16}
+                      strokeWidth={ICON_STROKE}
                       className="shrink-0 text-ink-400 dark:text-umber-400"
                       aria-hidden
                     />
@@ -1201,9 +1255,9 @@ function ReceivedGiftsTable({
                     aria-label={t("common.remove")}
                     title={t("common.remove")}
                     onClick={() => void removeRow(r)}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full text-blush-700 transition-colors hover:bg-blush-100 dark:text-blush-300 dark:hover:bg-blush-400/15"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} strokeWidth={ICON_STROKE} />
                   </button>
                 )}
               </div>
@@ -1409,15 +1463,17 @@ export default function WishlistEditorPage() {
 
   return (
     <>
-      <header className="mb-6">
+      <header className="mb-7">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
           <div className="min-w-0">
             <span className="flex items-start gap-1">
-              <h1 className="font-grotesk">{t("wishlist_editor.title")}</h1>
-              <InfoHint text={t("wishlist_editor.subtitle")} className="mt-1" />
+              <h1 className="font-grotesk font-bold tracking-[-0.03em]">
+                {t("wishlist_editor.title")}
+              </h1>
+              <InfoHint text={t("wishlist_editor.subtitle")} className="mt-1.5" />
             </span>
             {metaBits.length > 0 && (
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm tabular-nums text-ink-500 dark:text-umber-300">
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[0.9375rem] tabular-nums text-ink-500 dark:text-umber-300">
                 {metaBits.map((bit, i) => (
                   // Index in the key: the bits are a fixed, ordered set and
                   // two of them can legitimately render the same text.
@@ -1434,6 +1490,9 @@ export default function WishlistEditorPage() {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {/* No icons in the tabs. A gift box beside "Esküvő előtt" and a
+                parcel beside "Esküvő után" restate the words they sit next to,
+                and two glyphs is what turns a tab bar into a toolbar. */}
             <SegmentedControl<WishlistPhase>
               ariaLabel={t("wishlist_editor.title")}
               value={phase}
@@ -1441,16 +1500,8 @@ export default function WishlistEditorPage() {
               size="sm"
               shape="pill"
               options={[
-                {
-                  value: "before",
-                  label: t("wishlist_editor.phase_before"),
-                  icon: <Gift size={14} aria-hidden />,
-                },
-                {
-                  value: "after",
-                  label: t("wishlist_editor.phase_after"),
-                  icon: <PackageCheck size={14} aria-hidden />,
-                },
+                { value: "before", label: t("wishlist_editor.phase_before") },
+                { value: "after", label: t("wishlist_editor.phase_after") },
               ]}
             />
             {couple && phase === "before" && (
@@ -1458,6 +1509,11 @@ export default function WishlistEditorPage() {
               // is filled when the list is on the guest page and outlined when
               // it is not. A label plus a switch inside a pill was three
               // things saying the same thing.
+              //
+              // The glyph is an eye, open or shut. A globe said "the internet",
+              // which is not the state being toggled: the list goes to the
+              // couple's confirmed guests, and what changes is whether they can
+              // see it.
               <button
                 type="button"
                 onClick={() => void togglePublish()}
@@ -1468,13 +1524,17 @@ export default function WishlistEditorPage() {
                     ? t("wishlist_editor.publish_on")
                     : t("wishlist_editor.publish_off")
                 }
-                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 disabled:opacity-60 ${
+                className={`inline-flex min-h-[34px] items-center gap-2 rounded-full px-4 text-sm font-semibold tracking-[-0.01em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 disabled:opacity-60 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900 ${
                   couple.wishlist_published
                     ? "bg-ink-900 text-paper-50 hover:bg-ink-800 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200"
-                    : "border border-paper-300 bg-paper-50 text-ink-600 hover:border-ink-400 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:text-paper-50"
+                    : "border border-paper-300 bg-paper-50 text-ink-600 hover:border-ink-900 hover:text-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-umber-200 dark:hover:border-paper-100 dark:hover:text-paper-50"
                 }`}
               >
-                <Globe size={14} aria-hidden />
+                {couple.wishlist_published ? (
+                  <Eye size={16} strokeWidth={ICON_STROKE} aria-hidden />
+                ) : (
+                  <EyeOff size={16} strokeWidth={ICON_STROKE} aria-hidden />
+                )}
                 {t("wishlist_editor.publish_short")}
               </button>
             )}
@@ -1512,7 +1572,11 @@ export default function WishlistEditorPage() {
                         onClick={() => changeView(view === "list" ? "cards" : "list")}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50"
                       >
-                        {view === "list" ? <LayoutGrid size={16} /> : <Rows3 size={16} />}
+                        {view === "list" ? (
+                          <LayoutGrid size={18} strokeWidth={ICON_STROKE} />
+                        ) : (
+                          <List size={18} strokeWidth={ICON_STROKE} />
+                        )}
                       </button>
                     ) : undefined
                   }
@@ -1570,9 +1634,9 @@ export default function WishlistEditorPage() {
                     <button
                       type="button"
                       onClick={() => setEditing({ item: null, presetKind: "gift" })}
-                      className="mt-2 inline-flex items-center gap-2 rounded-xl px-2 py-2 font-grotesk text-sm font-medium text-ink-500 transition-colors hover:bg-paper-100/70 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-umber-300 dark:hover:bg-umber-800/60 dark:hover:text-paper-50"
+                      className={`mt-3 inline-flex min-h-[38px] items-center gap-2 bg-ink-900 px-4 font-grotesk text-sm font-semibold tracking-[-0.01em] text-paper-50 transition-colors hover:bg-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 dark:bg-paper-100 dark:text-umber-900 dark:hover:bg-paper-200 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900 ${R}`}
                     >
-                      <Plus size={16} aria-hidden />
+                      <Plus size={16} strokeWidth={2} aria-hidden />
                       {t("wishlist_editor.add_gift")}
                     </button>
                   </>
@@ -1630,8 +1694,8 @@ export default function WishlistEditorPage() {
                 count={received.length}
                 hint={t("wishlist_editor.section_received_subtitle")}
                 actions={
-                  <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 dark:text-umber-300">
-                    <PackageCheck size={13} aria-hidden />
+                  <span className="inline-flex items-center gap-1.5 text-[0.8125rem] text-ink-500 dark:text-umber-300">
+                    <Lock size={14} strokeWidth={ICON_STROKE} aria-hidden />
                     {t("wishlist_editor.received_private_badge")}
                   </span>
                 }
@@ -1682,7 +1746,7 @@ function WishlistSkeleton() {
     <ul className={GIFT_GRID} aria-hidden="true">
       {[0, 1, 2, 3].map((i) => (
         <li key={i}>
-          <Skeleton variant="block" className="aspect-[4/3] w-full" rounded="2xl" />
+          <Skeleton variant="block" className="aspect-[4/3] w-full" rounded="lg" />
           <div className="mt-2.5 space-y-2">
             <Skeleton variant="block" height={14} width="72%" rounded="md" />
             <Skeleton variant="block" height={11} width="40%" rounded="md" />
@@ -1859,11 +1923,11 @@ function WishlistItemDialog({
       }}
     >
       <form
-        className="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-paper-50 shadow-pop dark:bg-umber-800"
+        className={`flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden bg-paper-50 shadow-pop dark:bg-umber-800 ${R}`}
         onSubmit={onSubmit}
       >
         <div className="flex items-center justify-between border-b border-paper-200 px-6 py-4 dark:border-umber-700">
-          <h2 className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
+          <h2 className="font-grotesk text-lg font-bold tracking-[-0.02em] text-ink-900 dark:text-paper-50">
             {existing ? t("common.edit") : t("wishlist_editor.add_item")}
           </h2>
           <button
@@ -1872,14 +1936,16 @@ function WishlistItemDialog({
             onClick={onClose}
             aria-label={t("common.cancel")}
           >
-            <X size={18} />
+            <X size={18} strokeWidth={ICON_STROKE} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {/* Picture + title, side by side: the tile updates live as the title
               is typed (the motif is derived from it) or as a link resolves. */}
           <div className="mb-4 flex items-start gap-3.5">
-            <span className="relative block h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-850">
+            <span
+              className={`relative block h-20 w-20 shrink-0 overflow-hidden border border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-850 ${R}`}
+            >
               {previewStatus === "found" && previewImageUrl ? (
                 <img
                   src={previewImageUrl}
@@ -1896,7 +1962,11 @@ function WishlistItemDialog({
               )}
               {previewStatus === "loading" && (
                 <span className="absolute inset-0 flex items-center justify-center bg-paper-50/70 dark:bg-umber-900/70">
-                  <Loader2 size={16} className="animate-spin text-ink-500 dark:text-umber-200" />
+                  <Loader2
+                    size={16}
+                    strokeWidth={ICON_STROKE}
+                    className="animate-spin text-ink-500 dark:text-umber-200"
+                  />
                 </span>
               )}
             </span>
@@ -1939,13 +2009,13 @@ function WishlistItemDialog({
                     type="button"
                     onClick={() => setKind(k)}
                     aria-pressed={active}
-                    className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-300 dark:focus-visible:ring-paper-100 ${
+                    className={`flex items-center justify-center gap-2 border px-3 py-2.5 text-sm font-semibold tracking-[-0.01em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 dark:focus-visible:ring-paper-100 ${R} ${
                       active
                         ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
-                        : "border-paper-300 bg-white text-ink-700 hover:border-paper-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+                        : "border-paper-300 bg-white text-ink-700 hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-100"
                     }`}
                   >
-                    <Icon size={16} aria-hidden />
+                    <Icon size={16} strokeWidth={ICON_STROKE} aria-hidden />
                     {t(`wishlist_editor.kind_${k}`)}
                   </button>
                 );
