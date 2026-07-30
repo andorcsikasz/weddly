@@ -17,7 +17,6 @@ import {
   Globe,
   Handshake,
   Image as ImageIcon,
-  Inbox,
   Mail,
   LayoutDashboard,
   LayoutList,
@@ -254,14 +253,10 @@ type AdminNavGroup = "inbox" | "accounts" | "manage" | "insights";
 /** Maps each admin nav row to the matching `AdminSidebarBadges` key.
  *  Items without a badgeKey never show a red index (e.g. Categories —
  *  admin-edited content with no inbox). */
-type AdminBadgeKey =
-  | "suppliers"
-  | "users"
-  | "planners"
-  | "vendors"
-  | "vendor_waitlist"
-  | "feedback"
-  | "planner_waitlist";
+// `AdminSidebarBadges` still carries `vendor_waitlist` / `planner_waitlist`
+// counts; they are absent here because nothing on the rail can wear them any
+// more, and a badge key no row uses is a badge nobody sees.
+type AdminBadgeKey = "suppliers" | "users" | "planners" | "vendors" | "feedback";
 // `group` is re-typed (not intersected) — `NavItem.group` is
 // `NavGroup | undefined`, intersecting with `AdminNavGroup | undefined`
 // collapses to `never`. `Omit<NavItem, "group">` lets the admin variant
@@ -284,22 +279,11 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     badgeKey: "suppliers",
     group: "inbox",
   },
-  {
-    to: "/app/admin/vendor-waitlist",
-    labelKey: "admin.nav_waitlist",
-    // no tabKey — goes to the phone More sheet
-    icon: <Inbox size={18} />,
-    badgeKey: "vendor_waitlist",
-    group: "inbox",
-  },
-  {
-    to: "/app/admin/planner-waitlist",
-    labelKey: "admin.nav_planner_waitlist",
-    // no tabKey — goes to the phone More sheet
-    icon: <Inbox size={18} />,
-    badgeKey: "planner_waitlist",
-    group: "inbox",
-  },
+  // The two waitlist queues (Szolgáltatói / Szervezői várólista) used to sit
+  // here. Both are off the rail as of 2026-07-30: vendors and planners sign
+  // themselves up now, so neither queue has anything to approve. The routes,
+  // the pages and their endpoints are untouched and still reachable by URL,
+  // which is what keeps the historical entries readable.
   {
     to: "/app/admin/feedback",
     labelKey: "admin.nav_feedback",
@@ -560,24 +544,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   // mapping mirrors ADMIN_ITEMS' `badgeKey`.
   useEffect(() => {
     if (!user?.is_admin) return;
-    let section:
-      | "suppliers"
-      | "users"
-      | "planners"
-      | "vendors"
-      | "vendor_waitlist"
-      | "planner_waitlist"
-      | "feedback"
-      | null = null;
+    let section: "suppliers" | "users" | "planners" | "vendors" | "feedback" | null = null;
     if (location.pathname.startsWith("/app/admin/suppliers")) section = "suppliers";
     else if (location.pathname.startsWith("/app/admin/users")) section = "users";
-    // Both waitlist paths are prefixes of nothing else, but `/app/admin/vendors`
-    // and `/app/admin/vendor-waitlist` DO share a prefix — the waitlist arms
-    // must be tested first or a waitlist visit would clear the wrong index.
-    else if (location.pathname.startsWith("/app/admin/vendor-waitlist"))
-      section = "vendor_waitlist";
-    else if (location.pathname.startsWith("/app/admin/planner-waitlist"))
-      section = "planner_waitlist";
+    // `/app/admin/vendor-waitlist` is still routed, and it shares a prefix with
+    // `/app/admin/vendors`, so it has to be excluded explicitly: without this a
+    // visit to the retired waitlist page would stamp the VENDORS watermark and
+    // clear a badge for a queue the admin never looked at.
+    else if (location.pathname.startsWith("/app/admin/vendor-waitlist")) section = null;
     else if (location.pathname.startsWith("/app/admin/planners")) section = "planners";
     else if (location.pathname.startsWith("/app/admin/vendors")) section = "vendors";
     else if (location.pathname.startsWith("/app/admin/feedback")) section = "feedback";
