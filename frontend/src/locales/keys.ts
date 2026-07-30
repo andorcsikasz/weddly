@@ -10056,6 +10056,12 @@ export interface LocaleMessages {
     vendor_prompt: string;
     /** Aria-label for the sticky category rail that indexes the page. */
     nav_categories: string;
+    /** Rail header link into the whole category, and the paginated grid it
+     *  opens: the visitor can now see every vendor, not a sample. */
+    show_all: string;
+    results_count: string;
+    load_more: string;
+    all_towns: string;
     /** Clears the ?city= filter a landing-page town pick arrives with. */
     city_filter_clear: string;
     /** Aria-labels for the desktop scrubbers on each category rail. */

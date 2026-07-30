@@ -21,11 +21,14 @@
 
 import { countryName } from "@shared/country_list";
 import type {
+  DirectorySupplier,
+  PublicDirectoryPage,
   PublicShowcaseCategory,
   PublicShowcaseVendor,
   SupplierCategory,
   SupplierCountryCount,
 } from "@shared/suppliers";
+import { SUPPLIER_GROUPS } from "@shared/suppliers";
 import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -49,6 +52,13 @@ const STICKY_OFFSET = 140;
 // the "within an hour" block underneath. They need distinct anchors so the
 // sticky index can jump to either, and a shared category so one chip covers
 // both when the town has some of that category and the region has more.
+/** Every category the browser may open, straight off the taxonomy so a new
+ *  category needs no second list here. Guards the `?category=` param: an
+ *  unknown value falls back to the rails rather than an empty grid. */
+const VALID_BROWSE_CATEGORIES: ReadonlySet<string> = new Set(
+  SUPPLIER_GROUPS.flatMap((g) => g.categories),
+);
+
 const sectionDomId = (category: string) => `cat-${category}`;
 const nearbyDomId = (category: string) => `near-${category}`;
 const categoryOfDomId = (domId: string) => domId.replace(/^(cat|near)-/, "");
@@ -203,7 +213,10 @@ function VendorCard({
    *  segment of the same muted line: at this size a badge over the photo would
    *  compete with the verified check, and the distance is a fact, not a claim. */
   distanceLabel?: string;
-  hero: string;
+  /** Null when the listing has no photograph. The teaser endpoint only ever
+   *  returned photographed entries; the full catalogue shows everyone, and a
+   *  card with an empty frame is still a card the visitor can open. */
+  hero: string | null;
   /** Registered Weddly vendor — same blue check as the in-app directory. */
   verified: boolean;
   /** Listing setup finished — fills the check in. See `<VerifiedBadge>`. */
@@ -215,13 +228,14 @@ function VendorCard({
       className="group block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100"
     >
       <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-paper-200 dark:bg-umber-700">
-        {/* Endpoint only returns entries with a hero photo, so src is always set. */}
-        <img
-          src={hero}
-          alt={name}
-          loading="lazy"
-          className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.06]"
-        />
+        {hero && (
+          <img
+            src={hero}
+            alt={name}
+            loading="lazy"
+            className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.06]"
+          />
+        )}
         {/* The affordance, not a label: on hover the card admits it opens a
             profile. Pointer-only, so nothing is hidden from touch or AT — the
             whole tile is one link either way. */}
@@ -254,6 +268,7 @@ function CategoryRow({
   domId,
   label,
   vendors,
+  showAllTo,
   t,
 }: {
   category: SupplierCategory;
@@ -262,6 +277,11 @@ function CategoryRow({
   domId: string;
   label: string;
   vendors: PublicShowcaseVendor[];
+  /** Where "show all" goes. The rail is a taste (a handful of cards); this is
+   *  the way from it into the whole category, which is the point of the page
+   *  now that a visitor can see every vendor. Absent on the nearby block, whose
+   *  scope is a radius rather than a category. */
+  showAllTo?: string;
   t: T;
 }) {
   const railRef = useRef<HTMLDivElement>(null);
@@ -297,25 +317,35 @@ function CategoryRow({
         <h2 className="font-grotesk text-xl font-semibold tracking-[-0.02em] text-ink-900 sm:text-2xl dark:text-paper-50">
           {label}
         </h2>
-        <div className="hidden gap-2 lg:flex">
-          <button
-            type="button"
-            className={arrow}
-            onClick={() => page(-1)}
-            disabled={edges.start}
-            aria-label={t("vendorBrowse.rail_prev")}
-          >
-            <ChevronLeft size={17} aria-hidden />
-          </button>
-          <button
-            type="button"
-            className={arrow}
-            onClick={() => page(1)}
-            disabled={edges.end}
-            aria-label={t("vendorBrowse.rail_next")}
-          >
-            <ChevronRight size={17} aria-hidden />
-          </button>
+        <div className="flex items-center gap-3">
+          {showAllTo && (
+            <Link
+              to={showAllTo}
+              className="whitespace-nowrap text-[13px] font-medium tracking-tight text-ink-500 underline-offset-4 transition hover:text-ink-900 hover:underline dark:text-umber-300 dark:hover:text-paper-100"
+            >
+              {t("vendorBrowse.show_all")}
+            </Link>
+          )}
+          <div className="hidden gap-2 lg:flex">
+            <button
+              type="button"
+              className={arrow}
+              onClick={() => page(-1)}
+              disabled={edges.start}
+              aria-label={t("vendorBrowse.rail_prev")}
+            >
+              <ChevronLeft size={17} aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={arrow}
+              onClick={() => page(1)}
+              disabled={edges.end}
+              aria-label={t("vendorBrowse.rail_next")}
+            >
+              <ChevronRight size={17} aria-hidden />
+            </button>
+          </div>
         </div>
       </div>
       {/* Cards bleed to the screen edge on phones so the row reads as swipeable
@@ -450,6 +480,161 @@ function PlannerInviteModule({ t, vendors }: { t: T; vendors: PublicShowcaseVend
   );
 }
 
+/** The whole of one category, paginated. This is what "see every vendor"
+ *  means in the UI: the rails above are a taste, and picking a category opens
+ *  the catalogue behind it instead of a sign-up wall.
+ *
+ *  Filters live in the URL (`?category=&city=`), so a filtered view is
+ *  shareable, the back button undoes a pick, and the URL a visitor lands on
+ *  from search is the view they expected. Contact details are absent from every
+ *  card by construction — the public payload carries none. */
+function CatalogueGrid({
+  category,
+  city,
+  country,
+  onCity,
+  t,
+}: {
+  category: SupplierCategory;
+  city: string | null;
+  country: string | null;
+  onCity: (city: string | null) => void;
+  t: T;
+}) {
+  const [page, setPage] = useState<PublicDirectoryPage | null>(null);
+  const [vendors, setVendors] = useState<DirectorySupplier[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // A fresh filter starts a fresh list; "load more" appends to it. Keyed on
+  // every input so switching category or town can't leave the previous
+  // category's cards on screen under the new heading.
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setVendors([]);
+    supplierApi
+      .publicDirectory({ category, city, country, limit: 24 })
+      .then((r) => {
+        if (cancelled) return;
+        setPage(r);
+        setVendors(r.vendors);
+      })
+      .catch(() => {
+        if (!cancelled) setPage(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [category, city, country]);
+
+  async function loadMore() {
+    if (!page || loading) return;
+    setLoading(true);
+    try {
+      const next = await supplierApi.publicDirectory({
+        category,
+        city,
+        country,
+        limit: 24,
+        offset: vendors.length,
+      });
+      setPage(next);
+      setVendors((prev) => [...prev, ...next.vendors]);
+    } catch {
+      // Leave what is on screen; the button stays and can be retried.
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const total = page?.total ?? 0;
+  const hasMore = vendors.length < total;
+
+  return (
+    <section>
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+        <h2 className="font-grotesk text-2xl font-semibold tracking-[-0.025em] text-ink-900 sm:text-3xl dark:text-paper-50">
+          {t(`suppliers.cat.${category}`)}
+        </h2>
+        {total > 0 && (
+          <p className="text-[13px] text-ink-500 dark:text-umber-300">
+            {t("vendorBrowse.results_count", { count: total })}
+          </p>
+        )}
+      </div>
+
+      {/* Town chips, counted inside the active category so none of them leads
+          to an empty page. */}
+      {(page?.cities.length ?? 0) > 1 && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => onCity(null)}
+            className={`rounded-full border px-3 py-1.5 text-[13px] transition ${
+              city === null
+                ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-ink-900"
+                : "border-ink-900/15 text-ink-600 hover:border-ink-900/40 dark:border-paper-50/20 dark:text-umber-200"
+            }`}
+          >
+            {t("vendorBrowse.all_towns")}
+          </button>
+          {(page?.cities ?? []).slice(0, 14).map((c) => (
+            <button
+              key={c.city}
+              type="button"
+              onClick={() => onCity(c.city)}
+              className={`rounded-full border px-3 py-1.5 text-[13px] transition ${
+                city === c.city
+                  ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-ink-900"
+                  : "border-ink-900/15 text-ink-600 hover:border-ink-900/40 dark:border-paper-50/20 dark:text-umber-200"
+              }`}
+            >
+              {c.city} <span className="text-ink-400 dark:text-umber-400">{c.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {vendors.length === 0 && !loading ? (
+        <p className="py-16 text-center text-[15px] text-ink-500 dark:text-umber-300">
+          {t("vendorBrowse.empty")}
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-4">
+          {vendors.map((v) => (
+            <VendorCard
+              key={v.id}
+              id={v.id}
+              name={v.name}
+              city={v.city}
+              categoryLabel={t(`suppliers.cat.${v.category}`)}
+              hero={v.hero_image_url ?? v.gallery_urls?.[0] ?? null}
+              verified={v.vendor_account_id !== null}
+              listingComplete={v.listing_complete}
+            />
+          ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="mt-10 text-center">
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-full border border-ink-900/20 px-6 py-3 text-sm font-medium tracking-tight text-ink-900 transition hover:border-ink-900 disabled:opacity-50 dark:border-paper-50/25 dark:text-paper-100"
+          >
+            {t(loading ? "common.loading" : "vendorBrowse.load_more")}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function LoadingRails() {
   return (
     <div className="space-y-10">
@@ -482,6 +667,13 @@ export default function VendorBrowsePage() {
   const [params, setParams] = useSearchParams();
   const city = params.get("city")?.trim() || null;
   const jumpCategory = params.get("category");
+  // A valid `?category=` switches the page from the sampler rails to the whole
+  // of that category. Anything else (a stale link, a typo) is ignored, so the
+  // visitor lands on the rails instead of an empty grid.
+  const activeCategory =
+    jumpCategory && VALID_BROWSE_CATEGORIES.has(jumpCategory)
+      ? (jumpCategory as SupplierCategory)
+      : null;
   const [categories, setCategories] = useState<PublicShowcaseCategory[] | null>(null);
   // Populated by the server only when the town filter came back nearly empty:
   // the surrounding region, distance-stamped. Empty the rest of the time.
@@ -588,27 +780,14 @@ export default function VendorBrowsePage() {
     return () => observer.disconnect();
   }, [navKey, inTownKey, nearbyKey]);
 
-  // A `?category=` pick from the landing typeahead is a scroll target, not a
-  // filter — the visitor asked for photographers, not for everything else to
-  // disappear. Runs once the sections exist; the param is then dropped so a
-  // later scroll (or a refresh) isn't yanked back up here. If the category
-  // isn't in this sample, the top of the page is a fine place to be.
-  const jumpedRef = useRef<string | null>(null);
+  // `?category=` is the FILTER now, so it stays in the URL. It used to be a
+  // scroll target that the page consumed and deleted on arrival — which, once a
+  // category opened the whole catalogue, meant a shared link to
+  // /vendors/browse?category=venue landed on the sampler with its own query
+  // stripped before the first paint.
   useEffect(() => {
-    if (!jumpCategory || categories === null) return;
-    if (jumpedRef.current === jumpCategory) return;
-    jumpedRef.current = jumpCategory;
-    const el =
-      document.getElementById(sectionDomId(jumpCategory)) ??
-      document.getElementById(nearbyDomId(jumpCategory));
-    if (el) {
-      setActiveCat(jumpCategory);
-      el.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
-    }
-    const next = new URLSearchParams(params);
-    next.delete("category");
-    setParams(next, { replace: true });
-  }, [jumpCategory, categories, params, setParams]);
+    setActiveCat(activeCategory);
+  }, [activeCategory]);
 
   // The phone sign-up pill: on once you're past the hero, off again as soon as
   // the closing CTA is on screen so the same action never appears twice.
@@ -634,6 +813,16 @@ export default function VendorBrowsePage() {
 
   function jumpTo(category: string) {
     setActiveCat(category);
+    // A chip opens the whole category now. It used to scroll to a rail of six
+    // and that was the end of the visitor's road: everything past the sixth
+    // card was behind a sign-up.
+    if (VALID_BROWSE_CATEGORIES.has(category)) {
+      const next = new URLSearchParams(params);
+      next.set("category", category);
+      setParams(next, { replace: false });
+      window.scrollTo({ top: 0, behavior: scrollBehavior() });
+      return;
+    }
     // In-town first, nearby as the fallback: a chip that only exists because
     // the region has that category still has somewhere to go.
     const el =
@@ -720,7 +909,20 @@ export default function VendorBrowsePage() {
 
         {/* Body */}
         <main className="mx-auto max-w-7xl px-4 pb-14 pt-6 sm:px-6 lg:px-8">
-          {categories === null ? (
+          {activeCategory ? (
+            <CatalogueGrid
+              category={activeCategory}
+              city={city}
+              country={country}
+              onCity={(nextCity) => {
+                const next = new URLSearchParams(params);
+                if (nextCity) next.set("city", nextCity);
+                else next.delete("city");
+                setParams(next, { replace: false });
+              }}
+              t={t}
+            />
+          ) : categories === null ? (
             <div aria-label={t("common.loading")}>
               <LoadingRails />
             </div>
@@ -737,6 +939,7 @@ export default function VendorBrowsePage() {
                   domId={sectionDomId(c.category)}
                   label={t(`suppliers.cat.${c.category}`)}
                   vendors={c.vendors}
+                  showAllTo={`/vendors/browse?category=${c.category}${city ? `&city=${encodeURIComponent(city)}` : ""}`}
                   t={t}
                 />
               ))}

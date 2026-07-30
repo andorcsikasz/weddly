@@ -54,6 +54,24 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
         "We're a Hungarian couple building Weddly by hand. We believe wedding planning should be calm, shared and manageable, so we keep the budget, guest list, RSVP and seating in one shared workspace, instead of trading PDFs at midnight.",
     },
   },
+  "/vendors/browse": {
+    hu: {
+      title: "Esküvői szolgáltatók · Wēddly",
+      description:
+        "Böngéssz több mint ezer esküvői helyszínt, fotóst, zenészt és cateringet városra és kategóriára szűrve. Fotók, árfekvés, vélemények, regisztráció nélkül.",
+      h1: "Esküvői szolgáltatók",
+      intro:
+        "Helyszínek, fotósok, videósok, zenekarok, DJ-k, catering, dekor és minden más, amire egy esküvőhöz szükség van. Szűrj városra és kategóriára, nézd meg a képeket és a véleményeket, aztán vedd fel a kapcsolatot azzal, aki tetszik. A böngészéshez nem kell fiók.",
+    },
+    en: {
+      title: "Wedding vendors · Weddly",
+      description:
+        "Browse over a thousand wedding venues, photographers, bands and caterers, filtered by city and category. Photos, price bands and reviews, no sign-up needed.",
+      h1: "Wedding vendors",
+      intro:
+        "Venues, photographers, videographers, bands, DJs, catering, flowers and everything else a wedding needs. Filter by city and category, look at the photographs and the reviews, then get in touch with whoever fits. Browsing needs no account.",
+    },
+  },
   "/vendors": {
     hu: {
       title: "Szolgáltatóknak · Wēddly",

@@ -20,10 +20,13 @@ import type { BlogBlock } from "../../../shared/blog_posts";
 import { SEO_FAQ } from "../../../shared/seo_faq";
 import { enPathFor, huPathFor, lookupRouteSeo, type RouteSeo } from "../../../shared/seo_routes";
 import { toolFaqForPath } from "../../../shared/tool_faq";
+import { supplierCategoryLabel } from "../../../shared/suppliers";
 import { vendorPublicId } from "../../../shared/vendor_slug";
 import { db } from "../db";
+import { curatedOverrideMap } from "../domain/curated_overrides";
 import { listListingPhotos } from "../domain/listings";
 import { resolveSupplierBase } from "../domain/resolve_supplier";
+import { DIRECTORY } from "../domain/suppliers_data";
 import { normalizeSlugInput } from "../domain/slug";
 
 // Canonical apex moved from weddly.hu to tryweddly.com in the June 2026 domain
@@ -63,6 +66,10 @@ const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/eszkozok/100-kerdes-eskuvo-elott", priority: "0.8", changefreq: "monthly" },
   { path: "/signup", priority: "0.7", changefreq: "monthly" },
   { path: "/blog", priority: "0.6", changefreq: "weekly" },
+  // The public directory browser. Higher than the vendor-recruitment page it
+  // sits under: it is the hub every one of the thousand-odd profile URLs below
+  // hangs off, and the query a visitor actually types.
+  { path: "/vendors/browse", priority: "0.8", changefreq: "daily" },
   { path: "/vendors", priority: "0.6", changefreq: "monthly" },
   { path: "/about", priority: "0.5", changefreq: "monthly" },
   { path: "/login", priority: "0.5", changefreq: "monthly" },
@@ -71,6 +78,96 @@ const STATIC_PUBLIC_PATHS: ReadonlyArray<SitemapPath> = [
   { path: "/subscription-terms", priority: "0.3", changefreq: "yearly" },
   { path: "/imprint", priority: "0.3", changefreq: "yearly" },
 ];
+
+/** Every public vendor page, as the pretty URL the product links to.
+ *
+ *  A thousand-odd profile pages with per-vendor titles, descriptions, photos and
+ *  reviews were reachable only by clicking through the app, so nothing but the
+ *  handful of statically-listed paths was ever offered to a crawler. This is the
+ *  single largest indexable surface Weddly has, and it costs one query.
+ *
+ *  Assembled from the same places the directory itself is: the static curated
+ *  catalogue minus admin-hidden entries, plus every active DB-backed listing.
+ *  An unclaimed IMPORTED profile is included on purpose — its page renders a
+ *  teaser (name, town, one photo, no bio), which is a thin but honest page, and
+ *  leaving it out of the sitemap would not stop it being crawled anyway. */
+function publicVendorSitemapPaths(): string[] {
+  const hidden = new Set(curatedOverrideMap().keys());
+  const paths: string[] = [];
+  const seen = new Set<string>();
+  const push = (id: string, name: string) => {
+    if (hidden.has(id) || seen.has(id)) return;
+    seen.add(id);
+    paths.push(`/vendors/${vendorPublicId(id, name)}`);
+  };
+  for (const entry of DIRECTORY) push(entry.id, entry.name);
+  const rows = db.prepare("SELECT id, name FROM listings WHERE status = 'active'").all() as {
+    id: string;
+    name: string;
+  }[];
+  for (const row of rows) push(row.id, row.name);
+  return paths;
+}
+
+/** `/vendors/browse`, with or without a trailing slash. Query strings never
+ *  reach here (the SSR entry point passes a bare pathname), so a category
+ *  filter is a variation of the same indexable URL, not one of its own. */
+function isBrowsePath(pathname: string): boolean {
+  return pathname === "/vendors/browse" || pathname === "/vendors/browse/";
+}
+
+/** How many vendors the SSR'd browse body links to. Enough to give a crawler a
+ *  wide entry into the catalogue and a reader a real sense of it, small enough
+ *  that the HTML stays a page rather than a database dump. */
+const BROWSE_INDEX_LIMIT = 90;
+
+/** A crawlable list of vendor links for the browse page's SSR body, grouped by
+ *  category so the block reads as an index rather than a wall of names.
+ *
+ *  Deliberately name + town only. The card the visitor sees carries a photo, a
+ *  price band and a rating; none of those belong in a text index, and NO
+ *  contact detail appears here — the whole point of the masking elsewhere would
+ *  be lost if the crawlable HTML published what the API withholds. */
+function renderVendorIndexHtml(locale: SeoLocale): string {
+  const hidden = new Set(curatedOverrideMap().keys());
+  const byCategory = new Map<string, { name: string; city: string; path: string }[]>();
+  let taken = 0;
+  for (const entry of DIRECTORY) {
+    if (taken >= BROWSE_INDEX_LIMIT) break;
+    if (hidden.has(entry.id)) continue;
+    // A listing with no photograph is a thin card; the visible browser ranks
+    // those last, so the index leads with the same ones.
+    if (!entry.hero_image_url && !(entry.gallery_urls && entry.gallery_urls.length > 0)) continue;
+    const list = byCategory.get(entry.category) ?? [];
+    if (list.length >= 8) continue;
+    list.push({
+      name: entry.name,
+      city: entry.city,
+      path: `/vendors/${vendorPublicId(entry.id, entry.name)}`,
+    });
+    byCategory.set(entry.category, list);
+    taken += 1;
+  }
+  if (byCategory.size === 0) return "";
+
+  const heading = locale === "hu" ? "Szolgáltatók kategóriánként" : "Vendors by category";
+  const sections: string[] = [`<h2>${escapeText(heading)}</h2>`];
+  for (const [category, vendors] of byCategory) {
+    const items = vendors
+      .map(
+        (v) =>
+          `<li><a href="${escapeAttr(v.path)}">${escapeText(v.name)}</a>${
+            v.city ? ` · ${escapeText(v.city)}` : ""
+          }</li>`,
+      )
+      .join("\n          ");
+    sections.push(
+      `<h3>${escapeText(supplierCategoryLabel(category, locale))}</h3>`,
+      `<ul>\n          ${items}\n        </ul>`,
+    );
+  }
+  return `<article>\n        ${sections.join("\n        ")}\n      </article>`;
+}
 
 /** Per-post rows read from the `blog_posts` table at request time. Drafts
  *  (`is_published = 0`) are excluded so a half-written post doesn't end up
@@ -1080,6 +1177,16 @@ function renderRouteBody(pathname: string, locale: SeoLocale): string | null {
     }
   }
 
+  // The directory browser gets a real, crawlable index of the catalogue baked
+  // into the HTML. The React page renders the same names and links from the
+  // API, so this is a reflection of the page rather than a second, hidden one;
+  // what it adds is a path a crawler can follow from the hub into the profile
+  // pages without executing any JavaScript. Capped: this is an entry point,
+  // and the sitemap carries the complete set.
+  if (!articleHtml && isBrowsePath(pathname)) {
+    articleHtml = renderVendorIndexHtml(locale);
+  }
+
   return [
     `<header>`,
     `  <h1>${escapeAttr(entry.h1)}</h1>`,
@@ -1307,6 +1414,26 @@ export function renderSitemapXml(_host: string | null): string {
     if (enHere && enPath !== huPath) {
       blocks.push(buildUrlBlock(enHere, huHere, enHere, priority, changefreq));
     }
+  }
+
+  // Every public vendor profile. One <loc> each, no hreflang pair: a vendor
+  // page is one URL that renders in the visitor's language, not two slugs.
+  // These are the bulk of the file (a thousand-odd URLs against a dozen static
+  // paths), and they are the reason the file exists at this size: without them
+  // the product's largest body of unique, photographed, reviewed content was
+  // reachable only by crawling links from inside the app.
+  for (const path of publicVendorSitemapPaths()) {
+    const here = `https://${CANONICAL_HOST}${path}`;
+    blocks.push(
+      [
+        "  <url>",
+        `    <loc>${here}</loc>`,
+        `    <lastmod>${SITEMAP_LASTMOD}</lastmod>`,
+        "    <changefreq>weekly</changefreq>",
+        "    <priority>0.6</priority>",
+        "  </url>",
+      ].join("\n"),
+    );
   }
 
   // Blog posts: HU canonical + EN alternate via per-post en_slug.

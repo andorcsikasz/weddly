@@ -169,6 +169,7 @@ import type {
   CreateReviewBody,
   DirectorySupplier,
   PublicVendorPageData,
+  PublicDirectoryPage,
   PublicVendorSearchResult,
   PublicVendorShowcase,
   ReviewListResponse,
@@ -1967,6 +1968,27 @@ export const supplierApi = {
     if (city) qs.set("city", city);
     const suffix = qs.size > 0 ? `?${qs}` : "";
     return apiFetch<PublicVendorShowcase>("GET", `/api/public/vendor-showcase${suffix}`);
+  },
+  /** The PUBLIC directory, whole and paginated: what the browse page shows a
+   *  visitor once they pick a category or a town. Same catalogue a signed-in
+   *  couple sees; the cards carry no contact values (see `SupplierContact`). */
+  publicDirectory: (opts: {
+    category?: string | null;
+    country?: string | null;
+    city?: string | null;
+    q?: string | null;
+    offset?: number;
+    limit?: number;
+  }) => {
+    const qs = new URLSearchParams();
+    if (opts.category) qs.set("category", opts.category);
+    if (opts.country) qs.set("country", opts.country);
+    if (opts.city) qs.set("city", opts.city);
+    if (opts.q) qs.set("q", opts.q);
+    if (opts.offset) qs.set("offset", String(opts.offset));
+    if (opts.limit) qs.set("limit", String(opts.limit));
+    const suffix = qs.size > 0 ? `?${qs}` : "";
+    return apiFetch<PublicDirectoryPage>("GET", `/api/public/vendors${suffix}`);
   },
   /** Public typeahead for the landing-page directory search: vendor + city
    *  hits, plus the category census the client matches in its own language. */
