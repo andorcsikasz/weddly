@@ -15,6 +15,7 @@ import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
 import {
+  coerceBufferMin,
   coerceWeekdays,
   coerceWeeklyHours,
   hasAnyWorkingDay,
@@ -22,11 +23,16 @@ import {
   MAX_SCHEDULE_NAME_LEN,
   type WeeklyHours,
 } from "@shared/vendor_availability";
-import { getVendorSchedule, setVendorSchedule } from "../domain/vendor_availability_settings";
+import {
+  getVendorSchedule,
+  setVendorBuffers,
+  setVendorSchedule,
+} from "../domain/vendor_availability_settings";
 import { listVendorExternalBusy } from "../domain/vendor_external_busy";
 import {
   blockDate,
   isIsoDate,
+  bufferOnlyMap,
   listBlockedDates,
   listBlockedDays,
   listOpenDates,
@@ -45,12 +51,22 @@ function buildView(vendorAccountId: number): VendorAvailabilityView {
       externalBusy.push({ date, start_min: iv.start_min, end_min: iv.end_min });
     }
   }
+  // What the BUFFER adds on top, kept separate from the raw blocks: the vendor
+  // needs to see that Sunday morning went with Saturday's wedding, and that it
+  // is padding rather than something they marked.
+  const bufferBlocks: VendorAvailabilityView["buffer_blocks"] = [];
+  for (const [date, list] of bufferOnlyMap(vendorAccountId)) {
+    for (const iv of list) {
+      bufferBlocks.push({ date, start_min: iv.start_min, end_min: iv.end_min });
+    }
+  }
   return {
     blocked_dates: listBlockedDates(vendorAccountId),
     blocked_days: listBlockedDays(vendorAccountId),
     next_available: nextAvailableDate(vendorAccountId),
     open_dates: listOpenDates(vendorAccountId),
     external_busy: externalBusy,
+    buffer_blocks: bufferBlocks,
   };
 }
 
@@ -170,6 +186,8 @@ async function handlePutPattern(ctx: Ctx): Promise<Response> {
     weekdays?: unknown;
     working_hours?: unknown;
     schedule_name?: unknown;
+    buffer_before_min?: unknown;
+    buffer_after_min?: unknown;
   }>(ctx.req);
 
   const current = getVendorSchedule(account.id);
@@ -178,31 +196,58 @@ async function handlePutPattern(ctx: Ctx): Promise<Response> {
       ? body.schedule_name.trim().slice(0, MAX_SCHEDULE_NAME_LEN)
       : current.schedule_name;
 
-  let hours: WeeklyHours;
-  if (body.working_hours !== undefined) {
-    const parsed = coerceWeeklyHours(body.working_hours);
-    if (parsed === null) {
-      throw new HttpError(
-        400,
-        "working_hours must map weekdays 1-7 to {start_min,end_min} objects",
-      );
+  // A body that says nothing about the schedule must not rewrite it. This
+  // matters now that buffers share the endpoint: a buffer-only PUT used to fall
+  // into the legacy branch below, where an absent `weekdays` means "every day",
+  // and silently flattened the vendor's hours to whole days.
+  const touchesSchedule =
+    body.working_hours !== undefined ||
+    body.weekdays !== undefined ||
+    body.schedule_name !== undefined;
+
+  if (touchesSchedule) {
+    let hours: WeeklyHours;
+    if (body.working_hours !== undefined) {
+      const parsed = coerceWeeklyHours(body.working_hours);
+      if (parsed === null) {
+        throw new HttpError(
+          400,
+          "working_hours must map weekdays 1-7 to {start_min,end_min} objects",
+        );
+      }
+      // A week with no working day at all would mean "never available" and would
+      // silently drop the vendor out of every date-filtered search. Refused
+      // loudly rather than coerced, because unlike a junk weekday list there is
+      // no reading of an empty hour editor that means "every day".
+      if (!hasAnyWorkingDay(parsed)) {
+        throw new HttpError(400, "at least one working day is required");
+      }
+      hours = parsed;
+    } else if (body.weekdays !== undefined) {
+      // Legacy shape. Anything that isn't a usable partial set (empty or all
+      // seven) resolves to null = "available every day", so there is exactly one
+      // representation of the unrestricted case and a vendor can never
+      // accidentally store "never available" and vanish from every search. The
+      // named days become whole working days, which is what they meant before
+      // hours existed.
+      hours = hoursFromWeekdays(coerceWeekdays(body.weekdays));
+    } else {
+      // Renaming only: keep the week exactly as it is.
+      hours = current.working_hours;
     }
-    // A week with no working day at all would mean "never available" and would
-    // silently drop the vendor out of every date-filtered search. Refused loudly
-    // rather than coerced, because unlike a junk weekday list there is no
-    // reading of an empty hour editor that means "every day".
-    if (!hasAnyWorkingDay(parsed)) throw new HttpError(400, "at least one working day is required");
-    hours = parsed;
-  } else {
-    // Legacy shape. Anything that isn't a usable partial set (absent, empty, or
-    // all seven) resolves to null = "available every day", so there is exactly
-    // one representation of the unrestricted case and a vendor can never
-    // accidentally store "never available" and vanish from every search. The
-    // named days become whole working days, which is what they meant before
-    // hours existed.
-    hours = hoursFromWeekdays(coerceWeekdays(body.weekdays));
+    setVendorSchedule(account.id, { hours, scheduleName: name });
   }
-  setVendorSchedule(account.id, { hours, scheduleName: name });
+
+  // Buffers ride the same PUT because they are the same settings card, and
+  // because a client that saved hours and buffers separately could leave the two
+  // half-applied if the second call failed. Absent = unchanged; explicit null on
+  // BOTH = back to the category default.
+  if (body.buffer_before_min !== undefined || body.buffer_after_min !== undefined) {
+    setVendorBuffers(account.id, {
+      beforeMin: coerceBufferMin(body.buffer_before_min),
+      afterMin: coerceBufferMin(body.buffer_after_min),
+    });
+  }
 
   markVendorCalendarDirty(account.id);
   const settings = getVendorSchedule(account.id);

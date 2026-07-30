@@ -1814,6 +1814,18 @@ addColumnIfMissing(
 // default into every account.
 addColumnIfMissing("vendor_availability_settings", "schedule_name", "schedule_name TEXT");
 
+// Setup / teardown padding around confirmed bookings and external busy time.
+// NULL is meaningful and is NOT the same as 0: NULL means "never set, follow the
+// category default" (a venue starts at 4h before / 8h after), while 0 is a
+// vendor stating they need none, and that answer has to survive a category
+// default that says otherwise.
+addColumnIfMissing(
+  "vendor_availability_settings",
+  "buffer_before_min",
+  "buffer_before_min INTEGER",
+);
+addColumnIfMissing("vendor_availability_settings", "buffer_after_min", "buffer_after_min INTEGER");
+
 // One-time grandfather: every vendor account that existed BEFORE the vendor
 // freemium launch is an early adopter: grant the founding year (free, no
 // card), the same promise activation makes. Idempotent: only accounts with no

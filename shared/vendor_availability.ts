@@ -342,10 +342,78 @@ export function externalBusyVerdict(
   return minutes(left) < minutes(workNorm) ? "partial" : "none";
 }
 
+// ── Buffer time around an event ─────────────────────────────────────────────
+//
+// Setup and teardown. A wedding is not the working day: a venue is dressing the
+// room the evening before and stripping it the morning after, and neither is
+// visible in any calendar. The buffer is what turns "I have a wedding on
+// Saturday" into "Sunday morning is gone too", automatically, instead of the
+// vendor blocking the shoulder days by hand and forgetting half the time.
+//
+// It applies to CONFIRMED bookings and to busy time pulled from the vendor's
+// Google calendar. It deliberately does NOT apply to a block the vendor typed
+// here: that is already an explicit statement about a date, and padding it
+// would mean the app silently disagreeing with what they entered.
+
+/** What the editor offers, in minutes. Hours, because setup time is quoted in
+ *  hours and a minute-precise teardown estimate is a fiction. */
+export const BUFFER_OPTIONS_MIN: readonly number[] = [0, 60, 120, 240, 360, 480, 720];
+export const MAX_BUFFER_MIN = 720;
+
+export interface VendorBuffers {
+  before_min: number;
+  after_min: number;
+}
+
+export const NO_BUFFERS: VendorBuffers = { before_min: 0, after_min: 0 };
+
+/** Per-category starting points, because the honest default is not the same for
+ *  everyone: a venue loses the evening before and the morning after, while a
+ *  photographer arrives and leaves with their bag. Only categories with a real
+ *  load-in/load-out are listed; everything else starts at zero, since a default
+ *  nobody needs is a default that quietly costs them bookings.
+ *
+ *  A STARTING POINT, not a rule: the vendor overrides it and the override wins
+ *  for good (`buffer_before_min` / `buffer_after_min` stop being NULL). */
+export const CATEGORY_BUFFERS: Readonly<Record<string, VendorBuffers>> = {
+  venue: { before_min: 240, after_min: 480 },
+  tent_pavilion: { before_min: 480, after_min: 480 },
+  accommodation: { before_min: 0, after_min: 240 },
+  catering: { before_min: 240, after_min: 240 },
+  bar_drinks: { before_min: 120, after_min: 120 },
+  food_trucks: { before_min: 120, after_min: 120 },
+  cake_dessert: { before_min: 60, after_min: 0 },
+  wedding_decor: { before_min: 360, after_min: 240 },
+  florist: { before_min: 240, after_min: 120 },
+  lighting: { before_min: 240, after_min: 240 },
+  rental_equipment: { before_min: 240, after_min: 240 },
+  sound_tech: { before_min: 240, after_min: 120 },
+  dj: { before_min: 120, after_min: 120 },
+  live_music: { before_min: 120, after_min: 120 },
+  entertainment: { before_min: 60, after_min: 60 },
+  photo_booth: { before_min: 120, after_min: 60 },
+};
+
+export function defaultBuffersForCategory(category: string | null): VendorBuffers {
+  if (!category) return NO_BUFFERS;
+  return CATEGORY_BUFFERS[category] ?? NO_BUFFERS;
+}
+
+/** Validate an inbound buffer. `null` means "unset, follow the category
+ *  default", which is why absent and 0 must stay distinguishable: 0 is a vendor
+ *  saying they need no buffer, and it has to survive a category default of 4
+ *  hours. Anything out of range is clamped rather than rejected, since the
+ *  select can only offer valid values and a clamp is the harmless failure. */
+export function coerceBufferMin(raw: unknown): number | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== "number" || !Number.isFinite(raw)) return null;
+  return Math.max(0, Math.min(MAX_BUFFER_MIN, Math.round(raw)));
+}
+
 /** The vendor's recurring availability policy. Its own resource (and its own
  *  endpoint) rather than a field on the blocked-dates view, because it is
  *  settings rather than data, and because this is where the rest of the
- *  scheduling controls will land (minimum notice, booking horizon, buffers). */
+ *  scheduling controls will land (minimum notice, booking horizon). */
 export interface VendorAvailabilitySettings {
   /** ISO weekday numbers the vendor generally works; null = every day.
    *  DERIVED from `working_hours` on every write. */
@@ -354,6 +422,15 @@ export interface VendorAvailabilitySettings {
   schedule_name: string;
   /** Working hours per ISO weekday. */
   working_hours: WeeklyHours;
+  /** Setup / teardown padding around confirmed bookings and external busy time,
+   *  in minutes. RESOLVED: the vendor's own value, or their category's default
+   *  while they have not set one. */
+  buffer_before_min: number;
+  buffer_after_min: number;
+  /** True while the two values above are still the category's suggestion rather
+   *  than the vendor's own choice. The editor says so, because a number the
+   *  vendor never typed should not read as a decision they made. */
+  buffer_is_default: boolean;
 }
 
 /** Validate an inbound weekday list. Throws-free: returns null for anything

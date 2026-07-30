@@ -1076,6 +1076,14 @@ const en: LocaleMessages = {
       gcal_list_failed: "Could not read your calendars just now. Try again later.",
       gcal_last_pull: "Last read: {when} · {count} busy slots",
       gcal_never_pulled: "Nothing read yet.",
+      buffer_title: "Buffer time",
+      buffer_body:
+        "Setup and teardown around bookings and your Google events. Exceptions you add by hand are left alone.",
+      buffer_before: "Before an event",
+      buffer_after: "After an event",
+      buffer_none: "None",
+      buffer_hours: "{count} h",
+      buffer_default_hint: "This is your category's suggestion until you change it.",
     },
     plan: {
       free_label: "Basic",
@@ -1133,6 +1141,8 @@ const en: LocaleMessages = {
     legend_off_day: "Not working",
     legend_external: "Busy in an external calendar",
     external_busy_label: "Google Calendar: busy {from}-{to}",
+    legend_buffer: "Buffer time",
+    buffer_label: "Buffer {from}-{to}",
     schedule_link: "Edit working hours",
     blocked_pill_label: "Blocked",
     block_day_title: "Block {date}",

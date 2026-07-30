@@ -88,6 +88,65 @@ export function splitBusyRange(
   return out;
 }
 
+/** Days since the epoch for an ISO date, so a dated minute range can be treated
+ *  as one number line and padded across midnight without timezone maths (we are
+ *  already in the vendor's local calendar here). */
+function dayIndex(iso: string): number {
+  const [y, m, d] = iso.split("-").map(Number);
+  return Math.floor(Date.UTC(y as number, (m as number) - 1, d as number) / 86_400_000);
+}
+
+function isoFromDayIndex(index: number): string {
+  const dt = new Date(index * 86_400_000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${dt.getUTCFullYear()}-${p(dt.getUTCMonth() + 1)}-${p(dt.getUTCDate())}`;
+}
+
+/** Pad every dated interval by the vendor's setup/teardown buffers, spilling
+ *  onto the neighbouring dates when it crosses midnight. This is the whole
+ *  mechanism behind "a Saturday wedding takes Sunday morning with it": the
+ *  padded ranges then go through the SAME verdict as everything else, so a
+ *  2-hour teardown that lands before the vendor's next working day changes
+ *  nothing, and a 12-hour one takes the morning. */
+export function expandWithBuffer(
+  rows: readonly ExternalBusyRow[],
+  beforeMin: number,
+  afterMin: number,
+): ExternalBusyRow[] {
+  if (beforeMin <= 0 && afterMin <= 0) return rows.map((r) => ({ ...r }));
+  const out: ExternalBusyRow[] = [];
+  for (const r of rows) {
+    const base = dayIndex(r.busy_date) * DAY_MINUTES;
+    let from = base + r.start_min - Math.max(0, beforeMin);
+    const to = base + r.end_min + Math.max(0, afterMin);
+    while (from < to) {
+      const day = Math.floor(from / DAY_MINUTES);
+      const dayEnd = (day + 1) * DAY_MINUTES;
+      const chunkEnd = Math.min(to, dayEnd);
+      out.push({
+        busy_date: isoFromDayIndex(day),
+        start_min: from - day * DAY_MINUTES,
+        end_min: chunkEnd - day * DAY_MINUTES,
+      });
+      from = chunkEnd;
+    }
+  }
+  return out;
+}
+
+/** Group dated rows into the per-date map every availability read consumes,
+ *  merging overlaps so two padded events on one afternoon count once. */
+export function groupBusyRows(rows: readonly ExternalBusyRow[]): Map<string, WorkInterval[]> {
+  const out = new Map<string, WorkInterval[]>();
+  for (const r of rows) {
+    const list = out.get(r.busy_date) ?? [];
+    list.push({ start_min: r.start_min, end_min: r.end_min });
+    out.set(r.busy_date, list);
+  }
+  for (const [date, list] of out) out.set(date, normalizeIntervals(list));
+  return out;
+}
+
 /** Replace the vendor's whole external-busy set. Wholesale rather than diffed
  *  because free/busy has no stable per-block identity to diff against: the same
  *  Google event moved by an hour is simply a different range, and a deleted one

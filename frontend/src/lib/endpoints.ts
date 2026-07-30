@@ -2834,8 +2834,15 @@ export const vendorAvailabilityApi = {
    *  client can't write one layer and leave the other stale. */
   schedule: () =>
     apiFetch<VendorAvailabilitySettings>("GET", "/api/vendor/availability/me/pattern"),
-  saveSchedule: (body: { working_hours: WeeklyHours; schedule_name: string }) =>
-    apiFetch<VendorAvailabilitySettings>("PUT", "/api/vendor/availability/me/pattern", body),
+  saveSchedule: (body: {
+    working_hours: WeeklyHours;
+    schedule_name: string;
+    /** Setup / teardown padding in minutes. Sending both pins them as the
+     *  vendor's own choice; sending null for both restores the category
+     *  default. */
+    buffer_before_min?: number | null;
+    buffer_after_min?: number | null;
+  }) => apiFetch<VendorAvailabilitySettings>("PUT", "/api/vendor/availability/me/pattern", body),
 };
 
 /** Vendor to-do board: private, vendor-scoped tasks on the kanban at

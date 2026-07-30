@@ -20,6 +20,8 @@
 import { db, now } from "../db";
 import {
   ALL_WEEKDAYS,
+  coerceBufferMin,
+  defaultBuffersForCategory,
   emptyWeeklyHours,
   hoursFromWeekdays,
   MAX_SCHEDULE_NAME_LEN,
@@ -27,6 +29,7 @@ import {
   parseWeekdays,
   serializeWeekdays,
   type VendorAvailabilitySettings,
+  type VendorBuffers,
   type Weekday,
   type WeeklyHours,
   weekdaysFromHours,
@@ -36,6 +39,37 @@ interface SettingsRow {
   vendor_account_id: number;
   weekdays: string | null;
   schedule_name: string | null;
+  buffer_before_min: number | null;
+  buffer_after_min: number | null;
+}
+
+/** The listing category this vendor's buffer defaults come from. A vendor owns
+ *  one listing; a missing one just means no category-specific suggestion. */
+function categoryForVendor(vendorAccountId: number): string | null {
+  const row = db
+    .prepare("SELECT category FROM listings WHERE vendor_account_id = ? LIMIT 1")
+    .get(vendorAccountId) as { category: string | null } | undefined;
+  return row?.category ?? null;
+}
+
+/** Resolved setup/teardown padding: the vendor's own numbers, or their
+ *  category's suggestion while both are still NULL. Resolved TOGETHER on
+ *  purpose: setting only "after" would otherwise leave "before" following the
+ *  category, so the pair would come from two different decisions. */
+export function getVendorBuffers(vendorAccountId: number): VendorBuffers & { is_default: boolean } {
+  const row = db
+    .prepare(
+      "SELECT buffer_before_min, buffer_after_min FROM vendor_availability_settings WHERE vendor_account_id = ?",
+    )
+    .get(vendorAccountId) as
+    | Pick<SettingsRow, "buffer_before_min" | "buffer_after_min">
+    | undefined;
+  const before = row?.buffer_before_min ?? null;
+  const after = row?.buffer_after_min ?? null;
+  if (before === null && after === null) {
+    return { ...defaultBuffersForCategory(categoryForVendor(vendorAccountId)), is_default: true };
+  }
+  return { before_min: before ?? 0, after_min: after ?? 0, is_default: false };
 }
 
 /** The vendor's weekly working pattern, or null for "every day". Null is both
@@ -77,11 +111,45 @@ export function getVendorSchedule(vendorAccountId: number): VendorAvailabilitySe
     )
     .get(vendorAccountId) as Pick<SettingsRow, "weekdays" | "schedule_name"> | undefined;
   const weekdays = parseWeekdays(row?.weekdays ?? null);
+  const buffers = getVendorBuffers(vendorAccountId);
   return {
     weekdays,
     schedule_name: row?.schedule_name ?? "",
     working_hours: readStoredHours(vendorAccountId) ?? hoursFromWeekdays(weekdays),
+    buffer_before_min: buffers.before_min,
+    buffer_after_min: buffers.after_min,
+    buffer_is_default: buffers.is_default,
   };
+}
+
+/** Store the vendor's own buffers. Passing null for BOTH clears back to the
+ *  category default; passing one number pins the pair (the other resolves to
+ *  what was showing), so the vendor can never end up half-defaulted. */
+export function setVendorBuffers(
+  vendorAccountId: number,
+  input: { beforeMin: number | null; afterMin: number | null },
+): void {
+  const before = coerceBufferMin(input.beforeMin);
+  const after = coerceBufferMin(input.afterMin);
+  const ts = now();
+  if (before === null && after === null) {
+    db.prepare(
+      `UPDATE vendor_availability_settings
+          SET buffer_before_min = NULL, buffer_after_min = NULL, updated_at = ?
+        WHERE vendor_account_id = ?`,
+    ).run(ts, vendorAccountId);
+    return;
+  }
+  const current = getVendorBuffers(vendorAccountId);
+  db.prepare(
+    `INSERT INTO vendor_availability_settings
+       (vendor_account_id, weekdays, buffer_before_min, buffer_after_min, created_at, updated_at)
+     VALUES (?, NULL, ?, ?, ?, ?)
+     ON CONFLICT(vendor_account_id) DO UPDATE SET
+       buffer_before_min = excluded.buffer_before_min,
+       buffer_after_min  = excluded.buffer_after_min,
+       updated_at        = excluded.updated_at`,
+  ).run(vendorAccountId, before ?? current.before_min, after ?? current.after_min, ts, ts);
 }
 
 /** Replace the whole schedule: the intervals, the derived weekday mirror and the

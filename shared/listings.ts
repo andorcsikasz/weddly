@@ -456,6 +456,11 @@ export interface VendorAvailabilityView {
    *  the vendor themselves: couples see its EFFECT (a date reading busy), never
    *  the blocks. Empty when nothing is connected or the pull is off. */
   external_busy: VendorExternalBusyBlock[];
+  /** What the setup/teardown BUFFER adds on top of bookings and external busy,
+   *  and only that (the raw blocks are above). Drawn on the vendor's own
+   *  calendar so a quiet Sunday morning explains itself instead of reading as a
+   *  block they don't remember making. Empty when both buffers are zero. */
+  buffer_blocks: VendorExternalBusyBlock[];
   /** The OTHER direction of the exception layer: dates the vendor exceptionally
    *  works even though their weekly schedule says that weekday is off. The API
    *  has accepted these since the weekly pattern landed, but nothing read them

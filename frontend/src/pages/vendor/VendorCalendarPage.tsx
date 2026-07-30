@@ -94,7 +94,7 @@ const MODE_KEY = "weddly.vendor_cal_mode";
  *  compact "4 ó" shown next to the lock on a partial-day pill (absent = whole
  *  day, so the pill is a lock icon with no text). */
 interface CalEvent {
-  kind: "booked" | "pending" | "blocked" | "task" | "external";
+  kind: "booked" | "pending" | "blocked" | "task" | "external" | "buffer";
   date: string; // YYYY-MM-DD
   label: string;
   bookingId?: number;
@@ -168,6 +168,10 @@ function pillColor(kind: CalEvent["kind"]): string {
     // here, so it must not compete with a real inquiry for attention.
     case "external":
       return "bg-paper-200 text-ink-600 dark:bg-umber-800/80 dark:text-umber-200";
+    // Setup / teardown the app added around an event. Quieter still: it is a
+    // consequence, not an entry.
+    case "buffer":
+      return "bg-paper-100 text-ink-500 dark:bg-umber-800/50 dark:text-umber-300";
   }
 }
 
@@ -203,6 +207,8 @@ function EventGlyph({ ev, size = 10 }: { ev: CalEvent; size?: number }) {
       );
     case "external":
       return <CalendarSync size={size} className="shrink-0" aria-hidden="true" />;
+    case "buffer":
+      return <Hourglass size={size} className="shrink-0" aria-hidden="true" />;
   }
 }
 
@@ -532,10 +538,13 @@ function HourBand({
 }) {
   const top = ((start - windowStart) / span) * 100;
   const height = ((end - start) / span) * 100;
-  const external = ev.kind === "external";
-  const shared = external
-    ? "absolute inset-x-0.5 z-[4] overflow-hidden rounded-md border border-paper-300 bg-paper-200/90 px-1 py-0.5 text-left text-[10px] leading-tight text-ink-600 dark:border-umber-700 dark:bg-umber-800/90 dark:text-umber-200"
-    : "absolute inset-x-0.5 z-[5] overflow-hidden rounded-md border border-blush-300 bg-blush-100/85 px-1 py-0.5 text-left text-[10px] leading-tight text-blush-900 dark:border-blush-700 dark:bg-blush-900/50 dark:text-blush-100";
+  const external = ev.kind === "external" || ev.kind === "buffer";
+  const shared =
+    ev.kind === "buffer"
+      ? "absolute inset-x-0.5 z-[3] overflow-hidden rounded-md border border-dashed border-paper-300 bg-paper-100/80 px-1 py-0.5 text-left text-[10px] leading-tight text-ink-500 dark:border-umber-700 dark:bg-umber-800/60 dark:text-umber-300"
+      : external
+        ? "absolute inset-x-0.5 z-[4] overflow-hidden rounded-md border border-paper-300 bg-paper-200/90 px-1 py-0.5 text-left text-[10px] leading-tight text-ink-600 dark:border-umber-700 dark:bg-umber-800/90 dark:text-umber-200"
+        : "absolute inset-x-0.5 z-[5] overflow-hidden rounded-md border border-blush-300 bg-blush-100/85 px-1 py-0.5 text-left text-[10px] leading-tight text-blush-900 dark:border-blush-700 dark:bg-blush-900/50 dark:text-blush-100";
   const body = (
     <>
       <span className="flex items-center gap-1 font-medium tabular-nums">
@@ -598,7 +607,7 @@ function TimeGridView({
     let hi = DAY_END;
     for (const d of days) {
       for (const ev of eventsByDate.get(ymd(d)) ?? []) {
-        if (ev.kind === "external" && ev.minutes) {
+        if ((ev.kind === "external" || ev.kind === "buffer") && ev.minutes) {
           lo = Math.min(lo, Math.floor(ev.minutes.start / 60));
           hi = Math.max(hi, Math.ceil(ev.minutes.end / 60));
           continue;
@@ -676,7 +685,7 @@ function TimeGridView({
             // at their real position, so repeating them here would double-count
             // the day.
             const evs = (eventsByDate.get(ymd(d)) ?? []).filter(
-              (ev) => !isPartialBlock(ev) && ev.kind !== "external",
+              (ev) => !isPartialBlock(ev) && ev.kind !== "external" && ev.kind !== "buffer",
             );
             return (
               <div
@@ -739,12 +748,12 @@ function TimeGridView({
                   );
                 })}
                 {(eventsByDate.get(ymd(d)) ?? [])
-                  .filter((ev) => ev.kind === "external" && ev.minutes)
+                  .filter((ev) => (ev.kind === "external" || ev.kind === "buffer") && ev.minutes)
                   .map((ev) => {
                     const m = ev.minutes as { start: number; end: number };
                     return (
                       <HourBand
-                        key={`ext-${ev.date}-${m.start}-${m.end}`}
+                        key={`${ev.kind}-${ev.date}-${m.start}-${m.end}`}
                         ev={ev}
                         start={m.start / 60}
                         end={m.end / 60}
@@ -1551,6 +1560,19 @@ export default function VendorCalendarPage() {
         minutes: { start: b.start_min, end: b.end_min },
       });
     }
+    // Setup / teardown the schedule adds around a booking or an external event.
+    // Drawn so a quiet Sunday morning explains itself.
+    for (const b of availability?.buffer_blocks ?? []) {
+      out.push({
+        kind: "buffer",
+        date: b.date,
+        label: t("vendor_calendar.buffer_label", {
+          from: minutesToLabel(b.start_min),
+          to: minutesToLabel(b.end_min),
+        }),
+        minutes: { start: b.start_min, end: b.end_min },
+      });
+    }
     return out;
   }, [clients, blockedDays, blockedLabel, tasks, availability, t]);
 
@@ -1900,6 +1922,17 @@ export default function VendorCalendarPage() {
             {/* Only rendered once something has actually been pulled, so a
                 vendor with no Google connection reads no legend entry about
                 one. */}
+            {(availability?.buffer_blocks.length ?? 0) > 0 && (
+              <span className="flex items-center gap-1.5">
+                <Hourglass
+                  size={12}
+                  strokeWidth={1.5}
+                  className="text-umber-400"
+                  aria-hidden="true"
+                />
+                {t("vendor_calendar.legend_buffer")}
+              </span>
+            )}
             {(availability?.external_busy.length ?? 0) > 0 && (
               <span className="flex items-center gap-1.5">
                 <CalendarSync

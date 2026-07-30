@@ -1108,6 +1108,14 @@ const es: LocaleMessages = {
       gcal_list_failed: "No se han podido leer tus calendarios ahora mismo. Inténtalo más tarde.",
       gcal_last_pull: "Última lectura: {when} · {count} tramos ocupados",
       gcal_never_pulled: "Todavía no se ha leído nada.",
+      buffer_title: "Tiempo de margen",
+      buffer_body:
+        "Montaje y desmontaje alrededor de las reservas y de tus eventos de Google. Las excepciones que añades a mano no se tocan.",
+      buffer_before: "Antes del evento",
+      buffer_after: "Después del evento",
+      buffer_none: "Ninguno",
+      buffer_hours: "{count} h",
+      buffer_default_hint: "Es la sugerencia de tu categoría hasta que lo cambies.",
     },
     plan: {
       free_label: "Básico",
@@ -1165,6 +1173,8 @@ const es: LocaleMessages = {
     legend_off_day: "No trabajo",
     legend_external: "Ocupado en un calendario externo",
     external_busy_label: "Google Calendar: ocupado {from}-{to}",
+    legend_buffer: "Tiempo de margen",
+    buffer_label: "Margen {from}-{to}",
     schedule_link: "Editar el horario",
     blocked_pill_label: "Bloqueado",
     block_day_title: "Bloquear el {date}",

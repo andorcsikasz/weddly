@@ -1401,6 +1401,14 @@ export interface LocaleMessages {
       gcal_list_failed: string;
       gcal_last_pull: string;
       gcal_never_pulled: string;
+      /** Setup / teardown padding. `buffer_hours` takes `{count}`. */
+      buffer_title: string;
+      buffer_body: string;
+      buffer_before: string;
+      buffer_after: string;
+      buffer_none: string;
+      buffer_hours: string;
+      buffer_default_hint: string;
     };
     plan: {
       free_label: string;
@@ -1471,6 +1479,10 @@ export interface LocaleMessages {
      *  carries no title to show. */
     legend_external: string;
     external_busy_label: string;
+    /** Setup / teardown the schedule pads around an event. `buffer_label` takes
+     *  `{from}` + `{to}`. */
+    legend_buffer: string;
+    buffer_label: string;
     /** Short label on a blocked day's calendar pill. */
     blocked_pill_label: string;
     /** Receives `{date}` - the day a click would block. */

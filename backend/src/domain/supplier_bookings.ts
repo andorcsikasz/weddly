@@ -18,14 +18,27 @@ import { insertMessage } from "./booking_messages";
 import type { BookingStatus, SupplierBooking, SupplierAvailability } from "@shared/suppliers";
 import {
   type AvailabilityException,
+  DAY_MINUTES,
   isBookableDay,
   resolveDayAvailability,
+  subtractIntervals,
+  type WorkInterval,
 } from "@shared/vendor_availability";
 import { db, now } from "../db";
 import { isVendorEntitled, recordVendorLeadCredit } from "./vendor_billing";
 import { emitVendorEvent } from "./vendor_points";
-import { getVendorSchedule, getVendorWeekdays } from "./vendor_availability_settings";
-import { externalVerdictFor, listVendorExternalBusy } from "./vendor_external_busy";
+import {
+  getVendorBuffers,
+  getVendorSchedule,
+  getVendorWeekdays,
+} from "./vendor_availability_settings";
+import {
+  expandWithBuffer,
+  type ExternalBusyRow,
+  externalVerdictFor,
+  groupBusyRows,
+  listVendorExternalBusy,
+} from "./vendor_external_busy";
 
 const VALID_STATUSES: ReadonlySet<BookingStatus> = new Set([
   "requested",
@@ -161,8 +174,10 @@ export function listingIdsUnavailableOn(date: string): string[] {
   // Candidates only: a vendor with nothing on file for this date and no weekly
   // pattern resolves to "available" by definition, so there is no reason to ask
   // about them. Four ways to be interesting: an exception row on the day, a
-  // weekly pattern at all, a confirmed wedding that day, or busy time pulled
-  // from their own Google calendar for that day.
+  // weekly pattern at all, a confirmed wedding, or busy time pulled from their
+  // own Google calendar. The last two are asked about a ±1 day WINDOW, not the
+  // day itself: setup/teardown buffers cap at 12 hours, so a neighbouring event
+  // can reach into this date but nothing further away can.
   const rows = db
     .prepare(
       `SELECT l.id AS id, l.vendor_account_id AS vendor_account_id
@@ -176,12 +191,14 @@ export function listingIdsUnavailableOn(date: string): string[] {
                           AND s.weekdays IS NOT NULL AND s.weekdays != '')
             OR EXISTS (SELECT 1 FROM supplier_bookings b
                         WHERE b.vendor_account_id = l.vendor_account_id
-                          AND b.event_date = ? AND b.status = 'confirmed')
+                          AND b.event_date BETWEEN date(?, '-1 day') AND date(?, '+1 day')
+                          AND b.status = 'confirmed')
             OR EXISTS (SELECT 1 FROM vendor_external_busy e
-                        WHERE e.vendor_account_id = l.vendor_account_id AND e.busy_date = ?)
+                        WHERE e.vendor_account_id = l.vendor_account_id
+                          AND e.busy_date BETWEEN date(?, '-1 day') AND date(?, '+1 day'))
           )`,
     )
-    .all(date, date, date) as Array<{ id: string; vendor_account_id: number }>;
+    .all(date, date, date, date, date) as Array<{ id: string; vendor_account_id: number }>;
 
   const out: string[] = [];
   for (const row of rows) {
@@ -214,7 +231,7 @@ export function listingIdsUnavailableOn(date: string): string[] {
       date,
       external: externalVerdictFor({
         date,
-        busy: listVendorExternalBusy(row.vendor_account_id),
+        busy: effectiveBusyMap(row.vendor_account_id),
         hours: schedule.working_hours,
       }),
     });
@@ -321,8 +338,8 @@ export function nextAvailableDate(vendorAccountId: number): string | null {
   // leaves the day open for a booking.
   const schedule = getVendorSchedule(vendorAccountId);
   const exceptions = listAvailabilityExceptions(vendorAccountId);
-  // One query for the whole scan: 365 per-date lookups would be 365 queries.
-  const externalBusy = listVendorExternalBusy(vendorAccountId);
+  // Built once for the whole scan: 365 per-date lookups would be 365 queries.
+  const externalBusy = effectiveBusyMap(vendorAccountId);
   const confirmed = new Set(
     (
       db
@@ -356,12 +373,85 @@ export function nextAvailableDate(vendorAccountId: number): string | null {
   return null;
 }
 
+// ── Buffered busy time ──────────────────────────────────────────────────────
+// Setup and teardown, applied to the two things that have real duration: a
+// confirmed booking (which owns its whole date) and busy time pulled from the
+// vendor's Google calendar. A block the vendor typed in Weddly is left exactly
+// as typed, on the principle that the app must not quietly disagree with an
+// explicit statement about a date.
+
+/** Confirmed bookings as whole dated days, the shape the buffer maths wants. */
+function confirmedBookingRows(vendorAccountId: number): ExternalBusyRow[] {
+  const rows = db
+    .prepare(
+      `SELECT event_date FROM supplier_bookings
+        WHERE vendor_account_id = ? AND status = 'confirmed'`,
+    )
+    .all(vendorAccountId) as Array<{ event_date: string }>;
+  return rows
+    .filter((r) => isIsoDate(r.event_date))
+    .map((r) => ({ busy_date: r.event_date, start_min: 0, end_min: DAY_MINUTES }));
+}
+
+/** Everything that competes with a couple's date, per date: the vendor's
+ *  external calendar and the SHOULDERS of their confirmed bookings, both padded
+ *  by their buffers.
+ *
+ *  A booking's own date is deliberately dropped from the map: it is already
+ *  unavailable through `hasConfirmedBooking`, and feeding it in here would newly
+ *  add booked dates to the couple-facing `unavailable_dates`, which is a
+ *  separate (pre-existing) question this feature has no business answering. */
+export function effectiveBusyMap(vendorAccountId: number): Map<string, WorkInterval[]> {
+  const buffers = getVendorBuffers(vendorAccountId);
+  const external = listVendorExternalBusy(vendorAccountId);
+  const externalRows: ExternalBusyRow[] = [];
+  for (const [date, list] of external) {
+    for (const iv of list) {
+      externalRows.push({ busy_date: date, start_min: iv.start_min, end_min: iv.end_min });
+    }
+  }
+
+  const bookings = confirmedBookingRows(vendorAccountId);
+  const bookedDates = new Set(bookings.map((b) => b.busy_date));
+  const padded = [
+    ...expandWithBuffer(externalRows, buffers.before_min, buffers.after_min),
+    ...expandWithBuffer(bookings, buffers.before_min, buffers.after_min).filter(
+      (r) => !bookedDates.has(r.busy_date),
+    ),
+  ];
+  return groupBusyRows(padded);
+}
+
+/** What the BUFFER alone adds, per date: the padded set minus the raw one. Shown
+ *  on the vendor's own calendar so a Sunday that went quiet says why, rather
+ *  than the vendor hunting for a block they never made. */
+export function bufferOnlyMap(vendorAccountId: number): Map<string, WorkInterval[]> {
+  const buffers = getVendorBuffers(vendorAccountId);
+  if (buffers.before_min <= 0 && buffers.after_min <= 0) return new Map();
+  const raw = listVendorExternalBusy(vendorAccountId);
+  const rawRows: ExternalBusyRow[] = [];
+  for (const [date, list] of raw) {
+    for (const iv of list) {
+      rawRows.push({ busy_date: date, start_min: iv.start_min, end_min: iv.end_min });
+    }
+  }
+  const bookings = confirmedBookingRows(vendorAccountId);
+  const rawAll = groupBusyRows([...rawRows, ...bookings]);
+  const padded = effectiveBusyMap(vendorAccountId);
+  const out = new Map<string, WorkInterval[]>();
+  for (const [date, list] of padded) {
+    const added = subtractIntervals(list, rawAll.get(date) ?? []);
+    if (added.length > 0) out.set(date, added);
+  }
+  return out;
+}
+
 /** The couple-facing split of what the vendor's OWN Google calendar takes:
  *  `full` reads as booked, `partial` as partly booked. Same two buckets the
  *  hand-marked blocks use, so the busy calendar needs no third state and a
  *  couple is never shown why a vendor is busy, only that they are. */
 function externalDateBuckets(vendorAccountId: number): { full: string[]; partial: string[] } {
-  const busy = listVendorExternalBusy(vendorAccountId);
+  const busy = effectiveBusyMap(vendorAccountId);
   if (busy.size === 0) return { full: [], partial: [] };
   const hours = getVendorSchedule(vendorAccountId).working_hours;
   // A date the vendor has spoken about by hand is theirs to decide, in EITHER

@@ -1089,6 +1089,14 @@ const hu: LocaleMessages = {
       gcal_list_failed: "A naptáraidat most nem sikerült lekérni. Próbáld újra később.",
       gcal_last_pull: "Utolsó beolvasás: {when} · {count} foglalt idősáv",
       gcal_never_pulled: "Még nem olvastunk be foglaltságot.",
+      buffer_title: "Pufferidő",
+      buffer_body:
+        "Fel- és leépítés a foglalások és a Google-eseményeid körül. A kézzel felvett kivételeket nem érinti.",
+      buffer_before: "Esemény előtt",
+      buffer_after: "Esemény után",
+      buffer_none: "Nincs",
+      buffer_hours: "{count} óra",
+      buffer_default_hint: "Ez a kategóriád szerinti javaslat, amíg nem állítod át.",
     },
     plan: {
       free_label: "Alap",
@@ -1146,6 +1154,8 @@ const hu: LocaleMessages = {
     legend_off_day: "Nem dolgozom",
     legend_external: "Külső naptárból foglalt",
     external_busy_label: "Google Naptár: foglalt {from}-{to}",
+    legend_buffer: "Pufferidő",
+    buffer_label: "Pufferidő {from}-{to}",
     schedule_link: "Munkarend szerkesztése",
     blocked_pill_label: "Blokkolt",
     block_day_title: "{date} blokkolása",

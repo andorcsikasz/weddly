@@ -15,13 +15,24 @@
 // Blocking is PRO, and so is this: a FREE vendor gets the read-only view with
 // the upgrade path instead of a form whose writes would 402.
 
-import { CalendarOff, CalendarPlus, CalendarSync, Check, Copy, Lock, Plus, X } from "lucide-react";
+import {
+  CalendarOff,
+  CalendarPlus,
+  CalendarSync,
+  Check,
+  Clock,
+  Copy,
+  Lock,
+  Plus,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { hourLabel, type VendorAvailabilityView } from "@shared/listings";
 import type { GoogleCalendarStatus } from "@shared/types";
 import {
   ALL_WEEKDAYS,
+  BUFFER_OPTIONS_MIN,
   DAY_MINUTES,
   DEFAULT_WORK_END,
   DEFAULT_WORK_START,
@@ -673,6 +684,13 @@ export default function VendorSettingsSchedule() {
   const [savedHours, setSavedHours] = useState<WeeklyHours>(() => emptyWeeklyHours());
   const [name, setName] = useState("");
   const [savedName, setSavedName] = useState("");
+  const [bufferBefore, setBufferBefore] = useState(0);
+  const [bufferAfter, setBufferAfter] = useState(0);
+  const [savedBuffers, setSavedBuffers] = useState({ before: 0, after: 0 });
+  /** True while the numbers on screen are the category's suggestion rather than
+   *  the vendor's own answer. Shown, because a value nobody typed should not
+   *  look like a decision that was made. */
+  const [bufferIsDefault, setBufferIsDefault] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -690,6 +708,10 @@ export default function VendorSettingsSchedule() {
         setSavedHours(cloneHours(s.working_hours));
         setName(s.schedule_name);
         setSavedName(s.schedule_name);
+        setBufferBefore(s.buffer_before_min);
+        setBufferAfter(s.buffer_after_min);
+        setSavedBuffers({ before: s.buffer_before_min, after: s.buffer_after_min });
+        setBufferIsDefault(s.buffer_is_default);
         setLoaded(true);
       })
       .catch(() => setLoadFailed(true));
@@ -713,7 +735,11 @@ export default function VendorSettingsSchedule() {
     return out;
   }, [locale]);
 
-  const dirty = !sameHours(hours, savedHours) || name.trim() !== savedName;
+  const dirty =
+    !sameHours(hours, savedHours) ||
+    name.trim() !== savedName ||
+    bufferBefore !== savedBuffers.before ||
+    bufferAfter !== savedBuffers.after;
   const anyWorkingDay = ALL_WEEKDAYS.some((d) => hours[d].length > 0);
   const editable = canEdit && loaded && !loadFailed && !saving;
 
@@ -736,11 +762,20 @@ export default function VendorSettingsSchedule() {
       const saved = await vendorAvailabilityApi.saveSchedule({
         working_hours: payload,
         schedule_name: name.trim(),
+        // Sent every time, so saving the card always states the buffers the
+        // vendor is looking at. Once sent they stop being the category's
+        // suggestion, which is the honest reading of "they saw it and saved".
+        buffer_before_min: bufferBefore,
+        buffer_after_min: bufferAfter,
       });
       setHours(cloneHours(saved.working_hours));
       setSavedHours(cloneHours(saved.working_hours));
       setName(saved.schedule_name);
       setSavedName(saved.schedule_name);
+      setBufferBefore(saved.buffer_before_min);
+      setBufferAfter(saved.buffer_after_min);
+      setSavedBuffers({ before: saved.buffer_before_min, after: saved.buffer_after_min });
+      setBufferIsDefault(saved.buffer_is_default);
       toast.success(t("vendor.schedule.saved"));
     } catch {
       toast.error(t("vendor.schedule.save_failed"));
@@ -885,6 +920,65 @@ export default function VendorSettingsSchedule() {
             {t("vendor.schedule.need_one_day")}
           </p>
         )}
+
+        {/* Setup / teardown. Lives in this card because it is part of "when am I
+            actually free", and it only ever pads bookings and the external
+            calendar, never a block typed by hand. */}
+        <div className="mt-5 border-t border-paper-100 pt-4 dark:border-umber-800">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-800 dark:text-paper-100">
+            <Clock
+              size={16}
+              strokeWidth={1.5}
+              aria-hidden="true"
+              className="shrink-0 text-steel-600 dark:text-steel-300"
+            />
+            {t("vendor.schedule.buffer_title")}
+          </h3>
+          <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+            {t("vendor.schedule.buffer_body")}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <label className="block min-w-[10rem] flex-1">
+              <span className="field-label">{t("vendor.schedule.buffer_before")}</span>
+              <select
+                className="input"
+                value={bufferBefore}
+                disabled={!editable}
+                onChange={(e) => setBufferBefore(Number(e.target.value))}
+              >
+                {BUFFER_OPTIONS_MIN.map((m) => (
+                  <option key={m} value={m}>
+                    {m === 0
+                      ? t("vendor.schedule.buffer_none")
+                      : t("vendor.schedule.buffer_hours", { count: m / 60 })}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block min-w-[10rem] flex-1">
+              <span className="field-label">{t("vendor.schedule.buffer_after")}</span>
+              <select
+                className="input"
+                value={bufferAfter}
+                disabled={!editable}
+                onChange={(e) => setBufferAfter(Number(e.target.value))}
+              >
+                {BUFFER_OPTIONS_MIN.map((m) => (
+                  <option key={m} value={m}>
+                    {m === 0
+                      ? t("vendor.schedule.buffer_none")
+                      : t("vendor.schedule.buffer_hours", { count: m / 60 })}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {bufferIsDefault && (
+            <p className="mt-2 text-xs text-ink-500 dark:text-umber-300">
+              {t("vendor.schedule.buffer_default_hint")}
+            </p>
+          )}
+        </div>
 
         <div className="mt-4 flex items-center gap-3">
           <button

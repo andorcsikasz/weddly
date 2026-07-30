@@ -543,3 +543,176 @@ describe("directory date filter — GET /api/suppliers/unavailable", () => {
     for (const s of unclaimed) expect(r.data.supplier_ids).not.toContain(s.id);
   });
 });
+
+// ─── Setup / teardown buffers ────────────────────────────────────────────────
+// The padding around a booking and around external busy time. What matters here
+// is not that the number saves, but WHERE it lands: on the shoulders of an
+// event, measured against the working hours, so a 2-hour teardown changes
+// nothing and a 12-hour one takes the next morning.
+describe("vendor availability — buffers", () => {
+  function putBuffers(
+    token: string,
+    before: number | null,
+    after: number | null,
+  ): Promise<{ status: number; data: VendorAvailabilitySettings }> {
+    return req<VendorAvailabilitySettings>(
+      "PUT",
+      "/api/vendor/availability/me/pattern",
+      { buffer_before_min: before, buffer_after_min: after },
+      { token },
+    );
+  }
+
+  /** All seven days 09:00-17:00, so "does the buffer reach the working day" has
+   *  a definite answer. */
+  function putNineToFive(token: string) {
+    const day = [{ start_min: 540, end_min: 1020 }];
+    return req(
+      "PUT",
+      "/api/vendor/availability/me/pattern",
+      { working_hours: { 1: day, 2: day, 3: day, 4: day, 5: day, 6: day, 7: day } },
+      { token },
+    );
+  }
+
+  test("a photographer starts at zero; the category default is only a starting point", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("buf-default");
+
+    // bootstrapVendor lists under `photography`, which has no load-in to speak of.
+    const fresh = await getPattern(vendorToken);
+    expect(fresh.data.buffer_before_min).toBe(0);
+    expect(fresh.data.buffer_after_min).toBe(0);
+    expect(fresh.data.buffer_is_default).toBe(true);
+
+    const saved = await putBuffers(vendorToken, 120, 240);
+    expect(saved.status).toBe(200);
+    expect(saved.data.buffer_before_min).toBe(120);
+    expect(saved.data.buffer_after_min).toBe(240);
+    // Once the vendor has chosen, it is theirs, not a suggestion.
+    expect(saved.data.buffer_is_default).toBe(false);
+    expect((await getPattern(vendorToken)).data.buffer_after_min).toBe(240);
+  });
+
+  test("an explicit zero survives, and clearing both goes back to the default", async () => {
+    wipeAll();
+    const { vendorToken, accountId } = await bootstrapVendor("buf-zero");
+    // Pretend this vendor is a venue, whose category default is 4h / 8h.
+    db.prepare("UPDATE listings SET category = 'venue' WHERE vendor_account_id = ?").run(accountId);
+
+    expect((await getPattern(vendorToken)).data.buffer_after_min).toBe(480);
+
+    // "I need none" must not be re-interpreted as "unset".
+    const zero = await putBuffers(vendorToken, 0, 0);
+    expect(zero.data.buffer_before_min).toBe(0);
+    expect(zero.data.buffer_after_min).toBe(0);
+    expect(zero.data.buffer_is_default).toBe(false);
+
+    const cleared = await putBuffers(vendorToken, null, null);
+    expect(cleared.data.buffer_after_min).toBe(480);
+    expect(cleared.data.buffer_is_default).toBe(true);
+  });
+
+  test("saving hours does not disturb the buffers, and vice versa", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("buf-independent");
+    await putBuffers(vendorToken, 60, 120);
+    await putNineToFive(vendorToken);
+
+    const after = await getPattern(vendorToken);
+    expect(after.data.buffer_before_min).toBe(60);
+    expect(after.data.buffer_after_min).toBe(120);
+    expect(after.data.working_hours[3]).toEqual([{ start_min: 540, end_min: 1020 }]);
+  });
+
+  test("a short teardown leaves the next day alone; a long one takes the morning", async () => {
+    wipeAll();
+    const { vendorToken, listingId, accountId, coupleToken } = await bootstrapVendor("buf-spill");
+    await putNineToFive(vendorToken);
+
+    // A confirmed wedding on a Saturday.
+    const saturday = "2030-06-15";
+    expect(new Date(`${saturday}T00:00:00Z`).getUTCDay()).toBe(6);
+    const sunday = "2030-06-16";
+    db.prepare(
+      `INSERT INTO supplier_bookings
+         (supplier_id, couple_id, vendor_account_id, event_date, status, notes, amount_huf, created_at, updated_at)
+       VALUES (?, (SELECT id FROM couples LIMIT 1), ?, ?, 'confirmed', NULL, NULL, 0, 0)`,
+    ).run(listingId, accountId, saturday);
+
+    // 2 hours of teardown reaches 02:00 on Sunday: nowhere near 09:00-17:00.
+    await putBuffers(vendorToken, 0, 120);
+    let pub = await publicAvailability(listingId, coupleToken);
+    expect(pub.data.unavailable_dates).not.toContain(sunday);
+    expect(pub.data.partial_dates).not.toContain(sunday);
+
+    // 12 hours reaches noon, so half the Sunday is gone but it stays bookable.
+    await putBuffers(vendorToken, 0, 720);
+    pub = await publicAvailability(listingId, coupleToken);
+    expect(pub.data.partial_dates).toContain(sunday);
+    expect(pub.data.unavailable_dates).not.toContain(sunday);
+
+    // The vendor's own view says WHERE the padding is, so the quiet morning
+    // explains itself.
+    const view = await req<{ buffer_blocks: Array<{ date: string; end_min: number }> }>(
+      "GET",
+      "/api/vendor/availability/me",
+      undefined,
+      { token: vendorToken },
+    );
+    const sundayPadding = view.data.buffer_blocks.filter((b) => b.date === sunday);
+    expect(sundayPadding.length).toBe(1);
+    expect(sundayPadding[0]?.end_min).toBe(720);
+  });
+
+  test("the buffer reaches backwards too", async () => {
+    wipeAll();
+    const { vendorToken, listingId, accountId, coupleToken } = await bootstrapVendor("buf-before");
+    await putNineToFive(vendorToken);
+    const sunday = "2030-06-16";
+    const saturday = "2030-06-15";
+    db.prepare(
+      `INSERT INTO supplier_bookings
+         (supplier_id, couple_id, vendor_account_id, event_date, status, notes, amount_huf, created_at, updated_at)
+       VALUES (?, (SELECT id FROM couples LIMIT 1), ?, ?, 'confirmed', NULL, NULL, 0, 0)`,
+    ).run(listingId, accountId, sunday);
+
+    // 12 hours of set-up before Sunday reaches back to Saturday noon.
+    await putBuffers(vendorToken, 720, 0);
+    const pub = await publicAvailability(listingId, coupleToken);
+    expect(pub.data.partial_dates).toContain(saturday);
+  });
+
+  test("a manual block is taken literally, never padded", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("buf-manual");
+    await putNineToFive(vendorToken);
+    await putBuffers(vendorToken, 720, 720);
+
+    const blocked = "2030-06-15";
+    const neighbour = "2030-06-16";
+    const r = await req(
+      "POST",
+      "/api/vendor/availability/me",
+      { date: blocked },
+      { token: vendorToken },
+    );
+    expect(r.status).toBe(201);
+
+    const pub = await publicAvailability(listingId, coupleToken);
+    expect(pub.data.unavailable_dates).toContain(blocked);
+    // The vendor said "this date"; the app does not silently extend that to the
+    // next one.
+    expect(pub.data.unavailable_dates).not.toContain(neighbour);
+    expect(pub.data.partial_dates).not.toContain(neighbour);
+  });
+
+  test("out-of-range buffers are clamped, not rejected", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("buf-clamp");
+    const r = await putBuffers(vendorToken, -60, 99_999);
+    expect(r.status).toBe(200);
+    expect(r.data.buffer_before_min).toBe(0);
+    expect(r.data.buffer_after_min).toBe(720);
+  });
+});
