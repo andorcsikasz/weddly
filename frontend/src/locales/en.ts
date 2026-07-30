@@ -692,6 +692,8 @@ const en: LocaleMessages = {
       new_inquiries: "{count} new inquiries",
       collapse_sidebar: "Collapse sidebar",
       expand_sidebar: "Expand sidebar",
+      more: "More",
+      more_sheet_title: "More",
     },
     shell: {
       menu_label: "Profile menu",

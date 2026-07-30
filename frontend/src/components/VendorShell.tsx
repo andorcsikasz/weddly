@@ -1,9 +1,18 @@
 // Vendor workspace shell — the authenticated layout for role='vendor' users at
 // /vendor/*. Mirrors AppShell's structure (sticky header with the wordmark +
 // account menu + logout, a left nav rail) but is intentionally lean: vendors
-// have seven primary surfaces, not the couple's twenty. The nav rail collapses to
-// a horizontal scroller on mobile. Page chrome uses the standard horizontal
-// padding (px-4 sm:px-6 lg:px-8 xl:px-10) so content isn't pressed to the edge.
+// have seven primary surfaces, not the couple's twenty. Page chrome uses the
+// standard horizontal padding (px-4 sm:px-6 lg:px-8 xl:px-10) so content isn't
+// pressed to the edge.
+//
+// Below md the rail is replaced by a fixed bottom tab bar, the same 4-tabs-plus-
+// More anatomy the couple /app has. The rail used to WRAP on a phone: six
+// labelled tabs across two or three rows, above the page, on every screen, so a
+// vendor opening any surface read the navigation before the work. The bar is
+// icon-first (a one-word label under each glyph) and the two secondary surfaces
+// — Statisztika, Vélemények — move into the More sheet, which is also where the
+// header's preview + share buttons go, since a 360px header cannot hold five
+// circular controls beside the wordmark.
 
 import {
   BarChart3,
@@ -19,6 +28,7 @@ import {
   LogOut,
   MessageCircle,
   Moon,
+  MoreHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -27,8 +37,10 @@ import {
   Store,
   Sun,
   Users,
+  X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { useAuth } from "../lib/auth";
@@ -42,7 +54,16 @@ import { VendorShareDialog } from "./VendorShareDialog";
 import { VendorDemoOverlay } from "./VendorDemoOverlay";
 import { Wordmark } from "./Wordmark";
 
-type VendorNavItem = { to: string; labelKey: string; icon: ReactNode; end?: boolean };
+type VendorNavItem = {
+  to: string;
+  labelKey: string;
+  icon: ReactNode;
+  end?: boolean;
+  /** Rides the phone bottom bar. Exactly four carry it; everything else lands
+   *  in the More sheet, which keeps the bar at 4 tabs + More on a 360px screen
+   *  (72px per slot — enough for a 18px glyph and a one-word label). */
+  tab?: boolean;
+};
 
 // Six work surfaces, and only work surfaces. Settings is deliberately NOT one
 // of them: it is account housekeeping, not a place a vendor works, and it is
@@ -54,10 +75,16 @@ const VENDOR_ITEMS: VendorNavItem[] = [
     labelKey: "vendor.nav.dashboard",
     icon: <LayoutDashboard size={18} />,
     end: true,
+    tab: true,
   },
-  { to: "/vendor/clients", labelKey: "vendor.nav.clients", icon: <Users size={18} /> },
-  { to: "/vendor/calendar", labelKey: "vendor.nav.calendar", icon: <CalendarDays size={18} /> },
-  { to: "/vendor/listing", labelKey: "vendor.nav.listing", icon: <Store size={18} /> },
+  { to: "/vendor/clients", labelKey: "vendor.nav.clients", icon: <Users size={18} />, tab: true },
+  {
+    to: "/vendor/calendar",
+    labelKey: "vendor.nav.calendar",
+    icon: <CalendarDays size={18} />,
+    tab: true,
+  },
+  { to: "/vendor/listing", labelKey: "vendor.nav.listing", icon: <Store size={18} />, tab: true },
   { to: "/vendor/stats", labelKey: "vendor.nav.stats", icon: <BarChart3 size={18} /> },
   { to: "/vendor/reviews", labelKey: "vendor.nav.reviews", icon: <Star size={18} /> },
 ];
@@ -348,6 +375,175 @@ function VendorProfileMenu({
   );
 }
 
+/** One slot in the phone bottom bar: the glyph, an optional count badge, and a
+ *  one-word label under it. The label stays because a bare glyph row is only
+ *  self-evident once you already know the app — but it is 10px and truncating,
+ *  so the icon is what carries the row at 360px. */
+function VendorTabLink({
+  to,
+  icon,
+  label,
+  end,
+  badgeCount,
+}: {
+  to: string;
+  icon: ReactNode;
+  label: string;
+  end?: boolean;
+  badgeCount?: number;
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[10px] ${
+          isActive ? "text-blush-600 dark:text-blush-300" : "text-ink-500 dark:text-paper-400"
+        }`
+      }
+    >
+      <span className="relative inline-flex">
+        {icon}
+        {badgeCount && badgeCount > 0 ? (
+          <span
+            aria-hidden="true"
+            className="absolute -right-2 -top-1.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-blush-500 px-1 py-0.5 text-[9px] font-semibold leading-none text-white"
+          >
+            {badgeCount > 9 ? "9+" : badgeCount}
+          </span>
+        ) : null}
+      </span>
+      <span className="w-full truncate text-center">{label}</span>
+    </NavLink>
+  );
+}
+
+/** Bottom sheet behind the bar's More tab: the nav destinations that didn't
+ *  make the four tabs, plus the header actions that don't fit a phone header.
+ *  Portal-mounted so it floats over the fixed bar with its own backdrop. */
+function VendorMoreSheet({
+  items,
+  actions,
+  title,
+  closeLabel,
+  onClose,
+  translate,
+}: {
+  items: VendorNavItem[];
+  actions: Array<{
+    key: string;
+    label: string;
+    icon: ReactNode;
+    /** Internal route, unless `external` — then a new tab, so an editor full of
+     *  unsaved changes survives the trip to the public page. */
+    to?: string;
+    external?: boolean;
+    onClick?: () => void;
+  }>;
+  title: string;
+  closeLabel: string;
+  onClose: () => void;
+  translate: (key: string) => string;
+}) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  const actionClass =
+    "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-ink-700 transition-colors hover:bg-paper-200 dark:text-paper-200 dark:hover:bg-umber-800";
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-40 flex items-end justify-center bg-ink-900/40 backdrop-blur-sm md:hidden"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="safe-edges w-full overflow-y-auto overscroll-contain rounded-t-2xl border-t border-paper-300 bg-paper-50 px-4 pb-3 pt-4 shadow-pop dark:border-umber-700 dark:bg-umber-900 dark:text-paper-100"
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-grotesk text-base font-semibold">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={closeLabel}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <ul className="grid grid-cols-3 gap-2">
+          {items.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border px-2 text-center text-xs ${
+                    isActive
+                      ? "border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-500/15 dark:text-blush-200"
+                      : "border-paper-300 text-ink-700 hover:bg-paper-200 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800"
+                  }`
+                }
+              >
+                {item.icon}
+                <span className="w-full truncate">{translate(item.labelKey)}</span>
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+        {actions.length > 0 && (
+          <div className="mt-3 border-t border-paper-300 pt-2 dark:border-umber-700">
+            {actions.map((action) =>
+              action.to ? (
+                <Link
+                  key={action.key}
+                  to={action.to}
+                  {...(action.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  onClick={onClose}
+                  className={actionClass}
+                >
+                  {action.icon}
+                  <span>{action.label}</span>
+                </Link>
+              ) : (
+                <button
+                  key={action.key}
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    action.onClick?.();
+                  }}
+                  className={actionClass}
+                >
+                  {action.icon}
+                  <span>{action.label}</span>
+                </button>
+              ),
+            )}
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function VendorShell({ children }: { children: ReactNode }) {
   const { t } = useT();
   const { user, logout } = useAuth();
@@ -399,6 +595,9 @@ export function VendorShell({ children }: { children: ReactNode }) {
   // and couple shells).
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
+  // Phone bottom bar's More sheet.
+  const [moreOpen, setMoreOpen] = useState(false);
+
   // New-inquiry badge on the Ügyfelek nav item: the count of bookings still in
   // 'requested' (the vendor hasn't looked yet). Re-fetched on every route
   // change inside the shell, so opening a client and moving it along clears
@@ -436,6 +635,12 @@ export function VendorShell({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
+  }, [pathname]);
+
+  // The sheet is portal-mounted, so a tap that navigates would otherwise leave
+  // it open on top of the page it just opened.
+  useEffect(() => {
+    setMoreOpen(false);
   }, [pathname]);
 
   // Warm-dark mode, shared with the other shells via localStorage. Like the
@@ -497,12 +702,16 @@ export function VendorShell({ children }: { children: ReactNode }) {
                 it used to be a text link on Hirdetésem and a second one inside
                 the Vélemények empty state, and existed nowhere else. New tab,
                 so an editor full of unsaved changes survives the trip. */}
+            {/* Both this and Share drop off the phone header and reappear in
+                the More sheet: five 44px controls plus the wordmark and the
+                avatar do not fit 360px, and these are the two a vendor reaches
+                for least often. */}
             {listing && (
               <Link
                 to={`/vendors/${listing.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={HEADER_ICON_BTN}
+                className={`hidden md:inline-flex ${HEADER_ICON_BTN}`}
                 aria-label={t("vendor_home.preview_open")}
                 title={t("vendor_home.preview_open")}
               >
@@ -517,7 +726,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={() => setShareOpen(true)}
-                className={HEADER_ICON_BTN}
+                className={`hidden md:inline-flex ${HEADER_ICON_BTN}`}
                 aria-label={t("vendor.share.title")}
                 title={t("vendor.share.title")}
               >
@@ -555,15 +764,17 @@ export function VendorShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* The gap widens only from lg, where this flex turns into a real
-          sidebar-plus-content row. On mobile it is a vertical stack of the
-          wrapped nav tabs above the page, and 32px there would just push
-          content down a screen that has no height to spare. */}
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 pb-12 pt-6 sm:px-6 lg:flex-row lg:gap-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
-        {/* Left rail on desktop (collapsible icon rail); horizontal scroller on
-            mobile. The width animates between expanded (14rem) and collapsed
-            (4rem); collapse applies to lg+ only. */}
+          sidebar-plus-content row. At md the rail is still the wrapped tab row
+          above the page, and 32px there would just push content down a screen
+          that has no height to spare. The phone's extra bottom padding clears
+          the fixed tab bar (56px + the home-indicator inset). */}
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 md:pb-12 lg:flex-row lg:gap-8 lg:px-8 xl:max-w-screen-2xl xl:px-10">
+        {/* Left rail from lg (collapsible icon rail); a wrapped tab row at md.
+            Below md the fixed bottom bar replaces it entirely. The width
+            animates between expanded (14rem) and collapsed (4rem); collapse
+            applies to lg+ only. */}
         <aside
-          className={`shrink-0 transition-[width] duration-200 ease-out ${
+          className={`hidden shrink-0 transition-[width] duration-200 ease-out md:block ${
             collapsed ? "lg:w-16" : "lg:w-56"
           }`}
         >
@@ -657,6 +868,76 @@ export function VendorShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      {/* Phone bottom bar — the four tab-flagged surfaces plus More. Opaque
+          rather than translucent, like the header: a see-through strip over a
+          photo grid (the listing editor's gallery) reads as a rendering fault.
+          `translateZ` keeps iOS Safari from recompositing the bar every time
+          the address bar slides. */}
+      <nav
+        style={{ transform: "translateZ(0)", willChange: "transform" }}
+        className="safe-edges fixed bottom-0 left-0 right-0 z-30 border-t border-paper-300 bg-paper-50 md:hidden dark:border-umber-700 dark:bg-umber-900"
+      >
+        <div className="mx-auto grid max-w-md grid-cols-5 px-2 py-1.5">
+          {VENDOR_ITEMS.filter((item) => item.tab).map((item) => (
+            <VendorTabLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              icon={item.icon}
+              label={t(item.labelKey)}
+              badgeCount={item.to === "/vendor/clients" ? newInquiries : 0}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() => setMoreOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={moreOpen}
+            className={`flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[10px] ${
+              moreOpen ? "text-blush-600 dark:text-blush-300" : "text-ink-500 dark:text-paper-400"
+            }`}
+          >
+            <MoreHorizontal size={18} aria-hidden="true" />
+            <span className="w-full truncate text-center">{t("vendor.nav.more")}</span>
+          </button>
+        </div>
+      </nav>
+
+      {moreOpen && (
+        <VendorMoreSheet
+          items={VENDOR_ITEMS.filter((item) => !item.tab)}
+          actions={[
+            ...(listing
+              ? [
+                  {
+                    key: "preview",
+                    label: t("vendor_home.preview_open"),
+                    icon: <ExternalLink size={18} aria-hidden="true" />,
+                    to: `/vendors/${listing.id}`,
+                    external: true,
+                  },
+                  {
+                    key: "share",
+                    label: t("vendor.share.title"),
+                    icon: <Share2 size={18} aria-hidden="true" />,
+                    onClick: () => setShareOpen(true),
+                  },
+                ]
+              : []),
+            {
+              key: "settings",
+              label: t("vendor.shell.menu_settings"),
+              icon: <Settings size={18} aria-hidden="true" />,
+              to: "/vendor/settings",
+            },
+          ]}
+          title={t("vendor.nav.more_sheet_title")}
+          closeLabel={t("a11y.close")}
+          onClose={() => setMoreOpen(false)}
+          translate={t}
+        />
+      )}
 
       {listing && (
         <VendorShareDialog

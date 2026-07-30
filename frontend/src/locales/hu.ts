@@ -700,6 +700,8 @@ const hu: LocaleMessages = {
       new_inquiries: "{count} új megkeresés",
       collapse_sidebar: "Oldalsáv összecsukása",
       expand_sidebar: "Oldalsáv kibontása",
+      more: "Több",
+      more_sheet_title: "Több",
     },
     shell: {
       menu_label: "Profil menü",

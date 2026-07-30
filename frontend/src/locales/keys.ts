@@ -944,6 +944,9 @@ export interface LocaleMessages {
       new_inquiries: string;
       collapse_sidebar: string;
       expand_sidebar: string;
+      /** Phone bottom bar's fifth tab, and the title of the sheet it opens. */
+      more: string;
+      more_sheet_title: string;
     };
     /** Header profile-menu labels (mirrors planner_shell). */
     shell: {

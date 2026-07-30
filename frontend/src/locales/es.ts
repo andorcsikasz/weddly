@@ -720,6 +720,8 @@ const es: LocaleMessages = {
       new_inquiries: "{count} solicitudes nuevas",
       collapse_sidebar: "Contraer barra lateral",
       expand_sidebar: "Expandir barra lateral",
+      more: "Más",
+      more_sheet_title: "Más",
     },
     shell: {
       menu_label: "Menú de perfil",
