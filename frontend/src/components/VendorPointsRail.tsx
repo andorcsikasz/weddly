@@ -6,12 +6,22 @@
 // it shrinks to the ring alone (with the total inside it, since a bare icon
 // there would say nothing).
 //
+// On a phone there is no rail, and the block cannot simply move above the page:
+// score, tier, tier progress and standing are four lines of text that would push
+// the actual work off every screen. `VendorPointsChip` is the phone form — a
+// badge glyph and the total, in the header, opening the same dialog. The score
+// stays glanceable; the sentences live one tap away.
+//
 // The rulebook does NOT live in the rail: 224px is too narrow for five rules and
 // their point values, so the block is a button that opens the same list in a
 // dialog. That also keeps the rail's job intact, which is navigation plus a
 // glanceable score, not a panel that pushes the nav around when it expands.
+//
+// The fetch is a hook rather than per-component state because the rail and the
+// chip are both mounted by VendorShell: two copies would mean two GETs on every
+// navigation for a number only one of them is showing.
 
-import { ChevronRight } from "lucide-react";
+import { Award, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -51,15 +61,13 @@ function categoryLabel(t: Translate, category: string): string {
   return label === key ? category : label;
 }
 
-export function VendorPointsRail({ collapsed }: { collapsed: boolean }) {
-  const { t } = useT();
+/** The one fetch, shared by the rail and the phone chip. Re-reads on
+ *  navigation, like the rail's inquiry badge: the rules are things the vendor
+ *  does elsewhere in the portal (finish the listing, answer an inquiry), so the
+ *  number would otherwise sit stale until a full reload. */
+export function useVendorPoints(): VendorPointsStatus | null {
   const { pathname } = useLocation();
   const [points, setPoints] = useState<VendorPointsStatus | null>(null);
-  const [open, setOpen] = useState(false);
-
-  // Re-read on navigation, like the rail's inquiry badge: the rules are things
-  // the vendor does elsewhere in the portal (finish the listing, answer an
-  // inquiry), so the number would otherwise sit stale until a full reload.
   useEffect(() => {
     let cancelled = false;
     vendorPointsApi
@@ -75,23 +83,90 @@ export function VendorPointsRail({ collapsed }: { collapsed: boolean }) {
       cancelled = true;
     };
   }, [pathname]);
+  return points;
+}
+
+/** The two sentences both surfaces need: how far to the next tier, and where
+ *  this vendor stands in their category. */
+function pointsCopy(
+  t: Translate,
+  points: VendorPointsStatus,
+): { status: string; rankLine: string | null } {
+  const status =
+    points.next_tier === null
+      ? t("vendor.points.at_top")
+      : t("vendor.points.to_next", {
+          points: String(points.points_to_next),
+          tier: t(`vendor.points.tier.${points.next_tier}`),
+        });
+  const rank = points.category_rank;
+  return {
+    status,
+    rankLine: rank
+      ? t("vendor.points.rank_position", {
+          rank: String(rank.rank),
+          total: String(rank.total),
+          category: categoryLabel(t, rank.category),
+        })
+      : null,
+  };
+}
+
+/** Phone form: a badge glyph and the total, sized and coloured like the other
+ *  header controls, opening the same rulebook dialog. No ring — the ring's
+ *  track is drawn for the page's paper surface and reads as a smudge on the
+ *  steel bar, and at this size the arc would say less than the number does. */
+export function VendorPointsChip({
+  points,
+  className = "",
+}: {
+  points: VendorPointsStatus | null;
+  className?: string;
+}) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  if (!points) return null;
+  const { status, rankLine } = pointsCopy(t, points);
+  const label = `${t("vendor.points.label")}: ${points.points}`;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={[label, rankLine, t("vendor.points.how_to_earn")].filter(Boolean).join(". ")}
+        title={label}
+        className={`inline-flex h-11 items-center gap-1.5 rounded-full px-2.5 text-paper-100 transition-colors hover:bg-steel-600 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-paper-100 focus-visible:ring-offset-2 focus-visible:ring-offset-steel-700 dark:hover:bg-steel-800 dark:focus-visible:ring-offset-steel-900 ${className}`}
+      >
+        <Award size={18} aria-hidden="true" />
+        <span className="font-grotesk text-sm font-semibold tabular-nums leading-none">
+          {points.points}
+        </span>
+      </button>
+      <VendorPointsDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        points={points}
+        status={status}
+        rankLine={rankLine}
+      />
+    </>
+  );
+}
+
+export function VendorPointsRail({
+  collapsed,
+  points,
+}: {
+  collapsed: boolean;
+  points: VendorPointsStatus | null;
+}) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
 
   if (!points) return null;
   const atTop = points.next_tier === null;
-  const status = atTop
-    ? t("vendor.points.at_top")
-    : t("vendor.points.to_next", {
-        points: String(points.points_to_next),
-        tier: t(`vendor.points.tier.${points.next_tier}`),
-      });
+  const { status, rankLine } = pointsCopy(t, points);
   const rank = points.category_rank;
-  const rankLine = rank
-    ? t("vendor.points.rank_position", {
-        rank: String(rank.rank),
-        total: String(rank.total),
-        category: categoryLabel(t, rank.category),
-      })
-    : null;
 
   // basis-full keeps the block on its own row until the rail turns vertical at
   // lg. As a plain flex item it wrapped in beside the last tab, so around
