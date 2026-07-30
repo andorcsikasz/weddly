@@ -17,6 +17,7 @@ import type { AuthSession } from "@shared/types";
 import type { VendorListingView } from "@shared/listings";
 import { VENDOR_EARLY_CAP, VENDOR_FOUNDING_CAP } from "@shared/vendor_billing";
 import { db } from "../../src/db";
+import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { req, wipeAll } from "../helpers";
 
 interface RegBody {
@@ -491,4 +492,85 @@ describe("vendor Google registration", () => {
     });
     expect(badCat.status).toBe(400);
   });
+});
+
+// One business is one card, and self-serve register used to be the hole in that
+// rule: it minted a fresh `v{N}` listing without ever asking whether the
+// directory already showed the business. The result was a curated card couples
+// browse and review, plus an empty one the vendor's portal reads, with the
+// vendor's account truthfully reporting zero of everything. Production carried
+// four such duplicate sets.
+describe("register refuses to add a second card for a listed business", () => {
+  test("an unclaimed directory twin routes the vendor to claiming instead", async () => {
+    wipeAll();
+    const curated = DIRECTORY.find((d) => d.city && d.city.length > 0);
+    if (!curated) throw new Error("DIRECTORY has no entry with a city");
+
+    const r = await req<{ detail?: { code?: string; listing?: { id: string; name: string } } }>(
+      "POST",
+      "/api/vendor/register",
+      {
+        ...baseBody,
+        email: "twin@test.test",
+        // Same business, same town, as the couple-facing card already shows.
+        business_name: curated.name,
+        city: curated.city,
+        category: curated.category,
+      },
+    );
+    expect(r.status).toBe(409);
+    expect(r.data.detail?.code).toBe("listing_exists_unclaimed");
+    // The response names the card so the page can offer to claim THAT one.
+    expect(r.data.detail?.listing?.id).toBe(curated.id);
+
+    // And nothing was provisioned: no user, no account, no duplicate listing.
+    const user = db.prepare("SELECT id FROM users WHERE email = ?").get("twin@test.test");
+    expect(user ?? null).toBeNull();
+    const dupes = db
+      .prepare("SELECT COUNT(*) AS n FROM listings WHERE LOWER(name) = LOWER(?)")
+      .get(curated.name) as { n: number };
+    expect(dupes.n).toBe(1);
+  }, 30000);
+
+  test("a business the directory does not know still registers normally", async () => {
+    wipeAll();
+    const r = await register({
+      ...baseBody,
+      email: "brandnew@test.test",
+      business_name: "Teljesen Új Stúdió Kft.",
+      city: "Debrecen",
+    });
+    expect(r.status).toBe(201);
+    const listing = db
+      .prepare(
+        `SELECT l.id FROM listings l
+           JOIN vendor_accounts va ON va.id = l.vendor_account_id
+           JOIN users u ON u.id = va.owner_user_id
+          WHERE u.email = ?`,
+      )
+      .get("brandnew@test.test") as { id: string } | undefined;
+    expect(listing?.id).toMatch(/^v\d+$/);
+  }, 30000);
+
+  test("a CLAIMED namesake does not block a genuine second business", async () => {
+    wipeAll();
+    // Refusing a real business over a shared name is worse than a duplicate, so
+    // only an unclaimed match blocks. Register once, then again from a different
+    // account with the same name: the first is now claimed, so this gets through.
+    const first = await register({
+      ...baseBody,
+      email: "namesake-a@test.test",
+      business_name: "Malom Étterem",
+      city: "Szentendre",
+    });
+    expect(first.status).toBe(201);
+
+    const second = await register({
+      ...baseBody,
+      email: "namesake-b@test.test",
+      business_name: "Malom Étterem",
+      city: "Eger",
+    });
+    expect(second.status).toBe(201);
+  }, 30000);
 });

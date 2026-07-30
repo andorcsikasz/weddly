@@ -27,12 +27,13 @@ import { db, now } from "../db";
 import { recordConsent } from "../domain/consents";
 import { sendKind } from "../domain/emails";
 import { recordGrowthEvent } from "../domain/growth_events";
-import { createVendorListing } from "../domain/listings";
+import { createVendorListing, findVisibleDirectoryMatch } from "../domain/listings";
 import { buildSignupAcquisition } from "../domain/signup_meta";
 import { createVendorAccount } from "../domain/vendor_accounts";
 import { initVendorBilling } from "../domain/vendor_billing";
 import { getUserById, getUserByEmail, toUser, type UserRow } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
+import { log } from "../lib/logger";
 import { verifyGoogleCredential } from "../lib/google_oauth";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { requireHttpUrl } from "../lib/url";
@@ -200,6 +201,47 @@ function parseBusinessFields(body: VendorRegisterBody, email: string): VendorPro
   };
 }
 
+/** Refuse to mint a SECOND card for a business the directory already shows, and
+ *  send the registrant to claim the first one instead.
+ *
+ *  Self-serve register used to create a fresh `v{N}` listing unconditionally,
+ *  never asking the question, even though the helper that answers it already
+ *  existed and was wired to the couple's recommend form. The result was one
+ *  business with two cards: the curated one couples actually browse (photos,
+ *  blurb, price band, ranked) and an empty `v{N}` the portal reads. A couple
+ *  would review the curated card and inquire against it, and the vendor's own
+ *  account would truthfully report zero of both, with no error on either side.
+ *  Production carries four such duplicate sets today.
+ *
+ *  It routes to claiming rather than binding the listing here, and that is the
+ *  whole point: `/api/vendor/claim/start` mails the listing's OWN contact_email
+ *  to prove the registrant runs that business. Auto-attaching on the strength of
+ *  a typed-in name would hand anyone the card of any business we list.
+ *
+ *  Only an UNCLAIMED match blocks. A claimed one is either the same business
+ *  already signed up (they should log in) or a real namesake, and refusing a
+ *  genuine second business over a shared name is worse than a duplicate, so
+ *  that case is logged and allowed through. */
+function assertNoUnclaimedDirectoryTwin(input: VendorProvisionInput): void {
+  const match = findVisibleDirectoryMatch({
+    website: input.website ?? "",
+    name: input.businessName,
+    city: input.city ?? "",
+  });
+  if (!match) return;
+  if (match.vendor_account_id !== null) {
+    log.info("vendor.register.claimed_twin", {
+      listing_id: match.id,
+      business_name: input.businessName,
+    });
+    return;
+  }
+  throw new HttpError(409, "This business is already in the Weddly directory", {
+    code: "listing_exists_unclaimed",
+    listing: { id: match.id, name: match.name, city: match.city },
+  });
+}
+
 /** Run the atomic user-insert + vendor_account + listing + billing transaction.
  *  `insertUser` is the differing piece (password vs Google) — it inserts the
  *  users row and returns the new id, throwing Error(ERR_EMAIL_TAKEN) on a
@@ -210,6 +252,7 @@ function provisionVendor(
   currency: ReturnType<typeof vendorCurrencyForLocale>,
   ts: number,
 ): { userId: number; vendorAccountId: number } {
+  assertNoUnclaimedDirectoryTwin(input);
   let userId = 0;
   let vendorAccountId = 0;
   const tx = db.transaction(() => {

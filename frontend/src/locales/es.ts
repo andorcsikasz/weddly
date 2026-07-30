@@ -2041,6 +2041,8 @@ const es: LocaleMessages = {
     demo_error: "No se pudo iniciar. Inténtalo de nuevo.",
   },
   vendor_register: {
+    err_listing_exists:
+      "{name} ya está en el directorio de Weddly. Abre {url} y toma el control de ese perfil en lugar de crear un segundo, así las reseñas y consultas de las parejas te llegan a ti.",
     seo_title: "Conviértete en proveedor · Weddly",
     seo_description:
       "Crea tu perfil de proveedor en Weddly y llega a las parejas que están organizando su boda ahora mismo.",

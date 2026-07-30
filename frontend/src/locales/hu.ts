@@ -2014,6 +2014,8 @@ const hu: LocaleMessages = {
     demo_error: "Nem indult. Próbáld újra.",
   },
   vendor_register: {
+    err_listing_exists:
+      "A(z) {name} már szerepel a Weddly katalógusában. Nyisd meg a {url} oldalt, és vedd át azt a profilt egy második létrehozása helyett, így a párok értékelései és megkeresései hozzád futnak be.",
     seo_title: "Légy szolgáltató · Wēddly",
     seo_description: "Hozd létre a Weddly szolgáltatói profilod, és érd el a most tervező párokat.",
     title: "Szolgáltatói fiók létrehozása",

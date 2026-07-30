@@ -1192,6 +1192,11 @@ export interface DirectoryMatch {
   name: string;
   city: string | null;
   source: string;
+  /** Who owns the matched card, if anyone. An UNCLAIMED match is the one a
+   *  self-serve registrant can be routed into claiming; a claimed one is either
+   *  the same business already signed up or a genuine namesake, and neither is
+   *  ours to reassign. */
+  vendor_account_id: number | null;
 }
 
 // Shared platforms where the hostname is NOT a unique business identifier — a
@@ -1245,7 +1250,7 @@ export function findVisibleDirectoryMatch(opts: {
   if (host) {
     const byWebsite = db
       .prepare(
-        `SELECT id, name, city, source FROM listings
+        `SELECT id, name, city, source, vendor_account_id FROM listings
           WHERE status = 'active' AND website IS NOT NULL AND website != ''
             AND LOWER(website) LIKE ?
           ORDER BY (vendor_account_id IS NOT NULL) DESC, (source = 'curated') DESC
@@ -1259,7 +1264,7 @@ export function findVisibleDirectoryMatch(opts: {
   if (name && city) {
     const byNameCity = db
       .prepare(
-        `SELECT id, name, city, source FROM listings
+        `SELECT id, name, city, source, vendor_account_id FROM listings
           WHERE status = 'active' AND LOWER(name) = LOWER(?) AND LOWER(city) = LOWER(?)
           LIMIT 1`,
       )

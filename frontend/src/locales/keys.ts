@@ -2401,6 +2401,7 @@ export interface LocaleMessages {
     demo_error: string;
   };
   vendor_register: {
+    err_listing_exists: string;
     seo_title: string;
     seo_description: string;
     title: string;

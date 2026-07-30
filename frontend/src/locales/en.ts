@@ -1986,6 +1986,8 @@ const en: LocaleMessages = {
     demo_error: "Couldn't start. Try again.",
   },
   vendor_register: {
+    err_listing_exists:
+      "{name} is already in the Weddly directory. Open {url} to take over that profile instead of creating a second one, so the reviews and inquiries couples send land with you.",
     seo_title: "Become a vendor · Weddly",
     seo_description:
       "Create your Weddly vendor profile and reach couples planning their wedding right now.",
