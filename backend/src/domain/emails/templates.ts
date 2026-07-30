@@ -281,6 +281,19 @@ export interface ComebackNudgePayload {
   /** Optional couple display name for a warmer preheader ("Mia & Lucas"). */
   coupleDisplayName?: string;
 }
+export interface WhatsNewPayload {
+  /** Deep link to /app, the workspace this mail exists to pull them back into. */
+  appUrl: string;
+  /** Whole days since anyone in the workspace was last seen, >= 30. Rounded to
+   *  weeks in the copy for the same reason as the comeback nudge: an exact day
+   *  count reads as surveillance. */
+  daysAway: number;
+  /** Days until the wedding when a date is set. Omitted for a couple with no
+   *  date, who get the "no date yet, that's fine" close instead. */
+  daysUntilWedding?: number;
+  /** Optional couple display name for a warmer preheader ("Mia & Lucas"). */
+  coupleDisplayName?: string;
+}
 export interface PostWeddingReviewPayload {
   /** Deep link to /app/rate-vendors, the one-click star surface. */
   ctaUrl: string;
@@ -909,6 +922,7 @@ export type KindPayload = {
   onboarding_nudge_week: OnboardingNudgePayload;
   honeymoon_nudge: HoneymoonNudgePayload;
   comeback_nudge: ComebackNudgePayload;
+  whats_new_2026_07: WhatsNewPayload;
   post_wedding_review_request: PostWeddingReviewPayload;
   wedding_farewell: WeddingFarewellPayload;
   milestone_t90: MilestonePayload;
@@ -2066,7 +2080,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
         paragraphs: [
           `${weeks} hete nem jártál a tervezőtökben. Semmi baj, a vendéglista nem szökött meg, minden pontosan ott van, ahol hagytad.`,
-          "Mi közben nem tétlenkedtünk. Ez került be azóta:\n- **Szolgáltatók térképen**: a katalógus térképen is nézhető, értékelésekkel, és egy kattintással mentheted a kedvenceidet.\n- **Döntések**: a Tervezés fülön végigvezetünk azon a sok apró kérdésen, amire a végén mindig rákérdez valaki.\n- **Arculat**: egy összefüggő stíluskészlet, és nyomtatható ültetőkártyák, menük, táblák hozzá.",
+          "Mi közben nem tétlenkedtünk. Ez került be azóta:\n- **Szolgáltatók**: 120+ új helyszín valódi galériákkal, térképen, és rá lehet szűrni, ki szabad a ti dátumotokon.\n- **Üzenetek**: amit egy szolgáltatótól kérdeztek, arra a válasz a Weddlyn belül landol.\n- **Arculat**: egy összefüggő stíluskészlet a vendégoldalhoz, és nyomtatható ültetőkártyák, menük, táblák hozzá.",
           closingHu,
           "Egy kávé alatt átfutod, mi van kész és mi vár még rátok.",
         ],
@@ -2079,7 +2093,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Hi ${ctx.recipientName || "there"},`,
         paragraphs: [
           `It's been ${weeks} weeks since you were last in your planner. Nothing to worry about: the guest list didn't run off, everything is exactly where you left it.`,
-          "We haven't been idle either. Here's what landed since:\n- **Vendors on a map**: the directory has a map view now, with reviews, and one tap saves a favourite.\n- **Decisions**: the Planning tab walks you through the small questions someone always asks about at the end.\n- **Style kit**: one visual identity for the wedding, plus printable place cards, menus and signs to match.",
+          "We haven't been idle either. Here's what landed since:\n- **Vendors**: 120+ new venues with real galleries, on a map, filterable by who still has your date open.\n- **Messages**: ask a vendor something and the reply lands inside Weddly.\n- **Style kit**: one visual identity for your guest page, plus printable place cards, menus and signs to match.",
           closingEn,
           "One coffee is enough to see what's done and what's still waiting.",
         ],
@@ -2087,6 +2101,72 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ctaSubtext: "Takes you straight into your planner.",
         footnote:
           "We're improving Weddly constantly, so there'll be something new to show you next time too.",
+      },
+    };
+  },
+
+  // The deliberate second touch to a workspace that has been quiet for a month
+  // or more, sent by an operator rather than a sweep (see scripts/whats_new_blast.ts).
+  // `comeback_nudge` is one-shot at 21 days, so everyone in this segment already
+  // had their one automatic "we miss you"; repeating that note would land as a
+  // nag. This mail earns its place by being about the PRODUCT instead: it opens
+  // by confirming nothing of theirs was lost, then states plainly what got
+  // rebuilt while they were away.
+  //
+  // THE BULLETS ARE DATED COPY, and so is the kind's name. When the next wave
+  // goes out it gets its own kind (`whats_new_<yyyy_mm>`) with its own list,
+  // rather than this one quietly bragging about last season's work: the
+  // one-shot dispatch key is per kind, so reusing this one would silently skip
+  // everybody who already received it.
+  //
+  // Two rules the list must keep. Never name anything gated behind an env var
+  // production doesn't have set (the Google Calendar sync, DeepL translation,
+  // the Places-ranked browse teaser). And never quote a number we can't stand
+  // behind: "120+ new venues" is the 122 real Italy / Albania / Greece venues
+  // added in July, not a rounded-up guess.
+  whats_new_2026_07: (p, ctx) => {
+    const weeks = Math.max(4, Math.floor(p.daysAway / 7));
+    const couplePrefix = p.coupleDisplayName ? `${p.coupleDisplayName}: ` : "";
+    const closingHu =
+      p.daysUntilWedding !== undefined
+        ? `Az esküvőtökig ${p.daysUntilWedding} nap van. Pont most érdemes ránézni, amíg a döntések még kényelmesek.`
+        : "Ha még nincs kitűzve a dátum, az sem baj: a körülnézéshez nem kell.";
+    const closingEn =
+      p.daysUntilWedding !== undefined
+        ? `Your wedding is ${p.daysUntilWedding} days away. Now is the good moment to look, while the decisions are still calm ones.`
+        : "No date yet? You don't need one to look around.";
+    return {
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Ez már nem az a Weddly, amit itt hagytál",
+        "This is not the Weddly you left",
+      ),
+      ctaUrl: p.appUrl,
+      hu: {
+        preheader: `${couplePrefix}120+ új helyszín, üzenetek a szolgáltatókkal, arculat és nyomtatás.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `Kezdjük a jó hírrel: a vendéglistátok, a költségvetésetek és az ültetés pontosan ott van, ahol ${weeks} hete hagytad. Semmi nem tűnt el.`,
+          "**Ami körülöttük van, azt viszont nagyrészt újraépítettük.** Ez került be, mióta utoljára itt voltál:\n- **120+ új helyszín és szolgáltató**, valódi galériákkal, térképen, és rá lehet szűrni, ki szabad a ti dátumotokon.\n- **Üzenetek**: amit egy szolgáltatótól kérdeztek, arra a válasz a Weddlyn belül landol, nem a postafiókod mélyén.\n- **Arculat és nyomtatás**: egy összefüggő stíluskészlet a vendégoldalhoz, kézzel beigazítható borítófotó, helyszíni térkép, és nyomtatható ültetőkártyák, menük, táblák hozzá.\n- **Költségvetés**: fizetési határidők, részletenként csatolható PDF számla, és a keret túllépése azonnal szól, nem a végén derül ki.",
+          closingHu,
+          "Nem kell újratanulni semmit. Nyisd meg, és két perc alatt látszik a különbség.",
+        ],
+        cta: "Megnézem, mi változott",
+        ctaSubtext: "Egyenesen a tervezőtökbe visz.",
+        footnote: "Amit most felsoroltunk, két hónap munkája. A következő kettőben sem állunk le.",
+      },
+      en: {
+        preheader: `${couplePrefix}120+ new venues, vendor messaging, style kit and print.`,
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `Good news first: your guest list, your budget and your seating plan are exactly where you left them ${weeks} weeks ago. Nothing got lost.`,
+          "**Almost everything around them, though, has been rebuilt.** Here's what landed since you were last in:\n- **120+ new venues and vendors**, with real galleries, on a map, and filterable by who still has your date open.\n- **Messages**: ask a vendor something and the reply lands inside Weddly, not somewhere down your inbox.\n- **Style kit and print**: one visual identity for your guest page, a cover photo you can nudge into place, a venue map, and printable place cards, menus and signs to match.\n- **Budget**: payment due dates, a PDF invoice per installment, and an alert the moment a category goes over, instead of a surprise at the end.",
+          closingEn,
+          "Nothing to relearn. Open it and the difference shows inside two minutes.",
+        ],
+        cta: "See what changed",
+        ctaSubtext: "Takes you straight into your planner.",
+        footnote: "That list is two months of work. The next two won't be quieter.",
       },
     };
   },

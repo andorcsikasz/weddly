@@ -35,6 +35,7 @@ export type EmailKind =
   | "onboarding_nudge_week" // 7 days after signup, still no workspace, second, warmer nudge
   | "honeymoon_nudge" // one-shot, inside the 90-day window, to couples who haven't touched the honeymoon planner
   | "comeback_nudge" // one-shot win-back: nobody in the workspace has been seen for 3 weeks, here's what shipped meanwhile
+  | "whats_new_2026_07" // operator-triggered product-update mail to workspaces quiet for 30+ days; dated on purpose, a later wave is its own kind
   | "milestone_t90" // 90 days before the wedding
   | "milestone_t30" // 30 days before
   | "milestone_t7" // 7 days before
@@ -181,6 +182,12 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // one-shot per workspace — a couple who is deliberately away must not be
   // followed by a drip.
   comeback_nudge: "lifecycle",
+  // Lifecycle: the same win-back relationship as comeback_nudge, one rung
+  // later. `comeback_nudge` is one-shot at 21 days, so a workspace quiet for
+  // months already had its single automatic touch; this is the deliberate
+  // second one, sent by an operator, and it honours the unsubscribe footer for
+  // exactly the same reason.
+  whats_new_2026_07: "lifecycle",
   post_wedding_review_request: "lifecycle",
   // Lifecycle, and the last one: the sweep that sends it flips
   // `lifecycle_opt_out` immediately afterwards, so this is the final mail a
