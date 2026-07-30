@@ -127,6 +127,20 @@ export function listBlockedDays(vendorAccountId: number): VendorBlockedDay[] {
   return rows.map((r) => ({ date: r.blocked_date, hours: parseBlockedHours(r.blocked_hours) }));
 }
 
+/** The other direction of the exception layer: dates the vendor exceptionally
+ *  WORKS, sorted ascending. Read by the vendor's own schedule editor, which is
+ *  the only place both directions are listed together. */
+export function listOpenDates(vendorAccountId: number): string[] {
+  const rows = db
+    .prepare(
+      `SELECT blocked_date FROM vendor_unavailable_dates
+        WHERE vendor_account_id = ? AND is_available = 1
+        ORDER BY blocked_date ASC`,
+    )
+    .all(vendorAccountId) as Array<{ blocked_date: string }>;
+  return rows.map((r) => r.blocked_date);
+}
+
 /** Listings we KNOW are taken on `date`, for the directory's date filter.
  *
  *  The inverse question ("who is free?") is unanswerable and would be dishonest

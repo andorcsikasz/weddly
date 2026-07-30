@@ -261,6 +261,7 @@ import type {
   VendorMessageTemplate,
 } from "@shared/booking_messages";
 import type { VendorPointsStatus } from "@shared/vendor_points";
+import type { VendorAvailabilitySettings, WeeklyHours } from "@shared/vendor_availability";
 import type {
   AdminVendorView,
   VendorAccount,
@@ -2778,11 +2779,27 @@ export const vendorAvailabilityApi = {
       hours: hours ?? null,
       reason,
     }),
+  /** The other direction of the same per-date exception: the vendor works this
+   *  day even though their weekly schedule has that weekday off. Hours are
+   *  meaningless here, so the server stores none. */
+  open: (date: string, reason?: string) =>
+    apiFetch<VendorAvailabilityView>("POST", "/api/vendor/availability/me", {
+      date,
+      available: true,
+      reason,
+    }),
   unblock: (date: string) =>
     apiFetch<VendorAvailabilityView>(
       "DELETE",
       `/api/vendor/availability/me?date=${encodeURIComponent(date)}`,
     ),
+  /** The recurring weekly schedule: working hours per weekday, plus the derived
+   *  weekday set every couple-facing surface reads. One endpoint for both, so a
+   *  client can't write one layer and leave the other stale. */
+  schedule: () =>
+    apiFetch<VendorAvailabilitySettings>("GET", "/api/vendor/availability/me/pattern"),
+  saveSchedule: (body: { working_hours: WeeklyHours; schedule_name: string }) =>
+    apiFetch<VendorAvailabilitySettings>("PUT", "/api/vendor/availability/me/pattern", body),
 };
 
 /** Vendor to-do board: private, vendor-scoped tasks on the kanban at

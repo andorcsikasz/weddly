@@ -21,12 +21,18 @@
 // HTML5 drag & drop lifted from the planner board, plus create and delete.
 
 import {
+  Calendar1,
   CalendarDays,
+  CalendarOff,
+  CalendarRange,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Columns3,
+  Grid3x3,
   Heart,
   Hourglass,
+  List,
   ListChecks,
   Lock,
   SquareKanban,
@@ -49,6 +55,12 @@ import {
   type VendorAvailabilityView,
   type VendorBlockedDay,
 } from "@shared/listings";
+import {
+  DAY_MINUTES,
+  hoursFromWeekdays,
+  isoWeekday,
+  type WeeklyHours,
+} from "@shared/vendor_availability";
 import type { VendorClientView } from "@shared/vendor_clients";
 import type { VendorBoardStatus, VendorTask } from "@shared/vendor_tasks";
 import { GoogleCalendarConnect } from "../../components/GoogleCalendarConnect";
@@ -118,6 +130,23 @@ function formatDay(iso: string, locale: Locale): string {
 }
 
 // ── event pills ──────────────────────────────────────────────────────────────
+
+/** The complement of one day's working hours, in fractional hours, which is what
+ *  the hour grid paints as "not working". A day with no working block at all
+ *  comes back as the whole 0-24, so an off day reads as one shaded column. */
+function offRanges(intervals: readonly { start_min: number; end_min: number }[]): Array<{
+  start: number;
+  end: number;
+}> {
+  const out: Array<{ start: number; end: number }> = [];
+  let cursor = 0;
+  for (const iv of intervals) {
+    if (iv.start_min > cursor) out.push({ start: cursor / 60, end: iv.start_min / 60 });
+    cursor = Math.max(cursor, iv.end_min);
+  }
+  if (cursor < DAY_MINUTES) out.push({ start: cursor / 60, end: DAY_MINUTES / 60 });
+  return out;
+}
 
 function pillColor(kind: CalEvent["kind"]): string {
   switch (kind) {
@@ -343,6 +372,8 @@ function MonthView({
   busy,
   onOpenDay,
   openTitleFor,
+  isOffDay,
+  offDayTitle,
 }: {
   cursor: Date;
   eventsByDate: Map<string, CalEvent[]>;
@@ -353,6 +384,9 @@ function MonthView({
   busy: boolean;
   onOpenDay: (iso: string) => void;
   openTitleFor: (iso: string) => string;
+  /** From the weekly schedule, not from anything the vendor marked by hand. */
+  isOffDay: (iso: string) => boolean;
+  offDayTitle: string;
 }) {
   const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   const offset = (first.getDay() + 6) % 7;
@@ -377,6 +411,10 @@ function MonthView({
           const isToday = key === todayStr;
           const isBlocked = blockedDays.has(key);
           const isPartial = isBlocked && blockedDays.get(key) != null;
+          // "Not working" comes from the weekly schedule, so it is drawn but
+          // never counted as a block: no pill, no colour, just a muted cell and
+          // a glyph. A day the vendor blocked BY HAND still wins the surface.
+          const isOff = !isBlocked && isOffDay(key);
           const evs = eventsByDate.get(key) ?? [];
           const hasBooking = evs.some((e) => e.kind === "booked");
           // The month grid is the blocking editor: clicking a free future day
@@ -396,23 +434,35 @@ function MonthView({
                   ? isPartial
                     ? "bg-blush-50 dark:bg-blush-900/10"
                     : "bg-blush-100/60 dark:bg-blush-900/20"
-                  : inMonth
-                    ? editable
-                      ? "hover:bg-paper-50 dark:hover:bg-umber-800/60"
-                      : ""
-                    : "bg-paper-50/60 dark:bg-umber-950/40"
+                  : isOff && inMonth
+                    ? "bg-paper-100/70 dark:bg-umber-950/50"
+                    : inMonth
+                      ? editable
+                        ? "hover:bg-paper-50 dark:hover:bg-umber-800/60"
+                        : ""
+                      : "bg-paper-50/60 dark:bg-umber-950/40"
               }`}
             >
-              <span
-                className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                  isToday
-                    ? "bg-blush-500 font-semibold text-paper-50 dark:bg-blush-400 dark:text-umber-900"
-                    : inMonth
-                      ? "text-umber-700 dark:text-paper-200"
-                      : "text-umber-300 dark:text-umber-600"
-                }`}
-              >
-                {d.getDate()}
+              <span className="flex items-center justify-between gap-1">
+                <span
+                  className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
+                    isToday
+                      ? "bg-blush-500 font-semibold text-paper-50 dark:bg-blush-400 dark:text-umber-900"
+                      : inMonth
+                        ? "text-umber-700 dark:text-paper-200"
+                        : "text-umber-300 dark:text-umber-600"
+                  }`}
+                >
+                  {d.getDate()}
+                </span>
+                {isOff && inMonth && (
+                  <CalendarOff
+                    size={12}
+                    strokeWidth={1.5}
+                    aria-label={offDayTitle}
+                    className="shrink-0 text-umber-400 dark:text-umber-500"
+                  />
+                )}
               </span>
               <div className="mt-1 space-y-1">
                 {evs.slice(0, 3).map((ev, i) => (
@@ -499,6 +549,7 @@ function TimeGridView({
   allDayLabel,
   onOpenDay,
   openTitleFor,
+  offRangesFor,
 }: {
   days: Date[];
   eventsByDate: Map<string, CalEvent[]>;
@@ -506,6 +557,9 @@ function TimeGridView({
   allDayLabel: string;
   onOpenDay?: (iso: string) => void;
   openTitleFor: (iso: string) => string;
+  /** Non-working hours for a date, from the weekly schedule, in fractional
+   *  hours. Shaded rather than blocked: nothing here is an event. */
+  offRangesFor: (iso: string) => Array<{ start: number; end: number }>;
 }) {
   const { locale } = useT();
 
@@ -541,117 +595,145 @@ function TimeGridView({
   const wd = (d: Date) =>
     new Intl.DateTimeFormat(intlLocale(locale), { weekday: "short" }).format(d);
 
+  // A day column has a floor. Seven of them in a 360px viewport used to get
+  // 44px each: the weekday name truncated to a letter, every event pill an
+  // unreadable sliver, and no way to widen them. Below the floor the three
+  // grids overflow together inside one horizontal scroller, so they stay in
+  // register and a week is something you swipe rather than squint at.
+  const cols = `3.5rem repeat(${days.length}, minmax(4.5rem,1fr))`;
+
   return (
     <div className="overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
-      {/* Day headers */}
-      <div
-        className="grid border-b border-paper-200 dark:border-umber-800"
-        style={{ gridTemplateColumns: `3.5rem repeat(${days.length}, minmax(0,1fr))` }}
-      >
-        <div />
-        {days.map((d) => {
-          const isToday = ymd(d) === todayStr;
-          return (
-            <div key={ymd(d)} className="px-1 py-2 text-center">
-              <div className="text-[10px] uppercase tracking-wide text-umber-400 dark:text-umber-500">
-                {wd(d)}
+      <div className="overflow-x-auto">
+        {/* Day headers */}
+        <div
+          className="grid border-b border-paper-200 dark:border-umber-800"
+          style={{ gridTemplateColumns: cols }}
+        >
+          <div />
+          {days.map((d) => {
+            const isToday = ymd(d) === todayStr;
+            return (
+              <div key={ymd(d)} className="px-1 py-2 text-center">
+                <div className="text-[10px] uppercase tracking-wide text-umber-400 dark:text-umber-500">
+                  {wd(d)}
+                </div>
+                <div
+                  className={`mx-auto mt-0.5 flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+                    isToday
+                      ? "bg-blush-500 text-paper-50 dark:bg-blush-400 dark:text-umber-900"
+                      : "text-umber-800 dark:text-paper-100"
+                  }`}
+                >
+                  {d.getDate()}
+                </div>
               </div>
-              <div
-                className={`mx-auto mt-0.5 flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                  isToday
-                    ? "bg-blush-500 text-paper-50 dark:bg-blush-400 dark:text-umber-900"
-                    : "text-umber-800 dark:text-paper-100"
-                }`}
-              >
-                {d.getDate()}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      {/* All-day band: bookings, inquiries, whole-day blocks and task deadlines
+        {/* All-day band: bookings, inquiries, whole-day blocks and task deadlines
           are date-only, so they live here. Partial-hour blocks are the one
           exception - they are drawn on the hour grid below at their real
           position, so repeating them here would double-count the day. */}
-      <div
-        className="grid border-b border-paper-200 dark:border-umber-800"
-        style={{ gridTemplateColumns: `3.5rem repeat(${days.length}, minmax(0,1fr))` }}
-      >
-        <div className="px-1 py-1 text-right text-[9px] uppercase tracking-wide text-umber-400">
-          {allDayLabel}
+        <div
+          className="grid border-b border-paper-200 dark:border-umber-800"
+          style={{ gridTemplateColumns: cols }}
+        >
+          <div className="px-1 py-1 text-right text-[9px] uppercase tracking-wide text-umber-400">
+            {allDayLabel}
+          </div>
+          {days.map((d) => {
+            const evs = (eventsByDate.get(ymd(d)) ?? []).filter((ev) => !isPartialBlock(ev));
+            return (
+              <div
+                key={ymd(d)}
+                className="min-h-[2.5rem] space-y-1 border-l border-paper-100 p-1 dark:border-umber-800"
+              >
+                {evs.map((ev, i) => (
+                  <EventPill
+                    key={`${ev.kind}-${ev.bookingId ?? ev.date}-${i}`}
+                    ev={ev}
+                    onOpenDay={onOpenDay}
+                    openTitle={openTitleFor(ev.date)}
+                  />
+                ))}
+              </div>
+            );
+          })}
         </div>
-        {days.map((d) => {
-          const evs = (eventsByDate.get(ymd(d)) ?? []).filter((ev) => !isPartialBlock(ev));
-          return (
-            <div
-              key={ymd(d)}
-              className="min-h-[2.5rem] space-y-1 border-l border-paper-100 p-1 dark:border-umber-800"
-            >
-              {evs.map((ev, i) => (
-                <EventPill
-                  key={`${ev.kind}-${ev.bookingId ?? ev.date}-${i}`}
-                  ev={ev}
-                  onOpenDay={onOpenDay}
-                  openTitle={openTitleFor(ev.date)}
-                />
-              ))}
-            </div>
-          );
-        })}
-      </div>
 
-      {/* Hour grid. Partial-hour blocks are painted here as bands spanning the
+        {/* Hour grid. Partial-hour blocks are painted here as bands spanning the
           hours they actually cover, so the vendor can read their booked hours
           off the grid instead of having to open every day. */}
-      <div className="relative max-h-[60vh] overflow-y-auto">
-        <div
-          className="relative grid"
-          style={{ gridTemplateColumns: `3.5rem repeat(${days.length}, minmax(0,1fr))` }}
-        >
-          <div className="col-span-1">
-            {HOURS.map((h) => (
-              <div
-                key={h}
-                className="h-12 pr-1 text-right text-[10px] text-umber-400 dark:text-umber-500"
-              >
-                {h}:00
-              </div>
-            ))}
-          </div>
-          {days.map((d) => (
-            <div key={ymd(d)} className="relative border-l border-paper-100 dark:border-umber-800">
+        <div className="relative max-h-[60vh] overflow-y-auto">
+          <div className="relative grid" style={{ gridTemplateColumns: cols }}>
+            <div className="col-span-1">
               {HOURS.map((h) => (
-                <div key={h} className="h-12 border-b border-paper-100 dark:border-umber-800/60" />
+                <div
+                  key={h}
+                  className="h-12 pr-1 text-right text-[10px] text-umber-400 dark:text-umber-500"
+                >
+                  {h}:00
+                </div>
               ))}
-              {(eventsByDate.get(ymd(d)) ?? [])
-                .filter((ev) => isPartialBlock(ev) && ev.hours)
-                .map((ev) => {
-                  const { start, end } = blockedHoursRange(ev.hours as number[]);
+            </div>
+            {days.map((d) => (
+              <div
+                key={ymd(d)}
+                className="relative border-l border-paper-100 dark:border-umber-800"
+              >
+                {HOURS.map((h) => (
+                  <div
+                    key={h}
+                    className="h-12 border-b border-paper-100 dark:border-umber-800/60"
+                  />
+                ))}
+                {/* Off hours, from the weekly schedule. Translucent so the hour
+                    lines stay readable through them, and inert: this is the
+                    absence of working time, not an event. */}
+                {offRangesFor(ymd(d)).map((r) => {
+                  const top = ((Math.max(r.start, windowStart) - windowStart) / span) * 100;
+                  const bottom = ((Math.min(r.end, windowEnd) - windowStart) / span) * 100;
+                  if (bottom <= 0 || top >= 100 || bottom <= top) return null;
                   return (
-                    <HourBand
-                      key={`${ev.date}-${start}-${end}`}
-                      ev={ev}
-                      start={start}
-                      end={end}
-                      windowStart={windowStart}
-                      span={span}
-                      onOpenDay={onOpenDay}
-                      openTitle={openTitleFor(ev.date)}
+                    <div
+                      key={`off-${r.start}-${r.end}`}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-x-0 bg-paper-200/40 dark:bg-umber-950/40"
+                      style={{ top: `${top}%`, height: `${bottom - top}%` }}
                     />
                   );
                 })}
-              {showNow && ymd(d) === todayStr && (
-                <div
-                  className="pointer-events-none absolute left-0 right-0 z-10 flex items-center"
-                  style={{ top: `${nowTop}%` }}
-                >
-                  <span className="-ml-1 h-2 w-2 rounded-full bg-red-500" />
-                  <span className="h-px flex-1 bg-red-500" />
-                </div>
-              )}
-            </div>
-          ))}
+                {(eventsByDate.get(ymd(d)) ?? [])
+                  .filter((ev) => isPartialBlock(ev) && ev.hours)
+                  .map((ev) => {
+                    const { start, end } = blockedHoursRange(ev.hours as number[]);
+                    return (
+                      <HourBand
+                        key={`${ev.date}-${start}-${end}`}
+                        ev={ev}
+                        start={start}
+                        end={end}
+                        windowStart={windowStart}
+                        span={span}
+                        onOpenDay={onOpenDay}
+                        openTitle={openTitleFor(ev.date)}
+                      />
+                    );
+                  })}
+                {showNow && ymd(d) === todayStr && (
+                  <div
+                    className="pointer-events-none absolute left-0 right-0 z-10 flex items-center"
+                    style={{ top: `${nowTop}%` }}
+                  >
+                    <span className="-ml-1 h-2 w-2 rounded-full bg-red-500" />
+                    <span className="h-px flex-1 bg-red-500" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -774,10 +856,33 @@ const VIEW_KEYS: Record<CalView, string> = {
   schedule: "vendor_calendar.view_schedule",
 };
 
+/** One glyph per view, so the trigger can drop its word on a phone and the menu
+ *  rows can be scanned by shape. Each says what the view IS: one column, four,
+ *  a span, a grid of days, a grid of months, a list. */
+const VIEW_ICONS: Record<CalView, ReactNode> = {
+  day: <Calendar1 size={15} aria-hidden="true" />,
+  "4day": <Columns3 size={15} aria-hidden="true" />,
+  week: <CalendarRange size={15} aria-hidden="true" />,
+  month: <CalendarDays size={15} aria-hidden="true" />,
+  year: <Grid3x3 size={15} aria-hidden="true" />,
+  schedule: <List size={15} aria-hidden="true" />,
+};
+
+/** The two multi-day time grids, which a phone cannot draw: seven columns in
+ *  360px leaves 44px each, so the header degrades to a bare day number and every
+ *  event pill is an unreadable sliver. Landing on one is a dead end rather than
+ *  a dense view, so a narrow viewport falls back to the single-day grid. */
+const WIDE_VIEWS: CalView[] = ["week", "4day"];
+const NARROW_MAX_PX = 640;
+
+function isNarrowViewport(): boolean {
+  return typeof window !== "undefined" && window.innerWidth < NARROW_MAX_PX;
+}
+
 /** Thin wrapper over the shared `ViewSelect` — this control WAS the local
  *  implementation until the couple Timeline needed the same picker for its
  *  day/week/month/quarter range; it now lives in `components/ui` and the vendor
- *  side keeps only its option list and the steel tone. */
+ *  side keeps only its option list, its icons and the steel tone. */
 function ViewDropdown({ view, onChange }: { view: CalView; onChange: (v: CalView) => void }) {
   const { t } = useT();
   return (
@@ -786,10 +891,12 @@ function ViewDropdown({ view, onChange }: { view: CalView; onChange: (v: CalView
       options={VIEW_ORDER.map((v) => ({
         value: v,
         label: t(VIEW_KEYS[v] as Parameters<typeof t>[0]),
+        icon: VIEW_ICONS[v],
       }))}
       onChange={onChange}
       ariaLabel={t("vendor_calendar.view_label")}
       tone="steel"
+      compact
     />
   );
 }
@@ -1212,6 +1319,9 @@ export default function VendorCalendarPage() {
 
   const [availability, setAvailability] = useState<VendorAvailabilityView | null>(null);
   const [availabilityMissing, setAvailabilityMissing] = useState(false);
+  // The recurring weekly schedule. Null until it lands (and if it never does,
+  // the calendar simply draws no off days rather than guessing at them).
+  const [workingHours, setWorkingHours] = useState<WeeklyHours | null>(null);
   const [clients, setClients] = useState<VendorClientView[]>([]);
   const [canEdit, setCanEdit] = useState(true);
   const [availBusy, setAvailBusy] = useState(false);
@@ -1226,7 +1336,13 @@ export default function VendorCalendarPage() {
       const m = localStorage.getItem(MODE_KEY) as Mode | null;
       if (m === "tasks" || m === "calendar") setMode(m);
       const v = localStorage.getItem(VIEW_KEY) as CalView | null;
-      if (v && VIEW_ORDER.includes(v)) setView(v);
+      // A stored week / 4-day view is honoured on a screen that can draw it and
+      // swapped for the single day on one that cannot. Deliberately NOT
+      // persisted: the vendor picked week on their laptop and that preference
+      // should still be there when they open the same account on it.
+      if (v && VIEW_ORDER.includes(v)) {
+        setView(WIDE_VIEWS.includes(v) && isNarrowViewport() ? "day" : v);
+      }
     } catch {
       /* localStorage unavailable */
     }
@@ -1265,6 +1381,12 @@ export default function VendorCalendarPage() {
       .me()
       .then((v) => setAvailability(v))
       .catch(() => setAvailabilityMissing(true));
+    vendorAvailabilityApi
+      .schedule()
+      .then((s) => setWorkingHours(s.working_hours))
+      .catch(() => {
+        /* no schedule, no off-day shading; the calendar still works */
+      });
     vendorClientsApi
       .list()
       .then((r) => setClients(r.clients))
@@ -1287,6 +1409,32 @@ export default function VendorCalendarPage() {
     for (const bd of availability?.blocked_days ?? []) map.set(bd.date, bd.hours);
     return map;
   }, [availability]);
+
+  // A date the vendor exceptionally works, overriding their weekly schedule.
+  // Kept apart from `blockedDays` because it is the opposite direction.
+  const openDates = useMemo(() => new Set(availability?.open_dates ?? []), [availability]);
+
+  // "Not working" per date, derived: the weekly schedule says this weekday is
+  // off and no exception opens the date. Deliberately NOT stored per day, which
+  // is the whole reason a weekly schedule exists.
+  const isOffDay = useCallback(
+    (iso: string): boolean =>
+      workingHours !== null && workingHours[isoWeekday(iso)].length === 0 && !openDates.has(iso),
+    [workingHours, openDates],
+  );
+
+  const offRangesFor = useCallback(
+    (iso: string) => {
+      if (workingHours === null) return [];
+      // An exceptionally-open day has no hour detail on file, so it is treated
+      // as a full working day rather than shaded shut.
+      const intervals = openDates.has(iso)
+        ? hoursFromWeekdays(null)[isoWeekday(iso)]
+        : workingHours[isoWeekday(iso)];
+      return offRanges(intervals);
+    },
+    [workingHours, openDates],
+  );
 
   // Human summary for the schedule/agenda row + tooltip: "Egész nap foglalt"
   // for a whole-day block, "Foglalt 09:00-13:00 (4 ó)" for a partial one.
@@ -1517,6 +1665,8 @@ export default function VendorCalendarPage() {
       busy={availBusy}
       onOpenDay={openDay}
       openTitleFor={openTitleFor}
+      isOffDay={isOffDay}
+      offDayTitle={t("vendor_calendar.legend_off_day")}
     />
   );
 
@@ -1648,6 +1798,7 @@ export default function VendorCalendarPage() {
               allDayLabel={t("vendor_calendar.all_day")}
               onOpenDay={openHandler}
               openTitleFor={openTitleFor}
+              offRangesFor={offRangesFor}
             />
           )}
 
@@ -1672,6 +1823,17 @@ export default function VendorCalendarPage() {
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-moss-500" aria-hidden="true" />
               {t("vendor_calendar.legend_tasks")}
+            </span>
+            {/* The weekly schedule's own mark. Neutral on purpose: it is the
+                absence of working time, not something the vendor did. */}
+            <span className="flex items-center gap-1.5">
+              <CalendarOff
+                size={12}
+                strokeWidth={1.5}
+                className="text-umber-400"
+                aria-hidden="true"
+              />
+              {t("vendor_calendar.legend_off_day")}
             </span>
           </div>
 
@@ -1710,6 +1872,16 @@ export default function VendorCalendarPage() {
                       date: formatDay(availability.next_available, locale),
                     })
                   : t("vendor_calendar.availability_none_free")}
+              </p>
+              {/* Recurring days off belong to the schedule, not to 52 clicks on
+                  this grid, so the grid points at where they are edited. */}
+              <p className="text-xs">
+                <Link
+                  to="/vendor/settings/schedule"
+                  className="text-blush-600 underline-offset-2 hover:underline dark:text-blush-300"
+                >
+                  {t("vendor_calendar.schedule_link")}
+                </Link>
               </p>
             </div>
           )}

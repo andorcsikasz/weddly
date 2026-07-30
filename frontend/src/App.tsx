@@ -119,6 +119,9 @@ const VendorSettingsPage = lazyWithReload(() => import("./pages/vendor/VendorSet
 const VendorSettingsLayout = lazyWithReload(() => import("./pages/vendor/VendorSettingsLayout"));
 const VendorSettingsCompany = lazyWithReload(() => import("./pages/vendor/VendorSettingsCompany"));
 const VendorSettingsData = lazyWithReload(() => import("./pages/vendor/VendorSettingsData"));
+const VendorSettingsSchedule = lazyWithReload(
+  () => import("./pages/vendor/VendorSettingsSchedule"),
+);
 const VerifySupplierPage = lazyWithReload(() => import("./pages/VerifySupplierPage"));
 const WeddingWebsitePage = lazyWithReload(() => import("./pages/WeddingWebsitePage"));
 const WishlistEditorPage = lazyWithReload(() => import("./pages/WishlistEditorPage"));
@@ -788,6 +791,14 @@ export default function App() {
               element={
                 <Page>
                   <VendorSettingsCompany />
+                </Page>
+              }
+            />
+            <Route
+              path="schedule"
+              element={
+                <Page>
+                  <VendorSettingsSchedule />
                 </Page>
               }
             />

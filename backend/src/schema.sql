@@ -1330,6 +1330,31 @@ CREATE TABLE IF NOT EXISTS vendor_availability_settings (
   updated_at        INTEGER NOT NULL
 );
 
+-- Vendor WEEKLY WORKING HOURS: the hour-granular half of the weekly layer.
+-- One row per interval per weekday ('Monday 09:00-13:00'), minutes from
+-- midnight, end exclusive, 0..1440.
+--
+-- `vendor_availability_settings.weekdays` above stays as the DERIVED day-level
+-- mirror (a weekday with at least one interval is a working day) and remains
+-- what every couple-facing read uses: the public availability payload, the
+-- next-free date, the directory's date filter. Writes go through one function
+-- (`setVendorSchedule`) that rewrites both, so the mirror cannot drift, and
+-- nothing downstream of `weekdays` needed to change when hours landed.
+--
+-- No rows at all for a vendor = they never opened the hour editor; the schedule
+-- is then synthesized from `weekdays` as whole days (hoursFromWeekdays), which
+-- is lossless. That is why this needs no migration.
+CREATE TABLE IF NOT EXISTS vendor_working_hours (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  weekday           INTEGER NOT NULL,                          -- ISO 1 = Monday … 7 = Sunday
+  start_min         INTEGER NOT NULL,                          -- minutes from midnight
+  end_min           INTEGER NOT NULL,                          -- exclusive; 1440 = end of day
+  created_at        INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vendor_working_hours_vendor
+  ON vendor_working_hours(vendor_account_id, weekday, start_min);
+
 -- Vendor "payments" — lightweight, in-app-only money tracking per Weddly-sourced
 -- client (booking). NO real money movement / Stripe Connect: each row is one
 -- labelled installment in the vendor's payment schedule for a booking. Amount is

@@ -279,6 +279,175 @@ describe("vendor availability — weekly pattern", () => {
   });
 });
 
+// The hour-granular half of the same resource. `weekdays` is a DERIVED mirror of
+// the intervals, and everything couples read still goes through it, so these
+// tests assert the mirror as hard as they assert the hours.
+describe("vendor availability — weekly working hours", () => {
+  function putHours(
+    token: string,
+    working_hours: Record<number, Array<{ start_min: number; end_min: number }>>,
+    schedule_name?: string,
+  ): Promise<{ status: number; data: VendorAvailabilitySettings }> {
+    return req<VendorAvailabilitySettings>(
+      "PUT",
+      "/api/vendor/availability/me/pattern",
+      schedule_name === undefined ? { working_hours } : { working_hours, schedule_name },
+      { token },
+    );
+  }
+
+  test("a vendor with no hours on file reads back whole days from the legacy pattern", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("wh-legacy");
+
+    // Nothing set at all: every day, covered whole.
+    const fresh = await getPattern(vendorToken);
+    expect(fresh.status).toBe(200);
+    expect(fresh.data.weekdays).toBe(null);
+    expect(fresh.data.schedule_name).toBe("");
+    expect(fresh.data.working_hours[1]).toEqual([{ start_min: 0, end_min: 1440 }]);
+    expect(fresh.data.working_hours[7]).toEqual([{ start_min: 0, end_min: 1440 }]);
+
+    // The pre-hours API shape still writes a consistent schedule: the days it
+    // names become whole working days, the rest empty.
+    await putPattern(vendorToken, [5, 6, 7]);
+    const legacy = await getPattern(vendorToken);
+    expect(legacy.data.weekdays).toEqual([5, 6, 7]);
+    expect(legacy.data.working_hours[1]).toEqual([]);
+    expect(legacy.data.working_hours[5]).toEqual([{ start_min: 0, end_min: 1440 }]);
+  });
+
+  test("hours round-trip, and the derived weekday mirror follows them", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("wh-roundtrip");
+
+    const put = await putHours(
+      vendorToken,
+      {
+        1: [],
+        2: [],
+        3: [],
+        4: [],
+        5: [{ start_min: 14 * 60, end_min: 22 * 60 }],
+        6: [
+          { start_min: 9 * 60, end_min: 12 * 60 },
+          { start_min: 13 * 60, end_min: 23 * 60 },
+        ],
+        7: [{ start_min: 10 * 60, end_min: 18 * 60 }],
+      },
+      "Nyári munkarend",
+    );
+    expect(put.status).toBe(200);
+    expect(put.data.schedule_name).toBe("Nyári munkarend");
+    // The whole point: couples never see intervals, they see the weekday set,
+    // and it is computed from the hours rather than sent alongside them.
+    expect(put.data.weekdays).toEqual([5, 6, 7]);
+    expect(put.data.working_hours[6]).toEqual([
+      { start_min: 540, end_min: 720 },
+      { start_min: 780, end_min: 1380 },
+    ]);
+
+    const again = await getPattern(vendorToken);
+    expect(again.data.working_hours).toEqual(put.data.working_hours);
+
+    // ...and the couple-facing payload agrees, without knowing hours exist.
+    const pub = await publicAvailability(listingId, coupleToken);
+    expect(pub.data.available_weekdays).toEqual([5, 6, 7]);
+    const next = pub.data.next_available;
+    expect(next).toBeTruthy();
+    const wd = new Date(`${next as string}T00:00:00Z`).getUTCDay();
+    expect([5, 6, 0]).toContain(wd); // Fri / Sat / Sun
+  });
+
+  test("overlapping and touching intervals merge, so one week has one representation", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("wh-merge");
+
+    const put = await putHours(vendorToken, {
+      1: [
+        { start_min: 660, end_min: 1020 }, // 11:00-17:00, deliberately out of order
+        { start_min: 540, end_min: 720 }, // 09:00-12:00, overlaps the above
+        { start_min: 1020, end_min: 1200 }, // 17:00-20:00, merely touches
+        { start_min: 300, end_min: 300 }, // empty, dropped
+        { start_min: 600, end_min: 400 }, // inverted, dropped
+      ],
+    });
+    expect(put.status).toBe(200);
+    expect(put.data.working_hours[1]).toEqual([{ start_min: 540, end_min: 1200 }]);
+    expect(put.data.weekdays).toEqual([1]);
+
+    // Storage matches what was returned: no shadow rows left behind by the
+    // replace-the-week write.
+    const rows = db
+      .prepare("SELECT weekday, start_min, end_min FROM vendor_working_hours ORDER BY id")
+      .all() as Array<{ weekday: number; start_min: number; end_min: number }>;
+    expect(rows).toEqual([{ weekday: 1, start_min: 540, end_min: 1200 }]);
+  });
+
+  test("a full week collapses the mirror to null, exactly like the day-level pattern", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("wh-full");
+
+    const put = await putHours(vendorToken, {
+      1: [{ start_min: 480, end_min: 1080 }],
+      2: [{ start_min: 480, end_min: 1080 }],
+      3: [{ start_min: 480, end_min: 1080 }],
+      4: [{ start_min: 480, end_min: 1080 }],
+      5: [{ start_min: 480, end_min: 1080 }],
+      6: [{ start_min: 480, end_min: 1080 }],
+      7: [{ start_min: 480, end_min: 1080 }],
+    });
+    // Works every day: the mirror is null (one representation of unrestricted),
+    // while the hours themselves are kept.
+    expect(put.data.weekdays).toBe(null);
+    expect(put.data.working_hours[3]).toEqual([{ start_min: 480, end_min: 1080 }]);
+    const pub = await publicAvailability(listingId, coupleToken);
+    expect(pub.data.available_weekdays).toBe(null);
+  });
+
+  test("an empty week is refused rather than read as 'every day'", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("wh-empty");
+    await putHours(vendorToken, { 6: [{ start_min: 600, end_min: 1200 }] });
+
+    const empty = await putHours(vendorToken, { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] });
+    expect(empty.status).toBe(400);
+
+    // The refusal left the stored week alone.
+    expect((await getPattern(vendorToken)).data.working_hours[6]).toEqual([
+      { start_min: 600, end_min: 1200 },
+    ]);
+  });
+
+  test("a malformed working_hours payload is a 400, not a silently emptied week", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("wh-junk");
+    await putHours(vendorToken, { 6: [{ start_min: 600, end_min: 1200 }] });
+
+    for (const junk of [
+      { working_hours: [] },
+      { working_hours: { 1: "09:00-17:00" } },
+      { working_hours: { 1: [{ start_min: "9", end_min: 17 }] } },
+      { working_hours: { 1: [null] } },
+    ]) {
+      const r = await req("PUT", "/api/vendor/availability/me/pattern", junk, {
+        token: vendorToken,
+      });
+      expect(r.status).toBe(400);
+    }
+    expect((await getPattern(vendorToken)).data.weekdays).toEqual([6]);
+  });
+
+  test("out-of-range minutes are clamped to the day instead of stored", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("wh-clamp");
+    const put = await putHours(vendorToken, {
+      2: [{ start_min: -120, end_min: 3000 }],
+    });
+    expect(put.data.working_hours[2]).toEqual([{ start_min: 0, end_min: 1440 }]);
+  });
+});
+
 // The directory's date filter reads the same two layers from the other end: one
 // call, one date, the listings a couple should not be shown for that day.
 describe("directory date filter — GET /api/suppliers/unavailable", () => {

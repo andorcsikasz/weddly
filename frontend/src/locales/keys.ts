@@ -1341,6 +1341,54 @@ export interface LocaleMessages {
       /** Intent confirmation before the mailto opens. */
       data_delete_confirm_title: string;
       data_delete_confirm_body: string;
+      tab_schedule: string;
+    };
+    /** Munkarend: the recurring weekly working hours + dated exceptions, at
+     *  /vendor/settings/schedule. Icon-first by design (the +, copy and remove
+     *  affordances are glyphs), so most of these are accessible names rather
+     *  than visible labels. */
+    schedule: {
+      intro: string;
+      name_label: string;
+      name_placeholder: string;
+      from: string;
+      to: string;
+      /** Accessible names for the per-row glyph buttons. */
+      add_interval: string;
+      remove_interval: string;
+      /** "Add hours to {day}" on an off day's lone + button. */
+      add_day: string;
+      copy_to: string;
+      copy_title: string;
+      copy_apply: string;
+      day_on_action: string;
+      day_off_action: string;
+      need_one_day: string;
+      saved: string;
+      save_failed: string;
+      up_to_date: string;
+      exceptions_title: string;
+      exceptions_intro: string;
+      exceptions_empty: string;
+      exception_add: string;
+      exception_date: string;
+      exception_kind_label: string;
+      exception_kind_off: string;
+      exception_kind_on: string;
+      exception_scope_label: string;
+      exception_all_day: string;
+      exception_hours: string;
+      exception_on_hint: string;
+      exception_on_label: string;
+      exception_off_label: string;
+      /** "Busy {from}-{to}" for an hours-only exception. */
+      exception_off_hours_label: string;
+      exception_saved: string;
+      exception_removed: string;
+      exception_failed: string;
+      exception_remove: string;
+      exception_remove_title: string;
+      exception_remove_body: string;
     };
     plan: {
       free_label: string;
@@ -1401,6 +1449,11 @@ export interface LocaleMessages {
     legend_booked: string;
     legend_pending: string;
     legend_tasks: string;
+    /** Legend entry + cell glyph for a day the WEEKLY SCHEDULE has off. Not a
+     *  block: nothing was marked by hand, so it reads neutral. */
+    legend_off_day: string;
+    /** Link out to /vendor/settings/schedule, where recurring days off live. */
+    schedule_link: string;
     /** Short label on a blocked day's calendar pill. */
     blocked_pill_label: string;
     /** Receives `{date}` - the day a click would block. */

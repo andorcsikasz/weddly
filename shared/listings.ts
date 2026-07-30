@@ -443,4 +443,10 @@ export interface VendorAvailabilityView {
   blocked_dates: string[];
   blocked_days: VendorBlockedDay[];
   next_available: string | null;
+  /** The OTHER direction of the exception layer: dates the vendor exceptionally
+   *  works even though their weekly schedule says that weekday is off. The API
+   *  has accepted these since the weekly pattern landed, but nothing read them
+   *  back, so an opened Monday was invisible in the vendor's own UI and could
+   *  only be undone by blocking the day. */
+  open_dates: string[];
 }

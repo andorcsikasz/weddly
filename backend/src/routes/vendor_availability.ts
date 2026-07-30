@@ -14,13 +14,21 @@ import type { VendorAvailabilityView } from "@shared/listings";
 import { addAuditLog } from "../lib/audit";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { markVendorCalendarDirty } from "../domain/vendor_google_calendar";
-import { coerceWeekdays, type VendorAvailabilitySettings } from "@shared/vendor_availability";
-import { getVendorWeekdays, setVendorWeekdays } from "../domain/vendor_availability_settings";
+import {
+  coerceWeekdays,
+  coerceWeeklyHours,
+  hasAnyWorkingDay,
+  hoursFromWeekdays,
+  MAX_SCHEDULE_NAME_LEN,
+  type WeeklyHours,
+} from "@shared/vendor_availability";
+import { getVendorSchedule, setVendorSchedule } from "../domain/vendor_availability_settings";
 import {
   blockDate,
   isIsoDate,
   listBlockedDates,
   listBlockedDays,
+  listOpenDates,
   nextAvailableDate,
   unblockDate,
 } from "../domain/supplier_bookings";
@@ -33,6 +41,7 @@ function buildView(vendorAccountId: number): VendorAvailabilityView {
     blocked_dates: listBlockedDates(vendorAccountId),
     blocked_days: listBlockedDays(vendorAccountId),
     next_available: nextAvailableDate(vendorAccountId),
+    open_dates: listOpenDates(vendorAccountId),
   };
 }
 
@@ -128,33 +137,74 @@ async function handleUnblock(ctx: Ctx): Promise<Response> {
   return json(buildView(account.id));
 }
 
-/** The recurring weekly pattern — which weekdays this vendor generally works.
- *  Its own resource because it is settings rather than dated data. */
+/** The recurring weekly schedule: which weekdays this vendor works, and from
+ *  when to when on each. Its own resource because it is settings rather than
+ *  dated data. */
 async function handleGetPattern(ctx: Ctx): Promise<Response> {
   const { account } = resolveVendorListing(ctx);
-  const settings: VendorAvailabilitySettings = { weekdays: getVendorWeekdays(account.id) };
-  return json(settings);
+  return json(getVendorSchedule(account.id));
 }
 
+/** Two accepted shapes on one endpoint, which is deliberate:
+ *
+ *  * `working_hours` (+ optional `schedule_name`) is the current contract: the
+ *    full week of intervals, authoritative, with `weekdays` derived from it.
+ *  * a bare `weekdays` list is the pre-hours contract, still spoken by older
+ *    clients. It writes the same schedule with whole working days.
+ *
+ *  Splitting them into two endpoints would let a client write one layer and
+ *  leave the other stale, which is exactly the drift the single writer in
+ *  `setVendorSchedule` exists to prevent. */
 async function handlePutPattern(ctx: Ctx): Promise<Response> {
   const { account } = resolveVendorListing(ctx);
-  const body = await readJson<{ weekdays?: unknown }>(ctx.req);
-  // Anything that isn't a usable partial set (absent, empty, or all seven)
-  // resolves to null = "available every day", so there is exactly one
-  // representation of the unrestricted case and a vendor can never accidentally
-  // store "never available" and vanish from every search.
-  const weekdays = coerceWeekdays(body.weekdays);
-  setVendorWeekdays(account.id, weekdays);
+  const body = await readJson<{
+    weekdays?: unknown;
+    working_hours?: unknown;
+    schedule_name?: unknown;
+  }>(ctx.req);
+
+  const current = getVendorSchedule(account.id);
+  const name =
+    typeof body.schedule_name === "string"
+      ? body.schedule_name.trim().slice(0, MAX_SCHEDULE_NAME_LEN)
+      : current.schedule_name;
+
+  let hours: WeeklyHours;
+  if (body.working_hours !== undefined) {
+    const parsed = coerceWeeklyHours(body.working_hours);
+    if (parsed === null) {
+      throw new HttpError(
+        400,
+        "working_hours must map weekdays 1-7 to {start_min,end_min} objects",
+      );
+    }
+    // A week with no working day at all would mean "never available" and would
+    // silently drop the vendor out of every date-filtered search. Refused loudly
+    // rather than coerced, because unlike a junk weekday list there is no
+    // reading of an empty hour editor that means "every day".
+    if (!hasAnyWorkingDay(parsed)) throw new HttpError(400, "at least one working day is required");
+    hours = parsed;
+  } else {
+    // Legacy shape. Anything that isn't a usable partial set (absent, empty, or
+    // all seven) resolves to null = "available every day", so there is exactly
+    // one representation of the unrestricted case and a vendor can never
+    // accidentally store "never available" and vanish from every search. The
+    // named days become whole working days, which is what they meant before
+    // hours existed.
+    hours = hoursFromWeekdays(coerceWeekdays(body.weekdays));
+  }
+  setVendorSchedule(account.id, { hours, scheduleName: name });
+
   markVendorCalendarDirty(account.id);
+  const settings = getVendorSchedule(account.id);
   addAuditLog({
     actor_user_id: account.owner_user_id,
     couple_id: null,
     action: "vendor.availability_pattern",
     target_kind: "vendor_account",
     target_id: account.id,
-    after: { weekdays: weekdays ?? "every_day" },
+    after: { weekdays: settings.weekdays ?? "every_day", named: settings.schedule_name !== "" },
   });
-  const settings: VendorAvailabilitySettings = { weekdays };
   return json(settings);
 }
 

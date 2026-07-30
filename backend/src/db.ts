@@ -1785,6 +1785,13 @@ addColumnIfMissing(
   "is_available INTEGER NOT NULL DEFAULT 0",
 );
 
+// The weekly schedule gained a NAME when it gained hours: the editor header
+// reads as a document the vendor can retitle ("Nyári munkarend"), and a second
+// named schedule is the obvious next step. NULL / empty = unnamed, which the
+// editor renders as a localised placeholder rather than storing one language's
+// default into every account.
+addColumnIfMissing("vendor_availability_settings", "schedule_name", "schedule_name TEXT");
+
 // One-time grandfather: every vendor account that existed BEFORE the vendor
 // freemium launch is an early adopter: grant the founding year (free, no
 // card), the same promise activation makes. Idempotent: only accounts with no
