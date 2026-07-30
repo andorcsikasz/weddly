@@ -1841,6 +1841,15 @@ addColumnIfMissing("supplier_bookings", "vendor_notes", "vendor_notes TEXT");
 // (shared/vendor_points.ts); NULL on every pre-existing row by design, and the
 // backfill deliberately awards nothing for those.
 addColumnIfMissing("supplier_bookings", "first_response_at", "first_response_at INTEGER");
+// When the vendor OPENED this inquiry (the client detail page), stamped
+// first-wins by POST /api/vendor/clients/:id/seen. Deliberately NOT the
+// `vendor_seen` status: that one is a triage decision the vendor makes and the
+// COUPLE reads ("Megtekintve"), while this is only "I have looked at it", which
+// is what the Ügyfelek nav badge counts. Server-side rather than a per-device
+// watermark for the same reason `booking_messages.seen_at` is: a lead read on
+// the laptop must not badge again on the phone. NULL on every pre-existing row,
+// so an old untouched `requested` inquiry still counts once.
+addColumnIfMissing("supplier_bookings", "vendor_seen_at", "vendor_seen_at INTEGER");
 // Index on the payments table AFTER it exists (schema.sql) — every payment query
 // is scoped by booking, so the booking_id lookup is the hot path.
 db.exec(

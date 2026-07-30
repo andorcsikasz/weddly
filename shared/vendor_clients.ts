@@ -43,6 +43,11 @@ export interface VendorClientView {
    *  booking_messages.seen_at), unlike the header bell's per-device watermark:
    *  an unread lead must not un-read itself on a second device. */
   unread_count: number;
+  /** When the vendor first OPENED this inquiry, null while they never have.
+   *  Distinct from the `vendor_seen` STATUS, which is triage the vendor sets and
+   *  the couple reads; this is only "I have looked at it" and is what the
+   *  Ügyfelek nav badge counts (see VendorStats.new_inquiries). */
+  vendor_seen_at: UnixMs | null;
 }
 
 /** One labelled installment in a client's payment schedule. */
@@ -165,6 +170,11 @@ export interface VendorStats {
   inquiries_30d: number;
   /** Count per BookingStatus. */
   by_status: Record<string, number>;
+  /** Inquiries still `requested` that the vendor has never OPENED — the number
+   *  on the Ügyfelek nav badge. Not `by_status.requested`: a vendor who read a
+   *  lead and left the status alone (nothing forces them to triage) was badged
+   *  for it forever, so the badge stopped meaning "look at this". */
+  new_inquiries: number;
   /** Confirmed/upcoming events, soonest first. */
   upcoming: { id: number; couple_display_name: string; event_date: string }[];
   /** Sparse daily inquiry counts (booking created_at) for the last 365 days,

@@ -2822,6 +2822,10 @@ export const vendorTaskApi = {
 export const vendorClientsApi = {
   list: () => apiFetch<{ clients: VendorClientView[] }>("GET", "/api/vendor/clients"),
   get: (id: number) => apiFetch<VendorClientDetail>("GET", `/api/vendor/clients/${id}`),
+  /** "I have opened this inquiry" — first-wins server-side, which is what drops
+   *  it out of the Ügyfelek nav badge on every device. */
+  markSeen: (id: number) =>
+    apiFetch<{ vendor_seen_at: number }>("POST", `/api/vendor/clients/${id}/seen`),
   update: (
     id: number,
     body: {
@@ -2849,6 +2853,21 @@ export const vendorClientsApi = {
 export const vendorStatsApi = {
   get: () => apiFetch<VendorStats>("GET", "/api/vendor/stats"),
 };
+
+/** Something the stats rollup counts just changed, so VendorShell's nav badge
+ *  and bell are stale. The shell otherwise only re-fetches on navigation, which
+ *  would leave "1 new client" on the rail while the vendor is reading that very
+ *  client. Fire-and-forget: nothing depends on anyone listening. */
+export const VENDOR_STATS_STALE_EVENT = "weddly:vendor-stats-stale";
+
+export function notifyVendorStatsStale(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new CustomEvent(VENDOR_STATS_STALE_EVENT));
+  } catch {
+    /* CustomEvent may not exist on some odd embeds */
+  }
+}
 
 /** Weddly Points: the vendor's derived total, tier, perks and recent ledger.
  *  Read-only by design — points are only ever written by the server-side engine

@@ -820,6 +820,7 @@ const en: LocaleMessages = {
       thread_locked_body:
         "Reading what a couple wrote is always open to you. Replying here is part of the Pro plan.",
       unread_messages: "{count} unread messages",
+      unopened: "You have not opened this one yet",
       detail_title: "Client",
       status_label: "Inquiry status",
       status_requested: "Requested",

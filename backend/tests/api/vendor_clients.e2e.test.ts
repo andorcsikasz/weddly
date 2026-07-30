@@ -21,6 +21,7 @@ import type {
   VendorClientDetail,
   VendorClientPayment,
   VendorClientView,
+  VendorStats,
 } from "@shared/vendor_clients";
 import type { SupplierBooking } from "@shared/suppliers";
 
@@ -350,6 +351,105 @@ describe("vendor clients — /api/vendor/clients + payment tracking", () => {
     );
     expect(bToggle.status).toBe(404);
     expect(bToggle.data.detail?.code).toBe("payment_not_found");
+  });
+
+  test("opening an inquiry clears its share of the new-client badge", async () => {
+    wipeAll();
+    const { vendorToken, listingId, accountId } = await bootstrapVendor("clients-seen");
+    upgradeToPro(accountId);
+    const { coupleId } = await bootstrapCouple("couple-seen@weddly.test");
+    const first = await createInboundBooking(listingId, coupleId, "2031-05-05");
+    const second = await createInboundBooking(listingId, coupleId, "2031-06-06");
+
+    // Two untouched inquiries → the badge counts both, and neither carries a
+    // seen stamp.
+    const before = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: vendorToken,
+    });
+    expect(before.status).toBe(200);
+    expect(before.data.by_status.requested).toBe(2);
+    expect(before.data.new_inquiries).toBe(2);
+
+    const seen = await req<{ vendor_seen_at: number }>(
+      "POST",
+      `/api/vendor/clients/${first}/seen`,
+      {},
+      { token: vendorToken },
+    );
+    expect(seen.status).toBe(200);
+    expect(typeof seen.data.vendor_seen_at).toBe("number");
+
+    // The badge drops by one while the STATUS is untouched: what the couple
+    // reads ("requested") is the vendor's triage, not their reading.
+    const after = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: vendorToken,
+    });
+    expect(after.data.by_status.requested).toBe(2);
+    expect(after.data.new_inquiries).toBe(1);
+
+    // First-wins: a re-opened detail page must not move the stamp.
+    const again = await req<{ vendor_seen_at: number }>(
+      "POST",
+      `/api/vendor/clients/${first}/seen`,
+      {},
+      { token: vendorToken },
+    );
+    expect(again.data.vendor_seen_at).toBe(seen.data.vendor_seen_at);
+
+    // The list marks WHICH row the badge means.
+    const list = await req<{ clients: VendorClientView[] }>(
+      "GET",
+      "/api/vendor/clients",
+      undefined,
+      { token: vendorToken },
+    );
+    const opened = list.data.clients.find((c) => c.id === first);
+    const untouched = list.data.clients.find((c) => c.id === second);
+    expect(opened?.vendor_seen_at).toBe(seen.data.vendor_seen_at);
+    expect(opened?.status).toBe("requested");
+    expect(untouched?.vendor_seen_at).toBeNull();
+
+    // Opening the second one empties the badge.
+    await req("POST", `/api/vendor/clients/${second}/seen`, {}, { token: vendorToken });
+    const empty = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: vendorToken,
+    });
+    expect(empty.data.new_inquiries).toBe(0);
+  });
+
+  test("marking seen is owner-scoped (404) and free of the PRO gate", async () => {
+    wipeAll();
+    const a = await bootstrapVendor("seen-iso-a");
+    const b = await bootstrapVendor("seen-iso-b");
+    const { coupleId } = await bootstrapCouple("couple-seen-iso@weddly.test");
+    const bookingId = await createInboundBooking(a.listingId, coupleId, "2031-07-07");
+
+    // A foreign vendor cannot stamp someone else's lead as read.
+    const foreign = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/vendor/clients/${bookingId}/seen`,
+      {},
+      { token: b.vendorToken },
+    );
+    expect(foreign.status).toBe(404);
+    expect(foreign.data.detail?.code).toBe("client_not_found");
+
+    // A lapses to FREE. The basic client list is free by design, so the vendor
+    // who can READ the lead must also be able to stop it badging.
+    db.prepare(
+      "UPDATE vendor_subscriptions SET subscription_status = 'none', founding_until = NULL, is_founding_member = 0 WHERE vendor_account_id = ?",
+    ).run(a.accountId);
+    const free = await req<{ vendor_seen_at: number }>(
+      "POST",
+      `/api/vendor/clients/${bookingId}/seen`,
+      {},
+      { token: a.vendorToken },
+    );
+    expect(free.status).toBe(200);
+    const stats = await req<VendorStats>("GET", "/api/vendor/stats", undefined, {
+      token: a.vendorToken,
+    });
+    expect(stats.data.new_inquiries).toBe(0);
   });
 
   test("free plan: list/detail work but payment tracking is PRO-gated (403)", async () => {

@@ -848,6 +848,7 @@ const es: LocaleMessages = {
       thread_locked_body:
         "Leer lo que escribió una pareja siempre está abierto. Responder aquí forma parte del plan Pro.",
       unread_messages: "{count} mensajes sin leer",
+      unopened: "Todavía no has abierto esta",
       detail_title: "Cliente",
       status_label: "Estado de la solicitud",
       status_requested: "Solicitada",

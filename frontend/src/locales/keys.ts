@@ -1135,6 +1135,9 @@ export interface LocaleMessages {
       thread_locked_body: string;
       /** Aria-label on the unread badge in the client list. Receives `{count}`. */
       unread_messages: string;
+      /** Aria-label on the dot marking a `requested` inquiry the vendor has
+       *  never opened — the rows the Ügyfelek nav badge counts. */
+      unopened: string;
       detail_title: string;
       status_label: string;
       status_requested: string;

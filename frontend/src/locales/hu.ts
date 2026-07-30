@@ -827,6 +827,7 @@ const hu: LocaleMessages = {
       thread_locked_title: "Válaszolj az ügyfeleidnek",
       thread_locked_body: "A pár üzenetét mindig elolvashatod. A válaszadás a Pro csomag része.",
       unread_messages: "{count} olvasatlan üzenet",
+      unopened: "Ezt még nem nyitottad meg",
       detail_title: "Ügyfél",
       status_label: "Megkeresés állapota",
       status_requested: "Beérkezett",

@@ -106,7 +106,29 @@ export function toVendorClientView(row: BookingRow, unread?: number): VendorClie
     balance: computeBalance(contractValue, depositPaid),
     created_at: row.created_at,
     unread_count: unread ?? unreadCount(row.id, "vendor"),
+    vendor_seen_at: vendorSeenAt(row),
   };
+}
+
+/** `vendor_seen_at` off a widened row — the column is additive (db.ts) so it
+ *  isn't on the base BookingRow type, same as the CRM columns above. */
+function vendorSeenAt(row: BookingRow): number | null {
+  return (row as BookingRow & { vendor_seen_at?: number | null }).vendor_seen_at ?? null;
+}
+
+/** Stamp "the vendor has opened this inquiry", first-wins, and return the stamp
+ *  that is now on the row. Deliberately leaves `updated_at` and the booking
+ *  STATUS alone: reading a lead is not a reply and not triage, and the couple
+ *  reads the status. Idempotent, so a re-opened detail page can call it freely. */
+export function markVendorClientSeen(bookingId: number): number {
+  const ts = now();
+  db.prepare(
+    "UPDATE supplier_bookings SET vendor_seen_at = COALESCE(vendor_seen_at, ?) WHERE id = ?",
+  ).run(ts, bookingId);
+  const row = db
+    .prepare("SELECT vendor_seen_at AS seen FROM supplier_bookings WHERE id = ?")
+    .get(bookingId) as { seen: number | null } | undefined;
+  return row?.seen ?? ts;
 }
 
 /** Map a booking row to the full PRO CRM detail (notes + contact + schedule). */
@@ -420,9 +442,14 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
   const byStatus: Record<string, number> = {};
   let revenue = 0;
   let inquiries30d = 0;
+  // Still 'requested' AND never opened. The nav badge counts THIS rather than
+  // by_status.requested, so a lead the vendor has read stops shouting even when
+  // they never move the status along.
+  let newInquiries = 0;
   const byDay = new Map<string, number>();
   for (const r of rows) {
     byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
+    if (r.status === "requested" && vendorSeenAt(r) === null) newInquiries += 1;
     if (nowMs - r.created_at <= THIRTY_DAYS_MS) inquiries30d += 1;
     if (nowMs - r.created_at <= YEAR_MS) {
       const day = new Date(r.created_at).toISOString().slice(0, 10);
@@ -503,6 +530,7 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
     inquiries_total: rows.length,
     inquiries_30d: inquiries30d,
     by_status: byStatus,
+    new_inquiries: newInquiries,
     upcoming,
     inquiries_by_day: inquiriesByDay,
     views_total: views.total,

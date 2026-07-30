@@ -20,6 +20,7 @@ import {
   getOwnedBooking,
   getOwnedPayment,
   listVendorClients,
+  markVendorClientSeen,
   requireVendorPro,
   resolveVendorAccount,
   toVendorClientDetail,
@@ -96,6 +97,18 @@ async function handleGetClient(ctx: Ctx): Promise<Response> {
   const bookingId = parseId(ctx.params.id, "client id");
   const booking = getOwnedBooking(account.id, bookingId);
   return json(redactDetailForPlan(account.id, toVendorClientDetail(booking)));
+}
+
+/** "I have opened this inquiry" — what clears its share of the Ügyfelek nav
+ *  badge. Its own call rather than a side effect of the detail GET, following
+ *  the message thread's delivered/seen split: a page load and a vendor actually
+ *  reading are not the same claim. FREE on purpose — the basic client list is
+ *  free, so a FREE vendor must be able to clear their own badge. */
+async function handleMarkClientSeen(ctx: Ctx): Promise<Response> {
+  const account = resolveVendorAccount(ctx);
+  const bookingId = parseId(ctx.params.id, "client id");
+  getOwnedBooking(account.id, bookingId);
+  return json({ vendor_seen_at: markVendorClientSeen(bookingId) });
 }
 
 async function handlePatchClient(ctx: Ctx): Promise<Response> {
@@ -214,6 +227,7 @@ async function handleDeletePayment(ctx: Ctx): Promise<Response> {
 export function registerVendorClientsRoutes(router: Router) {
   router.get("/api/vendor/clients", handleListClients, true);
   router.get("/api/vendor/clients/:id", handleGetClient, true);
+  router.post("/api/vendor/clients/:id/seen", handleMarkClientSeen, true);
   router.patch("/api/vendor/clients/:id", handlePatchClient, true);
   router.get("/api/vendor/clients/:id/payments", handleListPayments, true);
   router.post("/api/vendor/clients/:id/payments", handleAddPayment, true);

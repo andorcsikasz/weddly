@@ -459,6 +459,16 @@ export default function VendorClientsPage() {
                     className="grid grid-cols-1 gap-1 px-4 py-3 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:bg-paper-100 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3 dark:hover:bg-umber-700 dark:focus-visible:bg-umber-700"
                   >
                     <span className="flex min-w-0 items-center gap-2">
+                      {/* The rows the nav badge is counting: a 'requested'
+                          inquiry this vendor has never opened. Without the mark
+                          the badge said "2" over a list of five identical amber
+                          Inbox icons and there was no way to tell which two. */}
+                      {c.status === "requested" && c.vendor_seen_at === null ? (
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full bg-blush-500"
+                          aria-label={t("vendor.clients.unopened")}
+                        />
+                      ) : null}
                       <span
                         className="truncate font-medium text-ink-900 dark:text-paper-50"
                         title={c.couple_display_name}

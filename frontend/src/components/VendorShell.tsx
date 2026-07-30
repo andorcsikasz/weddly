@@ -44,7 +44,12 @@ import { createPortal } from "react-dom";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { useAuth } from "../lib/auth";
-import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../lib/endpoints";
+import {
+  VENDOR_STATS_STALE_EVENT,
+  vendorBillingApi,
+  vendorListingApi,
+  vendorStatsApi,
+} from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { useNotifSeen } from "../lib/useNotifSeen";
 import { useTheme } from "../lib/useTheme";
@@ -627,12 +632,22 @@ export function VendorShell({ children }: { children: ReactNode }) {
   // block from md up, the header chip below it.
   const points = useVendorPoints();
 
-  // New-inquiry badge on the Ügyfelek nav item: the count of bookings still in
-  // 'requested' (the vendor hasn't looked yet). Re-fetched on every route
-  // change inside the shell, so opening a client and moving it along clears
-  // the badge on the next navigation without a reload. Best-effort; a failed
-  // fetch just hides the badge.
+  // New-inquiry badge on the Ügyfelek nav item: inquiries still 'requested'
+  // that the vendor has never OPENED (`supplier_bookings.vendor_seen_at`, so
+  // the same lead doesn't badge again on their phone). It used to count every
+  // 'requested' row, which meant a vendor who read a lead and left the status
+  // alone — nothing forces them to triage — carried the badge forever and the
+  // number stopped meaning anything. Re-fetched on every route change inside
+  // the shell, plus on VENDOR_STATS_STALE_EVENT so opening a client clears its
+  // share immediately. Best-effort; a failed fetch just hides the badge.
   const { pathname } = useLocation();
+  // Bumped by the staleness event to force the fetch effect to re-run.
+  const [statsNonce, setStatsNonce] = useState(0);
+  useEffect(() => {
+    const onStale = () => setStatsNonce((n) => n + 1);
+    window.addEventListener(VENDOR_STATS_STALE_EVENT, onStale);
+    return () => window.removeEventListener(VENDOR_STATS_STALE_EVENT, onStale);
+  }, []);
   const [newInquiries, setNewInquiries] = useState(0);
   // Confirmed events in the next 7 days, for the header bell.
   const [upcomingWeek, setUpcomingWeek] = useState(0);
@@ -651,7 +666,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
       .get()
       .then((stats) => {
         if (cancelled) return;
-        setNewInquiries(stats.by_status.requested ?? 0);
+        setNewInquiries(stats.new_inquiries);
         const weekEnd = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
         setUpcomingWeek(stats.upcoming.filter((u) => u.event_date <= weekEnd).length);
         setNewReviews(stats.reviews_recent);
@@ -669,7 +684,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+  }, [pathname, statsNonce]);
 
   // The sheet is portal-mounted, so a tap that navigates would otherwise leave
   // it open on top of the page it just opened.

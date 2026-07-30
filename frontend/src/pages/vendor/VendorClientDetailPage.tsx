@@ -15,7 +15,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button, DateField, Skeleton, TextField, useConfirm, useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
-import { bookingMessagesApi, vendorBillingApi, vendorClientsApi } from "../../lib/endpoints";
+import {
+  bookingMessagesApi,
+  notifyVendorStatsStale,
+  vendorBillingApi,
+  vendorClientsApi,
+} from "../../lib/endpoints";
 import { formatDate, formatMoney, intlLocale } from "../../lib/format";
 import { BookingThreadPanel } from "../../components/BookingThreadPanel";
 import { MessageTemplatesDialog } from "../../components/MessageTemplatesDialog";
@@ -157,6 +162,21 @@ export default function VendorClientDetailPage() {
       cancelled = true;
     };
   }, [bookingId, hydrateForm]);
+
+  // Opening the inquiry is what "seen" means for the Ügyfelek nav badge. Only
+  // ever the first time (the stamp is first-wins server-side anyway, but a
+  // pointless POST on every revisit is noise), and it deliberately leaves the
+  // booking STATUS alone: "Megtekintve" is triage the vendor chooses and the
+  // couple reads, whereas this is only "it is no longer new to me".
+  useEffect(() => {
+    if (!detail || detail.vendor_seen_at !== null) return;
+    vendorClientsApi
+      .markSeen(detail.id)
+      .then(() => notifyVendorStatsStale())
+      .catch(() => {
+        /* best-effort: the badge just clears on the next stats fetch */
+      });
+  }, [detail]);
 
   const canEditCrm = features?.client_crm_detail ?? false;
   const canTrackPayments = features?.payment_tracking ?? false;
