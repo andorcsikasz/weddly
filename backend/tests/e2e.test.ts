@@ -9473,7 +9473,7 @@ describe("places search (Nominatim proxy)", () => {
     expect(tooShort.status).toBe(200);
     expect(tooShort.data.places).toEqual([]);
 
-    const tooLong = await req("GET", `/api/places/search?q=${"x".repeat(101)}`, undefined, {
+    const tooLong = await req("GET", `/api/places/search?q=${"x".repeat(201)}`, undefined, {
       token,
     });
     expect(tooLong.status).toBe(400);

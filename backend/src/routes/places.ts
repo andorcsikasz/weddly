@@ -10,6 +10,15 @@ import { rateLimit } from "../lib/rate_limit";
 const USER_AGENT = "weddly-places-autocomplete/0.1 (admin@weddly.hu)";
 const NOMINATIM = "https://nominatim.openstreetmap.org/search";
 
+/** Longest query we forward, matching the `maxLength` of the fields that feed
+ *  this endpoint. It has to, because those fields don't only carry what a person
+ *  typed: picking a suggestion stores Nominatim's own `display_name`, and the
+ *  honeymoon map then asks us to geocode that string back. A Roman church comes
+ *  home as 137 characters of breadcrumb, so the old 100-char cap 400'd on our
+ *  own stored value and the map read "couldn't load" for every specific place.
+ *  Nominatim resolves those breadcrumbs exactly (it wrote them). */
+export const MAX_QUERY_CHARS = 200;
+
 interface NominatimResult {
   display_name?: string;
   name?: string;
@@ -110,7 +119,7 @@ async function handleSearch(ctx: Ctx): Promise<Response> {
   const params = new URL(ctx.req.url).searchParams;
   const q = params.get("q")?.trim() ?? "";
   if (q.length < 2) return json({ places: [] });
-  if (q.length > 100) throw new HttpError(400, "query too long");
+  if (q.length > MAX_QUERY_CHARS) throw new HttpError(400, "query too long");
 
   const url = new URL(NOMINATIM);
   url.searchParams.set("q", q);

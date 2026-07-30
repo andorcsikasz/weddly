@@ -1,16 +1,24 @@
-// Map preview for the honeymoon destination. Renders a 60vw × 60vh popup
-// with an OpenStreetMap embed iframe centred on the destination's lat/lng.
+// Map preview for the honeymoon destination. Renders a 60vw × 60vh popup with a
+// map centred on the destination's lat/lng and the plane pin standing on it.
 //
-// We use an iframe (not react-leaflet) because the modal needs to render
-// reliably across React 19 / Suspense / lazy combinations — Leaflet's
-// canvas-sizing was prone to mounting in a half-grey state when the parent
-// flexbox animated in. The iframe is fully self-contained and always paints.
+// It used to be an OpenStreetMap embed iframe with that pin absolutely
+// positioned at the container's centre, which came loose the moment anyone
+// zoomed: the map moved, the pin didn't. PinnedMap draws a real Leaflet marker
+// instead, and its header carries the rest of the reasoning.
 
 import { ExternalLink, Loader2, MapPin, Plane, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { placesApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+
+// Lazy even though this modal is itself lazy-imported, so leaflet only loads for
+// a destination that actually geocoded.
+const PinnedMap = lazy(() => import("./PinnedMap"));
+
+// The pin is a round badge, so the coordinate sits at its centre.
+const PIN_SIZE: [number, number] = [40, 40];
+const PIN_ANCHOR: [number, number] = [20, 20];
 
 interface Coords {
   lat: number;
@@ -105,7 +113,7 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
           <div className="flex shrink-0 items-center gap-1">
             {state === "ready" && coords && (
               <a
-                href={osmExternalUrl(coords, label)}
+                href={osmExternalUrl(coords, destination)}
                 target="_blank"
                 rel="noreferrer noopener"
                 className="btn-ghost btn-sm"
@@ -145,21 +153,29 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
             </div>
           )}
           {state === "ready" && coords && (
-            <>
-              <iframe
-                key={`${coords.lat},${coords.lng}`}
-                title={t("honeymoon.map_iframe_title", { label })}
-                src={osmEmbedUrl(coords, label)}
-                loading="eager"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="absolute inset-0 h-full w-full border-0"
-              />
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blush-500 shadow-lg">
-                  <Plane size={20} className="text-white" aria-hidden="true" />
+            <Suspense
+              fallback={
+                <div className="flex h-full items-center justify-center text-sm text-ink-500 dark:text-umber-300">
+                  <Loader2 size={16} className="mr-2 animate-spin" aria-hidden="true" />
+                  {t("common.loading")}
                 </div>
-              </div>
-            </>
+              }
+            >
+              <PinnedMap
+                key={`${coords.lat},${coords.lng}`}
+                lat={coords.lat}
+                lng={coords.lng}
+                zoom={pickZoomFor(destination)}
+                label={t("honeymoon.map_iframe_title", { label })}
+                pinSize={PIN_SIZE}
+                pinAnchor={PIN_ANCHOR}
+                pin={
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blush-500 shadow-lg ring-2 ring-white/80">
+                    <Plane size={20} className="text-white" aria-hidden="true" />
+                  </span>
+                }
+              />
+            </Suspense>
           )}
         </div>
       </div>
@@ -168,40 +184,18 @@ export default function HoneymoonMapModal({ destination, onClose }: HoneymoonMap
   );
 }
 
-/** Build OpenStreetMap's `/export/embed.html` URL with a small bbox around
- *  the marker. The bbox width is a heuristic: a tighter zoom for detailed
- *  addresses, wider for bare country / region names. */
-function osmEmbedUrl(coords: Coords, label: string): string {
-  const { lat, lng } = coords;
-  const halfWidth = pickHalfWidth(label);
-  // Aspect-correct half-height. We don't know the iframe's exact dimensions
-  // here so we use the modal's roughly 1.5:1 (60vw × 60vh on a 16:9 display)
-  // — close enough that the marker stays centred.
-  const halfHeight = halfWidth * 0.75;
-  const bbox = [lng - halfWidth, lat - halfHeight, lng + halfWidth, lat + halfHeight];
-  const params = new URLSearchParams({
-    bbox: bbox.join(","),
-    layer: "mapnik",
-  });
-  return `https://www.openstreetmap.org/export/embed.html?${params.toString()}`;
+function osmExternalUrl(coords: Coords, destination: string): string {
+  return `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=${pickZoomFor(destination)}/${coords.lat}/${coords.lng}`;
 }
 
-function osmExternalUrl(coords: Coords, _label: string): string {
-  return `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=${pickZoomFor(_label)}/${coords.lat}/${coords.lng}`;
-}
-
-/** Half-bbox width in degrees. More commas in the label → more specific
- *  address → tighter view. Same heuristic spirit as our earlier
- *  Leaflet `pickZoom`, expressed in lng-degree spread. */
-function pickHalfWidth(label: string): number {
-  const commas = (label.match(/,/g) ?? []).length;
-  if (commas >= 3) return 0.005; // street level
-  if (commas >= 1) return 0.06; // city in a region
-  return 4; // bare country / region name
-}
-
-function pickZoomFor(label: string): number {
-  const commas = (label.match(/,/g) ?? []).length;
+/** Opening zoom. More commas → a more specific address → a tighter view; a bare
+ *  country or island name opens wide. Measured on the SAVED DESTINATION, not on
+ *  the geocoder's `primary` label: that label is one word ("Róma") almost
+ *  always, so reading it meant a couple who pinned a particular church still
+ *  opened at country zoom. The visitor takes it from there, and the pin now
+ *  follows them. */
+function pickZoomFor(destination: string): number {
+  const commas = (destination.match(/,/g) ?? []).length;
   if (commas >= 3) return 14;
   if (commas >= 1) return 10;
   return 6;

@@ -1,19 +1,25 @@
-// Map preview for a supplier's location. Renders a 70vw × 70vh popup with an
-// OpenStreetMap embed iframe centred on the supplier's coordinates, so couples
-// can place the venue without leaving the detail page.
+// Map preview for a supplier's location. Renders a 70vw × 70vh popup centred on
+// the supplier's coordinates, so couples can place the venue without leaving the
+// detail page. When the supplier already carries lat/lng we centre on those
+// directly; otherwise we geocode the street address via /api/places/search as a
+// fallback.
 //
-// We use an iframe (not react-leaflet) for the same reason HoneymoonMapModal
-// does: the embed paints reliably across React 19 / Suspense / lazy combos,
-// where Leaflet's canvas-sizing can mount in a half-grey state inside an
-// animating flexbox. When the supplier already carries lat/lng we centre on
-// those directly; otherwise we geocode the street address via
-// /api/places/search as a fallback.
+// The map used to be an OpenStreetMap embed iframe with our pin absolutely
+// positioned at the container's centre, which only pointed at the venue until
+// someone zoomed. PinnedMap draws a real Leaflet marker instead; its header
+// carries the reasoning.
 
 import { ExternalLink, Loader2, MapPin, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { placesApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+
+const PinnedMap = lazy(() => import("./PinnedMap"));
+
+// A teardrop, so the coordinate is under its TIP rather than its middle.
+const PIN_SIZE: [number, number] = [30, 42];
+const PIN_ANCHOR: [number, number] = [15, 42];
 
 interface Coords {
   lat: number;
@@ -196,40 +202,42 @@ export default function SupplierMapModal({
             </div>
           )}
           {state === "ready" && coords && (
-            <>
-              <iframe
+            <Suspense
+              fallback={
+                <div className="flex h-full items-center justify-center text-sm text-ink-500 dark:text-umber-300">
+                  <Loader2 size={16} className="mr-2 animate-spin" aria-hidden="true" />
+                  {t("common.loading")}
+                </div>
+              }
+            >
+              <PinnedMap
                 key={`${coords.lat},${coords.lng}`}
-                title={t("suppliers.detail.map.iframeTitle", { name })}
-                src={osmEmbedUrl(coords, label)}
-                loading="eager"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="absolute inset-0 h-full w-full border-0"
+                lat={coords.lat}
+                lng={coords.lng}
+                zoom={pickZoomFor(label)}
+                label={t("suppliers.detail.map.iframeTitle", { name })}
+                pinSize={PIN_SIZE}
+                pinAnchor={PIN_ANCHOR}
+                pin={
+                  /* Our own pin rather than Leaflet's default blue one, in the
+                     celebrate red the rest of the directory marks a place with. */
+                  <svg
+                    width="30"
+                    height="42"
+                    viewBox="0 0 24 34"
+                    fill="none"
+                    className="text-celebrate drop-shadow-md"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M12 0C5.4 0 0 5.4 0 12c0 9 12 22 12 22s12-13 12-22C24 5.4 18.6 0 12 0z"
+                      fill="currentColor"
+                    />
+                    <circle cx="12" cy="12" r="4.5" className="fill-white" />
+                  </svg>
+                }
               />
-              {/* Our own red pin, overlaid on the iframe. OSM's built-in embed
-                  marker is green and lives in a cross-origin iframe, so it can't
-                  be recoloured. We drop it (see osmEmbedUrl) and drop this pin at
-                  the map centre instead — OSM renders the bbox centre at the
-                  viewport centre, and the bbox is symmetric around (lat,lng), so
-                  the tip lands exactly on the venue. */}
-              <div
-                className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full"
-                aria-hidden="true"
-              >
-                <svg
-                  width="30"
-                  height="42"
-                  viewBox="0 0 24 34"
-                  fill="none"
-                  className="text-celebrate drop-shadow-md"
-                >
-                  <path
-                    d="M12 0C5.4 0 0 5.4 0 12c0 9 12 22 12 22s12-13 12-22C24 5.4 18.6 0 12 0z"
-                    fill="currentColor"
-                  />
-                  <circle cx="12" cy="12" r="4.5" className="fill-white" />
-                </svg>
-              </div>
-            </>
+            </Suspense>
           )}
         </div>
       </div>
@@ -238,38 +246,12 @@ export default function SupplierMapModal({
   );
 }
 
-/** Build OpenStreetMap's `/export/embed.html` URL with a small bbox around the
- *  marker. A supplier address is street-level, so we use a tight half-width. */
-function osmEmbedUrl(coords: Coords, label: string): string {
-  const { lat, lng } = coords;
-  const halfWidth = pickHalfWidth(label);
-  // Aspect-correct half-height for the modal's roughly 1.5:1 (70vw × 70vh on a
-  // 16:9 display) so the marker stays centred.
-  const halfHeight = halfWidth * 0.75;
-  const bbox = [lng - halfWidth, lat - halfHeight, lng + halfWidth, lat + halfHeight];
-  // Intentionally no `marker` param: OSM's default embed marker is green and,
-  // being cross-origin, can't be recoloured. We overlay our own red pin at the
-  // map centre in the JSX above instead.
-  const params = new URLSearchParams({
-    bbox: bbox.join(","),
-    layer: "mapnik",
-  });
-  return `https://www.openstreetmap.org/export/embed.html?${params.toString()}`;
-}
-
 function osmExternalUrl(coords: Coords, label: string): string {
   return `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=${pickZoomFor(label)}/${coords.lat}/${coords.lng}`;
 }
 
-/** Half-bbox width in degrees. A full street address (more commas) gets a
- *  tighter view; a bare city falls back to a wider neighbourhood frame. */
-function pickHalfWidth(label: string): number {
-  const commas = (label.match(/,/g) ?? []).length;
-  if (commas >= 2) return 0.005; // street level
-  if (commas >= 1) return 0.02; // address within a settlement
-  return 0.06; // bare city / settlement
-}
-
+/** Opening zoom. A full street address (more commas) opens tighter; a bare city
+ *  opens on the settlement. */
 function pickZoomFor(label: string): number {
   const commas = (label.match(/,/g) ?? []).length;
   if (commas >= 2) return 16;
