@@ -179,7 +179,7 @@ export default function VendorsPage() {
           this is aimed at whoever else wandered in. */}
       <section className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
         <TracingFrame className="rounded-2xl shadow-soft dark:shadow-none">
-          <div className="flex flex-col items-start gap-5 rounded-[calc(1rem-3px)] bg-ink-900 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 dark:bg-ink-950">
+          <div className="flex flex-col items-start gap-5 rounded-[calc(1rem-5px)] bg-ink-900 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 dark:bg-ink-950">
             <div className="min-w-0">
               <h2 className="font-grotesk text-xl text-paper-50 sm:text-2xl">
                 {t("vendors.recommend_title")}

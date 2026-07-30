@@ -2009,14 +2009,19 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
 }
 .trace-frame {
-  --trace-lap: 1.5s;
+  /* One lap. Slow enough to follow with the eye rather than register as a
+     flicker: at 1.5s the light crossed the long edge faster than the reader
+     could track it, which reads as a glitch instead of an invitation. */
+  --trace-lap: 2.4s;
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  /* 3px, not a hairline. Measured on the page: at 2px the running light was
+  /* The ring is the light's whole stage: nothing wider than this is ever
+     visible, because the plate covers the rest. At 2px the running light was
      legible in a 3x capture and invisible at normal size, which defeats the
-     point of it. */
-  padding: 3px;
+     point of it. 5px carries at a glance and still reads as a frame rather
+     than a bar, since the ring's own colour sits close to the plate's. */
+  padding: 5px;
   background: theme("colors.ink.700");
 }
 html.dark .trace-frame {
@@ -2052,12 +2057,12 @@ html.dark .trace-frame {
    the ring by the wrapper's `overflow: hidden` and the plate above it, so it
    widens the apparent line instead of leaking into the card. */
 .trace-run > i {
-  box-shadow: 0 0 10px 1px theme("colors.paper.300" / 55%);
+  box-shadow: 0 0 12px 1px theme("colors.paper.300" / 50%);
 }
 .trace-run-top,
 .trace-run-bottom {
   left: 0;
-  height: 3px;
+  height: 5px;
   width: 30%;
   background: linear-gradient(
     90deg,
@@ -2071,7 +2076,7 @@ html.dark .trace-frame {
 .trace-run-left,
 .trace-run-right {
   top: 0;
-  width: 3px;
+  width: 5px;
   height: 30%;
   background: linear-gradient(
     180deg,
