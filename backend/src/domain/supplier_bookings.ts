@@ -23,7 +23,6 @@ import { db, now } from "../db";
 import { isVendorEntitled, recordVendorLeadCredit } from "./vendor_billing";
 import { emitVendorEvent } from "./vendor_points";
 import { getVendorWeekdays } from "./vendor_availability_settings";
-import { isoWeekday } from "@shared/vendor_availability";
 
 const VALID_STATUSES: ReadonlySet<BookingStatus> = new Set([
   "requested",
@@ -142,7 +141,10 @@ export function listBlockedDays(vendorAccountId: number): VendorBlockedDay[] {
  *  Both queries are keyed to one date, so this stays two small scans however big
  *  the catalogue gets. */
 export function listingIdsUnavailableOn(date: string): string[] {
-  const weekday = isoWeekday(date);
+  // Candidates only: a vendor with nothing on file for this date and no weekly
+  // pattern resolves to "available" by definition, so there is no reason to ask
+  // about them. Three ways to be interesting — an exception row on the day, a
+  // weekly pattern at all, or a confirmed wedding that day.
   const rows = db
     .prepare(
       `SELECT l.id AS id, l.vendor_account_id AS vendor_account_id
@@ -150,36 +152,47 @@ export function listingIdsUnavailableOn(date: string): string[] {
         WHERE l.vendor_account_id IS NOT NULL
           AND (
             EXISTS (SELECT 1 FROM vendor_unavailable_dates d
-                     WHERE d.vendor_account_id = l.vendor_account_id
-                       AND d.blocked_date = ? AND d.blocked_hours IS NULL
-                       AND d.is_available = 0)
+                     WHERE d.vendor_account_id = l.vendor_account_id AND d.blocked_date = ?)
             OR EXISTS (SELECT 1 FROM vendor_availability_settings s
                         WHERE s.vendor_account_id = l.vendor_account_id
                           AND s.weekdays IS NOT NULL AND s.weekdays != '')
+            OR EXISTS (SELECT 1 FROM supplier_bookings b
+                        WHERE b.vendor_account_id = l.vendor_account_id
+                          AND b.event_date = ? AND b.status = 'confirmed')
           )`,
     )
-    .all(date) as Array<{ id: string; vendor_account_id: number }>;
+    .all(date, date) as Array<{ id: string; vendor_account_id: number }>;
 
   const out: string[] = [];
-  // The weekday pattern can't be decided in SQL (it is a JSON array), and the
-  // entitlement check is a function, so the narrowed set is finished in JS. The
-  // set is small by construction: only vendors with a block on this exact day or
-  // a weekly pattern at all.
   for (const row of rows) {
     if (!isVendorEntitled(row.vendor_account_id)) continue;
-    const blocked = db
+    const ex = db
       .prepare(
-        `SELECT 1 FROM vendor_unavailable_dates
-          WHERE vendor_account_id = ? AND blocked_date = ?
-            AND blocked_hours IS NULL AND is_available = 0`,
+        `SELECT is_available, blocked_hours FROM vendor_unavailable_dates
+          WHERE vendor_account_id = ? AND blocked_date = ?`,
+      )
+      .get(row.vendor_account_id, date) as
+      | { is_available: number; blocked_hours: string | null }
+      | undefined;
+    const booked = db
+      .prepare(
+        `SELECT 1 FROM supplier_bookings
+          WHERE vendor_account_id = ? AND event_date = ? AND status = 'confirmed'`,
       )
       .get(row.vendor_account_id, date);
-    if (blocked) {
-      out.push(row.id);
-      continue;
-    }
-    const weekdays = getVendorWeekdays(row.vendor_account_id);
-    if (weekdays !== null && !weekdays.includes(weekday)) out.push(row.id);
+    // The SAME resolver the vendor calendar and the public busy calendar use.
+    // Re-deriving the order here is how a couple ends up being shown a day the
+    // vendor's own calendar calls taken (or, worse, hidden from a day the
+    // vendor opened by hand).
+    const day = resolveDayAvailability({
+      hasConfirmedBooking: booked !== undefined && booked !== null,
+      exception: ex
+        ? { available: ex.is_available === 1, hours: parseBlockedHours(ex.blocked_hours) }
+        : null,
+      weekdays: getVendorWeekdays(row.vendor_account_id),
+      date,
+    });
+    if (!isBookableDay(day)) out.push(row.id);
   }
   return out;
 }
@@ -359,6 +372,11 @@ export interface CreateBookingArgs {
    *  admin booking route leaves it off: that surface represents "this couple
    *  booked", which genuinely is PRO. */
   allowUnentitled?: boolean;
+  /** When the inquiry actually happened, defaulting to now. Set only by the
+   *  replay, which delivers messages a couple sent before the vendor had an
+   *  account: stamping those "now" would tell the vendor a two-week-old lead
+   *  arrived this morning, and the age of a lead is how overdue a reply is. */
+  at?: number;
 }
 
 /** Insert a booking inquiry. Throws when the supplier is unclaimed (v1
@@ -384,7 +402,7 @@ export function createBooking(args: CreateBookingArgs): SupplierBooking {
   if (!args.allowUnentitled && !isVendorEntitled(listing.vendor_account_id)) {
     throw new Error("booking_free_plan: vendor is not accepting direct inquiries");
   }
-  const ts = now();
+  const ts = args.at ?? now();
   const info = db
     .prepare(
       `INSERT INTO supplier_bookings
@@ -504,6 +522,7 @@ export function deliverInquiryFromOutreach(args: {
     // A message the couple has already emailed gets recorded whatever the
     // vendor's plan. See this function's header.
     allowUnentitled: true,
+    at: args.at,
   });
   return {
     bookingId: booking.id,

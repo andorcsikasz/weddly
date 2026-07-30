@@ -24,9 +24,20 @@ type Props = {
   countries: SupplierCountryCount[];
   /** Emits "all" or an ISO code. */
   onChange: (next: string) => void;
+  /** Drop the built-in label. For the filters dialog, where every row's label is
+   *  owned by the row itself so the controls can share one right edge — a
+   *  component that brings its own label can't line up with anything. The
+   *  trigger keeps its `aria-label`, so nothing is lost to a screen reader. */
+  hideLabel?: boolean;
 };
 
-export function SupplierCountryFilter({ value, homeCountry, countries, onChange }: Props) {
+export function SupplierCountryFilter({
+  value,
+  homeCountry,
+  countries,
+  onChange,
+  hideLabel,
+}: Props) {
   const { t, locale } = useT();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -81,9 +92,11 @@ export function SupplierCountryFilter({ value, homeCountry, countries, onChange 
 
   return (
     <div className="inline-flex shrink-0 items-center gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-        {t("suppliers.country_filter_label")}
-      </span>
+      {!hideLabel && (
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
+          {t("suppliers.country_filter_label")}
+        </span>
+      )}
       <div className="relative" ref={wrapRef}>
         <div
           className={

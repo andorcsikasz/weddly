@@ -255,6 +255,12 @@ function celebrateSelection(cat: SupplierCategory, prev: SelectionMap, next: Sel
   else if (groupJustCompleted(cat, prev, next)) fireConfetti();
 }
 
+/** Every filter row's label. One constant so the four rows can't drift apart:
+ *  they only line up if they are typographically identical, not merely
+ *  similar. */
+const FILTER_ROW_LABEL =
+  "text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300";
+
 export default function SuppliersPage() {
   const { t, locale } = useT();
   const navigate = useNavigate();
@@ -2683,21 +2689,28 @@ export default function SuppliersPage() {
           </div>
         }
       >
-        <div className="space-y-6">
-          {/* No label of our own here: the picker ships with one. */}
-          <div className="flex flex-wrap items-center gap-3">
+        {/* One list, four rows, ONE pair of edges. Every row is
+            label-left / control-right inside the same box, separated by
+            hairlines and nothing else: no row carries a border or padding of
+            its own, which is what used to make the country picker float mid-row
+            and the guest card sit inset from the two rows above it. The controls
+            therefore all end on the same right edge, and the labels all start on
+            the same left one. */}
+        <div className="-my-1 divide-y divide-paper-200 dark:divide-umber-700">
+          <div className="flex min-h-[3.25rem] items-center justify-between gap-3">
+            <span className={FILTER_ROW_LABEL}>{t("suppliers.country_filter_label")}</span>
+            {/* The row owns the label, so the picker drops its own. */}
             <SupplierCountryFilter
               value={countrySelection}
               homeCountry={coupleCountry}
               countries={availableCountries}
               onChange={setCountryFilter}
+              hideLabel
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-              {t("suppliers.price_filter_label")}
-            </span>
+          <div className="flex min-h-[3.25rem] flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <span className={FILTER_ROW_LABEL}>{t("suppliers.price_filter_label")}</span>
             {/* Each chip is ONE band, not a ceiling: tapping $$$ shows band-3
                 suppliers. Tap the same chip again to clear. */}
             <div className="inline-flex items-center gap-1">
@@ -2720,16 +2733,55 @@ export default function SuppliersPage() {
             </div>
           </div>
 
+          {/* The day being shopped for. Seeded with the wedding date because
+              that is the question behind the whole directory, and editable
+              because the second question is usually a different day. It only
+              ever REMOVES suppliers with a real reason on file for being taken
+              (a whole-day block, or a weekday they don't work) — an unclaimed
+              entry has no calendar here, and "we don't know" must not read as
+              "booked". */}
+          <div className="flex min-h-[3.25rem] items-center justify-between gap-3">
+            <span className={FILTER_ROW_LABEL}>{t("suppliers.date_filter_label")}</span>
+            <span className="inline-flex items-center gap-1.5">
+              {/* The marker for "this is not your wedding day", and the way
+                  back. A dot rather than a sentence: the row is already
+                  labelled, and the tooltip carries the words. */}
+              {dateFilter && !dateIsWedding && weddingDate && (
+                <button
+                  type="button"
+                  onClick={() => setDateFilter(null)}
+                  title={t("suppliers.date_filter_not_wedding")}
+                  aria-label={t("suppliers.date_filter_not_wedding")}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full text-blush-500 transition hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-950"
+                >
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current" />
+                </button>
+              )}
+              <input
+                type="date"
+                value={dateFilter ?? ""}
+                onChange={(e) => setDateFilter(e.target.value || null)}
+                aria-label={t("suppliers.date_filter_label")}
+                // pl-only: the row's right edge is the alignment line every control
+                // shares, and the native date input already reserves its own
+                // padding around the calendar indicator.
+                // `dark:[color-scheme:dark]` rather than the `.input` class: this
+                // field has no box by design, and index.css scopes the
+                // color-scheme rule to `.input`. Without it the native calendar
+                // glyph paints black on dark umber and disappears.
+                className="rounded-lg bg-transparent py-0.5 pl-1 text-sm font-semibold tabular-nums text-ink-900 outline-none transition focus-visible:ring-2 focus-visible:ring-ink-900 dark:text-paper-50 dark:[color-scheme:dark] dark:focus-visible:ring-paper-200"
+              />
+            </span>
+          </div>
+
           {/* Guest count is owned by the cost-planning slider on /app/budget and
               only mirrored here — two edit surfaces for one number is how they
               drift apart. So the whole row is a link that routes the edit. */}
           <Link
             to="/app/budget"
-            className="group flex items-center justify-between gap-3 rounded-2xl border border-paper-300 px-4 py-3 transition hover:border-ink-900 dark:border-umber-700 dark:hover:border-paper-200"
+            className="group flex min-h-[3.25rem] items-center justify-between gap-3"
           >
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 dark:text-umber-300">
-              {t("suppliers.guests_filter_label")}
-            </span>
+            <span className={FILTER_ROW_LABEL}>{t("suppliers.guests_filter_label")}</span>
             <span className="inline-flex items-center gap-1.5 text-sm font-semibold tabular-nums text-ink-900 dark:text-paper-50">
               {guestsFilter ?? "-"}
               <ArrowUpRight

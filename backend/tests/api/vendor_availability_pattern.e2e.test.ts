@@ -278,3 +278,99 @@ describe("vendor availability — weekly pattern", () => {
     expect(couple.status).toBe(403);
   });
 });
+
+// The directory's date filter reads the same two layers from the other end: one
+// call, one date, the listings a couple should not be shown for that day.
+describe("directory date filter — GET /api/suppliers/unavailable", () => {
+  const monday = "2030-06-03"; // ISO weekday 1
+  const sunday = "2030-06-02"; // ISO weekday 7
+
+  async function unavailableOn(
+    date: string,
+    token: string,
+  ): Promise<{ status: number; data: { date: string; supplier_ids: string[] } }> {
+    return req<{ date: string; supplier_ids: string[] }>(
+      "GET",
+      `/api/suppliers/unavailable?date=${encodeURIComponent(date)}`,
+      undefined,
+      { token },
+    );
+  }
+
+  test("a whole-day block puts the listing on the list, and only for that day", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("df-block");
+    await req("POST", "/api/vendor/availability/me", { date: monday }, { token: vendorToken });
+
+    const taken = await unavailableOn(monday, coupleToken);
+    expect(taken.status).toBe(200);
+    expect(taken.data.supplier_ids).toContain(listingId);
+
+    // The day before is untouched: the filter answers about one date.
+    const free = await unavailableOn(sunday, coupleToken);
+    expect(free.data.supplier_ids).not.toContain(listingId);
+  });
+
+  test("a weekday outside the pattern counts as taken, without a block row", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("df-pattern");
+    await putPattern(vendorToken, [7]); // Sundays only
+
+    expect((await unavailableOn(monday, coupleToken)).data.supplier_ids).toContain(listingId);
+    expect((await unavailableOn(sunday, coupleToken)).data.supplier_ids).not.toContain(listingId);
+  });
+
+  test("an exceptional open day beats the pattern here too", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("df-exception");
+    await putPattern(vendorToken, [7]);
+    await req(
+      "POST",
+      "/api/vendor/availability/me",
+      { date: monday, available: true },
+      { token: vendorToken },
+    );
+    // The vendor said yes to this specific Monday, so the filter must not hide
+    // them on it — the two surfaces cannot be allowed to disagree.
+    expect((await unavailableOn(monday, coupleToken)).data.supplier_ids).not.toContain(listingId);
+  });
+
+  test("a partial-hour block leaves the day bookable, so the listing stays", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("df-partial");
+    await req(
+      "POST",
+      "/api/vendor/availability/me",
+      { date: monday, hours: [9, 10] },
+      { token: vendorToken },
+    );
+    expect((await unavailableOn(monday, coupleToken)).data.supplier_ids).not.toContain(listingId);
+  });
+
+  test("a malformed date hides nothing rather than erroring", async () => {
+    wipeAll();
+    const { coupleToken } = await bootstrapVendor("df-junk");
+    for (const bad of ["", "nope", "2030-02-30", "2030-6-3"]) {
+      const r = await unavailableOn(bad, coupleToken);
+      // The caller is a filter. A 400 would break the page; an empty set is the
+      // honest answer to "we don't know".
+      expect(r.status).toBe(200);
+      expect(r.data.supplier_ids).toEqual([]);
+    }
+  });
+
+  test("an unclaimed listing is never on the list: no calendar, no conclusion", async () => {
+    wipeAll();
+    const { coupleToken } = await bootstrapVendor("df-unclaimed-peer");
+    // Curated entries carry no vendor account at all, so nothing about them can
+    // land here whatever the date.
+    const r = await unavailableOn(monday, coupleToken);
+    for (const id of r.data.supplier_ids)
+      expect(id.startsWith("c") || id.startsWith("v")).toBe(true);
+    const curated = await req<{
+      suppliers: Array<{ id: string; vendor_account_id: number | null }>;
+    }>("GET", "/api/suppliers?country=all", undefined, { token: coupleToken });
+    const unclaimed = curated.data.suppliers.filter((s) => s.vendor_account_id === null);
+    for (const s of unclaimed) expect(r.data.supplier_ids).not.toContain(s.id);
+  });
+});
