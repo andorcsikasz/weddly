@@ -48,7 +48,9 @@ export const VENUE_COORDS: Record<string, { lat: number; lng: number }> = {
   "festetics-kastely-deg": { lat: 46.8675, lng: 18.4495 },
   "karolyi-kastely-fuzerradvany": { lat: 48.5108, lng: 21.4564 },
   "nest-cottage-birtok": { lat: 46.953, lng: 17.877 },
-  "fenyoharaszt-kastelyszallo": { lat: 47.7236, lng: 19.5083 },
+  // The venue's own published GPS, about 6 km off the postcode centroid
+  // this table had been using.
+  "fenyoharaszt-kastelyszallo": { lat: 47.698052, lng: 19.580561 },
   "gereby-kuria": { lat: 47.0244, lng: 19.5575 },
   "brunszvik-kastely": { lat: 47.3107, lng: 18.7878 },
   "pronay-kastely": { lat: 47.8997, lng: 19.2997 },
@@ -828,6 +830,10 @@ const RAW_DIRECTORY: (Omit<
     website: "https://eskuvonkhelyszine.hu/",
     ...noContact,
     contact_email: "eskuvo@fenyoharaszt.hu",
+    // Two organisers answer the wedding line (Dobák Zsolt and Elek Éva);
+    // Zsolt is the number the venue publishes first.
+    contact_phone: "+36 70 367 1937",
+    contact_phone_alt: "+36 20 484 3381",
     source: "curated",
     price_band: 3,
   },
@@ -20506,6 +20512,49 @@ const RAW_DIRECTORY: (Omit<
     website: "https://sgphoto.hu/",
     ...noContact,
     contact_phone: "+36 30 243 7872",
+    source: "curated",
+    price_band: null,
+  },
+
+  // -- Fenyőharaszt Kastélyszálló's recommended suppliers, July 2026 -------
+  // Sourced from the venue's own "Esküvői szolgáltatók" directory and then
+  // checked against each supplier's own site, which is where the towns below
+  // and two of the contact details come from. The rest of that list is held
+  // back for now: they publish no town anywhere, and every other entry in this
+  // file has one.
+  {
+    id: "jakus-mate-ceremoniamester",
+    name: "Jakus Máté ceremóniamester",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu: "Budapesti ceremóniamester és műsorvezető, esküvőkre és rendezvényekre.",
+    blurb_en: "Budapest-based wedding MC and host for weddings and events.",
+    website: "https://jakusmate.hu/",
+    ...noContact,
+    contact_email: "jakusmate.cm@gmail.com",
+    contact_phone: "+36 30 839 9794",
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "sanna-eskuvoi-meghivo",
+    name: "Sanna Esküvői Meghívó (Schaumann-Juhász Zsuzsa)",
+    category: "invitation_graphics",
+    city: "Székesfehérvár",
+    address: "Székesfehérvár, Szabadkai utca 18.",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Egyedi esküvői meghívók székesfehérvári műhelyből, előzetes egyeztetéssel. Nincs minimum darabszám, és a végleges rendelés előtt ingyenes mintanyomat kérhető.",
+    blurb_en:
+      "Bespoke wedding invitations from a Székesfehérvár workshop, by appointment. No minimum order, and a free sample print before the final run.",
+    website: "https://sannaeskuvoimeghivo.hu/",
+    ...noContact,
+    contact_email: "sanna@sannaeskuvoimeghivo.hu",
+    contact_phone: "+36 20 283 4951",
     source: "curated",
     price_band: null,
   },
