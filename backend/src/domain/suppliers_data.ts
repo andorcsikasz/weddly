@@ -958,6 +958,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Private castle estate with luxury stay, 20–80 guests.",
     website: "https://www.hertelendy-castle.com/",
     ...noContact,
+    contact_email: "exclusive@hertelendy-castle.com",
     source: "curated",
     price_band: 5,
   },
