@@ -10,7 +10,7 @@
 // One button now: it states the current filter, and opens a list. The closed
 // state is the answer, the open state is the question.
 
-import { Check, ChevronDown, Globe } from "lucide-react";
+import { Check, ChevronDown, Globe, type LucideIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 export interface CountryOption {
@@ -25,6 +25,7 @@ export function CountryPicker({
   onChange,
   allLabel,
   ariaLabel,
+  icon: Icon = Globe,
   tone = "brand",
 }: {
   /** null = every country. */
@@ -33,6 +34,13 @@ export function CountryPicker({
   onChange: (code: string | null) => void;
   allLabel: string;
   ariaLabel: string;
+  /** Trigger glyph. Defaults to the globe, because countries were the first
+   *  and for a while the only facet this control served. It now also runs the
+   *  TOWN filter beside it, and both filters behave identically on purpose:
+   *  one hand-wired listbox, one set of keyboard semantics, one label pattern,
+   *  so the two controls read as a pair rather than as two different ideas
+   *  about what a filter is. */
+  icon?: LucideIcon;
   /** Closed-state skin. `brand` is the stationery-coffee pill the in-app
    *  directory uses; `ink` is the flat near-black one the public browse page
    *  runs, where every control on the page is monochrome. */
@@ -128,7 +136,7 @@ export function CountryPicker({
               : "border-umber-600 bg-paper-50 text-ink-700 hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
         }`}
       >
-        <Globe size={15} aria-hidden />
+        <Icon size={15} aria-hidden />
         <span>{selected ? selected.label : allLabel}</span>
         {selected && (
           <span className="rounded-full bg-paper-100/20 px-1.5 py-0.5 text-[11px] tabular-nums">

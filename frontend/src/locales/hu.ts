@@ -320,6 +320,9 @@ const hu: LocaleMessages = {
     email_label: "E-mail",
     phone_label: "Telefon",
     save_cta: "Helyszín mentése",
+    suggestion_use: "Ezt",
+    suggestion_hint:
+      "Ha kiválasztod, a címe, a térképi jelölője és a telefonszáma is jön vele. Ha nincs köztük, csak írd tovább a nevet.",
   },
   wedding_site_editor: {
     page_title: "Esküvői weboldal",
@@ -9090,6 +9093,7 @@ const hu: LocaleMessages = {
     load_more: "Még több",
     all_towns: "Minden település",
     city_filter_clear: "Város szűrő törlése",
+    city_filter_label: "Szűrés településre",
     rail_prev: "Előzőek",
     rail_next: "Következők",
     planner_badge: "Együttműködés",

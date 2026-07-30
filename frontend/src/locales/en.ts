@@ -318,6 +318,9 @@ const en: LocaleMessages = {
     email_label: "Email",
     phone_label: "Phone",
     save_cta: "Save venue",
+    suggestion_use: "Use",
+    suggestion_hint:
+      "Pick one and its address, map pin and phone come with it. Keep typing to add a venue we don't have yet.",
   },
   wedding_site_editor: {
     page_title: "Wedding website",
@@ -9017,6 +9020,7 @@ const en: LocaleMessages = {
     load_more: "Show more",
     all_towns: "Every town",
     city_filter_clear: "Clear the city filter",
+    city_filter_label: "Filter by town",
     rail_prev: "Show previous",
     rail_next: "Show next",
     planner_badge: "Collaboration",

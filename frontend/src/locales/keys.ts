@@ -527,6 +527,11 @@ export interface LocaleMessages {
     email_label: string;
     phone_label: string;
     save_cta: string;
+    /** Right-hand hint on a suggestion row: picking it uses that listing. */
+    suggestion_use: string;
+    /** One line under the suggestion list explaining what picking does, since
+     *  "use the listing" and "type your own" produce different records. */
+    suggestion_hint: string;
   };
   /** Couple-facing editor for the public wedding-website at /w/:slug — flips
    *  the publish toggle and edits venue name + hero image. Reachable at
@@ -10064,6 +10069,8 @@ export interface LocaleMessages {
     all_towns: string;
     /** Clears the ?city= filter a landing-page town pick arrives with. */
     city_filter_clear: string;
+    /** Aria-label on the town picker beside the country one. */
+    city_filter_label: string;
     /** Aria-labels for the desktop scrubbers on each category rail. */
     rail_prev: string;
     rail_next: string;

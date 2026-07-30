@@ -328,6 +328,9 @@ const es: LocaleMessages = {
     email_label: "Correo",
     phone_label: "Teléfono",
     save_cta: "Guardar lugar",
+    suggestion_use: "Usar",
+    suggestion_hint:
+      "Al elegir uno, su dirección, su punto en el mapa y su teléfono vienen con él. Si no está, sigue escribiendo el nombre.",
   },
   wedding_site_editor: {
     page_title: "Web de la boda",
@@ -9173,6 +9176,7 @@ const es: LocaleMessages = {
     load_more: "Ver más",
     all_towns: "Todas las localidades",
     city_filter_clear: "Quitar el filtro de ciudad",
+    city_filter_label: "Filtrar por localidad",
     rail_prev: "Ver anteriores",
     rail_next: "Ver siguientes",
     planner_badge: "Colaboración",

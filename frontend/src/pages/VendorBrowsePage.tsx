@@ -686,6 +686,7 @@ export default function VendorBrowsePage() {
   // every country listed once one is selected (a client-side count would drop
   // to just the filtered country and strand the visitor there).
   const [countries, setCountries] = useState<SupplierCountryCount[]>([]);
+  const [cityFacets, setCityFacets] = useState<{ city: string; count: number }[]>([]);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [showPill, setShowPill] = useState(false);
   const closingRef = useRef<HTMLElement>(null);
@@ -713,6 +714,26 @@ export default function VendorBrowsePage() {
       cancelled = true;
     };
   }, [country, city]);
+
+  // Towns for the picker above: every town in the active country, counted
+  // across all categories, so the list is the same whichever category the
+  // visitor is looking at. Deliberately NOT derived from the sampler payload —
+  // that only knows the handful of vendors it sampled, and a "Szeged 3" chip
+  // that means "3 of the 6 we happened to show" is a lie in every language.
+  useEffect(() => {
+    let cancelled = false;
+    supplierApi
+      .publicDirectory({ country, limit: 1 })
+      .then((r) => {
+        if (!cancelled) setCityFacets(r.cities);
+      })
+      .catch(() => {
+        if (!cancelled) setCityFacets([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [country]);
 
   // Pull planners out of the vendor rails — they get their own reframed module.
   const gridCategories = categories?.filter((c) => c.category !== "wedding_planner") ?? [];
@@ -859,23 +880,31 @@ export default function VendorBrowsePage() {
             {t("vendorBrowse.subtitle")}
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 lg:shrink-0">
-            {/* Active town, and the way out of it. A filter the visitor can't
-                see themselves out of reads as an empty directory. */}
-            {city && (
-              <button
-                type="button"
-                onClick={() => {
+            {/* Town, beside country, same control. The town used to arrive only
+                from the landing typeahead and could be removed but never
+                CHOSEN here, which left a visitor who wanted "photographers in
+                Szeged" with no way to say so. Counts come from the same public
+                endpoint the grid does, so a town in this list always has that
+                many vendors behind it. */}
+            {cityFacets.length > 1 && (
+              <CountryPicker
+                value={city}
+                onChange={(nextCity) => {
                   const next = new URLSearchParams(params);
-                  next.delete("city");
-                  setParams(next, { replace: true });
+                  if (nextCity) next.set("city", nextCity);
+                  else next.delete("city");
+                  setParams(next, { replace: false });
                 }}
-                className="inline-flex items-center gap-2 rounded-full border border-ink-900 bg-ink-900 py-2 pl-3.5 pr-3 text-[13px] font-medium tracking-tight text-paper-50 transition hover:bg-ink-950 dark:border-paper-100 dark:bg-paper-100 dark:text-ink-900 dark:hover:bg-paper-50"
-              >
-                <MapPin size={14} aria-hidden />
-                {city}
-                <X size={14} aria-hidden />
-                <span className="sr-only">{t("vendorBrowse.city_filter_clear")}</span>
-              </button>
+                tone="ink"
+                icon={MapPin}
+                allLabel={t("vendorBrowse.all_towns")}
+                ariaLabel={t("vendorBrowse.city_filter_label")}
+                options={cityFacets.map((c) => ({
+                  code: c.city,
+                  label: c.city,
+                  count: c.count,
+                }))}
+              />
             )}
             {countries.length > 1 && (
               <CountryPicker
