@@ -578,6 +578,41 @@ export function getListingById(id: string): Listing | null {
   return row ? toListing(row) : null;
 }
 
+/** Directory category of every id that still has a card a couple can OPEN,
+ *  keyed by id. An id that resolves to nothing is simply absent from the map.
+ *
+ *  This is the one query behind "show the vendor's category, and make the name
+ *  a link": a UI that renders the category on exactly the ids this returns can
+ *  link on the same condition and never hand a couple a 404. Two ways a listing
+ *  we have a booking or an outreach row for stops resolving, and they live in
+ *  different tables — a community/claimed row goes `pending`/`hidden` on
+ *  `listings.status`, while a curated slug is hidden by an override row and
+ *  keeps its `active` mirror — so both are checked here rather than in each
+ *  caller. Mirrors `resolveSupplierBase`'s verdict without paying for the full
+ *  directory read per row. */
+export function linkableListingCategories(ids: readonly string[]): Map<string, string> {
+  const out = new Map<string, string>();
+  if (ids.length === 0) return out;
+  const placeholders = ids.map(() => "?").join(",");
+  const rows = db
+    .prepare(
+      `SELECT l.id, l.category
+         FROM listings l
+         LEFT JOIN curated_supplier_overrides o ON o.supplier_id = l.id
+        WHERE l.id IN (${placeholders})
+          AND l.status = 'active'
+          AND o.supplier_id IS NULL`,
+    )
+    .all(...ids) as Array<{ id: string; category: string }>;
+  for (const r of rows) out.set(r.id, r.category);
+  return out;
+}
+
+/** Single-id form of `linkableListingCategories`. */
+export function linkableListingCategory(id: string): string | null {
+  return linkableListingCategories([id]).get(id) ?? null;
+}
+
 /** Whether this listing's owner opted to hide the address + contact-email tail
  *  from anonymous visitors. False for curated/community ids (no `listings` row
  *  or the column defaults 0) — only vendor-owned claimed listings can opt in.

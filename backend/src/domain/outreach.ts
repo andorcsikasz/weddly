@@ -37,6 +37,7 @@ import { log } from "../lib/logger";
 import { sendKind } from "./emails";
 import { isOptedOut } from "./emails/optouts";
 import type { SupplierOutreachMode } from "./emails/templates";
+import { linkableListingCategories } from "./listings";
 import { deliverInquiryFromOutreach, type DeliveredInquiry } from "./supplier_bookings";
 import { isVendorEntitled } from "./vendor_billing";
 import { localeForCountry, resolveListingCountry } from "./vendor_campaign";
@@ -197,12 +198,17 @@ function toMessageStatus(raw: string): OutreachMessageStatus {
   return "queued";
 }
 
-function toMessage(row: MessageRow, supplierName: string): OutreachMessage {
+function toMessage(
+  row: MessageRow,
+  supplierName: string,
+  supplierCategory: string | null,
+): OutreachMessage {
   return {
     id: row.id,
     campaign_id: row.campaign_id,
     supplier_id: row.supplier_id,
     supplier_name: supplierName,
+    supplier_category: supplierCategory,
     supplier_email: row.supplier_email,
     sent_at: row.sent_at,
     status: toMessageStatus(row.status),
@@ -571,7 +577,10 @@ export function createCampaign(
   const campaignRow = db
     .prepare("SELECT * FROM outreach_campaigns WHERE id = ?")
     .get(inserted.campaignId) as CampaignRow;
-  const messages = inserted.messages.map((m, i) => toMessage(m, contacts[i]!.name));
+  const openableCategories = linkableListingCategories(contacts.map((c) => c.id));
+  const messages = inserted.messages.map((m, i) =>
+    toMessage(m, contacts[i]!.name, openableCategories.get(contacts[i]!.id) ?? null),
+  );
   return {
     detail: {
       ...toCampaign(campaignRow, messages.length),
@@ -619,8 +628,17 @@ export function getCampaignDetail(
       .all(...ids) as Array<{ id: string; name: string }>;
     for (const r of rows) supplierNames.set(r.id, r.name);
   }
+  // Deliberately a SECOND lookup rather than one more column above: the name is
+  // read for every row we have (the label must render even for a listing that
+  // has since been hidden), the category only for the ones the couple can still
+  // open, and that verdict is not this module's to spell.
+  const openableCategories = linkableListingCategories(ids);
   const messages = messageRows.map((row) =>
-    toMessage(row, supplierNames.get(row.supplier_id) ?? row.supplier_id),
+    toMessage(
+      row,
+      supplierNames.get(row.supplier_id) ?? row.supplier_id,
+      openableCategories.get(row.supplier_id) ?? null,
+    ),
   );
   const replyRows = db
     .prepare(

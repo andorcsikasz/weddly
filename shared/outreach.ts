@@ -18,6 +18,11 @@ export interface OutreachMessage {
    *  in-app thread render even if the supplier's listing is later renamed
    *  or hidden from the directory. */
   supplier_name: string;
+  /** Directory category key of the supplier's card (`photo_video`, …), null
+   *  when the listing no longer resolves. Non-null doubles as "there is a card
+   *  at /app/suppliers/<id>", so the UI shows the category and links the name
+   *  on one condition — see `linkableListingCategories`. */
+  supplier_category: string | null;
   supplier_email: string;
   sent_at: number | null;
   status: OutreachMessageStatus;

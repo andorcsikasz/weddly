@@ -33,6 +33,7 @@ import {
 import { db, now } from "../db";
 import { HttpError } from "../lib/http";
 import { log } from "../lib/logger";
+import { linkableListingCategories } from "./listings";
 // Type-only: supplier_bookings imports insertMessage from here, so a value
 // import would be a runtime cycle.
 import type { BookingRow } from "./supplier_bookings";
@@ -224,11 +225,16 @@ export function buildThread(args: {
   booking: BookingRow;
   readerKind: MessageSenderKind;
   counterpartyName: string;
+  /** Only the COUPLE's read has one — a vendor's counterparty is a couple, and
+   *  a couple's is a directory card. Left out means "no card to open". */
+  counterpartyCategory?: string | null;
 }): BookingThread {
   markDelivered(args.booking.id, args.readerKind);
   return {
     booking_id: args.booking.id,
     counterparty_name: args.counterpartyName,
+    supplier_id: args.booking.supplier_id,
+    counterparty_category: args.counterpartyCategory ?? null,
     event_date: args.booking.event_date,
     messages: listMessages(args.booking.id),
   };
@@ -267,18 +273,22 @@ export function listCoupleThreads(coupleId: number): CoupleVendorThreadPreview[]
     last_sender_kind: string | null;
     unread_count: number;
   }[];
-  return rows
-    .filter((r) => r.last_at !== null)
-    .map((r) => ({
-      booking_id: r.booking_id,
-      supplier_id: r.supplier_id,
-      vendor_name: r.vendor_name,
-      event_date: r.event_date,
-      last_body: r.last_body ?? "",
-      last_at: r.last_at ?? 0,
-      last_sender_kind: r.last_sender_kind === "vendor" ? "vendor" : "couple",
-      unread_count: r.unread_count,
-    }));
+  const withMessages = rows.filter((r) => r.last_at !== null);
+  // One batched hop for the categories rather than a join on this query: the
+  // "can the couple open this card" verdict spans two tables and lives in
+  // domain/listings.ts, so it is not re-spelled here.
+  const categories = linkableListingCategories(withMessages.map((r) => r.supplier_id));
+  return withMessages.map((r) => ({
+    booking_id: r.booking_id,
+    supplier_id: r.supplier_id,
+    vendor_name: r.vendor_name,
+    event_date: r.event_date,
+    last_body: r.last_body ?? "",
+    last_at: r.last_at ?? 0,
+    last_sender_kind: r.last_sender_kind === "vendor" ? "vendor" : "couple",
+    unread_count: r.unread_count,
+    vendor_category: categories.get(r.supplier_id) ?? null,
+  }));
 }
 
 // ---------------------------------------------------------------- attachments

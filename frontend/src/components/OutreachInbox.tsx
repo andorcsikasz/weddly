@@ -26,7 +26,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { Mail, Send, Plus, Search, Sparkles, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight, Mail, Send, Plus, Search, Sparkles, X } from "lucide-react";
 import { InfoHint } from "./InfoHint";
 import {
   type CreateOutreachCampaignInput,
@@ -44,6 +45,7 @@ import { useConfirm } from "./ui/ConfirmDialogProvider";
 import { useToast } from "./ui/ToastProvider";
 import { ApiError } from "../lib/api";
 import { guestCountBaseline } from "../lib/budget";
+import { categoryIcon } from "../lib/category_icons";
 import { coupleApi, outreachApi, supplierApi } from "../lib/endpoints";
 import { formatDate, intlLocale } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -222,30 +224,59 @@ export function OutreachInbox({ variant = "section" }: { variant?: OutreachInbox
                     {t("outreach.recipients_header")}
                   </h4>
                   <ul className="space-y-2">
-                    {detail.messages.map((m) => (
-                      <li
-                        key={m.id}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-paper-200 px-3 py-2 dark:border-umber-700"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{m.supplier_name}</p>
-                          <p className="truncate text-xs text-ink-500 dark:text-umber-300">
-                            {m.supplier_email}
-                          </p>
-                        </div>
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-                            m.status === "sent"
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
-                              : m.status === "bounced"
-                                ? "bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
-                                : "bg-paper-200 text-ink-600 dark:bg-umber-700 dark:text-paper-200"
-                          }`}
+                    {detail.messages.map((m) => {
+                      const Glyph = categoryIcon(m.supplier_category ?? "");
+                      return (
+                        <li
+                          key={m.id}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-paper-200 px-3 py-2 dark:border-umber-700"
                         >
-                          {t(`outreach.status_${m.status}`)}
-                        </span>
-                      </li>
-                    ))}
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            {/* Category as a glyph rather than a third line of
+                              text; the label rides on the meta line below. */}
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-paper-300">
+                              <Glyph className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                            </span>
+                            <div className="min-w-0">
+                              {/* A category means the card still resolves, so it
+                                is also what earns the link — same rule as the
+                                message threads. */}
+                              {m.supplier_category ? (
+                                <Link
+                                  to={`/app/suppliers/${m.supplier_id}`}
+                                  title={t("suppliers.open_card")}
+                                  className="inline-flex min-w-0 items-center gap-1 text-sm font-medium hover:underline"
+                                >
+                                  <span className="min-w-0 truncate">{m.supplier_name}</span>
+                                  <ArrowUpRight
+                                    className="h-3.5 w-3.5 shrink-0 text-ink-400 dark:text-umber-300"
+                                    aria-hidden="true"
+                                  />
+                                </Link>
+                              ) : (
+                                <p className="truncate text-sm font-medium">{m.supplier_name}</p>
+                              )}
+                              <p className="truncate text-xs text-ink-500 dark:text-umber-300">
+                                {m.supplier_category
+                                  ? `${t(`suppliers.cat.${m.supplier_category}`)} · ${m.supplier_email}`
+                                  : m.supplier_email}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                              m.status === "sent"
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
+                                : m.status === "bounced"
+                                  ? "bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
+                                  : "bg-paper-200 text-ink-600 dark:bg-umber-700 dark:text-paper-200"
+                            }`}
+                          >
+                            {t(`outreach.status_${m.status}`)}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>

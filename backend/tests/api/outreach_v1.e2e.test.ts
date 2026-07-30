@@ -379,6 +379,10 @@ describe("GET /api/outreach/campaigns/:id — detail view", () => {
     // table at read time so a later rename surfaces correctly).
     for (const msg of detail.data.messages) {
       expect(msg.supplier_name.length).toBeGreaterThan(0);
+      // The category comes along so the recipient row can say what kind of
+      // business this was, and it is also what tells the UI the card still
+      // resolves — see linkableListingCategories.
+      expect(msg.supplier_category).toBeTruthy();
     }
   });
 

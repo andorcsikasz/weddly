@@ -52,6 +52,7 @@ import {
   updateTemplate,
 } from "../domain/booking_messages";
 import { notifyCoupleOfVendorMessage, notifyVendorOfCoupleMessage } from "../domain/booking_notify";
+import { linkableListingCategory } from "../domain/listings";
 
 function parseId(raw: string | undefined, label: string): number {
   const n = Number(raw);
@@ -317,6 +318,7 @@ async function handleCoupleGetThread(ctx: Ctx): Promise<Response> {
     booking,
     readerKind: "couple",
     counterpartyName: vendorDisplayName(booking.supplier_id),
+    counterpartyCategory: linkableListingCategory(booking.supplier_id),
   });
   return json({ thread, unread: unreadCount(bookingId, "couple") });
 }

@@ -287,7 +287,7 @@ describe("booking messages — couple ↔ vendor thread", () => {
     "a couple's inquiry lands in the vendor's thread as a couple-sent message",
     async () => {
       wipeAll();
-      const { vendorToken, coupleToken, bookingId } = await bootstrapThread("inbound");
+      const { vendorToken, coupleToken, bookingId, listingId } = await bootstrapThread("inbound");
 
       const r = await req<{ thread: BookingThread; unread: number }>(
         "GET",
@@ -299,6 +299,9 @@ describe("booking messages — couple ↔ vendor thread", () => {
       expect(r.data.thread.booking_id).toBe(bookingId);
       // The thread renders from the READER's side: the vendor sees the couple.
       expect(r.data.thread.counterparty_name).toBe("Mia & Lucas");
+      // …and a couple has no directory category, so the vendor's read carries
+      // none. Only the couple's side gets a card to open.
+      expect(r.data.thread.counterparty_category).toBeNull();
       expect(r.data.thread.event_date).toBe("2026-09-12");
       expect(r.data.thread.messages).toHaveLength(1);
       const msg = r.data.thread.messages[0]!;
@@ -327,6 +330,54 @@ describe("booking messages — couple ↔ vendor thread", () => {
       expect(preview.last_body).toContain("Are you free?");
       // Their own message is not something they can have unread.
       expect(preview.unread_count).toBe(0);
+      // The row names the vendor's category and carries the id its card lives
+      // at: the couple should not have to open a thread to remember who this is.
+      expect(preview.supplier_id).toBe(listingId);
+      expect(preview.vendor_category).toBe("photography");
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  test(
+    "the vendor's category rides along, and a listing that stopped resolving keeps the name but loses the link",
+    async () => {
+      wipeAll();
+      const { coupleToken, bookingId, listingId } = await bootstrapThread("category");
+
+      const view = await req<{ thread: BookingThread }>(
+        "GET",
+        `/api/messages/threads/${bookingId}`,
+        undefined,
+        { token: coupleToken },
+      );
+      expect(view.status).toBe(200);
+      expect(view.data.thread.supplier_id).toBe(listingId);
+      expect(view.data.thread.counterparty_category).toBe("photography");
+
+      // Admin hides the listing after the conversation happened. The couple's
+      // thread must survive — the name is still who they talked to — but the
+      // category goes null, which is exactly what stops the UI linking to a
+      // card that no longer resolves at /app/suppliers/:id.
+      db.prepare("UPDATE listings SET status = 'hidden' WHERE id = ?").run(listingId);
+
+      const hidden = await req<{ thread: BookingThread }>(
+        "GET",
+        `/api/messages/threads/${bookingId}`,
+        undefined,
+        { token: coupleToken },
+      );
+      expect(hidden.status).toBe(200);
+      expect(hidden.data.thread.counterparty_name).toBe("category Studio");
+      expect(hidden.data.thread.counterparty_category).toBeNull();
+
+      const threads = await req<{ threads: CoupleVendorThreadPreview[] }>(
+        "GET",
+        "/api/messages/threads",
+        undefined,
+        { token: coupleToken },
+      );
+      expect(threads.data.threads[0]!.vendor_name).toBe("category Studio");
+      expect(threads.data.threads[0]!.vendor_category).toBeNull();
     },
     TEST_TIMEOUT_MS,
   );

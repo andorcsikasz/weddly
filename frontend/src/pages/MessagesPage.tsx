@@ -19,11 +19,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, MessageCircle, Send } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, MessageCircle, Send } from "lucide-react";
 import type { BookingMessage, CoupleVendorThreadPreview } from "@shared/booking_messages";
 import { BookingThreadPanel } from "../components/BookingThreadPanel";
 import { OutreachInbox } from "../components/OutreachInbox";
 import { Skeleton } from "../components/ui";
+import { categoryIcon } from "../lib/category_icons";
 import { bookingMessagesApi } from "../lib/endpoints";
 import { formatDateMs } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -76,35 +77,125 @@ function ThreadList() {
 
   return (
     <ul className="space-y-2">
-      {threads.map((thread) => (
-        <li key={thread.booking_id}>
-          <Link
-            to={`/app/messages/${thread.booking_id}`}
-            className="flex items-center gap-3 rounded-2xl border border-paper-300 bg-white p-4 transition hover:bg-paper-50 dark:border-umber-600 dark:bg-umber-800 dark:hover:bg-umber-700"
+      {threads.map((thread) => {
+        const Glyph = categoryIcon(thread.vendor_category ?? "");
+        return (
+          <li
+            key={thread.booking_id}
+            className="relative rounded-2xl border border-paper-300 bg-white transition hover:bg-paper-50 dark:border-umber-600 dark:bg-umber-800 dark:hover:bg-umber-700"
           >
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-2">
-                <span className="truncate font-medium text-ink-900 dark:text-paper-50">
-                  {thread.vendor_name}
+            {/* Two destinations in one row, which is why the row is no longer a
+                single <Link>: the card opens the conversation (an overlay link
+                covering it, so the whole thing stays one tap on a phone) and the
+                vendor's NAME goes to their card instead. Nested anchors are
+                invalid HTML, so the content is pointer-transparent and the one
+                thing that isn't the thread opts back in. */}
+            <Link
+              to={`/app/messages/${thread.booking_id}`}
+              aria-label={t("messages.open_thread_aria", { name: thread.vendor_name })}
+              className="absolute inset-0 rounded-2xl"
+            />
+            <div className="pointer-events-none flex items-center gap-3 p-4">
+              {/* The glyph carries the category visually; the label beside the
+                  name is for anyone who doesn't read glyphs. */}
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-paper-300">
+                <Glyph className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  {thread.vendor_category ? (
+                    <Link
+                      to={`/app/suppliers/${thread.supplier_id}`}
+                      title={t("suppliers.open_card")}
+                      className="pointer-events-auto relative inline-flex min-w-0 items-center gap-1 font-medium text-ink-900 hover:underline dark:text-paper-50"
+                    >
+                      <span className="min-w-0 truncate">{thread.vendor_name}</span>
+                      <ArrowUpRight
+                        className="h-3.5 w-3.5 shrink-0 text-ink-400 dark:text-paper-400"
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  ) : (
+                    <span className="truncate font-medium text-ink-900 dark:text-paper-50">
+                      {thread.vendor_name}
+                    </span>
+                  )}
+                  {thread.vendor_category ? (
+                    <span className="shrink-0 rounded-full bg-paper-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-500 dark:bg-umber-700 dark:text-paper-300">
+                      {t(`suppliers.cat.${thread.vendor_category}`)}
+                    </span>
+                  ) : null}
+                  {thread.unread_count > 0 ? (
+                    <span className="shrink-0 rounded-full bg-blush-500 px-2 py-0.5 text-xs font-semibold text-white">
+                      {thread.unread_count}
+                    </span>
+                  ) : null}
                 </span>
-                {thread.unread_count > 0 ? (
-                  <span className="rounded-full bg-blush-500 px-2 py-0.5 text-xs font-semibold text-white">
-                    {thread.unread_count}
-                  </span>
-                ) : null}
+                <span className="mt-0.5 block truncate text-sm text-ink-600 dark:text-paper-300">
+                  {thread.last_sender_kind === "couple" ? `${t("messages.you")}: ` : ""}
+                  {thread.last_body}
+                </span>
               </span>
-              <span className="mt-0.5 block truncate text-sm text-ink-600 dark:text-paper-300">
-                {thread.last_sender_kind === "couple" ? `${t("messages.you")}: ` : ""}
-                {thread.last_body}
+              <span className="shrink-0 text-xs text-ink-500 dark:text-paper-400">
+                {formatDateMs(thread.last_at, locale)}
               </span>
-            </span>
-            <span className="shrink-0 text-xs text-ink-500 dark:text-paper-400">
-              {formatDateMs(thread.last_at, locale)}
-            </span>
-          </Link>
-        </li>
-      ))}
+            </div>
+          </li>
+        );
+      })}
     </ul>
+  );
+}
+
+/** Name + category + category glyph, wrapped in a link to the vendor's card
+ *  when one resolves. Plain text otherwise — a header that looks tappable and
+ *  lands on a 404 is worse than a header. */
+function ThreadHeader({
+  name,
+  vendor,
+}: {
+  name: string;
+  vendor: { supplierId: string; category: string } | null;
+}) {
+  const { t } = useT();
+  const Glyph = categoryIcon(vendor?.category ?? "");
+  const inner = (
+    <>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-paper-300">
+        <Glyph className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="flex items-center gap-1">
+          <span className="truncate text-lg font-semibold text-ink-900 dark:text-paper-50">
+            {name}
+          </span>
+          {vendor ? (
+            <ArrowUpRight
+              className="h-4 w-4 shrink-0 text-ink-400 dark:text-paper-400"
+              aria-hidden="true"
+            />
+          ) : null}
+        </span>
+        {vendor ? (
+          <span className="block truncate text-xs uppercase tracking-wide text-ink-500 dark:text-paper-400">
+            {t(`suppliers.cat.${vendor.category}`)}
+          </span>
+        ) : null}
+      </span>
+    </>
+  );
+
+  if (!vendor) return <h2 className="flex items-center gap-3">{inner}</h2>;
+  return (
+    <h2>
+      <Link
+        to={`/app/suppliers/${vendor.supplierId}`}
+        title={t("suppliers.open_card")}
+        className="-m-1 flex items-center gap-3 rounded-2xl p-1 transition hover:bg-paper-50 dark:hover:bg-umber-700/60"
+      >
+        {inner}
+      </Link>
+    </h2>
   );
 }
 
@@ -113,6 +204,7 @@ function ThreadView({ bookingId }: { bookingId: number }) {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<BookingMessage[]>([]);
   const [name, setName] = useState("");
+  const [vendor, setVendor] = useState<{ supplierId: string; category: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -124,6 +216,13 @@ function ThreadView({ bookingId }: { bookingId: number }) {
         if (cancelled) return;
         setMessages(thread.messages);
         setName(thread.counterparty_name);
+        // A category is the server saying the card still resolves, so it is
+        // also the only thing that earns the link. See `counterparty_category`.
+        setVendor(
+          thread.counterparty_category
+            ? { supplierId: thread.supplier_id, category: thread.counterparty_category }
+            : null,
+        );
         setLoading(false);
         // Opening the thread IS reading it on this side: there is no list-then-
         // open step once you are here.
@@ -160,7 +259,9 @@ function ThreadView({ bookingId }: { bookingId: number }) {
         {t("messages.back")}
       </Link>
       <section className="card space-y-3">
-        <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">{name}</h2>
+        {/* The header is the profile door: glyph + name + category, the whole
+            block a link to the vendor's card when there is still a card. */}
+        <ThreadHeader name={name} vendor={vendor} />
         <BookingThreadPanel side="couple" messages={messages} loading={loading} onSend={send} />
       </section>
     </div>

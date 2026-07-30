@@ -1664,6 +1664,10 @@ export interface LocaleMessages {
     /** Prefix on the last-message preview when the couple wrote it. */
     you: string;
     back: string;
+    /** Accessible name for the whole-row link into a conversation. The row also
+     *  holds a link to the vendor's card, so neither can rely on the row's text
+     *  for its name. */
+    open_thread_aria: string;
     /** Tab row over the two halves of the surface. */
     tabs_aria: string;
     tab_threads: string;
@@ -5107,6 +5111,9 @@ export interface LocaleMessages {
     sub: string;
     contact_email: string;
     visit_website: string;
+    /** Tooltip on any vendor NAME that links to its directory card from outside
+     *  the directory — the message threads and the outreach recipient list. */
+    open_card: string;
     /** Tooltips on the muted Globe/Phone/Mail chips in the supplier card and
      *  Timeline point-of-contact card when the supplier has no contact data on
      *  file. */

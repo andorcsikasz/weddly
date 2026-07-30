@@ -61,6 +61,15 @@ export interface BookingThread {
   /** The other party's name: the couple's display name when a vendor reads,
    *  the listing name when a couple reads. */
   counterparty_name: string;
+  /** The booking's directory supplier id — the couple's link target for the
+   *  vendor's card. Present on both sides (it is the booking's own column); the
+   *  vendor already knows their own listing and ignores it. */
+  supplier_id: string;
+  /** Directory category key of the vendor's card (`photo_video`, …). Null on a
+   *  VENDOR's read, whose counterparty is a couple, and null when the listing
+   *  no longer resolves in the directory — see `linkableListingCategory`, which
+   *  makes non-null double as "there is a card at /app/suppliers/<id> to open". */
+  counterparty_category: string | null;
   /** ISO 'YYYY-MM-DD', or "" when the couple had no date at inquiry time. */
   event_date: string;
   messages: BookingMessage[];
@@ -77,6 +86,10 @@ export interface CoupleVendorThreadPreview {
   last_sender_kind: MessageSenderKind;
   /** Vendor-written messages this couple has not seen. */
   unread_count: number;
+  /** Directory category key of the vendor's card, null when the listing no
+   *  longer resolves. Same "non-null means linkable" contract as
+   *  `BookingThread.counterparty_category`. */
+  vendor_category: string | null;
 }
 
 /** A vendor's reusable canned reply. */
