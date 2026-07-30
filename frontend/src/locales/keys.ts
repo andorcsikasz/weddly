@@ -6698,9 +6698,25 @@ export interface LocaleMessages {
     /** Contact-coverage filter + the inline flag on a listing with no email:
      *  the claim-invite campaign mails contact_email, so those rows can only be
      *  chased by hand. */
+    /** LEGACY contact-select copy. The select is gone (the gaps below replaced
+     *  it); the keys stay because the CSV column header and older screenshots
+     *  still use this wording. */
     directory_filter_contact_label: string;
     directory_filter_contact_all: string;
     directory_filter_contact_no_email: string;
+    /** One per DIRECTORY_GAP, keyed `directory_gap_<gap>`: what the listing is
+     *  MISSING, phrased as the hole and never as a metric ("No email", not
+     *  "Email coverage"), because the chip is a filter, not a report. */
+    directory_gap_no_email: string;
+    directory_gap_no_phone: string;
+    directory_gap_no_website: string;
+    directory_gap_no_hero: string;
+    /** Overflow chip holding the rarely-set dimensions. */
+    directory_filter_more: string;
+    /** The word after the headline count when nothing is filtering. */
+    directory_total_count_word: string;
+    /** Replaces it when something is: receives `{total}`, the unfiltered size. */
+    directory_count_of: string;
     directory_no_email: string;
     directory_no_email_tooltip: string;
     directory_filter_status_label: string;

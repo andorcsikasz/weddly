@@ -23,7 +23,11 @@ import { purgeOneUser } from "../domain/purge";
 import { enrichSupplier } from "../domain/supplier_enrich";
 import { fetchAndStoreListingHero } from "../domain/listing_image_backfill";
 import { getListingById } from "../domain/listings";
-import { listDirectoryForAdmin, parseDirectoryFilters } from "../domain/supplier_views";
+import {
+  listDirectoryForAdmin,
+  listDirectoryWithFacets,
+  parseDirectoryFilters,
+} from "../domain/supplier_views";
 import { DIRECTORY } from "../domain/suppliers_data";
 import { requireAdmin } from "../domain/users";
 import { addAuditLog } from "../lib/audit";
@@ -487,8 +491,12 @@ async function handleCuratedDelete(ctx: Ctx): Promise<Response> {
 function handleDirectory(ctx: Ctx): Response {
   requireAdmin(ctx);
   const filters = parseDirectoryFilters(ctx.url.searchParams);
-  const rows = listDirectoryForAdmin(filters);
-  return json({ suppliers: rows, filters });
+  // Facets ride along with the rows rather than sitting behind their own
+  // endpoint: they are counted from the same in-memory catalogue this call
+  // already builds, so a second request would rebuild all 1000 rows to learn
+  // four numbers, and the two answers could disagree mid-edit.
+  const { rows, facets } = listDirectoryWithFacets(filters);
+  return json({ suppliers: rows, facets, filters });
 }
 
 /** RFC 4180 CSV cell: wrap in quotes and double internal quotes whenever the

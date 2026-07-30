@@ -3,13 +3,16 @@
 // directory view aggregates total / 30-day / 7-day windows; we don't bother
 // with finer buckets until the metric matters.
 
-import type {
-  AdminDirectoryFilters,
-  SupplierAnalytics,
-  SupplierCategory,
-  SupplierDirectoryAdminRow,
-  SupplierEventInput,
-  SupplierEventType,
+import {
+  type AdminDirectoryFacets,
+  type AdminDirectoryFilters,
+  DIRECTORY_GAPS,
+  type DirectoryGap,
+  type SupplierAnalytics,
+  type SupplierCategory,
+  type SupplierDirectoryAdminRow,
+  type SupplierEventInput,
+  type SupplierEventType,
 } from "@shared/suppliers";
 import { db, now } from "../db";
 import {
@@ -301,9 +304,60 @@ export function listDirectoryForAdmin(filters: AdminDirectoryFilters): SupplierD
   return rows.filter((row) => matches(row, filters));
 }
 
+/** The list plus its gap facet counts, in ONE pass over the catalogue.
+ *
+ *  The whole directory is assembled in memory anyway (curated entries live in
+ *  code, community rows are one query, heroes are one IN(...)), so counting the
+ *  four gaps costs a walk over an array we already hold. That is what makes the
+ *  chips affordable: they say "412" rather than making an admin apply a filter
+ *  to find out it was empty.
+ *
+ *  Gap counts are measured against `base` (every active filter EXCEPT the gap
+ *  toggles), per the rule on `AdminDirectoryFacets`. */
+export function listDirectoryWithFacets(filters: AdminDirectoryFilters): {
+  rows: SupplierDirectoryAdminRow[];
+  facets: AdminDirectoryFacets;
+} {
+  const base = listDirectoryForAdmin({ ...filters, gaps: undefined, contact: undefined });
+  const gaps = Object.fromEntries(DIRECTORY_GAPS.map((g) => [g, 0])) as Record<
+    DirectoryGap,
+    number
+  >;
+  for (const row of base) {
+    for (const gap of DIRECTORY_GAPS) if (hasGap(row, gap)) gaps[gap] += 1;
+  }
+  const active = activeGaps(filters);
+  const rows =
+    active.length === 0 ? base : base.filter((row) => active.every((g) => hasGap(row, g)));
+  return { rows, facets: { base_total: base.length, gaps } };
+}
+
+/** Is this hole present on this row? One place, so the filter, the facet count
+ *  and (via the row DTO) the table's inline warning can never disagree. */
+function hasGap(row: SupplierDirectoryAdminRow, gap: DirectoryGap): boolean {
+  switch (gap) {
+    case "no_email":
+      return (row.contact_email ?? "").trim().length === 0;
+    case "no_phone":
+      return (row.contact_phone ?? "").trim().length === 0;
+    case "no_website":
+      return (row.website ?? "").trim().length === 0;
+    case "no_hero":
+      return (row.hero_image_url ?? "").trim().length === 0;
+  }
+}
+
+/** Requested gaps, with the legacy `contact=no_email` folded in and duplicates
+ *  dropped. The two spellings of the same filter must not narrow twice. */
+function activeGaps(f: AdminDirectoryFilters): DirectoryGap[] {
+  const set = new Set<DirectoryGap>(f.gaps ?? []);
+  if (f.contact === "no_email") set.add("no_email");
+  return [...set];
+}
+
 function matches(row: SupplierDirectoryAdminRow, f: AdminDirectoryFilters): boolean {
   if (f.source && f.source !== "all" && row.source !== f.source) return false;
-  if (f.contact === "no_email" && (row.contact_email ?? "").trim().length > 0) return false;
+  for (const gap of activeGaps(f)) if (!hasGap(row, gap)) return false;
   if (f.status && f.status !== "all" && row.status !== f.status) return false;
   if (f.category && f.category !== "all" && row.category !== f.category) return false;
   if (f.city && f.city.trim().length > 0) {
@@ -339,6 +393,17 @@ export function parseDirectoryFilters(params: URLSearchParams): AdminDirectoryFi
   if (source === "curated" || source === "community" || source === "all") out.source = source;
   const contact = params.get("contact");
   if (contact === "no_email" || contact === "all") out.contact = contact;
+  // `gaps=no_email,no_hero`. Unknown names are dropped rather than 400'ing: this
+  // is a filter, and an admin who follows a stale link should get a list they
+  // can fix by hand, not an error page.
+  const gaps = params.get("gaps");
+  if (gaps) {
+    const wanted = gaps
+      .split(",")
+      .map((g) => g.trim())
+      .filter((g): g is DirectoryGap => (DIRECTORY_GAPS as readonly string[]).includes(g));
+    if (wanted.length > 0) out.gaps = [...new Set(wanted)];
+  }
   const status = params.get("status");
   if (
     status === "active" ||

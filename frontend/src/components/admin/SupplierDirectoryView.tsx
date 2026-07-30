@@ -1,5 +1,8 @@
 import {
+  type AdminDirectoryFacets,
   type AdminDirectoryFilters,
+  DIRECTORY_GAPS,
+  type DirectoryGap,
   SUPPLIER_GROUPS,
   type SupplierCategory,
   type SupplierDirectoryAdminRow,
@@ -7,18 +10,21 @@ import {
 import { intlLocale } from "../../lib/format";
 import { safeExternalHref } from "../../lib/url";
 import {
+  ChevronDown,
   Download,
   ExternalLink,
   Eye,
   EyeOff,
   ImageDown,
   MailX,
-  RotateCcw,
+  MapPin,
   Search,
+  SlidersHorizontal,
   Trash2,
   UserX,
+  X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConfirm, useEntryPrompt, useToast } from "../ui";
 import { ApiError } from "../../lib/api";
 import { adminSupplierApi } from "../../lib/endpoints";
@@ -91,6 +97,11 @@ export function SupplierDirectoryView() {
   const promptEntry = useEntryPrompt();
   const [filters, setFilters] = useState<AdminDirectoryFilters>(EMPTY_FILTERS);
   const [rows, setRows] = useState<SupplierDirectoryAdminRow[]>([]);
+  // Gap counts, from the same call as the rows. Null until the first response,
+  // which is why the chips render their count only when they have one: a chip
+  // reading "0" before anything loaded is a lie, and one that jumps from 0 to
+  // 412 reads as a bug.
+  const [facets, setFacets] = useState<AdminDirectoryFacets | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [sort, setSort] = useState<SortState>({ key: "views_total", dir: "desc" });
@@ -114,7 +125,9 @@ export function SupplierDirectoryView() {
     adminSupplierApi
       .listDirectory(filters)
       .then((r) => {
-        if (!cancelled) setRows(r.suppliers);
+        if (cancelled) return;
+        setRows(r.suppliers);
+        setFacets(r.facets);
       })
       .catch((e) => {
         if (!cancelled) {
@@ -252,6 +265,43 @@ export function SupplierDirectoryView() {
     setFilters(EMPTY_FILTERS);
   }
 
+  /** Gaps currently narrowing the list. The legacy `contact=no_email` shape is
+   *  folded in so a bookmarked URL lights the chip it corresponds to instead of
+   *  filtering invisibly. */
+  const activeGaps: DirectoryGap[] = useMemo(() => {
+    const set = new Set<DirectoryGap>(filters.gaps ?? []);
+    if (filters.contact === "no_email") set.add("no_email");
+    return [...set];
+  }, [filters.gaps, filters.contact]);
+
+  function toggleGap(gap: DirectoryGap) {
+    setFilters((cur) => {
+      const set = new Set<DirectoryGap>(cur.gaps ?? []);
+      if (cur.contact === "no_email") set.add("no_email");
+      if (set.has(gap)) set.delete(gap);
+      else set.add(gap);
+      const next = [...set];
+      // `contact` is dropped on the first toggle: keeping both spellings alive
+      // would let the legacy field silently re-apply a chip the admin just
+      // turned off.
+      return { ...cur, contact: undefined, gaps: next.length > 0 ? next : undefined };
+    });
+  }
+
+  /** Is anything narrowing the list? Drives whether a reset affordance exists
+   *  at all. Compared field by field rather than by JSON, so an undefined and a
+   *  missing key can't read as a difference. */
+  const dirty =
+    activeGaps.length > 0 ||
+    (filters.source ?? "all") !== "all" ||
+    (filters.status ?? "all") !== "all" ||
+    (filters.category ?? "all") !== "all" ||
+    (filters.city ?? "").trim().length > 0 ||
+    (filters.q ?? "").trim().length > 0 ||
+    Boolean(filters.min_views) ||
+    Boolean(filters.from) ||
+    Boolean(filters.to);
+
   function toggleSort(key: SortKey) {
     setSort((cur) =>
       cur.key === key ? { key, dir: cur.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" },
@@ -299,18 +349,21 @@ export function SupplierDirectoryView() {
             {t("admin.directory_sub")}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-neutral-500 dark:text-umber-300">
-            {t("admin.directory_total_count", { n: rows.length })}
+        <div className="flex items-center gap-3">
+          {/* The count is the page's headline number, so it is set as one. When
+              a filter is narrowing the list it also says what it is narrowing
+              FROM, which is the difference between "1004 suppliers" and "412 of
+              1004" and the thing an admin is actually reading here. */}
+          <span className="flex items-baseline gap-1.5">
+            <span className="stat-num text-lg text-neutral-900 dark:text-paper-50">
+              {rows.length}
+            </span>
+            <span className="text-xs text-neutral-500 dark:text-umber-300">
+              {dirty && facets
+                ? t("admin.directory_count_of", { total: facets.base_total })
+                : t("admin.directory_total_count_word")}
+            </span>
           </span>
-          <button
-            type="button"
-            className="btn-ghost btn-sm"
-            onClick={resetFilters}
-            aria-label={t("admin.directory_reset_filters")}
-          >
-            <RotateCcw size={14} /> {t("admin.directory_reset_filters")}
-          </button>
           <button
             type="button"
             className="btn-primary btn-sm"
@@ -322,84 +375,131 @@ export function SupplierDirectoryView() {
         </div>
       </header>
 
-      {/* Filter strip. Lay out as a wrapped flex so each control gets a
-          comfortable minimum width on phones. */}
-      <div className="grid grid-cols-1 gap-x-3 gap-y-2 rounded-xl border border-paper-300 bg-paper-50 p-3 dark:border-umber-700 dark:bg-umber-800/60 sm:grid-cols-2 lg:grid-cols-4">
-        <FilterSelect
-          label={t("admin.directory_filter_source_label")}
-          value={filters.source ?? "all"}
-          onChange={(v) => setFilter("source", v as AdminDirectoryFilters["source"])}
-          options={[
-            { value: "all", label: t("admin.directory_filter_source_all") },
-            { value: "curated", label: t("admin.directory_filter_source_curated") },
-            { value: "community", label: t("admin.directory_filter_source_community") },
-          ]}
-        />
-        <FilterSelect
-          label={t("admin.directory_filter_contact_label")}
-          value={filters.contact ?? "all"}
-          onChange={(v) => setFilter("contact", v as AdminDirectoryFilters["contact"])}
-          options={[
-            { value: "all", label: t("admin.directory_filter_contact_all") },
-            { value: "no_email", label: t("admin.directory_filter_contact_no_email") },
-          ]}
-        />
-        <FilterSelect
-          label={t("admin.directory_filter_status_label")}
-          value={filters.status ?? "all"}
-          onChange={(v) => setFilter("status", v as AdminDirectoryFilters["status"])}
-          options={[
-            { value: "all", label: t("admin.filter_status_all") },
-            { value: "active", label: t("admin.filter_status_active") },
-            { value: "pending", label: t("admin.filter_status_pending") },
-            { value: "awaiting_review", label: t("admin.filter_status_awaiting_review") },
-            { value: "hidden", label: t("admin.filter_status_hidden") },
-          ]}
-        />
-        <FilterSelect
-          label={t("admin.directory_filter_category_label")}
-          value={filters.category ?? "all"}
-          onChange={(v) => setFilter("category", v as AdminDirectoryFilters["category"])}
-          options={[
-            { value: "all", label: t("admin.directory_filter_category_all") },
-            ...CATEGORIES.map((c) => ({ value: c, label: t(`suppliers.cat.${c}`) })),
-          ]}
-        />
-        <FilterInput
-          label={t("admin.directory_filter_city_label")}
-          value={filters.city ?? ""}
-          placeholder={t("admin.directory_filter_city_placeholder")}
-          onChange={(v) => setFilter("city", v)}
-        />
-        <FilterInput
-          label={t("admin.directory_filter_search_label")}
-          value={filters.q ?? ""}
-          placeholder={t("admin.directory_filter_search_placeholder")}
-          onChange={(v) => setFilter("q", v)}
-          icon={<Search size={14} aria-hidden />}
-        />
-        <FilterInput
-          label={t("admin.directory_filter_min_views_label")}
-          value={filters.min_views ? String(filters.min_views) : ""}
-          placeholder="0"
-          type="number"
-          onChange={(v) => {
-            const n = Number(v);
-            setFilter("min_views", Number.isFinite(n) && n > 0 ? Math.floor(n) : undefined);
-          }}
-        />
-        <FilterInput
-          label={t("admin.directory_filter_from_label")}
-          value={toDateInput(filters.from)}
-          type="date"
-          onChange={(v) => setFilter("from", fromDateInput(v, false))}
-        />
-        <FilterInput
-          label={t("admin.directory_filter_to_label")}
-          value={toDateInput(filters.to)}
-          type="date"
-          onChange={(v) => setFilter("to", fromDateInput(v, true))}
-        />
+      {/* Filter bar. One search field and a row of chips, not nine labelled
+          form controls in a grid.
+
+          The grid version put every dimension on screen at equal weight, which
+          is how a filter an admin needs weekly (no email address: the listings
+          no outbound flow can reach) ended up as one option inside a select
+          labelled "Kapcsolat". Here the four data GAPS are one-tap toggles
+          carrying their own counts, so the answer to "how many are unreachable"
+          is on screen before anything is clicked, and everything else is a pill
+          that names its own value when set. */}
+      <div className="flex flex-col gap-2.5">
+        <label className="relative flex items-center">
+          <Search
+            size={16}
+            aria-hidden
+            className="pointer-events-none absolute left-3.5 text-neutral-400 dark:text-umber-300"
+          />
+          <span className="sr-only">{t("admin.directory_filter_search_label")}</span>
+          <input
+            type="search"
+            value={filters.q ?? ""}
+            onChange={(e) => setFilter("q", e.target.value)}
+            placeholder={t("admin.directory_filter_search_placeholder")}
+            className="input w-full !rounded-full !py-2 pl-10"
+          />
+        </label>
+
+        {/* Chips scroll rather than wrap on a phone: a wrapping row of ten
+            reflows the table down the screen every time one is toggled. */}
+        <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1">
+          {DIRECTORY_GAPS.map((gap) => (
+            <ToggleChip
+              key={gap}
+              label={t(`admin.directory_gap_${gap}`)}
+              count={facets?.gaps[gap]}
+              active={activeGaps.includes(gap)}
+              onClick={() => toggleGap(gap)}
+            />
+          ))}
+
+          <span className="h-5 w-px shrink-0 bg-paper-300 dark:bg-umber-700" aria-hidden />
+
+          <SelectChip
+            label={t("admin.directory_filter_source_label")}
+            value={filters.source ?? "all"}
+            onChange={(v) => setFilter("source", v as AdminDirectoryFilters["source"])}
+            options={[
+              { value: "all", label: t("admin.directory_filter_source_all") },
+              { value: "curated", label: t("admin.directory_filter_source_curated") },
+              { value: "community", label: t("admin.directory_filter_source_community") },
+            ]}
+          />
+          <SelectChip
+            label={t("admin.directory_filter_status_label")}
+            value={filters.status ?? "all"}
+            onChange={(v) => setFilter("status", v as AdminDirectoryFilters["status"])}
+            options={[
+              { value: "all", label: t("admin.filter_status_all") },
+              { value: "active", label: t("admin.filter_status_active") },
+              { value: "pending", label: t("admin.filter_status_pending") },
+              { value: "awaiting_review", label: t("admin.filter_status_awaiting_review") },
+              { value: "hidden", label: t("admin.filter_status_hidden") },
+            ]}
+          />
+          <SelectChip
+            label={t("admin.directory_filter_category_label")}
+            value={filters.category ?? "all"}
+            onChange={(v) => setFilter("category", v as AdminDirectoryFilters["category"])}
+            options={[
+              { value: "all", label: t("admin.directory_filter_category_all") },
+              ...CATEGORIES.map((c) => ({ value: c, label: t(`suppliers.cat.${c}`) })),
+            ]}
+          />
+          <InputChip
+            label={t("admin.directory_filter_city_label")}
+            value={filters.city ?? ""}
+            placeholder={t("admin.directory_filter_city_placeholder")}
+            onChange={(v) => setFilter("city", v)}
+          />
+          {/* The three rare dimensions live one tap away rather than on the
+              bar: an admin sets a date window or a view floor occasionally,
+              and they cost three controls of permanent width. */}
+          <MoreChip
+            label={t("admin.directory_filter_more")}
+            activeCount={
+              (filters.min_views ? 1 : 0) + (filters.from ? 1 : 0) + (filters.to ? 1 : 0)
+            }
+          >
+            <FilterInput
+              label={t("admin.directory_filter_min_views_label")}
+              value={filters.min_views ? String(filters.min_views) : ""}
+              placeholder="0"
+              type="number"
+              onChange={(v) => {
+                const n = Number(v);
+                setFilter("min_views", Number.isFinite(n) && n > 0 ? Math.floor(n) : undefined);
+              }}
+            />
+            <FilterInput
+              label={t("admin.directory_filter_from_label")}
+              value={toDateInput(filters.from)}
+              type="date"
+              onChange={(v) => setFilter("from", fromDateInput(v, false))}
+            />
+            <FilterInput
+              label={t("admin.directory_filter_to_label")}
+              value={toDateInput(filters.to)}
+              type="date"
+              onChange={(v) => setFilter("to", fromDateInput(v, true))}
+            />
+          </MoreChip>
+
+          {/* Only when there is something to clear. A permanent reset button is
+              a permanent invitation to lose the filter you just built. */}
+          {dirty && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-neutral-600 transition-colors hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
+            >
+              <X size={13} aria-hidden />
+              {t("admin.directory_reset_filters")}
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -722,7 +822,60 @@ function SortableTh({
   );
 }
 
-function FilterSelect({
+// ── Chips ──────────────────────────────────────────────────────────────────
+// One height (32px), one radius (full), one active treatment (ink fill) across
+// all four, so a row of them reads as one control rather than four widgets.
+
+const CHIP =
+  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors";
+const CHIP_OFF =
+  "border-paper-300 bg-paper-50 text-neutral-700 hover:border-neutral-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500";
+const CHIP_ON =
+  "border-neutral-900 bg-neutral-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-neutral-900";
+
+/** A binary filter: on or off, one tap, and it carries how many rows it would
+ *  give you. The count is what makes the chip worth the width, since "no
+ *  website: 6" is a decision not to bother and "no email: 412" is an afternoon
+ *  of work. */
+function ToggleChip({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  count?: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`${CHIP} ${active ? CHIP_ON : CHIP_OFF}`}
+    >
+      {label}
+      {count !== undefined && (
+        <span
+          className={`stat-num text-[11px] ${
+            active
+              ? "text-paper-50/70 dark:text-neutral-900/60"
+              : "text-neutral-400 dark:text-umber-300"
+          }`}
+        >
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** A one-of-many filter. The chip shows the CHOSEN value once set, not the
+ *  dimension name, because "Fotós" is what the admin is looking at and
+ *  "Kategória: Fotós" spends half the chip repeating a word they just picked
+ *  from. The dimension survives as the accessible name. */
+function SelectChip({
   label,
   value,
   onChange,
@@ -733,14 +886,20 @@ function FilterSelect({
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
 }) {
+  const active = value !== "all";
+  const current = options.find((o) => o.value === value);
   return (
-    <label className="flex flex-col gap-0.5 text-xs">
-      <span className="uppercase tracking-wide text-neutral-500 dark:text-umber-300">{label}</span>
+    <span className={`${CHIP} relative ${active ? CHIP_ON : CHIP_OFF} pr-2`}>
+      <span className="pointer-events-none">{active ? (current?.label ?? label) : label}</span>
+      <ChevronDown size={13} aria-hidden className="pointer-events-none opacity-60" />
+      {/* A native select stretched invisibly over the chip: it gets the
+          platform's own menu (searchable on desktop, a wheel on iOS) for free,
+          which a hand-rolled listbox of 30 categories would have to rebuild. */}
       <select
-        className="input !min-h-0 !py-1.5"
+        aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        aria-label={label}
+        className="absolute inset-0 cursor-pointer opacity-0"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -748,7 +907,100 @@ function FilterSelect({
           </option>
         ))}
       </select>
-    </label>
+    </span>
+  );
+}
+
+/** A free-text filter that stays a chip until it has something in it. Sized to
+ *  its own content so an empty "Város" is chip-sized and a typed one grows to
+ *  fit the town rather than truncating it. */
+function InputChip({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  onChange: (v: string) => void;
+}) {
+  const active = value.trim().length > 0;
+  return (
+    <span className={`${CHIP} ${active ? CHIP_ON : CHIP_OFF} px-3`}>
+      <MapPin size={13} aria-hidden className="opacity-60" />
+      <input
+        type="text"
+        aria-label={label}
+        value={value}
+        placeholder={placeholder ?? label}
+        onChange={(e) => onChange(e.target.value)}
+        size={Math.max(6, Math.min(18, value.length || label.length))}
+        className="border-0 bg-transparent p-0 text-xs font-medium placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:placeholder:text-umber-300"
+      />
+      {active && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          aria-label={`${label}: ×`}
+          className="opacity-70 hover:opacity-100"
+        >
+          <X size={12} aria-hidden />
+        </button>
+      )}
+    </span>
+  );
+}
+
+/** The overflow chip: the dimensions that are worth having but not worth
+ *  permanent width. Closes on outside click and on Escape, like every other
+ *  dropdown in the app. */
+function MoreChip({
+  label,
+  activeCount,
+  children,
+}: {
+  label: string;
+  activeCount: number;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <span className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={`${CHIP} ${activeCount > 0 ? CHIP_ON : CHIP_OFF}`}
+      >
+        <SlidersHorizontal size={13} aria-hidden />
+        {label}
+        {activeCount > 0 && <span className="stat-num text-[11px]">{activeCount}</span>}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-30 mt-2 flex w-64 flex-col gap-3 rounded-2xl border border-paper-300 bg-white p-3 shadow-pop dark:border-umber-700 dark:bg-umber-800">
+          {children}
+        </div>
+      )}
+    </span>
   );
 }
 

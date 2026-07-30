@@ -161,6 +161,7 @@ import type {
 } from "@shared/admin_analytics";
 import type {
   AdminDirectoryFilters,
+  AdminDirectoryListResponse,
   AdminFlaggedReviewsResponse,
   CommentListResponse,
   CreateBookingBody,
@@ -3485,7 +3486,7 @@ export const adminSupplierApi = {
   /** Full directory (curated + community) with per-supplier visit analytics.
    *  Filters narrow the row set; analytics counters always span total/30d/7d. */
   listDirectory: (filters: AdminDirectoryFilters) =>
-    apiFetch<{ suppliers: SupplierDirectoryAdminRow[]; filters: AdminDirectoryFilters }>(
+    apiFetch<AdminDirectoryListResponse & { filters: AdminDirectoryFilters }>(
       "GET",
       `/api/admin/suppliers/directory${buildDirectoryQuery(filters)}`,
     ),
@@ -3508,6 +3509,10 @@ function buildDirectoryQuery(f: AdminDirectoryFilters): string {
   const p = new URLSearchParams();
   if (f.source && f.source !== "all") p.set("source", f.source);
   if (f.contact && f.contact !== "all") p.set("contact", f.contact);
+  // One repeated key would be the other option; a comma list keeps the CSV
+  // download URL short enough to paste into a message, which is what these
+  // exports get used for.
+  if (f.gaps && f.gaps.length > 0) p.set("gaps", f.gaps.join(","));
   if (f.status && f.status !== "all") p.set("status", f.status);
   if (f.category && f.category !== "all") p.set("category", f.category);
   if (f.city && f.city.trim().length > 0) p.set("city", f.city.trim());

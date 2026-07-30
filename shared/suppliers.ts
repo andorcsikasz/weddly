@@ -945,12 +945,17 @@ export interface SupplierDirectoryAdminRow {
  *  the metric windows). */
 export interface AdminDirectoryFilters {
   source?: "curated" | "community" | "all";
-  /** Contact coverage. "no_email" narrows to listings with no contact_email,
-   *  which is the set no outbound flow can reach: the claim-invite campaign
-   *  mails contact_email, so a listing without one can never be offered to its
-   *  owner and has to be chased by hand. Whole scraped batches arrive this way
-   *  (Google Maps publishes a phone and a website, never an address). */
+  /** LEGACY single-select contact filter, superseded by `gaps`. Still parsed so
+   *  a bookmarked list URL or an old CSV export link keeps working; the server
+   *  folds `contact=no_email` into `gaps: ["no_email"]` and nothing downstream
+   *  reads this field. Do not add values here: add a `DirectoryGap` instead. */
   contact?: "all" | "no_email";
+  /** What a listing is MISSING. Independent toggles rather than one dropdown,
+   *  because the question an admin actually has is a combination ("no email and
+   *  no phone" is the truly unreachable set), and because a gap hidden inside a
+   *  select labelled "Kapcsolat" is a gap nobody finds. AND-ed: every listed gap
+   *  must be present on the row. */
+  gaps?: DirectoryGap[];
   status?: "active" | "pending" | "awaiting_review" | "hidden" | "all";
   category?: SupplierCategory | "all";
   city?: string;
@@ -958,6 +963,44 @@ export interface AdminDirectoryFilters {
   min_views?: number;
   from?: number | null;
   to?: number | null;
+}
+
+/** The four holes worth filtering a catalogue of 1000 businesses by, each one
+ *  the reason some flow cannot run:
+ *
+ *   • `no_email`   nothing outbound can reach it. The claim-invite campaign
+ *                  mails `contact_email`, so a listing without one can never be
+ *                  offered to its owner and has to be chased by hand. Whole
+ *                  scraped batches arrive this way (Google Maps publishes a
+ *                  phone and a website, never an address).
+ *   • `no_phone`   with no email either, the row is unreachable outright.
+ *   • `no_website` no hero can ever be auto-fetched (the refetch button reads
+ *                  the site), and there is nothing for a couple to click.
+ *   • `no_hero`    the card renders as an empty grey tile in the directory,
+ *                  which is the single most visible quality problem a couple
+ *                  meets.
+ */
+export const DIRECTORY_GAPS = ["no_email", "no_phone", "no_website", "no_hero"] as const;
+
+export type DirectoryGap = (typeof DIRECTORY_GAPS)[number];
+
+/** Facet counts returned beside the rows.
+ *
+ *  Each gap count is measured against the rows matching every OTHER active
+ *  filter but NO gap toggle, so a chip always answers "how many would this give
+ *  me" rather than "how many are left after I already applied it". Without that
+ *  rule the counts collapse to the result total the moment one is on, and a
+ *  number that only ever agrees with itself is worse than no number. */
+export interface AdminDirectoryFacets {
+  /** Rows matching the non-gap filters: the denominator the gap counts are of. */
+  base_total: number;
+  gaps: Record<DirectoryGap, number>;
+}
+
+/** `GET /api/admin/suppliers/directory`. */
+export interface AdminDirectoryListResponse {
+  suppliers: SupplierDirectoryAdminRow[];
+  facets: AdminDirectoryFacets;
 }
 
 // ─── Supplier detail page (admin-only v1) ───────────────────────────────────

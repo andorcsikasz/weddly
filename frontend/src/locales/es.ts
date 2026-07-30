@@ -5874,6 +5874,13 @@ const es: LocaleMessages = {
     directory_filter_contact_label: "Contacto",
     directory_filter_contact_all: "Todos",
     directory_filter_contact_no_email: "Sin correo",
+    directory_gap_no_email: "Sin correo",
+    directory_gap_no_phone: "Sin teléfono",
+    directory_gap_no_website: "Sin web",
+    directory_gap_no_hero: "Sin foto",
+    directory_filter_more: "Más",
+    directory_total_count_word: "proveedores",
+    directory_count_of: "de {total}",
     directory_no_email: "Sin correo",
     directory_no_email_tooltip:
       "El anuncio no tiene correo, así que la campaña de reclamación no puede contactarlo. Solo se llega a mano.",

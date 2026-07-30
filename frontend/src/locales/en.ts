@@ -5764,6 +5764,13 @@ const en: LocaleMessages = {
     directory_filter_contact_label: "Contact",
     directory_filter_contact_all: "All",
     directory_filter_contact_no_email: "No email",
+    directory_gap_no_email: "No email",
+    directory_gap_no_phone: "No phone",
+    directory_gap_no_website: "No website",
+    directory_gap_no_hero: "No photo",
+    directory_filter_more: "More",
+    directory_total_count_word: "suppliers",
+    directory_count_of: "of {total}",
     directory_no_email: "No email",
     directory_no_email_tooltip:
       "No email address on the listing, so the claim-invite campaign can't reach it. Only reachable by hand.",
