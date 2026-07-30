@@ -76,8 +76,16 @@ function Providers({ children }: { children: ReactNode }) {
   );
 }
 
-function pick(category: string, supplier_id: string): CouplePick {
-  return { category, supplier_id, picked_by_user_id: 1, picked_at: 0 };
+/** A pick, optionally carrying the picked listing's phone. The number lives on
+ *  the PICK now, not on the catalogue row: `/api/suppliers` no longer returns
+ *  contact values to anybody, so the server resolves the phone for the handful
+ *  of listings this couple actually picked. */
+function pick(
+  category: string,
+  supplier_id: string,
+  contact_phone: string | null = null,
+): CouplePick {
+  return { category, supplier_id, picked_by_user_id: 1, picked_at: 0, contact_phone };
 }
 
 function dir(over: Partial<DirectorySupplier>): DirectorySupplier {
@@ -134,7 +142,11 @@ afterEach(() => {
 
 describe("<KeyInfoCard>", () => {
   it("shows the picked directory venue richly (coords + phone) when nothing is overridden", async () => {
-    picks = [pick("venue", "v1"), pick("photography", "p1"), pick("dj", "d1")];
+    picks = [
+      pick("venue", "v1", "+36 1 200 8817"),
+      pick("photography", "p1", "+36 20 111 2222"),
+      pick("dj", "d1"),
+    ];
     suppliers = [
       dir({
         id: "v1",
@@ -179,7 +191,7 @@ describe("<KeyInfoCard>", () => {
   });
 
   it("manual venue fields override the picked venue, and renders coordinator + emergency rows", async () => {
-    picks = [pick("venue", "v1")];
+    picks = [pick("venue", "v1", "+36 1 200 8817")];
     suppliers = [
       dir({
         id: "v1",
@@ -287,7 +299,7 @@ describe("<KeyInfoCard>", () => {
     // The couple picked Aranybástya, then retyped the venue name to a different
     // venue without re-picking. The card must NOT lend the old vendor's phone or
     // detail page to the renamed venue (the Kulcsinfó stale-relink bug).
-    picks = [pick("venue", "v1")];
+    picks = [pick("venue", "v1", "+36 1 200 8817")];
     suppliers = [
       dir({
         id: "v1",
