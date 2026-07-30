@@ -34,6 +34,7 @@ import { Link } from "react-router-dom";
 import { VendorListingMockup } from "../components/mockups";
 import { PublicShell } from "../components/PublicShell";
 import { SubmitSupplierModal } from "../components/SubmitSupplierModal";
+import { TracingFrame } from "../components/TracingFrame";
 import { VendorDemoLaunchButton } from "../components/VendorDemoLaunchButton";
 import { VendorSearchBar } from "../components/VendorSearchBar";
 import { useToast } from "../components/ui";
@@ -169,33 +170,44 @@ export default function VendorsPage() {
       {/* Recommend-a-supplier prompt — two ways to help: register the vendor
           yourself (verify email, no account needed) or pass the link on. It sits
           ABOVE the closing band on purpose: it is the secondary ask, aimed at a
-          visitor who isn't the vendor, so it must not be what the page ends on. */}
-      <section className="mx-auto max-w-3xl px-4 pb-12 sm:px-6">
-        <div className="card flex flex-col items-start gap-5 !p-6 sm:flex-row sm:items-center sm:justify-between sm:!p-8">
-          <div className="min-w-0">
-            <h2 className="font-grotesk text-xl text-ink-900 sm:text-2xl dark:text-paper-50">
-              {t("vendors.recommend_title")}
-            </h2>
+          visitor who isn't the vendor, so it must not be what the page ends on.
+          Same max-w-6xl + padding as the benefits grid above, so the two blocks
+          share one edge instead of the ask reading as a narrower afterthought.
+          Dark plate with a tracing frame (four laps, see `.trace-frame` in
+          index.css): this is the one block on the page allowed to ask for
+          attention, because everything else here is aimed at the vendor and
+          this is aimed at whoever else wandered in. */}
+      <section className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
+        <TracingFrame className="rounded-2xl shadow-soft dark:shadow-none">
+          <div className="flex flex-col items-start gap-5 rounded-[calc(1rem-3px)] bg-ink-900 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 dark:bg-ink-950">
+            <div className="min-w-0">
+              <h2 className="font-grotesk text-xl text-paper-50 sm:text-2xl">
+                {t("vendors.recommend_title")}
+              </h2>
+            </div>
+            {/* Side by side on desktop rather than stacked: on the wider card the
+                two-high stack left a lake of empty plate between the heading and
+                the buttons. */}
+            <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setRegisterOpen(true)}
+                className="btn-outline inline-flex items-center justify-center gap-2 whitespace-nowrap"
+              >
+                <Store size={16} aria-hidden />
+                {t("vendors.recommend_register_cta")}
+              </button>
+              <button
+                type="button"
+                onClick={shareRecommendPrompt}
+                className="btn-outline inline-flex items-center justify-center gap-2 whitespace-nowrap"
+              >
+                <Share2 size={16} aria-hidden />
+                {t("vendors.recommend_share_cta")}
+              </button>
+            </div>
           </div>
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setRegisterOpen(true)}
-              className="btn-outline inline-flex items-center justify-center gap-2 whitespace-nowrap"
-            >
-              <Store size={16} aria-hidden />
-              {t("vendors.recommend_register_cta")}
-            </button>
-            <button
-              type="button"
-              onClick={shareRecommendPrompt}
-              className="btn-outline inline-flex items-center justify-center gap-2 whitespace-nowrap"
-            >
-              <Share2 size={16} aria-hidden />
-              {t("vendors.recommend_share_cta")}
-            </button>
-          </div>
-        </div>
+        </TracingFrame>
       </section>
 
       <SubmitSupplierModal

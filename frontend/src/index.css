@@ -1909,3 +1909,206 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     margin-right: 1.5rem;
   }
 }
+
+/* ── Tracing frame: a light that runs a card's border, four laps, then out ──
+   For ONE deliberately loud card on an otherwise calm page (the "know a good
+   vendor?" ask at the foot of /vendors). Four laps is the whole brief: enough
+   to catch an eye scrolling past, few enough that the page settles instead of
+   pulsing at the reader forever. Driven by `.is-tracing`, which the component
+   adds when the card scrolls into view, so the laps are never spent above the
+   fold where nobody sees them.
+
+   FOUR SEGMENTS, ONE PER EDGE, rather than the usual single rotating conic
+   gradient. A conic sweep maps ANGLE to position, and this card is roughly 11:1,
+   so that mapping is wildly uneven: the bright core smears across half the
+   bottom edge, then crosses the short ends in an angular sliver so thin it never
+   visibly lights them. Measured on the real page, most of the lap read as
+   nothing happening. One bar per edge travels at a constant speed and keeps the
+   same length wherever it is on the border.
+
+   The frame's own hairline (the wrapper's background, showing through the 2px
+   padding ring) is what the card wears once the light has gone. */
+@keyframes trace-envelope {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* Each bar is 30% of its edge, so a full traverse is (100 + 30) / 30 = 433.33%
+   of its own length: from just off one corner to just past the next. */
+@keyframes trace-edge-top {
+  0% {
+    opacity: 1;
+    transform: translateX(-100%);
+  }
+  40% {
+    opacity: 1;
+    transform: translateX(333.33%);
+  }
+  40.01%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes trace-edge-right {
+  0%,
+  40% {
+    opacity: 0;
+  }
+  40.01% {
+    opacity: 1;
+    transform: translateY(-100%);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(333.33%);
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes trace-edge-bottom {
+  0%,
+  50% {
+    opacity: 0;
+  }
+  50.01% {
+    opacity: 1;
+    transform: translateX(333.33%);
+  }
+  90% {
+    opacity: 1;
+    transform: translateX(-100%);
+  }
+  90.01%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes trace-edge-left {
+  0%,
+  90% {
+    opacity: 0;
+  }
+  90.01% {
+    opacity: 1;
+    transform: translateY(333.33%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-100%);
+  }
+}
+.trace-frame {
+  --trace-lap: 1.5s;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  /* 3px, not a hairline. Measured on the page: at 2px the running light was
+     legible in a 3x capture and invisible at normal size, which defeats the
+     point of it. */
+  padding: 3px;
+  background: theme("colors.ink.700");
+}
+html.dark .trace-frame {
+  background: theme("colors.umber.700");
+}
+/* The card's own plate rides above the light; only the padding ring shows it. */
+.trace-frame > :not(.trace-run) {
+  position: relative;
+  z-index: 1;
+}
+.trace-run {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.trace-frame.is-tracing .trace-run {
+  animation: trace-envelope calc(var(--trace-lap) * 4) linear forwards;
+}
+.trace-run > i {
+  position: absolute;
+  display: block;
+  opacity: 0;
+}
+.trace-frame.is-tracing .trace-run > i {
+  animation-duration: var(--trace-lap);
+  animation-timing-function: linear;
+  animation-iteration-count: 4;
+}
+/* Warm brass shoulders into a near-white core, which is what makes it read as
+   light travelling rather than a coloured stripe sliding. The glow is clipped to
+   the ring by the wrapper's `overflow: hidden` and the plate above it, so it
+   widens the apparent line instead of leaking into the card. */
+.trace-run > i {
+  box-shadow: 0 0 10px 1px theme("colors.paper.300" / 55%);
+}
+.trace-run-top,
+.trace-run-bottom {
+  left: 0;
+  height: 3px;
+  width: 30%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    theme("colors.paper.400") 20%,
+    theme("colors.paper.50") 50%,
+    theme("colors.paper.400") 80%,
+    transparent
+  );
+}
+.trace-run-left,
+.trace-run-right {
+  top: 0;
+  width: 3px;
+  height: 30%;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    theme("colors.paper.400") 20%,
+    theme("colors.paper.50") 50%,
+    theme("colors.paper.400") 80%,
+    transparent
+  );
+}
+.trace-run-top {
+  top: 0;
+}
+.trace-run-bottom {
+  bottom: 0;
+}
+.trace-run-left {
+  left: 0;
+}
+.trace-run-right {
+  right: 0;
+}
+.trace-frame.is-tracing .trace-run-top {
+  animation-name: trace-edge-top;
+}
+.trace-frame.is-tracing .trace-run-right {
+  animation-name: trace-edge-right;
+}
+.trace-frame.is-tracing .trace-run-bottom {
+  animation-name: trace-edge-bottom;
+}
+.trace-frame.is-tracing .trace-run-left {
+  animation-name: trace-edge-left;
+}
+/* Decoration only: the card keeps its hairline and loses nothing but the show. */
+@media (prefers-reduced-motion: reduce) {
+  .trace-run {
+    display: none;
+  }
+}
