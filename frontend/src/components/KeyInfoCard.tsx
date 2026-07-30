@@ -74,17 +74,15 @@ import { CATEGORY_ICON } from "../lib/category_icons";
 const MAX_CONTACTS = 4;
 const STORAGE_KEY = "weddly.dashboard.keyinfo";
 
-/** Shared shape for the two header controls (all-vendors, collapse). Open, they
- *  sit on the blush cap and go white-on-accent; collapsed, they sit on the card
- *  surface and keep the usual ink treatment. Slightly smaller when open, since
- *  that row's whole point is to be thin. */
+/** The collapse control. Open, it sits on the black cap and goes light-on-dark;
+ *  collapsed, it sits on the card surface and keeps the usual ink treatment.
+ *  Smaller when open, since that row's whole point is to be thin: a 24px target
+ *  inside a 24px strip is what keeps the cap from growing back into a header. */
 function headerIconClass(open: boolean): string {
   const base =
     "inline-flex shrink-0 items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100";
-  // Open, they sit on the blush wash and shrink (that row's whole point is to be
-  // thin), so the hover fill deepens the wash instead of adding a second colour.
   return open
-    ? `${base} h-7 w-7 text-blush-700 hover:bg-blush-500/20 hover:text-blush-800 dark:text-blush-200 dark:hover:bg-blush-500/25 dark:hover:text-blush-100`
+    ? `${base} h-6 w-6 text-paper-200 hover:bg-white/15 hover:text-white focus-visible:ring-paper-100`
     : `${base} h-8 w-8 text-ink-500 hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50`;
 }
 
@@ -410,21 +408,22 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
     <section className="card mb-6 p-0" data-tour-target="dashboard-keyinfo">
       {/* The header carries its own title ONLY while collapsed, where the strip
           is all there is to identify. Open, the venue row underneath says what
-          this is far better than a label does, so the text gives way to a thin
-          blush cap and the row shrinks to its controls: roughly 12px back on
-          the header, plus the ~22px the "all vendors" link used to spend on a
-          row of its own below. The heading stays in the accessibility tree
-          either way (sr-only when open), so the document outline is unchanged. */}
+          this is far better than a label does, so the text gives way to a black
+          cap holding one control.
+
+          Black rather than the blush wash it used to wear: a pale tint across a
+          full-width strip reads as an alert banner (the one thing on the
+          dashboard that pink is supposed to mean), while black reads as chrome
+          and lets the card's actual content carry the only colour on the card.
+          It also freed the strip of its left accent marker, which existed to
+          keep a wash legible and has nothing left to mark. */}
       <header
         className={
           open
-            ? "flex items-center justify-between gap-2 rounded-t-2xl bg-blush-500/10 px-3 py-0.5 dark:bg-blush-500/15"
+            ? "flex items-center justify-end gap-2 rounded-t-2xl bg-ink-900 px-2 py-0 dark:bg-ink-950"
             : "flex items-center justify-between gap-2 border-b border-paper-200 px-5 py-2.5 dark:border-umber-700"
         }
       >
-        {/* A solid blush wash across the whole strip read as an alert banner
-            rather than a header, so the accent stays a marker and the strip
-            only carries a wash of it. */}
         <h2
           className={
             open
@@ -437,35 +436,23 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           )}
           {t("dashboard.keyinfo_title")}
         </h2>
-        {/* Open, the sr-only heading is out of flow, so this marker is what
-            holds the left end of the strip and keeps the accent legible. */}
-        {open && (
-          <span className="inline-block h-3.5 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
-        )}
-        {/* Edit lives on the venue row (with the map/call actions), not up here. */}
-        <div className="flex items-center gap-0.5">
-          <Link
-            to="/app/vendors"
-            aria-label={t("dashboard.keyinfo_all_suppliers")}
-            title={t("dashboard.keyinfo_all_suppliers")}
-            className={headerIconClass(open)}
-          >
-            <Store size={15} aria-hidden="true" />
-          </Link>
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-label={t("dashboard.keyinfo_title")}
-            className={headerIconClass(open)}
-          >
-            <ChevronDown
-              size={16}
-              aria-hidden="true"
-              className={`transition-transform ${open ? "" : "-rotate-90"}`}
-            />
-          </button>
-        </div>
+        {/* Collapse only. The all-vendors link moved down to sit under the
+            pencil, where the card's other controls are: two icons up here made
+            the cap read as a toolbar, and the vendor link belongs beside the
+            vendors it opens rather than above the venue. */}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={t("dashboard.keyinfo_title")}
+          className={headerIconClass(open)}
+        >
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className={`transition-transform ${open ? "" : "-rotate-90"}`}
+          />
+        </button>
       </header>
 
       {open && (
@@ -529,7 +516,14 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                         <span className="hidden sm:inline">{t("dashboard.keyinfo_call")}</span>
                       </a>
                     )}
-                    <EditButton label={t("dashboard.keyinfo_edit")} onClick={openDialog} />
+                    {/* Edit, and the all-vendors link directly under it: the
+                        card's two "go somewhere else" controls share one column
+                        at the right edge, so the venue row keeps its height and
+                        the header cap keeps its single control. */}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <EditButton label={t("dashboard.keyinfo_edit")} onClick={openDialog} />
+                      <AllVendorsLink label={t("dashboard.keyinfo_all_suppliers")} />
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -546,7 +540,10 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                     </span>
                     <ChevronRight size={16} aria-hidden="true" />
                   </Link>
-                  <EditButton label={t("dashboard.keyinfo_edit")} onClick={openDialog} />
+                  <div className="flex flex-col items-center gap-0.5">
+                    <EditButton label={t("dashboard.keyinfo_edit")} onClick={openDialog} />
+                    <AllVendorsLink label={t("dashboard.keyinfo_all_suppliers")} />
+                  </div>
                 </div>
               )}
 
@@ -795,6 +792,26 @@ function EditButton({ label, onClick }: { label: string; onClick: () => void }) 
     >
       <Pencil size={16} aria-hidden="true" />
     </button>
+  );
+}
+
+/** "Every supplier", as an icon under the pencil.
+ *
+ *  Same ink as `EditButton`, deliberately: a step lighter (`ink-400`) resolves
+ *  to #8A6841 in this workspace, where the ink scale is remapped warm, and
+ *  against the pencil's #4A3A2E that reads as a different COLOUR rather than a
+ *  quieter one, i.e. as an accent on a control that is not one. Hierarchy comes
+ *  from the size instead: 28px under the pencil's 32px. */
+function AllVendorsLink({ label }: { label: string }) {
+  return (
+    <Link
+      to="/app/vendors"
+      aria-label={label}
+      title={label}
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+    >
+      <Store size={15} aria-hidden="true" />
+    </Link>
   );
 }
 
