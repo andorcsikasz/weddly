@@ -2729,6 +2729,9 @@ const RAW_DIRECTORY: (Omit<
     website:
       "https://budapestevent.hu/en/event-photography-rental-wedding-videographer-hire-budapest-hungary/",
     ...noContact,
+    // Same operator as the other Budapest Event card (photo/video and
+    // band hire are two service lines of one business).
+    contact_email: "info@budapestevent.hu",
     source: "curated",
     price_band: 3,
   },
@@ -2745,6 +2748,7 @@ const RAW_DIRECTORY: (Omit<
     website:
       "https://budapestfun.hu/en/event-photography-rental-wedding-videographer-hire-budapest-hungary/",
     ...noContact,
+    contact_email: "info@budapestfun.hu",
     source: "curated",
     price_band: 3,
   },
@@ -2814,6 +2818,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Local wedding planner for international and multicultural weddings.",
     website: "https://www.hungarianweddings.com/",
     ...noContact,
+    contact_email: "info@hungarianweddings.com",
     source: "curated",
     price_band: 4,
   },
@@ -2914,6 +2919,9 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Makeup and hair for weddings; contact form.",
     website: "https://en.bridalbeauty.hu/",
     ...noContact,
+    // Shared with the other Bridal Beauty card; hair and makeup are two
+    // listings of one business.
+    contact_email: "info@bridalbeauty.hu",
     source: "curated",
     price_band: 3,
   },
@@ -2981,6 +2989,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Long-running premium bridal salon.",
     website: "https://lauraszalon.hu/",
     ...noContact,
+    contact_email: "lauraszalon@gmail.com",
     source: "curated",
     price_band: 4,
   },
@@ -2996,6 +3005,8 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Wedding dresses and groom's outfits.",
     website: "https://eskuvopalota.hu/english/",
     ...noContact,
+    // A personal address, which is what the salon publishes.
+    contact_email: "kissrozi97@gmail.com",
     source: "curated",
     price_band: 3,
   },
@@ -3028,6 +3039,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Wedding DJ; positions itself as good value.",
     website: "https://www.slagerdj.hu/",
     ...noContact,
+    contact_email: "slager@slagerdj.hu",
     source: "curated",
     price_band: 3,
   },
@@ -3060,6 +3072,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Wedding DJ, event DJ, effects; contact page.",
     website: "https://www.eskuvo.dj/en/contact/",
     ...noContact,
+    contact_email: "eskuvo@eskuvo.dj",
     source: "curated",
     profile_imported: true,
     price_band: 4,
@@ -3076,6 +3089,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Wedding/event DJ and karaoke; 14 years' experience.",
     website: "https://budapestdj.hu/",
     ...noContact,
+    contact_email: "david@budapestdj.hu",
     source: "curated",
     price_band: 3,
   },
@@ -3093,6 +3107,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Luxury flower decoration for weddings and events.",
     website: "https://fleurt.hu/english/",
     ...noContact,
+    contact_email: "fleurt@fleurt.hu",
     source: "curated",
     price_band: 4,
   },
@@ -3124,6 +3139,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Luxury wedding florist and decorator.",
     website: "https://fioridamorewedding.com/",
     ...noContact,
+    contact_email: "office@fioridamorewedding.com",
     source: "curated",
     price_band: 5,
   },
@@ -3139,6 +3155,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Wedding flower work; phone public.",
     website: "https://www.budapestflower.hu/en/eskuvo",
     ...noContact,
+    contact_email: "budapestflower@budapestflower.hu",
     contact_phone: "+36 20 592 0263",
     source: "curated",
     price_band: 3,
@@ -3189,6 +3206,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Party, event and wedding band.",
     website: "https://www.budapestshowband.com/en",
     ...noContact,
+    contact_email: "budapestshowband@gmail.com",
     source: "curated",
     price_band: 4,
   },
@@ -3219,6 +3237,9 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Agency for cover bands and live music.",
     website: "https://budapestevent.hu/en/party-music-band-hire-budapest/",
     ...noContact,
+    // Same operator as the other Budapest Event card (photo/video and
+    // band hire are two service lines of one business).
+    contact_email: "info@budapestevent.hu",
     source: "curated",
     price_band: 3,
   },
@@ -3317,6 +3338,9 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Makeup and hair for weddings.",
     website: "https://en.bridalbeauty.hu/",
     ...noContact,
+    // Shared with the other Bridal Beauty card; hair and makeup are two
+    // listings of one business.
+    contact_email: "info@bridalbeauty.hu",
     source: "curated",
     price_band: 3,
   },
@@ -3385,6 +3409,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Photo booth/selfie machine rentals nationwide.",
     website: "https://mywayphotobox.eu/",
     ...noContact,
+    contact_email: "fun@mywayphotobox.eu",
     source: "curated",
     price_band: 3,
   },
@@ -3447,6 +3472,7 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Digital content production agency; not wedding-specific.",
     website: "https://www.hipstudio.hu/",
     ...noContact,
+    contact_email: "info@hipstudio.hu",
     source: "curated",
     price_band: 4,
   },
@@ -3479,6 +3505,8 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "International celebrant service in Budapest.",
     website: "https://www.yourstoryceremony.com/english",
     ...noContact,
+    // A named person (Andrea), which is what the site publishes.
+    contact_email: "andrea@yourstoryceremony.com",
     source: "curated",
     price_band: 4,
   },
@@ -3494,6 +3522,8 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "Multilingual wedding MC and ceremony service; contact form.",
     website: "https://nativeceremony.eu/en/",
     ...noContact,
+    // A named person (Balázs), which is what the site publishes.
+    contact_email: "balazs@nativeceremony.eu",
     source: "curated",
     price_band: 4,
   },
@@ -3512,6 +3542,8 @@ const RAW_DIRECTORY: (Omit<
     blurb_en: "MC and wedding officiant in Hungarian, English and Spanish.",
     website: "https://herendigabor.hu/master-of-ceremonies-hungary",
     ...noContact,
+    // Not to be confused with the separate `dj-herendi-zsolt` listing.
+    contact_email: "herendigabor@herendigabor.hu",
     source: "curated",
     price_band: 4,
   },
