@@ -133,6 +133,15 @@ const ITEMS: NavItem[] = [
     icon: <Send size={18} />,
     group: "planning",
   },
+  // Vendor conversations. Unlike outreach this is NOT earned: a vendor can
+  // write to a couple who has sent exactly one inquiry, and a reply nobody can
+  // find is the bug this whole surface exists to fix.
+  {
+    to: "/app/messages",
+    labelKey: "nav.messages",
+    icon: <MessageCircle size={18} />,
+    group: "planning",
+  },
   // Free-form planning surface — desktop-only so the mobile bottom nav stays
   // at the 5 core flows. Two tabs inside: tasks + ideas. The wedding-day
   // run-of-show lives on its own page at /app/schedule (richer model + PDF).

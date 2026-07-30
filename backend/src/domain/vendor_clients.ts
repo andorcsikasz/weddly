@@ -28,6 +28,7 @@ import { getUserById } from "./users";
 import { getVendorAccountByOwnerUserId, type VendorAccountRow } from "./vendor_accounts";
 import { getVendorSub, toVendorBilling } from "./vendor_billing";
 import { getBookingById, type BookingRow } from "./supplier_bookings";
+import { unreadCount, unreadCountsByBooking, vendorUnreadTotal } from "./booking_messages";
 import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "./listings";
 import { viewCountsForListings } from "./supplier_views";
 import type { Listing } from "@shared/listings";
@@ -85,8 +86,10 @@ function computeBalance(contractValue: number | null, depositPaid: number | null
   return contractValue - (depositPaid ?? 0);
 }
 
-/** Map a booking row (owned by the vendor) to the basic client list view. */
-export function toVendorClientView(row: BookingRow): VendorClientView {
+/** Map a booking row (owned by the vendor) to the basic client list view.
+ *  `unread` is passed in by the list path, which resolves the whole set in one
+ *  query; the single-row callers let it default. */
+export function toVendorClientView(row: BookingRow, unread?: number): VendorClientView {
   const contractValue =
     (row as BookingRow & { contract_value?: number | null }).contract_value ?? null;
   const depositPaid = (row as BookingRow & { deposit_paid?: number | null }).deposit_paid ?? null;
@@ -102,6 +105,7 @@ export function toVendorClientView(row: BookingRow): VendorClientView {
     deposit_paid: depositPaid,
     balance: computeBalance(contractValue, depositPaid),
     created_at: row.created_at,
+    unread_count: unread ?? unreadCount(row.id, "vendor"),
   };
 }
 
@@ -305,7 +309,14 @@ export function listVendorClients(accountId: number): VendorClientView[] {
   const rows = db
     .prepare("SELECT * FROM supplier_bookings WHERE vendor_account_id = ? ORDER BY created_at DESC")
     .all(accountId) as BookingRow[];
-  return rows.map(toVendorClientView);
+  // NOT rows.map(toVendorClientView): Array.map passes the index as the second
+  // argument, which would land in `unread` and badge every row with its own
+  // position.
+  const unread = unreadCountsByBooking(
+    rows.map((r) => r.id),
+    "vendor",
+  );
+  return rows.map((r) => toVendorClientView(r, unread.get(r.id) ?? 0));
 }
 
 /** Same list with the full CRM detail (notes + contact + payment schedule)
@@ -499,6 +510,7 @@ export function buildVendorStats(account: VendorAccountRow): VendorStats {
     views_7d: views.d7,
     blocked_dates_count: blocked.n,
     reviews_recent: reviewsRecent,
+    unread_messages: vendorUnreadTotal(accountId),
     listing_completeness: listingCompleteness(listing),
     listing_steps: listingChecklist(listing),
     revenue_tracked: revenue,

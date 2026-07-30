@@ -15,8 +15,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button, DateField, Skeleton, TextField, useConfirm, useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
-import { vendorBillingApi, vendorClientsApi } from "../../lib/endpoints";
-import { formatMoney, intlLocale } from "../../lib/format";
+import { bookingMessagesApi, vendorBillingApi, vendorClientsApi } from "../../lib/endpoints";
+import { formatDate, formatMoney, intlLocale } from "../../lib/format";
+import { BookingThreadPanel } from "../../components/BookingThreadPanel";
+import { MessageTemplatesDialog } from "../../components/MessageTemplatesDialog";
+import type { BookingMessage, VendorMessageTemplate } from "@shared/booking_messages";
 import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
 
@@ -107,6 +110,13 @@ export default function VendorClientDetailPage() {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Message thread state. Loaded alongside the detail; sending is PRO, reading
+  // is not, so the panel renders on FREE with the composer swapped for a nudge.
+  const [messages, setMessages] = useState<BookingMessage[]>([]);
+  const [threadLoading, setThreadLoading] = useState(true);
+  const [templates, setTemplates] = useState<VendorMessageTemplate[]>([]);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+
   // Payment schedule state (seeded from the detail payload, then kept live).
   const [payments, setPayments] = useState<VendorClientPayment[]>([]);
   const [payLabel, setPayLabel] = useState("");
@@ -150,6 +160,62 @@ export default function VendorClientDetailPage() {
 
   const canEditCrm = features?.client_crm_detail ?? false;
   const canTrackPayments = features?.payment_tracking ?? false;
+  const canSendMessages = features?.direct_messages ?? false;
+
+  // Fetching the thread is what stamps DELIVERED on the couple's messages;
+  // marking them SEEN is a second call, because "the page loaded" and "the
+  // vendor read it" are not the same claim to make to the other side.
+  useEffect(() => {
+    if (!Number.isFinite(bookingId)) return;
+    let cancelled = false;
+    setThreadLoading(true);
+    bookingMessagesApi
+      .vendorThread(bookingId)
+      .then(({ thread }) => {
+        if (cancelled) return;
+        setMessages(thread.messages);
+        setThreadLoading(false);
+        if (thread.messages.some((m) => m.sender_kind === "couple" && m.seen_at === null)) {
+          void bookingMessagesApi.vendorMarkSeen(bookingId).then(() => {
+            if (!cancelled) {
+              bookingMessagesApi
+                .vendorThread(bookingId)
+                .then(({ thread: fresh }) => !cancelled && setMessages(fresh.messages))
+                .catch(() => undefined);
+            }
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setThreadLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingId]);
+
+  useEffect(() => {
+    if (!canSendMessages) return;
+    let cancelled = false;
+    bookingMessagesApi
+      .listTemplates()
+      .then(({ templates: list }) => !cancelled && setTemplates(list))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [canSendMessages]);
+
+  const sendMessage = useCallback(
+    async (body: string, files: File[]) => {
+      const res =
+        files.length > 0
+          ? await bookingMessagesApi.vendorSendWithFiles(bookingId, body, files)
+          : await bookingMessagesApi.vendorSend(bookingId, body);
+      setMessages((prev) => [...prev, res.message]);
+    },
+    [bookingId],
+  );
 
   // Live balance from the in-progress edits, not the persisted row, so the
   // number moves as the vendor types.
@@ -357,21 +423,47 @@ export default function VendorClientDetailPage() {
         />
       </section>
 
-      {/* What the couple wrote. Deliberately outside the PRO block: the point
-          of a lead is reading what was asked, and a vendor who can see the
-          client at all can see their message. Read-only — the vendor's own
-          scratchpad is the CRM notes field below. */}
-      {detail.inquiry_message ? (
-        <section className="card space-y-2">
-          <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
-            {t("vendor.clients.inquiry_message_title")}
-          </h2>
-          {/* whitespace-pre-wrap keeps the couple's own line breaks; the value
-              is rendered as text, never as markup. */}
-          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink-700 dark:text-paper-200">
-            {detail.inquiry_message}
-          </p>
-        </section>
+      {/* The conversation. READING is deliberately outside the PRO block: the
+          point of a lead is knowing what was asked, and a vendor who can see
+          the client at all can see their message. SENDING is PRO, so on FREE
+          the composer is replaced by the upgrade card. */}
+      <section className="card space-y-3">
+        <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
+          {t("vendor.clients.thread_title")}
+        </h2>
+        <BookingThreadPanel
+          side="vendor"
+          messages={messages}
+          loading={threadLoading}
+          onSend={sendMessage}
+          allowAttachments={canSendMessages}
+          templates={canSendMessages ? templates : undefined}
+          templateVars={{
+            client_name: detail.couple_display_name,
+            event_date: detail.event_date
+              ? formatDate(detail.event_date, locale)
+              : t("vendor.clients.no_event_date"),
+          }}
+          onManageTemplates={canSendMessages ? () => setTemplatesOpen(true) : undefined}
+          composerLock={
+            canSendMessages ? undefined : (
+              <UpgradeCard
+                title={t("vendor.clients.thread_locked_title")}
+                body={t("vendor.clients.thread_locked_body")}
+                cta={t("vendor.upgrade.cta")}
+                locked={t("vendor.upgrade.feature_locked")}
+              />
+            )
+          }
+        />
+      </section>
+
+      {templatesOpen ? (
+        <MessageTemplatesDialog
+          templates={templates}
+          onChange={setTemplates}
+          onClose={() => setTemplatesOpen(false)}
+        />
       ) : null}
 
       {/* CRM editor — PRO. */}

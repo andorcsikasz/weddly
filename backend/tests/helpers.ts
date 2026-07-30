@@ -242,6 +242,12 @@ export function wipeAll(): void {
     "supplier_review_tags",
     "supplier_reviews",
     "supplier_comments",
+    // Booking threads cascade off supplier_bookings (and attachments off the
+    // messages), but the file's convention is to name child tables explicitly
+    // so a future FK change can't silently start leaking rows between suites.
+    "booking_message_attachments",
+    "booking_messages",
+    "vendor_message_templates",
     "supplier_bookings",
     "vendor_unavailable_dates",
     "supplier_aggregates",

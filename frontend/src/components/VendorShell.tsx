@@ -49,7 +49,7 @@ import { useT } from "../lib/i18n";
 import { useNotifSeen } from "../lib/useNotifSeen";
 import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
-import { VendorPointsRail } from "./VendorPointsRail";
+import { VendorPointsChip, VendorPointsRail, useVendorPoints } from "./VendorPointsRail";
 import { VendorShareDialog } from "./VendorShareDialog";
 import { VendorDemoOverlay } from "./VendorDemoOverlay";
 import { Wordmark } from "./Wordmark";
@@ -108,20 +108,30 @@ function VendorNotificationBell({
   newInquiries,
   upcomingWeek,
   newReviews,
+  unreadMessages,
   ready,
 }: {
   newInquiries: number;
   upcomingWeek: number;
   newReviews: number;
+  unreadMessages: number;
   ready: boolean;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const hasNotifications = newInquiries > 0 || upcomingWeek > 0 || newReviews > 0;
+  const hasNotifications =
+    newInquiries > 0 || upcomingWeek > 0 || newReviews > 0 || unreadMessages > 0;
   const { dot, markSeen } = useNotifSeen(
     "weddly.vendor_notif_seen",
-    { inquiries: newInquiries, upcoming: upcomingWeek, reviews: newReviews },
+    {
+      inquiries: newInquiries,
+      upcoming: upcomingWeek,
+      reviews: newReviews,
+      // Unlike the other three this count is server-truth (booking_messages
+      // .seen_at), so the watermark only decides whether the DOT re-arms.
+      messages: unreadMessages,
+    },
     ready,
   );
 
@@ -196,6 +206,21 @@ function VendorNotificationBell({
                 aria-hidden="true"
               />
               <span>{t("vendor.notif.new_inquiries", { count: String(newInquiries) })}</span>
+            </Link>
+          )}
+          {unreadMessages > 0 && (
+            <Link
+              to="/vendor/clients"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={rowClass}
+            >
+              <MessageCircle
+                size={15}
+                className="shrink-0 text-ink-400 dark:text-paper-400"
+                aria-hidden="true"
+              />
+              <span>{t("vendor.notif.unread_messages", { count: String(unreadMessages) })}</span>
             </Link>
           )}
           {upcomingWeek > 0 && (
@@ -598,6 +623,10 @@ export function VendorShell({ children }: { children: ReactNode }) {
   // Phone bottom bar's More sheet.
   const [moreOpen, setMoreOpen] = useState(false);
 
+  // Weddly Points — fetched once here and handed to both surfaces: the rail
+  // block from md up, the header chip below it.
+  const points = useVendorPoints();
+
   // New-inquiry badge on the Ügyfelek nav item: the count of bookings still in
   // 'requested' (the vendor hasn't looked yet). Re-fetched on every route
   // change inside the shell, so opening a client and moving it along clears
@@ -609,6 +638,9 @@ export function VendorShell({ children }: { children: ReactNode }) {
   const [upcomingWeek, setUpcomingWeek] = useState(0);
   // Published reviews from the last 30 days, also for the bell.
   const [newReviews, setNewReviews] = useState(0);
+  // Unseen couple messages across every client. Server-truth, not derived from
+  // a status column.
+  const [unreadMessages, setUnreadMessages] = useState(0);
   // Stays false until the first stats fetch lands, so the bell's seen-watermark
   // never sees the transient all-zero mount state (and never on fetch failure;
   // the counts are unknown then, not zero).
@@ -623,6 +655,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
         const weekEnd = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
         setUpcomingWeek(stats.upcoming.filter((u) => u.event_date <= weekEnd).length);
         setNewReviews(stats.reviews_recent);
+        setUnreadMessages(stats.unread_messages);
         setStatsReady(true);
       })
       .catch(() => {
@@ -630,6 +663,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
           setNewInquiries(0);
           setUpcomingWeek(0);
           setNewReviews(0);
+          setUnreadMessages(0);
         }
       });
     return () => {
@@ -746,10 +780,14 @@ export function VendorShell({ children }: { children: ReactNode }) {
                 <Moon size={18} aria-hidden="true" />
               )}
             </button>
+            {/* Phone only: from md the same score is a block in the rail, and
+                two copies of one number in one viewport is one too many. */}
+            <VendorPointsChip points={points} className="md:hidden" />
             <VendorNotificationBell
               newInquiries={newInquiries}
               upcomingWeek={upcomingWeek}
               newReviews={newReviews}
+              unreadMessages={unreadMessages}
               ready={statsReady}
             />
             <VendorProfileMenu
@@ -856,7 +894,7 @@ export function VendorShell({ children }: { children: ReactNode }) {
             {/* Weddly Points, docked under the nav. Collapses to the ring
                 alone on the icon rail; stays a full block on mobile, where
                 there is no collapsed state. */}
-            <VendorPointsRail collapsed={collapsed} />
+            <VendorPointsRail collapsed={collapsed} points={points} />
 
             {/* No profile chip at the foot of the rail: the same avatar, the
                 same business name and the same route already sit in the header

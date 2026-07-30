@@ -458,11 +458,25 @@ export default function VendorClientsPage() {
                     to={`/vendor/clients/${c.id}`}
                     className="grid grid-cols-1 gap-1 px-4 py-3 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:bg-paper-100 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3 dark:hover:bg-umber-700 dark:focus-visible:bg-umber-700"
                   >
-                    <span
-                      className="truncate font-medium text-ink-900 dark:text-paper-50"
-                      title={c.couple_display_name}
-                    >
-                      {c.couple_display_name}
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span
+                        className="truncate font-medium text-ink-900 dark:text-paper-50"
+                        title={c.couple_display_name}
+                      >
+                        {c.couple_display_name}
+                      </span>
+                      {/* Server-side unread, not a per-device watermark: a lead
+                          you have not read must still look unread on the phone. */}
+                      {c.unread_count > 0 ? (
+                        <span
+                          className="shrink-0 rounded-full bg-blush-500 px-2 py-0.5 text-xs font-semibold text-white"
+                          aria-label={t("vendor.clients.unread_messages", {
+                            count: c.unread_count,
+                          })}
+                        >
+                          {c.unread_count}
+                        </span>
+                      ) : null}
                     </span>
                     <span className="text-sm text-ink-600 dark:text-paper-300">
                       {c.event_date

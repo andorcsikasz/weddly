@@ -254,6 +254,12 @@ import type {
   VendorClientView,
   VendorStats,
 } from "@shared/vendor_clients";
+import type {
+  BookingMessage,
+  BookingThread,
+  CoupleVendorThreadPreview,
+  VendorMessageTemplate,
+} from "@shared/booking_messages";
 import type { VendorPointsStatus } from "@shared/vendor_points";
 import type {
   AdminVendorView,
@@ -2786,6 +2792,94 @@ export const vendorPointsApi = {
 
 /** Vendor billing snapshot + derived FREE/PRO plan + per-feature flags, plus
  *  the freemium money path (Stripe-hosted card setup / checkout / portal). */
+/** Couple ↔ vendor message threads. One thread per booking; the vendor reaches
+ *  it from their client card, the couple from /app/messages. Sending is PRO on
+ *  the vendor side (403 `vendor_pro_required`), reading is not. */
+export const bookingMessagesApi = {
+  vendorThread: (bookingId: number) =>
+    apiFetch<{ thread: BookingThread; unread: number }>(
+      "GET",
+      `/api/vendor/clients/${bookingId}/messages`,
+    ),
+  vendorSend: (bookingId: number, body: string) =>
+    apiFetch<{ message: BookingMessage }>("POST", `/api/vendor/clients/${bookingId}/messages`, {
+      body,
+    }),
+  /** Multipart send. `apiFetch` is JSON-only, so this mirrors budgetDocApi's
+   *  hand-rolled fetch. Text and files go in ONE request so "here is the quote"
+   *  can never half-land. */
+  vendorSendWithFiles: async (
+    bookingId: number,
+    body: string,
+    files: File[],
+  ): Promise<{ message: BookingMessage }> => {
+    const form = new FormData();
+    form.append("body", body);
+    for (const file of files) form.append("file", file);
+    const token = getToken();
+    const res = await fetch(`/api/vendor/clients/${bookingId}/messages`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let parsed: { code?: string; message?: string } | null = null;
+      try {
+        parsed = text ? (JSON.parse(text) as { code?: string; message?: string }) : null;
+      } catch {
+        parsed = null;
+      }
+      throw new ApiError(
+        res.status,
+        res.status >= 500 ? "server_error" : "client_error",
+        parsed?.message ?? text ?? "Send failed",
+        parsed,
+      );
+    }
+    return JSON.parse(text) as { message: BookingMessage };
+  },
+  vendorMarkSeen: (bookingId: number) =>
+    apiFetch<{ seen_at: number }>("POST", `/api/vendor/clients/${bookingId}/messages/seen`),
+  listTemplates: () =>
+    apiFetch<{ templates: VendorMessageTemplate[] }>("GET", "/api/vendor/message-templates"),
+  createTemplate: (title: string, body: string) =>
+    apiFetch<{ template: VendorMessageTemplate }>("POST", "/api/vendor/message-templates", {
+      title,
+      body,
+    }),
+  updateTemplate: (id: number, title: string, body: string) =>
+    apiFetch<{ template: VendorMessageTemplate }>("PATCH", `/api/vendor/message-templates/${id}`, {
+      title,
+      body,
+    }),
+  deleteTemplate: (id: number) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/vendor/message-templates/${id}`),
+
+  coupleThreads: () =>
+    apiFetch<{ threads: CoupleVendorThreadPreview[] }>("GET", "/api/messages/threads"),
+  coupleThread: (bookingId: number) =>
+    apiFetch<{ thread: BookingThread; unread: number }>(
+      "GET",
+      `/api/messages/threads/${bookingId}`,
+    ),
+  coupleSend: (bookingId: number, body: string) =>
+    apiFetch<{ message: BookingMessage }>("POST", `/api/messages/threads/${bookingId}`, { body }),
+  coupleMarkSeen: (bookingId: number) =>
+    apiFetch<{ seen_at: number }>("POST", `/api/messages/threads/${bookingId}/seen`),
+
+  /** Attachments are never on a public /uploads URL: quotes and contracts go
+   *  through the authenticated download route, and the caller opens the blob. */
+  fetchAttachmentBlob: async (attachmentId: number): Promise<Blob> => {
+    const token = getToken();
+    const res = await fetch(`/api/booking-messages/attachments/${attachmentId}/download`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) throw new Error(`Attachment fetch failed: ${res.status}`);
+    return res.blob();
+  },
+};
+
 export const vendorBillingApi = {
   get: () =>
     apiFetch<VendorBillingStatus & { plan: VendorPlan; features: VendorFeatureFlags }>(

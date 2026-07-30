@@ -13,6 +13,8 @@
 // to confirm and the rest auto-decline via a cron sweep (not yet wired).
 
 import type { VendorBlockedDay } from "@shared/listings";
+import { MESSAGE_BODY_MAX_LEN } from "@shared/booking_messages";
+import { insertMessage } from "./booking_messages";
 import type { BookingStatus, SupplierBooking, SupplierAvailability } from "@shared/suppliers";
 import {
   type AvailabilityException,
@@ -505,6 +507,15 @@ export function deliverInquiryFromOutreach(args: {
     db.prepare(
       "UPDATE supplier_bookings SET notes = ?, event_date = ?, updated_at = ? WHERE id = ?",
     ).run(notes, eventDate, args.at, open.id);
+    // The blob stays (it is what `inquiry_message` still reads), but the thread
+    // is the live surface now, so every inquiry is also a message row.
+    insertMessage({
+      bookingId: open.id,
+      senderKind: "couple",
+      senderUserId: null,
+      body: args.message.slice(0, MESSAGE_BODY_MAX_LEN),
+      at: args.at,
+    });
     return {
       bookingId: open.id,
       vendorAccountId: listing.vendor_account_id,
@@ -522,6 +533,13 @@ export function deliverInquiryFromOutreach(args: {
     // A message the couple has already emailed gets recorded whatever the
     // vendor's plan. See this function's header.
     allowUnentitled: true,
+    at: args.at,
+  });
+  insertMessage({
+    bookingId: booking.id,
+    senderKind: "couple",
+    senderUserId: null,
+    body: args.message.slice(0, MESSAGE_BODY_MAX_LEN),
     at: args.at,
   });
   return {

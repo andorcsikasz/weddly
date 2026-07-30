@@ -87,6 +87,7 @@ const SchedulePage = lazyWithReload(() => import("./pages/SchedulePage"));
 const SeatingPage = lazyWithReload(() => import("./pages/SeatingPage"));
 const SuppliersPage = lazyWithReload(() => import("./pages/SuppliersPage"));
 const OutreachPage = lazyWithReload(() => import("./pages/OutreachPage"));
+const MessagesPage = lazyWithReload(() => import("./pages/MessagesPage"));
 const SupplierDetailPage = lazyWithReload(() => import("./pages/SupplierDetailPage"));
 const PlannerDetailPage = lazyWithReload(() => import("./pages/PlannerDetailPage"));
 const PublicVendorPage = lazyWithReload(() => import("./pages/PublicVendorPage"));
@@ -1000,6 +1001,24 @@ export default function App() {
             element={
               <Page>
                 <OutreachPage />
+              </Page>
+            }
+          />
+          {/* The couple's half of the vendor conversations. Two paths, one
+            page: the list, or one thread. */}
+          <Route
+            path="messages"
+            element={
+              <Page>
+                <MessagesPage />
+              </Page>
+            }
+          />
+          <Route
+            path="messages/:bookingId"
+            element={
+              <Page>
+                <MessagesPage />
               </Page>
             }
           />

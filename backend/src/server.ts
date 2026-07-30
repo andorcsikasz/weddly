@@ -99,6 +99,8 @@ import { registerVendorListingRoutes } from "./routes/vendor_listing";
 import { registerVendorAccountRoutes } from "./routes/vendor_account";
 import { registerVendorAvailabilityRoutes } from "./routes/vendor_availability";
 import { registerVendorClientsRoutes } from "./routes/vendor_clients";
+import { registerBookingMessageRoutes } from "./routes/booking_messages";
+import { backfillLegacyBookingNotes } from "./domain/booking_messages";
 import { registerVendorPointsRoutes } from "./routes/vendor_points";
 import { registerVendorStatsRoutes } from "./routes/vendor_stats";
 import { registerVendorTaskRoutes } from "./routes/vendor_tasks";
@@ -175,6 +177,11 @@ seedDoNotContact();
   const owners = backfillPartnerPropagation();
   log.info("partners.backfill", { owners });
 }
+// Split the legacy supplier_bookings.notes blob into real message rows so the
+// new thread opens with the conversation that already happened rather than
+// blank. Skips any booking that already has a message, which is what makes it
+// idempotent and safe against an inquiry landing between deploy and boot.
+backfillLegacyBookingNotes();
 // The gift list is one switch now (couples.wishlist_published), so retire the
 // second one: any couple still carrying the "wishlist" slug in their design's
 // hidden-sections list has it stripped and their publish flag pinned to the
@@ -304,6 +311,7 @@ registerVendorListingRoutes(router);
 registerVendorAccountRoutes(router);
 registerVendorAvailabilityRoutes(router);
 registerVendorClientsRoutes(router);
+registerBookingMessageRoutes(router);
 registerVendorStatsRoutes(router);
 registerVendorPointsRoutes(router);
 registerVendorTaskRoutes(router);
@@ -513,7 +521,13 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
     // photos/moodboard images. They are couple-scoped behind the authenticated
     // /api/budget/documents/:id/download route; refuse them here so an old
     // public URL (or an id-enumeration probe) can't read another couple's files.
-    if (decodedRel.includes("/budget-docs/") || decodedRel.includes("/budget-payments/"))
+    // Message attachments are the same case: a quote or a contract a vendor
+    // sent one couple, readable only through /api/booking-messages/attachments.
+    if (
+      decodedRel.includes("/budget-docs/") ||
+      decodedRel.includes("/budget-payments/") ||
+      decodedRel.includes("/booking-messages/")
+    )
       return null;
     const key = keyFromUploadUrl(decodedRel);
     if (!key) return null;

@@ -75,6 +75,8 @@ export type EmailKind =
   | "vendor_claim_approved" // sent to the new vendor account once the claim flow completes
   | "vendor_moved_to_planner" // admin rerouted a mis-routed vendor account to the planner side
   | "supplier_outreach" // P2.E, couple-initiated cold outreach to a shortlisted vendor
+  | "vendor_message" // a vendor answered on the booking thread, heads-up to the couple
+  | "couple_message" // a couple wrote back on the booking thread, heads-up to the vendor
   | "planner_access_requested" // a planner asked a couple for workspace access, couple decides
   | "planner_message" // free-form planner → couple message (user-entered subject + body)
   | "planner_access_approved" // couple approved the planner's access request, heads-up to the planner
@@ -315,6 +317,12 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // Transactional: a planner is sending a direct message to their client
   // couple. The couple has an account; Reply-To routes back to the planner.
   planner_message: "transactional",
+  // Transactional both ways: someone the recipient is already in a
+  // conversation with just wrote to them. Never opt-out: a vendor who cannot
+  // be told a client answered is a vendor who loses the booking. The volume
+  // guard is the burst debounce in domain/booking_notify.ts, not a category.
+  vendor_message: "transactional",
+  couple_message: "transactional",
   // Transactional: the resolution of the planner's access request, the
   // couple approved, and the planner is waiting to hear they can enter.
   planner_access_approved: "transactional",

@@ -1350,6 +1350,63 @@ CREATE TABLE IF NOT EXISTS vendor_client_payments (
   updated_at INTEGER NOT NULL
 );
 
+-- Couple ↔ vendor message thread, anchored on a booking (the "client" in the
+-- vendor CRM). One row per message, either direction, replacing the appended
+-- supplier_bookings.notes blob that had no sender and no timestamps.
+--
+-- delivered_at / seen_at are stamped on the RECIPIENT's read, first-wins, and
+-- the sent/delivered/seen ladder is DERIVED from them (shared/booking_messages.ts):
+-- a stored status column would be the same fact twice and would drift.
+-- sender_user_id is who actually typed it (a partner, or the vendor owner) and
+-- goes NULL on account deletion. sender_kind is what the thread renders from,
+-- so a deleted author never orphans the message.
+CREATE TABLE IF NOT EXISTS booking_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_id INTEGER NOT NULL REFERENCES supplier_bookings(id) ON DELETE CASCADE,
+  sender_kind TEXT NOT NULL,                                   -- 'vendor' | 'couple'
+  sender_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  body TEXT NOT NULL,
+  delivered_at INTEGER,
+  seen_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_booking_messages_thread
+  ON booking_messages(booking_id, created_at ASC);
+-- Drives both unread counters: "messages TO me that I have not seen".
+CREATE INDEX IF NOT EXISTS idx_booking_messages_unseen
+  ON booking_messages(booking_id, sender_kind) WHERE seen_at IS NULL;
+
+-- Files hanging off a message. Same shape as budget_documents (the private-doc
+-- precedent): the row owns the display name + sniffed mime, and file_path is a
+-- storage key under couples/<id>/ so a GDPR purge of the couple takes the bytes
+-- with it. PDF and JPG only, and served ONLY through the authenticated download
+-- route, since /uploads/* is public, so this prefix is denylisted there.
+CREATE TABLE IF NOT EXISTS booking_message_attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  message_id INTEGER NOT NULL REFERENCES booking_messages(id) ON DELETE CASCADE,
+  file_path TEXT NOT NULL,                                     -- /uploads/couples/<id>/booking-messages/<id>.pdf
+  file_name TEXT NOT NULL,                                     -- original filename, for display
+  mime TEXT NOT NULL,                                          -- 'application/pdf' | 'image/jpeg'
+  size_bytes INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_booking_message_attachments_message
+  ON booking_message_attachments(message_id);
+
+-- A vendor's canned replies ("Szabad a dátum", "Árajánlat mellékelve"). Body may
+-- contain {client_name}-style tokens, substituted at insert-into-the-composer
+-- time, not at save time, so the stored template stays reusable across clients.
+CREATE TABLE IF NOT EXISTS vendor_message_templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vendor_message_templates_account
+  ON vendor_message_templates(vendor_account_id, created_at DESC);
+
 -- Vendor to-do board. Private, vendor-scoped work items (not tied to a couple
 -- or booking) shown on the Trello-style board in the vendor workspace. Lanes
 -- mirror the planner board: 'todo' | 'doing' | 'done'.

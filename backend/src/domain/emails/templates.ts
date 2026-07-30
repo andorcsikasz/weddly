@@ -769,6 +769,30 @@ export interface PlannerAccessApprovedPayload {
   coupleName: string;
 }
 
+/** A vendor answered on the booking thread. Deliberately carries NO replyTo:
+ *  the conversation now has a home in the product, and the supplier_outreach
+ *  `in_account` branch set the precedent of withholding Reply-To to keep it
+ *  there. The body is quoted so the couple can judge urgency from the inbox. */
+export interface VendorMessagePayload {
+  /** Listing name, bold in the opening line. */
+  vendorName: string;
+  /** The vendor's own text, one paragraph per line. */
+  bodyText: string;
+  /** Rendered as a "N attachment(s)" line; the files themselves are behind the
+   *  authenticated download route, never attached to the mail (the mailer has
+   *  no attachment support and these are contracts). */
+  attachmentCount: number;
+  /** App-relative path to the thread, e.g. /app/messages/188. */
+  threadUrl: string;
+}
+
+/** A couple wrote back on the booking thread. Same no-replyTo reasoning. */
+export interface CoupleMessagePayload {
+  coupleName: string;
+  bodyText: string;
+  threadUrl: string;
+}
+
 export interface AdminFeedbackReplyPayload {
   /** The admin's free-form reply, one paragraph per line (line breaks kept). */
   replyText: string;
@@ -906,6 +930,8 @@ export type KindPayload = {
   vendor_claim_approved: VendorClaimApprovedPayload;
   vendor_moved_to_planner: VendorMovedToPlannerPayload;
   supplier_outreach: SupplierOutreachPayload;
+  vendor_message: VendorMessagePayload;
+  couple_message: CoupleMessagePayload;
   planner_access_requested: PlannerAccessRequestedPayload;
   planner_message: PlannerMessagePayload;
   planner_access_approved: PlannerAccessApprovedPayload;
@@ -3670,6 +3696,61 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       cta: "Open planners",
     },
   }),
+
+  // A vendor answered the couple on the booking thread. No Reply-To on purpose:
+  // the thread is the record, and the outreach mail already promised the couple
+  // the conversation lives in Weddly. Attachments are LINKED, never attached:
+  // they sit behind an authenticated download route because they are quotes and
+  // contracts.
+  vendor_message: (p, ctx) => {
+    const bodyParas = p.bodyText.split("\n").filter((line) => line.trim().length > 0);
+    const huAttach =
+      p.attachmentCount > 0 ? [`${p.attachmentCount} csatolmány érkezett az üzenettel.`] : [];
+    const enAttach =
+      p.attachmentCount > 0
+        ? [
+            `${p.attachmentCount} attachment${p.attachmentCount === 1 ? "" : "s"} came with this message.`,
+          ]
+        : [];
+    return {
+      subject: `${p.vendorName} válaszolt · Weddly`,
+      ctaUrl: `${CONFIG.frontendBaseUrl}${p.threadUrl}`,
+      hu: {
+        preheader: `${p.vendorName} üzenetet küldött.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [`**${p.vendorName}** válaszolt a megkeresésetekre:`, ...bodyParas, ...huAttach],
+        cta: "Üzenet megnyitása",
+      },
+      en: {
+        preheader: `${p.vendorName} sent you a message.`,
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [`**${p.vendorName}** replied to your inquiry:`, ...bodyParas, ...enAttach],
+        cta: "Open the message",
+      },
+    };
+  },
+
+  // The couple wrote back. Goes to the vendor account owner and lands them on
+  // the client card, which is where the thread and the CRM fields already are.
+  couple_message: (p, ctx) => {
+    const bodyParas = p.bodyText.split("\n").filter((line) => line.trim().length > 0);
+    return {
+      subject: `${p.coupleName} üzenetet küldött · Weddly`,
+      ctaUrl: `${CONFIG.frontendBaseUrl}${p.threadUrl}`,
+      hu: {
+        preheader: `${p.coupleName} írt neked.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [`**${p.coupleName}** üzenetet küldött:`, ...bodyParas],
+        cta: "Válasz a Weddly-ben",
+      },
+      en: {
+        preheader: `${p.coupleName} wrote to you.`,
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [`**${p.coupleName}** sent you a message:`, ...bodyParas],
+        cta: "Reply in Weddly",
+      },
+    };
+  },
 
   // Free-form direct message a planner sends to their client couple. The
   // subject + body are user-entered; we slot the body into the branded shell

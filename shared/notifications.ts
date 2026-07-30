@@ -23,6 +23,10 @@ export type NotificationKind =
   // Post-wedding: ~7 days after the wedding, a nudge to rate the vendors the
   // couple used. Stored (not computed); links to /app/rate-vendors.
   | "review_vendors"
+  // A vendor answered on a booking thread. Stored; links to /app/messages/:id.
+  // Written once per burst (domain/booking_notify.ts debounces on "already has
+  // something unseen from this sender"), so a chatty vendor is one row, not ten.
+  | "vendor_message"
   // Computed (like the timeline_* pair): a dateless to-do that's been parked
   // for a week, and a decisions category that's piled up untouched. Both are
   // gentle, derived live from planning_items — never stored.

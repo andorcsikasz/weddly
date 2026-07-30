@@ -90,6 +90,9 @@ export interface LocaleMessages {
     guest_page_description: string;
     wedding_site_title: string;
     wedding_site_description: string;
+    /** The couple's side of the vendor conversations (/app/messages). */
+    messages_title: string;
+    messages_description: string;
   };
   /** Post-wedding "rate your vendors" page (/app/rate-vendors). */
   rate_vendors: {
@@ -121,6 +124,8 @@ export interface LocaleMessages {
     partner_task_added_named: string;
     partner_task_added_self: string;
     timeline_email_sent: string;
+    /** A vendor wrote on the booking thread. Receives `{vendor}`. */
+    vendor_message: string;
     /** RSVP status words used inside `rsvp_received`. */
     rsvp_yes: string;
     rsvp_no: string;
@@ -845,6 +850,9 @@ export interface LocaleMessages {
     gallery_position_hint: string;
     section_videos: string;
     videos_add: string;
+    /** One-word form for the button beside the URL field; the full sentence
+     *  stays on its aria-label + title. */
+    videos_add_short: string;
     videos_url_label: string;
     videos_url_placeholder: string;
     videos_url_invalid: string;
@@ -965,6 +973,8 @@ export interface LocaleMessages {
       upcoming_week: string;
       /** Published reviews from the last 30 days (VendorStats.reviews_recent). */
       new_reviews: string;
+      /** Receives `{count}` (unread couple messages across every thread). */
+      unread_messages: string;
     };
     /** Listing-setup checklist. Each `step_*` suffix matches a
      *  `VendorListingStepKey` in shared/vendor_clients.ts AND the
@@ -1113,6 +1123,14 @@ export interface LocaleMessages {
       no_event_date: string;
       /** Heading over the couple's own inquiry text on the client detail page. */
       inquiry_message_title: string;
+      /** Heading over the two-way thread on the client detail page. */
+      thread_title: string;
+      /** Shown instead of the composer on FREE. Reading a client's message is
+       *  never gated, only writing back is. */
+      thread_locked_title: string;
+      thread_locked_body: string;
+      /** Aria-label on the unread badge in the client list. Receives `{count}`. */
+      unread_messages: string;
       detail_title: string;
       status_label: string;
       status_requested: string;
@@ -1517,6 +1535,60 @@ export interface LocaleMessages {
      *  stop mailing it, so a couple campaign cannot reach it either. */
     err_supplier_no_contact: string;
     err_generic: string;
+  };
+  /** The couple ↔ vendor conversation. One block for both portals, because
+   *  `BookingThreadPanel` is one component rendered from either side. */
+  thread: {
+    empty: string;
+    placeholder: string;
+    send: string;
+    sending: string;
+    /** Paperclip button: aria-label + the title tooltip naming the limits. */
+    attach: string;
+    attach_hint: string;
+    remove_file: string;
+    /** Canned replies. Vendor-only, the couple never sees the toggle. */
+    templates: string;
+    templates_manage: string;
+    templates_empty: string;
+    template_title: string;
+    template_body: string;
+    /** Sits before the placeholder chips, e.g. "Insert:". */
+    template_vars: string;
+    template_add: string;
+    template_update: string;
+    template_cancel: string;
+    template_saved: string;
+    template_save_failed: string;
+    template_delete_title: string;
+    template_delete_confirm: string;
+    /** Chip labels for the TEMPLATE_VARS tokens. The token itself stays
+     *  locale-independent ({client_name}); only the button is translated. */
+    var_client_name: string;
+    var_event_date: string;
+    var_vendor_name: string;
+    /** Accessible names for the one / two / two-highlighted tick ladder. Keyed
+     *  by MessageDeliveryStatus, so the three must stay in lockstep with it. */
+    status_sent: string;
+    status_delivered: string;
+    status_seen: string;
+    attachment_failed: string;
+    send_failed: string;
+    /** Receives `{max}` (MESSAGE_ATTACHMENTS_MAX). */
+    too_many_files: string;
+    /** Both receive `{name}` (the rejected file). */
+    file_too_large: string;
+    unsupported_file: string;
+  };
+  /** The couple's thread list + single thread at /app/messages. */
+  messages: {
+    page_title: string;
+    page_body: string;
+    empty_body: string;
+    empty_cta: string;
+    /** Prefix on the last-message preview when the couple wrote it. */
+    you: string;
+    back: string;
   };
   /** Page reached from the email_change_verify confirm link. */
   change_email: {
@@ -2513,6 +2585,9 @@ export interface LocaleMessages {
      *  sent OUTREACH_NAV_UNLOCK_SENT messages; before that the inbox lives
      *  under the directory on /app/vendors. */
     outreach: string;
+    /** Vendor conversations. Unlike outreach the rail always carries it: one
+     *  inquiry is enough for a vendor to write back. */
+    messages: string;
     /** Free-form planning surface (tasks / ideas / wedding-day schedule). */
     planning: string;
     /** Gantt-style timeline + point-of-contact panel — sidebar only. */

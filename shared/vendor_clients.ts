@@ -39,6 +39,10 @@ export interface VendorClientView {
   /** contract_value − deposit_paid when contract_value is set, else null. */
   balance: number | null;
   created_at: UnixMs;
+  /** Messages from this couple the vendor has not opened yet. Server-side (off
+   *  booking_messages.seen_at), unlike the header bell's per-device watermark:
+   *  an unread lead must not un-read itself on a second device. */
+  unread_count: number;
 }
 
 /** One labelled installment in a client's payment schedule. */
@@ -179,6 +183,9 @@ export interface VendorStats {
    *  days. Feeds the header bell's "new review" row; the bell's own per-device
    *  seen-watermark decides whether that counts as unread. */
   reviews_recent: number;
+  /** Unseen couple messages across every client. Feeds the header bell's
+   *  "new message" row and the Clients nav badge. */
+  unread_messages: number;
   /** 0..100 — how complete the public listing is. Derived from `listing_steps`,
    *  so the ring and the checklist can never disagree. */
   listing_completeness: number;

@@ -393,6 +393,18 @@ const STUBS: KindPayload = {
     plannerLabel: "Eventful Studio",
     replyToEmail: "hello@eventful.studio",
   },
+  vendor_message: {
+    vendorName: "Magyar Fotó Stúdió",
+    bodyText:
+      "Szia! Igen, június 20. szabad nálunk.\nCsatoltam az árajánlatot, és szívesen egyeztetünk telefonon is.",
+    attachmentCount: 1,
+    threadUrl: "/app/messages/188",
+  },
+  couple_message: {
+    coupleName: "Mia & Lucas",
+    bodyText: "Köszönjük az ajánlatot! Egy kérdés: a második fotós is benne van az árban?",
+    threadUrl: "/vendor/clients/188",
+  },
   planner_message: {
     subject: "Venue walkthrough next week",
     bodyText:

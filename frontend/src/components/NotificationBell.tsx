@@ -50,6 +50,7 @@ const KIND_ICON: Record<NotificationItem["kind"], IconCmp> = {
   planning_stale_task: Clock,
   planning_decisions_stale: ListChecks,
   review_vendors: Star,
+  vendor_message: MessageCircle,
 };
 
 /** Compose the human label for a feed row from its kind + params. */
@@ -85,6 +86,8 @@ function useLabel() {
         return t("notifications.feedback_survey");
       case "review_vendors":
         return t("notifications.review_vendors", { count: Number(d.count ?? 0) });
+      case "vendor_message":
+        return t("notifications.vendor_message", { vendor: String(d.vendorName ?? "") });
       case "planning_stale_task":
         return t("notifications.planning_stale_task", { task: String(d.taskTitle ?? "") });
       case "planning_decisions_stale": {
