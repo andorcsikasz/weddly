@@ -1182,10 +1182,21 @@ export const googleCalendarApi = {
     ),
 };
 
-/** Vendor calendar -> Google Calendar push-sync. Same four endpoints and the
- *  same status shape as the couple flow, against the vendor aggregate; PRO-gated
- *  server-side because the availability calendar itself is. There is no
- *  `callback` here: both flows share one browser-only OAuth callback. */
+/** One of the vendor's Google calendars, as the picker sees it. */
+export interface VendorGoogleCalendarChoice {
+  id: string;
+  summary: string;
+  primary: boolean;
+  /** Weddly currently reads free/busy from this one. */
+  selected: boolean;
+}
+
+/** Vendor calendar <-> Google Calendar, BOTH directions. The first four
+ *  endpoints and the status shape match the couple flow (which is push-only);
+ *  `calendars` is the pull half's picker, and `sync` runs push and pull
+ *  together. PRO-gated server-side because the availability calendar itself is.
+ *  There is no `callback` here: both flows share one browser-only OAuth
+ *  callback. */
 export const vendorGoogleCalendarApi = {
   status: () =>
     apiFetch<import("@shared/types").GoogleCalendarStatus>(
@@ -1202,6 +1213,21 @@ export const vendorGoogleCalendarApi = {
     apiFetch<import("@shared/types").GoogleCalendarStatus>(
       "POST",
       "/api/vendor/google-calendar/disconnect",
+    ),
+  /** The vendor's own calendars, live from Google, with the read ones ticked.
+   *  Weddly's own pushed calendar is filtered out server-side. */
+  calendars: () =>
+    apiFetch<{ pull_enabled: boolean; calendars: VendorGoogleCalendarChoice[] }>(
+      "GET",
+      "/api/vendor/google-calendar/calendars",
+    ),
+  /** Save which calendars are read (and whether to read at all). The server
+   *  re-pulls immediately, so the returned status already reflects the change. */
+  saveCalendars: (body: { calendar_ids: string[]; pull_enabled: boolean }) =>
+    apiFetch<import("@shared/types").GoogleCalendarStatus>(
+      "PUT",
+      "/api/vendor/google-calendar/calendars",
+      body,
     ),
 };
 

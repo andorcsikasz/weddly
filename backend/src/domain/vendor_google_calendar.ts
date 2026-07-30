@@ -9,10 +9,26 @@
 // PK and FK, so there was no additive path to a second owner type. Same reason
 // vendor billing sits beside couple billing rather than inside it.
 //
-// STRICTLY one-way (Weddly -> Google). Google is never read back, so nothing in
-// a vendor's personal calendar can silently change the availability couples see.
-// A pull direction would need incremental-sync/syncToken machinery that does not
-// exist here, and would let a dentist appointment mark a wedding date busy.
+// TWO-WAY since 2026-07-30, and the two directions are deliberately unequal:
+//
+//   push (Weddly -> Google)   full events: what, who, when.
+//   pull (Google -> Weddly)   FREE/BUSY ONLY, from the calendars the vendor
+//                             ticked, stored as bare date + minute ranges.
+//
+// It used to be push-only, with two objections written down. Both are answered
+// rather than ignored:
+//
+//   "a pull needs syncToken machinery"  -> free/busy needs none. It is a
+//     stateless question about a window, so the pull is a periodic replace of
+//     one horizon, not an incremental event feed.
+//   "a dentist appointment would mark a wedding date busy" -> external busy is
+//     measured against the vendor's WORKING HOURS (`externalBusyVerdict`), so it
+//     only takes a date off the market when no workable minute survives. An hour
+//     at the dentist reads as partly busy and the Saturday stays bookable.
+//
+// The other guard is structural: the pull NEVER queries our own pushed calendar
+// (`conn.calendar_id` is filtered out of every selection), otherwise a booking
+// we pushed would return as external busy and block the date it belongs to.
 
 import { createHash } from "node:crypto";
 import { db, now } from "../db";
@@ -25,12 +41,21 @@ import {
   deleteEvent,
   type DesiredCalendarEvent,
   encryptToken,
+  type GoogleCalendarListEntry,
   type GoogleEventBody,
+  listCalendars,
+  queryFreeBusy,
   reconcileCalendarEvents,
   refreshAccessToken,
   revokeToken,
 } from "../lib/google_calendar";
 import { log } from "../lib/logger";
+import {
+  clearVendorExternalBusy,
+  type ExternalBusyRow,
+  replaceVendorExternalBusy,
+  splitBusyRange,
+} from "./vendor_external_busy";
 import { vendorPlanForAccount } from "./vendor_clients";
 import { isVendorFeatureEnabled } from "@shared/vendor_plan";
 
@@ -48,6 +73,15 @@ export interface VendorGoogleCalendarConnectionRow {
   sync_state: string;
   last_synced_at: number | null;
   last_error: string | null;
+  /** The pull direction's master switch. 1 by default: a vendor who connects a
+   *  calendar wants it respected. */
+  pull_enabled: number;
+  /** JSON array of Google calendar ids to read free/busy from. NULL = not
+   *  chosen yet, which resolves to their primary calendar only. */
+  selected_calendar_ids: string | null;
+  /** Last successful free/busy pull. Separate from `last_synced_at` so the pull
+   *  is paced independently of the push queue. */
+  busy_synced_at: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -455,6 +489,137 @@ export async function syncVendorCalendar(vendorAccountId: number): Promise<void>
   }
 }
 
+// ─── Pull direction: the vendor's own calendars, free/busy only ──────────────
+
+/** How far ahead the pull looks. A YEAR, deliberately: this is a wedding
+ *  calendar, couples book 12 to 18 months out, and `nextAvailableDate` scans 365
+ *  days. A shorter horizon would leave exactly the dates couples are asking
+ *  about unchecked while looking like it worked. */
+const BUSY_HORIZON_DAYS = 365;
+/** Google answers free/busy per window; 90-day chunks keep every request small
+ *  and well inside the documented limits. Five calls per pull. */
+const BUSY_CHUNK_DAYS = 90;
+
+/** Which calendars the pull reads. Ours is ALWAYS excluded: it holds what we
+ *  pushed, so reading it back would turn every booking into external busy on its
+ *  own date. An unchosen selection means the primary calendar only. */
+export function pullCalendarIds(conn: VendorGoogleCalendarConnectionRow): string[] {
+  let ids: string[] = [];
+  if (conn.selected_calendar_ids) {
+    try {
+      const parsed = JSON.parse(conn.selected_calendar_ids);
+      if (Array.isArray(parsed)) ids = parsed.filter((x): x is string => typeof x === "string");
+    } catch {
+      ids = [];
+    }
+  }
+  if (ids.length === 0) ids = ["primary"];
+  return ids.filter((id) => id !== conn.calendar_id);
+}
+
+/** The vendor's Google calendars, for the picker. Ours is filtered out: it is
+ *  Weddly's own output, not something the vendor should be asked about. */
+export async function listVendorGoogleCalendars(
+  vendorAccountId: number,
+): Promise<GoogleCalendarListEntry[]> {
+  const conn = getVendorConnectionRow(vendorAccountId);
+  if (!conn) return [];
+  const accessToken = await ensureFreshAccessToken(conn);
+  const all = await listCalendars(accessToken);
+  return all.filter((c) => c.id !== conn.calendar_id);
+}
+
+/** Persist the vendor's picker choices. Storing the ids rather than a per-row
+ *  join keeps this a settings field: a calendar the vendor loses access to just
+ *  stops answering free/busy (the lib drops it), no dangling row to clean up. */
+export function setVendorPullSelection(
+  vendorAccountId: number,
+  input: { calendarIds: readonly string[]; pullEnabled: boolean },
+): void {
+  const ids = [...new Set(input.calendarIds.filter((id) => typeof id === "string" && id !== ""))];
+  db.prepare(
+    `UPDATE vendor_google_calendar_connections
+        SET selected_calendar_ids = ?, pull_enabled = ?, updated_at = ?
+      WHERE vendor_account_id = ?`,
+  ).run(
+    ids.length > 0 ? JSON.stringify(ids) : null,
+    input.pullEnabled ? 1 : 0,
+    now(),
+    vendorAccountId,
+  );
+}
+
+/** Pull free/busy for the selected calendars and replace the vendor's external
+ *  busy set. Never throws: like the push, a Google failure is recorded on the
+ *  connection and retried on the next pass, because a half-applied pull would be
+ *  worse than a stale one.
+ *
+ *  Switching the pull off CLEARS what was pulled. Stale busy from a calendar
+ *  Weddly no longer reads would go on blocking dates with nothing in the UI to
+ *  explain it. */
+export async function syncVendorExternalBusy(vendorAccountId: number): Promise<void> {
+  const conn = getVendorConnectionRow(vendorAccountId);
+  if (!conn) return;
+
+  if (conn.pull_enabled !== 1) {
+    clearVendorExternalBusy(vendorAccountId);
+    db.prepare(
+      "UPDATE vendor_google_calendar_connections SET busy_synced_at = ?, updated_at = ? WHERE vendor_account_id = ?",
+    ).run(now(), now(), vendorAccountId);
+    return;
+  }
+  // Same entitlement as the push half: this feeds the availability calendar.
+  if (!vendorCalendarSyncEntitled(vendorAccountId)) return;
+
+  try {
+    const accessToken = await ensureFreshAccessToken(conn);
+    const calendarIds = pullCalendarIds(conn);
+    const rows: ExternalBusyRow[] = [];
+    const startMs = now();
+    for (let offset = 0; offset < BUSY_HORIZON_DAYS; offset += BUSY_CHUNK_DAYS) {
+      const from = startMs + offset * 86_400_000;
+      const to = Math.min(
+        startMs + (offset + BUSY_CHUNK_DAYS) * 86_400_000,
+        startMs + BUSY_HORIZON_DAYS * 86_400_000,
+      );
+      const result = await queryFreeBusy(accessToken, {
+        timeMin: new Date(from).toISOString(),
+        timeMax: new Date(to).toISOString(),
+        calendarIds,
+      });
+      for (const ranges of Object.values(result)) {
+        for (const r of ranges) {
+          rows.push(...splitBusyRange(Date.parse(r.start), Date.parse(r.end), conn.time_zone));
+        }
+      }
+    }
+    replaceVendorExternalBusy(vendorAccountId, rows);
+    db.prepare(
+      "UPDATE vendor_google_calendar_connections SET busy_synced_at = ?, last_error = NULL, updated_at = ? WHERE vendor_account_id = ?",
+    ).run(now(), now(), vendorAccountId);
+  } catch (e) {
+    const msg = String(e instanceof Error ? e.message : e).slice(0, 500);
+    db.prepare(
+      "UPDATE vendor_google_calendar_connections SET last_error = ?, updated_at = ? WHERE vendor_account_id = ?",
+    ).run(msg, now(), vendorAccountId);
+    log.error("gcal.vendor_busy_pull_failed", { vendorAccountId, err: msg });
+  }
+}
+
+/** Connections whose pulled busy set is older than `maxAgeMs` — the pull
+ *  worker's queue. Unlike the push queue this is time-based, not dirty-flag
+ *  based: nothing in Weddly knows when the vendor edits their Google calendar. */
+export function listVendorAccountIdsNeedingBusyPull(maxAgeMs: number): number[] {
+  const cutoff = now() - maxAgeMs;
+  const rows = db
+    .prepare(
+      `SELECT vendor_account_id FROM vendor_google_calendar_connections
+        WHERE pull_enabled = 1 AND (busy_synced_at IS NULL OR busy_synced_at < ?)`,
+    )
+    .all(cutoff) as { vendor_account_id: number }[];
+  return rows.map((r) => r.vendor_account_id);
+}
+
 /** Tear down a connection: best-effort delete the dedicated calendar + revoke
  *  the token, then drop the local rows. Safe to call when not connected. */
 export async function disconnectVendorCalendar(vendorAccountId: number): Promise<void> {
@@ -475,6 +640,10 @@ export async function disconnectVendorCalendar(vendorAccountId: number): Promise
   db.prepare("DELETE FROM vendor_google_calendar_event_map WHERE vendor_account_id = ?").run(
     vendorAccountId,
   );
+  // The pulled busy set goes with the connection. Keeping it would leave dates
+  // blocked by a calendar Weddly can no longer read, with nothing in the UI to
+  // explain why.
+  clearVendorExternalBusy(vendorAccountId);
   db.prepare("DELETE FROM vendor_google_calendar_connections WHERE vendor_account_id = ?").run(
     vendorAccountId,
   );

@@ -1,7 +1,8 @@
-// Google Calendar push-sync infra. App-agnostic plumbing: the OAuth2
-// authorization-code dance + Google Calendar API v3 CRUD, plus AES-256-GCM
-// token encryption. No domain imports — the sync logic (what to push, when)
-// lives in domain/google_calendar.ts.
+// Google Calendar sync infra. App-agnostic plumbing: the OAuth2
+// authorization-code dance + Google Calendar API v3 CRUD + the two READ calls
+// the pull direction needs (calendar list, free/busy), plus AES-256-GCM token
+// encryption. No domain imports: the sync logic (what to push or pull, when)
+// lives in domain/google_calendar.ts and domain/vendor_external_busy.ts.
 //
 // The GSI Web client id (`CONFIG.googleClientId`, already used for sign-in) is
 // reused as the OAuth `client_id`; `CONFIG.googleClientSecret` is its paired
@@ -275,6 +276,68 @@ export async function deleteEvent(
   }
 }
 
+// ─── Reading the other direction: calendar list + free/busy ──────────────────
+// The pull half of the two-way sync. Deliberately the two THINNEST reads Google
+// offers: which calendars exist (so the vendor can pick), and when they are busy
+// (start/end only). `events.list` is never called, so no title, attendee or
+// location of a private appointment can reach Weddly even by accident.
+
+export interface GoogleCalendarListEntry {
+  id: string;
+  summary: string;
+  primary: boolean;
+}
+
+/** The vendor's own calendars. Read-only entries (`freeBusyReader` and up) are
+ *  included: reading busy time is exactly what we need them for. */
+export async function listCalendars(accessToken: string): Promise<GoogleCalendarListEntry[]> {
+  if (CONFIG.googleCalendarFake) return fakeListCalendars();
+  const res = await calFetch(accessToken, "GET", "/users/me/calendarList?maxResults=250");
+  if (!res.ok) throw new Error(`gcal listCalendars ${res.status}: ${await res.text()}`);
+  const data = (await res.json()) as {
+    items?: Array<{ id?: string; summary?: string; primary?: boolean; deleted?: boolean }>;
+  };
+  return (data.items ?? [])
+    .filter((i): i is { id: string; summary?: string; primary?: boolean } => !!i.id && !i.deleted)
+    .map((i) => ({ id: i.id, summary: i.summary ?? i.id, primary: i.primary === true }));
+}
+
+/** One busy block, as Google reports it: RFC3339 instants, no content. */
+export interface BusyRange {
+  start: string;
+  end: string;
+}
+
+/** Free/busy for up to 50 calendars in one call. Returns the merged busy ranges
+ *  per calendar id; a calendar Google errors on (deleted, permission lost) is
+ *  omitted rather than failing the whole query, because one stale id in the
+ *  vendor's selection must not stop the other calendars from syncing. */
+export async function queryFreeBusy(
+  accessToken: string,
+  input: { timeMin: string; timeMax: string; calendarIds: readonly string[] },
+): Promise<Record<string, BusyRange[]>> {
+  if (input.calendarIds.length === 0) return {};
+  if (CONFIG.googleCalendarFake) return fakeFreeBusy(input);
+  const res = await calFetch(accessToken, "POST", "/freeBusy", {
+    timeMin: input.timeMin,
+    timeMax: input.timeMax,
+    items: input.calendarIds.slice(0, 50).map((id) => ({ id })),
+  });
+  if (!res.ok) throw new Error(`gcal freeBusy ${res.status}: ${await res.text()}`);
+  const data = (await res.json()) as {
+    calendars?: Record<string, { busy?: BusyRange[]; errors?: Array<{ reason?: string }> }>;
+  };
+  const out: Record<string, BusyRange[]> = {};
+  for (const [id, entry] of Object.entries(data.calendars ?? {})) {
+    if (entry.errors && entry.errors.length > 0) {
+      log.warn("gcal.freebusy_calendar_error", { calendarId: id, reason: entry.errors[0]?.reason });
+      continue;
+    }
+    out[id] = entry.busy ?? [];
+  }
+  return out;
+}
+
 // ─── Idempotent event reconcile ──────────────────────────────────────────────
 // The insert / patch-if-changed / delete-orphans diff, shared by every aggregate
 // that pushes a calendar (couples and vendors today). Kept here rather than
@@ -394,12 +457,59 @@ interface FakeCalendar {
 }
 const fakeCalendars = new Map<string, FakeCalendar>();
 let fakeSeq = 0;
+/** Busy ranges the test seeded per calendar id, answered by the fake free/busy
+ *  query. Separate from `fakeCalendars.events`: free/busy is a different read,
+ *  and a test asserting the PULL direction should not have to write events. */
+const fakeBusy = new Map<string, BusyRange[]>();
+/** Calendars that exist in the fake Google account but were not created by us
+ *  (the vendor's personal ones), so `listCalendars` has something to return. */
+const fakeExternalCalendars: GoogleCalendarListEntry[] = [];
 
 /** Reset the fake store — tests call this alongside DB wipes so calendars from
  *  a prior case don't leak into the next. */
 export function __resetGoogleCalendarFake(): void {
   fakeCalendars.clear();
+  fakeBusy.clear();
+  fakeExternalCalendars.length = 0;
   fakeSeq = 0;
+}
+
+/** Seed a personal calendar into the fake account (id, name, primary flag). */
+export function __fakeAddCalendar(entry: GoogleCalendarListEntry): void {
+  fakeExternalCalendars.push(entry);
+}
+
+/** Seed busy ranges for a calendar id, as Google's free/busy would report them. */
+export function __fakeSetBusy(calendarId: string, ranges: BusyRange[]): void {
+  fakeBusy.set(calendarId, ranges);
+}
+
+function fakeListCalendars(): GoogleCalendarListEntry[] {
+  // Our own pushed calendars are part of the account too, exactly as they would
+  // be in the real API. Filtering ours out is the CALLER's job, and that filter
+  // is what stops a pushed booking coming back as external busy.
+  const ours = [...fakeCalendars.values()].map((c) => ({
+    id: c.id,
+    summary: c.summary,
+    primary: false,
+  }));
+  return [...fakeExternalCalendars, ...ours];
+}
+
+function fakeFreeBusy(input: {
+  timeMin: string;
+  timeMax: string;
+  calendarIds: readonly string[];
+}): Record<string, BusyRange[]> {
+  const min = Date.parse(input.timeMin);
+  const max = Date.parse(input.timeMax);
+  const out: Record<string, BusyRange[]> = {};
+  for (const id of input.calendarIds) {
+    out[id] = (fakeBusy.get(id) ?? []).filter(
+      (r) => Date.parse(r.end) > min && Date.parse(r.start) < max,
+    );
+  }
+  return out;
 }
 
 /** Read-only peek at a fake calendar's events, for test assertions. */

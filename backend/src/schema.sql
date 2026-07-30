@@ -2060,6 +2060,30 @@ CREATE TABLE IF NOT EXISTS vendor_google_calendar_event_map (
   PRIMARY KEY (vendor_account_id, source_kind, source_id)
 );
 
+-- The PULL half of the vendor's two-way Google sync: busy time read back out of
+-- the vendor's OWN calendars via the free/busy API, split into local dates.
+--
+-- What is stored is deliberately the least Google will tell us: a date and a
+-- minute range. No title, no attendees, no calendar of origin beyond what the
+-- vendor selected, because free/busy is the only endpoint we call. A vendor who
+-- has a dentist appointment at 10:00 shows up here as "busy 600-660" and
+-- nothing else, in Weddly or in the logs.
+--
+-- Rows are REPLACED wholesale per sync for the pulled horizon, so a deleted
+-- Google event disappears here on the next pass. Nothing else writes this table,
+-- which is what keeps "external" cleanly separable from what the vendor marked
+-- by hand in `vendor_unavailable_dates`.
+CREATE TABLE IF NOT EXISTS vendor_external_busy (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  busy_date         TEXT    NOT NULL,                       -- 'YYYY-MM-DD' in the vendor's own time zone
+  start_min         INTEGER NOT NULL,                       -- minutes from local midnight
+  end_min           INTEGER NOT NULL,                       -- exclusive; 1440 = end of day
+  synced_at         INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vendor_external_busy_vendor
+  ON vendor_external_busy(vendor_account_id, busy_date);
+
 -- Signups that haven't proved their email address yet. A password registration
 -- lands HERE, not in `users` — the users row is only minted when the verify
 -- link is clicked (see routes/email_verify.ts handleConsume).

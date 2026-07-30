@@ -1390,6 +1390,17 @@ export interface LocaleMessages {
       exception_remove: string;
       exception_remove_title: string;
       exception_remove_body: string;
+      /** Two-way Google Calendar block on the same tab. `gcal_last_pull` takes
+       *  `{when}` + `{count}`. */
+      gcal_title: string;
+      gcal_body: string;
+      gcal_pull_label: string;
+      gcal_privacy: string;
+      gcal_primary: string;
+      gcal_saved: string;
+      gcal_list_failed: string;
+      gcal_last_pull: string;
+      gcal_never_pulled: string;
     };
     plan: {
       free_label: string;
@@ -1455,6 +1466,11 @@ export interface LocaleMessages {
     legend_off_day: string;
     /** Link out to /vendor/settings/schedule, where recurring days off live. */
     schedule_link: string;
+    /** Busy time pulled from the vendor's own Google calendar: legend entry, and
+     *  the block's own label, which takes `{from}` + `{to}` because free/busy
+     *  carries no title to show. */
+    legend_external: string;
+    external_busy_label: string;
     /** Short label on a blocked day's calendar pill. */
     blocked_pill_label: string;
     /** Receives `{date}` - the day a click would block. */

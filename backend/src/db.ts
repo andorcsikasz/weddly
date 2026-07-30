@@ -1785,6 +1785,28 @@ addColumnIfMissing(
   "is_available INTEGER NOT NULL DEFAULT 0",
 );
 
+// The vendor Google connection gained the PULL direction. `pull_enabled` is the
+// master switch (on by default: the vendor connected a calendar to have it
+// respected), `selected_calendar_ids` is the JSON array of calendar ids the
+// vendor ticked (NULL = their primary only, which is the conservative default
+// before they have chosen), and `busy_synced_at` paces the pull worker
+// independently of the push queue's `last_synced_at`.
+addColumnIfMissing(
+  "vendor_google_calendar_connections",
+  "pull_enabled",
+  "pull_enabled INTEGER NOT NULL DEFAULT 1",
+);
+addColumnIfMissing(
+  "vendor_google_calendar_connections",
+  "selected_calendar_ids",
+  "selected_calendar_ids TEXT",
+);
+addColumnIfMissing(
+  "vendor_google_calendar_connections",
+  "busy_synced_at",
+  "busy_synced_at INTEGER",
+);
+
 // The weekly schedule gained a NAME when it gained hours: the editor header
 // reads as a document the vendor can retitle ("Nyári munkarend"), and a second
 // named schedule is the obvious next step. NULL / empty = unnamed, which the

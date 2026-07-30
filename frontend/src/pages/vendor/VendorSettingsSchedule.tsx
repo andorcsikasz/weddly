@@ -15,10 +15,11 @@
 // Blocking is PRO, and so is this: a FREE vendor gets the read-only view with
 // the upgrade path instead of a form whose writes would 402.
 
-import { CalendarOff, CalendarPlus, Check, Copy, Lock, Plus, X } from "lucide-react";
+import { CalendarOff, CalendarPlus, CalendarSync, Check, Copy, Lock, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { hourLabel, type VendorAvailabilityView } from "@shared/listings";
+import type { GoogleCalendarStatus } from "@shared/types";
 import {
   ALL_WEEKDAYS,
   DAY_MINUTES,
@@ -34,9 +35,15 @@ import {
   type WeeklyHours,
   type WorkInterval,
 } from "@shared/vendor_availability";
+import { GoogleCalendarConnect } from "../../components/GoogleCalendarConnect";
 import { DateField, Dialog, SegmentedControl, useConfirm, useToast } from "../../components/ui";
 import { intlLocale } from "../../lib/format";
-import { vendorAvailabilityApi, vendorBillingApi } from "../../lib/endpoints";
+import {
+  vendorAvailabilityApi,
+  vendorBillingApi,
+  vendorGoogleCalendarApi,
+  type VendorGoogleCalendarChoice,
+} from "../../lib/endpoints";
 import { type Locale, useT } from "../../lib/i18n";
 
 /** Every half hour of the day as select options. 24:00 is offered as an END
@@ -214,7 +221,7 @@ function CopyMenu({
             >
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-paper-300 text-blush-500 focus:ring-blush-400 dark:border-umber-600"
+                className="h-4 w-4 rounded border-paper-400 accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600 dark:border-umber-600"
                 checked={checked}
                 onChange={() =>
                   setTargets((prev) => (checked ? prev.filter((x) => x !== d) : [...prev, d]))
@@ -487,6 +494,174 @@ function ExceptionDialog({
   );
 }
 
+// ── Google Calendar, both directions ────────────────────────────────────────
+
+/** The pull half's controls. The connect/sync/disconnect pill is the shared
+ *  component both aggregates use; what is local here is the calendar picker,
+ *  which only the vendor flow has, and the sentence that says what Weddly reads.
+ *
+ *  It lives on THIS tab rather than in a generic "integrations" screen because
+ *  the only thing the integration changes is availability, and this is the page
+ *  that owns availability. */
+function GoogleCalendarSection() {
+  const { t, locale } = useT();
+  const toast = useToast();
+  const [status, setStatus] = useState<GoogleCalendarStatus | null>(null);
+  const [calendars, setCalendars] = useState<VendorGoogleCalendarChoice[] | null>(null);
+  const [pullEnabled, setPullEnabled] = useState(true);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [listFailed, setListFailed] = useState(false);
+
+  const loadStatus = useCallback(() => {
+    vendorGoogleCalendarApi
+      .status()
+      .then(setStatus)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  const connected = status?.connected === true;
+
+  useEffect(() => {
+    if (!connected) {
+      setCalendars(null);
+      return;
+    }
+    setListFailed(false);
+    vendorGoogleCalendarApi
+      .calendars()
+      .then((r) => {
+        setCalendars(r.calendars);
+        setPullEnabled(r.pull_enabled);
+        setSelected(r.calendars.filter((c) => c.selected).map((c) => c.id));
+      })
+      .catch(() => setListFailed(true));
+  }, [connected]);
+
+  async function save(nextIds: string[], nextPull: boolean) {
+    setBusy(true);
+    try {
+      const fresh = await vendorGoogleCalendarApi.saveCalendars({
+        calendar_ids: nextIds,
+        pull_enabled: nextPull,
+      });
+      setStatus(fresh);
+      setSelected(nextIds);
+      setPullEnabled(nextPull);
+      toast.success(t("vendor.schedule.gcal_saved"));
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Hidden entirely until the operator has configured the integration, the same
+  // rule the connect pill follows: an unconfigured deploy shows no dead
+  // affordance.
+  if (!status || !status.configured) return null;
+
+  return (
+    <section className="card p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 font-grotesk text-base font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+          <CalendarSync
+            size={18}
+            strokeWidth={1.5}
+            aria-hidden="true"
+            className="shrink-0 text-steel-600 dark:text-steel-300"
+          />
+          {t("vendor.schedule.gcal_title")}
+        </h2>
+        <GoogleCalendarConnect api={vendorGoogleCalendarApi} keyPrefix="vendor_calendar" />
+      </div>
+      <p className="mt-1 text-sm text-ink-500 dark:text-umber-300">
+        {t("vendor.schedule.gcal_body")}
+      </p>
+
+      {connected && (
+        <>
+          <label className="mt-4 flex cursor-pointer items-start gap-2.5 text-sm text-ink-700 dark:text-paper-200">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-paper-400 accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600 dark:border-umber-600"
+              checked={pullEnabled}
+              disabled={busy}
+              onChange={(e) => void save(selected, e.target.checked)}
+            />
+            <span>
+              {t("vendor.schedule.gcal_pull_label")}
+              <span className="mt-0.5 block text-xs text-ink-500 dark:text-umber-300">
+                {t("vendor.schedule.gcal_privacy")}
+              </span>
+            </span>
+          </label>
+
+          {listFailed ? (
+            <p className="mt-3 text-sm text-amber-700 dark:text-amber-400">
+              {t("vendor.schedule.gcal_list_failed")}
+            </p>
+          ) : (
+            calendars !== null && (
+              <ul className="mt-3 space-y-1.5">
+                {calendars.map((c) => {
+                  const on = selected.includes(c.id);
+                  return (
+                    <li key={c.id}>
+                      <label
+                        className={`flex cursor-pointer items-center gap-2.5 text-sm ${
+                          pullEnabled
+                            ? "text-ink-700 dark:text-paper-200"
+                            : "text-ink-400 dark:text-umber-400"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-paper-400 accent-blush-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush-600 dark:border-umber-600"
+                          checked={on}
+                          disabled={busy || !pullEnabled}
+                          onChange={() =>
+                            void save(
+                              on ? selected.filter((x) => x !== c.id) : [...selected, c.id],
+                              pullEnabled,
+                            )
+                          }
+                        />
+                        <span className="truncate">{c.summary}</span>
+                        {c.primary && (
+                          <span className="shrink-0 rounded-md bg-paper-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-ink-600 dark:bg-umber-800 dark:text-umber-300">
+                            {t("vendor.schedule.gcal_primary")}
+                          </span>
+                        )}
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          )}
+
+          <p className="mt-3 text-xs text-ink-500 dark:text-umber-300">
+            {status.busySyncedAt
+              ? t("vendor.schedule.gcal_last_pull", {
+                  when: new Intl.DateTimeFormat(intlLocale(locale), {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }).format(new Date(status.busySyncedAt)),
+                  count: status.externalBusyCount,
+                })
+              : t("vendor.schedule.gcal_never_pulled")}
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
 // ── page ────────────────────────────────────────────────────────────────────
 
 export default function VendorSettingsSchedule() {
@@ -728,6 +903,11 @@ export default function VendorSettingsSchedule() {
           )}
         </div>
       </section>
+
+      {/* Two-way Google Calendar. Sits between the weekly schedule and the dated
+          exceptions because that is what it is: another source of "when am I
+          not free", one the vendor keeps somewhere else. */}
+      <GoogleCalendarSection />
 
       {/* Dated exceptions */}
       <section className="card p-5">

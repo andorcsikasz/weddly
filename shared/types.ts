@@ -1837,6 +1837,16 @@ export interface GoogleCalendarStatus {
   syncState: "idle" | "dirty" | null;
   /** Most recent sync failure message, or `null` when the last sync was clean. */
   lastError: string | null;
+  /** PULL direction (vendors only): is Weddly reading free/busy back out of the
+   *  vendor's own calendars? `null` when not connected, and always `null` for
+   *  couples, whose sync is push-only. */
+  pullEnabled: boolean | null;
+  /** Last successful free/busy pull (unix ms). Separate from `lastSyncedAt`,
+   *  which is the push half. */
+  busySyncedAt: UnixMs | null;
+  /** How many busy blocks the pull is currently holding. 0 when nothing is
+   *  pulled, which is what lets the UI say "connected but reading nothing". */
+  externalBusyCount: number;
 }
 
 /** A single segment within a flight offer's outbound itinerary. */

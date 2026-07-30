@@ -25,6 +25,7 @@ import {
   CalendarDays,
   CalendarOff,
   CalendarRange,
+  CalendarSync,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -59,6 +60,7 @@ import {
   DAY_MINUTES,
   hoursFromWeekdays,
   isoWeekday,
+  minutesToLabel,
   type WeeklyHours,
 } from "@shared/vendor_availability";
 import type { VendorClientView } from "@shared/vendor_clients";
@@ -92,12 +94,15 @@ const MODE_KEY = "weddly.vendor_cal_mode";
  *  compact "4 ó" shown next to the lock on a partial-day pill (absent = whole
  *  day, so the pill is a lock icon with no text). */
 interface CalEvent {
-  kind: "booked" | "pending" | "blocked" | "task";
+  kind: "booked" | "pending" | "blocked" | "task" | "external";
   date: string; // YYYY-MM-DD
   label: string;
   bookingId?: number;
   hours?: number[] | null;
   hoursBadge?: string;
+  /** Minutes from local midnight, for 'external' blocks: free/busy reports real
+   *  times, not the whole hours the in-app block editor produces. */
+  minutes?: { start: number; end: number };
 }
 
 // ── date helpers (local-time safe, same as the planner page) ────────────────
@@ -158,6 +163,11 @@ function pillColor(kind: CalEvent["kind"]): string {
       return "bg-blush-100 text-blush-800 hover:brightness-95 dark:bg-blush-900/40 dark:text-blush-100";
     case "task":
       return "bg-moss-100 text-moss-900 hover:brightness-95 dark:bg-moss-900/40 dark:text-moss-100";
+    // Busy time from the vendor's OWN Google calendar. Neutral on purpose: it
+    // is not something they marked in Weddly and there is nothing to act on
+    // here, so it must not compete with a real inquiry for attention.
+    case "external":
+      return "bg-paper-200 text-ink-600 dark:bg-umber-800/80 dark:text-umber-200";
   }
 }
 
@@ -191,6 +201,8 @@ function EventGlyph({ ev, size = 10 }: { ev: CalEvent; size?: number }) {
           aria-hidden="true"
         />
       );
+    case "external":
+      return <CalendarSync size={size} className="shrink-0" aria-hidden="true" />;
   }
 }
 
@@ -490,8 +502,17 @@ function MonthView({
 const DAY_START = 7; // default visible window: 07:00 - 20:00
 const DAY_END = 21; // exclusive
 
-/** A partial-hour block drawn over the hour grid at its true position.
- *  Clicking it opens the same day editor the pill does. */
+/** 'HH:MM' for a fractional hour. `hourLabel` only speaks whole hours, and an
+ *  external block starts whenever the vendor's own appointment starts. */
+function clockLabel(hours: number): string {
+  const total = Math.round(hours * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+/** A block drawn over the hour grid at its true position: a partial-hour block
+ *  the vendor made here (clickable, opens the day editor), or busy time pulled
+ *  from their Google calendar (neutral and INERT, because the only place to
+ *  change it is Google). */
 function HourBand({
   ev,
   start,
@@ -511,18 +532,20 @@ function HourBand({
 }) {
   const top = ((start - windowStart) / span) * 100;
   const height = ((end - start) / span) * 100;
-  const shared =
-    "absolute inset-x-0.5 z-[5] overflow-hidden rounded-md border border-blush-300 bg-blush-100/85 px-1 py-0.5 text-left text-[10px] leading-tight text-blush-900 dark:border-blush-700 dark:bg-blush-900/50 dark:text-blush-100";
+  const external = ev.kind === "external";
+  const shared = external
+    ? "absolute inset-x-0.5 z-[4] overflow-hidden rounded-md border border-paper-300 bg-paper-200/90 px-1 py-0.5 text-left text-[10px] leading-tight text-ink-600 dark:border-umber-700 dark:bg-umber-800/90 dark:text-umber-200"
+    : "absolute inset-x-0.5 z-[5] overflow-hidden rounded-md border border-blush-300 bg-blush-100/85 px-1 py-0.5 text-left text-[10px] leading-tight text-blush-900 dark:border-blush-700 dark:bg-blush-900/50 dark:text-blush-100";
   const body = (
     <>
       <span className="flex items-center gap-1 font-medium tabular-nums">
         <EventGlyph ev={ev} />
-        {`${hourLabel(start)}-${hourLabel(end)}`}
+        {`${clockLabel(start)}-${clockLabel(end)}`}
       </span>
     </>
   );
   const style = { top: `${top}%`, height: `${height}%` };
-  if (!onOpenDay) {
+  if (!onOpenDay || external) {
     return (
       <div className={shared} style={style} title={ev.label}>
         {body}
@@ -575,6 +598,11 @@ function TimeGridView({
     let hi = DAY_END;
     for (const d of days) {
       for (const ev of eventsByDate.get(ymd(d)) ?? []) {
+        if (ev.kind === "external" && ev.minutes) {
+          lo = Math.min(lo, Math.floor(ev.minutes.start / 60));
+          hi = Math.max(hi, Math.ceil(ev.minutes.end / 60));
+          continue;
+        }
         if (!isPartialBlock(ev) || !ev.hours) continue;
         const { start, end } = blockedHoursRange(ev.hours);
         lo = Math.min(lo, start);
@@ -644,7 +672,12 @@ function TimeGridView({
             {allDayLabel}
           </div>
           {days.map((d) => {
-            const evs = (eventsByDate.get(ymd(d)) ?? []).filter((ev) => !isPartialBlock(ev));
+            // Partial blocks AND external busy are drawn on the hour grid below
+            // at their real position, so repeating them here would double-count
+            // the day.
+            const evs = (eventsByDate.get(ymd(d)) ?? []).filter(
+              (ev) => !isPartialBlock(ev) && ev.kind !== "external",
+            );
             return (
               <div
                 key={ymd(d)}
@@ -705,6 +738,22 @@ function TimeGridView({
                     />
                   );
                 })}
+                {(eventsByDate.get(ymd(d)) ?? [])
+                  .filter((ev) => ev.kind === "external" && ev.minutes)
+                  .map((ev) => {
+                    const m = ev.minutes as { start: number; end: number };
+                    return (
+                      <HourBand
+                        key={`ext-${ev.date}-${m.start}-${m.end}`}
+                        ev={ev}
+                        start={m.start / 60}
+                        end={m.end / 60}
+                        windowStart={windowStart}
+                        span={span}
+                        openTitle={ev.label}
+                      />
+                    );
+                  })}
                 {(eventsByDate.get(ymd(d)) ?? [])
                   .filter((ev) => isPartialBlock(ev) && ev.hours)
                   .map((ev) => {
@@ -1489,8 +1538,21 @@ export default function VendorCalendarPage() {
         out.push({ kind: "task", date: tk.due_date, label: tk.title });
       }
     }
+    // Busy time from the vendor's own Google calendars. Contentless by
+    // construction (free/busy carries no title), so the label IS the time range.
+    for (const b of availability?.external_busy ?? []) {
+      out.push({
+        kind: "external",
+        date: b.date,
+        label: t("vendor_calendar.external_busy_label", {
+          from: minutesToLabel(b.start_min),
+          to: minutesToLabel(b.end_min),
+        }),
+        minutes: { start: b.start_min, end: b.end_min },
+      });
+    }
     return out;
-  }, [clients, blockedDays, blockedLabel, tasks, t]);
+  }, [clients, blockedDays, blockedLabel, tasks, availability, t]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalEvent[]>();
@@ -1835,6 +1897,20 @@ export default function VendorCalendarPage() {
               />
               {t("vendor_calendar.legend_off_day")}
             </span>
+            {/* Only rendered once something has actually been pulled, so a
+                vendor with no Google connection reads no legend entry about
+                one. */}
+            {(availability?.external_busy.length ?? 0) > 0 && (
+              <span className="flex items-center gap-1.5">
+                <CalendarSync
+                  size={12}
+                  strokeWidth={1.5}
+                  className="text-umber-400"
+                  aria-hidden="true"
+                />
+                {t("vendor_calendar.legend_external")}
+              </span>
+            )}
           </div>
 
           {/* Freemium: blocking is PRO. A FREE vendor sees the locked state

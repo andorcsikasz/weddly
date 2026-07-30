@@ -1078,6 +1078,17 @@ const hu: LocaleMessages = {
       exception_remove: "Kivétel törlése",
       exception_remove_title: "Törlöd a kivételt?",
       exception_remove_body: "{date} újra a heti munkarend szerint alakul.",
+      gcal_title: "Google Naptár",
+      gcal_body:
+        "Kétirányú: a Weddly kiírja a foglalásaidat a Google Naptáradba, és visszaolvassa, mikor vagy elfoglalt.",
+      gcal_pull_label: "Vegye figyelembe a Google Naptáram foglaltságát",
+      gcal_privacy:
+        "Csak a foglalt idősávokat kérdezzük le, az események címét és résztvevőit nem.",
+      gcal_primary: "Fő",
+      gcal_saved: "Beállítás mentve",
+      gcal_list_failed: "A naptáraidat most nem sikerült lekérni. Próbáld újra később.",
+      gcal_last_pull: "Utolsó beolvasás: {when} · {count} foglalt idősáv",
+      gcal_never_pulled: "Még nem olvastunk be foglaltságot.",
     },
     plan: {
       free_label: "Alap",
@@ -1133,6 +1144,8 @@ const hu: LocaleMessages = {
     legend_pending: "Függő megkeresés",
     legend_tasks: "Teendő határidő",
     legend_off_day: "Nem dolgozom",
+    legend_external: "Külső naptárból foglalt",
+    external_busy_label: "Google Naptár: foglalt {from}-{to}",
     schedule_link: "Munkarend szerkesztése",
     blocked_pill_label: "Blokkolt",
     block_day_title: "{date} blokkolása",

@@ -3,19 +3,22 @@
 // next-free date, Google Calendar sync) and the frontend (vendor calendar,
 // public busy calendar).
 //
-// TWO LAYERS, deliberately:
+// THREE LAYERS, deliberately:
 //
-//   1. A recurring WEEKLY PATTERN — which weekdays the vendor generally works
-//      (e.g. only Fri/Sat/Sun). This is the general default, so a vendor who
-//      never works Mondays doesn't have to block 52 Mondays a year by hand.
+//   1. A recurring WEEKLY SCHEDULE: which weekdays the vendor works (e.g. only
+//      Fri/Sat/Sun) and, since the Munkarend editor landed, from when to when on
+//      each. This is the general default, so a vendor who never works Mondays
+//      doesn't have to block 52 Mondays a year by hand.
 //   2. Per-date EXCEPTIONS on top, in both directions: a blocked day (whole or
-//      partial hours) on a day the pattern says yes, and an "exceptionally
-//      working" day on one the pattern says no.
+//      partial hours) on a day the schedule says yes, and an "exceptionally
+//      working" day on one it says no.
+//   3. EXTERNAL BUSY pulled from the vendor's own Google calendars (free/busy
+//      only), measured against layer 1 rather than against the day.
 //
-// Day granularity, NOT hour granularity, for the weekly layer. A wedding vendor
-// takes one wedding per day; an hour-level weekly schedule (the Calendly model)
-// is built for back-to-back meetings and would be mostly unused complexity here.
-// Hours still exist, but only as a per-date exception ("busy 09:00-13:00").
+// The day-level `weekdays` set is the shape every COUPLE-facing surface reads,
+// and it is derived from the hour intervals (see "Weekly working HOURS" below):
+// one wedding fills a day, so "which days" is the whole question out there,
+// while the hours drive the vendor's own grid and the slot maths.
 //
 // BACK-COMPAT: a null pattern means "available every day", which is exactly the
 // behaviour before this existed. Every pre-existing vendor therefore keeps
@@ -78,7 +81,12 @@ export interface AvailabilityException {
 
 /** Resolve one day. Order matters: a confirmed booking beats everything (the
  *  date is genuinely taken), then explicit per-date exceptions, then the weekly
- *  pattern, then the "available by default" fallback. */
+ *  pattern, then what the vendor's external calendar says, then the "available
+ *  by default" fallback.
+ *
+ *  An explicit exception outranks the external calendar on purpose: a vendor who
+ *  opened a date by hand has said something about THIS date, and an inferred
+ *  Google block must not overrule it. */
 export function resolveDayAvailability(input: {
   /** The vendor already has a confirmed wedding this day. */
   hasConfirmedBooking: boolean;
@@ -87,6 +95,10 @@ export function resolveDayAvailability(input: {
   /** The weekly pattern; null = every day. */
   weekdays: readonly Weekday[] | null;
   date: string;
+  /** What the vendor's own Google calendars say about this date, already
+   *  measured against their working hours (`externalBusyVerdict`). Absent for
+   *  every caller that doesn't pull an external calendar. */
+  external?: "none" | "partial" | "full";
 }): DayAvailability {
   if (input.hasConfirmedBooking) return "unavailable";
 
@@ -99,6 +111,9 @@ export function resolveDayAvailability(input: {
   if (input.weekdays && !input.weekdays.includes(isoWeekday(input.date))) {
     return "unavailable";
   }
+
+  if (input.external === "full") return "unavailable";
+  if (input.external === "partial") return "partial";
   return "available";
 }
 
@@ -265,6 +280,66 @@ export function coerceWeeklyHours(raw: unknown): WeeklyHours | null {
     out[d] = normalizeIntervals(parsed);
   }
   return out;
+}
+
+// ── External (Google) busy time ─────────────────────────────────────────────
+//
+// Busy blocks pulled from the vendor's own Google calendars via the free/busy
+// API. Only the busy RANGES are ever fetched: no titles, no attendees, nothing
+// about what the vendor is doing.
+//
+// The rule below is what stops a dentist appointment from destroying a Saturday.
+// External busy is measured against the vendor's WORKING HOURS for that weekday,
+// not against the day: it only makes a day unavailable when nothing workable is
+// left, and otherwise reads as "partly busy", which keeps the day bookable.
+
+/** `subtract` removed from `base`, both normalized. Used to ask how much of a
+ *  working day survives the external calendar. */
+export function subtractIntervals(
+  base: readonly WorkInterval[],
+  subtract: readonly WorkInterval[],
+): WorkInterval[] {
+  let remaining = normalizeIntervals(base);
+  for (const cut of normalizeIntervals(subtract)) {
+    const next: WorkInterval[] = [];
+    for (const iv of remaining) {
+      if (cut.end_min <= iv.start_min || cut.start_min >= iv.end_min) {
+        next.push(iv); // no overlap
+        continue;
+      }
+      if (cut.start_min > iv.start_min)
+        next.push({ start_min: iv.start_min, end_min: cut.start_min });
+      if (cut.end_min < iv.end_min) next.push({ start_min: cut.end_min, end_min: iv.end_min });
+    }
+    remaining = next;
+  }
+  return remaining;
+}
+
+/** How much of a working day the external calendar takes:
+ *
+ *  * `none`  nothing overlaps the working hours (an evening dinner on a day the
+ *            vendor works 09:00-17:00 changes nothing);
+ *  * `partial` some working time is gone but not all, so the day stays bookable
+ *            and merely reads as partly busy;
+ *  * `full`  no workable minute is left, which is the only case that takes the
+ *            day away from couples.
+ *
+ *  An empty `working` list means the vendor has no hour restriction that day, so
+ *  the whole day counts as workable. */
+export function externalBusyVerdict(
+  busy: readonly WorkInterval[],
+  working: readonly WorkInterval[],
+): "none" | "partial" | "full" {
+  const busyNorm = normalizeIntervals(busy);
+  if (busyNorm.length === 0) return "none";
+  const workNorm =
+    working.length > 0 ? normalizeIntervals(working) : [{ start_min: 0, end_min: DAY_MINUTES }];
+  const left = subtractIntervals(workNorm, busyNorm);
+  if (left.length === 0) return "full";
+  const minutes = (list: readonly WorkInterval[]) =>
+    list.reduce((sum, iv) => sum + (iv.end_min - iv.start_min), 0);
+  return minutes(left) < minutes(workNorm) ? "partial" : "none";
 }
 
 /** The vendor's recurring availability policy. Its own resource (and its own

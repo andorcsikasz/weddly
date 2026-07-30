@@ -439,10 +439,23 @@ export function blockedHoursLabel(hours: number[] | null): string | null {
  *  is the earliest free day from today, or null if the next 365 days are full
  *  — the same value the public busy calendar shows couples. Partial-day blocks
  *  do NOT consume a day here (the vendor still has open hours). */
+/** One block of busy time pulled from the vendor's own Google calendar. Minutes
+ *  from local midnight, `end_min` exclusive. Deliberately contentless: free/busy
+ *  is the only thing Weddly asks Google for, so there is no title to carry. */
+export interface VendorExternalBusyBlock {
+  date: string;
+  start_min: number;
+  end_min: number;
+}
+
 export interface VendorAvailabilityView {
   blocked_dates: string[];
   blocked_days: VendorBlockedDay[];
   next_available: string | null;
+  /** Busy time from the vendor's connected Google calendars. Only ever shown to
+   *  the vendor themselves: couples see its EFFECT (a date reading busy), never
+   *  the blocks. Empty when nothing is connected or the pull is off. */
+  external_busy: VendorExternalBusyBlock[];
   /** The OTHER direction of the exception layer: dates the vendor exceptionally
    *  works even though their weekly schedule says that weekday is off. The API
    *  has accepted these since the weekly pattern landed, but nothing read them

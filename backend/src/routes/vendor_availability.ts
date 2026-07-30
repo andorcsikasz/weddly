@@ -23,6 +23,7 @@ import {
   type WeeklyHours,
 } from "@shared/vendor_availability";
 import { getVendorSchedule, setVendorSchedule } from "../domain/vendor_availability_settings";
+import { listVendorExternalBusy } from "../domain/vendor_external_busy";
 import {
   blockDate,
   isIsoDate,
@@ -37,11 +38,19 @@ import { resolveVendorListing } from "./vendor_listing";
 const MAX_REASON_LEN = 200;
 
 function buildView(vendorAccountId: number): VendorAvailabilityView {
+  const busy = listVendorExternalBusy(vendorAccountId);
+  const externalBusy: VendorAvailabilityView["external_busy"] = [];
+  for (const [date, list] of busy) {
+    for (const iv of list) {
+      externalBusy.push({ date, start_min: iv.start_min, end_min: iv.end_min });
+    }
+  }
   return {
     blocked_dates: listBlockedDates(vendorAccountId),
     blocked_days: listBlockedDays(vendorAccountId),
     next_available: nextAvailableDate(vendorAccountId),
     open_dates: listOpenDates(vendorAccountId),
+    external_busy: externalBusy,
   };
 }
 

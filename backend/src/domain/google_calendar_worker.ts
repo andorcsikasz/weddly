@@ -8,12 +8,25 @@
 import { GOOGLE_CALENDAR_ENABLED } from "../config";
 import { log } from "../lib/logger";
 import { listDirtyConnectionCoupleIds, syncCoupleCalendar } from "./google_calendar";
-import { listDirtyVendorAccountIds, syncVendorCalendar } from "./vendor_google_calendar";
+import {
+  listDirtyVendorAccountIds,
+  listVendorAccountIdsNeedingBusyPull,
+  syncVendorCalendar,
+  syncVendorExternalBusy,
+} from "./vendor_google_calendar";
 
 /** How often to drain the dirty queue. ~30s keeps "instant" feeling instant
  *  without hammering the Google API when nothing changed (idle couples cost a
  *  single indexed query). */
 const SYNC_INTERVAL_MS = 30_000;
+
+/** How stale a vendor's pulled free/busy may get. The pull CANNOT be
+ *  dirty-driven the way the push is: nothing in Weddly knows when the vendor
+ *  edits their own Google calendar, so it is a poll, and this interval is the
+ *  whole cost control. A year of horizon is five free/busy calls, so 30 minutes
+ *  is ten calls an hour for a connected vendor, and "Sync now" covers the vendor
+ *  who just moved a gig and wants to see it land. */
+const BUSY_PULL_INTERVAL_MS = 30 * 60_000;
 
 let timer: ReturnType<typeof setInterval> | null = null;
 let running = false;
@@ -38,6 +51,16 @@ async function drain(): Promise<void> {
     for (const vendorAccountId of vendorIds) {
       await syncVendorCalendar(vendorAccountId).catch((e) =>
         log.error("gcal.worker_vendor_failed", { vendorAccountId, err: String(e) }),
+      );
+    }
+
+    // The PULL half, on the same tick but its own (much longer) clock: the
+    // queue is "whose free/busy is older than the interval", so a connection
+    // that just synced is skipped by the query rather than by a counter here.
+    const pullIds = listVendorAccountIdsNeedingBusyPull(BUSY_PULL_INTERVAL_MS);
+    for (const vendorAccountId of pullIds) {
+      await syncVendorExternalBusy(vendorAccountId).catch((e) =>
+        log.error("gcal.worker_vendor_pull_failed", { vendorAccountId, err: String(e) }),
       );
     }
   } finally {

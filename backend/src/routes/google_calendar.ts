@@ -33,6 +33,12 @@ function statusFor(coupleId: number): GoogleCalendarStatus {
     lastSyncedAt: conn?.last_synced_at ?? null,
     syncState: conn ? (conn.sync_state === "idle" ? "idle" : "dirty") : null,
     lastError: conn?.last_error ?? null,
+    // The couple sync is push-only: their Google calendar holds the wedding, and
+    // reading it back would let an unrelated appointment move planning dates.
+    // Only the vendor aggregate pulls.
+    pullEnabled: null,
+    busySyncedAt: null,
+    externalBusyCount: 0,
   };
 }
 

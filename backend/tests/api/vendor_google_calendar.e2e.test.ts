@@ -17,7 +17,13 @@ import type { GoogleCalendarStatus } from "@shared/types";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
-import { __fakeCalendarEvents, type GoogleEventBody } from "../../src/lib/google_calendar";
+import { zonedParts } from "../../src/domain/vendor_external_busy";
+import {
+  __fakeAddCalendar,
+  __fakeCalendarEvents,
+  __fakeSetBusy,
+  type GoogleEventBody,
+} from "../../src/lib/google_calendar";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
@@ -491,5 +497,283 @@ describe("vendor google calendar — entitlement + callback security", () => {
     );
     expect(status.data.connected).toBe(false);
     expect(eventMap(accountId).length).toBe(0);
+  });
+});
+
+// ─── The PULL direction ──────────────────────────────────────────────────────
+// Free/busy read back out of the vendor's own calendars. The interesting
+// assertions are not "does it fetch" but the three guards that make a two-way
+// sync safe: an ordinary appointment must not cost a wedding date, our own
+// pushed calendar must never be read back, and switching the pull off must take
+// its effect with it.
+describe("vendor google calendar — free/busy pull", () => {
+  beforeEach(() => wipeAll());
+
+  /** A busy block `daysOut` from today, given as UTC instants, plus the LOCAL
+   *  date and minutes the server should file it under.
+   *
+   *  Built at runtime rather than hard-coded because the pull only looks a year
+   *  ahead, and derived through the server's own zone helper rather than a fixed
+   *  "+02:00" because Europe/Budapest is CET half the year: a literal offset
+   *  would make these tests pass in July and fail in December. */
+  function busyAt(daysOut: number, utcHour: number, lengthHours: number) {
+    const start = new Date(Date.now() + daysOut * 86_400_000);
+    start.setUTCHours(utcHour, 0, 0, 0);
+    const end = new Date(start.getTime() + lengthHours * 3_600_000);
+    const from = zonedParts(start.getTime(), "Europe/Budapest");
+    const to = zonedParts(end.getTime(), "Europe/Budapest");
+    return {
+      range: { start: start.toISOString(), end: end.toISOString() },
+      date: from.date,
+      startMin: from.min,
+      endDate: to.date,
+      endMin: to.min,
+    };
+  }
+
+  async function pullWith(
+    token: string,
+    busy: Array<{ start: string; end: string }>,
+  ): Promise<GoogleCalendarStatus> {
+    __fakeSetBusy("primary", busy);
+    return sync(token);
+  }
+
+  function externalBusyOf(token: string) {
+    return req<{ external_busy: Array<{ date: string; start_min: number; end_min: number }> }>(
+      "GET",
+      "/api/vendor/availability/me",
+      undefined,
+      { token },
+    );
+  }
+
+  test("busy blocks land as date + minutes, and nothing else", async () => {
+    const { vendorToken } = await bootstrapVendor("gcal-pull");
+    await connect(vendorToken);
+
+    const b = busyAt(60, 8, 2);
+    const status = await pullWith(vendorToken, [b.range]);
+    expect(status.busySyncedAt).toBeTruthy();
+    expect(status.externalBusyCount).toBe(1);
+    expect(status.pullEnabled).toBe(true);
+
+    const view = await externalBusyOf(vendorToken);
+    expect(view.status).toBe(200);
+    expect(view.data.external_busy).toEqual([
+      { date: b.date, start_min: b.startMin, end_min: b.startMin + 120 },
+    ]);
+  });
+
+  test("two hours at the dentist do NOT take the date off the market", async () => {
+    const { vendorToken, listingId } = await bootstrapVendor("gcal-pull-partial");
+    const { token: coupleToken } = await bootstrapCouple("couple-pull-partial@weddly.test");
+    await connect(vendorToken);
+    const b = busyAt(60, 8, 2);
+    await pullWith(vendorToken, [b.range]);
+
+    const pub = await req<{ unavailable_dates: string[]; partial_dates: string[] }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(listingId)}/availability`,
+      undefined,
+      { token: coupleToken },
+    );
+    expect(pub.status).toBe(200);
+    // This is the whole rule: partly busy, still bookable.
+    expect(pub.data.unavailable_dates).not.toContain(b.date);
+    expect(pub.data.partial_dates).toContain(b.date);
+  });
+
+  test("a day with no workable time left IS taken", async () => {
+    const { vendorToken, listingId } = await bootstrapVendor("gcal-pull-full");
+    const { token: coupleToken } = await bootstrapCouple("couple-pull-full@weddly.test");
+    await connect(vendorToken);
+    // The vendor works 09:00-17:00 every weekday; a dawn-to-late shoot swallows it.
+    await req(
+      "PUT",
+      "/api/vendor/availability/me/pattern",
+      {
+        working_hours: {
+          1: [{ start_min: 540, end_min: 1020 }],
+          2: [{ start_min: 540, end_min: 1020 }],
+          3: [{ start_min: 540, end_min: 1020 }],
+          4: [{ start_min: 540, end_min: 1020 }],
+          5: [{ start_min: 540, end_min: 1020 }],
+          6: [{ start_min: 540, end_min: 1020 }],
+          7: [{ start_min: 540, end_min: 1020 }],
+        },
+      },
+      { token: vendorToken },
+    );
+    const b = busyAt(60, 4, 16); // local 05:00/06:00 to 21:00/22:00, either way over 09:00-17:00
+    await pullWith(vendorToken, [b.range]);
+
+    const pub = await req<{ unavailable_dates: string[]; partial_dates: string[] }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(listingId)}/availability`,
+      undefined,
+      { token: coupleToken },
+    );
+    expect(pub.data.unavailable_dates).toContain(b.date);
+    expect(pub.data.partial_dates).not.toContain(b.date);
+  });
+
+  test("a date the vendor opened by hand outranks the external calendar", async () => {
+    const { vendorToken, listingId } = await bootstrapVendor("gcal-pull-exception");
+    const { token: coupleToken } = await bootstrapCouple("couple-pull-exception@weddly.test");
+    await connect(vendorToken);
+    const b = busyAt(60, 4, 16);
+    await pullWith(vendorToken, [b.range]);
+    // "I am working that day after all."
+    const open = await req(
+      "POST",
+      "/api/vendor/availability/me",
+      { date: b.date, available: true },
+      { token: vendorToken },
+    );
+    expect(open.status).toBe(201);
+
+    const pub = await req<{ unavailable_dates: string[]; partial_dates: string[] }>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(listingId)}/availability`,
+      undefined,
+      { token: coupleToken },
+    );
+    expect(pub.data.unavailable_dates).not.toContain(b.date);
+    expect(pub.data.partial_dates).not.toContain(b.date);
+  });
+
+  test("Weddly's own pushed calendar is never read back", async () => {
+    const { vendorToken, accountId } = await bootstrapVendor("gcal-pull-loop");
+    await connect(vendorToken);
+    const ourCalendarId = (
+      db
+        .prepare(
+          "SELECT calendar_id AS id FROM vendor_google_calendar_connections WHERE vendor_account_id = ?",
+        )
+        .get(accountId) as { id: string | null }
+    ).id;
+    expect(ourCalendarId).toBeTruthy();
+
+    // It is not even offered in the picker...
+    const list = await req<{ calendars: Array<{ id: string }> }>(
+      "GET",
+      "/api/vendor/google-calendar/calendars",
+      undefined,
+      { token: vendorToken },
+    );
+    expect(list.status).toBe(200);
+    expect(list.data.calendars.map((c) => c.id)).not.toContain(ourCalendarId);
+
+    // ...and selecting it by hand still reads nothing from it, so a booking we
+    // pushed can't come back as external busy on its own date.
+    __fakeSetBusy(ourCalendarId as string, [busyAt(60, 4, 16).range]);
+    const saved = await req<GoogleCalendarStatus>(
+      "PUT",
+      "/api/vendor/google-calendar/calendars",
+      { calendar_ids: [ourCalendarId] },
+      { token: vendorToken },
+    );
+    expect(saved.status).toBe(200);
+    expect(saved.data.externalBusyCount).toBe(0);
+  });
+
+  test("the picker lists the vendor's own calendars and remembers the ticks", async () => {
+    const { vendorToken } = await bootstrapVendor("gcal-pull-picker");
+    __fakeAddCalendar({ id: "primary", summary: "Personal", primary: true });
+    __fakeAddCalendar({
+      id: "birthdays@group.calendar.google.com",
+      summary: "Birthdays",
+      primary: false,
+    });
+    await connect(vendorToken);
+
+    const before = await req<{ calendars: Array<{ id: string; selected: boolean }> }>(
+      "GET",
+      "/api/vendor/google-calendar/calendars",
+      undefined,
+      { token: vendorToken },
+    );
+    // Nothing chosen yet reads as "primary only", which is what the pull does.
+    expect(before.data.calendars.find((c) => c.id === "primary")?.selected).toBe(true);
+    expect(
+      before.data.calendars.find((c) => c.id === "birthdays@group.calendar.google.com")?.selected,
+    ).toBe(false);
+
+    await req(
+      "PUT",
+      "/api/vendor/google-calendar/calendars",
+      { calendar_ids: ["birthdays@group.calendar.google.com"] },
+      { token: vendorToken },
+    );
+    const after = await req<{ calendars: Array<{ id: string; selected: boolean }> }>(
+      "GET",
+      "/api/vendor/google-calendar/calendars",
+      undefined,
+      { token: vendorToken },
+    );
+    expect(
+      after.data.calendars.find((c) => c.id === "birthdays@group.calendar.google.com")?.selected,
+    ).toBe(true);
+    expect(after.data.calendars.find((c) => c.id === "primary")?.selected).toBe(false);
+  });
+
+  test("switching the pull off clears what it had pulled", async () => {
+    const { vendorToken } = await bootstrapVendor("gcal-pull-off");
+    await connect(vendorToken);
+    await pullWith(vendorToken, [busyAt(60, 8, 2).range]);
+    expect((await externalBusyOf(vendorToken)).data.external_busy.length).toBe(1);
+
+    const off = await req<GoogleCalendarStatus>(
+      "PUT",
+      "/api/vendor/google-calendar/calendars",
+      { calendar_ids: [], pull_enabled: false },
+      { token: vendorToken },
+    );
+    expect(off.data.pullEnabled).toBe(false);
+    expect(off.data.externalBusyCount).toBe(0);
+    expect((await externalBusyOf(vendorToken)).data.external_busy).toEqual([]);
+  });
+
+  test("disconnecting takes the pulled busy with it", async () => {
+    const { vendorToken, accountId } = await bootstrapVendor("gcal-pull-disconnect");
+    await connect(vendorToken);
+    await pullWith(vendorToken, [busyAt(60, 8, 2).range]);
+
+    const d = await req(
+      "POST",
+      "/api/vendor/google-calendar/disconnect",
+      {},
+      { token: vendorToken },
+    );
+    expect(d.status).toBe(200);
+    const rows = db
+      .prepare("SELECT COUNT(*) AS c FROM vendor_external_busy WHERE vendor_account_id = ?")
+      .get(accountId) as { c: number };
+    expect(rows.c).toBe(0);
+  });
+
+  test("a multi-day block splits across the local dates it covers", async () => {
+    const { vendorToken } = await bootstrapVendor("gcal-pull-multiday");
+    await connect(vendorToken);
+    // 39 hours from a local evening: the first day to midnight, one whole day,
+    // then the morning of the third.
+    const b = busyAt(60, 16, 39);
+    await pullWith(vendorToken, [b.range]);
+    const view = await externalBusyOf(vendorToken);
+    const middle = view.data.external_busy[1];
+    expect(view.data.external_busy.length).toBe(3);
+    expect(view.data.external_busy[0]).toEqual({
+      date: b.date,
+      start_min: b.startMin,
+      end_min: 1440,
+    });
+    expect(middle?.start_min).toBe(0);
+    expect(middle?.end_min).toBe(1440);
+    expect(view.data.external_busy[2]).toEqual({
+      date: b.endDate,
+      start_min: 0,
+      end_min: b.endMin,
+    });
   });
 });

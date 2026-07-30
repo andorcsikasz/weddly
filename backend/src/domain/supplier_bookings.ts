@@ -24,7 +24,8 @@ import {
 import { db, now } from "../db";
 import { isVendorEntitled, recordVendorLeadCredit } from "./vendor_billing";
 import { emitVendorEvent } from "./vendor_points";
-import { getVendorWeekdays } from "./vendor_availability_settings";
+import { getVendorSchedule, getVendorWeekdays } from "./vendor_availability_settings";
+import { externalVerdictFor, listVendorExternalBusy } from "./vendor_external_busy";
 
 const VALID_STATUSES: ReadonlySet<BookingStatus> = new Set([
   "requested",
@@ -159,8 +160,9 @@ export function listOpenDates(vendorAccountId: number): string[] {
 export function listingIdsUnavailableOn(date: string): string[] {
   // Candidates only: a vendor with nothing on file for this date and no weekly
   // pattern resolves to "available" by definition, so there is no reason to ask
-  // about them. Three ways to be interesting — an exception row on the day, a
-  // weekly pattern at all, or a confirmed wedding that day.
+  // about them. Four ways to be interesting: an exception row on the day, a
+  // weekly pattern at all, a confirmed wedding that day, or busy time pulled
+  // from their own Google calendar for that day.
   const rows = db
     .prepare(
       `SELECT l.id AS id, l.vendor_account_id AS vendor_account_id
@@ -175,9 +177,11 @@ export function listingIdsUnavailableOn(date: string): string[] {
             OR EXISTS (SELECT 1 FROM supplier_bookings b
                         WHERE b.vendor_account_id = l.vendor_account_id
                           AND b.event_date = ? AND b.status = 'confirmed')
+            OR EXISTS (SELECT 1 FROM vendor_external_busy e
+                        WHERE e.vendor_account_id = l.vendor_account_id AND e.busy_date = ?)
           )`,
     )
-    .all(date, date) as Array<{ id: string; vendor_account_id: number }>;
+    .all(date, date, date) as Array<{ id: string; vendor_account_id: number }>;
 
   const out: string[] = [];
   for (const row of rows) {
@@ -200,13 +204,19 @@ export function listingIdsUnavailableOn(date: string): string[] {
     // Re-deriving the order here is how a couple ends up being shown a day the
     // vendor's own calendar calls taken (or, worse, hidden from a day the
     // vendor opened by hand).
+    const schedule = getVendorSchedule(row.vendor_account_id);
     const day = resolveDayAvailability({
       hasConfirmedBooking: booked !== undefined && booked !== null,
       exception: ex
         ? { available: ex.is_available === 1, hours: parseBlockedHours(ex.blocked_hours) }
         : null,
-      weekdays: getVendorWeekdays(row.vendor_account_id),
+      weekdays: schedule.weekdays,
       date,
+      external: externalVerdictFor({
+        date,
+        busy: listVendorExternalBusy(row.vendor_account_id),
+        hours: schedule.working_hours,
+      }),
     });
     if (!isBookableDay(day)) out.push(row.id);
   }
@@ -309,8 +319,10 @@ export function nextAvailableDate(vendorAccountId: number): string | null {
   // shared with the frontend so the vendor calendar, the public busy calendar
   // and this can't disagree about what "free" means. A partial-hour block still
   // leaves the day open for a booking.
-  const weekdays = getVendorWeekdays(vendorAccountId);
+  const schedule = getVendorSchedule(vendorAccountId);
   const exceptions = listAvailabilityExceptions(vendorAccountId);
+  // One query for the whole scan: 365 per-date lookups would be 365 queries.
+  const externalBusy = listVendorExternalBusy(vendorAccountId);
   const confirmed = new Set(
     (
       db
@@ -331,12 +343,46 @@ export function nextAvailableDate(vendorAccountId: number): string | null {
     const state = resolveDayAvailability({
       hasConfirmedBooking: confirmed.has(iso),
       exception: exceptions.get(iso) ?? null,
-      weekdays,
+      weekdays: schedule.weekdays,
       date: iso,
+      external: externalVerdictFor({
+        date: iso,
+        busy: externalBusy,
+        hours: schedule.working_hours,
+      }),
     });
     if (isBookableDay(state)) return iso;
   }
   return null;
+}
+
+/** The couple-facing split of what the vendor's OWN Google calendar takes:
+ *  `full` reads as booked, `partial` as partly booked. Same two buckets the
+ *  hand-marked blocks use, so the busy calendar needs no third state and a
+ *  couple is never shown why a vendor is busy, only that they are. */
+function externalDateBuckets(vendorAccountId: number): { full: string[]; partial: string[] } {
+  const busy = listVendorExternalBusy(vendorAccountId);
+  if (busy.size === 0) return { full: [], partial: [] };
+  const hours = getVendorSchedule(vendorAccountId).working_hours;
+  // A date the vendor has spoken about by hand is theirs to decide, in EITHER
+  // direction: a block is already in the blocked list, and an opened day must
+  // not be re-closed by the external calendar. Same precedence as
+  // `resolveDayAvailability`, and skipping it here is what keeps this payload
+  // agreeing with next-free and the directory filter.
+  const exceptions = listAvailabilityExceptions(vendorAccountId);
+  const full: string[] = [];
+  const partial: string[] = [];
+  for (const date of busy.keys()) {
+    if (exceptions.has(date)) continue;
+    const verdict = externalVerdictFor({ date, busy, hours });
+    if (verdict === "full") full.push(date);
+    else if (verdict === "partial") partial.push(date);
+  }
+  return { full, partial };
+}
+
+function mergeDates(a: readonly string[], b: readonly string[]): string[] {
+  return [...new Set([...a, ...b])].sort();
 }
 
 export function getAvailability(supplierId: string): SupplierAvailability {
@@ -363,11 +409,20 @@ export function getAvailability(supplierId: string): SupplierAvailability {
       available_weekdays: null,
     };
   }
+  // What the vendor's own Google calendar says, folded into the same two
+  // buckets. A date that is BOTH hand-blocked and externally busy lands in
+  // `unavailable` once: `mergeDates` dedupes, and full beats partial below.
+  const external = externalDateBuckets(listing.vendor_account_id);
+  const fullDates = mergeDates(listFullyBlockedDates(listing.vendor_account_id), external.full);
+  const partialDates = mergeDates(
+    listPartialBlockedDates(listing.vendor_account_id),
+    external.partial,
+  ).filter((d) => !fullDates.includes(d));
   return {
     // Only whole-day blocks read as "fully booked"; partial-hour blocks surface
     // as a distinct "partly booked" marker and keep the day bookable.
-    unavailable_dates: listFullyBlockedDates(listing.vendor_account_id),
-    partial_dates: listPartialBlockedDates(listing.vendor_account_id),
+    unavailable_dates: fullDates,
+    partial_dates: partialDates,
     next_available: nextAvailableDate(listing.vendor_account_id),
     bookable: true,
     // The recurring layer. Couples' calendars grey out the weekdays this vendor

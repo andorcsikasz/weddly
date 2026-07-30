@@ -21,12 +21,17 @@ import { resolveVendorAccount, vendorPlanForAccount } from "../domain/vendor_cli
 import {
   disconnectVendorCalendar,
   getVendorConnectionRow,
+  listVendorGoogleCalendars,
+  pullCalendarIds,
   saveVendorConnection,
+  setVendorPullSelection,
   syncVendorCalendar,
+  syncVendorExternalBusy,
   timeZoneForVendor,
 } from "../domain/vendor_google_calendar";
+import { countVendorExternalBusy } from "../domain/vendor_external_busy";
 import { buildAuthUrl, exchangeCode } from "../lib/google_calendar";
-import { type Ctx, HttpError, json, type Router } from "../lib/http";
+import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { signOAuthState } from "../lib/oauth_state";
 
 /** Where the vendor lands after the consent round-trip. */
@@ -42,6 +47,11 @@ function statusFor(vendorAccountId: number): GoogleCalendarStatus {
     lastSyncedAt: conn?.last_synced_at ?? null,
     syncState: conn ? (conn.sync_state === "idle" ? "idle" : "dirty") : null,
     lastError: conn?.last_error ?? null,
+    // The pull half. Null when not connected; the couple flow is push-only and
+    // reports the same nulls.
+    pullEnabled: conn ? conn.pull_enabled === 1 : null,
+    busySyncedAt: conn?.busy_synced_at ?? null,
+    externalBusyCount: conn ? countVendorExternalBusy(vendorAccountId) : 0,
   };
 }
 
@@ -102,13 +112,60 @@ export async function handleVendorCalendarCallback(
   }
 }
 
-/** Manual "Sync now". Awaits a reconcile and returns the fresh status. */
+/** Manual "Sync now". Runs BOTH directions: push what Weddly knows, then pull
+ *  free/busy back. One button, because from the vendor's side "sync" is one
+ *  idea, and doing only half of it is what makes an integration feel unreliable. */
 async function handleSync(ctx: Ctx): Promise<Response> {
   const account = resolveVendorAccount(ctx);
   if (!getVendorConnectionRow(account.id)) {
     throw new HttpError(400, "Google Calendar is not connected");
   }
   await syncVendorCalendar(account.id);
+  await syncVendorExternalBusy(account.id);
+  return json(statusFor(account.id));
+}
+
+/** The vendor's Google calendars, with the ones currently read ticked. Live from
+ *  Google rather than cached: a calendar list changes rarely but silently, and a
+ *  stale picker would offer calendars that no longer exist. */
+async function handleListCalendars(ctx: Ctx): Promise<Response> {
+  const account = resolveVendorAccount(ctx);
+  const conn = getVendorConnectionRow(account.id);
+  if (!conn) throw new HttpError(400, "Google Calendar is not connected");
+  const selected = new Set(pullCalendarIds(conn));
+  try {
+    const calendars = await listVendorGoogleCalendars(account.id);
+    return json({
+      pull_enabled: conn.pull_enabled === 1,
+      calendars: calendars.map((c) => ({
+        id: c.id,
+        summary: c.summary,
+        primary: c.primary,
+        // An unchosen selection resolves to "primary", so the primary calendar
+        // shows as ticked before the vendor has touched anything, which is what
+        // the pull actually does.
+        selected: selected.has(c.id) || (c.primary && selected.has("primary")),
+      })),
+    });
+  } catch (e) {
+    ctx.log.error("gcal.vendor_calendar_list_failed", { err: String(e) });
+    throw new HttpError(502, "Could not read your Google calendars");
+  }
+}
+
+/** Save which calendars the pull reads, then re-pull immediately so the vendor
+ *  sees the effect of the tick they just made rather than at the next sweep. */
+async function handleSaveCalendars(ctx: Ctx): Promise<Response> {
+  const account = resolveVendorAccount(ctx);
+  const conn = getVendorConnectionRow(account.id);
+  if (!conn) throw new HttpError(400, "Google Calendar is not connected");
+  const body = await readJson<{ calendar_ids?: unknown; pull_enabled?: unknown }>(ctx.req);
+  const ids = Array.isArray(body.calendar_ids)
+    ? body.calendar_ids.filter((x): x is string => typeof x === "string")
+    : [];
+  const pullEnabled = body.pull_enabled !== false;
+  setVendorPullSelection(account.id, { calendarIds: ids, pullEnabled });
+  await syncVendorExternalBusy(account.id);
   return json(statusFor(account.id));
 }
 
@@ -123,4 +180,6 @@ export function registerVendorGoogleCalendarRoutes(router: Router) {
   router.get("/api/vendor/google-calendar/connect", handleConnect, true);
   router.post("/api/vendor/google-calendar/sync", handleSync, true);
   router.post("/api/vendor/google-calendar/disconnect", handleDisconnect, true);
+  router.get("/api/vendor/google-calendar/calendars", handleListCalendars, true);
+  router.put("/api/vendor/google-calendar/calendars", handleSaveCalendars, true);
 }
