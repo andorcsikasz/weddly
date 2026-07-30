@@ -38,6 +38,7 @@ import { sendKind } from "./emails";
 import { isOptedOut } from "./emails/optouts";
 import type { SupplierOutreachMode } from "./emails/templates";
 import { deliverInquiryFromOutreach, type DeliveredInquiry } from "./supplier_bookings";
+import { isVendorEntitled } from "./vendor_billing";
 import { localeForCountry, resolveListingCountry } from "./vendor_campaign";
 
 /** Subset of `Couple` / `CoupleRow` the outreach send pipeline actually
@@ -515,6 +516,12 @@ export function createCampaign(
   // history ("in their client list" vs "emailed only") and by the claim-time
   // replay, which must not re-deliver a message that already landed.
   const bookingBySupplier = new Map(inquiries.map((i) => [i.supplierId, i.bookingId]));
+  // Whether each recipient can actually answer on the thread. Replying is PRO,
+  // so the mail must not tell a FREE vendor to "reply there" and land them on a
+  // paywall; see the plan-aware closing line in the supplier_outreach template.
+  const canReplyBySupplier = new Map(
+    inquiries.map((i) => [i.supplierId, isVendorEntitled(i.vendorAccountId)]),
+  );
   const stampBooking = db.prepare("UPDATE outreach_messages SET booking_id = ? WHERE id = ?");
   for (const row of inserted.messages) {
     const bookingId = bookingBySupplier.get(row.supplier_id);
@@ -550,6 +557,7 @@ export function createCampaign(
         mode,
         eventDate,
         sentAt: ts,
+        canReplyInApp: canReplyBySupplier.get(contact.id) ?? false,
       },
       {
         user: null,

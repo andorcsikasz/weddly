@@ -388,6 +388,9 @@ const STUBS: KindPayload = {
     mode: "in_account",
     eventDate: "2026-09-12",
     sentAt: Date.parse("2026-06-14T10:30:00Z"),
+    // Previews the PRO closing line. A FREE vendor gets the same mail with the
+    // last paragraph pointing at the couple's contact details instead.
+    canReplyInApp: true,
   },
   planner_access_requested: {
     plannerLabel: "Eventful Studio",

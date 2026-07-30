@@ -32,6 +32,7 @@ import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
+import { buildEmail } from "../../src/domain/emails/templates";
 import {
   MESSAGE_BODY_MAX_LEN,
   type BookingMessage,
@@ -1102,4 +1103,59 @@ describe("booking messages — couple ↔ vendor thread", () => {
     },
     TEST_TIMEOUT_MS,
   );
+});
+
+// The inquiry mail is the vendor's first contact with a lead, and until now it
+// told every recipient to "reply there" while replying on the thread is PRO.
+// A FREE vendor following that instruction lands on a paywall, so the closing
+// line is plan-aware. Asserted against the builder rather than email_log,
+// which stores kind + recipient but not the body.
+describe("supplier_outreach in_account closing line follows the plan", () => {
+  const basePayload = {
+    coupleDisplayName: "Mia & Lucas",
+    coupleReplyEmail: "mia@example.test",
+    coupleReplyName: "Mia",
+    supplierName: "Bloom Studio",
+    subject: "Florals for September",
+    body: "Hello!",
+    outreachUrl: "https://tryweddly.com/vendor/clients",
+    mode: "in_account" as const,
+    eventDate: "2030-09-12",
+    sentAt: 1_760_000_000_000,
+  };
+
+  test("a vendor who can reply in app is told to reply there", () => {
+    const built = buildEmail(
+      "supplier_outreach",
+      { ...basePayload, canReplyInApp: true },
+      { recipientName: "Bloom Studio" },
+    );
+    expect(built.rendered.text).toContain("Ott tudsz válaszolni rá");
+    expect(built.rendered.text).toContain("Reply there");
+  });
+
+  test("a vendor who cannot is pointed at the couple's contact details instead", () => {
+    const built = buildEmail(
+      "supplier_outreach",
+      { ...basePayload, canReplyInApp: false },
+      { recipientName: "Bloom Studio" },
+    );
+    // No instruction it cannot honour.
+    expect(built.rendered.text).not.toContain("Ott tudsz válaszolni rá");
+    expect(built.rendered.text).not.toContain("Reply there");
+    // But it still says where the lead is and what is waiting with it.
+    expect(built.rendered.text).toContain("a pár elérhetőségével együtt");
+    expect(built.rendered.text).toContain("contact details");
+  });
+
+  test("the in_account branch still withholds Reply-To on both plans", () => {
+    for (const canReplyInApp of [true, false]) {
+      const built = buildEmail(
+        "supplier_outreach",
+        { ...basePayload, canReplyInApp },
+        { recipientName: "Bloom Studio" },
+      );
+      expect(built.replyTo).toBeUndefined();
+    }
+  });
 });

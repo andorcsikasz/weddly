@@ -741,6 +741,12 @@ export interface SupplierOutreachPayload {
   /** When the couple sent it, epoch ms. Renders as a date + time so a vendor
    *  reading a day later knows how warm the lead is. */
   sentAt: number;
+  /** `in_account` only: whether this vendor can actually answer inside Weddly.
+   *  Replying on the booking thread is PRO, so a FREE vendor told to "reply
+   *  there" walks into a paywall. The mail must promise only what the plan can
+   *  do; the lead itself, and the couple's address on the client card, are FREE
+   *  either way. Ignored on `account` / `claim`, where the mail is the channel. */
+  canReplyInApp?: boolean;
 }
 
 export interface PlannerAccessRequestedPayload {
@@ -3594,19 +3600,31 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       // The facts a vendor decides on before opening anything: is that date
       // free, what is it about, and how warm is it. An unknown date is stated
       // rather than dropped, because "no date yet" is itself a useful answer.
+      // The closing line is PLAN-AWARE. Answering on the booking thread is a
+      // PRO surface, so promising "reply there" to a FREE vendor walks them
+      // into a paywall on arrival. What every plan does get is the lead itself
+      // and the couple's address on the client card, so that is what the FREE
+      // variant points at. It sells nothing: the upgrade prompt lives in the
+      // product, where they can see what they would be buying.
+      const closingHu = p.canReplyInApp
+        ? "Az üzenet az ügyfeleid között vár. Ott tudsz válaszolni rá, és ott marad a többi érdeklődés mellett."
+        : "Az üzenet az ügyfeleid között vár, a pár elérhetőségével együtt, és ott marad a többi érdeklődés mellett.";
+      const closingEn = p.canReplyInApp
+        ? "The message is waiting in your client list. Reply there and it stays with the rest of your inquiries."
+        : "The message is waiting in your client list, along with the couple's contact details, and it stays with the rest of your inquiries.";
       const huParas = [
         `**${p.coupleDisplayName}** érdeklődik nálatok a Weddly-n keresztül.`,
         `**Téma:** ${p.subject}`,
         `**Esküvő időpontja:** ${dateHu || "még nincs kitűzve"}`,
         ...(sentHu ? [`**Beérkezett:** ${sentHu}`] : []),
-        "Az üzenet az ügyfeleid között vár. Ott tudsz válaszolni rá, és ott marad a többi érdeklődés mellett.",
+        closingHu,
       ];
       const enParas = [
         `**${p.coupleDisplayName}** got in touch through Weddly.`,
         `**Topic:** ${p.subject}`,
         `**Wedding date:** ${dateEn || "not set yet"}`,
         ...(sentEn ? [`**Received:** ${sentEn}`] : []),
-        "The message is waiting in your client list. Reply there and it stays with the rest of your inquiries.",
+        closingEn,
       ];
       return {
         subject: `${p.coupleDisplayName}, ${p.subject}`,
@@ -3718,7 +3736,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       hu: {
         preheader: `${p.vendorName} üzenetet küldött.`,
         greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
-        paragraphs: [`**${p.vendorName}** válaszolt a megkeresésetekre:`, ...bodyParas, ...huAttach],
+        paragraphs: [
+          `**${p.vendorName}** válaszolt a megkeresésetekre:`,
+          ...bodyParas,
+          ...huAttach,
+        ],
         cta: "Üzenet megnyitása",
       },
       en: {
