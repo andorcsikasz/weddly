@@ -5,6 +5,7 @@ import type { CoupleBilling } from "./billing";
 import type { CoupleDesign } from "./design";
 import type { ListingPackage } from "./listing_packages";
 import type { TimelineEmailEscalation } from "./notifications";
+import type { PlannerTierKey } from "./planner_points";
 import type { ReviewSummary } from "./suppliers";
 
 export type UnixMs = number;
@@ -268,6 +269,15 @@ export interface PlannerDirectoryEntry {
    *  table — a planner is just another review subject. */
   rating: number | null;
   reviews_count: number;
+  /** Weddly Points tier the card may WEAR, or null when the planner's tier earns
+   *  no badge. Null rather than `"blue"` on purpose: every planner starts in blue
+   *  and a badge everybody has is chrome, so the field is exactly "is there a
+   *  badge here", which is the only question the card asks. Derived from the
+   *  ledger at read time (`plannerBadgeTierForPoints`), never stored.
+   *
+   *  `PlannerDirectoryDetail` inherits it: one field, both surfaces, so a
+   *  planner's badge can't appear on the rail and vanish on their page. */
+  tier: PlannerTierKey | null;
   /** Link state relative to the requesting couple: 'invited' = this couple
    *  already invited them (pending on the planner side); 'requested' = the
    *  planner asked this couple for access (pending on the couple side);

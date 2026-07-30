@@ -8,6 +8,7 @@
 import { randomBytes } from "node:crypto";
 import type { PlannerInvitation } from "@shared/types";
 import { db, now } from "../db";
+import { emitPlannerEvent } from "./planner_points";
 
 /** 30-day validity window. An invitee who never signs up lets it lapse. */
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 30;
@@ -116,5 +117,9 @@ export function linkPlannerInvitationsForCouple(
     db.prepare(
       "UPDATE planner_invitations SET status = 'accepted', accepted_user_id = ?, accepted_at = ? WHERE id = ?",
     ).run(userId, ts, inv.id);
+    // Weddly Points: the planner brought a NEW couple to Weddly. Paid separately
+    // from `client_linked`, which the couple's own approval fires later, because
+    // these are two different things a planner can do.
+    emitPlannerEvent(inv.planner_user_id, "invite.accepted", { invitation_id: inv.id });
   }
 }

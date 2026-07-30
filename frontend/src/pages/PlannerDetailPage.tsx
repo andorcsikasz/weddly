@@ -29,6 +29,7 @@ import { AvailabilityCalendar } from "../components/AvailabilityCalendar";
 import { hrefFor, plannerInitials, plannerStyleLabel } from "../components/PlannerDirectoryRail";
 import { ReviewsSection } from "../components/ReviewsSection";
 import { StarRow } from "../components/StarRow";
+import { TierBadge } from "../components/TierBadge";
 import { useToast } from "../components/ui";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { ApiError } from "../lib/api";
@@ -261,6 +262,11 @@ export default function PlannerDetailPage() {
               {detail.verified && (
                 <VerifiedBadge size={28} kind="planner" complete={detail.profile_complete} />
               )}
+              {/* Weddly Points tier, the `profile_badge` perk made real. Set only
+                  when the tier earned a badge, and kept at the small size the
+                  card uses: it rides with the verified check as a mark next to a
+                  36px name, not as a second headline. */}
+              {detail.tier && <TierBadge tier={detail.tier} size="sm" />}
             </h1>
 
             {/* Rating row, in the header where the vendor page keeps it. */}

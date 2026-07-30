@@ -9618,6 +9618,11 @@ export interface LocaleMessages {
     address_label: string;
     bio_label: string;
     bio_placeholder: string;
+    /** The style picker on the account tab. The style NAMES come from the
+     *  `planners.style_*` keys the /planners application already uses, since the
+     *  stored slugs are the same vocabulary. `styles_hint` receives `{max}`. */
+    styles_label: string;
+    styles_hint: string;
     availability_label: string;
     availability_placeholder: string;
     availability_help: string;
@@ -9669,6 +9674,77 @@ export interface LocaleMessages {
     reference_adding: string;
     reference_delete: string;
     reference_need_text: string;
+  };
+  /** Weddly Points, planner side. The rules, the values and the perk lines all
+   *  render from `shared/planner_points.ts`, so no point value or threshold is
+   *  ever written into the copy here.
+   *
+   *  The tier NAMES are deliberately absent: Blue / Gold / Platinum / Black is
+   *  one shared vocabulary with the vendor ladder and lives at
+   *  `vendor.points.tier.*`, which `TierBadge` already reads. A second copy for
+   *  planners would only be a second place to drift. */
+  planner_points: {
+    /** Small label above the total. */
+    label: string;
+    /** Accessible name of the tier progress ring. */
+    ring_label: string;
+    /** Receives `{points}` + `{tier}`: how far to the next tier. */
+    to_next: string;
+    /** Shown instead of `to_next` at the highest tier. */
+    at_top: string;
+    /** Opens the earning rules. */
+    how_to_earn: string;
+    /** One line per rule in PLANNER_EARNABLE_EVENTS, keyed `earn_<event>`. The
+     *  point value is rendered from PLANNER_POINTS_BY_EVENT, never written in. */
+    earn_profile_completeness: string;
+    earn_first_review: string;
+    earn_review_collected: string;
+    earn_client_linked: string;
+    earn_couple_invited: string;
+    /** Lifetime points from one rule. Receives `{n}`. */
+    earned_so_far: string;
+    /** Lead-in to the next tier's perks. Receives `{tier}`. */
+    next_unlocks: string;
+    /** Perk lines. Only the perks a tier actually holds are listed. */
+    perk_directory: string;
+    perk_badge: string;
+    /** The planner's place among the planners a couple can find. The country
+     *  variant receives `{rank}`, `{total}` and `{country}` (a display name from
+     *  `countryName`, never an ISO code); the `_all` variant is for a planner
+     *  with no country set, who is ranked against the whole pool rather than
+     *  dropped. */
+    rank_position_country: string;
+    rank_position_all: string;
+    /** How far behind the planner immediately above. Receives `{points}`. */
+    rank_gap: string;
+  };
+  /** The planner's profile setup checklist on /app/planner/settings/account.
+   *  Steps are keyed `step_<PlannerChecklistStep>` and the percentage comes from
+   *  `plannerChecklistCompleteness`, the same helper the points engine awards
+   *  its 25% milestones from. Distinct from `planner_profile.nudge_*`, which is
+   *  the shorter dashboard version and disappears once finished. */
+  planner_setup: {
+    title: string;
+    body: string;
+    /** Accessible name of the completeness ring. */
+    ring_label: string;
+    /** Receives `{pct}`. */
+    progress: string;
+    /** Per-row call to action on an unfinished step. */
+    cta: string;
+    /** Receives `{points}`: what one 25% milestone pays. */
+    points_hint: string;
+    /** The finished state. Kept rather than hidden, so the page does not lose
+     *  its progress block the moment it is earned. */
+    done_title: string;
+    done_body: string;
+    step_business_name: string;
+    step_city: string;
+    step_bio: string;
+    step_styles: string;
+    step_has_photo: string;
+    step_has_package: string;
+    step_has_availability: string;
   };
   planner_billing: {
     meta_title: string;

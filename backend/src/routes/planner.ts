@@ -6,7 +6,18 @@ import { sniffUploadedImage } from "../lib/image_sniff";
 import { keyFromUploadUrl, storage } from "../lib/storage";
 import { getCoupleById, toCouple } from "../domain/couples";
 import { sendKind } from "../domain/emails/send";
-import { isPlannerProfileComplete, plannerProfileMissing } from "../domain/planner_profile";
+import {
+  isPlannerProfileComplete,
+  PLANNER_DIRECTORY_VISIBLE_SQL,
+  plannerProfileChecklist,
+} from "../domain/planner_profile";
+import {
+  emitPlannerEvent,
+  PLANNER_DIRECTORY_BOOST_SQL,
+  PLANNER_POINTS_SUM_JOIN,
+  plannerBadgeTierForPoints,
+  plannerPointsTotal,
+} from "../domain/planner_points";
 import { plannerReviewSummary } from "../domain/planner_reviews";
 import {
   addPlannerPackage,
@@ -50,7 +61,6 @@ import type {
   PlannerPlan,
   PlannerPortfolioItem,
   PlannerProfile,
-  PlannerProfileChecklist,
   PlannerWaitlistPrefill,
 } from "@shared/types";
 
@@ -146,7 +156,9 @@ function isHhMm(v: unknown): v is string {
   return typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
 }
 
-function requirePlannerAuth(ctx: Ctx): number {
+/** Exported for `routes/planner_points.ts`, which is a second planner surface
+ *  rather than a second definition of "is the caller a planner". */
+export function requirePlannerAuth(ctx: Ctx): number {
   const userId = requireAuth(ctx);
   const user = db.prepare("SELECT user_type FROM users WHERE id = ?").get(userId) as
     | { user_type: string }
@@ -1038,37 +1050,6 @@ function toPlannerProfileBase(
   };
 }
 
-/** What a couple actually meets on the profile. The first four mirror the
- *  directory-listing fields the verified badge already measures; the last three
- *  are the showcase sections, which render only when they have content — so a
- *  planner can fill in every text field and still publish a page that is a
- *  monogram tile over three collapsed sections. Computed server-side because
- *  the blocked-date calendar lives outside the profile payload. */
-function plannerProfileChecklist(row: PlannerUserRow, userId: number): PlannerProfileChecklist {
-  const missing = plannerProfileMissing({
-    business_name: row.business_name,
-    planner_city: row.planner_city,
-    planner_bio: row.planner_bio,
-    planner_styles: row.planner_styles,
-  });
-  const has = (sql: string) => ((db.prepare(sql).get(userId) as { n: number }).n ?? 0) > 0;
-  return {
-    business_name: !missing.businessName,
-    city: !missing.city,
-    bio: !missing.bio,
-    styles: !missing.styles,
-    has_photo: has(
-      "SELECT COUNT(*) AS n FROM planner_portfolio WHERE planner_user_id = ? AND image_url IS NOT NULL",
-    ),
-    has_package: has("SELECT COUNT(*) AS n FROM planner_packages WHERE planner_user_id = ?"),
-    // Either half of the availability block counts: a kept calendar OR the
-    // free-text note. Both render the same section to the couple.
-    has_availability:
-      Boolean(row.planner_availability?.trim()) ||
-      has("SELECT COUNT(*) AS n FROM planner_unavailable_dates WHERE planner_user_id = ?"),
-  };
-}
-
 async function handleGetProfile(ctx: Ctx): Promise<Response> {
   const userId = requirePlannerAuth(ctx);
   const row = db.prepare(`SELECT ${PLANNER_PROFILE_COLUMNS} FROM users WHERE id = ?`).get(userId) as
@@ -1265,6 +1246,10 @@ async function handleUpdateProfile(ctx: Ctx): Promise<Response> {
     );
   }
 
+  // Weddly Points: announce the edit, never the reward. The engine re-reads the
+  // checklist and decides whether a 25% milestone was crossed.
+  emitPlannerEvent(userId, "profile.updated");
+
   const updated = db
     .prepare(`SELECT ${PLANNER_PROFILE_COLUMNS} FROM users WHERE id = ?`)
     .get(userId) as PlannerUserRow;
@@ -1363,6 +1348,7 @@ async function handleAddPortfolio(ctx: Ctx): Promise<Response> {
     );
   }
 
+  emitPlannerEvent(userId, "profile.updated");
   return json({ portfolio: listPortfolio(userId) });
 }
 
@@ -1379,6 +1365,7 @@ async function handleDeletePortfolio(ctx: Ctx): Promise<Response> {
   const key = row.image_url ? keyFromUploadUrl(row.image_url) : null;
   if (key) await storage.delete(key);
   db.prepare("DELETE FROM planner_portfolio WHERE id = ? AND planner_user_id = ?").run(id, userId);
+  emitPlannerEvent(userId, "profile.updated");
   return json({ portfolio: listPortfolio(userId) });
 }
 
@@ -1486,6 +1473,7 @@ async function handleAddPlannerPackage(ctx: Ctx): Promise<Response> {
     target_id: userId,
     after: { package_id: pkg.id, name },
   });
+  emitPlannerEvent(userId, "profile.updated");
   return json(reloadPlannerProfile(userId), { status: 201 });
 }
 
@@ -1533,6 +1521,7 @@ async function handleDeletePlannerPackage(ctx: Ctx): Promise<Response> {
       target_id: userId,
       after: { package_id: packageId, name: existing.name },
     });
+    emitPlannerEvent(userId, "profile.updated");
   }
   return json(reloadPlannerProfile(userId));
 }
@@ -1621,6 +1610,8 @@ async function handleBlockPlannerDate(ctx: Ctx): Promise<Response> {
     target_id: userId,
     after: { blocked_date: date, has_reason: reason !== null },
   });
+  // A kept calendar is one half of the checklist's availability step.
+  emitPlannerEvent(userId, "profile.updated");
   return json(plannerAvailabilityView(userId), { status: 201 });
 }
 
@@ -1639,6 +1630,7 @@ async function handleUnblockPlannerDate(ctx: Ctx): Promise<Response> {
       target_id: userId,
       after: { blocked_date: date },
     });
+    emitPlannerEvent(userId, "profile.updated");
   }
   return json(plannerAvailabilityView(userId));
 }
@@ -1738,6 +1730,9 @@ async function handleAcceptInvite(ctx: Ctx): Promise<Response> {
   db.prepare(
     "UPDATE planner_clients SET status = 'active' WHERE planner_user_id = ? AND couple_id = ? AND initiated_by = 'couple'",
   ).run(userId, coupleId);
+
+  // The consent handshake closed: one of the two places a link becomes active.
+  emitPlannerEvent(userId, "client.linked", { couple_id: coupleId });
 
   addAuditLog({
     actor_user_id: userId,
@@ -1847,7 +1842,8 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
               u.planner_country, u.planner_website, u.planner_styles, u.planner_km_radius,
               u.planner_weddings_per_year, u.planner_avatar_url, u.planner_verified,
               pc.status AS link_state, pc.initiated_by AS link_initiated_by,
-              sa.avg_rating AS avg_rating, sa.reviews_count AS reviews_count
+              sa.avg_rating AS avg_rating, sa.reviews_count AS reviews_count,
+              COALESCE(pp.points, 0) AS points
          FROM users u
          LEFT JOIN planner_clients pc
            ON pc.planner_user_id = u.id AND pc.couple_id = ?
@@ -1856,19 +1852,17 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
          -- yet" case needs no threshold logic of its own.
          LEFT JOIN supplier_aggregates sa
            ON sa.supplier_id = ${PLANNER_SUBJECT_SQL}
-        WHERE u.user_type = 'planner'
-          AND u.status = 'active'
-          AND u.verified_email = 1
-          AND u.email NOT LIKE '%@demo.weddly.local'
-          -- Admin-verified planners are surfaced even with a thin profile (the
-          -- card falls back to full_name and city is optional); everyone else
-          -- still needs a minimally complete profile (business name + city).
-          AND (
-            u.planner_verified = 1
-            OR (TRIM(COALESCE(u.business_name, '')) != ''
-                AND TRIM(COALESCE(u.planner_city, '')) != '')
-          )
+         -- Weddly Points total, for the tier badge and the tier's ranking boost.
+         ${PLANNER_POINTS_SUM_JOIN}
+        WHERE ${PLANNER_DIRECTORY_VISIBLE_SQL}
+        -- Four sort keys, in this order for a reason. planner_verified is a
+        -- human's trust decision and must stay on top: points are earned by
+        -- doing things, and no amount of doing things outranks an admin saying
+        -- "we checked this business". The tier boost sits directly under it and
+        -- ABOVE profile richness, so the perk is real (a Gold planner does move
+        -- up the rail) without letting the ladder bury a verified newcomer.
         ORDER BY u.planner_verified DESC,
+                 ${PLANNER_DIRECTORY_BOOST_SQL} DESC,
                  (CASE WHEN COALESCE(u.planner_avatar_url, '') != '' THEN 1 ELSE 0 END
                 + CASE WHEN TRIM(COALESCE(u.planner_bio, '')) != '' THEN 1 ELSE 0 END) DESC,
                  u.created_at DESC
@@ -1893,6 +1887,7 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
     link_initiated_by: string | null;
     avg_rating: number | null;
     reviews_count: number | null;
+    points: number;
   }>;
 
   const planners: PlannerDirectoryEntry[] = rows.map((r) => ({
@@ -1917,6 +1912,9 @@ async function handlePlannerDirectory(ctx: Ctx): Promise<Response> {
     }),
     rating: r.avg_rating,
     reviews_count: r.reviews_count ?? 0,
+    // null below the first badge-bearing rung: every planner is in blue, and a
+    // badge everybody wears says nothing.
+    tier: plannerBadgeTierForPoints(r.points),
     link_status:
       r.link_state === "active"
         ? "active"
@@ -1961,17 +1959,9 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
          LEFT JOIN planner_clients pc
            ON pc.planner_user_id = u.id AND pc.couple_id = ?
         WHERE u.id = ?
-          AND u.user_type = 'planner'
-          AND u.status = 'active'
-          AND u.verified_email = 1
-          AND u.email NOT LIKE '%@demo.weddly.local'
-          -- Mirror the directory list: verified planners open even with a thin
-          -- profile; unverified ones still need business name + city.
-          AND (
-            u.planner_verified = 1
-            OR (TRIM(COALESCE(u.business_name, '')) != ''
-                AND TRIM(COALESCE(u.planner_city, '')) != '')
-          )`,
+          -- Same visibility rules as the list, from the same definition: a card
+          -- a couple can see must open, and one they can't must not.
+          AND ${PLANNER_DIRECTORY_VISIBLE_SQL}`,
     )
     .get(coupleId, plannerId) as
     | {
@@ -2036,6 +2026,7 @@ async function handlePlannerDetail(ctx: Ctx): Promise<Response> {
       planner_bio: r.planner_bio,
       planner_styles: r.planner_styles,
     }),
+    tier: plannerBadgeTierForPoints(plannerPointsTotal(r.id)),
     link_status: linkStatusOf(r.link_state, r.link_initiated_by),
     availability: r.planner_availability,
     reference_links: referenceLinks.length ? referenceLinks : null,
@@ -2092,6 +2083,10 @@ async function handleAcceptPlannerRequest(ctx: Ctx): Promise<Response> {
   db.prepare(
     "UPDATE planner_clients SET status = 'active' WHERE planner_user_id = ? AND couple_id = ? AND initiated_by = 'planner'",
   ).run(plannerUserId, coupleId);
+
+  // The other place a link becomes active. Credited to the PLANNER, not to the
+  // couple who clicked: the points belong to whoever the ledger is about.
+  emitPlannerEvent(plannerUserId, "client.linked", { couple_id: coupleId });
 
   addAuditLog({
     actor_user_id: userId,

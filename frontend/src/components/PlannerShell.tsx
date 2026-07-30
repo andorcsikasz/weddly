@@ -39,6 +39,7 @@ import { useTheme } from "../lib/useTheme";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { PlannerDemoOverlay } from "./PlannerDemoOverlay";
+import { PlannerPointsChip, PlannerPointsRail, usePlannerPoints } from "./PlannerPointsRail";
 import { Wordmark } from "./Wordmark";
 
 type PlannerNavItem = { to: string; labelKey: string; icon: ReactNode; end?: boolean };
@@ -371,6 +372,10 @@ export function PlannerShell({ children }: { children: ReactNode }) {
   // Warm-dark mode, shared with the other shells via localStorage. Like the
   // couple /app, the planner workspace defaults to dark on first visit.
   const [theme, setTheme] = useTheme("dark");
+  // Weddly Points, read once here and handed to both surfaces: the block at the
+  // foot of the rail from lg, the header chip below it. The hook caches, so the
+  // account page's panel shares this same read rather than firing a second GET.
+  const points = usePlannerPoints();
 
   useEffect(() => {
     let cancelled = false;
@@ -478,6 +483,13 @@ export function PlannerShell({ children }: { children: ReactNode }) {
               )}
             </button>
 
+            {/* Below lg only: from lg the same score is a block at the foot of
+                the rail, and two copies of one number in one viewport is one
+                too many. The cutover is lg rather than the vendor shell's md
+                because that is where THIS nav becomes a vertical rail with a
+                foot to dock to. */}
+            <PlannerPointsChip points={points} className="lg:hidden" />
+
             <NotificationBell
               overdue={stats?.overdue_tasks ?? 0}
               pendingInvites={invites.length}
@@ -550,6 +562,11 @@ export function PlannerShell({ children }: { children: ReactNode }) {
                 </NavLink>
               );
             })}
+
+            {/* Weddly Points, docked under the nav from lg. It shrinks to the
+                tier ring alone on the collapsed icon rail; below lg it hides
+                itself and the header chip carries the score instead. */}
+            <PlannerPointsRail collapsed={collapsed} points={points} />
           </nav>
         </aside>
         <main id="main-content" className="min-w-0 flex-1 focus:outline-none">

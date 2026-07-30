@@ -13,6 +13,7 @@ import { ApiError } from "../lib/api";
 import { couplePlannerApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { StarRow } from "./StarRow";
+import { TierBadge } from "./TierBadge";
 import { useToast } from "./ui";
 import { VerifiedBadge } from "./VerifiedBadge";
 
@@ -38,21 +39,32 @@ export function plannerInitials(name: string): string {
   return (first + second).toUpperCase();
 }
 
+/** The style vocabulary, in the order it is offered. Reuses the /planners
+ *  waitlist slugs so a planner who applied with "rustic" keeps that exact value
+ *  when they later edit their profile in settings, and both surfaces label it
+ *  from the same `planners.style_*` keys.
+ *
+ *  Exported because the settings-page picker writes these values and this list
+ *  is the only place that says what they are. A slug stored before the list
+ *  existed still renders (see `plannerStyleLabel`), it just cannot be picked. */
+export const PLANNER_STYLE_SLUGS = [
+  "romantic",
+  "classic",
+  "rustic",
+  "modern",
+  "bohemian",
+  "elegant",
+  "vintage",
+  "outdoor",
+  "other",
+] as const;
+
 /** Planner style slugs reuse the /planners waitlist vocabulary, so the labels
  *  come from the same `planners.style_*` keys. Unknown slugs render raw. */
 export function plannerStyleLabel(t: (k: string) => string, style: string): string {
-  const known = [
-    "romantic",
-    "classic",
-    "rustic",
-    "modern",
-    "bohemian",
-    "elegant",
-    "vintage",
-    "outdoor",
-    "other",
-  ];
-  return known.includes(style) ? t(`planners.style_${style}`) : style;
+  return (PLANNER_STYLE_SLUGS as readonly string[]).includes(style)
+    ? t(`planners.style_${style}`)
+    : style;
 }
 
 export function PlannerCard({
@@ -117,6 +129,18 @@ export function PlannerCard({
             </button>
             {planner.verified && (
               <VerifiedBadge size={14} kind="planner" complete={planner.profile_complete} />
+            )}
+            {/* The Weddly Points tier, which is the whole substance of the
+                `profile_badge` perk: null unless the planner's tier actually
+                earned one, so the entry tier adds nothing here. It sits with the
+                verified check at badge size and stays quiet - a second loud pill
+                beside the name would compete with the name. */}
+            {planner.tier && (
+              // shrink-0, or a long business name squeezes the pill's letters
+              // instead of truncating itself in a 288px rail.
+              <span className="shrink-0">
+                <TierBadge tier={planner.tier} size="sm" />
+              </span>
             )}
             {planner.website && (
               <a

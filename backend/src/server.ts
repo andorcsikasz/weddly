@@ -35,6 +35,8 @@ import { startBackupWorker } from "./domain/backup";
 import { startGoogleCalendarWorker } from "./domain/google_calendar_worker";
 import { backfillVendorPoints } from "./domain/vendor_points";
 import { startVendorPointsWorker } from "./domain/vendor_points_worker";
+import { backfillPlannerPoints } from "./domain/planner_points";
+import { startPlannerPointsWorker } from "./domain/planner_points_worker";
 import { startWishlistImageBackfill } from "./domain/wishlist_image_backfill";
 import { startListingImageBackfill } from "./domain/listing_image_backfill";
 import { startListingGalleryBackfill } from "./domain/listing_gallery_backfill";
@@ -57,6 +59,7 @@ import { registerVendorWaitlistRoutes } from "./routes/vendor_waitlist";
 import { registerPlannerWaitlistRoutes } from "./routes/planner_waitlist";
 import { registerPlannerRoutes } from "./routes/planner";
 import { registerPlannerEventsRoutes } from "./routes/planner_events";
+import { registerPlannerPointsRoutes } from "./routes/planner_points";
 import { registerPlannerActivationRoutes } from "./routes/planner_activation";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAuthAppleRoutes } from "./routes/auth_apple";
@@ -296,6 +299,7 @@ registerVendorWaitlistRoutes(router);
 registerPlannerWaitlistRoutes(router);
 registerPlannerRoutes(router);
 registerPlannerEventsRoutes(router);
+registerPlannerPointsRoutes(router);
 registerPlannerActivationRoutes(router);
 registerUserCoupleRoutes(router);
 registerUserProfileRoutes(router);
@@ -864,6 +868,11 @@ if (process.env.NODE_ENV !== "test") {
   // idempotent (dedupe_key), so booting twice awards nothing twice.
   startVendorPointsWorker();
   backfillVendorPoints();
+  // Same pair for the planner ledger: drain the planner outbox, then replay what
+  // existing profiles / reviews / client links / accepted invitations would have
+  // earned. Idempotent through dedupe_key, so booting twice awards nothing twice.
+  startPlannerPointsWorker();
+  backfillPlannerPoints();
   // Tidy any abandoned demo couples left over from a previous boot — keeps
   // the table sparse even when /api/demo/start hasn't been hit in days.
   runDemoBootSweep();

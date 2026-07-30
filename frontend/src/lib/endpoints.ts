@@ -261,6 +261,7 @@ import type {
   VendorMessageTemplate,
 } from "@shared/booking_messages";
 import type { VendorPointsStatus } from "@shared/vendor_points";
+import type { PlannerPointsStatus } from "@shared/planner_points";
 import type { VendorAvailabilitySettings, WeeklyHours } from "@shared/vendor_availability";
 import type {
   AdminVendorView,
@@ -3954,6 +3955,14 @@ export const plannerApi = {
     }),
   deleteClientNote: (coupleId: number, noteId: number) =>
     apiFetch<{ ok: boolean }>("DELETE", `/api/planner/clients/${coupleId}/notes/${noteId}`),
+};
+
+/** Weddly Points: the planner's derived total, tier, perks, standing and recent
+ *  ledger. Read-only like the vendor twin, and for the same reason - points are
+ *  written only by the server-side engine replaying domain events, never by a
+ *  client call. */
+export const plannerPointsApi = {
+  get: () => apiFetch<PlannerPointsStatus>("GET", "/api/planner/points"),
 };
 
 export const couplePlannerApi = {

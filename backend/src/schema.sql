@@ -2413,3 +2413,51 @@ CREATE TABLE IF NOT EXISTS vendor_event_outbox (
 );
 CREATE INDEX IF NOT EXISTS idx_vendor_outbox_pending
   ON vendor_event_outbox(processed_at, id) WHERE processed_at IS NULL;
+
+-- ── Weddly Points: the planner tier currency ────────────────────────────────
+-- The planner twin of the two tables above, and deliberately a SEPARATE pair
+-- rather than an owner-type column on them: the vendor tables key on
+-- vendor_accounts(id) as a NOT NULL FK, and a planner has no vendor account, so
+-- there was no additive path to a second owner. Same shape, same rules, and the
+-- same reason for both: the ledger is APPEND-ONLY and the total, the tier and the
+-- standing are derived by replaying it, so an engine bug is fixable by replay
+-- instead of leaving a drifted number nobody can audit. Rules + amounts live in
+-- shared/planner_points.ts.
+--
+-- `dedupe_key` describes the OCCURRENCE that earned the points
+-- ("review:412", "client:88", "invite:12", "profile:75"), never the attempt, so
+-- the retroactive backfill, a redelivered outbox event and a manual replay all
+-- collapse onto one row. An admin correction is a NEW row with negative points.
+CREATE TABLE IF NOT EXISTS planner_points_ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL,                                    -- PlannerPointsEvent
+  points INTEGER NOT NULL,                                     -- may be negative (admin_adjustment)
+  dedupe_key TEXT NOT NULL,                                    -- stable per earning occurrence
+  created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_planner_points_dedupe
+  ON planner_points_ledger(planner_user_id, dedupe_key);
+CREATE INDEX IF NOT EXISTS idx_planner_points_planner
+  ON planner_points_ledger(planner_user_id, created_at DESC);
+
+-- Domain-event outbox for planners. Feature code (reviews, client links, email
+-- invitations, profile edits) only ever INSERTs here; the planner points worker
+-- is the sole consumer and the sole writer of the ledger above. A route says
+-- "this happened", never "add 60 points".
+--
+-- Rows are kept after processing (processed_at set) as a replay log.
+-- `attempts` + `last_error` make a poisonous event visible instead of letting it
+-- stall the queue behind it.
+CREATE TABLE IF NOT EXISTS planner_event_outbox (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  planner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL,                                    -- 'review.created' | 'client.linked' | …
+  payload_json TEXT,                                           -- small JSON: event-specific ids
+  created_at INTEGER NOT NULL,
+  processed_at INTEGER,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_planner_outbox_pending
+  ON planner_event_outbox(processed_at, id) WHERE processed_at IS NULL;

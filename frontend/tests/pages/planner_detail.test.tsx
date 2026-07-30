@@ -95,6 +95,9 @@ beforeEach(() => {
     weddings_per_year: 20,
     avatar_url: null,
     verified: true,
+    // No Weddly Points tier badge on this fixture: `tier` is null below the
+    // rung that earns one, which is where a planner with no points sits.
+    tier: null,
     // Business name, city, bio and styles are all filled in below, so the
     // badge this fixture stands for is the solid one.
     profile_complete: true,

@@ -1,6 +1,7 @@
-// The one progress ring in the vendor portal. Profile completeness, Weddly
-// Points tier progress and (phase 2) quest progress all render through it, so
-// "how far along am I" looks identical wherever it is asked.
+// The one progress ring in the vendor portal, and in the planner portal too.
+// Profile completeness, Weddly Points tier progress and (phase 2) quest
+// progress all render through it, so "how far along am I" looks identical
+// wherever it is asked.
 //
 // Colour semantics are fixed and must not be mixed, because the whole point of
 // a colour system is that a vendor learns it once:
@@ -16,6 +17,14 @@
 // to its right. That one passes trackClass/arcClass (from `TIER_RING`) and opts
 // out of the table above; it is the same exception TierBadge already is to the
 // portal's one-interactive-colour rule, and for the same reason: a tier is data.
+//
+// The PLANNER portal renders this ring as well, and overrides the same two
+// classes for the opposite reason: the table above is the vendor palette, whose
+// `active` tone is blush, and blush means nothing on a surface whose one
+// interactive colour is moss. So planner PROGRESS passes moss track+arc
+// (stroke-moss-100 / stroke-moss-600 and their dark pairs) while planner tier
+// rings keep `TIER_RING` untouched, since a tier is the same fact on both
+// sides. Either way both classes are passed together, never one.
 //
 // Pure tokenised SVG, no chart library. The arc animates on value change; a
 // ring that snaps reads as a redraw rather than as progress.

@@ -18,8 +18,9 @@ import {
   normaliseCustomReviewTag,
   SUPPLIER_REVIEW_TAGS,
 } from "@shared/suppliers";
-import { PLANNER_REVIEW_PREFIX } from "@shared/planner_reviews";
+import { PLANNER_REVIEW_PREFIX, plannerUserIdFromSubject } from "@shared/planner_reviews";
 import { db, now } from "../db";
+import { emitPlannerEvent } from "./planner_points";
 import { emitVendorEventForSupplier } from "./vendor_points";
 import { shortenName } from "./verified_visitors";
 
@@ -321,7 +322,23 @@ export function createReview(args: CreateReviewArgs): SupplierReview {
     recomputeSupplierAggregate(args.supplierId);
     // Weddly Points: announce the collection, never the reward. The engine
     // decides what a review is worth, and deliberately never sees the rating.
+    //
+    // Both subject kinds are announced from HERE rather than from the routes,
+    // for the same reason the aggregate is recomputed here: three composers post
+    // reviews (the couple/user one, the verified-visitor one, the admin one) and
+    // a rule that lives in the route has to be remembered three times. A
+    // `planner:{id}` subject resolves to no listing, so the vendor call below is
+    // a no-op for planners and vice versa.
     emitVendorEventForSupplier(args.supplierId, "review.created", { review_id: reviewId });
+    // A DRAFT earns nothing: an unpublished review is visible to nobody but its
+    // admin author, so paying for it would credit a planner for a page a couple
+    // never sees. The engine re-reads `published` too; this just keeps the
+    // pointless event out of the queue.
+    if (args.published) {
+      emitPlannerEvent(plannerUserIdFromSubject(args.supplierId), "review.created", {
+        review_id: reviewId,
+      });
+    }
     return reviewId;
   });
   const reviewId = txn();
