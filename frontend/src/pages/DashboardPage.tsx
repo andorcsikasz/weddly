@@ -1442,6 +1442,7 @@ export default function DashboardPage() {
         entries={activity}
         currentUserId={currentUser?.id ?? null}
         locale={locale}
+        currency={currency}
         t={t}
       />
     </>

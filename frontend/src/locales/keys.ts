@@ -4876,7 +4876,6 @@ export interface LocaleMessages {
     capacity: string;
     /** Helper text under the capacity stepper. */
     capacity_help: string;
-    price_huf: string;
     /** Currency-agnostic "Price" label — symbol shown as an input adornment. */
     price_label: string;
     /** Helper text under the price input. */
@@ -5390,7 +5389,6 @@ export interface LocaleMessages {
     cost_planned_label: string;
     cost_actual_label: string;
     cost_saved_indicator: string;
-    cost_currency_suffix: string;
     cost_help: string;
     cost_planned_help: string;
     cost_no_line_hint: string;

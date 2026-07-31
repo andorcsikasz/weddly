@@ -16,7 +16,7 @@ import {
 } from "@shared/planning_timeline";
 import { type ConditionTag, INTAKE_DIMENSIONS } from "@shared/planning_prompts";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
-import type { IdeaStatus, IdeaTag, PlanningItem, PlanningKind } from "@shared/types";
+import type { Currency, IdeaStatus, IdeaTag, PlanningItem, PlanningKind } from "@shared/types";
 import {
   ArrowRight,
   Calendar,
@@ -64,7 +64,7 @@ import {
 } from "../lib/endpoints";
 import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
 import { setSelection } from "../lib/supplier_selection";
-import { formatHuf, maxIsoDate, todayIso } from "../lib/format";
+import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import {
   DICE_CREATIVE_IDEAS,
@@ -407,12 +407,16 @@ export default function PlanningPage() {
   // of adding their own row. Null until the fetch lands, which just means the
   // adopt action isn't offered yet.
   const [coupleId, setCoupleId] = useState<number | null>(null);
+  // The board renders offer amounts, so it needs the workspace's own currency.
+  // HUF until the fetch lands, which is what every other page falls back to.
+  const [currency, setCurrency] = useState<Currency>("HUF");
   useEffect(() => {
     coupleApi
       .current()
       .then((r) => {
         if (!r.couple) return;
         setCoupleId(r.couple.id);
+        setCurrency(r.couple.currency ?? "HUF");
         setWeddingDate(r.couple.wedding_date ?? null);
         const bride = r.couple.bride_name?.trim() || t("planning.assignee_bride");
         const groom = r.couple.groom_name?.trim() || t("planning.assignee_groom");
@@ -1201,6 +1205,7 @@ export default function PlanningPage() {
                   (i) => i.kind === "task" && !(i.seed_key && i.decision_status !== "promoted"),
                 )}
                 vendors={vendors}
+                currency={currency}
                 filter={boardFilter}
                 onToggleTaskDone={onToggleDone}
                 onPatchTask={onPatch}
@@ -2876,6 +2881,7 @@ const COL_STYLES: Record<KanbanCol, { topBorder: string; headerText: string; bad
 function KanbanBoard({
   tasks,
   vendors,
+  currency,
   filter,
   onToggleTaskDone,
   onPatchTask,
@@ -2884,6 +2890,7 @@ function KanbanBoard({
 }: {
   tasks: PlanningItem[];
   vendors: CoupleSupplier[];
+  currency: Currency;
   filter: "all" | "tasks" | "vendors";
   onToggleTaskDone: (item: PlanningItem) => void;
   onPatchTask: (item: PlanningItem, patch: Partial<PlanningItem>) => void;
@@ -2942,6 +2949,7 @@ function KanbanBoard({
             label={t(colLabelKey[col])}
             tasks={tasksByCol[col]}
             vendors={vendorsByCol[col]}
+            currency={currency}
             filter={filter}
             isDragTarget={dragOverCol === col}
             draggingId={draggingId}
@@ -2971,6 +2979,7 @@ function KanbanColumn({
   label,
   tasks,
   vendors,
+  currency,
   filter,
   isDragTarget,
   draggingId,
@@ -2987,6 +2996,7 @@ function KanbanColumn({
   label: string;
   tasks: PlanningItem[];
   vendors: CoupleSupplier[];
+  currency: Currency;
   filter: "all" | "tasks" | "vendors";
   isDragTarget: boolean;
   draggingId: number | null;
@@ -3044,7 +3054,12 @@ function KanbanColumn({
           />
         ))}
         {vendors.map((vendor) => (
-          <VendorKanbanCard key={vendor.id} vendor={vendor} onEdit={onEditVendor} />
+          <VendorKanbanCard
+            key={vendor.id}
+            vendor={vendor}
+            currency={currency}
+            onEdit={onEditVendor}
+          />
         ))}
         {total === 0 && (
           <p className="py-4 text-center text-xs text-ink-300 dark:text-umber-500">-</p>
@@ -3164,12 +3179,14 @@ function TaskKanbanCard({
 
 function VendorKanbanCard({
   vendor,
+  currency,
   onEdit,
 }: {
   vendor: CoupleSupplier;
+  currency: Currency;
   onEdit: (vendor: CoupleSupplier) => void;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   return (
     <div className="rounded-xl border border-paper-200 bg-white p-3 dark:border-umber-700 dark:bg-umber-800">
       <div className="flex items-start gap-1">
@@ -3196,7 +3213,7 @@ function VendorKanbanCard({
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         {vendor.price_huf != null && (
           <span className="text-[11px] text-ink-600 dark:text-umber-200">
-            {formatHuf(vendor.price_huf)} Ft
+            {formatMoney(vendor.price_huf, currency, locale)}
           </span>
         )}
         {vendor.probability != null && (

@@ -14,7 +14,7 @@ import { Lock, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
 import { guestApi, householdApi, incomeApi } from "../lib/endpoints";
-import { formatMoney } from "../lib/format";
+import { formatMoney, MONEY_STEP } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useToast } from "./ui";
 
@@ -255,7 +255,7 @@ export function IncomeSection({
             <input
               type="number"
               min={1}
-              step={1000}
+              step={MONEY_STEP}
               inputMode="numeric"
               className={`${cellInput} stat-num w-32 shrink-0 tabular-nums`}
               value={r.amount}

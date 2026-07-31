@@ -71,6 +71,7 @@ import {
   formatMoney,
   formatTimestamp,
   isPlausibleDateIso,
+  MONEY_STEP,
   todayIso,
 } from "../lib/format";
 import { contentLocale, type Locale, useT } from "../lib/i18n";
@@ -911,7 +912,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
                       type="number"
                       inputMode="numeric"
                       min={0}
-                      step={1000}
+                      step={MONEY_STEP}
                       value={capInput}
                       onChange={(ev) => setCapInput(ev.target.value)}
                       placeholder={t("profile.budget_cap_placeholder")}
@@ -991,7 +992,7 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
                       type="number"
                       inputMode="numeric"
                       min={1}
-                      step={1000}
+                      step={MONEY_STEP}
                       value={paymentAmount}
                       onChange={(ev) => setPaymentAmount(ev.target.value)}
                       placeholder={t("profile.budget_payment_amount_placeholder")}

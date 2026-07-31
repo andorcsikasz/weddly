@@ -64,7 +64,7 @@ import {
   scheduleApi,
   transferApi,
 } from "../lib/endpoints";
-import { currencySymbol, formatHuf, intlLocale } from "../lib/format";
+import { currencySymbol, formatMoney, intlLocale, MONEY_STEP } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -81,7 +81,7 @@ interface DragData {
 }
 
 export default function LogisticsPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   useDocumentMeta("seo.logistics_title", "seo.logistics_description");
   const toast = useToast();
   const confirm = useConfirm();
@@ -698,6 +698,8 @@ export default function LogisticsPage() {
                         tapArmed={tapMode && selectedGuestId !== null}
                         onTap={() => handleTapAccommodation(a)}
                         onTapRoom={handleTapRoom}
+                        currency={couple?.currency ?? "HUF"}
+                        locale={locale}
                         t={t}
                       />
                     </li>
@@ -1307,6 +1309,8 @@ function AccommodationCard({
   tapArmed,
   onTap,
   onTapRoom,
+  currency,
+  locale,
   t,
 }: {
   accommodation: Accommodation;
@@ -1330,6 +1334,11 @@ function AccommodationCard({
   tapArmed: boolean;
   onTap: () => void;
   onTapRoom: (room: AccommodationRoom) => void;
+  /** The workspace's own currency. The nightly rate used to render through
+   *  `formatHuf`, so a couple budgeting in euro read their €450 room as
+   *  "450 Ft" on the card and as "450 €" in the dialog that wrote it. */
+  currency: Currency;
+  locale: Locale;
   t: (k: string) => string;
 }) {
   const hasRooms = rooms.length > 0;
@@ -1425,7 +1434,9 @@ function AccommodationCard({
         </div>
         {accommodation.price_huf !== null && (
           <div>
-            <span className="font-medium">{formatHuf(accommodation.price_huf)}</span>
+            <span className="font-medium">
+              {formatMoney(accommodation.price_huf, currency, locale)}
+            </span>
           </div>
         )}
         {accommodation.contact && (
@@ -2109,7 +2120,7 @@ function AccommodationDialog({
               <input
                 type="number"
                 min={0}
-                step={1000}
+                step={MONEY_STEP}
                 className="input pl-9"
                 value={priceHuf}
                 onChange={(e) => setPriceHuf(e.target.value)}

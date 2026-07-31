@@ -126,6 +126,37 @@ export function formatHufCompact(amount: number, locale: Locale = "hu"): string 
   return compactFmt(locale).format(n);
 }
 
+/** `step` for a money `<input type="number">`.
+ *
+ *  A browser rejects any value that isn't a multiple of `step`, so the
+ *  `step={1000}` these fields used to carry was not a spinner increment, it
+ *  was a validation rule shaped like forint. A couple budgeting in euro was
+ *  told "Please enter a valid value. The two nearest valid values are 0 and
+ *  1000" for every ordinary amount they typed (reported 2026-07-31), and the
+ *  same rule quietly refused any HUF figure that wasn't a round thousand.
+ *
+ *  Money is stored as a whole unit of the couple's currency, so 1 is the only
+ *  step that accepts everything a couple can legitimately enter. Spinner
+ *  arrows get less useful; nobody adjusts a wedding budget with them, and a
+ *  field that refuses what you typed is not a trade worth making. */
+export const MONEY_STEP = 1;
+
+/** Slider granularity for a money range input, ~60 stops snapped to a round
+ *  number so the value the couple lands on reads like a decision rather than a
+ *  measurement. Derived from the row's own maximum because a fixed step is
+ *  always some currency's step: the 10 000 / 25 000 pair this replaced was
+ *  forint, and it left a euro budget's entire row spanning two or three
+ *  positions of the slider. */
+export function moneySliderStep(rowMax: number): number {
+  if (!Number.isFinite(rowMax) || rowMax <= 0) return MONEY_STEP;
+  const raw = rowMax / 60;
+  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  for (const m of [1, 2, 2.5, 5]) {
+    if (raw <= m * magnitude) return Math.max(MONEY_STEP, Math.round(m * magnitude));
+  }
+  return Math.max(MONEY_STEP, Math.round(10 * magnitude));
+}
+
 /** Just the symbol (`Ft` / `€` / `$`) for the given currency + locale. Used
  *  by compact KPI tiles that pair the number with a unit string outside
  *  the formatter ("132k Ft", "2.8M €"). */

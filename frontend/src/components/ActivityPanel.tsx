@@ -6,13 +6,13 @@
 // just changed in the workspace" feed, which fits Dashboard's mental
 // model better than a settings page).
 
-import type { CoupleActivityEntry } from "@shared/types";
+import type { CoupleActivityEntry, Currency } from "@shared/types";
 import { ChevronDown, History } from "lucide-react";
 import { useState } from "react";
 import {
   formatDate,
-  formatHuf,
-  formatHufRange,
+  formatMoney,
+  formatMoneyRange,
   formatTimestamp,
   formatYearMonth,
 } from "../lib/format";
@@ -49,15 +49,21 @@ function tWithFallback(t: T, key: string, vars: Record<string, string | number>)
 
 /** Format a budget side (before or after) — honours `budget_kind` so a range
  *  renders as "min – max" and tbd renders as the i18n "TBD" string. */
-function formatBudgetSide(side: Record<string, unknown>, locale: Locale, t: T): string {
+function formatBudgetSide(
+  side: Record<string, unknown>,
+  locale: Locale,
+  currency: Currency,
+  t: T,
+): string {
   const kind = asString(side.budget_kind);
   const exact = asNumber(side.budget_ceiling_huf);
   const min = asNumber(side.budget_ceiling_min_huf);
   const max = asNumber(side.budget_ceiling_max_huf);
-  if (kind === "range" && min !== null && max !== null) return formatHufRange(min, max, locale);
-  if (kind === "exact" && exact !== null) return formatHuf(exact, locale);
-  if (exact !== null) return formatHuf(exact, locale);
-  if (min !== null && max !== null) return formatHufRange(min, max, locale);
+  if (kind === "range" && min !== null && max !== null)
+    return formatMoneyRange(min, max, currency, locale);
+  if (kind === "exact" && exact !== null) return formatMoney(exact, currency, locale);
+  if (exact !== null) return formatMoney(exact, currency, locale);
+  if (min !== null && max !== null) return formatMoneyRange(min, max, currency, locale);
   return t("profile.activity_value_empty");
 }
 
@@ -104,7 +110,12 @@ function formatCeremonyKind(value: string | null, t: T): string {
 /** Returns the localized verb-phrase for one activity entry. The actor name
  *  is rendered separately by `ActivityPanel`, so this string starts with the
  *  verb ("updated the budget cap: X → Y"). */
-function renderActivityEntry(entry: CoupleActivityEntry, t: T, locale: Locale): string {
+function renderActivityEntry(
+  entry: CoupleActivityEntry,
+  t: T,
+  locale: Locale,
+  currency: Currency,
+): string {
   const before = safeParse(entry.before_json);
   const after = safeParse(entry.after_json);
   const action = entry.action;
@@ -112,8 +123,8 @@ function renderActivityEntry(entry: CoupleActivityEntry, t: T, locale: Locale): 
 
   if (action === "couple.budget_cap_update" && before && after) {
     return tWithFallback(t, "profile.activity_action_couple_budget_cap_update", {
-      before: formatBudgetSide(before, locale, t),
-      after: formatBudgetSide(after, locale, t),
+      before: formatBudgetSide(before, locale, currency, t),
+      after: formatBudgetSide(after, locale, currency, t),
     });
   }
   if (action === "couple.wedding_date_update" && before && after) {
@@ -239,12 +250,12 @@ function renderActivityEntry(entry: CoupleActivityEntry, t: T, locale: Locale): 
     const actualAfter = asNumber(after?.actual_huf);
     if (plannedBefore !== null && plannedAfter !== null && plannedBefore !== plannedAfter) {
       segments.push(
-        `${t("profile.activity_budget_planned")}: ${formatHuf(plannedBefore, locale)} → ${formatHuf(plannedAfter, locale)}`,
+        `${t("profile.activity_budget_planned")}: ${formatMoney(plannedBefore, currency, locale)} → ${formatMoney(plannedAfter, currency, locale)}`,
       );
     }
     if (actualBefore !== null && actualAfter !== null && actualBefore !== actualAfter) {
       segments.push(
-        `${t("profile.activity_budget_actual")}: ${formatHuf(actualBefore, locale)} → ${formatHuf(actualAfter, locale)}`,
+        `${t("profile.activity_budget_actual")}: ${formatMoney(actualBefore, currency, locale)} → ${formatMoney(actualAfter, currency, locale)}`,
       );
     }
     const label = labelAfter ?? labelBefore ?? empty;
@@ -310,11 +321,16 @@ export function ActivityPanel({
   entries,
   currentUserId,
   locale,
+  currency,
   t,
 }: {
   entries: CoupleActivityEntry[];
   currentUserId: number | null;
   locale: Locale;
+  /** The workspace's own currency. Every amount in the feed used to render
+   *  through the HUF-pinned formatter, so a couple budgeting in euro read
+   *  their own budget change back as forint. */
+  currency: Currency;
   t: T;
 }) {
   const [open, setOpen] = useState(false);
@@ -398,7 +414,7 @@ export function ActivityPanel({
               const actorName = actorIsSelf
                 ? t("profile.activity_actor_you")
                 : (e.actor_full_name ?? t("profile.activity_actor_unknown"));
-              const phrase = renderActivityEntry(e, t, locale);
+              const phrase = renderActivityEntry(e, t, locale, currency);
               return (
                 <li
                   key={e.id}

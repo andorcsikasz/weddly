@@ -10,7 +10,7 @@
 import type { Currency } from "@shared/types";
 import { Check, Minus, Pencil, Plus } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { currencySymbol, formatMoney, intlLocale } from "../lib/format";
+import { currencySymbol, formatMoney, intlLocale, MONEY_STEP } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Button, Dialog } from "./ui";
 
@@ -329,7 +329,7 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
                   type="number"
                   inputMode="numeric"
                   min={0}
-                  step={100}
+                  step={MONEY_STEP}
                   aria-label={`${itemLabel}: ${t("suppliers.calc.col_unit_price")}`}
                   className="input !py-1 w-20 text-right text-sm"
                   value={fields[r.priceField]}

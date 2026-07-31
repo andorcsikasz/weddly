@@ -45,7 +45,7 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
-import { formatMoney, formatNumber } from "../lib/format";
+import { formatMoney, formatNumber, moneySliderStep } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 /** Build a left-fill gradient for `<input type="range">`. Native ranges only
@@ -905,7 +905,9 @@ function CategoryRowInner({
   const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
 
   // Slider step — fine enough for big budgets, coarse enough not to spam.
-  const step = rowMax >= 1_000_000 ? 25_000 : 10_000;
+  // Scales with the row: a fixed 10 000 / 25 000 was forint, and it left a
+  // euro budget's whole row spanning two or three positions of the rail.
+  const step = moneySliderStep(rowMax);
 
   // Per-guest unit for the cross-coupling hint. Suppressed while the row is
   // still 0 — a "0/fő" subscript next to "0 Ft" is just noise, and one user
@@ -1265,7 +1267,7 @@ function CustomRowInner({
 
   const rowMax = widthAnchor;
   const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
-  const step = rowMax >= 1_000_000 ? 25_000 : 10_000;
+  const step = moneySliderStep(rowMax);
   const Icon = resolveCustomIcon(line.icon);
   // Match CategoryRow: a "0/fő" subscript next to "0 Ft" is just noise, so
   // suppress it until the row actually has a plan.
