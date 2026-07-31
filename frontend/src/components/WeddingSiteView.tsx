@@ -961,14 +961,25 @@ export function WeddingSiteView({
               {t("wedding_site.schedule_title")}
             </Heading>
             {/* Only the day's headline beats (arrival / ceremony / dinner /
-             *  first dance by default, or whatever the couple flagged), kept on
-             *  a single row. `overflow-x-auto` lets the row scroll on a narrow
-             *  phone rather than wrapping back into a ragged grid. */}
-            <ul className="mt-8 flex flex-nowrap justify-center gap-x-8 overflow-x-auto sm:gap-x-12">
+             *  first dance by default, or whatever the couple flagged). They
+             *  WRAP; they never scroll sideways. The row used to be nowrap +
+             *  `overflow-x-auto`, which on any width narrower than the four
+             *  moments cut the last one in half and hid the rest behind a
+             *  gesture — on a page a guest reads once, standing up, to find out
+             *  when the ceremony starts.
+             *
+             *  The basis is written against the row rather than as a fixed
+             *  width (`calc(50% - gap)`, `calc(25% - gap)`) so the count per row
+             *  is EXACT at every width: two up to lg, four above it, never the
+             *  three-and-a-lonely-fourth a fixed width falls into when the
+             *  band's 768px content column can't quite hold four. `flex-wrap` +
+             *  `justify-center` then centres a short last row, which is what a
+             *  couple with three key moments gets. */}
+            <ul className="mt-8 flex flex-wrap items-start justify-center gap-x-6 gap-y-10 lg:gap-x-8">
               {pickKeyMoments(view.schedule).map((entry) => (
                 <li
                   key={entry.id}
-                  className="flex min-w-[4.5rem] shrink-0 flex-col items-center gap-1"
+                  className="flex basis-[calc(50%-0.75rem)] flex-col items-center gap-1 lg:basis-[calc(25%-1.5rem)]"
                 >
                   <span
                     className="text-2xl tabular-nums sm:text-3xl"
@@ -977,13 +988,16 @@ export function WeddingSiteView({
                     {formatTimeOfDay(entry.starts_at_minutes)}
                   </span>
                   <span
-                    className="text-[11px] uppercase tracking-[0.18em]"
+                    className="hyphens-auto break-words text-[11px] uppercase leading-relaxed tracking-[0.18em]"
                     style={{ opacity: 0.85 }}
                   >
                     {entry.label}
                   </span>
                   {entry.location && (
-                    <span className="text-[10px]" style={{ opacity: 0.6 }}>
+                    <span
+                      className="break-words text-[10px] leading-relaxed"
+                      style={{ opacity: 0.6 }}
+                    >
                       {entry.location}
                     </span>
                   )}
