@@ -631,8 +631,10 @@ export interface DirectorySupplierBase {
  *  booleans below are what the list is allowed to say about contact: whether
  *  there is one, never what it is. */
 export interface DirectorySupplier extends DirectorySupplierBase {
-  /** This listing publishes an email address. The value is NOT on this object;
-   *  ask `/api/suppliers/:id/contact` for it. */
+  /** This listing has an email address on file, so a message written through
+   *  Weddly will reach it. The value itself is on NO object and no endpoint
+   *  returns it: a vendor's mailbox is never shown to a user. This flag says a
+   *  channel is deliverable, never what the address is. */
   has_contact_email: boolean;
   /** This listing publishes a phone number (either line). Same rule. */
   has_contact_phone: boolean;
@@ -1490,14 +1492,18 @@ export interface PublicDirectoryPage {
   countries: SupplierCountryCount[];
 }
 
-/** `GET /api/suppliers/:id/contact` — one listing's published contact details,
- *  the only endpoint in the product that hands them over in full.
+/** `GET /api/suppliers/:id/contact` — one listing's published PHONE, the only
+ *  endpoint in the product that hands a contact value over in full.
  *
  *  Session required, and every call spends from a per-user quota shared with the
  *  detail endpoint, so harvesting the directory costs one rate-limited request
  *  per vendor instead of riding along free on the list. Anonymous callers get
  *  401 and never see anything but the masked teaser on the public page. */
 export interface SupplierContact {
+  /** ALWAYS null. A vendor's mailbox is never handed to a user on any surface
+   *  (owner rule, 2026-07-31): couples reach them through the inquiry flow,
+   *  which delivers to that address server-side without publishing it. The
+   *  field stays so an existing reader compiles and simply gets nothing. */
   contact_email: string | null;
   contact_phone: string | null;
   contact_phone_alt: string | null;

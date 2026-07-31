@@ -533,12 +533,13 @@ const es: LocaleMessages = {
     label_city: "Ciudad",
     label_address: "Dirección postal",
     label_website: "Sitio web",
-    label_contact_email: "Correo de contacto público",
-    label_contact_email_hint: "Lo usan las parejas que te contactan desde tu ficha.",
+    label_contact_email: "Correo de contacto",
+    label_contact_email_hint:
+      "Aquí enviamos los mensajes que las parejas escriben desde tu ficha. Nunca se muestra en tu página, a nadie.",
     label_contact_phone: "Teléfono de contacto público",
     label_hide_contact: "Ocultar los datos de contacto al público",
     label_hide_contact_hint:
-      "Los visitantes sin sesión ven una dirección y un correo parcialmente ocultos (p. ej. Attila út •••, in•••@…); las parejas obtienen los datos completos una vez que inician sesión. Tu teléfono siempre queda parcialmente oculto hasta el inicio de sesión.",
+      "Los visitantes sin sesión ven una dirección parcialmente oculta (p. ej. Attila út •••); las parejas obtienen la dirección completa una vez que inician sesión. Tu teléfono queda parcialmente oculto hasta el inicio de sesión y tu correo no se publica en ningún caso.",
     label_hide_contact_hint_short:
       "Los visitantes sin sesión ven tus datos de contacto parcialmente ocultos.",
     label_price_band: "Franja de precio",

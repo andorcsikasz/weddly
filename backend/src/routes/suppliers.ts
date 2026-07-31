@@ -46,7 +46,7 @@ import {
   redactUnclaimedImport,
   type ShowcaseVendorRow,
 } from "../domain/listings";
-import { maskAddressForPublic, maskEmailForPublic } from "../domain/contact_mask";
+import { maskAddressForPublic } from "../domain/contact_mask";
 import { getReviewSummary, listReviewsForSupplier } from "../domain/reviews";
 import { countNonDeletedComments, listCommentsForSupplier } from "../domain/supplier_comments";
 import { getAvailability, isIsoDate, listingIdsUnavailableOn } from "../domain/supplier_bookings";
@@ -494,16 +494,22 @@ function buildSupplierDetail(
   const coupleVotes = couple ? getCoupleVotesMap(couple.id) : null;
   const directory: DirectorySupplier = {
     ...base,
-    // The detail page IS allowed to carry the contact (one listing, one caller,
-    // one rate-limited request), so unlike the list these keep their values.
-    // The flags travel with them so a card built from a detail response answers
+    // The detail page IS allowed to carry the PHONE (one listing, one caller,
+    // one rate-limited request), so unlike the list that keeps its value. The
+    // flags travel with it so a card built from a detail response answers
     // "is there a phone here" the same way a card built from the list does.
     has_contact_email: Boolean(base.contact_email) && base.contact_email_flag == null,
     has_contact_phone: Boolean(base.contact_phone || base.contact_phone_alt),
-    // Held back from every couple-facing surface, not merely from outreach:
-    // an address we are unsure of is one a couple should not write to either.
-    // The admin catalogue reads the row directly and still shows it.
-    contact_email: base.contact_email_flag == null ? base.contact_email : null,
+    // The email address is NEVER handed to a user (owner rule, 2026-07-31), on
+    // any surface, signed in or not. A mailbox is the one contact detail that
+    // can be harvested silently, at scale and forever — a phone number costs a
+    // call, an address is a published fact, an address book is a mailing list.
+    // A couple who wants this vendor writes through Weddly (the inquiry /
+    // outreach path, which still mails `contact_email` server-side), so nothing
+    // a couple can actually do is lost. `has_contact_email` stays: that a
+    // mailbox EXISTS is what tells the UI the channel is deliverable, and it
+    // reveals no characters. Admin reads the row directly and still sees it.
+    contact_email: null,
     votes_score: scores.get(base.id) ?? 0,
     user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
     // Solid check vs hollow one. Only a claimed listing is asked — nothing else
@@ -565,14 +571,19 @@ function spendContactQuota(userId: number): void {
   }
 }
 
-/** GET /api/suppliers/:supplier_id/contact — one listing's published contact
- *  details, and the only place in the product that returns them in full.
+/** GET /api/suppliers/:supplier_id/contact — one listing's published PHONE, and
+ *  the only place in the product that returns it in full.
  *
  *  Split off the list (which now carries `has_contact_*` flags and nothing else)
  *  because the list is the entire catalogue in one response: the contact fields
  *  on it handed any caller, with or without a session, every vendor's mailbox
  *  and phone number in a single GET. Here it is one listing per request, behind
- *  a session and the shared per-user quota. */
+ *  a session and the shared per-user quota.
+ *
+ *  `contact_email` is always null here — see buildSupplierDetail. The field
+ *  stays on the DTO so a client that reads it keeps compiling and simply gets
+ *  nothing; removing it would break the venue-picker prefill's optional read
+ *  rather than emptying it. */
 async function handleContact(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   spendContactQuota(userId);
@@ -589,9 +600,9 @@ async function handleContact(ctx: Ctx): Promise<Response> {
   if (!detail) throw new HttpError(404, "Unknown supplier");
 
   const payload: SupplierContact = {
-    // Already nulled by buildSupplierDetail when the address is flagged; kept
-    // explicit here because this is the endpoint that hands the value out.
-    contact_email: detail.contact_email,
+    // Always null (buildSupplierDetail drops it for every viewer); kept explicit
+    // here because this is the endpoint a reader would check first.
+    contact_email: null,
     contact_phone: detail.contact_phone,
     contact_phone_alt: detail.contact_phone_alt ?? null,
   };
@@ -647,13 +658,13 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
   // route). Masked server-side so the hidden characters never leave the server;
   // a logged-in viewer gets everything in full.
   //
-  //  - Phone AND email are ALWAYS masked for an anonymous visitor. The email
-  //    mask used to be opt-in (`hide_contact_public`), which meant that for the
-  //    vendors who had not opted in — nearly all of them — the shareable page
-  //    published a working mailbox to anyone who loaded it, in a payload a
-  //    crawler can read as easily as a person. A visitor gets the shape of a
-  //    contact ("in•••@greattide.hu", "+36 70 6** ****"), which is the reason to
-  //    register; the characters themselves never leave the server.
+  //  - The PHONE is always masked for an anonymous visitor. They get the shape
+  //    of a contact ("+36 70 6** ****"), which is the reason to register; the
+  //    characters themselves never leave the server.
+  //  - There is nothing to do about the EMAIL here any more: it is null for
+  //    every viewer (buildSupplierDetail), so the masked teaser it used to get
+  //    would be a mask over an empty string. Registering no longer reveals it
+  //    either, which is the point — see the rule there.
   //  - The ADDRESS stays under the vendor's own `hide_contact_public` switch: a
   //    business address is a published fact, it is what puts the listing on the
   //    map, and hiding it by default would break the one thing a visitor
@@ -667,7 +678,6 @@ async function handlePublicDetail(ctx: Ctx): Promise<Response> {
     if (detail.contact_phone_alt) {
       detail.contact_phone_alt = maskPhoneForAnonymous(detail.contact_phone_alt);
     }
-    if (detail.contact_email) detail.contact_email = maskEmailForPublic(detail.contact_email);
     if (detail.address && listingContactHidden(detail.id)) {
       detail.address = maskAddressForPublic(detail.address);
     }

@@ -14,7 +14,7 @@ import type {
   SupplierReview,
 } from "@shared/suppliers";
 import { REVIEW_BODY_MAX_CHARS, showsCapacity } from "@shared/suppliers";
-import { ExternalLink, Globe, Mail, MapPin, Phone, Star, Users } from "lucide-react";
+import { ExternalLink, Globe, MapPin, Phone, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ClaimListingModal } from "../components/ClaimListingModal";
@@ -768,12 +768,12 @@ function PublicContactCard({
   locale: Locale;
   t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
-  // A vendor can hide the tail of their address + email from anonymous
-  // visitors; the server masks with `•`, which is our "is this masked?" test.
-  // A masked value renders as plain text — the maps/mailto link it would feed is
-  // broken, and dropping it doubles as the "register to see more" nudge.
+  // A vendor can hide the tail of their address from anonymous visitors; the
+  // server masks with `•`, which is our "is this masked?" test. A masked value
+  // renders as plain text — the maps link it would feed is broken, and dropping
+  // it doubles as the "register to see more" nudge. The email has no masked
+  // teaser because it has no revealed state: it is withheld from everyone.
   const addressMasked = detail.address?.includes("•") ?? false;
-  const emailMasked = detail.contact_email?.includes("•") ?? false;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     detail.address ? `${detail.name}, ${detail.address}` : `${detail.name}, ${detail.city}`,
   )}`;
@@ -819,21 +819,8 @@ function PublicContactCard({
           <ExternalLink size={12} aria-hidden className="text-ink-400 dark:text-umber-400" />
         </a>
       )}
-      {detail.contact_email &&
-        (emailMasked ? (
-          <div className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 dark:text-umber-100">
-            <Mail size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-            {detail.contact_email}
-          </div>
-        ) : (
-          <a
-            href={`mailto:${detail.contact_email}`}
-            className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
-          >
-            <Mail size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-            {detail.contact_email}
-          </a>
-        ))}
+      {/* No email row, masked or otherwise: a vendor's mailbox is never shown
+          to a visitor, and this page is the one a crawler reads most easily. */}
       {detail.contact_phone &&
         // A masked number (first five digits, rest `*`) is served to anonymous
         // visitors — registration reveals the rest. Render it as plain text, not

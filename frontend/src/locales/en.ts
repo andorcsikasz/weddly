@@ -509,12 +509,13 @@ const en: LocaleMessages = {
     label_city: "City",
     label_address: "Street address",
     label_website: "Website",
-    label_contact_email: "Public contact email",
-    label_contact_email_hint: "Used by couples reaching out from your listing.",
+    label_contact_email: "Contact email",
+    label_contact_email_hint:
+      "Where we send the inquiries couples write from your listing. Never shown on your page, to anyone.",
     label_contact_phone: "Public contact phone",
     label_hide_contact: "Hide contact details from the public",
     label_hide_contact_hint:
-      "Logged-out visitors see a partly hidden address and email (e.g. Attila út •••, in•••@…); couples get the full details once signed in. Your phone is always partly hidden until sign-in.",
+      "Logged-out visitors see a partly hidden address (e.g. Attila út •••); couples get the full address once signed in. Your phone stays partly hidden until sign-in, and your email address is never published at all.",
     label_hide_contact_hint_short: "Signed-out visitors see your contact details partly masked.",
     label_price_band: "Price band",
     label_price_band_help: "1 = budget, 5 = premium. Leave blank to hide.",

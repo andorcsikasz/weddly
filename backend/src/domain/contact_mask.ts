@@ -1,17 +1,20 @@
-/** Public-page contact masking for vendors who opt to hide their details from
+/** Public-page ADDRESS masking for vendors who opt to hide their details from
  *  anonymous visitors — a reason to register, same rationale as the always-on
- *  phone mask (see phone_mask.ts). Two rules apply, and only when the vendor
- *  flips `hide_contact_public` on their listing AND the viewer has no session:
+ *  phone mask (see phone_mask.ts). It applies only when the vendor flips
+ *  `hide_contact_public` on their listing AND the viewer has no session:
  *
- *    email   "info@greattide.hu" -> "in•••@greattide.hu"   (local tail hidden,
- *                                                            @domain kept)
  *    address "Attila út 35"      -> "Attila út •••"         (house-number tail
  *                                                            hidden, street kept)
  *
+ *  There is deliberately no email twin any more. A masked mailbox was a teaser
+ *  that registering used to redeem, and the email is now withheld from every
+ *  viewer (routes/suppliers.ts) — a mask over a value nobody is ever shown is
+ *  just a second thing to keep in sync.
+ *
  *  Masking happens server-side so the hidden characters never reach the client
  *  at all — a client-only mask would still ship the full value in the JSON. The
- *  bullet `•` is the sentinel the frontend also keys on to drop the mailto:/maps
- *  link that a partial value would otherwise break. */
+ *  bullet `•` is the sentinel the frontend also keys on to drop the maps link
+ *  that a partial value would otherwise break. */
 
 /** The one glyph the masked-value renderer looks for. Never occurs in a real
  *  email or a normal street address, so `value.includes(CONTACT_MASK_CHAR)` is a
@@ -27,18 +30,6 @@ const HIDDEN = CONTACT_MASK_CHAR.repeat(3);
  *  when there's no space to split on. */
 function keepHeadMaskTail(s: string): string {
   return s.slice(0, Math.min(2, s.length)) + HIDDEN;
-}
-
-/** `info@greattide.hu` -> `in•••@greattide.hu`. Keeps the first two chars of the
- *  local part and the whole `@domain` (so the vendor's domain still reads as
- *  legitimate), hides the rest of the local part. A value with no usable `@` is
- *  tail-masked like a plain string. */
-export function maskEmailForPublic(email: string): string {
-  const at = email.lastIndexOf("@");
-  if (at <= 0) return keepHeadMaskTail(email);
-  const local = email.slice(0, at);
-  const domain = email.slice(at); // includes the leading "@"
-  return local.slice(0, Math.min(2, local.length)) + HIDDEN + domain;
 }
 
 /** `Attila út 35` -> `Attila út •••`. Masks the last whitespace-delimited token

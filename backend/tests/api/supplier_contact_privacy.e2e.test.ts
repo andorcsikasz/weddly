@@ -4,12 +4,15 @@
 // quota. These tests pin the shape that replaced it.
 //
 //   1. The catalogue says WHETHER a listing has a contact, never what it is.
-//   2. The value comes from `/api/suppliers/:id/contact`, one listing per
+//   2. The PHONE comes from `/api/suppliers/:id/contact`, one listing per
 //      request, session required.
 //   3. That endpoint and the detail endpoint draw on ONE per-user quota, so
 //      alternating between them buys nothing.
 //   4. An anonymous visitor gets a masked teaser on the public page and no way
 //      to ask for more.
+//   5. The EMAIL has no door at all — no list, no detail, no contact endpoint,
+//      signed in or not (owner rule, 2026-07-31). Couples write through the
+//      inquiry flow, which delivers to the address without publishing it.
 //
 // A regression here is silent and expensive: nothing errors, the pages keep
 // working, and the contact book is simply public again.
@@ -81,14 +84,14 @@ describe("the catalogue never carries contact values", () => {
   });
 });
 
-describe("the contact endpoint is the only way to the values", () => {
+describe("the contact endpoint is the only way to the phone", () => {
   test("anonymous callers are refused", async () => {
     const seeded = contactableListing();
     const r = await req("GET", `/api/suppliers/${encodeURIComponent(seeded.id)}/contact`);
     expect(r.status).toBe(401);
   });
 
-  test("a signed-in couple gets the real email and phone, one listing at a time", async () => {
+  test("a signed-in couple gets the phone, one listing at a time, and never the email", async () => {
     const seeded = contactableListing();
     const { token } = await bootstrapCouple("contact-reveal@test.test");
     const r = await req<SupplierContact>(
@@ -98,8 +101,11 @@ describe("the contact endpoint is the only way to the values", () => {
       { token },
     );
     expect(r.status).toBe(200);
-    expect(r.data.contact_email).toBe(seeded.email);
     expect(r.data.contact_phone).toBe(seeded.phone);
+    // The mailbox has no reveal at all. Signing in used to buy it; it now buys
+    // the phone and nothing else, so the address book cannot be walked one
+    // rate-limited request at a time either.
+    expect(r.data.contact_email).toBeNull();
   });
 
   test("an unknown listing is a 404, not an empty contact", async () => {
@@ -108,6 +114,55 @@ describe("the contact endpoint is the only way to the values", () => {
       token,
     });
     expect(r.status).toBe(404);
+  });
+});
+
+describe("a vendor's email address has no door at all", () => {
+  /** Every couple-facing read of one listing, in the order a curious user would
+   *  try them. Each must come back without the address anywhere in the body —
+   *  not masked, not nested, not on a related object. */
+  async function bodiesFor(id: string, token: string): Promise<string[]> {
+    const paths = [
+      `/api/suppliers/${encodeURIComponent(id)}`,
+      `/api/suppliers/${encodeURIComponent(id)}/contact`,
+      `/api/public/vendors/${encodeURIComponent(id)}`,
+      "/api/suppliers?country=all",
+    ];
+    const out: string[] = [];
+    for (const path of paths) {
+      const signedIn = await req("GET", path, undefined, { token });
+      const anonymous = await req("GET", path);
+      out.push(JSON.stringify(signedIn.data), JSON.stringify(anonymous.data));
+    }
+    return out;
+  }
+
+  test("no couple-facing read of a listing contains its email, signed in or not", async () => {
+    const seeded = contactableListing();
+    const { token } = await bootstrapCouple("email-never@test.test");
+
+    for (const body of await bodiesFor(seeded.id, token)) {
+      expect(body).not.toContain(seeded.email);
+      // Nor the masked teaser it used to carry: two real characters plus the
+      // domain is still enough to guess a mailbox at a small business.
+      expect(body).not.toContain(seeded.email.slice(seeded.email.indexOf("@")));
+    }
+  });
+
+  test("the flag still says the channel is deliverable", async () => {
+    const seeded = contactableListing();
+    const { token } = await bootstrapCouple("email-flag@test.test");
+    const r = await req<DirectorySupplier>(
+      "GET",
+      `/api/suppliers/${encodeURIComponent(seeded.id)}`,
+      undefined,
+      { token },
+    );
+    expect(r.status).toBe(200);
+    // "There is a mailbox here" is what lets the UI offer to write; the
+    // characters stay on the server, which is the whole distinction.
+    expect(r.data.has_contact_email).toBe(true);
+    expect(r.data.contact_email).toBeNull();
   });
 });
 
@@ -159,6 +214,6 @@ describe("one quota covers both doors to a contact", () => {
       { token: fresh },
     );
     expect(r.status).toBe(200);
-    expect(r.data.contact_email).toBe(seeded.email);
+    expect(r.data.contact_phone).toBe(seeded.phone);
   });
 });

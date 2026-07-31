@@ -517,12 +517,13 @@ const hu: LocaleMessages = {
     label_city: "Város",
     label_address: "Cím",
     label_website: "Weboldal",
-    label_contact_email: "Nyilvános kapcsolati e-mail",
-    label_contact_email_hint: "Erre a címre írnak a párok a hirdetésedről.",
+    label_contact_email: "Kapcsolati e-mail",
+    label_contact_email_hint:
+      "Erre a címre küldjük a párok üzeneteit a hirdetésedről. A hirdetéseden soha, senkinek nem jelenik meg.",
     label_contact_phone: "Nyilvános telefonszám",
     label_hide_contact: "Elérhetőség elrejtése a látogatók elől",
     label_hide_contact_hint:
-      "A kijelentkezett látogatók részben elrejtett címet és e-mailt látnak (pl. Attila út •••, in•••@…); a párok bejelentkezve a teljes adatokat kapják. A telefonszám bejelentkezésig mindig részben rejtve marad.",
+      "A kijelentkezett látogatók részben elrejtett címet látnak (pl. Attila út •••); a párok bejelentkezve a teljes címet kapják. A telefonszám bejelentkezésig részben rejtve marad, az e-mail-címed pedig egyáltalán nem jelenik meg.",
     label_hide_contact_hint_short:
       "A kijelentkezett látogatók részben rejtett elérhetőséget látnak.",
     label_price_band: "Árkategória",

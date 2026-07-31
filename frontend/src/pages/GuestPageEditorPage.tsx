@@ -188,11 +188,15 @@ type VenueVendor = {
 /** One listing's contact details, or blanks. The catalogue response carries no
  *  contact values any more (only `has_contact_*`), so the venue the couple
  *  actually chose is asked for by itself. A failure degrades to empty fields,
- *  which the couple can type over, rather than blocking the picker. */
+ *  which the couple can type over, rather than blocking the picker.
+ *
+ *  Phone only: the endpoint no longer hands over a vendor's email to anyone, so
+ *  prefilling it here would just copy a null into the couple's own card. They
+ *  can still type an address the venue gave them directly. */
 async function venueContactFields(id: string): Promise<{ phone: string; email: string }> {
   try {
     const c = await supplierApi.contact(id);
-    return { phone: c.contact_phone ?? "", email: c.contact_email ?? "" };
+    return { phone: c.contact_phone ?? "", email: "" };
   } catch {
     return { phone: "", email: "" };
   }

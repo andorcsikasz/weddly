@@ -44,7 +44,6 @@ import {
   Globe,
   Hand,
   Lightbulb,
-  Mail,
   MapPin,
   PartyPopper,
   Phone,
@@ -1217,9 +1216,7 @@ function ContactCard({
   detail: SupplierDetail;
   t: (k: string) => string;
 }) {
-  const hasAny = Boolean(
-    detail.website || detail.contact_email || detail.contact_phone || detail.contact_phone_alt,
-  );
+  const hasAny = Boolean(detail.website || detail.contact_phone || detail.contact_phone_alt);
   return (
     <SidebarCard>
       {!hasAny && (
@@ -1238,15 +1235,9 @@ function ContactCard({
           {t("suppliers.detail.contact.website")}
         </a>
       )}
-      {detail.contact_email && (
-        <a
-          href={`mailto:${detail.contact_email}`}
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink-800 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
-        >
-          <Mail size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-          {detail.contact_email}
-        </a>
-      )}
+      {/* No email row. A vendor's mailbox is never shown to a couple (the API
+          sends null for every viewer); writing to them goes through the inquiry
+          flow, which delivers to that address without publishing it. */}
       {detail.contact_phone && (
         <a
           href={`tel:${detail.contact_phone}`}

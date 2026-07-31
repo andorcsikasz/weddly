@@ -14,7 +14,7 @@ import { DIRECTORY } from "../../src/domain/suppliers_data";
 import { createVendorAccount } from "../../src/domain/vendor_accounts";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
 import { maskPhoneForAnonymous } from "../../src/domain/phone_mask";
-import { maskAddressForPublic, maskEmailForPublic } from "../../src/domain/contact_mask";
+import { maskAddressForPublic } from "../../src/domain/contact_mask";
 import { HU_HOST, lookupVendorPageMeta, renderIndexHtml } from "../../src/lib/seo_ssr";
 import { canonicalListingId, slugifyName, vendorPublicId } from "@shared/vendor_slug";
 
@@ -356,12 +356,10 @@ describe("what an anonymous visitor may read off a vendor page", () => {
     // The address is what puts a venue on the map and is a published business
     // fact, so it stays under the vendor's own switch.
     expect(r.data.detail.address).toBe(ADDRESS);
-    // Email and phone are masked for an anonymous visitor whatever the vendor
-    // chose. The opt-in used to gate the email, which meant that for the vendors
-    // who never touched the switch — nearly all of them — the shareable page
-    // published a working mailbox to every crawler that loaded it.
-    expect(r.data.detail.contact_email).toBe("in•••@greattide.hu");
-    expect(r.data.detail.contact_email).not.toContain("fo@");
+    // The phone is masked for an anonymous visitor whatever the vendor chose.
+    // The email is not masked, it is ABSENT: a teaser was still a published
+    // domain plus a two-letter head, on the page a crawler reads most easily.
+    expect(r.data.detail.contact_email).toBeNull();
     expect(r.data.detail.contact_phone).toBe("06706******");
   });
 
@@ -378,14 +376,13 @@ describe("what an anonymous visitor may read off a vendor page", () => {
     const r = await req<ContactDetail>("GET", `/api/public/vendors/${encodeURIComponent(id)}`);
     expect(r.status).toBe(200);
     expect(r.data.detail.address).toBe("Attila út •••");
-    expect(r.data.detail.contact_email).toBe("in•••@greattide.hu");
+    expect(r.data.detail.contact_email).toBeNull();
     expect(r.data.detail.contact_phone).toBe("06706******");
     // The hidden characters never leave the server.
     expect(r.data.detail.address).not.toContain("35");
-    expect(r.data.detail.contact_email).not.toContain("fo@");
   });
 
-  test("enabled: a signed-in couple still gets the full address + email + phone", async () => {
+  test("enabled: a signed-in couple gets the full address + phone, and still no email", async () => {
     const { id, token } = await seedVendorWithContact({
       loginEmail: "hide-reveal@weddly.test",
       name: "Great Tide",
@@ -404,21 +401,16 @@ describe("what an anonymous visitor may read off a vendor page", () => {
     );
     expect(r.status).toBe(200);
     expect(r.data.detail.address).toBe(ADDRESS);
-    expect(r.data.detail.contact_email).toBe(CONTACT_EMAIL);
     expect(r.data.detail.contact_phone).toBe(PHONE);
+    // Signing in reveals the address and the phone. It does NOT reveal the
+    // mailbox: that is withheld from every viewer, on every surface, so an
+    // account is not a key to the address book (owner rule, 2026-07-31).
+    expect(r.data.detail.contact_email).toBeNull();
+    expect(JSON.stringify(r.data)).not.toContain(CONTACT_EMAIL);
   });
 });
 
 describe("contact_mask helpers", () => {
-  test("maskEmailForPublic keeps two local chars + the whole domain", () => {
-    expect(maskEmailForPublic("info@greattide.hu")).toBe("in•••@greattide.hu");
-    expect(maskEmailForPublic("jane.smith@example.com")).toBe("ja•••@example.com");
-  });
-
-  test("maskEmailForPublic tail-masks a value with no usable @", () => {
-    expect(maskEmailForPublic("notanemail")).toBe("no•••");
-  });
-
   test("maskAddressForPublic hides the last token, keeping the street", () => {
     expect(maskAddressForPublic("Attila út 35")).toBe("Attila út •••");
     expect(maskAddressForPublic("Váci utca 12/B")).toBe("Váci utca •••");
