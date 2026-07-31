@@ -20847,6 +20847,113 @@ const RAW_DIRECTORY: (Omit<
     source: "curated",
     price_band: null,
   },
+  // ── Fenyőharaszt kastélyszálló ajánlott szolgáltatói ───────────────────
+  // Five of the eleven vendors on the castle's own partner list, researched
+  // from their own sites in July 2026. The castle itself, its MC and its
+  // invitation designer were already listed. Left out: a decorator whose two
+  // own pages give two different phone numbers and two different contact
+  // names, a videographer with no site and no published town, and the village
+  // registrar — a public official is not a bookable supplier, and the sheet
+  // itself flags the name as needing re-checking.
+  //
+  // The bands and DJs travel, so several publish no street address; the mobile
+  // ones carry their base town only, and Csengőkoncert's Budapest HQ is
+  // deliberately NOT stored as an address, since the show happens wherever the
+  // wedding is and a pin on an office would say otherwise.
+  {
+    id: "barta-zsolti-dj-ceremoniamester",
+    name: "Barta Zsolti DJ és ceremóniamester",
+    category: "dj",
+    city: "Eger",
+    address: "",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Barta Zsolt több mint húsz éve dolgozik DJ-ként, zongoristaként és ceremóniamesterként. Az esküvői zenét, hangosítást és konferálást egy szolgáltatásban is tudja biztosítani, video DJ-megoldással, kültéri technikával és opcionális animációs programelemekkel.",
+    blurb_en:
+      "DJ, MC and pianist from Eger with more than twenty years behind the decks: the music, the sound and the hosting from one supplier, with a battery-powered outdoor rig for the ceremony.",
+    website: "https://djbartazsolt.hu/",
+    ...noContact,
+    contact_email: "djbartazsolti73@gmail.com",
+    contact_phone: "+36 30 598 8022",
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "deme-trio-dj-lachene",
+    name: "Deme Trió és DJ Lachene",
+    category: "live_music",
+    city: "Magyarország",
+    address: "",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "A Deme Trió jelenlegi felállásban 2002 óta működő élő partyzenekar, amelyet DJ Lachene egészít ki. Széles repertoárjuk és professzionális hangosításuk célja, hogy az eltérő korosztályokat élő- és DJ-zenével egyaránt táncparketten tartsák.",
+    blurb_en:
+      "Live party trio playing in this line-up since 2002, with DJ Lachene alongside them and their own PA, built to keep a mixed-age room on the floor all evening.",
+    website: "https://demetrio.hu/",
+    ...noContact,
+    contact_email: "demeistvanmusic@gmail.com",
+    contact_phone: "+36 30 965 3909",
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "a-la-carte-showband",
+    name: "A’la Carte Showband",
+    category: "live_music",
+    city: "Budapest",
+    address: "",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Az A’la Carte Music Group több választható partyformációval dolgozik, a szóló showmantől a három-, négy- és ötfős zenekarokig. Kertész Norbert vezetésével retro és mai slágerekre, közönségmozgató showra, gyors technikai átállásra és akár egész estés zeneszolgáltatásra építenek.",
+    blurb_en:
+      "Party band led by Norbert Kertész with four possible line-ups, from a solo showman to a five-piece, retro and current hits, and a quick technical changeover between sets.",
+    website: "https://alacartemusic.hu/",
+    ...noContact,
+    contact_email: "kertesz.norbert@alacartemusic.hu",
+    contact_phone: "+36 20 968 2629",
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "hamerli-tibor-discofever",
+    name: "Hamerli Tibor – Discofever",
+    category: "dj",
+    city: "Gödöllő",
+    address: "",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Hamerli Tibor, a Discofever DJ-je három évtizedes tapasztalattal vállal esküvőket és zártkörű rendezvényeket. A hetvenes évektől a mai slágerekig épít repertoárt, elfogad zenei kéréseket, és a párral előre egyeztetett kedvenc- és tiltólistával dolgozik.",
+    blurb_en:
+      "Wedding DJ and MC with three decades of parties behind him. Takes requests, and works from a play and do-not-play list agreed with the couple in advance.",
+    website: "https://discofever.hu/",
+    ...noContact,
+    contact_phone: "+36 70 609 8681",
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "csengokoncert",
+    name: "Csengőkoncert",
+    category: "entertainment",
+    city: "Budapest",
+    address: "",
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "A Csengőkoncert olyan interaktív produkció, amelyben a vendégek nyolcféle, színkódolt csengettyűvel, animált kotta és moderátor segítségével közösen játszanak el ismert dalokat. A programhoz nem kell zenei előképzettség, ezért kis és több száz fős násznépet is egyszerre tud bevonni.",
+    blurb_en:
+      "An interactive bell concert: the guests play a song together on eight colour-coded handbells, led by a host and an animated score. No musical training needed, and it travels to the venue.",
+    website: "https://csengokoncert.hu/",
+    ...noContact,
+    contact_email: "hello@csengokoncert.hu",
+    contact_phone: "+36 20 665 8168",
+    source: "curated",
+    price_band: null,
+  },
 ];
 
 // ── Country scoping ───────────────────────────────────────────────────────
