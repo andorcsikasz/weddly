@@ -1101,6 +1101,78 @@ describe("admin couples — multi-workspace member resolution", () => {
   });
 });
 
+// A paused workspace is on a 30-day delete countdown, and the exit dialog asks
+// the couple why. That answer is the only churn signal we ever collect, so it
+// has to reach the admin list — "Paused" on its own says nothing actionable.
+describe("admin couples — pause reason", () => {
+  interface CouplesWithPause {
+    couples: {
+      id: number;
+      status: string;
+      pause: {
+        reason: string | null;
+        requested_by_name: string | null;
+        requested_at: number;
+        scheduled_delete_at: number;
+      } | null;
+    }[];
+  }
+
+  async function pauseRowFor(adminToken: string, coupleId: number) {
+    const list = await req<CouplesWithPause>("GET", "/api/admin/couples", undefined, {
+      token: adminToken,
+    });
+    expect(list.status).toBe(200);
+    return list.data.couples.find((c) => c.id === coupleId);
+  }
+
+  test("the reason, who paused, and the delete deadline all reach the admin list", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token, coupleId } = await bootstrapCouple("paused-reason@weddly.test");
+
+    const paused = await req(
+      "POST",
+      "/api/couples/pause",
+      { reason: "Wedding postponed or called off (moved to 2027)" },
+      { token },
+    );
+    expect(paused.status).toBe(201);
+
+    const row = await pauseRowFor(adminToken, coupleId);
+    expect(row?.status).toBe("paused");
+    expect(row?.pause?.reason).toBe("Wedding postponed or called off (moved to 2027)");
+    expect(row?.pause?.requested_by_name).toBe("Owner");
+    // 30-day window, same constant the pause route stamps.
+    const days = (row!.pause!.scheduled_delete_at - row!.pause!.requested_at) / (24 * 3600 * 1000);
+    expect(Math.round(days)).toBe(30);
+  });
+
+  test("a pause with no reason still reports the countdown, with a null reason", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token, coupleId } = await bootstrapCouple("paused-noreason@weddly.test");
+    await req("POST", "/api/couples/pause", { reason: "   " }, { token });
+
+    const row = await pauseRowFor(adminToken, coupleId);
+    // Not null: the workspace IS on the countdown, the admin just gets no
+    // answer to render. Null here would hide the deadline too.
+    expect(row?.pause).not.toBeNull();
+    expect(row?.pause?.reason).toBeNull();
+    expect(row?.pause?.scheduled_delete_at).toBeGreaterThan(Date.now());
+  });
+
+  test("cancelling the pause clears it — an active workspace carries no reason", async () => {
+    const adminToken = await bootstrapAdmin();
+    const { token, coupleId } = await bootstrapCouple("paused-cancel@weddly.test");
+    await req("POST", "/api/couples/pause", { reason: "Just taking a break" }, { token });
+    const cancel = await req("POST", "/api/couples/pause/cancel", {}, { token });
+    expect(cancel.status).toBe(200);
+
+    const row = await pauseRowFor(adminToken, coupleId);
+    expect(row?.status).toBe("active");
+    expect(row?.pause).toBeNull();
+  });
+});
+
 describe("admin couples — remind-invite-partner nudge", () => {
   test("solo couple → email_log row + audit log + 200", async () => {
     const adminToken = await bootstrapAdmin();

@@ -4,6 +4,7 @@
 
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
 import type {
+  AdminCouplePause,
   AdminCoupleView,
   AdminEmailLogEntry,
   AdminUserActivity,
@@ -235,6 +236,38 @@ function demoFeatureCountsByCoupleId(): Map<number, Record<string, number>> {
   return out;
 }
 
+/** The pending pause request that put a workspace on the delete countdown, or
+ *  null. Read only for a paused workspace: an active one has no pending row by
+ *  construction (cancel flips it to 'cancelled'), and a purged one had its
+ *  reason NULLed by the sweep. The exit dialog writes the canonical EN label,
+ *  so this reads the same whatever locale the couple churned in. */
+function pauseDetailFor(coupleId: number): AdminCouplePause | null {
+  const row = db
+    .prepare(
+      `SELECT p.reason AS reason, p.created_at AS created_at,
+              p.scheduled_delete_at AS scheduled_delete_at, u.full_name AS full_name
+         FROM couple_pause_requests p
+         LEFT JOIN users u ON u.id = p.requested_by_user_id
+        WHERE p.couple_id = ? AND p.status = 'pending'
+        ORDER BY p.id DESC LIMIT 1`,
+    )
+    .get(coupleId) as
+    | {
+        reason: string | null;
+        created_at: number;
+        scheduled_delete_at: number;
+        full_name: string | null;
+      }
+    | undefined;
+  if (!row) return null;
+  return {
+    reason: row.reason?.trim() ? row.reason : null,
+    requested_by_name: row.full_name?.trim() ? row.full_name : null,
+    requested_at: row.created_at,
+    scheduled_delete_at: row.scheduled_delete_at,
+  };
+}
+
 function toAdminCouple(
   row: CoupleRow,
   demoFeatureCounts: Map<number, Record<string, number>>,
@@ -284,6 +317,7 @@ function toAdminCouple(
     invite_partner_reminded_at: row.invite_partner_reminded_at ?? null,
     billing: c.billing,
     wedding_date: row.wedding_date ?? null,
+    pause: c.status === "paused" ? pauseDetailFor(c.id) : null,
   };
 }
 

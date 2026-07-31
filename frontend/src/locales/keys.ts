@@ -6524,6 +6524,10 @@ export interface LocaleMessages {
     remind_invite_partner_success: string;
     remind_invite_partner_sent_label: string;
     workspace_status_paused: string;
+    /** Why a workspace is paused: the exit-dialog reason, plus the countdown
+     *  to the purge, rendered under the workspace name. */
+    pause_reason_none: string;
+    pause_purges_in: string;
     /** Billing badges + free-badge grant/revoke on the admin couples list. */
     billing_free: string;
     billing_until_wedding: string;

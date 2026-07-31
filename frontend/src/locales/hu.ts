@@ -5667,6 +5667,8 @@ const hu: LocaleMessages = {
     grant_free_success: "Ingyenes hozzáférés megadva.",
     revoke_free_success: "Ingyenes hozzáférés visszavonva.",
     workspace_status_paused: "Szüneteltetve",
+    pause_reason_none: "Nincs megadott ok",
+    pause_purges_in: "{n} nap múlva törlődik",
     workspace_status_deleting: "Törlés alatt",
     badge_admin: "Admin",
     badge_suspended: "Felfüggesztve",

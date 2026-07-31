@@ -50,6 +50,20 @@ function formatDate(unixMs: number, locale: Locale): string {
   }).format(d);
 }
 
+/** Calendar days between today and `unixMs`, both floored to local midnight, so
+ *  a 7-day deadline set yesterday reads "6" today rather than holding at 7 for
+ *  a full 24h. Math.round absorbs the ±1h DST wobble; never negative, since the
+ *  hourly sweep clears the row on the next tick past the deadline. */
+function daysLeftUntil(unixMs: number): number {
+  return Math.max(
+    0,
+    Math.round(
+      (new Date(unixMs).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) /
+        (24 * 60 * 60 * 1000),
+    ),
+  );
+}
+
 function workspaceLabel(c: AdminCoupleView): string {
   if (c.display_name && c.display_name.trim()) return c.display_name;
   const a = c.bride_name?.trim();
@@ -820,22 +834,7 @@ export default function AdminUsersPage() {
 
   function renderUserInfo(u: AdminUserView, opts: { showLastActive?: boolean } = {}) {
     const flag = u.active_flag;
-    // Days-remaining countdown for the flag badge, counted in CALENDAR days
-    // between today and the deletion date (both floored to local midnight), so
-    // a user flagged yesterday reads "6" today, not "7". A raw ceil of the ms
-    // gap would keep showing the full 7 until a complete 24h had elapsed.
-    // Math.round absorbs the ±1h DST wobble. Min 0 — never a negative count;
-    // once the deadline passes the hourly sweep removes the row on the next tick.
-    const flagDaysLeft = flag
-      ? Math.max(
-          0,
-          Math.round(
-            (new Date(flag.scheduled_delete_at).setHours(0, 0, 0, 0) -
-              new Date().setHours(0, 0, 0, 0)) /
-              (24 * 60 * 60 * 1000),
-          ),
-        )
-      : 0;
+    const flagDaysLeft = flag ? daysLeftUntil(flag.scheduled_delete_at) : 0;
     return (
       <div className="flex min-w-0 flex-col gap-y-1">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -1121,11 +1120,31 @@ export default function AdminUsersPage() {
       </div>
     );
 
+    // A paused workspace is on a 30-day delete countdown, so the row says WHY
+    // it stopped (the exit dialog's canonical EN reason + the couple's own
+    // note), who stopped it, and how long is left before the purge sweep takes
+    // it. Without this the admin list only reports the fact of the churn.
+    const pauseLine = c.pause ? (
+      <p className="mt-0.5 text-[11px] leading-snug text-neutral-500 dark:text-umber-300">
+        <span className="text-neutral-700 dark:text-paper-200">
+          {c.pause.reason ?? t("admin.pause_reason_none")}
+        </span>
+        {c.pause.requested_by_name && <> · {c.pause.requested_by_name}</>}
+        {" · "}
+        {t("admin.pause_purges_in", { n: daysLeftUntil(c.pause.scheduled_delete_at) })}
+      </p>
+    ) : null;
+
     const nameCluster = (
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-        <span className="font-medium text-neutral-900 dark:text-paper-50">{workspaceLabel(c)}</span>
-        {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
-        {!c.is_demo && renderBillingPill(c)}
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="font-medium text-neutral-900 dark:text-paper-50">
+            {workspaceLabel(c)}
+          </span>
+          {statusLabel && <Pill tone="muted">{statusLabel}</Pill>}
+          {!c.is_demo && renderBillingPill(c)}
+        </div>
+        {pauseLine}
       </div>
     );
 

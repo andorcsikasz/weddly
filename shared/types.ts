@@ -478,6 +478,21 @@ export interface UserFlag {
   created_at: UnixMs;
 }
 
+/** Why a workspace is paused, for the admin couples list. Mirrors the PENDING
+ *  `couple_pause_requests` row — the one that put the workspace on the 30-day
+ *  delete countdown. `reason` is the canonical EN label the exit dialog
+ *  composes (chip + optional free-text note), or null on a legacy pause taken
+ *  before the dialog existed, and on a purged workspace (the sweep NULLs it). */
+export interface AdminCouplePause {
+  reason: string | null;
+  /** Which partner clicked pause. Null when that user row is gone. */
+  requested_by_name: string | null;
+  requested_at: UnixMs;
+  /** Unix ms the purge sweep will take the workspace. Drives the "Xd left"
+   *  countdown, same shape as `UserFlag.scheduled_delete_at`. */
+  scheduled_delete_at: UnixMs;
+}
+
 export interface AdminCoupleView {
   id: number;
   /** Human-readable workspace identifier (e.g. "MIALUCAS"). Falls back to
@@ -527,6 +542,10 @@ export interface AdminCoupleView {
   billing: CoupleBilling;
   /** ISO date string (YYYY-MM-DD) of the wedding day, or null when not set. */
   wedding_date: string | null;
+  /** The pending pause request behind `status === "paused"`, so the admin list
+   *  can say WHY a workspace stopped instead of only that it did. Null on every
+   *  other status, and on a paused legacy row with no request row. */
+  pause: AdminCouplePause | null;
 }
 
 // ─── Couples (the workspace) ─────────────────────────────────────────────────

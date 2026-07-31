@@ -5719,6 +5719,8 @@ const es: LocaleMessages = {
     grant_free_success: "Acceso gratis concedido.",
     revoke_free_success: "Acceso gratis revocado.",
     workspace_status_paused: "En pausa",
+    pause_reason_none: "Sin motivo indicado",
+    pause_purges_in: "se borra en {n} d",
     workspace_status_deleting: "Purgado",
     badge_admin: "Admin",
     badge_suspended: "Suspendido",
