@@ -6,6 +6,7 @@ import type { CoupleDesign } from "./design";
 import type { ListingPackage } from "./listing_packages";
 import type { TimelineEmailEscalation } from "./notifications";
 import type { PlannerTierKey } from "./planner_points";
+import type { NameReview } from "./real_names";
 import type { ReviewSummary } from "./suppliers";
 
 export type UnixMs = number;
@@ -775,6 +776,13 @@ export interface Couple {
   country: string;
   style_tags: WeddingStyleTag[];
   status: CoupleStatus;
+  /** Set only while this workspace's partner names read as placeholders rather
+   *  than names ("x & y", "NŐ & FÉRFI"). Carries the 3-day deadline and, past
+   *  it, `locked: true`: the workspace is read-only until the names are real.
+   *  Computed from the LIVE names on every read, so correcting them clears this
+   *  on the very next response. `null` for everybody else, which is ~92% of
+   *  workspaces. */
+  name_review: NameReview | null;
   /** Free-text honeymoon destination — "Bali" / "Toscana, Italy". `null` until
    *  the couple fills it in on /app/honeymoon. */
   honeymoon_destination: string | null;

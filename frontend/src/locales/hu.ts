@@ -1440,6 +1440,27 @@ const hu: LocaleMessages = {
     extra_enter_cta: "Létrehozás és belépés",
     extra_entering: "Létrehozás...",
     extra_skip: "Kihagyom",
+    real_names_why:
+      "A valódi neveteket kérjük. Ez jelenik meg a vendégoldalon, a meghívókon és minden üzeneten, amit egy szolgáltató kap tőletek.",
+  },
+  real_names: {
+    error_too_short: "Kérjük, írd le a teljes keresztnevet.",
+    error_role_word: "Ez egy szerep, nem név. Kérjük, írd le magát a nevet.",
+    error_placeholder: "Ez kitöltésnek tűnik. Kérjük, írd be a valódi nevet.",
+    error_not_a_name: "Ez nem tűnik névnek. Kérjük, írd be a valódit.",
+    notice_title: "Kérjük, erősítsétek meg a neveteket",
+    notice_body:
+      "A munkaterületen szereplő nevek ({names}) nem tűnnek valódi neveknek. Kérjük, javítsátok őket, hogy a vendégeitek, a szolgáltatóitok és a meghívóitok a helyeset kapják.",
+    notice_cta: "Nevek javítása",
+    notice_deadline: "Kérjük, {date} napjáig tegyétek meg.",
+    locked_title: "Erősítsétek meg a neveteket",
+    locked_body:
+      "A munkaterület addig szünetel, amíg itt a valódi neveitek nem szerepelnek. Így marad a Weddly közössége igazi jegyespárokból. Minden mentett adatotok érintetlen, és azonnal visszatér.",
+    locked_save: "Mentés és tovább",
+    locked_saving: "Mentés",
+    bride_label: "Menyasszony",
+    groom_label: "Vőlegény",
+    saved: "Köszönjük, ezzel megvagyunk.",
   },
   goal: {
     date_tbd: "Dátum: később",

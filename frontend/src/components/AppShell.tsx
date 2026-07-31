@@ -56,6 +56,7 @@ import { ShareWeddlyDialog } from "./ShareWeddlyDialog";
 import { CoachMarks } from "./CoachMarks";
 import { FeatureTour } from "./FeatureTour";
 import { DemoOverlay } from "./DemoOverlay";
+import { NameReviewGate } from "./NameReviewGate";
 import { SubscriptionBanner } from "./SubscriptionBanner";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
 import { FeedbackDialog } from "./FeedbackDialog";
@@ -744,6 +745,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Read-only billing banner — renders only when the couple's free
           period has lapsed and they aren't subscribed. No-ops otherwise. */}
       <SubscriptionBanner />
+      {/* Placeholder partner names ("x & y"): a notice band with the deadline,
+          and a blocking card once that deadline has passed. No-ops for the
+          ~92% of workspaces that were never flagged. */}
+      <NameReviewGate />
       {/* Planner-mode banner — shown when a planner has entered a client
           workspace (couple_id set). Lets them exit back to /app/planner. */}
       {user?.user_type === "planner" && user.couple_id != null && (

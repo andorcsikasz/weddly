@@ -200,6 +200,7 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
     timeline_email_escalation: "overdue",
     notif_email_cadence: "1_weekly",
     notif_focus: "timeline,rsvp,partner",
+    name_review: null,
     is_demo: false,
     is_public: false,
     wishlist_published: false,
@@ -360,7 +361,7 @@ function installDefaultEndpoints(
     user: {
       id: 11,
       email: "test@example.com",
-      full_name: "Test User",
+      full_name: "Tamás Kovács",
       role: "user",
       verified_email: true,
       status: "active",
@@ -641,7 +642,7 @@ describe("<GuestsPage>", () => {
       guests: [
         makeGuest({
           id: 1,
-          full_name: "Bride",
+          full_name: "Brigitta Simon",
           household_id: 1,
           partner_role: "bride",
           invited_at: 5,

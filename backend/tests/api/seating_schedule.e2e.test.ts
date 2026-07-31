@@ -1903,7 +1903,7 @@ describe("print: unknown couple", () => {
     const reg = await registerAndVerify({
       email,
       password: "supersafe123",
-      full_name: "No Couple",
+      full_name: "Noémi Kiss",
     });
     expect(reg.status).toBe(201);
     const res = await fetch(`${BASE}/api/print/seating/a4`, {

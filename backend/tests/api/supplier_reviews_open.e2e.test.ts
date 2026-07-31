@@ -64,7 +64,7 @@ beforeAll(async () => {
   const admin = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   if (admin.status === 201) {
     adminToken = admin.data.token;

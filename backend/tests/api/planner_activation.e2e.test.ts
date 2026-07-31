@@ -17,7 +17,7 @@ async function addAdmin(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
     privacy_version: PRIVACY_VERSION,
     terms_version: TERMS_VERSION,
   });

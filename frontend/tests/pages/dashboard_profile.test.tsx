@@ -92,6 +92,7 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     timeline_email_escalation: "overdue",
     notif_email_cadence: "1_weekly",
     notif_focus: "timeline,rsvp,partner",
+    name_review: null,
     is_demo: false,
     is_public: false,
     wishlist_published: false,

@@ -29,7 +29,7 @@ async function freshUserNoCouple(email: string): Promise<{ token: string; userId
   const r = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Test User",
+    full_name: "Tamás Kovács",
   });
   expect(r.status).toBe(201);
   return { token: r.data.token, userId: r.data.user.id };

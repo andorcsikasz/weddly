@@ -10,6 +10,7 @@
 
 import { FOUNDING_CAP } from "@shared/billing";
 import { toIsoDate } from "@shared/planning_timeline";
+import { checkPartnerNames, NAME_REVIEW_GRACE_MS } from "@shared/real_names";
 import { INVITE_TTL_MS } from "@shared/types";
 import { CONFIG } from "../../config";
 import { db, now } from "../../db";
@@ -140,6 +141,7 @@ export function runEmailSweep(): {
   rsvpDigests: number;
   timelineEscalations: number;
   scheduledGuestMessages: number;
+  nameReviewNotices: number;
 } {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
@@ -159,6 +161,7 @@ export function runEmailSweep(): {
   const rsvpDigests = sweepRsvpWeeklyDigest(ts);
   const timelineEscalations = sweepTimelineEscalation(ts);
   const scheduledGuestMessages = sweepScheduledGuestMessages(ts);
+  const nameReviewNotices = sweepNameReviewNotice(ts);
   // Deliberately LAST, both of them. These two are the sweeps that yield to the
   // others: they skip any couple already written to today, so they have to run
   // once everyone else has logged their sends. The honeymoon nudge goes first
@@ -186,6 +189,7 @@ export function runEmailSweep(): {
     rsvpDigests,
     timelineEscalations,
     scheduledGuestMessages,
+    nameReviewNotices,
   };
 }
 
@@ -1197,6 +1201,81 @@ function sweepWeddingFarewell(ts: number): number {
     count++;
     if (count >= SENDS_PER_SWEEP_CAP) break;
   }
+  return count;
+}
+
+interface NameReviewCoupleRow {
+  couple_id: number;
+  bride_name: string;
+  groom_name: string;
+  name_flagged_at: number;
+  user_id: number;
+  email: string;
+  full_name: string;
+}
+
+/**
+ * Tell a flagged couple their names read as placeholders and name the date.
+ *
+ * BOTH partners get it, because either of them can fix it and a notice that
+ * reaches only the one who is not reading their email is no notice at all.
+ * `couples.name_notice_sent_at` is stamped once per workspace so the second
+ * partner's send doesn't re-arm the first; `markDispatched` then makes it
+ * once-per-user on top of that.
+ *
+ * The names are re-checked HERE rather than trusted from the flag, so a couple
+ * who fixed theirs between the backfill and the sweep is never written to.
+ */
+function sweepNameReviewNotice(ts: number): number {
+  const rows = db
+    .prepare(
+      `SELECT c.id AS couple_id, c.bride_name, c.groom_name, c.name_flagged_at,
+              u.id AS user_id, u.email, u.full_name
+         FROM couples c
+         JOIN users u ON u.couple_id = c.id
+        WHERE c.name_flagged_at IS NOT NULL
+          AND c.name_notice_sent_at IS NULL
+          AND c.status = 'active'
+          AND c.is_demo = 0
+          AND u.status = 'active'`,
+    )
+    .all() as NameReviewCoupleRow[];
+
+  let count = 0;
+  const notified = new Set<number>();
+  for (const r of rows) {
+    if (checkPartnerNames(r).length === 0) continue;
+    if (!markDispatched({ kind: "name_review_notice", couple_id: r.couple_id, user_id: r.user_id }))
+      continue;
+    const deadline = new Date(r.name_flagged_at + NAME_REVIEW_GRACE_MS);
+    void sendKind(
+      "name_review_notice",
+      {
+        currentNames: `${r.bride_name} & ${r.groom_name}`,
+        deadlineDateHu: deadline.toLocaleDateString("hu-HU", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        deadlineDateEn: deadline.toLocaleDateString("en-GB", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+      },
+      {
+        user: { id: r.user_id, email: r.email, full_name: r.full_name },
+        couple_id: r.couple_id,
+      },
+    );
+    notified.add(r.couple_id);
+    count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
+  }
+  // Stamped after the loop, so both partners of one workspace are written to on
+  // the same pass rather than the second being skipped by the first's stamp.
+  const stamp = db.prepare("UPDATE couples SET name_notice_sent_at = ? WHERE id = ?");
+  for (const coupleId of notified) stamp.run(ts, coupleId);
   return count;
 }
 

@@ -28,7 +28,7 @@ async function bootstrapAdmin(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   return reg.data.token;
 }
@@ -39,7 +39,7 @@ async function addAdmin(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   return reg.data.token;
 }
@@ -741,7 +741,7 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
     const reg = await registerAndVerify({
       email: "n2@weddly.test",
       password: "supersafe123",
-      full_name: "N2",
+      full_name: "Nóra Kiss",
     });
     const r = await req(
       "POST",
@@ -757,7 +757,7 @@ describe("admin users — resend-verify, delete, flag/unflag", () => {
     const reg = await registerAndVerify({
       email: "n3@weddly.test",
       password: "supersafe123",
-      full_name: "N3",
+      full_name: "Norbert Kiss",
     });
     const r = await req(
       "POST",
@@ -1176,7 +1176,7 @@ describe("admin couples — remind-invite-partner nudge", () => {
     const partnerB = await registerAndVerify({
       email: "partner@weddly.test",
       password: "supersafe123",
-      full_name: "Partner",
+      full_name: "Petra Nagy",
     });
     db.prepare("UPDATE couples SET partner_b_id = ? WHERE id = ?").run(
       partnerB.data.user.id,
@@ -1289,7 +1289,7 @@ describe("auto invite-partner nudge (worker sweep)", () => {
     const partnerB = await registerAndVerify({
       email: "auto-pair-b@weddly.test",
       password: "supersafe123",
-      full_name: "Partner B",
+      full_name: "Bea Nagy",
     });
     db.prepare("UPDATE couples SET partner_b_id = ?, created_at = ? WHERE id = ?").run(
       partnerB.data.user.id,

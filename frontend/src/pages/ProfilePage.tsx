@@ -17,6 +17,7 @@ import type {
   UserRole,
 } from "@shared/types";
 import { TIMELINE_EMAIL_ESCALATION_VALUES } from "@shared/notifications";
+import { checkRealName } from "@shared/real_names";
 import {
   Archive,
   BellRing,
@@ -73,6 +74,7 @@ import {
   todayIso,
 } from "../lib/format";
 import { contentLocale, type Locale, useT } from "../lib/i18n";
+import { realNameErrorKey } from "../lib/real_names";
 import { useDocumentMeta } from "../lib/seo";
 
 function deleteVerifyPhrase(couple: Couple | null): string {
@@ -1352,6 +1354,14 @@ export function ProfileHero({
       nextGroom.length > 100
     ) {
       setError(t("profile.hero_name_save_error"));
+      return;
+    }
+    // Same rule the server enforces, so the refusal reads as an explanation
+    // here rather than as a failed save. The bride's verdict wins when both
+    // fields are wrong; fixing it surfaces the groom's on the next attempt.
+    const verdict = checkRealName(nextBride) ?? checkRealName(nextGroom);
+    if (verdict) {
+      setError(t(realNameErrorKey(verdict.reason)));
       return;
     }
     if (nextBride === couple.bride_name && nextGroom === couple.groom_name) {

@@ -68,7 +68,7 @@ async function addPartnerB(ownerToken: string, email: string): Promise<string> {
   const reg = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Partner B",
+    full_name: "Bea Nagy",
   });
   expect(reg.status).toBe(201);
   const accept = await req(

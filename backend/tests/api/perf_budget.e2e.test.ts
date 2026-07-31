@@ -65,7 +65,7 @@ async function bootstrapAdmin(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   if (reg.status === 201) return reg.data.token;
   // 409 = already registered; just log in.
@@ -94,7 +94,7 @@ describe("perf: auth", () => {
     const reg = await registerAndVerify({
       email: "perf-login@weddly.test",
       password: "supersafe123",
-      full_name: "Login Tester",
+      full_name: "Levente Tóth",
     });
     expect(reg.status).toBe(201);
     const { p95 } = await timeIt("auth.login", () =>
@@ -116,7 +116,7 @@ describe("perf: auth", () => {
       return req("POST", "/api/auth/register", {
         email: `perf-reg-${counter}@weddly.test`,
         password: "supersafe123",
-        full_name: "Reg Tester",
+        full_name: "Regina Tóth",
       });
     });
     // raised after CI run because: Argon2id hash on Bun consistently lands in
@@ -131,7 +131,7 @@ describe("perf: auth", () => {
     const reg = await registerAndVerify({
       email: "perf-logout@weddly.test",
       password: "supersafe123",
-      full_name: "Logout Tester",
+      full_name: "Lóránt Tóth",
     });
     expect(reg.status).toBe(201);
     const { p95 } = await timeIt("auth.logout", async () => {

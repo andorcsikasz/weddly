@@ -21,7 +21,7 @@ async function registerAndAcceptInvite(email: string, inviteToken: string): Prom
   const reg = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Partner",
+    full_name: "Petra Nagy",
   });
   expect(reg.status).toBe(201);
   const accept = await req(
@@ -122,7 +122,7 @@ describe("saved_suppliers (shared couple shortlist)", () => {
     const reg = await registerAndVerify({
       email: "saved-iso-b@weddly.test",
       password: "supersafe123",
-      full_name: "B",
+      full_name: "Bence",
     });
     await req(
       "POST",

@@ -45,7 +45,7 @@ describe("POST /api/auth/register — validation", () => {
     wipeAll();
     const r = await req("POST", "/api/auth/register", {
       password: "supersafe123",
-      full_name: "X",
+      full_name: "Xénia",
     });
     expect(r.status).toBe(400);
   });
@@ -55,7 +55,7 @@ describe("POST /api/auth/register — validation", () => {
     const r = await req("POST", "/api/auth/register", {
       email: 42,
       password: "supersafe123",
-      full_name: "X",
+      full_name: "Xénia",
     });
     expect(r.status).toBe(400);
   });
@@ -65,7 +65,7 @@ describe("POST /api/auth/register — validation", () => {
     const r = await req("POST", "/api/auth/register", {
       email: "not-an-email",
       password: "supersafe123",
-      full_name: "X",
+      full_name: "Xénia",
     });
     expect(r.status).toBe(400);
   });
@@ -75,7 +75,7 @@ describe("POST /api/auth/register — validation", () => {
     const r = await req("POST", "/api/auth/register", {
       email: "@example.com",
       password: "supersafe123",
-      full_name: "X",
+      full_name: "Xénia",
     });
     expect(r.status).toBe(400);
   });
@@ -84,7 +84,7 @@ describe("POST /api/auth/register — validation", () => {
     wipeAll();
     const r = await req("POST", "/api/auth/register", {
       email: "ok@example.com",
-      full_name: "X",
+      full_name: "Xénia",
     });
     expect(r.status).toBe(400);
   });
@@ -94,7 +94,7 @@ describe("POST /api/auth/register — validation", () => {
     const r = await req("POST", "/api/auth/register", {
       email: "long@example.com",
       password: "a".repeat(1025),
-      full_name: "X",
+      full_name: "Xénia",
     });
     expect(r.status).toBe(400);
   });
@@ -123,7 +123,7 @@ describe("POST /api/auth/register — validation", () => {
     const r = await req("POST", "/api/auth/register", {
       email: "long-name@example.com",
       password: "supersafe123",
-      full_name: "a".repeat(201),
+      full_name: "Anita".repeat(201),
     });
     expect(r.status).toBe(400);
   });
@@ -186,7 +186,7 @@ describe("POST /api/auth/register — rate limit (5/min/IP)", () => {
         {
           email: `rl${i}@example.com`,
           password: "supersafe123",
-          full_name: `RL${i}`,
+          full_name: `Rita Lakatos ${i}`,
         },
         { clientIp: ip },
       );
@@ -199,7 +199,7 @@ describe("POST /api/auth/register — rate limit (5/min/IP)", () => {
       {
         email: "rl6@example.com",
         password: "supersafe123",
-        full_name: "RL6",
+        full_name: "Rita Lakatos",
       },
       { clientIp: ip },
     );
@@ -436,7 +436,7 @@ describe("POST /api/auth/verify/request-public", () => {
     const reg = await req("POST", "/api/auth/register", {
       email: "public-pending@example.com",
       password: "supersafe123",
-      full_name: "PP",
+      full_name: "Panna Papp",
     });
     expect(reg.status).toBe(202);
     const before = latestPendingSignupToken("public-pending@example.com");
@@ -464,7 +464,7 @@ describe("POST /api/auth/verify/request-public", () => {
     await req("POST", "/api/auth/register", {
       email: "public-verified@example.com",
       password: "supersafe123",
-      full_name: "PV",
+      full_name: "Péter Vas",
     });
     await verifyUserEmail("public-verified@example.com");
     const before = db
@@ -580,7 +580,7 @@ describe("POST /api/auth/change-password", () => {
     const reg = await registerAndVerify({
       email: "cp-missing@example.com",
       password: "supersafe123",
-      full_name: "CP",
+      full_name: "Csaba Pintér",
     });
     const r = await req(
       "POST",
@@ -596,7 +596,7 @@ describe("POST /api/auth/change-password", () => {
     const reg = await registerAndVerify({
       email: "cp-missing-new@example.com",
       password: "supersafe123",
-      full_name: "CP",
+      full_name: "Csaba Pintér",
     });
     const r = await req(
       "POST",
@@ -612,7 +612,7 @@ describe("POST /api/auth/change-password", () => {
     const reg = await registerAndVerify({
       email: "cp-short@example.com",
       password: "supersafe123",
-      full_name: "CP",
+      full_name: "Csaba Pintér",
     });
     const r = await req(
       "POST",
@@ -628,7 +628,7 @@ describe("POST /api/auth/change-password", () => {
     await req("POST", "/api/auth/register", {
       email: "cp-revoke@example.com",
       password: "supersafe123",
-      full_name: "CP",
+      full_name: "Csaba Pintér",
     });
     await verifyUserEmail("cp-revoke@example.com");
     // Three concurrent sessions, then we change the password using #1.
@@ -668,7 +668,7 @@ describe("POST /api/auth/change-password", () => {
     const reg = await registerAndVerify({
       email: "cp-mail@example.com",
       password: "supersafe123",
-      full_name: "CP",
+      full_name: "Csaba Pintér",
     });
     const r = await req(
       "POST",
@@ -690,7 +690,7 @@ describe("POST /api/auth/change-password", () => {
     const reg = await registerAndVerify({
       email: "cp-rl@example.com",
       password: "supersafe123",
-      full_name: "CP",
+      full_name: "Csaba Pintér",
     });
     // Each call rotates password + token, so we have to keep the latest token + pw.
     let token = reg.data.token;
@@ -783,7 +783,7 @@ describe("GET /api/auth/me", () => {
     const reg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     const r = await req<{ user: { is_admin: boolean } }>("GET", "/api/auth/me", undefined, {
       token: reg.data.token,
@@ -856,7 +856,7 @@ describe("POST /api/auth/verify/:token — consume", () => {
     const reg = await req("POST", "/api/auth/register", {
       email: "verify-flip2@example.com",
       password: "supersafe123",
-      full_name: "VF",
+      full_name: "Viola Fehér",
     });
     expect(reg.status).toBe(202);
     // No users row can hold verified_email = 0 here any more: register parks the
@@ -911,7 +911,7 @@ describe("POST /api/auth/verify/request — resend", () => {
     const reg = await registerAndVerify({
       email: "resend-rl@example.com",
       password: "supersafe123",
-      full_name: "RR",
+      full_name: "Réka Rózsa",
     });
     for (let i = 0; i < 5; i++) {
       const r = await req(
@@ -1125,7 +1125,7 @@ describe("POST /api/auth/reset", () => {
     await registerAndVerify({
       email: "reset-rev@example.com",
       password: "supersafe123",
-      full_name: "RR",
+      full_name: "Réka Rózsa",
     });
     const s1 = await req<{ token: string }>("POST", "/api/auth/login", {
       email: "reset-rev@example.com",
@@ -1181,7 +1181,7 @@ describe("POST /api/auth/reset", () => {
     const reg = await registerAndVerify({
       email: "reset-susp@example.com",
       password: "supersafe123",
-      full_name: "RS",
+      full_name: "Roland Sárdi",
     });
     await req("POST", "/api/auth/forgot", { email: "reset-susp@example.com" });
     const tokenRow = db
@@ -1298,7 +1298,7 @@ describe("POST /api/auth/change-email-request", () => {
     const reg = await registerAndVerify({
       email: "ce-me@example.com",
       password: "supersafe123",
-      full_name: "Me",
+      full_name: "Móni",
     });
     const r = await req(
       "POST",
@@ -1321,7 +1321,7 @@ describe("POST /api/auth/change-email-request", () => {
     const reg = await registerAndVerify({
       email: "ce-me2@example.com",
       password: "supersafe123",
-      full_name: "Me",
+      full_name: "Móni",
     });
     const r = await req(
       "POST",
@@ -1776,7 +1776,7 @@ describe("POST /api/unsubscribe/:token — RFC 8058", () => {
     const reg = await registerAndVerify({
       email: "unsub-rfc@example.com",
       password: "supersafe123",
-      full_name: "RFC",
+      full_name: "Rita Fodor",
     });
     const unsubToken = await unsubscribeTokenFor(reg.data.token);
     const r = await req("POST", `/api/unsubscribe/${unsubToken}`, {});

@@ -229,7 +229,7 @@ describe("logistics: accommodation rooms", () => {
     const regB = await registerAndVerify({
       email: "rooms-iso-b@weddly.test",
       password: "supersafe123",
-      full_name: "B",
+      full_name: "Bence",
     });
     expect(regB.status).toBe(201);
     await req(

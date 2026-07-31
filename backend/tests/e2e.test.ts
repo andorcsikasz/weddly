@@ -234,7 +234,7 @@ describe("auth", () => {
     const r = await req("POST", "/api/auth/register", {
       email: "x@example.com",
       password: "short",
-      full_name: "X",
+      full_name: "Xénia",
     });
     expect(r.status).toBe(400);
   });
@@ -302,7 +302,7 @@ describe("auth", () => {
     await registerAndVerify({
       email: "login@example.com",
       password: "supersafe123",
-      full_name: "L",
+      full_name: "Lilla",
     });
     const r = await req("POST", "/api/auth/login", {
       email: "login@example.com",
@@ -319,7 +319,7 @@ describe("auth", () => {
     const reg = await registerAndVerify({
       email: "pwchange@example.com",
       password: "supersafe123",
-      full_name: "PC",
+      full_name: "Petra Csík",
     });
     expect(reg.status).toBe(201);
     const oldToken = reg.data.token;
@@ -385,7 +385,7 @@ describe("auth", () => {
     await registerAndVerify({
       email: "pwreset@example.com",
       password: "supersafe123",
-      full_name: "PR",
+      full_name: "Piroska Rácz",
     });
     await req("POST", "/api/auth/forgot", { email: "pwreset@example.com" });
     const tokenRow = db
@@ -1540,7 +1540,7 @@ async function adminTokenVerified(): Promise<string> {
   await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   const login = await req<{ token: string }>("POST", "/api/auth/login", {
     email: "admin@test.test",
@@ -2491,7 +2491,7 @@ describe("households + airport check-in", () => {
     const reg = await registerAndVerify({
       email: "isoB@weddly.test",
       password: "supersafe123",
-      full_name: "B",
+      full_name: "Bence",
     });
     await req(
       "POST",
@@ -2995,7 +2995,7 @@ describe("password reset", () => {
     await registerAndVerify({
       email: "reset@weddly.test",
       password: "originalpw123",
-      full_name: "Reset User",
+      full_name: "Renáta Sós",
     });
 
     const r = await req<{ ok: true }>("POST", "/api/auth/forgot", { email: "reset@weddly.test" });
@@ -3816,7 +3816,7 @@ describe("email pipeline", () => {
     await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     // Seed one queue item so the digest has non-zero counts.
     await req("POST", "/api/vendors/waitlist", {
@@ -4029,7 +4029,7 @@ describe("community suppliers", () => {
     const r = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     expect(r.status).toBe(201);
     return r.data.token;
@@ -4958,7 +4958,7 @@ describe("admin users + couples directory", () => {
     const r = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     expect(r.status).toBe(201);
     return r.data.token;
@@ -5548,7 +5548,7 @@ describe("supplier taxonomy (admin-editable groups + categories)", () => {
     const r = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     expect(r.status).toBe(201);
     return r.data.token;
@@ -5966,7 +5966,7 @@ describe("round-2: leave couple", () => {
     const a = await registerAndVerify({
       email: "leaveA@weddly.test",
       password: "supersafe123",
-      full_name: "A",
+      full_name: "Aliz",
     });
     const ob = await req<{ couple: { id: number } }>(
       "POST",
@@ -5985,7 +5985,7 @@ describe("round-2: leave couple", () => {
     const b = await registerAndVerify({
       email: "leaveB@weddly.test",
       password: "supersafe123",
-      full_name: "B",
+      full_name: "Bence",
     });
     await req("POST", `/api/invites/${inv.data.invite.token}/accept`, {}, { token: b.data.token });
 
@@ -6829,7 +6829,7 @@ describe("community supplier verification gate", () => {
     const adminReg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     await req(
       "POST",
@@ -6975,7 +6975,7 @@ describe("vendor waitlist", () => {
     const adminReg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     expect(adminReg.status).toBe(201);
 
@@ -7054,7 +7054,7 @@ describe("vendor waitlist", () => {
     const adminReg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     expect(adminReg.status).toBe(201);
 
@@ -7105,7 +7105,7 @@ describe("vendor waitlist", () => {
     const userReg = await registerAndVerify({
       email: "notadmin@weddly.test",
       password: "supersafe123",
-      full_name: "User",
+      full_name: "Zsolt Nagy",
     });
     const list2 = await req("GET", "/api/admin/vendor-waitlist", undefined, {
       token: userReg.data.token,
@@ -7118,7 +7118,7 @@ describe("vendor waitlist", () => {
     const adminReg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     expect(adminReg.status).toBe(201);
 
@@ -7198,7 +7198,7 @@ describe("vendor waitlist", () => {
     const adminReg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     expect(adminReg.status).toBe(201);
 
@@ -7234,7 +7234,7 @@ describe("vendor waitlist outcomes", () => {
     const adminReg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
       business_name: "Bloom Studio",
@@ -7438,7 +7438,7 @@ describe("vendor waitlist outcomes", () => {
     const adminReg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     const submit = await req<{ entry: Entry }>("POST", "/api/vendors/waitlist", {
       business_name: "Anon Test Co",
@@ -7463,7 +7463,7 @@ describe("vendor waitlist outcomes", () => {
     const userReg = await registerAndVerify({
       email: "notadmin2@weddly.test",
       password: "supersafe123",
-      full_name: "User",
+      full_name: "Zsolt Nagy",
     });
     const u1 = await req(
       "POST",
@@ -7552,7 +7552,7 @@ describe("feedback admin triage", () => {
     const r = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     expect(r.status).toBe(201);
     return r.data.token;
@@ -7595,7 +7595,7 @@ describe("feedback admin triage", () => {
     const userReg = await registerAndVerify({
       email: "user@test.test",
       password: "supersafe123",
-      full_name: "Test User",
+      full_name: "Tamás Kovács",
     });
     expect(userReg.status).toBe(201);
 
@@ -7624,7 +7624,7 @@ describe("feedback admin triage", () => {
     expect(entry.source).toBe("app");
     expect(typeof entry.user_id).toBe("number");
     expect(entry.user_email).toBe("user@test.test");
-    expect(entry.user_full_name).toBe("Test User");
+    expect(entry.user_full_name).toBe("Tamás Kovács");
   });
 
   test("admin can move status through new → reviewed → fixed → re-open", async () => {
@@ -7693,7 +7693,7 @@ describe("feedback admin triage", () => {
     const userReg = await registerAndVerify({
       email: "user@test.test",
       password: "supersafe123",
-      full_name: "Test User",
+      full_name: "Tamás Kovács",
     });
     expect(userReg.status).toBe(201);
 
@@ -8667,7 +8667,7 @@ describe("loop A: per-couple supplier votes + self-vote block", () => {
     const adminReg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     await req(
       "POST",
@@ -8703,7 +8703,7 @@ describe("loop A: one-click unsubscribe (RFC 8058)", () => {
     const r = await registerAndVerify({
       email: "unsub@weddly.test",
       password: "supersafe123",
-      full_name: "Unsub Test",
+      full_name: "Ubul Szabó",
     });
     expect(r.status).toBe(201);
 
@@ -9594,7 +9594,7 @@ describe("loop C₁: couple_picks (server-side per-category supplier picks)", ()
     const reg = await registerAndVerify({
       email: "picks-iso-b@weddly.test",
       password: "supersafe123",
-      full_name: "B",
+      full_name: "Bence",
     });
     await req(
       "POST",
@@ -10504,7 +10504,7 @@ describe("admin analytics", () => {
     const r = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     expect(r.status).toBe(201);
     return r.data.token;

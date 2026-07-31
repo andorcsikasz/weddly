@@ -32,7 +32,7 @@ async function bootstrapAdmin(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   db.exec("DELETE FROM growth_events");
   return reg.data.token;

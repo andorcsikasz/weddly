@@ -22,7 +22,7 @@ async function freshUserNoCouple(email: string): Promise<{ token: string; userId
   const r = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Test User",
+    full_name: "Tamás Kovács",
   });
   expect(r.status).toBe(201);
   return { token: r.data.token, userId: r.data.user.id };
@@ -32,7 +32,7 @@ async function registerAndAcceptInvite(email: string, inviteToken: string): Prom
   const reg = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Partner",
+    full_name: "Petra Nagy",
   });
   expect(reg.status).toBe(201);
   const accept = await req(

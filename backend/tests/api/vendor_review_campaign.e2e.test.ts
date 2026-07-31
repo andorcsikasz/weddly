@@ -203,7 +203,7 @@ describe("vendor review-invite campaign", () => {
     const reg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     token = reg.data.token;
     adminUserId = reg.data.user.id;

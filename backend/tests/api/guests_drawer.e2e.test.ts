@@ -262,11 +262,11 @@ describe("guest drawer: explicit +1 type assigned to a host", () => {
 
   test("a +1 cannot host another +1, be its own host, or hang off a supplier", async () => {
     const { token } = await bootstrapCouple("gd-p1-guard@weddly.test");
-    const host = await req<FullGuest>("POST", "/api/guests", { full_name: "A" }, { token });
+    const host = await req<FullGuest>("POST", "/api/guests", { full_name: "Aliz" }, { token });
     const p1 = await req<FullGuest>(
       "POST",
       "/api/guests",
-      { full_name: "B", plus_one_of: host.data.guest.id },
+      { full_name: "Bence", plus_one_of: host.data.guest.id },
       { token },
     );
     expect(p1.status).toBe(201);

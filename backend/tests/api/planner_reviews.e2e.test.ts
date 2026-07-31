@@ -229,7 +229,7 @@ describe("planner reviews", () => {
     const admin = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     const q = await req<{ items: Array<{ supplier_id: string; supplier_name: string | null }> }>(
       "GET",

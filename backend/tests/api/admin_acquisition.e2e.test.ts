@@ -18,7 +18,7 @@ async function bootstrapAdmin(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   return reg.data.token;
 }
@@ -41,7 +41,7 @@ describe("admin analytics — acquisition", () => {
       {
         email: "paid-mobile@example.com",
         password: "supersafe123",
-        full_name: "PM",
+        full_name: "Petra Márton",
         utm_source: "google",
         utm_medium: "cpc",
         utm_campaign: "spring",
@@ -52,7 +52,7 @@ describe("admin analytics — acquisition", () => {
       {
         email: "paid-desktop@example.com",
         password: "supersafe123",
-        full_name: "PD",
+        full_name: "Pál Dobos",
         utm_source: "google",
         utm_medium: "cpc",
         utm_campaign: "spring",
@@ -111,7 +111,7 @@ describe("admin analytics — acquisition", () => {
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537 Chrome/120 Safari/537";
     for (const email of ["cl-a@example.com", "cl-b@example.com", "cl-c@example.com"]) {
       await registerAndVerify(
-        { email, password: "supersafe123", full_name: "CL" },
+        { email, password: "supersafe123", full_name: "Csilla Lakatos" },
         { headers: { "user-agent": desktop } },
       );
     }

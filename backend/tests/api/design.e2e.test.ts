@@ -50,7 +50,7 @@ async function registerVerified(email: string): Promise<string> {
   const r = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Design Test",
+    full_name: "Dóra Szabó",
   });
   expect(r.status).toBe(201);
   return r.data.token;

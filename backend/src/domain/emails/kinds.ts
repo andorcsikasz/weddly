@@ -23,6 +23,7 @@ export type EmailKind =
   | "account_purged" // 30-day window elapsed, all couple data deleted
   | "account_admin_purged" // an admin immediately deleted the account (no 30-day grace)
   | "account_flagged" // admin flagged the account, 7-day window to reply or it gets purged
+  | "name_review_notice" // the workspace's partner names are placeholders, 3 days to correct them
   | "account_flag_cleared" // admin resolved the flag, user is no longer under review
   | "free_access_granted" // admin comped the workspace free Weddly access, heads-up to the couple
   | "rsvp_received_for_couple" // couple gets a notification when a guest RSVPs
@@ -152,6 +153,11 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   account_purged: "transactional",
   account_admin_purged: "transactional",
   account_flagged: "transactional",
+  // Transactional: it is about this workspace's standing and it names a date
+  // after which the workspace goes read-only. A recipient who unsubscribed from
+  // lifecycle mail must still be told, otherwise the first they hear of it is a
+  // planner that stopped saving.
+  name_review_notice: "transactional",
   // Transactional: the user got the original "you're under review" mail and
   // is implicitly waiting on either a reply window or a resolution, this
   // mail closes that loop.

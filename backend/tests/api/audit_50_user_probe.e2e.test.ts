@@ -87,7 +87,7 @@ describe("A. concurrent registration at cohort scale", () => {
           registerAndVerify({
             email: `conc-reg-${i}@weddly.test`,
             password: "supersafe123",
-            full_name: `User ${i}`,
+            full_name: `Zsolt Nagy ${i}`,
           }),
         ),
       );

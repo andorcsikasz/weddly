@@ -37,6 +37,7 @@ import type {
 import { isCurrency } from "@shared/currency";
 import { MAX_PHOTOGRAPHER_LINKS } from "@shared/types";
 import { billingEnforcementOn, db, now } from "../db";
+import { computeNameReview } from "./name_review";
 import { generateOrganiserCode } from "./invite_codes";
 import { isAdminEmail } from "./users";
 
@@ -253,6 +254,10 @@ export interface CoupleRow {
   timeline_email_escalation: string | null;
   notif_email_cadence: string | null;
   notif_focus: string | null;
+  /** When we first noticed the partner names are placeholders. NULL for
+   *  everybody else: see `domain/name_review.ts`. */
+  name_flagged_at: number | null;
+  name_notice_sent_at: number | null;
   is_demo: number;
   welcome_desk_active: number;
   /** Public wedding-website (/w/:slug) opt-in toggle. 0 = private (default),
@@ -560,6 +565,7 @@ export function toCouple(row: CoupleRow): Couple {
       ? (row.notif_email_cadence as NotifEmailCadence)
       : "1_weekly",
     notif_focus: serializeNotifFocus(parseNotifFocus(row.notif_focus)),
+    name_review: computeNameReview(row),
     is_demo: Boolean(row.is_demo),
     is_public: Boolean(row.is_public),
     wishlist_published: Boolean(row.wishlist_published),

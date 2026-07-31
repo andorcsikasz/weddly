@@ -1423,6 +1423,27 @@ const en: LocaleMessages = {
     extra_enter_cta: "Create and enter",
     extra_entering: "Creating...",
     extra_skip: "Skip for now",
+    real_names_why:
+      "We ask for the names you actually go by. They appear on your guest page, your invitations and every message a supplier receives from you.",
+  },
+  real_names: {
+    error_too_short: "Please write the full first name.",
+    error_role_word: "That is a role, not a name. Please write the name itself.",
+    error_placeholder: "That looks like a placeholder. Please write the real name.",
+    error_not_a_name: "That does not look like a name. Please write the real one.",
+    notice_title: "Please confirm your names",
+    notice_body:
+      "The names on this workspace ({names}) do not look like real names. Please correct them so your guests, your suppliers and your invitations carry the right ones.",
+    notice_cta: "Correct the names",
+    notice_deadline: "Please do this by {date}.",
+    locked_title: "Confirm your names",
+    locked_body:
+      "Your workspace is paused until the names here are the ones you actually go by. This keeps the Weddly community made of real couples. Everything you have saved is untouched and comes straight back.",
+    locked_save: "Save and continue",
+    locked_saving: "Saving",
+    bride_label: "Bride",
+    groom_label: "Groom",
+    saved: "Thank you, that is sorted.",
   },
   goal: {
     date_tbd: "Date TBD",

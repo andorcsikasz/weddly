@@ -26,7 +26,7 @@ async function freshUserNoCouple(email: string): Promise<{ token: string; userId
   const r = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Test User",
+    full_name: "Tamás Kovács",
   });
   expect(r.status).toBe(201);
   return { token: r.data.token, userId: r.data.user.id };
@@ -55,7 +55,7 @@ async function registerAndAcceptInvite(email: string, token: string): Promise<st
   const reg = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Partner",
+    full_name: "Petra Nagy",
   });
   expect(reg.status).toBe(201);
   const accept = await req("POST", `/api/invites/${token}/accept`, {}, { token: reg.data.token });
@@ -277,7 +277,7 @@ describe("couples_lifecycle: onboarding goal validation", () => {
     const enReg = await registerAndVerify({
       email: "currency-en@weddly.test",
       password: "supersafe123",
-      full_name: "EN User",
+      full_name: "Emma Wells",
       locale: "en",
     });
     expect(enReg.status).toBe(201);
@@ -294,7 +294,7 @@ describe("couples_lifecycle: onboarding goal validation", () => {
     const huReg = await registerAndVerify({
       email: "currency-hu@weddly.test",
       password: "supersafe123",
-      full_name: "HU User",
+      full_name: "Hanna Balogh",
       locale: "hu",
     });
     expect(huReg.status).toBe(201);
@@ -311,7 +311,7 @@ describe("couples_lifecycle: onboarding goal validation", () => {
     const explReg = await registerAndVerify({
       email: "currency-explicit@weddly.test",
       password: "supersafe123",
-      full_name: "EN User",
+      full_name: "Emma Wells",
       locale: "en",
     });
     expect(explReg.status).toBe(201);
@@ -622,7 +622,7 @@ describe("couples_lifecycle: invite lifecycle edge cases", () => {
     const reg = await registerAndVerify({
       email: "expired-acc-b@weddly.test",
       password: "supersafe123",
-      full_name: "B",
+      full_name: "Bence",
     });
     expect(reg.status).toBe(201);
     const r = await req(
@@ -694,7 +694,7 @@ describe("couples_lifecycle: partner view status transitions", () => {
       { token: aToken },
     );
     expect(active.data.partner.status).toBe("active");
-    expect(active.data.partner.full_name).toBe("Partner");
+    expect(active.data.partner.full_name).toBe("Petra Nagy");
 
     // Drop B's sessions → status="joined" (no live token, but account exists).
     db.prepare("DELETE FROM sessions WHERE user_id = (SELECT id FROM users WHERE email = ?)").run(
@@ -1380,7 +1380,7 @@ describe("couples_lifecycle: accommodations CRUD", () => {
     const g = await req<{ guest: { id: number } }>(
       "POST",
       "/api/guests",
-      { full_name: "A" },
+      { full_name: "Aliz" },
       { token },
     );
     const r = await req(
@@ -1399,7 +1399,7 @@ describe("couples_lifecycle: accommodations CRUD", () => {
     const g = await req<{ guest: { id: number } }>(
       "POST",
       "/api/guests",
-      { full_name: "A" },
+      { full_name: "Aliz" },
       { token },
     );
     const a = await req<{ accommodation: { id: number } }>(

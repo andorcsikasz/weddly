@@ -1461,6 +1461,27 @@ const es: LocaleMessages = {
     extra_enter_cta: "Crear y entrar",
     extra_entering: "Creando...",
     extra_skip: "Omitir por ahora",
+    real_names_why:
+      "Pedimos los nombres que usáis de verdad. Aparecen en vuestra página de invitados, en las invitaciones y en cada mensaje que recibe un proveedor de vuestra parte.",
+  },
+  real_names: {
+    error_too_short: "Escribe el nombre completo, por favor.",
+    error_role_word: "Eso es un papel, no un nombre. Escribe el nombre, por favor.",
+    error_placeholder: "Eso parece un relleno. Escribe el nombre real, por favor.",
+    error_not_a_name: "Eso no parece un nombre. Escribe el real, por favor.",
+    notice_title: "Confirmad vuestros nombres",
+    notice_body:
+      "Los nombres de este espacio ({names}) no parecen nombres reales. Corregidlos para que vuestros invitados, vuestros proveedores y vuestras invitaciones lleven los correctos.",
+    notice_cta: "Corregir los nombres",
+    notice_deadline: "Hacedlo antes del {date}, por favor.",
+    locked_title: "Confirmad vuestros nombres",
+    locked_body:
+      "Vuestro espacio está en pausa hasta que aquí figuren los nombres que usáis de verdad. Así la comunidad de Weddly sigue siendo de parejas reales. Todo lo que habéis guardado sigue intacto y vuelve al instante.",
+    locked_save: "Guardar y continuar",
+    locked_saving: "Guardando",
+    bride_label: "Novia",
+    groom_label: "Novio",
+    saved: "Gracias, ya está.",
   },
   goal: {
     date_tbd: "Fecha por definir",

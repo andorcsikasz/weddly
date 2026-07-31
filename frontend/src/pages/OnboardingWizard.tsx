@@ -17,6 +17,7 @@ import type {
   WeddingSeason,
 } from "@shared/types";
 import { scaleFromEur } from "@shared/currency";
+import { checkRealName } from "@shared/real_names";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Confetti } from "../components/Confetti";
@@ -37,6 +38,7 @@ import {
   todayIso,
 } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
+import { placeholderNameField, realNameErrorKey } from "../lib/real_names";
 import { useDocumentMeta } from "../lib/seo";
 
 const DRAFT_KEY = "weddly.onboarding_draft";
@@ -247,7 +249,12 @@ function formatGroupedDigits(raw: string, locale: Locale): string {
 }
 
 function isStepValid(step: number, f: FormState): boolean {
-  if (step === 0) return f.bride_name.trim().length > 0 && f.groom_name.trim().length > 0;
+  if (step === 0) {
+    // Non-empty is what enables the button; whether the names are REAL is
+    // checked on the click instead (see `advance`), so the couple gets an
+    // explanation rather than a button that silently refuses to work.
+    return f.bride_name.trim().length > 0 && f.groom_name.trim().length > 0;
+  }
   if (step === 1) {
     const goal = buildDateGoal(f);
     // Only a real, fully-typed future day counts. `isPlausibleDateIso` rejects
@@ -331,6 +338,10 @@ export default function OnboardingWizard() {
   // away — couples wanted a beat to land the milestone before the dashboard.
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Which of the two name fields has been shown its "that isn't a name" line.
+  // Set on blur and on a refused Continue, never while the first letters are
+  // still being typed: "A" is not yet a failed attempt at "Anna".
+  const [nameErrorsShown, setNameErrorsShown] = useState(false);
   const [form, setForm] = useState<FormState>(() => loadDraft() ?? DEFAULT_FORM);
   // `null` = still loading, `false` = no couple (show wizard),
   // `Couple` = workspace already exists (show welcome card instead).
@@ -479,7 +490,16 @@ export default function OnboardingWizard() {
       clearDraft();
       setDone(true);
     } catch (err) {
-      setError(t("common.error_generic"));
+      // The server runs the same name rule. If it refused on that, walk the
+      // couple back to the field rather than leaving "something went wrong" on
+      // the last step of a wizard they can't get out of.
+      if (placeholderNameField(err) !== null) {
+        setNameErrorsShown(true);
+        setStep(0);
+        setError(null);
+      } else {
+        setError(t("common.error_generic"));
+      }
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -487,6 +507,24 @@ export default function OnboardingWizard() {
   }
 
   const stepValid = isStepValid(step, form);
+
+  // Placeholder-name verdicts for the two step-0 fields. Computed every render
+  // from the SAME shared rule the server enforces, so the wizard can never
+  // wave through something the POST is about to refuse.
+  const brideVerdict = checkRealName(form.bride_name);
+  const groomVerdict = checkRealName(form.groom_name);
+  const namesAreReal = form.bride_name.trim() !== "" && !brideVerdict && !groomVerdict;
+
+  /** Step 0's Continue. Refuses with an explanation rather than advancing into
+   *  a wizard the couple would only be thrown out of at the final POST. */
+  function advance() {
+    if (step === 0 && !namesAreReal) {
+      setNameErrorsShown(true);
+      return;
+    }
+    setStep((s) => s + 1);
+  }
+
   // The exact-date field is "invalid" once it holds a value that isn't a
   // real future day — a half-typed year ("2") or a past date. Drives the
   // inline error + aria-invalid on step 2.
@@ -524,8 +562,18 @@ export default function OnboardingWizard() {
                     className="input"
                     value={form.bride_name}
                     onChange={(e) => update("bride_name", e.target.value)}
+                    onBlur={() => setNameErrorsShown(true)}
+                    aria-invalid={nameErrorsShown && brideVerdict !== null}
+                    aria-describedby={
+                      nameErrorsShown && brideVerdict ? "bride_name_error" : undefined
+                    }
                     placeholder={t("onboarding.bride_name_placeholder")}
                   />
+                  {nameErrorsShown && brideVerdict && (
+                    <p id="bride_name_error" className="mt-1.5 text-sm text-clay-700">
+                      {t(realNameErrorKey(brideVerdict.reason))}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="groom_name" className="field-label">
@@ -536,10 +584,23 @@ export default function OnboardingWizard() {
                     className="input"
                     value={form.groom_name}
                     onChange={(e) => update("groom_name", e.target.value)}
+                    onBlur={() => setNameErrorsShown(true)}
+                    aria-invalid={nameErrorsShown && groomVerdict !== null}
+                    aria-describedby={
+                      nameErrorsShown && groomVerdict ? "groom_name_error" : undefined
+                    }
                     placeholder={t("onboarding.groom_name_placeholder")}
                   />
+                  {nameErrorsShown && groomVerdict && (
+                    <p id="groom_name_error" className="mt-1.5 text-sm text-clay-700">
+                      {t(realNameErrorKey(groomVerdict.reason))}
+                    </p>
+                  )}
                 </div>
               </div>
+              {nameErrorsShown && (brideVerdict || groomVerdict) && (
+                <p className="mt-4 text-sm text-ink-500">{t("onboarding.real_names_why")}</p>
+              )}
             </>
           )}
 
@@ -908,12 +969,7 @@ export default function OnboardingWizard() {
               {t("common.back")}
             </button>
             {step < TOTAL_STEPS - 1 ? (
-              <button
-                type="button"
-                className="btn-primary"
-                disabled={!stepValid}
-                onClick={() => setStep((s) => s + 1)}
-              >
+              <button type="button" className="btn-primary" disabled={!stepValid} onClick={advance}>
                 {t("common.next")}
               </button>
             ) : (

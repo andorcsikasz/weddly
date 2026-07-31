@@ -1922,6 +1922,21 @@ addColumnIfMissing(
   "envelope_tip_amount_override INTEGER",
 );
 
+// When we first noticed that this workspace's partner names are placeholders
+// rather than names ("x & y", "NŐ & FÉRFI", "Bridee & Groomy"). NULL for every
+// healthy couple, which is almost all of them.
+//
+// Only the TIMESTAMP is stored. Whether the couple is currently in breach is
+// re-derived from the live names on every read (`computeNameReview`), so the
+// notice and the lock disappear the instant someone types a real name, with no
+// job in between. Storing the verdict would mean a couple who fixed their names
+// stays locked until a sweep catches up, and that is the kind of bug support
+// tickets are made of.
+addColumnIfMissing("couples", "name_flagged_at", "name_flagged_at INTEGER");
+// Stamped when the "your names don't look real" notice is emailed, so the
+// sweep sends it once per flagged couple rather than once per sweep.
+addColumnIfMissing("couples", "name_notice_sent_at", "name_notice_sent_at INTEGER");
+
 // Scheduled-send lookup for the guest broadcast worker. Table lives in
 // schema.sql; the index is created here AFTER the table exists, per the May 2026
 // additive-ordering rule. The worker scans (status='scheduled', scheduled_at<=now).

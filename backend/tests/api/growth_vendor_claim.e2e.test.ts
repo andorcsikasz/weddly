@@ -45,7 +45,7 @@ async function registerAdminAndGetToken(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   if (reg.status === 201) {
     return reg.data.token;
@@ -461,7 +461,7 @@ describe("P2.C vendor claim — error paths", () => {
     const reg = await registerAndVerify({
       email: conflictingEmail,
       password: "supersafe123",
-      full_name: "Existing User",
+      full_name: "Eszter Varga",
     });
     expect(reg.status).toBe(201);
 

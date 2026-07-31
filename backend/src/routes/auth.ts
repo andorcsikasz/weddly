@@ -1,6 +1,7 @@
 // Register / login / logout / me. Issues opaque session tokens.
 
 import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
+import { checkRealName } from "@shared/real_names";
 import type { AuthSession } from "@shared/types";
 import { burnPasswordVerify, hashPassword, verifyPassword } from "../auth/password";
 import { extractToken, issueSession, revokeSession } from "../auth/session";
@@ -91,6 +92,18 @@ function parseFullName(raw: unknown): string {
   if (typeof raw !== "string") throw new HttpError(400, "Name is required");
   const trimmed = raw.trim();
   if (trimmed.length < 1 || trimmed.length > 200) throw new HttpError(400, "Name looks invalid");
+  // Registration is the cheapest door in the product: an address and a name.
+  // Refusing "Test" / "asdf" / a single letter here is what keeps the name on
+  // an account meaning something later, when it appears on a review, an
+  // inquiry a vendor reads, or the couple's own public page.
+  const verdict = checkRealName(trimmed);
+  if (verdict) {
+    throw new HttpError(400, "Name does not look like a real name", {
+      code: "placeholder_name",
+      field: "full_name",
+      reason: verdict.reason,
+    });
+  }
   return trimmed;
 }
 

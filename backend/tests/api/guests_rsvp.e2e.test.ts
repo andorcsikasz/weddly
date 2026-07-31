@@ -465,7 +465,7 @@ describe("guests: bulk endpoint", () => {
     const r = await req<{ guests: { id: number }[] }>(
       "POST",
       "/api/guests/bulk",
-      { guests: [{ full_name: "A" }, { full_name: "B" }, { full_name: "C" }] },
+      { guests: [{ full_name: "Aliz" }, { full_name: "Bence" }, { full_name: "C" }] },
       { token },
     );
     expect(r.status).toBe(201);
@@ -2126,7 +2126,7 @@ describe("guest portal: gate + isolation", () => {
     const bg = await req<{ guest: { id: number } }>(
       "POST",
       "/api/guests",
-      { full_name: "B", new_household_label: "BFam" },
+      { full_name: "Bence", new_household_label: "BFam" },
       { token: b.token },
     );
     const bSlug = b.slug || (await getSlug(b.token));

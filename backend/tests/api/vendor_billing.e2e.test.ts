@@ -54,7 +54,7 @@ async function registerAdminAndGetToken(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   if (reg.status === 201) {
     return reg.data.token;
@@ -836,7 +836,7 @@ describe("vendor free-cohort ladder", () => {
     const couple = await registerAndVerify({
       email: `details-couple-${Date.now()}@weddly.test`,
       password: "test1234",
-      full_name: "Couple Person",
+      full_name: "Panni Kovács",
     });
     const asCouple = await req("GET", "/api/vendor/billing/details", undefined, {
       token: couple.data.token,

@@ -14,7 +14,7 @@ async function registerVerified(email: string): Promise<string> {
   const r = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Country Test",
+    full_name: "Kata Ország",
   });
   expect(r.status).toBe(201);
   return r.data.token;

@@ -104,6 +104,7 @@ import { registerVendorAvailabilityRoutes } from "./routes/vendor_availability";
 import { registerVendorClientsRoutes } from "./routes/vendor_clients";
 import { registerBookingMessageRoutes } from "./routes/booking_messages";
 import { backfillLegacyBookingNotes } from "./domain/booking_messages";
+import { backfillNameReview, nameReviewBlock } from "./domain/name_review";
 import { registerVendorPointsRoutes } from "./routes/vendor_points";
 import { registerVendorStatsRoutes } from "./routes/vendor_stats";
 import { registerVendorTaskRoutes } from "./routes/vendor_tasks";
@@ -192,6 +193,14 @@ backfillLegacyBookingNotes();
 {
   const reconciled = reconcileWishlistSectionFlag();
   if (reconciled > 0) log.info("wishlist.section_flag_reconcile", { reconciled });
+}
+// Notice which workspaces are named after nobody ("x & y", "NŐ & FÉRFI",
+// "Bridee & Groomy") and start their three-day clock. Idempotent: an already
+// flagged couple keeps its original timestamp, and one that has since been
+// fixed is un-flagged here, so the cohort only ever shrinks on its own.
+{
+  const { flagged, cleared } = backfillNameReview();
+  if (flagged > 0 || cleared > 0) log.info("name_review.backfill", { flagged, cleared });
 }
 // Put every founding verdict on the workspace that can actually spend it. Runs
 // AFTER partners.backfill so an anchor that just gained its partner_b_id is
@@ -714,6 +723,24 @@ async function handleRequest(req: Request): Promise<Response> {
     const r = httpErr(402, "Subscription required", {
       code: "subscription_required",
       reason: blockReason,
+    });
+    const headers = new Headers(r.headers);
+    for (const [k, v] of Object.entries(cors)) headers.set(k, v);
+    headers.set("x-request-id", requestId);
+    return new Response(r.body, { status: r.status, headers });
+  }
+
+  // Real-name gate: a workspace whose partner names are placeholders was given
+  // three days' notice and did nothing, so the same edit surfaces go read-only.
+  // 409 rather than 402: this is not about money, and the frontend routes the
+  // two to completely different screens. PATCH /api/couples/current stays open,
+  // which is the whole point: the fix is one field away.
+  const nameBlock = nameReviewBlock(req.method, url.pathname, userId);
+  if (nameBlock) {
+    const r = httpErr(409, "Confirm the names on your workspace", {
+      code: "name_review_required",
+      fields: nameBlock.fields,
+      deadline: nameBlock.deadline,
     });
     const headers = new Headers(r.headers);
     for (const [k, v] of Object.entries(cors)) headers.set(k, v);

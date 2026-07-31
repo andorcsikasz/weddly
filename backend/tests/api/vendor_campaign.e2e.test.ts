@@ -203,7 +203,7 @@ describe("vendor claim-invite campaign", () => {
     const reg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     token = reg.data.token;
     // A real account on a known address, so the targeting test can prove we

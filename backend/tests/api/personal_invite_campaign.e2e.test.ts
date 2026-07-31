@@ -48,7 +48,7 @@ beforeAll(async () => {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "password123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   token = reg.data.token;
 });
@@ -74,7 +74,7 @@ describe("personal-invite campaign", () => {
     const reg = await registerAndVerify({
       email: "notadmin@test.test",
       password: "password123",
-      full_name: "Not Admin",
+      full_name: "Nóra Barta",
     });
     const outsider = reg.data.token;
     const probes: Array<[string, string]> = [

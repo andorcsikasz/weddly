@@ -18,7 +18,7 @@ async function register(email: string): Promise<{ id: number; token: string }> {
   const r = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Test User",
+    full_name: "Tamás Kovács",
   });
   expect(r.status).toBe(201);
   return { id: r.data.user.id, token: r.data.token };

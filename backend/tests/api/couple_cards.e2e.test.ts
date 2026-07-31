@@ -10,7 +10,7 @@ async function bootstrapAdmin(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   expect(reg.status).toBe(201);
   return reg.data.token;

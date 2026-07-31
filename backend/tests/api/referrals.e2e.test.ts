@@ -109,7 +109,7 @@ describe("couple referral reward", () => {
     const regB = await registerAndVerify({
       email: "partnerb@weddly.test",
       password: "supersafe123",
-      full_name: "Partner B",
+      full_name: "Bea Nagy",
     });
     expect(regB.status).toBe(201);
     const acceptR = await req(
@@ -208,7 +208,7 @@ describe("vendor referral reward", () => {
     const adminReg = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
 
     const decideR = await req(

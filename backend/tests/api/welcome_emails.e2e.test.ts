@@ -51,7 +51,7 @@ async function adminToken(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   expect(reg.status).toBe(201);
   return reg.data.token;
@@ -209,8 +209,8 @@ describe("admin email history stitches pre-account mail by address", () => {
   test("one user's history never leaks another user's mail", async () => {
     const a = "leak-a@weddly.test";
     const b = "leak-b@weddly.test";
-    await registerAndVerify({ email: a, password: "supersafe123", full_name: "A" });
-    await registerAndVerify({ email: b, password: "supersafe123", full_name: "B" });
+    await registerAndVerify({ email: a, password: "supersafe123", full_name: "Aliz" });
+    await registerAndVerify({ email: b, password: "supersafe123", full_name: "Bence" });
     const token = await adminToken();
 
     const r = await req<{ emails: Array<{ to_email: string }> }>(

@@ -1808,6 +1808,29 @@ export interface LocaleMessages {
     extra_enter_cta: string;
     extra_entering: string;
     extra_skip: string;
+    /** Shown under the two name inputs once one of them has been refused,
+     *  explaining why we care rather than just saying no. */
+    real_names_why: string;
+  };
+  /** The real-name rule: the inline refusals on any name field, the notice a
+   *  couple already inside the app gets, and the screen that stands in front of
+   *  a workspace whose correction window has passed. */
+  real_names: {
+    error_too_short: string;
+    error_role_word: string;
+    error_placeholder: string;
+    error_not_a_name: string;
+    notice_title: string;
+    notice_body: string;
+    notice_cta: string;
+    notice_deadline: string;
+    locked_title: string;
+    locked_body: string;
+    locked_save: string;
+    locked_saving: string;
+    bride_label: string;
+    groom_label: string;
+    saved: string;
   };
   goal: {
     date_tbd: string;

@@ -91,6 +91,11 @@ const STUBS: KindPayload = {
     deadlineDateHu: "2026-06-21",
     deadlineDateEn: "June 21, 2026",
   },
+  name_review_notice: {
+    currentNames: "x & y",
+    deadlineDateHu: "2026. augusztus 3.",
+    deadlineDateEn: "3 August 2026",
+  },
   account_flag_cleared: { note: "User responded — concern addressed." },
   free_access_granted: { workspaceName: "Mia & Lucas" },
   rsvp_received_for_couple: {

@@ -30,7 +30,7 @@ async function registerAdminAndGetToken(): Promise<string> {
   const reg = await registerAndVerify({
     email: "admin@test.test",
     password: "supersafe123",
-    full_name: "Admin",
+    full_name: "Ádám Nagy",
   });
   if (reg.status === 201) return reg.data.token;
   const login = await req<{ token: string }>("POST", "/api/auth/login", {
@@ -676,7 +676,7 @@ describe("suppliers directory: vote validation + auth", () => {
     const reg = await registerAndVerify({
       email: "voter-no-couple@weddly.test",
       password: "supersafe123",
-      full_name: "No Couple",
+      full_name: "Noémi Kiss",
     });
     expect(reg.status).toBe(201);
     const r = await req<{ detail: { code?: string } }>(
@@ -785,7 +785,7 @@ describe("suppliers directory: vote validation + auth", () => {
     const a = await registerAndVerify({
       email: "vote-pair-a@weddly.test",
       password: "supersafe123",
-      full_name: "A",
+      full_name: "Aliz",
     });
     expect(a.status).toBe(201);
     const ob = await req<{ couple: { id: number } }>(
@@ -804,7 +804,7 @@ describe("suppliers directory: vote validation + auth", () => {
     const b = await registerAndVerify({
       email: "vote-pair-b@weddly.test",
       password: "supersafe123",
-      full_name: "B",
+      full_name: "Bence",
     });
     await req("POST", `/api/invites/${inv.data.invite.token}/accept`, {}, { token: b.data.token });
 

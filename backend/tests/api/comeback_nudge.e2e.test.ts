@@ -95,7 +95,7 @@ describe("comeback nudge", () => {
     const partner = await registerAndVerify({
       email: "cb-partner@weddly.test",
       password: "supersafe123",
-      full_name: "Partner B",
+      full_name: "Bea Nagy",
     });
     expect(partner.status).toBe(201);
     db.prepare("UPDATE users SET couple_id = ?, last_seen_at = ? WHERE email = ?").run(

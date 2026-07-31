@@ -14,7 +14,7 @@ describe("feedback triage workflow", () => {
     const r = await registerAndVerify({
       email: "admin@test.test",
       password: "supersafe123",
-      full_name: "Admin",
+      full_name: "Ádám Nagy",
     });
     expect(r.status).toBe(201);
     return r.data.token;
@@ -160,7 +160,7 @@ describe("feedback triage workflow", () => {
     const user = await registerAndVerify({
       email: "user@test.test",
       password: "supersafe123",
-      full_name: "User",
+      full_name: "Zsolt Nagy",
     });
     const r = await req(
       "PATCH",
@@ -314,7 +314,7 @@ describe("feedback triage workflow", () => {
     const user = await registerAndVerify({
       email: "user2@test.test",
       password: "supersafe123",
-      full_name: "User",
+      full_name: "Zsolt Nagy",
     });
     const r = await req(
       "POST",

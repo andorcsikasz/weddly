@@ -607,6 +607,46 @@ describe("<OnboardingWizard>", () => {
     expect(nextBtn.disabled).toBe(false);
   });
 
+  it("refuses to advance past placeholder names, and explains why", async () => {
+    installWizardFetch();
+    render(
+      <ProviderStack initialEntries={["/onboarding"]} path="/onboarding">
+        <OnboardingWizard />
+      </ProviderStack>,
+    );
+    await waitFor(() => screen.getByLabelText(/bride/i));
+    // The exact pair a real production workspace carries.
+    fireEvent.change(screen.getByLabelText(/bride/i), { target: { value: "Bridee" } });
+    fireEvent.change(screen.getByLabelText(/groom/i), { target: { value: "Groomy" } });
+
+    // The button is enabled (both fields are filled), so the refusal has to
+    // arrive as an explanation on the click rather than as a dead control.
+    const nextBtn = () => screen.getByRole("button", { name: /^next$/i }) as HTMLButtonElement;
+    expect(nextBtn().disabled).toBe(false);
+    fireEvent.click(nextBtn());
+    await flush();
+
+    // One line per field: both "Bridee" and "Groomy" are roles, not names.
+    expect(screen.getAllByText(/that is a role, not a name/i)).toHaveLength(2);
+    // Still on step 1: the date question never appeared.
+    expect(screen.queryByText(/when's the wedding/i)).not.toBeInTheDocument();
+
+    // Correcting one field is not enough; the other still holds the wizard.
+    fireEvent.change(screen.getByLabelText(/bride/i), { target: { value: "Anna" } });
+    await flush();
+    expect(screen.getAllByText(/that is a role, not a name/i)).toHaveLength(1);
+    fireEvent.click(nextBtn());
+    await flush();
+    expect(screen.queryByText(/when's the wedding/i)).not.toBeInTheDocument();
+
+    // Both real: through.
+    fireEvent.change(screen.getByLabelText(/groom/i), { target: { value: "Bence" } });
+    await flush();
+    fireEvent.click(nextBtn());
+    await flush();
+    expect(screen.getByText(/when's the wedding/i)).toBeInTheDocument();
+  });
+
   it("advances forward + back through steps", async () => {
     installWizardFetch();
     render(
@@ -620,7 +660,7 @@ describe("<OnboardingWizard>", () => {
     fireEvent.click(screen.getByRole("button", { name: /^next$/i }));
     // Step 2 — the date question heading appears.
     await waitFor(() => {
-      expect(screen.getByText(/how fixed is the date/i)).toBeInTheDocument();
+      expect(screen.getByText(/when's the wedding/i)).toBeInTheDocument();
     });
     fireEvent.click(screen.getByRole("button", { name: /^back$/i }));
     await waitFor(() => {

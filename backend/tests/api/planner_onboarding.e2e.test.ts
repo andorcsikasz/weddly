@@ -14,7 +14,7 @@ async function registerVerified(
   const reg = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Test Person",
+    full_name: "Tamás Pék",
     ...extra,
   });
   expect(reg.status).toBe(201);
@@ -213,7 +213,7 @@ describe("planner email invitations", () => {
     const reg = await registerAndVerify({
       email: "bride@weddly.test",
       password: "supersafe123",
-      full_name: "Bride",
+      full_name: "Brigitta Simon",
       planner_invite: token,
     });
     expect(reg.status).toBe(201);

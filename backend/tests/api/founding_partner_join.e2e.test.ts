@@ -40,7 +40,7 @@ async function joinPartner(email: string, inviteToken: string): Promise<void> {
   const reg = await registerAndVerify({
     email,
     password: "supersafe123",
-    full_name: "Partner B",
+    full_name: "Bea Nagy",
   });
   expect(reg.status).toBe(201);
   const acc = await req(

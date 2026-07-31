@@ -179,7 +179,7 @@ describe("E. couple-shared visibility", () => {
     const regB = await registerAndVerify({
       email: "photos-e-b@weddly.test",
       password: "supersafe123",
-      full_name: "Partner B",
+      full_name: "Bea Nagy",
     });
     expect(regB.status).toBe(201);
     const tokenB = regB.data.token;

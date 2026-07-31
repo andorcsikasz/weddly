@@ -444,7 +444,7 @@ export function requireEntitledCouple(ctx: Ctx): CoupleRow {
 // recover or wind down: auth/*, account/*, billing/*, couples/pause*,
 // couples/invites*, couples/onboard, exports/* (read-only export is allowed),
 // and every public/guest surface (rsvp/*, unsubscribe/*, suppliers/community).
-const EDIT_PREFIXES: readonly string[] = [
+export const EDIT_PREFIXES: readonly string[] = [
   "/api/budget",
   "/api/guests",
   "/api/guest-messages",
@@ -464,7 +464,7 @@ const EDIT_PREFIXES: readonly string[] = [
   "/api/moodboard",
   "/api/couples/current",
 ];
-const MUTATING_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+export const MUTATING_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 // The subset of edit surfaces the guest-page (vendégoldal) add-on unlocks for a
 // couple member of a planner-managed couple. The guest-page / website config
@@ -483,7 +483,7 @@ const GUEST_PAGE_ADDON_PATHS: ReadonlySet<string> = new Set([
   "/api/couples/current/site-photo/2",
 ]);
 
-function onAnyPrefix(pathname: string, prefixes: readonly string[]): boolean {
+export function onAnyPrefix(pathname: string, prefixes: readonly string[]): boolean {
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 

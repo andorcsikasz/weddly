@@ -5,6 +5,7 @@
 // The DTO that comes back is the same `User` shape `/api/auth/me` returns,
 // so the frontend can drop it straight into the auth store after a PATCH.
 
+import { checkRealName } from "@shared/real_names";
 import type { User } from "@shared/types";
 import { db, now } from "../db";
 import { getUserById, toUser } from "../domain/users";
@@ -15,12 +16,29 @@ interface UpdateMeBody {
   locale?: unknown;
 }
 
-function parseOptionalFullName(raw: unknown): string | null {
+function parseOptionalFullName(raw: unknown, isPerson: boolean): string | null {
   if (raw === undefined) return null;
   if (typeof raw !== "string") throw new HttpError(400, "Name must be a string");
   const trimmed = raw.trim();
   if (trimmed.length < 1 || trimmed.length > 200) {
     throw new HttpError(400, "Name must be 1–200 characters");
+  }
+  // Same gate as registration, and for the same reason: without it the rule is
+  // a speed bump, since you could sign up as a person and rename to "asdf" one
+  // PATCH later.
+  //
+  // Couples only, though. A vendor's or planner's `full_name` is routinely
+  // their BUSINESS name, and a business name is not a person name: production
+  // holds "Dream Wedding Film" and "Esküvői Weboldalam", and "Bride & Groom
+  // Photography" is an entirely ordinary thing to call a studio.
+  if (!isPerson) return trimmed;
+  const verdict = checkRealName(trimmed);
+  if (verdict) {
+    throw new HttpError(400, "Name does not look like a real name", {
+      code: "placeholder_name",
+      field: "full_name",
+      reason: verdict.reason,
+    });
   }
   return trimmed;
 }
@@ -37,7 +55,11 @@ function parseOptionalLocale(raw: unknown): "hu" | "en" | null | undefined {
 async function handleUpdateMe(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const body = await readJson<UpdateMeBody>(ctx.req);
-  const nextName = parseOptionalFullName(body.full_name);
+  const current = getUserById(userId);
+  if (!current) throw new HttpError(404, "User not found");
+  // A couple member is a person; a vendor or planner is usually a business.
+  const isPerson = current.role !== "vendor" && current.user_type !== "planner";
+  const nextName = parseOptionalFullName(body.full_name, isPerson);
   const nextLocale = parseOptionalLocale(body.locale);
 
   if (nextName === null && nextLocale === undefined) {

@@ -24,6 +24,8 @@ import {
   type WeddingStyleTag,
 } from "@shared/types";
 import { COUNTRY_CODES } from "@shared/country_list";
+import { checkRealName } from "@shared/real_names";
+import { clearNameFlagIfFixed } from "../domain/name_review";
 import { CURRENCIES, isCurrency } from "@shared/currency";
 import {
   isNotifEmailCadence,
@@ -366,6 +368,18 @@ function parsePartnerName(raw: unknown, field: "bride_name" | "groom_name"): str
   const trimmed = raw.trim();
   if (trimmed.length < 1 || trimmed.length > 100) {
     throw new HttpError(400, `${field} must be 1–100 chars`);
+  }
+  // The real-name gate, and it lives HERE rather than in each caller because
+  // every path that writes a partner name funnels through this function:
+  // onboarding, the PATCH from Profile, and the additional-workspace create.
+  // A rule enforced at one of three doors is a rule with two ways around it.
+  const verdict = checkRealName(trimmed);
+  if (verdict) {
+    throw new HttpError(400, `${field} does not look like a real name`, {
+      code: "placeholder_name",
+      field,
+      reason: verdict.reason,
+    });
   }
   return trimmed;
 }
@@ -2524,6 +2538,11 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
   // backfill), seed it on the fly via ensurePartnerGuests below.
   if (renameBride) renamePartnerGuest(couple.id, "bride", nextBride);
   if (renameGroom) renamePartnerGuest(couple.id, "groom", nextGroom);
+
+  // A flagged couple who just typed real names leaves the cohort here, before
+  // the response is built, so the same PATCH that fixes the names is the one
+  // that returns `name_review: null` and lifts the lock.
+  if (renameBride || renameGroom) clearNameFlagIfFixed(couple.id);
 
   // The partner free window is pinned to the wedding day, so if the date moved,
   // re-derive founding_until so "free until your wedding day" stays accurate.

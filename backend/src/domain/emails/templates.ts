@@ -156,6 +156,14 @@ export interface AccountFlaggedPayload {
   deadlineDateHu: string;
   deadlineDateEn: string;
 }
+export interface NameReviewNoticePayload {
+  /** The names as they stand on the workspace, e.g. "x & y". Quoted back so
+   *  the couple knows exactly which workspace and which words we mean. */
+  currentNames: string;
+  /** Localised deadline, computed by the caller so the copy stays simple. */
+  deadlineDateHu: string;
+  deadlineDateEn: string;
+}
 export interface AccountFlagClearedPayload {
   /** Optional admin note when the flag was cleared. Verbatim when present.
    *  Empty string when admin chose not to add one, body softens accordingly. */
@@ -910,6 +918,7 @@ export type KindPayload = {
   account_purged: AccountPurgedPayload;
   account_admin_purged: AccountAdminPurgedPayload;
   account_flagged: AccountFlaggedPayload;
+  name_review_notice: NameReviewNoticePayload;
   account_flag_cleared: AccountFlagClearedPayload;
   free_access_granted: FreeAccessGrantedPayload;
   rsvp_received_for_couple: RsvpReceivedForCouplePayload;
@@ -1750,6 +1759,37 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "If we don't hear back by then, your account and all associated data (guest list, seating, budget, RSVPs) will be automatically and permanently deleted.",
       ],
       cta: "Weddly",
+    },
+  }),
+
+  // The workspace's partner names read as placeholders rather than names.
+  // Names the words we mean, the date, and what happens after it. Deliberately
+  // NOT accusatory: most of these are a couple who typed something to get past
+  // a required field months ago, not a bot.
+  name_review_notice: (p, ctx) => ({
+    subject: "Kérjük, erősítsétek meg a neveteket / Please confirm your names",
+    ctaUrl: `${CONFIG.frontendBaseUrl}/app/profile`,
+    hu: {
+      preheader: `Kérjük, ${p.deadlineDateHu}-ig javítsátok a neveteket a Weddlyn.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `Átnéztük a Weddly-fiókokat, és a tiéteken ez a név szerepel: „${p.currentNames}". Ez nem tűnik valódi névnek.`,
+        "A neveitek a vendégoldalatokon, a meghívóitokon és minden üzeneten megjelennek, amit egy szolgáltató kap tőletek, ezért fontos, hogy a valódiak legyenek. Így tudjuk a közösséget is valódi jegyespárokból tartani, és távol tartani a robotokat.",
+        `Kérjük, javítsátok a neveket a profilotokban **${p.deadlineDateHu}-ig**. Utána a munkaterület addig szünetel, amíg ez megtörténik. Minden adatotok megmarad, és a javítás pillanatában minden visszatér.`,
+        "Ha kérdésetek van, elég válaszolni erre az e-mailre.",
+      ],
+      cta: "Nevek javítása",
+    },
+    en: {
+      preheader: `Please correct the names on your Weddly workspace by ${p.deadlineDateEn}.`,
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `We went through the Weddly accounts, and yours carries this name: "${p.currentNames}". That does not look like a real name.`,
+        "Your names appear on your guest page, on your invitations and on every message a supplier receives from you, so it matters that they are the real ones. It is also how we keep the community made of real couples and keep bots out.",
+        `Please correct them in your profile **by ${p.deadlineDateEn}**. After that the workspace pauses until it is done. Everything you have saved stays exactly where it is, and it all comes back the moment the names are corrected.`,
+        "If you have any questions, just reply to this email.",
+      ],
+      cta: "Correct the names",
     },
   }),
 
