@@ -71,9 +71,70 @@ describe("guest invite channel marking", () => {
 
   afterAll(() => wipeGuestMessages());
 
-  // PATCH /api/guests/:id requires full_name (the update contract), so the
-  // composer resends the guest name alongside the channel toggle.
   const NAME = "Ada Channel";
+
+  // The bodies below carry `full_name` because the guest DRAWER sends the whole
+  // guest. The invites page does not: its channel icons send the one field they
+  // change, and that case is pinned separately below, because for months it was
+  // the only caller doing so and it 400'd on every click.
+
+  test("a channel-only PATCH works, which is what the invites page actually sends", async () => {
+    const solo = await createGuest(token, {
+      name: "Solo Toggle",
+      email: "solo.toggle@guest.test",
+    });
+    // Byte-for-byte the body `toggleChannel` builds in GuestInvitesPage.
+    const r = await req<{ guest: Guest }>(
+      "PATCH",
+      `/api/guests/${solo}`,
+      { invited_online: true },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.guest.invited_online_at).not.toBeNull();
+    // The name is still the name. A PATCH that reached the UPDATE with an empty
+    // `full_name` would have blanked it, which is what the 400 was hiding.
+    expect(r.data.guest.full_name).toBe("Solo Toggle");
+  });
+
+  test("a partial PATCH leaves every field it did not mention alone", async () => {
+    const id = await createGuest(token, { name: "Intact Ivy", email: "intact.ivy@guest.test" });
+    await req(
+      "PATCH",
+      `/api/guests/${id}`,
+      { full_name: "Intact Ivy", phone: "+36301234567", rsvp_status: "yes", kind: "child" },
+      { token },
+    );
+
+    // One field changes; the rest of the row must survive untouched.
+    const r = await req<{ guest: Guest }>(
+      "PATCH",
+      `/api/guests/${id}`,
+      { invited_physical: true },
+      { token },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.guest.invited_physical_at).not.toBeNull();
+    expect(r.data.guest.full_name).toBe("Intact Ivy");
+    expect(r.data.guest.email).toBe("intact.ivy@guest.test");
+    expect(r.data.guest.phone).toBe("+36301234567");
+    expect(r.data.guest.rsvp_status).toBe("yes");
+    expect(r.data.guest.kind).toBe("child");
+  });
+
+  test("an explicit null still clears, so 'omitted' and 'cleared' stay different things", async () => {
+    const id = await createGuest(token, { name: "Clear Cleo", email: "clear.cleo@guest.test" });
+    const r = await req<{ guest: Guest }>("PATCH", `/api/guests/${id}`, { email: null }, { token });
+    expect(r.status).toBe(200);
+    expect(r.data.guest.email).toBeNull();
+    expect(r.data.guest.full_name).toBe("Clear Cleo");
+  });
+
+  test("a PATCH that blanks the name is still refused", async () => {
+    const id = await createGuest(token, { name: "Named Nora", email: "named.nora@guest.test" });
+    const r = await req("PATCH", `/api/guests/${id}`, { full_name: "   " }, { token });
+    expect(r.status).toBe(400);
+  });
 
   test("invited_online stamps invited_online_at and syncs the legacy invited_at", async () => {
     const r = await req<{ guest: Guest }>(

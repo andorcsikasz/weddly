@@ -10005,6 +10005,16 @@ export interface LocaleMessages {
     audience_all: string;
     audience_pending: string;
     audience_confirmed: string;
+    /** Spells out who the picked audience is, with the headcount. The pills
+     *  themselves only carry a number, so this line is the label. */
+    audience_sending_all: string;
+    audience_sending_pending: string;
+    audience_sending_confirmed: string;
+    /** Confirmation before an immediate, unrecallable send. */
+    send_confirm_title: string;
+    send_confirm_body_all: string;
+    send_confirm_body_pending: string;
+    send_confirm_body_confirmed: string;
     send_mode_schedule: string;
     /** Refusal when the clock toggle is on but no time has been picked: a
      *  scheduled send with no time would go out immediately. */

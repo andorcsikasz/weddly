@@ -9113,6 +9113,16 @@ const es: LocaleMessages = {
     audience_all: "Todos",
     audience_pending: "Aún sin responder",
     audience_confirmed: "Confirmados",
+    audience_sending_all: "Va a los {count} invitados",
+    audience_sending_pending: "Va a {count} que no han respondido",
+    audience_sending_confirmed: "Va a {count} que confirmaron",
+    send_confirm_title: "¿Enviar ahora a {count} invitados?",
+    send_confirm_body_all:
+      "Esto envía un correo a los {count} invitados de inmediato. Un correo no se puede recuperar una vez enviado.",
+    send_confirm_body_pending:
+      "Esto envía un correo de inmediato a los {count} invitados que no han respondido. Un correo no se puede recuperar una vez enviado.",
+    send_confirm_body_confirmed:
+      "Esto envía un correo de inmediato a los {count} invitados que confirmaron. Un correo no se puede recuperar una vez enviado.",
     send_mode_schedule: "Programar",
     schedule_required: "Elige primero la fecha y la hora.",
     schedule_label: "Enviar el",

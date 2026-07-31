@@ -25,7 +25,14 @@ import type {
   GuestMessageAudience,
   GuestMessageTemplate,
 } from "@shared/types";
-import { SegmentedControl, Skeleton, Switch, useConfirm, useToast } from "../components/ui";
+import {
+  type ConfirmOptions,
+  SegmentedControl,
+  Skeleton,
+  Switch,
+  useConfirm,
+  useToast,
+} from "../components/ui";
 import { InfoHint } from "../components/InfoHint";
 import { coupleApi, guestApi, guestMessageApi } from "../lib/endpoints";
 import { formatMoney, formatTimestamp } from "../lib/format";
@@ -51,6 +58,35 @@ function scheduledAtFrom(mode: "now" | "schedule", value: string): number | null
   if (mode === "now" || !value) return null;
   const ms = new Date(value).getTime();
   return Number.isNaN(ms) ? null : ms;
+}
+
+/**
+ * Ask before an immediate send, and only before an immediate send.
+ *
+ * These three buttons are the only controls in the workspace that reach the
+ * couple's actual guests, and there is no recall: the mail is gone the moment
+ * the request lands. A SCHEDULED send deliberately does not ask, because it is
+ * already reversible, it sits in "Sent & scheduled" with a Cancel next to it
+ * until the worker picks it up.
+ *
+ * The count is in the question because that is the fact worth checking before
+ * saying yes: "Send to 6 guests?" catches a mis-picked audience in a way that
+ * "Are you sure?" never does.
+ */
+async function confirmImmediateSend(
+  confirm: (opts: ConfirmOptions) => Promise<boolean>,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  mode: "now" | "schedule",
+  audience: GuestMessageAudience,
+  count: number,
+): Promise<boolean> {
+  if (mode === "schedule") return true;
+  return confirm({
+    title: t("guest_invites.send_confirm_title", { count }),
+    body: t(`guest_invites.send_confirm_body_${audience}`, { count }),
+    confirmLabel: t("guest_invites.send_now_button"),
+    cancelLabel: t("common.cancel"),
+  });
 }
 
 /** Card title row: category glyph, name, and the card's own explanation tucked
@@ -83,16 +119,10 @@ function SendControls({
   audience,
   onAudience,
   counts,
-  mode,
-  scheduledValue,
-  onScheduledValue,
 }: {
   audience: GuestMessageAudience;
   onAudience: (a: GuestMessageAudience) => void;
   counts: AudienceCounts;
-  mode: "now" | "schedule";
-  scheduledValue: string;
-  onScheduledValue: (v: string) => void;
 }) {
   const { t } = useT();
   return (
@@ -113,20 +143,16 @@ function SendControls({
             };
           })}
         />
+        {/* The pills carry a count and an icon, never a word: the three labels
+            together are wider than a card in the three-up grid. So this line is
+            the only place the chosen audience is spelled out, which makes it
+            worth a full phrase rather than a bare label. Clicking through the
+            pills rewrites it, which is how the other two options explain
+            themselves on a touch device that has no hover. */}
         <span className="text-xs text-umber-600 dark:text-umber-300">
-          {t(`guest_invites.audience_${audience}`)}
+          {t(`guest_invites.audience_sending_${audience}`, { count: counts[audience] })}
         </span>
       </div>
-      {mode === "schedule" && (
-        <input
-          type="datetime-local"
-          aria-label={t("guest_invites.schedule_label")}
-          title={t("guest_invites.schedule_label")}
-          className="input w-full"
-          value={scheduledValue}
-          onChange={(e) => onScheduledValue(e.target.value)}
-        />
-      )}
     </div>
   );
 }
@@ -143,47 +169,69 @@ function SendButton({
   mode,
   onMode,
   onClick,
+  scheduledValue,
+  onScheduledValue,
 }: {
   sending: boolean;
   mode: "now" | "schedule";
   onMode: (m: "now" | "schedule") => void;
   onClick: () => void;
+  scheduledValue: string;
+  onScheduledValue: (v: string) => void;
 }) {
   const { t } = useT();
   const scheduling = mode === "schedule";
   return (
-    <div className="mt-auto flex items-center gap-2 pt-5">
-      <button
-        type="button"
-        className="btn-primary inline-flex flex-1 items-center justify-center gap-2"
-        disabled={sending}
-        onClick={onClick}
-      >
-        {scheduling ? (
-          <CalendarClock size={16} aria-hidden="true" />
-        ) : (
-          <Send size={16} aria-hidden="true" />
-        )}
-        {sending
-          ? t("guest_invites.sending")
-          : scheduling
-            ? t("guest_invites.schedule_button")
-            : t("guest_invites.send_now_button")}
-      </button>
-      <button
-        type="button"
-        aria-pressed={scheduling}
-        aria-label={t("guest_invites.send_mode_schedule")}
-        title={t("guest_invites.send_mode_schedule")}
-        onClick={() => onMode(scheduling ? "now" : "schedule")}
-        className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${
-          scheduling
-            ? "border-umber-700 bg-umber-700 text-paper-50 dark:border-umber-400 dark:bg-umber-400 dark:text-umber-900"
-            : "border-paper-300 text-umber-500 hover:border-umber-400 hover:text-umber-900 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-50"
-        }`}
-      >
-        <Clock3 size={16} aria-hidden="true" />
-      </button>
+    <div className="mt-auto pt-5">
+      {/* The date input belongs NEXT TO the clock that summons it. It used to
+          render up in SendControls, which on the two cards with a subject and a
+          message body put it a couple of hundred pixels above the button that
+          reveals it: you pressed the clock at the bottom of the card and the
+          only visible change happened off-screen, which reads exactly like a
+          dead control. */}
+      {scheduling && (
+        <input
+          type="datetime-local"
+          aria-label={t("guest_invites.schedule_label")}
+          title={t("guest_invites.schedule_label")}
+          className="input mb-2 w-full"
+          value={scheduledValue}
+          onChange={(e) => onScheduledValue(e.target.value)}
+        />
+      )}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="btn-primary inline-flex flex-1 items-center justify-center gap-2"
+          disabled={sending}
+          onClick={onClick}
+        >
+          {scheduling ? (
+            <CalendarClock size={16} aria-hidden="true" />
+          ) : (
+            <Send size={16} aria-hidden="true" />
+          )}
+          {sending
+            ? t("guest_invites.sending")
+            : scheduling
+              ? t("guest_invites.schedule_button")
+              : t("guest_invites.send_now_button")}
+        </button>
+        <button
+          type="button"
+          aria-pressed={scheduling}
+          aria-label={t("guest_invites.send_mode_schedule")}
+          title={t("guest_invites.send_mode_schedule")}
+          onClick={() => onMode(scheduling ? "now" : "schedule")}
+          className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+            scheduling
+              ? "border-umber-700 bg-umber-700 text-paper-50 dark:border-umber-400 dark:bg-umber-400 dark:text-umber-900"
+              : "border-paper-300 text-umber-500 hover:border-umber-400 hover:text-umber-900 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-50"
+          }`}
+        >
+          <Clock3 size={16} aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -192,6 +240,7 @@ function SendButton({
 function InviteCard({ counts, onSent }: { counts: AudienceCounts; onSent: () => void }) {
   const { t } = useT();
   const toast = useToast();
+  const confirm = useConfirm();
   const [audience, setAudience] = useState<GuestMessageAudience>("pending");
   const [mode, setMode] = useState<"now" | "schedule">("now");
   const [scheduledValue, setScheduledValue] = useState("");
@@ -202,6 +251,7 @@ function InviteCard({ counts, onSent }: { counts: AudienceCounts; onSent: () => 
       toast.error(t("guest_invites.schedule_required"));
       return;
     }
+    if (!(await confirmImmediateSend(confirm, t, mode, audience, counts[audience]))) return;
     setSending(true);
     try {
       await guestMessageApi.send({
@@ -225,19 +275,14 @@ function InviteCard({ counts, onSent }: { counts: AudienceCounts; onSent: () => 
         title={t("guest_invites.template_invite")}
         hint={t("guest_invites.invite_desc")}
       />
-      <SendControls
-        audience={audience}
-        onAudience={setAudience}
-        counts={counts}
-        mode={mode}
-        scheduledValue={scheduledValue}
-        onScheduledValue={setScheduledValue}
-      />
+      <SendControls audience={audience} onAudience={setAudience} counts={counts} />
       <SendButton
         sending={sending}
         mode={mode}
         onMode={setMode}
         onClick={() => void handleSend()}
+        scheduledValue={scheduledValue}
+        onScheduledValue={setScheduledValue}
       />
     </section>
   );
@@ -247,6 +292,7 @@ function InviteCard({ counts, onSent }: { counts: AudienceCounts; onSent: () => 
 function MajorUpdateCard({ counts, onSent }: { counts: AudienceCounts; onSent: () => void }) {
   const { t } = useT();
   const toast = useToast();
+  const confirm = useConfirm();
   const [audience, setAudience] = useState<GuestMessageAudience>("all");
   const [mode, setMode] = useState<"now" | "schedule">("now");
   const [scheduledValue, setScheduledValue] = useState("");
@@ -267,6 +313,7 @@ function MajorUpdateCard({ counts, onSent }: { counts: AudienceCounts; onSent: (
       toast.error(t("guest_invites.schedule_required"));
       return;
     }
+    if (!(await confirmImmediateSend(confirm, t, mode, audience, counts[audience]))) return;
     setSending(true);
     try {
       await guestMessageApi.send({
@@ -312,19 +359,14 @@ function MajorUpdateCard({ counts, onSent }: { counts: AudienceCounts; onSent: (
           placeholder={t("guest_invites.body_placeholder")}
         />
       </div>
-      <SendControls
-        audience={audience}
-        onAudience={setAudience}
-        counts={counts}
-        mode={mode}
-        scheduledValue={scheduledValue}
-        onScheduledValue={setScheduledValue}
-      />
+      <SendControls audience={audience} onAudience={setAudience} counts={counts} />
       <SendButton
         sending={sending}
         mode={mode}
         onMode={setMode}
         onClick={() => void handleSend()}
+        scheduledValue={scheduledValue}
+        onScheduledValue={setScheduledValue}
       />
     </section>
   );
@@ -342,6 +384,7 @@ function PreWeddingCard({
 }) {
   const { t, locale } = useT();
   const toast = useToast();
+  const confirm = useConfirm();
   const [audience, setAudience] = useState<GuestMessageAudience>("confirmed");
   const [mode, setMode] = useState<"now" | "schedule">("now");
   const [scheduledValue, setScheduledValue] = useState("");
@@ -419,6 +462,7 @@ function PreWeddingCard({
       toast.error(t("guest_invites.schedule_required"));
       return;
     }
+    if (!(await confirmImmediateSend(confirm, t, mode, audience, counts[audience]))) return;
     setSending(true);
     try {
       await guestMessageApi.send({
@@ -558,19 +602,14 @@ function PreWeddingCard({
         )}
       </div>
 
-      <SendControls
-        audience={audience}
-        onAudience={setAudience}
-        counts={counts}
-        mode={mode}
-        scheduledValue={scheduledValue}
-        onScheduledValue={setScheduledValue}
-      />
+      <SendControls audience={audience} onAudience={setAudience} counts={counts} />
       <SendButton
         sending={sending}
         mode={mode}
         onMode={setMode}
         onClick={() => void handleSend()}
+        scheduledValue={scheduledValue}
+        onScheduledValue={setScheduledValue}
       />
     </section>
   );

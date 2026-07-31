@@ -8961,6 +8961,16 @@ const en: LocaleMessages = {
     audience_all: "Everyone",
     audience_pending: "Not yet replied",
     audience_confirmed: "Confirmed",
+    audience_sending_all: "Going to all {count} guests",
+    audience_sending_pending: "Going to {count} who haven't replied",
+    audience_sending_confirmed: "Going to {count} who confirmed",
+    send_confirm_title: "Send to {count} guests now?",
+    send_confirm_body_all:
+      "This emails all {count} guests straight away. An email can't be pulled back once it's gone.",
+    send_confirm_body_pending:
+      "This emails the {count} guests who haven't replied yet, straight away. An email can't be pulled back once it's gone.",
+    send_confirm_body_confirmed:
+      "This emails the {count} guests who confirmed, straight away. An email can't be pulled back once it's gone.",
     send_mode_schedule: "Schedule",
     schedule_required: "Pick a date and time first.",
     schedule_label: "Send at",

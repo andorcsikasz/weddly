@@ -9032,6 +9032,16 @@ const hu: LocaleMessages = {
     audience_all: "Mindenki",
     audience_pending: "Még nem válaszolt",
     audience_confirmed: "Visszaigazolt",
+    audience_sending_all: "Mind a(z) {count} vendégnek megy",
+    audience_sending_pending: "{count} még nem válaszolt vendégnek megy",
+    audience_sending_confirmed: "{count} visszaigazolt vendégnek megy",
+    send_confirm_title: "Elküldjük most {count} vendégnek?",
+    send_confirm_body_all:
+      "Ez azonnal kimegy mind a(z) {count} vendégnek. Az elküldött e-mailt nem lehet visszahívni.",
+    send_confirm_body_pending:
+      "Ez azonnal kimegy annak a(z) {count} vendégnek, aki még nem válaszolt. Az elküldött e-mailt nem lehet visszahívni.",
+    send_confirm_body_confirmed:
+      "Ez azonnal kimegy a(z) {count} visszaigazolt vendégnek. Az elküldött e-mailt nem lehet visszahívni.",
     send_mode_schedule: "Időzítés",
     schedule_required: "Előbb válassz dátumot és időpontot.",
     schedule_label: "Küldés ekkor",

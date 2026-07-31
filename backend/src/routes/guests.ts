@@ -161,22 +161,53 @@ function parseMeal(raw: unknown): MealChoice | null {
   return isMealChoice(raw) ? raw : null;
 }
 
-function parseUpsert(body: UpsertBody, requireName = true): ParsedGuest {
-  const fullName = parseStr(body.full_name, 200);
+/**
+ * The UPDATE below writes every column, so a PATCH that omits a field would
+ * blank it: `{invited_online: true}` alone used to resolve to an empty name, no
+ * email, no phone, rsvp back to "pending". Only the `full_name required` throw
+ * stood between a partial PATCH and a wiped guest, which is why the invite
+ * page's channel toggle answered "Something went wrong" instead of destroying
+ * the row. Merging against `existing` is what makes the endpoint honest, and it
+ * is what lets a caller send the one field it means to change.
+ *
+ * `undefined` means ABSENT and keeps the stored value; an explicit `null` or ""
+ * still clears, because that is a caller saying "remove this".
+ */
+function parseUpsert(body: UpsertBody, requireName = true, existing?: GuestRow): ParsedGuest {
+  const keep = <T>(raw: unknown, current: T, parse: () => T): T =>
+    existing && raw === undefined ? current : parse();
+
+  const fullName = keep(body.full_name, existing?.full_name ?? null, () =>
+    parseStr(body.full_name, 200),
+  );
   if (requireName && !fullName) throw new HttpError(400, "full_name required");
 
   return {
     full_name: fullName ?? "",
-    email: parseStr(body.email, 320),
-    phone: parseStr(body.phone, 64),
-    group_tag: parseGroupTag(body.group_tag),
-    kind: parseKind(body.kind),
-    is_supplier: body.is_supplier ? 1 : 0,
-    rsvp_status: parseRsvp(body.rsvp_status),
-    meal_choice: parseMeal(body.meal_choice),
-    dietary: parseStr(body.dietary, 500),
-    plus_one_name: parseStr(body.plus_one_name, 200),
-    plus_one_meal: parseMeal(body.plus_one_meal),
+    email: keep(body.email, existing?.email ?? null, () => parseStr(body.email, 320)),
+    phone: keep(body.phone, existing?.phone ?? null, () => parseStr(body.phone, 64)),
+    group_tag: keep(body.group_tag, (existing?.group_tag ?? "other") as GuestGroupTag, () =>
+      parseGroupTag(body.group_tag),
+    ),
+    kind: keep(body.kind, (existing?.kind ?? "adult") as GuestKind, () => parseKind(body.kind)),
+    is_supplier: keep(body.is_supplier, existing?.is_supplier ?? 0, () =>
+      body.is_supplier ? 1 : 0,
+    ),
+    rsvp_status: keep(body.rsvp_status, (existing?.rsvp_status ?? "pending") as RsvpStatus, () =>
+      parseRsvp(body.rsvp_status),
+    ),
+    meal_choice: keep(body.meal_choice, (existing?.meal_choice ?? null) as MealChoice | null, () =>
+      parseMeal(body.meal_choice),
+    ),
+    dietary: keep(body.dietary, existing?.dietary ?? null, () => parseStr(body.dietary, 500)),
+    plus_one_name: keep(body.plus_one_name, existing?.plus_one_name ?? null, () =>
+      parseStr(body.plus_one_name, 200),
+    ),
+    plus_one_meal: keep(
+      body.plus_one_meal,
+      (existing?.plus_one_meal ?? null) as MealChoice | null,
+      () => parseMeal(body.plus_one_meal),
+    ),
     // Omitted → undefined (no change); explicit null → detach; finite number →
     // assign to that host. NaN/garbage is treated as "no change".
     plus_one_of:
@@ -187,9 +218,15 @@ function parseUpsert(body: UpsertBody, requireName = true): ParsedGuest {
           : typeof body.plus_one_of === "number" && Number.isFinite(body.plus_one_of)
             ? body.plus_one_of
             : undefined,
-    accommodation_needed: body.accommodation_needed ? 1 : 0,
-    song_request: parseStr(body.song_request, 500),
-    notes: parseStr(body.notes, 2000),
+    accommodation_needed: keep(
+      body.accommodation_needed,
+      existing?.accommodation_needed ?? 0,
+      () => (body.accommodation_needed ? 1 : 0),
+    ),
+    song_request: keep(body.song_request, existing?.song_request ?? null, () =>
+      parseStr(body.song_request, 500),
+    ),
+    notes: keep(body.notes, existing?.notes ?? null, () => parseStr(body.notes, 2000)),
   };
 }
 
@@ -508,7 +545,8 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   if (!existing) throw new HttpError(404, "Guest not found");
 
   const body = await readJson<UpsertBody>(ctx.req);
-  const parsed = parseUpsert(body);
+  // PATCH semantics: anything the caller left out keeps the value it has.
+  const parsed = parseUpsert(body, true, existing);
   const ts = now();
 
   // "+1" link transition. undefined = leave as-is; a number (re)assigns this
