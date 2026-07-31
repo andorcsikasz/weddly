@@ -17,8 +17,10 @@ import type {
 } from "@shared/suppliers";
 import {
   SUPPLIER_GROUPS,
+  collapseSettledCategories,
   isOutOfCountryScope,
   partitionByCountryScope,
+  pickIdentityOf,
   showsCapacity,
 } from "@shared/suppliers";
 import {
@@ -45,6 +47,8 @@ import {
   Map as MapIcon,
   Disc3,
   ExternalLink,
+  Eye,
+  EyeOff,
   Flower2,
   Flag,
   Gem,
@@ -339,6 +343,12 @@ export default function SuppliersPage() {
   const [bookedOpen, setBookedOpen] = useState(false);
   // The form is scoped to one sub-category, so moving to another collapses it.
   useEffect(() => setBookedOpen(false), [activeCat]);
+  // Temporarily lift the settled-category collapse (see `collapseSettled`) so a
+  // couple who wants to change their mind can see the rest of the trade again.
+  // It's a peek at one part of the directory, not a preference, so it resets
+  // when they move to another category.
+  const [showSettledSiblings, setShowSettledSiblings] = useState(false);
+  useEffect(() => setShowSettledSiblings(false), [activeCat, activeGroup]);
   // Report dialog state. `reporting` holds the numeric id + name; null when closed.
   const [reporting, setReporting] = useState<{ id: number; name: string } | null>(null);
   const { user } = useAuth();
@@ -1234,8 +1244,65 @@ export default function SuppliersPage() {
     geoResolved,
   ]);
 
+  // Once a category is settled, the rest of that trade is noise: a couple who
+  // has booked their venue does not need 289 more venues under it. So a settled
+  // category shows the card they settled it with and nothing else — whether
+  // that is a directory listing they picked, a vendor they added themselves, or
+  // a "csinálom magam" entry.
+  //
+  // The collapse stands down for the filters that ARE a request for a list:
+  // free-text search, the shortlist, verified-only and picked-only all mean the
+  // couple asked to see a set, and answering with one card would be ignoring
+  // them. `showSettledSiblings` is the couple lifting it by hand.
+  const collapseSettled =
+    !showSettledSiblings && !queryNorm && !showSavedOnly && !showVerifiedOnly && !showPickedOnly;
+
+  const shownBeforeCategory = useMemo(() => {
+    if (!collapseSettled) return filteredBeforeCategory;
+    // Collapsed against the IN-SCOPE half only, and the out-of-country tail is
+    // passed through untouched. A pick that is itself out of the browsed
+    // country is not a result here — `partitionByCountryScope` sends it to the
+    // tail below the grid — so letting it settle a category would empty the
+    // grid and leave the couple's own choice in the "these exist, elsewhere"
+    // footnote as the only thing on the page.
+    const inScope = filteredBeforeCategory.filter((s) => !isOutOfScope(s));
+    const kept = new Set(collapseSettledCategories(inScope, selection));
+    return filteredBeforeCategory.filter((s) => isOutOfScope(s) || kept.has(s));
+  }, [filteredBeforeCategory, selection, collapseSettled, isOutOfScope]);
+
+  /** The active category / group scope, as a predicate. Shared by the grid and
+   *  by the hidden-count below so the number offered always describes exactly
+   *  what is on screen. */
+  const inCategoryScope = useCallback(
+    (s: { category: SupplierCategory }) => {
+      if (activeCat) return s.category === activeCat;
+      if (!activeGroup) return true;
+      const group = SUPPLIER_GROUPS.find((g) => g.id === activeGroup);
+      return group ? group.categories.includes(s.category) : true;
+    },
+    [activeCat, activeGroup],
+  );
+
+  // How many cards the collapse holds back in the part of the directory on
+  // screen. Computed off the UNCOLLAPSED set whether or not the collapse is
+  // currently in force, because the same affordance has to offer the way back.
+  const settledHiddenCount = useMemo(() => {
+    if (queryNorm || showSavedOnly || showVerifiedOnly || showPickedOnly) return 0;
+    const scoped = filteredBeforeCategory.filter((s) => inCategoryScope(s) && !isOutOfScope(s));
+    return scoped.length - collapseSettledCategories(scoped, selection).length;
+  }, [
+    filteredBeforeCategory,
+    selection,
+    inCategoryScope,
+    isOutOfScope,
+    queryNorm,
+    showSavedOnly,
+    showVerifiedOnly,
+    showPickedOnly,
+  ]);
+
   const filtered = useMemo(() => {
-    let out = filteredBeforeCategory;
+    let out = shownBeforeCategory;
     if (activeCat) out = out.filter((s) => s.category === activeCat);
     else if (activeGroup) {
       const group = SUPPLIER_GROUPS.find((g) => g.id === activeGroup);
@@ -1336,7 +1403,7 @@ export default function SuppliersPage() {
       });
     }
     return sorted;
-  }, [filteredBeforeCategory, activeGroup, activeCat, sortMode, locale, queryNorm]);
+  }, [shownBeforeCategory, activeGroup, activeCat, sortMode, locale, queryNorm]);
 
   // Planners honour only the free-text search (name / business / city / bio) —
   // the venue-oriented country / price / guest filters don't apply to a service
@@ -1377,9 +1444,12 @@ export default function SuppliersPage() {
   // What the chain + pill counts are allowed to count: results in the country
   // being browsed. A chip reading "Fotós 24" that opens onto 24 Hungarian
   // photographers is a promise the page can't keep for an Italian wedding.
+  // Counted off the COLLAPSED set: a pill reading "Esküvői helyszín 289" that
+  // opens onto the one venue the couple booked is the same broken promise as
+  // counting out-of-country vendors, from the other direction.
   const countableBeforeCategory = useMemo(
-    () => filteredBeforeCategory.filter((s) => !isOutOfScope(s)),
-    [filteredBeforeCategory, isOutOfScope],
+    () => shownBeforeCategory.filter((s) => !isOutOfScope(s)),
+    [shownBeforeCategory, isOutOfScope],
   );
 
   // Per-group counts for the top chain. "Mind" gets the total across all
@@ -2064,6 +2134,32 @@ export default function SuppliersPage() {
             </section>
           )}
 
+          {/* The way out of the settled-category collapse. Without it a couple
+          who books a venue and then wants to change their mind is looking at a
+          one-card directory with nothing to explain it. Rendered above both the
+          grid and the map, since both are collapsed. */}
+          {settledHiddenCount > 0 && (
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={() => setShowSettledSiblings((v) => !v)}
+                aria-pressed={showSettledSiblings}
+                className={`${ACTION_CHIP} ${showSettledSiblings ? ACTION_CHIP_ON : ACTION_CHIP_IDLE}`}
+              >
+                {showSettledSiblings ? (
+                  <EyeOff size={13} aria-hidden />
+                ) : (
+                  <Eye size={13} aria-hidden />
+                )}
+                <span className="lowercase">
+                  {showSettledSiblings
+                    ? t("suppliers.settled_collapse")
+                    : t("suppliers.settled_show_all", { n: settledHiddenCount })}
+                </span>
+              </button>
+            </div>
+          )}
+
           {viewMode === "map" ? (
             // Same tour target as the grid/list container so the feature tour's
             // "vendors-list" steps still have something to spotlight in map view —
@@ -2166,8 +2262,7 @@ export default function SuppliersPage() {
                   const isSaved = s.source !== "self" && saved.has(s.id);
                   // A bound private row holds its pick under the LISTING's id, so
                   // ask about that when there is one.
-                  const pickIdentity = s.source === "self" ? (s.listing_id ?? s.id) : s.id;
-                  const isPicked = selection[s.category] === pickIdentity;
+                  const isPicked = selection[s.category] === pickIdentityOf(s);
                   const isCompared = compareIds.includes(s.id);
                   const compareCapReached = compareIds.length >= COMPARE_MAX;
                   if (s.source === "self") {

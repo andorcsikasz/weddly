@@ -4638,6 +4638,8 @@ const hu: LocaleMessages = {
     picked_filter_active: "Csak a választottak látszanak, koppints a feloldáshoz ({n})",
     picked_pill: "Választott",
     chain_progress_aria: "Lefoglalt alkategóriák: {done} / {total}",
+    settled_show_all: "Mutasd a többit ({n})",
+    settled_collapse: "Csak a választottad",
     cost_planned_label: "Tervezett",
     cost_actual_label: "Tényleges",
     cost_saved_indicator: "Mentve",

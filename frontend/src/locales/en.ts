@@ -4584,6 +4584,8 @@ const en: LocaleMessages = {
     picked_filter_active: "Showing only your picks, tap to clear ({n})",
     picked_pill: "Our pick",
     chain_progress_aria: "Sub-categories locked in: {done} / {total}",
+    settled_show_all: "Show the rest ({n})",
+    settled_collapse: "Only your pick",
     cost_planned_label: "Planned",
     cost_actual_label: "Final",
     cost_saved_indicator: "Saved",

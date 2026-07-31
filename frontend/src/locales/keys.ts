@@ -5359,6 +5359,10 @@ export interface LocaleMessages {
     picked_filter_active: string;
     picked_pill: string;
     chain_progress_aria: string;
+    /** A settled category shows only what settled it; this pair is the way back
+     *  to the rest of the trade. */
+    settled_show_all: string;
+    settled_collapse: string;
     /** Per-couple planned + final cost row on each supplier card. */
     cost_planned_label: string;
     cost_actual_label: string;

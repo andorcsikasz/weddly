@@ -4685,6 +4685,8 @@ const es: LocaleMessages = {
     picked_filter_active: "Mostrando solo tus elecciones, toca para borrar ({n})",
     picked_pill: "Nuestra elección",
     chain_progress_aria: "Subcategorías confirmadas: {done} / {total}",
+    settled_show_all: "Ver el resto ({n})",
+    settled_collapse: "Solo tu elección",
     cost_planned_label: "Previsto",
     cost_actual_label: "Final",
     cost_saved_indicator: "Guardado",

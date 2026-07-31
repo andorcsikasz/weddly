@@ -3,6 +3,7 @@
 
 import type { ListingPackage } from "./listing_packages";
 import type { ListingVideo } from "./listing_videos";
+import { isSentinelPick } from "./picks";
 
 // v2 taxonomy (July 2026): business types, not micro-services. Grouped below in
 // SUPPLIER_GROUPS. `other` is retired from the UI but kept as a hidden legacy
@@ -952,6 +953,56 @@ export function partitionByCountryScope<T extends CountryScopeCandidate>(
   const outOfScope: T[] = [];
   for (const s of rows) (isOutOfCountryScope(s, countryScope) ? outOfScope : inScope).push(s);
   return { inScope, outOfScope };
+}
+
+/** The minimum a row needs to be matched against the couple's pick for its
+ *  category. Structural (not `DirectorySupplier`) so the couple's own private
+ *  rows, a different shape entirely, go through the same call. */
+export interface SettledCandidate {
+  source: string;
+  category: SupplierCategory;
+  id: string;
+  /** A private row BOUND to a directory listing holds its pick under the
+   *  LISTING's id, never its own — that binding is the whole point. Absent on
+   *  directory rows. */
+  listing_id?: string | null;
+}
+
+/** The id this row would be picked under. One function because "a bound row
+ *  answers to its listing" is a rule the card, the grid and the collapse below
+ *  all have to agree on. */
+export function pickIdentityOf(s: SettledCandidate): string {
+  return s.source === "self" ? (s.listing_id ?? s.id) : s.id;
+}
+
+/** Drop the rest of the trade in every category the couple has already settled
+ *  with a real vendor: once a venue is booked, 289 more venues are noise, not
+ *  choice.
+ *
+ *  Two deliberate limits:
+ *  - A SENTINEL pick ("nem kell" / "magam szervezem") settles a category
+ *    without naming a vendor, so collapsing on it would empty the list with
+ *    nothing standing in its place. Those categories are left alone.
+ *  - A category only collapses when the chosen card SURVIVED the other filters
+ *    and is in `rows`. Otherwise a city chip or a price band the pick doesn't
+ *    match would blank the category out, and the couple would have no way to
+ *    read that as a filter rather than as an empty directory.
+ *
+ *  Order is preserved, so a caller that already sorted keeps its ranking. */
+export function collapseSettledCategories<T extends SettledCandidate>(
+  rows: readonly T[],
+  selection: Readonly<Partial<Record<SupplierCategory, string>>>,
+): T[] {
+  const settled = new Set<SupplierCategory>();
+  for (const s of rows) {
+    const pick = selection[s.category];
+    if (!pick || isSentinelPick(pick)) continue;
+    if (pickIdentityOf(s) === pick) settled.add(s.category);
+  }
+  if (settled.size === 0) return [...rows];
+  return rows.filter(
+    (s) => !settled.has(s.category) || pickIdentityOf(s) === selection[s.category],
+  );
 }
 
 /** One row in the typeahead. `kind` decides where picking it goes:
