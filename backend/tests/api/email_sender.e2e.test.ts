@@ -4,6 +4,7 @@ import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { CONFIG } from "../../src/config";
 import { db } from "../../src/db";
+import { buildResendPayload } from "../../src/lib/mailer";
 import { scanAdminSenderIntegrity } from "../../src/domain/emails/integrity_check";
 import { senderForKind } from "../../src/domain/emails/kinds";
 import { registerAndVerify, req, wipeAll } from "../helpers";
@@ -154,5 +155,53 @@ describe("the sender that actually went out is recorded", () => {
     // ordinary path. It must NOT have picked up the admin mailbox.
     expect(loggedFrom("welcome_verify")).toBe(CONFIG.emailFrom);
     expect(loggedFrom("welcome_verify")).not.toBe(CONFIG.emailFromAdmin);
+  });
+});
+
+// Reported 2026-07-31: a couple answered a hand-written support reply and the
+// answer went to `noreply@`, under a footer promising it would reach us.
+// Reply-To was being passed to Resend as a custom header, and Resend owns that
+// header on every message it sends — ours never left the building. The address
+// only travels in the top-level `reply_to` field.
+describe("a reply reaches a human", () => {
+  test("Reply-To rides the top-level field, never a header", () => {
+    const payload = buildResendPayload({
+      to: "flora@test.test",
+      subject: "Reply to your feedback",
+      html: "<p>hi</p>",
+      text: "hi",
+    });
+    expect(payload.reply_to).toBe(CONFIG.supportEmail);
+    // A Reply-To sitting in `headers` is the exact shape that silently failed.
+    const headers = payload.headers as Record<string, string>;
+    expect(Object.keys(headers).map((k) => k.toLowerCase())).not.toContain("reply-to");
+    // The headers Resend does honour are untouched.
+    expect(headers["Auto-Submitted"]).toBe("auto-generated");
+  });
+
+  test("a per-kind override wins over the support mailbox", () => {
+    // supplier_outreach points a vendor's reply straight at the couple.
+    const payload = buildResendPayload({
+      to: "vendor@test.test",
+      subject: "Wedding enquiry",
+      html: "<p>hi</p>",
+      text: "hi",
+      replyTo: "couple@test.test",
+    });
+    expect(payload.reply_to).toBe("couple@test.test");
+  });
+
+  test("a caller that still passes the header gets it promoted, not dropped", () => {
+    const payload = buildResendPayload({
+      to: "vendor@test.test",
+      subject: "Wedding enquiry",
+      html: "<p>hi</p>",
+      text: "hi",
+      headers: { "Reply-To": "couple@test.test", "List-Unsubscribe": "<https://x.test/u>" },
+    });
+    expect(payload.reply_to).toBe("couple@test.test");
+    const headers = payload.headers as Record<string, string>;
+    expect(headers["List-Unsubscribe"]).toBe("<https://x.test/u>");
+    expect(Object.keys(headers).map((k) => k.toLowerCase())).not.toContain("reply-to");
   });
 });

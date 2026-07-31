@@ -266,20 +266,20 @@ async function sendKindInner<K extends EmailKind>(
   // `/api/emails/optout-*` routes stay up because mail already sitting in
   // inboxes links to them.
   //
-  // Per-kind `replyTo` overrides land in the same map — supplier_outreach
-  // sets it to the couple owner's email so a vendor's reply lands in the
-  // couple's inbox instead of `CONFIG.supportEmail`.
   const extraHeaders: Record<string, string> = {};
   if (category === "lifecycle" && unsubscribeToken) {
     extraHeaders["List-Unsubscribe"] =
       `<${CONFIG.frontendBaseUrl}/api/unsubscribe/${unsubscribeToken}>`;
     extraHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
   }
-  if (built.replyTo) {
-    extraHeaders["Reply-To"] = built.replyTo;
-  }
   const headers: Record<string, string> | undefined =
     Object.keys(extraHeaders).length > 0 ? extraHeaders : undefined;
+
+  // Where a reply lands. A per-kind override (supplier_outreach points it at
+  // the couple owner so a vendor's answer skips us entirely) wins; otherwise
+  // the mailer falls back to CONFIG.supportEmail. Passed as its own field
+  // rather than a header — Resend drops a Reply-To it finds in `headers`.
+  const replyTo = built.replyTo;
 
   // Who this comes FROM. Resolved here, in the one chokepoint, rather than at
   // the call sites — a mailbox chosen per route is a mailbox that drifts.
@@ -307,6 +307,7 @@ async function sendKindInner<K extends EmailKind>(
       subject: built.subject,
       html: built.rendered.html,
       text: built.rendered.text,
+      replyTo,
       headers,
     });
     return { status: "skipped_no_provider" };
@@ -319,6 +320,7 @@ async function sendKindInner<K extends EmailKind>(
       subject: built.subject,
       html: built.rendered.html,
       text: built.rendered.text,
+      replyTo,
       headers,
     });
     recordEmailAttempt({

@@ -14,6 +14,10 @@ export interface SendEmailInput {
    *  person actually reads. Resolved by `domain/emails/send.ts` — no caller
    *  outside the dispatcher picks a sender. */
   from?: string;
+  /** Where a recipient hitting Reply lands. Defaults to `CONFIG.supportEmail`.
+   *  Deliberately its OWN field rather than a `headers` entry — see
+   *  `buildResendPayload`. */
+  replyTo?: string;
   /** Extra RFC 5322 headers to attach to the outgoing message. Used to
    *  carry `List-Unsubscribe` / `List-Unsubscribe-Post` for RFC 8058
    *  one-click unsubscribe — required by Gmail's 2024 bulk-sender rules
@@ -22,23 +26,57 @@ export interface SendEmailInput {
 }
 
 // Headers attached to every outgoing message:
-//   - `Reply-To: <support>` — Without this, a recipient hitting Reply lands
-//     on whatever Resend uses as Return-Path (typically a no-reply bounce
-//     address). Pointing Reply-To at a real, monitored mailbox lets vendors
-//     and guests respond to verification + RSVP mail without copy-pasting an
-//     address out of the body.
 //   - `Auto-Submitted: auto-generated` — RFC 3834. Tells vacation auto-
 //     responders, ticket systems, and Exchange "do not auto-reply to this".
 //     Without it, every verification email risks bouncing back via OOO replies.
 //   - `X-Auto-Response-Suppress: All` — Outlook/Exchange equivalent. Belt-and-
 //     braces; some Microsoft tenants honour this and ignore Auto-Submitted.
+// Reply-To is NOT here — it is a top-level Resend field, see below.
 // Per-kind headers (e.g. List-Unsubscribe for lifecycle mail) override these
 // only by adding entries — never by removing them.
 function defaultHeaders(): Record<string, string> {
   return {
-    "Reply-To": CONFIG.supportEmail,
     "Auto-Submitted": "auto-generated",
     "X-Auto-Response-Suppress": "All",
+  };
+}
+
+/** The exact JSON body sent to Resend. Split out of `dispatchToResend` so it
+ *  can be asserted without a network call — the suite runs with no
+ *  RESEND_API_KEY, so the real request never happens and nothing downstream
+ *  of this function is otherwise observable.
+ *
+ *  `reply_to` is a TOP-LEVEL field and never a custom header. Resend owns the
+ *  Reply-To of every message it sends and silently drops one passed through
+ *  `headers`, which is how a footer reading "you can reply to this email and
+ *  it reaches the Weddly team" sat for months under mail whose replies all
+ *  went to `noreply@`: the header WAS set on our side, the log showed it, and
+ *  nothing on the wire ever carried it. Reported 2026-07-31 by a couple who
+ *  answered a hand-written support reply and got nowhere.
+ *
+ *  A caller that still puts a Reply-To in `headers` gets it promoted here
+ *  rather than dropped, so the failure can't come back through a side door. */
+export function buildResendPayload(input: SendEmailInput): Record<string, unknown> {
+  const headers: Record<string, string> = {
+    ...defaultHeaders(),
+    ...(input.headers ?? {}),
+  };
+  // Header names are case-insensitive (RFC 5322 §1.2.2), so match that way.
+  let headerReplyTo: string | undefined;
+  for (const key of Object.keys(headers)) {
+    if (key.toLowerCase() === "reply-to") {
+      headerReplyTo = headers[key];
+      delete headers[key];
+    }
+  }
+  return {
+    from: input.from ?? CONFIG.emailFrom,
+    to: input.to,
+    reply_to: input.replyTo ?? headerReplyTo ?? CONFIG.supportEmail,
+    subject: input.subject,
+    html: input.html,
+    text: input.text,
+    headers,
   };
 }
 
@@ -79,19 +117,7 @@ async function drainSendQueue(): Promise<void> {
 }
 
 async function dispatchToResend(input: SendEmailInput): Promise<void> {
-  const mergedHeaders: Record<string, string> = {
-    ...defaultHeaders(),
-    ...(input.headers ?? {}),
-  };
-
-  const payload: Record<string, unknown> = {
-    from: input.from ?? CONFIG.emailFrom,
-    to: input.to,
-    subject: input.subject,
-    html: input.html,
-    text: input.text,
-    headers: mergedHeaders,
-  };
+  const payload = buildResendPayload(input);
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -113,18 +139,18 @@ async function dispatchToResend(input: SendEmailInput): Promise<void> {
 }
 
 export function sendEmail(input: SendEmailInput): Promise<void> {
-  // Dev / test: no API key set — log immediately, skip the queue.
+  // Dev / test: no API key set — log immediately, skip the queue. Logging the
+  // real payload (not a hand-assembled echo of it) is what makes the dev print
+  // evidence of what production would send, Reply-To included.
   if (!CONFIG.resendApiKey) {
-    const mergedHeaders: Record<string, string> = {
-      ...defaultHeaders(),
-      ...(input.headers ?? {}),
-    };
+    const payload = buildResendPayload(input);
     log.info("mailer.dev_print", {
-      from: input.from ?? CONFIG.emailFrom,
-      to: input.to,
+      from: payload.from,
+      to: payload.to,
+      reply_to: payload.reply_to,
       subject: input.subject,
       text: input.text,
-      headers: mergedHeaders,
+      headers: payload.headers,
     });
     return Promise.resolve();
   }
