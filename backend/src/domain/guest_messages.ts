@@ -5,7 +5,7 @@
 import type { EnvelopeTip, GuestMessageAudience, GuestMessageTemplate } from "@shared/types";
 import { CONFIG } from "../config";
 import { db } from "../db";
-import type { CoupleRow } from "./couples";
+import { type CoupleRow, envelopeTipEnabled } from "./couples";
 import { sendKind } from "./emails";
 
 /** A guest eligible to receive a broadcast: has an email, isn't a supplier, and
@@ -86,8 +86,7 @@ export function computeEnvelopeTip(couple: CoupleRow): EnvelopeTip {
   const heads = confirmed.n ?? 0;
   const auto = total > 0 && heads > 0 ? Math.round(total / heads) : null;
   const override = couple.envelope_tip_amount_override ?? null;
-  const enabled = couple.envelope_tip_enabled == null ? true : Boolean(couple.envelope_tip_enabled);
-  return { auto, override, effective: override ?? auto, enabled };
+  return { auto, override, effective: override ?? auto, enabled: envelopeTipEnabled(couple) };
 }
 
 /** Format an integer amount in the couple's display currency. HUF couples get a

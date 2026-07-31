@@ -258,11 +258,13 @@ async function handleEnvelopeTipPatch(ctx: Ctx): Promise<Response> {
   const ts = now();
 
   if (typeof body.enabled === "boolean") {
-    db.prepare("UPDATE couples SET envelope_tip_enabled = ?, updated_at = ? WHERE id = ?").run(
-      body.enabled ? 1 : 0,
-      ts,
-      couple.id,
-    );
+    // The stamp is what turns the flag from a default into an answer, so it
+    // goes down on every use of the switch, including turning it back off.
+    db.prepare(
+      `UPDATE couples
+          SET envelope_tip_enabled = ?, envelope_tip_choice_at = ?, updated_at = ?
+        WHERE id = ?`,
+    ).run(body.enabled ? 1 : 0, ts, ts, couple.id);
   }
   if (body.override === null) {
     db.prepare(

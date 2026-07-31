@@ -9968,14 +9968,14 @@ export interface LocaleMessages {
     channel_physical: string;
     responded_never: string;
     comm_title: string;
-    comm_subtitle: string;
     audience_label: string;
     audience_all: string;
     audience_pending: string;
     audience_confirmed: string;
-    send_mode_label: string;
-    send_mode_now: string;
     send_mode_schedule: string;
+    /** Refusal when the clock toggle is on but no time has been picked: a
+     *  scheduled send with no time would go out immediately. */
+    schedule_required: string;
     schedule_label: string;
     send_now_button: string;
     schedule_button: string;

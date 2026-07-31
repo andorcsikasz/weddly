@@ -1,6 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Handshake, Mail, X } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarClock,
+  Check,
+  CheckCheck,
+  Clock3,
+  Coins,
+  Handshake,
+  Mail,
+  Megaphone,
+  Pencil,
+  Send,
+  Sparkles,
+  Users,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import type {
   Couple,
   EnvelopeTip,
@@ -9,12 +25,26 @@ import type {
   GuestMessageAudience,
   GuestMessageTemplate,
 } from "@shared/types";
-import { SegmentedControl, Skeleton, useConfirm, useToast } from "../components/ui";
+import { SegmentedControl, Skeleton, Switch, useConfirm, useToast } from "../components/ui";
+import { InfoHint } from "../components/InfoHint";
 import { coupleApi, guestApi, guestMessageApi } from "../lib/endpoints";
 import { formatMoney, formatTimestamp } from "../lib/format";
 import { useT } from "../lib/i18n";
 
 const AUDIENCES: GuestMessageAudience[] = ["all", "pending", "confirmed"];
+
+/** One glyph per audience, so the picker can be three small pills carrying the
+ *  HEADCOUNT rather than three long labels that scroll off a narrow card. */
+const AUDIENCE_ICON: Record<GuestMessageAudience, LucideIcon> = {
+  all: Users,
+  pending: Clock3,
+  confirmed: CheckCheck,
+};
+
+/** How many people each audience would actually reach. Mirrors the server's
+ *  `resolveRecipients`: an address is required, and one address is one send
+ *  however many rows carry it. */
+export type AudienceCounts = Record<GuestMessageAudience, number>;
 
 /** Build the `scheduled_at` epoch-ms (or null for "send now") from the picker. */
 function scheduledAtFrom(mode: "now" | "schedule", value: string): number | null {
@@ -23,86 +53,143 @@ function scheduledAtFrom(mode: "now" | "schedule", value: string): number | null
   return Number.isNaN(ms) ? null : ms;
 }
 
-/** Shared audience + send-timing controls reused by all three composer cards. */
+/** Card title row: category glyph, name, and the card's own explanation tucked
+ *  behind an "i" instead of sitting under every heading as a paragraph. */
+function CardHeader({
+  icon: Icon,
+  title,
+  hint,
+}: { icon: LucideIcon; title: string; hint: string }) {
+  return (
+    <header className="flex items-center gap-3">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-paper-100 text-umber-600 dark:bg-umber-800 dark:text-umber-200">
+        <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+      </span>
+      <h2 className="min-w-0 flex-1 font-grotesk text-lg font-semibold text-umber-900 dark:text-paper-50">
+        {title}
+      </h2>
+      <InfoHint text={hint} className="shrink-0 text-umber-500 dark:text-umber-300" />
+    </header>
+  );
+}
+
+/** Audience picker + the scheduling field, shared by all three composer cards.
+ *
+ *  The picker shows the COUNT on each pill and names only the selected one: the
+ *  three labels together are wider than a card in the three-up grid, so they
+ *  used to scroll sideways, and the number is the fact the couple is actually
+ *  choosing on ("who is this going to" is answered by 42, not by the word). */
 function SendControls({
   audience,
   onAudience,
+  counts,
   mode,
-  onMode,
   scheduledValue,
   onScheduledValue,
 }: {
   audience: GuestMessageAudience;
   onAudience: (a: GuestMessageAudience) => void;
+  counts: AudienceCounts;
   mode: "now" | "schedule";
-  onMode: (m: "now" | "schedule") => void;
   scheduledValue: string;
   onScheduledValue: (v: string) => void;
 }) {
   const { t } = useT();
   return (
-    <div className="mt-4 flex flex-col gap-3">
-      <SegmentedControl
-        ariaLabel={t("guest_invites.audience_label")}
-        value={audience}
-        onChange={onAudience}
-        options={AUDIENCES.map((a) => ({
-          value: a,
-          label: t(`guest_invites.audience_${a}`),
-        }))}
-      />
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="mt-4 flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <SegmentedControl
-          ariaLabel={t("guest_invites.send_mode_label")}
-          value={mode}
-          onChange={onMode}
-          options={[
-            { value: "now", label: t("guest_invites.send_mode_now") },
-            { value: "schedule", label: t("guest_invites.send_mode_schedule") },
-          ]}
+          size="sm"
+          ariaLabel={t("guest_invites.audience_label")}
+          value={audience}
+          onChange={onAudience}
+          options={AUDIENCES.map((a) => {
+            const Icon = AUDIENCE_ICON[a];
+            return {
+              value: a,
+              label: String(counts[a]),
+              ariaLabel: `${t(`guest_invites.audience_${a}`)}: ${counts[a]}`,
+              icon: <Icon size={14} aria-hidden="true" />,
+            };
+          })}
         />
-        {mode === "schedule" && (
-          <input
-            type="datetime-local"
-            aria-label={t("guest_invites.schedule_label")}
-            title={t("guest_invites.schedule_label")}
-            className="input min-w-[180px] flex-1"
-            value={scheduledValue}
-            onChange={(e) => onScheduledValue(e.target.value)}
-          />
-        )}
+        <span className="text-xs text-umber-600 dark:text-umber-300">
+          {t(`guest_invites.audience_${audience}`)}
+        </span>
       </div>
+      {mode === "schedule" && (
+        <input
+          type="datetime-local"
+          aria-label={t("guest_invites.schedule_label")}
+          title={t("guest_invites.schedule_label")}
+          className="input w-full"
+          value={scheduledValue}
+          onChange={(e) => onScheduledValue(e.target.value)}
+        />
+      )}
     </div>
   );
 }
 
-/** Identical bottom-pinned primary button shared by the three composer cards.
- *  `mt-auto` anchors it so the buttons sit on one baseline across the grid. */
+/** Bottom-pinned send row: one primary action plus a clock that flips it to
+ *  scheduling. `mt-auto` anchors it so the buttons sit on one baseline across
+ *  the grid.
+ *
+ *  It used to be a Send-now/Schedule segmented control ABOVE a button that also
+ *  said "Send now", i.e. the same two words twice with different meanings. The
+ *  button is the only thing that sends; the clock only says when. */
 function SendButton({
   sending,
   mode,
+  onMode,
   onClick,
 }: {
   sending: boolean;
   mode: "now" | "schedule";
+  onMode: (m: "now" | "schedule") => void;
   onClick: () => void;
 }) {
   const { t } = useT();
+  const scheduling = mode === "schedule";
   return (
-    <div className="mt-auto pt-5">
-      <button type="button" className="btn-primary w-full" disabled={sending} onClick={onClick}>
+    <div className="mt-auto flex items-center gap-2 pt-5">
+      <button
+        type="button"
+        className="btn-primary inline-flex flex-1 items-center justify-center gap-2"
+        disabled={sending}
+        onClick={onClick}
+      >
+        {scheduling ? (
+          <CalendarClock size={16} aria-hidden="true" />
+        ) : (
+          <Send size={16} aria-hidden="true" />
+        )}
         {sending
           ? t("guest_invites.sending")
-          : mode === "now"
-            ? t("guest_invites.send_now_button")
-            : t("guest_invites.schedule_button")}
+          : scheduling
+            ? t("guest_invites.schedule_button")
+            : t("guest_invites.send_now_button")}
+      </button>
+      <button
+        type="button"
+        aria-pressed={scheduling}
+        aria-label={t("guest_invites.send_mode_schedule")}
+        title={t("guest_invites.send_mode_schedule")}
+        onClick={() => onMode(scheduling ? "now" : "schedule")}
+        className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+          scheduling
+            ? "border-umber-700 bg-umber-700 text-paper-50 dark:border-umber-400 dark:bg-umber-400 dark:text-umber-900"
+            : "border-paper-300 text-umber-500 hover:border-umber-400 hover:text-umber-900 dark:border-umber-600 dark:text-umber-300 dark:hover:border-umber-400 dark:hover:text-paper-50"
+        }`}
+      >
+        <Clock3 size={16} aria-hidden="true" />
       </button>
     </div>
   );
 }
 
 /** ── Invite card ── plain invitation + RSVP link. */
-function InviteCard({ onSent }: { onSent: () => void }) {
+function InviteCard({ counts, onSent }: { counts: AudienceCounts; onSent: () => void }) {
   const { t } = useT();
   const toast = useToast();
   const [audience, setAudience] = useState<GuestMessageAudience>("pending");
@@ -111,6 +198,10 @@ function InviteCard({ onSent }: { onSent: () => void }) {
   const [sending, setSending] = useState(false);
 
   async function handleSend() {
+    if (mode === "schedule" && scheduledAtFrom(mode, scheduledValue) === null) {
+      toast.error(t("guest_invites.schedule_required"));
+      return;
+    }
     setSending(true);
     try {
       await guestMessageApi.send({
@@ -129,27 +220,31 @@ function InviteCard({ onSent }: { onSent: () => void }) {
 
   return (
     <section className="card flex flex-col">
-      <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
-        {t("guest_invites.template_invite")}
-      </h2>
-      <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
-        {t("guest_invites.invite_desc")}
-      </p>
+      <CardHeader
+        icon={Mail}
+        title={t("guest_invites.template_invite")}
+        hint={t("guest_invites.invite_desc")}
+      />
       <SendControls
         audience={audience}
         onAudience={setAudience}
+        counts={counts}
         mode={mode}
-        onMode={setMode}
         scheduledValue={scheduledValue}
         onScheduledValue={setScheduledValue}
       />
-      <SendButton sending={sending} mode={mode} onClick={() => void handleSend()} />
+      <SendButton
+        sending={sending}
+        mode={mode}
+        onMode={setMode}
+        onClick={() => void handleSend()}
+      />
     </section>
   );
 }
 
 /** ── Major update card ── free-form announcement with subject + body. */
-function MajorUpdateCard({ onSent }: { onSent: () => void }) {
+function MajorUpdateCard({ counts, onSent }: { counts: AudienceCounts; onSent: () => void }) {
   const { t } = useT();
   const toast = useToast();
   const [audience, setAudience] = useState<GuestMessageAudience>("all");
@@ -166,6 +261,10 @@ function MajorUpdateCard({ onSent }: { onSent: () => void }) {
     }
     if (!body.trim()) {
       toast.error(t("guest_invites.body_required"));
+      return;
+    }
+    if (mode === "schedule" && scheduledAtFrom(mode, scheduledValue) === null) {
+      toast.error(t("guest_invites.schedule_required"));
       return;
     }
     setSending(true);
@@ -190,12 +289,11 @@ function MajorUpdateCard({ onSent }: { onSent: () => void }) {
 
   return (
     <section className="card flex flex-col">
-      <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
-        {t("guest_invites.template_major_update")}
-      </h2>
-      <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
-        {t("guest_invites.major_update_desc")}
-      </p>
+      <CardHeader
+        icon={Megaphone}
+        title={t("guest_invites.template_major_update")}
+        hint={t("guest_invites.major_update_desc")}
+      />
       <div className="mt-4 flex flex-col gap-3">
         <input
           id="gi_mu_subject"
@@ -217,12 +315,17 @@ function MajorUpdateCard({ onSent }: { onSent: () => void }) {
       <SendControls
         audience={audience}
         onAudience={setAudience}
+        counts={counts}
         mode={mode}
-        onMode={setMode}
         scheduledValue={scheduledValue}
         onScheduledValue={setScheduledValue}
       />
-      <SendButton sending={sending} mode={mode} onClick={() => void handleSend()} />
+      <SendButton
+        sending={sending}
+        mode={mode}
+        onMode={setMode}
+        onClick={() => void handleSend()}
+      />
     </section>
   );
 }
@@ -230,9 +333,11 @@ function MajorUpdateCard({ onSent }: { onSent: () => void }) {
 /** ── Pre-wedding info card ── subject + body + the optional envelope tip. */
 function PreWeddingCard({
   couple,
+  counts,
   onSent,
 }: {
   couple: Couple | null;
+  counts: AudienceCounts;
   onSent: () => void;
 }) {
   const { t, locale } = useT();
@@ -281,8 +386,10 @@ function PreWeddingCard({
     }
   }
 
+  const tipEnabled = tip?.enabled ?? false;
+
   function handleToggleEnabled() {
-    void persistTip({ enabled: !(tip?.enabled ?? false) });
+    void persistTip({ enabled: !tipEnabled });
   }
 
   function handleModeAuto() {
@@ -306,6 +413,10 @@ function PreWeddingCard({
     }
     if (!body.trim()) {
       toast.error(t("guest_invites.body_required"));
+      return;
+    }
+    if (mode === "schedule" && scheduledAtFrom(mode, scheduledValue) === null) {
+      toast.error(t("guest_invites.schedule_required"));
       return;
     }
     setSending(true);
@@ -333,12 +444,11 @@ function PreWeddingCard({
 
   return (
     <section className="card flex flex-col">
-      <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
-        {t("guest_invites.template_pre_wedding_info")}
-      </h2>
-      <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
-        {t("guest_invites.pre_wedding_desc")}
-      </p>
+      <CardHeader
+        icon={CalendarClock}
+        title={t("guest_invites.template_pre_wedding_info")}
+        hint={t("guest_invites.pre_wedding_desc")}
+      />
       <div className="mt-4 flex flex-col gap-3">
         <input
           id="gi_pw_subject"
@@ -358,65 +468,84 @@ function PreWeddingCard({
         />
       </div>
 
-      {/* Envelope tip */}
+      {/* Envelope tip. OFF until the couple asks for it (the server treats an
+          untouched switch as off), so this block is a switch first and a
+          settings panel only once it is on. */}
       <div className="mt-4 rounded-xl border border-paper-300 p-3.5 dark:border-umber-700">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-umber-900 dark:text-paper-50">
-              {t("guest_invites.envelope_tip_title")}
-            </p>
-            <p className="mt-0.5 text-xs text-umber-600 dark:text-umber-300">
-              {t("guest_invites.envelope_tip_desc")}
-            </p>
-          </div>
-          <label className="inline-flex shrink-0 cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-umber-700"
-              checked={tip?.enabled ?? false}
-              disabled={savingTip}
+        <div className="flex items-center gap-2">
+          <Coins
+            className="h-4 w-4 shrink-0 text-umber-500 dark:text-umber-300"
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
+          <span className="text-sm font-medium text-umber-900 dark:text-paper-50">
+            {t("guest_invites.envelope_tip_title")}
+          </span>
+          <InfoHint
+            text={t("guest_invites.envelope_tip_desc")}
+            className="shrink-0 text-umber-500 dark:text-umber-300"
+          />
+          <span className="ml-auto shrink-0">
+            <Switch
+              checked={tipEnabled}
               onChange={handleToggleEnabled}
+              disabled={savingTip}
+              label={t("guest_invites.envelope_tip_include")}
             />
-            <span className="text-xs text-umber-700 dark:text-umber-200">
-              {t("guest_invites.envelope_tip_include")}
-            </span>
-          </label>
+          </span>
         </div>
 
-        {(tip?.enabled ?? false) && (
-          <div className="mt-4 flex flex-col gap-3">
-            <SegmentedControl
-              ariaLabel={t("guest_invites.envelope_tip_mode_label")}
-              value={tipManual ? "manual" : "auto"}
-              onChange={(v) => (v === "auto" ? handleModeAuto() : handleModeManual())}
-              options={[
-                { value: "auto", label: t("guest_invites.envelope_tip_auto") },
-                { value: "manual", label: t("guest_invites.envelope_tip_manual") },
-              ]}
-            />
-
-            {tipManual ? (
-              <div className="flex gap-2">
-                <input
-                  id="gi_tip_override"
-                  type="number"
-                  min={0}
-                  className="input flex-1"
-                  aria-label={t("guest_invites.envelope_tip_amount_label")}
-                  title={t("guest_invites.envelope_tip_amount_label")}
-                  value={overrideInput}
-                  onChange={(e) => setOverrideInput(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="btn-outline shrink-0"
-                  disabled={savingTip}
-                  onClick={handleSaveOverride}
-                >
-                  {t("common.save")}
-                </button>
-              </div>
-            ) : null}
+        {tipEnabled && (
+          <div className="mt-3 flex flex-col gap-2">
+            {/* Wraps rather than squeezing: an amount field crushed to 60px in
+                the three-up grid can't show a six-digit forint figure. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <SegmentedControl
+                size="sm"
+                ariaLabel={t("guest_invites.envelope_tip_mode_label")}
+                value={tipManual ? "manual" : "auto"}
+                onChange={(v) => (v === "auto" ? handleModeAuto() : handleModeManual())}
+                options={[
+                  {
+                    value: "auto",
+                    label: t("guest_invites.envelope_tip_auto"),
+                    icon: <Sparkles size={13} aria-hidden="true" />,
+                  },
+                  {
+                    value: "manual",
+                    label: t("guest_invites.envelope_tip_manual"),
+                    icon: <Pencil size={13} aria-hidden="true" />,
+                  },
+                ]}
+              />
+              {tipManual && (
+                <>
+                  <input
+                    id="gi_tip_override"
+                    type="number"
+                    min={0}
+                    className="input h-9 min-w-[7rem] flex-1 py-1"
+                    aria-label={t("guest_invites.envelope_tip_amount_label")}
+                    title={t("guest_invites.envelope_tip_amount_label")}
+                    value={overrideInput}
+                    onChange={(e) => setOverrideInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveOverride();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    aria-label={t("common.save")}
+                    title={t("common.save")}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-paper-300 text-umber-600 transition-colors hover:border-umber-400 hover:text-umber-900 disabled:opacity-50 dark:border-umber-600 dark:text-umber-200 dark:hover:border-umber-400 dark:hover:text-paper-50"
+                    disabled={savingTip}
+                    onClick={handleSaveOverride}
+                  >
+                    <Check size={16} aria-hidden="true" />
+                  </button>
+                </>
+              )}
+            </div>
 
             <p className="text-sm text-umber-700 dark:text-umber-200">
               {effective != null
@@ -432,12 +561,17 @@ function PreWeddingCard({
       <SendControls
         audience={audience}
         onAudience={setAudience}
+        counts={counts}
         mode={mode}
-        onMode={setMode}
         scheduledValue={scheduledValue}
         onScheduledValue={setScheduledValue}
       />
-      <SendButton sending={sending} mode={mode} onClick={() => void handleSend()} />
+      <SendButton
+        sending={sending}
+        mode={mode}
+        onMode={setMode}
+        onClick={() => void handleSend()}
+      />
     </section>
   );
 }
@@ -511,6 +645,24 @@ export default function GuestInvitesPage() {
     () => guests.filter((g) => !g.is_supplier && g.partner_role === null),
     [guests],
   );
+
+  /** Headcount per audience, shown on the picker pills so the couple can see
+   *  who a broadcast reaches before sending it. Mirrors the server's
+   *  `resolveRecipients`: an address is required (a guest without one cannot be
+   *  mailed at all) and one address counts once, however many rows carry it. */
+  const audienceCounts = useMemo<AudienceCounts>(() => {
+    const all = new Set<string>();
+    const pending = new Set<string>();
+    const confirmed = new Set<string>();
+    for (const g of eligible) {
+      const key = (g.email ?? "").trim().toLowerCase();
+      if (!key) continue;
+      all.add(key);
+      if (g.rsvp_status === "pending" || g.rsvp_status === "maybe") pending.add(key);
+      else if (g.rsvp_status === "yes") confirmed.add(key);
+    }
+    return { all: all.size, pending: pending.size, confirmed: confirmed.size };
+  }, [eligible]);
 
   const stats = useMemo(() => {
     let adults = 0;
@@ -606,12 +758,18 @@ export default function GuestInvitesPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
-        <h1 className="font-grotesk text-3xl font-semibold text-umber-900 dark:text-paper-50 sm:text-4xl">
-          {t("guest_invites.title")}
-        </h1>
-        <p className="mt-2 text-sm text-umber-600 dark:text-umber-300">
-          {t("guest_invites.subtitle")}
-        </p>
+        {/* The page's own explanation lives behind the "i" rather than as a
+            paragraph under every heading — the same treatment the three
+            composer cards get. */}
+        <div className="flex items-center gap-2">
+          <h1 className="font-grotesk text-3xl font-semibold text-umber-900 dark:text-paper-50 sm:text-4xl">
+            {t("guest_invites.title")}
+          </h1>
+          <InfoHint
+            text={t("guest_invites.subtitle")}
+            className="text-umber-500 dark:text-umber-300"
+          />
+        </div>
 
         {loading ? (
           <div className="mt-8 flex flex-col gap-4">
@@ -733,14 +891,11 @@ export default function GuestInvitesPage() {
               <h2 className="font-grotesk text-xl font-semibold text-umber-900 dark:text-paper-50">
                 {t("guest_invites.comm_title")}
               </h2>
-              <p className="mt-1 text-sm text-umber-600 dark:text-umber-300">
-                {t("guest_invites.comm_subtitle")}
-              </p>
 
               <div className="mt-4 grid gap-4 lg:grid-cols-3">
-                <InviteCard onSent={onSent} />
-                <MajorUpdateCard onSent={onSent} />
-                <PreWeddingCard couple={couple} onSent={onSent} />
+                <InviteCard counts={audienceCounts} onSent={onSent} />
+                <MajorUpdateCard counts={audienceCounts} onSent={onSent} />
+                <PreWeddingCard couple={couple} counts={audienceCounts} onSent={onSent} />
               </div>
 
               {/* Past + scheduled broadcasts */}

@@ -163,7 +163,35 @@ describe("envelope tip", () => {
     expect(r.data.auto).toBe(500_000);
     expect(r.data.override).toBeNull();
     expect(r.data.effective).toBe(500_000);
-    expect(r.data.enabled).toBe(true);
+    // The amount is computed for everyone, but the tip itself is OPT-IN: a
+    // couple who has never touched the switch is off, even though the column
+    // still defaults to 1. Telling guests what to put in an envelope is not
+    // something to do on their behalf.
+    expect(r.data.enabled).toBe(false);
+  });
+
+  test("the switch is what makes the flag mean anything, in both directions", async () => {
+    // Straight from untouched to ON, then back OFF: the second one must stick
+    // rather than falling back to the default.
+    const on = await req<EnvelopeTip>(
+      "PATCH",
+      "/api/guest-messages/envelope-tip",
+      { enabled: true },
+      { token },
+    );
+    expect(on.data.enabled).toBe(true);
+
+    const off = await req<EnvelopeTip>(
+      "PATCH",
+      "/api/guest-messages/envelope-tip",
+      { enabled: false },
+      { token },
+    );
+    expect(off.data.enabled).toBe(false);
+    const get = await req<EnvelopeTip>("GET", "/api/guest-messages/envelope-tip", undefined, {
+      token,
+    });
+    expect(get.data.enabled).toBe(false);
   });
 
   test("PATCH persists override + enabled; effective = override ?? auto", async () => {

@@ -13,6 +13,10 @@ export type SegmentedOption<T extends string> = {
   value: T;
   label: string;
   icon?: ReactNode;
+  /** Accessible name + tooltip, for a pill whose visible label is not a name:
+   *  an audience picker showing headcounts renders "42", which is the fact the
+   *  user is choosing on but tells a screen reader nothing. */
+  ariaLabel?: string;
 };
 
 /** Which fill the selected pill wears. The palette is unchanged from the
@@ -235,7 +239,8 @@ export function SegmentedControl<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
-            aria-label={hideLabelsOnMobile ? opt.label : undefined}
+            aria-label={opt.ariaLabel ?? (hideLabelsOnMobile ? opt.label : undefined)}
+            title={opt.ariaLabel}
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(opt.value)}
             onKeyDown={onKey}

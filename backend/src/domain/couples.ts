@@ -307,9 +307,12 @@ export interface CoupleRow {
    *  `confirmed` (valid household code + at least one RSVP yes). Null
    *  when unset. */
   post_rsvp_content: string | null;
-  /** Envelope-tip toggle for the pre-wedding info message. 1/0; null on legacy
-   *  rows reads back as enabled. */
+  /** Envelope-tip toggle for the pre-wedding info message. 1/0, but only
+   *  meaningful once `envelope_tip_choice_at` is stamped — see db.ts. */
   envelope_tip_enabled: number | null;
+  /** When the couple last used the on/off switch. NULL = never, which reads
+   *  back as OFF regardless of the flag: the tip is opt-in. */
+  envelope_tip_choice_at: number | null;
   /** Manual per-head amount (couple currency, minor units) overriding the
    *  budget-derived auto value. Null = auto. */
   envelope_tip_amount_override: number | null;
@@ -486,6 +489,19 @@ export function parseDesignJson(json: string | null): CoupleDesign {
   }
 }
 
+/** Is the envelope tip on? OPT-IN: a couple who never touched the switch is
+ *  off, whatever the column says. `envelope_tip_enabled` shipped
+ *  `NOT NULL DEFAULT 1`, so the flag alone cannot tell an untouched row from a
+ *  deliberate yes, and "here is what to put in the envelope" is not something to
+ *  put in a couple's mail on their behalf. The stamp is the consent. */
+export function envelopeTipEnabled(row: {
+  envelope_tip_enabled: number | null;
+  envelope_tip_choice_at: number | null;
+}): boolean {
+  if (row.envelope_tip_choice_at == null) return false;
+  return Boolean(row.envelope_tip_enabled);
+}
+
 export function toCouple(row: CoupleRow): Couple {
   let styleTags: WeddingStyleTag[] = [];
   try {
@@ -565,8 +581,7 @@ export function toCouple(row: CoupleRow): Couple {
     guest_page_intro: row.guest_page_intro,
     useful_info: row.useful_info,
     post_rsvp_content: row.post_rsvp_content,
-    envelope_tip_enabled:
-      row.envelope_tip_enabled == null ? true : Boolean(row.envelope_tip_enabled),
+    envelope_tip_enabled: envelopeTipEnabled(row),
     envelope_tip_amount_override: row.envelope_tip_amount_override ?? null,
     media_links: parseMediaLinksJson(row.media_links_json),
     design: parseDesignJson(row.design_json),

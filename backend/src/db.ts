@@ -1898,14 +1898,24 @@ db.exec(
 );
 
 // Envelope-tip settings for the pre-wedding info message (the "what to put in
-// the envelope, the wedding costs ~X per head" block). enabled defaults on; the
-// override is a manual per-head amount (couple currency, minor units) that wins
-// over the budget-derived auto value when set.
+// the envelope, the wedding costs ~X per head" block). The override is a manual
+// per-head amount (couple currency, minor units) that wins over the
+// budget-derived auto value when set.
+//
+// `envelope_tip_enabled` is NOT the whole answer to "is the tip on": the column
+// shipped `NOT NULL DEFAULT 1`, so a 1 cannot tell "the couple asked for this"
+// from "nobody ever opened the block". Telling guests what to put in an
+// envelope is exactly the kind of thing that must be asked for, so
+// `envelope_tip_choice_at` is the opt-in stamp and NULL means off no matter
+// what the flag says (`computeEnvelopeTip`). Deriving it rather than migrating
+// the old rows keeps this true for couples created later on an existing DB,
+// where the column's baked-in default still writes a 1.
 addColumnIfMissing(
   "couples",
   "envelope_tip_enabled",
   "envelope_tip_enabled INTEGER NOT NULL DEFAULT 1",
 );
+addColumnIfMissing("couples", "envelope_tip_choice_at", "envelope_tip_choice_at INTEGER");
 addColumnIfMissing(
   "couples",
   "envelope_tip_amount_override",
