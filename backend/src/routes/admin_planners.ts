@@ -368,7 +368,7 @@ function handleRemindProfile(ctx: Ctx): Response {
     .get(userId) as PlannerProfileRow | undefined;
   if (!row) throw new HttpError(404, "Planner not found");
   const missing = plannerProfileMissing(row);
-  sendPlannerProfileReminder(row);
+  sendPlannerProfileReminder(row, { fromAdminConsole: true });
   addAuditLog({
     actor_user_id: admin.id,
     couple_id: null,

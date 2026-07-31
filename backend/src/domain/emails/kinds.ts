@@ -360,3 +360,73 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // is never opt-out suppressed.
   admin_feedback_reply: "transactional",
 };
+
+/**
+ * Which mailbox a send goes out FROM.
+ *
+ * `default` = `CONFIG.emailFrom` (`noreply@`). Automatic mail: the machine
+ * wrote it, nobody is standing behind it, and Reply-To already points anyone
+ * who answers at the support inbox.
+ *
+ * `admin` = `CONFIG.emailFromAdmin` (`hello@`). Mail an operator sent by hand
+ * from `/app/admin/*`. A person wrote it and a person is waiting for the
+ * answer, so `noreply@` is a lie the recipient reads before the first word.
+ */
+export type EmailSender = "default" | "admin";
+
+/**
+ * Kinds that ONLY ever leave the building because an admin clicked something
+ * in `/app/admin/*`. Owner rule, 2026-07-31: anything sent from the admin page
+ * comes from the support mailbox.
+ *
+ * Membership is about the TRIGGER, not the recipient or the volume: the four
+ * campaign families are here because an operator composes and runs each round
+ * from its own admin page, even though the hourly sweep is what paces the
+ * actual sends. Kinds the worker can also fire on its own are deliberately
+ * absent — they pass `sender: "admin"` at the admin call site instead, so the
+ * automatic path keeps the automatic sender. `senderForKind` is the only
+ * reader; `email_integrity` guards against an admin route forgetting.
+ *
+ * ONE EXCEPTION, and it is deliberate: the vendor REVIEW campaign
+ * (`vendor_review_campaign` + its reminder) stays on the default sender by
+ * owner direction. Do not add it here.
+ */
+const ADMIN_CONSOLE_KINDS: ReadonlySet<EmailKind> = new Set<EmailKind>([
+  // Feedback console — a human writing back to a human.
+  "admin_feedback_reply",
+  // Account actions taken on a couple from /app/admin/users.
+  "account_flagged",
+  "account_flag_cleared",
+  "account_admin_purged",
+  "free_access_granted",
+  // Supplier moderation queue.
+  "community_supplier_verify",
+  "community_supplier_published",
+  "community_supplier_rejected",
+  // Planner provisioning + triage.
+  "planner_provisioned",
+  "planner_onboarding_invite",
+  "planner_access_invite",
+  "planner_waitlist_decision",
+  "planner_suggested_invite",
+  // Vendor triage + rerouting.
+  "vendor_activation",
+  "vendor_waitlist_decision",
+  "vendor_moved_to_planner",
+  // Campaigns: composed and released from their own admin page. The review
+  // campaign is the exception noted above and is NOT in this list.
+  "vendor_claim_campaign",
+  "vendor_claim_campaign_reminder",
+  "personal_invite",
+  "onboarding_campaign",
+  "onboarding_campaign_reminder",
+]);
+
+/** Resolve the sender for one send. An explicit `override` is how a kind the
+ *  worker ALSO fires (verify_resend, partner_invite_reminder,
+ *  planner_profile_incomplete) says "this particular one came from the admin
+ *  console" without dragging the automatic path along with it. */
+export function senderForKind(kind: EmailKind, override?: EmailSender): EmailSender {
+  if (override) return override;
+  return ADMIN_CONSOLE_KINDS.has(kind) ? "admin" : "default";
+}

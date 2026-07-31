@@ -9,6 +9,11 @@ export interface SendEmailInput {
   subject: string;
   html: string;
   text: string;
+  /** RFC 5322 From. Defaults to `CONFIG.emailFrom`; admin-console mail passes
+   *  `CONFIG.emailFromAdmin` so a hand-written reply arrives from a mailbox a
+   *  person actually reads. Resolved by `domain/emails/send.ts` — no caller
+   *  outside the dispatcher picks a sender. */
+  from?: string;
   /** Extra RFC 5322 headers to attach to the outgoing message. Used to
    *  carry `List-Unsubscribe` / `List-Unsubscribe-Post` for RFC 8058
    *  one-click unsubscribe — required by Gmail's 2024 bulk-sender rules
@@ -80,7 +85,7 @@ async function dispatchToResend(input: SendEmailInput): Promise<void> {
   };
 
   const payload: Record<string, unknown> = {
-    from: CONFIG.emailFrom,
+    from: input.from ?? CONFIG.emailFrom,
     to: input.to,
     subject: input.subject,
     html: input.html,
@@ -115,6 +120,7 @@ export function sendEmail(input: SendEmailInput): Promise<void> {
       ...(input.headers ?? {}),
     };
     log.info("mailer.dev_print", {
+      from: input.from ?? CONFIG.emailFrom,
       to: input.to,
       subject: input.subject,
       text: input.text,

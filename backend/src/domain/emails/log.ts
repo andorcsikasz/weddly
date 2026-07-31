@@ -11,6 +11,10 @@ export interface EmailLogInput {
   couple_id: number | null;
   kind: EmailKind;
   category: EmailCategory;
+  /** The resolved From identity — `noreply@` for automatic mail, the support
+   *  mailbox for anything an admin sent by hand. Null on the rows recorded
+   *  before a sender was ever chosen (no recipient, pre-dispatch throw). */
+  from_email?: string | null;
   to_email: string;
   subject: string;
   status: EmailLogStatus;
@@ -24,13 +28,14 @@ export interface EmailLogInput {
 export function recordEmailAttempt(input: EmailLogInput): void {
   db.prepare(
     `INSERT INTO email_log
-       (user_id, couple_id, kind, category, to_email, subject, status, error, payload_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (user_id, couple_id, kind, category, from_email, to_email, subject, status, error, payload_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     input.user_id,
     input.couple_id,
     input.kind,
     input.category,
+    input.from_email ?? null,
     input.to_email,
     input.subject,
     input.status,

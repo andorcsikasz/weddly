@@ -20,6 +20,9 @@ process.env.JWT_SECRET = "test-jwt-secret-0123456789abcdef0123456789abcdef012345
 process.env.FRONTEND_BASE_URL = "http://localhost:5173";
 process.env.RESEND_API_KEY = ""; // ensure email is no-op
 process.env.EMAIL_FROM = ""; // no real From means no real send even if RESEND_API_KEY ever leaks
+// Pinned so the admin-console sender is deterministic: a SUPPORT_EMAIL in a
+// dev .env would otherwise decide what `CONFIG.emailFromAdmin` resolves to.
+process.env.SUPPORT_EMAIL = "hello@tryweddly.com";
 // Disable static SPA serving so a stray `SERVE_FRONTEND=1` in .env doesn't
 // flip the server into double-duty mode mid-suite (every dist-asset 404
 // would otherwise turn into the SPA fallback HTML, polluting test bodies).

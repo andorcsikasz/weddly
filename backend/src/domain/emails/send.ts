@@ -18,7 +18,7 @@ import { db, now } from "../../db";
 import { sendEmail } from "../../lib/mailer";
 import { reportError } from "../../lib/observability";
 import { makeOpenTrackingToken } from "../../routes/email_track";
-import { type EmailKind, KIND_CATEGORY } from "./kinds";
+import { type EmailKind, type EmailSender, KIND_CATEGORY, senderForKind } from "./kinds";
 import { recordEmailAttempt } from "./log";
 import { isOptedOut } from "./optouts";
 import { ensurePreferences } from "./preferences";
@@ -96,6 +96,15 @@ export interface SendTarget {
    * caller is responsible for signing whatever token it embeds.
    */
   trackingPixelUrl?: string;
+  /**
+   * Force the FROM mailbox for this one send. Only needed for a kind the
+   * worker also fires on its own (verify_resend, partner_invite_reminder,
+   * planner_profile_incomplete): the admin call site passes `"admin"` so a
+   * hand-sent nudge comes from the support mailbox while the automatic sweep
+   * keeps the automatic sender. Kinds that are admin-only carry it on the kind
+   * itself — see `ADMIN_CONSOLE_KINDS`.
+   */
+  sender?: EmailSender;
 }
 
 interface SendResult {
@@ -272,6 +281,11 @@ async function sendKindInner<K extends EmailKind>(
   const headers: Record<string, string> | undefined =
     Object.keys(extraHeaders).length > 0 ? extraHeaders : undefined;
 
+  // Who this comes FROM. Resolved here, in the one chokepoint, rather than at
+  // the call sites — a mailbox chosen per route is a mailbox that drifts.
+  const fromEmail =
+    senderForKind(kind, target.sender) === "admin" ? CONFIG.emailFromAdmin : CONFIG.emailFrom;
+
   if (!CONFIG.resendApiKey) {
     // Dev/test: mailer.ts just logs to stdout, never throws. Record the
     // attempt SYNCHRONOUSLY (before any await) so callers using fire-and-forget
@@ -282,11 +296,13 @@ async function sendKindInner<K extends EmailKind>(
       couple_id: target.couple_id ?? null,
       kind,
       category,
+      from_email: fromEmail,
       to_email: recipient.email,
       subject: built.subject,
       status: "skipped_no_provider",
     });
     void sendEmail({
+      from: fromEmail,
       to: recipient.email,
       subject: built.subject,
       html: built.rendered.html,
@@ -298,6 +314,7 @@ async function sendKindInner<K extends EmailKind>(
 
   try {
     await sendEmail({
+      from: fromEmail,
       to: recipient.email,
       subject: built.subject,
       html: built.rendered.html,
@@ -309,6 +326,7 @@ async function sendKindInner<K extends EmailKind>(
       couple_id: target.couple_id ?? null,
       kind,
       category,
+      from_email: fromEmail,
       to_email: recipient.email,
       subject: built.subject,
       status: "sent",
@@ -321,6 +339,7 @@ async function sendKindInner<K extends EmailKind>(
       couple_id: target.couple_id ?? null,
       kind,
       category,
+      from_email: fromEmail,
       to_email: recipient.email,
       subject: built.subject,
       status: "failed",

@@ -2143,6 +2143,14 @@ addColumnIfMissing("onboarding_campaign_sends", "clicked_at", "clicked_at INTEGE
 // One nullable column answers all three.
 addColumnIfMissing("outreach_messages", "booking_id", "booking_id INTEGER");
 
+// Which mailbox a send actually left from. Admin-console mail goes out as the
+// support address rather than `noreply@` (owner rule, 2026-07-31) and the log
+// is the only place that records it, so "did that reply reach them from a
+// mailbox they can answer?" stays answerable after the fact. Null on rows
+// written before this column, and on the two failure paths that never got as
+// far as choosing a sender.
+addColumnIfMissing("email_log", "from_email", "from_email TEXT");
+
 // Reserved system user that anchors the NOT-NULL author FK for verified-visitor
 // content (see above). Login-disabled (status='suspended' and password_hash that
 // can never verify); verified_email=1 + password_set=0 so no unverified-account

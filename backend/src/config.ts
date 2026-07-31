@@ -49,6 +49,32 @@ if (IS_PROD && process.env.EMAIL_FROM === DEFAULT_EMAIL_FROM) {
   process.exit(1);
 }
 
+/** The From identity for mail an admin sends by hand from `/app/admin/*`.
+ *
+ *  A person wrote it, so the reply has to land somewhere a person reads, and a
+ *  `noreply@` sender says the opposite before the recipient has read a word.
+ *  Derived from EMAIL_FROM + SUPPORT_EMAIL rather than a third env var, so the
+ *  two senders can never disagree about who Weddly is or drift apart on a
+ *  Railway env edit.
+ *
+ *  The domain guard is the one hard constraint: Resend verifies a DOMAIN, not
+ *  an address, so a support mailbox on some other domain is one we are not
+ *  allowed to send as and every admin action would come back 403. Keep the
+ *  configured sender in that case. An unset EMAIL_FROM (dev/test) names no
+ *  domain to disagree with, so the override stands there. */
+function adminSenderFrom(from: string, supportEmail: string): string {
+  const support = supportEmail.trim();
+  if (!support.includes("@")) return from;
+  const configured = /<([^>]*)>/.exec(from)?.[1]?.trim() ?? from.trim();
+  const domainOf = (addr: string) => addr.split("@")[1]?.toLowerCase() ?? "";
+  if (configured.includes("@") && domainOf(configured) !== domainOf(support)) return from;
+  const displayName = from.includes("<") ? from.slice(0, from.indexOf("<")).trim() : "";
+  return displayName ? `${displayName} <${support}>` : support;
+}
+
+const EMAIL_FROM = process.env.EMAIL_FROM ?? DEFAULT_EMAIL_FROM;
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? "hello@tryweddly.com";
+
 export const CONFIG = {
   port: Number(process.env.PORT ?? 8787),
   dbPath: process.env.DB_PATH ?? "./data/weddly.db",
@@ -61,13 +87,15 @@ export const CONFIG = {
   serveFrontend: process.env.SERVE_FRONTEND === "1",
   /** Resend API key. When unset, `sendEmail()` logs the link to stdout instead. */
   resendApiKey: process.env.RESEND_API_KEY ?? "",
-  emailFrom: process.env.EMAIL_FROM ?? DEFAULT_EMAIL_FROM,
+  emailFrom: EMAIL_FROM,
+  /** Sender for admin-console mail — see `adminSenderFrom`. */
+  emailFromAdmin: adminSenderFrom(EMAIL_FROM, SUPPORT_EMAIL),
   /** Reply-to + footer "questions?" address. Recipients hitting Reply on any
    *  outgoing mail land here; the footer also surfaces it as a visible link
    *  ("Kérdés? hello@tryweddly.com"). Defaults to the same mailbox as EMAIL_FROM
    *  so a single misconfiguration doesn't strand replies on a non-existent
    *  inbox. */
-  supportEmail: process.env.SUPPORT_EMAIL ?? "hello@tryweddly.com",
+  supportEmail: SUPPORT_EMAIL,
   /** Comma-separated email allowlist. Members get `is_admin: true` on the User
    *  DTO and access to /app/admin/* routes. Reversible via env edit. */
   adminEmails: (process.env.ADMIN_EMAILS ?? "andor.csikasz@gmail.com,saraazawiasa@gmail.com")

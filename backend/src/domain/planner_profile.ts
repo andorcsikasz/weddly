@@ -153,8 +153,13 @@ export const PLANNER_DIRECTORY_VISIBLE_SQL = `
 
 /** Fire the "complete your profile" email. Fire-and-forget: a mailer hiccup
  *  never fails the caller (sweep or admin action). Callers own the "should we
- *  send" decision (dedup for the sweep, explicit click for the admin button). */
-export function sendPlannerProfileReminder(row: PlannerProfileRow): void {
+ *  send" decision (dedup for the sweep, explicit click for the admin button),
+ *  and with it the sender: the admin button's copy is the same, but it came
+ *  from a person, so it goes out from the support mailbox. */
+export function sendPlannerProfileReminder(
+  row: PlannerProfileRow,
+  opts: { fromAdminConsole?: boolean } = {},
+): void {
   const missing = plannerProfileMissing(row);
   void sendKind(
     "planner_profile_incomplete",
@@ -164,6 +169,9 @@ export function sendPlannerProfileReminder(row: PlannerProfileRow): void {
       editUrl: `${CONFIG.frontendBaseUrl}/app/planner/settings/account`,
       missing,
     },
-    { user: { id: row.id, email: row.email, full_name: row.full_name } },
+    {
+      user: { id: row.id, email: row.email, full_name: row.full_name },
+      sender: opts.fromAdminConsole ? "admin" : "default",
+    },
   );
 }

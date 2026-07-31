@@ -366,6 +366,9 @@ function handleRemindInvitePartner(ctx: Ctx): Response {
     {
       user: { id: target.id, email: target.email, full_name: target.full_name },
       couple_id: couple.id,
+      // An admin pressed this one; the same kind also rides the worker sweep,
+      // which keeps the automatic sender.
+      sender: "admin",
     },
   );
 
@@ -472,7 +475,11 @@ function handleResendVerify(ctx: Ctx): Response {
   void sendKind(
     "verify_resend",
     { verifyUrl },
-    { user: { id: user.id, email: user.email, full_name: user.full_name } },
+    {
+      user: { id: user.id, email: user.email, full_name: user.full_name },
+      // Admin-pressed; the user's own "resend" button keeps the default sender.
+      sender: "admin",
+    },
   );
 
   addAuditLog({
