@@ -363,7 +363,13 @@ describe("WishlistEditorPage", () => {
       ({ url, method }) => method === "GET" && url.includes("/api/wishlist/link-preview"),
       ({ url }) => {
         previewUrlParam = new URL(url, "http://x").searchParams.get("url");
-        return jsonResponse(200, { image_url: "https://cdn.test/p.jpg", title: "Pretty thing" });
+        // The endpoint re-hosts the shop's og:image under our own /uploads key
+        // before answering (a remote src is blocked by the CSP img-src list), so
+        // what the dialog renders and what the POST carries is a local URL.
+        return jsonResponse(200, {
+          image_url: "/uploads/couples/1/wishlist/abc123.jpg?v=1",
+          title: "Pretty thing",
+        });
       },
     );
     let postBody: Record<string, unknown> | null = null;
@@ -396,7 +402,9 @@ describe("WishlistEditorPage", () => {
     await waitFor(() => expect(previewUrlParam).toBe("https://shop.test/p"));
     // ...and its image shows in the dialog.
     await waitFor(() =>
-      expect(document.querySelector('img[src="https://cdn.test/p.jpg"]')).not.toBeNull(),
+      expect(
+        document.querySelector('img[src="/uploads/couples/1/wishlist/abc123.jpg?v=1"]'),
+      ).not.toBeNull(),
     );
 
     await act(async () => {
@@ -409,7 +417,7 @@ describe("WishlistEditorPage", () => {
     expect(postBody).toMatchObject({
       title: "Linked gift",
       url: "https://shop.test/p",
-      image_url: "https://cdn.test/p.jpg",
+      image_url: "/uploads/couples/1/wishlist/abc123.jpg?v=1",
     });
   });
 

@@ -151,12 +151,20 @@ function ItemPicture({
   zoom?: boolean;
   dense?: boolean;
 }) {
-  if (item.image_url) {
+  // A picture that won't load falls back to the motif rather than the browser's
+  // broken-image glyph — a wall of grey squares reads as "the app is broken",
+  // and the motif is the same thing an item without a link gets. Keyed by the
+  // src that failed, so a new image after an edit is given its own chance.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+
+  if (item.image_url && item.image_url !== failedSrc) {
+    const src = item.image_url;
     return (
       <SmartImage
-        src={item.image_url}
+        src={src}
         alt=""
         loading="lazy"
+        onError={() => setFailedSrc(src)}
         wrapperClassName="h-full w-full"
         className={`h-full w-full object-cover ${
           zoom ? "transition-transform duration-700 group-hover:scale-[1.04]" : ""
@@ -1883,6 +1891,15 @@ function WishlistItemDialog({
       currency: !isGift || itemCurrency === currency ? null : itemCurrency,
       url: isGift && url.trim() ? url.trim() : null,
     };
+    // Hand back the picture the couple is looking at. The preview endpoint has
+    // already re-hosted it under our own /uploads key, so this saves the exact
+    // image shown in the dialog and spares the server a second download. Sent
+    // only when we HAVE one: omitting the field is what asks the server to
+    // resolve the link itself, which is also the recovery path for a preview
+    // that failed the first time.
+    if (isGift && previewStatus === "found" && previewImageUrl) {
+      body.image_url = previewImageUrl;
+    }
 
     setSubmitting(true);
     try {

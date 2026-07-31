@@ -208,6 +208,10 @@ export function GuestWishlistCard({
   // For simple toggle (gift without target): local optimistic state
   const [simpleActive, setSimpleActive] = useState(entry.viewer_has_interest);
   const [simpleLoading, setSimpleLoading] = useState(false);
+  // A thumbnail that fails to load drops to the drawn motif instead of the
+  // browser's broken-image glyph — on a guest's phone that glyph reads as a
+  // broken page, and the motif is what an item without a link shows anyway.
+  const [imageFailed, setImageFailed] = useState(false);
 
   // -------------------------------------------------------------------------
   // Handlers
@@ -284,11 +288,12 @@ export function GuestWishlistCard({
       {/* Every card gets a picture: the link's resolved og:image when there is
           one, otherwise the drawn motif — a deck where half the rows have a
           thumbnail and half have nothing looks broken, not minimal. */}
-      {entry.image_url ? (
+      {entry.image_url && !imageFailed ? (
         <img
           src={entry.image_url}
           alt=""
           loading="lazy"
+          onError={() => setImageFailed(true)}
           className="h-16 w-16 shrink-0 rounded-lg border border-paper-200 object-cover dark:border-umber-700"
         />
       ) : (

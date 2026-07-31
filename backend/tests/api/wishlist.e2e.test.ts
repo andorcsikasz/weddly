@@ -261,12 +261,16 @@ describe("/api/wishlist — boundary validation", () => {
     expect(cleared.data.item.currency).toBeNull();
   });
 
-  test("explicit image_url is stored; a bad image_url → 400", async () => {
+  test("a remote image_url is never stored raw; a bad image_url → 400", async () => {
     wipeAll();
-    const { token } = await bootstrapCouple("wishlist-image@weddly.test");
+    const { token, coupleId } = await bootstrapCouple("wishlist-image@weddly.test");
 
-    // A client-supplied (e.g. editor-prefetched) image_url is persisted as-is,
-    // and the server does NOT clobber it with an auto-fetch.
+    // A client-supplied (e.g. editor-prefetched) remote image is re-hosted
+    // under our own /uploads key before it is stored — the CSP img-src
+    // allow-list refuses to render a shop's CDN, so a raw remote URL means a
+    // broken tile on every card. Unreachable here, so it lands as null (the
+    // drawn motif), never as the remote URL. The mirroring happy path lives in
+    // wishlist_image_mirror.e2e.test.ts, which stubs the download.
     const ok = await req<{ item: WishlistItem }>(
       "POST",
       "/api/wishlist",
@@ -274,7 +278,18 @@ describe("/api/wishlist — boundary validation", () => {
       { token },
     );
     expect(ok.status).toBe(201);
-    expect(ok.data.item.image_url).toBe("https://cdn.example/toaster.jpg");
+    expect(ok.data.item.image_url).toBeNull();
+
+    // One of ours is taken at face value: nothing to download, nothing to fix.
+    const local = `/uploads/couples/${coupleId}/wishlist/abc123.jpg?v=1`;
+    const mine = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Toaster", image_url: local },
+      { token },
+    );
+    expect(mine.status).toBe(201);
+    expect(mine.data.item.image_url).toBe(local);
 
     const bad = await req(
       "POST",

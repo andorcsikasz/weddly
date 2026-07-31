@@ -26,6 +26,7 @@ import {
 import { db, now } from "../db";
 import type { HouseholdRow } from "./households";
 import { HttpError } from "../lib/http";
+import { keyFromUploadUrl } from "../lib/storage";
 import { httpUrlOrNull } from "../lib/url";
 import { sendRawEmail } from "./emails";
 
@@ -213,8 +214,11 @@ function parseUrl(raw: unknown): string | null {
 }
 
 /** Same http(s) + length validation as the user-facing `url`, used for the
- *  server-resolved `image_url`. Kept separate so a future image-specific rule
- *  (e.g. extension allowlist) has a home. */
+ *  server-resolved `image_url` — plus our own `/uploads/...` shape, which is
+ *  what actually gets STORED: the route mirrors every remote image locally
+ *  before it touches the DB (domain/wishlist_image), because the CSP img-src
+ *  allow-list refuses to render a shop's own CDN. A remote value is still
+ *  accepted here as INPUT; the route turns it into a local one. */
 function parseImageUrl(raw: unknown): string | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== "string") throw new HttpError(400, "image_url must be a string");
@@ -222,6 +226,13 @@ function parseImageUrl(raw: unknown): string | null {
   if (!trimmed) return null;
   if (trimmed.length > WISHLIST_MAX_URL_LEN) {
     throw new HttpError(400, `image_url too long (max ${WISHLIST_MAX_URL_LEN} chars)`);
+  }
+  if (trimmed.startsWith("/uploads/")) {
+    // Our own key space. keyFromUploadUrl rejects traversal, so a hand-written
+    // `/uploads/../…` never reaches storage.
+    if (!keyFromUploadUrl(trimmed))
+      throw new HttpError(400, "image_url is not a valid upload path");
+    return trimmed;
   }
   let parsed: URL;
   try {
@@ -391,6 +402,22 @@ export function listWishlistRowsNeedingImageBackfill(limit: number): WishlistIte
     .prepare(
       `SELECT * FROM wishlist_items
          WHERE url IS NOT NULL AND image_url IS NULL AND image_checked_at IS NULL
+         ORDER BY id ASC
+         LIMIT ?`,
+    )
+    .all(limit) as WishlistItemRow[];
+}
+
+/** Rows whose thumbnail is still a REMOTE url. Those were written before we
+ *  re-hosted images locally, and the browser's CSP img-src allow-list refuses
+ *  to load them — the card renders a broken tile. The rehost sweep
+ *  (domain/wishlist_image_backfill) drains this set; every write since goes
+ *  through localizeWishlistImage, so nothing refills it. */
+export function listWishlistRowsWithRemoteImage(limit: number): WishlistItemRow[] {
+  return db
+    .prepare(
+      `SELECT * FROM wishlist_items
+         WHERE image_url IS NOT NULL AND image_url LIKE 'http%'
          ORDER BY id ASC
          LIMIT ?`,
     )

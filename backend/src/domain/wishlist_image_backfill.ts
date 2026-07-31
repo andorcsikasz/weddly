@@ -1,9 +1,16 @@
-// One-time boot sweep that fills in missing wishlist thumbnails. The
-// link-preview feature (lib/link_preview) resolves an og:image on create/edit,
-// but rows created before it shipped — or before the image_checked_at column
-// existed — have a link and no thumbnail and would never get one. This sweep
-// finds those legacy rows (url set, image_url null, image_checked_at null) and
-// resolves each once.
+// Boot sweeps that give every wishlist row a thumbnail the browser will
+// actually render. Two shapes of legacy row, one pass each:
+//
+//  1. NO IMAGE. The link-preview feature (lib/link_preview) resolves an
+//     og:image on create/edit, but rows created before it shipped — or before
+//     the image_checked_at column existed — have a link and no thumbnail and
+//     would never get one. Found by (url set, image_url null,
+//     image_checked_at null) and resolved once each.
+//  2. A REMOTE image. Rows written before we mirrored images locally hold the
+//     shop's own CDN URL, which our CSP img-src refuses to load: the card
+//     paints the broken-image glyph forever. Each is re-hosted under our
+//     /uploads key, and a download we can't complete clears the column so the
+//     card falls back to its drawn motif instead of a broken tile.
 //
 // Design notes:
 //  - Non-blocking: server.ts fires this AFTER Bun.serve() is listening, never
@@ -16,8 +23,12 @@
 //  - Bounded fan-out: we process in small concurrent batches so a burst of
 //    legacy rows doesn't open dozens of simultaneous outbound fetches.
 
-import { applyBackfilledImage, listWishlistRowsNeedingImageBackfill } from "./wishlist";
-import { fetchLinkPreview } from "../lib/link_preview";
+import {
+  applyBackfilledImage,
+  listWishlistRowsNeedingImageBackfill,
+  listWishlistRowsWithRemoteImage,
+} from "./wishlist";
+import { localizeWishlistImage, resolveWishlistImageFromLink } from "./wishlist_image";
 import { log } from "../lib/logger";
 
 // Generous ceiling — the wishlist feature is days old, so the real legacy set
@@ -27,14 +38,14 @@ const MAX_ROWS = 1000;
 // 5s, so a handful in flight keeps the sweep quick without a thundering herd.
 const CONCURRENCY = 4;
 
-/** Resolve + persist the og:image for one legacy row. Never throws — a miss
- *  still stamps image_checked_at so the row drops out of the backfill set. */
-async function backfillOne(id: number, url: string): Promise<boolean> {
+/** Resolve + re-host + persist the og:image for one legacy row. Never throws —
+ *  a miss still stamps image_checked_at so the row drops out of the set. */
+async function backfillOne(coupleId: number, id: number, url: string): Promise<boolean> {
   let imageUrl: string | null = null;
   try {
-    imageUrl = (await fetchLinkPreview(url)).image_url;
+    imageUrl = await resolveWishlistImageFromLink(coupleId, url);
   } catch {
-    // fetchLinkPreview is soft by contract; this catch is belt-and-braces.
+    // Both halves are soft by contract; this catch is belt-and-braces.
     imageUrl = null;
   }
   applyBackfilledImage(id, imageUrl);
@@ -56,7 +67,7 @@ export async function runWishlistImageBackfill(): Promise<void> {
     while (cursor < rows.length) {
       const row = rows[cursor++];
       if (!row?.url) continue;
-      if (await backfillOne(row.id, row.url)) resolved++;
+      if (await backfillOne(row.couple_id, row.id, row.url)) resolved++;
     }
   }
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, rows.length) }, () => worker()));
@@ -64,10 +75,45 @@ export async function runWishlistImageBackfill(): Promise<void> {
   log.info("wishlist.image_backfill.done", { attempted: rows.length, resolved });
 }
 
+/** Re-host every thumbnail still pointing at a remote host. A row leaves the
+ *  set either way: mirrored on success, cleared on failure — a card with no
+ *  image draws its motif, a card with an unloadable one draws a broken tile.
+ *  Safe on every boot; after one pass nothing matches the query. */
+export async function runWishlistImageRehost(): Promise<void> {
+  const rows = listWishlistRowsWithRemoteImage(MAX_ROWS);
+  if (rows.length === 0) return;
+
+  log.info("wishlist.image_rehost.start", { count: rows.length });
+  let rehosted = 0;
+
+  let cursor = 0;
+  async function worker(): Promise<void> {
+    while (cursor < rows.length) {
+      const row = rows[cursor++];
+      if (!row?.image_url) continue;
+      let local: string | null = null;
+      try {
+        local = await localizeWishlistImage(row.couple_id, row.image_url);
+      } catch {
+        local = null;
+      }
+      applyBackfilledImage(row.id, local);
+      if (local) rehosted++;
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, rows.length) }, () => worker()));
+
+  log.info("wishlist.image_rehost.done", { attempted: rows.length, rehosted });
+}
+
 /** Fire-and-forget entry point for boot. Swallows any error so a backfill
- *  hiccup never takes down the server. */
+ *  hiccup never takes down the server. The rehost runs after the og:image
+ *  sweep, which can itself only ever write local URLs — so the order costs
+ *  nothing and keeps the two passes independent. */
 export function startWishlistImageBackfill(): void {
-  void runWishlistImageBackfill().catch((err) => {
-    log.warn("wishlist.image_backfill.failed", { error: String(err) });
-  });
+  void runWishlistImageBackfill()
+    .then(() => runWishlistImageRehost())
+    .catch((err) => {
+      log.warn("wishlist.image_backfill.failed", { error: String(err) });
+    });
 }

@@ -105,9 +105,11 @@ describe("wishlist image backfill sweep", () => {
     const { coupleId } = await bootstrapCouple("wishlist-apply@weddly.test");
     const id = insertLegacyRow(coupleId, "https://shop.example/x");
 
-    applyBackfilledImage(id, "https://cdn.example/x.jpg");
+    // What the sweep hands over is always a LOCAL url: it re-hosts the og:image
+    // before persisting it (see wishlist_image_mirror.e2e.test.ts).
+    applyBackfilledImage(id, `/uploads/couples/${coupleId}/wishlist/x.jpg?v=1`);
     const row = rowOf(id);
-    expect(row.image_url).toBe("https://cdn.example/x.jpg");
+    expect(row.image_url).toBe(`/uploads/couples/${coupleId}/wishlist/x.jpg?v=1`);
     expect(row.image_checked_at).not.toBeNull();
     expect(listWishlistRowsNeedingImageBackfill(100).map((r) => r.id)).not.toContain(id);
   });
