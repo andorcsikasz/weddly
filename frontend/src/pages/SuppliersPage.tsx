@@ -15,7 +15,12 @@ import type {
   SupplierCountryCount,
   SupplierGroup,
 } from "@shared/suppliers";
-import { SUPPLIER_GROUPS, showsCapacity } from "@shared/suppliers";
+import {
+  SUPPLIER_GROUPS,
+  isOutOfCountryScope,
+  partitionByCountryScope,
+  showsCapacity,
+} from "@shared/suppliers";
 import {
   BedDouble,
   Brush,
@@ -194,6 +199,12 @@ function trackSupplierClick(supplierId: string, type: "website_click" | "phone_c
 // up front; the rest expands in via a "load more" button. Keeps the initial
 // paint cheap on broad filters (the directory can run to hundreds of cards).
 const SUPPLIERS_PAGE_SIZE = 50;
+
+// How many verified-but-out-of-country vendors may sit under the results as a
+// labelled tail. Six is enough to say "these businesses are on Weddly" without
+// the foreign set ever being what the page is about: at any higher number a
+// country Weddly hasn't filled yet reads as a directory of somewhere else.
+const OUT_OF_COUNTRY_MAX = 6;
 
 // Sentinel "pick" ids (SELF_ORGANIZED_PICK = "organising it ourselves",
 // NOT_NEEDED_PICK = "we don't need this category") live in @shared/picks so the
@@ -718,11 +729,15 @@ export default function SuppliersPage() {
         // pages instead, which is what the vendor's own stats quote.
         const initialCountry = params.get("country") ?? couple.couple?.country ?? "";
         const initialScope = initialCountry && initialCountry !== "all" ? initialCountry : null;
-        // Same rule as `scopedItems`, so a verified vendor riding along on the
-        // country exemption is credited the impression it actually got.
-        const shown = initialScope
-          ? dir.suppliers.filter((s) => s.country === initialScope || s.source === "claimed")
-          : dir.suppliers;
+        // Impressions follow what is DRAWN, so this is the in-scope half only.
+        // An out-of-country verified vendor stopped being a card the moment it
+        // stopped being a result (see `partitionByCountryScope` below), and
+        // crediting it anyway would quote a Budapest florist impressions off an
+        // Italian couple's page it never appeared on. The most that vendor can
+        // reach here is a line in the capped tail, which is not a card. Same
+        // predicate as the grid, which is what keeps the two from drifting
+        // apart the way they did before.
+        const shown = dir.suppliers.filter((s) => !isOutOfCountryScope(s, initialScope));
         if (shown.length > 0) {
           supplierApi
             .recordEvents(shown.map((s) => ({ supplier_id: s.id, type: "impression" })))
@@ -952,15 +967,13 @@ export default function SuppliersPage() {
     [coupleId, saved, toast, t],
   );
 
-  // True for a card that is only in the list because it is verified — the
+  // True for a card that is only in the payload because it is verified — the
   // country being browsed is not its own. DIY entries carry no country and are
-  // never out of scope. Every caller below either demotes or drops these.
+  // never out of scope. Every caller below drops these from what it counts,
+  // draws or lists; the labelled tail at the bottom of the grid is the one
+  // place they are shown, and it reads them off the other half of the split.
   const isOutOfScope = useCallback(
-    (s: { source: string; country?: string }) =>
-      countryScope !== null &&
-      s.source !== "self" &&
-      s.country !== undefined &&
-      s.country !== countryScope,
+    (s: { source: string; country?: string }) => isOutOfCountryScope(s, countryScope),
     [countryScope],
   );
 
@@ -969,13 +982,14 @@ export default function SuppliersPage() {
   // search suggestions — reads from this so the country scope is applied once
   // and consistently across grid + map. "Mind"/All leaves the full set through.
   //
-  // Verified vendors are exempt: a registered vendor is a business that is
-  // actually ON Weddly, and the API deliberately leaves claimed listings
-  // un-scoped for exactly that reason. Scoping them away here undid that — a
-  // verified Austrian venue existed in the payload and was thrown out by the
-  // client before it could ever render. They ride along and sort last (see
-  // `isOutOfScope` in the comparators), so the exemption buys the vendor
-  // visibility without letting a Salzburg venue open a Hungarian venue list.
+  // Verified vendors are exempt from the DROP: a registered vendor is a
+  // business that is actually ON Weddly, and the API deliberately leaves
+  // claimed listings un-scoped for exactly that reason. Filtering them away
+  // here undid that — a verified Austrian venue existed in the payload and was
+  // thrown out by the client before it could ever render. What the exemption
+  // buys them is a place in the labelled tail under the grid, not a place among
+  // the results: see `partitionByCountryScope` below for why sorting them last
+  // was never enough.
   const scopedItems = useMemo(
     () =>
       countryScope
@@ -986,9 +1000,10 @@ export default function SuppliersPage() {
 
   // Cities derived from the scoped list, so the town autocomplete only offers
   // cities that belong to the selected country (no "Budapest" while browsing
-  // Romania). The out-of-country verified cards are excluded here specifically:
-  // they belong in the results, but "Antibes, FR" has no business in a
-  // Hungarian couple's town picker. Sorted alphabetically by locale rules.
+  // Romania). The out-of-country verified cards are excluded here too: "Antibes,
+  // FR" has no business in a Hungarian couple's town picker, and offering a town
+  // whose vendors aren't results would filter the grid down to nothing.
+  // Sorted alphabetically by locale rules.
   const cities = useMemo(() => {
     const set = new Set<string>();
     for (const s of scopedItems) if (s.city && !isOutOfScope(s)) set.add(s.city);
@@ -1235,30 +1250,25 @@ export default function SuppliersPage() {
     const sorted = [...out];
     const collator = (a: { name: string }, b: { name: string }) =>
       a.name.localeCompare(b.name, locale === "hu" ? "hu" : "en");
-    // The verified vendors that survived the country scope without belonging to
-    // it sink below every in-scope card, in EVERY sort mode — including alpha
-    // and price, where the verified tier doesn't apply and an out-of-country
-    // venue would otherwise land wherever its name or price band put it. They
-    // stay findable at the end of the list; they never answer "show me venues".
-    // 0 when both sides agree, so it composes as a leading tie-break.
-    const scopeTier = (
-      a: { source: string; country?: string },
-      b: { source: string; country?: string },
-    ) => (isOutOfScope(a) ? 1 : 0) - (isOutOfScope(b) ? 1 : 0);
+    // Nothing here sorts by country scope any more: `partitionByCountryScope`
+    // below takes the out-of-country verified cards out of the result set
+    // altogether, and it preserves order, so whatever these comparators decide
+    // survives inside each half. A tie-break that sank them was the old fix,
+    // and it did nothing in the case that mattered: a tail with no results
+    // above it is just the list.
+    //
     // When the free-text query is a known town, "top" (the default sort)
     // becomes nearest-first — a distance badge without reordering buries
     // the closest venue behind high-vote far ones. An explicit price/alpha
     // pick still wins; this only redefines the default.
     const proximityTown = nearbyTownLabel(queryNorm);
     if (sortMode === "alpha") {
-      sorted.sort((a, b) => scopeTier(a, b) || collator(a, b));
+      sorted.sort(collator);
     } else if (sortMode === "top" && proximityTown) {
       sorted.sort((a, b) => {
         const aSelf = a.source === "self" ? 1 : 0;
         const bSelf = b.source === "self" ? 1 : 0;
         if (aSelf !== bSelf) return bSelf - aSelf;
-        const scope = scopeTier(a, b);
-        if (scope !== 0) return scope;
         if (a.source !== "self" && b.source !== "self") {
           const ad = distanceKmForQuery(queryNorm, a.city, { lat: a.lat, lng: a.lng });
           const bd = distanceKmForQuery(queryNorm, b.city, { lat: b.lat, lng: b.lng });
@@ -1290,8 +1300,6 @@ export default function SuppliersPage() {
       const bandOf = (s: (typeof sorted)[number]): number | null =>
         "price_band" in s ? (s.price_band ?? null) : null;
       sorted.sort((a, b) => {
-        const scope = scopeTier(a, b);
-        if (scope !== 0) return scope;
         const ab = bandOf(a);
         const bb = bandOf(b);
         const aHas = ab != null ? 1 : 0;
@@ -1305,8 +1313,6 @@ export default function SuppliersPage() {
         const aSelf = a.source === "self" ? 1 : 0;
         const bSelf = b.source === "self" ? 1 : 0;
         if (aSelf !== bSelf) return bSelf - aSelf;
-        const scope = scopeTier(a, b);
-        if (scope !== 0) return scope;
         if (a.source !== "self" && b.source !== "self") {
           // Verified accounts lead the directory. A claimed card is a business
           // that is actually ON Weddly: the details are maintained by the owner,
@@ -1343,20 +1349,45 @@ export default function SuppliersPage() {
     );
   }, [planners, queryNorm]);
 
-  // How many of `filtered` are laid out right now. Reset to the first page
-  // whenever the filtered set changes (new search / category / sort) so we
+  // An out-of-country verified vendor is NOT a result for the country being
+  // browsed, so the two are counted, paged and labelled separately. A couple
+  // planning in Italy told us the list "actually shows vendors in Hungary": the
+  // verified exemption below `scopedItems` let every registered HU vendor ride
+  // along, and in a category where Italy has nothing they weren't sorted last,
+  // they were the entire list. Sinking them was never enough — a tail with
+  // nothing above it is just the list. So they leave the result set, and come
+  // back under their own heading, capped.
+  const { inScope: filteredInScope, outOfScope: filteredOutOfScope } = useMemo(
+    () => partitionByCountryScope(filtered, countryScope),
+    [filtered, countryScope],
+  );
+
+  // How many of `filteredInScope` are laid out right now. Reset to the first
+  // page whenever the filtered set changes (new search / category / sort) so we
   // never show a stale offset, then grow it a page at a time on "load more".
   const [visibleCount, setVisibleCount] = useState(SUPPLIERS_PAGE_SIZE);
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset on result change
   useEffect(() => setVisibleCount(SUPPLIERS_PAGE_SIZE), [filtered]);
-  const visibleSuppliers = filtered.slice(0, visibleCount);
+  // The grid is in-country results only. The tail never pages and never gets a
+  // card: it is a "these exist, elsewhere" note, and a couple who wants to
+  // browse another country has the country picker for that.
+  const visibleSuppliers = filteredInScope.slice(0, visibleCount);
+  const outOfScopeTail = filteredOutOfScope.slice(0, OUT_OF_COUNTRY_MAX);
+
+  // What the chain + pill counts are allowed to count: results in the country
+  // being browsed. A chip reading "Fotós 24" that opens onto 24 Hungarian
+  // photographers is a promise the page can't keep for an Italian wedding.
+  const countableBeforeCategory = useMemo(
+    () => filteredBeforeCategory.filter((s) => !isOutOfScope(s)),
+    [filteredBeforeCategory, isOutOfScope],
+  );
 
   // Per-group counts for the top chain. "Mind" gets the total across all
   // groups. Each group step gets its own count.
   const groupCounts = useMemo(() => {
     const map = new Map<SupplierGroup, number>();
     for (const g of SUPPLIER_GROUPS) map.set(g.id, 0);
-    for (const s of filteredBeforeCategory) {
+    for (const s of countableBeforeCategory) {
       for (const g of SUPPLIER_GROUPS) {
         if (g.categories.includes(s.category)) {
           map.set(g.id, (map.get(g.id) ?? 0) + 1);
@@ -1364,7 +1395,7 @@ export default function SuppliersPage() {
       }
     }
     return map;
-  }, [filteredBeforeCategory]);
+  }, [countableBeforeCategory]);
 
   // Per-category counts for the sub-category pills (only meaningful when a
   // group is active). "Mind" within the sub-row gets the in-group total.
@@ -1375,16 +1406,16 @@ export default function SuppliersPage() {
     if (!group) return map;
     const allowed = new Set(group.categories);
     for (const c of group.categories) map.set(c, 0);
-    for (const s of filteredBeforeCategory) {
+    for (const s of countableBeforeCategory) {
       if (allowed.has(s.category)) map.set(s.category, (map.get(s.category) ?? 0) + 1);
     }
     return map;
-  }, [filteredBeforeCategory, activeGroup]);
+  }, [countableBeforeCategory, activeGroup]);
 
   const inGroupTotal = useMemo(() => {
-    if (!activeGroup) return filteredBeforeCategory.length;
+    if (!activeGroup) return countableBeforeCategory.length;
     return [...subCategoryCounts.values()].reduce((a, b) => a + b, 0);
-  }, [activeGroup, filteredBeforeCategory.length, subCategoryCounts]);
+  }, [activeGroup, countableBeforeCategory.length, subCategoryCounts]);
 
   // Per-group "how many sub-categories are locked in" — drives the discreet
   // progress bars under each chain step. The "Mind" tile sums across all
@@ -2051,12 +2082,13 @@ export default function SuppliersPage() {
                 }
               >
                 <SupplierMap
-                  // Out-of-country verified vendors are dropped rather than
-                  // demoted here: a map has no "further down the list", and one
-                  // pin in Antibes would zoom a Hungarian couple's map out to
-                  // half of Europe to fit it.
-                  suppliers={filtered.filter(
-                    (s): s is DirectorySupplier => s.source !== "self" && !isOutOfScope(s),
+                  // The map draws the in-country half only, off the same split
+                  // as the grid. A map has no "further down the list" to sink
+                  // an out-of-country pin into, and one pin in Antibes would
+                  // zoom a Hungarian couple's map out to half of Europe to fit
+                  // it. DIY rows have no coordinates worth pinning either.
+                  suppliers={filteredInScope.filter(
+                    (s): s is DirectorySupplier => s.source !== "self",
                   )}
                   saved={saved}
                   selection={selection}
@@ -2101,6 +2133,33 @@ export default function SuppliersPage() {
                     : "grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3"
                 }
               >
+                {/* The country has nothing to offer under the current filters.
+                    Said BEFORE the cards, because the out-of-country tail below
+                    is otherwise read as the answer to "vendors in Italy". */}
+                {filteredInScope.length === 0 && items.length > 0 && (
+                  <div className="col-span-full flex flex-col items-center gap-2 py-8 text-center">
+                    <p className="text-sm text-ink-500 dark:text-umber-300">
+                      {countryScope
+                        ? t("suppliers.empty_country", {
+                            country: countryName(countryScope, locale),
+                          })
+                        : t("suppliers.empty_filtered")}
+                    </p>
+                    {/* When the emptiness is caused by the country scope, offer a
+                    one-tap widen to "Mind"/All rather than leaving the couple
+                    at a dead end (audit item 12). */}
+                    {countryScope && (
+                      <button
+                        type="button"
+                        onClick={() => setCountryFilter("all")}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-3 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                      >
+                        <Globe size={13} aria-hidden />
+                        {t("suppliers.empty_country_show_all")}
+                      </button>
+                    )}
+                  </div>
+                )}
                 {visibleSuppliers.map((s) => {
                   const Icon = CATEGORY_ICON[s.category];
                   const isHighlighted = s.id === highlightId;
@@ -2618,41 +2677,68 @@ export default function SuppliersPage() {
                     </article>
                   );
                 })}
-                {filtered.length === 0 && items.length > 0 && (
-                  <div className="col-span-full flex flex-col items-center gap-2 py-8 text-center">
-                    <p className="text-sm text-ink-500 dark:text-umber-300">
-                      {countryScope
-                        ? t("suppliers.empty_country", {
-                            country: countryName(countryScope, locale),
-                          })
-                        : t("suppliers.empty_filtered")}
-                    </p>
-                    {/* When the emptiness is caused by the country scope, offer a
-                    one-tap widen to "Mind"/All rather than leaving the couple
-                    at a dead end (audit item 12). */}
-                    {countryScope && (
-                      <button
-                        type="button"
-                        onClick={() => setCountryFilter("all")}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-3 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
-                      >
-                        <Globe size={13} aria-hidden />
-                        {t("suppliers.empty_country_show_all")}
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
-              {filtered.length > visibleCount && (
+              {filteredInScope.length > visibleCount && (
                 <div className="flex justify-center pt-3">
                   <button
                     type="button"
                     onClick={() => setVisibleCount((c) => c + SUPPLIERS_PAGE_SIZE)}
                     className="inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-4 text-sm font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
                   >
-                    {t("suppliers.load_more", { n: filtered.length - visibleCount })}
+                    {t("suppliers.load_more", { n: filteredInScope.length - visibleCount })}
                   </button>
                 </div>
+              )}
+              {/* Verified vendors who are on Weddly but work somewhere else.
+                  Deliberately NOT cards: a card is what the page offers for the
+                  wedding being planned, and these are not that. A compact,
+                  labelled list keeps a registered business findable (the reason
+                  the country scope exempts them at all) without letting a
+                  Budapest florist answer "show me vendors in Italy". */}
+              {countryScope && outOfScopeTail.length > 0 && (
+                <section
+                  aria-labelledby="out-of-country-heading"
+                  className="mt-6 border-t border-paper-200 pt-4 dark:border-umber-700"
+                >
+                  <h3
+                    id="out-of-country-heading"
+                    className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-umber-300"
+                  >
+                    {t("suppliers.out_of_country_heading", {
+                      country: countryName(countryScope, locale),
+                    })}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-ink-500 dark:text-umber-300">
+                    {t("suppliers.out_of_country_note")}
+                  </p>
+                  <ul className="mt-2 flex flex-col">
+                    {outOfScopeTail.map((s) => (
+                      <li key={s.id}>
+                        <Link
+                          to={`/app/suppliers/${encodeURIComponent(s.id)}`}
+                          className="flex items-baseline gap-2 rounded-lg px-1 py-1.5 text-sm text-ink-700 transition hover:bg-ink-50 dark:text-umber-100 dark:hover:bg-umber-800/60"
+                        >
+                          <span className="truncate font-medium">{s.name}</span>
+                          <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
+                            {[t(`suppliers.cat.${s.category}`), s.city].filter(Boolean).join(" · ")}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  {filteredOutOfScope.length > outOfScopeTail.length && (
+                    <button
+                      type="button"
+                      onClick={() => setCountryFilter("all")}
+                      className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-3 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                    >
+                      <Globe size={13} aria-hidden />
+                      {t("suppliers.out_of_country_show_all", {
+                        n: filteredOutOfScope.length - outOfScopeTail.length,
+                      })}
+                    </button>
+                  )}
+                </section>
               )}
             </>
           )}

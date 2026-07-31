@@ -907,6 +907,53 @@ export function findSupplierTwins<T extends TwinCandidate>(
   return scored.slice(0, limit).map((r) => r.twin);
 }
 
+/** The minimum a row needs to be placed against a country scope. Structural
+ *  (not `DirectorySupplier`) so the couple's own DIY rows, which carry no
+ *  country at all, can go through the same call. */
+export interface CountryScopeCandidate {
+  source: string;
+  country?: string;
+}
+
+/** True when this row is only in the payload because it is VERIFIED, and the
+ *  country being browsed is not its own.
+ *
+ *  The directory deliberately leaves claimed listings out of the server's
+ *  country scope so a registered vendor stays reachable. That exemption has to
+ *  be visible on the client, or the exception becomes the page: a couple
+ *  planning in Italy reported the vendor list "actually shows vendors in
+ *  Hungary", and they were right — in any category Italy has nothing in, every
+ *  registered Hungarian vendor was the whole result set. Sorting them last
+ *  fixes nothing when there is nothing above them.
+ *
+ *  A DIY row (`source: "self"`) is the couple's own and never out of scope. A
+ *  null scope ("all countries") puts nothing out of scope. */
+export function isOutOfCountryScope(
+  s: CountryScopeCandidate,
+  countryScope: string | null,
+): boolean {
+  if (countryScope === null) return false;
+  if (s.source === "self") return false;
+  return s.country !== undefined && s.country !== countryScope;
+}
+
+/** Split directory rows into what belongs to the browsed country and what is
+ *  only riding along verified. Order is preserved inside each half, so a caller
+ *  that already sorted keeps its ranking.
+ *
+ *  Exists so "an out-of-country vendor is not a result" is ONE rule rather than
+ *  a predicate re-derived at each of the grid, the map, the counts and the
+ *  town autocomplete — the four places it drifted apart before. */
+export function partitionByCountryScope<T extends CountryScopeCandidate>(
+  rows: readonly T[],
+  countryScope: string | null,
+): { inScope: T[]; outOfScope: T[] } {
+  const inScope: T[] = [];
+  const outOfScope: T[] = [];
+  for (const s of rows) (isOutOfCountryScope(s, countryScope) ? outOfScope : inScope).push(s);
+  return { inScope, outOfScope };
+}
+
 /** One row in the typeahead. `kind` decides where picking it goes:
  *  vendor → /vendors/{id}, city → /vendors/browse?city={label},
  *  category → /vendors/browse?category={category}. */

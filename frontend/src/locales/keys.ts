@@ -5399,6 +5399,12 @@ export interface LocaleMessages {
      *  localised country name. */
     empty_country: string;
     empty_country_show_all: string;
+    /** Heading of the tail block under the results: verified vendors who are
+     *  on Weddly but work outside the country being browsed. They are kept out
+     *  of the result set entirely, so this label is what explains them. */
+    out_of_country_heading: string;
+    out_of_country_note: string;
+    out_of_country_show_all: string;
     /** Up/downvote buttons + sort. */
     vote_up_aria: string;
     vote_down_aria: string;
