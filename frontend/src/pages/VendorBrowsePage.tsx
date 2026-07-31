@@ -872,13 +872,16 @@ export default function VendorBrowsePage() {
           {t("vendorBrowse.title")}
         </h1>
 
-        {/* The intro and the country filter share a line from lg. The filter
-            only earns its space once the catalogue actually spans more than one
-            country. */}
+        {/* The intro paragraph that used to sit left of these filters is gone
+            (owner call): it described the page to someone already looking at
+            it, and the controls beside it say the same thing by existing. The
+            `vendorBrowse.subtitle` string stays in the locales because it is
+            still this page's meta description, which is read by search results
+            rather than by a visitor.
+
+            The row keeps its shape so the filters sit where they always did;
+            with one child, `justify-between` simply leaves them at the start. */}
         <div className="mt-4 flex flex-col gap-4 sm:mt-5 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
-          <p className="max-w-xl text-[15px] leading-relaxed text-ink-500 dark:text-umber-200">
-            {t("vendorBrowse.subtitle")}
-          </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 lg:shrink-0">
             {/* Town, beside country, same control. The town used to arrive only
                 from the landing typeahead and could be removed but never
