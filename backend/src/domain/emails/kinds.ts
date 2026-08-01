@@ -19,6 +19,7 @@ export type EmailKind =
   | "founding_partner_push" // recurring (3x, 5 days apart) founding-cohort nudge: the free-until-your-wedding-day plan needs BOTH partners on the workspace
   | "partner_left_workspace" // partner B left the workspace, owner heads-up
   | "couple_paused" // workspace paused → 30-day delete countdown started
+  | "pause_feedback_request" // admin asks a couple who paused what was actually missing for them
   | "couple_pause_cancelled" // either partner cancelled the pause; both get a heads-up
   | "account_purged" // 30-day window elapsed, all couple data deleted
   | "account_admin_purged" // an admin immediately deleted the account (no 30-day grace)
@@ -146,6 +147,11 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // self-unlinked via /api/users/me/leave-couple. Owner deserves to know.
   partner_left_workspace: "transactional",
   couple_paused: "transactional",
+  // Lifecycle: they told us "missing features" on the way out and nothing
+  // obliges them to say another word. An admin presses this one by hand, one
+  // couple at a time, so it honours the unsubscribe footer like every other
+  // mail nobody asked for.
+  pause_feedback_request: "lifecycle",
   // Transactional: the pause was an explicit action one partner took and
   // both received notification of; the cancel is the resolution of that
   // action and both partners deserve to know.
@@ -394,6 +400,10 @@ export type EmailSender = "default" | "admin";
 const ADMIN_CONSOLE_KINDS: ReadonlySet<EmailKind> = new Set<EmailKind>([
   // Feedback console — a human writing back to a human.
   "admin_feedback_reply",
+  // The other direction of the same conversation: a human asking a churned
+  // couple a question, from the workspace list. It asks for a REPLY, so a
+  // sender that cannot receive one would defeat the entire mail.
+  "pause_feedback_request",
   // Account actions taken on a couple from /app/admin/users.
   "account_flagged",
   "account_flag_cleared",

@@ -245,7 +245,8 @@ function pauseDetailFor(coupleId: number): AdminCouplePause | null {
   const row = db
     .prepare(
       `SELECT p.reason AS reason, p.created_at AS created_at,
-              p.scheduled_delete_at AS scheduled_delete_at, u.full_name AS full_name
+              p.scheduled_delete_at AS scheduled_delete_at, p.feedback_asked_at AS feedback_asked_at,
+              u.full_name AS full_name
          FROM couple_pause_requests p
          LEFT JOIN users u ON u.id = p.requested_by_user_id
         WHERE p.couple_id = ? AND p.status = 'pending'
@@ -256,6 +257,7 @@ function pauseDetailFor(coupleId: number): AdminCouplePause | null {
         reason: string | null;
         created_at: number;
         scheduled_delete_at: number;
+        feedback_asked_at: number | null;
         full_name: string | null;
       }
     | undefined;
@@ -265,6 +267,7 @@ function pauseDetailFor(coupleId: number): AdminCouplePause | null {
     requested_by_name: row.full_name?.trim() ? row.full_name : null,
     requested_at: row.created_at,
     scheduled_delete_at: row.scheduled_delete_at,
+    feedback_asked_at: row.feedback_asked_at ?? null,
   };
 }
 
@@ -418,6 +421,92 @@ function handleRemindInvitePartner(ctx: Ctx): Response {
   });
 
   return json({ ok: true, reminded_at: ts });
+}
+
+/** Ask a couple who paused what was actually missing for them.
+ *
+ *  The exit dialog stores a category ("Missing features") and an optional note
+ *  almost nobody writes, so the one churn reason we could act on arrives with
+ *  no content. This mails the partner who pressed pause a single question and a
+ *  link into the PUBLIC feedback form with their address prefilled, so the
+ *  answer lands in the same /app/admin/feedback queue as everything else and
+ *  arrives attributed rather than anonymous.
+ *
+ *  One send per pause request (`feedback_asked_at`), not per couple: a couple
+ *  who cancels, comes back and leaves again is a new departure and a fair
+ *  question. The reason category is NOT gated here on purpose — the admin
+ *  decides who is worth asking, and "Other" or a bare note is often the same
+ *  conversation. */
+function handleAskPauseFeedback(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const coupleId = parseId(ctx);
+
+  const couple = db.prepare("SELECT * FROM couples WHERE id = ?").get(coupleId) as
+    | CoupleRow
+    | undefined;
+  if (!couple) throw new HttpError(404, "Couple not found");
+  if (couple.status === "deleting") throw new HttpError(400, "Workspace is already purged");
+  if (couple.is_demo) throw new HttpError(400, "Cannot write to a demo workspace");
+
+  const pause = db
+    .prepare(
+      `SELECT id, requested_by_user_id, feedback_asked_at
+         FROM couple_pause_requests
+        WHERE couple_id = ? AND status = 'pending'
+        ORDER BY id DESC LIMIT 1`,
+    )
+    .get(coupleId) as
+    | { id: number; requested_by_user_id: number; feedback_asked_at: number | null }
+    | undefined;
+  if (!pause) throw new HttpError(400, "Workspace has no pending pause request");
+  if (pause.feedback_asked_at) {
+    throw new HttpError(409, "Already asked this couple what was missing", {
+      code: "already_asked",
+    });
+  }
+
+  // Write to the partner who pressed pause: they are the one who chose the
+  // reason, so they are the one who can say what was behind it.
+  const target = db
+    .prepare("SELECT id, email, full_name FROM users WHERE id = ?")
+    .get(pause.requested_by_user_id) as
+    | { id: number; email: string; full_name: string }
+    | undefined;
+  if (!target) throw new HttpError(400, "The partner who paused no longer has an account");
+  if (target.email.endsWith("@purged.local")) {
+    throw new HttpError(400, "Cannot write to a purged user");
+  }
+
+  const coupleDisplayName =
+    couple.display_name && couple.display_name !== "Purged workspace"
+      ? couple.display_name
+      : undefined;
+  const feedbackUrl = `${CONFIG.frontendBaseUrl}/?feedback=1&e=${encodeURIComponent(target.email)}`;
+
+  void sendKind(
+    "pause_feedback_request",
+    { feedbackUrl, coupleDisplayName },
+    {
+      user: { id: target.id, email: target.email, full_name: target.full_name },
+      couple_id: couple.id,
+    },
+  );
+
+  const ts = Date.now();
+  db.prepare("UPDATE couple_pause_requests SET feedback_asked_at = ? WHERE id = ?").run(
+    ts,
+    pause.id,
+  );
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: couple.id,
+    action: "admin.ask_pause_feedback",
+    target_kind: "user",
+    target_id: target.id,
+  });
+
+  return json({ ok: true, asked_at: ts });
 }
 
 /** Comp a couple 18 months free ("free badge") regardless of the founding cap
@@ -1185,6 +1274,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.post("/api/admin/users/:id/set-type", handleSetUserType, true);
   router.post("/api/admin/users/:id/convert-to-vendor", handleConvertToVendor, true);
   router.post("/api/admin/couples/:id/remind-invite-partner", handleRemindInvitePartner, true);
+  router.post("/api/admin/couples/:id/ask-pause-feedback", handleAskPauseFeedback, true);
   router.post("/api/admin/couples/:id/notify", handleNotifyCouple, true);
   router.post("/api/admin/couples/:id/grant-free", handleGrantFree, true);
   router.post("/api/admin/couples/:id/revoke-free", handleRevokeFree, true);

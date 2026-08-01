@@ -80,6 +80,10 @@ const STUBS: KindPayload = {
     scheduledDeleteDate: "2026-07-14",
     cancelUrl: `${BASE_URL}/app/profile`,
   },
+  pause_feedback_request: {
+    coupleDisplayName: "Mia & Lucas",
+    feedbackUrl: `${BASE_URL}/?feedback=1&e=${encodeURIComponent("mia@example.com")}`,
+  },
   couple_pause_cancelled: {
     cancelledByName: "Lucas",
     dashboardUrl: `${BASE_URL}/app`,

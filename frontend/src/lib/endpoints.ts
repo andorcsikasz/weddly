@@ -2282,6 +2282,15 @@ export const adminUserApi = {
       `/api/admin/couples/${coupleId}/remind-invite-partner`,
       {},
     ),
+  /** Ask a paused couple what was actually missing for them. One send per pause
+   *  request; a second attempt returns 409 with `code: "already_asked"`.
+   *  Returns the timestamp so the row can flip to its "asked" mark in place. */
+  askPauseFeedback: (coupleId: number) =>
+    apiFetch<{ ok: true; asked_at: number }>(
+      "POST",
+      `/api/admin/couples/${coupleId}/ask-pause-feedback`,
+      {},
+    ),
   /** Comp a couple 18 months free ("free badge"). Returns the updated row. */
   grantFree: (coupleId: number) =>
     apiFetch<{ couple: AdminCoupleView }>("POST", `/api/admin/couples/${coupleId}/grant-free`, {}),

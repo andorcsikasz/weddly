@@ -491,6 +491,11 @@ export interface AdminCouplePause {
   /** Unix ms the purge sweep will take the workspace. Drives the "Xd left"
    *  countdown, same shape as `UserFlag.scheduled_delete_at`. */
   scheduled_delete_at: UnixMs;
+  /** Unix ms an admin asked this couple what was actually missing for them, or
+   *  null. One-shot per pause request: the admin list turns the ask control
+   *  into a "sent" mark once it is set, so a departing couple can't be asked
+   *  the same question twice. */
+  feedback_asked_at: UnixMs | null;
 }
 
 export interface AdminCoupleView {

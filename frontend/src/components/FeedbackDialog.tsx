@@ -1,5 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { feedbackApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { Button } from "./ui/Button";
@@ -26,6 +26,12 @@ type FeedbackDialogProps = {
   /** Optional sentence shown above the form intro — used by the survey prompt
    *  to set emotional context before the fields. */
   preface?: string;
+  /** Reply address to start with, and the "want a reply" box already ticked.
+   *  Set when the dialog was opened from a link WE mailed to a known address
+   *  (the pause follow-up): the answer then lands attributed instead of as an
+   *  anonymous landing-page note, without asking the sender to retype their own
+   *  address. Still editable, and still clearable by unticking the box. */
+  initialEmail?: string | null;
 };
 
 export function FeedbackDialog({
@@ -34,15 +40,26 @@ export function FeedbackDialog({
   source = "landing",
   context,
   preface,
+  initialEmail,
 }: FeedbackDialogProps) {
   const { t, locale } = useT();
   const [message, setMessage] = useState("");
   const [rating, setRating] = useState<number | null>(null);
-  const [wantReply, setWantReply] = useState(false);
-  const [email, setEmail] = useState("");
+  const [wantReply, setWantReply] = useState(Boolean(initialEmail));
+  const [email, setEmail] = useState(initialEmail ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  // The dialog stays mounted with `open` toggling, so the initial-state
+  // arguments above only ever see the first render. The prefill arrives one
+  // tick later (the shell reads it off the query string in its own effect), so
+  // adopt it when it shows up.
+  useEffect(() => {
+    if (!initialEmail) return;
+    setEmail(initialEmail);
+    setWantReply(true);
+  }, [initialEmail]);
 
   function resetAndClose() {
     setMessage("");

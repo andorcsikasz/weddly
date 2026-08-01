@@ -1812,6 +1812,8 @@ const hu: LocaleMessages = {
     nav_feedback_subject: "Wēddly · visszajelzés",
     feedback_title: "Mondd el, mit gondolsz",
     feedback_intro: "Minden mező opcionális. Pár szó is sokat segít.",
+    feedback_preface_invited:
+      "Köszönjük, hogy visszajöttél elmondani. Mi hiányzott, vagy mi lett volna hasznosabb?",
     feedback_message_label: "Mi van a fejedben?",
     feedback_message_placeholder: "Mi vált be, mi nem, mit hiányoltál…",
     feedback_rating_label: "Hogy állsz a Wēddlyvel eddig?",
@@ -5667,6 +5669,14 @@ const hu: LocaleMessages = {
     workspace_status_paused: "Szüneteltetve",
     pause_reason_none: "Nincs megadott ok",
     pause_purges_in: "{n} nap múlva törlődik",
+    ask_pause_feedback: "megkérdezem, mi hiányzott",
+    ask_pause_feedback_sent: "megkérdezve",
+    ask_pause_feedback_sent_at: "Megkérdezve: {date}",
+    ask_pause_feedback_confirm_title: "Megkérdezzük, mi hiányzott?",
+    ask_pause_feedback_confirm_body:
+      "Levelet küld annak, aki szüneteltette a(z) {workspace} munkaterületet, egyetlen kérdéssel: mi hiányzott, vagy mi lett volna hasznosabb. A link megnyitja a visszajelzési űrlapot a címével kitöltve. Távozásonként egyszer.",
+    ask_pause_feedback_confirm: "Kérdés elküldése",
+    ask_pause_feedback_success: "Kérdés elküldve.",
     workspace_status_deleting: "Törlés alatt",
     badge_admin: "Admin",
     badge_suspended: "Felfüggesztve",

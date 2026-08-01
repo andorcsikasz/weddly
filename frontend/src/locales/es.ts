@@ -1838,6 +1838,8 @@ const es: LocaleMessages = {
     nav_feedback_subject: "Weddly · opiniones",
     feedback_title: "Cuéntanos qué te parece",
     feedback_intro: "Todos los campos son opcionales. Con unas pocas palabras ya nos ayudas.",
+    feedback_preface_invited:
+      "Gracias por volver para contárnoslo. ¿Qué faltaba, o qué habría sido más útil?",
     feedback_message_label: "¿Qué tienes en mente?",
     feedback_message_placeholder: "Qué funcionó, qué no, qué te gustaría encontrar aquí…",
     feedback_rating_label: "¿Cómo puntuarías Weddly hasta ahora?",
@@ -5719,6 +5721,14 @@ const es: LocaleMessages = {
     workspace_status_paused: "En pausa",
     pause_reason_none: "Sin motivo indicado",
     pause_purges_in: "se borra en {n} d",
+    ask_pause_feedback: "preguntar qué faltaba",
+    ask_pause_feedback_sent: "preguntado",
+    ask_pause_feedback_sent_at: "Preguntado el {date}",
+    ask_pause_feedback_confirm_title: "¿Preguntar qué faltaba?",
+    ask_pause_feedback_confirm_body:
+      "Envía un correo con una sola pregunta a quien pausó {workspace}: qué faltaba, o qué habría sido más útil. El enlace abre el formulario de opiniones con su dirección ya escrita. Una vez por salida.",
+    ask_pause_feedback_confirm: "Enviar la pregunta",
+    ask_pause_feedback_success: "Pregunta enviada.",
     workspace_status_deleting: "Purgado",
     badge_admin: "Admin",
     badge_suspended: "Suspendido",

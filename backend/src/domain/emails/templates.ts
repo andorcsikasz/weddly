@@ -404,6 +404,15 @@ export interface WeddingTodayFollowupPayload {
   /** Where to leave feedback / NPS. Typically a Weddly form route. */
   feedbackUrl: string;
 }
+export interface PauseFeedbackRequestPayload {
+  /** "Mia & Lucas", so the couple knows which workspace this is about. Empty
+   *  when the display name is a placeholder / purged. */
+  coupleDisplayName?: string;
+  /** Opens the feedback form with their address prefilled, on the PUBLIC page,
+   *  because the recipient has stopped signing in and a login wall between a
+   *  question and its answer is how you get no answer. */
+  feedbackUrl: string;
+}
 export interface WeddingDateChangedPayload {
   /** "Mia & Lucas", couple's display name. */
   coupleDisplayName: string;
@@ -914,6 +923,7 @@ export type KindPayload = {
   founding_partner_push: FoundingPartnerPushPayload;
   partner_left_workspace: PartnerLeftWorkspacePayload;
   couple_paused: CouplePausedPayload;
+  pause_feedback_request: PauseFeedbackRequestPayload;
   couple_pause_cancelled: CouplePauseCancelledPayload;
   account_purged: AccountPurgedPayload;
   account_admin_purged: AccountAdminPurgedPayload;
@@ -1643,6 +1653,50 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       footnote: "Both partners get this notification so either of you can act.",
     },
   }),
+
+  // Sent by hand from the admin workspace list to a couple who left citing
+  // missing features. The exit dialog stores a CATEGORY and an optional note,
+  // and almost nobody writes the note, so "Missing features" is all we get: the
+  // one churn reason we could act on is the one we know nothing about.
+  //
+  // The copy asks one question and sells nothing. It deliberately does not
+  // mention the delete countdown (couple_paused already did, and repeating it
+  // here turns a question into leverage), does not offer a discount, and does
+  // not ask them to come back. The subject is picked per recipient locale
+  // rather than the bilingual "HU / EN" form other kinds use, because a person
+  // is being asked a favour and a slash in the subject line reads as a mailshot.
+  pause_feedback_request: (p, ctx) => {
+    const hu = ctx.recipientLocale === "hu";
+    const coupleHu = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
+    const coupleEn = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
+    return {
+      subject: hu ? "Mi hiányzott a Weddly-ből?" : "What was missing from Weddly?",
+      ctaUrl: p.feedbackUrl,
+      hu: {
+        preheader: "Egy mondat is sokat segít.",
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `Amikor szüneteltetted a tervezőtöket${coupleHu}, azt jelölted meg, hogy hiányoztak funkciók. Ennyit tudunk róla, és pont ez a gond: azt nem tudjuk, mi volt az.`,
+          "Mi hiányzott, vagy mi lett volna hasznosabb? Lehet egy funkció, ami nem volt meg, egy képernyő, ami körülményes volt, vagy valami, amit végül máshol csináltatok meg. Egy mondat is bőven elég.",
+          "A gomb megnyit egy rövid űrlapot, a címed már benne lesz. Ha egyszerűbb, válaszolj erre a levélre, ember olvassa.",
+        ],
+        cta: "Elmondom, mi hiányzott",
+        footnote:
+          "Nem azért kérdezzük, hogy visszahívjunk. Amit írsz, abból lesz a következő funkció.",
+      },
+      en: {
+        preheader: "One sentence is plenty.",
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `When you paused your workspace${coupleEn}, you told us features were missing. That is all we have, and that is exactly the problem: we don't know which ones.`,
+          "What was missing, or what would have been more useful? It could be a feature that wasn't there, a screen that was more work than it should have been, or something you ended up doing somewhere else. One sentence is plenty.",
+          "The button opens a short form with your address already filled in. If replying to this email is easier, do that instead, a human reads it.",
+        ],
+        cta: "Tell us what was missing",
+        footnote: "We're not asking to win you back. What you write is what gets built next.",
+      },
+    };
+  },
 
   couple_pause_cancelled: (p, ctx) => ({
     subject: "Esküvőtervező visszaállítva / Workspace pause cancelled",

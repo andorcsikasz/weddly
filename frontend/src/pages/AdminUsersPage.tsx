@@ -19,6 +19,8 @@ import {
   Hourglass,
   Layers,
   Mail,
+  MailCheck,
+  MessageSquare,
   RefreshCw,
   Search,
   Store,
@@ -106,6 +108,7 @@ export default function AdminUsersPage() {
   // button spinner. The "already sent" check reads couples.invite_partner_reminded_at
   // off the AdminCoupleView so a refresh keeps the sage Mail+Check state.
   const [remindPendingCoupleId, setRemindPendingCoupleId] = useState<number | null>(null);
+  const [askPausePendingCoupleId, setAskPausePendingCoupleId] = useState<number | null>(null);
 
   // Email log panel — shows the last N email_log rows for a user so admin
   // can verify delivery of account_flagged / welcome_verify etc.
@@ -756,6 +759,37 @@ export default function AdminUsersPage() {
     }
   }
 
+  /** Ask a departed couple what was actually missing for them. Confirmed rather
+   *  than one-click: it is one shot per departure, and the recipient has
+   *  already told us they are leaving. */
+  async function onAskPauseFeedback(c: AdminCoupleView) {
+    const ok = await confirm({
+      title: t("admin.ask_pause_feedback_confirm_title"),
+      body: t("admin.ask_pause_feedback_confirm_body", { workspace: workspaceLabel(c) }),
+      confirmLabel: t("admin.ask_pause_feedback_confirm"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    setAskPausePendingCoupleId(c.id);
+    try {
+      const r = await adminUserApi.askPauseFeedback(c.id);
+      // Same reason as the partner reminder above: fold the stamp into the
+      // local cache so the row shows "asked" for the rest of the session.
+      setCouples((cur) =>
+        cur.map((x) =>
+          x.id === c.id && x.pause
+            ? { ...x, pause: { ...x.pause, feedback_asked_at: r.asked_at } }
+            : x,
+        ),
+      );
+      toast.success(t("admin.ask_pause_feedback_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setAskPausePendingCoupleId(null);
+    }
+  }
+
   async function onToggleFree(c: AdminCoupleView) {
     const isFree = c.billing.subscription_status === "founding";
     const ok = await confirm({
@@ -1124,6 +1158,10 @@ export default function AdminUsersPage() {
     // it stopped (the exit dialog's canonical EN reason + the couple's own
     // note), who stopped it, and how long is left before the purge sweep takes
     // it. Without this the admin list only reports the fact of the churn.
+    // The reason names a CATEGORY and almost never a note, so the line ends in
+    // the one control that can turn it into something actionable: ask them what
+    // was missing. One shot per departure, after which the control becomes a
+    // date, because "asked, no answer" is itself a thing to know.
     const pauseLine = c.pause ? (
       <p className="mt-0.5 text-[11px] leading-snug text-neutral-500 dark:text-umber-300">
         <span className="text-neutral-700 dark:text-paper-200">
@@ -1132,6 +1170,28 @@ export default function AdminUsersPage() {
         {c.pause.requested_by_name && <> · {c.pause.requested_by_name}</>}
         {" · "}
         {t("admin.pause_purges_in", { n: daysLeftUntil(c.pause.scheduled_delete_at) })}
+        {" · "}
+        {c.pause.feedback_asked_at ? (
+          <span
+            className="inline-flex items-center gap-1 text-sage-700 dark:text-sage-300"
+            title={t("admin.ask_pause_feedback_sent_at", {
+              date: new Date(c.pause.feedback_asked_at).toISOString().slice(0, 10),
+            })}
+          >
+            <MailCheck size={11} aria-hidden />
+            {t("admin.ask_pause_feedback_sent")}
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onAskPauseFeedback(c)}
+            disabled={askPausePendingCoupleId === c.id}
+            className="inline-flex items-center gap-1 underline decoration-dotted underline-offset-2 hover:text-neutral-900 disabled:opacity-50 dark:hover:text-paper-50"
+          >
+            <MessageSquare size={11} aria-hidden />
+            {t("admin.ask_pause_feedback")}
+          </button>
+        )}
       </p>
     ) : null;
 

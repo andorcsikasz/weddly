@@ -1077,6 +1077,14 @@ addColumnIfMissing(
 );
 addColumnIfMissing("couples", "founding_push_last_at", "founding_push_last_at INTEGER");
 
+// Stamp set when an admin asks a churned couple what was actually missing for
+// them (the "Missing features" exit reason names a category and nothing else).
+// One-shot per pause request, and it lives HERE rather than on `couples`
+// because the question is about a specific departure: a couple who cancels the
+// pause, comes back and later leaves again is a new conversation, and the new
+// request row starts with a NULL. NULL = never asked.
+addColumnIfMissing("couple_pause_requests", "feedback_asked_at", "feedback_asked_at INTEGER");
+
 // Provenance for couple_invites. NULL = a human created it from the dashboard
 // or profile card. 'founding_push' = the email worker minted it purely so the
 // founding-cohort mail could carry a real shareable link. Campaign-minted rows

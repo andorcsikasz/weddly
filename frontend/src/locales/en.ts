@@ -1791,6 +1791,8 @@ const en: LocaleMessages = {
     nav_feedback_subject: "Weddly · feedback",
     feedback_title: "Tell us what you think",
     feedback_intro: "Every field is optional. Even a few words helps.",
+    feedback_preface_invited:
+      "Thanks for coming back to tell us. What was missing, or what would have been more useful?",
     feedback_message_label: "What's on your mind?",
     feedback_message_placeholder: "What worked, what didn't, what you wish was here…",
     feedback_rating_label: "How would you rate Weddly so far?",
@@ -5609,6 +5611,14 @@ const en: LocaleMessages = {
     workspace_status_paused: "Paused",
     pause_reason_none: "No reason given",
     pause_purges_in: "purges in {n}d",
+    ask_pause_feedback: "ask what was missing",
+    ask_pause_feedback_sent: "asked",
+    ask_pause_feedback_sent_at: "Asked on {date}",
+    ask_pause_feedback_confirm_title: "Ask what was missing?",
+    ask_pause_feedback_confirm_body:
+      "Emails the partner who paused {workspace} one question: what was missing, or what would have been more useful. The link opens the feedback form with their address filled in. Once per departure.",
+    ask_pause_feedback_confirm: "Send the question",
+    ask_pause_feedback_success: "Question sent.",
     workspace_status_deleting: "Purged",
     badge_admin: "Admin",
     badge_suspended: "Suspended",

@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { LOCALE_NAMES, LOCALES, useT } from "../lib/i18n";
 import { useTheme } from "../lib/useTheme";
@@ -120,6 +120,7 @@ function PublicHeader() {
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackEmail, setFeedbackEmail] = useState<string | null>(null);
   const { hidden, atTop } = useHeaderState();
   const isAudiencePage = pathname === "/planners" || pathname === "/vendors";
 
@@ -132,6 +133,25 @@ function PublicHeader() {
     setMenuOpen(false);
     setFeedbackOpen(true);
   }
+
+  // Deep link from mail we send to people who are NOT signed in: `/?feedback=1`
+  // opens the dialog on the public page. AppShell has the same hook on `/app`,
+  // but that one is behind the login wall, and the one cohort we most need to
+  // hear from is the couples who already left. `&e=` prefills the reply address
+  // so an answer arrives attributed instead of anonymous; it is the recipient's
+  // own address, echoed back to them. Both params are stripped afterwards so a
+  // refresh or the back button doesn't re-open the modal.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("feedback") !== "1") return;
+    const email = searchParams.get("e");
+    if (email?.includes("@")) setFeedbackEmail(email);
+    setFeedbackOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("feedback");
+    next.delete("e");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   return (
     <header
@@ -412,7 +432,13 @@ function PublicHeader() {
           </div>
         </nav>
       )}
-      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} source="landing" />
+      <FeedbackDialog
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        source="landing"
+        initialEmail={feedbackEmail}
+        preface={feedbackEmail ? t("landing.feedback_preface_invited") : undefined}
+      />
     </header>
   );
 }

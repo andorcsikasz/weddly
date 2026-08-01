@@ -2222,6 +2222,10 @@ export interface LocaleMessages {
     nav_feedback_subject: string;
     feedback_title: string;
     feedback_intro: string;
+    /** Shown above the form when the dialog was opened from a link we mailed to
+     *  a known address (the pause follow-up), so the page answers the question
+     *  the email asked instead of restarting the conversation. */
+    feedback_preface_invited: string;
     feedback_message_label: string;
     feedback_message_placeholder: string;
     feedback_rating_label: string;
@@ -6526,6 +6530,16 @@ export interface LocaleMessages {
      *  to the purge, rendered under the workspace name. */
     pause_reason_none: string;
     pause_purges_in: string;
+    /** Turning a churn CATEGORY into an answer: the admin asks the partner who
+     *  paused what was actually missing. One shot per pause request, after
+     *  which the control becomes the date it was asked. */
+    ask_pause_feedback: string;
+    ask_pause_feedback_sent: string;
+    ask_pause_feedback_sent_at: string;
+    ask_pause_feedback_confirm_title: string;
+    ask_pause_feedback_confirm_body: string;
+    ask_pause_feedback_confirm: string;
+    ask_pause_feedback_success: string;
     /** Billing badges + free-badge grant/revoke on the admin couples list. */
     billing_free: string;
     billing_until_wedding: string;
