@@ -18,7 +18,10 @@
 import "../setup";
 
 import { beforeEach, describe, expect, test } from "bun:test";
-import type { AdminListingPhotosResponse, CommunitySupplierAdminView } from "@shared/community_suppliers";
+import type {
+  AdminListingPhotosResponse,
+  CommunitySupplierAdminView,
+} from "@shared/community_suppliers";
 import { db } from "../../src/db";
 import { addListingPhoto, setListingHeroImage } from "../../src/domain/listings";
 import { registerAndVerify, req } from "../helpers";
