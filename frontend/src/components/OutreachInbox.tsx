@@ -233,8 +233,12 @@ export function OutreachInbox({ variant = "section" }: { variant?: OutreachInbox
                         >
                           <div className="flex min-w-0 items-center gap-2.5">
                             {/* Category as a glyph rather than a third line of
-                              text; the label rides on the meta line below. */}
-                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-paper-300">
+                              text; the label rides on the meta line below.
+                              Outlined in ink on the bare surface, matching the
+                              thread list this tab sits beside: it is the same
+                              tile a size down, and one page must not draw it
+                              two ways. */}
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
                               <Glyph className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
                             </span>
                             <div className="min-w-0">

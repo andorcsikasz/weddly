@@ -97,8 +97,14 @@ function ThreadList() {
             />
             <div className="pointer-events-none flex items-center gap-3 p-4">
               {/* The glyph carries the category visually; the label beside the
-                  name is for anyone who doesn't read glyphs. */}
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-paper-300">
+                  name is for anyone who doesn't read glyphs.
+
+                  Outlined in ink on the bare surface rather than sitting on a
+                  paper tint: a filled plate under a decorative icon reads as a
+                  disabled button (the same call the vendor portal made), and
+                  the outline matches the vendor rows on the dashboard's
+                  Kulcsinfó card, which is where these vendors also appear. */}
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
                 <Glyph className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
               </span>
               <span className="min-w-0 flex-1">
@@ -161,7 +167,7 @@ function ThreadHeader({
   const Glyph = categoryIcon(vendor?.category ?? "");
   const inner = (
     <>
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-paper-300">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
         <Glyph className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
       </span>
       <span className="min-w-0">
