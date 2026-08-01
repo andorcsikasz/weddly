@@ -1,8 +1,9 @@
 // Dashboard "Kulcsinfó" quick-access card. Guards the venue-resolution
 // priority (picked directory venue → free-text venue_name → CTA), the Google
 // Maps link (exact coords when available, else name/address + city), the
-// tel: call buttons, the booked-supplier contact list (venue excluded), and the
-// two empty states. The card self-fetches /api/picks + /api/suppliers +
+// tel: call buttons, the booked-supplier contact list (venue excluded), the
+// empty state, and that the card stays READ-ONLY (the inline editor is gone —
+// the venue is set on /app/guest-page). The card self-fetches /api/picks + /api/suppliers +
 // /api/couple-suppliers, so we stub globalThis.fetch with the same handler-
 // registry pattern the other dashboard-card tests use.
 
@@ -45,11 +46,6 @@ function installFetch() {
       }
     }
     calls.push({ url, method, body });
-    if (method === "PATCH" && url.includes("/api/couples/current")) {
-      // Echo the patched fields back as the updated couple (the card only reads
-      // the venue/contact fields off the response via pickFields).
-      return jsonResponse(200, { couple: body });
-    }
     if (url.includes("/api/couple-suppliers")) return jsonResponse(200, { suppliers: [] });
     if (url.includes("/api/suppliers")) return jsonResponse(200, { suppliers, countries: [] });
     if (url.includes("/api/picks")) return jsonResponse(200, { picks });
@@ -240,7 +236,9 @@ describe("<KeyInfoCard>", () => {
     expect(container.querySelector('a[href="tel:+36705556666"]')).toBeTruthy();
   });
 
-  it("edits and saves the venue phone via PATCH, updating the panel", async () => {
+  it("is read-only: no editor, and it never writes to the couple", async () => {
+    // The inline pencil/editor was removed (owner call, 2026-08-01) — the card
+    // is a pure read surface now, and the venue is set on /app/guest-page.
     picks = [];
     suppliers = [];
     const { container } = render(
@@ -249,30 +247,10 @@ describe("<KeyInfoCard>", () => {
       </Providers>,
     );
     await flush();
-    // No phone yet → no venue call button.
+
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
     expect(container.querySelector('a[href^="tel:"]')).toBeNull();
-
-    // Open the editor, type a venue phone, save.
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    });
-    await flush();
-    const phoneInput = screen.getByLabelText("Venue phone");
-    await act(async () => {
-      fireEvent.change(phoneInput, { target: { value: "+36 30 111 2222" } });
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    });
-    await flush();
-
-    // PATCH carried the new phone.
-    const patch = calls.find((c) => c.method === "PATCH" && c.url.includes("/api/couples/current"));
-    expect(patch).toBeDefined();
-    expect(patch?.body).toMatchObject({ venue_phone: "+36 30 111 2222" });
-
-    // Panel now offers a call button for the venue.
-    expect(container.querySelector('a[href="tel:+36301112222"]')).toBeTruthy();
+    expect(calls.some((c) => c.method !== "GET")).toBe(false);
   });
 
   it("falls back to the free-text venue name (in-app map) when nothing is picked", async () => {
@@ -345,9 +323,12 @@ describe("<KeyInfoCard>", () => {
   });
 
   it("collapse toggle hides the body and persists the closed state", async () => {
+    // The body stays mounted so the open/close can animate its height (a 1fr→0fr
+    // grid row); `invisible` is what actually hides it and takes it out of the
+    // tab order, so that's what this asserts rather than an unmount.
     picks = [];
     suppliers = [];
-    render(
+    const { container } = render(
       <Providers>
         <KeyInfoCard couple={couple({ venue_name: "Sári Csárda" })} />
       </Providers>,
@@ -356,10 +337,15 @@ describe("<KeyInfoCard>", () => {
     expect(screen.getByText("Sári Csárda")).toBeInTheDocument();
 
     const toggle = screen.getByRole("button", { name: "Key info" });
+    const panel = container.querySelector("section > div.grid");
+    expect(panel?.className).toContain("visible");
+    expect(panel?.className).not.toContain("invisible");
+
     await act(async () => {
       fireEvent.click(toggle);
     });
-    expect(screen.queryByText("Sári Csárda")).not.toBeInTheDocument();
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(panel?.className).toContain("invisible");
     expect(localStorage.getItem("weddly.dashboard.keyinfo")).toBe("closed");
   });
 });

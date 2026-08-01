@@ -2,62 +2,40 @@
 // Surfaces the two things people hunt for all through planning (not just on the
 // day): the venue's map + phone, and one-tap dialling for booked suppliers.
 //
-// Deliberately a READ/aggregate surface with ZERO new data model. The venue is
-// derived from what the couple already has — a picked directory venue (rich:
-// address / phone / coords) or the free-text `venue_name` + `venue_city`
-// fallback (name + a Maps *search* link, no phone). Contacts reuse the same
-// picks → suppliers merge that TimelinePage's "Kapcsolattartók" panel uses, so
-// there is no second copy of the contact data. Everything is fetched from the
-// existing /api/picks, /api/suppliers, /api/couple-suppliers endpoints.
+// Deliberately a READ/aggregate surface with ZERO new data model, and read-only
+// since 2026-08-01 (owner call): the pencil that opened an inline editor for the
+// venue/coordinator/emergency fields is gone, so the card is purely glanceable.
+// The venue is derived from what the couple already has — a picked directory
+// venue (rich: address / phone / coords) or the free-text `venue_name` +
+// `venue_city` fallback (name + an in-app geocoded map, no phone); the venue is
+// SET on /app/guest-page, which is where the empty state points. Contacts reuse
+// the same picks → suppliers merge that TimelinePage's "Kapcsolattartók" panel
+// uses, so there is no second copy of the contact data. Everything is fetched
+// from the existing /api/picks, /api/suppliers, /api/couple-suppliers endpoints.
 
 import type { CoupleSupplier } from "@shared/couple_suppliers";
 import type { CouplePick } from "@shared/picks";
 import type { DirectorySupplier, SupplierCategory } from "@shared/suppliers";
 import type { Couple } from "@shared/types";
 import {
-  BedDouble,
-  Brush,
   Building2,
-  Bus,
-  Cake,
-  Camera,
-  ChefHat,
   ChevronDown,
   ChevronRight,
-  ClipboardList,
-  Disc3,
-  Flower2,
-  Gem,
-  Globe,
-  Hand,
-  Lightbulb,
   MapPin,
-  PartyPopper,
-  Pencil,
   Phone,
-  Pizza,
   Plus,
-  Shirt,
   Siren,
-  Sparkles,
-  Speaker,
-  PenTool,
-  StickyNote,
   Store,
-  Tent,
   UserRound,
-  Wine,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ApiError } from "../lib/api";
-import { coupleApi, coupleSupplierApi, picksApi, supplierApi } from "../lib/endpoints";
+import { coupleSupplierApi, picksApi, supplierApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
-import { setSelection } from "../lib/supplier_selection";
-import { foldVenueName, venueDetachedFromPick, venueVendorHref } from "../lib/venue_link";
-import { Dialog, Skeleton, useToast } from "./ui";
+import { venueDetachedFromPick, venueVendorHref } from "../lib/venue_link";
+import { Skeleton } from "./ui";
 
 // Lazy so the OpenStreetMap embed bundle only loads when a couple opens the
 // venue map. Reused verbatim from the supplier detail page so the in-app map
@@ -77,19 +55,16 @@ const STORAGE_KEY = "weddly.dashboard.keyinfo";
 /** The collapse control. Open, it sits on the black cap and goes light-on-dark;
  *  collapsed, it sits on the card surface and keeps the usual ink treatment.
  *  Smaller when open, since that row's whole point is to be thin: a 24px target
- *  inside a 24px strip is what keeps the cap from growing back into a header. */
+ *  inside a 24px strip is what keeps the cap from growing back into a header.
+ *  `transition-all` rather than `transition-colors` so the size step animates
+ *  with the cap it sits on instead of snapping ahead of it. */
 function headerIconClass(open: boolean): string {
   const base =
-    "inline-flex shrink-0 items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100";
+    "inline-flex shrink-0 items-center justify-center rounded-full transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100";
   return open
     ? `${base} h-6 w-6 text-paper-200 hover:bg-white/15 hover:text-white focus-visible:ring-paper-100`
     : `${base} h-8 w-8 text-ink-500 hover:bg-paper-100 hover:text-ink-900 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50`;
 }
-
-/** Diacritic-folded lower-case, for the venue autocomplete match. Mirrors the
- *  helper in BookedSupplierCard (the "Már foglaltam" flow) so typing folds the
- *  same way here. */
-const fold = foldVenueName;
 
 type VenueInfo = {
   name: string;
@@ -121,9 +96,9 @@ type Contact = {
   linkable: boolean;
 };
 
-/** The couple-editable venue + day-of contact fields, as a plain string form
- *  (empty string = unset). Kept local so a save reflects immediately without
- *  threading state back through the dashboard. */
+/** The venue + day-of contact fields the card reads off the couple, as a plain
+ *  string form (empty string = unset). They are written elsewhere (the guest
+ *  page editor / onboarding); this card only displays them. */
 type VenueFields = {
   venue_name: string;
   venue_city: string;
@@ -175,8 +150,8 @@ function resolveVenue(
   // pick means the couple renamed / changed venues without re-picking. The old
   // vendor's phone, coordinates and detail page would then all point at the
   // wrong place, so we DETACH from the pick: the row behaves like a free-text
-  // venue (typed values only, geocoded map, hub link). The couple can re-link
-  // via the edit dialog's autocomplete. Name comparison is diacritic-folded.
+  // venue (typed values only, geocoded map, hub link). Name comparison is
+  // diacritic-folded.
   const detachedFromPick = venueDetachedFromPick(f.venue_name, picked?.name);
   const effPicked = detachedFromPick ? undefined : picked;
 
@@ -216,72 +191,10 @@ function resolveVenue(
 
 export function KeyInfoCard({ couple }: { couple: Couple }) {
   const { t } = useT();
-  const toast = useToast();
 
-  // Local mirror of the couple-editable fields — a save reflects here without
-  // threading state back up to the dashboard. Re-synced if the prop changes.
-  const [fields, setFields] = useState<VenueFields>(() => pickFields(couple));
-  useEffect(() => setFields(pickFields(couple)), [couple]);
-  // Edit dialog draft — null when the dialog is closed.
-  const [draft, setDraft] = useState<VenueFields | null>(null);
-  const [saving, setSaving] = useState(false);
-  // The venue directory vendor the couple picked from the edit dialog's
-  // autocomplete, staged until Save so the pick and the field edits commit
-  // together (a Cancel leaves everything untouched).
-  const [pendingVenue, setPendingVenue] = useState<DirectorySupplier | null>(null);
+  const fields = useMemo(() => pickFields(couple), [couple]);
   // In-app venue map modal (replaces the old external Google Maps hand-off).
   const [mapOpen, setMapOpen] = useState(false);
-
-  function openDialog() {
-    setDraft(fields);
-    setPendingVenue(null);
-  }
-  function closeDialog() {
-    setDraft(null);
-    setPendingVenue(null);
-  }
-
-  // Stage a directory venue chosen from the autocomplete: fill the name and
-  // clear the manual city/address/phone so the vendor's canonical details
-  // (incl. map coordinates) drive the row once the pick is written on Save.
-  function selectVenueSuggestion(s: DirectorySupplier) {
-    setDraft((d) =>
-      d ? { ...d, venue_name: s.name, venue_city: "", venue_address: "", venue_phone: "" } : d,
-    );
-    setPendingVenue(s);
-  }
-
-  async function saveDraft() {
-    if (!draft) return;
-    setSaving(true);
-    try {
-      const resp = await coupleApi.update(draft);
-      setFields(pickFields(resp.couple));
-      if (pendingVenue) {
-        // Write the "our venue" pick like the "Már foglaltam" flow does, then
-        // reflect it in this card's own picks/directory cache so the venue row
-        // updates without a refetch.
-        const picked = pendingVenue;
-        setSelection(couple.id, "venue", picked.id);
-        setData((prev) => {
-          if (!prev) return prev;
-          const picks: CouplePick[] = [
-            ...prev.picks.filter((p) => p.category !== "venue"),
-            { category: "venue", supplier_id: picked.id, picked_by_user_id: null, picked_at: 0 },
-          ];
-          const directory = prev.directory.some((d) => d.id === picked.id)
-            ? prev.directory
-            : [...prev.directory, picked];
-          return { ...prev, picks, directory };
-        });
-      }
-      closeDialog();
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
-    } finally {
-      setSaving(false);
-    }
-  }
 
   // Collapse state persists per browser so a couple who tucks it away keeps it
   // that way. Defaults to open (the panel is meant to be glanceable above fold).
@@ -347,8 +260,7 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
   );
   // The directory venue the row is EFFECTIVELY linked to — the pick, unless the
   // couple renamed the venue away from it (resolveVenue detaches a stale pick,
-  // exposing that decision via `venue.linkedSupplierId`). Drives both the row
-  // link and the edit-form placeholders, so neither surfaces a stale vendor.
+  // exposing that decision via `venue.linkedSupplierId`).
   const linkedDir = useMemo(
     () => (venue?.linkedSupplierId ? directoryById.get(venue.linkedSupplierId) : undefined),
     [venue?.linkedSupplierId, directoryById],
@@ -357,17 +269,6 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
   // its own vendor card; any other venue (DIY / free-text / detached) falls back
   // to the vendors hub. Mirrors the supplier-row behaviour.
   const venueLinkTo = venueVendorHref(linkedDir?.id);
-  // Venue-category directory vendors, offered as autocomplete suggestions in
-  // the edit dialog ("primarily suggest venue vendors").
-  const venueOptions = useMemo(
-    () => (data?.directory ?? []).filter((s) => s.category === "venue"),
-    [data],
-  );
-  // Placeholders follow the pending selection while the dialog is open, so the
-  // city/address/phone hints reflect the vendor the couple just picked. Falls
-  // back to the effectively-linked pick (never a stale, detached one), so a
-  // renamed venue shows empty fields to fill rather than a prior vendor's data.
-  const placeholderVenue = pendingVenue ?? linkedDir;
 
   const hasCoordinator = Boolean(fields.coordinator_name || fields.coordinator_phone);
   const hasEmergency = Boolean(fields.emergency_name || fields.emergency_phone);
@@ -423,30 +324,32 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           dashboard that pink is supposed to mean), while black reads as chrome
           and lets the card's actual content carry the only colour on the card.
           It also freed the strip of its left accent marker, which existed to
-          keep a wash legible and has nothing left to mark. */}
+          keep a wash legible and has nothing left to mark.
+
+          The title is FADED rather than swapped in and out (it used to toggle
+          `sr-only`), which is what lets the cap animate: the row keeps one
+          layout in both states, so only the colour and the padding move and
+          nothing jumps as the body slides. */}
       <header
-        className={
+        className={`flex items-center justify-between gap-2 transition-[background-color,padding] duration-300 ease-out ${
           open
-            ? "flex items-center justify-end gap-2 rounded-t-2xl bg-ink-900 px-2 py-0 dark:bg-ink-950"
-            : "flex items-center justify-between gap-2 border-b border-paper-200 px-5 py-2.5 dark:border-umber-700"
-        }
+            ? "rounded-t-2xl bg-ink-900 px-2 py-0 dark:bg-ink-950"
+            : "rounded-t-2xl bg-transparent px-5 py-2.5"
+        }`}
       >
         <h2
-          className={
-            open
-              ? "sr-only"
-              : "flex items-center gap-2.5 font-grotesk text-base font-medium tracking-tight text-ink-900 dark:text-paper-50"
-          }
+          aria-hidden={open}
+          className={`flex items-center gap-2.5 font-grotesk text-base font-medium leading-tight tracking-tight text-ink-900 transition-opacity duration-200 ease-out dark:text-paper-50 ${
+            open ? "pointer-events-none opacity-0" : "opacity-100"
+          }`}
         >
-          {!open && (
-            <span className="inline-block h-4 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
-          )}
+          <span className="inline-block h-4 w-0.5 rounded-full bg-blush-500" aria-hidden="true" />
           {t("dashboard.keyinfo_title")}
         </h2>
-        {/* Collapse only. The all-vendors link moved down to sit under the
-            pencil, where the card's other controls are: two icons up here made
-            the cap read as a toolbar, and the vendor link belongs beside the
-            vendors it opens rather than above the venue. */}
+        {/* Collapse only. The all-vendors link lives at the BOTTOM of the vendor
+            list now, as its own add-a-vendor row: two icons up here made the cap
+            read as a toolbar, and the link belongs beside the vendors it
+            opens. */}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -457,87 +360,88 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
           <ChevronDown
             size={16}
             aria-hidden="true"
-            className={`transition-transform ${open ? "" : "-rotate-90"}`}
+            className={`transition-transform duration-300 ease-out ${open ? "" : "-rotate-90"}`}
           />
         </button>
       </header>
 
-      {open && (
-        <div className="px-5 py-3">
-          {loading ? (
-            <div className="space-y-3" aria-hidden="true">
-              <div className="flex items-center gap-3">
-                <Skeleton variant="circle" width={36} />
-                <div className="flex-1 space-y-1.5">
-                  <Skeleton variant="block" width="45%" height={14} rounded="md" />
-                  <Skeleton variant="block" width="65%" height={11} rounded="md" />
-                </div>
-              </div>
-              <Skeleton variant="block" width="100%" height={36} rounded="lg" />
-            </div>
-          ) : (
-            <>
-              {/* ── Venue ─────────────────────────────────────────────── */}
-              {venue ? (
-                <div className="flex items-center justify-between gap-3">
-                  <Link
-                    to={venueLinkTo}
-                    className="group flex min-w-0 items-start gap-3 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
-                  >
-                    <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
-                      <MapPin size={16} aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
-                        {t("dashboard.keyinfo_venue_label")}
-                      </p>
-                      <p className="truncate text-sm font-semibold leading-tight text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
-                        {venue.name}
-                      </p>
-                      {venue.detail && (
-                        <p className="truncate text-xs leading-tight text-ink-600 dark:text-umber-200">
-                          {venue.detail}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setMapOpen(true)}
-                      aria-label={t("dashboard.keyinfo_map")}
-                      title={t("dashboard.keyinfo_map")}
-                      className="btn-outline btn-sm inline-flex min-h-[38px] items-center gap-1.5 sm:min-h-[34px]"
-                    >
-                      <MapPin size={15} aria-hidden="true" />
-                      <span className="hidden sm:inline">{t("dashboard.keyinfo_map")}</span>
-                    </button>
-                    {venue.phone && (
-                      <a
-                        href={`tel:${venue.phone.replace(/\s+/g, "")}`}
-                        title={venue.phone}
-                        aria-label={`${t("dashboard.keyinfo_call")} ${venue.phone}`}
-                        className="btn-primary btn-sm inline-flex min-h-[38px] items-center gap-1.5 sm:min-h-[34px]"
-                      >
-                        <Phone size={15} aria-hidden="true" />
-                        <span className="hidden sm:inline">{t("dashboard.keyinfo_call")}</span>
-                      </a>
-                    )}
-                    {/* Edit, and the all-vendors link directly under it: the
-                        card's two "go somewhere else" controls share one column
-                        at the right edge, so the venue row keeps its height and
-                        the header cap keeps its single control. */}
-                    <div className="flex flex-col items-center gap-0.5">
-                      <EditButton label={t("dashboard.keyinfo_edit")} onClick={openDialog} />
-                      <AllVendorsLink label={t("dashboard.keyinfo_all_suppliers")} />
-                    </div>
+      {/* Collapse animation. The 1fr→0fr grid row is the only CSS-only way to
+          transition to a CONTENT height (no measuring, no ResizeObserver), and
+          `invisible` rides along so a collapsed body can't be tabbed into —
+          visibility interpolates discretely and stays visible for the whole
+          out-transition, so the slide is never cut short by it. */}
+      <div
+        className={`grid transition-[grid-template-rows,opacity,visibility] duration-300 ease-out ${
+          open ? "visible grid-rows-[1fr] opacity-100" : "invisible grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="px-5 py-3">
+            {loading ? (
+              <div className="space-y-3" aria-hidden="true">
+                <div className="flex items-center gap-3">
+                  <Skeleton variant="circle" width={36} />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton variant="block" width="45%" height={14} rounded="md" />
+                    <Skeleton variant="block" width="65%" height={11} rounded="md" />
                   </div>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2">
+                <Skeleton variant="block" width="100%" height={36} rounded="lg" />
+              </div>
+            ) : (
+              <>
+                {/* ── Venue ─────────────────────────────────────────────── */}
+                {venue ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <Link
+                      to={venueLinkTo}
+                      className="group flex min-w-0 items-center gap-3 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
+                    >
+                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink-900 text-ink-900 dark:border-paper-200 dark:text-paper-100">
+                        <MapPin size={16} aria-hidden="true" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[11px] uppercase leading-tight tracking-wider text-ink-500 dark:text-umber-300">
+                          {t("dashboard.keyinfo_venue_label")}
+                        </p>
+                        <p className="truncate text-sm font-semibold leading-tight text-ink-900 transition-colors group-hover:text-blush-700 group-hover:underline dark:text-paper-50 dark:group-hover:text-blush-300">
+                          {venue.name}
+                        </p>
+                        {venue.detail && (
+                          <p className="truncate text-xs leading-tight text-ink-600 dark:text-umber-200">
+                            {venue.detail}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setMapOpen(true)}
+                        aria-label={t("dashboard.keyinfo_map")}
+                        title={t("dashboard.keyinfo_map")}
+                        className="btn-outline btn-sm inline-flex min-h-[38px] items-center gap-1.5 sm:min-h-[34px]"
+                      >
+                        <MapPin size={15} aria-hidden="true" />
+                        <span className="hidden sm:inline">{t("dashboard.keyinfo_map")}</span>
+                      </button>
+                      {venue.phone && (
+                        <a
+                          href={`tel:${venue.phone.replace(/\s+/g, "")}`}
+                          title={venue.phone}
+                          aria-label={`${t("dashboard.keyinfo_call")} ${venue.phone}`}
+                          className="btn-primary btn-sm inline-flex min-h-[38px] items-center gap-1.5 sm:min-h-[34px]"
+                        >
+                          <Phone size={15} aria-hidden="true" />
+                          <span className="hidden sm:inline">{t("dashboard.keyinfo_call")}</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ) : (
                   <Link
                     to="/app/guest-page"
-                    className="flex flex-1 items-center gap-3 rounded-2xl border border-dashed border-paper-300 px-4 py-2 text-sm text-ink-600 transition-colors hover:border-blush-300 hover:bg-paper-100/50 dark:border-umber-700 dark:text-umber-200 dark:hover:bg-umber-900/40"
+                    className="flex items-center gap-3 rounded-2xl border border-dashed border-paper-300 px-4 py-2 text-sm text-ink-600 transition-colors hover:border-blush-300 hover:bg-paper-100/50 dark:border-umber-700 dark:text-umber-200 dark:hover:bg-umber-900/40"
                   >
                     <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-100 text-ink-500 dark:bg-umber-700 dark:text-umber-200">
                       <MapPin size={16} aria-hidden="true" />
@@ -547,48 +451,36 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                     </span>
                     <ChevronRight size={16} aria-hidden="true" />
                   </Link>
-                  <div className="flex flex-col items-center gap-0.5">
-                    <EditButton label={t("dashboard.keyinfo_edit")} onClick={openDialog} />
-                    <AllVendorsLink label={t("dashboard.keyinfo_all_suppliers")} />
+                )}
+
+                {/* ── Day-of contacts (coordinator + emergency) ─────────── */}
+                {(hasCoordinator || hasEmergency) && (
+                  <div className="mt-3 space-y-1.5 border-t border-paper-200 pt-3 dark:border-umber-700">
+                    {hasCoordinator && (
+                      <PersonRow
+                        Icon={UserRound}
+                        label={t("dashboard.keyinfo_coordinator")}
+                        name={fields.coordinator_name}
+                        phone={fields.coordinator_phone}
+                      />
+                    )}
+                    {hasEmergency && (
+                      <PersonRow
+                        Icon={Siren}
+                        label={t("dashboard.keyinfo_emergency")}
+                        name={fields.emergency_name}
+                        phone={fields.emergency_phone}
+                      />
+                    )}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* ── Day-of contacts (coordinator + emergency) ─────────── */}
-              {(hasCoordinator || hasEmergency) && (
-                <div className="mt-3 space-y-1.5 border-t border-paper-200 pt-3 dark:border-umber-700">
-                  {hasCoordinator && (
-                    <PersonRow
-                      Icon={UserRound}
-                      label={t("dashboard.keyinfo_coordinator")}
-                      name={fields.coordinator_name}
-                      phone={fields.coordinator_phone}
-                    />
-                  )}
-                  {hasEmergency && (
-                    <PersonRow
-                      Icon={Siren}
-                      label={t("dashboard.keyinfo_emergency")}
-                      name={fields.emergency_name}
-                      phone={fields.emergency_phone}
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* ── Suppliers ─────────────────────────────────────────── */}
-              {/* "Összes szolgáltató" is no longer a row here: it moved into the
-                  header as the Store icon, which buys back the line it spent. */}
-              <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-700">
-                {shownContacts.length === 0 ? (
-                  <Link
-                    to="/app/vendors"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-paper-100 px-3.5 py-1.5 text-xs font-medium text-ink-700 transition-colors hover:bg-paper-200 dark:bg-umber-700 dark:text-paper-100 dark:hover:bg-umber-700/80"
-                  >
-                    <Plus size={14} aria-hidden="true" />
-                    <span>{t("dashboard.keyinfo_add_suppliers")}</span>
-                  </Link>
-                ) : (
+                {/* ── Suppliers ─────────────────────────────────────────── */}
+                {/* The list always ends in the add-a-vendor row, which is also
+                    the whole empty state: one row shape covers "you have four
+                    vendors, add another" and "you have none yet", so the card
+                    never has to swap layouts to say the same thing. */}
+                <div className="mt-3 border-t border-paper-200 pt-3 dark:border-umber-700">
                   <ul className="flex flex-col divide-y divide-paper-200 dark:divide-umber-700">
                     {shownContacts.map((c) => {
                       const Icon = CATEGORY_ICON[c.category] ?? Building2;
@@ -639,109 +531,16 @@ export function KeyInfoCard({ couple }: { couple: Couple }) {
                         </li>
                       );
                     })}
+                    <li>
+                      <AddVendorRow label={t("dashboard.keyinfo_add_suppliers")} />
+                    </li>
                   </ul>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {draft && (
-        <Dialog
-          open
-          role="dialog"
-          closeOnBackdrop
-          size="sm"
-          title={t("dashboard.keyinfo_edit_title")}
-          onClose={() => (saving ? undefined : closeDialog())}
-          footer={
-            <div className="flex justify-end gap-2">
-              <button type="button" className="btn-ghost" onClick={closeDialog} disabled={saving}>
-                {t("common.cancel")}
-              </button>
-              <button type="button" className="btn-primary" onClick={saveDraft} disabled={saving}>
-                {t("common.save")}
-              </button>
-            </div>
-          }
-        >
-          <div className="space-y-4">
-            <fieldset className="space-y-2">
-              <legend className="mb-1 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                {t("dashboard.keyinfo_venue_label")}
-              </legend>
-              <VenueNameField
-                label={t("dashboard.keyinfo_field_venue_name")}
-                value={draft.venue_name}
-                placeholder={placeholderVenue?.name ?? ""}
-                options={venueOptions}
-                currentId={pendingVenue?.id ?? venuePick?.supplier_id ?? null}
-                onChange={(v) => setDraft({ ...draft, venue_name: v })}
-                onSelect={selectVenueSuggestion}
-              />
-              <Field
-                label={t("dashboard.keyinfo_field_venue_city")}
-                value={draft.venue_city}
-                placeholder={placeholderVenue?.city ?? ""}
-                onChange={(v) => setDraft({ ...draft, venue_city: v })}
-              />
-              <Field
-                label={t("dashboard.keyinfo_field_venue_address")}
-                value={draft.venue_address}
-                placeholder={placeholderVenue?.address ?? ""}
-                onChange={(v) => setDraft({ ...draft, venue_address: v })}
-              />
-              <Field
-                label={t("dashboard.keyinfo_field_venue_phone")}
-                type="tel"
-                value={draft.venue_phone}
-                // The catalogue row carries no number, so the hint is the phone
-                // already resolved for the venue row above (which comes off the
-                // pick). While the dialog is showing a freshly-picked vendor
-                // there is nothing to hint with yet, and an empty placeholder is
-                // the honest version of that.
-                placeholder={pendingVenue ? "" : (venue?.phone ?? "")}
-                onChange={(v) => setDraft({ ...draft, venue_phone: v })}
-              />
-            </fieldset>
-
-            <fieldset className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <legend className="mb-1 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                {t("dashboard.keyinfo_coordinator")}
-              </legend>
-              <Field
-                label={t("dashboard.keyinfo_field_name")}
-                value={draft.coordinator_name}
-                onChange={(v) => setDraft({ ...draft, coordinator_name: v })}
-              />
-              <Field
-                label={t("dashboard.keyinfo_field_phone")}
-                type="tel"
-                value={draft.coordinator_phone}
-                onChange={(v) => setDraft({ ...draft, coordinator_phone: v })}
-              />
-            </fieldset>
-
-            <fieldset className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <legend className="mb-1 text-[11px] uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                {t("dashboard.keyinfo_emergency")}
-              </legend>
-              <Field
-                label={t("dashboard.keyinfo_field_name")}
-                value={draft.emergency_name}
-                onChange={(v) => setDraft({ ...draft, emergency_name: v })}
-              />
-              <Field
-                label={t("dashboard.keyinfo_field_phone")}
-                type="tel"
-                value={draft.emergency_phone}
-                onChange={(v) => setDraft({ ...draft, emergency_phone: v })}
-              />
-            </fieldset>
+                </div>
+              </>
+            )}
           </div>
-        </Dialog>
-      )}
+        </div>
+      </div>
 
       {mapOpen && venue && (
         <Suspense fallback={null}>
@@ -791,38 +590,28 @@ function PersonRow({
   );
 }
 
-/** Round icon button that opens the Kulcsinfó edit dialog. Sits on the venue
- *  row (with the map/call actions) so editing is inline with what it edits. */
-function EditButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-8 sm:w-8 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
-    >
-      <Pencil size={16} aria-hidden="true" />
-    </button>
-  );
-}
-
-/** "Every supplier", as an icon under the pencil.
- *
- *  Same ink as `EditButton`, deliberately: a step lighter (`ink-400`) resolves
- *  to #8A6841 in this workspace, where the ink scale is remapped warm, and
- *  against the pencil's #4A3A2E that reads as a different COLOUR rather than a
- *  quieter one, i.e. as an accent on a control that is not one. Hierarchy comes
- *  from the size instead: 28px under the pencil's 32px. */
-function AllVendorsLink({ label }: { label: string }) {
+/** The last row of the vendor list: the vendors hub, wearing the same icon +
+ *  name + trailing-control rhythm as the vendors above it so it reads as the
+ *  next line rather than a button bolted underneath. Quiet by default (dashed
+ *  ring, muted ink) because it is an invitation, not one of the couple's own
+ *  bookings — the row wakes to full ink on hover. */
+function AddVendorRow({ label }: { label: string }) {
   return (
     <Link
       to="/app/vendors"
-      aria-label={label}
-      title={label}
-      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+      className="group flex items-center gap-3 rounded-lg py-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:focus-visible:ring-paper-100"
     >
-      <Store size={15} aria-hidden="true" />
+      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-paper-300 text-ink-400 transition-colors group-hover:border-ink-900 group-hover:text-ink-900 dark:border-umber-600 dark:text-umber-300 dark:group-hover:border-paper-200 dark:group-hover:text-paper-100">
+        <Store size={14} aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-sm font-medium leading-tight text-ink-500 transition-colors group-hover:text-ink-900 dark:text-umber-300 dark:group-hover:text-paper-50">
+        {label}
+      </span>
+      <Plus
+        size={16}
+        aria-hidden="true"
+        className="shrink-0 text-ink-400 transition-colors group-hover:text-ink-900 dark:text-umber-300 dark:group-hover:text-paper-50"
+      />
     </Link>
   );
 }
@@ -840,133 +629,5 @@ function CallPill({ phone }: { phone: string }) {
       <Phone size={13} aria-hidden="true" />
       <span>{t("dashboard.keyinfo_call")}</span>
     </a>
-  );
-}
-
-/** Labelled text input for the edit dialog. */
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: "text" | "tel";
-}) {
-  return (
-    <label className="block text-sm">
-      <span className="mb-1 block text-xs font-medium text-ink-600 dark:text-umber-200">
-        {label}
-      </span>
-      <input
-        type={type}
-        className="input"
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </label>
-  );
-}
-
-/** Venue-name field for the edit dialog: a text input that "primarily suggests
- *  venue vendors" from the directory as the couple types. Picking a suggestion
- *  adopts it as the couple's venue (via `onSelect`); if the venue isn't listed,
- *  the couple just types it in, mirroring the "Már foglaltam" flow on the
- *  vendor page. */
-function VenueNameField({
-  label,
-  value,
-  placeholder,
-  options,
-  currentId,
-  onChange,
-  onSelect,
-}: {
-  label: string;
-  value: string;
-  placeholder?: string;
-  options: DirectorySupplier[];
-  /** Supplier id of the already-picked / just-picked venue, for the "current" marker. */
-  currentId: string | null;
-  onChange: (v: string) => void;
-  onSelect: (s: DirectorySupplier) => void;
-}) {
-  const { t } = useT();
-  const [open, setOpen] = useState(false);
-  const queryNorm = useMemo(() => fold(value.trim()), [value]);
-  const matches = useMemo<DirectorySupplier[]>(() => {
-    if (!queryNorm) return [];
-    return options.filter((s) => fold(`${s.name} ${s.city}`).includes(queryNorm)).slice(0, 6);
-  }, [queryNorm, options]);
-
-  return (
-    <label className="relative block text-sm">
-      <span className="mb-1 block text-xs font-medium text-ink-600 dark:text-umber-200">
-        {label}
-      </span>
-      <input
-        type="text"
-        autoComplete="off"
-        className="input"
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => {
-          onChange(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        // Delay the close so a mousedown on a suggestion lands before the
-        // dropdown unmounts.
-        onBlur={() => window.setTimeout(() => setOpen(false), 120)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && matches.length > 0) {
-            e.preventDefault();
-            onSelect(matches[0]!);
-            setOpen(false);
-          } else if (e.key === "Escape") {
-            setOpen(false);
-          }
-        }}
-      />
-      {open && queryNorm && matches.length > 0 && (
-        <div
-          role="listbox"
-          aria-label={t("dashboard.keyinfo_venue_suggestions")}
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-56 overflow-auto rounded-xl border border-paper-300 bg-white py-1 shadow-lg dark:border-umber-700 dark:bg-umber-800"
-        >
-          {matches.map((s) => {
-            const current = currentId === s.id;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                role="option"
-                aria-selected={current}
-                // mousedown fires before the input's blur → click would race the
-                // dropdown's unmount. mousedown wins cleanly.
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  onSelect(s);
-                  setOpen(false);
-                }}
-                className="flex w-full items-baseline justify-between gap-3 px-3 py-1.5 text-left text-sm transition hover:bg-paper-100 dark:hover:bg-umber-700"
-              >
-                <span className="truncate font-medium text-ink-800 dark:text-paper-100">
-                  {s.name}
-                </span>
-                <span className="shrink-0 text-xs text-ink-500 dark:text-umber-300">
-                  {current ? t("dashboard.keyinfo_venue_current") : s.city}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </label>
   );
 }
