@@ -5,6 +5,7 @@
 
 import { randomBytes } from "node:crypto";
 import type {
+  AdminSupplierEditInput,
   CommunitySubmitterType,
   CommunitySupplierAdminView,
   CommunitySupplierReportReason,
@@ -12,9 +13,11 @@ import type {
   PriceBand,
   SubmitCommunitySupplierInput,
 } from "@shared/community_suppliers";
-import type { DirectorySupplierBase, SupplierCategory } from "@shared/suppliers";
+import type { DirectorySupplierBase, SupplierCategory, VenueStyle } from "@shared/suppliers";
+import { VENUE_STYLES, formatSpokenLanguages, parseSpokenLanguages } from "@shared/suppliers";
 import { db, now } from "../db";
 import { deleteListingForCommunityId, syncListingFromCommunityId } from "./listings";
+import { curatedCountry } from "./suppliers_data";
 
 /** Verification-token TTL — 7 days. Vendors often share a generic inbox that
  *  is only checked weekly, so a week-long window keeps the friction low. */
@@ -42,6 +45,15 @@ export interface CommunitySupplierRow {
   contact_phone: string | null;
   blurb: string;
   price_band: number;
+  /** Researched by an admin through the moderation card, never by the couple's
+   *  submission form (which doesn't ask). NULL until somebody fills them in. */
+  lat: number | null;
+  lng: number | null;
+  capacity_min: number | null;
+  capacity_max: number | null;
+  venue_style: string | null;
+  /** Comma-separated ISO 639-1 codes, same storage shape as `listings`. */
+  spoken_languages: string | null;
   status: string;
   hide_reason: string | null;
   hidden_by_user_id: number | null;
@@ -76,10 +88,16 @@ function clampPriceBand(v: number): PriceBand | null {
   return null;
 }
 
+/** Narrow a stored venue-style string to the controlled union. Anything the
+ *  list doesn't know (legacy junk, a hand-edited row) reads as null rather than
+ *  rendering an untranslatable raw value on the card. */
+function clampVenueStyle(raw: string | null): VenueStyle | null {
+  if (!raw) return null;
+  return (VENUE_STYLES as string[]).includes(raw) ? (raw as VenueStyle) : null;
+}
+
 // id is `c${row.id}` so community ids cannot collide with curated string slugs.
 // Returns the base (no vote overlay) — the route wraps with vote tallies.
-// Community submissions don't carry capacity yet; the form would need new
-// fields to collect it. Leaving null until the submission UX grows.
 //
 // Privacy note: `contact_email` is INTENTIONALLY suppressed in the public
 // list (always `null`). Submitters' inboxes were being scraped from the
@@ -92,17 +110,18 @@ export function toDirectorySupplierBase(row: CommunitySupplierRow): DirectorySup
     name: row.name,
     category: row.category as SupplierCategory,
     city: row.city,
-    // No per-submission country capture yet; community recs are HU today and
-    // stay visible regardless of the couple's country (see routes/suppliers.ts).
-    country: "HU",
+    // Same ", XX" city-suffix convention the curated batches use, so an admin
+    // typing "Siena, IT" gets an Italian card instead of the flat "HU" this
+    // used to hardcode. Community rows stay visible regardless of the couple's
+    // country either way (see routes/suppliers.ts) — the code is a label, not
+    // a filter, and a wrong one is just wrong.
+    country: curatedCountry(`c${row.id}`, row.city),
     address: row.address,
-    capacity_min: null,
-    capacity_max: null,
-    // Community submissions don't collect a venue style yet — the form is a
-    // generic supplier form across all categories.
-    venue_style: null,
-    lat: null,
-    lng: null,
+    capacity_min: row.capacity_min,
+    capacity_max: row.capacity_max,
+    venue_style: clampVenueStyle(row.venue_style),
+    lat: row.lat,
+    lng: row.lng,
     blurb_hu: row.blurb,
     blurb_en: row.blurb,
     website: row.website,
@@ -111,6 +130,7 @@ export function toDirectorySupplierBase(row: CommunitySupplierRow): DirectorySup
     source: "community",
     submitter_type: toSubmitterType(row.submitter_type),
     price_band: clampPriceBand(row.price_band),
+    spoken_languages: parseSpokenLanguages(row.spoken_languages),
     // Defaults to null; routes/suppliers.ts overlays the real value from the
     // `listings` table where claimed entries flip vendor_account_id.
     vendor_account_id: null,
@@ -137,6 +157,12 @@ export function toAdminView(
     contact_phone: row.contact_phone,
     blurb: row.blurb,
     price_band: clampPriceBand(row.price_band),
+    lat: row.lat,
+    lng: row.lng,
+    capacity_min: row.capacity_min,
+    capacity_max: row.capacity_max,
+    venue_style: clampVenueStyle(row.venue_style),
+    spoken_languages: parseSpokenLanguages(row.spoken_languages),
     status: row.status as CommunitySupplierStatus,
     submitter_email: row.submitter_email,
     submitter_user_id: row.submitter_user_id,
@@ -148,6 +174,67 @@ export function toAdminView(
     open_report_count: openReportCount,
     admin_notes: row.admin_notes,
   };
+}
+
+/** Columns the admin edit form owns, mapped to the value actually written.
+ *  Three of them are NOT NULL in a schema we may never rebuild, so "clear this
+ *  field" lands on the resting value the read path already normalises away:
+ *  `price_band` 0 is the "unpriced" sentinel `clampPriceBand` turns back into
+ *  null, and website/blurb use the empty string the submission form itself
+ *  produces. Everything else is genuinely nullable and stores NULL. */
+type Bindable = string | number | null;
+const passthrough = (v: unknown): Bindable => (v as Bindable) ?? null;
+const EDIT_COLUMNS: Record<string, (v: unknown) => Bindable> = {
+  category: passthrough,
+  name: passthrough,
+  city: passthrough,
+  address: passthrough,
+  website: (v: unknown) => (v as string | null) ?? "",
+  contact_email: passthrough,
+  contact_phone: passthrough,
+  blurb: (v: unknown) => (v as string | null) ?? "",
+  price_band: (v: unknown) => (v as number | null) ?? 0,
+  lat: passthrough,
+  lng: passthrough,
+  capacity_min: passthrough,
+  capacity_max: passthrough,
+  venue_style: passthrough,
+  // "" rather than NULL for an emptied picker, because the listings mirror
+  // COALESCEs this column (a claiming vendor edits their own languages and the
+  // community sync knows nothing about them). NULL there means "say nothing",
+  // so an admin clearing the list would silently leave the old codes on the
+  // public card; "" is the explicit none that survives the COALESCE and reads
+  // back as an empty list.
+  spoken_languages: (v: unknown) =>
+    Array.isArray(v) ? (formatSpokenLanguages(v as string[]) ?? "") : passthrough(v),
+};
+
+/** Apply an admin edit to a community listing and re-mirror it into `listings`.
+ *  Only the keys PRESENT in `patch` are written — an absent key means "leave it
+ *  alone", so a form that sends one field can never blank the other fourteen.
+ *  Returns the number of columns written (0 when the patch was empty).
+ *
+ *  The caller validates; this only writes. Both are deliberate: validation is a
+ *  route-boundary job in this codebase, and the listings mirror has to happen
+ *  on every write path or the public card and the admin card disagree. */
+export function updateCommunitySupplier(id: number, patch: AdminSupplierEditInput): number {
+  const sets: string[] = [];
+  const values: (string | number | null)[] = [];
+  for (const [column, normalize] of Object.entries(EDIT_COLUMNS)) {
+    if (!(column in patch)) continue;
+    sets.push(`${column} = ?`);
+    values.push(normalize((patch as Record<string, unknown>)[column]));
+  }
+  if (sets.length === 0) return 0;
+
+  const ts = now();
+  db.prepare(`UPDATE community_suppliers SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`).run(
+    ...values,
+    ts,
+    id,
+  );
+  syncListingFromCommunityId(id);
+  return sets.length;
 }
 
 /** Persist admin freeform notes for a community-submitted supplier. Empty

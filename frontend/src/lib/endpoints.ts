@@ -113,6 +113,8 @@ import type {
   WishlistLinkPreview,
 } from "@shared/wishlist";
 import type {
+  AdminListingPhotosResponse,
+  AdminSupplierEditInput,
   CommunitySupplierAdminView,
   CommunitySupplierReportReason,
   SubmitCommunitySupplierInput,
@@ -3483,6 +3485,37 @@ export const adminSupplierApi = {
       "POST",
       `/api/admin/suppliers/${id}/unhide`,
       {},
+    ),
+  /** Edit a community listing's own data. PARTIAL by contract: send only the
+   *  keys that changed — an absent key is left alone, `null` clears. */
+  edit: (id: number, patch: AdminSupplierEditInput) =>
+    apiFetch<{ supplier: CommunitySupplierAdminView; fields_written: number }>(
+      "PATCH",
+      `/api/admin/suppliers/${id}`,
+      patch,
+    ),
+  /** Hero + gallery of any listing. `listingId` is the listing id (`c<N>` for a
+   *  community row, a curated slug, `v<N>` for a vendor card). */
+  listPhotos: (listingId: string) =>
+    apiFetch<AdminListingPhotosResponse>(
+      "GET",
+      `/api/admin/suppliers/${encodeURIComponent(listingId)}/photos`,
+    ),
+  /** Attach a photo BY URL: the server downloads it and re-hosts it under our
+   *  own uploads key, because the CSP refuses to render a foreign host. Omit
+   *  `role` to fill the hero when there isn't one and append otherwise. */
+  addPhoto: (listingId: string, url: string, role?: "hero" | "gallery") =>
+    apiFetch<AdminListingPhotosResponse>(
+      "POST",
+      `/api/admin/suppliers/${encodeURIComponent(listingId)}/photos`,
+      { url, role: role ?? null },
+    ),
+  /** `photoId` is the gallery row id, or the literal "hero" (which lives on the
+   *  listings column and has no row of its own). */
+  removePhoto: (listingId: string, photoId: number | "hero") =>
+    apiFetch<AdminListingPhotosResponse>(
+      "DELETE",
+      `/api/admin/suppliers/${encodeURIComponent(listingId)}/photos/${photoId}`,
     ),
   /** Persist freeform admin-only notes. Empty string clears. The admin
    *  moderation card edits this in place; the server caps payload length. */

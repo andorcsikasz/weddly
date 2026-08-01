@@ -1,6 +1,14 @@
 // Admin moderation for community-submitted suppliers. Gate every handler
 // with requireAdmin() — that checks auth + ADMIN_EMAILS allowlist.
 
+import type { AdminListingPhoto, AdminSupplierEditInput } from "@shared/community_suppliers";
+import {
+  SUPPLIER_GROUPS,
+  type SupplierCategory,
+  VENUE_STYLES,
+  type VenueStyle,
+  isKnownLanguage,
+} from "@shared/suppliers";
 import {
   approveSupplier,
   createVerificationToken,
@@ -15,6 +23,7 @@ import {
   setStatus,
   toAdminView,
   updateAdminNotes,
+  updateCommunitySupplier,
 } from "../domain/community_suppliers";
 import { CONFIG } from "../config";
 import { clearCuratedOverride, setCuratedOverride } from "../domain/curated_overrides";
@@ -22,7 +31,17 @@ import { sendKind } from "../domain/emails";
 import { purgeOneUser } from "../domain/purge";
 import { enrichSupplier } from "../domain/supplier_enrich";
 import { fetchAndStoreListingHero } from "../domain/listing_image_backfill";
-import { getListingById } from "../domain/listings";
+import {
+  addListingPhoto,
+  countListingPhotos,
+  deleteListingPhoto,
+  getListingById,
+  getListingPhoto,
+  listListingPhotos,
+  setListingHeroImage,
+} from "../domain/listings";
+import { fetchRemoteImage } from "../lib/remote_image";
+import { storage } from "../lib/storage";
 import {
   listDirectoryForAdmin,
   listDirectoryWithFacets,
@@ -148,6 +167,347 @@ async function handleEnrich(ctx: Ctx): Promise<Response> {
   if (!after) throw new HttpError(500, "Failed to read updated supplier");
   const counts = openReportCountsForAll();
   return json({ supplier: toAdminView(after, counts.get(id) ?? 0), fields_filled: filled });
+}
+
+// ── Admin edit: the rest of a listing the submission form never asked for ────
+//
+// The couple-facing modal collects nine fields and the enricher fills what a
+// website happens to publish. Neither can produce a coordinate, a capacity, a
+// venue character or a corrected phone number, so up to now a researched
+// listing had nowhere to land: an admin who knew the answers could only write
+// them into the private admin note. This is where they go instead.
+//
+// Validation mirrors `parseSubmitBody` in routes/community_suppliers.ts (same
+// caps, same URL/email rules) with one difference that runs through every
+// field: an ABSENT key means "leave it alone" and `null` means "clear it", so a
+// form that sends one field can never blank the other fourteen.
+
+const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set(
+  SUPPLIER_GROUPS.flatMap((g) => g.categories),
+);
+const VALID_VENUE_STYLES: ReadonlySet<string> = new Set(VENUE_STYLES);
+
+/** Trim a string field. Present-but-blank reads as "clear it" (null) — an admin
+ *  emptying a text input means the value is gone, not the empty string. */
+function optionalText(raw: unknown, field: string, max: number): string | null {
+  if (raw === null) return null;
+  if (typeof raw !== "string") throw new HttpError(400, `${field} must be a string or null`);
+  const v = raw.trim();
+  if (!v) return null;
+  if (v.length > max) throw new HttpError(400, `${field} too long (max ${max})`);
+  return v;
+}
+
+function optionalNumber(
+  raw: unknown,
+  field: string,
+  opts: { min: number; max: number; integer?: boolean },
+): number | null {
+  if (raw === null || raw === "") return null;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) throw new HttpError(400, `${field} must be a number or null`);
+  if (opts.integer && !Number.isInteger(n)) throw new HttpError(400, `${field} must be an integer`);
+  if (n < opts.min || n > opts.max) {
+    throw new HttpError(400, `${field} must be between ${opts.min} and ${opts.max}`);
+  }
+  return n;
+}
+
+function parseEditBody(body: Record<string, unknown>): AdminSupplierEditInput {
+  const patch: AdminSupplierEditInput = {};
+
+  if ("category" in body) {
+    if (
+      typeof body.category !== "string" ||
+      !VALID_CATEGORIES.has(body.category as SupplierCategory)
+    ) {
+      throw new HttpError(400, "Invalid category");
+    }
+    patch.category = body.category as SupplierCategory;
+  }
+
+  // name / city / category back NOT-NULL columns, so they take a string only —
+  // there is no "clear the name" state for a listing that still exists.
+  if ("name" in body) {
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    if (!name) throw new HttpError(400, "name required");
+    if (name.length > 120) throw new HttpError(400, "name too long (max 120)");
+    patch.name = name;
+  }
+
+  if ("city" in body) {
+    const city = typeof body.city === "string" ? body.city.trim() : "";
+    if (city.length > 80) throw new HttpError(400, "city too long (max 80)");
+    patch.city = city;
+  }
+
+  if ("address" in body) patch.address = optionalText(body.address, "address", 200);
+  if ("blurb" in body) patch.blurb = optionalText(body.blurb, "blurb", 2000);
+  if ("contact_phone" in body) {
+    patch.contact_phone = optionalText(body.contact_phone, "contact_phone", 30);
+  }
+
+  if ("website" in body) {
+    const website = optionalText(body.website, "website", 300);
+    if (website) {
+      let parsed: URL;
+      try {
+        parsed = new URL(website);
+      } catch {
+        throw new HttpError(400, "website is not a valid URL");
+      }
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new HttpError(400, "website must start with http:// or https://");
+      }
+      if (!parsed.hostname) throw new HttpError(400, "website hostname required");
+    }
+    patch.website = website;
+  }
+
+  if ("contact_email" in body) {
+    const email = optionalText(body.contact_email, "contact_email", 200);
+    if (email) {
+      const at = email.indexOf("@");
+      if (at < 1 || email.indexOf(".", at) === -1) {
+        throw new HttpError(400, "contact_email is not a valid email");
+      }
+    }
+    patch.contact_email = email;
+  }
+
+  if ("price_band" in body) {
+    const band = optionalNumber(body.price_band, "price_band", { min: 1, max: 5, integer: true });
+    patch.price_band = band as AdminSupplierEditInput["price_band"];
+  }
+
+  // Coordinates are all-or-nothing on the way OUT (the map needs both), but the
+  // fields are independent here so a half-typed pair is the caller's problem to
+  // finish, not a 400 mid-edit.
+  if ("lat" in body) patch.lat = optionalNumber(body.lat, "lat", { min: -90, max: 90 });
+  if ("lng" in body) patch.lng = optionalNumber(body.lng, "lng", { min: -180, max: 180 });
+
+  if ("capacity_min" in body) {
+    patch.capacity_min = optionalNumber(body.capacity_min, "capacity_min", {
+      min: 0,
+      max: 100000,
+      integer: true,
+    });
+  }
+  if ("capacity_max" in body) {
+    patch.capacity_max = optionalNumber(body.capacity_max, "capacity_max", {
+      min: 0,
+      max: 100000,
+      integer: true,
+    });
+  }
+
+  if ("venue_style" in body) {
+    if (body.venue_style === null || body.venue_style === "") {
+      patch.venue_style = null;
+    } else if (typeof body.venue_style === "string" && VALID_VENUE_STYLES.has(body.venue_style)) {
+      patch.venue_style = body.venue_style as VenueStyle;
+    } else {
+      throw new HttpError(400, "Invalid venue_style");
+    }
+  }
+
+  if ("spoken_languages" in body) {
+    const raw = body.spoken_languages;
+    if (!Array.isArray(raw)) throw new HttpError(400, "spoken_languages must be an array");
+    for (const code of raw) {
+      if (typeof code !== "string" || !isKnownLanguage(code)) {
+        throw new HttpError(400, `Unknown language code: ${String(code)}`);
+      }
+    }
+    patch.spoken_languages = raw as string[];
+  }
+
+  return patch;
+}
+
+async function handleEdit(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const id = parseId(ctx);
+
+  const before = getCommunitySupplierById(id);
+  if (!before) throw new HttpError(404, "Supplier not found");
+
+  const body = await readJson<Record<string, unknown>>(ctx.req);
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    throw new HttpError(400, "Body must be an object");
+  }
+  const patch = parseEditBody(body);
+
+  // A capacity range that reads backwards would render as "200-40 guests" on
+  // the card. Checked against the MERGED row so editing one end still validates
+  // against the other end that is already stored.
+  const nextMin = "capacity_min" in patch ? patch.capacity_min : before.capacity_min;
+  const nextMax = "capacity_max" in patch ? patch.capacity_max : before.capacity_max;
+  if (nextMin != null && nextMax != null && nextMin > nextMax) {
+    throw new HttpError(400, "capacity_min cannot be greater than capacity_max");
+  }
+
+  const written = updateCommunitySupplier(id, patch);
+
+  if (written > 0) {
+    addAuditLog({
+      actor_user_id: admin.id,
+      couple_id: null,
+      action: "supplier.community.edit",
+      target_kind: "community_supplier",
+      target_id: id,
+      before: Object.fromEntries(
+        Object.keys(patch).map((k) => [
+          k,
+          (before as unknown as Record<string, unknown>)[k] ?? null,
+        ]),
+      ),
+      after: patch,
+    });
+  }
+
+  const after = getCommunitySupplierWithEmail(id);
+  if (!after) throw new HttpError(500, "Failed to read updated supplier");
+  const counts = openReportCountsForAll();
+  return json({ supplier: toAdminView(after, counts.get(id) ?? 0), fields_written: written });
+}
+
+// ── Admin photo manager (any listing: curated slug, `c<id>`, `v<id>`) ────────
+//
+// "Fetch from website" is the automatic path and it needs a website; a business
+// that only exists on a social page, or whose site has no usable og:image, had
+// no path to a photo at all and stayed a category-icon placeholder forever. So
+// this takes an image URL directly: the server downloads it (same SSRF-guarded
+// `fetchRemoteImage` every other image path uses — scheme check, DNS guard on
+// each redirect hop, byte cap, magic-byte sniff) and re-hosts it under our own
+// `listings/<id>/…` key. Never a hotlink: the CSP `img-src` allow-list refuses
+// an arbitrary remote host, so a stored remote URL renders as a broken glyph.
+
+/** Cap on gallery thumbnails an admin can attach. Matches the backfill sweep's
+ *  own cap so a hand-built gallery and a seeded one look the same on the card. */
+const ADMIN_GALLERY_CAP = 12;
+
+function listingPhotosPayload(listingId: string): AdminListingPhoto[] {
+  const listing = getListingById(listingId);
+  const out: AdminListingPhoto[] = [];
+  if (listing?.hero_image_url) out.push({ id: null, url: listing.hero_image_url, role: "hero" });
+  for (const p of listListingPhotos(listingId)) {
+    out.push({ id: p.id, url: p.url, role: "gallery" });
+  }
+  return out;
+}
+
+function parseListingId(ctx: Ctx): string {
+  const id = ctx.params.id?.trim();
+  if (!id) throw new HttpError(400, "Invalid id");
+  if (!getListingById(id)) throw new HttpError(404, "Listing not found");
+  return id;
+}
+
+function handleListPhotos(ctx: Ctx): Response {
+  requireAdmin(ctx);
+  const listingId = parseListingId(ctx);
+  return json({ listing_id: listingId, photos: listingPhotosPayload(listingId) });
+}
+
+interface AddPhotoBody {
+  url?: unknown;
+  /** "hero" replaces the card image; "gallery" appends to the strip; omitted
+   *  means "hero if there isn't one, gallery otherwise", which is what makes
+   *  pasting a list of URLs in order do the obvious thing. */
+  role?: unknown;
+}
+
+async function handleAddPhoto(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const listingId = parseListingId(ctx);
+
+  const body = await readJson<AddPhotoBody>(ctx.req);
+  const url = typeof body.url === "string" ? body.url.trim() : "";
+  if (!url) throw new HttpError(400, "url required");
+  if (body.role != null && body.role !== "hero" && body.role !== "gallery") {
+    throw new HttpError(400, "role must be 'hero' or 'gallery'");
+  }
+
+  const listing = getListingById(listingId);
+  const role: "hero" | "gallery" =
+    body.role === "hero" || body.role === "gallery"
+      ? body.role
+      : listing?.hero_image_url
+        ? "gallery"
+        : "hero";
+
+  if (role === "gallery" && countListingPhotos(listingId) >= ADMIN_GALLERY_CAP) {
+    throw new HttpError(409, `Gallery is full (max ${ADMIN_GALLERY_CAP})`, {
+      code: "gallery_full",
+    });
+  }
+
+  // No quality gate: an admin pasting a specific URL has already looked at the
+  // picture, and the gate exists to filter what an automatic sweep guessed at.
+  const img = await fetchRemoteImage(url);
+  if (!img) {
+    throw new HttpError(422, "Could not download a usable image from that URL", {
+      code: "image_unavailable",
+    });
+  }
+
+  // Timestamped key so replacing a hero can't be served stale from a CDN or the
+  // browser cache under the key the old bytes already occupy.
+  const ts = Date.now();
+  const key =
+    role === "hero"
+      ? `listings/${listingId}/hero.${img.ext}`
+      : `listings/${listingId}/gallery/admin-${ts}.${img.ext}`;
+  await storage.write(key, img.bytes);
+  const publicUrl = `/uploads/${key}?v=${ts}`;
+
+  if (role === "hero") setListingHeroImage(listingId, publicUrl);
+  else addListingPhoto(listingId, publicUrl);
+
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.listing.photo.add",
+    target_kind: "listing",
+    target_id: null,
+    after: { listing_id: listingId, role, source_url: url, stored_url: publicUrl },
+  });
+
+  return json({ listing_id: listingId, photos: listingPhotosPayload(listingId) });
+}
+
+function handleDeletePhoto(ctx: Ctx): Response {
+  const admin = requireAdmin(ctx);
+  const listingId = parseListingId(ctx);
+  const photoId = ctx.params.photoId?.trim();
+  if (!photoId) throw new HttpError(400, "Invalid photo id");
+
+  // The hero has no `listing_photos` row (it lives on the listings column), so
+  // it is addressed by the literal "hero" rather than an id.
+  if (photoId === "hero") {
+    setListingHeroImage(listingId, null);
+  } else {
+    const numeric = Number(photoId);
+    if (!Number.isInteger(numeric) || numeric <= 0) throw new HttpError(400, "Invalid photo id");
+    if (!getListingPhoto(listingId, numeric)) throw new HttpError(404, "Photo not found");
+    deleteListingPhoto(listingId, numeric);
+  }
+
+  // The stored object is deliberately left in place: a delete is a display
+  // decision an admin may want back, and an orphaned image costs bytes rather
+  // than correctness. Couple-scoped purges are the case that must actually
+  // reclaim storage, and they sweep by prefix.
+  addAuditLog({
+    actor_user_id: admin.id,
+    couple_id: null,
+    action: "supplier.listing.photo.delete",
+    target_kind: "listing",
+    target_id: null,
+    before: { listing_id: listingId, photo_id: photoId },
+  });
+
+  return json({ listing_id: listingId, photos: listingPhotosPayload(listingId) });
 }
 
 async function handleRefetchHero(ctx: Ctx): Promise<Response> {
@@ -608,6 +968,12 @@ export function registerAdminSupplierRoutes(router: Router) {
   router.post("/api/admin/suppliers/curated/:slug/hide", handleCuratedHide, true);
   router.post("/api/admin/suppliers/curated/:slug/unhide", handleCuratedUnhide, true);
   router.delete("/api/admin/suppliers/curated/:slug", handleCuratedDelete, true);
+  // Photo manager. `:id` is a LISTING id (curated slug / `c<N>` / `v<N>`), same
+  // as refetch-hero — registered before the numeric `:id` routes so a curated
+  // slug can't be swallowed by a handler that parses ids as integers.
+  router.get("/api/admin/suppliers/:id/photos", handleListPhotos, true);
+  router.post("/api/admin/suppliers/:id/photos", handleAddPhoto, true);
+  router.delete("/api/admin/suppliers/:id/photos/:photoId", handleDeletePhoto, true);
   router.get("/api/admin/suppliers/:id/reports", handleListReports, true);
   router.post("/api/admin/suppliers/:id/approve", handleApprove, true);
   router.post("/api/admin/suppliers/:id/send-verify", handleSendVerify, true);
@@ -617,6 +983,7 @@ export function registerAdminSupplierRoutes(router: Router) {
   router.post("/api/admin/suppliers/:id/unhide", handleUnhide, true);
   router.post("/api/admin/suppliers/:id/reports/dismiss", handleDismissReports, true);
   router.patch("/api/admin/suppliers/:id/notes", handleUpdateNotes, true);
+  router.patch("/api/admin/suppliers/:id", handleEdit, true);
   router.post("/api/admin/suppliers/:id/purge-submitter", handlePurgeSubmitter, true);
   router.delete("/api/admin/suppliers/:id", handleDelete, true);
 }

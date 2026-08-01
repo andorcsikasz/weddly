@@ -1,4 +1,5 @@
 import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
+import { languageLabel } from "@shared/suppliers";
 import { intlLocale } from "../lib/format";
 import { safeExternalHref } from "../lib/url";
 import {
@@ -12,6 +13,7 @@ import {
   Flag,
   Mail,
   MapPin,
+  Pencil,
   Phone,
   Sparkles,
   Trash2,
@@ -20,6 +22,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
 import { SupplierDirectoryView } from "../components/admin/SupplierDirectoryView";
+import { SupplierEditForm, SupplierPhotoManager } from "../components/admin/SupplierEditor";
 import { SegmentedControl, Skeleton, useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { adminSupplierApi } from "../lib/endpoints";
@@ -625,6 +628,10 @@ function SupplierCard({
     !s.blurb?.trim();
   const [notesDraft, setNotesDraft] = useState<string>(s.admin_notes ?? "");
   const [notesSaving, setNotesSaving] = useState(false);
+  // The read grid and the edit form are the same surface in two modes rather
+  // than a modal: a moderator edits a listing while reading the duplicate
+  // warning and the submitter's address that made them open it.
+  const [editing, setEditing] = useState(false);
   // Cards collapse by default. The parent flags exactly one row (the first
   // awaiting_review submission) for auto-expand on mount so the moderator
   // sees full detail + actions one click away. Everything else stays
@@ -759,11 +766,23 @@ function SupplierCard({
               ) : null}
             </div>
           ) : null}
+          {editing ? (
+            <SupplierEditForm
+              supplier={s}
+              onSaved={onSavedNotes}
+              onCancel={() => setEditing(false)}
+            />
+          ) : null}
+
           {/* Body: three-column dl grid on lg, stacking on small viewports.
            *  Each <dl> packs label/value pairs into a tight `grid-cols-[8rem_1fr]
            *  gap-y-1 text-xs` rhythm — roughly half the vertical height of the
            *  prior 4× CardField column stack. */}
-          <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={`grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 lg:grid-cols-3 ${
+              editing ? "hidden" : ""
+            }`}
+          >
             {/* Contact column */}
             <section className="flex flex-col gap-2">
               <h3 className="eyebrow m-0">{t("admin.suppliers_card_section_contact")}</h3>
@@ -809,6 +828,19 @@ function SupplierCard({
                     ) : null
                   }
                 />
+                <DefRow label={t("admin.suppliers_card_field_address")} value={s.address} />
+                <DefRow
+                  label={t("admin.suppliers_edit_section_place")}
+                  value={
+                    // Both or nothing: a lone latitude puts nothing on the map,
+                    // so showing one would read as "placed" when it isn't.
+                    s.lat != null && s.lng != null ? (
+                      <span className="tabular-nums">
+                        {s.lat.toFixed(5)}, {s.lng.toFixed(5)}
+                      </span>
+                    ) : null
+                  }
+                />
                 <DefRow
                   label={t("admin.suppliers_card_field_submitter")}
                   value={
@@ -832,6 +864,26 @@ function SupplierCard({
                 <DefRow
                   label={t("admin.suppliers_card_field_price_band")}
                   value={s.price_band ? <PriceBandPill band={s.price_band} /> : "—"}
+                />
+                <DefRow
+                  label={t("admin.suppliers_edit_field_venue_style")}
+                  value={s.venue_style ? t(`suppliers.venue_style.${s.venue_style}`) : null}
+                />
+                <DefRow
+                  label={t("admin.suppliers_card_field_capacity")}
+                  value={
+                    s.capacity_min != null || s.capacity_max != null
+                      ? `${s.capacity_min ?? "?"}–${s.capacity_max ?? "?"}`
+                      : null
+                  }
+                />
+                <DefRow
+                  label={t("admin.suppliers_edit_field_languages")}
+                  value={
+                    s.spoken_languages.length > 0
+                      ? s.spoken_languages.map((c) => languageLabel(c, locale)).join(", ")
+                      : null
+                  }
                 />
                 <DefRow
                   label={t("admin.suppliers_card_field_blurb")}
@@ -886,6 +938,12 @@ function SupplierCard({
               </dl>
             </section>
           </div>
+
+          {/* Pictures. Sits beside "Fetch from website" rather than replacing
+           *  it: the sweep is the automatic path and needs a website, this is
+           *  the one that works for a business whose only web presence is a
+           *  social page. */}
+          <SupplierPhotoManager listingId={`c${s.id}`} />
 
           {/* Admin notes — the CRM heart of the page. Editable in place, with a
            *  dirty indicator and an explicit save action so an accidental tab
@@ -960,6 +1018,15 @@ function SupplierCard({
                 <Check size={14} /> {t("admin.approve")}
               </button>
             )}
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={() => setEditing((v) => !v)}
+              aria-expanded={editing}
+              aria-label={t("admin.suppliers_edit")}
+            >
+              <Pencil size={14} /> {t("admin.suppliers_edit")}
+            </button>
             <button
               type="button"
               className="btn-ghost btn-sm"

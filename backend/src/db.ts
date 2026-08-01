@@ -2159,6 +2159,23 @@ addColumnIfMissing("outreach_messages", "booking_id", "booking_id INTEGER");
 // far as choosing a sender.
 addColumnIfMissing("email_log", "from_email", "from_email TEXT");
 
+// ── Community listing: the facts the submission form never asked for ────────
+// The couple-facing "recommend a supplier" modal collects nine fields, so a
+// community row could never carry a coordinate, a capacity, a venue character
+// or the languages the business speaks — the `listings` mirror wrote NULL into
+// all of them. That is fine while a submission is a tip; it stops being fine
+// once an admin researches the business and has the facts in hand, because a
+// listing with no lat/lng is INVISIBLE on the /app/suppliers map tab and one
+// with no venue_style drops out of every style filter. Additive columns so the
+// admin edit form (PATCH /api/admin/suppliers/:id) has somewhere to put them
+// and `syncListingFromCommunityRow` has something to mirror.
+addColumnIfMissing("community_suppliers", "lat", "lat REAL");
+addColumnIfMissing("community_suppliers", "lng", "lng REAL");
+addColumnIfMissing("community_suppliers", "capacity_min", "capacity_min INTEGER");
+addColumnIfMissing("community_suppliers", "capacity_max", "capacity_max INTEGER");
+addColumnIfMissing("community_suppliers", "venue_style", "venue_style TEXT");
+addColumnIfMissing("community_suppliers", "spoken_languages", "spoken_languages TEXT");
+
 // Reserved system user that anchors the NOT-NULL author FK for verified-visitor
 // content (see above). Login-disabled (status='suspended' and password_hash that
 // can never verify); verified_email=1 + password_set=0 so no unverified-account

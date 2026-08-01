@@ -6735,6 +6735,40 @@ export interface LocaleMessages {
     suppliers_card_field_notes_dirty: string;
     suppliers_card_notes_save_success: string;
     suppliers_card_empty_value: string;
+    /** Admin edit form on the moderation card — the only place a researched
+     *  listing's own data can be typed (the couple's submission form asks for
+     *  nine fields and never for a coordinate or a capacity). */
+    suppliers_edit: string;
+    suppliers_edit_cancel: string;
+    suppliers_edit_save: string;
+    suppliers_edit_saving: string;
+    suppliers_edit_success: string;
+    suppliers_edit_no_changes: string;
+    suppliers_edit_section_place: string;
+    suppliers_edit_field_lat: string;
+    suppliers_edit_field_lng: string;
+    suppliers_edit_coords_help: string;
+    suppliers_card_field_capacity: string;
+    suppliers_edit_field_capacity_min: string;
+    suppliers_edit_field_capacity_max: string;
+    suppliers_edit_field_venue_style: string;
+    suppliers_edit_field_venue_style_none: string;
+    suppliers_edit_field_languages: string;
+    suppliers_edit_field_price_band_none: string;
+    suppliers_edit_city_help: string;
+    /** Photo manager: attach a card image by URL (the server re-hosts it). */
+    suppliers_photos_section: string;
+    suppliers_photos_empty: string;
+    suppliers_photos_hero: string;
+    suppliers_photos_gallery: string;
+    suppliers_photos_add_placeholder: string;
+    suppliers_photos_add: string;
+    suppliers_photos_adding: string;
+    suppliers_photos_add_help: string;
+    suppliers_photos_added: string;
+    suppliers_photos_removed: string;
+    suppliers_photos_remove_aria: string;
+    suppliers_photos_make_hero: string;
     /** Visible "delete" action verb (imperative). Used on the destructive
      *  btn-alert buttons (per-row + bulk) on the supplier moderation page.
      *  Distinct from `delete` (noun) which doubles as a confirm-dialog

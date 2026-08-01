@@ -518,7 +518,7 @@ export interface DirectorySupplierBase {
    *  country scoping in `/api/suppliers`: a couple only sees listings in the
    *  country their wedding is in (see `couples.country`). Curated venues derive
    *  this from their city/section in `suppliers_data.ts`; community submissions
-   *  default to "HU" (no per-submission country capture yet). */
+   *  read the same ", XX" suffix off `city` and fall back to "HU". */
   country: string;
   blurb_hu: string;
   blurb_en: string;

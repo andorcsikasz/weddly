@@ -2,7 +2,7 @@
 // in `domain/suppliers_data.ts` and these submissions both flow through the
 // public list endpoint as `DirectorySupplier`s, distinguished by `source`.
 
-import type { SupplierCategory } from "./suppliers";
+import type { SupplierCategory, VenueStyle } from "./suppliers";
 
 export type SupplierSource = "curated" | "community";
 /** Lifecycle:
@@ -80,6 +80,17 @@ export interface CommunitySupplierAdminView {
   contact_phone: string | null;
   blurb: string;
   price_band: PriceBand | null;
+  /** The four facts the submission form never collects. NULL on every row an
+   *  admin hasn't researched yet; filled through the admin edit form and
+   *  mirrored into `listings`, which is what puts the card on the map tab and
+   *  into the venue-style / capacity filters. */
+  lat: number | null;
+  lng: number | null;
+  capacity_min: number | null;
+  capacity_max: number | null;
+  venue_style: VenueStyle | null;
+  /** ISO 639-1 codes, controlled list — see `SPOKEN_LANGUAGE_OPTIONS`. */
+  spoken_languages: string[];
   status: CommunitySupplierStatus;
   submitter_email: string;
   submitter_user_id: number;
@@ -102,6 +113,47 @@ export interface CommunitySupplierAdminView {
    *  Empty string is a legit "cleared" state. The CRM-style supplier card
    *  on /app/admin/suppliers edits this in place via PATCH. */
   admin_notes: string | null;
+}
+
+/** Admin edit payload for a community listing. Every field is OPTIONAL and an
+ *  absent key means "leave it alone" — the form sends only what changed, and a
+ *  partial body must never blank a column it said nothing about. `null` is a
+ *  real value (clear the field) on everything nullable; `name`, `city` and
+ *  `category` are NOT NULL in the schema, so they only accept a string.
+ *
+ *  This is the admin's answer to "the submitter typed three fields and the
+ *  enricher found nothing" — the couple-facing form is deliberately tiny, so
+ *  the moderation card is the only place the rest of a listing can be typed. */
+export interface AdminSupplierEditInput {
+  category?: SupplierCategory;
+  name?: string;
+  city?: string;
+  address?: string | null;
+  website?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  blurb?: string | null;
+  price_band?: PriceBand | null;
+  lat?: number | null;
+  lng?: number | null;
+  capacity_min?: number | null;
+  capacity_max?: number | null;
+  venue_style?: VenueStyle | null;
+  spoken_languages?: string[];
+}
+
+/** One photo on a listing, as the admin photo manager sees it. `id` is null for
+ *  the hero (it lives on `listings.hero_image_url`, not in `listing_photos`),
+ *  which is also what makes the hero deletable through the same list. */
+export interface AdminListingPhoto {
+  id: number | null;
+  url: string;
+  role: "hero" | "gallery";
+}
+
+export interface AdminListingPhotosResponse {
+  listing_id: string;
+  photos: AdminListingPhoto[];
 }
 
 /** Reasons a couple can pick when reporting a community listing. Kept short

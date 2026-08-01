@@ -439,6 +439,17 @@ function hashCommunityRow(r: CommunitySupplierRow): string {
     r.price_band,
     r.submitter_type,
     r.status,
+    // The admin-researched half. Absent from this hash, an edit that only
+    // touches coordinates or capacity produces the same digest as before and
+    // the upsert's `content_hash != excluded.content_hash` guard skips the
+    // write entirely — the admin card would show the new values and the public
+    // card the old ones, forever.
+    r.lat,
+    r.lng,
+    r.capacity_min,
+    r.capacity_max,
+    r.venue_style,
+    r.spoken_languages,
   ]);
   return createHash("sha256").update(payload).digest("hex").slice(0, 16);
 }
@@ -448,8 +459,9 @@ function hashCommunityRow(r: CommunitySupplierRow): string {
  * row. Called from `community_suppliers.ts` on every write so the `listings`
  * table stays current without needing reads to fall back. Idempotent.
  *
- * Community submissions don't carry capacity / lat / lng yet (the form
- * doesn't collect them) — those columns stay null on the mirrored row.
+ * The submission form still doesn't collect capacity / lat / lng / style, so
+ * those stay null on a row nobody has curated; they carry a value once an admin
+ * fills them in through the moderation card's edit form.
  */
 export function syncListingFromCommunityRow(row: CommunitySupplierRow): void {
   const ts = now();
@@ -471,14 +483,15 @@ export function syncListingFromCommunityRow(row: CommunitySupplierRow): void {
     // listings mirror is nullable, so normalize the sentinel (and any junk) to
     // null — the public card then shows no price instead of a phantom "$".
     $price_band: row.price_band >= 1 && row.price_band <= 5 ? row.price_band : null,
-    $capacity_min: null,
-    $capacity_max: null,
-    $venue_style: null,
-    $lat: null,
-    $lng: null,
-    // The submission form doesn't ask for spoken languages. NULL here leaves
-    // whatever a claiming vendor set intact (see the COALESCE on the upsert).
-    $spoken_languages: null,
+    $capacity_min: row.capacity_min,
+    $capacity_max: row.capacity_max,
+    $venue_style: row.venue_style,
+    $lat: row.lat,
+    $lng: row.lng,
+    // NULL here leaves whatever a claiming vendor set intact (see the COALESCE
+    // on the upsert); the admin edit form writes "" for an explicitly emptied
+    // picker, which is the value that does survive it.
+    $spoken_languages: row.spoken_languages,
     // A community submission is somebody typing a supplier into our own form,
     // not a profile lifted off another platform.
     $profile_imported: 0,
@@ -984,6 +997,19 @@ export function setListingPhotoPositionY(
 
 export function deleteListingPhoto(listingId: string, photoId: number): void {
   db.prepare("DELETE FROM listing_photos WHERE id = ? AND listing_id = ?").run(photoId, listingId);
+}
+
+/** Set (or clear) a listing's card hero. Always stamps `hero_checked_at`, which
+ *  is what takes the row out of the boot auto-fill set — otherwise clearing a
+ *  hero an admin judged wrong would just invite the next deploy to fetch the
+ *  same og:image straight back in. Deliberately does NOT touch `updated_at`:
+ *  a photo is not content the community/curated content-hash sync arbitrates. */
+export function setListingHeroImage(listingId: string, url: string | null): void {
+  db.prepare("UPDATE listings SET hero_image_url = ?, hero_checked_at = ? WHERE id = ?").run(
+    url,
+    now(),
+    listingId,
+  );
 }
 
 // ── Listing video reel ───────────────────────────────────────────────────────
