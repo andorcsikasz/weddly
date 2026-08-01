@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import { type DragEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { InfoHint } from "../components/InfoHint";
+import { MoneyInput } from "../components/MoneyInput";
 import { Button, Dialog, Skeleton, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import {
@@ -64,7 +65,7 @@ import {
   scheduleApi,
   transferApi,
 } from "../lib/endpoints";
-import { currencySymbol, formatMoney, intlLocale, MONEY_STEP } from "../lib/format";
+import { currencySymbol, formatMoney, intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
@@ -2117,15 +2118,12 @@ function AccommodationDialog({
               >
                 {currencyGlyph}
               </span>
-              <input
-                type="number"
-                min={0}
-                step={MONEY_STEP}
+              <MoneyInput
+                locale={locale}
                 className="input pl-9"
                 value={priceHuf}
-                onChange={(e) => setPriceHuf(e.target.value)}
+                onChange={setPriceHuf}
                 placeholder="-"
-                inputMode="numeric"
               />
             </div>
           </Field>

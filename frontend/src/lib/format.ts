@@ -126,20 +126,22 @@ export function formatHufCompact(amount: number, locale: Locale = "hu"): string 
   return compactFmt(locale).format(n);
 }
 
-/** `step` for a money `<input type="number">`.
- *
- *  A browser rejects any value that isn't a multiple of `step`, so the
- *  `step={1000}` these fields used to carry was not a spinner increment, it
- *  was a validation rule shaped like forint. A couple budgeting in euro was
- *  told "Please enter a valid value. The two nearest valid values are 0 and
- *  1000" for every ordinary amount they typed (reported 2026-07-31), and the
- *  same rule quietly refused any HUF figure that wasn't a round thousand.
- *
- *  Money is stored as a whole unit of the couple's currency, so 1 is the only
- *  step that accepts everything a couple can legitimately enter. Spinner
- *  arrows get less useful; nobody adjusts a wedding budget with them, and a
- *  field that refuses what you typed is not a trade worth making. */
-export const MONEY_STEP = 1;
+/** Strip everything that isn't a digit. The other half of
+ *  `formatGroupedDigits`: a grouped money field keeps raw digits in state and
+ *  formats them on the way to the screen. */
+export function digitsOnly(raw: string): string {
+  return raw.replace(/[^\d]/g, "");
+}
+
+/** Show a digit-only string with the locale's thousand separators, so a
+ *  couple typing eight figures can see what they typed. The empty string
+ *  passes through, or the field could never be cleared. */
+export function formatGroupedDigits(raw: string, locale: Locale = "hu"): string {
+  if (!raw) return "";
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return raw;
+  return formatNumber(n, locale);
+}
 
 /** Slider granularity for a money range input, ~60 stops snapped to a round
  *  number so the value the couple lands on reads like a decision rather than a
@@ -148,13 +150,13 @@ export const MONEY_STEP = 1;
  *  forint, and it left a euro budget's entire row spanning two or three
  *  positions of the slider. */
 export function moneySliderStep(rowMax: number): number {
-  if (!Number.isFinite(rowMax) || rowMax <= 0) return MONEY_STEP;
+  if (!Number.isFinite(rowMax) || rowMax <= 0) return 1;
   const raw = rowMax / 60;
   const magnitude = 10 ** Math.floor(Math.log10(raw));
   for (const m of [1, 2, 2.5, 5]) {
-    if (raw <= m * magnitude) return Math.max(MONEY_STEP, Math.round(m * magnitude));
+    if (raw <= m * magnitude) return Math.max(1, Math.round(m * magnitude));
   }
-  return Math.max(MONEY_STEP, Math.round(10 * magnitude));
+  return Math.max(1, Math.round(10 * magnitude));
 }
 
 /** Just the symbol (`Ft` / `€` / `$`) for the given currency + locale. Used

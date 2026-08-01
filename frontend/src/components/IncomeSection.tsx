@@ -14,8 +14,9 @@ import { Lock, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
 import { guestApi, householdApi, incomeApi } from "../lib/endpoints";
-import { formatMoney, MONEY_STEP } from "../lib/format";
+import { formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { MoneyInput } from "./MoneyInput";
 import { useToast } from "./ui";
 
 const MAX_LABEL_LEN = 120;
@@ -252,14 +253,11 @@ export function IncomeSection({
               onChange={(e) => patchRow(r.key, { label: e.target.value })}
               onBlur={() => void commit(r.key)}
             />
-            <input
-              type="number"
-              min={1}
-              step={MONEY_STEP}
-              inputMode="numeric"
+            <MoneyInput
+              locale={locale}
               className={`${cellInput} stat-num w-32 shrink-0 tabular-nums`}
               value={r.amount}
-              onChange={(e) => patchRow(r.key, { amount: e.target.value })}
+              onChange={(digits) => patchRow(r.key, { amount: digits })}
               onBlur={() => void commit(r.key)}
               aria-label={t("income.field_amount")}
             />

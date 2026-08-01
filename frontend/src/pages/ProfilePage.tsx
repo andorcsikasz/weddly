@@ -46,6 +46,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { CountryCombobox } from "../components/CountryCombobox";
 import { CurrencySelect } from "../components/CurrencySelect";
+import { MoneyInput } from "../components/MoneyInput";
 import { PauseReasonDialog } from "../components/PauseReasonDialog";
 import { useConfirm, useEntryPrompt, useToast } from "../components/ui";
 import { WorkspacesPanel } from "../components/WorkspacesPanel";
@@ -71,7 +72,6 @@ import {
   formatMoney,
   formatTimestamp,
   isPlausibleDateIso,
-  MONEY_STEP,
   todayIso,
 } from "../lib/format";
 import { contentLocale, type Locale, useT } from "../lib/i18n";
@@ -908,13 +908,10 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
                   aria-label={t("profile.budget_cap_label")}
                 >
                   <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      step={MONEY_STEP}
+                    <MoneyInput
+                      locale={locale}
                       value={capInput}
-                      onChange={(ev) => setCapInput(ev.target.value)}
+                      onChange={setCapInput}
                       placeholder={t("profile.budget_cap_placeholder")}
                       className="input h-11 w-32 py-0 text-right text-base tabular-nums sm:h-8 sm:text-sm"
                       autoFocus
@@ -988,13 +985,10 @@ export default function ProfilePage({ tab }: { tab?: ProfileTab } = {}) {
                     disabled={savingPayment}
                   />
                   <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      step={MONEY_STEP}
+                    <MoneyInput
+                      locale={locale}
                       value={paymentAmount}
-                      onChange={(ev) => setPaymentAmount(ev.target.value)}
+                      onChange={setPaymentAmount}
                       placeholder={t("profile.budget_payment_amount_placeholder")}
                       className="input h-11 w-28 py-0 text-right text-base tabular-nums sm:h-8 sm:text-sm"
                       disabled={savingPayment}

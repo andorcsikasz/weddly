@@ -28,7 +28,9 @@ import { Skeleton } from "../components/ui";
 import { coupleApi } from "../lib/endpoints";
 import {
   currencySymbol,
+  digitsOnly,
   formatBudgetGoal,
+  formatGroupedDigits,
   formatGuestCountGoal,
   formatMoney,
   formatMoneyRange,
@@ -231,21 +233,6 @@ function buildBudgetGoal(f: FormState): BudgetGoal {
     min_huf: Number.isFinite(min) ? Math.round(min) : null,
     max_huf: Number.isFinite(max) ? Math.round(max) : null,
   };
-}
-
-/** Strip everything that isn't a digit. Used when typing into a grouped
- *  number input — we store the raw digits, format on display. */
-function digitsOnly(raw: string): string {
-  return raw.replace(/[^\d]/g, "");
-}
-
-/** Display a digit-only string with thousand separators per locale. Empty
- *  string passes through so the input can be cleared while editing. */
-function formatGroupedDigits(raw: string, locale: Locale): string {
-  if (!raw) return "";
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return raw;
-  return formatNumber(n, locale);
 }
 
 function isStepValid(step: number, f: FormState): boolean {

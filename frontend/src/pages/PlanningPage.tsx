@@ -63,6 +63,7 @@ import {
   supplierApi,
 } from "../lib/endpoints";
 import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
+import { MoneyInput } from "../components/MoneyInput";
 import { setSelection } from "../lib/supplier_selection";
 import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
@@ -3281,7 +3282,7 @@ function VendorModal({
   ) => Promise<void>;
   onDelete: (id: string) => Promise<boolean>;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const isEdit = vendor !== null;
 
   const [name, setName] = useState(vendor?.name ?? "");
@@ -3491,11 +3492,10 @@ function VendorModal({
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-umber-300">
               {t("planning.board_vendor_amount_label")}
             </span>
-            <input
-              type="number"
+            <MoneyInput
+              locale={locale}
               value={priceHuf}
-              onChange={(e) => setPriceHuf(e.target.value)}
-              min={0}
+              onChange={setPriceHuf}
               placeholder="-"
               className="w-full rounded-lg border border-paper-300 bg-paper-50 px-3 py-2 text-sm text-ink-900 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-50"
             />

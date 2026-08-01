@@ -20,9 +20,10 @@ import { Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { alreadyListedName, ApiError } from "../lib/api";
 import { coupleSupplierApi } from "../lib/endpoints";
-import { currencySymbol, formatMoney, MONEY_STEP } from "../lib/format";
+import { currencySymbol, formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { DirectoryTwinNotice } from "./DirectoryTwinNotice";
+import { MoneyInput } from "./MoneyInput";
 import { Button, Dialog, FieldError, HelperText, TextField, useConfirm, useToast } from "./ui";
 
 type Props = {
@@ -351,15 +352,12 @@ export function DiyEntryModal({
               the currency per workspace, so "(Ft)" was wrong for everyone
               outside Hungary. */}
           <div className="flex items-center gap-2">
-            <input
+            <MoneyInput
               id="diy-price"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              step={MONEY_STEP}
               className="input flex-1"
+              locale={locale}
               value={form.price}
-              onChange={(e) => setField("price", e.target.value)}
+              onChange={(digits) => setField("price", digits)}
               aria-invalid={errors.price ? true : undefined}
             />
             <span className="text-sm text-ink-500 dark:text-umber-300">{currencyGlyph}</span>
@@ -543,7 +541,11 @@ function InstallmentRow({
   busy: boolean;
   onRun: (p: Promise<{ supplier: CoupleSupplier }>) => void;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
+  // Uncontrolled elsewhere in this row, but a grouped field has to re-render
+  // as you type. Seeded from the row and committed on blur, same contract as
+  // the `defaultValue` inputs beside it.
+  const [amount, setAmount] = useState(String(inst.amount_huf));
 
   return (
     <li className="flex flex-wrap items-center gap-2">
@@ -571,19 +573,18 @@ function InstallmentRow({
         }}
         className="input min-w-[6rem] flex-1 !py-1 text-sm"
       />
-      <input
-        type="number"
-        min={1}
-        step={MONEY_STEP}
-        defaultValue={inst.amount_huf}
+      <MoneyInput
+        locale={locale}
+        value={amount}
+        onChange={setAmount}
         disabled={busy}
         aria-label={t("diy.schedule_amount")}
-        onBlur={(e) => {
-          const n = Math.round(Number(e.target.value));
+        onBlur={() => {
+          const n = Math.round(Number(amount));
           if (Number.isFinite(n) && n > 0 && n !== inst.amount_huf)
             onRun(coupleSupplierApi.updateInstallment(supplierId, inst.id, { amount_huf: n }));
         }}
-        className="input w-24 !py-1 text-sm"
+        className="input w-28 !py-1 text-right text-sm tabular-nums"
       />
       <input
         type="date"

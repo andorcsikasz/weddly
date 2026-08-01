@@ -10,8 +10,9 @@
 import type { Currency } from "@shared/types";
 import { Check, Minus, Pencil, Plus } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { currencySymbol, formatMoney, intlLocale, MONEY_STEP } from "../lib/format";
+import { currencySymbol, formatMoney, intlLocale } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { MoneyInput } from "./MoneyInput";
 import { Button, Dialog } from "./ui";
 
 type Props = {
@@ -325,15 +326,12 @@ export function CakeDrinksCalculator({ open, onClose, currency = "HUF", defaultG
                 &times;
               </span>
               <div className="inline-flex items-center gap-1">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  step={MONEY_STEP}
+                <MoneyInput
+                  locale={loc}
                   aria-label={`${itemLabel}: ${t("suppliers.calc.col_unit_price")}`}
-                  className="input !py-1 w-20 text-right text-sm"
+                  className="input !py-1 w-24 text-right text-sm tabular-nums"
                   value={fields[r.priceField]}
-                  onChange={(e) => set(r.priceField, e.target.value)}
+                  onChange={(digits) => set(r.priceField, digits)}
                 />
                 <span className="text-xs text-ink-500 dark:text-umber-300">{symbol}</span>
               </div>
