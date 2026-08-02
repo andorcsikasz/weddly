@@ -496,12 +496,22 @@ export default function VendorClientsPage() {
                     <span className="sm:text-center">
                       <StatusBadge status={c.status} />
                     </span>
+                    {/* Below `sm` the grid stacks and the column header is gone
+                        with it, so these two carry their own label: an unlabelled
+                        "-" under a name told the vendor nothing at all on a
+                        phone. Above `sm` the header says it and the prefix goes. */}
                     <span className="text-sm text-ink-600 dark:text-paper-300">
+                      <span className="mr-1.5 text-xs text-ink-400 sm:hidden dark:text-umber-400">
+                        {t("vendor.clients.col_stage")}
+                      </span>
                       <ProCell locked={crmLocked}>
                         {c.stage ? c.stage : <span className="text-ink-400">-</span>}
                       </ProCell>
                     </span>
                     <span className="text-sm tabular-nums text-ink-700 sm:text-right dark:text-paper-200">
+                      <span className="mr-1.5 text-xs tracking-normal text-ink-400 sm:hidden dark:text-umber-400">
+                        {t("vendor.clients.col_balance")}
+                      </span>
                       <ProCell locked={crmLocked}>
                         {c.balance !== null ? (
                           VOID_STATUSES.has(c.status) ? (

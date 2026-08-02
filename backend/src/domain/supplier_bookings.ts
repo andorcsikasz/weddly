@@ -89,6 +89,19 @@ export function isIsoDate(s: string): boolean {
   return d.toISOString().slice(0, 10) === s;
 }
 
+/** Midnight of `d` in the deployment's timezone. */
+function startOfLocalDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** `d`'s CIVIL date in the deployment's timezone as YYYY-MM-DD. Deliberately not
+ *  `toISOString().slice(0, 10)`, which reports the UTC date and so names the
+ *  wrong day for most of the evening east of Greenwich. */
+function localIsoDate(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 /** Returns the listings row keyed by the public supplier id. Used to find the
  *  vendor_account_id (claim status) for booking and availability lookups. */
 export function getListingFor(
@@ -351,12 +364,19 @@ export function nextAvailableDate(vendorAccountId: number): string | null {
     ).map((r) => r.event_date),
   );
 
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
+  // "Today" is the deployment's CIVIL date, not the UTC instant. Pinning it to
+  // UTC put the scan a whole day behind every vendor east of Greenwich between
+  // their local midnight and UTC midnight: a Budapest vendor opening the app at
+  // 00:30 on the 3rd was told the next free date was the 2nd, a date that had
+  // already passed for them. Reported against the Listing page, 2026-08-03.
+  // Set TZ on the service to the market's zone to close the window; unset (UTC)
+  // this behaves exactly as before.
+  const today = startOfLocalDay(new Date());
   for (let i = 0; i < 365; i++) {
-    const d = new Date(today);
-    d.setUTCDate(d.getUTCDate() + i);
-    const iso = d.toISOString().slice(0, 10);
+    // Civil-day arithmetic — the Date constructor normalises month/year rollover
+    // and a DST shift moves the clock, never the calendar date.
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+    const iso = localIsoDate(d);
     const state = resolveDayAvailability({
       hasConfirmedBooking: confirmed.has(iso),
       exception: exceptions.get(iso) ?? null,

@@ -130,6 +130,24 @@ describe("vendor availability — GET/POST/DELETE /api/vendor/availability/me", 
     expect(r.data.next_available).not.toBeNull();
   });
 
+  test("next_available is never a date that has already passed", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("avail-today");
+    const r = await req<VendorAvailabilityView>("GET", "/api/vendor/availability/me", undefined, {
+      token: vendorToken,
+    });
+    expect(r.status).toBe(200);
+    // The scan used to start from the UTC date, which runs a day behind every
+    // vendor east of Greenwich between their local midnight and UTC midnight:
+    // a Budapest vendor at 00:30 on the 3rd was offered the 2nd. Compared
+    // against the CIVIL date here for the same reason the scan now uses it.
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    expect(r.data.next_available).not.toBeNull();
+    expect(r.data.next_available && r.data.next_available >= today).toBe(true);
+  });
+
   test("block then unblock a future date round-trips", async () => {
     wipeAll();
     const { vendorToken } = await bootstrapVendor("avail-rt");

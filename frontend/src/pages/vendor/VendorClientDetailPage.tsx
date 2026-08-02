@@ -9,7 +9,19 @@
 import type { Currency } from "@shared/types";
 import type { VendorClientDetail, VendorClientPayment } from "@shared/vendor_clients";
 import type { VendorFeatureFlags } from "@shared/vendor_plan";
-import { ArrowLeft, CircleCheck, CircleDashed, Lock, Mail, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  CircleCheck,
+  CircleDashed,
+  CircleX,
+  Eye,
+  Lock,
+  Mail,
+  Plus,
+  Trash2,
+  Undo2,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -38,6 +50,19 @@ const STATUS_OPTIONS = [
   "cancelled",
   "expired",
 ] as const;
+
+/** The four states a vendor actually TRIAGES an inquiry into, as one-tap
+ *  actions. `requested` and `expired` are omitted deliberately: neither is a
+ *  decision the vendor makes about a lead (one is how it arrives, the other is
+ *  time passing), and the select below still carries the full six for the rare
+ *  correction. Icons are the same vocabulary the clients list uses, so a status
+ *  reads identically in both places. */
+const QUICK_STATUSES: ReadonlyArray<{ value: string; Icon: LucideIcon }> = [
+  { value: "vendor_seen", Icon: Eye },
+  { value: "confirmed", Icon: CircleCheck },
+  { value: "declined", Icon: CircleX },
+  { value: "cancelled", Icon: Undo2 },
+];
 
 /** Parse a money / number input to an integer whole-unit value, or null when the
  *  field is left blank or invalid. Grouping separators (regular, non-breaking
@@ -114,6 +139,9 @@ export default function VendorClientDetailPage() {
   const [depositPaid, setDepositPaid] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  // The status being written by a one-tap action, so only that button shows a
+  // pending state rather than the whole row going dead.
+  const [quickStatusBusy, setQuickStatusBusy] = useState<string | null>(null);
 
   // Message thread state. Loaded alongside the detail; sending is PRO, reading
   // is not, so the panel renders on FREE with the composer swapped for a nudge.
@@ -261,6 +289,28 @@ export default function VendorClientDetailPage() {
     [currency, locale],
   );
 
+  /** One-tap triage from the summary card. Sends ONLY the status, so it can't
+   *  carry half-typed edits from the CRM form below into the row, and re-seeds
+   *  the form from the server's answer so the select and these buttons can
+   *  never disagree about the current state. */
+  async function onQuickStatus(next: string) {
+    if (!detail || next === detail.status || quickStatusBusy !== null) return;
+    setQuickStatusBusy(next);
+    try {
+      const res = await vendorClientsApi.update(detail.id, { status: next });
+      setDetail(res.client);
+      hydrateForm(res.client);
+      // Confirming or declining moves what the dashboard counts, and the rail
+      // badge is only re-fetched on navigation.
+      notifyVendorStatsStale();
+      toast.success(t("vendor.clients.saved"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("vendor.clients.save_failed"));
+    } finally {
+      setQuickStatusBusy(null);
+    }
+  }
+
   async function onSaveCrm() {
     if (!detail) return;
     setSaving(true);
@@ -398,9 +448,42 @@ export default function VendorClientDetailPage() {
       </header>
 
       <section className="card grid gap-4 sm:grid-cols-2">
+        {/* Status is the one summary field that is also a DECISION, so it is
+            the one that gets controls rather than a label. The current state
+            stays spelled out above them: the quick set is the four a vendor
+            triages into, and a booking sitting in `requested` or `expired`
+            would otherwise light no button and read as having no status. */}
         <SummaryItem
           label={t("vendor.clients.status_label")}
-          value={t(`vendor.clients.status_${detail.status}`)}
+          value={
+            <div className="space-y-2">
+              <span className="block">{t(`vendor.clients.status_${detail.status}`)}</span>
+              {canEditCrm ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {QUICK_STATUSES.map(({ value, Icon }) => {
+                    const active = detail.status === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => onQuickStatus(value)}
+                        disabled={quickStatusBusy !== null || active}
+                        aria-pressed={active}
+                        className={`inline-flex min-h-tap items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors disabled:cursor-default ${
+                          active
+                            ? "bg-blush-500 text-white"
+                            : "border border-paper-300 text-ink-700 hover:bg-paper-100 disabled:opacity-50 dark:border-umber-700 dark:text-paper-200 dark:hover:bg-umber-800"
+                        }`}
+                      >
+                        <Icon size={15} aria-hidden="true" />
+                        {t(`vendor.clients.status_${value}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          }
         />
         <SummaryItem
           label={t("vendor.clients.contact_email")}
