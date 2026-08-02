@@ -1942,8 +1942,11 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     opacity: 0;
   }
 }
-/* Each bar is 30% of its edge, so a full traverse is (100 + 30) / 30 = 433.33%
-   of its own length: from just off one corner to just past the next. */
+/* A bar is `--trace-len` of its edge, so a full traverse is (100 + len) / len of
+   its OWN length: from just off one corner to just past the next. The end
+   translate is that minus the -100% start, and it lives in `--trace-end` next to
+   the length it is derived from, because the two numbers are one decision and a
+   drift between them parks the light half a corner short. */
 @keyframes trace-edge-top {
   0% {
     opacity: 1;
@@ -1951,7 +1954,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   40% {
     opacity: 1;
-    transform: translateX(333.33%);
+    transform: translateX(var(--trace-end));
   }
   40.01%,
   100% {
@@ -1969,7 +1972,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   50% {
     opacity: 1;
-    transform: translateY(333.33%);
+    transform: translateY(var(--trace-end));
   }
   50.01%,
   100% {
@@ -1983,7 +1986,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   50.01% {
     opacity: 1;
-    transform: translateX(333.33%);
+    transform: translateX(var(--trace-end));
   }
   90% {
     opacity: 1;
@@ -2001,7 +2004,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
   }
   90.01% {
     opacity: 1;
-    transform: translateY(333.33%);
+    transform: translateY(var(--trace-end));
   }
   100% {
     opacity: 1;
@@ -2011,8 +2014,16 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
 .trace-frame {
   /* One lap. Slow enough to follow with the eye rather than register as a
      flicker: at 1.5s the light crossed the long edge faster than the reader
-     could track it, which reads as a glitch instead of an invitation. */
-  --trace-lap: 2.4s;
+     could track it, which reads as a glitch instead of an invitation, and 2.4s
+     still hurried. At a walking pace the light is something the eye can rest
+     on, so the four laps are 29s of quiet drift rather than a blinking badge. */
+  --trace-lap: 7.2s;
+  /* Bar length as a share of its edge, and the matching end translate:
+     (100 + len) / len - 100, in the bar's own units. Short and crisp, because a
+     long bar crawling at this pace reads as a smear sliding rather than a light
+     travelling. */
+  --trace-len: 20%;
+  --trace-end: 500%;
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -2022,7 +2033,7 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
      point of it. 5px carries at a glance and still reads as a frame rather
      than a bar, since the ring's own colour sits close to the plate's. */
   padding: 5px;
-  background: theme("colors.ink.700");
+  background: theme("colors.umber.800");
 }
 html.dark .trace-frame {
   background: theme("colors.umber.700");
@@ -2055,21 +2066,28 @@ html.dark .trace-frame {
 /* Warm brass shoulders into a near-white core, which is what makes it read as
    light travelling rather than a coloured stripe sliding. The glow is clipped to
    the ring by the wrapper's `overflow: hidden` and the plate above it, so it
-   widens the apparent line instead of leaking into the card. */
+   widens the apparent line instead of leaking into the card. Tight rather than
+   generous: a 12px halo around a bar this slow blurred the two ends into the
+   ring and the light lost its edge, so the halo is only what keeps the core from
+   looking cut out of paper. */
 .trace-run > i {
-  box-shadow: 0 0 12px 1px theme("colors.paper.300" / 50%);
+  box-shadow: 0 0 6px 0 theme("colors.paper.200" / 40%);
 }
+/* The core is a short bright middle with a fast falloff on both shoulders. The
+   old 20/50/80 stops spread the brightness over the whole bar, which at this
+   pace reads as a lit rod being dragged; 38/50/62 leaves a point of light with a
+   tail. */
 .trace-run-top,
 .trace-run-bottom {
   left: 0;
   height: 5px;
-  width: 30%;
+  width: var(--trace-len);
   background: linear-gradient(
     90deg,
     transparent,
-    theme("colors.paper.400") 20%,
+    theme("colors.paper.400") 38%,
     theme("colors.paper.50") 50%,
-    theme("colors.paper.400") 80%,
+    theme("colors.paper.400") 62%,
     transparent
   );
 }
@@ -2077,13 +2095,13 @@ html.dark .trace-frame {
 .trace-run-right {
   top: 0;
   width: 5px;
-  height: 30%;
+  height: var(--trace-len);
   background: linear-gradient(
     180deg,
     transparent,
-    theme("colors.paper.400") 20%,
+    theme("colors.paper.400") 38%,
     theme("colors.paper.50") 50%,
-    theme("colors.paper.400") 80%,
+    theme("colors.paper.400") 62%,
     transparent
   );
 }
