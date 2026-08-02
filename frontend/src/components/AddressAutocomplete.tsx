@@ -61,6 +61,12 @@ export function AddressAutocomplete({
   // suggestion writes the input value, which must not spawn a new search.
   const requestSeq = useRef(0);
   const suppressNext = useRef(false);
+  // Whether the input still has focus. A search in flight when the vendor
+  // clicks away used to resolve AFTER the blur and re-open the list on an
+  // unfocused field: nothing could then close it, because blur had already
+  // happened and Escape is keyed to the input. The listing page's city field
+  // was left with a suggestion list hanging over the form until reload.
+  const focused = useRef(false);
 
   useEffect(() => {
     if (suppressNext.current) {
@@ -81,7 +87,7 @@ export function AddressAutocomplete({
           if (requestSeq.current !== seq) return;
           setSuggestions(r.suggestions);
           setHighlighted(-1);
-          setOpen(r.suggestions.length > 0);
+          setOpen(focused.current && r.suggestions.length > 0);
         })
         .catch(() => {
           // Upstream hiccup or rate limit: typing stays fully usable.
@@ -140,7 +146,13 @@ export function AddressAutocomplete({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
-        onBlur={() => setOpen(false)}
+        onFocus={() => {
+          focused.current = true;
+        }}
+        onBlur={() => {
+          focused.current = false;
+          setOpen(false);
+        }}
         placeholder={placeholder}
         maxLength={maxLength}
         disabled={disabled}

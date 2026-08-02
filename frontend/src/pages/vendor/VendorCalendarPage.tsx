@@ -625,6 +625,14 @@ function TimeGridView({
     };
   }, [days, eventsByDate]);
 
+  // Mirrors the month grid's `editable`: a day the vendor can still act on. A
+  // confirmed booking owns its date (unblocking it would be a lie) and the past
+  // cannot be blocked, so both keep the plain, inert header.
+  const isDayEditable = (iso: string) =>
+    !!onOpenDay &&
+    iso >= todayStr &&
+    !(eventsByDate.get(iso) ?? []).some((e) => e.kind === "booked");
+
   const span = windowEnd - windowStart;
   const now = new Date();
   const nowTop = ((now.getHours() + now.getMinutes() / 60 - windowStart) / span) * 100;
@@ -642,16 +650,23 @@ function TimeGridView({
   return (
     <div className="overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900">
       <div className="overflow-x-auto">
-        {/* Day headers */}
+        {/* Day headers. The header is also the day's blocking target: the hour
+            grid has no cell to click on a day with nothing on it, so blocking a
+            free Saturday used to be possible in the month grid ALONE while the
+            page's own instruction line ("click a day in the calendar") was
+            printed under every view. Same editability rule as the month cell —
+            a booked day and the past stay inert. */}
         <div
           className="grid border-b border-paper-200 dark:border-umber-800"
           style={{ gridTemplateColumns: cols }}
         >
           <div />
           {days.map((d) => {
-            const isToday = ymd(d) === todayStr;
-            return (
-              <div key={ymd(d)} className="px-1 py-2 text-center">
+            const iso = ymd(d);
+            const isToday = iso === todayStr;
+            const editable = isDayEditable(iso);
+            const inner = (
+              <>
                 <div className="text-[10px] uppercase tracking-wide text-umber-400 dark:text-umber-500">
                   {wd(d)}
                 </div>
@@ -664,6 +679,21 @@ function TimeGridView({
                 >
                   {d.getDate()}
                 </div>
+              </>
+            );
+            return editable ? (
+              <button
+                key={iso}
+                type="button"
+                onClick={() => onOpenDay?.(iso)}
+                title={openTitleFor(iso)}
+                className="px-1 py-2 text-center transition-colors hover:bg-paper-50 dark:hover:bg-umber-800/60"
+              >
+                {inner}
+              </button>
+            ) : (
+              <div key={iso} className="px-1 py-2 text-center">
+                {inner}
               </div>
             );
           })}
@@ -681,15 +711,32 @@ function TimeGridView({
             {allDayLabel}
           </div>
           {days.map((d) => {
+            const iso = ymd(d);
             // Partial blocks AND external busy are drawn on the hour grid below
             // at their real position, so repeating them here would double-count
             // the day.
-            const evs = (eventsByDate.get(ymd(d)) ?? []).filter(
+            const evs = (eventsByDate.get(iso) ?? []).filter(
               (ev) => !isPartialBlock(ev) && ev.kind !== "external" && ev.kind !== "buffer",
             );
+            // An empty band is the obvious place to aim at for "block this day",
+            // and being empty is exactly what makes a plain button safe here: a
+            // day carrying pills keeps them as its own click targets rather than
+            // nesting them inside one.
+            if (evs.length === 0 && isDayEditable(iso)) {
+              return (
+                <button
+                  key={iso}
+                  type="button"
+                  onClick={() => onOpenDay?.(iso)}
+                  title={openTitleFor(iso)}
+                  aria-label={openTitleFor(iso)}
+                  className="min-h-[2.5rem] border-l border-paper-100 p-1 transition-colors hover:bg-paper-50 dark:border-umber-800 dark:hover:bg-umber-800/60"
+                />
+              );
+            }
             return (
               <div
-                key={ymd(d)}
+                key={iso}
                 className="min-h-[2.5rem] space-y-1 border-l border-paper-100 p-1 dark:border-umber-800"
               >
                 {evs.map((ev, i) => (

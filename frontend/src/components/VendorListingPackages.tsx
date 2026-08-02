@@ -320,6 +320,16 @@ function PackageCard({
                   className="shrink-0 text-ink-400 dark:text-umber-300"
                 />
               )}
+              {/* The disclosure cue. Without it the row's only glyph was the
+                  pencil beside it, which means RENAME — so price, description
+                  and the PDF read as things an existing package simply doesn't
+                  have, while a freshly added one (auto-expanded) showed all
+                  three. Reported as "the package cannot be edited". */}
+              <ChevronDown
+                size={16}
+                aria-hidden
+                className="shrink-0 text-ink-400 dark:text-umber-300"
+              />
             </button>
             <button
               type="button"
@@ -347,7 +357,9 @@ function PackageCard({
             aria-label={t("a11y.close")}
             className="vp-btn-quiet shrink-0"
           >
-            <ChevronDown size={16} aria-hidden />
+            {/* Flipped against the collapsed cue, so the pair reads as one
+                control in two states rather than two unrelated chevrons. */}
+            <ChevronDown size={16} aria-hidden className="rotate-180" />
           </button>
         )}
       </div>

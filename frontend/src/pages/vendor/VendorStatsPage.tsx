@@ -562,6 +562,13 @@ function TrendChart({
       </p>
     );
   }
+  // The axis top is rounded up to an even count so its midline lands on a whole
+  // one. Labelling the three gridlines straight off `max` printed "0 / 1 / 1"
+  // for every vendor whose best day was a single view, since Math.round(0.5)
+  // is 1 — an axis that reads as broken on exactly the accounts with the least
+  // reason to trust the numbers. Bars scale to the same top, so a lone view
+  // fills half the frame rather than all of it, which is also the truth.
+  const axisTop = max % 2 === 0 ? max : max + 1;
   // Label thinning: at most ~6 axis labels, evenly spaced from the first.
   const step = Math.ceil(buckets.length / 6);
   return (
@@ -575,7 +582,7 @@ function TrendChart({
             style={{ bottom: `${f * 100}%` }}
           >
             <span className="absolute -top-2 right-0 text-[10px] text-ink-400 tabular-nums dark:text-paper-500">
-              {Math.round(f * max)}
+              {f * axisTop}
             </span>
           </div>
         ))}
@@ -584,7 +591,7 @@ function TrendChart({
             <div key={`${b.label}-${i}`} className="group relative flex h-full flex-1 items-end">
               <div
                 className="w-full rounded-t bg-blush-500 transition-colors group-hover:bg-blush-600 dark:bg-blush-400 dark:group-hover:bg-blush-300"
-                style={{ height: `${Math.max((b.count / max) * 100, b.count > 0 ? 3 : 0)}%` }}
+                style={{ height: `${Math.max((b.count / axisTop) * 100, b.count > 0 ? 3 : 0)}%` }}
               />
               {/* Full-column hover target + tooltip. */}
               <span

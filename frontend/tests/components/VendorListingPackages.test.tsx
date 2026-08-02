@@ -62,7 +62,7 @@ describe("VendorListingPackages — collapsible cards", () => {
 
     // No package body fields are mounted while collapsed.
     expect(screen.queryByLabelText("Package name")).toBeNull();
-    expect(screen.queryByLabelText("Price (optional)")).toBeNull();
+    expect(screen.queryByLabelText("Price")).toBeNull();
     expect(screen.queryByText("Save")).toBeNull();
 
     // Each collapsed card is a toggle button summarising name + price.
@@ -80,22 +80,23 @@ describe("VendorListingPackages — collapsible cards", () => {
       </Providers>,
     );
 
-    const firstHeader = screen.getAllByRole("button", { expanded: false })[0]!;
-    fireEvent.click(firstHeader);
+    fireEvent.click(screen.getAllByRole("button", { expanded: false })[0]!);
 
-    // Body of the first package is now open — its fields are mounted.
+    // Body of the first package is now open — its fields are mounted. The
+    // header's own button is GONE at this point: an open card turns its title
+    // into the name input, so the title is never printed twice. The collapse
+    // control is the chevron beside it.
     const nameInput = screen.getByLabelText("Package name") as HTMLInputElement;
     expect(nameInput.value).toBe("Tasting");
-    expect(screen.getByLabelText("Price (optional)")).toBeTruthy();
+    expect(screen.getByLabelText("Price")).toBeTruthy();
     expect(screen.getByText("Save")).toBeTruthy();
-    expect(firstHeader.getAttribute("aria-expanded")).toBe("true");
 
     // Only THIS card opened — the other two stay collapsed.
     expect(screen.getAllByRole("button", { expanded: false }).length).toBe(2);
 
-    // Clicking the header again collapses it.
-    fireEvent.click(firstHeader);
+    // The chevron collapses it again.
+    fireEvent.click(screen.getByRole("button", { expanded: true }));
     expect(screen.queryByLabelText("Package name")).toBeNull();
-    expect(firstHeader.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getAllByRole("button", { expanded: false }).length).toBe(3);
   });
 });
