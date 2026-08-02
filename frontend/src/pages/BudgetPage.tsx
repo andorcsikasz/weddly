@@ -138,8 +138,13 @@ function budgetCap(couple: Couple | null): number | null {
   return null;
 }
 
-/** Strip whitespace + dots so HU-formatted "350 000" / "350.000" both parse. */
-function parseHuf(raw: string): number | null {
+/** Strip every grouping separator our locales emit, so "350 000" (HU),
+ *  "350,000" (EN) and "350.000" (ES) all parse to the same integer.
+ *  Deliberately locale-AGNOSTIC rather than locale-aware: a couple who
+ *  switches language mid-edit, or pastes an amount copied from elsewhere,
+ *  still gets the number they meant. `\s` is what covers the non-breaking and
+ *  narrow spaces `Intl` actually emits; a literal " " would not. */
+function parseAmountInput(raw: string): number | null {
   const cleaned = raw.replace(/[\s. ]/g, "").replace(/,/g, "");
   if (cleaned === "") return 0;
   if (!/^\d+$/.test(cleaned)) return null;
@@ -3373,8 +3378,13 @@ function HufInput({
   dataKey?: "planned" | "actual" | "paid";
   ariaLabel?: string;
 }) {
-  const { t } = useT();
-  const [draft, setDraft] = useState<string>(formatNumber(value, "hu"));
+  // Amounts group in the READER's locale ("1,500,000" in EN, "1.500.000" in ES,
+  // "1 500 000" in HU). This was pinned to "hu" while the card around it was
+  // already locale-aware, so an English workspace read its own money in
+  // Hungarian. Parsing stays locale-agnostic (`parseAmountInput`), so a
+  // switch mid-edit can't turn a valid figure into an error.
+  const { t, locale } = useT();
+  const [draft, setDraft] = useState<string>(formatNumber(value, locale));
   const [error, setError] = useState(false);
   // Transient "saved" tick. A toast per amount edit would be unbearable on a
   // page whose whole point is typing 13 numbers in a row, but with no
@@ -3392,11 +3402,12 @@ function HufInput({
   // output. Null means "leave the caret alone" (initial mount / blur).
   const caretDigitsRef = useRef<number | null>(null);
 
-  // Reset when the upstream value changes (e.g. snapshot reload, refresh).
+  // Reset when the upstream value changes (e.g. snapshot reload, refresh), or
+  // when the reader switches language and the grouping has to be redrawn.
   useEffect(() => {
-    setDraft(formatNumber(value, "hu"));
+    setDraft(formatNumber(value, locale));
     setError(false);
-  }, [value]);
+  }, [value, locale]);
 
   useEffect(
     () => () => {
@@ -3449,7 +3460,7 @@ function HufInput({
       return;
     }
     caretDigitsRef.current = digitsBeforeCaret;
-    setDraft(formatNumber(n, "hu"));
+    setDraft(formatNumber(n, locale));
     if (error) setError(false);
   }
 
@@ -3478,13 +3489,13 @@ function HufInput({
   async function onBlur() {
     selectingRef.current = false;
     if (readOnly) return;
-    const parsed = parseHuf(draft);
+    const parsed = parseAmountInput(draft);
     if (parsed === null) {
       setError(true);
       return;
     }
     // Always re-format so the user sees grouping after they leave the field.
-    setDraft(formatNumber(parsed, "hu"));
+    setDraft(formatNumber(parsed, locale));
     if (parsed === value) return;
     const outcome = await onCommit(parsed);
     if (outcome === false) return;

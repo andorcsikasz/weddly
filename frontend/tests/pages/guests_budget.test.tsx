@@ -908,6 +908,21 @@ describe("<BudgetPage>", () => {
     expect(actual!.selectionEnd).toBe(actual!.value.length);
   });
 
+  it("groups amounts in the reader's locale, not always in Hungarian", async () => {
+    // The field was pinned to formatNumber(value, "hu") while the card around
+    // it was already locale-aware, so an English workspace read its own money
+    // as "1 500 000". The harness pins locale to "en".
+    installDefaultEndpoints({
+      lines: [makeBudgetLine({ id: 5001, category: "venue", actual_huf: 1_500_000 })],
+    });
+    renderBudget();
+    await waitFor(() => expect(screen.getAllByText("Venue").length).toBeGreaterThan(0));
+    await flush(2);
+
+    const actual = document.querySelector('input[data-budget-actual="true"]') as HTMLInputElement;
+    expect(actual.value).toBe("1,500,000");
+  });
+
   it("acknowledges a committed amount edit", async () => {
     // The page's only other write acknowledgements are toasts on payments and
     // snapshots; typing amounts produced nothing at all, so a committed edit

@@ -18,14 +18,14 @@ import { MemoryRouter } from "react-router-dom";
 import { CostPlanningCard } from "@/components/CostPlanningCard";
 import { I18nProvider } from "@/lib/i18n";
 
-function line(id: number, category: BudgetCategory, planned: number): BudgetLine {
+function line(id: number, category: BudgetCategory, planned: number, actual = 0): BudgetLine {
   return {
     id,
     couple_id: 1,
     category,
     label: category,
     planned_huf: planned,
-    actual_huf: 0,
+    actual_huf: actual,
     paid_huf: 0,
     supplier_id: null,
     couple_supplier_id: null,
@@ -44,6 +44,9 @@ function setup({
   frozen = new Set<BudgetCategory>(),
   onEditPlanned = mock(async () => {}),
   onToggleFreeze,
+  onCountLockToggle,
+  countLocked = false,
+  showActualToggle = false,
 }: {
   lines: BudgetLine[];
   count?: number;
@@ -51,6 +54,11 @@ function setup({
   frozen?: Set<BudgetCategory>;
   onEditPlanned?: (cat: BudgetCategory, planned: number) => Promise<void>;
   onToggleFreeze?: (cat: BudgetCategory) => void;
+  onCountLockToggle?: () => void;
+  countLocked?: boolean;
+  /** Matches the component default. BudgetPage passes it; the dashboard
+   *  deliberately doesn't, so the toggle is absent there. */
+  showActualToggle?: boolean;
 }) {
   return render(
     <MemoryRouter>
@@ -66,6 +74,9 @@ function setup({
           onEditPlanned={onEditPlanned}
           frozenCategories={frozen}
           onToggleFreeze={onToggleFreeze}
+          onCountLockToggle={onCountLockToggle}
+          countLocked={countLocked}
+          showActualToggle={showActualToggle}
         />
       </I18nProvider>
     </MemoryRouter>,
@@ -241,5 +252,88 @@ describe("<CostPlanningCard> freeze affordance", () => {
     // be pinned.
     setup({ lines: [line(1, "venue", 300_000)] });
     expect(screen.queryByRole("button", { name: /freeze/i })).toBeNull();
+  });
+
+  it("keeps the category name in the row at every width", () => {
+    // The name used to carry `hidden sm:inline`, so a phone got a bare 14px
+    // glyph and no way to tell which of thirteen bar charts it was looking
+    // at. The row wraps on mobile now, which pays for the label outright.
+    setup({ lines: [line(1, "venue", 300_000)] });
+    const label = screen.getByText(/venue/i);
+    expect(label.className).not.toContain("hidden");
+  });
+});
+
+describe("<CostPlanningCard> headcount lock", () => {
+  // Same defect as the category icon, one row up: the giant headcount number
+  // WAS the toggle, and the only hint was an open-lock badge revealed on
+  // hover. Hover does not exist on a phone, so tapping the number silently
+  // pinned the count and collapsed the slider underneath it.
+  it("does not pin the headcount when the number itself is clicked", () => {
+    const onCountLockToggle = mock(() => {});
+    setup({ lines: [line(1, "venue", 300_000)], count: 120, onCountLockToggle });
+
+    fireEvent.click(screen.getByText("120"));
+    expect(onCountLockToggle).not.toHaveBeenCalled();
+  });
+
+  it("pins the headcount from a dedicated control", () => {
+    const onCountLockToggle = mock(() => {});
+    setup({ lines: [line(1, "venue", 300_000)], count: 120, onCountLockToggle });
+
+    const control = screen.getByRole("button", { name: /pin the headcount/i });
+    expect(control.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(control);
+    expect(onCountLockToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers the inverse action once pinned", () => {
+    setup({
+      lines: [line(1, "venue", 300_000)],
+      count: 120,
+      countLocked: true,
+      onCountLockToggle: mock(() => {}),
+    });
+    expect(
+      screen.getByRole("button", { name: /unpin the headcount/i }).getAttribute("aria-pressed"),
+    ).toBe("true");
+  });
+});
+
+describe("<CostPlanningCard> actual-spend overlay", () => {
+  // Planned-against-actual is the reason this panel is sliders and not a
+  // table, and it used to arrive switched off behind an unlabelled Receipt
+  // glyph — so the question the page exists to answer was the one thing it
+  // did not show on load.
+  function overlayCount(container: HTMLElement): number {
+    // Counted by its own attribute rather than by class: the honeymoon row
+    // draws a static `range-fill` lookalike bar too, so a class selector
+    // matches whether or not the overlay is on and proves nothing.
+    return container.querySelectorAll("[data-actual-overlay]").length;
+  }
+
+  it("draws the actual bar on arrival, without being switched on", () => {
+    const { container } = setup({
+      lines: [line(1, "venue", 300_000, 120_000)],
+    });
+    expect(overlayCount(container)).toBe(1);
+  });
+
+  it("still lets the couple hide it", () => {
+    const { container } = setup({
+      lines: [line(1, "venue", 300_000, 120_000)],
+      showActualToggle: true,
+    });
+    // Starting visible, the control reads as "hide this" rather than as a
+    // mystery button — which is the whole reason it can stay.
+    fireEvent.click(screen.getByRole("button", { name: /hide actual/i }));
+    expect(overlayCount(container)).toBe(0);
+  });
+
+  it("shows no overlay control at all when nothing has been spent", () => {
+    // Toggling would change nothing visible, so the control would read as a
+    // dead chip.
+    setup({ lines: [line(1, "venue", 300_000)], showActualToggle: true });
+    expect(screen.queryByRole("button", { name: /actual/i })).toBeNull();
   });
 });

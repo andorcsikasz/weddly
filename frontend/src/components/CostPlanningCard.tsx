@@ -318,10 +318,19 @@ export function CostPlanningCard({
   onRemoveCustomRow?: (lineId: number) => void | Promise<void>;
 }) {
   const { t, locale } = useT();
-  // Second-layer overlay: when on, each category row renders a thin red bar
-  // under the planned slider showing the actual spend. Local state — no
-  // persistence; toggling is cheap and most users won't keep it on.
-  const [showActualOverlay, setShowActualOverlay] = useState(false);
+  // Second-layer overlay: each category row renders a thin red bar under the
+  // planned slider showing the actual spend.
+  //
+  // ON by default. Planned-against-actual is the whole reason this panel is a
+  // set of sliders rather than a table, and it was parked behind an unlabelled
+  // Receipt glyph that most couples never pressed — so the answer the page
+  // exists to give ("where am I against what I said?") was the one thing it
+  // did not show on arrival. The toggle stays, because a couple who finds the
+  // second bar noisy needs a way to quiet it, and now that it starts visible
+  // the control reads as "hide this" rather than as a mystery button. It also
+  // only renders once some row HAS an actual, so it never sits there dead.
+  // Local state, no persistence: it costs one tap to restore.
+  const [showActualOverlay, setShowActualOverlay] = useState(true);
   const factor = baseline > 0 ? count / baseline : 1;
 
   // In-progress drags, ONE ENTRY PER ROW. Lifted out of the row components
@@ -589,52 +598,48 @@ export function CostPlanningCard({
        *  the overage pill that wraps to its own line — so mobile gets a
        *  positive top gap and a touch more breathing room under the label.
        *
-       *  Click-to-lock: when `onCountLockToggle` is wired the big number
-       *  becomes a button. Hovering reveals an open-lock badge to the
-       *  right; clicking pins the headcount and flips the badge to
-       *  closed-lock, while the slider beneath collapses with a smooth
-       *  max-height transition so the panel feels like it tucked the
-       *  knob away rather than greying it out. */}
+       *  Click-to-lock: the lock is its OWN control beside the number, not
+       *  the number itself. It used to be the number, with the affordance
+       *  carried by an open-lock badge revealed on hover — which does not
+       *  exist on a touch screen, so tapping the headcount silently pinned
+       *  it and collapsed the slider underneath with nothing having said the
+       *  number was a button. Same reasoning as the per-row category lock.
+       *  Locking still collapses the slider beneath with a max-height
+       *  transition, so the panel reads as having tucked the knob away
+       *  rather than greying it out.
+       *
+       *  The lock occupied layout width even while invisible, so making it
+       *  permanent costs no shift in where the number sits. */}
       <div className="mt-3 text-center sm:-mt-3">
-        {onCountLockToggle ? (
-          <button
-            type="button"
-            onClick={() => void onCountLockToggle()}
-            className="group inline-flex items-center gap-2 rounded-md px-2 py-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-200 dark:focus-visible:ring-paper-50"
-            aria-pressed={countLocked}
-            aria-label={t(
-              countLocked
-                ? "budget.cost_planning_count_unlock_aria"
-                : "budget.cost_planning_count_lock_aria",
-            )}
-            title={t(
-              countLocked
-                ? "budget.cost_planning_count_unlock_aria"
-                : "budget.cost_planning_count_lock_aria",
-            )}
-          >
-            <span className="font-grotesk text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
-              {formatNumber(count, locale)}
-            </span>
-            {countLocked ? (
-              <Lock
-                size={16}
-                className="shrink-0 text-ink-500 transition dark:text-umber-200"
-                aria-hidden
-              />
-            ) : (
-              <LockOpen
-                size={16}
-                className="shrink-0 text-ink-400 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100 dark:text-umber-300"
-                aria-hidden
-              />
-            )}
-          </button>
-        ) : (
-          <div className="font-grotesk text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
+        <div className="inline-flex items-center gap-2 px-2 py-0.5">
+          <span className="font-grotesk text-5xl leading-none text-ink-900 sm:text-5xl dark:text-paper-50">
             {formatNumber(count, locale)}
-          </div>
-        )}
+          </span>
+          {onCountLockToggle && (
+            <button
+              type="button"
+              onClick={() => void onCountLockToggle()}
+              className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-200 dark:focus-visible:ring-paper-50 ${
+                countLocked
+                  ? "text-ink-600 hover:bg-paper-100 dark:text-umber-200 dark:hover:bg-umber-700"
+                  : "text-ink-300 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-500 dark:hover:bg-umber-700 dark:hover:text-umber-200"
+              }`}
+              aria-pressed={countLocked}
+              aria-label={t(
+                countLocked
+                  ? "budget.cost_planning_count_unlock_aria"
+                  : "budget.cost_planning_count_lock_aria",
+              )}
+              title={t(
+                countLocked
+                  ? "budget.cost_planning_count_unlock_aria"
+                  : "budget.cost_planning_count_lock_aria",
+              )}
+            >
+              {countLocked ? <Lock size={16} aria-hidden /> : <LockOpen size={16} aria-hidden />}
+            </button>
+          )}
+        </div>
         <div className="mt-2 text-[11px] font-medium uppercase tracking-wider text-ink-400 sm:mt-0.5 dark:text-umber-400">
           {t("budget.cost_planning_unit_label")}
         </div>
@@ -816,9 +821,26 @@ export function CostPlanningCard({
  *  column is the freeze lock, and it is reserved on EVERY row variant —
  *  including the ones that can't be frozen (honeymoon's link row, custom
  *  rows) — because they share one list and a per-row column count would
- *  stagger the sliders against each other. */
+ *  stagger the sliders against each other.
+ *
+ *  The row WRAPS below `sm:`. One line was only ever affordable by hiding the
+ *  category name, which left a phone showing thirteen bar charts labelled
+ *  with nothing but a 14 px glyph — and the rail was squeezed to ~9rem to buy
+ *  even that. Putting the slider on its own line pays for itself twice: the
+ *  name comes back at full width, and the rail roughly doubles, which is the
+ *  difference between a bar chart and a smear. Desktop is untouched — it has
+ *  the width for one line and keeps it. */
 const ROW_GRID =
-  "grid grid-cols-[2rem_minmax(0,1fr)_4.5rem_1.5rem] items-center gap-2 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem_1.75rem] sm:gap-3 sm:text-sm";
+  "grid grid-cols-[minmax(0,1fr)_auto_1.5rem] items-center gap-x-2 gap-y-1 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem_1.75rem] sm:gap-x-3 sm:gap-y-0 sm:text-sm";
+/** Cell placement, so the three row variants can't drift out of step. The
+ *  DOM order stays label → track → amount → lock (which is the reading order
+ *  on desktop and the tab order everywhere); mobile re-places the track onto
+ *  its own line underneath. */
+const ROW_LABEL_CELL = "col-start-1 row-start-1";
+const ROW_TRACK_CELL =
+  "col-start-1 col-span-3 row-start-2 sm:col-start-2 sm:col-span-1 sm:row-start-1";
+const ROW_AMOUNT_CELL = "col-start-2 row-start-1 sm:col-start-3";
+const ROW_LOCK_CELL = "col-start-3 row-start-1 sm:col-start-4";
 
 function CategoryRowInner({
   category,
@@ -1009,15 +1031,17 @@ function CategoryRowInner({
         className={`shrink-0 ${frozen ? "text-blush-700 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"}`}
         aria-hidden
       />
-      {/* Icon-only on phones: the label is hidden `<sm` so the left column
-       *  collapses to just the glyph and hands its width to the slider rail.
-       *  The full label returns at `sm:` upwards where the column has room. */}
-      <span className={`hidden min-w-0 truncate sm:inline ${frozenTint}`}>{categoryLabel}</span>
+      {/* Shown at every width now that the slider has its own line on mobile.
+       *  `truncate` still guards the long names against the 10rem desktop
+       *  column. */}
+      <span className={`min-w-0 truncate ${frozenTint}`}>{categoryLabel}</span>
     </>
   );
 
   const leftTile = (
-    <span className={`flex items-center gap-2 text-ink-700 dark:text-paper-100 ${frozenTint}`}>
+    <span
+      className={`${ROW_LABEL_CELL} flex min-w-0 items-center gap-2 text-ink-700 dark:text-paper-100 ${frozenTint}`}
+    >
       {leftTileContent}
     </span>
   );
@@ -1032,7 +1056,7 @@ function CategoryRowInner({
     <button
       type="button"
       onClick={() => onToggleFreeze?.(category)}
-      className={`inline-flex h-6 w-6 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 ${
+      className={`${ROW_LOCK_CELL} inline-flex h-6 w-6 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 ${
         frozen
           ? "text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
           : "text-ink-300 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-500 dark:hover:bg-umber-700 dark:hover:text-umber-200"
@@ -1048,7 +1072,7 @@ function CategoryRowInner({
       {frozen ? <Lock size={12} aria-hidden /> : <LockOpen size={12} aria-hidden />}
     </button>
   ) : (
-    <span aria-hidden />
+    <span className={ROW_LOCK_CELL} aria-hidden />
   );
 
   // Right tile — the amount. On the dashboard we promote this to a Link so a
@@ -1108,13 +1132,15 @@ function CategoryRowInner({
     amountLinkTo && !linkTo ? (
       <Link
         to={`${amountLinkTo}#cat-${category}`}
-        className={`stat-num block rounded text-right text-xs ${amountColorClass} underline-offset-2 transition hover:text-ink-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:hover:text-paper-50`}
+        className={`${ROW_AMOUNT_CELL} stat-num block rounded text-right text-xs ${amountColorClass} underline-offset-2 transition hover:text-ink-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:hover:text-paper-50`}
         aria-label={t("budget.open_table_aria", { category: categoryLabel })}
       >
         {amountInner}
       </Link>
     ) : (
-      <span className={`stat-num block text-right text-xs ${amountColorClass}`}>{amountInner}</span>
+      <span className={`${ROW_AMOUNT_CELL} stat-num block text-right text-xs ${amountColorClass}`}>
+        {amountInner}
+      </span>
     );
 
   const trackEl = linkTo ? (
@@ -1170,6 +1196,7 @@ function CategoryRowInner({
   const actualOverlayEl =
     (showActualOverlay || overBudget) && actual > 0 ? (
       <div
+        data-actual-overlay="true"
         className="range-fill range-fill-thin mt-1 block"
         style={actualOverlayStyle}
         aria-hidden="true"
@@ -1196,18 +1223,22 @@ function CategoryRowInner({
           className={`${ROW_GRID} -mx-2 rounded-md px-2 py-1.5 transition hover:bg-paper-50 dark:hover:bg-umber-700`}
           aria-label={categoryLabel}
         >
-          <span className="flex items-center gap-2 text-ink-700 dark:text-paper-100">
+          <span
+            className={`${ROW_LABEL_CELL} flex min-w-0 items-center gap-2 text-ink-700 dark:text-paper-100`}
+          >
             {leftTileContent}
           </span>
-          <div className="w-full">
+          <div className={`${ROW_TRACK_CELL} w-full`}>
             {trackEl}
             {actualOverlayEl}
             {overBudgetEl}
           </div>
-          <span className="stat-num block text-right text-xs text-ink-700 dark:text-paper-100">
+          <span
+            className={`${ROW_AMOUNT_CELL} stat-num block text-right text-xs text-ink-700 dark:text-paper-100`}
+          >
             {amountInner}
           </span>
-          <span aria-hidden />
+          <span className={ROW_LOCK_CELL} aria-hidden />
         </Link>
       </li>
     );
@@ -1216,7 +1247,7 @@ function CategoryRowInner({
   return (
     <li id={`cat-${category}`} className={`${ROW_GRID} scroll-mt-24 py-1.5`}>
       {leftTile}
-      <div className="w-full">
+      <div className={`${ROW_TRACK_CELL} w-full`}>
         {trackEl}
         {actualOverlayEl}
         {overBudgetEl}
@@ -1346,31 +1377,28 @@ function CustomRowInner({
 
   return (
     <li className={`${ROW_GRID} py-1.5`}>
-      <span className="flex items-center gap-1.5 text-ink-700 dark:text-paper-100">
-        {/* Phones show the row's icon so it stays identifiable when the label
-         *  is hidden; the delete button (which would otherwise replace the
-         *  icon) moves to `sm:` where the label + width are back. Deletion on
-         *  a phone stays available via the budget table's mobile card. */}
+      <span
+        className={`${ROW_LABEL_CELL} flex min-w-0 items-center gap-1.5 text-ink-700 dark:text-paper-100`}
+      >
+        {/* Delete used to be desktop-only, because on a phone it had to fight
+         *  the icon for the same 2rem and the label was hidden anyway — so
+         *  removing a custom row meant going to the budget table's mobile
+         *  card. The wrapped row gives the label line the full width, so the
+         *  glyph, the name and the delete all fit at every size now. */}
         {onRemove && (
           <button
             type="button"
             onClick={() => onRemove(line.id)}
-            className="-ml-1 hidden h-5 w-5 shrink-0 items-center justify-center rounded-full text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 sm:inline-flex dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+            className="-ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
             aria-label={t("budget.custom_row_delete_aria", { label: line.label })}
           >
             <X size={12} aria-hidden />
           </button>
         )}
-        <Icon
-          size={14}
-          className={`shrink-0 text-ink-500 dark:text-umber-300 ${onRemove ? "sm:hidden" : ""}`}
-          aria-hidden
-        />
-        {/* Icon-only on phones (label hidden `<sm`); full label on tablet+,
-         *  matching CategoryRow's rhythm. */}
-        <span className="hidden min-w-0 truncate sm:inline">{line.label}</span>
+        <Icon size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
+        <span className="min-w-0 truncate">{line.label}</span>
       </span>
-      <div className="w-full">
+      <div className={`${ROW_TRACK_CELL} w-full`}>
         <input
           type="range"
           min={0}
@@ -1393,13 +1421,16 @@ function CustomRowInner({
         />
         {showActualOverlay && line.actual_huf > 0 && (
           <div
+            data-actual-overlay="true"
             className="range-fill range-fill-thin mt-1 block"
             style={actualOverlayStyle}
             aria-hidden="true"
           />
         )}
       </div>
-      <span className="stat-num block text-right text-xs text-ink-700 dark:text-paper-100">
+      <span
+        className={`${ROW_AMOUNT_CELL} stat-num block text-right text-xs text-ink-700 dark:text-paper-100`}
+      >
         <span
           className="flex flex-col items-end leading-tight"
           title={
@@ -1428,7 +1459,7 @@ function CustomRowInner({
       </span>
       {/* A custom row has no freeze concept — the column is held open so its
        *  slider still lines up with the category rows above it. */}
-      <span aria-hidden />
+      <span className={ROW_LOCK_CELL} aria-hidden />
     </li>
   );
 }
