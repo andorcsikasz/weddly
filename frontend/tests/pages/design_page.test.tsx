@@ -21,7 +21,16 @@ beforeAll(async () => {
   localStorage.setItem("weddly.locale", "hu");
 });
 
-afterEach(cleanup);
+// `mountPage` swaps in a stub fetch and, until this, never gave it back — so
+// every test file that ran afterwards and did NOT install its own stub was
+// silently talking to DesignPage's mock. That is a large share of the suite's
+// order-dependent failures, and it is also how a genuine crash can hide
+// behind "the frontend tests are just broken".
+const realFetch = globalThis.fetch;
+afterEach(() => {
+  cleanup();
+  globalThis.fetch = realFetch;
+});
 
 const couple = {
   id: 1,

@@ -10,6 +10,7 @@ import { MemoryRouter } from "react-router-dom";
 import { _preloadHuForTests, I18nProvider } from "@/lib/i18n";
 import CoupleCardsPage from "@/pages/CoupleCardsPage";
 import { COUPLE_CARD_DECKS, DECK_SIZE } from "@/lib/couple_cards";
+import { AuthProvider } from "@/lib/auth";
 
 beforeAll(async () => {
   await _preloadHuForTests();
@@ -31,7 +32,15 @@ function renderPage() {
   return render(
     <MemoryRouter>
       <I18nProvider>
-        <CoupleCardsPage />
+        {/* The page itself needs no auth, but it renders inside PublicShell,
+         *  which reads `useAuth()` to decide between "sign in" and "open the
+         *  app" — and useAuth THROWS outside its provider by design. Without
+         *  this wrapper every test in the file died before its first
+         *  assertion, which is why the file read as 15 separate failures
+         *  rather than one missing provider. */}
+        <AuthProvider>
+          <CoupleCardsPage />
+        </AuthProvider>
       </I18nProvider>
     </MemoryRouter>,
   );

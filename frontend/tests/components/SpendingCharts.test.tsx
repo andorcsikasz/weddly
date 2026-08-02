@@ -6,8 +6,10 @@
 import type { BudgetCategory, BudgetLine } from "@shared/types";
 import { describe, expect, it } from "bun:test";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { SpendingCharts } from "@/components/SpendingCharts";
 import { I18nProvider, useT } from "@/lib/i18n";
+import { formatHufCompact } from "@/lib/format";
 
 let nextId = 1;
 function line(category: BudgetCategory, planned: number, actual = 0): BudgetLine {
@@ -36,9 +38,15 @@ function Harness({ lines }: { lines: BudgetLine[] }) {
 
 function renderCharts(lines: BudgetLine[]) {
   return render(
-    <I18nProvider>
-      <Harness lines={lines} />
-    </I18nProvider>,
+    // SpendingCharts links through to the budget table, so it needs a router
+    // in context. Without one every test here died on react-router's
+    // "Cannot destructure property 'basename' from null" before reaching an
+    // assertion — one missing wrapper reading as four separate failures.
+    <MemoryRouter>
+      <I18nProvider>
+        <Harness lines={lines} />
+      </I18nProvider>
+    </MemoryRouter>,
   );
 }
 
@@ -67,10 +75,18 @@ describe("<SpendingCharts>", () => {
       line("transport", 100), // → Other
     ];
     renderCharts(lines);
-    // The seventh/eighth roll up under the localized "Other" label.
-    expect(screen.getByText(/^Other$/)).toBeInTheDocument();
+    // "Other" appears twice by design: once as the donut segment's SVG
+    // <title> (its accessible name) and once as the legend row. Assert the
+    // ROLLED-UP AMOUNT instead, which is the actual behaviour under test and
+    // which neither a stray label nor a second legend could fake: 200 + 100.
+    const otherRow = screen
+      .getAllByText(/^Other$/)
+      .map((el) => el.closest("li"))
+      .find((li): li is HTMLLIElement => li !== null);
+    expect(otherRow).toBeTruthy();
+    expect(otherRow?.textContent).toContain(formatHufCompact(300, "en"));
     // A top category is shown by its own label.
-    expect(screen.getByText(/Venue/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Venue/i).length).toBeGreaterThan(0);
   });
 
   it("shows the empty state when there are no planned costs", () => {
