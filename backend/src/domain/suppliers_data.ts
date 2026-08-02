@@ -3554,6 +3554,10 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
     blurb_en:
       "An MC specialising in bilingual and trilingual weddings, working in Hungarian, English and French. Keeping international guests informed and translating on the spot are built into the natural flow of the day.",
     website: "https://nativeceremony.eu/",
+    gallery_urls: [
+      "https://nativeceremony.eu/storage/LB-gal-005-1024x623.jpg",
+      "https://nativeceremony.eu/storage/LB-gal-008-1024x683.jpg",
+    ],
     ...noContact,
     // A named person (Balázs), which is what the site publishes.
     contact_email: "balazs@nativeceremony.eu",
@@ -13382,6 +13386,10 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
     blurb_en:
       "An award-winning MC and training lead who has hosted weddings on television as well. He combines elegance, humour and precise background work, with a long list of weddings behind him.",
     website: "https://ceremoniamestered.hu/",
+    gallery_urls: [
+      "https://ceremoniamestered.hu/site/images/szablya-akos-ceremoniamester-fokep2-desktop.webp",
+      "https://ceremoniamestered.hu/site/images/hatter-video-desktop2.webp",
+    ],
     ...noContact,
     contact_email: "szablyaakoscm@gmail.com",
     contact_phone: "+36 20 913 9994",
@@ -21025,6 +21033,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "Hosts the day in a precise, warm and even-handed style while lining the vendors up in the background. Several hundred weddings in, he aims at a calm run-through built around what the couple actually asked for.",
     website: "https://illespetercm.hu/",
+    gallery_urls: [
+      "https://illespetercm.hu/wp-content/uploads/2024/10/szabina_david_wedd-2367-scaled.jpg",
+      "https://illespetercm.hu/wp-content/uploads/2024/10/szabina_david_wedd-2346-scaled.jpg",
+    ],
     ...noContact,
     contact_email: "illespetercm@gmail.com",
     contact_phone: "+36 30 247 2980",
@@ -21045,6 +21057,7 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC specialising in Hungarian-German weddings, who keeps the day in hand with a composed, punctual presence. He describes his style through the discipline of aviation: safe and predictable.",
     website: "https://papsandor.hu/",
+    gallery_urls: ["https://papsandor.hu/wp-content/uploads/2024/10/9-1.jpg"],
     ...noContact,
     contact_email: "psa@ceremoniamester.org",
     contact_phone: "+36 30 553 3258",
@@ -21065,6 +21078,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC working in three languages, so an international wedding party stays in one pair of hands. He coordinates guests and vendors with an event planner's eye to keep the programme moving.",
     website: "https://czetozoltan.hu/",
+    gallery_urls: [
+      "https://czetozoltan.hu/wp-content/uploads/2024/10/WF_1344-scaled.jpg",
+      "https://czetozoltan.hu/wp-content/uploads/2024/10/DSC9189-scaled.jpg",
+    ],
     ...noContact,
     contact_email: "zoltan.czeto.cm@gmail.com",
     contact_phone: "+36 30 981 8355",
@@ -21085,6 +21102,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A very experienced MC working in three languages and at home on international weddings. He leads with an elegant, understated presence and makes a point of every guest following the programme.",
     website: "https://farkasstefan.hu/",
+    gallery_urls: [
+      "https://farkasstefan.hu/wp-content/uploads/2023/11/A7_06623-min-scaled.jpg",
+      "https://farkasstefan.hu/wp-content/uploads/2026/07/farkas-stefan-ceremoniamester-og-1200x630.jpg",
+    ],
     ...noContact,
     contact_email: "farkasstefancm@gmail.com",
     contact_phone: "+36 20 596 0704",
@@ -21105,6 +21126,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "His work as an MC is backed by TV hosting and pastoral experience, so he can be firm and empathetic at once. In his own words he is a storm lantern: steady light, while the day keeps clockwork time.",
     website: "https://kormosrobert.hu/",
+    gallery_urls: [
+      "https://kormosrobert.hu/wp-content/uploads/2024/10/AnettErik-137.jpg",
+      "https://kormosrobert.hu/wp-content/uploads/2022/07/kormos-robert-ceremoniamester-referencia-29.jpg",
+    ],
     ...noContact,
     contact_email: "kormosrobertcm@gmail.com",
     contact_phone: "+36 30 522 7471",
@@ -21125,6 +21150,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A trilingual MC with a background as a lawyer, author and Korea expert. Decisive, elegant and collaborative, which makes him a strong fit for a culturally mixed wedding party.",
     website: "https://teszardavid.hu/",
+    gallery_urls: [
+      "https://teszardavid.hu/wp-content/uploads/2020/03/10.png",
+      "https://teszardavid.hu/wp-content/uploads/2019/05/teszar-david-ceremoniamester.jpg",
+    ],
     ...noContact,
     contact_email: "teszar.david@gmail.com",
     contact_phone: "+36 70 664 2287",
@@ -21145,6 +21174,9 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "Founder of the Hungarian association of wedding MCs, working to a couple-first idea of the role, led from the background. Long experience with running orders, protocol and blending the customs of two cultures.",
     website: "https://tothmihaly-ceremoniamester.hu/",
+    gallery_urls: [
+      "https://tothmihaly-ceremoniamester.hu/wp-content/uploads/2020/12/toth-mihaly-ceremoniamester-home.jpg",
+    ],
     ...noContact,
     contact_email: "tm@ceremoniamester.org",
     contact_phone: "+36 1 501 3463",
@@ -21165,6 +21197,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An English-Hungarian MC who puts elegance, discretion and well-rehearsed background work first. A hosting and photography background helps him keep both the rhythm and the look of the day in mind.",
     website: "https://marosiviktor.hu/",
+    gallery_urls: [
+      "https://marosiviktor.hu/wp-content/uploads/2019/10/marosi_01-1024x683.jpg",
+      "https://marosiviktor.hu/wp-content/uploads/2019/10/marosi-viktor-3.png",
+    ],
     ...noContact,
     contact_email: "marosi.viktor@gmail.com",
     contact_phone: "+36 20 380 5380",
@@ -21185,6 +21221,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "Brings the precision of international corporate project work to coordinating a wedding day. He works in English and Hungarian, balancing teamwork, a cool head and a warm heart.",
     website: "https://hendemate.hu/",
+    gallery_urls: [
+      "https://hendemate.hu/wp-content/uploads/2024/11/Untitled-1_0007_017A7455.jpg",
+      "https://hendemate.hu/wp-content/uploads/2017/06/hendemate-cover.png",
+    ],
     ...noContact,
     contact_email: "hm@ceremoniamester.org",
     contact_phone: "+36 70 269 7469",
@@ -21205,6 +21245,9 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A modern, elegant and natural MC who puts the weight on background coordination. Several hundred weddings in, he treats communication and vendor cooperation as the basis of a smooth day.",
     website: "https://ceremoniamesteretek.hu/",
+    gallery_urls: [
+      "https://ceremoniamesteretek.hu/uploads/tartalom_33/eskuvis-ceremoniamesternek-lenni-csodalatos-elmeny-1715274708.jpg",
+    ],
     ...noContact,
     contact_email: "viktor.borbas@gmail.com",
     contact_phone: "+36 30 631 9382",
@@ -21225,6 +21268,7 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "Works as both MC and DJ, so the programme and the music keep to one rhythm. He promises a supportive, direct style and steers clear of awkward or forced moments.",
     website: "https://ceri.hu/",
+    gallery_urls: ["https://ceri.hu/ckfinder/userfiles/images/ceremoniamester.jpg"],
     ...noContact,
     contact_email: "ceri@ceri.hu",
     contact_phone: "+36 30 270 6821",
@@ -21245,6 +21289,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A modern MC from Debrecen aiming for an elegant, natural mood without forced games. He works with a DJ partner, so the programme and the music can be carried on a single arc.",
     website: "https://eskuvokiraly.hu/",
+    gallery_urls: [
+      "https://eskuvokiraly.hu/wp-content/uploads/2025/10/art-3202-980x653-1.jpg",
+      "https://eskuvokiraly.hu/wp-content/uploads/2026/02/belepo-zenek-980x547-1.png",
+    ],
     ...noContact,
     contact_email: "info@eskuvokiraly.hu",
     contact_phone: "+36 20 954 0016",
@@ -21265,6 +21313,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A multilingual MC and moderator with a theatre and television background. He coordinates vendors and guests discreetly, and builds on a personal relationship with the couple.",
     website: "https://www.aceremoniamestere.com/",
+    gallery_urls: [
+      "https://static.wixstatic.com/media/97dcae_47195c37d4b24c1aaf60a6fa13b09ab2~mv2.jpg/v1/fill/w_1500,h_753,fp_0.57_0.21,q_90,enc_avif,quality_auto/97dcae_47195c37d4b24c1aaf60a6fa13b09ab2~mv2.jpg",
+      "https://static.wixstatic.com/media/97dcae_0408eeb66fa84af3831b4eb5d46f4824~mv2.jpg/v1/fill/w_1911,h_753,fp_0.53_0.22,q_90,enc_avif,quality_auto/97dcae_0408eeb66fa84af3831b4eb5d46f4824~mv2.jpg",
+    ],
     ...noContact,
     contact_email: "zoltansiposhegyi@gmail.com",
     contact_phone: "+36 70 512 6662",
@@ -21285,6 +21337,7 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC and traditional vofely based near Pécs who works nationwide and takes English-Hungarian events. A calm, adaptable style at home with both the traditional and the modern parts of a wedding.",
     website: "https://hervai.hu/",
+    gallery_urls: ["https://hervai.hu/ceremoniamester-pecs-vofely-baranya-hervai-misi.png"],
     ...noContact,
     contact_email: "mihaly@hervai.hu",
     contact_phone: "+36 30 997 2071",
@@ -21325,6 +21378,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A modern, funny and dependable MC who takes an active part in the planning as well. On the day he runs the programme and the vendors so the couple never has to handle logistics.",
     website: "https://leventecm.hu/",
+    gallery_urls: [
+      "https://leventecm.hu/wp-content/uploads/2023/07/IMG_7618.jpg",
+      "https://leventecm.hu/wp-content/uploads/2023/07/IMG_E8486.jpg",
+    ],
     ...noContact,
     contact_email: "info@leventecm.hu",
     contact_phone: "+36 30 846 5569",
@@ -21345,6 +21402,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A Budapest-based English-Hungarian MC combining teaching, music and event-management experience. He builds a young, tailored programme and treats the details like his own wedding.",
     website: "https://domjanpeter.hu/",
+    gallery_urls: [
+      "https://domjanpeter.hu/wp-content/uploads/2025/07/share.webp",
+      "https://domjanpeter.hu/wp-content/uploads/2023/05/share.webp",
+    ],
     ...noContact,
     contact_email: "info@domjanpeter.hu",
     contact_phone: "+36 30 349 4571",
@@ -21365,6 +21426,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC with an acting and performing background who promises a natural mood with nothing forced about it. The programme is fitted to the couple, on transparent terms with no hidden costs.",
     website: "https://www.martondavid.com/",
+    gallery_urls: [
+      "https://static.wixstatic.com/media/1c5d82_ce15d351eb3b4018914579d3206abf2d~mv2.jpg/v1/fit/w_960,h_640,q_90,enc_avif,quality_auto/1c5d82_ce15d351eb3b4018914579d3206abf2d~mv2.jpg",
+      "https://static.wixstatic.com/media/1c5d82_1dc1852e3b9447d28b73c31cb1763db4~mv2.jpg/v1/crop/x_736,y_434,w_4889,h_3179/fill/w_752,h_734,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_4516_JPG.jpg",
+    ],
     ...noContact,
     contact_email: "marton.david.cm@gmail.com",
     contact_phone: "+36 30 128 4322",
@@ -21385,6 +21450,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC from Kecskemét who works alongside his wife, an event planner, for the background support. Precise, helpful and modern, with coordination and keeping the guests informed both in focus.",
     website: "https://atenapodkecskemet-hu.webnode.hu/",
+    gallery_urls: [
+      "https://667296ac36.cbaul-cdnwnd.com/58fd79437408285eceec7b16dd8d7323/200000078-f1791f271d/21148261_1440021692740373_646248307_n.jpg?ph=667296ac36",
+      "https://667296ac36.cbaul-cdnwnd.com/58fd79437408285eceec7b16dd8d7323/200000050-3512d360c3/image-crop-200000049.jpeg?ph=667296ac36",
+    ],
     ...noContact,
     contact_email: "atenapod001@gmail.com",
     contact_phone: "+36 30 402 5937",
@@ -21425,6 +21494,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A stylish, personal and energetic MC who stays with the couple from the planning to the last game of the night. Based between Budapest and Székesfehérvár, and takes weddings nationwide.",
     website: "https://jakabzoltan.hu/",
+    gallery_urls: [
+      "https://jakabzoltan.hu/img/newgalery/JZ_1.jpg",
+      "https://jakabzoltan.hu/img/newgalery/JZ_3.jpg",
+    ],
     ...noContact,
     contact_email: "info@jakabzoltan.hu",
     contact_phone: "+36 30 643 6732",
@@ -21465,6 +21538,7 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An event planner, MC and English-Hungarian celebrant from Debrecen in one person. Elegant coordination, programmes that draw the guests in, and fuller planning support if it is wanted.",
     website: "https://dreamparty.hu/tollas-brigitta-rendezvenyszervezo/",
+    gallery_urls: ["https://dreamparty.hu/wp-content/uploads/brigi.webp"],
     ...noContact,
     contact_email: "info@dreamparty.hu",
     contact_phone: "+36 30 959 1606",
@@ -21485,6 +21559,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A young, direct MC who can be more bohemian or more restrained, whichever the couple asks for. He coordinates with a deliberate presence and natural humour, without making himself the show.",
     website: "https://www.gombosdaniel.com/",
+    gallery_urls: [
+      "https://d7ce8d4175.clvaw-cdnwnd.com/f1d87b35d427dee11ea244367dc7575d/200000265-e8548e854b/cerem%C3%B3niamester%20el%C5%91re%20n%C3%A9z.jpg?ph=d7ce8d4175",
+      "https://d7ce8d4175.clvaw-cdnwnd.com/f1d87b35d427dee11ea244367dc7575d/200000282-5089450896/cerem%C3%B3niamester%20menyasszonnyal.jpg?ph=d7ce8d4175",
+    ],
     ...noContact,
     contact_email: "gombosdaniel@gmail.com",
     contact_phone: "+36 70 398 0581",
@@ -21525,6 +21603,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A former wedding musician and singer-guitarist who has also worked as an MC since 2020. He rounds out an elegant modern style with traditional elements and with leading the ceremony on request.",
     website: "https://boldogigen.hu/",
+    gallery_urls: [
+      "https://boldogigen.hu/wp-content/uploads/2024/12/NAnd0937C1IMG_1334.jpg",
+      "https://boldogigen.hu/wp-content/uploads/2024/12/MG_0181.jpg",
+    ],
     ...noContact,
     contact_email: "bmmilan90@gmail.com",
     contact_phone: "+36 30 911 1580",
@@ -21545,6 +21627,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC since 2007, who brings a female assistant at no extra charge when it helps. He adds logistics support, a photo corner and constant contact through the run-up to the coordination itself.",
     website: "https://cmester.hu/",
+    gallery_urls: [
+      "https://cmester.hu/wp-content/uploads/2020/06/Final-700x500.jpg",
+      "https://cmester.hu/wp-content/uploads/2021/12/20210924_213532_954_IMG_1495-scaled.jpg",
+    ],
     ...noContact,
     contact_email: "info@cmester.hu",
     contact_phone: "+36 30 473 4163",
@@ -21565,6 +21651,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An English-Hungarian MC and celebrant from Hajdúböszörmény who also offers music services. He works with a personal, youthful humour and can extend the programme with a DJ set or a conga show.",
     website: "https://zsoltiacm.hu/",
+    gallery_urls: [
+      "https://zsoltiacm.hu/images/pictures/zsoltiacm_fotok_64.jpg",
+      "https://zsoltiacm.hu/images/private/zsoltiacm_personal_6.png",
+    ],
     ...noContact,
     contact_email: "kovazso777@gmail.com",
     contact_phone: "+36 20 497 3858",
@@ -21585,6 +21675,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC and host from Törökbálint who works with good cheer, drive and continuous support through the planning. His firm but easy style is documented by years of couples' feedback.",
     website: "https://aceremoniamester.hu/",
+    gallery_urls: [
+      "https://aceremoniamester.hu/wp-content/uploads/291411289_5156785037772839_6707823054336796678_n-masolat.jpg",
+      "https://aceremoniamester.hu/wp-content/uploads/IMG_2226-1.jpg",
+    ],
     ...noContact,
     contact_email: "info@aceremoniamester.hu",
     contact_phone: "+36 30 604 0180",
@@ -21625,6 +21719,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC from western Hungary with over a decade of hospitality and event work behind him. A direct, easy and funny style, with level-headed problem solving and detailed background coordination.",
     website: "https://moricztamas.hu/",
+    gallery_urls: [
+      "https://moricztamas.hu/wp-content/uploads/2026/06/53358A2F-FB9F-4D53-988B-918B1968C286.png",
+      "https://moricztamas.hu/wp-content/uploads/2026/06/wedding-moment.jpg",
+    ],
     ...noContact,
     contact_email: "info@moricztamas.hu",
     contact_phone: "+36 30 539 1656",
@@ -21645,6 +21743,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An event manager, host and communications trainer bringing thousands of hours on a microphone to weddings. Firm but funny coordination tuned to the couple, available nationwide.",
     website: "https://fehergaborceremoniamester.hu/",
+    gallery_urls: [
+      "https://fehergaborceremoniamester.hu/wp-content/uploads/2020/11/MG_7836.jpg",
+      "https://fehergaborceremoniamester.hu/wp-content/uploads/2020/11/IMG_7784.jpg",
+    ],
     ...noContact,
     contact_email: "gabor.ceremonia@gmail.com",
     contact_phone: "+36 30 298 7427",
@@ -21685,6 +21787,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A full-time MC who uses his experience leading large teams to build trust and organisation. He supports the couple and the guests directly, so the problems stay in the background.",
     website: "https://benceremonia.hu/",
+    gallery_urls: [
+      "https://benceremonia.hu/wp-content/uploads/2024/04/benceremonia-home-banner.jpg",
+      "https://benceremonia.hu/wp-content/uploads/2022/08/220619_viki_beni_eskuvo_0258-2.jpeg",
+    ],
     ...noContact,
     contact_email: "benceremonia@gmail.com",
     contact_phone: "+36 70 636 2989",
@@ -21705,6 +21811,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC and host from Szeged with radio, podcast and voice-over experience. He rounds out a modern compere style with a family vofely tradition, a quiz written for the couple and ceremonies in English.",
     website: "https://veresimre.hu/",
+    gallery_urls: [
+      "https://veresimre.hu/wp-content/uploads/2025/03/FB_IMG_1742589439570.webp",
+      "https://veresimre.hu/wp-content/uploads/2025/03/Eskuvoi-Ceremoniamester-Veres-Imre-Szeged-2-768x1020.webp",
+    ],
     ...noContact,
     contact_email: "info@veresimre.hu",
     contact_phone: "+36 30 255 4450",
@@ -21725,6 +21835,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC of more than twenty years, arriving from a transport-engineering and logistics background. His signature is a song written about the couple, alongside a Hungarian-English symbolic ceremony and a detailed running order.",
     website: "https://hubadur-ceremoniamester.hu/",
+    gallery_urls: [
+      "https://hubadur-ceremoniamester.hu/wp-content/uploads/2022/05/heatlie-eskuvo.jpg",
+      "https://hubadur-ceremoniamester.hu/wp-content/uploads/2022/11/cimlap-rolam.jpg",
+    ],
     ...noContact,
     contact_email: "info@hubadur-ceremoniamester.hu",
     contact_phone: "+36 30 636 3205",
@@ -21745,6 +21859,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A musician, DJ and MC who has worked weddings since 2003. Beyond coordinating the whole day he can supply ceremony sound, background music and the technical support.",
     website: "https://ceremoniamester-attila.hu/",
+    gallery_urls: [
+      "https://ceremoniamester-attila.hu/wp-content/uploads/2021/05/ceremoniamester_11-1024x769.jpg",
+      "https://ceremoniamester-attila.hu/wp-content/uploads/2021/05/ceremoniamester_kovacs_attila_01.jpg",
+    ],
     ...noContact,
     contact_email: "cmkovacsattila@gmail.com",
     contact_phone: "+36 30 205 0120",
@@ -21765,6 +21883,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A Budapest MC, host and moderator with a background in radio, theatre and the press. He coordinates smaller and larger weddings alike with an empathetic, cultured and funny presence.",
     website: "https://imiceremony.com/",
+    gallery_urls: [
+      "https://imiceremony.com/wp-content/uploads/2022/11/Lucia_Mark_JBWEDDING-e1667511748484.jpeg",
+      "https://imiceremony.com/wp-content/uploads/2022/11/272900438_513160656909265_6031491395475916068_n-e1667512372222.jpg",
+    ],
     ...noContact,
     contact_email: "hello@imiceremony.com",
     contact_phone: "+36 30 693 6073",
@@ -21785,6 +21907,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A celebrant and wedding coordinator from Paks offering a three-in-one service. She works in a modern, understated MC style and takes themed ceremonies and unusual locations.",
     website: "https://parkak.hu/",
+    gallery_urls: [
+      "https://parkak.hu/wp-content/uploads/2024/11/20221015-370A9056-vsamuphoto.jpg",
+      "https://parkak.hu/wp-content/uploads/2024/11/AM_WHL_136_BTZ_1263s.jpg",
+    ],
     ...noContact,
     contact_email: "hanol.eva@gmail.com",
     contact_phone: "+36 20 469 9972",
@@ -21805,6 +21931,7 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC, traditional vofely, musician and DJ from Tolna county with over twenty-five years of weddings behind him. He blends traditional elements with a modern style and handles the musical rhythm as a vendor himself.",
     website: "https://lepoattila.hu/",
+    gallery_urls: ["https://lepoattila.hu/wp-content/uploads/2023/01/z1-768x667-1.jpg"],
     ...noContact,
     contact_email: "attila.lepo@gmail.com",
     contact_phone: "+36 70 702 2636",
@@ -21825,6 +21952,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC working nationwide who writes a running order for the couple from the first meeting onward. On the day he takes the organising off them and keeps the wedding party and the mood moving.",
     website: "https://vereckeiadam.hu/",
+    gallery_urls: [
+      "https://vereckeiadam.hu/wp-content/uploads/2024/10/Vereckei-Adam-A-Ceremoniamester.jpg",
+      "https://vereckeiadam.hu/wp-content/uploads/2025/01/fullscreen-slider4-background1.jpg",
+    ],
     ...noContact,
     contact_email: "vereckei@gmail.com",
     contact_phone: "+36 70 431 2525",
@@ -21845,6 +21976,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A Budapest MC offering elegant, understated but decisive coordination nationwide. From American football he brings teamwork, timing and holding up under pressure.",
     website: "https://cermester.hu/",
+    gallery_urls: [
+      "https://cermester.hu/wp-content/uploads/2026/06/norbi_magyari-178-e1781860120160.jpg",
+      "https://cermester.hu/wp-content/uploads/2026/07/IMG-86.jpg",
+    ],
     ...noContact,
     contact_email: "info.cermester@gmail.com",
     contact_phone: "+36 20 537 8866",
@@ -21865,6 +22000,9 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A former restaurant manager and current F&B manager who knows hospitality from the inside. As a modern, direct MC he offers precise timing, nationwide availability and his own selfie machine for the guests.",
     website: "https://www.kemenysandor.hu/",
+    gallery_urls: [
+      "https://46333867ff.clvaw-cdnwnd.com/b382fc634a29c1182f4fd0ab1c169f9f/200000366-bc1f3bc1f4/ceremoniamester-boldog-parral-eskuvon.jpeg?ph=46333867ff",
+    ],
     ...noContact,
     contact_email: "info@kemenysandor.hu",
     contact_phone: "+36 70 319 3562",
@@ -21885,6 +22023,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC, celebrant, host and event manager from Győr who gives both the organising and the stage support. A firm style that never takes the lead role, backed by several hundred weddings.",
     website: "https://www.lendvayevent.hu/maganszemelyeknek/",
+    gallery_urls: [
+      "https://www.lendvayevent.hu/wp-content/uploads/2025/11/musorvezetes-1024x683.webp",
+      "https://www.lendvayevent.hu/wp-content/uploads/2025/11/profil-1.jpg",
+    ],
     ...noContact,
     contact_email: "info@lendvayevent.hu",
     contact_phone: "+36 70 432 1000",
@@ -21905,6 +22047,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A magician and MC who rounds out the coordination with interactive entertainment for the guests. A good fit for couples who want a polished show instead of the traditional wedding games.",
     website: "https://feher-ceremoniamester.hu/",
+    gallery_urls: [
+      "https://feher-ceremoniamester.hu/wp-content/uploads/2026/06/Feher-Peter.jpg",
+      "https://feher-ceremoniamester.hu/wp-content/uploads/2026/06/Feher-Peter-1030x814.jpg",
+    ],
     ...noContact,
     contact_email: "feher.ceremonia@gmail.com",
     contact_phone: "+36 20 938 3985",
@@ -21925,6 +22071,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "A radio host and MC from Szeged with over 260 weddings behind him. His strengths are improvisation, natural humour and drawing a room in quickly, and he takes bookings nationwide.",
     website: "https://ceremoniamesterem.hu/",
+    gallery_urls: [
+      "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1440,h=756,fit=crop,f=jpeg/Y4Lg0L8r78sMlp2J/ceremoniamester-balintkgergo-A85ZxR5ewDhWK8pB.png",
+      "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1024,h=1078,fit=crop/Y4Lg0L8r78sMlp2J/ceremoniamester_szeged_balintkgergo-dOqMENXz2XhEqnRp.png",
+    ],
     ...noContact,
     contact_email: "bkg@radio88.hu",
     contact_phone: "+36 70 300 6595",
@@ -21945,6 +22095,10 @@ const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
     blurb_en:
       "An MC and celebrant from Székesfehérvár with two English-teaching degrees and a coach and HR background. He writes texts and games specific to the couple, and shares wedding tips on several social platforms.",
     website: "https://www.ceremoniamestergalgo.hu/",
+    gallery_urls: [
+      "https://www.ceremoniamestergalgo.hu/wp-content/uploads/2023/02/a1-1.jpg",
+      "https://www.ceremoniamestergalgo.hu/wp-content/uploads/2023/02/a1-1-1024x683.jpg",
+    ],
     ...noContact,
     contact_email: "andras.galgovszki@gmail.com",
     contact_phone: "+36 30 390 8930",
