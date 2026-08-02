@@ -73,7 +73,7 @@ function trimStr(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
-function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
+function parseSubmitBody(body: SubmitBody, requireEmail: boolean): SubmitCommunitySupplierInput {
   // Only name + category + price_band are truly required — they're what makes
   // a card displayable and rankable. Everything else is optional; the form
   // accepts skeletal entries that the submitter can complete later (or that
@@ -122,13 +122,22 @@ function parseSubmitBody(body: SubmitBody): SubmitCommunitySupplierInput {
     if (!parsedUrl.hostname) throw new HttpError(400, "website hostname required");
   }
 
-  // `contact_email` is OPTIONAL. When the submitter provides one we send a
-  // verification link there to confirm the listing belongs to that business;
-  // without it the submission skips straight to the admin moderation queue
-  // (the admin gate is the last safety net either way). Format is still
-  // validated when present so we don't queue bogus addresses for sending.
+  // `contact_email` is REQUIRED of a visitor (`requireEmail`) and optional for
+  // a logged-in couple. The asymmetry is about who is answerable for the row: a
+  // couple has an account we can go back to, a visitor is an address and
+  // nothing else, so the business's own mailbox is the only thing that can
+  // confirm the listing later. Without it the row queues with whatever the
+  // enricher scraped off the website, which is how a Sentry DSN ended up
+  // standing in for a vendor's contact (listing #8, 2026-07-30).
+  //
+  // When present, the address is where the verification link goes; when absent
+  // (couple path) the submission skips straight to the admin moderation queue.
+  // Format is validated either way so we never queue a bogus address.
   let contact_email: string | null = null;
   const e = trimStr(body.contact_email);
+  if (!e && requireEmail) {
+    throw new HttpError(400, "contact_email required", { code: "contact_email_required" });
+  }
   if (e) {
     const at = e.indexOf("@");
     if (at < 1 || e.indexOf(".", at) === -1) {
@@ -215,7 +224,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
   }
 
   const body = await readJson<SubmitBody>(ctx.req);
-  const input = parseSubmitBody(body);
+  const input = parseSubmitBody(body, submitterVisitorId !== null);
 
   const principalKey = submitterVisitorId
     ? `visitor:${submitterVisitorId}`

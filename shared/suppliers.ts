@@ -1060,6 +1060,12 @@ export interface SupplierDirectoryAdminRow {
   price_band: 1 | 2 | 3 | 4 | 5 | null;
   status: "active" | "pending" | "awaiting_review" | "hidden";
   submitter_email: string | null;
+  /** Set when a verified VISITOR (no account) submitted the row — their real
+   *  address. `submitter_email` is the reserved system user on those rows, so
+   *  this is the only field that answers "who suggested this?". Also the flag
+   *  for "there is no account here", which is why the purge-submitter action
+   *  is refused on these rows. */
+  submitter_visitor_email: string | null;
   /** Who put this row here: `null` = curated (admin-maintained, code-resident),
    *  `"self"` = a vendor submitted their own business, `"user"` = a couple
    *  recommended it. Lets the admin catalog show "admin vs self-uploaded". */

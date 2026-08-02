@@ -500,32 +500,20 @@ function StatusPill({
   status: "active" | "hidden" | "pending" | "awaiting_review";
   label: string;
 }) {
+  // No srLabel anywhere here: the pill's visible text IS the status word, and
+  // srLabel adds an sr-only copy of it — a screen reader read "Awaiting email
+  // verification" twice, and so did anyone copying the card's text.
   if (status === "active") {
+    return <Pill tone="sage">{label}</Pill>;
+  }
+  if (status === "awaiting_review" || status === "pending") {
     return (
-      <Pill tone="sage" srLabel={label}>
+      <Pill tone="blush" icon={<Clock size={11} />}>
         {label}
       </Pill>
     );
   }
-  if (status === "awaiting_review") {
-    return (
-      <Pill tone="blush" icon={<Clock size={11} />} srLabel={label}>
-        {label}
-      </Pill>
-    );
-  }
-  if (status === "pending") {
-    return (
-      <Pill tone="blush" icon={<Clock size={11} />} srLabel={label}>
-        {label}
-      </Pill>
-    );
-  }
-  return (
-    <Pill tone="muted" srLabel={label}>
-      {label}
-    </Pill>
-  );
+  return <Pill tone="muted">{label}</Pill>;
 }
 
 /** Price-band glyph pill — $..$$$$$. The earlier version pinned `stat-num`
@@ -577,6 +565,37 @@ function DefRow({
         )}
       </dd>
     </>
+  );
+}
+
+/** Who suggested this listing. A visitor submission anchors its author FK to
+ *  the reserved system user, so `submitter_email` reads
+ *  `community-visitor@weddly.internal` on those rows — an address that names
+ *  nobody. The visitor's own address is the answer whenever it is set, and the
+ *  pill says why there is no account behind it. */
+function SubmitterValue({
+  supplier: s,
+  t,
+}: {
+  supplier: CommunitySupplierAdminView;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const visitorEmail = s.submitter_visitor_email;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+      <User size={11} aria-hidden className="text-neutral-500 dark:text-umber-300" />
+      <a href={`mailto:${visitorEmail ?? s.submitter_email}`} className="break-all hover:underline">
+        {visitorEmail ?? s.submitter_email}
+      </a>
+      {visitorEmail ? (
+        <>
+          {s.submitter_visitor_name ? (
+            <span className="text-neutral-500 dark:text-umber-300">{s.submitter_visitor_name}</span>
+          ) : null}
+          <Pill tone="violet">{t("admin.suppliers_card_submitter_visitor")}</Pill>
+        </>
+      ) : null}
+    </span>
   );
 }
 
@@ -843,16 +862,7 @@ function SupplierCard({
                 />
                 <DefRow
                   label={t("admin.suppliers_card_field_submitter")}
-                  value={
-                    <span className="inline-flex items-center gap-1">
-                      <User
-                        size={11}
-                        aria-hidden
-                        className="text-neutral-500 dark:text-umber-300"
-                      />
-                      <span className="break-all">{s.submitter_email}</span>
-                    </span>
-                  }
+                  value={<SubmitterValue supplier={s} t={t} />}
                 />
               </dl>
             </section>
@@ -907,7 +917,14 @@ function SupplierCard({
                 <DefRow label={t("admin.suppliers_card_field_id")} value={`#${s.id}`} />
                 <DefRow
                   label={t("admin.suppliers_card_field_submitter_id")}
-                  value={`#${s.submitter_user_id}`}
+                  value={
+                    // A visitor row's submitter_user_id is the shared system
+                    // user, so printing it would read as an account that
+                    // suggested dozens of unrelated businesses.
+                    s.submitter_visitor_email
+                      ? t("admin.suppliers_card_submitter_no_account")
+                      : `#${s.submitter_user_id}`
+                  }
                 />
                 <DefRow
                   label={t("admin.suppliers_card_field_submitted_at")}

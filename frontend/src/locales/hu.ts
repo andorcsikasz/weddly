@@ -5827,6 +5827,8 @@ const hu: LocaleMessages = {
     suppliers_card_field_blurb: "Leírás",
     suppliers_card_field_submitter: "Beküldő",
     suppliers_card_field_submitter_id: "Beküldő azonosító",
+    suppliers_card_submitter_visitor: "Látogató",
+    suppliers_card_submitter_no_account: "Nincs fiók",
     suppliers_card_field_submitted_at: "Beküldve",
     suppliers_card_field_updated_at: "Utoljára módosítva",
     suppliers_card_field_hidden_at: "Elrejtve",
@@ -5956,6 +5958,7 @@ const hu: LocaleMessages = {
     directory_submitter_admin: "Admin (curated)",
     directory_submitter_self: "Saját feltöltés",
     directory_submitter_user: "Pár ajánlása",
+    directory_submitter_visitor: "Látogató ajánlása",
     directory_delete_entry: "Bejegyzés törlése",
     directory_delete_confirm_body:
       "Törlöd a(z) „{name}” szolgáltatót a katalógusból? Nem vonható vissza.",

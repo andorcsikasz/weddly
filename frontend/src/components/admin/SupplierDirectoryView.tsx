@@ -650,7 +650,10 @@ export function SupplierDirectoryView() {
                   </td>
                   <td className="px-3 py-2">
                     <SourcePill source={row.source} t={t} />
-                    <span className="mt-0.5 block text-[10px] text-neutral-500 dark:text-umber-300">
+                    <span
+                      className="mt-0.5 block text-[10px] text-neutral-500 dark:text-umber-300"
+                      title={row.submitter_visitor_email ?? row.submitter_email ?? undefined}
+                    >
                       {t(`admin.directory_submitter_${submitterKind(row)}`)}
                     </span>
                   </td>
@@ -749,7 +752,11 @@ export function SupplierDirectoryView() {
                       >
                         <Trash2 size={14} aria-hidden />
                       </button>
-                      {row.community_id != null && (
+                      {/* A visitor suggestion has no account to purge — the row
+                          is anchored to the shared system user, so the button
+                          would aim at every other visitor's listing. Deleting
+                          the entry (the button to its left) is the action. */}
+                      {row.community_id != null && !row.submitter_visitor_email && (
                         <button
                           type="button"
                           className="btn-ghost btn-sm text-rose-600 dark:text-rose-400"
@@ -774,9 +781,12 @@ export function SupplierDirectoryView() {
 }
 
 /** Collapses source + submitter_type into a single "who put this here" label
- *  key: admin (curated), self (vendor self-submitted), or user (couple rec). */
-function submitterKind(row: SupplierDirectoryAdminRow): "admin" | "self" | "user" {
+ *  key: admin (curated), visitor (verified, no account), self (vendor
+ *  self-submitted), or user (couple rec). Visitor wins over submitter_type
+ *  because the account column on those rows names the system user. */
+function submitterKind(row: SupplierDirectoryAdminRow): "admin" | "visitor" | "self" | "user" {
   if (row.source === "curated") return "admin";
+  if (row.submitter_visitor_email) return "visitor";
   return row.submitter_type === "self" ? "self" : "user";
 }
 

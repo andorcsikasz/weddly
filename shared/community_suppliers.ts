@@ -40,10 +40,13 @@ export interface SubmitCommunitySupplierInput {
    *  through to the website. */
   address: string | null;
   website: string;
-  /** Optional. When provided we send a verification link here before the
-   *  listing goes to admin review; without it the submission skips straight
-   *  to the moderation queue. The address remains hidden from the public DTO
-   *  (privacy) and only surfaces in the admin moderation view. */
+  /** The BUSINESS's own address, not the submitter's. REQUIRED on the visitor
+   *  path (an account-less stranger has to leave something the listing can be
+   *  confirmed against), optional for a logged-in couple, who is reachable
+   *  through their own account. When provided we send a verification link here
+   *  before the listing goes to admin review; without it the submission skips
+   *  straight to the moderation queue. The address remains hidden from the
+   *  public DTO (privacy) and only surfaces in the admin moderation view. */
   contact_email: string | null;
   contact_phone: string | null;
   blurb: string;
@@ -96,8 +99,15 @@ export interface CommunitySupplierAdminView {
   submitter_user_id: number;
   /** When the submission came from a verified VISITOR (no Weddly account), this
    *  is their real email; `submitter_user_id` then points at the reserved system
-   *  user. Null for the normal logged-in-couple path. */
+   *  user. Null for the normal logged-in-couple path.
+   *
+   *  Admin surfaces must prefer this over `submitter_email` when it is set:
+   *  the account address on a visitor row is the sentinel system user, which
+   *  answers "who suggested this?" with nobody. */
   submitter_visitor_email: string | null;
+  /** The visitor's own name, when Google handed one over with the address.
+   *  Null for the couple path and for a visitor who verified by email link. */
+  submitter_visitor_name: string | null;
   created_at: number;
   /** Last-edit timestamp on the supplier row itself. Tracks DB writes
    *  (admin notes, hide/unhide, enrich) — not the submitter's last edit

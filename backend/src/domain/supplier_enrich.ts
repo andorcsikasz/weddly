@@ -269,16 +269,39 @@ function decodeHtmlEntities(s: string): string {
     .replace(/&quot;/g, '"');
 }
 
+/** Hosts that only ever appear in a page's telemetry wiring, never as a way to
+ *  reach the business. A Sentry DSN (`<32 hex>@o0.ingest.sentry.io`) is
+ *  email-shaped, sits in the first inline script of most modern sites, and
+ *  therefore wins the "first address on the page" race — that is exactly how
+ *  `dab2873b…@sentry.io` became a vendor's contact address on listing #8. */
+const TELEMETRY_EMAIL_HOSTS = ["sentry.io", "sentry-cdn.com", "bugsnag.com", "rollbar.com"];
+
+/** An address we would be willing to write to. Applied to BOTH extraction
+ *  branches: a mailto: can hold a no-reply just as easily as body text can. */
+function isUsableEmail(e: string): boolean {
+  if (e.includes("noreply") || e.includes("no-reply")) return false;
+  if (e.startsWith("sentry@")) return false;
+  const host = e.slice(e.indexOf("@") + 1);
+  if (TELEMETRY_EMAIL_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))) return false;
+  // A local part that is a long hex blob is a key, not a person: DSNs, image
+  // CDN digests, tracking ids. No real mailbox is 24+ unbroken hex characters.
+  if (/^[0-9a-f]{24,}$/.test(e.slice(0, e.indexOf("@")))) return false;
+  return true;
+}
+
 function extractEmail(html: string): string | null {
   const mailto = html.match(/href=["']mailto:([^"'?]+)/i);
-  if (mailto && mailto[1]) return decodeHtmlEntities(mailto[1]).trim().toLowerCase();
+  if (mailto && mailto[1]) {
+    const e = decodeHtmlEntities(mailto[1]).trim().toLowerCase();
+    if (e && isUsableEmail(e)) return e;
+  }
   const text = decodeHtmlEntities(html.replace(/<[^>]+>/g, " "));
-  const m = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
-  if (m) {
-    const e = m[0].toLowerCase();
-    // Reject obvious sentinels (Sentry, no-reply, image-CDN encoded blobs).
-    if (e.startsWith("sentry@") || e.includes("noreply") || e.includes("no-reply")) return null;
-    return e;
+  // Every candidate, not just the first: the first address on the page is
+  // frequently the telemetry one, and stopping there threw away the real
+  // contact sitting three lines below it.
+  for (const m of text.matchAll(/[\w.+-]+@[\w-]+\.[\w.-]+/g)) {
+    const e = (m[0] ?? "").toLowerCase();
+    if (e && isUsableEmail(e)) return e;
   }
   return null;
 }

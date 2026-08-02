@@ -6714,6 +6714,12 @@ export interface LocaleMessages {
     suppliers_card_field_blurb: string;
     suppliers_card_field_submitter: string;
     suppliers_card_field_submitter_id: string;
+    /** Marks a submitter who has no Weddly account: a verified visitor. Their
+     *  email is the real one; the row's account is the system sentinel. */
+    suppliers_card_submitter_visitor: string;
+    /** Stands in for the numeric submitter id on a visitor row, where the id
+     *  belongs to the shared system user rather than to a person. */
+    suppliers_card_submitter_no_account: string;
     suppliers_card_field_submitted_at: string;
     suppliers_card_field_updated_at: string;
     suppliers_card_field_hidden_at: string;
@@ -6870,6 +6876,7 @@ export interface LocaleMessages {
     directory_submitter_admin: string;
     directory_submitter_self: string;
     directory_submitter_user: string;
+    directory_submitter_visitor: string;
     directory_delete_entry: string;
     directory_delete_confirm_body: string;
     directory_delete_account: string;

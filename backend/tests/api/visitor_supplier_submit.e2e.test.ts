@@ -8,16 +8,37 @@ import "../setup";
 import { beforeEach, describe, expect, test } from "bun:test";
 import type { VisitorSession } from "@shared/verified_visitors";
 import { __testPlaintextForHash } from "../../src/auth/tokens";
-import { db, getVisitorSystemUserId } from "../../src/db";
-import { req } from "../helpers";
+import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
+import { db, VISITOR_SYSTEM_USER_EMAIL, getVisitorSystemUserId } from "../../src/db";
+import { registerAndVerify, req } from "../helpers";
+
+const ADMIN_EMAIL = "admin@test.test";
+const ADMIN_PASSWORD = "supersafe123";
+
+async function adminToken(): Promise<string> {
+  const reg = await registerAndVerify({
+    email: ADMIN_EMAIL,
+    password: ADMIN_PASSWORD,
+    full_name: "Ádám Nagy",
+  });
+  if (reg.status === 201) return reg.data.token;
+  const login = await req<{ token: string }>("POST", "/api/auth/login", {
+    email: ADMIN_EMAIL,
+    password: ADMIN_PASSWORD,
+  });
+  return login.data.token;
+}
 
 interface VisitorRow {
   id: number;
   verify_token_hash: string | null;
 }
 
-async function verifiedVisitor(email: string): Promise<{ id: number; deviceToken: string }> {
-  await req("POST", "/api/visitors/verify/request", { email });
+async function verifiedVisitor(
+  email: string,
+  fullName?: string,
+): Promise<{ id: number; deviceToken: string }> {
+  await req("POST", "/api/visitors/verify/request", { email, full_name: fullName });
   const row = db.prepare("SELECT * FROM verified_visitors WHERE email = ?").get(email) as
     | VisitorRow
     | undefined;
@@ -110,6 +131,7 @@ describe("verified visitor suggests a supplier", () => {
         category: "photography",
         name: "Totally Different Name",
         address: "Budapest",
+        contact_email: "dup@vvsup.example.com",
         website: "https://www.vvsup-existing.example.com/contact",
       },
       { headers: { "X-Visitor-Token": deviceToken } },
@@ -122,13 +144,50 @@ describe("verified visitor suggests a supplier", () => {
     const byNameCity = await req<{ detail?: { code?: string } }>(
       "POST",
       "/api/suppliers/community",
-      { category: "photography", name: "VVSup Existing", address: "x", city: "budapest" },
+      {
+        category: "photography",
+        name: "VVSup Existing",
+        address: "x",
+        city: "budapest",
+        contact_email: "dup2@vvsup.example.com",
+      },
       { headers: { "X-Visitor-Token": deviceToken } },
     );
     expect(byNameCity.status).toBe(409);
     expect(byNameCity.data.detail?.code).toBe("already_listed");
 
     db.prepare("DELETE FROM listings WHERE id = 'vvexisting1'").run();
+  });
+
+  test("the vendor's own email is required of a visitor", async () => {
+    const { deviceToken } = await verifiedVisitor("vsub4@example.com");
+    const res = await req<{ detail?: { code?: string } }>(
+      "POST",
+      "/api/suppliers/community",
+      { category: "photography", name: "VVSup Nameless", address: "Budapest" },
+      { headers: { "X-Visitor-Token": deviceToken } },
+    );
+    expect(res.status).toBe(400);
+    expect(res.data.detail?.code).toBe("contact_email_required");
+    expect(supplierByName("VVSup Nameless")).toBeNull();
+  });
+
+  test("a logged-in couple may still submit without one", async () => {
+    // The gate is about who is answerable for the row: a couple has an account
+    // we can go back to, a visitor is an address and nothing else.
+    const couple = await registerAndVerify({
+      email: "vvcouple@example.com",
+      password: "supersafe123",
+      full_name: "Kata Kis",
+    });
+    const res = await req(
+      "POST",
+      "/api/suppliers/community",
+      { category: "photography", name: "VVSup Couple Sub", city: "Budapest" },
+      { token: couple.data.token },
+    );
+    expect(res.status).toBe(201);
+    expect(supplierByName("VVSup Couple Sub")).not.toBeNull();
   });
 
   test("a provided price band (1..5) is kept", async () => {
@@ -147,6 +206,89 @@ describe("verified visitor suggests a supplier", () => {
     );
     expect(res.status).toBe(201);
     expect(supplierByName("VVSup Priced")?.price_band).toBe(4);
+  });
+});
+
+describe("admin sees who suggested a visitor listing", () => {
+  // The row's author FK points at the reserved system user, so an admin card
+  // that reads `submitter_email` answers "who suggested this?" with a sentinel
+  // address. The visitor's own address is carried alongside it.
+  test("the queue and every action response name the visitor, not the sentinel", async () => {
+    const { deviceToken } = await verifiedVisitor("vadmin1@example.com", "Zsuzsi Kovács");
+    const token = await adminToken();
+
+    await req(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "mc_celebrant",
+        name: "VVSup Ceremony",
+        city: "Budapest",
+        contact_email: "hello@vvceremony.example.com",
+      },
+      { headers: { "X-Visitor-Token": deviceToken } },
+    );
+    const id = supplierByName("VVSup Ceremony")?.id;
+    expect(id).toBeDefined();
+
+    const list = await req<{ suppliers: CommunitySupplierAdminView[] }>(
+      "GET",
+      "/api/admin/suppliers",
+      undefined,
+      { token },
+    );
+    const card = list.data.suppliers.find((s) => s.id === id);
+    expect(card?.submitter_visitor_email).toBe("vadmin1@example.com");
+    expect(card?.submitter_visitor_name).toBe("Zsuzsi Kovács");
+    // The sentinel is still reported — it is what the row actually stores —
+    // but it is no longer the only thing the admin can read.
+    expect(card?.submitter_email).toBe(VISITOR_SYSTEM_USER_EMAIL);
+
+    // Single-row reads go through their own query; a moderator touching the
+    // card must not blank the identity the list just showed them.
+    const patched = await req<{ supplier: CommunitySupplierAdminView }>(
+      "PATCH",
+      `/api/admin/suppliers/${id}/notes`,
+      { notes: "called them" },
+      { token },
+    );
+    expect(patched.status).toBe(200);
+    expect(patched.data.supplier.submitter_visitor_email).toBe("vadmin1@example.com");
+  });
+
+  test("purge-submitter is refused: there is no account behind the row", async () => {
+    // submitter_user_id is the SHARED system user, so purging "the submitter"
+    // would scrub it and take every other visitor's listing with it.
+    const { deviceToken } = await verifiedVisitor("vadmin2@example.com");
+    const token = await adminToken();
+    await req(
+      "POST",
+      "/api/suppliers/community",
+      {
+        category: "photography",
+        name: "VVSup Purgeable",
+        city: "Budapest",
+        contact_email: "hello@vvpurge.example.com",
+      },
+      { headers: { "X-Visitor-Token": deviceToken } },
+    );
+    const id = supplierByName("VVSup Purgeable")?.id;
+
+    const res = await req<{ detail?: { code?: string } }>(
+      "POST",
+      `/api/admin/suppliers/${id}/purge-submitter`,
+      {},
+      { token },
+    );
+    expect(res.status).toBe(409);
+    expect(res.data.detail?.code).toBe("visitor_submitter");
+    expect(supplierByName("VVSup Purgeable")).not.toBeNull();
+    // A purge scrubs the users row in place, so the sentinel address surviving
+    // is the proof the system user was never touched.
+    const systemUser = db
+      .prepare("SELECT email FROM users WHERE id = ?")
+      .get(getVisitorSystemUserId()) as { email: string } | undefined;
+    expect(systemUser?.email).toBe(VISITOR_SYSTEM_USER_EMAIL);
   });
 });
 

@@ -75,6 +75,9 @@ export interface CommunitySupplierRowWithEmail extends CommunitySupplierRow {
   /** Real email of the verified visitor who submitted (LEFT JOIN), or null when
    *  the submitter was a logged-in couple. */
   submitter_visitor_email?: string | null;
+  /** Name the visitor's Google account carried, when they gave one. Same LEFT
+   *  JOIN as the email; null for the logged-in-couple path. */
+  submitter_visitor_name?: string | null;
   /** Last time the submitter's account was seen active (users.last_seen_at),
    *  stamped throttled on session verify. Null if they've never been stamped. */
   submitter_last_seen_at: number | null;
@@ -167,6 +170,7 @@ export function toAdminView(
     submitter_email: row.submitter_email,
     submitter_user_id: row.submitter_user_id,
     submitter_visitor_email: row.submitter_visitor_email ?? null,
+    submitter_visitor_name: row.submitter_visitor_name ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     hidden_at: row.hidden_at,
@@ -269,7 +273,7 @@ export function listAllForAdmin(): CommunitySupplierRowWithEmail[] {
   return db
     .prepare(
       `SELECT cs.*, u.email AS submitter_email, u.last_seen_at AS submitter_last_seen_at,
-              vv.email AS submitter_visitor_email
+              vv.email AS submitter_visitor_email, vv.full_name AS submitter_visitor_name
        FROM community_suppliers cs
        JOIN users u ON u.id = cs.submitter_user_id
        LEFT JOIN verified_visitors vv ON vv.id = cs.submitter_visitor_id
@@ -326,9 +330,15 @@ export function getCommunitySupplierWithEmail(id: number): CommunitySupplierRowW
   return (
     (db
       .prepare(
-        `SELECT cs.*, u.email AS submitter_email
+        // Same shape as listAllForAdmin, visitor join included: every admin
+        // action answers with toAdminView(after), so a single-row read that
+        // skipped the join would blank the submitter's identity the moment a
+        // moderator touched the card.
+        `SELECT cs.*, u.email AS submitter_email, u.last_seen_at AS submitter_last_seen_at,
+              vv.email AS submitter_visitor_email, vv.full_name AS submitter_visitor_name
          FROM community_suppliers cs
          JOIN users u ON u.id = cs.submitter_user_id
+         LEFT JOIN verified_visitors vv ON vv.id = cs.submitter_visitor_id
          WHERE cs.id = ?`,
       )
       .get(id) as CommunitySupplierRowWithEmail | undefined) ?? null

@@ -399,6 +399,13 @@ export function SubmitSupplierModal({
           setVisitorToken(null);
           setVerified(false);
           setVerifyError(t("suppliers.submit.visitor_reverify"));
+        } else if (err.status === 400 && detailCode === "contact_email_required") {
+          // The server requires the vendor's own address from a visitor. The
+          // form asks for it too, so this only fires when something got past
+          // the client check — send them back to the field rather than
+          // surfacing the server's English sentence.
+          setStep(2);
+          setErrors((prev) => ({ ...prev, contact_email: t("suppliers.submit.err_required") }));
         } else if (err.status === 429) {
           toast.error(t("suppliers.submit.err_rate_limited"));
         } else if (err.status === 409 && detailCode === "already_listed") {

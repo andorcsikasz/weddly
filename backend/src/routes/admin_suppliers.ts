@@ -26,6 +26,7 @@ import {
   updateCommunitySupplier,
 } from "../domain/community_suppliers";
 import { CONFIG } from "../config";
+import { getVisitorSystemUserId } from "../db";
 import { clearCuratedOverride, setCuratedOverride } from "../domain/curated_overrides";
 import { sendKind } from "../domain/emails";
 import { purgeOneUser } from "../domain/purge";
@@ -747,6 +748,23 @@ function handlePurgeSubmitter(ctx: Ctx): Response {
 
   const before = getCommunitySupplierById(id);
   if (!before) throw new HttpError(404, "Supplier not found");
+
+  // Guard: a visitor submission has NO account behind it. `submitter_user_id`
+  // points at the reserved system user that anchors the NOT-NULL author FK for
+  // every account-less submission, so purging "the submitter" here would scrub
+  // that shared row and delete every other visitor's listing with it. Delete
+  // the single listing instead.
+  // The id check is the load-bearing half: `submitter_visitor_id` is
+  // ON DELETE SET NULL, so a row whose visitor is already gone looks like an
+  // ordinary couple submission while still pointing at the system user.
+  if (
+    before.submitter_visitor_id !== null ||
+    before.submitter_user_id === getVisitorSystemUserId()
+  ) {
+    throw new HttpError(409, "This listing was suggested by a visitor, not an account", {
+      code: "visitor_submitter",
+    });
+  }
 
   const submitterId = before.submitter_user_id;
   // Guard: never let an admin nuke their own account through this button.
