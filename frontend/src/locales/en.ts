@@ -4100,6 +4100,8 @@ const en: LocaleMessages = {
     snapshot_breakdown_label: "View breakdown",
     snapshot_breakdown_title: "Snapshot breakdown",
     snapshot_breakdown_total_label: "Total",
+    snapshot_breakdown_vs_now: "The smaller figure is the difference from your plan now.",
+    snapshot_delta_title: "Difference from your plan now",
     add_template_help: "Pick a category to add",
     edit_planned_aria: "Edit planned amount for {category}",
     per_guest_unit: "{n}/guest",

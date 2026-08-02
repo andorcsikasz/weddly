@@ -831,6 +831,16 @@ export default function BudgetPage() {
   // count is small.
   const livePlannedTotal = useMemo(() => lines.reduce((s, l) => s + l.planned_huf, 0), [lines]);
 
+  /** Live planned per category, summed from the raw `planned_huf` column
+   *  rather than the headcount-scaled display value — the snapshot payload
+   *  stores the same baseline units, so this is the only way the breakdown
+   *  compares like with like. Same reasoning as `livePlannedTotal` above. */
+  const livePlannedByCategory = useMemo(() => {
+    const map = new Map<BudgetCategory, number>();
+    for (const l of lines) map.set(l.category, (map.get(l.category) ?? 0) + l.planned_huf);
+    return map;
+  }, [lines]);
+
   // Dashboard "tap the amount" deep-link → /app/budget#cat-<category>. Scroll
   // the first table row of that category into view and focus its planned-huf
   // input so the user lands ready to type. Falls back to the CostPlanningCard
@@ -1399,6 +1409,7 @@ export default function BudgetPage() {
                 key={s.id}
                 snapshot={s}
                 livePlannedTotal={livePlannedTotal}
+                livePlannedByCategory={livePlannedByCategory}
                 locale={locale}
                 currency={currency}
                 restoring={restoringId === s.id}
@@ -3090,6 +3101,7 @@ function DeltaPill({
 function SnapshotCard({
   snapshot,
   livePlannedTotal,
+  livePlannedByCategory,
   locale,
   currency,
   restoring,
@@ -3099,6 +3111,9 @@ function SnapshotCard({
 }: {
   snapshot: BudgetSnapshot;
   livePlannedTotal: number;
+  /** Per-category live planned, for the breakdown's "what has moved since"
+   *  column. Baseline units, matching the snapshot payload. */
+  livePlannedByCategory: ReadonlyMap<BudgetCategory, number>;
   locale: Locale;
   currency: Currency;
   /** This card is the one currently being restored — show a spinner. */
@@ -3191,6 +3206,7 @@ function SnapshotCard({
       {breakdownOpen && (
         <SnapshotBreakdownDialog
           snapshot={snapshot}
+          livePlannedByCategory={livePlannedByCategory}
           locale={locale}
           currency={currency}
           onClose={() => setBreakdownOpen(false)}
@@ -3201,15 +3217,20 @@ function SnapshotCard({
 }
 
 /** Modal showing the per-category planned/actual totals captured inside one
- *  saved snapshot. Lets the user inspect what's actually inside the scenario
- *  before deciding whether to restore it. */
+ *  saved snapshot, each set against what that category plans TODAY. A saved
+ *  scenario that can only be read back on its own terms answers "what did I
+ *  say in March"; the question a couple actually has weeks later is "what has
+ *  moved since", and that one needs both numbers side by side. Reading it is
+ *  also what makes Restore a decision rather than a leap. */
 function SnapshotBreakdownDialog({
   snapshot,
+  livePlannedByCategory,
   locale,
   currency,
   onClose,
 }: {
   snapshot: BudgetSnapshot;
+  livePlannedByCategory: ReadonlyMap<BudgetCategory, number>;
   locale: Locale;
   currency: Currency;
   onClose: () => void;
@@ -3219,7 +3240,7 @@ function SnapshotBreakdownDialog({
   // Parse + aggregate by category. Defensive: a malformed payload yields an
   // empty breakdown rather than a crash (matches `SnapshotCard`'s inline
   // parse).
-  const { rows, totalPlanned, totalActual } = useMemo(() => {
+  const { rows, totalPlanned, totalActual, totalLive } = useMemo(() => {
     const agg = new Map<BudgetCategory, { planned: number; actual: number }>();
     try {
       const arr = JSON.parse(snapshot.payload_json) as {
@@ -3243,20 +3264,58 @@ function SnapshotBreakdownDialog({
     } catch {
       // ignore — empty breakdown table is the graceful fallback.
     }
-    const rows = Array.from(agg.entries())
-      .map(([category, totals]) => ({ category, ...totals }))
-      // Hide all-zero categories so the table stays scannable.
-      .filter((r) => r.planned !== 0 || r.actual !== 0)
-      // Heaviest planned spend first.
-      .sort((a, b) => b.planned - a.planned);
+    // A category the couple has added SINCE the snapshot exists only on the
+    // live side, and it is often the most interesting line in the table. Union
+    // the two key sets rather than walking the payload alone, or the per-row
+    // deltas silently fail to add up to the total delta.
+    const categories = new Set<BudgetCategory>([...agg.keys(), ...livePlannedByCategory.keys()]);
+    const rows = Array.from(categories)
+      .map((category) => {
+        const saved = agg.get(category) ?? { planned: 0, actual: 0 };
+        return {
+          category,
+          planned: saved.planned,
+          actual: saved.actual,
+          live: livePlannedByCategory.get(category) ?? 0,
+        };
+      })
+      // Hide rows that are zero on BOTH sides so the table stays scannable.
+      .filter((r) => r.planned !== 0 || r.actual !== 0 || r.live !== 0)
+      // Heaviest planned spend first, falling back to the live figure so a
+      // category added since the snapshot still sorts sensibly.
+      .sort((a, b) => b.planned - a.planned || b.live - a.live);
     let totalPlanned = 0;
     let totalActual = 0;
+    let totalLive = 0;
     for (const r of rows) {
       totalPlanned += r.planned;
       totalActual += r.actual;
+      totalLive += r.live;
     }
-    return { rows, totalPlanned, totalActual };
-  }, [snapshot.payload_json]);
+    return { rows, totalPlanned, totalActual, totalLive };
+  }, [snapshot.payload_json, livePlannedByCategory]);
+
+  /** The "since you saved this" figure. Rendered under the saved planned
+   *  amount rather than as its own column: five columns do not fit a modal on
+   *  a phone, and the delta only means anything next to the number it is a
+   *  delta from. Suppressed at zero, which is the common case and reads as
+   *  noise repeated down every row. */
+  function deltaCell(saved: number, live: number) {
+    const delta = live - saved;
+    if (delta === 0) return null;
+    return (
+      <span
+        className={`block text-[10px] font-medium tabular-nums ${
+          delta > 0 ? "text-blush-700 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"
+        }`}
+        title={t("budget.snapshot_delta_title")}
+      >
+        {/* One text node: split across two, the sign and the amount can't be
+         *  matched (or read aloud) as a single figure. */}
+        {`${delta > 0 ? "+" : ""}${formatMoney(delta, currency, locale)}`}
+      </span>
+    );
+  }
 
   return (
     <Dialog
@@ -3275,6 +3334,13 @@ function SnapshotBreakdownDialog({
         <p className="text-xs uppercase tracking-wide text-ink-400 dark:text-umber-300">
           {snapshot.name}
         </p>
+        {/* Names the small second figure once, at the top, instead of
+         *  repeating a label on every row. */}
+        {rows.length > 0 && totalLive !== totalPlanned && (
+          <p className="text-xs text-ink-500 dark:text-umber-300">
+            {t("budget.snapshot_breakdown_vs_now")}
+          </p>
+        )}
         {rows.length === 0 ? (
           <p className="text-ink-500 dark:text-umber-300">{t("budget.lines_empty")}</p>
         ) : (
@@ -3289,7 +3355,11 @@ function SnapshotBreakdownDialog({
               </thead>
               <tbody>
                 {rows.map((row) => {
-                  const Icon = CATEGORY_ICONS[row.category];
+                  // `payload_json` is opaque JSON that can outlive a category
+                  // rename, so this lookup can miss. An undefined component
+                  // is not a blank cell, it is a React "Element type is
+                  // invalid" throw that takes the whole dialog down.
+                  const Icon = CATEGORY_ICONS[row.category] ?? MoreHorizontal;
                   return (
                     <tr
                       key={row.category}
@@ -3307,6 +3377,7 @@ function SnapshotBreakdownDialog({
                       </td>
                       <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
                         {formatMoney(row.planned, currency, locale)}
+                        {deltaCell(row.planned, row.live)}
                       </td>
                       <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
                         {formatMoney(row.actual, currency, locale)}
@@ -3320,6 +3391,7 @@ function SnapshotBreakdownDialog({
                   </td>
                   <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
                     {formatMoney(totalPlanned, currency, locale)}
+                    {deltaCell(totalPlanned, totalLive)}
                   </td>
                   <td className="px-2 py-2 text-right align-middle tabular-nums text-ink-900 dark:text-paper-50">
                     {formatMoney(totalActual, currency, locale)}

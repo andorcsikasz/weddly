@@ -4714,6 +4714,9 @@ export interface LocaleMessages {
     snapshot_breakdown_title: string;
     /** Row label for the totals row at the bottom of the breakdown table. */
     snapshot_breakdown_total_label: string;
+    /** Caption naming the small delta figure in the snapshot breakdown. */
+    snapshot_breakdown_vs_now: string;
+    snapshot_delta_title: string;
     add_template_help: string;
     edit_planned_aria: string;
     per_guest_unit: string;

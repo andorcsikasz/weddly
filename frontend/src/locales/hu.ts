@@ -4144,6 +4144,8 @@ const hu: LocaleMessages = {
     snapshot_breakdown_label: "Bontás megtekintése",
     snapshot_breakdown_title: "Pillanatkép bontása",
     snapshot_breakdown_total_label: "Összesen",
+    snapshot_breakdown_vs_now: "A kisebb szám az eltérés a mostani tervedhez képest.",
+    snapshot_delta_title: "Eltérés a mostani tervedtől",
     add_template_help: "Válassz kategóriát",
     edit_planned_aria: "{category} tervezett összegének módosítása",
     per_guest_unit: "{n}/fő",

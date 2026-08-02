@@ -4190,6 +4190,8 @@ const es: LocaleMessages = {
     snapshot_breakdown_label: "Ver desglose",
     snapshot_breakdown_title: "Desglose de la instantánea",
     snapshot_breakdown_total_label: "Total",
+    snapshot_breakdown_vs_now: "La cifra pequeña es la diferencia con tu plan actual.",
+    snapshot_delta_title: "Diferencia con tu plan actual",
     add_template_help: "Elige una categoría para añadir",
     edit_planned_aria: "Editar el importe previsto para {category}",
     per_guest_unit: "{n}/invitado",

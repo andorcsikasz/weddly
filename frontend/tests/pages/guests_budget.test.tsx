@@ -27,7 +27,7 @@ import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import BudgetPage from "@/pages/BudgetPage";
 import GuestsPage from "@/pages/GuestsPage";
-import { currencyName } from "@/lib/format";
+import { currencyName, formatMoney } from "@/lib/format";
 import { AuthProvider } from "@/lib/auth";
 import { I18nProvider } from "@/lib/i18n";
 import { ToastProvider } from "@/components/ui/ToastProvider";
@@ -1006,6 +1006,50 @@ describe("<BudgetPage>", () => {
     expect(
       fetchCalls.find((c) => c.method === "DELETE" && c.url === "/api/budget/payments/9001"),
     ).toBeDefined();
+  });
+
+  it("sets a snapshot's categories against what they plan today", async () => {
+    // A saved scenario that can only be read on its own terms answers "what
+    // did I say in March". The question weeks later is "what has moved", and
+    // reading Restore as a decision rather than a leap depends on it.
+    installDefaultEndpoints({
+      lines: [
+        // Venue: planned 1.5M when saved, 1.8M now → +300 000.
+        makeBudgetLine({ id: 5001, category: "venue", planned_huf: 1_800_000 }),
+        // Floral: not in the snapshot at all, added since → +250 000. This
+        // is the row a payload-only walk would drop entirely, which is also
+        // what would stop the per-row deltas summing to the total.
+        makeBudgetLine({
+          id: 5002,
+          category: "decor_floral",
+          planned_huf: 250_000,
+          label: "Flowers",
+        }),
+      ],
+      snapshots: [
+        makeSnapshot({
+          id: 42,
+          name: "Original plan",
+          payload_json: JSON.stringify([
+            { category: "venue", planned_huf: 1_500_000, actual_huf: 0 },
+          ]),
+        }),
+      ],
+    });
+    renderBudget();
+    await waitFor(() => expect(screen.getByText("Original plan")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: /view breakdown/i }));
+    const dialog = await screen.findByRole("dialog");
+
+    // Deltas are signed against the live budget, and the total agrees with
+    // the rows rather than with the payload alone.
+    // `Intl` separates symbol from number with a non-breaking space, which
+    // testing-library normalises out of the DOM side but not out of ours.
+    const delta = (n: number) => `+${formatMoney(n, "HUF", "en")}`.replace(/\s/g, " ");
+    expect(within(dialog).getByText(delta(300_000))).toBeInTheDocument();
+    expect(within(dialog).getByText(delta(250_000))).toBeInTheDocument();
+    expect(within(dialog).getByText(delta(550_000))).toBeInTheDocument();
   });
 
   it("Add row affordance is rendered and reveals the label input on click", async () => {
