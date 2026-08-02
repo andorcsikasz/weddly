@@ -556,6 +556,15 @@ const CITY_COORDS_MANUAL: Record<string, { lat: number; lng: number }> = {
   Túrkeve: { lat: 47.1017, lng: 20.7456 },
   Zsombó: { lat: 46.3272, lng: 19.9942 },
   Érd: { lat: 47.3919, lng: 18.9136 },
+  // Home towns of the August 2026 ceremóniamester batch that had no coordinated
+  // venue to average. An MC publishes no address, so the town centre is the only
+  // pin they can ever have, and without one the card is missing from the map tab
+  // entirely. Photon/OSM centroids, same precision as the rest of this table.
+  Hajdúböszörmény: { lat: 47.6717, lng: 21.5079 },
+  Nemesgulács: { lat: 46.8348, lng: 17.4834 },
+  Paks: { lat: 46.6229, lng: 18.8589 },
+  Székesfehérvár: { lat: 47.191, lng: 18.4108 },
+  Törökbálint: { lat: 47.435, lng: 18.913 },
 };
 
 // `submitter_type` is layered on by the DIRECTORY map below, curated entries
@@ -564,7 +573,7 @@ const CITY_COORDS_MANUAL: Record<string, { lat: number; lng: number }> = {
 // `venue_style` is optional in the literals (most pre-international entries
 // predate it and stay null), the DIRECTORY map below defaults the absent ones
 // to null. New venue entries set it from their "jelleg" tag.
-const RAW_DIRECTORY: (Omit<
+type RawDirectoryEntry = Omit<
   DirectorySupplierBase,
   | "submitter_type"
   | "vendor_account_id"
@@ -572,7 +581,17 @@ const RAW_DIRECTORY: (Omit<
   | "venue_style"
   | "gallery_urls"
   | "country"
-> & { venue_style?: VenueStyle | null; gallery_urls?: string[] | null })[] = [
+> & { venue_style?: VenueStyle | null; gallery_urls?: string[] | null };
+
+// THE LIST IS SPLIT ACROSS SEVERAL CONSTS ON PURPOSE, and `RAW_DIRECTORY` at
+// the bottom of this block is the one everything reads. Past roughly a thousand
+// entries a single annotated array literal fails to compile with TS2590
+// ("union type that is too complex to represent"), which arrives as an error on
+// the array's own type line and says nothing about the entry that tipped it
+// over. Each literal is checked against `RawDirectoryEntry` on its own, so a new
+// batch can either extend the last const or start its own; splitting costs
+// nothing and the entries are identical either way.
+const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
   {
     id: "normafa-rendezvenyhaz",
     name: "Normafa Rendezvényház",
@@ -3522,17 +3541,24 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "native-ceremony",
     name: "Native Ceremony",
-    category: "entertainment",
+    // Sat in `entertainment` from the first pass. It is Láng Balázs's MC
+    // business, and under the right category the three languages below are
+    // filterable rather than trivia in a sentence.
+    category: "mc_celebrant",
     city: "Budapest",
     address: null,
     capacity_min: null,
     capacity_max: null,
-    blurb_hu: "Többnyelvű esküvői MC és szertartás szolgáltatás.",
-    blurb_en: "Multilingual wedding MC and ceremony service; contact form.",
-    website: "https://nativeceremony.eu/en/",
+    blurb_hu:
+      "Két- és háromnyelvű esküvőkre szakosodott ceremóniamester, aki magyarul, angolul és franciául dolgozik. A nemzetközi vendégek tájékoztatását és a spontán fordításokat is beépíti a nap természetes menetébe.",
+    blurb_en:
+      "An MC specialising in bilingual and trilingual weddings, working in Hungarian, English and French. Keeping international guests informed and translating on the spot are built into the natural flow of the day.",
+    website: "https://nativeceremony.eu/",
     ...noContact,
     // A named person (Balázs), which is what the site publishes.
     contact_email: "balazs@nativeceremony.eu",
+    contact_phone: "+36 20 467 1696",
+    spoken_languages: ["hu", "en", "fr"],
     source: "curated",
     price_band: 4,
   },
@@ -13342,15 +13368,24 @@ const RAW_DIRECTORY: (Omit<
   {
     id: "szablya-akos-ceremoniamester",
     name: "Szablya Ákos Ceremóniamester",
-    category: "wedding_planner",
+    // Was `wedding_planner` with a one-line blurb and no way to reach him: the
+    // entry came out of a bulk pass that read the business as event planning.
+    // The August 2026 MC research says otherwise, and it is what he calls
+    // himself.
+    category: "mc_celebrant",
     city: "Nagykovácsi",
     address: "Nagykovácsi, Körte u. 16, 2094",
     capacity_min: null,
     capacity_max: null,
-    blurb_hu: "Esküvő- és rendezvényszervező – Nagykovácsi.",
-    blurb_en: "Wedding and event planner in Nagykovácsi.",
+    blurb_hu:
+      "Díjnyertes ceremóniamester és képzési vezető, akinek televíziós esküvői műsorvezetői tapasztalata is van. Eleganciát, humort és precíz háttérmunkát kombinál, jelentős számú esküvői referenciával.",
+    blurb_en:
+      "An award-winning MC and training lead who has hosted weddings on television as well. He combines elegance, humour and precise background work, with a long list of weddings behind him.",
     website: "https://ceremoniamestered.hu/",
     ...noContact,
+    contact_email: "szablyaakoscm@gmail.com",
+    contact_phone: "+36 20 913 9994",
+    spoken_languages: ["hu", "en"],
     source: "curated",
     price_band: null,
   },
@@ -16481,7 +16516,8 @@ const RAW_DIRECTORY: (Omit<
     capacity_max: null,
     blurb_hu:
       "A legfontosabb elvem, hogy az esküvő napja kizárólag rólatok szól! Bár ezen a napon fontos szereplője vagyok a történeteteknek, semmiképp sem a főszereplője.",
-    blurb_en: "Master of ceremonies in Budapest.",
+    blurb_en:
+      "An English-Hungarian MC and celebrant who also offers several add-on wedding services from one pair of hands. His guiding principle is that the day belongs to the couple: an important character in the story, never its lead.",
     website: "https://megoldaseskuvore.hu/",
     gallery_urls: [
       "https://images.wedigo.hu/provider-images/36/gallery/1780573217740-BSZ_eskuvo_web_426_Original.jpg",
@@ -16495,6 +16531,7 @@ const RAW_DIRECTORY: (Omit<
     ...noContact,
     contact_email: "megoldas.eskuvore@gmail.com",
     contact_phone: "+36209745916",
+    spoken_languages: ["hu", "en"],
     source: "curated",
     profile_imported: true,
     price_band: null,
@@ -20955,6 +20992,971 @@ const RAW_DIRECTORY: (Omit<
     price_band: null,
   },
 ];
+
+// ── Ceremóniamester batch, August 2026 ────────────────────────────────────
+// 47 Hungarian wedding MCs, researched off their OWN published pages (one sits
+// on a professional catalogue as well), verified 2026-08-02. Every one ships
+// with a business email, a phone and a live website, which is what makes them
+// reachable by the claim-invite campaign rather than a card that dead-ends.
+//
+// All go in as `mc_celebrant`. A good few also lead the ceremony itself, and
+// the blurb says so where it is true, but the business they sell is hosting the
+// day, and a listing gets ONE category. `spoken_languages` is the reason the
+// category matters here: an MC is booked for what they say, so it is the first
+// thing a couple with foreign guests filters on.
+//
+// `city` is where they are based, not how far they travel: almost all of these
+// work nationwide, so the town in the field would be a lie if it were read as a
+// service area. The ones whose own listing names no town at all sit under
+// "Magyarország" rather than a town we picked for them, and the cost of that is
+// exact: no town means no centroid, so those cards are in every list and on no
+// map. A pin in the middle of Budapest would fix the map and be untrue.
+const CEREMONY_MASTERS_2026_08: RawDirectoryEntry[] = [
+  {
+    id: "illes-peter",
+    name: "Illés Péter",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Precíz, kedves és kiegyensúlyozott stílusban vezeti végig az esküvőt, miközben a háttérben összehangolja a szolgáltatókat. Több száz esküvő tapasztalatával a pár elképzeléseihez igazított, nyugodt lebonyolításra törekszik.",
+    blurb_en:
+      "Hosts the day in a precise, warm and even-handed style while lining the vendors up in the background. Several hundred weddings in, he aims at a calm run-through built around what the couple actually asked for.",
+    website: "https://illespetercm.hu/",
+    ...noContact,
+    contact_email: "illespetercm@gmail.com",
+    contact_phone: "+36 30 247 2980",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "pap-sandor-alex",
+    name: "Pap Sándor Alex",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Magyar–német esküvőkre specializálódó ceremóniamester, aki higgadt és pontos jelenléttel tartja kézben a napot. Stílusát a légi közlekedésből ismert fegyelmezettséghez hasonló biztonság és kiszámíthatóság jellemzi.",
+    blurb_en:
+      "An MC specialising in Hungarian-German weddings, who keeps the day in hand with a composed, punctual presence. He describes his style through the discipline of aviation: safe and predictable.",
+    website: "https://papsandor.hu/",
+    ...noContact,
+    contact_email: "psa@ceremoniamester.org",
+    contact_phone: "+36 30 553 3258",
+    spoken_languages: ["hu", "de"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "czeto-zoltan",
+    name: "Czető Zoltán",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Három nyelven dolgozó ceremóniamester, aki a nemzetközi násznép kommunikációját is egy kézben tartja. Rendezvényszervezési szemlélettel koordinálja a vendégeket és a szolgáltatókat, hogy a program gördülékeny maradjon.",
+    blurb_en:
+      "An MC working in three languages, so an international wedding party stays in one pair of hands. He coordinates guests and vendors with an event planner's eye to keep the programme moving.",
+    website: "https://czetozoltan.hu/",
+    ...noContact,
+    contact_email: "zoltan.czeto.cm@gmail.com",
+    contact_phone: "+36 30 981 8355",
+    spoken_languages: ["hu", "de", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "farkas-stefan",
+    name: "Farkas Stefán",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Nagy tapasztalatú, három nyelven dolgozó ceremóniamester, aki nemzetközi esküvőkön is otthonosan mozog. Elegáns, visszafogott jelenléttel irányít, és kiemelt figyelmet fordít arra, hogy minden vendég értse a programot.",
+    blurb_en:
+      "A very experienced MC working in three languages and at home on international weddings. He leads with an elegant, understated presence and makes a point of every guest following the programme.",
+    website: "https://farkasstefan.hu/",
+    ...noContact,
+    contact_email: "farkasstefancm@gmail.com",
+    contact_phone: "+36 20 596 0704",
+    spoken_languages: ["hu", "de", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "kormos-robert",
+    name: "Kormos Róbert",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Ceremóniamesteri munkáját műsorvezetői és lelkipásztori tapasztalat egészíti ki, ezért egyszerre tud határozott és empatikus lenni. Saját megfogalmazása szerint viharlámpaként ad biztonságot, miközben óraműszerűen tartja a nap ritmusát.",
+    blurb_en:
+      "His work as an MC is backed by TV hosting and pastoral experience, so he can be firm and empathetic at once. In his own words he is a storm lantern: steady light, while the day keeps clockwork time.",
+    website: "https://kormosrobert.hu/",
+    ...noContact,
+    contact_email: "kormosrobertcm@gmail.com",
+    contact_phone: "+36 30 522 7471",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "teszar-david",
+    name: "dr. Teszár Dávid",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Jogász, író és Korea-szakértő háttérrel dolgozó, háromnyelvű ceremóniamester. Határozott, elegáns és együttműködő stílusával különösen jó választás lehet kulturálisan vegyes násznéphez.",
+    blurb_en:
+      "A trilingual MC with a background as a lawyer, author and Korea expert. Decisive, elegant and collaborative, which makes him a strong fit for a culturally mixed wedding party.",
+    website: "https://teszardavid.hu/",
+    ...noContact,
+    contact_email: "teszar.david@gmail.com",
+    contact_phone: "+36 70 664 2287",
+    spoken_languages: ["hu", "en", "ko"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "toth-mihaly",
+    name: "Tóth Mihály",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "A Ceremóniamester Szövetség alapítója, aki a háttérből irányító, párközpontú szerepfelfogást képviseli. Nagy rutinnal segít a forgatókönyv, a protokoll és a kulturálisan vegyes esküvői elemek összehangolásában.",
+    blurb_en:
+      "Founder of the Hungarian association of wedding MCs, working to a couple-first idea of the role, led from the background. Long experience with running orders, protocol and blending the customs of two cultures.",
+    website: "https://tothmihaly-ceremoniamester.hu/",
+    ...noContact,
+    contact_email: "tm@ceremoniamester.org",
+    contact_phone: "+36 1 501 3463",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "marosi-viktor",
+    name: "Marosi Viktor",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Angol–magyar ceremóniamester, aki az eleganciát, diszkréciót és jól összehangolt háttérmunkát emeli ki. Műsorvezetői és fotográfusi látásmódja segíti abban, hogy jó ritmusban, vizuálisan is tudatosan vezesse a napot.",
+    blurb_en:
+      "An English-Hungarian MC who puts elegance, discretion and well-rehearsed background work first. A hosting and photography background helps him keep both the rhythm and the look of the day in mind.",
+    website: "https://marosiviktor.hu/",
+    ...noContact,
+    contact_email: "marosi.viktor@gmail.com",
+    contact_phone: "+36 20 380 5380",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "hende-mate",
+    name: "Hende Máté",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Nemzetközi vállalati projektgazdai tapasztalatát ülteti át az esküvők pontos koordinációjába. Angol–magyar szolgáltatást nyújt, miközben a csapatmunka, a hideg fej és a meleg szív egyensúlyát tartja szem előtt.",
+    blurb_en:
+      "Brings the precision of international corporate project work to coordinating a wedding day. He works in English and Hungarian, balancing teamwork, a cool head and a warm heart.",
+    website: "https://hendemate.hu/",
+    ...noContact,
+    contact_email: "hm@ceremoniamester.org",
+    contact_phone: "+36 70 269 7469",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "borbas-viktor",
+    name: "Borbás Viktor",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Modern, elegáns és természetes jelenléttel dolgozó ceremóniamester, aki a háttérkoordinációra nagy hangsúlyt helyez. Több száz esküvő tapasztalatával a kommunikációt és a szolgáltatói együttműködést tartja a gördülékeny nap alapjának.",
+    blurb_en:
+      "A modern, elegant and natural MC who puts the weight on background coordination. Several hundred weddings in, he treats communication and vendor cooperation as the basis of a smooth day.",
+    website: "https://ceremoniamesteretek.hu/",
+    ...noContact,
+    contact_email: "viktor.borbas@gmail.com",
+    contact_phone: "+36 30 631 9382",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "molnar-attila-ceremoniamester",
+    name: "Molnár Attila",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Ceremóniamesterként és DJ-ként egyaránt dolgozik, így a program és a zene ritmusát összehangoltan tudja kezelni. Támogató, közvetlen stílust ígér, kerülve a kellemetlen vagy erőltetett helyzeteket.",
+    blurb_en:
+      "Works as both MC and DJ, so the programme and the music keep to one rhythm. He promises a supportive, direct style and steers clear of awkward or forced moments.",
+    website: "https://ceri.hu/",
+    ...noContact,
+    contact_email: "ceri@ceri.hu",
+    contact_phone: "+36 30 270 6821",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "keseru-tamas",
+    name: "Keserü Tamás",
+    category: "mc_celebrant",
+    city: "Debrecen",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Debreceni, modern ceremóniamester, aki elegáns és természetes hangulatot céloz erőltetett játékok nélkül. DJ-partnerrel együttműködve a program és a zene egységes ívét is tudja támogatni.",
+    blurb_en:
+      "A modern MC from Debrecen aiming for an elegant, natural mood without forced games. He works with a DJ partner, so the programme and the music can be carried on a single arc.",
+    website: "https://eskuvokiraly.hu/",
+    ...noContact,
+    contact_email: "info@eskuvokiraly.hu",
+    contact_phone: "+36 20 954 0016",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "siposhegyi-zoltan",
+    name: "Siposhegyi Zoltán",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Televíziós és színházi háttérrel rendelkező, többnyelvű ceremóniamester és moderátor. Diszkréten koordinálja a szolgáltatókat és a vendégeket, miközben a személyes kapcsolatra és az egyedi ötletekre épít.",
+    blurb_en:
+      "A multilingual MC and moderator with a theatre and television background. He coordinates vendors and guests discreetly, and builds on a personal relationship with the couple.",
+    website: "https://www.aceremoniamestere.com/",
+    ...noContact,
+    contact_email: "zoltansiposhegyi@gmail.com",
+    contact_phone: "+36 70 512 6662",
+    spoken_languages: ["hu", "en", "es", "de"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "hervai-mihaly",
+    name: "Hervai Mihály",
+    category: "mc_celebrant",
+    city: "Pécs",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Pécs környékéről induló, országosan dolgozó ceremóniamester és vőfély, aki angol–magyar eseményeket is vállal. Nyugodt, alkalmazkodó stílusával a hagyományos és a modern esküvői elemek között is otthonosan mozog.",
+    blurb_en:
+      "An MC and traditional vofely based near Pécs who works nationwide and takes English-Hungarian events. A calm, adaptable style at home with both the traditional and the modern parts of a wedding.",
+    website: "https://hervai.hu/",
+    ...noContact,
+    contact_email: "mihaly@hervai.hu",
+    contact_phone: "+36 30 997 2071",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "szabo-richard-vofelyetek",
+    name: "Szabó Richárd",
+    category: "mc_celebrant",
+    city: "Nemesgulács",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "A Balaton térségében dolgozó ceremóniamester és vőfély, aki táncoktatói és műsorvezetői tapasztalatot is hoz. A modern koordinációt a hagyományos elemekkel a pár igényei szerint tudja ötvözni.",
+    blurb_en:
+      "An MC and traditional vofely working around Lake Balaton, with dance teaching and hosting experience behind him. He mixes modern coordination with traditional elements to whatever degree the couple wants.",
+    website: "https://www.vofelyetek.hu/",
+    ...noContact,
+    contact_email: "info@vofelyetek.hu",
+    contact_phone: "+36 30 989 6468",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "haraszti-levente",
+    name: "Haraszti Levente",
+    category: "mc_celebrant",
+    city: "Albertirsa",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Modern, humoros és megbízható ceremóniamester, aki az előzetes tervezésben is aktívan részt vesz. A nagy napon a programot és a szolgáltatókat koordinálja, hogy a párnak ne kelljen operatív kérdésekkel foglalkoznia.",
+    blurb_en:
+      "A modern, funny and dependable MC who takes an active part in the planning as well. On the day he runs the programme and the vendors so the couple never has to handle logistics.",
+    website: "https://leventecm.hu/",
+    ...noContact,
+    contact_email: "info@leventecm.hu",
+    contact_phone: "+36 30 846 5569",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "domjan-peter",
+    name: "Domján Péter",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Budapesti, angol–magyar ceremóniamester, aki pedagógusi, zenei és rendezvényszervezői tapasztalatot ötvöz. Fiatalos, személyre szabott programot készít, és a nagy napon saját esküvőjeként kezeli a részleteket.",
+    blurb_en:
+      "A Budapest-based English-Hungarian MC combining teaching, music and event-management experience. He builds a young, tailored programme and treats the details like his own wedding.",
+    website: "https://domjanpeter.hu/",
+    ...noContact,
+    contact_email: "info@domjanpeter.hu",
+    contact_phone: "+36 30 349 4571",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "marton-david",
+    name: "Marton Dávid",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Színészi és előadóművészeti háttérrel dolgozó ceremóniamester, aki természetes, nem kínos hangulatot ígér. A programot a párhoz igazítja, rejtett költségek nélküli, átlátható együttműködéssel.",
+    blurb_en:
+      "An MC with an acting and performing background who promises a natural mood with nothing forced about it. The programme is fitted to the couple, on transparent terms with no hidden costs.",
+    website: "https://www.martondavid.com/",
+    ...noContact,
+    contact_email: "marton.david.cm@gmail.com",
+    contact_phone: "+36 30 128 4322",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "fazekas-istvan-atenapod",
+    name: "Fazekas István",
+    category: "mc_celebrant",
+    city: "Kecskemét",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Kecskeméti ceremóniamester, aki rendezvényszervező feleségével közösen nyújt háttértámogatást. Precíz, segítőkész és modern lebonyolítást kínál, amelyben a koordináció és a vendégek tájékoztatása is hangsúlyos.",
+    blurb_en:
+      "An MC from Kecskemét who works alongside his wife, an event planner, for the background support. Precise, helpful and modern, with coordination and keeping the guests informed both in focus.",
+    website: "https://atenapodkecskemet-hu.webnode.hu/",
+    ...noContact,
+    contact_email: "atenapod001@gmail.com",
+    contact_phone: "+36 30 402 5937",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "csaszar-patrik",
+    name: "Császár Patrik",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Rendezvényszervező és műsorvezető, aki a modern ceremóniamesteri szerepet képviseli. Különböző létszámú események koordinációjában szerzett tapasztalatát elegáns, közvetlen esküvői jelenlétté alakítja.",
+    blurb_en:
+      "An event manager and host representing the modern idea of what an MC is for. He turns experience coordinating events of every size into an elegant, easy presence on a wedding day.",
+    website: "https://www.csaszarpatrik.hu/",
+    ...noContact,
+    contact_email: "info@csaszarpatrik.hu",
+    contact_phone: "+36 20 944 7375",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "jakab-zoltan",
+    name: "Jakab Zoltán",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Stílusos, személyre szabott és energikus ceremóniamester, aki a tervezéstől a programok levezetéséig kíséri a párt. Budapest és Székesfehérvár térségéből országosan vállal esküvőket.",
+    blurb_en:
+      "A stylish, personal and energetic MC who stays with the couple from the planning to the last game of the night. Based between Budapest and Székesfehérvár, and takes weddings nationwide.",
+    website: "https://jakabzoltan.hu/",
+    ...noContact,
+    contact_email: "info@jakabzoltan.hu",
+    contact_phone: "+36 30 643 6732",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "dahud-emil",
+    name: "Dahud Emil",
+    category: "mc_celebrant",
+    city: "Szekszárd",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Képzett ceremóniamester és szertartásvezető, aki magyarul és igény szerint angolul is dolgozik. Strukturált felkészüléssel, finom humorral és a párhoz igazított jelenléttel vezeti az eseményt.",
+    blurb_en:
+      "A trained MC and celebrant who works in Hungarian and, on request, in English. Structured preparation, gentle humour and a presence tuned to the couple.",
+    website: "https://www.ceemil.hu/",
+    ...noContact,
+    contact_email: "dahudemil@gmail.com",
+    contact_phone: "+36 20 406 1178",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "tollas-brigitta",
+    name: "Tollas Brigitta",
+    category: "mc_celebrant",
+    city: "Debrecen",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Debreceni rendezvényszervező, ceremóniamester és angol–magyar szertartásvezető egy személyben. Elegáns koordinációt, közösséget bevonó programokat és teljesebb szervezési támogatást is kínál.",
+    blurb_en:
+      "An event planner, MC and English-Hungarian celebrant from Debrecen in one person. Elegant coordination, programmes that draw the guests in, and fuller planning support if it is wanted.",
+    website: "https://dreamparty.hu/tollas-brigitta-rendezvenyszervezo/",
+    ...noContact,
+    contact_email: "info@dreamparty.hu",
+    contact_phone: "+36 30 959 1606",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "gombos-daniel",
+    name: "Gombos Dániel",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Fiatalos és közvetlen ceremóniamester, aki a pár igénye szerint lehet bohémabb vagy visszafogottabb. Tudatos jelenléttel, természetes humorral és a túlzott szereplés kerülésével koordinálja a napot.",
+    blurb_en:
+      "A young, direct MC who can be more bohemian or more restrained, whichever the couple asks for. He coordinates with a deliberate presence and natural humour, without making himself the show.",
+    website: "https://www.gombosdaniel.com/",
+    ...noContact,
+    contact_email: "gombosdaniel@gmail.com",
+    contact_phone: "+36 70 398 0581",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "hajagos-robert",
+    name: "Hajagos Róbert",
+    category: "mc_celebrant",
+    city: "Szeged",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Szegedi ceremóniamester, akinek vendéglátás-menedzsment háttere erősíti a helyszíni koordinációját. Több mint egy évtizede dolgozik esküvőkön Magyarországon és a határ menti régióban.",
+    blurb_en:
+      "An MC from Szeged whose hospitality-management background strengthens his coordination on site. He has worked weddings in Hungary and the neighbouring border region for over a decade.",
+    website: "https://hajagosrobert.hu/",
+    ...noContact,
+    contact_email: "hajagosrobert.ev@gmail.com",
+    contact_phone: "+36 70 613 7730",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "braz-mate-milan",
+    name: "Bráz Máté Milán",
+    category: "mc_celebrant",
+    city: "Szekszárd",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Korábbi esküvői zenész és énekes-gitáros, aki 2020 óta ceremóniamesterként is dolgozik. Az elegáns modern stílust igény szerint a hagyományos elemekkel és szertartásvezetéssel egészíti ki.",
+    blurb_en:
+      "A former wedding musician and singer-guitarist who has also worked as an MC since 2020. He rounds out an elegant modern style with traditional elements and with leading the ceremony on request.",
+    website: "https://boldogigen.hu/",
+    ...noContact,
+    contact_email: "bmmilan90@gmail.com",
+    contact_phone: "+36 30 911 1580",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "kopcsanyi-robert",
+    name: "Kopcsányi Róbert",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "2007 óta dolgozik ceremóniamesterként, és igény szerint női asszisztenssel érkezik külön díj nélkül. A koordinációt logisztikai segítséggel, fotósarokkal és a felkészülés alatti folyamatos kapcsolattartással egészíti ki.",
+    blurb_en:
+      "An MC since 2007, who brings a female assistant at no extra charge when it helps. He adds logistics support, a photo corner and constant contact through the run-up to the coordination itself.",
+    website: "https://cmester.hu/",
+    ...noContact,
+    contact_email: "info@cmester.hu",
+    contact_phone: "+36 30 473 4163",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "boszormenyi-kovacs-zsolt",
+    name: "Böszörményi Kovács Zsolt",
+    category: "mc_celebrant",
+    city: "Hajdúböszörmény",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Hajdúböszörményi angol–magyar ceremóniamester és szertartásvezető, aki zenei szolgáltatásokat is kínál. Személyes, fiatalos humorral dolgozik, és DJ- vagy Konga-show elemekkel is tudja bővíteni a programot.",
+    blurb_en:
+      "An English-Hungarian MC and celebrant from Hajdúböszörmény who also offers music services. He works with a personal, youthful humour and can extend the programme with a DJ set or a conga show.",
+    website: "https://zsoltiacm.hu/",
+    ...noContact,
+    contact_email: "kovazso777@gmail.com",
+    contact_phone: "+36 20 497 3858",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "menyhart-balazs",
+    name: "Menyhárt Balázs",
+    category: "mc_celebrant",
+    city: "Törökbálint",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Törökbálinti ceremóniamester és műsorvezető, aki jókedvvel, lendülettel és folyamatos szervezési támogatással dolgozik. Határozott, mégis laza stílusát több évnyi páros visszajelzés dokumentálja.",
+    blurb_en:
+      "An MC and host from Törökbálint who works with good cheer, drive and continuous support through the planning. His firm but easy style is documented by years of couples' feedback.",
+    website: "https://aceremoniamester.hu/",
+    ...noContact,
+    contact_email: "info@aceremoniamester.hu",
+    contact_phone: "+36 30 604 0180",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "varga-zsolt-zsubi",
+    name: "Varga Zsolt „Zsubi”",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Színpadi háttérrel rendelkező ceremóniamester, műsorvezető és moderátor, aki országosan vállal eseményeket. Elegáns, humoros és fiatalos stílusban dolgozik, miközben a szervezést és a programokat is kézben tartja.",
+    blurb_en:
+      "An MC, host and moderator with a stage background who takes events nationwide. He works in an elegant, funny, youthful register while keeping the organising and the programme in hand.",
+    website: "https://www.vargazsubi.hu/",
+    ...noContact,
+    contact_email: "info@vargazsubi.hu",
+    contact_phone: "+36 30 930 3583",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "moricz-tamas",
+    name: "Móricz Tamás",
+    category: "mc_celebrant",
+    city: "Győr",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Nyugat-magyarországi ceremóniamester, aki több mint egy évtizede dolgozik vendéglátási és rendezvényes környezetben. Közvetlen, laza és humoros stílusa mellett higgadt problémamegoldást és részletes háttérkoordinációt kínál.",
+    blurb_en:
+      "An MC from western Hungary with over a decade of hospitality and event work behind him. A direct, easy and funny style, with level-headed problem solving and detailed background coordination.",
+    website: "https://moricztamas.hu/",
+    ...noContact,
+    contact_email: "info@moricztamas.hu",
+    contact_phone: "+36 30 539 1656",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "feher-gabor-ceremoniamester",
+    name: "Fehér Gábor",
+    category: "mc_celebrant",
+    city: "Győr",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Rendezvényszervező, műsorvezető és kommunikációs tréner, aki több ezer órás mikrofonos tapasztalatot hoz az esküvőkre. Rátok hangolt, határozott, de humoros koordinációt kínál, és országosan vállal felkéréseket.",
+    blurb_en:
+      "An event manager, host and communications trainer bringing thousands of hours on a microphone to weddings. Firm but funny coordination tuned to the couple, available nationwide.",
+    website: "https://fehergaborceremoniamester.hu/",
+    ...noContact,
+    contact_email: "gabor.ceremonia@gmail.com",
+    contact_phone: "+36 30 298 7427",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "csecsei-tamas",
+    name: "Csécsei Tamás",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Lendületes, kedves és elegáns ceremóniamester, aki a profizmus és a jókedv egyensúlyára törekszik. Országosan vállal esküvőket, és a tervezéstől a váratlan helyzetek diszkrét megoldásáig kíséri a párt.",
+    blurb_en:
+      "A spirited, kind and elegant MC aiming for the balance between professionalism and good cheer. He takes weddings nationwide and stays with the couple from the planning to the discreet fixing of surprises.",
+    website: "https://csecseiceremoniamester.hu/",
+    ...noContact,
+    contact_email: "csecseitamasceremoniamester@gmail.com",
+    contact_phone: "+36 70 303 7020",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "der-bence",
+    name: "Dér Bence",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Főállású ceremóniamester, aki korábbi nagycsapatos vezetői tapasztalatát a bizalom és a szervezés építésére használja. A párt és a vendégeket is közvetlenül támogatja, hogy a problémák a háttérben maradjanak.",
+    blurb_en:
+      "A full-time MC who uses his experience leading large teams to build trust and organisation. He supports the couple and the guests directly, so the problems stay in the background.",
+    website: "https://benceremonia.hu/",
+    ...noContact,
+    contact_email: "benceremonia@gmail.com",
+    contact_phone: "+36 70 636 2989",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "veres-imre",
+    name: "Veres Imre",
+    category: "mc_celebrant",
+    city: "Szeged",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Szegedi ceremóniamester és műsorvezető, aki rádiós, podcast- és reklámhangos tapasztalattal rendelkezik. A modern konferanszié stílust családi vőfélyhagyománnyal, személyre szabott kvízzel és angol szertartásvezetéssel egészíti ki.",
+    blurb_en:
+      "An MC and host from Szeged with radio, podcast and voice-over experience. He rounds out a modern compere style with a family vofely tradition, a quiz written for the couple and ceremonies in English.",
+    website: "https://veresimre.hu/",
+    ...noContact,
+    contact_email: "info@veresimre.hu",
+    contact_phone: "+36 30 255 4450",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "street-gabor-hubadur",
+    name: "Street Gábor „Hubadúr”",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Közlekedésmérnöki és logisztikai háttérből érkező, több mint húsz éve dolgozó ceremóniamester. Védjegye a párról írt személyes dal, emellett magyar–angol szimbolikus szertartást és részletes forgatókönyvet is kínál.",
+    blurb_en:
+      "An MC of more than twenty years, arriving from a transport-engineering and logistics background. His signature is a song written about the couple, alongside a Hungarian-English symbolic ceremony and a detailed running order.",
+    website: "https://hubadur-ceremoniamester.hu/",
+    ...noContact,
+    contact_email: "info@hubadur-ceremoniamester.hu",
+    contact_phone: "+36 30 636 3205",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "kovacs-attila-ceremoniamester",
+    name: "Kovács Attila",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Zenész, DJ és ceremóniamester, aki 2003 óta dolgozik esküvőkön. A teljes nap koordinációja mellett szertartáshangosítást, háttérzenét és technikai támogatást is tud biztosítani.",
+    blurb_en:
+      "A musician, DJ and MC who has worked weddings since 2003. Beyond coordinating the whole day he can supply ceremony sound, background music and the technical support.",
+    website: "https://ceremoniamester-attila.hu/",
+    ...noContact,
+    contact_email: "cmkovacsattila@gmail.com",
+    contact_phone: "+36 30 205 0120",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "borsodi-imre",
+    name: "Borsodi Imre",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Budapesti ceremóniamester, műsorvezető és moderátor, aki rádiós, színházi és elektronikus sajtós háttérrel rendelkezik. Empatikus, kulturált és humoros jelenléttel koordinál kisebb és nagyobb esküvőket.",
+    blurb_en:
+      "A Budapest MC, host and moderator with a background in radio, theatre and the press. He coordinates smaller and larger weddings alike with an empathetic, cultured and funny presence.",
+    website: "https://imiceremony.com/",
+    ...noContact,
+    contact_email: "hello@imiceremony.com",
+    contact_phone: "+36 30 693 6073",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "hanol-eva-hajnalka",
+    name: "Hanol Éva Hajnalka",
+    category: "mc_celebrant",
+    city: "Paks",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Paksi szertartásvezető és esküvői koordinátor, aki komplex, három az egyben szolgáltatást kínál. Modern, visszafogott ceremóniamesteri stílusban dolgozik, és tematikus vagy extrém helyszínű szertartásokat is vállal.",
+    blurb_en:
+      "A celebrant and wedding coordinator from Paks offering a three-in-one service. She works in a modern, understated MC style and takes themed ceremonies and unusual locations.",
+    website: "https://parkak.hu/",
+    ...noContact,
+    contact_email: "hanol.eva@gmail.com",
+    contact_phone: "+36 20 469 9972",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "lepo-attila",
+    name: "Lépő Attila",
+    category: "mc_celebrant",
+    city: "Tolna vármegye",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Tolna vármegyei ceremóniamester, vőfély, zenész és DJ, aki több mint huszonöt éve dolgozik esküvőkön. A hagyományos elemeket modern stílussal ötvözi, és a zenei ritmust is szolgáltatói szemmel kezeli.",
+    blurb_en:
+      "An MC, traditional vofely, musician and DJ from Tolna county with over twenty-five years of weddings behind him. He blends traditional elements with a modern style and handles the musical rhythm as a vendor himself.",
+    website: "https://lepoattila.hu/",
+    ...noContact,
+    contact_email: "attila.lepo@gmail.com",
+    contact_phone: "+36 70 702 2636",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "vereckei-adam",
+    name: "Vereckei Ádám",
+    category: "mc_celebrant",
+    city: "Magyarország",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Országosan dolgozó ceremóniamester, aki az első egyeztetéstől személyre szabott forgatókönyvet készít. A nagy napon leveszi a szervezési terheket a párról, koordinálja a násznépet és a hangulatot.",
+    blurb_en:
+      "An MC working nationwide who writes a running order for the couple from the first meeting onward. On the day he takes the organising off them and keeps the wedding party and the mood moving.",
+    website: "https://vereckeiadam.hu/",
+    ...noContact,
+    contact_email: "vereckei@gmail.com",
+    contact_phone: "+36 70 431 2525",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "varga-szomos-bence",
+    name: "Varga-Szömös Bence",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Budapesti ceremóniamester, aki elegáns, visszafogott, mégis határozott koordinációt kínál országosan. Amerikai futballos tapasztalatából a csapatmunkát, az időzítést és a nyomás alatti helytállást emeli át az esküvőkre.",
+    blurb_en:
+      "A Budapest MC offering elegant, understated but decisive coordination nationwide. From American football he brings teamwork, timing and holding up under pressure.",
+    website: "https://cermester.hu/",
+    ...noContact,
+    contact_email: "info.cermester@gmail.com",
+    contact_phone: "+36 20 537 8866",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "kemeny-sandor",
+    name: "Kemény Sándor",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Korábbi étteremvezető és jelenlegi F&B manager, aki a vendéglátás működését belülről ismeri. Modern, közvetlen ceremóniamesterként pontos időzítést, országos rendelkezésre állást és saját selfie gépes vendégélményt kínál.",
+    blurb_en:
+      "A former restaurant manager and current F&B manager who knows hospitality from the inside. As a modern, direct MC he offers precise timing, nationwide availability and his own selfie machine for the guests.",
+    website: "https://www.kemenysandor.hu/",
+    ...noContact,
+    contact_email: "info@kemenysandor.hu",
+    contact_phone: "+36 70 319 3562",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "lendvay-patrik",
+    name: "Lendvay Patrik",
+    category: "mc_celebrant",
+    city: "Győr",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Győri ceremóniamester, szertartásvezető, műsorvezető és event manager, aki egy személyben ad szervezői és színpadi támogatást. Határozott, de nem főszereplő stílust képvisel, több száz esküvő tapasztalatával.",
+    blurb_en:
+      "An MC, celebrant, host and event manager from Győr who gives both the organising and the stage support. A firm style that never takes the lead role, backed by several hundred weddings.",
+    website: "https://www.lendvayevent.hu/maganszemelyeknek/",
+    ...noContact,
+    contact_email: "info@lendvayevent.hu",
+    contact_phone: "+36 70 432 1000",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "feher-peter-ceremoniamester",
+    name: "Fehér Péter",
+    category: "mc_celebrant",
+    city: "Budapest",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Bűvész és ceremóniamester, aki a koordinációt interaktív vendégszórakoztatással egészíti ki. Különösen azoknak lehet érdekes, akik a hagyományos esküvői játékok helyett látványos, kulturált műsort szeretnének.",
+    blurb_en:
+      "A magician and MC who rounds out the coordination with interactive entertainment for the guests. A good fit for couples who want a polished show instead of the traditional wedding games.",
+    website: "https://feher-ceremoniamester.hu/",
+    ...noContact,
+    contact_email: "feher.ceremonia@gmail.com",
+    contact_phone: "+36 20 938 3985",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "balint-k-gergo",
+    name: "Bálint K. Gergő",
+    category: "mc_celebrant",
+    city: "Szeged",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Szegedi rádiós műsorvezető és ceremóniamester, aki több mint 260 esküvő tapasztalatával dolgozik. Erőssége az improvizáció, a természetes humor és a közönség gyors bevonása, miközben országosan vállal felkérést.",
+    blurb_en:
+      "A radio host and MC from Szeged with over 260 weddings behind him. His strengths are improvisation, natural humour and drawing a room in quickly, and he takes bookings nationwide.",
+    website: "https://ceremoniamesterem.hu/",
+    ...noContact,
+    contact_email: "bkg@radio88.hu",
+    contact_phone: "+36 70 300 6595",
+    spoken_languages: ["hu"],
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "galgovszki-l-andras",
+    name: "Galgovszki L. András",
+    category: "mc_celebrant",
+    city: "Székesfehérvár",
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Székesfehérvári ceremóniamester és szertartásvezető, két angoltanári diplomával, coach- és humánmenedzseri háttérrel. Párspecifikus szövegeket és játékokat készít, és több közösségi platformon oszt meg esküvői tippeket.",
+    blurb_en:
+      "An MC and celebrant from Székesfehérvár with two English-teaching degrees and a coach and HR background. He writes texts and games specific to the couple, and shares wedding tips on several social platforms.",
+    website: "https://www.ceremoniamestergalgo.hu/",
+    ...noContact,
+    contact_email: "andras.galgovszki@gmail.com",
+    contact_phone: "+36 30 390 8930",
+    spoken_languages: ["hu", "en"],
+    source: "curated",
+    price_band: null,
+  },
+];
+
+/** Every curated entry, in one list. Order is only what the batches were added
+ *  in; nothing downstream depends on it (the API sorts). */
+const RAW_DIRECTORY: RawDirectoryEntry[] = [...RAW_DIRECTORY_CORE, ...CEREMONY_MASTERS_2026_08];
 
 // ── Country scoping ───────────────────────────────────────────────────────
 // A couple only sees venues in the country their wedding is in (see the
