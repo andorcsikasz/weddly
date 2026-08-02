@@ -560,6 +560,8 @@ const CITY_COORDS_MANUAL: Record<string, { lat: number; lng: number }> = {
   // venue to average. An MC publishes no address, so the town centre is the only
   // pin they can ever have, and without one the card is missing from the map tab
   // entirely. Photon/OSM centroids, same precision as the rest of this table.
+  // Same case, one town further: a photographer with no public address.
+  Ballószög: { lat: 46.8606, lng: 19.5696 },
   Hajdúböszörmény: { lat: 47.6717, lng: 21.5079 },
   Nemesgulács: { lat: 46.8348, lng: 17.4834 },
   Paks: { lat: 46.6229, lng: 18.8589 },
@@ -20996,6 +20998,37 @@ const RAW_DIRECTORY_CORE: RawDirectoryEntry[] = [
     ...noContact,
     contact_email: "hello@csengokoncert.hu",
     contact_phone: "+36 20 665 8168",
+    source: "curated",
+    price_band: null,
+  },
+  {
+    id: "bodzart-weddings",
+    name: "Bodzart Weddings",
+    // They shoot the film as well, and a listing gets one category. Photo is
+    // what the business leads with, and the blurb carries the video.
+    category: "photography",
+    city: "Ballószög",
+    // Their published seat is a sole trader's home address, so the card shows
+    // the town and nothing narrower. A photographer travels to the wedding;
+    // nobody needs the house number to book one.
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    blurb_hu:
+      "Érzelemközpontú esküvői fotós és filmes csapat, amely természetes, őszinte pillanatokon keresztül meséli el a pár történetét. Fotós, másodfotós, asszisztens és filmes is dolgozik náluk, így az egész napot egy csapat fotózza és filmezi, a képeket pedig lehetőség szerint egy-két héten belül átadják.",
+    blurb_en:
+      "An emotion-led wedding photo and film team who tell the couple's story through natural, unstaged moments. A photographer, a second shooter, an assistant and a filmmaker work together, so one team covers the whole day in both stills and video, with the pictures usually delivered within a week or two.",
+    website: "https://weddings.bodzart.hu/",
+    gallery_urls: [
+      "https://weddings.bodzart.hu/wp-content/uploads/2022/01/0010.jpg",
+      "https://weddings.bodzart.hu/wp-content/uploads/2024/12/bemutatkozascover_bodzartweddings.jpg",
+    ],
+    ...noContact,
+    contact_email: "mate@bodzart.hu",
+    // Deliberately null. The "telefonszám" field on their site asks the COUPLE
+    // for a number; the business publishes none, and a directory that guesses
+    // one from elsewhere is worse than one that says there is no phone.
+    contact_phone: null,
     source: "curated",
     price_band: null,
   },
