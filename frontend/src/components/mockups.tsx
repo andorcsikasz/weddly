@@ -611,6 +611,38 @@ export function SeatingMockup({ className }: Common) {
   );
 }
 
+/** One five-petal blossom for the vendor card's florist badge. Petals are five
+ *  filled discs on a ring, which merges into a flower silhouette at any size —
+ *  the shape survives the scale a 44-unit badge gets rendered at, where a
+ *  stroked outline would not. The centre disc is the BADGE's black, not a hole:
+ *  punching it out with a mask would also punch through the stems crossing
+ *  behind, and painting it is one element instead of a mask per flower. */
+function VendorMockupBlossom({ cx, cy, scale }: { cx: number; cy: number; scale: number }) {
+  const petal = 1.7 * scale;
+  const ring = 1.8 * scale;
+  return (
+    <g>
+      <g className="text-white">
+        {[-90, -18, 54, 126, 198].map((deg) => {
+          const rad = (deg * Math.PI) / 180;
+          return (
+            <circle
+              key={deg}
+              cx={cx + Math.cos(rad) * ring}
+              cy={cy + Math.sin(rad) * ring}
+              r={petal}
+              fill="currentColor"
+            />
+          );
+        })}
+      </g>
+      <g className="text-umber-950">
+        <circle cx={cx} cy={cy} r={1.05 * scale} fill="currentColor" />
+      </g>
+    </g>
+  );
+}
+
 /** Vendor listing mockup — a single supplier card as it appears in
  *  the directory, used on VendorsPage to show vendors what their
  *  listing will look like.
@@ -641,11 +673,6 @@ export function VendorListingMockup({ className }: Common) {
         <clipPath id="vendor-cover-clip">
           <path d="M 16 0 Q 0 0 0 16 L 0 92 L 360 92 L 360 16 Q 360 0 344 0 Z" />
         </clipPath>
-        {/* Round crop for the profile badge. Same radius as the ring drawn on
-            top of it, so the photo stops exactly under the hairline. */}
-        <clipPath id="vendor-avatar-clip">
-          <circle cx="40" cy="92" r="22" />
-        </clipPath>
       </defs>
 
       {/* Card fill — no stroke; drop-shadow filter on the SVG element provides
@@ -675,33 +702,60 @@ export function VendorListingMockup({ className }: Common) {
         preserveAspectRatio="xMidYMid slice"
       />
 
-      {/* Profile badge. The disc underneath is the backdrop the illustration
-          lands on (and what shows while it loads), the artwork fills it, and the
-          hairline ring goes on top so the edge stays crisp in both modes.
+      {/* Profile badge — a white bouquet mark on a black disc.
 
-          An ILLUSTRATED florist, not a stock photograph. This card is the
-          "here's your listing" mockup on the vendor landing — a real face in it
-          reads as a specific person Weddly signed, which is a claim the page
-          shouldn't make, and a stock portrait reads as one every vendor has
-          already seen elsewhere. The drawing says "a vendor like you" without
-          pretending to be anyone. It also matches the flat, warm-neutral
-          illustration language of the rest of the landing.
+          It used to be an illustrated portrait, and a portrait is the wrong
+          object here whatever it depicts: this card is the "here's your
+          listing" mockup, so any face in it is a person the page is implicitly
+          claiming, and the vendor reading it has to look past somebody else's
+          picture to imagine their own. A mark claims nobody. Black is the only
+          fill that stays a badge rather than a smudge where the disc straddles
+          the cover photo and the white card below it — and `umber-950` rather
+          than `ink-900`, because the landing's black is the warm one; the cool
+          navy sits wrong against a photo of a flower-dressed table.
 
-          Head-and-shoulders crop, shipped at 176px for a badge that renders at
-          ~44: a full-body drawing turns to mush at that size while a face still
-          resolves. */}
-      <g className="text-white dark:text-umber-700">
+          Drawn as paths, not an asset: it renders at 44 units in a 360-wide
+          viewBox, so a bitmap either ships oversized or turns to mush, and the
+          petals have to stay crisp at every scale the landing renders this at.
+          Petals are FILLED with a punched-out dark centre rather than stroked —
+          at this size a 1px outline of a 3px flower is a grey dot. */}
+      <g className="text-umber-950">
         <circle cx="40" cy="92" r="22" fill="currentColor" />
       </g>
-      <image
-        href="/vendor-avatar-illustration.jpg"
-        x="18"
-        y="70"
-        width="44"
-        height="44"
-        clipPath="url(#vendor-avatar-clip)"
-        preserveAspectRatio="xMidYMid slice"
-      />
+      {/* Geometry below is written against the badge's own centre (40, 92) and
+          then scaled as a whole, so the mark's size is one number to tune
+          rather than thirty. 1.18 puts it at ~60% of the disc: enough to carry
+          at 44 units, with the padding a badge needs to stay a badge. */}
+      <g transform="translate(40 92) scale(1.18) translate(-40 -92)">
+        <g className="text-white">
+          {/* Stems, gathered into the tie, then cut ends fanning below it. */}
+          <g fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round">
+            <path d="M 35.5 88.5 Q 36.5 93 40 97.5" />
+            <path d="M 40 85.5 L 40 97.5" />
+            <path d="M 44.5 89.5 Q 43.5 93.5 40 97.5" />
+            <path d="M 40 99 L 37.6 102.2" />
+            <path d="M 40 99 L 40 102.8" />
+            <path d="M 40 99 L 42.4 102.2" />
+          </g>
+          {/* Leaves. */}
+          <path d="M 37 92.6 Q 32.8 91.3 31 94.2 Q 35 96 37 92.6 Z" fill="currentColor" />
+          <path d="M 43 93.8 Q 47.2 92.6 49 95.5 Q 45 97.3 43 93.8 Z" fill="currentColor" />
+          {/* The tie. */}
+          <path
+            d="M 36.4 97.5 L 43.6 97.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          />
+        </g>
+        {/* Three blossoms: white petals with the disc's own black painted back
+            over the middle, so each flower has an eye instead of reading as a
+            blob. */}
+        <VendorMockupBlossom cx={35.5} cy={86.5} scale={1} />
+        <VendorMockupBlossom cx={44.5} cy={87.5} scale={0.92} />
+        <VendorMockupBlossom cx={40} cy={83.5} scale={0.8} />
+      </g>
       <g className="text-paper-300 dark:text-umber-600">
         <circle cx="40" cy="92" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
       </g>
