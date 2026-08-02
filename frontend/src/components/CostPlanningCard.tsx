@@ -278,7 +278,7 @@ export function CostPlanningCard({
   onBoundsChange?: (min: number, max: number) => void | Promise<void>;
   /** Called when the user releases a category slider with a new amount.
    *  The parent applies it to the underlying budget lines. */
-  onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
+  onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<unknown>;
   /** Called when the user inline-edits the budget cap. The parent persists
    *  it via `coupleApi.update({ budget_goal: ... })`. */
   onCapChange?: (newCapHuf: number) => Promise<void>;
@@ -812,6 +812,14 @@ export function CostPlanningCard({
   );
 }
 
+/** Shared row template for every child of the category `<ul>`. The trailing
+ *  column is the freeze lock, and it is reserved on EVERY row variant —
+ *  including the ones that can't be frozen (honeymoon's link row, custom
+ *  rows) — because they share one list and a per-row column count would
+ *  stagger the sliders against each other. */
+const ROW_GRID =
+  "grid grid-cols-[2rem_minmax(0,1fr)_4.5rem_1.5rem] items-center gap-2 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem_1.75rem] sm:gap-3 sm:text-sm";
+
 function CategoryRowInner({
   category,
   plannedBaseline,
@@ -851,7 +859,7 @@ function CategoryRowInner({
    *  expands gently up to 75 % of cap as a row is pulled toward the rail's
    *  right edge. Floored upstream so it never hits zero. */
   widthAnchor: number;
-  onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<void>;
+  onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<unknown>;
   onToggleFreeze?: (category: BudgetCategory) => void | Promise<void>;
   /** Drag handler — fires on each slider change with the row's category and
    *  the new *baseline* value. Identity-stable in the parent so React.memo
@@ -875,11 +883,6 @@ function CategoryRowInner({
   linkTo?: string;
 }) {
   const { t, locale } = useT();
-  // Hover preview — when the user mouses over the left tile of an unfrozen
-  // row, swap the category icon to Lock so the freeze affordance is
-  // discoverable without a click. Click is what actually freezes.
-  const [tilePreview, setTilePreview] = useState(false);
-
   const Icon = CATEGORY_ICONS[category];
   const editable = !!onEditPlanned;
 
@@ -991,55 +994,61 @@ function CategoryRowInner({
   // handled by the parent's per-row write queue instead.
   const sliderDisabled = !editable || frozen;
 
-  // Left tile — icon + name. Doubles as the freeze toggle on non-link rows
-  // (honeymoon routes the whole row through to /app/honeymoon, so its left
-  // tile stays inert). When frozen, a tiny lock badge replaces the icon's
-  // ink-500 with the blush tint so the row reads as pinned at a glance.
-  // Hover-preview: on a toggleable, unfrozen row, mousing over swaps the
-  // icon to Lock so the freeze affordance is discoverable pre-click.
-  const showLockIcon = frozen || (canToggleFreeze && tilePreview);
+  // Left tile — icon + name, and NOTHING else. It used to double as the
+  // freeze toggle, which made one glyph mean two things: below `sm:` the
+  // label is hidden, so the entire tile was a bare 14 px category icon whose
+  // tap silently froze the category. The hover-swap that was supposed to
+  // advertise it does not exist on a touch screen. Freezing now has its own
+  // control in the trailing column (see `lockTile`); the icon is identity.
+  // Frozen rows still tint the whole tile blush so the lock reads at a glance.
+  const frozenTint = frozen ? "text-blush-700 dark:text-blush-300" : "";
   const leftTileContent = (
     <>
-      {showLockIcon ? (
-        <Lock size={14} className="shrink-0 text-blush-700 dark:text-blush-300" aria-hidden />
-      ) : (
-        <Icon size={14} className="shrink-0 text-ink-500 dark:text-umber-300" aria-hidden />
-      )}
+      <Icon
+        size={14}
+        className={`shrink-0 ${frozen ? "text-blush-700 dark:text-blush-300" : "text-ink-500 dark:text-umber-300"}`}
+        aria-hidden
+      />
       {/* Icon-only on phones: the label is hidden `<sm` so the left column
        *  collapses to just the glyph and hands its width to the slider rail.
        *  The full label returns at `sm:` upwards where the column has room. */}
-      <span
-        className={`hidden min-w-0 truncate sm:inline ${frozen ? "text-blush-700 dark:text-blush-300" : ""}`}
-      >
-        {categoryLabel}
-      </span>
+      <span className={`hidden min-w-0 truncate sm:inline ${frozenTint}`}>{categoryLabel}</span>
     </>
   );
 
-  const leftTile = canToggleFreeze ? (
+  const leftTile = (
+    <span className={`flex items-center gap-2 text-ink-700 dark:text-paper-100 ${frozenTint}`}>
+      {leftTileContent}
+    </span>
+  );
+
+  // Trailing tile — the freeze toggle, one fixed position down the whole
+  // list so it is learnable, and never the same glyph as anything else in
+  // the row. Open shackle = editable, closed = pinned: the state is carried
+  // by SHAPE first and colour second, so it survives a glance and a
+  // colour-blind reader. Rows that cannot be frozen render an empty cell
+  // rather than dropping the column (see ROW_GRID).
+  const lockTile = canToggleFreeze ? (
     <button
       type="button"
       onClick={() => onToggleFreeze?.(category)}
-      onMouseEnter={() => setTilePreview(true)}
-      onMouseLeave={() => setTilePreview(false)}
-      onFocus={() => setTilePreview(true)}
-      onBlur={() => setTilePreview(false)}
-      className={`flex items-center gap-2 text-left text-ink-700 transition hover:text-ink-900 dark:text-paper-100 dark:hover:text-paper-50 ${
+      className={`inline-flex h-6 w-6 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 ${
         frozen
-          ? "text-blush-700 hover:text-blush-800 dark:text-blush-300 dark:hover:text-blush-200"
-          : ""
+          ? "text-blush-700 hover:bg-blush-50 dark:text-blush-300 dark:hover:bg-blush-400/15"
+          : "text-ink-300 hover:bg-paper-100 hover:text-ink-600 dark:text-umber-500 dark:hover:bg-umber-700 dark:hover:text-umber-200"
       }`}
       aria-pressed={frozen}
       aria-label={t(frozen ? "budget.unfreeze_aria" : "budget.freeze_aria", {
         category: categoryLabel,
       })}
+      title={t(frozen ? "budget.unfreeze_aria" : "budget.freeze_aria", {
+        category: categoryLabel,
+      })}
     >
-      {leftTileContent}
+      {frozen ? <Lock size={12} aria-hidden /> : <LockOpen size={12} aria-hidden />}
     </button>
   ) : (
-    <span className="flex items-center gap-2 text-ink-700 dark:text-paper-100">
-      {leftTileContent}
-    </span>
+    <span aria-hidden />
   );
 
   // Right tile — the amount. On the dashboard we promote this to a Link so a
@@ -1184,7 +1193,7 @@ function CategoryRowInner({
            * and `4.5rem` (amount, sans the "actual/" prefix that's hidden
            * `<sm`) — the slider rail picks up the extra 3rem and the
            * progress is readable at a glance instead of squashed. */
-          className="grid grid-cols-[2rem_minmax(0,1fr)_4.5rem] items-center gap-2 py-1.5 text-xs transition hover:bg-paper-50 sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm -mx-2 px-2 rounded-md dark:hover:bg-umber-700"
+          className={`${ROW_GRID} -mx-2 rounded-md px-2 py-1.5 transition hover:bg-paper-50 dark:hover:bg-umber-700`}
           aria-label={categoryLabel}
         >
           <span className="flex items-center gap-2 text-ink-700 dark:text-paper-100">
@@ -1198,16 +1207,14 @@ function CategoryRowInner({
           <span className="stat-num block text-right text-xs text-ink-700 dark:text-paper-100">
             {amountInner}
           </span>
+          <span aria-hidden />
         </Link>
       </li>
     );
   }
 
   return (
-    <li
-      id={`cat-${category}`}
-      className="grid grid-cols-[2rem_minmax(0,1fr)_4.5rem] scroll-mt-24 items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm"
-    >
+    <li id={`cat-${category}`} className={`${ROW_GRID} scroll-mt-24 py-1.5`}>
       {leftTile}
       <div className="w-full">
         {trackEl}
@@ -1215,6 +1222,7 @@ function CategoryRowInner({
         {overBudgetEl}
       </div>
       {amountTile}
+      {lockTile}
     </li>
   );
 }
@@ -1337,7 +1345,7 @@ function CustomRowInner({
   }
 
   return (
-    <li className="grid grid-cols-[2rem_minmax(0,1fr)_4.5rem] items-center gap-2 py-1.5 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_11rem] sm:gap-3 sm:text-sm">
+    <li className={`${ROW_GRID} py-1.5`}>
       <span className="flex items-center gap-1.5 text-ink-700 dark:text-paper-100">
         {/* Phones show the row's icon so it stays identifiable when the label
          *  is hidden; the delete button (which would otherwise replace the
@@ -1418,6 +1426,9 @@ function CustomRowInner({
           )}
         </span>
       </span>
+      {/* A custom row has no freeze concept — the column is held open so its
+       *  slider still lines up with the category rows above it. */}
+      <span aria-hidden />
     </li>
   );
 }

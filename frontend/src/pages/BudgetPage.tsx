@@ -14,6 +14,7 @@ import {
 import {
   ArrowUpRight,
   BarChart3,
+  Check,
   CircleCheck,
   ExternalLink,
   FileText,
@@ -30,7 +31,19 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { type ChangeEvent, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type FocusEvent,
+  memo,
+  // Aliased: the bare name would shadow the DOM `MouseEvent` this file also
+  // relies on for its document-level `mousedown` listeners.
+  type MouseEvent as ReactMouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   CATEGORY_ICONS,
@@ -206,13 +219,19 @@ export default function BudgetPage() {
       budgetDocApi.list(),
       budgetPaymentApi.list(),
     ]);
-    setLines(linesR.lines);
-    stampVersions(linesR.lines);
-    setSnapshots(snapsR.snapshots);
+    // Every list is coerced to an array before it reaches state. These are
+    // rendered with `for…of` / `.map`, so one malformed body (or a response
+    // that 200s with the wrong shape) doesn't misrender a section — it throws
+    // during render and takes the whole page down to a white screen. Only
+    // `suppliers` was guarded; the other five had the same exposure.
+    const rows = linesR.lines ?? [];
+    setLines(rows);
+    stampVersions(rows);
+    setSnapshots(snapsR.snapshots ?? []);
     setCouple(coupleR.couple);
     setCoupleSuppliers(suppliersR.suppliers ?? []);
-    setDocuments(docsR.documents);
-    setBudgetPayments(paymentsR.payments);
+    setDocuments(docsR.documents ?? []);
+    setBudgetPayments(paymentsR.payments ?? []);
     // Seed the slider with the shared cost-planning count if /app/suppliers
     // or a prior session has one stored. Otherwise stay at `null` so the
     // slider defaults to the couple's onboarding target. Hydration moved
@@ -230,7 +249,7 @@ export default function BudgetPage() {
   const reloadDocuments = useCallback(async () => {
     try {
       const r = await budgetDocApi.list();
-      setDocuments(r.documents);
+      setDocuments(r.documents ?? []);
     } catch {
       // Non-fatal — the next full refresh will reconcile.
     }
@@ -253,7 +272,7 @@ export default function BudgetPage() {
   const reloadPayments = useCallback(async () => {
     try {
       const r = await budgetPaymentApi.list();
-      setBudgetPayments(r.payments);
+      setBudgetPayments(r.payments ?? []);
     } catch {
       // Non-fatal — the next full refresh will reconcile.
     }
@@ -359,11 +378,15 @@ export default function BudgetPage() {
     void retry;
   }
 
+  /** Returns whether the write landed. Callers that only fire-and-forget can
+   *  ignore it; the inline amount fields use it to decide whether they earned
+   *  their saved tick, since a failure here is reported by toast and must not
+   *  also be acknowledged as a save. */
   async function save(
     line: BudgetLine,
     key: "planned_huf" | "actual_huf" | "paid_huf",
     val: number,
-  ) {
+  ): Promise<boolean> {
     // Functional updater so stale-closure callers (e.g. the useCallback'd
     // setCustomRowPlanned) still see the latest lines.
     setLines((prev) => prev.map((l) => (l.id === line.id ? { ...l, [key]: val } : l)));
@@ -379,8 +402,10 @@ export default function BudgetPage() {
       );
       adoptRows([result.line], latest);
       publish("budget:changed");
+      return true;
     } catch (e) {
       handleSaveError(e, () => save(line, key, val));
+      return false;
     }
   }
 
@@ -466,12 +491,14 @@ export default function BudgetPage() {
    *  concurrent edit, so a slow save could silently revert a fast one.
    *  Reads `linesRef` rather than `lines` so the callback identity survives a
    *  headcount drag and React.memo on the rows keeps working. */
+  /** Same success contract as `save` above — see its comment. A no-op plan
+   *  reports `true`: nothing needed writing, so nothing failed. */
   const commitCategoryPlan = useCallback(async function commitCategoryPlan(
     category: BudgetCategory,
     plan: ReturnType<typeof planCategoryPlanned>,
     retry: () => void,
-  ) {
-    if (isNoopPlan(plan)) return;
+  ): Promise<boolean> {
+    if (isNoopPlan(plan)) return true;
     setLines((prev) => mergeLines(prev, plan.updates));
     try {
       const { result, latest } = await writes.run(`cat:${category}:${plan.field}`, () =>
@@ -479,14 +506,16 @@ export default function BudgetPage() {
       );
       adoptRows(result, latest);
       publish("budget:changed");
+      return true;
     } catch (e) {
       handleSaveError(e, retry);
+      return false;
     }
   }, []);
 
   const setAggregatedPlanned = useCallback(
     async function setAggregatedPlanned(category: BudgetCategory, newTotal: number) {
-      await commitCategoryPlan(
+      return commitCategoryPlan(
         category,
         planCategoryPlanned(
           category,
@@ -503,7 +532,7 @@ export default function BudgetPage() {
 
   const setAggregatedActual = useCallback(
     async function setAggregatedActual(category: BudgetCategory, newTotal: number) {
-      await commitCategoryPlan(
+      return commitCategoryPlan(
         category,
         planCategoryActual(
           category,
@@ -520,7 +549,7 @@ export default function BudgetPage() {
 
   const setAggregatedPaid = useCallback(
     async function setAggregatedPaid(category: BudgetCategory, newTotal: number) {
-      await commitCategoryPlan(
+      return commitCategoryPlan(
         category,
         planCategoryPaid(
           category,
@@ -1877,6 +1906,7 @@ function PaidEntryDialog({
 }) {
   const { t } = useT();
   const toast = useToast();
+  const confirm = useConfirm();
   // Percent only means something against an agreed amount; without one the
   // dialog opens straight on the currency side.
   const [mode, setMode] = useState<"pct" | "amount">(actual > 0 ? "pct" : "amount");
@@ -1973,6 +2003,21 @@ function PaidEntryDialog({
 
   async function deletePayment(p: BudgetPayment) {
     if (busy) return;
+    // A recorded payment is a financial fact with a date attached, and it
+    // moves the row's paid total the moment it goes. Deleting a budget line
+    // and deleting an attached document both ask first; this was the one
+    // destructive action on the page that just did it.
+    const ok = await confirm({
+      title: t("budget.payment_delete_confirm_title"),
+      body: t("budget.payment_delete_confirm_body", {
+        amount: formatMoney(p.amount_huf, currency, locale),
+        date: formatUnixDate(p.paid_at, locale),
+      }),
+      confirmLabel: t("common.confirm_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await budgetPaymentApi.remove(p.id);
@@ -2616,9 +2661,9 @@ function BudgetMobileCard({
   scope: string;
   documents: BudgetDocument[];
   payments: BudgetPayment[];
-  onPlannedCommit: (v: number) => void | Promise<void>;
-  onActualCommit: (v: number) => void | Promise<void>;
-  onPaidCommit: (v: number) => void | Promise<void>;
+  onPlannedCommit: (v: number) => void | Promise<unknown>;
+  onActualCommit: (v: number) => void | Promise<unknown>;
+  onPaidCommit: (v: number) => void | Promise<unknown>;
   onDocsChanged: () => void;
   onPaymentsChanged: () => void;
   onDelete: () => void;
@@ -2733,9 +2778,9 @@ function BudgetMobileCustomCard({
   scope: string;
   documents: BudgetDocument[];
   payments: BudgetPayment[];
-  onPlannedCommit: (v: number) => void | Promise<void>;
-  onActualCommit: (v: number) => void | Promise<void>;
-  onPaidCommit: (v: number) => void | Promise<void>;
+  onPlannedCommit: (v: number) => void | Promise<unknown>;
+  onActualCommit: (v: number) => void | Promise<unknown>;
+  onPaidCommit: (v: number) => void | Promise<unknown>;
   onDocsChanged: () => void;
   onPaymentsChanged: () => void;
   onDelete: () => void;
@@ -3076,7 +3121,7 @@ function SnapshotCard({
     // ignore — bad payload still shows zeros, not a crash.
   }
   const diff = livePlannedTotal - planned;
-  const created = formatSnapshotDate(snapshot.created_at, locale);
+  const created = formatUnixDate(snapshot.created_at, locale);
   const diffStr = (diff >= 0 ? "+" : "") + formatMoney(diff, currency, locale);
 
   return (
@@ -3284,7 +3329,7 @@ function SnapshotBreakdownDialog({
   );
 }
 
-function formatSnapshotDate(unixMs: number, locale: Locale): string {
+function formatUnixDate(unixMs: number, locale: Locale): string {
   // Stored as ms (UnixMs). Be defensive: if the value looks like seconds (small
   // 10-digit), upscale.
   const ms = unixMs > 1e12 ? unixMs : unixMs * 1000;
@@ -3298,6 +3343,11 @@ function formatSnapshotDate(unixMs: number, locale: Locale): string {
 }
 
 /* ─── HUF mask input ────────────────────────────────────────────────── */
+
+/** How long the post-save tick stays on an amount field. Long enough to catch
+ *  out of the corner of the eye while tabbing to the next cell, short enough
+ *  that a column of ticks never accumulates. */
+const SAVED_TICK_MS = 1600;
 
 /** Numeric HUF input that accepts space- and dot-separated thousands. Stores
  *  the canonical integer Forint via `onCommit`. Live-formats on blur for
@@ -3315,14 +3365,27 @@ function HufInput({
   ariaLabel,
 }: {
   value: number;
-  onCommit: (v: number) => void;
+  /** Resolving to `false` means the write failed and the caller has already
+   *  surfaced its own error — the saved tick stays away. Anything else
+   *  (including `undefined`, for handlers that can't fail) counts as saved. */
+  onCommit: (v: number) => void | Promise<unknown>;
   readOnly?: boolean;
   dataKey?: "planned" | "actual" | "paid";
   ariaLabel?: string;
 }) {
+  const { t } = useT();
   const [draft, setDraft] = useState<string>(formatNumber(value, "hu"));
   const [error, setError] = useState(false);
+  // Transient "saved" tick. A toast per amount edit would be unbearable on a
+  // page whose whole point is typing 13 numbers in a row, but with no
+  // acknowledgement at all the couple has no way to tell a committed edit
+  // from one that never left the field.
+  const [saved, setSaved] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Set while a pointer-initiated focus is still waiting for its mouseup —
+  // see `onFocus` / `onMouseUp` below.
+  const selectingRef = useRef(false);
   // Where to drop the caret after the next render — measured in *digits*
   // before the cursor in the raw input, so reformatting (which changes the
   // space positions) can put it back at the equivalent spot in the grouped
@@ -3334,6 +3397,13 @@ function HufInput({
     setDraft(formatNumber(value, "hu"));
     setError(false);
   }, [value]);
+
+  useEffect(
+    () => () => {
+      if (savedTimer.current !== null) clearTimeout(savedTimer.current);
+    },
+    [],
+  );
 
   // Restore caret to the digit-equivalent position after a reformat.
   useEffect(() => {
@@ -3383,35 +3453,82 @@ function HufInput({
     if (error) setError(false);
   }
 
-  function onBlur() {
+  // Select the whole amount on focus, so typing REPLACES it. Without this,
+  // clicking into "200 000" drops a caret wherever the pointer happened to
+  // land and the next keystroke types into the middle of the number: the
+  // couple entered a new figure and got a mangled one, with no error and no
+  // way to notice beyond re-reading the cell.
+  function onFocus(e: FocusEvent<HTMLInputElement>) {
+    if (readOnly) return;
+    selectingRef.current = true;
+    e.currentTarget.select();
+  }
+
+  // The guard that makes the select-all stick on a desktop click. Focus fires
+  // first and selects; the default mouseup would then collapse the selection
+  // back to the click point. An intentional drag-select is unaffected — by
+  // the time mouseup runs the drag has already set its own range, and this
+  // only suppresses the collapse.
+  function onMouseUp(e: ReactMouseEvent<HTMLInputElement>) {
+    if (!selectingRef.current) return;
+    selectingRef.current = false;
+    e.preventDefault();
+  }
+
+  async function onBlur() {
+    selectingRef.current = false;
     if (readOnly) return;
     const parsed = parseHuf(draft);
     if (parsed === null) {
       setError(true);
       return;
     }
-    if (parsed !== value) onCommit(parsed);
     // Always re-format so the user sees grouping after they leave the field.
     setDraft(formatNumber(parsed, "hu"));
+    if (parsed === value) return;
+    const outcome = await onCommit(parsed);
+    if (outcome === false) return;
+    setSaved(true);
+    if (savedTimer.current !== null) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => {
+      savedTimer.current = null;
+      setSaved(false);
+    }, SAVED_TICK_MS);
   }
 
   return (
-    <input
-      ref={inputRef}
-      type="text"
-      inputMode="numeric"
-      autoComplete="off"
-      readOnly={readOnly}
-      data-budget-planned={dataKey === "planned" ? "true" : undefined}
-      data-budget-actual={dataKey === "actual" ? "true" : undefined}
-      aria-label={ariaLabel}
-      className={`input h-9 min-h-0 py-1 text-center text-sm tabular-nums ${
-        error ? "input-invalid" : ""
-      } ${readOnly ? "cursor-not-allowed bg-paper-100 text-ink-500 dark:bg-umber-700/60 dark:text-umber-300" : ""}`}
-      value={draft}
-      onChange={onChange}
-      onBlur={onBlur}
-      aria-invalid={error || undefined}
-    />
+    <span className="relative block">
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        readOnly={readOnly}
+        data-budget-planned={dataKey === "planned" ? "true" : undefined}
+        data-budget-actual={dataKey === "actual" ? "true" : undefined}
+        aria-label={ariaLabel}
+        className={`input h-9 min-h-0 py-1 text-center text-sm tabular-nums ${
+          error ? "input-invalid" : ""
+        } ${readOnly ? "cursor-not-allowed bg-paper-100 text-ink-500 dark:bg-umber-700/60 dark:text-umber-300" : ""}`}
+        value={draft}
+        onChange={onChange}
+        onFocus={onFocus}
+        onMouseUp={onMouseUp}
+        onBlur={onBlur}
+        aria-invalid={error || undefined}
+      />
+      {saved && (
+        <Check
+          size={12}
+          aria-hidden
+          className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-emerald-600 dark:text-emerald-400"
+        />
+      )}
+      {/* Announced once per commit; the tick alone says nothing to a screen
+       *  reader, and this is the only confirmation the edit produces. */}
+      <span role="status" className="sr-only">
+        {saved ? t("budget.saved") : ""}
+      </span>
+    </span>
   );
 }

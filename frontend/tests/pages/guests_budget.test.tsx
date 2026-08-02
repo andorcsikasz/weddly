@@ -13,13 +13,21 @@
 // environment-dependent.
 
 import { resolveDesign } from "@shared/design";
-import type { BudgetLine, BudgetSnapshot, Couple, Guest, Household } from "@shared/types";
+import type {
+  BudgetLine,
+  BudgetPayment,
+  BudgetSnapshot,
+  Couple,
+  Guest,
+  Household,
+} from "@shared/types";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import BudgetPage from "@/pages/BudgetPage";
 import GuestsPage from "@/pages/GuestsPage";
+import { currencyName } from "@/lib/format";
 import { AuthProvider } from "@/lib/auth";
 import { I18nProvider } from "@/lib/i18n";
 import { ToastProvider } from "@/components/ui/ToastProvider";
@@ -321,6 +329,21 @@ function makeBudgetLine(over: Partial<BudgetLine> = {}): BudgetLine {
   };
 }
 
+function makeBudgetPayment(over: Partial<BudgetPayment> = {}): BudgetPayment {
+  return {
+    id: 9001,
+    couple_id: 1,
+    scope: "cat:venue",
+    amount_huf: 400_000,
+    paid_at: 1_700_000_000_000,
+    note: null,
+    pdf_url: null,
+    pdf_name: null,
+    created_at: 0,
+    ...over,
+  };
+}
+
 function makeSnapshot(over: Partial<BudgetSnapshot> = {}): BudgetSnapshot {
   return {
     id: 7001,
@@ -342,6 +365,7 @@ function installDefaultEndpoints(
     households?: Household[];
     lines?: BudgetLine[];
     snapshots?: BudgetSnapshot[];
+    payments?: BudgetPayment[];
   } = {},
 ) {
   const couple = opts.couple ?? makeCouple();
@@ -349,6 +373,11 @@ function installDefaultEndpoints(
   const households = opts.households ?? [];
   const lines = opts.lines ?? [];
   const snapshots = opts.snapshots ?? [];
+  const payments = opts.payments ?? [];
+  // Registered even when empty. Left unregistered it fell through to the
+  // harness's benign `{}`, and `{}.payments` is `undefined` — which is how
+  // the whole <BudgetPage> suite used to die during render.
+  onGet((u) => u.startsWith("/api/budget/payments"), { payments });
   onGet((u) => u.startsWith("/api/couples/current"), { couple });
   onGet((u) => u.startsWith("/api/guests/dietary-summary"), { meals: {}, dietary: {} });
   onGet((u) => u.startsWith("/api/guests"), { guests, total: guests.length });
@@ -853,6 +882,117 @@ describe("<BudgetPage>", () => {
     expect(patchCall).toBeUndefined();
   });
 
+  it("selects the whole amount when an editable field is focused", async () => {
+    // Without this the caret landed wherever the pointer did, so typing a new
+    // figure into "1 500 000" appended into the middle of it. No error, no
+    // validation failure — the couple simply ended up with a number they
+    // never entered.
+    installDefaultEndpoints({
+      lines: [makeBudgetLine({ id: 5001, category: "venue", actual_huf: 1_500_000 })],
+    });
+    renderBudget();
+    await waitFor(() => expect(screen.getAllByText("Venue").length).toBeGreaterThan(0));
+    await flush(2);
+
+    const actual = document.querySelector(
+      'input[data-budget-actual="true"]',
+    ) as HTMLInputElement | null;
+    expect(actual).not.toBeNull();
+    expect(actual!.value.length).toBeGreaterThan(0);
+
+    // Real DOM focus, not fireEvent.focus — React listens on focusin.
+    await act(async () => {
+      actual!.focus();
+    });
+    expect(actual!.selectionStart).toBe(0);
+    expect(actual!.selectionEnd).toBe(actual!.value.length);
+  });
+
+  it("acknowledges a committed amount edit", async () => {
+    // The page's only other write acknowledgements are toasts on payments and
+    // snapshots; typing amounts produced nothing at all, so a committed edit
+    // and one that never left the field looked identical.
+    installDefaultEndpoints({
+      lines: [makeBudgetLine({ id: 5001, category: "venue", actual_huf: 100_000 })],
+    });
+    onPatch((u) => u === "/api/budget/lines/5001", {
+      line: makeBudgetLine({ id: 5001, category: "venue", actual_huf: 250_000 }),
+    });
+    renderBudget();
+    await waitFor(() => expect(screen.getAllByText("Venue").length).toBeGreaterThan(0));
+    await flush(2);
+
+    const actual = document.querySelector('input[data-budget-actual="true"]') as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(actual, { target: { value: "250000" } });
+      fireEvent.blur(actual);
+    });
+    await flush(3);
+
+    expect(
+      fetchCalls.find((c) => c.method === "PATCH" && c.url === "/api/budget/lines/5001"),
+    ).toBeDefined();
+    expect(screen.getAllByText(/^saved$/i).length).toBeGreaterThan(0);
+  });
+
+  it("asks before deleting a recorded payment, and does not DELETE on cancel", async () => {
+    // Deleting a budget row and deleting an attached document both confirm.
+    // A payment — a dated financial record that moves the row's paid total —
+    // was the one destructive action on the page that just went ahead.
+    const line = makeBudgetLine({
+      id: 5001,
+      category: "venue",
+      actual_huf: 1_000_000,
+      paid_huf: 400_000,
+    });
+    installDefaultEndpoints({
+      lines: [line],
+      payments: [makeBudgetPayment({ id: 9001, scope: "cat:venue", amount_huf: 400_000 })],
+    });
+    renderBudget();
+    await waitFor(() => expect(screen.getAllByText("Venue").length).toBeGreaterThan(0));
+    await flush(2);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /record payment/i })[0]!);
+    const entry = await screen.findByRole("dialog");
+    fireEvent.click(within(entry).getAllByRole("button", { name: /^delete$/i })[0]!);
+
+    const confirmDialog = await screen.findByRole("alertdialog");
+    // Nothing has gone over the wire yet — the confirm is a gate, not a
+    // courtesy notice shown after the fact.
+    expect(fetchCalls.find((c) => c.method === "DELETE")).toBeUndefined();
+
+    fireEvent.click(within(confirmDialog).getByRole("button", { name: /^cancel$/i }));
+    await flush(2);
+    expect(fetchCalls.find((c) => c.method === "DELETE")).toBeUndefined();
+  });
+
+  it("deletes the payment once the confirm is accepted", async () => {
+    installDefaultEndpoints({
+      lines: [
+        makeBudgetLine({ id: 5001, category: "venue", actual_huf: 1_000_000, paid_huf: 400_000 }),
+      ],
+      payments: [makeBudgetPayment({ id: 9001, scope: "cat:venue", amount_huf: 400_000 })],
+    });
+    onDelete((u) => u === "/api/budget/payments/9001", { ok: true });
+    renderBudget();
+    await waitFor(() => expect(screen.getAllByText("Venue").length).toBeGreaterThan(0));
+    await flush(2);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /record payment/i })[0]!);
+    const entry = await screen.findByRole("dialog");
+    fireEvent.click(within(entry).getAllByRole("button", { name: /^delete$/i })[0]!);
+
+    const confirmDialog = await screen.findByRole("alertdialog");
+    await act(async () => {
+      fireEvent.click(within(confirmDialog).getByRole("button", { name: /yes, delete/i }));
+    });
+    await flush(3);
+    expect(
+      fetchCalls.find((c) => c.method === "DELETE" && c.url === "/api/budget/payments/9001"),
+    ).toBeDefined();
+  });
+
   it("Add row affordance is rendered and reveals the label input on click", async () => {
     installDefaultEndpoints({ lines: [], snapshots: [] });
     renderBudget();
@@ -919,24 +1059,34 @@ describe("<BudgetPage>", () => {
     await flush();
   });
 
-  it("renders the currency picker (HUF / EUR / USD radio buttons)", async () => {
-    installDefaultEndpoints({ lines: [], snapshots: [] });
-    renderBudget();
+  // The picker is a combobox + listbox, not the three radios it shipped as.
+  // Option labels come from ICU display names, so they're derived through the
+  // app's own `currencyName` rather than hardcoded — the exact wording is the
+  // runtime's to decide ("Euro" vs "euro" vs a localised form).
+  async function openCurrencyPicker() {
     await waitFor(() =>
       expect(screen.getByRole("heading", { level: 1, name: /^budget$/i })).toBeInTheDocument(),
     );
-    expect(screen.getByRole("radio", { name: "HUF" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "EUR" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "USD" })).toBeInTheDocument();
+    // Scoped by label: the page renders more than one combobox, and the
+    // currency trigger names itself "<label>: <current currency>".
+    fireEvent.click(screen.getByRole("combobox", { name: /^currency:/i }));
+    return await screen.findByRole("listbox");
+  }
+
+  it("renders the currency picker with HUF / EUR / USD among its options", async () => {
+    installDefaultEndpoints({ lines: [], snapshots: [] });
+    renderBudget();
+    const listbox = await openCurrencyPicker();
+    for (const code of ["HUF", "EUR", "USD"] as const) {
+      expect(within(listbox).getByRole("option", { name: currencyName(code, "en") })).toBeVisible();
+    }
   });
 
-  it("clicking a different currency radio opens the confirm dialog before PATCHing", async () => {
+  it("choosing a different currency opens the confirm dialog before PATCHing", async () => {
     installDefaultEndpoints({ lines: [], snapshots: [] });
     renderBudget();
-    await waitFor(() =>
-      expect(screen.getByRole("heading", { level: 1, name: /^budget$/i })).toBeInTheDocument(),
-    );
-    fireEvent.click(screen.getByRole("radio", { name: "EUR" }));
+    const listbox = await openCurrencyPicker();
+    fireEvent.click(within(listbox).getByRole("option", { name: currencyName("EUR", "en") }));
     await waitFor(() => expect(screen.getByRole("alertdialog")).toBeInTheDocument());
     // Defensive cancel so the page doesn't keep the dialog mounted into the next test.
     fireEvent.click(

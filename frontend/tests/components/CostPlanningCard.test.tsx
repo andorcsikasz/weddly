@@ -43,12 +43,14 @@ function setup({
   baseline = 100,
   frozen = new Set<BudgetCategory>(),
   onEditPlanned = mock(async () => {}),
+  onToggleFreeze,
 }: {
   lines: BudgetLine[];
   count?: number;
   baseline?: number;
   frozen?: Set<BudgetCategory>;
   onEditPlanned?: (cat: BudgetCategory, planned: number) => Promise<void>;
+  onToggleFreeze?: (cat: BudgetCategory) => void;
 }) {
   return render(
     <MemoryRouter>
@@ -63,6 +65,7 @@ function setup({
           onCountChange={mock(() => {})}
           onEditPlanned={onEditPlanned}
           frozenCategories={frozen}
+          onToggleFreeze={onToggleFreeze}
         />
       </I18nProvider>
     </MemoryRouter>,
@@ -188,5 +191,55 @@ describe("<CostPlanningCard> slider commits", () => {
     expect(photo.value).toBe("600000");
     // …and the card total reflects both, not one of them reverted.
     expect(totalDigits()).toContain("1600000");
+  });
+});
+
+describe("<CostPlanningCard> freeze affordance", () => {
+  // The row's category icon used to BE the freeze toggle. Below `sm:` the
+  // label is hidden, so the entire control was a bare 14px glyph that looked
+  // like decoration, and the hover-swap meant to advertise it cannot fire on
+  // a touch screen: tapping what reads as a category icon silently froze the
+  // category. Freezing now has its own control, and the identity tile is
+  // inert.
+  it("does not freeze anything when the category identity tile is clicked", () => {
+    const onToggleFreeze = mock((_cat: BudgetCategory) => {});
+    setup({ lines: [line(1, "venue", 300_000)], onToggleFreeze });
+
+    // The label is the identity tile. If it still sits inside a button, this
+    // click reaches the freeze handler.
+    fireEvent.click(screen.getByText(/venue/i));
+    expect(onToggleFreeze).not.toHaveBeenCalled();
+  });
+
+  it("freezes from a dedicated per-row control", () => {
+    const onToggleFreeze = mock((_cat: BudgetCategory) => {});
+    setup({
+      lines: [line(1, "venue", 300_000), line(2, "catering", 200_000)],
+      onToggleFreeze,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /freeze venue/i }));
+    expect(onToggleFreeze).toHaveBeenCalledTimes(1);
+    expect(onToggleFreeze.mock.calls[0]).toEqual(["venue"]);
+  });
+
+  it("reports frozen state on the control itself, not just as a tint", () => {
+    setup({
+      lines: [line(1, "venue", 300_000)],
+      frozen: new Set<BudgetCategory>(["venue"]),
+      onToggleFreeze: mock(() => {}),
+    });
+
+    // A frozen row offers the inverse action, and says so to assistive tech
+    // rather than relying on the blush colour alone.
+    const control = screen.getByRole("button", { name: /unfreeze venue/i });
+    expect(control.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("offers no freeze control when the card has no freeze handler", () => {
+    // The dashboard-style read-only case: nothing should imply the row can
+    // be pinned.
+    setup({ lines: [line(1, "venue", 300_000)] });
+    expect(screen.queryByRole("button", { name: /freeze/i })).toBeNull();
   });
 });

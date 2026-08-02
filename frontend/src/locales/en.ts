@@ -3992,6 +3992,7 @@ const en: LocaleMessages = {
     planned: "Planned",
     actual: "Actual",
     paid: "Paid",
+    saved: "Saved",
     paid_mark_full: "Mark fully paid",
     paid_record: "Record payment",
     paid_record_help: "Enter the percentage or amount paid.",
@@ -4006,6 +4007,9 @@ const en: LocaleMessages = {
     payment_add: "Add payment",
     payment_date: "Date",
     payment_delete: "Delete",
+    payment_delete_confirm_title: "Delete this payment?",
+    payment_delete_confirm_body:
+      "{amount} ({date}) leaves the payment history, and the category's paid total drops by that much.",
     payment_pdf_attach: "Attach PDF (invoice)",
     payment_pdf_view: "Open PDF",
     payment_pdf_remove: "Remove PDF",

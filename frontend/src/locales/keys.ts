@@ -4574,6 +4574,8 @@ export interface LocaleMessages {
     planned: string;
     actual: string;
     paid: string;
+    /** Transient acknowledgement on an inline amount field after it commits. */
+    saved: string;
     paid_mark_full: string;
     paid_record: string;
     paid_record_help: string;
@@ -4588,6 +4590,8 @@ export interface LocaleMessages {
     payment_add: string;
     payment_date: string;
     payment_delete: string;
+    payment_delete_confirm_title: string;
+    payment_delete_confirm_body: string;
     payment_pdf_attach: string;
     payment_pdf_view: string;
     payment_pdf_remove: string;

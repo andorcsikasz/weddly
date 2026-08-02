@@ -4080,6 +4080,7 @@ const es: LocaleMessages = {
     planned: "Previsto",
     actual: "Real",
     paid: "Pagado",
+    saved: "Guardado",
     paid_mark_full: "Marcar como pagado por completo",
     paid_record: "Registrar pago",
     paid_record_help: "Introduce el porcentaje o el importe pagado.",
@@ -4094,6 +4095,9 @@ const es: LocaleMessages = {
     payment_add: "Añadir pago",
     payment_date: "Fecha",
     payment_delete: "Eliminar",
+    payment_delete_confirm_title: "¿Eliminar este pago?",
+    payment_delete_confirm_body:
+      "{amount} ({date}) saldrá del historial de pagos y el total pagado de la categoría bajará esa cantidad.",
     payment_pdf_attach: "Adjuntar PDF (factura)",
     payment_pdf_view: "Abrir PDF",
     payment_pdf_remove: "Quitar PDF",

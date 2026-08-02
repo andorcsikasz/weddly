@@ -4035,6 +4035,7 @@ const hu: LocaleMessages = {
     planned: "Tervezett",
     actual: "Tényleges",
     paid: "Kifizetve",
+    saved: "Mentve",
     paid_mark_full: "Teljesen kifizetve",
     paid_record: "Kifizetés rögzítése",
     paid_record_help: "Add meg a kifizetett százalékot vagy összeget.",
@@ -4049,6 +4050,9 @@ const hu: LocaleMessages = {
     payment_add: "Kifizetés hozzáadása",
     payment_date: "Dátum",
     payment_delete: "Törlés",
+    payment_delete_confirm_title: "Törlöd ezt a kifizetést?",
+    payment_delete_confirm_body:
+      "{amount} ({date}) kikerül a kifizetési előzményekből, és a kategória fizetett összege ennyivel csökken.",
     payment_pdf_attach: "PDF csatolása (számla)",
     payment_pdf_view: "PDF megnyitása",
     payment_pdf_remove: "PDF eltávolítása",
