@@ -793,11 +793,30 @@ function handleDelete(ctx: Ctx): Response {
   // point at it throws SQLITE_CONSTRAINT → 500. One transaction so the cascade
   // is indivisible.
   const plusOnes = db
-    .prepare("SELECT id, full_name FROM guests WHERE plus_one_of = ? AND couple_id = ?")
-    .all(id, couple.id) as { id: number; full_name: string }[];
+    .prepare(
+      "SELECT id, full_name, household_id FROM guests WHERE plus_one_of = ? AND couple_id = ?",
+    )
+    .all(id, couple.id) as { id: number; full_name: string; household_id: number | null }[];
+  // Removing a guest can empty its household exactly like moving one out does
+  // (handleUpdate above), so the delete runs the same cleanup: an emptied
+  // household is swept in the SAME transaction, or it lingers in the guest
+  // list, the household picker and the invite-batch report while permanently
+  // squatting its UNIQUE(couple_id, code) check-in code. A "+1" inherits its
+  // host's household at creation but can be moved away afterwards, so every
+  // household the cascade touches is collected, not just the host's.
+  const affectedHouseholdIds = [
+    ...new Set(
+      [existing.household_id, ...plusOnes.map((p) => p.household_id)].filter(
+        (h): h is number => h != null,
+      ),
+    ),
+  ];
   const tx = db.transaction(() => {
     db.prepare("DELETE FROM guests WHERE plus_one_of = ? AND couple_id = ?").run(id, couple.id);
     db.prepare("DELETE FROM guests WHERE id = ? AND couple_id = ?").run(id, couple.id);
+    // After BOTH deletes: the +1 cascade has to be gone before the member count
+    // can read zero.
+    for (const hhId of affectedHouseholdIds) purgeHouseholdIfEmpty(couple.id, hhId);
   });
   tx();
 
@@ -807,7 +826,12 @@ function handleDelete(ctx: Ctx): Response {
     action: "guest.delete",
     target_kind: "guest",
     target_id: id,
-    before: { full_name: existing.full_name },
+    before: {
+      full_name: existing.full_name,
+      household_id: existing.household_id,
+      email: existing.email,
+      rsvp_status: existing.rsvp_status,
+    },
   });
   for (const p of plusOnes) {
     addAuditLog({
@@ -816,7 +840,7 @@ function handleDelete(ctx: Ctx): Response {
       action: "guest.delete",
       target_kind: "guest",
       target_id: p.id,
-      before: { full_name: p.full_name, plus_one_of: id },
+      before: { full_name: p.full_name, plus_one_of: id, household_id: p.household_id },
     });
   }
   return json({ ok: true });
