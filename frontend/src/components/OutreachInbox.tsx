@@ -27,7 +27,7 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Mail, Send, Plus, Search, Sparkles, X } from "lucide-react";
+import { ArrowUpRight, Mail, MessageCircle, Send, Plus, Search, Sparkles, X } from "lucide-react";
 import { InfoHint } from "./InfoHint";
 import {
   type CreateOutreachCampaignInput,
@@ -279,17 +279,41 @@ export function OutreachInbox({ variant = "section" }: { variant?: OutreachInbox
                               </p>
                             </div>
                           </div>
-                          <span
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-                              m.status === "sent"
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
-                                : m.status === "bounced"
-                                  ? "bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
-                                  : "bg-paper-200 text-ink-600 dark:bg-umber-700 dark:text-paper-200"
-                            }`}
-                          >
-                            {t(`outreach.status_${m.status}`)}
-                          </span>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                                // `replied` is the only status the couple can do
+                                // something about, so it is the only one that
+                                // gets the accent. Sent is now quiet chrome: a
+                                // green badge on every row of every campaign
+                                // told them nothing and left nowhere for the one
+                                // that matters to stand out.
+                                m.status === "replied"
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
+                                  : m.status === "bounced"
+                                    ? "bg-blush-100 text-blush-700 dark:bg-blush-400/15 dark:text-blush-300"
+                                    : "bg-paper-200 text-ink-600 dark:bg-umber-700 dark:text-paper-200"
+                              }`}
+                            >
+                              {t(`outreach.status_${m.status}`)}
+                            </span>
+                            {/* The campaign row's way into the conversation it
+                              started. Until now the sent history could only send
+                              the couple back to the vendor's directory card,
+                              even though the inquiry had a thread the whole
+                              time and the vendor may already have answered in
+                              it. Only an in-account delivery has one to open. */}
+                            {m.booking_id !== null && (
+                              <Link
+                                to={`/app/messages/${m.booking_id}`}
+                                title={t("outreach.open_thread")}
+                                aria-label={t("outreach.open_thread")}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-paper-300 text-ink-600 transition hover:border-blush-300 hover:bg-blush-50 hover:text-blush-700 dark:border-umber-700 dark:text-umber-200 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+                              >
+                                <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                              </Link>
+                            )}
+                          </div>
                         </li>
                       );
                     })}
@@ -707,6 +731,17 @@ export function ComposeDialog({
             {capped
               ? t("outreach.suppliers_picker_capped", { max: cap })
               : t("outreach.suppliers_picker_help", { max: cap })}
+            {/* Only once they have actually hit it. A limit stated with no
+                reason reads either as arbitrary or as a tier that could be paid
+                off, and it is neither: cold volume burns the same sending
+                domain that email verification and RSVP delivery run on. */}
+            {capped && (
+              <InfoHint
+                icon={Mail}
+                text={t("outreach.suppliers_picker_capped_why")}
+                label={t("outreach.suppliers_picker_capped_why")}
+              />
+            )}
           </p>
         </div>
         {/* Quick-fill templates. One row of chips; click replaces subject +

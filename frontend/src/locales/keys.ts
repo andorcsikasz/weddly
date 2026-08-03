@@ -1975,6 +1975,11 @@ export interface LocaleMessages {
     suppliers_picker_help: string;
     /** Shown in the input when the cap is reached — receives `{max}`. */
     suppliers_picker_capped: string;
+    /** WHY the cap is 5. Without it the limit reads as arbitrary, or as a tier
+     *  the couple could pay to lift, which it is not. */
+    suppliers_picker_capped_why: string;
+    /** Opens the conversation an in-account inquiry became. */
+    open_thread: string;
     /** No-results state — receives `{q}` (the current query). */
     suppliers_picker_no_matches: string;
     /** aria-label for the chip's × button — receives `{name}`. */

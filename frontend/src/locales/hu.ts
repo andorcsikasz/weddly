@@ -1506,6 +1506,9 @@ const hu: LocaleMessages = {
     suppliers_picker_help:
       "Gépelj a neve elejéből, válassz a felugró találatok közül. Legfeljebb {max} szolgáltatót adhatsz hozzá.",
     suppliers_picker_capped: "Elérted a maximumot ({max}).",
+    suppliers_picker_capped_why:
+      "Néhány átgondolt levélre válaszolnak. Ötvenre nem, és annak az árát az a feladó címzi meg, ahonnan minden Weddly e-mail indul.",
+    open_thread: "Beszélgetés megnyitása",
     suppliers_picker_no_matches: "Nincs találat erre: „{q}”.",
     suppliers_remove_aria: "Eltávolítás: {name}",
     suppliers_count: "{n} / {max}",

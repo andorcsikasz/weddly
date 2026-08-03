@@ -1527,6 +1527,9 @@ const es: LocaleMessages = {
     suppliers_picker_help:
       "Escribe el principio del nombre de un proveedor y elige entre las sugerencias. Hasta {max} proveedores por campaña.",
     suppliers_picker_capped: "Has alcanzado el límite ({max}).",
+    suppliers_picker_capped_why:
+      "A unas pocas notas pensadas se responde. A un envío masivo a cincuenta no, y lo paga la dirección desde la que sale cada email de Weddly.",
+    open_thread: "Abrir la conversación",
     suppliers_picker_no_matches: "No hay coincidencias para «{q}».",
     suppliers_remove_aria: "Eliminar: {name}",
     suppliers_count: "{n} / {max}",

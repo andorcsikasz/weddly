@@ -199,11 +199,47 @@ function toMessageStatus(raw: string): OutreachMessageStatus {
   return "queued";
 }
 
+/** Has a HUMAN at the vendor answered, for a batch of delivered inquiries?
+ *
+ *  Derived on read rather than stamped, the same idiom as `quoteStatus` and
+ *  `holdState`: `outreach_messages.status` records what the SEND did, and a
+ *  reply is not an event the send can know about. Nothing has ever written
+ *  `status='replied'` even though the enum, the pill and the copy for it have
+ *  shipped in all five locales since v1, so a couple watched a frozen "Sent"
+ *  chip on an inquiry the vendor had already answered.
+ *
+ *  An AUTOMATED acknowledgement is not a reply, and the exclusion is the same
+ *  join `messageEdgesFor` uses in the vendor's own client list. A vendor with an
+ *  auto-reply armed would otherwise show as "Replied" to the couple within
+ *  seconds of every inquiry, which is precisely the lie the automation layer
+ *  already refuses to tell on the vendor's side. One rule, both directions. */
+function vendorRepliedBookingIds(bookingIds: number[]): Set<number> {
+  if (bookingIds.length === 0) return new Set();
+  const rows = db
+    .prepare(
+      `SELECT DISTINCT booking_id
+         FROM booking_messages
+        WHERE booking_id IN (${bookingIds.map(() => "?").join(",")})
+          AND sender_kind = 'vendor'
+          AND id NOT IN (
+                SELECT message_id FROM vendor_automation_runs WHERE message_id IS NOT NULL
+              )`,
+    )
+    .all(...bookingIds) as Array<{ booking_id: number }>;
+  return new Set(rows.map((r) => r.booking_id));
+}
+
 function toMessage(
   row: MessageRow,
   supplierName: string,
   supplierCategory: string | null,
+  /** The vendor has answered in the thread this inquiry became. Only ever true
+   *  for an `in_account` delivery: an unclaimed listing replies to the couple's
+   *  own mailbox and Weddly never sees it, so "no reply" here means "we cannot
+   *  know", which is what the delivery label is there to say. */
+  vendorReplied = false,
 ): OutreachMessage {
+  const stored = toMessageStatus(row.status);
   return {
     id: row.id,
     campaign_id: row.campaign_id,
@@ -219,9 +255,18 @@ function toMessage(
     // per campaign, for as many campaigns as they cared to send. What the couple
     // needs from this row is WHERE it landed, and `delivery` already says that.
     sent_at: row.sent_at,
-    status: toMessageStatus(row.status),
+    // A reply only overrides a clean `sent`. A BOUNCE is a fact about this
+    // message that a later thread cannot undo, and it is the one the couple has
+    // to act on (the address is wrong), so it keeps the row.
+    status: vendorReplied && stored === "sent" ? "replied" : stored,
     reply_token: row.reply_token,
     delivery: row.booking_id === null ? "email_only" : "in_account",
+    // The inquiry this message became, so the row can open the conversation it
+    // started. `delivery` is derived from this same column; the id is what the
+    // couple needs to actually get there, and until now the outreach tab could
+    // only send them back to the vendor's directory card. The couple owns this
+    // booking, and `getCoupleBooking` re-authorises it at the thread route.
+    booking_id: row.booking_id,
     created_at: row.created_at,
   };
 }
@@ -646,11 +691,16 @@ export function getCampaignDetail(
   // has since been hidden), the category only for the ones the couple can still
   // open, and that verdict is not this module's to spell.
   const openableCategories = linkableListingCategories(ids);
+  // One batched lookup for the whole campaign, like the two above it.
+  const replied = vendorRepliedBookingIds(
+    messageRows.map((m) => m.booking_id).filter((id): id is number => id !== null),
+  );
   const messages = messageRows.map((row) =>
     toMessage(
       row,
       supplierNames.get(row.supplier_id) ?? row.supplier_id,
       openableCategories.get(row.supplier_id) ?? null,
+      row.booking_id !== null && replied.has(row.booking_id),
     ),
   );
   const replyRows = db

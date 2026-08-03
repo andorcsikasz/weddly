@@ -1551,6 +1551,9 @@ const de: LocaleMessages = {
     suppliers_picker_help:
       "Tippen Sie den Anfang eines Namens und wählen Sie aus den Vorschlägen. Bis zu {max} Dienstleister pro Kampagne.",
     suppliers_picker_capped: "Sie haben das Limit erreicht ({max}).",
+    suppliers_picker_capped_why:
+      "Auf eine Handvoll durchdachter Nachrichten wird geantwortet. Auf fünfzig nicht, und dafür zahlt die Adresse, von der jede Weddly-E-Mail ausgeht.",
+    open_thread: "Gespräch öffnen",
     suppliers_picker_no_matches: "Keine Treffer für „{q}“.",
     suppliers_remove_aria: "Entfernen: {name}",
     suppliers_count: "{n} / {max}",

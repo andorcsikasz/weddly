@@ -14,6 +14,13 @@
 // This module is the SENT-HISTORY half only. The conversation itself belongs to
 // `booking_messages`; nothing here is a second copy of it.
 
+/** `queued` / `sent` / `bounced` are what the SEND did and are stored on the
+ *  row. `replied` is DERIVED on read from the thread the inquiry became (a
+ *  human message from the vendor, never an armed auto-acknowledgement), because
+ *  an answer is not an event the send can know about and stamping it would need
+ *  a sweep that does not exist. It is therefore only ever reachable on an
+ *  `in_account` delivery: an unclaimed listing answers to the couple's own
+ *  mailbox, which Weddly never sees. */
 export type OutreachMessageStatus = "queued" | "sent" | "bounced" | "replied";
 
 export interface OutreachMessage {
@@ -45,6 +52,11 @@ export interface OutreachMessage {
    *  undifferentiated "sent" was how an inquiry that reached nobody's dashboard
    *  looked exactly like one that did. */
   delivery: "in_account" | "email_only";
+  /** The `supplier_bookings` row this inquiry became, or null when it was mail
+   *  and nothing more. `delivery` is this same fact as a word; the id is what
+   *  lets the sent-history row open the conversation it started, at
+   *  /app/messages/:booking_id. */
+  booking_id: number | null;
   created_at: number;
 }
 

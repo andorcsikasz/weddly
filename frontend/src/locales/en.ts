@@ -1492,6 +1492,9 @@ const en: LocaleMessages = {
     suppliers_picker_help:
       "Type the start of a vendor's name and pick from the suggestions. Up to {max} vendors per campaign.",
     suppliers_picker_capped: "You've reached the cap ({max}).",
+    suppliers_picker_capped_why:
+      "A handful of considered notes gets answered. A blast to fifty does not, and it is the address every Weddly email leaves from that pays for it.",
+    open_thread: "Open the conversation",
     suppliers_picker_no_matches: "No matches for “{q}”.",
     suppliers_remove_aria: "Remove: {name}",
     suppliers_count: "{n} / {max}",

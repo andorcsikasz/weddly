@@ -392,3 +392,104 @@ describe("outreach → vendor inbox", () => {
     expect(list.data.clients[0]?.event_date).toBe("");
   }, 30000);
 });
+
+// ── "Did they answer?" ────────────────────────────────────────────────────
+//
+// `OutreachMessageStatus` has carried a `replied` member, a pill and copy in
+// all five locales since v1, and nothing ever set it: the couple watched a
+// frozen "Sent" chip on an inquiry the vendor had already answered, on the one
+// screen whose whole job is telling them where their outreach stands. It is
+// derived on read from the thread the inquiry became, the same idiom as
+// `quoteStatus` and `holdState`, so it needs no sweep and cannot drift.
+describe("outreach → the sent history says whether the vendor answered", () => {
+  async function detailOf(token: string, campaignId: number): Promise<OutreachCampaignDetail> {
+    const r = await req<OutreachCampaignDetail>(
+      "GET",
+      `/api/outreach/campaigns/${campaignId}`,
+      undefined,
+      { token },
+    );
+    expect(r.status).toBe(200);
+    return r.data;
+  }
+
+  function latestCampaignId(coupleId: number): number {
+    const row = db
+      .prepare("SELECT id FROM outreach_campaigns WHERE couple_id = ? ORDER BY id DESC LIMIT 1")
+      .get(coupleId) as { id: number };
+    return row.id;
+  }
+
+  test("a human reply flips the row, and carries the thread to open", async () => {
+    wipeAll();
+    const { vendorToken, listingId, accountId } = await bootstrapVendor("replied");
+    initVendorBilling(accountId, "EUR");
+    const { token, coupleId } = await bootstrapCouple("couple-replied@weddly.test");
+    expect(await sendOutreach(token, [listingId], "Photo for Sept 12", "Are you free?")).toBe(201);
+    const campaignId = latestCampaignId(coupleId);
+
+    const before = await detailOf(token, campaignId);
+    expect(before.messages[0]?.status).toBe("sent");
+    // The link into the conversation exists from the moment it is delivered:
+    // the couple could reach the vendor's directory card and nothing else.
+    const bookingId = before.messages[0]?.booking_id;
+    expect(bookingId).toBeTruthy();
+
+    const reply = await req(
+      "POST",
+      `/api/vendor/clients/${bookingId}/messages`,
+      { body: "Yes, that date is free. Happy to send a quote." },
+      { token: vendorToken },
+    );
+    expect(reply.status).toBe(201);
+
+    const after = await detailOf(token, campaignId);
+    expect(after.messages[0]?.status).toBe("replied");
+    expect(after.messages[0]?.booking_id).toBe(bookingId as number);
+  }, 30000);
+
+  test("an ARMED auto-acknowledgement is not an answer", async () => {
+    wipeAll();
+    const { vendorToken, listingId, accountId } = await bootstrapVendor("autoack");
+    initVendorBilling(accountId, "EUR");
+    const { token, coupleId } = await bootstrapCouple("couple-autoack@weddly.test");
+    expect(await sendOutreach(token, [listingId], "Photo for Sept 12", "Are you free?")).toBe(201);
+    const campaignId = latestCampaignId(coupleId);
+    const bookingId = (await detailOf(token, campaignId)).messages[0]?.booking_id as number;
+
+    // Exactly what the automation engine writes: a real vendor message, joined
+    // to the run that produced it.
+    const msg = await req<{ message: { id: number } }>(
+      "POST",
+      `/api/vendor/clients/${bookingId}/messages`,
+      { body: "Thanks for getting in touch, we will be back to you shortly." },
+      { token: vendorToken },
+    );
+    expect(msg.status).toBe(201);
+    db.prepare(
+      `INSERT INTO vendor_automation_runs
+         (vendor_account_id, automation_key, booking_id, dedupe_key, status, message_id, created_at)
+       VALUES (?, 'inquiry_ack', ?, ?, 'sent', ?, ?)`,
+    ).run(accountId, bookingId, `inquiry_ack:${bookingId}`, msg.data.message.id, Date.now());
+
+    // A machine saying "we have this" leaves the couple still waiting for a
+    // human. The vendor's own client list already refuses to count it; telling
+    // the couple the opposite would be the same lie pointed the other way.
+    expect((await detailOf(token, campaignId)).messages[0]?.status).toBe("sent");
+  }, 30000);
+
+  test("an unclaimed listing has no thread and never claims an answer", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("couple-unclaimed@weddly.test");
+    expect(await sendOutreach(token, ["budapest-congress-center"], "Hello", "Are you free?")).toBe(
+      201,
+    );
+    const msg = (await detailOf(token, latestCampaignId(coupleId))).messages[0];
+    // Their reply goes to the couple's own mailbox via Reply-To, so silence
+    // here means "we cannot know", never "they ignored you". `delivery` is what
+    // says so, and there is no conversation to link to.
+    expect(msg?.delivery).toBe("email_only");
+    expect(msg?.booking_id).toBeNull();
+    expect(msg?.status).toBe("sent");
+  }, 30000);
+});

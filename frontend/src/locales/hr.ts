@@ -1518,6 +1518,9 @@ const hr: LocaleMessages = {
     suppliers_picker_help:
       "Upišite početak imena dobavljača i odaberite iz prijedloga. Do {max} dobavljača po kampanji.",
     suppliers_picker_capped: "Dosegli ste ograničenje ({max}).",
+    suppliers_picker_capped_why:
+      "Na nekoliko promišljenih poruka dobit ćete odgovor. Na pedeset njih nećete, a to plaća adresa s koje odlazi svaka Weddly e-poruka.",
+    open_thread: "Otvori razgovor",
     suppliers_picker_no_matches: "Nema rezultata za „{q}”.",
     suppliers_remove_aria: "Ukloni: {name}",
     suppliers_count: "{n} / {max}",
