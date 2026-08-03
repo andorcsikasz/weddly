@@ -1,13 +1,7 @@
 // Guest row → DTO mapper + helpers.
 
-import type {
-  Guest,
-  GuestGroupTag,
-  GuestKind,
-  MealChoice,
-  PublicRsvpView,
-  RsvpStatus,
-} from "@shared/types";
+import type { Guest, GuestGroupTag, GuestKind, PublicRsvpView, RsvpStatus } from "@shared/types";
+import { isMealSlotKey } from "@shared/meals";
 import { db, now } from "../db";
 import { purgeHouseholdIfEmpty } from "./household_cleanup";
 import { generateHouseholdCode, generateInviteCode } from "./invite_codes";
@@ -67,14 +61,6 @@ const VALID_GROUPS: ReadonlySet<GuestGroupTag> = new Set([
 ]);
 
 const VALID_RSVP: ReadonlySet<RsvpStatus> = new Set(["pending", "yes", "no", "maybe"]);
-const VALID_MEAL: ReadonlySet<MealChoice> = new Set([
-  "meat",
-  "fish",
-  "vegetarian",
-  "vegan",
-  "child",
-  "none",
-]);
 const VALID_KIND: ReadonlySet<GuestKind> = new Set(["adult", "child", "baby"]);
 
 export function isGuestKind(s: string): s is GuestKind {
@@ -89,9 +75,11 @@ export function isRsvpStatus(s: string): s is RsvpStatus {
   return VALID_RSVP.has(s as RsvpStatus);
 }
 
-export function isMealChoice(s: string): s is MealChoice {
-  return VALID_MEAL.has(s as MealChoice);
-}
+/** Re-exported from the shared module so there is one definition of what a
+ *  meal slot is. It used to be a second hand-maintained Set here, which was
+ *  fine while the six were the whole story and would have silently rejected
+ *  every couple-defined option the moment they existed. */
+export { isMealChoice, isMealSlotKey } from "@shared/meals";
 
 export function toGuest(row: GuestRow): Guest {
   return {
@@ -108,10 +96,10 @@ export function toGuest(row: GuestRow): Guest {
     is_plus_one: Boolean(row.is_plus_one),
     plus_one_of: row.plus_one_of,
     rsvp_status: (isRsvpStatus(row.rsvp_status) ? row.rsvp_status : "pending") as RsvpStatus,
-    meal_choice: row.meal_choice && isMealChoice(row.meal_choice) ? row.meal_choice : null,
+    meal_choice: row.meal_choice && isMealSlotKey(row.meal_choice) ? row.meal_choice : null,
     dietary: row.dietary,
     plus_one_name: row.plus_one_name,
-    plus_one_meal: row.plus_one_meal && isMealChoice(row.plus_one_meal) ? row.plus_one_meal : null,
+    plus_one_meal: row.plus_one_meal && isMealSlotKey(row.plus_one_meal) ? row.plus_one_meal : null,
     accommodation_needed: Boolean(row.accommodation_needed),
     song_request: row.song_request,
     notes: row.notes,

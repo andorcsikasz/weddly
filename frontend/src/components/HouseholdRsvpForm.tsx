@@ -4,12 +4,13 @@
 // fires once the guest accepts the double-confirm dialog. Shared by both
 // the /rsvp check-in page and the legacy /rsvp/:code resolver.
 
-import { MEAL_ORDER } from "@shared/meals";
+import { isCustomMealKey, MEAL_ORDER } from "@shared/meals";
 import type {
   CheckinAddedMember,
   CheckinMemberSubmit,
   HouseholdMember,
   MealChoice,
+  MealSlotKey,
   MealMenu,
   PublicCheckinView,
   RsvpStatus,
@@ -30,6 +31,7 @@ import {
   Plus,
   Shell,
   Sprout,
+  UtensilsCrossed,
   Wheat,
 } from "lucide-react";
 import { DIETARY_FREE_MAX, GUEST_MESSAGE_MAX } from "@shared/rsvp";
@@ -53,8 +55,15 @@ const MEAL_ICONS: Record<MealChoice, typeof Beef> = {
   none: Ban,
 };
 
+/** A couple's own option has no fixed meaning, so it gets the neutral cutlery
+ *  glyph rather than one of the six that would imply one. The label carries
+ *  the meaning, and it is always present on a custom slot. */
+function mealIcon(choice: MealSlotKey): typeof Beef {
+  return isCustomMealKey(choice) ? UtensilsCrossed : MEAL_ICONS[choice];
+}
+
 interface MealOption {
-  choice: MealChoice;
+  choice: MealSlotKey;
   /** Resolved label: the couple's custom override, or the localised default. */
   label: string;
 }
@@ -66,7 +75,7 @@ interface MealOption {
 function resolveMealOptions(
   menu: MealMenu | undefined,
   t: (key: string) => string,
-  current: MealChoice | null,
+  current: MealSlotKey | null,
 ): MealOption[] {
   const items =
     menu && menu.length > 0
@@ -75,7 +84,12 @@ function resolveMealOptions(
   const out: MealOption[] = [];
   for (const it of items) {
     if (!it.enabled && it.choice !== current) continue;
-    out.push({ choice: it.choice, label: it.label?.trim() || t(`guests.meal_${it.choice}`) });
+    const fallback = isCustomMealKey(it.choice) ? "" : t(`guests.meal_${it.choice}`);
+    const label = it.label?.trim() || fallback;
+    // A custom slot with no label is not an option a guest could understand;
+    // the shared parser drops those, and this is the belt to its braces.
+    if (!label) continue;
+    out.push({ choice: it.choice, label });
   }
   return out;
 }
@@ -210,7 +224,7 @@ interface AttachedDraft {
   full_name: string;
   /** Meal selection — present for plus-ones (adults who eat). Babies skip
    *  this (no wedding-menu meal), so the field is unused for them. */
-  meal_choice: MealChoice | null;
+  meal_choice: MealSlotKey | null;
   /** Same allergen tags the host can mark on themselves. */
   dietary_tags: Set<DietaryTag>;
 }
@@ -234,7 +248,7 @@ interface MemberDraft {
    *  returning users can't accidentally re-submit a stale answer. */
   interacted: boolean;
   rsvp_status: RsvpStatus;
-  meal_choice: MealChoice | null;
+  meal_choice: MealSlotKey | null;
   dietary_tags: Set<DietaryTag>;
   /** Free-text remainder of `dietary` after known tags are pulled out. */
   dietary_free: string;
@@ -881,7 +895,7 @@ export function HouseholdRsvpForm({
                           className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
                         >
                           {resolveMealOptions(view.meal_menu, t, d.meal_choice).map((opt) => {
-                            const Icon = MEAL_ICONS[opt.choice];
+                            const Icon = mealIcon(opt.choice);
                             const active = d.meal_choice === opt.choice;
                             return (
                               <button
@@ -1501,7 +1515,7 @@ function AttachedDietary({
 }: {
   member: AttachedDraft;
   mealMenu?: MealMenu;
-  onMealChange: (m: MealChoice | null) => void;
+  onMealChange: (m: MealSlotKey | null) => void;
   onToggleTag: (tag: DietaryTag) => void;
   showMeal?: boolean;
 }) {
@@ -1515,7 +1529,7 @@ function AttachedDietary({
           className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
         >
           {resolveMealOptions(mealMenu, t, member.meal_choice).map((opt) => {
-            const Icon = MEAL_ICONS[opt.choice];
+            const Icon = mealIcon(opt.choice);
             const active = member.meal_choice === opt.choice;
             return (
               <button

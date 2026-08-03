@@ -5,10 +5,11 @@ import type {
   Guest,
   GuestGroupTag,
   GuestKind,
-  MealChoice,
+  MealSlotKey,
   RsvpStatus,
 } from "@shared/types";
 import { CONFIG } from "../config";
+import { isCustomMealKey, parseMealMenu } from "@shared/meals";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import { getCoupleForUser } from "../domain/couples";
@@ -20,7 +21,7 @@ import {
   getGuestByIdScoped,
   isGuestGroupTag,
   isGuestKind,
-  isMealChoice,
+  isMealSlotKey,
   isRsvpStatus,
   listGuestsByCouple,
   toGuest,
@@ -104,10 +105,10 @@ interface ParsedGuest {
   kind: GuestKind;
   is_supplier: number;
   rsvp_status: RsvpStatus;
-  meal_choice: MealChoice | null;
+  meal_choice: MealSlotKey | null;
   dietary: string | null;
   plus_one_name: string | null;
-  plus_one_meal: MealChoice | null;
+  plus_one_meal: MealSlotKey | null;
   /** undefined = caller didn't touch the +1 link; number = assign to that host;
    *  null = detach an existing +1. */
   plus_one_of: number | null | undefined;
@@ -156,9 +157,9 @@ function parseRsvp(raw: unknown): RsvpStatus {
   return "pending";
 }
 
-function parseMeal(raw: unknown): MealChoice | null {
+function parseMeal(raw: unknown): MealSlotKey | null {
   if (typeof raw !== "string") return null;
-  return isMealChoice(raw) ? raw : null;
+  return isMealSlotKey(raw) ? raw : null;
 }
 
 /**
@@ -196,7 +197,7 @@ function parseUpsert(body: UpsertBody, requireName = true, existing?: GuestRow):
     rsvp_status: keep(body.rsvp_status, (existing?.rsvp_status ?? "pending") as RsvpStatus, () =>
       parseRsvp(body.rsvp_status),
     ),
-    meal_choice: keep(body.meal_choice, (existing?.meal_choice ?? null) as MealChoice | null, () =>
+    meal_choice: keep(body.meal_choice, (existing?.meal_choice ?? null) as MealSlotKey | null, () =>
       parseMeal(body.meal_choice),
     ),
     dietary: keep(body.dietary, existing?.dietary ?? null, () => parseStr(body.dietary, 500)),
@@ -205,7 +206,7 @@ function parseUpsert(body: UpsertBody, requireName = true, existing?: GuestRow):
     ),
     plus_one_meal: keep(
       body.plus_one_meal,
-      (existing?.plus_one_meal ?? null) as MealChoice | null,
+      (existing?.plus_one_meal ?? null) as MealSlotKey | null,
       () => parseMeal(body.plus_one_meal),
     ),
     // Omitted → undefined (no change); explicit null → detach; finite number →
@@ -332,7 +333,7 @@ function materializePlusOne(
   coupleId: number,
   parent: { id: number; household_id: number | null; group_tag: string },
   name: string,
-  meal: MealChoice | null,
+  meal: MealSlotKey | null,
   userId: number,
 ): void {
   const ts = now();
@@ -1035,6 +1036,14 @@ interface CsvGuestRow extends GuestRow {
   household_label: string | null;
 }
 
+/** A meal value as it should appear in a spreadsheet: the six canonical keys
+ *  unchanged (existing exports and any re-import depend on them), a custom slot
+ *  resolved to the couple's own label. */
+function csvMeal(raw: string | null, menu: ReturnType<typeof parseMealMenu>): string | null {
+  if (!raw || !isCustomMealKey(raw)) return raw;
+  return menu.find((m) => m.choice === raw)?.label ?? raw;
+}
+
 function handleExportCsv(ctx: Ctx): Response {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
@@ -1055,6 +1064,7 @@ function handleExportCsv(ctx: Ctx): Response {
   const rows = [...rowsRaw].sort((a, b) =>
     a.full_name.localeCompare(b.full_name, "hu", { sensitivity: "base" }),
   );
+  const exportMenu = parseMealMenu(couple.meal_menu);
 
   const headers = [
     "full_name",
@@ -1083,10 +1093,14 @@ function handleExportCsv(ctx: Ctx): Response {
         csvField(r.kind),
         csvField(r.household_label),
         csvField(r.rsvp_status),
-        csvField(r.meal_choice),
+        // A custom slot exports its LABEL, not its `x1` key: the CSV goes to a
+        // caterer, and the key is an internal slot id that means nothing to
+        // anyone. The six canonical values stay as-is so existing spreadsheets
+        // and any re-import keep working.
+        csvField(csvMeal(r.meal_choice, exportMenu)),
         csvField(r.dietary),
         csvField(r.plus_one_name),
-        csvField(r.plus_one_meal),
+        csvField(csvMeal(r.plus_one_meal, exportMenu)),
         r.accommodation_needed ? "1" : "0",
         csvField(r.song_request),
         csvField(r.notes),
@@ -1159,8 +1173,19 @@ function handleDietarySummary(ctx: Ctx): Response {
       fish_shellfish: 0,
       other_text_count: 0,
     },
+    custom_meals: [],
     counted_guests: rows.length,
   };
+
+  // The couple's own options, keyed for counting and carrying the label a
+  // caterer can actually read. Seeded from the menu so an option nobody picked
+  // still shows as a zero rather than vanishing from the order.
+  const menu = parseMealMenu(couple.meal_menu);
+  const customCounts = new Map<string, { label: string; count: number }>();
+  for (const item of menu) {
+    if (!isCustomMealKey(item.choice)) continue;
+    customCounts.set(item.choice, { label: item.label ?? item.choice, count: 0 });
+  }
 
   // Case-insensitive substring tests. Hungarian keywords first (most common
   // in this market), English fallbacks listed in the same regex. Milk protein
@@ -1185,7 +1210,14 @@ function handleDietarySummary(ctx: Ctx): Response {
     else if (meal === "vegan") summary.meal.vegan += 1;
     else if (meal === "child") summary.meal.child += 1;
     else if (meal === "none") summary.meal.none += 1;
-    else summary.meal.unspecified += 1;
+    else if (meal && isCustomMealKey(meal)) {
+      // Including an option the couple has since DELETED: the guest still
+      // holds it, and someone has to be fed. It falls back to its bare key as
+      // the label, which is ugly and is exactly the signal that it is stale.
+      const existing = customCounts.get(meal);
+      if (existing) existing.count += 1;
+      else customCounts.set(meal, { label: meal, count: 1 });
+    } else summary.meal.unspecified += 1;
 
     // Allergy bucket — keyword scan over `dietary` text. Run milk_protein
     // before lactose; `matchedKeyword` flips once so a multi-allergen note
@@ -1220,6 +1252,11 @@ function handleDietarySummary(ctx: Ctx): Response {
     if (!matchedKeyword) summary.allergies.other_text_count += 1;
   }
 
+  summary.custom_meals = [...customCounts].map(([key, v]) => ({
+    key,
+    label: v.label,
+    count: v.count,
+  }));
   return json(summary);
 }
 

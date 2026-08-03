@@ -6,11 +6,11 @@ import type {
   GuestGroupTag,
   Household,
   HouseholdMember,
-  MealChoice,
+  MealSlotKey,
   RsvpStatus,
 } from "@shared/types";
 import { db, now } from "../db";
-import { type GuestRow, isGuestGroupTag, isMealChoice, isRsvpStatus, toGuest } from "./guests";
+import { type GuestRow, isGuestGroupTag, isMealSlotKey, isRsvpStatus, toGuest } from "./guests";
 import { generateHouseholdCode, normalizeHouseholdCode } from "./invite_codes";
 
 export interface HouseholdRow {
@@ -326,7 +326,7 @@ export function applyMemberCheckin(
   householdId: number,
   patch: {
     rsvp_status: RsvpStatus;
-    meal_choice: MealChoice | null;
+    meal_choice: MealSlotKey | null;
     dietary: string | null;
     accommodation_needed: boolean;
     /** The lodging the guest picked, already validated by the caller as one
@@ -373,4 +373,4 @@ export function setHouseholdGuestMessage(
 }
 
 /** Type guards re-exported for callers parsing public payloads. */
-export const guards = { isMealChoice, isRsvpStatus };
+export const guards = { isMealSlotKey, isRsvpStatus };

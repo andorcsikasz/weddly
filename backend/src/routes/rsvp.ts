@@ -6,6 +6,7 @@
 //
 // Heavy rate-limit per IP to slow code enumeration.
 
+import type { MealMenu, MealSlotKey } from "@shared/types";
 import type {
   CheckinAddedMember,
   CheckinMemberSubmit,
@@ -14,7 +15,7 @@ import type {
   PublicCheckinView,
   RsvpStatus,
 } from "@shared/types";
-import { parseMealMenu } from "@shared/meals";
+import { isMealChoice, parseMealMenu } from "@shared/meals";
 import { isCurrency } from "@shared/currency";
 import { GUEST_MESSAGE_MAX } from "@shared/rsvp";
 import { isRsvpOfferedAccommodation, listRsvpAccommodationOptions } from "../domain/accommodations";
@@ -37,7 +38,7 @@ import {
   getCoupleRsvpProgress,
   getGuestByInviteCode,
   isGuestKind,
-  isMealChoice,
+  isMealSlotKey,
   isRsvpStatus,
   uniqueInviteCode,
 } from "../domain/guests";
@@ -208,15 +209,26 @@ function strOrNull(raw: unknown, max: number): string | null {
   return trimmed;
 }
 
-function parseMember(raw: SubmitMemberRaw, coupleId: number): CheckinMemberSubmit {
+/** Resolve a submitted meal value against THIS couple's menu. The six
+ *  canonical slots always pass; a custom key has to actually exist on their
+ *  menu, so a hand-rolled request can't invent `x9` and a key whose option the
+ *  couple has since deleted resolves to "no preference" rather than to a
+ *  phantom dish. Unknown values degrade to null, which is the contract this
+ *  field always had. */
+function resolveMeal(raw: unknown, menu: MealMenu): MealSlotKey | null {
+  if (typeof raw !== "string" || !isMealSlotKey(raw)) return null;
+  if (isMealChoice(raw)) return raw;
+  return menu.some((m) => m.choice === raw) ? raw : null;
+}
+
+function parseMember(raw: SubmitMemberRaw, coupleId: number, menu: MealMenu): CheckinMemberSubmit {
   if (typeof raw.guest_id !== "number" || !Number.isFinite(raw.guest_id)) {
     throw new HttpError(400, "members[].guest_id required");
   }
   const status = typeof raw.rsvp_status === "string" ? raw.rsvp_status : "";
   if (!isRsvpStatus(status)) throw new HttpError(400, "members[].rsvp_status invalid");
 
-  const mealRaw = typeof raw.meal_choice === "string" ? raw.meal_choice : null;
-  const meal = mealRaw && isMealChoice(mealRaw) ? mealRaw : null;
+  const meal = resolveMeal(raw.meal_choice, menu);
 
   // This handler is unauthenticated, so the lodging id is verified rather than
   // trusted: it has to be this couple's row AND one they actually published.
@@ -423,7 +435,7 @@ interface AddedMemberRaw {
   parent_member_id?: unknown;
 }
 
-function parseAddedMember(raw: AddedMemberRaw): CheckinAddedMember {
+function parseAddedMember(raw: AddedMemberRaw, menu: MealMenu): CheckinAddedMember {
   const fullNameRaw = typeof raw.full_name === "string" ? raw.full_name.trim() : "";
   if (!fullNameRaw) throw new HttpError(400, "added_members[].full_name required");
   if (fullNameRaw.length > 200) throw new HttpError(400, "added_members[].full_name too long");
@@ -435,7 +447,7 @@ function parseAddedMember(raw: AddedMemberRaw): CheckinAddedMember {
   const rsvpStatus = isRsvpStatus(status) ? status : "yes";
 
   const mealRaw = typeof raw.meal_choice === "string" ? raw.meal_choice : null;
-  const meal = mealRaw && isMealChoice(mealRaw) ? mealRaw : null;
+  const meal = mealRaw && isMealSlotKey(mealRaw) ? mealRaw : null;
 
   const isPlusOne = raw.is_plus_one === true;
   const parentId =
@@ -582,8 +594,9 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
     });
   }
 
-  const parsed = body.members.map((m) => parseMember(m as SubmitMemberRaw, couple.id));
-  const parsedAdded = addedRaw.map((m) => parseAddedMember(m as AddedMemberRaw));
+  const coupleMenu = parseMealMenu(couple.meal_menu);
+  const parsed = body.members.map((m) => parseMember(m as SubmitMemberRaw, couple.id, coupleMenu));
+  const parsedAdded = addedRaw.map((m) => parseAddedMember(m as AddedMemberRaw, coupleMenu));
 
   const { previous, updated } = persistCheckin(couple, hh, parsed);
   const addedRows = persistAddedMembers(couple, hh, parsedAdded);
@@ -685,8 +698,8 @@ async function handleLegacySubmit(ctx: Ctx): Promise<Response> {
   const status = typeof body.rsvp_status === "string" ? body.rsvp_status : "";
   if (!isRsvpStatus(status)) throw new HttpError(400, "Invalid rsvp_status");
 
-  const mealRaw = typeof body.meal_choice === "string" ? body.meal_choice : null;
-  const meal = mealRaw && isMealChoice(mealRaw) ? mealRaw : null;
+  const legacyMenu = parseMealMenu(couple.meal_menu);
+  const meal = resolveMeal(body.meal_choice, legacyMenu);
 
   const member: CheckinMemberSubmit = {
     guest_id: guest.id,
@@ -729,7 +742,7 @@ async function handleLegacySubmit(ctx: Ctx): Promise<Response> {
     }
     if (sibling) {
       const plusMealRaw = typeof body.plus_one_meal === "string" ? body.plus_one_meal : null;
-      const plusMeal = plusMealRaw && isMealChoice(plusMealRaw) ? plusMealRaw : null;
+      const plusMeal = resolveMeal(plusMealRaw, legacyMenu);
       members.push({
         guest_id: sibling.id,
         rsvp_status: status,

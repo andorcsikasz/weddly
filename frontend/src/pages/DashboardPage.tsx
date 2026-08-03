@@ -380,6 +380,11 @@ export default function DashboardPage() {
   // as the useful comparison it is.
   const plannedCount = targetGuestCount(couple);
   const guestDenominator = invitedCount;
+  // The headline is how many have REPLIED, not how many said yes: the tile is
+  // labelled "RSVPs in" / "Visszajelzés", and "of 100 invited, 62 have
+  // answered" is the number that tells a couple whether to start chasing.
+  // Who is actually coming is the yes row in the breakdown one line below.
+  const respondedCount = invitedCount - rsvp.pending;
 
   // ── Budget ────────────────────────────────────────────────────────────
   const totalPlanned = lines.reduce((s, l) => s + l.planned_huf, 0);
@@ -1179,7 +1184,7 @@ export default function DashboardPage() {
           <KpiTile
             label={t("dashboard.kpi_guests_label")}
             icon={<Users size={16} aria-hidden="true" />}
-            value={formatNumber(rsvp.yes, locale)}
+            value={formatNumber(respondedCount, locale)}
             unit={
               guestDenominator > 0
                 ? t("dashboard.kpi_guests_unit", { total: formatNumber(guestDenominator, locale) })
@@ -1187,7 +1192,7 @@ export default function DashboardPage() {
             }
             progress={
               guestDenominator > 0
-                ? Math.min(100, Math.round((rsvp.yes / guestDenominator) * 100))
+                ? Math.min(100, Math.round((respondedCount / guestDenominator) * 100))
                 : null
             }
             onToggle={() => setRsvpOpen((v) => !v)}
@@ -2358,6 +2363,9 @@ function CatererSummaryCard({ dietary }: { dietary: DietarySummary }) {
     pushIf(t("dashboard.caterer_label_vegan"), dietary.meal.vegan);
     pushIf(t("dashboard.caterer_label_child"), dietary.meal.child);
     pushIf(t("dashboard.caterer_label_none"), dietary.meal.none);
+    // The couple's own options, under their own names. A caterer reading this
+    // needs "Halal: 4", not "x1: 4".
+    for (const c of dietary.custom_meals) pushIf(c.label, c.count);
     pushIf(t("dashboard.caterer_label_unspecified"), dietary.meal.unspecified);
     pushIf(t("dashboard.caterer_label_gluten"), dietary.allergies.gluten);
     pushIf(t("dashboard.caterer_label_milk_protein"), dietary.allergies.milk_protein);
@@ -2392,6 +2400,7 @@ function CatererSummaryCard({ dietary }: { dietary: DietarySummary }) {
     { label: t("dashboard.caterer_label_vegetarian"), value: dietary.meal.vegetarian },
     { label: t("dashboard.caterer_label_vegan"), value: dietary.meal.vegan },
     { label: t("dashboard.caterer_label_child"), value: dietary.meal.child },
+    ...dietary.custom_meals.map((c) => ({ label: c.label, value: c.count })),
     { label: t("dashboard.caterer_label_gluten"), value: dietary.allergies.gluten },
     { label: t("dashboard.caterer_label_milk_protein"), value: dietary.allergies.milk_protein },
     { label: t("dashboard.caterer_label_lactose"), value: dietary.allergies.lactose },

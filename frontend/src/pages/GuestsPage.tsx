@@ -9,15 +9,21 @@ import type {
   GuestGroupTag,
   GuestKind,
   Household,
+  CustomMealKey,
   MealChoice,
+  MealSlotKey,
   MealMenu,
   RsvpStatus,
 } from "@shared/types";
 import { intlLocale } from "../lib/format";
 import {
   MEAL_LABEL_MAX,
+  isCustomMealKey,
   MEAL_ORDER,
+  customMealCount,
   isCustomMealMenu,
+  MEAL_MAX_CUSTOM,
+  nextCustomMealKey,
   mealItemLabel,
   normalizeMealMenuInput,
 } from "@shared/meals";
@@ -111,7 +117,28 @@ const GROUPS: GuestGroupTag[] = [
   "other",
 ];
 
-const MEALS: MealChoice[] = ["meat", "fish", "vegetarian", "vegan", "child", "none"];
+/** Every slot this couple offers, in render order: the six canonical ones and
+ *  then their own. Replaces a hardcoded six-item array that could not show a
+ *  couple-defined option however many they added. */
+function mealSlots(menu: MealMenu | null | undefined): MealSlotKey[] {
+  const custom = (menu ?? [])
+    .map((m) => m.choice)
+    .filter((c): c is CustomMealKey => isCustomMealKey(c));
+  return [...MEAL_ORDER, ...custom];
+}
+
+/** The visible label for any slot: the couple's own text, else the localised
+ *  default. A custom slot has no default, so its label is all there is and an
+ *  unlabelled one is skipped by the callers that build lists. */
+function slotLabel(
+  menu: MealMenu | null | undefined,
+  choice: MealSlotKey,
+  t: (key: string) => string,
+): string {
+  const own = menu?.find((m) => m.choice === choice)?.label?.trim();
+  if (own) return own;
+  return isCustomMealKey(choice) ? "" : t(`guests.meal_${choice}`);
+}
 
 // Guest-list sort axes. "default" preserves the server/household order (the
 // historic behavior); the rest are explicit user picks from the sort control.
@@ -2108,15 +2135,18 @@ function GuestTableRow({
           value={g.meal_choice ?? ""}
           ariaLabel={t("guests.table_col_meal")}
           onChange={(v) =>
-            void onUpdateGuest(g, { meal_choice: v === "" ? null : (v as MealChoice) })
+            void onUpdateGuest(g, { meal_choice: v === "" ? null : (v as MealSlotKey) })
           }
         >
           <option value="">{t("guests.table_meal_unset")}</option>
-          {MEALS.map((c) => (
-            <option key={c} value={c}>
-              {(mealMenu && mealItemLabel(mealMenu, c)) || t(`guests.meal_${c}`)}
-            </option>
-          ))}
+          {mealSlots(mealMenu)
+            .map((c) => ({ c, label: slotLabel(mealMenu, c, t) }))
+            .filter((o) => o.label)
+            .map((o) => (
+              <option key={o.c} value={o.c}>
+                {o.label}
+              </option>
+            ))}
         </CellSelect>
       </td>
       <td className="px-3 py-2">
@@ -3115,7 +3145,7 @@ function parseDietaryTags(dietary: string | null): {
   return { tags, remainder: rest };
 }
 
-function MealIcons({ meal, dietary }: { meal: MealChoice | null; dietary: string | null }) {
+function MealIcons({ meal, dietary }: { meal: MealSlotKey | null; dietary: string | null }) {
   const { t } = useT();
   const veg = meal === "vegetarian" || meal === "vegan";
   const fish = meal === "fish";
@@ -3768,20 +3798,23 @@ function GuestDrawer({
               <div className="mb-3">
                 <label className="field-label">{t("guests.meal")}</label>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                  {MEALS.map((m) => (
-                    <SegmentButton
-                      key={m}
-                      active={form.meal_choice === m}
-                      // Re-clicking the active option clears it so the user can
-                      // return to "no preference" without a dedicated null button.
-                      onClick={() =>
-                        setForm({ ...form, meal_choice: form.meal_choice === m ? null : m })
-                      }
-                      icon={<MealIcon meal={m} />}
-                      label={t(`guests.meal_${m}`)}
-                      compact
-                    />
-                  ))}
+                  {mealSlots(couple?.meal_menu)
+                    .map((m) => ({ m, label: slotLabel(couple?.meal_menu, m, t) }))
+                    .filter((o) => o.label)
+                    .map(({ m, label }) => (
+                      <SegmentButton
+                        key={m}
+                        active={form.meal_choice === m}
+                        // Re-clicking the active option clears it so the user can
+                        // return to "no preference" without a dedicated null button.
+                        onClick={() =>
+                          setForm({ ...form, meal_choice: form.meal_choice === m ? null : m })
+                        }
+                        icon={<MealIcon meal={m} />}
+                        label={label}
+                        compact
+                      />
+                    ))}
                 </div>
               </div>
 
@@ -4115,8 +4148,12 @@ function RsvpGlyph({ status }: { status: RsvpStatus }) {
   );
 }
 
-function MealIcon({ meal }: { meal: MealChoice }) {
+function MealIcon({ meal }: { meal: MealSlotKey }) {
   const size = 16;
+  // A couple's own option means whatever its label says, so it gets the
+  // neutral cutlery glyph rather than one of the six that would imply a
+  // meaning it does not have.
+  if (isCustomMealKey(meal)) return <Utensils size={size} aria-hidden />;
   switch (meal) {
     case "meat":
       return <Beef size={size} aria-hidden />;
@@ -4363,14 +4400,17 @@ function MealsDialog({
   // The menu the read-only stats + labels resolve against: the live draft while
   // editing, otherwise the saved menu.
   const activeMenu: MealMenu = editing ? draftMenu : (savedMenu ?? draftMenu);
+  /** The slots the stats + legend iterate: the six, then this couple's own.
+   *  Derived from the ACTIVE menu so adding an option in the editor shows its
+   *  (empty) row immediately rather than after a save. */
+  const slots = useMemo(() => mealSlots(activeMenu), [activeMenu]);
   const mealLabel = useCallback(
-    (m: MealChoice): string =>
-      activeMenu.find((x) => x.choice === m)?.label?.trim() || t(`guests.meal_${m}`),
+    (m: MealSlotKey): string => slotLabel(activeMenu, m, t) || t("guests.meal_custom_unnamed"),
     [activeMenu, t],
   );
 
   function patchSlot(
-    choice: MealChoice,
+    choice: MealSlotKey,
     patch: Partial<{ label: string | null; enabled: boolean }>,
   ) {
     setDraftMenu((prev) => prev.map((m) => (m.choice === choice ? { ...m, ...patch } : m)));
@@ -4398,14 +4438,10 @@ function MealsDialog({
   }
 
   const stats = useMemo(() => {
-    const mealCounts: Record<MealChoice, number> = {
-      meat: 0,
-      fish: 0,
-      vegetarian: 0,
-      vegan: 0,
-      child: 0,
-      none: 0,
-    };
+    // Keyed by slot rather than by the six, so a couple's own option is
+    // counted instead of silently vanishing from the caterer's tally.
+    const mealCounts: Record<string, number> = {};
+    for (const slot of slots) mealCounts[slot] = 0;
     const dietaryCounts: Record<DietaryTag, number> = {
       lactose: 0,
       milk_protein: 0,
@@ -4420,7 +4456,9 @@ function MealsDialog({
       if (g.rsvp_status !== "yes") continue;
       totalYes += 1;
       if (g.meal_choice) {
-        mealCounts[g.meal_choice] += 1;
+        // A guest may still hold a slot the couple has since deleted; count it
+        // rather than dropping a real person off the catering order.
+        mealCounts[g.meal_choice] = (mealCounts[g.meal_choice] ?? 0) + 1;
       } else if (g.kind !== "baby") {
         pending += 1;
       }
@@ -4428,7 +4466,7 @@ function MealsDialog({
       for (const tag of tags) dietaryCounts[tag] += 1;
     }
     return { mealCounts, dietaryCounts, pending, totalYes };
-  }, [guests]);
+  }, [guests, slots]);
 
   // Babies don't eat from the wedding menu, so the meals chart only counts
   // adults + children. Surface the count separately so the caterer still
@@ -4441,7 +4479,7 @@ function MealsDialog({
   // pending. Babies are excluded so percentages describe "what's on the
   // catering order", not "headcount at the venue".
   const mealsDenominator =
-    MEAL_ORDER.reduce((acc, m) => acc + stats.mealCounts[m], 0) + stats.pending;
+    slots.reduce((acc, m) => acc + (stats.mealCounts[m] ?? 0), 0) + stats.pending;
   // Allergens count against the full "yes" cohort (including babies — they
   // can be lactose-intolerant just like adults).
   const dietaryMax = Math.max(0, ...DIETARY_TAG_KEYS.map((tag) => stats.dietaryCounts[tag]));
@@ -4453,8 +4491,8 @@ function MealsDialog({
     lines.push(t("guests.meals_total_yes", { count: stats.totalYes }));
     lines.push("");
     lines.push(`${t("guests.meals_section_meals")}:`);
-    for (const m of MEAL_ORDER) {
-      lines.push(`  ${mealLabel(m)}: ${stats.mealCounts[m]}`);
+    for (const m of slots) {
+      lines.push(`  ${mealLabel(m)}: ${stats.mealCounts[m] ?? 0}`);
     }
     if (stats.pending > 0) {
       lines.push(`  ${t("guests.meals_pending_label")}: ${stats.pending}`);
@@ -4488,8 +4526,8 @@ function MealsDialog({
         .join(","),
     );
     const mealCat = t("guests.meals_csv_cat_meal");
-    for (const m of MEAL_ORDER) {
-      rows.push([mealCat, mealLabel(m), stats.mealCounts[m]].map(cell).join(","));
+    for (const m of slots) {
+      rows.push([mealCat, mealLabel(m), stats.mealCounts[m] ?? 0].map(cell).join(","));
     }
     if (stats.pending > 0) {
       rows.push([mealCat, t("guests.meals_pending_label"), stats.pending].map(cell).join(","));
@@ -4682,37 +4720,78 @@ function MealsDialog({
           </header>
 
           {editing ? (
-            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {MEAL_ORDER.map((m) => {
-                const item = draftMenu.find((x) => x.choice === m);
-                return (
-                  <MealEditRow
-                    key={m}
-                    meal={m}
-                    value={item?.label ?? ""}
-                    enabled={item?.enabled ?? true}
-                    placeholder={t(`guests.meal_${m}`)}
-                    offeredLabel={t("guests.meals_menu_offered")}
-                    onLabel={(label) => patchSlot(m, { label })}
-                    onToggle={() => patchSlot(m, { enabled: !(item?.enabled ?? true) })}
-                  />
-                );
-              })}
-            </ul>
+            <>
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {MEAL_ORDER.map((m) => {
+                  const item = draftMenu.find((x) => x.choice === m);
+                  return (
+                    <MealEditRow
+                      key={m}
+                      meal={m}
+                      value={item?.label ?? ""}
+                      enabled={item?.enabled ?? true}
+                      placeholder={t(`guests.meal_${m}`)}
+                      offeredLabel={t("guests.meals_menu_offered")}
+                      onLabel={(label) => patchSlot(m, { label })}
+                      onToggle={() => patchSlot(m, { enabled: !(item?.enabled ?? true) })}
+                    />
+                  );
+                })}
+                {/* The couple's own options. Same row, one difference: the
+                    label is the whole option rather than an override, so it
+                    has no placeholder default to fall back on and the row can
+                    be deleted. */}
+                {draftMenu
+                  .filter((x) => isCustomMealKey(x.choice))
+                  .map((item) => (
+                    <MealEditRow
+                      key={item.choice}
+                      meal={item.choice}
+                      value={item.label ?? ""}
+                      enabled={item.enabled}
+                      placeholder={t("guests.meals_menu_custom_placeholder")}
+                      offeredLabel={t("guests.meals_menu_offered")}
+                      onLabel={(label) => patchSlot(item.choice, { label })}
+                      onToggle={() => patchSlot(item.choice, { enabled: !item.enabled })}
+                      onRemove={() =>
+                        setDraftMenu((prev) => prev.filter((x) => x.choice !== item.choice))
+                      }
+                      removeLabel={t("guests.meals_menu_remove_option")}
+                    />
+                  ))}
+              </ul>
+              {/* Six was not enough for real weddings: halal, a gluten-free
+                  plate, a second main. The cap keeps the RSVP a tap grid
+                  rather than a form to read. */}
+              <button
+                type="button"
+                className="btn-outline btn-sm mt-3"
+                disabled={customMealCount(draftMenu) >= MEAL_MAX_CUSTOM}
+                onClick={() =>
+                  setDraftMenu((prev) => [
+                    ...prev,
+                    { choice: nextCustomMealKey(prev), label: "", enabled: true },
+                  ])
+                }
+              >
+                <Plus size={14} aria-hidden /> {t("guests.meals_menu_add_option")}
+              </button>
+            </>
           ) : stats.totalYes > 0 ? (
             <>
               <MealsStackedBar
                 mealCounts={stats.mealCounts}
+                slots={slots}
                 pending={stats.pending}
                 total={mealsDenominator}
               />
               <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {MEAL_ORDER.map((m) => (
+                {slots.map((m) => (
                   <MealLegendRow
                     key={m}
                     meal={m}
                     label={mealLabel(m)}
-                    count={stats.mealCounts[m]}
+                    count={stats.mealCounts[m] ?? 0}
                     total={mealsDenominator}
                   />
                 ))}
@@ -4728,7 +4807,7 @@ function MealsDialog({
                 ).map((m) => (
                   <li
                     key={m}
-                    className={`inline-flex items-center gap-1.5 rounded-full border border-paper-200 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 ${MEAL_TONE_TEXT[m]}`}
+                    className={`inline-flex items-center gap-1.5 rounded-full border border-paper-200 bg-paper-50 px-2.5 py-1 text-xs font-medium text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 ${mealToneText(m)}`}
                   >
                     <MealIcon meal={m} />
                     <span className="text-ink-700 dark:text-paper-100">{mealLabel(m)}</span>
@@ -4813,12 +4892,52 @@ const MEAL_TONE_TEXT: Record<MealChoice, string> = {
   none: "text-ink-500 dark:text-umber-300",
 };
 
+/** Tones for the couple's OWN options. Three project families none of the six
+ *  use, rotated by the slot's own number so two custom options are never the
+ *  same colour in the same bar. Repeats past three, which is fine: a couple
+ *  with four custom meals has bigger problems than a colour clash. */
+const CUSTOM_MEAL_TONES = [
+  {
+    seg: "bg-eucalyptus-500 dark:bg-eucalyptus-400",
+    soft: "bg-eucalyptus-500/10 dark:bg-eucalyptus-400/15",
+    text: "text-eucalyptus-700 dark:text-eucalyptus-300",
+  },
+  {
+    seg: "bg-steel-500 dark:bg-steel-400",
+    soft: "bg-steel-500/10 dark:bg-steel-400/15",
+    text: "text-steel-700 dark:text-steel-300",
+  },
+  {
+    seg: "bg-umber-500 dark:bg-umber-400",
+    soft: "bg-umber-500/10 dark:bg-umber-400/15",
+    text: "text-umber-700 dark:text-umber-300",
+  },
+] as const;
+
+function customTone(choice: MealSlotKey) {
+  const n = Number(String(choice).slice(1));
+  const i = (Number.isFinite(n) && n > 0 ? n - 1 : 0) % CUSTOM_MEAL_TONES.length;
+  return CUSTOM_MEAL_TONES[i] ?? CUSTOM_MEAL_TONES[0];
+}
+
+function mealSegmentBg(choice: MealSlotKey): string {
+  return isCustomMealKey(choice) ? customTone(choice).seg : MEAL_SEGMENT_BG[choice];
+}
+function mealToneSoft(choice: MealSlotKey): string {
+  return isCustomMealKey(choice) ? customTone(choice).soft : MEAL_TONE_SOFT[choice];
+}
+function mealToneText(choice: MealSlotKey): string {
+  return isCustomMealKey(choice) ? customTone(choice).text : MEAL_TONE_TEXT[choice];
+}
+
 function MealsStackedBar({
   mealCounts,
+  slots,
   pending,
   total,
 }: {
-  mealCounts: Record<MealChoice, number>;
+  mealCounts: Record<string, number>;
+  slots: MealSlotKey[];
   pending: number;
   total: number;
 }) {
@@ -4835,14 +4954,14 @@ function MealsStackedBar({
       className="flex h-4 w-full gap-0.5 overflow-hidden rounded-full bg-paper-200 dark:bg-umber-900/60"
       role="presentation"
     >
-      {MEAL_ORDER.map((m) => {
-        const c = mealCounts[m];
+      {slots.map((m) => {
+        const c = mealCounts[m] ?? 0;
         if (c === 0) return null;
         const pct = (c / total) * 100;
         return (
           <div
             key={m}
-            className={`${MEAL_SEGMENT_BG[m]} h-full`}
+            className={`${mealSegmentBg(m)} h-full`}
             style={{ width: `${pct}%` }}
             title={`${t(`guests.meal_${m}`)}: ${c}`}
             aria-hidden
@@ -4867,7 +4986,7 @@ function MealLegendRow({
   count,
   total,
 }: {
-  meal: MealChoice;
+  meal: MealSlotKey;
   label: string;
   count: number;
   total: number;
@@ -4887,7 +5006,7 @@ function MealLegendRow({
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
           dim
             ? "bg-paper-200 text-ink-400 dark:bg-umber-700 dark:text-umber-400"
-            : `${MEAL_TONE_SOFT[meal]} ${MEAL_TONE_TEXT[meal]}`
+            : `${mealToneSoft(meal)} ${mealToneText(meal)}`
         }`}
       >
         <MealIcon meal={meal} />
@@ -4914,7 +5033,7 @@ function MealLegendRow({
             {!dim && (
               <div
                 aria-hidden
-                className={`h-full rounded-full ${MEAL_SEGMENT_BG[meal]}`}
+                className={`h-full rounded-full ${mealSegmentBg(meal)}`}
                 style={{ width: `${Math.max(pct, 4)}%` }}
               />
             )}
@@ -4940,14 +5059,21 @@ function MealEditRow({
   offeredLabel,
   onLabel,
   onToggle,
+  onRemove,
+  removeLabel,
 }: {
-  meal: MealChoice;
+  meal: MealSlotKey;
   value: string;
   enabled: boolean;
   placeholder: string;
   offeredLabel: string;
   onLabel: (label: string) => void;
   onToggle: () => void;
+  /** Present only for the couple's OWN options. The six canonical slots are
+   *  hidden with the switch instead of deleted, because everything downstream
+   *  (the caterer buckets, existing guests' answers) keys on them. */
+  onRemove?: () => void;
+  removeLabel?: string;
 }) {
   return (
     <li
@@ -4959,7 +5085,7 @@ function MealEditRow({
     >
       <span
         aria-hidden
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${MEAL_TONE_SOFT[meal]} ${MEAL_TONE_TEXT[meal]}`}
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${mealToneSoft(meal)} ${mealToneText(meal)}`}
       >
         <MealIcon meal={meal} />
       </span>
@@ -4990,6 +5116,17 @@ function MealEditRow({
           }`}
         />
       </button>
+      {onRemove && (
+        <button
+          type="button"
+          className="btn-ghost btn-sm shrink-0 text-blush-700 dark:text-blush-300"
+          onClick={onRemove}
+          aria-label={removeLabel}
+          title={removeLabel}
+        >
+          <Trash2 size={14} aria-hidden />
+        </button>
+      )}
     </li>
   );
 }

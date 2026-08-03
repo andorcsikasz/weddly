@@ -4560,6 +4560,10 @@ export interface LocaleMessages {
     meals_menu_saved: string;
     meals_menu_edit_help: string;
     meals_menu_offered: string;
+    meals_menu_add_option: string;
+    meals_menu_remove_option: string;
+    meals_menu_custom_placeholder: string;
+    meal_custom_unnamed: string;
     meals_menu_custom_badge: string;
     meals_section_dietary: string;
     meals_section_dietary_help: string;

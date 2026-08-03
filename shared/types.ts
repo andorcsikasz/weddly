@@ -1176,13 +1176,28 @@ export type GuestGroupTag =
 
 export type MealChoice = "meat" | "fish" | "vegetarian" | "vegan" | "child" | "none";
 
+/** A couple-defined meal option beyond the six canonical ones, keyed `x1`…`xN`.
+ *  The key is an opaque slot id, NOT a meaning: what it says is entirely the
+ *  couple's `label` ("Halal", "Gluténmentes tál", "Gyerekmenü 3 év alatt").
+ *  Deliberately a separate key space from `MealChoice` so everything that
+ *  reasons about a KNOWN meal (the allergen scan, the caterer buckets) keeps
+ *  compiling against the closed enum and simply treats these as "other". */
+export type CustomMealKey = `x${number}`;
+
+/** What `guests.meal_choice` can hold: one of the six canonical slots, or one
+ *  of the couple's own. */
+export type MealSlotKey = MealChoice | CustomMealKey;
+
 /** Per-couple customisation of one fixed meal slot. The `choice` key stays the
  *  canonical `MealChoice` enum (so stats / place cards / allergen logic never
  *  change); the couple only overrides the visible `label` and whether the slot
  *  is `enabled` (offered) on the public RSVP form. `label: null` means "use the
  *  localised default". See `shared/meals.ts` for the resolve/validate helpers. */
 export interface MealMenuItem {
-  choice: MealChoice;
+  choice: MealSlotKey;
+  /** For a canonical slot: an override, `null` meaning "use the localised
+   *  default". For a CUSTOM slot: required, and the only thing that gives the
+   *  option meaning, so a custom item without one is dropped on save. */
   label: string | null;
   enabled: boolean;
 }
@@ -1246,13 +1261,13 @@ export interface Guest {
    *  guest list shows a Crown next to matching rows. */
   partner_role: "bride" | "groom" | null;
   rsvp_status: RsvpStatus;
-  meal_choice: MealChoice | null;
+  meal_choice: MealSlotKey | null;
   dietary: string | null;
   /** @deprecated since the household refactor — kept for back-compat. New
    *  flows materialize the plus-one as a sibling guest in the same household. */
   plus_one_name: string | null;
   /** @deprecated — see `plus_one_name`. */
-  plus_one_meal: MealChoice | null;
+  plus_one_meal: MealSlotKey | null;
   accommodation_needed: boolean;
   song_request: string | null;
   notes: string | null;
@@ -1410,7 +1425,7 @@ export interface HouseholdMember {
   full_name: string;
   kind: GuestKind;
   rsvp_status: RsvpStatus;
-  meal_choice: MealChoice | null;
+  meal_choice: MealSlotKey | null;
   dietary: string | null;
   accommodation_needed: boolean;
   /** Which published lodging this member picked, or `null` for none. Only ever
@@ -1490,7 +1505,7 @@ export interface CheckinSubmitBody {
 export interface CheckinMemberSubmit {
   guest_id: number;
   rsvp_status: RsvpStatus;
-  meal_choice: MealChoice | null;
+  meal_choice: MealSlotKey | null;
   dietary: string | null;
   accommodation_needed: boolean;
   /** The lodging this member picked, from `PublicCheckinView.accommodation_options`.
@@ -1505,7 +1520,7 @@ export interface CheckinAddedMember {
   full_name: string;
   kind: GuestKind;
   rsvp_status: RsvpStatus;
-  meal_choice: MealChoice | null;
+  meal_choice: MealSlotKey | null;
   dietary: string | null;
   /** Set when this addition is a "+1" — flags the new row as a plus-one and
    *  nests it under `parent_member_id`. Babies/children leave this false. */
@@ -1535,6 +1550,13 @@ export interface DietarySummary {
     /** rsvp=yes/maybe guests with `meal_choice` null. */
     unspecified: number;
   };
+  /** The couple's OWN meal options, resolved to their labels because the key
+   *  (`x1`) means nothing to a caterer. One entry per option currently on the
+   *  menu, plus any option guests still hold that the couple later deleted, so
+   *  a real person never falls off the catering order. Empty for the couples
+   *  who never added one, which is why it sits beside `meal` rather than
+   *  reshaping it. */
+  custom_meals: { key: string; label: string; count: number }[];
   allergies: {
     gluten: number;
     lactose: number;
@@ -1556,10 +1578,10 @@ export interface PublicRsvpView {
   couple_display_name: string;
   wedding_date: string | null;
   rsvp_status: RsvpStatus;
-  meal_choice: MealChoice | null;
+  meal_choice: MealSlotKey | null;
   dietary: string | null;
   plus_one_name: string | null;
-  plus_one_meal: MealChoice | null;
+  plus_one_meal: MealSlotKey | null;
   accommodation_needed: boolean;
   song_request: string | null;
 }
