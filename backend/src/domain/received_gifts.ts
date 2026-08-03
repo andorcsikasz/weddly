@@ -3,6 +3,7 @@
 // getCoupleForUser, same contract as wishlist.ts / schedule.ts. Private,
 // couple-only data: never surfaced on the guest page. No money moves.
 
+import { type Currency, minorUnitFactor } from "@shared/currency";
 import {
   RECEIVED_GIFT_CATEGORIES,
   RECEIVED_GIFT_MAX_NOTE_LEN,
@@ -283,4 +284,82 @@ export function deleteReceivedGift(id: number, coupleId: number): boolean {
     .prepare("DELETE FROM received_gifts WHERE id = ? AND couple_id = ?")
     .run(id, coupleId);
   return result.changes > 0;
+}
+
+// ── Carry-over from the budget page's old money-in ledger ────────────────────
+
+/** Move every `couple_income` row into this ledger as a `money` gift.
+ *
+ *  The budget page used to keep its OWN money-in table, so a couple who logged
+ *  a cash gift on the wishlist saw the budget's "Összesen befolyt" report 0,
+ *  and vice versa: two grids, two tables, and two headline numbers that
+ *  contradicted each other. This ledger is the single source of truth now, and
+ *  the budget renders a read-only rollup of it, so the old rows have to arrive
+ *  here or the couple's money silently disappears from the page that reports it.
+ *
+ *  Idempotent via the UNIQUE `income_id` index, so it is safe on every boot:
+ *  a row already carried over loses the INSERT race to the index and is skipped.
+ *  Nothing is deleted — `couple_income` keeps its rows as the audit trail, and
+ *  the route stays mounted so a client mid-deploy can still read them.
+ *
+ *  The unit conversion is the part worth being careful about: `amount_huf` is
+ *  WHOLE units of the couple's currency, `amount_minor` is minor units, so a
+ *  straight copy is correct in HUF and inflates every EUR figure 100x. */
+export function backfillIncomeIntoReceivedGifts(): { carried: number } {
+  const rows = db
+    .prepare(
+      `SELECT i.id, i.couple_id, i.label, i.amount_huf, i.notes, i.created_at, i.updated_at,
+              c.currency AS currency
+         FROM couple_income i
+         JOIN couples c ON c.id = i.couple_id
+        WHERE NOT EXISTS (SELECT 1 FROM received_gifts g WHERE g.income_id = i.id)
+        ORDER BY i.couple_id ASC, i.id ASC`,
+    )
+    .all() as {
+    id: number;
+    couple_id: number;
+    label: string;
+    amount_huf: number;
+    notes: string | null;
+    created_at: number;
+    updated_at: number;
+    currency: Currency;
+  }[];
+  if (rows.length === 0) return { carried: 0 };
+
+  // Append after whatever the couple already has, so the carried rows land at
+  // the bottom of the grid instead of interleaving with their own entries.
+  const maxSort = db.prepare(
+    "SELECT COALESCE(MAX(sort_order), -1) AS m FROM received_gifts WHERE couple_id = ?",
+  );
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO received_gifts
+       (couple_id, household_id, guest_id, title, note, category, amount_minor, sort_order, income_id, created_at, updated_at)
+     VALUES (?, NULL, NULL, ?, ?, 'money', ?, ?, ?, ?, ?)`,
+  );
+
+  let carried = 0;
+  const nextSort = new Map<number, number>();
+  const run = db.transaction(() => {
+    for (const r of rows) {
+      let sort = nextSort.get(r.couple_id);
+      if (sort === undefined) {
+        sort = Number((maxSort.get(r.couple_id) as { m: number }).m) + 1;
+      }
+      const result = insert.run(
+        r.couple_id,
+        r.label.slice(0, RECEIVED_GIFT_MAX_TITLE_LEN),
+        r.notes ? r.notes.slice(0, RECEIVED_GIFT_MAX_NOTE_LEN) : null,
+        Math.round(r.amount_huf * minorUnitFactor(r.currency)),
+        sort,
+        r.id,
+        r.created_at,
+        r.updated_at,
+      );
+      if (result.changes > 0) carried += 1;
+      nextSort.set(r.couple_id, sort + 1);
+    }
+  });
+  run();
+  return { carried };
 }

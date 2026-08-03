@@ -1461,6 +1461,15 @@ addColumnIfMissing(
 // and optional money value (integer minor units, same convention as wishlist).
 addColumnIfMissing("received_gifts", "category", "category TEXT NOT NULL DEFAULT 'gift'");
 addColumnIfMissing("received_gifts", "amount_minor", "amount_minor INTEGER");
+// `income_id` records which `couple_income` row a gift was carried over from
+// when the budget page's separate money-in ledger was folded into this one.
+// NULL for everything the couple typed here. It is provenance, but its real
+// job is the UNIQUE index below: that is what makes the carry-over idempotent,
+// and therefore safe to run on every boot rather than once by hand.
+addColumnIfMissing("received_gifts", "income_id", "income_id INTEGER");
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_received_gifts_income ON received_gifts(income_id) WHERE income_id IS NOT NULL",
+);
 
 // Notification preference columns (cadence + focus areas).
 addColumnIfMissing(

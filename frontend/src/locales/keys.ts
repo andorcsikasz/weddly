@@ -5225,10 +5225,14 @@ export interface LocaleMessages {
     net_cost: string;
     surplus: string;
     recovered_pct: string;
-    field_label: string;
-    field_label_placeholder: string;
-    field_amount: string;
-    col_note: string;
+    /** "{n} cash gifts" — the rows that actually carry a money amount. */
+    count_money: string;
+    /** "{n} other gifts" — physical gifts / experiences / vouchers, counted
+     *  but never valued, so the total can't claim a blender paid for the day. */
+    count_other: string;
+    empty: string;
+    manage_link: string;
+    open_ledger_aria: string;
     private_badge: string;
   };
   /** Cost-planning panel surfaces that don't belong to the budget *table*:

@@ -148,6 +148,7 @@ import {
 } from "./domain/planner_conversion";
 import { registerUserCoupleRoutes } from "./routes/user_couple";
 import { registerUserProfileRoutes } from "./routes/user_profile";
+import { backfillIncomeIntoReceivedGifts } from "./domain/received_gifts";
 import { registerReceivedGiftsRoutes } from "./routes/received_gifts";
 import { registerWishlistRoutes } from "./routes/wishlist";
 
@@ -187,6 +188,15 @@ seedDoNotContact();
 // blank. Skips any booking that already has a message, which is what makes it
 // idempotent and safe against an inquiry landing between deploy and boot.
 backfillLegacyBookingNotes();
+// Fold the budget page's old money-in table into the wishlist's received-gifts
+// ledger, which is the single source of truth for "what came in" now. Without
+// this, every cash gift a couple logged on the budget page vanishes from the
+// page that reports it. Idempotent via the UNIQUE income_id index, so this is
+// safe on every boot and empties out after the first pass.
+{
+  const { carried } = backfillIncomeIntoReceivedGifts();
+  if (carried > 0) log.info("received_gifts.income_carryover", { carried });
+}
 // The gift list is one switch now (couples.wishlist_published), so retire the
 // second one: any couple still carrying the "wishlist" slug in their design's
 // hidden-sections list has it stripped and their publish flag pinned to the

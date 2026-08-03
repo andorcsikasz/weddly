@@ -1264,8 +1264,14 @@ export default function WishlistEditorPage() {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<DrawerInit | null>(null);
+  // `?phase=after` wins over the remembered tab: it is how the budget page's
+  // "Befolyt pénz" card hands the couple over to the ledger it reports, and
+  // landing them on the gift list instead is a dead end they have to recover
+  // from. Absent (the ordinary visit), the per-device memory decides.
   const [phase, setPhase] = useState<WishlistPhase>(() => {
     try {
+      const fromUrl = new URLSearchParams(window.location.search).get("phase");
+      if (fromUrl === "after" || fromUrl === "before") return fromUrl;
       return localStorage.getItem(PHASE_STORAGE_KEY) === "after" ? "after" : "before";
     } catch {
       return "before";
