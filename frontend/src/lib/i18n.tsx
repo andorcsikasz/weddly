@@ -1,20 +1,38 @@
+import { isUiLocale, UI_LOCALES, type UiLocale } from "@shared/locales";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import en from "../locales/en";
-import type { LocaleMessages } from "../locales/keys";
+import type { LocaleMessages, PartialLocaleMessages } from "../locales/keys";
 
-export type Locale = "hu" | "en" | "es";
+export type Locale = UiLocale;
 
 /** Every UI locale the app ships. EN is the bundled default; the rest are
  *  dynamically imported on first use (see `loadTree`). Order is the order the
- *  language switcher cycles through. */
-export const LOCALES: readonly Locale[] = ["en", "hu", "es"];
+ *  language switcher cycles through. Single-sourced in `@shared/locales`
+ *  because the backend persists the same set on `users.locale`. */
+export const LOCALES: readonly Locale[] = UI_LOCALES;
 
 /** Display name of each locale in its OWN language, for switcher labels. */
 export const LOCALE_NAMES: Record<Locale, string> = {
   en: "English",
   hu: "Magyar",
   es: "Español",
+  hr: "Hrvatski",
+  de: "Deutsch",
 };
+
+/** Locales whose tree covers EVERY key in `LocaleMessages`. Drift against EN
+ *  is a bug in these and `warnDriftDev` reports it in both directions. */
+const FULL_LOCALES = ["hu", "es"] as const;
+
+/** Locales that ship a DELIBERATELY partial tree: the vendor-facing surface is
+ *  translated and everything else resolves through the EN fallback in `t()`.
+ *  Croatian and German landed this way so vendors in those markets could work
+ *  in their own language without holding the release for 7,226 keys apiece.
+ *  A missing key here is expected, not drift, so the "missing in <loc>"
+ *  direction of the dev check is skipped for them — 5,700 warnings per boot
+ *  would bury the real ones. The other direction still fires: a key present
+ *  here and absent from EN is a typo or a stale key either way. */
+const PARTIAL_LOCALES = ["hr", "de"] as const;
 
 const STORAGE_KEY = "weddly.locale";
 
@@ -24,20 +42,35 @@ const STORAGE_KEY = "weddly.locale";
 // promise is cached per-locale so a back-and-forth flip doesn't re-fetch.
 // Real non-EN users pay one extra network round trip on the I18nProvider
 // mount; everyone on the EN default saves the full translation chunk.
-const TREES: Partial<Record<Locale, LocaleMessages>> = { en };
-const lazyPromises: Partial<Record<Locale, Promise<LocaleMessages>>> = {};
+const TREES: Partial<Record<Locale, PartialLocaleMessages>> = { en };
+const lazyPromises: Partial<Record<Locale, Promise<PartialLocaleMessages>>> = {};
+
+/** The dynamic import per lazy locale. Written as a map rather than a ternary
+ *  chain so adding a locale is one line and cannot silently fall through to
+ *  the wrong chunk — the old two-locale ternary would have served the ES tree
+ *  to a Croatian user. Each entry must be a literal `import()` call for Vite's
+ *  static analysis to split the chunk. */
+const LAZY_IMPORTS: Record<
+  Exclude<Locale, "en">,
+  () => Promise<{ default: PartialLocaleMessages }>
+> = {
+  hu: () => import("../locales/hu"),
+  es: () => import("../locales/es"),
+  hr: () => import("../locales/hr"),
+  de: () => import("../locales/de"),
+};
 
 /** Load a locale tree, dynamically importing the non-EN ones on demand. EN is
  *  always resolved from the eager bundle. The per-locale promise cache means a
  *  concurrent second call while the import is in flight reuses it. */
-function loadTree(locale: Locale): Promise<LocaleMessages> {
+function loadTree(locale: Locale): Promise<PartialLocaleMessages> {
   const cached = TREES[locale];
   if (cached) return Promise.resolve(cached);
   const inflight = lazyPromises[locale];
   if (inflight) return inflight;
-  // EN is always in TREES, so we only ever dynamic-import hu or es here.
-  const mod = locale === "hu" ? import("../locales/hu") : import("../locales/es");
-  const promise = mod.then((m) => {
+  // EN is always in TREES, so `locale` is never "en" by this point.
+  const load = LAZY_IMPORTS[locale as Exclude<Locale, "en">];
+  const promise = load().then((m) => {
     TREES[locale] = m.default;
     return m.default;
   });
@@ -55,6 +88,13 @@ export async function _preloadHuForTests(): Promise<void> {
 /** Test-only companion to `_preloadHuForTests` for the ES locale tree. */
 export async function _preloadEsForTests(): Promise<void> {
   await loadTree("es");
+}
+
+/** Test-only: preload any lazy locale tree. Same reason as the HU/ES helpers —
+ *  a synchronous query against a translated label needs the chunk resolved
+ *  before render. */
+export async function _preloadLocaleForTests(locale: Locale): Promise<void> {
+  await loadTree(locale);
 }
 
 interface I18nState {
@@ -76,7 +116,7 @@ function detectInitial(): Locale {
   // localStorage and it sticks across visits.
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === "hu" || saved === "en" || saved === "es") return saved;
+    if (isUiLocale(saved)) return saved;
   } catch {
     // localStorage may be blocked
   }
@@ -113,7 +153,7 @@ export function missingKeyFallbackForTests(path: string, dev: boolean): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-function resolve(tree: LocaleMessages, path: string): string | null {
+function resolve(tree: PartialLocaleMessages, path: string): string | null {
   const parts = path.split(".");
   let cur: unknown = tree;
   for (const p of parts) {
@@ -157,11 +197,13 @@ async function warnDriftDev() {
     return out;
   };
   const enKeys = new Set(flatten(en as unknown as Record<string, unknown>));
-  for (const loc of ["hu", "es"] as const) {
+  for (const loc of [...FULL_LOCALES, ...PARTIAL_LOCALES] as const) {
     const tree = await loadTree(loc);
     const keys = new Set(flatten(tree as unknown as Record<string, unknown>));
     for (const k of keys)
       if (!enKeys.has(k)) console.warn(`[i18n] missing in en (present in ${loc}):`, k);
+    // A partial tree is missing most of EN on purpose — see PARTIAL_LOCALES.
+    if ((PARTIAL_LOCALES as readonly string[]).includes(loc)) continue;
     for (const k of enKeys) if (!keys.has(k)) console.warn(`[i18n] missing in ${loc}:`, k);
   }
 }

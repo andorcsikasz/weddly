@@ -2,6 +2,7 @@
 // uses "1 234 567", EN uses "1,234,567"), date display, and renderers for
 // the structured goal types (WeddingDateGoal / GuestCountGoal / BudgetGoal).
 
+import type { UiLocale } from "@shared/locales";
 import type {
   BudgetGoal,
   Currency,
@@ -10,18 +11,26 @@ import type {
   WeddingSeason,
 } from "@shared/types";
 
-type Locale = "hu" | "en" | "es";
+type Locale = UiLocale;
 
 /** The single BCP-47 tag every date/number formatter on the platform uses for
- *  a given UI locale: HU → `hu-HU`, ES → `es-ES`, everything else → `en-GB`.
+ *  a given UI locale: HU → `hu-HU`, ES → `es-ES`, HR → `hr-HR`, DE → `de-DE`,
+ *  everything else → `en-GB`.
  *  English surfaces format with en-GB platform-wide (day-month-year ordering,
  *  24h clock, "8 June 2026") — NEVER en-US — so a date reads identically no
  *  matter which screen renders it. Always derive Intl/`toLocale*` locale args
  *  from this, never inline the ternary, so the convention can never drift back
- *  to en-US in new code. */
-export function intlLocale(locale: Locale): "hu-HU" | "en-GB" | "es-ES" {
+ *  to en-US in new code.
+ *
+ *  A locale whose UI tree is only PARTIALLY translated still gets its own tag:
+ *  numbers, money and dates are formatted by the platform, not by us, so they
+ *  are correct in Croatian and German from the first render even where the
+ *  surrounding copy is still falling back to English. */
+export function intlLocale(locale: Locale): "hu-HU" | "en-GB" | "es-ES" | "hr-HR" | "de-DE" {
   if (locale === "hu") return "hu-HU";
   if (locale === "es") return "es-ES";
+  if (locale === "hr") return "hr-HR";
+  if (locale === "de") return "de-DE";
   return "en-GB";
 }
 
