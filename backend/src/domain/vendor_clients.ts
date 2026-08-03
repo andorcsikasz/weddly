@@ -29,7 +29,13 @@ import { getVendorAccountByOwnerUserId, type VendorAccountRow } from "./vendor_a
 import { getVendorSub, toVendorBilling } from "./vendor_billing";
 import { getBookingById, type BookingRow } from "./supplier_bookings";
 import { unreadCount, unreadCountsByBooking, vendorUnreadTotal } from "./booking_messages";
-import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "./listings";
+import {
+  countListingPackages,
+  countListingPhotos,
+  getListingByVendorAccountId,
+  listingChecklist,
+  listingCompleteness,
+} from "./listings";
 import { viewCountsForListings } from "./supplier_views";
 import type { Listing } from "@shared/listings";
 
@@ -352,33 +358,6 @@ export function listVendorClientDetails(accountId: number): VendorClientDetail[]
 
 const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
 const YEAR_MS = 1000 * 60 * 60 * 24 * 365;
-
-/** The vendor's listing-setup checklist. The RULES live in
- *  `listingChecklistFor` (shared/), so the dashboard ring, the listing-editor
- *  chip and this payload can't drift; all this adds is the two DB counts. A
- *  vendor with no listing yet has every step undone. */
-export function listingChecklist(listing: Listing | null): VendorListingStep[] {
-  return listingChecklistFor({
-    category: listing?.category ?? null,
-    hero_image_url: listing?.hero_image_url ?? null,
-    blurb_hu: listing?.blurb_hu ?? null,
-    blurb_en: listing?.blurb_en ?? null,
-    city: listing?.city ?? null,
-    contact_email: listing?.contact_email ?? null,
-    contact_phone: listing?.contact_phone ?? null,
-    price_band: listing?.price_band ?? null,
-    capacity_min: listing?.capacity_min ?? null,
-    capacity_max: listing?.capacity_max ?? null,
-    photo_count: listing ? countListingPhotos(listing.id) : 0,
-    package_count: listing ? countListingPackages(listing.id) : 0,
-  });
-}
-
-/** Percent (0..100) of the checklist a vendor has completed. */
-export function listingCompleteness(listing: Listing | null): number {
-  if (!listing) return 0;
-  return listingCompletenessFor(listingChecklist(listing));
-}
 
 /** Which of these listings have finished the whole setup checklist — the batch
  *  form of `listingCompleteness(...) === 100`, for the directory views that

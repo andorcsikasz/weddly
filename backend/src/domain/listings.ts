@@ -32,6 +32,8 @@ import type {
 } from "@shared/listings";
 import type { ListingPackage } from "@shared/listing_packages";
 import type { ListingVideo, VideoProvider } from "@shared/listing_videos";
+import type { VendorListingStep } from "@shared/vendor_clients";
+import { listingChecklistFor, listingCompletenessFor } from "@shared/vendor_clients";
 import {
   type DirectorySupplierBase,
   foldSupplierName,
@@ -1168,6 +1170,43 @@ export function countListingPackages(listingId: string): number {
     .prepare("SELECT COUNT(*) AS n FROM listing_packages WHERE listing_id = ?")
     .get(listingId) as { n: number };
   return row.n;
+}
+
+/** THE listing-setup checklist for one listing: the shared RULES
+ *  (`listingChecklistFor`) plus the two counts only the DB can answer.
+ *
+ *  It lives here, next to the counts, rather than in vendor_clients or
+ *  vendor_profile, because BOTH of those need it and vendor_profile ←
+ *  vendor_accounts ← vendor_clients would close an import cycle. That is not a
+ *  filing preference: the dashboard ring and the reminder email each grew their
+ *  own idea of "what is missing", they disagreed (the ring read 100% while the
+ *  mail named two empty sections), and nobody reconciled them for months
+ *  because the two definitions never met in one file.
+ *
+ *  A vendor with no listing yet has every step undone. Callers decide what that
+ *  means — the reminder sweep skips them, since there is no editor to send them
+ *  to. */
+export function listingChecklist(listing: Listing | null): VendorListingStep[] {
+  return listingChecklistFor({
+    category: listing?.category ?? null,
+    hero_image_url: listing?.hero_image_url ?? null,
+    blurb_hu: listing?.blurb_hu ?? null,
+    blurb_en: listing?.blurb_en ?? null,
+    city: listing?.city ?? null,
+    contact_email: listing?.contact_email ?? null,
+    contact_phone: listing?.contact_phone ?? null,
+    price_band: listing?.price_band ?? null,
+    capacity_min: listing?.capacity_min ?? null,
+    capacity_max: listing?.capacity_max ?? null,
+    photo_count: listing ? countListingPhotos(listing.id) : 0,
+    package_count: listing ? countListingPackages(listing.id) : 0,
+  });
+}
+
+/** Percent (0..100) of the checklist a vendor has completed. */
+export function listingCompleteness(listing: Listing | null): number {
+  if (!listing) return 0;
+  return listingCompletenessFor(listingChecklist(listing));
 }
 
 export function addListingPackage(

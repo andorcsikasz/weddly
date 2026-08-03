@@ -6,7 +6,10 @@ import { getCoupleForUser, parseDesignJson } from "../domain/couples";
 import { recordExport } from "../domain/exports";
 import { type Ctx, HttpError, requireAuth, type Router } from "../lib/http";
 import { listByCoupleId as listCoupleSuppliers } from "../domain/couple_suppliers";
+import { parseMenuCard } from "@shared/menu_card";
+import { getUserById } from "../domain/users";
 import {
+  printLocale,
   renderInvitationPdf,
   renderMenuPdf,
   renderPlaceCardsPdf,
@@ -292,6 +295,11 @@ async function handleMenu(ctx: Ctx): Promise<Response> {
     bride_name: couple.bride_name,
     groom_name: couple.groom_name,
     design: parseDesignJson(couple.design_json),
+    menu_card: parseMenuCard(couple.menu_card),
+    // The printed words follow the person doing the printing. Nothing on the
+    // couple row carries a language, and `users.locale` is what the rest of
+    // the product (email, currency) already reads for this.
+    locale: printLocale(getUserById(userId)?.locale ?? null),
   });
   addAuditLog({
     actor_user_id: userId,

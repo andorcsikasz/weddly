@@ -8,46 +8,67 @@
 import { CONFIG } from "../config";
 import { db } from "../db";
 import { sendKind } from "./emails";
-import { countListingPackages, countListingPhotos, getListingByVendorAccountId } from "./listings";
+import { getListingByVendorAccountId, listingChecklist } from "./listings";
 
+/** The still-empty sections, one flag per thing the email can name. Keys are
+ *  the checklist's step keys, so a step added to the portal shows up here the
+ *  moment it has copy — and can never be silently dropped from the email
+ *  instead. */
 export interface VendorListingMissing {
-  photos: boolean;
-  bio: boolean;
+  cover: boolean;
+  gallery: boolean;
+  description: boolean;
+  contact: boolean;
   pricing: boolean;
+  capacity: boolean;
   packages: boolean;
 }
 
 /** Which public-facing sections of a vendor's PRIMARY listing are still empty.
- *  Mirrors what a couple sees on the public profile, so the nudge (and the admin
- *  badge) only ever names things that are genuinely blank.
  *
- *  Every count keys on the listing's OWN id, never on `v<accountId>`: only a
- *  listing created by vendor register carries that id, while a CLAIMED one keeps
- *  the curated/community id it was imported under ('csengokoncert', 'c9'). Two
- *  thirds of live vendor listings are the claimed kind, and each of them was
- *  told their photos and packages were missing while both were on the page —
- *  the nudge counted rows under an id that does not exist.
+ *  DERIVED FROM THE SAME CHECKLIST the vendor sees, and that is the whole
+ *  point. This used to be a second, hand-written definition of "incomplete",
+ *  and the two drifted exactly as you would expect: the dashboard ring read
+ *  100% while the reminder mail named two empty sections, so a vendor could not
+ *  tell which one was lying (both were consulted honestly, they simply asked
+ *  different questions). It also hid a real bug for months — the counts keyed on
+ *  `v<accountId>`, an id only a register-born listing has, so 42 of 62 live
+ *  vendors were told their photos and packages were missing while the ring, which
+ *  keyed on the real id, said they were done.
  *
- *  There is deliberately NO availability rule here. It used to be "has blocked
- *  no dates", which is not an empty section but an empty CALENDAR: a vendor with
- *  nothing booked is fully available, and the reminder asked 50 of 62 accounts
- *  to go and mark themselves busy. See `calendar_public` in
- *  domain/vendor_availability_settings.ts for the vendors who publish no
- *  calendar at all. */
+ *  There is deliberately NO availability rule. It used to be "has blocked no
+ *  dates", which is not an empty section but an empty CALENDAR: a vendor with
+ *  nothing booked is fully available, and the reminder asked 50 of 62 accounts to
+ *  go and mark themselves busy. See `calendar_public` in
+ *  domain/vendor_availability_settings.ts for the vendors who publish none at all.
+ *
+ *  A vendor with NO listing gets every flag set; `sendVendorIncompleteReminder`'s
+ *  callers skip them, because a mail about an editor that 404s is worse than no
+ *  mail. */
 export function vendorListingMissing(vendorAccountId: number): VendorListingMissing {
   const listing = getListingByVendorAccountId(vendorAccountId);
-  const listingId = listing?.id ?? `v${vendorAccountId}`;
+  const undone = new Set(
+    listingChecklist(listing)
+      .filter((s) => !s.done)
+      .map((s) => s.key),
+  );
   return {
-    photos: !listing?.hero_image_url && countListingPhotos(listingId) === 0,
-    bio: !(listing?.blurb_hu || listing?.blurb_en),
-    pricing: listing?.price_band == null,
-    packages: countListingPackages(listingId) === 0,
+    cover: undone.has("cover"),
+    gallery: undone.has("gallery"),
+    description: undone.has("description"),
+    contact: undone.has("contact"),
+    pricing: undone.has("pricing"),
+    // Absent from the checklist for the ~23 categories with no guest count, and
+    // an absent step is not a missing one.
+    capacity: undone.has("capacity"),
+    packages: undone.has("packages"),
   };
 }
 
-/** True when any public section is still empty. */
+/** True when any public section is still empty — i.e. the checklist is not at
+ *  100%, which is what the vendor's own ring shows. */
 export function isVendorListingIncomplete(m: VendorListingMissing): boolean {
-  return m.photos || m.bio || m.pricing || m.packages;
+  return Object.values(m).some(Boolean);
 }
 
 /** The account fields the reminder + its bookkeeping need. */

@@ -60,7 +60,9 @@ import {
   Maximize2,
   Monitor,
   Pencil,
+  Plus,
   Smartphone,
+  Trash2,
   X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
@@ -75,6 +77,15 @@ import { PaletteBar, roleColors } from "../components/design/PaletteBar";
 import { SampleTable } from "../components/design/SampleTable";
 import { headingTreatmentCss, OrnamentDivider } from "../components/ornaments";
 import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
+import {
+  emptyMenuCard,
+  MENU_LINE_MAX,
+  MENU_MAX_COURSES,
+  MENU_MAX_LINES,
+  MENU_TITLE_MAX,
+  normalizeMenuCardInput,
+} from "@shared/menu_card";
+import type { MenuCard, MenuCourse } from "@shared/types";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Switch, useConfirm, useToast } from "../components/ui";
@@ -209,6 +220,111 @@ function ScaledPreview({
   );
 }
 
+/** The couple's dinner, as printed. Courses in serving order, each a heading
+ *  plus its dishes one per line.
+ *
+ *  Dishes are a textarea rather than a row of inputs on purpose: a menu is
+ *  copied in from the caterer's email, and pasting four lines into one box
+ *  beats tabbing through four fields. Splitting on newline is also what makes
+ *  the cap enforceable without the editor fighting the paste. */
+function MenuCardEditor({
+  value,
+  onChange,
+  onSave,
+  saving,
+  readOnly,
+}: {
+  value: MenuCard;
+  onChange: (next: MenuCard) => void;
+  onSave: () => void;
+  saving: boolean;
+  readOnly: boolean;
+}) {
+  const { t } = useT();
+  const courses = value.courses;
+
+  function patchCourse(index: number, patch: Partial<MenuCourse>) {
+    onChange({
+      courses: courses.map((c, i) => (i === index ? { ...c, ...patch } : c)),
+    });
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-paper-300 bg-white shadow-soft dark:border-umber-600 dark:bg-umber-800 dark:shadow-none">
+      <div className="divide-y divide-paper-200 dark:divide-umber-700">
+        {courses.length === 0 && (
+          <p className="px-4 py-4 text-sm text-ink-500 dark:text-umber-300">
+            {t("design.menu_editor.empty")}
+          </p>
+        )}
+        {courses.map((course, i) => (
+          // Index key: a course has no id, and reordering rewrites the array.
+          // biome-ignore lint/suspicious/noArrayIndexKey: positional by nature
+          <div key={i} className="space-y-2 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <input
+                className="input flex-1"
+                value={course.title}
+                maxLength={MENU_TITLE_MAX}
+                disabled={readOnly}
+                placeholder={t("design.menu_editor.course_placeholder")}
+                aria-label={t("design.menu_editor.course_placeholder")}
+                onChange={(e) => patchCourse(i, { title: e.target.value })}
+              />
+              <button
+                type="button"
+                className="btn-ghost btn-sm text-blush-700 dark:text-blush-300"
+                disabled={readOnly}
+                onClick={() => onChange({ courses: courses.filter((_, j) => j !== i) })}
+                aria-label={t("design.menu_editor.remove_course")}
+                title={t("design.menu_editor.remove_course")}
+              >
+                <Trash2 size={14} aria-hidden />
+              </button>
+            </div>
+            <textarea
+              className="input"
+              rows={Math.min(MENU_MAX_LINES, Math.max(2, course.lines.length + 1))}
+              disabled={readOnly}
+              value={course.lines.join("\n")}
+              placeholder={t("design.menu_editor.dishes_placeholder")}
+              aria-label={t("design.menu_editor.dishes_placeholder")}
+              onChange={(e) =>
+                patchCourse(i, {
+                  lines: e.target.value
+                    .split("\n")
+                    .slice(0, MENU_MAX_LINES)
+                    .map((l) => l.slice(0, MENU_LINE_MAX)),
+                })
+              }
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-paper-200 px-4 py-3 dark:border-umber-700">
+        <button
+          type="button"
+          className="btn btn-outline btn-sm"
+          disabled={readOnly || courses.length >= MENU_MAX_COURSES}
+          onClick={() => onChange({ courses: [...courses, { title: "", lines: [] }] })}
+        >
+          <Plus size={14} aria-hidden />
+          {t("design.menu_editor.add_course")}
+        </button>
+        <button
+          type="button"
+          className="btn btn-primary btn-sm"
+          disabled={readOnly || saving}
+          onClick={onSave}
+        >
+          {saving ? <Loader2 size={14} className="animate-spin" aria-hidden /> : null}
+          {t("common.save")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function DesignPage() {
   const { t, locale } = useT();
   const toast = useToast();
@@ -275,6 +391,11 @@ export default function DesignPage() {
   // Which photo slot has an upload/delete in flight (1 | 2 | null).
   const [photoBusy, setPhotoBusy] = useState<1 | 2 | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
+  /** The couple's printed menu. Kept as page state rather than inside the
+   *  editor so the card preview beside it re-renders on every keystroke, which
+   *  is the whole point of this page. */
+  const [menuCard, setMenuCard] = useState<MenuCard>(emptyMenuCard());
+  const [menuSaving, setMenuSaving] = useState(false);
   // Below lg only chapter 01 starts open (small screens scroll past the whole
   // editor); at lg+ all chapters start open. Read once at mount.
   const [lgUp] = useState(
@@ -291,6 +412,7 @@ export default function DesignPage() {
         setCouple(r.couple);
         setDesign(r.couple.design);
         setSaved(r.couple.design);
+        setMenuCard(r.couple.menu_card);
         // A couple still sitting on the untouched default has never made the
         // one decision this page is about, so open the Sample Table for them.
         setStyleTableOpen(
@@ -581,6 +703,32 @@ export default function DesignPage() {
   // hidden-section entry of its own here, which meant two switches for one idea
   // and a design preview that could disagree with the live page in either
   // direction. Optimistic with a rollback, mirroring the wishlist editor.
+  /** Explicit save rather than the page's usual autosave: the couple types a
+   *  whole dinner here, and a PATCH per keystroke would be both noisy and, on
+   *  a half-typed dish, wrong in the audit log. The preview updates live from
+   *  local state either way, so nothing is waiting on this. */
+  async function saveMenuCard() {
+    if (menuSaving || readOnly) return;
+    setMenuSaving(true);
+    try {
+      const r = await coupleApi.update({ menu_card: normalizeMenuCardInput(menuCard) });
+      setCouple(r.couple);
+      // Adopt the server's normalised form so empty rows the couple left
+      // behind disappear from the editor rather than lingering as ghosts.
+      setMenuCard(r.couple.menu_card);
+      toast.success(t("design.menu_editor.saved"));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 402) {
+        setReadOnly(true);
+        toast.error(t("design.save_blocked"));
+      } else {
+        toast.error(t("design.save_error"));
+      }
+    } finally {
+      setMenuSaving(false);
+    }
+  }
+
   async function toggleWishlist() {
     if (!couple || wishlistBusy || readOnly) return;
     const next = !couple.wishlist_published;
@@ -1731,6 +1879,25 @@ export default function DesignPage() {
 
               {tab === "print" && (
                 <>
+                  {/* The one printable whose CONTENT lives nowhere else. Every
+                      other card draws from data the couple already keeps (guest
+                      names, table labels, the schedule); the menu had no home
+                      at all, so the card printed blank rules to fill in by
+                      hand. Shown only on the menu template, because that is the
+                      only card it belongs to. */}
+                  {printTemplate === "menu" && (
+                    <section>
+                      <p className="eyebrow mb-2">{t("design.menu_editor.heading")}</p>
+                      <MenuCardEditor
+                        value={menuCard}
+                        onChange={setMenuCard}
+                        onSave={saveMenuCard}
+                        saving={menuSaving}
+                        readOnly={readOnly}
+                      />
+                    </section>
+                  )}
+
                   {/* Same fine-tune vocabulary as the guest tab, so the two
                       surfaces read as one tool. Dividers is literally the same
                       switch: it writes both surfaces. */}
@@ -1867,6 +2034,7 @@ export default function DesignPage() {
                           design={design}
                           template={printTemplate}
                           brideName={couple?.bride_name ?? null}
+                          menuCard={menuCard}
                         />
                       </span>
                     </div>

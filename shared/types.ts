@@ -837,6 +837,11 @@ export interface Couple {
    *  Always six items in `MEAL_ORDER`; defaults to all-enabled, no overrides.
    *  Lets couples show their real dishes ("Marhasült") on the RSVP form. */
   meal_menu: MealMenu;
+  /** The dinner as printed on the A5 menu card: courses in serving order with
+   *  their dishes. Empty by default, in which case the card keeps printing
+   *  blank writing rules under localised course labels. Not to be confused
+   *  with `meal_menu` above, which is the RSVP's six choice slots. */
+  menu_card: MenuCard;
   /** Per-couple trigger for the proactive-timeline EMAIL escalation. The in-app
    *  bell is always on; this only governs the email push. Defaults to 'overdue'
    *  (push only when a task is genuinely late). See `TimelineEmailEscalation`. */
@@ -1184,6 +1189,23 @@ export interface MealMenuItem {
 
 /** A couple's full meal menu: always the six slots in `MEAL_ORDER`. */
 export type MealMenu = MealMenuItem[];
+
+/** One course on the printed menu card: a heading and the dishes under it.
+ *  `title` may be empty when the couple only wants dishes listed; `lines` may
+ *  be empty when they only want the courses named. Both empty is dropped on
+ *  save. See `shared/menu_card.ts` for the caps and the resolve helpers. */
+export interface MenuCourse {
+  title: string;
+  lines: string[];
+}
+
+/** What the A5 menu card prints. Distinct from `Couple.meal_menu`, which is
+ *  the six RSVP slots a guest picks between: this is the dinner as served.
+ *  An empty `courses` renders the blank ruled card with localised default
+ *  course labels, which is what every couple had before the editor existed. */
+export interface MenuCard {
+  courses: MenuCourse[];
+}
 
 /** Guest "kind" — orthogonal to `meal_choice`. Drives high-chair / kid-meal
  *  affordances on the seating + catering side and lets the public check-in

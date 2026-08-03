@@ -15,6 +15,7 @@
 // are design DATA, not authored literals (same pattern as the palette swatches).
 
 import { type CoupleDesign, getBorderCss, toPublicDesign } from "@shared/design";
+import type { MenuCard } from "@shared/types";
 import { useT } from "../lib/i18n";
 import { OrnamentDivider, OrnamentFrame, headingTreatmentCss } from "./ornaments";
 
@@ -31,13 +32,19 @@ export function PrintCardPreview({
   design,
   template,
   brideName,
+  menuCard,
 }: {
   design: CoupleDesign;
   template: PrintTemplate;
   brideName: string | null;
+  /** The couple's own menu, so the preview shows their dishes as they type
+   *  them. Absent or empty falls back to the generic course labels, which is
+   *  also exactly what the PDF prints in that case. */
+  menuCard?: MenuCard | null;
 }) {
   const { t } = useT();
   const d = toPublicDesign(design);
+  const menuCourses = menuCard?.courses ?? [];
 
   // Menu / schedule / invitation / thank-you cards are taller (portrait); place
   // cards + table numbers are landscape.
@@ -180,9 +187,28 @@ export function PrintCardPreview({
                 className={`flex flex-col gap-2 text-sm ${isLeft ? "items-start" : "items-center"}`}
                 style={{ color: d.text }}
               >
-                {(["menu_starter", "menu_main", "menu_dessert"] as const).map((key) => (
-                  <span key={key}>{t(`design.print_preview.${key}`)}</span>
-                ))}
+                {menuCourses.length > 0
+                  ? menuCourses.map((course, i) => (
+                      // Index key: courses have no id and are reordered by the
+                      // editor rewriting the whole array.
+                      // biome-ignore lint/suspicious/noArrayIndexKey: positional by nature
+                      <div key={i} className="flex flex-col gap-0.5">
+                        {course.title && (
+                          <span
+                            className="text-[11px] uppercase tracking-[0.14em]"
+                            style={{ color: d.accent_text }}
+                          >
+                            {course.title}
+                          </span>
+                        )}
+                        {course.lines.map((line) => (
+                          <span key={line}>{line}</span>
+                        ))}
+                      </div>
+                    ))
+                  : (["menu_starter", "menu_main", "menu_dessert"] as const).map((key) => (
+                      <span key={key}>{t(`design.print_preview.${key}`)}</span>
+                    ))}
               </div>
             </>
           )}

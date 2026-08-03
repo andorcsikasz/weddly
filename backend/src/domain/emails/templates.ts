@@ -515,9 +515,12 @@ export interface VendorProfileIncompletePayload {
    *  in the body. At least one is always true (the sweep only emails incomplete
    *  listings). */
   missing: {
-    photos: boolean;
-    bio: boolean;
+    cover: boolean;
+    gallery: boolean;
+    description: boolean;
+    contact: boolean;
     pricing: boolean;
+    capacity: boolean;
     packages: boolean;
   };
   /** Rotating copy index (0-based). The builder picks one of N wording variants
@@ -2839,19 +2842,34 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const name = p.businessName.trim();
     // Name only the empty sections, in the same order in both languages so the
     // two blocks stay parallel. At least one is always true here.
+    // One line per checklist step, in the order the portal lists them, so the
+    // mail and the vendor's own setup ring read as the same list rather than as
+    // two opinions about the same profile.
     const huMissing: string[] = [];
     const enMissing: string[] = [];
-    if (p.missing.photos) {
-      huMissing.push("fotók");
-      enMissing.push("photos");
+    if (p.missing.cover) {
+      huMissing.push("borítókép");
+      enMissing.push("a cover photo");
     }
-    if (p.missing.bio) {
+    if (p.missing.gallery) {
+      huMissing.push("galéria");
+      enMissing.push("gallery photos");
+    }
+    if (p.missing.description) {
       huMissing.push("bemutatkozó szöveg");
       enMissing.push("a short bio");
+    }
+    if (p.missing.contact) {
+      huMissing.push("város és elérhetőség");
+      enMissing.push("your town and contact details");
     }
     if (p.missing.pricing) {
       huMissing.push("ársáv");
       enMissing.push("a price range");
+    }
+    if (p.missing.capacity) {
+      huMissing.push("vendéglétszám");
+      enMissing.push("guest capacity");
     }
     if (p.missing.packages) {
       huMissing.push("árcsomagok");

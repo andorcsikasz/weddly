@@ -455,9 +455,19 @@ function sweepVendorProfileIncomplete(ts: number): number {
       if (r.profile_nudge_last_at > ts - gapDays * 86_400_000) continue;
     }
 
+    // A reminder is only owed on a listing that is LIVE and finishable. No
+    // listing at all means the account is still mid-onboarding, and the mail's
+    // own CTA would land on an editor that 404s; a hidden listing is a vendor
+    // who took their page down on purpose, and "finish the profile nobody can
+    // see" answers a question they didn't ask. Both keep their nudge count
+    // untouched, so the series resumes if the listing arrives or comes back.
+    const listing = getListingByVendorAccountId(r.account_id);
+    if (!listing || listing.status !== "active") continue;
+
     // Only email if a public-facing section is actually empty. The completeness
-    // definition + the stamp-then-send live in domain/vendor_profile.ts, shared
-    // with the admin "Send reminder" button so the two can never disagree.
+    // definition + the stamp-then-send live in domain/vendor_profile.ts, which
+    // derives it from the same checklist the vendor's own setup ring draws — so
+    // the mail can never name a section the portal calls done.
     const missing = vendorListingMissing(r.account_id);
     if (!isVendorListingIncomplete(missing)) continue; // complete — count untouched
     sendVendorIncompleteReminder(

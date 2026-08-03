@@ -9,6 +9,7 @@ import {
 } from "@shared/billing";
 import { type CoupleDesign, type CoupleDesignInput, resolveDesign } from "@shared/design";
 import { parseMealMenu } from "@shared/meals";
+import { parseMenuCard } from "@shared/menu_card";
 import {
   type NotifEmailCadence,
   type TimelineEmailEscalation,
@@ -251,6 +252,7 @@ export interface CoupleRow {
   rsvp_offers_accommodation: number;
   rsvp_collects_meal: number;
   meal_menu: string | null;
+  menu_card: string | null;
   timeline_email_escalation: string | null;
   notif_email_cadence: string | null;
   notif_focus: string | null;
@@ -558,6 +560,7 @@ export function toCouple(row: CoupleRow): Couple {
     rsvp_offers_accommodation: Boolean(row.rsvp_offers_accommodation),
     rsvp_collects_meal: Boolean(row.rsvp_collects_meal),
     meal_menu: parseMealMenu(row.meal_menu),
+    menu_card: parseMenuCard(row.menu_card),
     timeline_email_escalation: isTimelineEmailEscalation(row.timeline_email_escalation ?? "")
       ? (row.timeline_email_escalation as TimelineEmailEscalation)
       : "overdue",

@@ -625,12 +625,16 @@ describe("admin vendor incomplete-listing reminder", () => {
     db.prepare(
       "UPDATE listings SET hero_image_url = ?, blurb_hu = ?, price_band = 3 WHERE id = ?",
     ).run("https://cdn.example/hero.jpg", "Bemutatkozó szöveg.", listing.id);
+    db.prepare("INSERT INTO listing_photos (listing_id, url, created_at) VALUES (?, ?, ?)").run(
+      listing.id,
+      "https://cdn.example/gallery-1.jpg",
+      ts,
+    );
     db.prepare(
       "INSERT INTO listing_packages (listing_id, name, price_text, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
     ).run(listing.id, "Alapcsomag", "150000 Ft", ts, ts);
-    db.prepare(
-      "INSERT INTO vendor_unavailable_dates (vendor_account_id, blocked_date, created_at) VALUES (?, ?, ?)",
-    ).run(accountId, "2030-06-20", ts);
+    // Deliberately no blocked date: an empty availability calendar means the
+    // vendor has nothing booked, and it has stopped counting as incomplete.
   }
 
   test("emails an incomplete vendor on demand and advances the reminder count", async () => {
@@ -645,7 +649,7 @@ describe("admin vendor incomplete-listing reminder", () => {
     );
     expect(res.status).toBe(200);
     expect(res.data.ok).toBe(true);
-    expect(res.data.missing.photos).toBe(true);
+    expect(res.data.missing.cover).toBe(true);
 
     const acct = db
       .prepare("SELECT profile_nudge_count FROM vendor_accounts WHERE id = ?")
@@ -682,7 +686,7 @@ describe("admin vendor incomplete-listing reminder", () => {
     });
     const row = res.data.active.find((v) => v.id === accountId);
     expect(row?.listing_incomplete).toBe(true);
-    expect(row?.listing_missing?.photos).toBe(true);
+    expect(row?.listing_missing?.cover).toBe(true);
     expect(row?.profile_nudge_count).toBe(0);
   });
 

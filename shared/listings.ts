@@ -211,9 +211,12 @@ export interface AdminVendorView {
    *  (active rows only; null for pending rows, which have no listing yet).
    *  Powers the admin "incomplete" badge + the "Send reminder" button. */
   listing_missing: {
-    photos: boolean;
-    bio: boolean;
+    cover: boolean;
+    gallery: boolean;
+    description: boolean;
+    contact: boolean;
     pricing: boolean;
+    capacity: boolean;
     packages: boolean;
   } | null;
   /** True when any `listing_missing` flag is set. False for pending rows. */

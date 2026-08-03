@@ -3294,6 +3294,15 @@ const es: LocaleMessages = {
         side: "Uno al lado del otro",
       },
     },
+    menu_editor: {
+      heading: "Contenido del menú",
+      empty: "Aún no hay platos. La tarjeta imprime líneas en blanco para rellenar a mano.",
+      add_course: "Añadir plato",
+      remove_course: "Quitar plato",
+      course_placeholder: "Plato, por ejemplo Entrante",
+      dishes_placeholder: "Un plato por línea",
+      saved: "Menú guardado",
+    },
     print_preview: {
       sample_name: "Nombre del invitado",
       sample_couple: "Anna y Bence",

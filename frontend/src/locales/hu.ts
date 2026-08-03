@@ -3259,6 +3259,15 @@ const hu: LocaleMessages = {
         side: "Egymás mellett",
       },
     },
+    menu_editor: {
+      heading: "Menü tartalma",
+      empty: "Még nincs fogás. A kártya üres vonalakat nyomtat, amiket kézzel tölthettek ki.",
+      add_course: "Fogás hozzáadása",
+      remove_course: "Fogás törlése",
+      course_placeholder: "Fogás, például Előétel",
+      dishes_placeholder: "Soronként egy étel",
+      saved: "Menü mentve",
+    },
     print_preview: {
       sample_name: "Vendég neve",
       sample_couple: "Anna & Bence",

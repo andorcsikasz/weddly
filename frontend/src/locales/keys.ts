@@ -3687,6 +3687,15 @@ export interface LocaleMessages {
       };
     };
     /** Instant print-card preview (right column on the Print tab). */
+    menu_editor: {
+      heading: string;
+      empty: string;
+      add_course: string;
+      remove_course: string;
+      course_placeholder: string;
+      dishes_placeholder: string;
+      saved: string;
+    };
     print_preview: {
       sample_name: string;
       sample_couple: string;

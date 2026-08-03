@@ -70,6 +70,7 @@ import {
   type WebsiteSectionSlug,
 } from "@shared/design";
 import { normalizeMealMenuInput, parseMealMenu } from "@shared/meals";
+import { normalizeMenuCardInput, parseMenuCard } from "@shared/menu_card";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
@@ -203,6 +204,7 @@ interface OnboardBody {
    *  fixed slots. Validated + normalised server-side via normalizeMealMenuInput
    *  (tolerant of partials; guarantees at least one slot stays offered). */
   meal_menu?: unknown;
+  menu_card?: unknown;
   /** Publish toggle for the public wedding website at `/w/:slug`.
    *  Default off — couples opt in explicitly from the wedding-site editor. */
   is_public?: unknown;
@@ -2074,6 +2076,22 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         action: "couple.meal_menu_update",
         before: { meal_menu: prevJson },
         after: { meal_menu: nextJson },
+      });
+    }
+  }
+
+  if (body.menu_card !== undefined) {
+    // Same shape as meal_menu above: normalise, store canonically, and compare
+    // the serialised forms so a no-op PATCH writes nothing.
+    const nextCard = normalizeMenuCardInput(body.menu_card);
+    const nextJson = JSON.stringify(nextCard);
+    const prevJson = JSON.stringify(parseMenuCard(couple.menu_card));
+    if (nextJson !== prevJson) {
+      updates.push({ col: "menu_card", val: nextJson });
+      auditEntries.push({
+        action: "couple.menu_card_update",
+        before: { menu_card: prevJson },
+        after: { menu_card: nextJson },
       });
     }
   }

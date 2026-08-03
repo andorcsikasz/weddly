@@ -25,7 +25,7 @@ import {
 } from "@shared/design";
 import type { ScheduleEvent } from "@shared/schedule";
 import { chairOffsets, tableHalfDims } from "@shared/seating";
-import type { Guest, SeatAssignment, SeatingTable } from "@shared/types";
+import type { Guest, MenuCard, SeatAssignment, SeatingTable } from "@shared/types";
 
 const FONT_DIR = join(import.meta.dir, "pdf_fonts");
 const NOTO_REGULAR = readFileSync(join(FONT_DIR, "NotoSans-Regular.ttf"));
@@ -1216,12 +1216,34 @@ interface MenuInput {
   bride_name: string;
   groom_name: string;
   design: CoupleDesign;
+  /** What the couple typed at /app/design. Empty courses = they haven't, and
+   *  the card falls back to blank writing rules. */
+  menu_card: MenuCard;
+  /** Drives the printed strings ("Menü" vs "Menu" and the fallback course
+   *  labels). These used to be hardcoded English, so a Hungarian couple
+   *  printed an English menu card for a Hungarian wedding. */
+  locale: PrintLocale;
 }
 
-/** A5 menu card in the wedding style - monogram, couple name, date, then a set
- *  of labelled course lines the couple fills by hand. No invented dish names
- *  (project rule: no fake placeholder data), just the generic course labels and
- *  a writing rule under each. One card per A5 page. */
+/** Printed-card copy, per locale. Deliberately tiny and local to the PDF layer
+ *  rather than pulled from the frontend i18n trees: the renderer runs on the
+ *  server with no `t()`, and these are the only words it ever draws. */
+type PrintLocale = "hu" | "en" | "es";
+const MENU_COPY: Record<PrintLocale, { heading: string; courses: string[] }> = {
+  hu: { heading: "Menü", courses: ["Előétel", "Főétel", "Desszert"] },
+  en: { heading: "Menu", courses: ["Starter", "Main", "Dessert"] },
+  es: { heading: "Menú", courses: ["Entrante", "Principal", "Postre"] },
+};
+
+export function printLocale(raw: string | null | undefined): PrintLocale {
+  return raw === "hu" || raw === "es" ? raw : "en";
+}
+
+/** A5 menu card in the wedding style: monogram, couple name, date, then the
+ *  courses. When the couple has written a menu it prints their dishes; when
+ *  they haven't it keeps the original card of labelled writing rules to fill
+ *  in by hand, which is a real thing to print and avoids inventing dishes for
+ *  somebody's wedding. One card per A5 page. */
 export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
   const { width_mm: W, height_mm: H } = FORMATS.a5;
   const pdf = await PDFDocument.create();
@@ -1270,8 +1292,10 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     drawOrnament(page, pack.ornament, cxPt, mm(H - 57), 40, colors.accent);
   }
 
+  const copy = MENU_COPY[input.locale];
+
   // "Menu" heading.
-  const heading = headingText("Menu", input.design);
+  const heading = headingText(copy.heading, input.design);
   const hFont = await pickDisplayAsync(fontPair, heading, "heading");
   const hw = hFont.widthOfTextAtSize(heading, 13);
   page.drawText(heading, {
@@ -1282,30 +1306,77 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     color: colors.primary,
   });
 
-  // Course sections - generic labels only, each over a blank writing rule the
-  // couple fills in by hand. No invented dishes.
-  const courses = ["Starter", "Main", "Dessert"];
-  let yMm = H - 88;
+  const written = input.menu_card.courses;
   const ruleHalf = mm((W - 40) / 2);
-  for (const course of courses) {
-    const cSafe = headingText(safe(course), input.design);
-    const cFont = await pickDisplayAsync(fontPair, cSafe, "heading");
-    const cw = cFont.widthOfTextAtSize(cSafe, 11);
-    page.drawText(cSafe, {
-      x: cxPt - cw / 2,
-      y: mm(yMm),
-      size: 11,
-      font: cFont,
-      color: colors.text,
-    });
-    // Blank writing rule under the label.
-    page.drawLine({
-      start: { x: cxPt - ruleHalf, y: mm(yMm - 6) },
-      end: { x: cxPt + ruleHalf, y: mm(yMm - 6) },
-      thickness: 0.4,
-      color: colors.accent,
-    });
-    yMm -= 28;
+  let yMm = H - 88;
+
+  if (written.length === 0) {
+    // Nothing written: the original card. Localised course labels over blank
+    // writing rules, evenly spaced. Still no invented dishes.
+    for (const course of copy.courses) {
+      const cSafe = headingText(safe(course), input.design);
+      const cFont = await pickDisplayAsync(fontPair, cSafe, "heading");
+      const cw = cFont.widthOfTextAtSize(cSafe, 11);
+      page.drawText(cSafe, {
+        x: cxPt - cw / 2,
+        y: mm(yMm),
+        size: 11,
+        font: cFont,
+        color: colors.text,
+      });
+      page.drawLine({
+        start: { x: cxPt - ruleHalf, y: mm(yMm - 6) },
+        end: { x: cxPt + ruleHalf, y: mm(yMm - 6) },
+        thickness: 0.4,
+        color: colors.accent,
+      });
+      yMm -= 28;
+    }
+    return pdf.save();
+  }
+
+  // The couple's own menu. Spacing is derived from how much they wrote rather
+  // than fixed, so three courses breathe and six still fit on the page instead
+  // of running off the bottom edge.
+  const rows = written.reduce((n, c) => n + (c.title ? 1 : 0) + c.lines.length, 0);
+  const available = yMm - 22; // leave a bottom margin
+  const gap = Math.max(5, Math.min(9, available / Math.max(rows + written.length, 1)));
+
+  for (const course of written) {
+    if (course.title) {
+      const cSafe = headingText(safe(course.title), input.design);
+      const cFont = await pickDisplayAsync(fontPair, cSafe, "heading");
+      const cw = cFont.widthOfTextAtSize(cSafe, 11);
+      page.drawText(cSafe, {
+        x: cxPt - cw / 2,
+        y: mm(yMm),
+        size: 11,
+        font: cFont,
+        color: colors.primary,
+      });
+      yMm -= gap;
+    }
+    for (const line of course.lines) {
+      const lSafe = safe(line);
+      const lFont = await pickDisplayAsync(fontPair, lSafe, "body");
+      const lw = lFont.widthOfTextAtSize(lSafe, 9.5);
+      page.drawText(lSafe, {
+        x: cxPt - lw / 2,
+        y: mm(yMm),
+        size: 9.5,
+        font: lFont,
+        color: colors.text,
+      });
+      yMm -= gap;
+    }
+    // Breathing room between courses, and the pack's own divider when the
+    // couple has ornaments on. Not after the last course: a rule under the
+    // final dish reads as a cut-off card.
+    yMm -= gap * 0.6;
+    if (course !== written[written.length - 1] && input.design.print.ornament) {
+      drawOrnament(page, pack.ornament, cxPt, mm(yMm + gap * 0.2), 22, colors.accent);
+      yMm -= gap * 0.4;
+    }
   }
 
   return pdf.save();

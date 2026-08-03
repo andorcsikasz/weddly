@@ -43,6 +43,7 @@ import type {
   FilmDevice,
   FilmUpload,
   MealMenu,
+  MenuCard,
   MediaLinks,
   PhotoAlbum,
   PhotoAlbumPublic,
@@ -790,6 +791,10 @@ export const coupleApi = {
     /** Per-couple meal menu (custom labels + offered flags for the six
      *  fixed slots). Normalised + validated server-side. */
     meal_menu?: MealMenu;
+    /** The printed menu card's courses + dishes. A different thing from
+     *  `meal_menu` above: that is the RSVP's six choice slots, this is the
+     *  dinner as served. Normalised + validated server-side. */
+    menu_card?: MenuCard;
     /** Proactive-timeline email escalation trigger. */
     timeline_email_escalation?: import("@shared/notifications").TimelineEmailEscalation;
     /** Email digest frequency. */

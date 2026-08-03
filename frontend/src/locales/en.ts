@@ -3225,6 +3225,15 @@ const en: LocaleMessages = {
         side: "Side by side",
       },
     },
+    menu_editor: {
+      heading: "Menu content",
+      empty: "No courses yet. The card prints blank lines to fill in by hand.",
+      add_course: "Add course",
+      remove_course: "Remove course",
+      course_placeholder: "Course, e.g. Starter",
+      dishes_placeholder: "One dish per line",
+      saved: "Menu saved",
+    },
     print_preview: {
       sample_name: "Guest name",
       sample_couple: "Anna & Bence",

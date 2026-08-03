@@ -264,7 +264,15 @@ const STUBS: KindPayload = {
   vendor_profile_incomplete: {
     businessName: "Bloom Studio",
     editUrl: `${BASE_URL}/vendor/listing`,
-    missing: { photos: true, bio: true, pricing: false, packages: true },
+    missing: {
+      cover: false,
+      gallery: true,
+      description: true,
+      contact: false,
+      pricing: false,
+      capacity: false,
+      packages: true,
+    },
     variant: 0,
   },
   planner_profile_incomplete: {

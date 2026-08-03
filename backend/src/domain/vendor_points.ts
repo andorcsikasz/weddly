@@ -39,7 +39,7 @@ import {
 } from "@shared/vendor_points";
 import { db, now } from "../db";
 import { log } from "../lib/logger";
-import { listingCompleteness } from "./vendor_clients";
+import { listingCompleteness } from "./listings";
 import { CLAIMED_DIRECTORY_FROM, getListingByVendorAccountId, getListingById } from "./listings";
 
 /** Domain events the outbox carries. Named after what HAPPENED, never after

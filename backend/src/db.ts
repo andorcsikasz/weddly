@@ -700,6 +700,17 @@ addColumnIfMissing(
 // shared/meals.ts.
 addColumnIfMissing("couples", "meal_menu", "meal_menu TEXT");
 
+// The dinner as printed on the A5 menu card: `{courses:[{title,lines[]}]}` as
+// JSON, null/empty meaning "not written yet". A DIFFERENT thing from
+// `meal_menu` directly above, which is the six RSVP slots a guest chooses
+// between; this is the card on the table, and a wedding has both.
+//
+// Before this the menu card drew three hardcoded English course labels over
+// blank writing rules, and no screen in the product let a couple type a dish.
+// An empty value still renders exactly that card (now with localised labels),
+// because a blank menu to fill in by hand is a real thing to print.
+addColumnIfMissing("couples", "menu_card", "menu_card TEXT");
+
 // Household-level group tag — one source of truth for the whole party (his
 // family, her friends, work, etc.) so the household card can render the
 // chip in its header and every member inherits the same group. Backfills
