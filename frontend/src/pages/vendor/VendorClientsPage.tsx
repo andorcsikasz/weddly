@@ -22,12 +22,13 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { Currency } from "@shared/types";
 import type { VendorClientView } from "@shared/vendor_clients";
 import { isVendorFeatureEnabled, type VendorPlan } from "@shared/vendor_plan";
-import { Skeleton } from "../../components/ui";
+import { Skeleton, useToast } from "../../components/ui";
+import { AttentionBand } from "../../components/VendorNextAction";
 import { VendorShareDialog } from "../../components/VendorShareDialog";
 import { vendorBillingApi, vendorClientsApi, vendorListingApi } from "../../lib/endpoints";
 import { formatDate, formatMoney } from "../../lib/format";
@@ -258,6 +259,7 @@ function EmptyClients() {
 
 export default function VendorClientsPage() {
   const { t, locale } = useT();
+  const toast = useToast();
   useDocumentTitle(t("vendor.clients.page_title"));
   const [clients, setClients] = useState<VendorClientView[]>([]);
   // `null` = billing not loaded yet (or the billing fetch failed). The paywall
@@ -321,6 +323,36 @@ export default function VendorClientsPage() {
   // unknown, nothing locks — the paywall is never shown on a guess.
   const crmLocked = plan !== null && !isVendorFeatureEnabled(plan, "client_crm_detail");
 
+  // "Not now" on an attention row. Optimistic: the row leaves the band on the
+  // click and the server call only confirms it, because a band row that lingers
+  // for a round trip reads as a broken button. A failure puts it back and says
+  // so — silently keeping it dismissed would hide the lead again next reload.
+  const onSnooze = useCallback(
+    (client: VendorClientView) => {
+      const previous = client.attention;
+      setClients((prev) => prev.map((c) => (c.id === client.id ? { ...c, attention: null } : c)));
+      vendorClientsApi
+        .snooze(client.id)
+        .then((res) => {
+          setClients((prev) =>
+            prev.map((c) =>
+              c.id === client.id
+                ? { ...c, attention_snoozed_until: res.attention_snoozed_until }
+                : c,
+            ),
+          );
+          toast.success(t("vendor.attention.snoozed", { name: client.couple_display_name }));
+        })
+        .catch(() => {
+          setClients((prev) =>
+            prev.map((c) => (c.id === client.id ? { ...c, attention: previous } : c)),
+          );
+          toast.error(t("vendor.attention.snooze_failed"));
+        });
+    },
+    [t, toast],
+  );
+
   // Status pills: "all" plus EVERY canonical status (each with its count), so
   // the filter row always mirrors the status options on the detail form,
   // plus any unknown extras actually present in the data.
@@ -378,6 +410,11 @@ export default function VendorClientsPage() {
       </header>
 
       {crmLocked && <UpgradeNudge />}
+
+      {/* Everything that needs the vendor TODAY, above the list rather than
+          inside it: the table is sorted by arrival, and arrival order is not
+          urgency order once there are more than a handful of leads. */}
+      {!loading && !failed && <AttentionBand clients={clients} onSnooze={onSnooze} />}
 
       {loading ? (
         <GhostTable />

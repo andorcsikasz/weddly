@@ -96,6 +96,7 @@ import type {
 } from "@shared/admin_financial_planner";
 import type { BillingStatusResponse, PaymentMethodResponse } from "@shared/billing";
 import type { GrowthEventKind } from "@shared/growth";
+import type { UiLocale } from "@shared/locales";
 import type { CompanyLookupAvailability, CompanyLookupResult } from "@shared/company_lookup";
 import type { TranslateAvailability, TranslateRequest, TranslateResult } from "@shared/translate";
 import type { AddressSuggestion } from "@shared/geo";
@@ -266,6 +267,7 @@ import type {
   CoupleVendorThreadPreview,
   VendorMessageTemplate,
 } from "@shared/booking_messages";
+import type { BookingQuote, QuoteLineInput } from "@shared/booking_quotes";
 import type { VendorPointsStatus } from "@shared/vendor_points";
 import type { PlannerPointsStatus } from "@shared/planner_points";
 import type { VendorAvailabilitySettings, WeeklyHours } from "@shared/vendor_availability";
@@ -518,8 +520,9 @@ export const authApi = {
     privacy_version: string;
     terms_version: string;
     /** Current UI locale, persisted on users.locale so the user's preference
-     *  survives across devices. Backend only stores 'hu' | 'en'. */
-    locale?: "hu" | "en";
+     *  survives across devices. Backend stores any shipped UI locale
+     *  (`UI_LOCALES`) and drops anything else to null. */
+    locale?: UiLocale;
     /** Funnel attribution: which public surface drove the signup. The
      *  LandingPage extracts this from `?ref=<source>` and stashes to
      *  sessionStorage; RegisterPage hands it off. Backend allow-list:
@@ -553,7 +556,7 @@ export const authApi = {
     /** Same persistence semantics as `register.locale` — only applied to
      *  brand-new accounts; ignored when the credential matches an
      *  existing user. */
-    locale?: "hu" | "en";
+    locale?: UiLocale;
   }) => apiFetch<AuthSession>("POST", "/api/auth/google", body),
   /** Sign in OR register with a Sign in with Apple `id_token` JWT. Apple omits
    *  the display name from the token and only hands it to the JS client on the
@@ -569,7 +572,7 @@ export const authApi = {
     /** Same persistence semantics as `register.locale` — only applied to
      *  brand-new accounts; ignored when the credential matches an
      *  existing user. */
-    locale?: "hu" | "en";
+    locale?: UiLocale;
   }) => apiFetch<AuthSession>("POST", "/api/auth/apple", body),
   login: (body: { email: string; password: string }) =>
     apiFetch<AuthSession>("POST", "/api/auth/login", body),
@@ -577,8 +580,7 @@ export const authApi = {
   me: () => apiFetch<{ user: User }>("GET", "/api/auth/me"),
   /** Persist an explicit locale-switcher pick on users.locale so the choice
    *  survives sign-out and follows the account to fresh devices. */
-  setLocale: (locale: "hu" | "en") =>
-    apiFetch<{ user: User }>("POST", "/api/auth/locale", { locale }),
+  setLocale: (locale: UiLocale) => apiFetch<{ user: User }>("POST", "/api/auth/locale", { locale }),
   /** Latch `users.share_prompt_seen_at` so the automatic share prompt never
    *  fires again for this ACCOUNT, on any device. Write-once server-side; safe
    *  to call more than once. */
@@ -1296,7 +1298,7 @@ export const userApi = {
   /** Patch the signed-in user's display name and/or persisted UI locale.
    *  Omitted fields stay untouched; an explicit `locale: null` clears the
    *  preference (client then falls back to navigator detection). */
-  updateProfile: (body: { full_name?: string; locale?: "hu" | "en" | null }) =>
+  updateProfile: (body: { full_name?: string; locale?: UiLocale | null }) =>
     apiFetch<{ user: import("@shared/types").User }>("PATCH", "/api/users/me", body),
 };
 
@@ -2919,6 +2921,14 @@ export const vendorClientsApi = {
    *  it out of the Ügyfelek nav badge on every device. */
   markSeen: (id: number) =>
     apiFetch<{ vendor_seen_at: number }>("POST", `/api/vendor/clients/${id}/seen`),
+  /** "Not now" on an attention row. Omit `days` for the default window, pass
+   *  null to un-snooze. Mutes the attention band only. */
+  snooze: (id: number, days?: number | null) =>
+    apiFetch<{ attention_snoozed_until: number | null }>(
+      "POST",
+      `/api/vendor/clients/${id}/snooze`,
+      days === undefined ? {} : { days },
+    ),
   update: (
     id: number,
     body: {
@@ -3057,6 +3067,42 @@ export const bookingMessagesApi = {
     if (!res.ok) throw new Error(`Attachment fetch failed: ${res.status}`);
     return res.blob();
   },
+};
+
+/** The fields a vendor's quote editor submits. `lines` replaces the whole set
+ *  on a PATCH, because a quote is one priced statement and a half-updated line
+ *  list would be a different offer than the one the vendor is reading. */
+export interface VendorQuoteInput {
+  title: string;
+  message: string | null;
+  valid_until: string | null;
+  deposit_amount: number | null;
+  lines: QuoteLineInput[];
+}
+
+/** Vendor quotes: one priced offer against one inquiry. The two sides read the
+ *  same object from different doors, so the couple's calls are keyed by the
+ *  THREAD (a booking they are part of) and the vendor's by their own client. */
+export const bookingQuoteApi = {
+  vendorList: (bookingId: number) =>
+    apiFetch<{ quotes: BookingQuote[] }>("GET", `/api/vendor/clients/${bookingId}/quotes`),
+  vendorCreate: (bookingId: number, body: VendorQuoteInput) =>
+    apiFetch<{ quote: BookingQuote }>("POST", `/api/vendor/clients/${bookingId}/quotes`, body),
+  vendorUpdate: (quoteId: number, body: Partial<VendorQuoteInput>) =>
+    apiFetch<{ quote: BookingQuote }>("PATCH", `/api/vendor/quotes/${quoteId}`, body),
+  vendorSend: (quoteId: number) =>
+    apiFetch<{ quote: BookingQuote }>("POST", `/api/vendor/quotes/${quoteId}/send`),
+  vendorWithdraw: (quoteId: number) =>
+    apiFetch<{ quote: BookingQuote }>("POST", `/api/vendor/quotes/${quoteId}/withdraw`),
+  vendorDelete: (quoteId: number) =>
+    apiFetch<{ ok: true }>("DELETE", `/api/vendor/quotes/${quoteId}`),
+
+  coupleList: (bookingId: number) =>
+    apiFetch<{ quotes: BookingQuote[] }>("GET", `/api/messages/threads/${bookingId}/quotes`),
+  coupleAccept: (quoteId: number) =>
+    apiFetch<{ quote: BookingQuote }>("POST", `/api/quotes/${quoteId}/accept`),
+  coupleDecline: (quoteId: number, reason: string | null) =>
+    apiFetch<{ quote: BookingQuote }>("POST", `/api/quotes/${quoteId}/decline`, { reason }),
 };
 
 export const vendorBillingApi = {

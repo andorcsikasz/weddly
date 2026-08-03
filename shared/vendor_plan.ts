@@ -24,7 +24,12 @@ export type VendorFeature =
   | "direct_messages"
   /** The self-serve availability calendar (blocked dates + the public busy
    *  calendar / next-free date derived from it). */
-  | "calendar_availability";
+  | "calendar_availability"
+  /** Writing and sending a priced offer against an inquiry. READING one is not
+   *  gated on either side, and neither is the couple's answer: a lapsed vendor
+   *  must still be able to see the quote a couple accepted, and a couple can
+   *  never be charged for replying to an offer made to them. */
+  | "quotes";
 
 /** Per-feature minimum plan. A feature with `minPlan: "free"` is always on;
  *  the premium features require `"pro"`. Kept as a map (not a bare set)
@@ -36,6 +41,7 @@ export const VENDOR_FEATURES: Record<VendorFeature, { minPlan: VendorPlan }> = {
   response_workflow: { minPlan: "pro" },
   direct_messages: { minPlan: "pro" },
   calendar_availability: { minPlan: "pro" },
+  quotes: { minPlan: "pro" },
 };
 
 /** True when `plan` may use `feature`. PRO unlocks everything; FREE only the
@@ -68,5 +74,6 @@ export function vendorFeatureFlags(plan: VendorPlan): VendorFeatureFlags {
     response_workflow: isVendorFeatureEnabled(plan, "response_workflow"),
     direct_messages: isVendorFeatureEnabled(plan, "direct_messages"),
     calendar_availability: isVendorFeatureEnabled(plan, "calendar_availability"),
+    quotes: isVendorFeatureEnabled(plan, "quotes"),
   };
 }

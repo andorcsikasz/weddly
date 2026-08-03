@@ -10,6 +10,7 @@
 // CRM columns. Feature agents extend validation, privacy rules, and audit.
 
 import type { VendorClientDetail, VendorClientPayment } from "@shared/vendor_clients";
+import { SNOOZE_DAYS } from "@shared/vendor_next_action";
 import { addAuditLog } from "../lib/audit";
 import type { BookingRow } from "../domain/supplier_bookings";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
@@ -23,6 +24,7 @@ import {
   markVendorClientSeen,
   requireVendorPro,
   resolveVendorAccount,
+  snoozeVendorClientAttention,
   toVendorClientDetail,
   updatePayment,
   updateVendorClientFields,
@@ -109,6 +111,28 @@ async function handleMarkClientSeen(ctx: Ctx): Promise<Response> {
   const bookingId = parseId(ctx.params.id, "client id");
   getOwnedBooking(account.id, bookingId);
   return json({ vendor_seen_at: markVendorClientSeen(bookingId) });
+}
+
+/** "Not now" on an attention row. Mutes the BAND for `days` (default
+ *  SNOOZE_DAYS); `days: null` clears it again. Deliberately FREE and
+ *  deliberately narrow: it never touches the nav badge, the unread count or the
+ *  next action, so a dismissed lead goes quiet without going missing. */
+async function handleSnoozeClient(ctx: Ctx): Promise<Response> {
+  const account = resolveVendorAccount(ctx);
+  const bookingId = parseId(ctx.params.id, "client id");
+  getOwnedBooking(account.id, bookingId);
+  const body = await readJson<Record<string, unknown>>(ctx.req);
+  let days: number | null = SNOOZE_DAYS;
+  if (body.days === null) days = null;
+  else if (body.days !== undefined) {
+    if (typeof body.days !== "number" || !Number.isInteger(body.days) || body.days < 1) {
+      throw new HttpError(400, "days must be a positive integer or null");
+    }
+    // A snooze longer than the season it is hiding a lead from is a delete with
+    // extra steps.
+    days = Math.min(body.days, 90);
+  }
+  return json({ attention_snoozed_until: snoozeVendorClientAttention(bookingId, days) });
 }
 
 async function handlePatchClient(ctx: Ctx): Promise<Response> {
@@ -228,6 +252,7 @@ export function registerVendorClientsRoutes(router: Router) {
   router.get("/api/vendor/clients", handleListClients, true);
   router.get("/api/vendor/clients/:id", handleGetClient, true);
   router.post("/api/vendor/clients/:id/seen", handleMarkClientSeen, true);
+  router.post("/api/vendor/clients/:id/snooze", handleSnoozeClient, true);
   router.patch("/api/vendor/clients/:id", handlePatchClient, true);
   router.get("/api/vendor/clients/:id/payments", handleListPayments, true);
   router.post("/api/vendor/clients/:id/payments", handleAddPayment, true);

@@ -1418,6 +1418,52 @@ CREATE TABLE IF NOT EXISTS booking_message_attachments (
 CREATE INDEX IF NOT EXISTS idx_booking_message_attachments_message
   ON booking_message_attachments(message_id);
 
+-- A vendor's priced offer against ONE inquiry. Hangs off the booking for the
+-- same reason the message thread does: an offer with no inquiry behind it has
+-- nobody to send to, and the cascade means a GDPR purge of the couple takes the
+-- quotes with it without purge.ts naming them.
+--
+-- No status column, deliberately. The ladder (draft/sent/viewed/accepted/
+-- declined/withdrawn/expired) is DERIVED from these timestamps by `quoteStatus`
+-- in shared/booking_quotes.ts, which is what lets expiry work with no cron: a
+-- lapsed quote reads as expired the next time anyone looks. Amounts are whole
+-- units of `currency`, and the TOTAL is derived from the lines, never stored,
+-- so a quote cannot disagree with its own arithmetic.
+CREATE TABLE IF NOT EXISTS booking_quotes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_id INTEGER NOT NULL REFERENCES supplier_bookings(id) ON DELETE CASCADE,
+  vendor_account_id INTEGER REFERENCES vendor_accounts(id) ON DELETE SET NULL,
+  currency TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT,
+  valid_until TEXT,                                            -- 'YYYY-MM-DD'
+  deposit_amount INTEGER,
+  sent_at INTEGER,
+  viewed_at INTEGER,
+  accepted_at INTEGER,
+  declined_at INTEGER,
+  withdrawn_at INTEGER,
+  decline_reason TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_booking_quotes_booking
+  ON booking_quotes(booking_id, created_at DESC);
+
+-- The priced rows. `unit_amount` is PER unit, so the row total is qty *
+-- unit_amount and the quote total is the sum: storing either would be a second
+-- source of truth for the one number the couple is agreeing to.
+CREATE TABLE IF NOT EXISTS booking_quote_lines (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  quote_id INTEGER NOT NULL REFERENCES booking_quotes(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  unit_amount INTEGER NOT NULL,
+  qty INTEGER NOT NULL,
+  sort_order INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_booking_quote_lines_quote
+  ON booking_quote_lines(quote_id, sort_order ASC);
+
 -- A vendor's canned replies ("Szabad a dátum", "Árajánlat mellékelve"). Body may
 -- contain {client_name}-style tokens, substituted at insert-into-the-composer
 -- time, not at save time, so the stored template stays reusable across clients.

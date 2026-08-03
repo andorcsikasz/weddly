@@ -10,12 +10,16 @@
 // PAYMENTS are lightweight, in-app-only money tracking per client — NO real
 // money movement, no Stripe Connect. Each booking carries a contract value,
 // a deposit paid, a computed balance, a stage, and a payment SCHEDULE of
-// labelled installments (due_date + paid flag). Money is integer minor units;
-// the currency comes from the vendor's subscription (HUF | EUR).
+// labelled installments (due_date + paid flag). Money is a WHOLE unit of the
+// currency, never minor units: `formatMoney` renders the integer as-is, so a
+// contract value of 1500 is 1500 euros and storing 150000 would render as a
+// hundred and fifty thousand. The currency comes from the vendor's
+// subscription.
 
 import { capacityKindFor } from "./suppliers";
 import type { Currency, UnixMs } from "./types";
 import type { VendorBilling } from "./vendor_billing";
+import type { VendorActionKey, VendorAttention } from "./vendor_next_action";
 
 /** Row in a vendor's client list — the basic view available on the FREE tier
  *  (display name + event date + status). Money fields are populated but the
@@ -48,6 +52,16 @@ export interface VendorClientView {
    *  the couple reads; this is only "I have looked at it" and is what the
    *  Ügyfelek nav badge counts (see VendorStats.new_inquiries). */
   vendor_seen_at: UnixMs | null;
+  /** The ONE thing to do about this client next, derived server-side from
+   *  `shared/vendor_next_action.ts`. Never null — `none` is the verdict for an
+   *  archived or finished row. */
+  next_action: VendorActionKey;
+  /** Why this client is in the attention band, or null when nothing is wrong
+   *  right now. Same derivation, same module. */
+  attention: VendorAttention | null;
+  /** Attention muted until this stamp (the vendor dismissed the row), or null.
+   *  Mutes the band ONLY: the nav badge and `unread_count` ignore it. */
+  attention_snoozed_until: UnixMs | null;
 }
 
 /** One labelled installment in a client's payment schedule. */

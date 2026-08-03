@@ -27,6 +27,11 @@ export type NotificationKind =
   // Written once per burst (domain/booking_notify.ts debounces on "already has
   // something unseen from this sender"), so a chatty vendor is one row, not ten.
   | "vendor_message"
+  // A vendor priced the inquiry. Stored; links to /app/messages/:id, the same
+  // place the thread lives, because that is where the couple can accept or
+  // decline it. Deliberately NOT debounced the way vendor_message is: a second
+  // quote is a second commercial offer, not the next line of one conversation.
+  | "vendor_quote"
   // Computed (like the timeline_* pair): a dateless to-do that's been parked
   // for a week, and a decisions category that's piled up untouched. Both are
   // gentle, derived live from planning_items — never stored.

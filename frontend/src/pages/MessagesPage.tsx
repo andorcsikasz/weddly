@@ -19,13 +19,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowUpRight, MessageCircle, Send } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, MessageCircle, Phone, Send } from "lucide-react";
 import type { BookingMessage, CoupleVendorThreadPreview } from "@shared/booking_messages";
+import type { BookingQuote } from "@shared/booking_quotes";
+import { BookingQuoteCard } from "../components/BookingQuoteCard";
 import { BookingThreadPanel } from "../components/BookingThreadPanel";
 import { OutreachInbox } from "../components/OutreachInbox";
-import { Skeleton } from "../components/ui";
+import { Skeleton, useToast } from "../components/ui";
+import { ApiError } from "../lib/api";
 import { categoryIcon } from "../lib/category_icons";
-import { bookingMessagesApi } from "../lib/endpoints";
+import { bookingMessagesApi, bookingQuoteApi } from "../lib/endpoints";
 import { formatDateMs } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
@@ -155,13 +158,21 @@ function ThreadList() {
 
 /** Name + category + category glyph, wrapped in a link to the vendor's card
  *  when one resolves. Plain text otherwise — a header that looks tappable and
- *  lands on a 404 is worse than a header. */
+ *  lands on a 404 is worse than a header.
+ *
+ *  The call button sits BESIDE that link rather than inside it: a `tel:` anchor
+ *  nested in the card link is invalid HTML and would make the whole header
+ *  ambiguous to tap. It appears only once the server says the number is earned
+ *  (`counterparty_phone`), so there is no disabled or teaser state here — the
+ *  couple either has a vendor who has written back, or no button at all. */
 function ThreadHeader({
   name,
   vendor,
+  phone,
 }: {
   name: string;
   vendor: { supplierId: string; category: string } | null;
+  phone: string | null;
 }) {
   const { t } = useT();
   const Glyph = categoryIcon(vendor?.category ?? "");
@@ -191,9 +202,10 @@ function ThreadHeader({
     </>
   );
 
-  if (!vendor) return <h2 className="flex items-center gap-3">{inner}</h2>;
-  return (
-    <h2>
+  const title = !vendor ? (
+    <h2 className="flex min-w-0 items-center gap-3">{inner}</h2>
+  ) : (
+    <h2 className="min-w-0">
       <Link
         to={`/app/suppliers/${vendor.supplierId}`}
         title={t("suppliers.open_card")}
@@ -203,15 +215,39 @@ function ThreadHeader({
       </Link>
     </h2>
   );
+
+  if (!phone) return title;
+  return (
+    <div className="flex items-start justify-between gap-3">
+      {title}
+      <a
+        href={`tel:${phone.replace(/\s+/g, "")}`}
+        title={phone}
+        aria-label={`${t("messages.call_vendor")} ${phone}`}
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-sm text-ink-700 transition hover:bg-paper-50 dark:border-umber-600 dark:text-paper-200 dark:hover:bg-umber-700/60"
+      >
+        <Phone className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+        <span className="tabular-nums">{phone}</span>
+      </a>
+    </div>
+  );
 }
 
 function ThreadView({ bookingId }: { bookingId: number }) {
-  const { t } = useT();
+  const { t, locale } = useT();
+  const toast = useToast();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<BookingMessage[]>([]);
   const [name, setName] = useState("");
   const [vendor, setVendor] = useState<{ supplierId: string; category: string } | null>(null);
+  // Non-null only once the vendor has written back — the server decides, this
+  // side never re-derives it from the message list it happens to be holding.
+  const [phone, setPhone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // The vendor's priced offers on this inquiry. Loading them is also what marks
+  // one VIEWED server-side, so there is no second call to make.
+  const [quotes, setQuotes] = useState<BookingQuote[]>([]);
+  const [busyQuoteId, setBusyQuoteId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -229,6 +265,7 @@ function ThreadView({ bookingId }: { bookingId: number }) {
             ? { supplierId: thread.supplier_id, category: thread.counterparty_category }
             : null,
         );
+        setPhone(thread.counterparty_phone);
         setLoading(false);
         // Opening the thread IS reading it on this side: there is no list-then-
         // open step once you are here.
@@ -247,12 +284,52 @@ function ThreadView({ bookingId }: { bookingId: number }) {
     };
   }, [bookingId, navigate]);
 
+  useEffect(() => {
+    let cancelled = false;
+    bookingQuoteApi
+      .coupleList(bookingId)
+      .then(({ quotes: list }) => !cancelled && setQuotes(list))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingId]);
+
   const send = useCallback(
     async (body: string) => {
       const { message } = await bookingMessagesApi.coupleSend(bookingId, body);
       setMessages((prev) => [...prev, message]);
     },
     [bookingId],
+  );
+
+  /** Answering replaces the card in place: the couple stays where they are and
+   *  the pill tells them what they just did. */
+  const answer = useCallback(
+    async (quote: BookingQuote, run: () => Promise<{ quote: BookingQuote }>, okKey: string) => {
+      setBusyQuoteId(quote.id);
+      try {
+        const { quote: updated } = await run();
+        setQuotes((prev) => prev.map((q) => (q.id === updated.id ? updated : q)));
+        toast.success(t(okKey));
+        // Answering one offer can change the others: accepting withdraws every
+        // sibling still live on this inquiry. Patching only the card that was
+        // clicked would leave a retired price reading as answerable, so the
+        // list is re-read rather than guessed at.
+        bookingQuoteApi
+          .coupleList(bookingId)
+          .then(({ quotes: list }) => setQuotes(list))
+          .catch(() => undefined);
+      } catch (e) {
+        const code = e instanceof ApiError ? (e.detail as { code?: string } | null)?.code : null;
+        toast.error(
+          code === "quote_not_answerable" ? t("quotes.not_answerable") : t("quotes.answer_failed"),
+        );
+      } finally {
+        setBusyQuoteId(null);
+      }
+    },
+    [t, toast, bookingId],
   );
 
   return (
@@ -267,7 +344,31 @@ function ThreadView({ bookingId }: { bookingId: number }) {
       <section className="card space-y-3">
         {/* The header is the profile door: glyph + name + category, the whole
             block a link to the vendor's card when there is still a card. */}
-        <ThreadHeader name={name} vendor={vendor} />
+        <ThreadHeader name={name} vendor={vendor} phone={phone} />
+        {quotes.length > 0 ? (
+          <div className="space-y-3">
+            <h3 className="field-label mb-0">{t("quotes.section_title")}</h3>
+            {quotes.map((q) => (
+              <BookingQuoteCard
+                key={q.id}
+                quote={q}
+                locale={locale}
+                side="couple"
+                busy={busyQuoteId === q.id}
+                onAccept={() =>
+                  void answer(q, () => bookingQuoteApi.coupleAccept(q.id), "quotes.accepted")
+                }
+                onDecline={(reason) =>
+                  void answer(
+                    q,
+                    () => bookingQuoteApi.coupleDecline(q.id, reason),
+                    "quotes.declined",
+                  )
+                }
+              />
+            ))}
+          </div>
+        ) : null}
         <BookingThreadPanel side="couple" messages={messages} loading={loading} onSend={send} />
       </section>
     </div>

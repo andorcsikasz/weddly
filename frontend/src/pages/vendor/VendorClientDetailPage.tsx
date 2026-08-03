@@ -7,6 +7,15 @@
 // a minor unit) and formatted by the vendor's billing currency.
 
 import type { Currency } from "@shared/types";
+import type { BookingQuote, QuoteLineInput } from "@shared/booking_quotes";
+import {
+  QUOTE_LINE_LABEL_MAX,
+  QUOTE_LINES_MAX,
+  QUOTE_MESSAGE_MAX,
+  QUOTE_QTY_MAX,
+  QUOTE_TITLE_MAX,
+  quoteTotal,
+} from "@shared/booking_quotes";
 import type { VendorClientDetail, VendorClientPayment } from "@shared/vendor_clients";
 import type { VendorFeatureFlags } from "@shared/vendor_plan";
 import {
@@ -24,18 +33,29 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { Button, DateField, Skeleton, TextField, useConfirm, useToast } from "../../components/ui";
+import { Link, useLocation, useParams } from "react-router-dom";
+import {
+  Button,
+  DateField,
+  Dialog,
+  Skeleton,
+  TextField,
+  useConfirm,
+  useToast,
+} from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import {
   bookingMessagesApi,
+  bookingQuoteApi,
   notifyVendorStatsStale,
   vendorBillingApi,
   vendorClientsApi,
 } from "../../lib/endpoints";
 import { formatDate, formatMoney, intlLocale } from "../../lib/format";
+import { BookingQuoteCard } from "../../components/BookingQuoteCard";
 import { BookingThreadPanel } from "../../components/BookingThreadPanel";
 import { MessageTemplatesDialog } from "../../components/MessageTemplatesDialog";
+import { NextActionBar, scrollToActionTarget } from "../../components/VendorNextAction";
 import type { BookingMessage, VendorMessageTemplate } from "@shared/booking_messages";
 import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
@@ -63,6 +83,32 @@ const QUICK_STATUSES: ReadonlyArray<{ value: string; Icon: LucideIcon }> = [
   { value: "declined", Icon: CircleX },
   { value: "cancelled", Icon: Undo2 },
 ];
+
+/** Read the server error `code` off an ApiError's detail, if any. The quote
+ *  routes answer with a code rather than a sentence, so the refusal can be
+ *  said in the vendor's own language. */
+function errCode(err: unknown): string | undefined {
+  if (err instanceof ApiError) return (err.detail as { code?: string } | null)?.code;
+  return undefined;
+}
+
+/** One row of the quote editor, held as raw strings so a half-typed figure
+ *  never round-trips through a number and back. `key` is client-only: rows are
+ *  removable, and an index key would hand the removed row's input state to
+ *  whichever row slid up into its place. */
+interface QuoteLineDraft {
+  key: number;
+  label: string;
+  qty: string;
+  unit: string;
+}
+
+let lineKeySeq = 0;
+
+function newLine(label = "", qty = "1", unit = ""): QuoteLineDraft {
+  lineKeySeq += 1;
+  return { key: lineKeySeq, label, qty, unit };
+}
 
 /** Parse a money / number input to an integer whole-unit value, or null when the
  *  field is left blank or invalid. Grouping separators (regular, non-breaking
@@ -124,6 +170,7 @@ export default function VendorClientDetailPage() {
   const toast = useToast();
   const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
+  const { hash } = useLocation();
   const bookingId = Number(id);
 
   const [detail, setDetail] = useState<VendorClientDetail | null>(null);
@@ -149,6 +196,20 @@ export default function VendorClientDetailPage() {
   const [threadLoading, setThreadLoading] = useState(true);
   const [templates, setTemplates] = useState<VendorMessageTemplate[]>([]);
   const [templatesOpen, setTemplatesOpen] = useState(false);
+
+  // Quotes. Reading them is FREE (a quote already sent has to stay readable
+  // whatever the plan says today); writing one is PRO.
+  const [quotes, setQuotes] = useState<BookingQuote[]>([]);
+  const [editorOpen, setEditorOpen] = useState(false);
+  /** The draft being edited, or null while composing a new one. */
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [qTitle, setQTitle] = useState("");
+  const [qLines, setQLines] = useState<QuoteLineDraft[]>([newLine()]);
+  const [qDeposit, setQDeposit] = useState("");
+  const [qValidUntil, setQValidUntil] = useState("");
+  const [qMessage, setQMessage] = useState("");
+  const [savingQuote, setSavingQuote] = useState(false);
+  const [busyQuoteId, setBusyQuoteId] = useState<number | null>(null);
 
   // Payment schedule state (seeded from the detail payload, then kept live).
   const [payments, setPayments] = useState<VendorClientPayment[]>([]);
@@ -209,6 +270,20 @@ export default function VendorClientDetailPage() {
   const canEditCrm = features?.client_crm_detail ?? false;
   const canTrackPayments = features?.payment_tracking ?? false;
   const canSendMessages = features?.direct_messages ?? false;
+  const canWriteQuotes = features?.quotes ?? false;
+
+  // The attention band on the clients list links straight to the section its
+  // action belongs to (`#vc-thread`, `#vc-payments`). React Router doesn't
+  // restore a hash on its own, and the target only exists once the detail and
+  // the plan have resolved, so the scroll waits for both rather than firing at
+  // an element that isn't mounted yet.
+  useEffect(() => {
+    if (loadState !== "ok" || !hash) return;
+    const id = hash.slice(1);
+    // One frame, so the PRO-gated sections have painted before we measure.
+    const raf = requestAnimationFrame(() => scrollToActionTarget(id));
+    return () => cancelAnimationFrame(raf);
+  }, [loadState, hash, canEditCrm, canTrackPayments]);
 
   // Fetching the thread is what stamps DELIVERED on the couple's messages;
   // marking them SEEN is a second call, because "the page loaded" and "the
@@ -253,6 +328,20 @@ export default function VendorClientDetailPage() {
       cancelled = true;
     };
   }, [canSendMessages]);
+
+  // Quotes load for every plan: a FREE vendor who sent one on PRO still has to
+  // be able to read what the couple is looking at.
+  useEffect(() => {
+    if (!Number.isFinite(bookingId)) return;
+    let cancelled = false;
+    bookingQuoteApi
+      .vendorList(bookingId)
+      .then(({ quotes: list }) => !cancelled && setQuotes(list))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingId]);
 
   const sendMessage = useCallback(
     async (body: string, files: File[]) => {
@@ -331,6 +420,171 @@ export default function VendorClientDetailPage() {
       toast.error(e instanceof ApiError ? e.message : t("vendor.clients.save_failed"));
     } finally {
       setSaving(false);
+    }
+  }
+
+  /** The rows the server will take: a labelled line with a real quantity. The
+   *  blank trailing row is how the editor invites the next line, so it is
+   *  dropped rather than refused. */
+  const quoteLineInputs = useMemo<QuoteLineInput[]>(() => {
+    const out: QuoteLineInput[] = [];
+    for (const line of qLines) {
+      const label = line.label.trim();
+      if (label === "") continue;
+      const qty = Math.min(Math.max(parseIntOrNull(line.qty) ?? 1, 1), QUOTE_QTY_MAX);
+      out.push({ label, qty, unit_amount: parseIntOrNull(line.unit) ?? 0 });
+    }
+    return out;
+  }, [qLines]);
+
+  const draftTotal = useMemo(() => quoteTotal(quoteLineInputs), [quoteLineInputs]);
+
+  /** Local today, not UTC: a validity date the vendor picks is a calendar day
+   *  where they are standing. */
+  const todayIso = useMemo(() => {
+    const d = new Date();
+    const mo = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${mo}-${day}`;
+  }, []);
+
+  /** Say a refusal in the vendor's language when the server named one. */
+  const quoteError = useCallback(
+    (e: unknown, fallback: string): string => {
+      const code = errCode(e);
+      if (code === "quote_not_draft") return t("vendor.quotes.not_draft");
+      if (code === "quote_not_answerable") return t("quotes.not_answerable");
+      if (code === "vendor_pro_required") return t("vendor.quotes.pro_required");
+      return fallback;
+    },
+    [t],
+  );
+
+  /** Accepting a quote moves `contract_value` server-side, so the summary and
+   *  the CRM form are re-read rather than guessed at. */
+  const refreshDetail = useCallback(async () => {
+    try {
+      const client = await vendorClientsApi.get(bookingId);
+      setDetail(client);
+      hydrateForm(client);
+    } catch {
+      /* the sections keep what they already have */
+    }
+  }, [bookingId, hydrateForm]);
+
+  function openNewQuote() {
+    setEditingId(null);
+    setQTitle("");
+    setQLines([newLine()]);
+    setQDeposit("");
+    setQValidUntil("");
+    setQMessage("");
+    setEditorOpen(true);
+  }
+
+  function openEditQuote(quote: BookingQuote) {
+    setEditingId(quote.id);
+    setQTitle(quote.title);
+    setQLines(
+      quote.lines.length > 0
+        ? quote.lines.map((l) => newLine(l.label, String(l.qty), String(l.unit_amount)))
+        : [newLine()],
+    );
+    setQDeposit(moneyToInput(quote.deposit_amount));
+    setQValidUntil(quote.valid_until ?? "");
+    setQMessage(quote.message ?? "");
+    setEditorOpen(true);
+  }
+
+  async function onSaveQuote() {
+    const title = qTitle.trim();
+    if (title === "" || quoteLineInputs.length === 0) return;
+    const trimmedMessage = qMessage.trim();
+    setSavingQuote(true);
+    try {
+      const body = {
+        title,
+        message: trimmedMessage === "" ? null : trimmedMessage,
+        valid_until: qValidUntil.trim() === "" ? null : qValidUntil.trim(),
+        deposit_amount: parseIntOrNull(qDeposit),
+        lines: quoteLineInputs,
+      };
+      const res =
+        editingId === null
+          ? await bookingQuoteApi.vendorCreate(bookingId, body)
+          : await bookingQuoteApi.vendorUpdate(editingId, body);
+      setQuotes((prev) =>
+        prev.some((q) => q.id === res.quote.id)
+          ? prev.map((q) => (q.id === res.quote.id ? res.quote : q))
+          : [res.quote, ...prev],
+      );
+      setEditorOpen(false);
+      toast.success(t("vendor.quotes.saved"));
+    } catch (e) {
+      toast.error(quoteError(e, t("vendor.quotes.save_failed")));
+    } finally {
+      setSavingQuote(false);
+    }
+  }
+
+  /** Sending retires whatever offer the couple was looking at, so the list is
+   *  re-read rather than patched one row at a time. */
+  async function onSendQuote(quote: BookingQuote) {
+    setBusyQuoteId(quote.id);
+    try {
+      await bookingQuoteApi.vendorSend(quote.id);
+      const { quotes: list } = await bookingQuoteApi.vendorList(bookingId);
+      setQuotes(list);
+      await refreshDetail();
+      notifyVendorStatsStale();
+      toast.success(t("vendor.quotes.sent"));
+    } catch (e) {
+      toast.error(quoteError(e, t("vendor.quotes.send_failed")));
+    } finally {
+      setBusyQuoteId(null);
+    }
+  }
+
+  async function onWithdrawQuote(quote: BookingQuote) {
+    const ok = await confirm({
+      title: t("vendor.quotes.withdraw_confirm_title"),
+      body: t("vendor.quotes.withdraw_confirm_body"),
+      confirmLabel: t("vendor.quotes.withdraw"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setBusyQuoteId(quote.id);
+    try {
+      const res = await bookingQuoteApi.vendorWithdraw(quote.id);
+      setQuotes((prev) => prev.map((q) => (q.id === res.quote.id ? res.quote : q)));
+      await refreshDetail();
+      toast.success(t("vendor.quotes.withdrawn"));
+    } catch (e) {
+      toast.error(quoteError(e, t("vendor.quotes.withdraw_failed")));
+    } finally {
+      setBusyQuoteId(null);
+    }
+  }
+
+  async function onDeleteQuote(quote: BookingQuote) {
+    const ok = await confirm({
+      title: t("vendor.quotes.remove_confirm_title"),
+      body: t("vendor.quotes.remove_confirm_body"),
+      confirmLabel: t("vendor.quotes.remove"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+    setBusyQuoteId(quote.id);
+    try {
+      await bookingQuoteApi.vendorDelete(quote.id);
+      setQuotes((prev) => prev.filter((q) => q.id !== quote.id));
+      toast.success(t("vendor.quotes.removed"));
+    } catch (e) {
+      toast.error(quoteError(e, t("vendor.quotes.remove_failed")));
+    } finally {
+      setBusyQuoteId(null);
     }
   }
 
@@ -447,7 +701,12 @@ export default function VendorClientDetailPage() {
         </p>
       </header>
 
-      <section className="card grid gap-4 sm:grid-cols-2">
+      {/* The one thing to do about this client, above everything the vendor
+          could do. Derived server-side so it can never disagree with the band
+          on the clients list. */}
+      <NextActionBar client={detail} />
+
+      <section id="vc-triage" className="card grid gap-4 sm:grid-cols-2">
         {/* Status is the one summary field that is also a DECISION, so it is
             the one that gets controls rather than a label. The current state
             stays spelled out above them: the quick set is the four a vendor
@@ -530,7 +789,7 @@ export default function VendorClientDetailPage() {
           point of a lead is knowing what was asked, and a vendor who can see
           the client at all can see their message. SENDING is PRO, so on FREE
           the composer is replaced by the upgrade card. */}
-      <section className="card space-y-3">
+      <section id="vc-thread" className="card space-y-3">
         <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
           {t("vendor.clients.thread_title")}
         </h2>
@@ -569,9 +828,197 @@ export default function VendorClientDetailPage() {
         />
       ) : null}
 
+      {/* Quotes. Same split as the thread above: WRITING one is PRO, reading
+          what has already been sent is not, so a lapsed vendor keeps the
+          number their couple is looking at. */}
+      <section id="vc-quotes" className="card space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
+            {t("vendor.quotes.title")}
+          </h2>
+          {canWriteQuotes ? (
+            <Button size="sm" onClick={openNewQuote}>
+              <Plus size={16} aria-hidden="true" />
+              <span className="ml-1">{t("vendor.quotes.new")}</span>
+            </Button>
+          ) : null}
+        </div>
+
+        {quotes.length === 0 ? (
+          canWriteQuotes ? (
+            <p className="text-sm text-ink-500 dark:text-paper-400">{t("vendor.quotes.empty")}</p>
+          ) : null
+        ) : (
+          <ul className="space-y-3">
+            {quotes.map((q) => (
+              <li key={q.id}>
+                <BookingQuoteCard
+                  quote={q}
+                  locale={locale}
+                  side="vendor"
+                  busy={busyQuoteId === q.id}
+                  onSend={canWriteQuotes ? () => onSendQuote(q) : undefined}
+                  onEdit={canWriteQuotes ? () => openEditQuote(q) : undefined}
+                  onDelete={canWriteQuotes ? () => onDeleteQuote(q) : undefined}
+                  onWithdraw={canWriteQuotes ? () => onWithdrawQuote(q) : undefined}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {canWriteQuotes ? null : (
+          <UpgradeCard
+            title={t("vendor.quotes.locked_title")}
+            body={t("vendor.quotes.locked_body")}
+            cta={t("vendor.upgrade.cta")}
+            locked={t("vendor.upgrade.feature_locked")}
+          />
+        )}
+      </section>
+
+      <Dialog
+        open={editorOpen}
+        role="dialog"
+        size="lg"
+        title={editingId === null ? t("vendor.quotes.new_title") : t("vendor.quotes.edit_title")}
+        onClose={() => setEditorOpen(false)}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditorOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={onSaveQuote}
+              loading={savingQuote}
+              loadingLabel={t("common.saving")}
+              disabled={qTitle.trim() === "" || quoteLineInputs.length === 0}
+            >
+              {t("common.save")}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <TextField
+            id="vq-title"
+            label={t("vendor.quotes.title_field")}
+            placeholder={t("vendor.quotes.title_placeholder")}
+            maxLength={QUOTE_TITLE_MAX}
+            value={qTitle}
+            onChange={(e) => setQTitle(e.target.value)}
+          />
+
+          <div className="space-y-3">
+            {qLines.map((line, i) => (
+              <div
+                key={line.key}
+                className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_5.5rem_9rem_auto] sm:items-end"
+              >
+                <TextField
+                  id={`vq-line-label-${line.key}`}
+                  label={t("vendor.quotes.line_label")}
+                  placeholder={t("vendor.quotes.line_placeholder")}
+                  maxLength={QUOTE_LINE_LABEL_MAX}
+                  value={line.label}
+                  onChange={(e) =>
+                    setQLines((prev) =>
+                      prev.map((l, idx) => (idx === i ? { ...l, label: e.target.value } : l)),
+                    )
+                  }
+                />
+                <TextField
+                  id={`vq-line-qty-${line.key}`}
+                  label={t("vendor.quotes.line_qty")}
+                  inputMode="numeric"
+                  value={line.qty}
+                  onChange={(e) =>
+                    setQLines((prev) =>
+                      prev.map((l, idx) =>
+                        idx === i ? { ...l, qty: e.target.value.replace(/[^\d]/g, "") } : l,
+                      ),
+                    )
+                  }
+                />
+                <MoneyField
+                  id={`vq-line-amount-${line.key}`}
+                  label={t("vendor.quotes.line_amount")}
+                  value={line.unit}
+                  onValueChange={(raw) =>
+                    setQLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, unit: raw } : l)))
+                  }
+                  locale={locale}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={qLines.length === 1}
+                  onClick={() => setQLines((prev) => prev.filter((_, idx) => idx !== i))}
+                  aria-label={t("vendor.quotes.line_remove")}
+                >
+                  <Trash2 size={16} aria-hidden="true" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={qLines.length >= QUOTE_LINES_MAX}
+              onClick={() => setQLines((prev) => [...prev, newLine()])}
+            >
+              <Plus size={16} aria-hidden="true" />
+              <span className="ml-1">{t("vendor.quotes.line_add")}</span>
+            </Button>
+          </div>
+
+          {/* The total moves as the vendor types, so the number they are about
+              to commit to is never a surprise on the sent card. */}
+          <div className="flex items-baseline justify-between rounded-xl bg-paper-100 px-4 py-3 dark:bg-umber-900">
+            <span className="field-label mb-0">{t("quotes.total")}</span>
+            <span className="text-lg font-semibold text-ink-900 dark:text-paper-50">
+              {fmt(draftTotal)}
+            </span>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <MoneyField
+              id="vq-deposit"
+              label={t("vendor.quotes.deposit_field")}
+              value={qDeposit}
+              onValueChange={setQDeposit}
+              locale={locale}
+            />
+            <DateField
+              id="vq-valid-until"
+              label={t("vendor.quotes.valid_until_field")}
+              value={qValidUntil}
+              onChange={setQValidUntil}
+              locale={locale}
+              min={todayIso}
+              clearable
+            />
+          </div>
+
+          <div className="block">
+            <label htmlFor="vq-message" className="field-label">
+              {t("vendor.quotes.message_field")}
+            </label>
+            <textarea
+              id="vq-message"
+              rows={4}
+              maxLength={QUOTE_MESSAGE_MAX}
+              className="input min-h-[6rem] resize-y leading-relaxed"
+              placeholder={t("vendor.quotes.message_placeholder")}
+              value={qMessage}
+              onChange={(e) => setQMessage(e.target.value)}
+            />
+          </div>
+        </div>
+      </Dialog>
+
       {/* CRM editor — PRO. */}
       {canEditCrm ? (
-        <section className="card space-y-5">
+        <section id="vc-crm" className="card space-y-5">
           <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
             {t("vendor.clients.detail_title")}
           </h2>
@@ -659,7 +1106,7 @@ export default function VendorClientDetailPage() {
 
       {/* Payment schedule — PRO. */}
       {canTrackPayments ? (
-        <section className="card space-y-5">
+        <section id="vc-payments" className="card space-y-5">
           <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
             {t("vendor.payments.title")}
           </h2>

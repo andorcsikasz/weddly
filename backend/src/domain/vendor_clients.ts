@@ -17,6 +17,8 @@ import type {
   VendorStats,
 } from "@shared/vendor_clients";
 import { listingChecklistFor, listingCompletenessFor } from "@shared/vendor_clients";
+import type { VendorClientSignals } from "@shared/vendor_next_action";
+import { vendorAttention, vendorNextAction } from "@shared/vendor_next_action";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { vendorPlanFromEntitlement } from "@shared/vendor_plan";
 import { VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
@@ -93,13 +95,20 @@ function computeBalance(contractValue: number | null, depositPaid: number | null
 }
 
 /** Map a booking row (owned by the vendor) to the basic client list view.
- *  `unread` is passed in by the list path, which resolves the whole set in one
- *  query; the single-row callers let it default. */
-export function toVendorClientView(row: BookingRow, unread?: number): VendorClientView {
+ *  `unread` and `signals` are passed in by the list path, which resolves the
+ *  whole set in one query each; the single-row callers let them default and pay
+ *  for their own lookup. */
+export function toVendorClientView(
+  row: BookingRow,
+  unread?: number,
+  signals?: VendorClientSignals,
+): VendorClientView {
   const contractValue =
     (row as BookingRow & { contract_value?: number | null }).contract_value ?? null;
   const depositPaid = (row as BookingRow & { deposit_paid?: number | null }).deposit_paid ?? null;
   const stage = (row as BookingRow & { stage?: string | null }).stage ?? null;
+  const facts = signals ?? clientSignalsForBooking(row);
+  const nowMs = now();
   return {
     id: row.id,
     couple_id: row.couple_id,
@@ -113,7 +122,187 @@ export function toVendorClientView(row: BookingRow, unread?: number): VendorClie
     created_at: row.created_at,
     unread_count: unread ?? unreadCount(row.id, "vendor"),
     vendor_seen_at: vendorSeenAt(row),
+    next_action: vendorNextAction(facts, nowMs),
+    attention: vendorAttention(facts, nowMs),
+    attention_snoozed_until: attentionSnoozedUntil(row),
   };
+}
+
+// ── Next Best Action signals ────────────────────────────────────────────────
+//
+// The rules themselves live in `shared/vendor_next_action.ts`; this half only
+// GATHERS the facts. The list path resolves them for every booking in three
+// queries regardless of how many clients the vendor has, because the per-row
+// form is four lookups each and a busy vendor's list is the hot path.
+
+function attentionSnoozedUntil(row: BookingRow): number | null {
+  return (
+    (row as BookingRow & { attention_snoozed_until?: number | null }).attention_snoozed_until ??
+    null
+  );
+}
+
+/** The listing ids a vendor account owns — the `supplier_id` values their
+ *  reviews are keyed on. */
+function listingIdsForAccount(accountId: number): string[] {
+  return (
+    db.prepare("SELECT id FROM listings WHERE vendor_account_id = ?").all(accountId) as {
+      id: string;
+    }[]
+  ).map((r) => r.id);
+}
+
+/** Couples that have already written this vendor a review. Soft-deleted rows
+ *  are excluded, unpublished ones are NOT: a review sitting in draft is still a
+ *  review the couple wrote, and asking them for a second one would be wrong. */
+function reviewedCoupleIds(accountId: number): Set<number> {
+  const listingIds = listingIdsForAccount(accountId);
+  if (listingIds.length === 0) return new Set();
+  const rows = db
+    .prepare(
+      `SELECT DISTINCT couple_id FROM supplier_reviews
+        WHERE supplier_id IN (${listingIds.map(() => "?").join(",")})
+          AND couple_id IS NOT NULL AND deleted_at IS NULL`,
+    )
+    .all(...listingIds) as { couple_id: number }[];
+  return new Set(rows.map((r) => r.couple_id));
+}
+
+interface MessageEdges {
+  couple: number | null;
+  vendor: number | null;
+}
+
+/** Newest message per (booking, sender) for a batch of bookings. */
+function messageEdgesFor(bookingIds: number[]): Map<number, MessageEdges> {
+  const out = new Map<number, MessageEdges>();
+  if (bookingIds.length === 0) return out;
+  const rows = db
+    .prepare(
+      `SELECT booking_id, sender_kind, MAX(created_at) AS last_at
+         FROM booking_messages
+        WHERE booking_id IN (${bookingIds.map(() => "?").join(",")})
+        GROUP BY booking_id, sender_kind`,
+    )
+    .all(...bookingIds) as { booking_id: number; sender_kind: string; last_at: number }[];
+  for (const r of rows) {
+    const entry = out.get(r.booking_id) ?? { couple: null, vendor: null };
+    if (r.sender_kind === "couple") entry.couple = r.last_at;
+    else if (r.sender_kind === "vendor") entry.vendor = r.last_at;
+    out.set(r.booking_id, entry);
+  }
+  return out;
+}
+
+interface PaymentEdges {
+  count: number;
+  next_unpaid_due: string | null;
+}
+
+/** Installment count + earliest unpaid due date per booking. */
+function paymentEdgesFor(bookingIds: number[]): Map<number, PaymentEdges> {
+  const out = new Map<number, PaymentEdges>();
+  if (bookingIds.length === 0) return out;
+  const rows = db
+    .prepare(
+      `SELECT booking_id,
+              COUNT(*) AS n,
+              MIN(CASE WHEN paid = 0 AND due_date IS NOT NULL THEN due_date END) AS next_due
+         FROM vendor_client_payments
+        WHERE booking_id IN (${bookingIds.map(() => "?").join(",")})
+        GROUP BY booking_id`,
+    )
+    .all(...bookingIds) as { booking_id: number; n: number; next_due: string | null }[];
+  for (const r of rows) out.set(r.booking_id, { count: r.n, next_unpaid_due: r.next_due });
+  return out;
+}
+
+function buildSignals(
+  row: BookingRow,
+  edges: MessageEdges,
+  payments: PaymentEdges,
+  reviewed: boolean,
+  pro: boolean,
+): VendorClientSignals {
+  return {
+    status: row.status,
+    created_at: row.created_at,
+    vendor_seen_at: vendorSeenAt(row),
+    event_date: row.event_date,
+    last_couple_message_at: edges.couple,
+    last_vendor_message_at: edges.vendor,
+    contract_value: (row as BookingRow & { contract_value?: number | null }).contract_value ?? null,
+    payment_count: pro ? payments.count : 0,
+    next_unpaid_due: pro ? payments.next_unpaid_due : null,
+    reviewed,
+    snoozed_until: attentionSnoozedUntil(row),
+    pro,
+  };
+}
+
+/** Signals for a whole booking set, in three queries plus the plan lookup. */
+export function clientSignalsForBookings(
+  accountId: number,
+  rows: BookingRow[],
+): Map<number, VendorClientSignals> {
+  const out = new Map<number, VendorClientSignals>();
+  if (rows.length === 0) return out;
+  const ids = rows.map((r) => r.id);
+  const pro = vendorPlanForAccount(accountId) === "pro";
+  const edges = messageEdgesFor(ids);
+  const payments = pro ? paymentEdgesFor(ids) : new Map<number, PaymentEdges>();
+  const reviewed = reviewedCoupleIds(accountId);
+  for (const row of rows) {
+    out.set(
+      row.id,
+      buildSignals(
+        row,
+        edges.get(row.id) ?? { couple: null, vendor: null },
+        payments.get(row.id) ?? { count: 0, next_unpaid_due: null },
+        reviewed.has(row.couple_id),
+        pro,
+      ),
+    );
+  }
+  return out;
+}
+
+/** Single-row form, for the detail paths. The account comes off the row itself
+ *  so the mapper's signature stays as it was; a booking with no vendor account
+ *  (a curated-listing inquiry) has no vendor to advise, so it derives as FREE
+ *  with no reviews, which lands on the same open/reply ladder. */
+export function clientSignalsForBooking(row: BookingRow): VendorClientSignals {
+  const accountId = row.vendor_account_id;
+  if (accountId === null) {
+    return buildSignals(
+      row,
+      messageEdgesFor([row.id]).get(row.id) ?? { couple: null, vendor: null },
+      { count: 0, next_unpaid_due: null },
+      false,
+      false,
+    );
+  }
+  return (
+    clientSignalsForBookings(accountId, [row]).get(row.id) ??
+    buildSignals(
+      row,
+      { couple: null, vendor: null },
+      { count: 0, next_unpaid_due: null },
+      false,
+      false,
+    )
+  );
+}
+
+/** Mute a client's attention row for `days`, or clear the mute with `null`.
+ *  Returns the stamp now on the row. */
+export function snoozeVendorClientAttention(bookingId: number, days: number | null): number | null {
+  const until = days === null ? null : now() + days * 86_400_000;
+  db.prepare("UPDATE supplier_bookings SET attention_snoozed_until = ? WHERE id = ?").run(
+    until,
+    bookingId,
+  );
+  return until;
 }
 
 /** `vendor_seen_at` off a widened row — the column is additive (db.ts) so it
@@ -138,8 +327,11 @@ export function markVendorClientSeen(bookingId: number): number {
 }
 
 /** Map a booking row to the full PRO CRM detail (notes + contact + schedule). */
-export function toVendorClientDetail(row: BookingRow): VendorClientDetail {
-  const base = toVendorClientView(row);
+export function toVendorClientDetail(
+  row: BookingRow,
+  signals?: VendorClientSignals,
+): VendorClientDetail {
+  const base = toVendorClientView(row, undefined, signals);
   const vendorNotes = (row as BookingRow & { vendor_notes?: string | null }).vendor_notes ?? null;
   return {
     ...base,
@@ -344,7 +536,8 @@ export function listVendorClients(accountId: number): VendorClientView[] {
     rows.map((r) => r.id),
     "vendor",
   );
-  return rows.map((r) => toVendorClientView(r, unread.get(r.id) ?? 0));
+  const signals = clientSignalsForBookings(accountId, rows);
+  return rows.map((r) => toVendorClientView(r, unread.get(r.id) ?? 0, signals.get(r.id)));
 }
 
 /** Same list with the full CRM detail (notes + contact + payment schedule)
@@ -353,7 +546,8 @@ export function listVendorClientDetails(accountId: number): VendorClientDetail[]
   const rows = db
     .prepare("SELECT * FROM supplier_bookings WHERE vendor_account_id = ? ORDER BY created_at DESC")
     .all(accountId) as BookingRow[];
-  return rows.map(toVendorClientDetail);
+  const signals = clientSignalsForBookings(accountId, rows);
+  return rows.map((r) => toVendorClientDetail(r, signals.get(r.id)));
 }
 
 const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
