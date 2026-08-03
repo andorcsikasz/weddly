@@ -753,6 +753,10 @@ export interface LocaleMessages {
      *  shown instead of the help line while the band is locked.
      *  {date} = localised unlock date. */
     price_band_locked_until: string;
+    price_band_clear: string;
+    price_band_clear_title: string;
+    price_band_clear_body: string;
+    price_band_clear_confirm: string;
     label_capacity_min: string;
     label_capacity_max: string;
     section_hero: string;
@@ -1397,6 +1401,11 @@ export interface LocaleMessages {
       exception_remove_body: string;
       /** Two-way Google Calendar block on the same tab. `gcal_last_pull` takes
        *  `{when}` + `{count}`. */
+      public_title: string;
+      public_on_body: string;
+      public_off_body: string;
+      public_on_saved: string;
+      public_off_saved: string;
       gcal_title: string;
       gcal_body: string;
       gcal_pull_label: string;
@@ -1931,6 +1940,7 @@ export interface LocaleMessages {
     kpi_days_edit_hint: string;
     kpi_guests_label: string;
     kpi_guests_unit: string;
+    kpi_guests_planned: string;
     kpi_guests_no_data: string;
     kpi_budget_label: string;
     kpi_budget_unit: string;
@@ -6011,7 +6021,6 @@ export interface LocaleMessages {
       missing_bio: string;
       missing_pricing: string;
       missing_packages: string;
-      missing_availability: string;
       reminders_sent: string;
       reminders_last: string;
       reach_label: string;

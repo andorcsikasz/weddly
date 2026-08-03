@@ -530,6 +530,11 @@ const hu: LocaleMessages = {
     label_price_band_help: "1 = legolcsóbb, 5 = prémium. Üresen hagyva nem jelenik meg.",
     price_band_locked_until:
       "Az árszint 30 naponta egyszer módosítható. Következő módosítás: {date}.",
+    price_band_clear: "Árszint törlése",
+    price_band_clear_title: "Törlöd az árszintet?",
+    price_band_clear_body:
+      "A párok ezután nem látnak árszintet a profilodon, és kikerülsz az ár szerinti szűrésből. Új szintet rögtön beállíthatsz, utána viszont 30 naponta egyszer módosítható.",
+    price_band_clear_confirm: "Törlés",
     label_capacity_min: "Kapacitás (min)",
     label_capacity_max: "Kapacitás (max)",
     section_hero: "Borítókép",
@@ -1082,6 +1087,13 @@ const hu: LocaleMessages = {
       exception_remove: "Kivétel törlése",
       exception_remove_title: "Törlöd a kivételt?",
       exception_remove_body: "{date} újra a heti munkarend szerint alakul.",
+      public_title: "Foglaltságom látszik a pároknak",
+      public_on_body:
+        "A párok látják a profilodon, mely dátumok foglaltak, és megjelensz a dátumra szűrt keresésekben.",
+      public_off_body:
+        "A foglaltságod privát marad. A párok nem látnak naptárat a profilodon, bármelyik dátumra írhatnak, és te válaszolsz. A lenti munkarend a saját tervezőeszközöd marad, és dátumra szűrt keresésből sem eshetsz ki.",
+      public_on_saved: "A foglaltságod újra látszik.",
+      public_off_saved: "A foglaltságod mostantól privát.",
       gcal_title: "Google Naptár",
       gcal_body:
         "Kétirányú: a Weddly kiírja a foglalásaidat a Google Naptáradba, és visszaolvassa, mikor vagy elfoglalt.",
@@ -1556,7 +1568,8 @@ const hu: LocaleMessages = {
     kpi_days_tbd: "Dátum később",
     kpi_days_edit_hint: "Kattints a dátum módosításához",
     kpi_guests_label: "Visszajelzés",
-    kpi_guests_unit: "/ {total} várt",
+    kpi_guests_unit: "/ {total} meghívott",
+    kpi_guests_planned: "tervezett: {count}",
     kpi_guests_no_data: "Add hozzá a vendéglistát",
     kpi_budget_label: "Költés",
     kpi_budget_unit: "/ {cap}",
@@ -5203,7 +5216,6 @@ const hu: LocaleMessages = {
       missing_bio: "bemutatkozó",
       missing_pricing: "ársáv",
       missing_packages: "árcsomag",
-      missing_availability: "naptár",
       reminders_sent: "{n} emlékeztető",
       reminders_last: "Utolsó: {date}",
       reach_label: "Elérés (megtekintés · kattintás)",

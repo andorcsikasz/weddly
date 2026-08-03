@@ -521,6 +521,11 @@ const en: LocaleMessages = {
     label_price_band_help: "1 = budget, 5 = premium. Leave blank to hide.",
     price_band_locked_until:
       "Price level changes are limited to once every 30 days. Next change: {date}.",
+    price_band_clear: "Remove price level",
+    price_band_clear_title: "Remove the price level?",
+    price_band_clear_body:
+      "Couples will see no price level on your listing, and you drop out of their price filters. You can set a level again straight away, but after that it changes only once every 30 days.",
+    price_band_clear_confirm: "Remove",
     label_capacity_min: "Capacity (min)",
     label_capacity_max: "Capacity (max)",
     section_hero: "Hero image",
@@ -1070,6 +1075,13 @@ const en: LocaleMessages = {
       exception_remove: "Remove exception",
       exception_remove_title: "Remove this exception?",
       exception_remove_body: "{date} goes back to following your weekly schedule.",
+      public_title: "Show my availability to couples",
+      public_on_body:
+        "Couples see which dates are taken on your profile, and you appear in searches filtered by date.",
+      public_off_body:
+        "Your availability stays private. Couples see no calendar on your profile and can send an inquiry for any date, which you answer yourself. Your schedule below keeps working as your own planning tool, and no date search will ever hide you.",
+      public_on_saved: "Your availability is public again.",
+      public_off_saved: "Your availability is now private.",
       gcal_title: "Google Calendar",
       gcal_body:
         "Two-way: Weddly writes your bookings into your Google Calendar, and reads back when you are busy.",
@@ -1537,7 +1549,8 @@ const en: LocaleMessages = {
     kpi_days_tbd: "Date TBD",
     kpi_days_edit_hint: "Click to change the date",
     kpi_guests_label: "RSVPs in",
-    kpi_guests_unit: "of {total} confirmed",
+    kpi_guests_unit: "of {total} invited",
+    kpi_guests_planned: "planned for {count}",
     kpi_guests_no_data: "Add your guest list",
     kpi_budget_label: "Spent",
     kpi_budget_unit: "of {cap}",
@@ -5148,7 +5161,6 @@ const en: LocaleMessages = {
       missing_bio: "bio",
       missing_pricing: "price range",
       missing_packages: "packages",
-      missing_availability: "calendar",
       reminders_sent: "{n} reminder(s)",
       reminders_last: "Last: {date}",
       reach_label: "Reach (views · clicks)",

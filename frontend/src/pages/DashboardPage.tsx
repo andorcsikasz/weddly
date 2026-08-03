@@ -348,8 +348,17 @@ export default function DashboardPage() {
   const dayOfMode = rawDelta !== null && rawDelta <= 1 && rawDelta >= 0 && !couple.archived_at;
 
   // ── RSVP breakdown ────────────────────────────────────────────────────
+  // The couple's own two rows are `guests` too — `ensurePartnerGuests` inserts
+  // them with `rsvp_status = 'yes'` — and /app/guests hides them from every
+  // stat it draws (`listableGuests`). Counting them here is what made the same
+  // account read two different numbers on two pages, always off by exactly two.
+  // `invited` is the shared definition: everyone the couple actually invited.
+  const invited = guests.filter((g) => g.partner_role === null);
   const rsvp = { yes: 0, no: 0, maybe: 0, pending: 0 };
-  for (const g of guests) rsvp[g.rsvp_status] += 1;
+  for (const g of invited) rsvp[g.rsvp_status] += 1;
+  const invitedCount = invited.length;
+  // Kept on the full list: the cost-planning baseline asks "how many people are
+  // we feeding", and the couple eats at their own wedding.
   const totalGuests = guests.length;
   // ── Day-of: how many guests checked in today? ────────────────────────
   // "Today" = the user's local start of day. We bucket on `rsvp_responded_at`
@@ -360,13 +369,17 @@ export default function DashboardPage() {
     return d.getTime();
   })();
   const checkedInToday = dayOfMode
-    ? guests.filter((g) => g.rsvp_responded_at !== null && g.rsvp_responded_at >= startOfToday)
+    ? invited.filter((g) => g.rsvp_responded_at !== null && g.rsvp_responded_at >= startOfToday)
         .length
     : 0;
-  const targetCount = targetGuestCount(couple);
-  // Denominator for "X of Y confirmed": if the couple set a target, use that;
-  // otherwise fall back to the actual list size so the % stays meaningful.
-  const guestDenominator = targetCount ?? totalGuests;
+  // Denominator for "X / Y invited": the real guest list. It used to be the
+  // onboarding goal, which nothing ever reconciles against the list — so a
+  // couple who added forty guests watched the number sit still, reported
+  // 2026-08-03. The goal is a plan, not a headcount; it stays visible as a
+  // secondary line in the breakdown so "126 invited, we planned for 120" reads
+  // as the useful comparison it is.
+  const plannedCount = targetGuestCount(couple);
+  const guestDenominator = invitedCount;
 
   // ── Budget ────────────────────────────────────────────────────────────
   const totalPlanned = lines.reduce((s, l) => s + l.planned_huf, 0);
@@ -569,7 +582,9 @@ export default function DashboardPage() {
             to: "/app/planning",
           },
         ]),
-    { key: "task_add_guests", done: totalGuests > 0, to: "/app/guests" },
+    // `invitedCount`, not `totalGuests`: the partner rows are auto-created, so
+    // the full count is never 0 and this nudge could never fire.
+    { key: "task_add_guests", done: invitedCount > 0, to: "/app/guests" },
     { key: "task_plan_budget", done: lines.length > 0, to: "/app/budget" },
     { key: "task_add_tables", done: tableCount > 0, to: "/app/seating" },
   ]
@@ -1182,22 +1197,22 @@ export default function DashboardPage() {
                 <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-700">
                   <Segment
                     count={rsvp.yes}
-                    total={Math.max(totalGuests, 1)}
+                    total={Math.max(invitedCount, 1)}
                     className="bg-emerald-500"
                   />
                   <Segment
                     count={rsvp.maybe}
-                    total={Math.max(totalGuests, 1)}
+                    total={Math.max(invitedCount, 1)}
                     className="bg-amber-400"
                   />
                   <Segment
                     count={rsvp.no}
-                    total={Math.max(totalGuests, 1)}
+                    total={Math.max(invitedCount, 1)}
                     className="bg-red-500"
                   />
                   <Segment
                     count={rsvp.pending}
-                    total={Math.max(totalGuests, 1)}
+                    total={Math.max(invitedCount, 1)}
                     className="bg-slate-300"
                   />
                 </div>
@@ -1248,6 +1263,17 @@ export default function DashboardPage() {
                     </Link>
                   ))}
                 </div>
+                {/* The onboarding goal, demoted to a footnote. It is the only
+                    place the plan still appears on this tile, and it is worth
+                    keeping: "126 invited, we planned for 120" is the sentence
+                    a couple actually wants. Hidden when they never set one. */}
+                {plannedCount !== null && (
+                  <div className="mt-1 text-[10px] text-ink-400 dark:text-umber-400">
+                    {t("dashboard.kpi_guests_planned", {
+                      count: formatNumber(plannedCount, locale),
+                    })}
+                  </div>
+                )}
               </div>
             }
           />
