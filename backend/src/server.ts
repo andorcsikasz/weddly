@@ -506,6 +506,40 @@ function isRsvpRoute(pathname: string): boolean {
   return pathname === "/rsvp" || pathname.startsWith("/rsvp/");
 }
 
+/** A page whose URL is itself the credential, and which must therefore never
+ *  end up in a search index.
+ *
+ *  robots.txt already Disallows most of these, but robots.txt is the wrong
+ *  instrument on its own: it asks a crawler not to FETCH, which neither removes
+ *  a URL somebody already indexed nor binds a crawler that ignores it. Only
+ *  `noindex` de-indexes, and a crawler has to be allowed to fetch the page to
+ *  read it, which is why these stay crawlable and carry the header instead.
+ *
+ *  `/w/:slug/:code` is the one that was covered by nothing at all. `/w/:slug`
+ *  is a couple's public wedding page and is SUPPOSED to be indexed (it is only
+ *  served at all when they set `is_public`), but adding the household code to
+ *  the same URL turns it into that household's own view: their names, who is
+ *  coming, meal choices and dietary notes. Those codes travel through group
+ *  chats and get pasted into public places, and once a crawler has followed one
+ *  the guest list is in a search result. So the slug alone stays indexable and
+ *  anything BELOW it does not. */
+function isPrivateByTokenPath(pathname: string): boolean {
+  if (
+    pathname.startsWith("/invite/") ||
+    pathname.startsWith("/reset-password/") ||
+    pathname.startsWith("/verify-email/") ||
+    pathname.startsWith("/photo-albums/") ||
+    pathname.startsWith("/planner-activation/") ||
+    isRsvpRoute(pathname)
+  ) {
+    return true;
+  }
+  // `/w/<slug>` public, `/w/<slug>/<code>` private. Trailing slash on the bare
+  // slug is the same page, so it is not treated as a code.
+  const w = /^\/w\/[^/]+\/(.+)$/.exec(pathname);
+  return w !== null && (w[1] ?? "").length > 0;
+}
+
 /** Strip capability tokens that travel in the URL path before the path is
  *  written to request logs or attached to Sentry. An un-consumed token in a log
  *  line (forwarded to a third-party log service) is a replayable credential —
@@ -882,6 +916,13 @@ async function serveOne(req: Request): Promise<Response> {
   const headers = new Headers(res.headers);
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
     if (!headers.has(k)) headers.set(k, v);
+  }
+  // Keep-out-of-the-index rides here rather than on the SPA branch, for the
+  // same reason the baseline headers do: it must not depend on which branch
+  // answered. A private-by-token URL is equally un-indexable whether it came
+  // back as SSR HTML, a redirect or a 404.
+  if (isPrivateByTokenPath(new URL(req.url).pathname)) {
+    headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
   return new Response(res.body, { status: res.status, headers });
 }
