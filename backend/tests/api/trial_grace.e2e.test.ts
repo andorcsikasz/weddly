@@ -147,6 +147,7 @@ describe("trial grace window", () => {
 describe("trial_ended mail", () => {
   test("goes out once at the boundary and never twice", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const { coupleId } = await bootstrapCouple("grace-mail@weddly.test");
     setTrialEnd(coupleId, now() - DAY);
 
@@ -161,8 +162,26 @@ describe("trial_ended mail", () => {
     expect(mailCount(coupleId)).toBe(1);
   });
 
+  test("nothing is sent while the freeze is deferred", async () => {
+    // The mail's deadline only means something if the wall behind it is up. The
+    // go-live switch is OFF in production today, so a couple mailed now would
+    // find the app works fine past the date and learn to ignore the next one.
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("grace-deferred@weddly.test");
+    setTrialEnd(coupleId, now() - DAY);
+
+    expect(runEmailSweep().trialEnded).toBe(0);
+    expect(mailCount(coupleId)).toBe(0);
+
+    // Flipping the switch is what releases it, on the very next sweep.
+    enableBillingEnforcement();
+    expect(runEmailSweep().trialEnded).toBe(1);
+    expect(mailCount(coupleId)).toBe(1);
+  });
+
   test("a couple whose grace already ran out is not mailed", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const { coupleId } = await bootstrapCouple("grace-late@weddly.test");
     // Past the grace: the mail's whole content is a deadline that has gone, and
     // the workspace is already read-only. Sending it would be a notice about
@@ -175,6 +194,7 @@ describe("trial_ended mail", () => {
 
   test("a couple still inside its trial is not mailed", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const { coupleId } = await bootstrapCouple("grace-early@weddly.test");
     setTrialEnd(coupleId, now() + 5 * DAY);
 

@@ -2659,8 +2659,9 @@ export const vendorClaimApi = {
  *     prefill the activate screen; doesn't consume the token.
  *  2. `complete` — create user(role=vendor) + vendor_account + a live listing +
  *     a founding/trial subscription, returns a fresh AuthSession to install via
- *     useAuth().setSession. No card is asked — the first 100 vendors are free
- *     for a year. */
+ *     useAuth().setSession. The first VENDOR_FOUNDING_CAP vendors are our
+ *     guests for a year. Named rather than spelled: the number moved once
+ *     already (100 → 500) and every literal copy of it had to be hunted down. */
 /** Self-serve vendor signup — creates a role='vendor' account and returns a
  *  session (persist via useAuth().setSession, then run the in-app onboarding
  *  wizard at /vendor/onboarding). Replaces the waitlist + token-activation flow. */

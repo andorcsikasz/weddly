@@ -13,7 +13,7 @@ import { toIsoDate } from "@shared/planning_timeline";
 import { checkPartnerNames, NAME_REVIEW_GRACE_MS } from "@shared/real_names";
 import { INVITE_TTL_MS } from "@shared/types";
 import { CONFIG } from "../../config";
-import { db, now } from "../../db";
+import { billingEnforcementOn, db, now } from "../../db";
 import { log } from "../../lib/logger";
 import { reportError } from "../../lib/observability";
 import { foundingSlotsUsed, isFoundingEligible } from "../billing";
@@ -761,8 +761,16 @@ interface TrialEndedRow {
  *  ONE recipient per couple, the OWNER. `email_dispatches` is unique on
  *  (couple_id, user_id, kind), so joining every member would mail both partners
  *  the same deadline inside a single sweep. The owner is also the person who can
- *  act on route two, since they hold the subscription. */
+ *  act on route two, since they hold the subscription.
+ *
+ *  SILENT while the global go-live switch is off. The mail's second route says
+ *  "add payment details by this date and the workspace keeps editing without a
+ *  break", which is only true if something would otherwise break it. With the
+ *  freeze deferred nothing does, so the deadline would be a threat we are not
+ *  carrying out, sent to couples who then find the app works fine either way.
+ *  That teaches them to ignore the next one. */
 function sweepTrialEnded(ts: number): number {
+  if (!billingEnforcementOn()) return 0;
   const rows = db
     .prepare(
       `SELECT c.id AS couple_id, c.display_name, c.trial_ends_at,
