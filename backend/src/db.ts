@@ -763,6 +763,15 @@ db.exec(`
      AND couple_id IN (SELECT id FROM couples WHERE rsvp_collects_meal = 0)
 `);
 
+// Free-text note the GUEST writes on the public RSVP, one per household. It is
+// deliberately not `households.notes`, which is the couple's own private note
+// about the party and would be overwritten by whoever RSVP'd last. Until this
+// existed the only free-text box a guest could reach on the whole form was
+// "Song request", so anyone with something to say (arriving late, a wheelchair,
+// congratulations) had to put it there or nowhere. Nullable: an empty box
+// stores NULL rather than "", so "wrote nothing" and "cleared it" read alike.
+addColumnIfMissing("households", "guest_message", "guest_message TEXT");
+
 // Logistics assignments live on the guest row. One accommodation + one
 // transfer per guest, both nullable. We index on the foreign-key columns so
 // the LogisticsPage can pull "guests assigned to this accommodation" with a
@@ -1840,6 +1849,23 @@ addColumnIfMissing(
   "buffer_before_min INTEGER",
 );
 addColumnIfMissing("vendor_availability_settings", "buffer_after_min", "buffer_after_min INTEGER");
+
+// Whether this vendor's availability is PUBLISHED at all. Default 1, because
+// that is what every existing account already does and a silent opt-out would
+// hide dates couples are reading today.
+//
+// 0 is a vendor saying "my calendar is not public information", which several
+// have: in photography and music, an openly readable booked/free calendar is a
+// marketing liability (a page that looks empty in the off season) and a second
+// calendar to maintain beside the one their own business already runs. With it
+// off, availability simply becomes UNKNOWN to Weddly — no busy dates, no
+// next-free date, and no date filter can drop them from a search — while the
+// inquiry channel is untouched, which is the only part a couple actually needs.
+addColumnIfMissing(
+  "vendor_availability_settings",
+  "calendar_public",
+  "calendar_public INTEGER NOT NULL DEFAULT 1",
+);
 
 // One-time grandfather: every vendor account that existed BEFORE the vendor
 // freemium launch is an early adopter: grant the founding year (free, no

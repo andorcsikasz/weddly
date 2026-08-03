@@ -69,7 +69,7 @@ import { useToast } from "../../components/ui/ToastProvider";
 import { vendorAvailabilityApi, vendorListingApi } from "../../lib/endpoints";
 import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
-import { Skeleton, SkeletonText, SmartImage } from "../../components/ui";
+import { Skeleton, SkeletonText, SmartImage, useConfirm } from "../../components/ui";
 import VendorListingPreview from "./VendorListingPreview";
 
 /** Visual price-band scale shown in the editor. Each level maps to the same
@@ -251,6 +251,7 @@ export default function VendorListingPage() {
   const { t, locale } = useT();
   useDocumentTitle(t("vendor_home.page_title"));
   const toast = useToast();
+  const confirm = useConfirm();
 
   const [view, setView] = useState<VendorListingView | null>(null);
   const [form, setForm] = useState<FormState | null>(null);
@@ -616,10 +617,25 @@ export default function VendorListingPage() {
     void runSave("manual");
   };
 
+  // Picking a band is a RADIO choice, never a toggle. Clicking the level that is
+  // already on used to clear it, and with the 1-second autosave behind it that
+  // stray click published "no price" before the vendor could react — then the
+  // 30-day cooldown refused to let them put it back while the reminder mail went
+  // on asking for the very field the page would not let them touch. Withdrawing
+  // a price is now its own deliberate control below.
   const setPriceBand = (level: number) => {
-    setForm((prev) =>
-      prev ? { ...prev, price_band: prev.price_band === String(level) ? "" : String(level) } : prev,
-    );
+    setForm((prev) => (prev ? { ...prev, price_band: String(level) } : prev));
+  };
+
+  const clearPriceBand = async () => {
+    const ok = await confirm({
+      title: t("vendor_home.price_band_clear_title"),
+      body: t("vendor_home.price_band_clear_body"),
+      confirmLabel: t("vendor_home.price_band_clear_confirm"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    setForm((prev) => (prev ? { ...prev, price_band: "" } : prev));
   };
 
   // Autosave status pill shown near the top of the form.
@@ -664,7 +680,14 @@ export default function VendorListingPage() {
     if (!view) return;
     setForm((prev) => (prev ? { ...prev, name: view.listing.name } : prev));
   };
-  const priceLockedUntil = view ? priceBandLockedUntil(view.listing.price_band_changed_at) : null;
+  // Mirrors the server rule exactly (routes/vendor_listing.ts): the cooldown
+  // guards a PUBLISHED band, so a listing with no price is always freely
+  // settable. Keyed on the SAVED band rather than the form, or clearing the
+  // field in the editor would unlock the very change that is locked.
+  const priceLockedUntil =
+    view && view.listing.price_band != null
+      ? priceBandLockedUntil(view.listing.price_band_changed_at)
+      : null;
   const priceLocked = priceLockedUntil !== null && priceLockedUntil > Date.now();
   const priceUnlockDate = priceLocked
     ? new Intl.DateTimeFormat(intlLocale(locale), {
@@ -1316,7 +1339,7 @@ export default function VendorListingPage() {
                   </p>
                 )}
                 <div
-                  role="group"
+                  role="radiogroup"
                   aria-label={t("vendor_home.label_price_band")}
                   className="grid grid-cols-2 gap-2 sm:grid-cols-5"
                 >
@@ -1326,7 +1349,8 @@ export default function VendorListingPage() {
                       <button
                         key={lvl}
                         type="button"
-                        aria-pressed={active}
+                        role="radio"
+                        aria-checked={active}
                         // The glyph row IS the label — five € read as a price
                         // band faster than "Ultra-luxus / A piac csúcsa" does.
                         // The words survive as the accessible name + the hover
@@ -1363,6 +1387,20 @@ export default function VendorListingPage() {
                     );
                   })}
                 </div>
+                {/* Withdrawing the price is a real decision (it empties the
+                    band on the public card and starts the 30-day cooldown), so
+                    it gets a named, confirmed control instead of riding on a
+                    second click of the level that is already chosen. It only
+                    appears once there is something to withdraw. */}
+                {form.price_band !== "" && !priceLocked && (
+                  <button
+                    type="button"
+                    onClick={() => void clearPriceBand()}
+                    className="mt-2 text-xs font-medium text-ink-500 underline underline-offset-2 transition-colors hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+                  >
+                    {t("vendor_home.price_band_clear")}
+                  </button>
+                )}
               </div>
 
               {/* Capacity, only where a guest count exists. A venue reports the

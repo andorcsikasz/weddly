@@ -431,6 +431,15 @@ export interface VendorAvailabilitySettings {
    *  than the vendor's own choice. The editor says so, because a number the
    *  vendor never typed should not read as a decision they made. */
   buffer_is_default: boolean;
+  /** Whether couples see this vendor's availability at all. True by default.
+   *
+   *  False is a deliberate "my calendar is not public": the busy calendar comes
+   *  off the public profile, `next_available` stops being published, and a
+   *  date-filtered search can no longer drop the listing — Weddly simply does
+   *  not claim to know. Everything else is untouched, including the ability to
+   *  receive inquiries, and the vendor's OWN calendar keeps working as their
+   *  private planning tool. */
+  calendar_public: boolean;
 }
 
 /** Validate an inbound weekday list. Throws-free: returns null for anything

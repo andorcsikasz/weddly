@@ -41,6 +41,7 @@ interface SettingsRow {
   schedule_name: string | null;
   buffer_before_min: number | null;
   buffer_after_min: number | null;
+  calendar_public: number;
 }
 
 /** The listing category this vendor's buffer defaults come from. A vendor owns
@@ -107,9 +108,11 @@ function readStoredHours(vendorAccountId: number): WeeklyHours | null {
 export function getVendorSchedule(vendorAccountId: number): VendorAvailabilitySettings {
   const row = db
     .prepare(
-      "SELECT weekdays, schedule_name FROM vendor_availability_settings WHERE vendor_account_id = ?",
+      "SELECT weekdays, schedule_name, calendar_public FROM vendor_availability_settings WHERE vendor_account_id = ?",
     )
-    .get(vendorAccountId) as Pick<SettingsRow, "weekdays" | "schedule_name"> | undefined;
+    .get(vendorAccountId) as
+    | Pick<SettingsRow, "weekdays" | "schedule_name" | "calendar_public">
+    | undefined;
   const weekdays = parseWeekdays(row?.weekdays ?? null);
   const buffers = getVendorBuffers(vendorAccountId);
   return {
@@ -119,7 +122,36 @@ export function getVendorSchedule(vendorAccountId: number): VendorAvailabilitySe
     buffer_before_min: buffers.before_min,
     buffer_after_min: buffers.after_min,
     buffer_is_default: buffers.is_default,
+    calendar_public: isVendorCalendarPublic(vendorAccountId),
   };
+}
+
+/** Whether couples may see this vendor's availability. A vendor with no
+ *  settings row has never answered, and the answer everyone starts on is yes —
+ *  the same default the column carries, kept here too so a read that predates
+ *  the row does not have to know that. */
+export function isVendorCalendarPublic(vendorAccountId: number): boolean {
+  const row = db
+    .prepare("SELECT calendar_public FROM vendor_availability_settings WHERE vendor_account_id = ?")
+    .get(vendorAccountId) as Pick<SettingsRow, "calendar_public"> | undefined | null;
+  return (row?.calendar_public ?? 1) !== 0;
+}
+
+/** Publish or unpublish the vendor's availability. Its own writer rather than a
+ *  field on `setVendorSchedule`, because it decides whether the schedule is
+ *  SHOWN, not what the schedule is: a vendor who hides their calendar keeps
+ *  every working hour and every blocked date they have entered, and gets all of
+ *  it back the moment they turn it on again. */
+export function setVendorCalendarPublic(vendorAccountId: number, isPublic: boolean): void {
+  const ts = now();
+  db.prepare(
+    `INSERT INTO vendor_availability_settings
+       (vendor_account_id, weekdays, calendar_public, created_at, updated_at)
+     VALUES (?, NULL, ?, ?, ?)
+     ON CONFLICT(vendor_account_id) DO UPDATE SET
+       calendar_public = excluded.calendar_public,
+       updated_at      = excluded.updated_at`,
+  ).run(vendorAccountId, isPublic ? 1 : 0, ts, ts);
 }
 
 /** Store the vendor's own buffers. Passing null for BOTH clears back to the

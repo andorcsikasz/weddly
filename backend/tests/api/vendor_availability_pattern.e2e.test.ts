@@ -716,3 +716,127 @@ describe("vendor availability — buffers", () => {
     expect(r.data.buffer_after_min).toBe(720);
   });
 });
+
+// ─── Publishing the calendar at all ──────────────────────────────────────────
+// A vendor asked for this in as many words: in their trade an openly readable
+// booked/free calendar is a marketing liability and a second diary to maintain
+// beside the one their own business already runs. Turning it off makes
+// availability UNKNOWN to Weddly rather than "free", and it must cost them
+// nothing else — least of all their place in a date-filtered search.
+describe("vendor availability — public calendar switch", () => {
+  function setCalendarPublic(
+    token: string,
+    isPublic: boolean,
+  ): Promise<{ status: number; data: VendorAvailabilitySettings }> {
+    return req<VendorAvailabilitySettings>(
+      "PUT",
+      "/api/vendor/availability/me/pattern",
+      { calendar_public: isPublic },
+      { token },
+    );
+  }
+
+  const monday = "2030-06-03";
+
+  test("defaults to published, which is what every existing account already does", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("cal-default");
+    expect((await getPattern(vendorToken)).data.calendar_public).toBe(true);
+    expect((await publicAvailability(listingId, coupleToken)).data.calendar_public).toBe(true);
+  });
+
+  test("switched off, the couple-facing payload says nothing about dates", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("cal-off");
+    await req("POST", "/api/vendor/availability/me", { date: monday }, { token: vendorToken });
+    // Published: the block is visible, as it has always been.
+    const before = await publicAvailability(listingId, coupleToken);
+    expect(before.data.unavailable_dates).toContain(monday);
+    expect(before.data.next_available).not.toBeNull();
+
+    const off = await setCalendarPublic(vendorToken, false);
+    expect(off.status).toBe(200);
+    expect(off.data.calendar_public).toBe(false);
+
+    const after = await publicAvailability(listingId, coupleToken);
+    expect(after.status).toBe(200);
+    expect(after.data.calendar_public).toBe(false);
+    expect(after.data.unavailable_dates).toEqual([]);
+    expect(after.data.partial_dates).toEqual([]);
+    expect(after.data.next_available).toBeNull();
+    expect(after.data.available_weekdays).toBeNull();
+    // The one thing that must NOT change: they are still open for business.
+    // Hiding a calendar is a privacy choice, not a decision to stop taking work.
+    expect(after.data.bookable).toBe(true);
+  });
+
+  test("a hidden calendar is never filtered out by a date search", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("cal-filter");
+    await req("POST", "/api/vendor/availability/me", { date: monday }, { token: vendorToken });
+    const taken = await req<{ supplier_ids: string[] }>(
+      "GET",
+      `/api/suppliers/unavailable?date=${monday}`,
+      undefined,
+      { token: coupleToken },
+    );
+    expect(taken.data.supplier_ids).toContain(listingId);
+
+    await setCalendarPublic(vendorToken, false);
+    const hidden = await req<{ supplier_ids: string[] }>(
+      "GET",
+      `/api/suppliers/unavailable?date=${monday}`,
+      undefined,
+      { token: coupleToken },
+    );
+    // Both halves matter: answering "taken" would leak the calendar one date at
+    // a time, and it would quietly cost them every date-filtered search.
+    expect(hidden.data.supplier_ids).not.toContain(listingId);
+  });
+
+  test("hiding keeps the vendor's own schedule and hands it all back on", async () => {
+    wipeAll();
+    const { vendorToken, listingId, coupleToken } = await bootstrapVendor("cal-restore");
+    await putPattern(vendorToken, [5, 6, 7]);
+    await req("POST", "/api/vendor/availability/me", { date: monday }, { token: vendorToken });
+
+    await setCalendarPublic(vendorToken, false);
+    // The vendor's OWN view is untouched — it is their planning tool, not a
+    // publication — and so is the stored week.
+    const mine = await req<{ blocked_dates: string[] }>(
+      "GET",
+      "/api/vendor/availability/me",
+      undefined,
+      { token: vendorToken },
+    );
+    expect(mine.data.blocked_dates).toContain(monday);
+    expect((await getPattern(vendorToken)).data.weekdays).toEqual([5, 6, 7]);
+
+    const on = await setCalendarPublic(vendorToken, true);
+    expect(on.data.calendar_public).toBe(true);
+    // Nothing had to be re-entered: the same dates and the same week come back.
+    const pub = await publicAvailability(listingId, coupleToken);
+    expect(pub.data.unavailable_dates).toContain(monday);
+    expect(pub.data.available_weekdays).toEqual([5, 6, 7]);
+  });
+
+  test("a switch-only PUT does not rewrite the week", async () => {
+    wipeAll();
+    const { vendorToken } = await bootstrapVendor("cal-only");
+    const day = [{ start_min: 600, end_min: 900 }];
+    const saved = await req<VendorAvailabilitySettings>(
+      "PUT",
+      "/api/vendor/availability/me/pattern",
+      { working_hours: { 1: day, 2: day, 3: [], 4: [], 5: [], 6: [], 7: [] } },
+      { token: vendorToken },
+    );
+    expect(saved.status).toBe(200);
+    expect(saved.data.weekdays).toEqual([1, 2]);
+
+    // Same trap the buffers had: an absent `weekdays` reads as "every day" in
+    // the legacy branch, so a body about one setting must not touch the hours.
+    const off = await setCalendarPublic(vendorToken, false);
+    expect(off.data.weekdays).toEqual([1, 2]);
+    expect(off.data.working_hours[1]).toEqual(day);
+  });
+});

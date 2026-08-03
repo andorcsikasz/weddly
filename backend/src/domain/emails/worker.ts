@@ -373,16 +373,16 @@ function sweepVendorProfileShareNudge(ts: number): number {
 
   let count = 0;
   const stamp = db.prepare("UPDATE vendor_accounts SET share_nudge_sent_at = ? WHERE id = ?");
-  const blockedDates = db.prepare(
-    "SELECT COUNT(*) AS n FROM vendor_unavailable_dates WHERE vendor_account_id = ?",
-  );
   for (const r of rows) {
-    const listingId = `v${r.account_id}`;
     const listing = getListingByVendorAccountId(r.account_id);
+    // The listing's OWN id, for the same reason `vendorListingMissing` uses it:
+    // a claimed listing keeps its imported id, so `v<accountId>` counted nothing
+    // for two thirds of vendors AND put a dead link in the share mail — the one
+    // mail whose entire job is handing the vendor their own URL.
+    const listingId = listing?.id ?? `v${r.account_id}`;
     const missing = {
       photos: !listing?.hero_image_url && countListingPhotos(listingId) === 0,
       bio: !(listing?.blurb_hu || listing?.blurb_en),
-      calendar: (blockedDates.get(r.account_id) as { n: number }).n === 0,
       packages: countListingPackages(listingId) === 0,
     };
     // Stamp BEFORE the fire-and-forget send — a true one-shot.

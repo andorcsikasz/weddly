@@ -215,7 +215,6 @@ export interface AdminVendorView {
     bio: boolean;
     pricing: boolean;
     packages: boolean;
-    availability: boolean;
   } | null;
   /** True when any `listing_missing` flag is set. False for pending rows. */
   listing_incomplete: boolean;

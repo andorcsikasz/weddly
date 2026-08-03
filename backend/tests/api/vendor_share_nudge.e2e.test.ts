@@ -108,7 +108,7 @@ describe("vendor profile-share nudge", () => {
         shareUrl: "https://tryweddly.com/vendors/v11",
         editUrl: "https://tryweddly.com/vendor/listing",
         reviewsUrl: "https://tryweddly.com/vendor/reviews",
-        missing: { photos: true, bio: false, calendar: true, packages: false },
+        missing: { photos: true, bio: false, packages: true },
       },
       { recipientName: "Bloom Studio", recipientLocale: "en" },
     );
@@ -119,9 +119,11 @@ describe("vendor profile-share nudge", () => {
     expect(html).not.toContain("utm_source");
     // Only the two empty sections are named; the filled ones are not.
     expect(html).toContain("photos");
-    expect(html).toContain("an availability calendar");
+    expect(html).toContain("pricing packages");
     expect(html).not.toContain("a short bio");
-    expect(html).not.toContain("pricing packages");
+    // An empty availability calendar is never named: it means the vendor has
+    // nothing booked, not that a section of their profile is blank.
+    expect(html).not.toContain("availability calendar");
     // The 5-star reviews trust nudge is present.
     expect(html.toLowerCase()).toContain("5-star");
     expect(html).toContain("/vendor/reviews");
@@ -135,7 +137,7 @@ describe("vendor profile-share nudge", () => {
         shareUrl: "https://tryweddly.com/vendors/v11",
         editUrl: "https://tryweddly.com/vendor/listing",
         reviewsUrl: "https://tryweddly.com/vendor/reviews",
-        missing: { photos: false, bio: false, calendar: false, packages: false },
+        missing: { photos: false, bio: false, packages: false },
       },
       { recipientName: "Bloom Studio", recipientLocale: "hu" },
     );

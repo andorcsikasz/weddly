@@ -15,30 +15,39 @@ export interface VendorListingMissing {
   bio: boolean;
   pricing: boolean;
   packages: boolean;
-  availability: boolean;
 }
 
 /** Which public-facing sections of a vendor's PRIMARY listing are still empty.
  *  Mirrors what a couple sees on the public profile, so the nudge (and the admin
- *  badge) only ever names things that are genuinely blank. */
+ *  badge) only ever names things that are genuinely blank.
+ *
+ *  Every count keys on the listing's OWN id, never on `v<accountId>`: only a
+ *  listing created by vendor register carries that id, while a CLAIMED one keeps
+ *  the curated/community id it was imported under ('csengokoncert', 'c9'). Two
+ *  thirds of live vendor listings are the claimed kind, and each of them was
+ *  told their photos and packages were missing while both were on the page —
+ *  the nudge counted rows under an id that does not exist.
+ *
+ *  There is deliberately NO availability rule here. It used to be "has blocked
+ *  no dates", which is not an empty section but an empty CALENDAR: a vendor with
+ *  nothing booked is fully available, and the reminder asked 50 of 62 accounts
+ *  to go and mark themselves busy. See `calendar_public` in
+ *  domain/vendor_availability_settings.ts for the vendors who publish no
+ *  calendar at all. */
 export function vendorListingMissing(vendorAccountId: number): VendorListingMissing {
-  const listingId = `v${vendorAccountId}`;
   const listing = getListingByVendorAccountId(vendorAccountId);
-  const blocked = db
-    .prepare("SELECT COUNT(*) AS n FROM vendor_unavailable_dates WHERE vendor_account_id = ?")
-    .get(vendorAccountId) as { n: number };
+  const listingId = listing?.id ?? `v${vendorAccountId}`;
   return {
     photos: !listing?.hero_image_url && countListingPhotos(listingId) === 0,
     bio: !(listing?.blurb_hu || listing?.blurb_en),
     pricing: listing?.price_band == null,
     packages: countListingPackages(listingId) === 0,
-    availability: blocked.n === 0,
   };
 }
 
 /** True when any public section is still empty. */
 export function isVendorListingIncomplete(m: VendorListingMissing): boolean {
-  return m.photos || m.bio || m.pricing || m.packages || m.availability;
+  return m.photos || m.bio || m.pricing || m.packages;
 }
 
 /** The account fields the reminder + its bookkeeping need. */

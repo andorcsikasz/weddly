@@ -2876,13 +2876,17 @@ export const vendorAvailabilityApi = {
   schedule: () =>
     apiFetch<VendorAvailabilitySettings>("GET", "/api/vendor/availability/me/pattern"),
   saveSchedule: (body: {
-    working_hours: WeeklyHours;
-    schedule_name: string;
+    working_hours?: WeeklyHours;
+    schedule_name?: string;
     /** Setup / teardown padding in minutes. Sending both pins them as the
      *  vendor's own choice; sending null for both restores the category
      *  default. */
     buffer_before_min?: number | null;
     buffer_after_min?: number | null;
+    /** Whether couples see this vendor's availability at all. Absent leaves it
+     *  alone, so the calendar-visibility switch can send itself and nothing
+     *  else — sending a schedule-shaped body would rewrite the week. */
+    calendar_public?: boolean;
   }) => apiFetch<VendorAvailabilitySettings>("PUT", "/api/vendor/availability/me/pattern", body),
 };
 

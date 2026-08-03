@@ -481,7 +481,7 @@ export interface VendorProfileSharePayload {
   /** Vendor business name, used in the greeting. Falls back to a generic
    *  greeting when empty. */
   businessName: string;
-  /** The vendor's PUBLIC profile URL (`/vendors/v{id}`). This is the CTA
+  /** The vendor's PUBLIC profile URL (`/vendors/<listing id>`). This is the CTA
    *  destination AND the copy-paste share link the whole mail is built around,
    *  so it stays UTM-free (noUtm) — the vendor pastes it into their own
    *  socials/email and we don't want an email-attribution tag riding along. */
@@ -493,12 +493,14 @@ export interface VendorProfileSharePayload {
    *  "ask a happy client for a review" nudge. */
   reviewsUrl: string;
   /** Which public-facing sections are still empty. Only the true ones are
-   *  named in the body; when all four are false the "finish your profile"
-   *  paragraph is dropped entirely and the mail is pure share + reviews. */
+   *  named in the body; when all three are false the "finish your profile"
+   *  paragraph is dropped entirely and the mail is pure share + reviews.
+   *
+   *  An empty availability calendar is deliberately NOT one of them: it means
+   *  the vendor has nothing booked, not that a section is blank. */
   missing: {
     photos: boolean;
     bio: boolean;
-    calendar: boolean;
     packages: boolean;
   };
 }
@@ -517,7 +519,6 @@ export interface VendorProfileIncompletePayload {
     bio: boolean;
     pricing: boolean;
     packages: boolean;
-    availability: boolean;
   };
   /** Rotating copy index (0-based). The builder picks one of N wording variants
    *  by `variant % N`, so consecutive reminders to the same vendor never read
@@ -2767,10 +2768,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       huMissing.push("bemutatkozó szöveg");
       enMissing.push("a short bio");
     }
-    if (p.missing.calendar) {
-      huMissing.push("foglaltsági naptár");
-      enMissing.push("an availability calendar");
-    }
     if (p.missing.packages) {
       huMissing.push("árcsomagok");
       enMissing.push("pricing packages");
@@ -2859,10 +2856,6 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     if (p.missing.packages) {
       huMissing.push("árcsomagok");
       enMissing.push("pricing packages");
-    }
-    if (p.missing.availability) {
-      huMissing.push("foglaltsági naptár");
-      enMissing.push("an availability calendar");
     }
     // The missing sections render as a bullet list (a `- ` line per item, which
     // the template turns into a <ul>) rather than an inline comma list: with up

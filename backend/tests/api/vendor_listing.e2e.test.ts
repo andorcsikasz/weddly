@@ -857,6 +857,49 @@ describe("vendor listing price-band 30-day cooldown", () => {
     // The accepted change re-stamps the anchor to "now".
     expect(after.data.listing.price_band_changed_at).toBeGreaterThan(thirtyOneDaysAgo);
   });
+
+  // The dead end the cooldown used to have, and the shape six live listings were
+  // stuck in: no published band, a fresh anchor, and the reminder mail naming
+  // "ársáv" as a missing section every few days. A rule that asks for a field it
+  // refuses to accept is worse than no rule.
+  test("a listing with NO published band can always set one, anchor or not", async () => {
+    wipeAll();
+    const { vendorToken, listingId } = await makeVendor("cooldown-unpriced");
+
+    // Withdraw the claim-seeded band, then pin the anchor to an hour ago: the
+    // state a stray click on the old toggling picker produced.
+    const withdraw = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: null },
+      { token: vendorToken },
+    );
+    expect(withdraw.status).toBe(200);
+    expect(withdraw.data.listing.price_band).toBeNull();
+    db.prepare("UPDATE listings SET price_band_changed_at = ? WHERE id = ?").run(
+      Date.now() - 60 * 60 * 1000,
+      listingId,
+    );
+
+    const republish = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 5 },
+      { token: vendorToken },
+    );
+    expect(republish.status).toBe(200);
+    expect(republish.data.listing.price_band).toBe(5);
+
+    // And the rule still bites: the band is published again, the anchor is
+    // recent, so the next change waits out the 30 days like any other.
+    const nextChange = await req(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { price_band: 2 },
+      { token: vendorToken },
+    );
+    expect(nextChange.status).toBe(409);
+  });
 });
 
 // ── Portfolio gallery ────────────────────────────────────────────────────────

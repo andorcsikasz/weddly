@@ -543,7 +543,7 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
   const looksLikePlanner = vendor.categories.includes("wedding_planner");
 
   // Localized names of the still-empty listing sections, for the "incomplete"
-  // badge tooltip. Order follows the object key order (photos → availability).
+  // badge tooltip. Order follows the object key order (photos → packages).
   const missingLabels = vendor.listing_missing
     ? (Object.entries(vendor.listing_missing) as [string, boolean][])
         .filter(([, on]) => on)

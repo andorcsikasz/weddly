@@ -259,12 +259,12 @@ const STUBS: KindPayload = {
     shareUrl: `${BASE_URL}/vendors/v11`,
     editUrl: `${BASE_URL}/vendor/listing`,
     reviewsUrl: `${BASE_URL}/vendor/reviews`,
-    missing: { photos: true, bio: false, calendar: true, packages: true },
+    missing: { photos: true, bio: false, packages: true },
   },
   vendor_profile_incomplete: {
     businessName: "Bloom Studio",
     editUrl: `${BASE_URL}/vendor/listing`,
-    missing: { photos: true, bio: true, pricing: false, packages: true, availability: false },
+    missing: { photos: true, bio: true, pricing: false, packages: true },
     variant: 0,
   },
   planner_profile_incomplete: {

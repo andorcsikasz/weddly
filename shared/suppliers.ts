@@ -1535,6 +1535,13 @@ export interface SupplierAvailability {
   /** True when the supplier is claimed by a vendor and therefore accepts
    *  booking inquiries. v1 rejects inquiries on unclaimed listings. */
   bookable: boolean;
+  /** Whether this vendor publishes their availability at all. False means they
+   *  turned the public calendar off in their own settings, so every field above
+   *  is deliberately empty: not "free on every date", but "Weddly does not know,
+   *  ask them". The UI drops the busy calendar entirely rather than drawing a
+   *  month with nothing marked, which would read as a promise we can't make.
+   *  Always true for the vendors who never touched the setting. */
+  calendar_public: boolean;
   /** The vendor's recurring weekly working pattern as ISO weekday numbers
    *  (1 = Monday … 7 = Sunday), or null for "works any day".
    *

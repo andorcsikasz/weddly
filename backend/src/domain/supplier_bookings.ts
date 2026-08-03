@@ -31,6 +31,7 @@ import {
   getVendorBuffers,
   getVendorSchedule,
   getVendorWeekdays,
+  isVendorCalendarPublic,
 } from "./vendor_availability_settings";
 import {
   expandWithBuffer,
@@ -216,6 +217,12 @@ export function listingIdsUnavailableOn(date: string): string[] {
   const out: string[] = [];
   for (const row of rows) {
     if (!isVendorEntitled(row.vendor_account_id)) continue;
+    // A vendor who publishes no calendar is never filtered out by a date. Both
+    // halves matter: dropping them would answer the availability question we
+    // just agreed not to answer (a couple could read the whole calendar back one
+    // date at a time), and it would quietly cost them every date-filtered search
+    // as the price of a privacy setting.
+    if (!isVendorCalendarPublic(row.vendor_account_id)) continue;
     const ex = db
       .prepare(
         `SELECT is_available, blocked_hours FROM vendor_unavailable_dates
@@ -503,6 +510,7 @@ export function getAvailability(supplierId: string): SupplierAvailability {
       partial_dates: [],
       next_available: null,
       bookable: false,
+      calendar_public: true,
       available_weekdays: null,
     };
   }
@@ -516,6 +524,21 @@ export function getAvailability(supplierId: string): SupplierAvailability {
       partial_dates: [],
       next_available: null,
       bookable: false,
+      calendar_public: true,
+      available_weekdays: null,
+    };
+  }
+  // The vendor publishes no availability. Everything availability-shaped comes
+  // off — no busy dates, no next-free date, no weekly pattern — while `bookable`
+  // deliberately stays true: they are still taking inquiries, they just answer
+  // the date question themselves instead of Weddly answering it for them.
+  if (!isVendorCalendarPublic(listing.vendor_account_id)) {
+    return {
+      unavailable_dates: [],
+      partial_dates: [],
+      next_available: null,
+      bookable: true,
+      calendar_public: false,
       available_weekdays: null,
     };
   }
@@ -535,6 +558,7 @@ export function getAvailability(supplierId: string): SupplierAvailability {
     partial_dates: partialDates,
     next_available: nextAvailableDate(listing.vendor_account_id),
     bookable: true,
+    calendar_public: true,
     // The recurring layer. Couples' calendars grey out the weekdays this vendor
     // doesn't work, without us enumerating an unbounded date set.
     available_weekdays: getVendorWeekdays(listing.vendor_account_id),

@@ -16,6 +16,7 @@
 // the upgrade path instead of a form whose writes would 402.
 
 import {
+  CalendarCheck,
   CalendarOff,
   CalendarPlus,
   CalendarSync,
@@ -47,7 +48,14 @@ import {
   type WorkInterval,
 } from "@shared/vendor_availability";
 import { GoogleCalendarConnect } from "../../components/GoogleCalendarConnect";
-import { DateField, Dialog, SegmentedControl, useConfirm, useToast } from "../../components/ui";
+import {
+  DateField,
+  Dialog,
+  SegmentedControl,
+  Switch,
+  useConfirm,
+  useToast,
+} from "../../components/ui";
 import { intlLocale } from "../../lib/format";
 import {
   vendorAvailabilityApi,
@@ -691,6 +699,13 @@ export default function VendorSettingsSchedule() {
    *  the vendor's own answer. Shown, because a value nobody typed should not
    *  look like a decision that was made. */
   const [bufferIsDefault, setBufferIsDefault] = useState(true);
+  /** Whether couples see this vendor's availability at all. Saved on the spot
+   *  rather than through the card's Save button: it is one switch with an
+   *  immediate public consequence, and leaving it sitting in an unsaved form
+   *  would mean a vendor who came here to take their calendar down thinks they
+   *  did and hasn't. */
+  const [calendarPublic, setCalendarPublic] = useState(true);
+  const [calendarBusy, setCalendarBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -712,6 +727,7 @@ export default function VendorSettingsSchedule() {
         setBufferAfter(s.buffer_after_min);
         setSavedBuffers({ before: s.buffer_before_min, after: s.buffer_after_min });
         setBufferIsDefault(s.buffer_is_default);
+        setCalendarPublic(s.calendar_public);
         setLoaded(true);
       })
       .catch(() => setLoadFailed(true));
@@ -781,6 +797,25 @@ export default function VendorSettingsSchedule() {
       toast.error(t("vendor.schedule.save_failed"));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function toggleCalendarPublic(next: boolean) {
+    setCalendarBusy(true);
+    // Optimistic, because the switch is the whole feedback: a control that only
+    // moves after a round trip reads as broken.
+    setCalendarPublic(next);
+    try {
+      const saved = await vendorAvailabilityApi.saveSchedule({ calendar_public: next });
+      setCalendarPublic(saved.calendar_public);
+      toast.success(
+        next ? t("vendor.schedule.public_on_saved") : t("vendor.schedule.public_off_saved"),
+      );
+    } catch {
+      setCalendarPublic(!next);
+      toast.error(t("vendor.schedule.save_failed"));
+    } finally {
+      setCalendarBusy(false);
     }
   }
 
@@ -869,6 +904,42 @@ export default function VendorSettingsSchedule() {
           </Link>
         </section>
       )}
+
+      {/* Is any of this public at all? First, because it governs everything
+          below it: with the switch off the week, the buffers and the dated
+          exceptions stay exactly where they are and keep working as the
+          vendor's own planning tool, they just stop being something couples can
+          read. */}
+      <section className="card p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="flex items-center gap-2 font-grotesk text-base font-semibold tracking-tight text-ink-900 dark:text-paper-50">
+              <CalendarCheck
+                size={18}
+                strokeWidth={1.5}
+                aria-hidden="true"
+                className="shrink-0 text-steel-600 dark:text-steel-300"
+              />
+              {t("vendor.schedule.public_title")}
+            </h2>
+            <p
+              id="vendor-calendar-public-help"
+              className="mt-1 text-sm text-ink-500 dark:text-umber-300"
+            >
+              {calendarPublic
+                ? t("vendor.schedule.public_on_body")
+                : t("vendor.schedule.public_off_body")}
+            </p>
+          </div>
+          <Switch
+            checked={calendarPublic}
+            disabled={!canEdit || calendarBusy}
+            onChange={(next) => void toggleCalendarPublic(next)}
+            label={t("vendor.schedule.public_title")}
+            describedBy="vendor-calendar-public-help"
+          />
+        </div>
+      </section>
 
       {/* Weekly schedule */}
       <section className="card p-5">

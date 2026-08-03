@@ -1357,6 +1357,13 @@ function BusyCalendarCard({
 
   const hasAny = blocked.size > 0 || partial.size > 0;
 
+  // The vendor publishes no availability. Drawing the grid anyway would show a
+  // month with every day clear, which is a promise about their diary that nobody
+  // made: the honest rendering of "we don't know" is no calendar at all. Still
+  // null while the payload is in flight, so the card only disappears on a real
+  // answer.
+  if (availability && !availability.calendar_public) return null;
+
   return (
     <SidebarCard
       icon={<CalendarIcon size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />}

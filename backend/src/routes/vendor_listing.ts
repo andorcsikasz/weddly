@@ -286,13 +286,24 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
     patch.name = undefined;
   }
 
-  // Anti-fraud pricing cooldown (shared/listings.ts): a change to the price
-  // band, including withdrawing it, is allowed once every 30 days. Only a
+  // Anti-fraud pricing cooldown (shared/listings.ts): a change to a PUBLISHED
+  // price band, including withdrawing it, is allowed once every 30 days. Only a
   // real change trips the gate; re-sending the current value is a no-op.
-  // Publishing the FIRST price never starts the clock (misclick grace), but
-  // every change of a published band stamps the anchor, so hide-and-republish
-  // can't be used to flip bands faster than the cooldown.
-  if (patch.price_band !== undefined && patch.price_band !== currentListing.price_band) {
+  //
+  // The lock never applies while the listing has NO published band. Without that
+  // exemption the cooldown had a dead end in it: a vendor who cleared their band
+  // (one stray click on the picker, autosaved a second later) was locked out of
+  // setting a price for 30 days while the reminder mail kept naming "ársáv" as a
+  // missing section. Six live listings sat in exactly that state, and being told
+  // to fill in a field the app refuses to let you touch is the worst thing an
+  // anti-fraud rule can do. The rule itself is intact: an unpriced listing shows
+  // couples no band at all, so there is no cheap ranking to flip away from, and
+  // the withdrawal still stamps the anchor — a vendor going band → none → band
+  // lands right back under the lock, having spent the gap invisible in the price
+  // filters, which is the same one-change-per-30-days cadence the rule allows.
+  const bandChanged =
+    patch.price_band !== undefined && patch.price_band !== currentListing.price_band;
+  if (bandChanged && currentListing.price_band !== null) {
     const lockedUntil = priceBandLockedUntil(currentListing.price_band_changed_at);
     if (lockedUntil !== null && now() < lockedUntil) {
       throw new HttpError(
@@ -300,7 +311,7 @@ async function handlePatchMe(ctx: Ctx): Promise<Response> {
         `price_band is locked until ${new Date(lockedUntil).toISOString().slice(0, 10)}`,
       );
     }
-    if (currentListing.price_band !== null) patch.price_band_changed_at = now();
+    patch.price_band_changed_at = now();
   }
   const updated = patchListing(currentListing.id, patch);
   if (!updated) {

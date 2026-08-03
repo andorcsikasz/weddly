@@ -83,21 +83,25 @@ function nudgeCount(accountId: number): number {
   return row.n;
 }
 
-/** Fill in every section the sweep checks, so the listing reads as complete. */
-function completeListing(accountId: number): void {
+function listingIdOf(accountId: number): string {
   const listing = db
     .prepare("SELECT id FROM listings WHERE vendor_account_id = ? ORDER BY updated_at DESC LIMIT 1")
     .get(accountId) as { id: string };
+  return listing.id;
+}
+
+/** Fill in every section the sweep checks, so the listing reads as complete.
+ *  Note there is nothing about the availability calendar here: an empty
+ *  calendar means the vendor has no bookings, not an unfinished profile. */
+function completeListing(accountId: number): void {
+  const listingId = listingIdOf(accountId);
   const ts = Date.now();
   db.prepare(
     "UPDATE listings SET hero_image_url = ?, blurb_hu = ?, price_band = 3 WHERE id = ?",
-  ).run("https://cdn.example/hero.jpg", "Bemutatkozó szöveg a stúdióról.", listing.id);
+  ).run("https://cdn.example/hero.jpg", "Bemutatkozó szöveg a stúdióról.", listingId);
   db.prepare(
     "INSERT INTO listing_packages (listing_id, name, price_text, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-  ).run(listing.id, "Alapcsomag", "150000 Ft", ts, ts);
-  db.prepare(
-    "INSERT INTO vendor_unavailable_dates (vendor_account_id, blocked_date, created_at) VALUES (?, ?, ?)",
-  ).run(accountId, "2030-06-20", ts);
+  ).run(listingId, "Alapcsomag", "150000 Ft", ts, ts);
 }
 
 describe("vendor incomplete-profile recurring nudge", () => {
@@ -187,7 +191,7 @@ describe("vendor incomplete-profile recurring nudge", () => {
     const payload = {
       businessName: "Bloom Studio",
       editUrl: "https://tryweddly.com/vendor/listing",
-      missing: { photos: true, bio: false, pricing: true, packages: false, availability: false },
+      missing: { photos: true, bio: false, pricing: true, packages: false },
     };
     const v0 = buildEmail(
       "vendor_profile_incomplete",
@@ -216,5 +220,43 @@ describe("vendor incomplete-profile recurring nudge", () => {
     expect(html).not.toContain("pricing packages");
     expect(html).not.toContain("an availability calendar");
     expect(html).toContain("/vendor/listing");
+  });
+
+  // Both regressions here come from one line: the sweep counted photos and
+  // packages under `v<accountId>`, an id only a listing born at vendor register
+  // carries. A CLAIMED listing keeps the id it was imported under, so two thirds
+  // of live vendors were told their photos and packages were missing while both
+  // were on their page, and no amount of uploading could ever satisfy it.
+  test("a claimed listing is read by its OWN id, not v<accountId>", async () => {
+    wipeAll();
+    const id = await registerVendor("claimed@test.test", "Csengőkoncert");
+    verify(id);
+    backdateCreation(id, 3 * DAY);
+    // Re-key the listing the way a claim does: same vendor, imported id.
+    const born = listingIdOf(id);
+    db.prepare("UPDATE listings SET id = ? WHERE id = ?").run("harangszo-koncert-studio", born);
+    completeListing(id);
+    expect(listingIdOf(id)).toBe("harangszo-koncert-studio");
+
+    runEmailSweep();
+    expect(nudgeCount(id)).toBe(0);
+    expect(readNudge(id).count).toBe(0);
+  });
+
+  test("an empty availability calendar is not an unfinished profile", async () => {
+    wipeAll();
+    const id = await registerVendor("nobookings@test.test", "Bloom Studio");
+    verify(id);
+    backdateCreation(id, 3 * DAY);
+    completeListing(id);
+    // Not one blocked date anywhere: this vendor is simply free, which is the
+    // state 50 of 62 live accounts were in when the sweep called them incomplete.
+    const blocked = db
+      .prepare("SELECT COUNT(*) AS n FROM vendor_unavailable_dates WHERE vendor_account_id = ?")
+      .get(id) as { n: number };
+    expect(blocked.n).toBe(0);
+
+    runEmailSweep();
+    expect(nudgeCount(id)).toBe(0);
   });
 });

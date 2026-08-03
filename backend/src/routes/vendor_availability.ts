@@ -26,6 +26,7 @@ import {
 import {
   getVendorSchedule,
   setVendorBuffers,
+  setVendorCalendarPublic,
   setVendorSchedule,
 } from "../domain/vendor_availability_settings";
 import { listVendorExternalBusy } from "../domain/vendor_external_busy";
@@ -188,6 +189,7 @@ async function handlePutPattern(ctx: Ctx): Promise<Response> {
     schedule_name?: unknown;
     buffer_before_min?: unknown;
     buffer_after_min?: unknown;
+    calendar_public?: unknown;
   }>(ctx.req);
 
   const current = getVendorSchedule(account.id);
@@ -249,6 +251,14 @@ async function handlePutPattern(ctx: Ctx): Promise<Response> {
     });
   }
 
+  // Same partial contract as the buffers: absent means unchanged. Only a real
+  // boolean counts — a body that sends anything else is not making a statement
+  // about publishing, and guessing one for a vendor would either hide dates
+  // couples are reading or publish a calendar someone deliberately took down.
+  if (typeof body.calendar_public === "boolean") {
+    setVendorCalendarPublic(account.id, body.calendar_public);
+  }
+
   markVendorCalendarDirty(account.id);
   const settings = getVendorSchedule(account.id);
   addAuditLog({
@@ -257,7 +267,11 @@ async function handlePutPattern(ctx: Ctx): Promise<Response> {
     action: "vendor.availability_pattern",
     target_kind: "vendor_account",
     target_id: account.id,
-    after: { weekdays: settings.weekdays ?? "every_day", named: settings.schedule_name !== "" },
+    after: {
+      weekdays: settings.weekdays ?? "every_day",
+      named: settings.schedule_name !== "",
+      calendar_public: settings.calendar_public,
+    },
   });
   return json(settings);
 }
