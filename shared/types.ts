@@ -4,6 +4,7 @@
 import type { CoupleBilling } from "./billing";
 import type { CoupleDesign } from "./design";
 import type { ListingPackage } from "./listing_packages";
+import type { UiLocale } from "./locales";
 import type { TimelineEmailEscalation } from "./notifications";
 import type { PlannerTierKey } from "./planner_points";
 import type { NameReview } from "./real_names";
@@ -30,10 +31,11 @@ export interface User {
   /** Couple this user belongs to. `null` only on signup before onboarding. */
   couple_id: number | null;
   verified_email: boolean;
-  /** Per-user UI locale captured at signup. Null until the user signs up
+  /** Per-user UI locale captured at signup, and re-persisted whenever the
+   *  user picks a language in a switcher. Null until the user signs up
    *  through a client that sends `locale` in the register body — the
    *  frontend then prefers `user.locale` over its own navigator detection. */
-  locale: "hu" | "en" | "es" | null;
+  locale: UiLocale | null;
   /** True when the user has a real local password (i.e. can sign in via the
    *  email/password form). False for Google-only signups whose stored hash is
    *  a synthetic placeholder. Drives the SessionExpiredDialog's choice of
@@ -1062,6 +1064,14 @@ export interface BudgetLine {
   /** When set, this line was auto-created from a DIY supplier entry on
    *  /app/suppliers and is locked — editing happens on the supplier card. */
   couple_supplier_id: string | null;
+  /** When set, this line mirrors a DIRECTORY supplier the couple both priced
+   *  (`couple_supplier_costs`) and committed to (`couple_picks`), and is locked
+   *  for the same reason: the price is owned by the supplier card. Clearing the
+   *  price or un-picking the supplier is what removes the row. The two
+   *  ownership columns are mutually exclusive: a booked vendor is either the
+   *  couple's own private row or a directory listing, never both, which is what
+   *  keeps one vendor to one line. */
+  listing_id: string | null;
   /** Honeymoon preset chip that created this line (e.g. "stay", "travel").
    *  Null for custom rows. Cleared server-side whenever the label is renamed. */
   preset_key?: string | null;

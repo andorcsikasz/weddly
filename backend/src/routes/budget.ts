@@ -63,6 +63,7 @@ interface LineRow {
   paid_huf: number;
   supplier_id: number | null;
   couple_supplier_id: string | null;
+  listing_id: string | null;
   notes: string | null;
   per_guest: number;
   icon: string | null;
@@ -84,6 +85,7 @@ function toLine(r: LineRow): BudgetLine {
     paid_huf: r.paid_huf,
     supplier_id: r.supplier_id,
     couple_supplier_id: r.couple_supplier_id,
+    listing_id: r.listing_id,
     notes: r.notes,
     per_guest: r.per_guest === 1,
     icon: r.icon,
@@ -254,10 +256,17 @@ async function handleUpdateLine(ctx: Ctx): Promise<Response> {
     .prepare("SELECT * FROM budget_lines WHERE id = ? AND couple_id = ?")
     .get(id, couple.id) as LineRow | undefined;
   if (!existing) throw new HttpError(404, "Line not found");
-  // DIY-supplier-mirrored lines are owned by the supplier card. Editing
-  // here would race with the next supplier save and confuse the user.
+  // Supplier-mirrored lines are owned by the supplier card. Editing here would
+  // race with the next supplier save and confuse the user. Two flavours, same
+  // verdict: a DIY entry owns its line through `couple_supplier_id`, a booked
+  // directory supplier owns its line through `listing_id` (pick + cost row).
   if (existing.couple_supplier_id) {
     throw new HttpError(409, "This line is managed by a DIY supplier entry", {
+      code: "locked",
+    });
+  }
+  if (existing.listing_id) {
+    throw new HttpError(409, "This line is managed by a directory supplier", {
       code: "locked",
     });
   }
@@ -385,6 +394,14 @@ function handleDeleteLine(ctx: Ctx): Response {
       code: "locked",
     });
   }
+  // Same for a booked directory supplier: the pick + the cost row own this line,
+  // and deleting it here would leave the couple's own budget disagreeing with
+  // the price on the supplier card until the next edit re-created it.
+  if (existing.listing_id) {
+    throw new HttpError(409, "This line is managed by a directory supplier", {
+      code: "locked",
+    });
+  }
   // Deleting a line in a frozen category would silently drop its planned cost
   // from the locked total. Refuse — the user must unfreeze first.
   const frozenSet = parseFrozenCategoriesJson(couple.frozen_categories_json);
@@ -431,6 +448,10 @@ async function handleCreateSnapshot(ctx: Ctx): Promise<Response> {
     // whether to skip a row (the live DIY supplier still owns it) or
     // re-insert it as a regular orphan.
     couple_supplier_id: l.couple_supplier_id,
+    // Carried for the opposite reason: a directory-supplier line is DERIVED
+    // (pick + cost row) and restore always skips it, so the field is here to be
+    // recognised, never to be replayed.
+    listing_id: l.listing_id,
   }));
   const ts = now();
   const result = db
@@ -476,7 +497,13 @@ function handleListSnapshots(ctx: Ctx): Response {
  *       stale frozen price would be confusing), and
  *    3. bumps the couple's `updated_at` so concurrency-sensitive tabs
  *       reload.
- *  Wrapped in `db.transaction()` — a partial restore would be terrible. */
+ *  Wrapped in `db.transaction()`, since a partial restore would be terrible.
+ *
+ *  Directory-supplier lines (`listing_id`) survive step 1 and are SKIPPED
+ *  outright in step 2, never restored under any condition. They are derived
+ *  from the live pick + cost row, so replaying one could only do one of two
+ *  wrong things: resurrect a line for a supplier the couple has since dropped,
+ *  or sit beside the live mirror as a second copy of one vendor. */
 interface RestoreLinePayload {
   category?: unknown;
   label?: unknown;
@@ -486,6 +513,7 @@ interface RestoreLinePayload {
   per_guest?: unknown;
   icon?: unknown;
   couple_supplier_id?: unknown;
+  listing_id?: unknown;
 }
 
 function parseSnapshotPayload(raw: string): RestoreLinePayload[] {
@@ -557,12 +585,15 @@ function handleRestoreSnapshot(ctx: Ctx): Response {
   let restoredCount = 0;
 
   const tx = db.transaction(() => {
-    // 1. Wipe non-DIY lines. DIY-mirrored rows survive — the supplier
-    //    auto-recreates them, and nuking them silently would orphan the
-    //    /app/suppliers DIY entry without a path to re-link.
-    db.prepare("DELETE FROM budget_lines WHERE couple_id = ? AND couple_supplier_id IS NULL").run(
-      couple.id,
-    );
+    // 1. Wipe the hand-owned lines only. Both flavours of supplier-mirrored row
+    //    survive: the DIY supplier auto-recreates its line (and nuking it
+    //    silently would orphan the /app/suppliers entry without a path to
+    //    re-link), and a directory supplier's line is owned by a pick + a cost
+    //    row that this restore knows nothing about.
+    db.prepare(
+      `DELETE FROM budget_lines
+        WHERE couple_id = ? AND couple_supplier_id IS NULL AND listing_id IS NULL`,
+    ).run(couple.id);
 
     // 2. Insert the snapshot payload. Skip rows whose couple_supplier_id is
     //    still owned by a live supplier — the supplier card holds the
@@ -574,6 +605,11 @@ function handleRestoreSnapshot(ctx: Ctx): Response {
        VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
     );
     for (const raw of payload) {
+      // A directory-supplier line is never replayed: the live mirror already
+      // survived step 1, so re-inserting would double the vendor, and if the
+      // couple has since un-picked them the snapshot's copy would resurrect a
+      // commitment they withdrew.
+      if (typeof raw.listing_id === "string" && raw.listing_id) continue;
       const cspId = typeof raw.couple_supplier_id === "string" ? raw.couple_supplier_id : null;
       if (cspId && survivingIds.has(cspId)) {
         // Live DIY supplier still owns its mirrored line. Skip — the

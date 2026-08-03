@@ -18,6 +18,7 @@ import type { CoupleSupplier, CoupleSupplierDirectoryMatch } from "@shared/coupl
 import { SUPPLIER_TO_BUDGET, type SupplierCategory } from "@shared/suppliers";
 import { db, now } from "../db";
 import { insertCommunitySupplier } from "./community_suppliers";
+import { syncListingBudgetLine } from "./listing_budget_mirror";
 import { findDirectoryTwinByName } from "./listings";
 import { listForSupplier, recomputePaidState } from "./supplier_installments";
 
@@ -324,8 +325,10 @@ export function update(id: string, coupleId: number, input: UpdateInput): Couple
 
 export function deleteById(id: string, coupleId: number): boolean {
   const existing = db
-    .prepare("SELECT budget_line_id FROM couple_suppliers WHERE id = ? AND couple_id = ?")
-    .get(id, coupleId) as { budget_line_id: number | null } | undefined;
+    .prepare(
+      "SELECT budget_line_id, listing_id FROM couple_suppliers WHERE id = ? AND couple_id = ?",
+    )
+    .get(id, coupleId) as { budget_line_id: number | null; listing_id: string | null } | undefined;
   if (!existing) return false;
 
   // Drop the paired budget line and the supplier row together.
@@ -333,9 +336,14 @@ export function deleteById(id: string, coupleId: number): boolean {
     if (existing.budget_line_id !== null) {
       deleteBudgetLine(existing.budget_line_id, coupleId);
     }
-    return db
+    const r = db
       .prepare("DELETE FROM couple_suppliers WHERE id = ? AND couple_id = ?")
       .run(id, coupleId);
+    // This row was the reason the listing's own mirror stood down (one booked
+    // vendor, one budget line). With the row gone the directory side is free to
+    // answer for itself again, if it is still picked and still priced.
+    if (existing.listing_id) syncListingBudgetLine(coupleId, existing.listing_id);
+    return r;
   })();
   return result.changes > 0;
 }
@@ -376,6 +384,11 @@ export function bindListing(
     db.prepare(
       "UPDATE couple_picks SET supplier_id = ? WHERE couple_id = ? AND supplier_id = ?",
     ).run(listingId, coupleId, id);
+    // From here the private row IS this listing, and it already owns a mirrored
+    // budget line. A line the listing had earned on its own (the couple had
+    // picked and priced it before adopting) would now be the second copy of one
+    // vendor, so the mirror is re-run to withdraw it.
+    syncListingBudgetLine(coupleId, listingId);
   })();
   return getById(id, coupleId);
 }

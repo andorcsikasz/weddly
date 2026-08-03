@@ -4,6 +4,7 @@
 
 import { type CouplePick, isSentinelPick } from "@shared/picks";
 import { db, now } from "../db";
+import { syncListingBudgetLine } from "./listing_budget_mirror";
 import { resolveSupplierBase } from "./resolve_supplier";
 
 interface Row {
@@ -62,7 +63,13 @@ export function getPick(coupleId: number, category: string): CouplePick | null {
 
 /** Insert-or-replace a pick. Uses the UNIQUE(couple_id, category) constraint
  *  to keep exactly one row per category — caller looks up the prior pick (if
- *  any) for audit `before` payloads before calling this. */
+ *  any) for audit `before` payloads before calling this.
+ *
+ *  The pick is also the COMMITMENT GATE on the budget: a priced directory
+ *  supplier earns a `budget_lines` row only while it is picked. So the replace
+ *  the UNIQUE constraint performs is two budget edits, not one: the supplier
+ *  being dropped loses its line in the same breath as the new one gains it,
+ *  which is the edge that would otherwise leave the couple paying for both. */
 export function upsertPick(
   coupleId: number,
   category: string,
@@ -70,23 +77,37 @@ export function upsertPick(
   userId: number,
 ): CouplePick {
   const ts = now();
-  db.prepare(
-    `INSERT INTO couple_picks (couple_id, category, supplier_id, picked_by_user_id, picked_at)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(couple_id, category) DO UPDATE SET
-       supplier_id = excluded.supplier_id,
-       picked_by_user_id = excluded.picked_by_user_id,
-       picked_at = excluded.picked_at`,
-  ).run(coupleId, category, supplierId, userId, ts);
+  const previous = getPick(coupleId, category);
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO couple_picks (couple_id, category, supplier_id, picked_by_user_id, picked_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(couple_id, category) DO UPDATE SET
+         supplier_id = excluded.supplier_id,
+         picked_by_user_id = excluded.picked_by_user_id,
+         picked_at = excluded.picked_at`,
+    ).run(coupleId, category, supplierId, userId, ts);
+    if (previous && previous.supplier_id !== supplierId) {
+      syncListingBudgetLine(coupleId, previous.supplier_id);
+    }
+    syncListingBudgetLine(coupleId, supplierId);
+  })();
   const fresh = getPick(coupleId, category);
   if (!fresh) throw new Error("couple_picks row vanished after upsert");
   return fresh;
 }
 
-/** Returns true if a row was deleted (i.e. there was something to clear). */
+/** Returns true if a row was deleted (i.e. there was something to clear).
+ *  Un-picking withdraws the commitment, so the mirrored budget line goes with
+ *  it; the cost row itself survives as the price note it always was. */
 export function removePick(coupleId: number, category: string): boolean {
-  const r = db
-    .prepare("DELETE FROM couple_picks WHERE couple_id = ? AND category = ?")
-    .run(coupleId, category);
-  return r.changes > 0;
+  const previous = getPick(coupleId, category);
+  const changes = db.transaction(() => {
+    const r = db
+      .prepare("DELETE FROM couple_picks WHERE couple_id = ? AND category = ?")
+      .run(coupleId, category);
+    if (previous) syncListingBudgetLine(coupleId, previous.supplier_id);
+    return r.changes;
+  })();
+  return changes > 0;
 }

@@ -1,8 +1,14 @@
 // Per-couple cost tracking against directory suppliers. The directory itself
 // is global (curated entries in code + community submissions in DB), but each
 // couple has their own planned + actual figure per supplier they care about.
+//
+// A figure here reaches /app/budget only while the supplier is the couple's
+// PICK in its category: see domain/listing_budget_mirror.ts for why, and for
+// the double-count guard. Every writer below re-syncs the mirror in the same
+// transaction, so the budget line and the money it stands for commit together.
 
 import { db, now } from "../db";
+import { syncListingBudgetLine } from "./listing_budget_mirror";
 
 export interface CoupleSupplierCostRow {
   id: number;
@@ -62,24 +68,30 @@ export function upsertCoupleSupplierCost(
   input: UpsertCostInput,
 ): CoupleSupplierCostRow {
   const ts = now();
-  db.prepare(
-    `INSERT INTO couple_supplier_costs
-       (couple_id, supplier_id, planned_huf, actual_huf, notes, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(couple_id, supplier_id) DO UPDATE SET
-       planned_huf = excluded.planned_huf,
-       actual_huf = excluded.actual_huf,
-       notes = excluded.notes,
-       updated_at = excluded.updated_at`,
-  ).run(coupleId, supplierId, input.planned_huf, input.actual_huf, input.notes, ts, ts);
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO couple_supplier_costs
+         (couple_id, supplier_id, planned_huf, actual_huf, notes, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(couple_id, supplier_id) DO UPDATE SET
+         planned_huf = excluded.planned_huf,
+         actual_huf = excluded.actual_huf,
+         notes = excluded.notes,
+         updated_at = excluded.updated_at`,
+    ).run(coupleId, supplierId, input.planned_huf, input.actual_huf, input.notes, ts, ts);
+    syncListingBudgetLine(coupleId, supplierId);
+  })();
   const row = getCoupleSupplierCost(coupleId, supplierId);
   if (!row) throw new Error("Failed to read upserted supplier cost row");
   return row;
 }
 
 export function deleteCoupleSupplierCost(coupleId: number, supplierId: string): void {
-  db.prepare("DELETE FROM couple_supplier_costs WHERE couple_id = ? AND supplier_id = ?").run(
-    coupleId,
-    supplierId,
-  );
+  db.transaction(() => {
+    db.prepare("DELETE FROM couple_supplier_costs WHERE couple_id = ? AND supplier_id = ?").run(
+      coupleId,
+      supplierId,
+    );
+    syncListingBudgetLine(coupleId, supplierId);
+  })();
 }
