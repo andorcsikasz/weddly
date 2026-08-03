@@ -98,7 +98,15 @@ function installFetch() {
     }
     if (url.includes("/api/couples/current")) {
       return jsonResponse(200, {
-        couple: { id: coupleId, wedding_date: null, currency: "EUR" },
+        couple: {
+          id: coupleId,
+          wedding_date: null,
+          currency: "EUR",
+          // Not decoration: the compose dialog mail-merges the headcount into
+          // the template body, so a couple stub without this field crashes the
+          // modal the Send inquiry button opens.
+          guest_count_goal: { kind: "range", exact: null, min: 85, max: 105 },
+        },
       });
     }
     if (url.includes("/reviews")) {
@@ -342,5 +350,55 @@ describe("SupplierDetailPage: pick is a sage bookmark", () => {
     });
     expect(saved).toContain(SUPPLIER_ID);
     expect(picks[CATEGORY]).toBe(SUPPLIER_ID);
+  });
+});
+
+// The page's PRIMARY action, and the one the two above are secondary to.
+//
+// `contact_email` is null on this fixture because it is null on the real
+// payload: a vendor's mailbox is never handed to a user (owner rule,
+// 2026-07-31). The page nonetheless gated Send inquiry on the truthiness of
+// that value, so from the day the address was withdrawn the CTA was disabled on
+// every listing in the directory, on desktop and in the mobile sticky bar, and
+// Messages ▸ Outreach was the only surviving way to write to a vendor. Nothing
+// errored: the button simply stopped answering.
+describe("SupplierDetailPage: send inquiry is offered whenever the channel is deliverable", () => {
+  beforeEach(() => {
+    coupleId = ++coupleIdSeq;
+    installFetch();
+  });
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  function inquiryButtons(): HTMLButtonElement[] {
+    return screen.getAllByRole("button", { name: /send inquiry/i }) as HTMLButtonElement[];
+  }
+
+  it("is enabled on has_contact_email, which is all the payload ever says", async () => {
+    await renderPage();
+    const buttons = inquiryButtons();
+    // Desktop row + mobile sticky bar. Both render always; CSS picks.
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const b of buttons) expect(b.disabled).toBe(false);
+  });
+
+  it("opens the composer rather than doing nothing", async () => {
+    await renderPage();
+    fireEvent.click(inquiryButtons()[0] as HTMLButtonElement);
+    await flush();
+    // The composer's own fields are the proof it mounted; a dead button leaves
+    // the page exactly as it was. (The dialog TITLE is also "Send inquiry", so
+    // matching on that text would match the buttons too.)
+    await waitFor(() => {
+      expect(document.getElementById("outreach-subject")).toBeTruthy();
+      expect(document.getElementById("outreach-body")).toBeTruthy();
+    });
+  });
+
+  it("stays disabled when there is no mailbox to deliver to", async () => {
+    detail = { ...detail, has_contact_email: false };
+    await renderPage();
+    for (const b of inquiryButtons()) expect(b.disabled).toBe(true);
   });
 });

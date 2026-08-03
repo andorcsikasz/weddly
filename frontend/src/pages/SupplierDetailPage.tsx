@@ -361,7 +361,17 @@ export default function SupplierDetailPage() {
         ? ratingAvg.toFixed(1).replace(".", ",")
         : ratingAvg.toFixed(1)
       : null;
-  const canInquire = Boolean(detail.contact_email);
+  // `has_contact_email`, NEVER `contact_email`. The address itself is nulled on
+  // every couple-facing payload (owner rule, 2026-07-31 — a mailbox is never
+  // shown to a user), so a truthiness check on the value is a check that can
+  // only ever be false: this disabled the Send inquiry button on all 356
+  // listings at once, on desktop AND in the mobile sticky bar, leaving the
+  // vendor page — the most discoverable way into outreach — with a dead primary
+  // CTA and Messages ▸ Outreach as the only working door. The boolean is the
+  // whole vocabulary the payload has for "there is a deliverable mailbox here",
+  // and it agrees with what the send actually requires: `resolveSupplierContacts`
+  // refuses a listing with no `contact_email` (400 `supplier_no_email`).
+  const canInquire = detail.has_contact_email;
   const inquireLabel = t("suppliers.detail.cta.sendInquiry");
   const saveLabel = t(isSaved ? "suppliers.detail.cta.savedActive" : "suppliers.detail.cta.save");
   // Same aria pair the directory card uses, so a screen reader hears one
@@ -760,6 +770,10 @@ export default function SupplierDetailPage() {
             type="button"
             onClick={() => setComposeOpen(true)}
             disabled={!canInquire}
+            // Same explanation the desktop row carries. The bar renders below
+            // `lg`, which includes hover-capable narrow desktops, so a greyed
+            // CTA that says nothing is avoidable here too.
+            title={canInquire ? undefined : t("suppliers.detail.cta.inquireDisabled")}
             className="btn-accent flex-1 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Send size={16} aria-hidden />
