@@ -118,7 +118,7 @@ export default function AdminFlaggedReviewsPage() {
                   <span className="text-sm font-medium text-ink-900 dark:text-paper-50">
                     {r.author_display_name}
                   </span>
-                  <span className="rounded-full bg-cream-100 px-2 py-0.5 text-xs text-ink-600 dark:bg-umber-700/40 dark:text-umber-200">
+                  <span className="rounded-full bg-paper-100 px-2 py-0.5 text-xs text-ink-600 dark:bg-umber-700/40 dark:text-umber-200">
                     {r.author_kind}
                   </span>
                 </div>
@@ -154,7 +154,7 @@ export default function AdminFlaggedReviewsPage() {
                   {r.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full bg-cream-100 px-2 py-0.5 text-xs text-ink-700 dark:bg-umber-700/40 dark:text-umber-100"
+                      className="rounded-full bg-paper-100 px-2 py-0.5 text-xs text-ink-700 dark:bg-umber-700/40 dark:text-umber-100"
                     >
                       {reviewTagLabel(tag, t)}
                     </span>

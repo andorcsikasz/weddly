@@ -140,7 +140,7 @@ function NameFixCard({
             aria-invalid={showErrors && brideVerdict !== null}
           />
           {showErrors && brideVerdict && (
-            <p className="mt-1.5 text-sm text-clay-700">
+            <p className="mt-1.5 text-sm text-blush-700 dark:text-blush-300">
               {t(realNameErrorKey(brideVerdict.reason))}
             </p>
           )}
@@ -158,13 +158,17 @@ function NameFixCard({
             aria-invalid={showErrors && groomVerdict !== null}
           />
           {showErrors && groomVerdict && (
-            <p className="mt-1.5 text-sm text-clay-700">
+            <p className="mt-1.5 text-sm text-blush-700 dark:text-blush-300">
               {t(realNameErrorKey(groomVerdict.reason))}
             </p>
           )}
         </div>
       </div>
-      {failed && <p className="mt-3 text-sm text-clay-700">{t("common.error_generic")}</p>}
+      {failed && (
+        <p className="mt-3 text-sm text-blush-700 dark:text-blush-300">
+          {t("common.error_generic")}
+        </p>
+      )}
       <button type="submit" className="btn-primary mt-6 w-full" disabled={saving}>
         {saving ? t("real_names.locked_saving") : t("real_names.locked_save")}
       </button>

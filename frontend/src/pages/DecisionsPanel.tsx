@@ -631,7 +631,7 @@ function DecisionCard({
           )}
 
           {seed?.prompt_target === "supplier" && !decided && (
-            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-oat-100 px-2 py-0.5 text-[11px] text-umber-700 dark:bg-umber-700 dark:text-umber-100">
+            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-paper-100 px-2 py-0.5 text-[11px] text-umber-700 dark:bg-umber-700 dark:text-umber-100">
               <HelpCircle size={11} aria-hidden="true" />
               {t("planning.decisions.ask_supplier")}
             </span>

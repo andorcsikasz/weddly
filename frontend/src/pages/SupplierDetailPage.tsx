@@ -422,7 +422,7 @@ export default function SupplierDetailPage() {
             <div className="mt-5 text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
               {t(`suppliers.cat.${detail.category}`)} · {detail.city}
             </div>
-            <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50 sm:text-4xl">
+            <h1 className="mt-1 inline-flex flex-wrap items-center gap-x-2 text-3xl font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50 sm:text-4xl">
               <span>{detail.name}</span>
               {detail.vendor_account_id !== null && (
                 <VerifiedBadge size={28} complete={detail.listing_complete} />
@@ -445,7 +445,7 @@ export default function SupplierDetailPage() {
                       max: 5,
                     })}
                   />
-                  <span className="font-medium text-ink-900 dark:text-cream-50">
+                  <span className="font-medium text-ink-900 dark:text-paper-50">
                     {ratingDisplay}
                   </span>
                   <span className="text-ink-500 dark:text-umber-300">·</span>
@@ -593,7 +593,7 @@ export default function SupplierDetailPage() {
               least one. */}
           {detail.videos.length > 0 && (
             <section className="mb-10">
-              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+              <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                 {t("suppliers.detail.videos.title")}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -613,7 +613,7 @@ export default function SupplierDetailPage() {
 
           {/* About / blurb */}
           <section className="mb-10">
-            <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+            <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
               {t("suppliers.detail.about.title")}
             </h2>
             <BlurbBody detail={detail} locale={locale} t={t} />
@@ -640,7 +640,7 @@ export default function SupplierDetailPage() {
               shared <VendorPackageGrid> (also used by the public page). */}
           {detail.packages.length > 0 && (
             <section className="mb-10">
-              <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+              <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                 {t("suppliers.detail.packages.title")}
               </h2>
               <VendorPackageGrid packages={detail.packages} t={t} />
@@ -914,7 +914,7 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
     // The id is the jump target for the admin panel's comment counter, which
     // was a dead number sitting a screen below the thread it counts.
     <section id={COMMENTS_ANCHOR_ID} className="mb-10 scroll-mt-24">
-      <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+      <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
         {t("suppliers.detail.comments.title")}
       </h2>
 
@@ -922,7 +922,7 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
           (admin_internal / public / vendor_only) is a moderation control, and
           couple-authored questions are a separate Phase-3 surface. */}
       {isAdmin && (
-        <div className="mb-6 rounded-xl border border-ink-200/60 bg-cream-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
+        <div className="mb-6 rounded-xl border border-ink-200/60 bg-paper-50 p-5 dark:border-umber-700/60 dark:bg-umber-800/40">
           <textarea
             className="mb-3 w-full rounded-md border border-ink-200 bg-white p-3 text-sm dark:border-umber-700 dark:bg-umber-900"
             placeholder={t("suppliers.detail.comments.placeholder")}
@@ -968,7 +968,7 @@ function CommentsSection({ comments, ...ctx }: SectionCtx & { comments: Supplier
             >
               <div className="mb-1 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-ink-900 dark:text-cream-50">
+                  <span className="text-sm font-medium text-ink-900 dark:text-paper-50">
                     {c.author.display_name}
                   </span>
                   {c.author.is_admin && <Pill tone="violet">Weddly</Pill>}
@@ -1019,7 +1019,7 @@ function BookingsSection({
   if (!bookable && bookings.length === 0) return null;
   return (
     <section className="mb-10">
-      <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+      <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
         {t("suppliers.detail.calendar.title")}
       </h2>
       {bookings.length === 0 ? (
@@ -1034,7 +1034,7 @@ function BookingsSection({
               className="flex items-center justify-between rounded-xl border border-ink-200/60 bg-white p-4 text-sm dark:border-umber-700/60 dark:bg-umber-900"
             >
               <div>
-                <div className="font-medium text-ink-900 dark:text-cream-50">{b.event_date}</div>
+                <div className="font-medium text-ink-900 dark:text-paper-50">{b.event_date}</div>
                 <div className="text-xs text-ink-500 dark:text-umber-300">
                   {t(`suppliers.detail.calendar.status.${b.status}`)}
                 </div>
@@ -1081,7 +1081,7 @@ function ClaimCtaSection({
 
   if (isVendorSelfServeBlocked(category)) {
     return (
-      <section className="mb-10 rounded-xl border border-ink-200/60 bg-cream-50 p-6 dark:border-umber-700/60 dark:bg-umber-800/40">
+      <section className="mb-10 rounded-xl border border-ink-200/60 bg-paper-50 p-6 dark:border-umber-700/60 dark:bg-umber-800/40">
         <div className="mb-4 flex items-start gap-3">
           <ShieldCheck
             size={22}
@@ -1089,7 +1089,7 @@ function ClaimCtaSection({
             className="mt-0.5 shrink-0 text-paper-600 dark:text-paper-400"
           />
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+            <h2 className="text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
               {t("suppliers.detail.claim.plannerTitle")}
             </h2>
             <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
@@ -1108,7 +1108,7 @@ function ClaimCtaSection({
   }
 
   return (
-    <section className="mb-10 rounded-xl border border-ink-200/60 bg-cream-50 p-6 dark:border-umber-700/60 dark:bg-umber-800/40">
+    <section className="mb-10 rounded-xl border border-ink-200/60 bg-paper-50 p-6 dark:border-umber-700/60 dark:bg-umber-800/40">
       <div className="mb-4 flex items-start gap-3">
         <ShieldCheck
           size={22}
@@ -1116,7 +1116,7 @@ function ClaimCtaSection({
           className="mt-0.5 shrink-0 text-paper-600 dark:text-paper-400"
         />
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold tracking-tight text-ink-900 dark:text-cream-50">
+          <h2 className="text-lg font-semibold tracking-tight text-ink-900 dark:text-paper-50">
             {t("suppliers.detail.claim.sectionTitle")}
           </h2>
           <p className="mt-1 text-sm text-ink-600 dark:text-umber-200">
@@ -1163,7 +1163,7 @@ function SidebarCard({
     // cards so the whole page reads as one system.
     <div className="rounded-2xl bg-white p-5 shadow-elevated ring-1 ring-black/[0.04] dark:bg-umber-900 dark:shadow-none dark:ring-umber-600">
       {title && (
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-cream-50">
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-paper-50">
           {icon}
           {title}
         </h3>
@@ -1238,7 +1238,7 @@ function HeroImage({
       className="flex aspect-[16/9] w-full items-center justify-center rounded-2xl border-2 border-dashed border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-800/60"
     >
       <div className="flex flex-col items-center gap-4 text-center">
-        <Wordmark size="lg" className="text-ink-700 dark:text-cream-100" />
+        <Wordmark size="lg" className="text-ink-700 dark:text-paper-100" />
         <CategoryGlyph
           size={72}
           strokeWidth={1.25}

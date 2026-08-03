@@ -231,7 +231,7 @@ export function SessionExpiredDialog({
       )}
 
       {!showPassword && error && (
-        <p id={errorId} className="mt-3 text-sm text-danger-700 dark:text-danger-300" role="alert">
+        <p id={errorId} className="mt-3 text-sm text-blush-700 dark:text-blush-300" role="alert">
           {error}
         </p>
       )}

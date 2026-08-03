@@ -557,7 +557,10 @@ export default function OnboardingWizard() {
                     placeholder={t("onboarding.bride_name_placeholder")}
                   />
                   {nameErrorsShown && brideVerdict && (
-                    <p id="bride_name_error" className="mt-1.5 text-sm text-clay-700">
+                    <p
+                      id="bride_name_error"
+                      className="mt-1.5 text-sm text-blush-700 dark:text-blush-300"
+                    >
                       {t(realNameErrorKey(brideVerdict.reason))}
                     </p>
                   )}
@@ -579,7 +582,10 @@ export default function OnboardingWizard() {
                     placeholder={t("onboarding.groom_name_placeholder")}
                   />
                   {nameErrorsShown && groomVerdict && (
-                    <p id="groom_name_error" className="mt-1.5 text-sm text-clay-700">
+                    <p
+                      id="groom_name_error"
+                      className="mt-1.5 text-sm text-blush-700 dark:text-blush-300"
+                    >
                       {t(realNameErrorKey(groomVerdict.reason))}
                     </p>
                   )}

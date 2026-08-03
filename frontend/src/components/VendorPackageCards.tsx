@@ -161,7 +161,7 @@ function SpecRow({ spec }: { spec: Spec }) {
       {spec.label ? (
         <span className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
           <span className="text-ink-500 dark:text-umber-300">{spec.label}</span>
-          <span className="text-right font-medium text-ink-900 dark:text-cream-50">
+          <span className="text-right font-medium text-ink-900 dark:text-paper-50">
             {spec.value}
           </span>
         </span>
@@ -189,11 +189,11 @@ function PackageCard({
           price. The name reserves two lines (min-h) so the divider below it
           lands in the same band across every card, whatever the name length. */}
       <div className="flex flex-col gap-1.5 px-5 pb-4 pt-5">
-        <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-semibold leading-snug text-ink-900 dark:text-cream-50">
+        <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-semibold leading-snug text-ink-900 dark:text-paper-50">
           {pkg.name}
         </h3>
         {pkg.price_text ? (
-          <p className="text-lg font-bold leading-tight tracking-tight text-ink-900 dark:text-cream-50">
+          <p className="text-lg font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50">
             {pkg.price_text}
           </p>
         ) : isEmpty ? (
@@ -212,7 +212,7 @@ function PackageCard({
             type="button"
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
-            className="flex w-full items-center justify-between gap-1 py-1.5 text-sm font-medium text-ink-600 transition hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-umber-200 dark:hover:text-cream-50"
+            className="flex w-full items-center justify-between gap-1 py-1.5 text-sm font-medium text-ink-600 transition hover:text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 dark:text-umber-200 dark:hover:text-paper-50"
           >
             {expanded
               ? t("suppliers.detail.packages.showLess")
@@ -243,7 +243,7 @@ function PackageCard({
             href={pkg.pdf_url}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-700 hover:text-ink-900 hover:underline dark:text-umber-100 dark:hover:text-cream-50"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-700 hover:text-ink-900 hover:underline dark:text-umber-100 dark:hover:text-paper-50"
           >
             <FileText size={15} aria-hidden />
             {pkg.pdf_name ?? t("suppliers.detail.packages.download")}
