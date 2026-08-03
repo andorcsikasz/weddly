@@ -55,6 +55,9 @@ process.env.GOOGLE_CLIENT_ID = "test-google-client.apps.googleusercontent.com";
 // fake instead of hitting Google. See backend/src/lib/google_calendar.ts.
 process.env.GOOGLE_CLIENT_SECRET = "test-google-client-secret";
 process.env.GOOGLE_CALENDAR_FAKE = "1";
+// Pinned ON so the suite exercises the interesting branch: the pre-consent
+// warning the app shows while Google's verification review is pending.
+process.env.GOOGLE_OAUTH_UNVERIFIED = "1";
 // Same escape hatch for the Apple ID-token verifier — the E2E suite exercises
 // /api/auth/apple via HMAC'd test bearers (mintAppleTestBearer) instead of
 // hitting Apple; see backend/src/lib/apple_oauth.ts.

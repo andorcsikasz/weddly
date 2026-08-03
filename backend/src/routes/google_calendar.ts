@@ -34,6 +34,7 @@ function statusFor(coupleId: number): GoogleCalendarStatus {
     syncState: conn ? (conn.sync_state === "idle" ? "idle" : "dirty") : null,
     lastError: conn?.last_error ?? null,
     needsReconnect: conn?.last_error === GCAL_REAUTH_REQUIRED,
+    verificationPending: CONFIG.googleOAuthUnverified,
     // The couple sync is push-only: their Google calendar holds the wedding, and
     // reading it back would let an unrelated appointment move planning dates.
     // Only the vendor aggregate pulls.

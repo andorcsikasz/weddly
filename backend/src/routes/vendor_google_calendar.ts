@@ -15,7 +15,7 @@
 
 import type { GoogleCalendarStatus } from "@shared/types";
 import { isVendorFeatureEnabled } from "@shared/vendor_plan";
-import { GOOGLE_CALENDAR_ENABLED } from "../config";
+import { CONFIG, GOOGLE_CALENDAR_ENABLED } from "../config";
 import { getVendorAccountByOwnerUserId } from "../domain/vendor_accounts";
 import { resolveVendorAccount, vendorPlanForAccount } from "../domain/vendor_clients";
 import {
@@ -48,6 +48,7 @@ function statusFor(vendorAccountId: number): GoogleCalendarStatus {
     syncState: conn ? (conn.sync_state === "idle" ? "idle" : "dirty") : null,
     lastError: conn?.last_error ?? null,
     needsReconnect: conn?.last_error === GCAL_REAUTH_REQUIRED,
+    verificationPending: CONFIG.googleOAuthUnverified,
     // The pull half. Null when not connected; the couple flow is push-only and
     // reports the same nulls.
     pullEnabled: conn ? conn.pull_enabled === 1 : null,

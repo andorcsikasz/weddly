@@ -1124,6 +1124,10 @@ const en: LocaleMessages = {
     gcal_reauth_hint:
       "Google has ended Weddly's access to your calendar, so nothing is syncing. Reconnect to start it again. Your bookings and blocked dates stay exactly as they are.",
     gcal_reconnect: "Reconnect",
+    gcal_unverified_title: "Google is still reviewing this integration",
+    gcal_unverified_body:
+      "Google is checking Weddly's calendar integration, and until that finishes it shows a screen saying the app isn't verified. You can safely continue past it. Weddly creates one calendar of its own for your bookings and blocked days, reads only when you are busy and never what for, and stops the moment you disconnect.",
+    gcal_unverified_confirm: "Continue to Google",
     gcal_sync_now: "Sync now",
     gcal_syncing: "Syncing…",
     gcal_disconnect: "Disconnect",
@@ -2624,6 +2628,10 @@ const en: LocaleMessages = {
     gcal_reauth_hint:
       "Google has ended Weddly's access to your calendar, so nothing is syncing. Reconnect to start it again. Your plan stays exactly as it is.",
     gcal_reconnect: "Reconnect",
+    gcal_unverified_title: "Google is still reviewing this integration",
+    gcal_unverified_body:
+      "Google is checking Weddly's calendar integration, and until that finishes it shows a screen saying the app isn't verified. You can safely continue past it. Weddly creates one calendar of its own for your wedding plan, never touches your other calendars, and stops the moment you disconnect.",
+    gcal_unverified_confirm: "Continue to Google",
     gcal_sync_now: "Sync now",
     gcal_syncing: "Syncing…",
     gcal_disconnect: "Disconnect",

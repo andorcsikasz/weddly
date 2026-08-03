@@ -109,6 +109,10 @@ describe("google-calendar: status gating", () => {
     expect(r.data.configured).toBe(true);
     expect(r.data.connected).toBe(false);
     expect(r.data.email).toBeNull();
+    // GOOGLE_OAUTH_UNVERIFIED is pinned on in tests/setup.ts: while Google's
+    // review is pending the UI warns about the interstitial BEFORE handing over,
+    // so the person doesn't meet "this app isn't verified" cold and back out.
+    expect(r.data.verificationPending).toBe(true);
   });
 });
 

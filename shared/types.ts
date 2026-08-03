@@ -2020,6 +2020,12 @@ export interface GoogleCalendarStatus {
    *  connection read as a healthy one forever: `lastError` was in this payload
    *  from the start and no screen rendered it. */
   needsReconnect: boolean;
+  /** Google is still reviewing the OAuth app, so consent is preceded by an
+   *  "app isn't verified" interstitial. The UI warns about it in Weddly's own
+   *  words first: met cold, that screen reads as "this app is unsafe" and the
+   *  person backs out of a feature that works fine. Operator-controlled
+   *  (`GOOGLE_OAUTH_UNVERIFIED`), so it goes away without a deploy. */
+  verificationPending: boolean;
   /** PULL direction (vendors only): is Weddly reading free/busy back out of the
    *  vendor's own calendars? `null` when not connected, and always `null` for
    *  couples, whose sync is push-only. */

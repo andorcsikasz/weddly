@@ -271,6 +271,12 @@ export interface LocaleMessages {
     gcal_reauth_label: string;
     gcal_reauth_hint: string;
     gcal_reconnect: string;
+    /** Shown BEFORE the hand-off to Google while the OAuth app is still in
+     *  verification review, because the interstitial Google shows in that
+     *  window reads as a security warning to anyone meeting it cold. */
+    gcal_unverified_title: string;
+    gcal_unverified_body: string;
+    gcal_unverified_confirm: string;
     gcal_sync_now: string;
     gcal_syncing: string;
     gcal_disconnect: string;
@@ -1459,6 +1465,12 @@ export interface LocaleMessages {
     gcal_reauth_label: string;
     gcal_reauth_hint: string;
     gcal_reconnect: string;
+    /** Shown BEFORE the hand-off to Google while the OAuth app is still in
+     *  verification review, because the interstitial Google shows in that
+     *  window reads as a security warning to anyone meeting it cold. */
+    gcal_unverified_title: string;
+    gcal_unverified_body: string;
+    gcal_unverified_confirm: string;
     gcal_sync_now: string;
     gcal_syncing: string;
     gcal_disconnect: string;

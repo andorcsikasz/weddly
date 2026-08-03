@@ -79,6 +79,22 @@ export function GoogleCalendarConnect({
   if (!status || !status.configured) return null;
 
   async function onConnect() {
+    // While Google's verification review is pending, consent is preceded by a
+    // full-page "Google hasn't verified this app" warning. Met cold it reads as
+    // "this app is unsafe" and the person backs out of a feature that works
+    // perfectly. So Weddly says it first, in its own words, and uses the same
+    // breath to state what the integration actually touches. The dialog exists
+    // only while the flag is on: nothing extra stands between the vendor and
+    // their calendar once the badge lands.
+    if (status?.verificationPending) {
+      const ok = await confirm({
+        title: t(k("gcal_unverified_title")),
+        body: t(k("gcal_unverified_body")),
+        confirmLabel: t(k("gcal_unverified_confirm")),
+        cancelLabel: t("common.cancel"),
+      });
+      if (!ok) return;
+    }
     setBusy(true);
     try {
       const { url } = await api.connect();

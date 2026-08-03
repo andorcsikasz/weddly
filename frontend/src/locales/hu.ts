@@ -1137,6 +1137,10 @@ const hu: LocaleMessages = {
     gcal_reauth_hint:
       "A Google megszüntette a Weddly hozzáférését a naptáradhoz, így most semmi nem szinkronizálódik. Csatlakoztasd újra, és folytatódik. A foglalásaid és a lezárt napjaid változatlanok maradnak.",
     gcal_reconnect: "Újracsatlakozás",
+    gcal_unverified_title: "A Google még ellenőrzi ezt az integrációt",
+    gcal_unverified_body:
+      "A Google épp átnézi a Weddly naptár-integrációját, és amíg ez tart, kiír egy képernyőt, hogy az alkalmazás nincs ellenőrizve. Nyugodtan továbbmehetsz rajta. A Weddly egyetlen saját naptárat hoz létre a foglalásaidnak és a lezárt napjaidnak, csak azt olvassa, mikor vagy elfoglalt, azt soha, hogy mivel, és a lecsatlakozás pillanatában mindez megszűnik.",
+    gcal_unverified_confirm: "Tovább a Google-höz",
     gcal_sync_now: "Szinkronizálás most",
     gcal_syncing: "Szinkronizálás…",
     gcal_disconnect: "Szétkapcsolás",
@@ -2655,6 +2659,10 @@ const hu: LocaleMessages = {
     gcal_reauth_hint:
       "A Google megszüntette a Weddly hozzáférését a naptáratokhoz, így most semmi nem szinkronizálódik. Csatlakoztassátok újra, és folytatódik. A terveitek változatlanok maradnak.",
     gcal_reconnect: "Újracsatlakozás",
+    gcal_unverified_title: "A Google még ellenőrzi ezt az integrációt",
+    gcal_unverified_body:
+      "A Google épp átnézi a Weddly naptár-integrációját, és amíg ez tart, kiír egy képernyőt, hogy az alkalmazás nincs ellenőrizve. Nyugodtan továbbmehettek rajta. A Weddly egyetlen saját naptárat hoz létre az esküvői terveteknek, a többi naptáratokhoz nem nyúl, és a lecsatlakozás pillanatában mindez megszűnik.",
+    gcal_unverified_confirm: "Tovább a Google-höz",
     gcal_sync_now: "Szinkronizálás most",
     gcal_syncing: "Szinkronizálás…",
     gcal_disconnect: "Leválasztás",

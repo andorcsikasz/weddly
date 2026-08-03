@@ -124,6 +124,16 @@ export const CONFIG = {
    *  Google, so the E2E suite exercises the full connect -> sync -> disconnect
    *  pipeline hermetically. Never set this in production. */
   googleCalendarFake: !REQUIRE_PROD_HARDENING && process.env.GOOGLE_CALENDAR_FAKE === "1",
+  /** `1` while the OAuth app is published but still waiting on Google's
+   *  verification review. Google shows every user an "app isn't verified"
+   *  interstitial in that window, and a person who meets it with no warning
+   *  reads it as "this app is unsafe" and backs out. So the app says it first,
+   *  in its own words, before handing over.
+   *
+   *  Defaults to OFF: a forgotten flag then means no notice (today's behaviour),
+   *  rather than telling users for months that a finished review is pending.
+   *  Clearing it when the badge lands is one Railway variable, no deploy. */
+  googleOAuthUnverified: process.env.GOOGLE_OAUTH_UNVERIFIED === "1",
   /** Apple "Sign in with Apple" Services ID (e.g. "hu.weddly.signin"). This is
    *  the `client_id` the Apple JS SDK is initialised with AND the `aud` claim
    *  the id-token verifier checks. When empty, `/api/auth/apple` returns 503 so
