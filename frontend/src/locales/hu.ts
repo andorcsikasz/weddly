@@ -1133,6 +1133,10 @@ const hu: LocaleMessages = {
     gcal_connect: "Google Naptár összekapcsolása",
     gcal_connecting: "Kapcsolódás…",
     gcal_connected_label: "Google Naptár",
+    gcal_reauth_label: "Újracsatlakozás szükséges",
+    gcal_reauth_hint:
+      "A Google megszüntette a Weddly hozzáférését a naptáradhoz, így most semmi nem szinkronizálódik. Csatlakoztasd újra, és folytatódik. A foglalásaid és a lezárt napjaid változatlanok maradnak.",
+    gcal_reconnect: "Újracsatlakozás",
     gcal_sync_now: "Szinkronizálás most",
     gcal_syncing: "Szinkronizálás…",
     gcal_disconnect: "Szétkapcsolás",
@@ -2647,6 +2651,10 @@ const hu: LocaleMessages = {
     gcal_connect: "Google Naptár összekötése",
     gcal_connecting: "Összekötés…",
     gcal_connected_label: "Google Naptár",
+    gcal_reauth_label: "Újracsatlakozás szükséges",
+    gcal_reauth_hint:
+      "A Google megszüntette a Weddly hozzáférését a naptáratokhoz, így most semmi nem szinkronizálódik. Csatlakoztassátok újra, és folytatódik. A terveitek változatlanok maradnak.",
+    gcal_reconnect: "Újracsatlakozás",
     gcal_sync_now: "Szinkronizálás most",
     gcal_syncing: "Szinkronizálás…",
     gcal_disconnect: "Leválasztás",
@@ -7182,7 +7190,7 @@ const hu: LocaleMessages = {
       "Hogyan kezeli a Wēddly az adataitokat: gyűjtött kategóriák, megőrzés, GDPR jogok, sütik és külső szolgáltatók.",
     page_title: "Adatvédelmi szabályzat",
     last_updated_label: "Utolsó frissítés",
-    last_updated_date: "2026-07-28",
+    last_updated_date: "2026-08-03",
     intro:
       "Ez az adatkezelési tájékoztató célja, hogy a Wēddly weboldal és alkalmazás látogatói, regisztrált felhasználói, hírlevél-feliratkozói, valamint a megjelenő szolgáltatók részletes, átlátható tájékoztatást kapjanak személyes adataik kezeléséről. Az adatkezelés során az Adatkezelő az alábbi jogszabályokat alkalmazza: az Európai Parlament és a Tanács 2016/679/EU rendeletét (GDPR); az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvényt (Infotv.); az elektronikus kereskedelmi szolgáltatásokról szóló 2001. évi CVIII. törvényt (Ektv.); és a gazdasági reklámtevékenység alapvető feltételeiről szóló 2008. évi XLVIII. törvényt (Grtv.).",
     controller_title: "Az adataitok kezelője",
@@ -7286,6 +7294,22 @@ const hu: LocaleMessages = {
       "Pinterest (USA), a hangulattábla widget egy nyilvános Pinterest board RSS-feedjét olvassa be a szerveroldalon. Csak az általatok megadott Pinterest-URL-t kapja meg.",
     subprocessors_sentry:
       "Sentry (USA), alkalmazáshiba-jelentések rögzítése. Ma még nincs bekapcsolva éles üzemben; ha aktiváljuk, frissítjük ezt az oldalt. Pszeudonim hibanyomokat küldene, közvetlen azonosító nélkül.",
+    subprocessors_google:
+      "Google Ireland Ltd. / Google LLC (USA), három külön funkcióban: belépés Google-fiókkal (a neveteket, e-mail-címeteket és a Google-fiókazonosítót kapjuk meg), a következő pontban leírt opcionális Google Naptár-szinkron, valamint a Google Maps Places lekérdezések, amelyek a nyilvános szolgáltatói katalógus sorrendjét segítik (csak cégnevek, a ti adataitok soha). Az adattovábbítás alapja DPF/SCC.",
+    google_data_title: "Google-fiókból származó adatok (belépés és naptárszinkron)",
+    google_data_body:
+      "Mindkét funkció opcionális, és egyik sem indul el addig, amíg át nem kattintotok a Google saját engedélyező képernyőjén. Aki nem köti össze a fiókját, arra az alábbiakból semmi nem vonatkozik.",
+    google_data_signin:
+      "Belépés Google-fiókkal: a neveteket, e-mail-címeteket és a Google-fiókazonosítót kapjuk meg, és kizárólag a Weddly-fiókotok létrehozására vagy megnyitására használjuk. Helyette e-mail-címmel és jelszóval is be lehet lépni.",
+    google_data_calendar_write:
+      "Naptárszinkron, amit írunk: a Weddly EGYETLEN új naptárat hoz létre a Google-fiókotokban, és azt tartja szinkronban a Weddly-ben rögzítettekkel (páron: a dátumhoz kötött tervezési feladatok, az esküvő napja és a napirend; szolgáltatón: a visszaigazolt esküvők, a függő megkeresések, a lezárt napok és a feladathatáridők). A többi naptáratokba soha nem írunk.",
+    google_data_calendar_read:
+      "Naptárszinkron, amit olvasunk: kizárólag szabad/foglalt időpontokat, csak az általatok kipipált naptárakból, és csak ha ezt a felét bekapcsoljátok. Azt kérdezzük a Google-től, mikor vagytok elfoglaltak, azt soha, hogy mivel: esemény címe, leírása, helyszíne és résztvevője sosem jut el a Weddly-hez. A foglalt idősávokat puszta dátum- és időintervallumként tároljuk, hogy a páratoknak mutatott szabad időpontok pontosak maradjanak.",
+    google_data_control:
+      "A ti kezetekben van: bármikor lecsatlakoztathatjátok, ugyanazon a képernyőn, ahol összekötöttétek. A lecsatlakozás visszavonja a hozzáférési tokenünket, törli a Weddly által létrehozott naptárat a Google-fiókotokból, és kitörli a tárolt szabad/foglalt idősávokat. A Weddly-ben lévő adataitok érintetlenül maradnak. A hozzáférés a myaccount.google.com/permissions oldalon is visszavonható.",
+    google_data_limited_use:
+      "Limited Use: a Weddly a Google API-któl kapott adatok felhasználása és továbbadása során betartja a Google API Services User Data Policy előírásait, beleértve a Limited Use követelményeket. A Google-fiókból származó adatokat nem használjuk hirdetésre, nem adjuk el, nem tanítunk velük mesterséges intelligenciát vagy gépi tanulási modellt, és a Weddly-nél ember nem olvassa őket, kivéve ha ti kértek hozzá támogatást, vagy ha jogszabály kötelez rá.",
+    google_data_policy_link: "Google API Services User Data Policy",
     cookies_title: "Sütik és localStorage",
     cookies_intro:
       "A Wēddly nem állít be követő sütit. A böngészőben tárolt adatok mind a localStorage-ban élnek a ti eszközötökön, így sosem kerülnek külső félhez:",

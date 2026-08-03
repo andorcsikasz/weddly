@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import "../setup";
 import type { GoogleCalendarStatus } from "@shared/types";
 import { db } from "../../src/db";
-import { __fakeCalendarEvents } from "../../src/lib/google_calendar";
+import {
+  __fakeCalendarEvents,
+  encryptToken,
+  FAKE_REVOKED_REFRESH_MARKER,
+} from "../../src/lib/google_calendar";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 
 // Runs with GOOGLE_CALENDAR_FAKE=1 + GOOGLE_CLIENT_SECRET pinned (tests/setup.ts):
@@ -220,5 +224,74 @@ describe("google-calendar: connect + sync", () => {
     const res = await callback("code=fake-code&state=not-a-valid-state");
     expect(res.status).toBe(302);
     expect(res.headers.get("location") ?? "").toContain("gcal=error");
+  });
+});
+
+// ─── A grant that Google has ended ───────────────────────────────────────────
+// The connection keeps its row and its calendar id, so nothing distinguishes it
+// from a healthy one except the reason it stopped working. That is the whole
+// point: `lastError` has been in this payload from the start and no screen
+// rendered it, so a dead sync read as a green tick indefinitely. It matters more
+// now than it did: while the OAuth app sits in Google's "Testing" publishing
+// status, EVERY refresh token expires after 7 days.
+describe("google-calendar: revoked grant asks for a reconnect", () => {
+  beforeEach(() => wipeAll());
+
+  /** Force the stored access token stale so the next sync must refresh, and
+   *  swap the refresh token for one the fake refuses. */
+  function expireAndRevoke(coupleId: number): void {
+    db.prepare(
+      "UPDATE google_calendar_connections SET token_expiry = 0, refresh_token_enc = ? WHERE couple_id = ?",
+    ).run(encryptToken(`fake-refresh-${FAKE_REVOKED_REFRESH_MARKER}`), coupleId);
+  }
+
+  test("a refused refresh token sets needsReconnect, not a raw error string", async () => {
+    const { token, coupleId } = await bootstrapCouple("gcal-revoked@test.test");
+    await addTask(token, "Order invitations", "2026-03-01", "2026-03-15");
+    const healthy = await connect(token);
+    expect(healthy.needsReconnect).toBe(false);
+
+    expireAndRevoke(coupleId);
+    // Any sync attempt is enough; the manual one is the one a user would press.
+    const synced = await req<GoogleCalendarStatus>("POST", "/api/google-calendar/sync", undefined, {
+      token,
+    });
+    expect(synced.status).toBe(200);
+    expect(synced.data.needsReconnect).toBe(true);
+    // The connection is intact: the calendar, the email and the event map all
+    // survive, because reconnecting must not cost the couple their sync state.
+    expect(synced.data.connected).toBe(true);
+    expect(synced.data.calendarId).toBeTruthy();
+    // The one task plus the wedding day itself.
+    expect(eventMap(coupleId).length).toBe(2);
+  });
+
+  test("an ordinary sync failure is NOT a reconnect prompt", async () => {
+    const { token, coupleId } = await bootstrapCouple("gcal-blip@test.test");
+    await connect(token);
+    // A transient failure the worker will retry out of, recorded the way any
+    // non-auth error is. Telling the couple to go back to Google for this would
+    // be crying wolf.
+    db.prepare("UPDATE google_calendar_connections SET last_error = ? WHERE couple_id = ?").run(
+      "google events.insert 503: backend error",
+      coupleId,
+    );
+    const s = await req<GoogleCalendarStatus>("GET", "/api/google-calendar/status", undefined, {
+      token,
+    });
+    expect(s.data.lastError).toContain("503");
+    expect(s.data.needsReconnect).toBe(false);
+  });
+
+  test("reconnecting clears it", async () => {
+    const { token, coupleId } = await bootstrapCouple("gcal-recover@test.test");
+    await connect(token);
+    expireAndRevoke(coupleId);
+    await req("POST", "/api/google-calendar/sync", undefined, { token });
+
+    // The same consent round-trip the pill's "Reconnect" runs.
+    const back = await connect(token);
+    expect(back.needsReconnect).toBe(false);
+    expect(back.lastError).toBeNull();
   });
 });

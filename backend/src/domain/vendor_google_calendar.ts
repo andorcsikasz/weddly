@@ -34,6 +34,7 @@ import { createHash } from "node:crypto";
 import { db, now } from "../db";
 import {
   type CalendarEventMapRow,
+  calendarErrorForStore,
   countryToTimeZone,
   createCalendar,
   decryptToken,
@@ -41,6 +42,7 @@ import {
   deleteEvent,
   type DesiredCalendarEvent,
   encryptToken,
+  GCAL_REAUTH_REQUIRED,
   type GoogleCalendarListEntry,
   type GoogleEventBody,
   listCalendars,
@@ -481,7 +483,7 @@ export async function syncVendorCalendar(vendorAccountId: number): Promise<void>
       "UPDATE vendor_google_calendar_connections SET sync_state = 'idle', last_synced_at = ?, last_error = NULL, updated_at = ? WHERE vendor_account_id = ?",
     ).run(now(), now(), vendorAccountId);
   } catch (e) {
-    const msg = String(e instanceof Error ? e.message : e).slice(0, 500);
+    const msg = calendarErrorForStore(e);
     db.prepare(
       "UPDATE vendor_google_calendar_connections SET last_error = ?, updated_at = ? WHERE vendor_account_id = ?",
     ).run(msg, now(), vendorAccountId);
@@ -598,7 +600,7 @@ export async function syncVendorExternalBusy(vendorAccountId: number): Promise<v
       "UPDATE vendor_google_calendar_connections SET busy_synced_at = ?, last_error = NULL, updated_at = ? WHERE vendor_account_id = ?",
     ).run(now(), now(), vendorAccountId);
   } catch (e) {
-    const msg = String(e instanceof Error ? e.message : e).slice(0, 500);
+    const msg = calendarErrorForStore(e);
     db.prepare(
       "UPDATE vendor_google_calendar_connections SET last_error = ?, updated_at = ? WHERE vendor_account_id = ?",
     ).run(msg, now(), vendorAccountId);

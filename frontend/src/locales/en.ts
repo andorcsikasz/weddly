@@ -1120,6 +1120,10 @@ const en: LocaleMessages = {
     gcal_connect: "Connect Google Calendar",
     gcal_connecting: "Connecting…",
     gcal_connected_label: "Google Calendar",
+    gcal_reauth_label: "Reconnect needed",
+    gcal_reauth_hint:
+      "Google has ended Weddly's access to your calendar, so nothing is syncing. Reconnect to start it again. Your bookings and blocked dates stay exactly as they are.",
+    gcal_reconnect: "Reconnect",
     gcal_sync_now: "Sync now",
     gcal_syncing: "Syncing…",
     gcal_disconnect: "Disconnect",
@@ -2616,6 +2620,10 @@ const en: LocaleMessages = {
     gcal_connect: "Connect Google Calendar",
     gcal_connecting: "Connecting…",
     gcal_connected_label: "Google Calendar",
+    gcal_reauth_label: "Reconnect needed",
+    gcal_reauth_hint:
+      "Google has ended Weddly's access to your calendar, so nothing is syncing. Reconnect to start it again. Your plan stays exactly as it is.",
+    gcal_reconnect: "Reconnect",
     gcal_sync_now: "Sync now",
     gcal_syncing: "Syncing…",
     gcal_disconnect: "Disconnect",
@@ -7110,7 +7118,7 @@ const en: LocaleMessages = {
       "How Weddly handles your data: categories collected, retention, GDPR rights, cookies and third-party services.",
     page_title: "Privacy policy",
     last_updated_label: "Last updated",
-    last_updated_date: "2026-07-28",
+    last_updated_date: "2026-08-03",
     intro:
       "This Privacy Policy provides detailed, transparent information to visitors, registered users, newsletter subscribers, and listed service providers about how their personal data is processed by Weddly. The following laws apply: EU Regulation 2016/679 (GDPR); the Hungarian Information Self-Determination and Freedom of Information Act (Infotv., Act CXII of 2011); the Electronic Commerce Act (Ektv., Act CVIII of 2001); and the Commercial Advertising Act (Grtv., Act XLVIII of 2008).",
     controller_title: "Who controls your data",
@@ -7214,6 +7222,22 @@ const en: LocaleMessages = {
       "Pinterest (USA), the moodboard widget reads a public Pinterest board's RSS feed server-side. Receives only the Pinterest URL you provide.",
     subprocessors_sentry:
       "Sentry (USA), application error reporting. Not yet enabled in production; if we turn it on, we'll update this page. It would receive pseudonymised error traces without direct identifiers.",
+    subprocessors_google:
+      "Google Ireland Ltd. / Google LLC (USA), three separate functions: sign-in with Google (we receive your name, email address and Google account id), the optional Google Calendar sync described in the next section, and Google Maps Places lookups used to rank the public vendor directory (business names only, never your data). DPF/SCC for the transfer.",
+    google_data_title: "Google account data (sign-in and calendar sync)",
+    google_data_body:
+      "Both features are optional and neither starts until you click through Google's own consent screen. Nothing below happens for an account that never connects.",
+    google_data_signin:
+      "Sign in with Google: we receive your name, email address and Google account id, and use them only to create or open your Weddly account. You can also sign in with an email address and password instead.",
+    google_data_calendar_write:
+      "Calendar sync, what we write: Weddly creates ONE new calendar in your Google account and keeps it in step with your Weddly entries (a couple's dated planning tasks, the wedding day and the run sheet; a vendor's confirmed weddings, pending inquiries, blocked days and task deadlines). We never write to your other calendars.",
+    google_data_calendar_read:
+      "Calendar sync, what we read: free/busy times only, from the calendars you tick, and only if you turn that half on. We ask Google when you are busy, never what for, so no event title, description, location or attendee ever reaches Weddly. We store the busy periods as bare date and time ranges to keep your availability accurate for couples.",
+    google_data_control:
+      "Your control: disconnect at any time from the same screen you connected on. Disconnecting revokes our access token, deletes the calendar Weddly created in your Google account, and erases the free/busy periods we stored. Your Weddly data stays as it is. You can also withdraw access at myaccount.google.com/permissions.",
+    google_data_limited_use:
+      "Limited Use: Weddly's use and transfer of information received from Google APIs to any other app will adhere to the Google API Services User Data Policy, including the Limited Use requirements. We do not use Google user data for advertising, we do not sell it, we do not use it to train any AI or machine-learning model, and no human at Weddly reads it except where you ask us to for support, or where the law requires it.",
+    google_data_policy_link: "Google API Services User Data Policy",
     cookies_title: "Cookies and local storage",
     cookies_intro:
       "Weddly does not set any tracking cookies. The only browser storage we use lives in localStorage on your device, so it never reaches a third party:",

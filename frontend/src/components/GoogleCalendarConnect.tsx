@@ -6,7 +6,14 @@
 // redirect-result toast, and the disconnect confirmation are identical, so they
 // live here once. Extracted rather than copied when the vendor flow landed.
 
-import { CalendarCheck2, CalendarPlus, ChevronDown, RefreshCw, Unlink } from "lucide-react";
+import {
+  CalendarCheck2,
+  CalendarPlus,
+  ChevronDown,
+  RefreshCw,
+  TriangleAlert,
+  Unlink,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { GoogleCalendarStatus } from "@shared/types";
 import { ApiError } from "../lib/api";
@@ -133,6 +140,13 @@ export function GoogleCalendarConnect({
     );
   }
 
+  // Google has ended our access and only the person can restore it (revoked, or
+  // the grant expired). Nothing retries out of this, so the pill stops claiming
+  // "connected", which was a green tick over a sync that had been dead for
+  // weeks, and turns into the one action that fixes it. Amber, not red: nothing
+  // is broken or lost, the link just has to be made again.
+  const needsReconnect = status.needsReconnect;
+
   return (
     <div className="relative">
       <button
@@ -141,10 +155,19 @@ export function GoogleCalendarConnect({
         aria-haspopup="menu"
         aria-expanded={menuOpen}
         aria-label={t(k("gcal_menu_aria"))}
-        className={`${pillBase} bg-sage-100 text-sage-800 hover:bg-sage-200 dark:bg-sage-900/40 dark:text-sage-200 dark:hover:bg-sage-900/60`}
+        title={needsReconnect ? t(k("gcal_reauth_hint")) : undefined}
+        className={`${pillBase} ${
+          needsReconnect
+            ? "bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:hover:bg-amber-900/60"
+            : "bg-sage-100 text-sage-800 hover:bg-sage-200 dark:bg-sage-900/40 dark:text-sage-200 dark:hover:bg-sage-900/60"
+        }`}
       >
-        <CalendarCheck2 size={15} aria-hidden="true" />
-        <span>{t(k("gcal_connected_label"))}</span>
+        {needsReconnect ? (
+          <TriangleAlert size={15} aria-hidden="true" />
+        ) : (
+          <CalendarCheck2 size={15} aria-hidden="true" />
+        )}
+        <span>{t(k(needsReconnect ? "gcal_reauth_label" : "gcal_connected_label"))}</span>
         <ChevronDown size={14} aria-hidden="true" />
       </button>
       {menuOpen && (
@@ -165,16 +188,39 @@ export function GoogleCalendarConnect({
                 {status.email}
               </p>
             )}
-            <button
-              type="button"
-              role="menuitem"
-              onClick={onSync}
-              disabled={busy}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-paper-100 disabled:opacity-60 dark:text-paper-100 dark:hover:bg-umber-800"
-            >
-              <RefreshCw size={14} aria-hidden="true" />
-              {busy ? t(k("gcal_syncing")) : t(k("gcal_sync_now"))}
-            </button>
+            {needsReconnect ? (
+              <>
+                {/* Says what happened before offering the fix, because "reconnect"
+                    with no reason reads as the app being flaky. */}
+                <p className="px-3 pb-1.5 text-xs text-ink-600 dark:text-umber-200">
+                  {t(k("gcal_reauth_hint"))}
+                </p>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={onConnect}
+                  disabled={busy}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-ink-900 transition-colors hover:bg-paper-100 disabled:opacity-60 dark:text-paper-50 dark:hover:bg-umber-800"
+                >
+                  <CalendarPlus size={14} aria-hidden="true" />
+                  {busy ? t(k("gcal_connecting")) : t(k("gcal_reconnect"))}
+                </button>
+              </>
+            ) : (
+              // Deliberately absent while the grant is dead: a "Sync now" that
+              // cannot succeed is a button that teaches the vendor to distrust
+              // the screen.
+              <button
+                type="button"
+                role="menuitem"
+                onClick={onSync}
+                disabled={busy}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-paper-100 disabled:opacity-60 dark:text-paper-100 dark:hover:bg-umber-800"
+              >
+                <RefreshCw size={14} aria-hidden="true" />
+                {busy ? t(k("gcal_syncing")) : t(k("gcal_sync_now"))}
+              </button>
+            )}
             <button
               type="button"
               role="menuitem"

@@ -2010,6 +2010,16 @@ export interface GoogleCalendarStatus {
   syncState: "idle" | "dirty" | null;
   /** Most recent sync failure message, or `null` when the last sync was clean. */
   lastError: string | null;
+  /** Google has ended our access and only the person can restore it: they
+   *  revoked it, or the grant expired (every refresh token issued while the
+   *  OAuth app sits in Google's "Testing" publishing status dies after 7 days).
+   *
+   *  Its own boolean rather than a string the UI matches on, because this is the
+   *  one failure retrying cannot fix, and the difference the person needs is
+   *  "we're retrying, ignore it" vs "come back to Google". Without it a dead
+   *  connection read as a healthy one forever: `lastError` was in this payload
+   *  from the start and no screen rendered it. */
+  needsReconnect: boolean;
   /** PULL direction (vendors only): is Weddly reading free/busy back out of the
    *  vendor's own calendars? `null` when not connected, and always `null` for
    *  couples, whose sync is push-only. */

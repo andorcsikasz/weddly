@@ -30,7 +30,7 @@ import {
   timeZoneForVendor,
 } from "../domain/vendor_google_calendar";
 import { countVendorExternalBusy } from "../domain/vendor_external_busy";
-import { buildAuthUrl, exchangeCode } from "../lib/google_calendar";
+import { buildAuthUrl, exchangeCode, GCAL_REAUTH_REQUIRED } from "../lib/google_calendar";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
 import { signOAuthState } from "../lib/oauth_state";
 
@@ -47,6 +47,7 @@ function statusFor(vendorAccountId: number): GoogleCalendarStatus {
     lastSyncedAt: conn?.last_synced_at ?? null,
     syncState: conn ? (conn.sync_state === "idle" ? "idle" : "dirty") : null,
     lastError: conn?.last_error ?? null,
+    needsReconnect: conn?.last_error === GCAL_REAUTH_REQUIRED,
     // The pull half. Null when not connected; the couple flow is push-only and
     // reports the same nulls.
     pullEnabled: conn ? conn.pull_enabled === 1 : null,

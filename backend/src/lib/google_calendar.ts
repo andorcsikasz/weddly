@@ -154,6 +154,34 @@ export async function exchangeCode(code: string): Promise<OAuthTokens> {
 
 /** Trade a refresh_token for a fresh access_token. Google does not return a new
  *  refresh_token here, so `refreshToken` is null. */
+/** Google has refused the refresh token itself: the user revoked access, the
+ *  grant expired (every refresh token issued while the OAuth app sits in
+ *  Google's "Testing" publishing status dies after 7 days), or the token was
+ *  reissued elsewhere. Distinguished from every other failure because only this
+ *  one is unfixable by retrying — it needs the person back on the consent
+ *  screen, and the connection has to SAY so instead of retrying forever behind a
+ *  UI that still reads "connected". */
+export class GoogleReauthRequiredError extends Error {
+  constructor(detail: string) {
+    super(`google refresh token rejected: ${detail}`);
+    this.name = "GoogleReauthRequiredError";
+  }
+}
+
+/** The sentinel both connection tables store in `last_error` for a dead grant.
+ *  A sentinel rather than the raw message because the status payload is read by
+ *  a UI that has to decide between "retrying, nothing to do" and "you must come
+ *  back to Google", and a message string is not a decision. Mirrors the vendor
+ *  side's existing `pro_required` parking value. */
+export const GCAL_REAUTH_REQUIRED = "reauth_required";
+
+/** What to store in `last_error` for a failed sync. Every catch goes through
+ *  here so a dead grant is recorded the same way on both aggregates. */
+export function calendarErrorForStore(e: unknown): string {
+  if (e instanceof GoogleReauthRequiredError) return GCAL_REAUTH_REQUIRED;
+  return String(e instanceof Error ? e.message : e).slice(0, 500);
+}
+
 export async function refreshAccessToken(refreshToken: string): Promise<OAuthTokens> {
   if (CONFIG.googleCalendarFake) return fakeRefresh(refreshToken);
   const res = await postForm(TOKEN_URL, {
@@ -162,7 +190,16 @@ export async function refreshAccessToken(refreshToken: string): Promise<OAuthTok
     client_secret: CONFIG.googleClientSecret,
     grant_type: "refresh_token",
   });
-  if (!res.ok) throw new Error(`google token refresh ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    const body = await res.text();
+    // `invalid_grant` is Google's answer for a dead grant; a 400/401 on the
+    // token endpoint means the same thing in practice. Anything else (429, 5xx,
+    // a network blip) stays an ordinary error the worker may retry.
+    if (res.status === 400 || res.status === 401 || body.includes("invalid_grant")) {
+      throw new GoogleReauthRequiredError(`${res.status} ${body.slice(0, 200)}`);
+    }
+    throw new Error(`google token refresh ${res.status}: ${body}`);
+  }
   const data = (await res.json()) as { access_token: string; expires_in: number };
   return {
     accessToken: data.access_token,
@@ -526,7 +563,16 @@ function fakeExchange(code: string): OAuthTokens {
   };
 }
 
+/** The fake refuses a token whose id says so, which is how a test reaches the
+ *  dead-grant path without a network. Real life gets there three ways: the user
+ *  revoked access, the grant expired (7 days while the OAuth app is in Google's
+ *  Testing status), or the refresh token was superseded. */
+export const FAKE_REVOKED_REFRESH_MARKER = "revoked";
+
 function fakeRefresh(refreshToken: string): OAuthTokens {
+  if (refreshToken.includes(FAKE_REVOKED_REFRESH_MARKER)) {
+    throw new GoogleReauthRequiredError("400 invalid_grant (fake)");
+  }
   return {
     accessToken: `fake-access-refreshed-${refreshToken.slice(-6)}`,
     refreshToken: null,

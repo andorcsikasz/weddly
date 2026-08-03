@@ -1152,6 +1152,10 @@ const es: LocaleMessages = {
     gcal_connect: "Conectar Google Calendar",
     gcal_connecting: "Conectando…",
     gcal_connected_label: "Google Calendar",
+    gcal_reauth_label: "Hay que volver a conectar",
+    gcal_reauth_hint:
+      "Google ha terminado el acceso de Weddly a tu calendario, así que no se está sincronizando nada. Vuelve a conectar para reanudarlo: tus reservas y tus días bloqueados se quedan como están.",
+    gcal_reconnect: "Volver a conectar",
     gcal_sync_now: "Sincronizar ahora",
     gcal_syncing: "Sincronizando…",
     gcal_disconnect: "Desconectar",
@@ -2676,6 +2680,10 @@ const es: LocaleMessages = {
     gcal_connect: "Conectar Google Calendar",
     gcal_connecting: "Conectando…",
     gcal_connected_label: "Google Calendar",
+    gcal_reauth_label: "Hay que volver a conectar",
+    gcal_reauth_hint:
+      "Google ha terminado el acceso de Weddly a tu calendario, así que no se está sincronizando nada. Vuelve a conectar para reanudarlo: tus planes se quedan como están.",
+    gcal_reconnect: "Volver a conectar",
     gcal_sync_now: "Sincronizar ahora",
     gcal_syncing: "Sincronizando…",
     gcal_disconnect: "Desconectar",
@@ -7242,7 +7250,7 @@ const es: LocaleMessages = {
       "Cómo gestiona Weddly tus datos: categorías recopiladas, conservación, derechos del RGPD, cookies y servicios de terceros.",
     page_title: "Política de privacidad",
     last_updated_label: "Última actualización",
-    last_updated_date: "2026-07-28",
+    last_updated_date: "2026-08-03",
     intro:
       "Esta Política de privacidad ofrece información detallada y transparente a los visitantes, usuarios registrados, suscriptores del boletín y proveedores de servicios listados sobre cómo Weddly trata sus datos personales. Se aplican las siguientes leyes: el Reglamento de la UE 2016/679 (RGPD); la Ley húngara de Autodeterminación Informativa y Libertad de Información (Infotv., Ley CXII de 2011); la Ley de Comercio Electrónico (Ektv., Ley CVIII de 2001); y la Ley de Publicidad Comercial (Grtv., Ley XLVIII de 2008).",
     controller_title: "Quién controla tus datos",
@@ -7346,6 +7354,23 @@ const es: LocaleMessages = {
       "Pinterest (EE. UU.), el widget de moodboard lee el feed RSS de un tablero público de Pinterest del lado del servidor. Recibe solo la URL de Pinterest que proporcionas.",
     subprocessors_sentry:
       "Sentry (EE. UU.), notificación de errores de la aplicación. Aún no está activado en producción; si lo activamos, actualizaremos esta página. Recibiría trazas de error seudonimizadas sin identificadores directos.",
+    subprocessors_google:
+      "Google Ireland Ltd. / Google LLC (EE. UU.), en tres funciones distintas: iniciar sesión con Google (recibimos tu nombre, tu correo electrónico y el id de tu cuenta de Google), la sincronización opcional con Google Calendar descrita en la sección siguiente, y las consultas de Google Maps Places que ordenan el directorio público de proveedores (solo nombres de empresas, nunca tus datos). DPF/SCC para la transferencia.",
+    google_data_title:
+      "Datos de la cuenta de Google (inicio de sesión y sincronización de calendario)",
+    google_data_body:
+      "Ambas funciones son opcionales y ninguna empieza hasta que pasas por la propia pantalla de consentimiento de Google. Nada de lo siguiente ocurre en una cuenta que nunca se conecta.",
+    google_data_signin:
+      "Iniciar sesión con Google: recibimos tu nombre, tu correo electrónico y el id de tu cuenta de Google, y los usamos únicamente para crear o abrir tu cuenta de Weddly. También puedes iniciar sesión con correo y contraseña.",
+    google_data_calendar_write:
+      "Sincronización, lo que escribimos: Weddly crea UN calendario nuevo en tu cuenta de Google y lo mantiene al día con lo que tienes en Weddly (en una pareja: las tareas de planificación con fecha, el día de la boda y la escaleta; en un proveedor: las bodas confirmadas, las solicitudes pendientes, los días bloqueados y los vencimientos de tareas). Nunca escribimos en tus otros calendarios.",
+    google_data_calendar_read:
+      "Sincronización, lo que leemos: solo franjas de ocupado/libre, de los calendarios que marques y solo si activas esa mitad. Preguntamos a Google cuándo estás ocupado, nunca por qué: ningún título, descripción, ubicación ni asistente llega a Weddly. Guardamos las franjas ocupadas como simples rangos de fecha y hora para que tu disponibilidad siga siendo exacta para las parejas.",
+    google_data_control:
+      "Bajo tu control: puedes desconectar cuando quieras, desde la misma pantalla en la que conectaste. Al desconectar se revoca nuestro token de acceso, se elimina el calendario que Weddly creó en tu cuenta de Google y se borran las franjas de ocupado que guardamos. Tus datos en Weddly permanecen intactos. También puedes retirar el acceso en myaccount.google.com/permissions.",
+    google_data_limited_use:
+      "Limited Use: el uso y la transferencia por parte de Weddly de la información recibida de las API de Google se ajustan a la Google API Services User Data Policy, incluidos los requisitos de Limited Use. No usamos los datos de la cuenta de Google con fines publicitarios, no los vendemos, no entrenamos con ellos ningún modelo de inteligencia artificial o aprendizaje automático, y nadie en Weddly los lee salvo que nos lo pidas para darte soporte o que la ley lo exija.",
+    google_data_policy_link: "Google API Services User Data Policy",
     cookies_title: "Cookies y almacenamiento local",
     cookies_intro:
       "Weddly no coloca ninguna cookie de seguimiento. El único almacenamiento del navegador que usamos vive en el localStorage de tu dispositivo, por lo que nunca llega a un tercero:",

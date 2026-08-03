@@ -352,7 +352,34 @@ function PrivacyBodyForLocale({
         <li>{strings.subprocessors_osm}</li>
         <li>{strings.subprocessors_pinterest}</li>
         <li>{strings.subprocessors_sentry}</li>
+        <li>{strings.subprocessors_google}</li>
       </ul>
+
+      {/* Google account data gets its own section rather than one more bullet
+          above. Two reasons: it is the only subprocessor we hand a user's OWN
+          account to (the others receive a query or an error trace), and the
+          Limited Use paragraph is what Google's OAuth verification reads before
+          it will let the calendar sync out of Testing mode. The policy link is
+          left as a real anchor for the same reason. */}
+      <H2>{strings.google_data_title}</H2>
+      <p>{strings.google_data_body}</p>
+      <ul className="ml-5 mt-3 list-disc space-y-2">
+        <li>{strings.google_data_signin}</li>
+        <li>{strings.google_data_calendar_write}</li>
+        <li>{strings.google_data_calendar_read}</li>
+        <li>{strings.google_data_control}</li>
+      </ul>
+      <p className="mt-3">
+        {strings.google_data_limited_use}{" "}
+        <a
+          href="https://developers.google.com/terms/api-services-user-data-policy"
+          target="_blank"
+          rel="noreferrer"
+          className="underline underline-offset-2"
+        >
+          {strings.google_data_policy_link}
+        </a>
+      </p>
 
       <H2>{strings.vendor_transfer_title}</H2>
       <p>{strings.vendor_transfer_body}</p>

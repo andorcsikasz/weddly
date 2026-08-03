@@ -18,7 +18,7 @@ import {
   syncCoupleCalendar,
   timeZoneForCouple,
 } from "../domain/google_calendar";
-import { buildAuthUrl, exchangeCode } from "../lib/google_calendar";
+import { buildAuthUrl, exchangeCode, GCAL_REAUTH_REQUIRED } from "../lib/google_calendar";
 import { type Ctx, HttpError, json, requireAuth, type Router } from "../lib/http";
 import { signOAuthState, verifyOAuthState } from "../lib/oauth_state";
 import { handleVendorCalendarCallback } from "./vendor_google_calendar";
@@ -33,6 +33,7 @@ function statusFor(coupleId: number): GoogleCalendarStatus {
     lastSyncedAt: conn?.last_synced_at ?? null,
     syncState: conn ? (conn.sync_state === "idle" ? "idle" : "dirty") : null,
     lastError: conn?.last_error ?? null,
+    needsReconnect: conn?.last_error === GCAL_REAUTH_REQUIRED,
     // The couple sync is push-only: their Google calendar holds the wedding, and
     // reading it back would let an unrelated appointment move planning dates.
     // Only the vendor aggregate pulls.

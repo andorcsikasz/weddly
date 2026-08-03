@@ -12,11 +12,13 @@
 import { createHash } from "node:crypto";
 import { db, now } from "../db";
 import {
+  calendarErrorForStore,
   countryToTimeZone,
   createCalendar,
   decryptToken,
   deleteCalendar,
   encryptToken,
+  GCAL_REAUTH_REQUIRED,
   type GoogleEventBody,
   reconcileCalendarEvents,
   refreshAccessToken,
@@ -323,7 +325,7 @@ export async function syncCoupleCalendar(coupleId: number): Promise<void> {
       "UPDATE google_calendar_connections SET sync_state = 'idle', last_synced_at = ?, last_error = NULL, updated_at = ? WHERE couple_id = ?",
     ).run(now(), now(), coupleId);
   } catch (e) {
-    const msg = String(e instanceof Error ? e.message : e).slice(0, 500);
+    const msg = calendarErrorForStore(e);
     db.prepare(
       "UPDATE google_calendar_connections SET last_error = ?, updated_at = ? WHERE couple_id = ?",
     ).run(msg, now(), coupleId);

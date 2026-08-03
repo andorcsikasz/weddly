@@ -266,6 +266,11 @@ export interface LocaleMessages {
     gcal_connect: string;
     gcal_connecting: string;
     gcal_connected_label: string;
+    /** Dead-grant state: Google ended our access (revoked, or the grant
+     *  expired) and only the person can restore it. */
+    gcal_reauth_label: string;
+    gcal_reauth_hint: string;
+    gcal_reconnect: string;
     gcal_sync_now: string;
     gcal_syncing: string;
     gcal_disconnect: string;
@@ -1449,6 +1454,11 @@ export interface LocaleMessages {
     gcal_connect: string;
     gcal_connecting: string;
     gcal_connected_label: string;
+    /** Dead-grant state: Google ended our access (revoked, or the grant
+     *  expired) and only the person can restore it. */
+    gcal_reauth_label: string;
+    gcal_reauth_hint: string;
+    gcal_reconnect: string;
     gcal_sync_now: string;
     gcal_syncing: string;
     gcal_disconnect: string;
@@ -8381,6 +8391,19 @@ export interface LocaleMessages {
     subprocessors_osm: string;
     subprocessors_pinterest: string;
     subprocessors_sentry: string;
+    subprocessors_google: string;
+    /** Google API user data: the disclosure Google's OAuth verification asks
+     *  for, and the one this policy owed anyway once sign-in and the calendar
+     *  sync started touching a user's Google account. The Limited Use sentence
+     *  is quoted rather than paraphrased: it is what the review looks for. */
+    google_data_title: string;
+    google_data_body: string;
+    google_data_signin: string;
+    google_data_calendar_write: string;
+    google_data_calendar_read: string;
+    google_data_control: string;
+    google_data_limited_use: string;
+    google_data_policy_link: string;
     cookies_title: string;
     cookies_intro: string;
     cookies_locale: string;
