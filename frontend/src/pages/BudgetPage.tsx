@@ -1288,6 +1288,15 @@ export default function BudgetPage() {
                 .map((line) => {
                   const plannedDisplay = scaledCustomPlanned(line);
                   const delta = line.actual_huf - plannedDisplay;
+                  // SUPPLIER_TO_BUDGET folds planner fees, celebrants, rentals,
+                  // accommodation and dance lessons into "other", so a mirrored
+                  // line for any of those lands here rather than in a category
+                  // bucket, carrying the business name as its label. This branch
+                  // used to hand it three editable inputs and a delete button,
+                  // every one of which the server answers with 409 locked. The
+                  // row reads the same as the category rows now: owned by the
+                  // supplier, and linked to the card where it can be changed.
+                  const owned = isSupplierManagedLine(line);
                   return (
                     <tr
                       key={line.id}
@@ -1296,12 +1305,21 @@ export default function BudgetPage() {
                       className="border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60"
                     >
                       <td className="px-4 py-2 align-middle">
-                        <CustomRowLabel icon={line.icon} label={line.label} />
+                        <CustomRowLabel
+                          icon={line.icon}
+                          label={line.label}
+                          href={
+                            owned
+                              ? `/app/suppliers/${line.couple_supplier_id ?? line.listing_id}`
+                              : null
+                          }
+                        />
                       </td>
                       <td className="px-4 py-2 align-middle">
                         <HufInput
                           value={plannedDisplay}
                           onCommit={(v) => save(line, "planned_huf", unscaleCustomPlanned(line, v))}
+                          readOnly={owned}
                           dataKey="planned"
                           ariaLabel={t("budget.planned")}
                         />
@@ -1310,6 +1328,7 @@ export default function BudgetPage() {
                         <HufInput
                           value={line.actual_huf}
                           onCommit={(v) => save(line, "actual_huf", v)}
+                          readOnly={owned}
                           dataKey="actual"
                           ariaLabel={t("budget.actual")}
                         />
@@ -1318,7 +1337,7 @@ export default function BudgetPage() {
                         <PaidCell
                           paid={line.paid_huf}
                           actual={line.actual_huf}
-                          readOnly={false}
+                          readOnly={owned}
                           scope={`line:${line.id}`}
                           documents={docsByScope.get(`line:${line.id}`) ?? []}
                           payments={paymentsByScope.get(`line:${line.id}`) ?? []}
@@ -1343,14 +1362,16 @@ export default function BudgetPage() {
                         )}
                       </td>
                       <td className="px-2 py-2 text-right align-middle">
-                        <button
-                          type="button"
-                          className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
-                          onClick={() => removeLine(line.id)}
-                          aria-label={t("budget.delete")}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {!owned && (
+                          <button
+                            type="button"
+                            className="btn-ghost btn-sm text-ink-500 hover:text-blush-700 dark:text-umber-300 dark:hover:text-blush-300"
+                            onClick={() => removeLine(line.id)}
+                            aria-label={t("budget.delete")}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -1444,12 +1465,32 @@ export default function BudgetPage() {
 /** Custom-row category cell — resolves the stored icon slug via the shared
  *  helper so a row picked an icon in the widget shows up with the same
  *  glyph here. */
-function CustomRowLabel({ icon, label }: { icon: string | null; label: string }) {
+/** `href` is set only for a supplier-owned row, whose label already IS the
+ *  business name, so it doubles as the way back to the card that owns the
+ *  amount. Same treatment CategoryCell gives its sources. */
+function CustomRowLabel({
+  icon,
+  label,
+  href,
+}: {
+  icon: string | null;
+  label: string;
+  href?: string | null;
+}) {
   const Icon = resolveCustomIcon(icon);
   return (
     <span className="inline-flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
       <Icon size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
-      {label}
+      {href ? (
+        <Link
+          to={href}
+          className="underline decoration-dotted underline-offset-2 transition hover:text-blush-700 dark:hover:text-blush-300"
+        >
+          {label}
+        </Link>
+      ) : (
+        label
+      )}
     </span>
   );
 }
@@ -2850,24 +2891,34 @@ function BudgetMobileCustomCard({
 }) {
   const { t } = useT();
   const delta = line.actual_huf - planned;
+  // Same rule as the desktop custom row: a supplier-mirrored line folded into
+  // "other" is owned elsewhere and the server refuses every write to it.
+  const owned = isSupplierManagedLine(line);
   return (
     <article data-budget-line-id={line.id} data-category="other-custom" className="card p-2.5">
       <header className="flex items-start justify-between gap-2">
-        <CustomRowLabel icon={line.icon} label={line.label} />
+        <CustomRowLabel
+          icon={line.icon}
+          label={line.label}
+          href={owned ? `/app/suppliers/${line.couple_supplier_id ?? line.listing_id}` : null}
+        />
         {/* Bin lives inline with the delta pill — see BudgetMobileCard
-         *  for the rationale. Custom lines are always deletable so the
-         *  icon is unconditional here. */}
+         *  for the rationale. A custom line the couple typed is always
+         *  deletable; one mirroring a booked supplier is not, because
+         *  DELETE answers 409 locked. */}
         <div className="flex shrink-0 items-center gap-1.5">
           {line.actual_huf > 0 && <DeltaPill delta={delta} currency={currency} locale={locale} />}
-          <button
-            type="button"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
-            onClick={onDelete}
-            aria-label={t("budget.delete")}
-            title={t("budget.delete")}
-          >
-            <Trash2 size={14} aria-hidden="true" />
-          </button>
+          {!owned && (
+            <button
+              type="button"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-400 transition hover:bg-blush-50 hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-200 dark:text-umber-300 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
+              onClick={onDelete}
+              aria-label={t("budget.delete")}
+              title={t("budget.delete")}
+            >
+              <Trash2 size={14} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </header>
       <dl className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-2">
@@ -2879,6 +2930,7 @@ function BudgetMobileCustomCard({
             <HufInput
               value={planned}
               onCommit={onPlannedCommit}
+              readOnly={owned}
               dataKey="planned"
               ariaLabel={t("budget.planned")}
             />
@@ -2892,6 +2944,7 @@ function BudgetMobileCustomCard({
             <HufInput
               value={line.actual_huf}
               onCommit={onActualCommit}
+              readOnly={owned}
               dataKey="actual"
               ariaLabel={t("budget.actual")}
             />
@@ -2905,7 +2958,7 @@ function BudgetMobileCustomCard({
             <PaidCell
               paid={line.paid_huf}
               actual={line.actual_huf}
-              readOnly={false}
+              readOnly={owned}
               align="start"
               scope={scope}
               documents={documents}

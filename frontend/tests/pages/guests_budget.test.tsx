@@ -793,6 +793,72 @@ describe("<BudgetPage>", () => {
     expect(screen.getAllByText("Honeymoon").length).toBeGreaterThan(0);
   });
 
+  // SUPPLIER_TO_BUDGET folds planner fees, celebrants, rentals, accommodation
+  // and dance lessons into "other", so a mirrored line for any of them renders
+  // through the custom-row branch rather than a category bucket. That branch
+  // used to hardcode editable inputs and an unconditional bin, all of which the
+  // server answers with 409 locked.
+  it("a supplier-owned custom row is read-only and offers no delete", async () => {
+    installDefaultEndpoints({
+      lines: [
+        makeBudgetLine({
+          id: 41,
+          category: "other",
+          label: "Dream Day Planning",
+          planned_huf: 400_000,
+          couple_supplier_id: "abc123",
+        }),
+      ],
+    });
+    renderBudget();
+    await waitFor(() => {
+      expect(screen.getAllByText("Dream Day Planning").length).toBeGreaterThan(0);
+    });
+    // BOTH renderings carry the id: the mobile card and the desktop table row.
+    // querySelector would only ever reach the first, so a regression in the
+    // other one would pass unnoticed. Assert on every match.
+    const rows = Array.from(document.querySelectorAll('[data-budget-line-id="41"]'));
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    for (const row of rows) {
+      const inputs = Array.from(row.querySelectorAll("input"));
+      expect(inputs.length).toBeGreaterThan(0);
+      for (const input of inputs) expect(input.readOnly).toBe(true);
+      // The label doubles as the route back to the card that owns the amount.
+      expect(row.querySelector('a[href="/app/suppliers/abc123"]')).not.toBeNull();
+      // DELETE is 409 locked too, so the bin must not be offered.
+      expect(row.querySelector('button[aria-label="Delete"]')).toBeNull();
+    }
+  });
+
+  it("a custom row the couple typed stays editable and deletable", async () => {
+    // The guard above must not swallow ordinary custom rows.
+    installDefaultEndpoints({
+      lines: [
+        makeBudgetLine({
+          id: 42,
+          category: "other",
+          label: "Ceremony permit",
+          planned_huf: 30_000,
+          couple_supplier_id: null,
+          listing_id: null,
+        }),
+      ],
+    });
+    renderBudget();
+    await waitFor(() => {
+      expect(screen.getAllByText("Ceremony permit").length).toBeGreaterThan(0);
+    });
+    const rows = Array.from(document.querySelectorAll('[data-budget-line-id="42"]'));
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    for (const row of rows) {
+      const inputs = Array.from(row.querySelectorAll("input"));
+      expect(inputs.length).toBeGreaterThan(0);
+      expect(inputs.some((i) => !i.readOnly)).toBe(true);
+      expect(row.querySelector("a[href^='/app/suppliers/']")).toBeNull();
+      expect(row.querySelector('button[aria-label="Delete"]')).not.toBeNull();
+    }
+  });
+
   it("the headcount slider has the cost_planning aria label and is wired up", async () => {
     installDefaultEndpoints({
       lines: [makeBudgetLine({ id: 1, category: "catering", planned_huf: 200_000 })],
