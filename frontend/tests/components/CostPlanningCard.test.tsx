@@ -18,7 +18,13 @@ import { MemoryRouter } from "react-router-dom";
 import { CostPlanningCard } from "@/components/CostPlanningCard";
 import { I18nProvider } from "@/lib/i18n";
 
-function line(id: number, category: BudgetCategory, planned: number, actual = 0): BudgetLine {
+function line(
+  id: number,
+  category: BudgetCategory,
+  planned: number,
+  actual = 0,
+  paid = 0,
+): BudgetLine {
   return {
     id,
     couple_id: 1,
@@ -26,7 +32,7 @@ function line(id: number, category: BudgetCategory, planned: number, actual = 0)
     label: category,
     planned_huf: planned,
     actual_huf: actual,
-    paid_huf: 0,
+    paid_huf: paid,
     supplier_id: null,
     couple_supplier_id: null,
     listing_id: null,
@@ -429,5 +435,48 @@ describe("<CostPlanningCard> actual-spend overlay", () => {
     // dead chip.
     setup({ lines: [line(1, "venue", 300_000)], showActualToggle: true });
     expect(screen.queryByRole("button", { name: /actual/i })).toBeNull();
+  });
+
+  // The bar carries TWO facts, not one: what the row cost, and how much of it
+  // the couple still owes. All-red said "this money is gone" about an amount
+  // they may have settled in full, so a row needing nothing from them looked
+  // exactly like one with an invoice still open.
+  function overlayBackground(container: HTMLElement): string {
+    const el = container.querySelector<HTMLElement>("[data-actual-overlay]");
+    return el?.style.background ?? "";
+  }
+
+  it("colours the settled share of the actual bar green", () => {
+    const { container } = setup({
+      lines: [line(1, "venue", 300_000, 200_000, 50_000)],
+    });
+    const bg = overlayBackground(container);
+    // Green head, red tail, and the green must stop before the red starts —
+    // a proportion, not a flag.
+    expect(bg).toContain("--range-paid-amount");
+    expect(bg).toContain("--range-actual-amount");
+    expect(bg.indexOf("--range-paid-amount")).toBeLessThan(bg.indexOf("--range-actual-amount"));
+  });
+
+  it("leaves a fully settled row with no red at all", () => {
+    const { container } = setup({
+      lines: [line(1, "venue", 300_000, 200_000, 200_000)],
+    });
+    const bg = overlayBackground(container);
+    // The red stop is still emitted, at the same x the green ends, so the
+    // segment has zero width. What matters is that nothing paints red.
+    const paidStop = bg.split("--range-paid-amount")[2]?.split(",")[0]?.trim();
+    const actualStop = bg.split("--range-actual-amount")[2]?.split(",")[0]?.trim();
+    expect(paidStop).toBeTruthy();
+    expect(actualStop).toBe(paidStop);
+  });
+
+  it("keeps an unpaid row entirely red, with no stray green cap", () => {
+    // At 0 the thumb-aware offset is +6 px, so a zero-width green segment
+    // would still paint a 6 px head on a row nobody has paid anything on.
+    const { container } = setup({
+      lines: [line(1, "venue", 300_000, 200_000, 0)],
+    });
+    expect(overlayBackground(container)).not.toContain("--range-paid-amount");
   });
 });

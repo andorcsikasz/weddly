@@ -323,9 +323,12 @@
     --range-fill-frozen: theme("colors.blush.400");
     /* Same inversion for the over-budget "actual spend" overlay: keeps the
        red as the eye-catching half in both modes (bright red on light, soft
-       red on umber) and dims the empty side. */
+       red on umber) and dims the empty side. `paid` is the settled head of
+       that same bar — the money is out of the door, so it needs no alarm
+       colour and only what is still owed stays red. */
     --range-actual-amount: #dc2626;
     --range-actual-remainder: #fef2f2;
+    --range-paid-amount: theme("colors.sage.500");
   }
   html.dark {
     --range-fill-amount: theme("colors.paper.100");
@@ -333,6 +336,7 @@
     --range-fill-frozen: theme("colors.blush.300");
     --range-actual-amount: #fca5a5;
     --range-actual-remainder: theme("colors.umber.700");
+    --range-paid-amount: theme("colors.sage.300");
   }
 
   html,

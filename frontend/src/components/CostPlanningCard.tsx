@@ -80,6 +80,42 @@ function rangeFillStyle(
   };
 }
 
+/** Thumb-aware stop for the read-only bars drawn UNDER a slider. Same offset
+ *  as `rangeFillStyle` at the thin thumb width, so a bar that equals the
+ *  planned amount ends at exactly the planned thumb's x rather than up to 6 px
+ *  either side of it. */
+function overlayStop(value: number, rowMax: number): string {
+  const pct = rowMax > 0 ? Math.max(0, Math.min(100, (value / rowMax) * 100)) : 0;
+  const offsetPx = 12 * (0.5 - pct / 100);
+  return `calc(${pct}% + ${offsetPx.toFixed(3)}px)`;
+}
+
+/** Background for the actual-spend overlay, read left to right as **settled →
+ *  still owed → not spent**.
+ *
+ *  The whole bar used to be red, which said "this money is gone" about an
+ *  amount the couple may already have paid off in full — so a row that needed
+ *  nothing from them looked identical to one with an invoice still open, and
+ *  the only alarm colour on the page marked both. The `paid_huf` share is green
+ *  instead: money out of the door, nothing left to do. A fully settled row is
+ *  therefore entirely green, which is what finally makes the red on the others
+ *  mean "still to pay" rather than just "spent".
+ *
+ *  `paid_huf` is clamped to `[0, actual_huf]` server-side, so the stops can
+ *  never cross; the clamp here only guards a stale optimistic row. Nothing paid
+ *  skips the green stop entirely — at 0 the thumb offset is +6 px, so a zero
+ *  green segment would still paint a 6 px cap. */
+function actualOverlayBackground(actual: number, paid: number, rowMax: number): string {
+  const actualStop = overlayStop(actual, rowMax);
+  const tail = `var(--range-actual-remainder) ${actualStop}, var(--range-actual-remainder) 100%`;
+  const settled = Math.max(0, Math.min(paid, actual));
+  if (settled <= 0) {
+    return `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualStop}, ${tail})`;
+  }
+  const paidStop = overlayStop(settled, rowMax);
+  return `linear-gradient(to right, var(--range-paid-amount) 0%, var(--range-paid-amount) ${paidStop}, var(--range-actual-amount) ${paidStop}, var(--range-actual-amount) ${actualStop}, ${tail})`;
+}
+
 // (Visual constants previously lived here — per-row tuning is now derived
 //  from `widthAnchor` directly so every row shares the same denominator.)
 
@@ -411,16 +447,17 @@ export function CostPlanningCard({
   // Custom rows are excluded — they own their own row below the buckets so
   // we don't want them folded back into "Egyéb" here.
   const buckets = useMemo(() => {
-    const map = new Map<BudgetCategory, { planned: number; actual: number }>();
+    const map = new Map<BudgetCategory, { planned: number; actual: number; paid: number }>();
     for (const l of aggregatableLines) {
-      const cur = map.get(l.category) ?? { planned: 0, actual: 0 };
+      const cur = map.get(l.category) ?? { planned: 0, actual: 0, paid: 0 };
       map.set(l.category, {
         planned: cur.planned + l.planned_huf,
         actual: cur.actual + l.actual_huf,
+        paid: cur.paid + l.paid_huf,
       });
     }
     return CATEGORY_ORDER.map((cat) => {
-      const v = map.get(cat) ?? { planned: 0, actual: 0 };
+      const v = map.get(cat) ?? { planned: 0, actual: 0, paid: 0 };
       const isPerGuest = PER_GUEST_CATEGORIES.has(cat);
       const frozen = frozenCategories?.has(cat) ?? false;
       // Frozen categories opt out of per-guest scaling — the user has pinned
@@ -432,6 +469,7 @@ export function CostPlanningCard({
       return {
         category: cat,
         actual: v.actual,
+        paid: v.paid,
         // Display planned = baseline planned scaled for per-guest categories.
         plannedDisplay: scales ? Math.round(liveBaseline * factor) : liveBaseline,
         plannedBaseline: liveBaseline,
@@ -732,6 +770,7 @@ export function CostPlanningCard({
             category={b.category}
             plannedBaseline={b.plannedBaseline}
             actual={b.actual}
+            paid={b.paid}
             scales={b.scales}
             frozen={b.frozen}
             // Per-guest categories receive the live headcount factor so the
@@ -860,6 +899,7 @@ function CategoryRowInner({
   category,
   plannedBaseline,
   actual,
+  paid,
   scales,
   frozen,
   scaleFactor,
@@ -878,6 +918,10 @@ function CategoryRowInner({
   category: BudgetCategory;
   plannedBaseline: number;
   actual: number;
+  /** How much of `actual` the couple has already settled (sum of `paid_huf`).
+   *  Colours the settled head of the actual bar green — see
+   *  `actualOverlayBackground`. */
+  paid: number;
   scales: boolean;
   /** Display currency for the amount tile. Passed through from the parent
    *  CostPlanningCard so every row matches the couple's preference. */
@@ -1197,20 +1241,16 @@ function CategoryRowInner({
     />
   );
 
-  // Actual-spend overlay: a thin red lookalike-slider rendered under the real
-  // one, fill width tied to the same widthAnchor as planned so the two bars
-  // are visually comparable at a glance. Non-interactive — `aria-hidden`
-  // keeps it out of the AT tree (the actual amount is already in the right
-  // tile copy). Clamped to 100% so over-spend doesn't bleed past the row.
-  // Mirrors the planned slider's thumb-aware stop so an actual == planned row
-  // ends both bars at exactly the same x — without the offset they'd diverge
-  // by up to 6 px and read as slightly different values.
-  const actualFillPct = rowMax > 0 ? Math.max(0, Math.min(100, (actual / rowMax) * 100)) : 0;
-  const actualFillOffsetPx = 12 * (0.5 - actualFillPct / 100);
-  const actualFillStop = `calc(${actualFillPct}% + ${actualFillOffsetPx.toFixed(3)}px)`;
+  // Actual-spend overlay: a thin lookalike-slider rendered under the real one,
+  // fill width tied to the same widthAnchor as planned so the two bars are
+  // visually comparable at a glance. Green head = already paid, red tail =
+  // spent but still owed (see `actualOverlayBackground`). Non-interactive —
+  // `aria-hidden` keeps it out of the AT tree (the actual amount is already in
+  // the right tile copy). Clamped to 100% so over-spend doesn't bleed past the
+  // row.
   const actualOverlayStyle: CSSProperties = {
     width: `${widthPct}%`,
-    background: `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualFillStop}, var(--range-actual-remainder) ${actualFillStop}, var(--range-actual-remainder) 100%)`,
+    background: actualOverlayBackground(actual, paid, rowMax),
   };
   // A category whose real spend has passed its own plan. The slider fill only
   // shows the PLANNED position on a rail shared across categories, so an
@@ -1366,13 +1406,9 @@ function CustomRowInner({
     ...rangeFillStyle(liveDisplay, 0, rowMax, 12),
   };
 
-  const actualFillPct =
-    rowMax > 0 ? Math.max(0, Math.min(100, (line.actual_huf / rowMax) * 100)) : 0;
-  const actualFillOffsetPx = 12 * (0.5 - actualFillPct / 100);
-  const actualFillStop = `calc(${actualFillPct}% + ${actualFillOffsetPx.toFixed(3)}px)`;
   const actualOverlayStyle: CSSProperties = {
     width: "100%",
-    background: `linear-gradient(to right, var(--range-actual-amount) 0%, var(--range-actual-amount) ${actualFillStop}, var(--range-actual-remainder) ${actualFillStop}, var(--range-actual-remainder) 100%)`,
+    background: actualOverlayBackground(line.actual_huf, line.paid_huf, rowMax),
   };
 
   // Slider input is in display units; convert back to baseline before
