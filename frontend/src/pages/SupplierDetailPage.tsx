@@ -43,6 +43,7 @@ import {
   Gem,
   Globe,
   Hand,
+  Heart,
   Lightbulb,
   MapPin,
   PartyPopper,
@@ -109,6 +110,12 @@ import {
   setSaved as setSavedStore,
   subscribeSaved,
 } from "../lib/supplier_saved";
+import {
+  readSelection,
+  type SelectionMap,
+  setSelection,
+  subscribeSelection,
+} from "../lib/supplier_selection";
 
 // Lazy so the OpenStreetMap embed modal only loads when the user opens the map.
 const SupplierMapModal = lazyWithReload(() => import("../components/SupplierMapModal"));
@@ -254,9 +261,42 @@ export default function SupplierDetailPage() {
   const savedKey = detail?.id ?? null;
   const isSaved = savedKey !== null && savedSet.has(savedKey);
   const toggleSaved = useCallback(() => {
-    if (coupleId === null || savedKey === null) return;
+    if (coupleId === null) {
+      toast.info(t("suppliers.save_no_couple"));
+      return;
+    }
+    if (savedKey === null) return;
     setSavedSet(setSavedStore(coupleId, savedKey, !savedSet.has(savedKey)));
-  }, [coupleId, savedKey, savedSet]);
+  }, [coupleId, savedKey, savedSet, t, toast]);
+
+  // "Our pick" state: the OTHER half of the directory's two-glyph vocabulary,
+  // and a different promise from the heart above. The shortlist is cheap and
+  // plural; `couple_picks` holds exactly ONE supplier per category ("this is
+  // our photographer"), so picking here replaces whoever held the category.
+  // Same server-side store the grid writes (`supplier_selection` →
+  // `PUT /api/picks/:category`), which is why the card and this page can never
+  // disagree, and why the partner's device sees it too. It lives here at all
+  // because a couple who arrived from search lands on THIS page: the pick was
+  // only settable back on the grid they may never return to.
+  const [selection, setSelectionState] = useState<SelectionMap>({});
+  useEffect(() => {
+    if (coupleId === null) return;
+    setSelectionState(readSelection(coupleId));
+    return subscribeSelection(coupleId, (next) => setSelectionState(next));
+  }, [coupleId]);
+  // Keyed on the RESOLVED listing id for the same reason the shortlist is: a
+  // pretty slug would store a pick the grid can't match.
+  const pickCategory = detail?.category ?? null;
+  const isPicked =
+    pickCategory !== null && savedKey !== null && selection[pickCategory] === savedKey;
+  const togglePicked = useCallback(() => {
+    if (coupleId === null) {
+      toast.info(t("suppliers.save_no_couple"));
+      return;
+    }
+    if (pickCategory === null || savedKey === null) return;
+    setSelectionState(setSelection(coupleId, pickCategory, isPicked ? null : savedKey));
+  }, [coupleId, isPicked, pickCategory, savedKey, t, toast]);
 
   // Outreach compose modal — opens with the current supplier pre-attached
   // so the user can write a tailored inquiry without re-picking a vendor.
@@ -323,6 +363,10 @@ export default function SupplierDetailPage() {
   const canInquire = Boolean(detail.contact_email);
   const inquireLabel = t("suppliers.detail.cta.sendInquiry");
   const saveLabel = t(isSaved ? "suppliers.detail.cta.savedActive" : "suppliers.detail.cta.save");
+  // Same aria pair the directory card uses, so a screen reader hears one
+  // vocabulary across both surfaces.
+  const saveAria = t(isSaved ? "suppliers.unsave_aria" : "suppliers.save_aria");
+  const pickLabel = t(isPicked ? "suppliers.unpick_aria" : "suppliers.pick_aria");
   const shareLabel = t("suppliers.detail.cta.share");
 
   return (
@@ -422,11 +466,7 @@ export default function SupplierDetailPage() {
               {showsSpokenLanguages(detail) && (
                 <span className="inline-flex items-center gap-1 text-sm text-ink-600 dark:text-umber-200">
                   <Speech size={14} aria-hidden className="text-ink-500 dark:text-umber-400" />
-                  {(detail.spoken_languages ?? [])
-                    .map((c) =>
-                      languageLabel(c, locale === "hu" ? "hu" : locale === "es" ? "es" : "en"),
-                    )
-                    .join(", ")}
+                  {(detail.spoken_languages ?? []).map((c) => languageLabel(c, locale)).join(", ")}
                 </span>
               )}
               {detail.venue_style && (
@@ -441,10 +481,18 @@ export default function SupplierDetailPage() {
             </div>
 
             {/* Primary actions. Send inquiry is the sole conversion target,
-                so it stays the one solid accent-filled button. Save + share
-                are demoted to quiet outline secondaries that don't compete
-                for the eye. All three render on desktop here AND in the
-                sticky bottom bar on mobile (see end of this file). */}
+                so it stays the one solid accent-filled button. Save, pick and
+                share are demoted to quiet outline secondaries that don't
+                compete for the eye. All four render on desktop here AND in the
+                sticky bottom bar on mobile (see end of this file).
+
+                Save and pick keep the directory's two-glyph vocabulary exactly:
+                a BLUSH HEART for the shortlist (cheap, many per category) and a
+                SAGE BOOKMARK for the pick (one per category, a commitment).
+                This page used to draw the save button in the picked treatment
+                (sage border, BookmarkCheck), so the two surfaces disagreed about
+                what a bookmark meant, and the pick could not be set here at
+                all. */}
             <div className="mt-6 flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
@@ -460,18 +508,41 @@ export default function SupplierDetailPage() {
                 type="button"
                 onClick={toggleSaved}
                 aria-pressed={isSaved}
+                aria-label={saveAria}
+                title={saveAria}
+                data-testid="supplier-save-toggle"
                 className={
                   isSaved
-                    ? "inline-flex items-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1.5 text-sm font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
-                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-transparent px-3 py-1.5 text-sm text-ink-600 transition hover:border-ink-300 hover:bg-paper-100/70 hover:text-ink-800 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500 dark:hover:bg-umber-800"
+                    ? "inline-flex items-center gap-1.5 rounded-full border border-blush-300 bg-blush-50 px-3 py-1.5 text-sm font-medium text-blush-700 transition hover:border-blush-400 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
+                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-transparent px-3 py-1.5 text-sm text-ink-600 transition hover:border-blush-300 hover:bg-blush-50 hover:text-blush-700 dark:border-umber-700 dark:text-umber-200 dark:hover:border-blush-400/40 dark:hover:bg-blush-400/15 dark:hover:text-blush-300"
                 }
               >
-                {isSaved ? (
-                  <BookmarkCheck size={14} aria-hidden />
+                <Heart
+                  size={14}
+                  aria-hidden
+                  className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+                />
+                {saveLabel}
+              </button>
+              <button
+                type="button"
+                onClick={togglePicked}
+                aria-pressed={isPicked}
+                aria-label={pickLabel}
+                title={pickLabel}
+                data-testid="supplier-pick-toggle"
+                className={
+                  isPicked
+                    ? "inline-flex items-center gap-1.5 rounded-full border border-sage-400 bg-sage-50 px-3 py-1.5 text-sm font-medium text-sage-700 transition hover:border-sage-500 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
+                    : "inline-flex items-center gap-1.5 rounded-full border border-paper-300 bg-transparent px-3 py-1.5 text-sm text-ink-600 transition hover:border-sage-400 hover:bg-sage-50 hover:text-sage-700 dark:border-umber-700 dark:text-umber-200 dark:hover:border-sage-600 dark:hover:bg-sage-600/20 dark:hover:text-sage-300"
+                }
+              >
+                {isPicked ? (
+                  <BookmarkCheck size={14} aria-hidden className="fill-sage-200" />
                 ) : (
                   <Bookmark size={14} aria-hidden />
                 )}
-                {saveLabel}
+                {pickLabel}
               </button>
               <button
                 type="button"
@@ -629,24 +700,52 @@ export default function SupplierDetailPage() {
 
       {/* Mobile sticky action bar. On <lg the right rail is far below the
           fold (after reviews + Q&A + bookings + admin meta), which leaves
-          the user with no persistent CTA. The bar pins Send inquiry + Save
-          to the bottom of the viewport so the conversion path is always
-          one thumb-reach away. `pb-24` on the outer container reserves
+          the user with no persistent CTA. The bar pins Send inquiry, save
+          and pick to the bottom of the viewport so the conversion path is
+          always one thumb-reach away. `pb-24` on the outer container reserves
           the height so this never occludes the last article. */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-paper-200 bg-paper-50/95 px-4 py-3 backdrop-blur lg:hidden dark:border-umber-700 dark:bg-umber-900/95">
         <div className="mx-auto flex max-w-6xl items-center gap-2">
+          {/* Same two glyphs as the desktop row and as the directory card. The
+              save used to be a solid sage fill here, which both stole the
+              picked treatment AND put a second solid button beside the one
+              blush CTA. A tinted plate with the filled heart says "saved"
+              without competing with Send inquiry. */}
           <button
             type="button"
             onClick={toggleSaved}
             aria-pressed={isSaved}
-            aria-label={saveLabel}
+            aria-label={saveAria}
+            data-testid="supplier-save-toggle-mobile"
             className={
               isSaved
-                ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-sage-600 bg-sage-600 text-white dark:border-sage-600 dark:bg-sage-600 dark:text-white"
+                ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-blush-300 bg-blush-50 text-blush-700 dark:border-blush-400/40 dark:bg-blush-400/15 dark:text-blush-300"
                 : "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
             }
           >
-            {isSaved ? <BookmarkCheck size={18} aria-hidden /> : <Bookmark size={18} aria-hidden />}
+            <Heart
+              size={18}
+              aria-hidden
+              className={isSaved ? "fill-blush-500 text-blush-500" : ""}
+            />
+          </button>
+          <button
+            type="button"
+            onClick={togglePicked}
+            aria-pressed={isPicked}
+            aria-label={pickLabel}
+            data-testid="supplier-pick-toggle-mobile"
+            className={
+              isPicked
+                ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-sage-400 bg-sage-50 text-sage-700 dark:border-sage-600 dark:bg-sage-600/20 dark:text-sage-200"
+                : "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-paper-300 bg-paper-50 text-ink-700 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+            }
+          >
+            {isPicked ? (
+              <BookmarkCheck size={18} aria-hidden className="fill-sage-200" />
+            ) : (
+              <Bookmark size={18} aria-hidden />
+            )}
           </button>
           <button
             type="button"

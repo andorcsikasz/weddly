@@ -1,0 +1,346 @@
+// The supplier detail page's two bookmark-ish affordances, and the fact that
+// they are NOT the same thing.
+//
+// The directory grid carries a deliberate two-glyph vocabulary: a blush HEART
+// is the shortlist (`saved_suppliers`, as many per category as you like) and a
+// sage BOOKMARK is the pick (`couple_picks`, exactly one per category, "this is
+// our photographer"). The detail page used to draw its Save button in the
+// PICKED treatment (sage border + BookmarkCheck) and offered no pick control at
+// all, so a couple who landed here from search read one glyph as two meanings
+// and could not set the pick on the page they were actually standing on.
+//
+// These tests pin the glyph + colour family of each control and the endpoint
+// each one writes to, because that pairing is the whole contract.
+
+import type { SupplierAvailability, SupplierDetail } from "@shared/suppliers";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import SupplierDetailPage from "@/pages/SupplierDetailPage";
+import { ConfirmDialogProvider } from "@/components/ui/ConfirmDialogProvider";
+import { ToastProvider } from "@/components/ui/ToastProvider";
+import { AuthProvider } from "@/lib/auth";
+import { I18nProvider } from "@/lib/i18n";
+
+type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+type Call = { url: string; method: Method };
+
+const realFetch = globalThis.fetch;
+const calls: Call[] = [];
+
+const SUPPLIER_ID = "v42";
+const CATEGORY = "photography";
+
+// A fresh couple id per test keeps the module-level caches in
+// `lib/supplier_saved` + `lib/supplier_selection` from leaking one test's
+// shortlist into the next (both hydrate once per couple id per process).
+let coupleIdSeq = 900;
+let coupleId = coupleIdSeq;
+
+let detail: SupplierDetail;
+let availability: SupplierAvailability;
+/** Server-side pick map, keyed by category: the `couple_picks` UNIQUE rule. */
+let picks: Record<string, string>;
+let saved: string[];
+
+function jsonResponse(status: number, payload: unknown): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function installFetch() {
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input.toString();
+    const method = (init?.method ?? "GET").toUpperCase() as Method;
+    calls.push({ url, method });
+
+    if (url.includes("/api/picks")) {
+      const category = url.split("/api/picks/")[1];
+      if (method === "PUT" && category) {
+        const body = JSON.parse(String(init?.body ?? "{}")) as { supplier_id?: string };
+        // One pick per category: the PUT replaces whoever held it.
+        picks[decodeURIComponent(category)] = body.supplier_id ?? "";
+        return jsonResponse(200, { pick: { category, supplier_id: body.supplier_id } });
+      }
+      if (method === "DELETE" && category) {
+        delete picks[decodeURIComponent(category)];
+        return jsonResponse(200, { ok: true });
+      }
+      return jsonResponse(200, {
+        picks: Object.entries(picks).map(([category, supplier_id]) => ({
+          category,
+          supplier_id,
+          picked_by_user_id: 1,
+          picked_at: 0,
+        })),
+      });
+    }
+    if (url.includes("/api/saved-suppliers")) {
+      const id = url.split("/api/saved-suppliers/")[1];
+      if (method === "PUT" && id) {
+        saved = [...new Set([...saved, decodeURIComponent(id)])];
+        return jsonResponse(200, { ok: true });
+      }
+      if (method === "DELETE" && id) {
+        saved = saved.filter((s) => s !== decodeURIComponent(id));
+        return jsonResponse(200, { ok: true });
+      }
+      return jsonResponse(200, {
+        saved: saved.map((supplier_id) => ({
+          supplier_id,
+          saved_by_user_id: 1,
+          saved_at: 0,
+        })),
+      });
+    }
+    if (url.includes("/api/couples/current")) {
+      return jsonResponse(200, {
+        couple: { id: coupleId, wedding_date: null, currency: "EUR" },
+      });
+    }
+    if (url.includes("/reviews")) {
+      return jsonResponse(200, {
+        items: [],
+        can_review: false,
+        already_reviewed: false,
+        nextCursor: null,
+      });
+    }
+    if (url.includes("/comments")) return jsonResponse(200, { items: [], nextCursor: null });
+    if (url.includes("/availability")) return jsonResponse(200, availability);
+    if (url.includes(`/api/suppliers/${SUPPLIER_ID}`)) return jsonResponse(200, detail);
+    return jsonResponse(200, {});
+  }) as typeof fetch;
+}
+
+async function flush(times = 4) {
+  for (let i = 0; i < times; i++) {
+    await act(async () => {
+      await Promise.resolve();
+      await new Promise((r) => setTimeout(r, 0));
+    });
+  }
+}
+
+function Providers({ children }: { children: ReactNode }) {
+  return (
+    <MemoryRouter initialEntries={[`/app/suppliers/${SUPPLIER_ID}`]}>
+      <I18nProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <ConfirmDialogProvider>
+              <Routes>
+                <Route path="/app/suppliers/:supplier_id" element={children} />
+              </Routes>
+            </ConfirmDialogProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </I18nProvider>
+    </MemoryRouter>
+  );
+}
+
+async function renderPage() {
+  render(
+    <Providers>
+      <SupplierDetailPage />
+    </Providers>,
+  );
+  await flush();
+}
+
+/** The lucide glyph inside a control, as its class string (`lucide-heart`,
+ *  `lucide-bookmark-check`, …). That name IS the vocabulary under test. */
+function glyphOf(testId: string): string {
+  const svg = screen.getByTestId(testId).querySelector("svg");
+  return svg?.getAttribute("class") ?? "";
+}
+
+function classesOf(testId: string): string {
+  return screen.getByTestId(testId).getAttribute("class") ?? "";
+}
+
+beforeEach(() => {
+  calls.length = 0;
+  coupleId = ++coupleIdSeq;
+  picks = {};
+  saved = [];
+  try {
+    localStorage.clear();
+    localStorage.setItem("weddly.locale", "en");
+  } catch {
+    /* happy-dom without storage, ignore */
+  }
+  detail = {
+    id: SUPPLIER_ID,
+    name: "Magyar Fotó",
+    category: CATEGORY,
+    city: "Budapest",
+    country: "HU",
+    blurb_hu: "",
+    blurb_en: "Documentary wedding photography.",
+    website: "https://magyarfoto.example",
+    contact_email: null,
+    contact_phone: null,
+    address: null,
+    capacity_min: null,
+    capacity_max: null,
+    venue_style: null,
+    lat: null,
+    lng: null,
+    source: "claimed",
+    submitter_type: "self",
+    price_band: 3,
+    vendor_account_id: 7,
+    hero_image_url: null,
+    gallery_urls: [],
+    has_contact_email: true,
+    has_contact_phone: false,
+    votes_score: 0,
+    user_vote: 0,
+    listing_complete: true,
+    bookable: true,
+    videos: [],
+    packages: [],
+    reviews_summary: {
+      avg_rating: null,
+      reviews_count: 0,
+      histogram: [0, 0, 0, 0, 0],
+      top_tags: [],
+    },
+  };
+  availability = {
+    unavailable_dates: [],
+    partial_dates: [],
+    next_available: null,
+    bookable: true,
+    calendar_public: true,
+    available_weekdays: null,
+  };
+  installFetch();
+});
+
+afterEach(() => {
+  globalThis.fetch = realFetch;
+});
+
+describe("SupplierDetailPage: save is a blush heart", () => {
+  it("renders the shortlist control as a Heart in the blush family, never the picked sage bookmark", async () => {
+    await renderPage();
+
+    expect(glyphOf("supplier-save-toggle")).toContain("lucide-heart");
+    // The regression: the save button used to wear the PICKED treatment.
+    const cls = classesOf("supplier-save-toggle");
+    expect(cls).toContain("blush");
+    expect(cls).not.toContain("sage");
+    expect(glyphOf("supplier-save-toggle")).not.toContain("bookmark");
+    // Mobile sticky bar says the same thing.
+    expect(glyphOf("supplier-save-toggle-mobile")).toContain("lucide-heart");
+    expect(classesOf("supplier-save-toggle-mobile")).not.toContain("sage");
+  });
+
+  it("saving fills the heart in blush and writes to the shortlist endpoint", async () => {
+    await renderPage();
+
+    expect(glyphOf("supplier-save-toggle")).not.toContain("fill-blush-500");
+    expect(screen.getByTestId("supplier-save-toggle")).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(screen.getByTestId("supplier-save-toggle"));
+    await flush();
+
+    expect(
+      calls.some(
+        (c) => c.method === "PUT" && c.url.includes(`/api/saved-suppliers/${SUPPLIER_ID}`),
+      ),
+    ).toBe(true);
+    // It must NOT have touched the pick: hearting is not committing.
+    expect(calls.some((c) => c.url.includes("/api/picks/"))).toBe(false);
+
+    await waitFor(() => expect(glyphOf("supplier-save-toggle")).toContain("fill-blush-500"));
+    expect(classesOf("supplier-save-toggle")).toContain("bg-blush-50");
+    expect(classesOf("supplier-save-toggle")).not.toContain("sage");
+    expect(screen.getByTestId("supplier-save-toggle")).toHaveAttribute("aria-pressed", "true");
+    // The mobile twin follows the same state off the same store.
+    expect(glyphOf("supplier-save-toggle-mobile")).toContain("fill-blush-500");
+  });
+});
+
+describe("SupplierDetailPage: pick is a sage bookmark", () => {
+  it("renders a pick control at all, as a Bookmark in the sage family", async () => {
+    await renderPage();
+
+    const pick = screen.getByTestId("supplier-pick-toggle");
+    expect(pick).toBeInTheDocument();
+    expect(glyphOf("supplier-pick-toggle")).toContain("lucide-bookmark");
+    const cls = classesOf("supplier-pick-toggle");
+    expect(cls).toContain("sage");
+    expect(cls).not.toContain("blush");
+    expect(pick).toHaveAttribute("aria-pressed", "false");
+    // And on the mobile bar, where the page's only persistent CTA row lives.
+    expect(glyphOf("supplier-pick-toggle-mobile")).toContain("lucide-bookmark");
+  });
+
+  it("picking writes the ONE-per-category pick and flips to the sage BookmarkCheck", async () => {
+    await renderPage();
+
+    fireEvent.click(screen.getByTestId("supplier-pick-toggle"));
+    await flush();
+
+    // The same endpoint the grid writes, `PUT /api/picks/:category`, keyed on
+    // the category, which is what makes it one pick per category.
+    expect(calls.some((c) => c.method === "PUT" && c.url.includes(`/api/picks/${CATEGORY}`))).toBe(
+      true,
+    );
+    expect(picks[CATEGORY]).toBe(SUPPLIER_ID);
+    // Picking is not saving: the shortlist was left alone.
+    expect(calls.some((c) => c.url.includes("/api/saved-suppliers/"))).toBe(false);
+
+    await waitFor(() => expect(glyphOf("supplier-pick-toggle")).toContain("lucide-bookmark-check"));
+    expect(glyphOf("supplier-pick-toggle")).toContain("fill-sage-200");
+    expect(classesOf("supplier-pick-toggle")).toContain("bg-sage-50");
+    expect(screen.getByTestId("supplier-pick-toggle")).toHaveAttribute("aria-pressed", "true");
+    expect(glyphOf("supplier-pick-toggle-mobile")).toContain("lucide-bookmark-check");
+  });
+
+  it("takes the category over from whoever held it, and un-picking clears it", async () => {
+    // Another supplier is this category's pick when the page opens.
+    picks[CATEGORY] = "aranybastya";
+    await renderPage();
+
+    expect(screen.getByTestId("supplier-pick-toggle")).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(screen.getByTestId("supplier-pick-toggle"));
+    await flush();
+    // One row per category, so the write REPLACES rather than adding a second.
+    expect(picks[CATEGORY]).toBe(SUPPLIER_ID);
+    await waitFor(() => expect(glyphOf("supplier-pick-toggle")).toContain("lucide-bookmark-check"));
+
+    fireEvent.click(screen.getByTestId("supplier-pick-toggle"));
+    await flush();
+    expect(
+      calls.some((c) => c.method === "DELETE" && c.url.includes(`/api/picks/${CATEGORY}`)),
+    ).toBe(true);
+    expect(picks[CATEGORY]).toBeUndefined();
+    await waitFor(() =>
+      expect(glyphOf("supplier-pick-toggle")).not.toContain("lucide-bookmark-check"),
+    );
+  });
+
+  it("the two controls are independent: one supplier can be both saved and picked", async () => {
+    await renderPage();
+
+    fireEvent.click(screen.getByTestId("supplier-save-toggle"));
+    fireEvent.click(screen.getByTestId("supplier-pick-toggle"));
+    await flush();
+
+    await waitFor(() => {
+      expect(glyphOf("supplier-save-toggle")).toContain("fill-blush-500");
+      expect(glyphOf("supplier-pick-toggle")).toContain("lucide-bookmark-check");
+    });
+    expect(saved).toContain(SUPPLIER_ID);
+    expect(picks[CATEGORY]).toBe(SUPPLIER_ID);
+  });
+});
