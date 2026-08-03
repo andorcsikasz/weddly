@@ -5861,6 +5861,8 @@ const hr: LocaleMessages = {
     waitlist_card_submitted: "Zaprimljeno",
     waitlist_card_decided: "Odlučeno",
     waitlist_card_price_list_label: "Cjenik",
+    waitlist_card_price_list_open: "Otvori cjenik",
+    waitlist_card_price_list_failed: "Otvaranje nije uspjelo, pokušajte ponovno",
     waitlist_card_message_label: "Poruka",
     waitlist_card_notes_label: "Interne bilješke",
     waitlist_card_verification_label: "Podaci o tvrtki",

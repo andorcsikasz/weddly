@@ -562,6 +562,54 @@ function EntryCard({
   );
 }
 
+/** Opens an applicant's price list. It is NOT an `<a href>` any more: the file
+ *  is a business's confidential commercial terms, so it left the public
+ *  `/uploads/` path for an admin-gated route, and a plain link carries no
+ *  Authorization header. Fetch the bytes, hand the browser a blob. */
+function PriceListLink({
+  entryId,
+  t,
+}: {
+  entryId: number;
+  t: (k: string, vars?: Record<string, string>) => string;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  async function open() {
+    setBusy(true);
+    setFailed(false);
+    try {
+      const blob = await adminVendorWaitlistApi.fetchPriceListBlob(entryId);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      // The tab has its own reference by now; free ours on the next tick so a
+      // long admin session doesn't hold every price list it ever opened.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={open}
+      disabled={busy}
+      className="mt-1 inline-flex items-center gap-1.5 text-xs text-neutral-700 hover:text-neutral-900 disabled:opacity-60 dark:text-paper-100 dark:hover:text-paper-50"
+    >
+      <FileText size={13} aria-hidden className="shrink-0" />
+      <span>
+        {failed
+          ? t("admin.waitlist_card_price_list_failed")
+          : t("admin.waitlist_card_price_list_open")}
+      </span>
+    </button>
+  );
+}
+
 /** Read-only recap of everything the vendor submitted, rendered at the top of
  *  the respond sheet so the admin can vet the application and reply in one
  *  surface. Pulled out of the card to keep the list clean (Uber-style: the
@@ -609,15 +657,7 @@ function SubmittedDetails({
       {entry.price_list_url && (
         <div className="admin-tile">
           <p className="eyebrow">{t("admin.waitlist_card_price_list_label")}</p>
-          <a
-            href={entry.price_list_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 inline-flex items-center gap-1.5 text-xs text-neutral-700 hover:text-neutral-900 dark:text-paper-100 dark:hover:text-paper-50"
-          >
-            <FileText size={13} aria-hidden className="shrink-0" />
-            <span>{entry.price_list_url.split("/").pop()}</span>
-          </a>
+          <PriceListLink entryId={entry.id} t={t} />
         </div>
       )}
       {(entry.tax_number || entry.registration_number) && (

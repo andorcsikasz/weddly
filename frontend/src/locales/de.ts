@@ -5975,6 +5975,8 @@ const de: LocaleMessages = {
     waitlist_card_submitted: "Eingereicht",
     waitlist_card_decided: "Entschieden",
     waitlist_card_price_list_label: "Preisliste",
+    waitlist_card_price_list_open: "Preisliste öffnen",
+    waitlist_card_price_list_failed: "Konnte nicht geöffnet werden, bitte erneut versuchen",
     waitlist_card_message_label: "Nachricht",
     waitlist_card_notes_label: "Interne Notizen",
     waitlist_card_verification_label: "Firmendaten",

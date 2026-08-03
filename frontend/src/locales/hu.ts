@@ -5869,6 +5869,8 @@ const hu: LocaleMessages = {
     waitlist_card_submitted: "Beérkezett",
     waitlist_card_decided: "Eldöntve",
     waitlist_card_price_list_label: "Árajánlat",
+    waitlist_card_price_list_open: "Árajánlat megnyitása",
+    waitlist_card_price_list_failed: "Nem sikerült megnyitni, próbáld újra",
     waitlist_card_message_label: "Üzenet",
     waitlist_card_notes_label: "Belső jegyzet",
     waitlist_card_verification_label: "Cégadatok",

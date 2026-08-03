@@ -65,9 +65,20 @@ function toStatus(s: string): VendorWaitlistStatus {
   return "new";
 }
 
+/** The ADMIN-GATED path to an applicant's price list, never the raw
+ *  `/uploads/` one. A price list is a business's confidential commercial terms,
+ *  handed over on the strength of a signup form, and it is only ever rendered
+ *  on /app/admin/vendor-waitlist. It used to resolve to
+ *  `/uploads/vendor_waitlist/<row.id>/price_list.<ext>`, which the public
+ *  static handler serves to anybody: the key is built from a SEQUENTIAL row id,
+ *  so every applicant's pricing could be walked one integer at a time by a
+ *  stranger with no account. Same rule and same shape as the budget documents
+ *  and the booking-message attachments, which is where the pattern comes from
+ *  (`/uploads/*` refuses the prefix; the bytes stream from a route that checks
+ *  who is asking). */
 export function priceListUrl(row: VendorWaitlistRow): string | null {
   if (!row.price_list_path) return null;
-  return `/uploads/${row.price_list_path}`;
+  return `/api/admin/vendor-waitlist/${row.id}/price-list`;
 }
 
 export function toVendorWaitlistEntry(row: VendorWaitlistRow): VendorWaitlistEntry {

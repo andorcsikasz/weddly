@@ -557,10 +557,23 @@ async function tryServeStatic(req: Request, pathname: string): Promise<Response 
     // public URL (or an id-enumeration probe) can't read another couple's files.
     // Message attachments are the same case: a quote or a contract a vendor
     // sent one couple, readable only through /api/booking-messages/attachments.
+    // A waitlist price list is the same case again, and was the sharpest of the
+    // three: it is a business's confidential commercial terms, it is only ever
+    // shown on /app/admin/vendor-waitlist, and its key is built from a
+    // SEQUENTIAL row id (`vendor_waitlist/<id>/price_list.<ext>`), so before
+    // this line every applicant's pricing could be walked one integer at a time
+    // by a stranger with no account. It streams from
+    // /api/admin/vendor-waitlist/:id/price-list instead.
+    //
+    // This list is a DENYLIST, so a new private upload category is public until
+    // someone remembers to add it here. Adding a `storage.write` key that a
+    // stranger should not be able to guess means adding its prefix in the same
+    // commit. Guarded by uploads_private_prefixes.e2e.test.ts.
     if (
       decodedRel.includes("/budget-docs/") ||
       decodedRel.includes("/budget-payments/") ||
-      decodedRel.includes("/booking-messages/")
+      decodedRel.includes("/booking-messages/") ||
+      decodedRel.startsWith("vendor_waitlist/")
     )
       return null;
     const key = keyFromUploadUrl(decodedRel);

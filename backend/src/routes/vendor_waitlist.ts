@@ -301,6 +301,29 @@ async function handleAdminList(ctx: Ctx): Promise<Response> {
   return json({ entries: rows.map(toVendorWaitlistAdminView) });
 }
 
+/** Stream an applicant's price list to an admin. Mirrors the budget-document
+ *  download: the bytes are private, so `/uploads/*` refuses the
+ *  `vendor_waitlist/` prefix and this is the only way in. The stored value is a
+ *  bare storage key rather than an `/uploads/` URL, so it is handed to the
+ *  storage driver as-is. */
+async function handleAdminPriceList(ctx: Ctx): Promise<Response> {
+  requireAdmin(ctx);
+  const id = Number(ctx.params.id);
+  if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "Invalid id");
+
+  const row = getVendorWaitlistById(id);
+  if (!row?.price_list_path) throw new HttpError(404, "Price list not found");
+
+  const served = await storage.serve(row.price_list_path);
+  if (!served) throw new HttpError(404, "Price list not found");
+
+  const headers = new Headers(served.headers);
+  // Never cached by a shared proxy, and never left in the browser's disk cache
+  // on a shared admin machine.
+  headers.set("Cache-Control", "private, no-store");
+  return new Response(served.body, { status: served.status, headers });
+}
+
 interface DecideBody {
   outcome?: unknown;
   subject?: unknown;
@@ -449,6 +472,7 @@ async function handleAdminReopen(ctx: Ctx): Promise<Response> {
 export function registerVendorWaitlistRoutes(router: Router) {
   router.post("/api/vendors/waitlist", handleSubmit);
   router.get("/api/admin/vendor-waitlist", handleAdminList, true);
+  router.get("/api/admin/vendor-waitlist/:id/price-list", handleAdminPriceList, true);
   router.post("/api/admin/vendor-waitlist/:id/decide", handleAdminDecide, true);
   router.post("/api/admin/vendor-waitlist/:id/reopen", handleAdminReopen, true);
 }

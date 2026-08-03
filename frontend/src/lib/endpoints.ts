@@ -3522,6 +3522,19 @@ export const adminVendorWaitlistApi = {
       `/api/admin/vendor-waitlist/${id}/reopen`,
       {},
     ),
+  /** Auth-protected blob fetch for an applicant's price list. The bytes are a
+   *  business's confidential terms, so they are no longer reachable at a public
+   *  `/uploads/` URL and `price_list_url` now points at the admin route. Same
+   *  shape as `budgetDocumentApi.fetchBlob`: the caller opens the blob itself,
+   *  because an `<a href>` carries no Authorization header. */
+  fetchPriceListBlob: async (id: number): Promise<Blob> => {
+    const token = getToken();
+    const res = await fetch(`/api/admin/vendor-waitlist/${id}/price-list`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) throw new Error(`Price list fetch failed: ${res.status}`);
+    return res.blob();
+  },
 };
 
 export const adminEmailListApi = {

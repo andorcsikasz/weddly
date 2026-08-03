@@ -5812,6 +5812,8 @@ const en: LocaleMessages = {
     waitlist_card_submitted: "Submitted",
     waitlist_card_decided: "Decided",
     waitlist_card_price_list_label: "Price list",
+    waitlist_card_price_list_open: "Open price list",
+    waitlist_card_price_list_failed: "Could not open, try again",
     waitlist_card_message_label: "Message",
     waitlist_card_notes_label: "Internal notes",
     waitlist_card_verification_label: "Business details",

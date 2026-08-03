@@ -6874,6 +6874,11 @@ export interface LocaleMessages {
     waitlist_card_submitted: string;
     waitlist_card_decided: string;
     waitlist_card_price_list_label: string;
+    /** Opens the applicant's price list. It streams from an admin-gated route
+     *  rather than a public `/uploads/` URL, so this is a button, not a link. */
+    waitlist_card_price_list_open: string;
+    /** Shown in place of the open label when the fetch failed. */
+    waitlist_card_price_list_failed: string;
     waitlist_card_message_label: string;
     waitlist_card_notes_label: string;
     waitlist_card_verification_label: string;
