@@ -93,15 +93,29 @@ describe("translate: POST /api/translate", () => {
     expect(r.status).toBe(400);
   });
 
-  test("rejects an unsupported language", async () => {
+  test("rejects a language outside the closed union", async () => {
     const { token } = await registerVerified("t-lang@test.test");
-    const r = await req(
+    // "DE" used to be the example here. German is a real target now — a vendor
+    // in Austria or Germany writes their own-language description in it — so
+    // the case has to be a language the union genuinely excludes, or the test
+    // passes for the wrong reason. The union stays closed on purpose: opening
+    // it to everything DeepL does would make this a general-purpose
+    // translation API on someone else's bill.
+    for (const target of ["JA", "ZH", "XX", "", 42]) {
+      const r = await req("POST", "/api/translate", { text: "hi", source: "HU", target }, { token });
+      expect(r.status).toBe(400);
+    }
+  });
+
+  test("accepts a language a vendor's own country actually maps to", async () => {
+    const { token } = await registerVerified("t-lang-de@test.test");
+    const r = await req<{ text: string }>(
       "POST",
       "/api/translate",
-      { text: "hi", source: "HU", target: "DE" },
+      { text: "hello", source: "EN", target: "DE" },
       { token },
     );
-    expect(r.status).toBe(400);
+    expect(r.status).toBe(200);
   });
 
   test("rejects over-long text", async () => {

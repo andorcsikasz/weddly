@@ -330,7 +330,10 @@ describe("vendor review-invite campaign", () => {
     expect(hu?.addresses).toBe(2);
     expect(hu?.locale).toBe("hu");
     expect(de?.addresses).toBe(1);
-    expect(de?.locale).toBe("en");
+    // German ships as a UI language, so a German segment is written to in
+    // German. This used to read "en" back when every non-HU country collapsed
+    // to English.
+    expect(de?.locale).toBe("de");
   });
 
   test("send batch delivers one mail per vendor, in their language", async () => {
