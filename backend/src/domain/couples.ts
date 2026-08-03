@@ -40,7 +40,7 @@ import { isCurrency } from "@shared/currency";
 import { MAX_PHOTOGRAPHER_LINKS } from "@shared/types";
 import { billingEnforcementOn, db, now } from "../db";
 import { computeNameReview } from "./name_review";
-import { generateOrganiserCode } from "./invite_codes";
+import { generateHouseholdCode, generateInviteCode, generateOrganiserCode } from "./invite_codes";
 import { isAdminEmail } from "./users";
 
 const VALID_SUBSCRIPTION_STATUSES: ReadonlySet<SubscriptionStatus> = new Set(SUBSCRIPTION_STATUSES);
@@ -974,11 +974,21 @@ export function seedCoupleFromCouple(
       "SELECT 1 FROM households WHERE couple_id = ? AND code = ? LIMIT 1",
     );
     function uniqueHouseholdCode(): string {
-      // Inline copy of domain/households.uniqueHouseholdCode — that helper
-      // takes a different signature shape than what we need here and a
-      // 50-attempt cap is plenty given the 9000-code namespace.
+      // `generateHouseholdCode` is the ONLY generator, exactly as it is in
+      // domain/households.uniqueHouseholdCode. Only the uniqueness loop is
+      // local, because it reuses this transaction's prepared statement.
+      //
+      // What used to be here was a hand-written "inline copy" that had drifted
+      // into the two things the canonical helper exists to prevent: it minted
+      // the LEGACY 4-digit form (9,000 codes) that the May 2026 bump removed
+      // for being enumerable, and it drew from `Math.random()`, which is not a
+      // CSPRNG and whose internal state is recoverable from a handful of
+      // outputs. This code is the credential on /w/:slug/:code, so a guessed
+      // one hands over that household's names, RSVP answers, meal choices,
+      // dietary notes and the schedule. The comment above it claimed
+      // "8-character code" the whole time, which is how it went unnoticed.
       for (let attempt = 0; attempt < 50; attempt++) {
-        const code = String(1000 + Math.floor(Math.random() * 9000));
+        const code = generateHouseholdCode();
         if (!codeCheck.get(dstCoupleId, code)) return code;
       }
       throw new Error(`Could not generate a unique household code for couple ${dstCoupleId}`);
@@ -999,15 +1009,13 @@ export function seedCoupleFromCouple(
 
     const inviteCheck = db.prepare("SELECT 1 FROM guests WHERE invite_code = ? LIMIT 1");
     function uniqueInviteCode(): string {
-      // Mirrors domain/invite_codes.generateInviteCode + the uniqueness
-      // loop in domain/guests.uniqueInviteCode. Inline so this helper has
-      // no cross-domain imports.
-      const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      // Same rule as the household code above: `generateInviteCode` is the
+      // generator, only the uniqueness loop is local to this transaction. The
+      // copy that was here re-implemented it from `Math.random()` and got the
+      // alphabet wrong in the bargain, keeping the `L` the canonical one drops
+      // so a code read off a printed invitation cannot be confused with a 1.
       for (let attempt = 0; attempt < 50; attempt++) {
-        let code = "";
-        for (let i = 0; i < 8; i++) {
-          code += alphabet[Math.floor(Math.random() * alphabet.length)];
-        }
+        const code = generateInviteCode();
         if (!inviteCheck.get(code)) return code;
       }
       throw new Error("Could not generate a unique guest invite_code");
