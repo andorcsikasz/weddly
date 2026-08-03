@@ -855,6 +855,37 @@ export interface CoupleMessagePayload {
   threadUrl: string;
 }
 
+/** The vendor's own acknowledgement, fired by the automation layer the moment
+ *  an inquiry lands. `bodyText` is the vendor's canned reply with its tokens
+ *  already substituted; the copy around it says plainly that a machine sent it,
+ *  so the couple never mistakes an acknowledgement for the real answer. */
+export interface VendorAutoReplyPayload {
+  vendorName: string;
+  bodyText: string;
+  threadUrl: string;
+}
+
+/** Automation, to the VENDOR: a couple is still waiting. The hours come from
+ *  `vendorAttention`, so the number in the mail is the number on their own
+ *  attention band. */
+export interface VendorLeadReminderPayload {
+  coupleName: string;
+  /** ISO 'YYYY-MM-DD'. */
+  eventDate: string;
+  waitingHours: number;
+  /** App-relative path to the client card. */
+  clientUrl: string;
+}
+
+/** Automation, to the COUPLE, and only after the vendor clicked Approve. */
+export interface VendorReviewRequestPayload {
+  vendorName: string;
+  /** ISO 'YYYY-MM-DD'. */
+  eventDate: string;
+  /** Absolute URL of the vendor's public page, deep-linked to the composer. */
+  reviewUrl: string;
+}
+
 /** A vendor sent a priced offer against the inquiry. Same no-replyTo reasoning
  *  as the message pair: the offer has a home in the product, and answering it
  *  is a button there, not a sentence in a reply. */
@@ -1047,6 +1078,9 @@ export type KindPayload = {
   vendor_moved_to_planner: VendorMovedToPlannerPayload;
   supplier_outreach: SupplierOutreachPayload;
   vendor_message: VendorMessagePayload;
+  vendor_auto_reply: VendorAutoReplyPayload;
+  vendor_lead_reminder: VendorLeadReminderPayload;
+  vendor_review_request: VendorReviewRequestPayload;
   couple_message: CoupleMessagePayload;
   vendor_quote: VendorQuotePayload;
   quote_response: QuoteResponsePayload;
@@ -1495,6 +1529,30 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Reset password now",
       footnote: "If this was you, you can safely ignore this email.",
+    },
+    extra: {
+      hr: {
+        preheader: "Potvrđujemo da je vaša lozinka uspješno promijenjena.",
+        greeting: `Pozdrav ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `Lozinka vašeg Weddly računa upravo je promijenjena **(${p.changedAt})**.`,
+          "Odjavili smo sve vaše dosadašnje prijave, pa se svugdje morate ponovno prijaviti novom lozinkom.",
+          "**Ako to niste bili vi**, odmah zatražite novu lozinku poveznicom ispod i time istog trena isključite onoga tko je ušao.",
+        ],
+        cta: "Zatražite novu lozinku",
+        footnote: "Ako ste to bili vi, slobodno zanemarite ovu poruku.",
+      },
+      de: {
+        preheader: "Wir bestätigen, dass Ihr Passwort erfolgreich geändert wurde.",
+        greeting: `Hallo ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `Das Passwort Ihres Weddly-Kontos wurde gerade geändert **(${p.changedAt})**.`,
+          "Wir haben alle bestehenden Sitzungen abgemeldet, Sie müssen sich also überall mit dem neuen Passwort neu anmelden.",
+          "**Falls Sie das nicht waren**, fordern Sie über den Link unten sofort ein neues Passwort an, damit ist wer auch immer gerade hereingekommen ist sofort ausgesperrt.",
+        ],
+        cta: "Jetzt neues Passwort anfordern",
+        footnote: "Falls Sie das waren, können Sie diese E-Mail ignorieren.",
+      },
     },
   }),
 
@@ -2993,17 +3051,25 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     // in both languages so the two blocks stay parallel.
     const huMissing: string[] = [];
     const enMissing: string[] = [];
+    const hrMissing: string[] = [];
+    const deMissing: string[] = [];
     if (p.missing.photos) {
       huMissing.push("fotók");
       enMissing.push("photos");
+      hrMissing.push("fotografije");
+      deMissing.push("Fotos");
     }
     if (p.missing.bio) {
       huMissing.push("bemutatkozó szöveg");
       enMissing.push("a short bio");
+      hrMissing.push("kratko predstavljanje");
+      deMissing.push("eine kurze Vorstellung");
     }
     if (p.missing.packages) {
       huMissing.push("árcsomagok");
       enMissing.push("pricing packages");
+      hrMissing.push("cjenovni paketi");
+      deMissing.push("Preispakete");
     }
 
     const huParas = [
@@ -3064,6 +3130,54 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           { label: "Reviews", url: p.reviewsUrl },
         ],
         footnote: "We only email when there's something useful for your Weddly profile.",
+      },
+      extra: {
+        hr: {
+          preheader: "Vaš je javni profil na Weddlyju spreman, evo poveznice za dijeljenje.",
+          greeting: name ? `Pozdrav ${name}!` : "Pozdrav!",
+          paragraphs: [
+            "Vaš je profil objavljen na Weddlyju i spreman za dijeljenje. Poveznica ispod otvara vašu javnu stranicu za parove, bez prijave.",
+            "Stavite je na svoje društvene mreže, ubacite u e-poruku ili pošaljite parovima koji vam se jave. Što je više ljudi vidi, to više upita može stići.",
+            ...(hrMissing.length > 0
+              ? [
+                  `Nekoliko je odjeljaka na profilu još prazno: **${joinNaturalList(hrMissing, "i")}**. Kad ih ispunite, profil je puno uvjerljiviji i veći je izgled da odaberu vas.`,
+                ]
+              : []),
+            "Na Weddlyju stvarni parovi planiraju stvarna vjenčanja i doista pregledavaju dobavljače. Uredan, potpun profil puno znači za prvi dojam.",
+            "Ako imate zadovoljnog klijenta, zamolite ga da vas ocijeni na profilu. Nekoliko iskrenih recenzija s 5 zvjezdica najbolja je preporuka i osjetno diže broj rezervacija.",
+          ],
+          cta: "Otvorite moj profil",
+          ctaSubtext:
+            "Ovo je vaša javna poveznica, pošaljite je bilo kome, otvara se i bez prijave.",
+          secondaryLinks: [
+            { label: "Uredite profil", url: p.editUrl },
+            { label: "Recenzije", url: p.reviewsUrl },
+          ],
+          footnote: "Pišemo samo kad postoji nešto čime možete napredovati na Weddlyju.",
+        },
+        de: {
+          preheader: "Ihr öffentliches Profil auf Weddly steht, hier ist Ihr Link zum Teilen.",
+          greeting: name ? `Hallo ${name},` : "Hallo!",
+          paragraphs: [
+            "Ihr Profil ist auf Weddly online und bereit zum Teilen. Der Link unten öffnet Ihre öffentliche Seite für Paare, ganz ohne Anmeldung.",
+            "Stellen Sie ihn in Ihre sozialen Kanäle, packen Sie ihn in eine E-Mail, oder schicken Sie ihn Paaren, die sich melden. Je mehr Menschen ihn sehen, desto mehr Anfragen können kommen.",
+            ...(deMissing.length > 0
+              ? [
+                  `Ein paar Abschnitte auf Ihrem Profil sind noch leer: **${joinNaturalList(deMissing, "und")}**. Ausgefüllt wirkt es deutlich überzeugender, und mehr Paare entscheiden sich für Sie.`,
+                ]
+              : []),
+            "Auf Weddly planen echte Paare echte Hochzeiten, und sie sehen sich Dienstleister wirklich an. Ein aufgeräumtes, vollständiges Profil macht einen starken ersten Eindruck.",
+            "Wenn Sie einen zufriedenen Kunden haben, bitten Sie ihn um eine Bewertung auf Ihrem Profil. Ein paar ehrliche 5-Sterne-Bewertungen sind die beste Referenz und heben die Buchungen spürbar.",
+          ],
+          cta: "Mein Profil öffnen",
+          ctaSubtext:
+            "Das ist Ihr öffentlicher Link, teilen Sie ihn mit wem Sie möchten, er öffnet ohne Anmeldung.",
+          secondaryLinks: [
+            { label: "Profil bearbeiten", url: p.editUrl },
+            { label: "Bewertungen", url: p.reviewsUrl },
+          ],
+          footnote: "Wir schreiben nur, wenn es etwas gibt, das Sie auf Weddly weiterbringt.",
+        },
       },
     };
   },
@@ -4291,6 +4405,94 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       },
     };
   },
+
+  // Automation 1: the vendor's own acknowledgement, sent the moment the inquiry
+  // landed. The copy has one job beyond delivering their words, and it is to say
+  // that a machine sent them: an acknowledgement that reads as a personal reply
+  // makes the vendor's real answer, hours later, look like a repetition. The
+  // same text also sits on the booking thread, marked the same way, so neither
+  // side is ever surprised by words in the vendor's name.
+  vendor_auto_reply: (p, ctx) => {
+    const bodyParas = p.bodyText.split("\n").filter((line) => line.trim().length > 0);
+    return {
+      subject: `${p.vendorName} visszajelzett / got back to you · Weddly`,
+      ctaUrl: `${CONFIG.frontendBaseUrl}${p.threadUrl}`,
+      hu: {
+        preheader: `${p.vendorName} megkapta a megkereséseteket.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `**${p.vendorName}** megkapta a megkereséseteket, és ezt üzeni:`,
+          ...bodyParas,
+          "Ez automatikus visszajelzés volt. A részletes válasz ezután érkezik, és ugyanebben a beszélgetésben olvashatjátok.",
+        ],
+        cta: "Beszélgetés megnyitása",
+      },
+      en: {
+        preheader: `${p.vendorName} received your inquiry.`,
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `**${p.vendorName}** received your inquiry and sent this straight back:`,
+          ...bodyParas,
+          "That was an automatic acknowledgement. Their own answer follows, in the same conversation.",
+        ],
+        cta: "Open the conversation",
+      },
+    };
+  },
+
+  // Automation 2: to the VENDOR, about a couple still waiting. The hours are
+  // `vendorAttention`'s own count, so the mail and the attention band on the
+  // vendor's screen can never quote two different numbers about one lead.
+  vendor_lead_reminder: (p, ctx) => ({
+    subject: `${p.coupleName} még válaszra vár / is still waiting · Weddly`,
+    ctaUrl: `${CONFIG.frontendBaseUrl}${p.clientUrl}`,
+    hu: {
+      preheader: `${p.coupleName} ${p.waitingHours} órája vár válaszra.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `**${p.coupleName}** ${p.waitingHours} órája vár válaszra, a ${p.eventDate} dátumú megkeresésre.`,
+        "Pár sor is elég ahhoz, hogy a megkeresés életben maradjon.",
+      ],
+      cta: "Ügyfél megnyitása",
+    },
+    en: {
+      preheader: `${p.coupleName} has been waiting ${p.waitingHours} hours.`,
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `**${p.coupleName}** has been waiting ${p.waitingHours} hours for an answer about ${p.eventDate}.`,
+        "A couple of lines is usually all it takes to keep the lead alive.",
+      ],
+      cta: "Open the client",
+    },
+  }),
+
+  // Automation 3: to the COUPLE, and only because the vendor pressed Approve.
+  // Nothing schedules this; a proposal sits in the vendor's queue until a human
+  // decides, which is why the copy can speak in the vendor's name at all.
+  vendor_review_request: (p, ctx) => ({
+    subject: `${p.vendorName} értékelése / Rate ${p.vendorName} · Weddly`,
+    ctaUrl: p.reviewUrl,
+    hu: {
+      preheader: `Pár csillag ${p.vendorName} munkájára.`,
+      greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+      paragraphs: [
+        `A ${p.eventDate} napi esküvőtökön **${p.vendorName}** dolgozott veletek.`,
+        "Ha van rá pár másodpercetek, egy őszinte értékelés rengeteget segít a következő pároknak, és nekik is.",
+        "**Egy kattintás csillagonként.** Ha kedvetek van hozzá, írhattok mellé pár szót is.",
+      ],
+      cta: "Értékelem őket",
+    },
+    en: {
+      preheader: `A few stars for ${p.vendorName}.`,
+      greeting: `Hi ${ctx.recipientName || "there"},`,
+      paragraphs: [
+        `**${p.vendorName}** worked with you at your wedding on ${p.eventDate}.`,
+        "If you have a few seconds, an honest rating helps the next couples enormously, and helps them too.",
+        "**One click per star.** Add a line or two if you feel like it.",
+      ],
+      cta: "Leave a rating",
+    },
+  }),
 
   // The couple wrote back. Goes to the vendor account owner and lands them on
   // the client card, which is where the thread and the CRM fields already are.
