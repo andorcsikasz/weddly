@@ -38,7 +38,7 @@ import { activateFilmAlbum } from "../domain/film";
 import { validateFilmSlug } from "../domain/film_slug";
 import { getCoupleForUser } from "../domain/couples";
 import { HttpError, json, requireAuth, type Ctx, type Router } from "../lib/http";
-import { sniffUploadedImage } from "../lib/image_sniff";
+import { type SniffedImageMime, sniffUploadedImage } from "../lib/image_sniff";
 import { rateLimit } from "../lib/rate_limit";
 
 // ─── constants ───────────────────────────────────────────────────────────────
@@ -46,7 +46,13 @@ import { rateLimit } from "../lib/rate_limit";
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const FIVE_MONTHS_MS = 5 * 30 * 24 * 60 * 60 * 1000;
 
-const PHOTO_MIME_EXT: Record<string, "jpg" | "png" | "webp"> = {
+/** Keyed by `SniffedImageMime` rather than by `string`, so the lookup is TOTAL:
+ *  under `noUncheckedIndexedAccess` a `Record<string, …>` reads back as
+ *  possibly-undefined, and the old key was built by template literal, which
+ *  accepts that silently and would have written a file named `<id>.undefined`.
+ *  The sniffer already returns exactly these three, so nothing changes at
+ *  runtime; it just stops the type from allowing a case that cannot happen. */
+const PHOTO_MIME_EXT: Record<SniffedImageMime, "jpg" | "png" | "webp"> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
@@ -107,6 +113,27 @@ function countParticipants(albumId: number): number {
 
 function generateToken(): string {
   return randomBytes(12).toString("hex");
+}
+
+/** The object key for one uploaded photo. The trailing random segment is the
+ *  point: without it the key was `couples/<coupleId>/photos/<albumId>/<uploadId>`
+ *  from three sequential integers, so anyone could walk `/uploads/couples/3/
+ *  photos/5/1.jpg`, `2.jpg`, … and read a stranger's wedding album straight off
+ *  the static handler.
+ *
+ *  That mattered more here than the guessable key usually does, because the
+ *  album API around it is careful: the guest routes are gated on an unguessable
+ *  `upload_token` and the photo list is REVEAL-LOCKED, so a couple can keep the
+ *  guests' shots hidden until they choose. Walking the ids skipped both.
+ *
+ *  These stay public-by-URL rather than moving behind a gated route (the way
+ *  the budget documents and the waitlist price list did), because a wedding
+ *  album is meant to be opened by guests with no account, on a link, and 128
+ *  bits in the path is what makes that link a credential instead of a guess.
+ *  Existing rows keep their stored `file_path` and go on resolving; this only
+ *  changes what NEW uploads are addressed by. */
+function photoObjectKey(coupleId: number, albumId: number, uploadId: number, ext: string): string {
+  return `couples/${coupleId}/photos/${albumId}/${uploadId}-${randomBytes(16).toString("hex")}.${ext}`;
 }
 
 // ─── mappers ─────────────────────────────────────────────────────────────────
@@ -775,7 +802,7 @@ async function handleGuestUpload(ctx: Ctx): Promise<Response> {
     )
     .get(row.id, deviceId, guestName, sniffed, raw.size, filter, ts) as { id: number };
 
-  const key = `couples/${row.couple_id}/photos/${row.id}/${uploadRow.id}.${ext}`;
+  const key = photoObjectKey(row.couple_id, row.id, uploadRow.id, ext);
   const publicUrl = `/uploads/${key}`;
   await storage.write(key, raw);
   db.prepare("UPDATE photo_uploads SET file_path = ? WHERE id = ?").run(publicUrl, uploadRow.id);
@@ -833,7 +860,7 @@ async function handleCoupleUpload(ctx: Ctx): Promise<Response> {
     )
     .get(row.id, "couple", null, sniffed, raw.size, filter, ts) as { id: number };
 
-  const key = `couples/${row.couple_id}/photos/${row.id}/${uploadRow.id}.${ext}`;
+  const key = photoObjectKey(row.couple_id, row.id, uploadRow.id, ext);
   const publicUrl = `/uploads/${key}`;
   await storage.write(key, raw);
   db.prepare("UPDATE photo_uploads SET file_path = ? WHERE id = ?").run(publicUrl, uploadRow.id);

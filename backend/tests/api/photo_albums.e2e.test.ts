@@ -116,6 +116,24 @@ describe("photo-albums API", () => {
     };
     expect(body.shotCount).toBe(1);
     expect(typeof body.upload.fileUrl).toBe("string");
+
+    // The stored path must NOT be walkable. It used to be
+    // `couples/<coupleId>/photos/<albumId>/<uploadId>.jpg`, three sequential
+    // integers, so a stranger could enumerate any couple's album straight off
+    // the public /uploads/ handler and skip both the unguessable upload_token
+    // and the reveal lock. The random segment is what makes the URL itself the
+    // credential.
+    const url = body.upload.fileUrl;
+    expect(url.startsWith("/uploads/couples/")).toBe(true);
+    const file = url.split("/").pop() ?? "";
+    expect(file).not.toBe(`${body.upload.id}.jpg`);
+    // <uploadId>-<32 hex chars>.jpg
+    expect(/^\d+-[0-9a-f]{32}\.jpg$/.test(file)).toBe(true);
+
+    // And it really is served from that path (the key and the stored URL agree).
+    const fetched = await fetch(`${BASE}${url}`);
+    expect(fetched.status).toBe(200);
+    await fetched.arrayBuffer();
   });
 
   test("photoCount increments after upload", async () => {
