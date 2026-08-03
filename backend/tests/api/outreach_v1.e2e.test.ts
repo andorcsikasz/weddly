@@ -59,7 +59,8 @@ describe("POST /api/outreach/campaigns — happy path + validation", () => {
     expect(r.data.message_count).toBe(3);
     for (const msg of r.data.messages) {
       expect(msg.supplier_id).toBeTruthy();
-      expect(msg.supplier_email).toContain("@");
+      // The recipient's address is NOT on the payload; see the privacy suite.
+      expect(JSON.stringify(msg)).not.toContain("@");
       expect(msg.status).toBe("sent");
       expect(msg.sent_at).not.toBeNull();
       // 32-hex reply token, ready for the v1.5 inbound webhook.

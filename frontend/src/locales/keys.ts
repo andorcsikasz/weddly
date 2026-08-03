@@ -1930,10 +1930,11 @@ export interface LocaleMessages {
     task_deleted: string;
     task_delete_failed: string;
   };
-  /** Supplier Outreach Inbox (P2.E v1) — the in-app surface where a couple
-   *  sends a localised cold-outreach mail to up to 5 shortlisted vendors
-   *  per campaign and browses the sent history. Replies arrive in the
-   *  couple's own email today; v1.5 wires the in-app thread. */
+  /** Supplier Outreach Inbox — the in-app surface where a couple sends a
+   *  localised cold-outreach mail to up to 5 shortlisted vendors per campaign
+   *  and browses the sent history. Where the REPLY goes depends on who owns the
+   *  listing: a claimed one answers in the two-way thread under Conversations,
+   *  an unclaimed one answers to the couple's own email (Reply-To). */
   outreach: {
     page_title: string;
     page_body: string;
@@ -1941,6 +1942,11 @@ export interface LocaleMessages {
     subheading: string;
     new_campaign: string;
     reply_note: string;
+    /** Per-recipient delivery, keyed by `OutreachMessage.delivery` so the row
+     *  can index them directly. This is what the meta line says instead of the
+     *  vendor's email address, which is never shown to a user. */
+    delivery_in_account: string;
+    delivery_email_only: string;
     empty_title: string;
     empty_body: string;
     recipient_count: string;

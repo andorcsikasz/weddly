@@ -164,6 +164,59 @@ describe("a vendor's email address has no door at all", () => {
     expect(r.data.has_contact_email).toBe(true);
     expect(r.data.contact_email).toBeNull();
   });
+
+  /** The four reads above were closed on 2026-07-31 and the outreach inbox was
+   *  not, so writing to a vendor was itself the door: the sent-history payload
+   *  echoed `supplier_email` back for every recipient, five per campaign, for as
+   *  many campaigns as a couple cared to send. The address is still stored (it
+   *  is the record of where the mail went) and still mailed server-side; it just
+   *  no longer travels to the client. */
+  describe("and writing to a vendor is not a door either", () => {
+    async function sendCampaignTo(id: string, token: string): Promise<unknown> {
+      const r = await req<{ id: number }>(
+        "POST",
+        "/api/outreach/campaigns",
+        {
+          subject: "Are you free on 14 June 2027?",
+          body_template: "We are getting married on 14 June 2027. Do you have the date?",
+          supplier_ids: [id],
+        },
+        { token },
+      );
+      expect(r.status).toBe(201);
+      return r.data;
+    }
+
+    test("neither the send response nor the sent history carries the address", async () => {
+      const seeded = contactableListing();
+      const { token } = await bootstrapCouple("outreach-no-door@test.test");
+
+      const created = await sendCampaignTo(seeded.id, token);
+      const list = await req("GET", "/api/outreach/campaigns", undefined, { token });
+      const detail = await req(
+        "GET",
+        `/api/outreach/campaigns/${(created as { id: number }).id}`,
+        undefined,
+        { token },
+      );
+
+      for (const body of [created, list.data, detail.data]) {
+        expect(JSON.stringify(body)).not.toContain(seeded.email);
+      }
+    });
+
+    test("the recipient row still says WHERE it landed", async () => {
+      const seeded = contactableListing();
+      const { token } = await bootstrapCouple("outreach-delivery@test.test");
+      const created = (await sendCampaignTo(seeded.id, token)) as {
+        messages: Array<{ delivery: string; supplier_name: string }>;
+      };
+      // Losing the address must not cost the couple the one fact they can act
+      // on: an unclaimed curated listing was mailed and nothing more.
+      expect(created.messages[0]?.delivery).toBe("email_only");
+      expect(created.messages[0]?.supplier_name).toBeTruthy();
+    });
+  });
 });
 
 describe("one quota covers both doors to a contact", () => {

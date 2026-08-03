@@ -1489,7 +1489,9 @@ const hr: LocaleMessages = {
     subheading: "Pišite do {max} dobavljača odjednom i pregledajte što ste već poslali.",
     new_campaign: "Nova kampanja",
     reply_note:
-      "Odgovori danas stižu u vaš vlastiti sandučić (Reply-To je vaša e-pošta). Razgovor u aplikaciji stiže u sljedećoj verziji.",
+      "Odgovor Weddly dobavljača pojavljuje se pod Razgovori. Profil koji još nitko nije preuzeo odgovara izravno na vašu e-poštu.",
+    delivery_in_account: "U njihovom Weddly sandučiću",
+    delivery_email_only: "Poslano e-poštom",
     empty_title: "Još nema kampanja",
     empty_body:
       "Odaberite nekoliko dobavljača iz kataloga i napišite im isti uvodni upit, koji šaljemo preko Weddlyja s vašom e-poštom kao adresom za odgovor.",

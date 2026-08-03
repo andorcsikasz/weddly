@@ -210,7 +210,14 @@ function toMessage(
     supplier_id: row.supplier_id,
     supplier_name: supplierName,
     supplier_category: supplierCategory,
-    supplier_email: row.supplier_email,
+    // `supplier_email` is deliberately NOT mapped out. The column stays (it is
+    // the record of where the mail actually went, and the reply-routing key),
+    // but a vendor's mailbox is never shown to a user (owner rule, 2026-07-31)
+    // and this was the door that rule missed: the catalogue, the detail, the
+    // contact endpoint and the public page were all closed, while the outreach
+    // inbox read back the address of every vendor a couple had written to, five
+    // per campaign, for as many campaigns as they cared to send. What the couple
+    // needs from this row is WHERE it landed, and `delivery` already says that.
     sent_at: row.sent_at,
     status: toMessageStatus(row.status),
     reply_token: row.reply_token,

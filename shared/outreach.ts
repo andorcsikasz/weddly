@@ -1,10 +1,18 @@
-// Supplier Outreach Inbox — Q3 (P2.E). The couple picks suppliers from
-// their shortlist (`couple_picks` etc.) and Weddly sends a localised mail
-// per supplier. Each mail carries the couple's email as Reply-To so the
-// vendor replies directly to them; the in-app "inbox" shows the sent
-// state of every campaign. The Resend inbound webhook + reply archival
-// land in v1.5 — for now the couple manages threads in their own email
-// client and uses /app/outreach as a send + sent-history surface.
+// Supplier Outreach Inbox. The couple picks suppliers from their shortlist
+// (`couple_picks` etc.) and Weddly sends a localised mail per supplier.
+//
+// WHERE THE REPLY GOES depends on whether anyone owns the listing, and
+// `delivery` is what says which happened. A CLAIMED listing gets a real
+// `supplier_bookings` row, so the vendor answers in their own client list and
+// the couple reads it as an ordinary two-way thread at /app/messages/:id
+// (shipped 2026-07-30). An UNCLAIMED one is mail and nothing more: the message
+// carries the couple's address as Reply-To, so the vendor's answer lands in
+// their personal inbox and Weddly never sees it. One undifferentiated "Sent"
+// over those two outcomes is how a couple ends up waiting on a dashboard that
+// nobody owns, which is why the recipient row names the delivery.
+//
+// This module is the SENT-HISTORY half only. The conversation itself belongs to
+// `booking_messages`; nothing here is a second copy of it.
 
 export type OutreachMessageStatus = "queued" | "sent" | "bounced" | "replied";
 
@@ -23,7 +31,6 @@ export interface OutreachMessage {
    *  at /app/suppliers/<id>", so the UI shows the category and links the name
    *  on one condition — see `linkableListingCategories`. */
   supplier_category: string | null;
-  supplier_email: string;
   sent_at: number | null;
   status: OutreachMessageStatus;
   /** Per-message UNIQUE token. Embedded in the Reply-To address (v1.5)

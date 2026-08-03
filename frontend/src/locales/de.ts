@@ -1522,7 +1522,9 @@ const de: LocaleMessages = {
       "Schreiben Sie bis zu {max} Dienstleister auf einmal an und sehen Sie durch, was Sie schon geschickt haben.",
     new_campaign: "Neue Kampagne",
     reply_note:
-      "Antworten landen heute in Ihrem eigenen Postfach (Reply-To ist Ihre E-Mail-Adresse). Das Gespräch in der App kommt in der nächsten Version.",
+      "Die Antwort eines Weddly-Dienstleisters erscheint unter Gespräche. Ein noch nicht beanspruchtes Profil antwortet direkt an Ihre eigene E-Mail-Adresse.",
+    delivery_in_account: "In ihrem Weddly-Postfach",
+    delivery_email_only: "Per E-Mail",
     empty_title: "Noch keine Kampagnen",
     empty_body:
       "Wählen Sie ein paar Dienstleister aus dem Katalog und schreiben Sie ihnen allen dieselbe Vorstellung, verschickt über Weddly mit Ihrer E-Mail als Antwortadresse.",

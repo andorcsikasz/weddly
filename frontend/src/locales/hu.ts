@@ -1477,7 +1477,9 @@ const hu: LocaleMessages = {
       "Írj egyszerre legfeljebb {max} szolgáltatónak, és nézd vissza a kiküldött köröket.",
     new_campaign: "Új megkeresés",
     reply_note:
-      "A válaszok a saját e-mail fiókodba érkeznek (Reply-To). A teljes inbox-élmény a következő körben jön.",
+      "A Weddlys szolgáltatók válasza a Beszélgetések fülön jelenik meg. A még nem igényelt profilok közvetlenül a saját e-mail címedre válaszolnak.",
+    delivery_in_account: "A Weddly fiókjukban",
+    delivery_email_only: "E-mailben",
     empty_title: "Még nem küldtél ki megkeresést",
     empty_body:
       "Válassz pár szolgáltatót a katalógusból, és írj nekik egy közös üzenetet, a Weddly-n keresztül megy ki, de a válaszuk hozzád ér.",

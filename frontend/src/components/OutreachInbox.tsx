@@ -260,10 +260,22 @@ export function OutreachInbox({ variant = "section" }: { variant?: OutreachInbox
                               ) : (
                                 <p className="truncate text-sm font-medium">{m.supplier_name}</p>
                               )}
+                              {/* The meta line used to end in the vendor's email
+                                address. It says where the message LANDED
+                                instead: the address is never shown to a user,
+                                and "someone's dashboard has this" vs "it is in
+                                a mailbox and nothing more" is the one thing the
+                                couple can actually act on. The status pill
+                                beside it only ever says "sent". */}
                               <p className="truncate text-xs text-ink-500 dark:text-umber-300">
-                                {m.supplier_category
-                                  ? `${t(`suppliers.cat.${m.supplier_category}`)} · ${m.supplier_email}`
-                                  : m.supplier_email}
+                                {[
+                                  m.supplier_category
+                                    ? t(`suppliers.cat.${m.supplier_category}`)
+                                    : null,
+                                  t(`outreach.delivery_${m.delivery}`),
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
                               </p>
                             </div>
                           </div>

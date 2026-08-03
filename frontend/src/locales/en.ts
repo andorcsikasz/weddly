@@ -1463,7 +1463,9 @@ const en: LocaleMessages = {
     subheading: "Write to up to {max} vendors at once and browse what you've already sent.",
     new_campaign: "New campaign",
     reply_note:
-      "Replies land in your own inbox today (Reply-To is your email). The in-app thread arrives in the next iteration.",
+      "A Weddly vendor's reply appears under Conversations. A listing nobody has claimed yet replies straight to your own email.",
+    delivery_in_account: "In their Weddly inbox",
+    delivery_email_only: "Emailed",
     empty_title: "No campaigns yet",
     empty_body:
       "Pick a few vendors from the directory and write them all the same intro, sent via Weddly with your email as the Reply-To.",

@@ -1498,7 +1498,9 @@ const es: LocaleMessages = {
     subheading: "Escribe hasta a {max} proveedores a la vez y consulta lo que ya has enviado.",
     new_campaign: "Nueva campaña",
     reply_note:
-      "Las respuestas llegan hoy a tu propia bandeja de entrada (el Reply-To es tu email). El hilo dentro de la app llegará en la próxima iteración.",
+      "La respuesta de un proveedor de Weddly aparece en Conversaciones. Un perfil que nadie ha reclamado todavía responde directamente a tu propio correo.",
+    delivery_in_account: "En su bandeja de Weddly",
+    delivery_email_only: "Enviado por correo",
     empty_title: "Aún no hay campañas",
     empty_body:
       "Elige unos cuantos proveedores del directorio y escríbeles a todos la misma presentación, enviada a través de Weddly con tu email como Reply-To.",
