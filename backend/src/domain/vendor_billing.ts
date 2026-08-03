@@ -25,7 +25,7 @@ import {
   type VendorSubscriptionStatus,
 } from "@shared/vendor_billing";
 import type { Currency } from "@shared/types";
-import { db, now } from "../db";
+import { billingEnforcementOn, db, now } from "../db";
 import { getVendorAccountByOwnerUserId } from "./vendor_accounts";
 
 export interface VendorSubRow {
@@ -146,13 +146,25 @@ export function initVendorBilling(
  *  status + timestamps at read-time (the shared pure function). */
 export function toVendorBilling(row: VendorSubRow, nowMs: number = Date.now()): VendorBilling {
   const status = row.subscription_status as VendorSubscriptionStatus;
-  const { entitled, reason } = computeVendorEntitlement(status, {
+  let { entitled, reason } = computeVendorEntitlement(status, {
     trial_ends_at: row.trial_ends_at,
     founding_until: row.founding_until,
     lead_credits_used: row.lead_credits_used,
     billing_starts_at: row.billing_starts_at,
     nowMs,
   });
+  // The global go-live switch, honoured here for the same reason the couple and
+  // planner mappers honour it (couples.ts / planner_billing.ts): while the
+  // freeze is deferred NOBODY is gated, so one flip starts all three aggregates
+  // at the same instant instead of leaving vendors on a clock of their own.
+  // Every gate downstream (vendorEntitlementBlock, vendorPlanForAccount and so
+  // the whole FREE/PRO feature table) reads this verdict, which is what makes
+  // the single check enough. A single indexed PK read, and it short-circuits on
+  // the already-entitled path so the common case pays nothing.
+  if (!entitled && !billingEnforcementOn()) {
+    entitled = true;
+    reason = "subscribed";
+  }
   return {
     subscription_status: status,
     trial_ends_at: row.trial_ends_at,

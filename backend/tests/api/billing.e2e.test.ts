@@ -292,7 +292,7 @@ describe("billing state machine", () => {
     expect(edit.status).toBe(201);
   });
 
-  test("admin enforcement toggle: requires admin, refuses ON below 200, then sets/clears", async () => {
+  test("admin enforcement toggle: requires admin, then sets/clears at any cohort size", async () => {
     const { token: userToken } = await bootstrapCouple("toggle-user@weddly.test");
     const adminToken = await addAdmin();
     const setEnforce = (on: boolean, tok: string) =>
@@ -307,11 +307,18 @@ describe("billing state machine", () => {
     const forbidden = await setEnforce(true, userToken);
     expect(forbidden.status).toBe(403);
 
-    // Admin, but fewer than 200 couples → refused.
-    const tooEarly = await setEnforce(true, adminToken);
-    expect(tooEarly.status).toBe(400);
+    // Below 200 couples the endpoint used to 400. It no longer does: when we
+    // start charging is a date the founder picks, not a headcount the app
+    // reaches, and the guard that protects anyone is the impact count stated in
+    // the admin confirm. `enforcement_ready` survives as the readiness signal
+    // only, and is false here while the flip still succeeds.
+    const early = await setEnforce(true, adminToken);
+    expect(early.status).toBe(200);
+    expect(early.data.billing_enforcement_on).toBe(true);
+    expect(early.data.enforcement_ready).toBe(false);
+    await setEnforce(false, adminToken);
 
-    // Fill the cohort, then go live.
+    // Filling the cohort flips the signal, and go-live still works.
     seedCouples(200);
     const on = await setEnforce(true, adminToken);
     expect(on.status).toBe(200);

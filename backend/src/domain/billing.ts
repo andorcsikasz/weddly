@@ -7,18 +7,24 @@
 import Stripe from "stripe";
 import {
   type BillingReason,
+  computeEntitlement,
   FOUNDING_CAP,
   FOUNDING_DURATION_MS,
   PAID_LAUNCH_DATE,
   partnerFreeWindowEnd,
+  type SubscriptionStatus,
   TRIAL_DURATION_MS,
 } from "@shared/billing";
 import type { Currency } from "@shared/types";
+import { computeVendorEntitlement, type VendorSubscriptionStatus } from "@shared/vendor_billing";
 import { CONFIG, STRIPE_ENABLED } from "../config";
 import { db, now } from "../db";
 import { type Ctx, HttpError } from "../lib/http";
 import {
+  billingAnchorRow,
   type CoupleRow,
+  coupleHasAdminMember,
+  coupleHasBetaMember,
   getCoupleById,
   getCoupleForUser,
   isBillingAnchor,
@@ -96,6 +102,89 @@ export function activeFoundingCount(nowMs: number = Date.now()): number {
     )
     .get(nowMs) as { n: number };
   return row.n;
+}
+
+// ── Go-live blast radius ────────────────────────────────────────────────────
+/** Who would lose access THE MOMENT the global switch is flipped on, per
+ *  aggregate. The switch is a one-way door in practice (a couple who opens the
+ *  app to "Csak olvasható" has already had the experience by the time it is
+ *  flipped back), so the admin confirm has to state the number before it
+ *  happens rather than after.
+ *
+ *  Each count re-derives its own aggregate's verdict the same way the live gate
+ *  does — the couples anchor rule and the beta/admin exemptions included —
+ *  MINUS the deferral, which is the whole question being asked. Deriving it
+ *  rather than storing it is the same rule entitlement itself follows: a stored
+ *  count would be wrong by the next trial expiry.
+ *
+ *  Vendors with no subscription row at all are deliberately not counted: they
+ *  are already FREE today (vendorPlanForAccount has no row to read), so the
+ *  flip does not move them. */
+export function enforcementImpact(nowMs: number = now()): {
+  couples: number;
+  vendors: number;
+  planners: number;
+} {
+  const couples = db
+    .prepare("SELECT id, partner_a_id FROM couples WHERE status != 'deleting' AND is_demo = 0")
+    .all() as Array<{ id: number; partner_a_id: number | null }>;
+  let coupleCount = 0;
+  for (const c of couples) {
+    const row = getCoupleById(c.id);
+    if (!row) continue;
+    // The verdict a secondary workspace rides is its anchor's, so asking the
+    // row itself would over-count a lapsed primary's extra events.
+    const anchor = billingAnchorRow(row);
+    const { entitled } = computeEntitlement(anchor.subscription_status as SubscriptionStatus, {
+      trial_ends_at: anchor.trial_ends_at,
+      founding_until: anchor.founding_until,
+      nowMs,
+    });
+    if (entitled) continue;
+    if (coupleHasBetaMember(row.id) || coupleHasAdminMember(row.id)) continue;
+    coupleCount++;
+  }
+
+  const vendorRows = db
+    .prepare(
+      `SELECT subscription_status, trial_ends_at, founding_until, lead_credits_used,
+              billing_starts_at FROM vendor_subscriptions`,
+    )
+    .all() as Array<{
+    subscription_status: string;
+    trial_ends_at: number | null;
+    founding_until: number | null;
+    lead_credits_used: number;
+    billing_starts_at: number | null;
+  }>;
+  const vendors = vendorRows.filter(
+    (v) =>
+      !computeVendorEntitlement(v.subscription_status as VendorSubscriptionStatus, {
+        trial_ends_at: v.trial_ends_at,
+        founding_until: v.founding_until,
+        lead_credits_used: v.lead_credits_used,
+        billing_starts_at: v.billing_starts_at,
+        nowMs,
+      }).entitled,
+  ).length;
+
+  const plannerRows = db
+    .prepare("SELECT subscription_status, trial_ends_at, founding_until FROM planner_subscriptions")
+    .all() as Array<{
+    subscription_status: string;
+    trial_ends_at: number | null;
+    founding_until: number | null;
+  }>;
+  const planners = plannerRows.filter(
+    (p) =>
+      !computeEntitlement(p.subscription_status as SubscriptionStatus, {
+        trial_ends_at: p.trial_ends_at,
+        founding_until: p.founding_until,
+        nowMs,
+      }).entitled,
+  ).length;
+
+  return { couples: coupleCount, vendors, planners };
 }
 
 // ── Global enforcement switch ───────────────────────────────────────────────

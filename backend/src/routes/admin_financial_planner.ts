@@ -14,6 +14,7 @@ import { billingEnforcementOn, db, now } from "../db";
 import { addAuditLog } from "../lib/audit";
 import {
   activeFoundingCount,
+  enforcementImpact,
   foundingSlotsUsed,
   setBillingEnforcement,
   stripe,
@@ -123,6 +124,7 @@ function overview(): AdminFinancialPlannerOverview {
     huf_per_eur: HUF_PER_EUR,
     billing_enforcement_on: billingEnforcementOn(),
     enforcement_ready: total >= FOUNDING_CAP,
+    enforcement_impact: enforcementImpact(nowMs),
   };
 }
 
@@ -140,14 +142,14 @@ async function handleSetEnforcement(ctx: Ctx): Promise<Response> {
   if (typeof body.on !== "boolean") {
     throw new HttpError(400, "`on` must be a boolean");
   }
-  const total = (
-    db.prepare("SELECT COUNT(*) AS n FROM couples WHERE is_demo = 0").get() as { n: number }
-  ).n;
-  if (body.on && total < FOUNDING_CAP) {
-    throw new HttpError(400, "Cannot enforce billing before 200 couples", {
-      code: "founding_cohort_not_full",
-    });
-  }
+  // Deliberately NOT gated on the founding cohort being full. It used to 400
+  // below FOUNDING_CAP, which made the moment we start charging a function of a
+  // headcount rather than a date the founder picks — and left no way to start
+  // early, or to run the freeze at all on a smaller cohort. `enforcement_ready`
+  // still ships as the readiness SIGNAL; the guard that actually protects
+  // anyone is the impact count stated in the admin confirm (enforcementImpact),
+  // which names how many couples, vendors and planners lose access on this
+  // click. Reversible, and every flip is audited either way.
   setBillingEnforcement(body.on, admin.id);
   addAuditLog({
     actor_user_id: admin.id,

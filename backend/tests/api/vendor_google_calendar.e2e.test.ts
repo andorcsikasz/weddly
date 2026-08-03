@@ -24,7 +24,13 @@ import {
   __fakeSetBusy,
   type GoogleEventBody,
 } from "../../src/lib/google_calendar";
-import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
+import {
+  bootstrapCouple,
+  enableBillingEnforcement,
+  registerAndVerify,
+  req,
+  wipeAll,
+} from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
@@ -394,6 +400,7 @@ describe("vendor google calendar — entitlement + callback security", () => {
   beforeEach(() => wipeAll());
 
   test("connect is PRO-gated (the availability calendar itself is)", async () => {
+    enableBillingEnforcement();
     const { vendorToken, accountId } = await bootstrapVendor("gcal-free");
     // A claimed vendor is entitled out of the box (claim-complete grants the
     // subscription), so lapse it deliberately to exercise the FREE tier.
@@ -415,6 +422,7 @@ describe("vendor google calendar — entitlement + callback security", () => {
     // Downgrade must not destroy data — same principle as the couple read-only
     // gate. The connection and the already-pushed events survive; they just
     // stop receiving updates.
+    enableBillingEnforcement();
     const { vendorToken, accountId } = await bootstrapVendor("gcal-lapse");
     await blockDay(vendorToken, "2030-07-04");
     const status = await connect(vendorToken);

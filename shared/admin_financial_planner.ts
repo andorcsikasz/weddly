@@ -71,8 +71,15 @@ export interface AdminFinancialPlannerOverview {
    *  locked out yet (the default until the founder flips it on). */
   billing_enforcement_on: boolean;
   /** True once the founding cohort is full (total non-demo couples >= 200),
-   *  i.e. the freeze is ready to be turned on. Drives the admin go-live signal. */
+   *  i.e. the freeze is ready to be turned on. A READINESS SIGNAL, not a lock:
+   *  the go-live button stays pressable below it (behind a confirm), because
+   *  the decision to start charging is a date the founder picks, not a headcount
+   *  the app reaches. */
   enforcement_ready: boolean;
+  /** Who loses access the moment the switch is flipped on, per aggregate. Shown
+   *  in the go-live confirm so the blast radius is stated BEFORE the flip, not
+   *  discovered after it. Recomputed per request. */
+  enforcement_impact: { couples: number; vendors: number; planners: number };
   /** Distinct couples who started the payment process (reached the Stripe
    *  Checkout screen) at least once — top of the paid-conversion funnel.
    *  Counted from `checkout.started` growth events. */

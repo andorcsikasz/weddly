@@ -42,7 +42,13 @@ import {
   vendorEarlySpotsLeft,
   vendorFoundingSpotsLeft,
 } from "../../src/domain/vendor_billing";
-import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
+import {
+  bootstrapCouple,
+  enableBillingEnforcement,
+  registerAndVerify,
+  req,
+  wipeAll,
+} from "../helpers";
 
 interface BillingResponse {
   billing: VendorBilling;
@@ -240,6 +246,7 @@ describe("vendor billing — GET /api/vendor/billing", () => {
 
   test("lapsed vendor ('none') resolves to plan='free' with every feature off", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const listingId = await makeApprovedListing(
       "owner-lapsed@weddly.test",
       "vendor-lapsed@weddly.test",
@@ -261,8 +268,37 @@ describe("vendor billing — GET /api/vendor/billing", () => {
     expect(r.data.features.response_workflow).toBe(false);
   });
 
+  test("while the freeze is deferred a lapsed vendor stays PRO", async () => {
+    // The go-live switch is GLOBAL: couples, planners and vendors all read the
+    // same flag, so one flip starts charging everywhere at the same instant.
+    // Deliberately no enableBillingEnforcement() here — the default off state
+    // IS the case under test, and it is production's resting state today.
+    wipeAll();
+    const listingId = await makeApprovedListing(
+      "owner-deferred@weddly.test",
+      "vendor-deferred@weddly.test",
+      "Deferred Co",
+    );
+    const { vendorToken, accountId } = await claimVendor(listingId, "vendor-deferred@weddly.test");
+    // The same lapsed row that reads FREE in the test above.
+    setVendorSub(accountId, { subscription_status: "none" });
+
+    const r = await req<BillingResponse>("GET", "/api/vendor/billing", undefined, {
+      token: vendorToken,
+    });
+    expect(r.status).toBe(200);
+    expect(r.data.billing.subscription_status).toBe("none");
+    expect(r.data.billing.entitled).toBe(true);
+    expect(r.data.plan).toBe("pro");
+    // The whole feature table follows the one verdict, which is what makes the
+    // single check in toVendorBilling enough to cover every gate.
+    expect(r.data.features.client_crm_detail).toBe(true);
+    expect(r.data.features.payment_tracking).toBe(true);
+  });
+
   test("an expired trial resolves to plan='free'", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const listingId = await makeApprovedListing(
       "owner-expired@weddly.test",
       "vendor-expired@weddly.test",
@@ -458,6 +494,7 @@ describe("vendor billing: freemium lead window", () => {
 
   test("scheduled billing date passed with no active sub → leads_exhausted, FREE", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const listingId = await makeApprovedListing(
       "owner-exhaust@weddly.test",
       "vendor-exhaust@weddly.test",
@@ -538,6 +575,7 @@ describe("vendor billing: freemium lead window", () => {
 describe("vendor billing: freemium feature gates", () => {
   test("a FREE vendor is not bookable: bookable=false and inquiry create 409", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const listingId = await makeApprovedListing(
       "owner-gatebook@weddly.test",
       "vendor-gatebook@weddly.test",
@@ -593,6 +631,7 @@ describe("vendor billing: freemium feature gates", () => {
 
   test("FREE vendor: availability writes 402, listing edit still allowed", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const listingId = await makeApprovedListing(
       "owner-gateedit@weddly.test",
       "vendor-gateedit@weddly.test",
@@ -775,6 +814,7 @@ describe("vendor free-cohort ladder", () => {
 
   test("an expired free window never frees its slot back up", () => {
     wipeAll();
+    enableBillingEnforcement();
     const accountId = makeUngrantedAccount("long-ago");
     const longAgo = Date.now() - VENDOR_FOUNDING_DURATION_MS * 2;
     const row = initVendorBilling(accountId, "EUR", longAgo);

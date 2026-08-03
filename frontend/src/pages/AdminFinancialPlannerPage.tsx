@@ -201,11 +201,23 @@ export default function AdminFinancialPlannerPage() {
   const last = projection[projection.length - 1];
 
   async function onToggleEnforcement(next: boolean) {
+    // Going live states the blast radius in the confirm itself. The button is
+    // pressable below the 200-couple mark on purpose (the date is the founder's
+    // call, not a headcount the app reaches), so the number is the only thing
+    // standing between the click and N couples reading "Csak olvasható".
+    const impact = data?.enforcement_impact;
+    const onBody = impact
+      ? `${t("admin.fin_enforce_confirm_on_body")} ${t("admin.fin_enforce_impact", {
+          couples: impact.couples,
+          vendors: impact.vendors,
+          planners: impact.planners,
+        })}`
+      : t("admin.fin_enforce_confirm_on_body");
     const ok = await confirm({
       title: next
         ? t("admin.fin_enforce_confirm_on_title")
         : t("admin.fin_enforce_confirm_off_title"),
-      body: next ? t("admin.fin_enforce_confirm_on_body") : t("admin.fin_enforce_confirm_off_body"),
+      body: next ? onBody : t("admin.fin_enforce_confirm_off_body"),
       confirmLabel: next ? t("admin.fin_enforce_go_live") : t("admin.fin_enforce_turn_off"),
       cancelLabel: t("common.cancel"),
       destructive: next,
@@ -978,13 +990,13 @@ function BillingLaunchCard({
             {t("admin.fin_enforce_turn_off")}
           </button>
         ) : (
+          // The 200-couple mark is a READINESS SIGNAL, not a lock: starting to
+          // charge is a date the founder picks. The confirm carries the blast
+          // radius, which is the guard that actually protects anyone.
           <button
             type="button"
             onClick={() => onToggle(true)}
-            disabled={busy || !ready}
-            title={
-              ready ? undefined : t("admin.fin_enforce_not_ready", { n: total, cap: FOUNDING_CAP })
-            }
+            disabled={busy}
             className="btn-primary btn-sm shrink-0"
           >
             {t("admin.fin_enforce_go_live")}
@@ -1011,6 +1023,23 @@ function BillingLaunchCard({
         {!on && ready && (
           <p className="mt-2 text-sm font-medium text-sage-700 dark:text-sage-300">
             {t("admin.fin_enforce_ready_signal")}
+          </p>
+        )}
+        {!on && !ready && (
+          <p className="mt-2 text-xs text-neutral-500 dark:text-umber-300">
+            {t("admin.fin_enforce_below_cap", { n: total, cap: FOUNDING_CAP })}
+          </p>
+        )}
+        {/* The blast radius, on the card rather than only in the confirm: the
+            number is the whole decision, and it should be readable before the
+            founder's finger is already on the button. */}
+        {!on && (
+          <p className="mt-2 text-xs font-medium text-neutral-700 dark:text-umber-200">
+            {t("admin.fin_enforce_impact", {
+              couples: data.enforcement_impact.couples,
+              vendors: data.enforcement_impact.vendors,
+              planners: data.enforcement_impact.planners,
+            })}
           </p>
         )}
       </div>

@@ -49,7 +49,7 @@ const VALID_SUBSCRIPTION_STATUSES: ReadonlySet<SubscriptionStatus> = new Set(SUB
  *  `users.couple_id` (the active-workspace pointer) — otherwise a multi-workspace
  *  beta member silently flips this couple's free pass on/off by switching which
  *  workspace they have selected. */
-function coupleHasBetaMember(coupleId: number): boolean {
+export function coupleHasBetaMember(coupleId: number): boolean {
   return (
     db
       .prepare(
@@ -66,7 +66,7 @@ function coupleHasBetaMember(coupleId: number): boolean {
  *  obligated — their own workspace stays editable even after the paywall goes
  *  live. Sourced from the ADMIN_EMAILS allowlist (isAdminEmail), so it tracks
  *  env changes with no stored state. */
-function coupleHasAdminMember(coupleId: number): boolean {
+export function coupleHasAdminMember(coupleId: number): boolean {
   // Through `couple_members`, not `users.couple_id` — same active-pointer hazard
   // as coupleHasBetaMember above.
   const rows = db

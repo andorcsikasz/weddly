@@ -340,6 +340,15 @@ export function wipeAll(): void {
   __resetGoogleCalendarFake();
 }
 
+/** Turn the global go-live switch ON for this test. Entitlement is DEFERRED by
+ *  default (the production resting state, reset by `wipeAll`), which means no
+ *  aggregate is gated: a lapsed couple, planner or vendor still reads as
+ *  entitled. Any test asserting that a paywall BITES has to flip this first, or
+ *  it is asserting against a wall that isn't up yet. Call after `wipeAll()`. */
+export function enableBillingEnforcement(): void {
+  db.exec("UPDATE billing_control SET enforcement_on = 1 WHERE id = 1");
+}
+
 /** Recover the PLAINTEXT verify-link token for a parked signup — the value the
  *  welcome mail would carry. A password register no longer creates a `users`
  *  row, so its token lives in `pending_signups`, not

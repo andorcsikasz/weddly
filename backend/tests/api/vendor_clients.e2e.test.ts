@@ -13,7 +13,13 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
+import {
+  bootstrapCouple,
+  enableBillingEnforcement,
+  registerAndVerify,
+  req,
+  wipeAll,
+} from "../helpers";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
@@ -454,6 +460,7 @@ describe("vendor clients — /api/vendor/clients + payment tracking", () => {
 
   test("free plan: list/detail work but payment tracking is PRO-gated (403)", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const { vendorToken, listingId, accountId } = await bootstrapVendor("free-gate");
     const { coupleId } = await bootstrapCouple("couple-free@weddly.test");
     // The inquiry arrives while the activation grant is live (claim-complete

@@ -5438,6 +5438,9 @@ const es: LocaleMessages = {
     fin_enforce_turn_off: "Desactivar",
     fin_enforce_go_live: "Activar los pagos",
     fin_enforce_not_ready: "Esperando a 200 parejas ({n} / {cap})",
+    fin_enforce_below_cap: "Aún no hay 200 parejas ({n} / {cap}). Puedes activarlo igualmente.",
+    fin_enforce_impact:
+      "Activarlo ahora deja en solo lectura a {couples} parejas, {vendors} proveedores y {planners} organizadores.",
     fin_enforce_progress_label: "Parejas hacia el tope de 200",
     fin_enforce_ready_signal: "200 parejas alcanzadas: listo para activar los pagos.",
     fin_enforce_confirm_on_title: "¿Activar los pagos?",

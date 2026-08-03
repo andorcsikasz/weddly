@@ -5388,6 +5388,9 @@ const hu: LocaleMessages = {
     fin_enforce_turn_off: "Kikapcsolás",
     fin_enforce_go_live: "Fizetés élesítése",
     fin_enforce_not_ready: "Várj a 200 párra ({n} / {cap})",
+    fin_enforce_below_cap: "Még nincs meg a 200 pár ({n} / {cap}). Így is élesítheted.",
+    fin_enforce_impact:
+      "Ha most élesíted, {couples} pár, {vendors} szolgáltató és {planners} tervező kerül csak olvasható módba.",
     fin_enforce_progress_label: "Párok a 200-as keretből",
     fin_enforce_ready_signal: "Megvan a 200 pár - készen áll a fizetés élesítésére.",
     fin_enforce_confirm_on_title: "Élesíted a fizetést?",

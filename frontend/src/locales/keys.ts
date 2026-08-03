@@ -6209,6 +6209,8 @@ export interface LocaleMessages {
     fin_enforce_turn_off: string;
     fin_enforce_go_live: string;
     fin_enforce_not_ready: string;
+    fin_enforce_below_cap: string;
+    fin_enforce_impact: string;
     fin_enforce_progress_label: string;
     fin_enforce_ready_signal: string;
     fin_enforce_confirm_on_title: string;

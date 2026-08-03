@@ -111,6 +111,95 @@ describe("GET /api/admin/financial-planner/overview", () => {
     expect(r.data.founding_active).toBe(1);
     expect(r.data.founding_expiry).toContainEqual({ month: "2027-09", count: 1 });
   });
+
+  test("enforcement_impact counts who a flip would freeze, exempting beta and admin", async () => {
+    wipeAll();
+    // Lapsed: past its trial, nothing exempting it. This is the one that counts.
+    const lapsed = await bootstrapCouple("fin-impact-lapsed@weddly.test");
+    db.prepare(
+      "UPDATE couples SET subscription_status = 'trialing', trial_ends_at = ? WHERE id = ?",
+    ).run(Date.now() - 86_400_000, lapsed.coupleId);
+    // Equally lapsed, but a beta tester — never payment-obligated, so the flip
+    // does not touch them and neither may the count, or the founder is quoted a
+    // freeze bigger than the one that happens.
+    const beta = await bootstrapCouple("fin-impact-beta@weddly.test");
+    db.prepare(
+      "UPDATE couples SET subscription_status = 'trialing', trial_ends_at = ? WHERE id = ?",
+    ).run(Date.now() - 86_400_000, beta.coupleId);
+    db.prepare("UPDATE users SET is_beta_tester = 1 WHERE email = ?").run(
+      "fin-impact-beta@weddly.test",
+    );
+    // Healthy trial: unaffected either way.
+    const live = await bootstrapCouple("fin-impact-live@weddly.test");
+    db.prepare(
+      "UPDATE couples SET subscription_status = 'trialing', trial_ends_at = ? WHERE id = ?",
+    ).run(Date.now() + 86_400_000, live.coupleId);
+
+    const adminToken = await addAdmin();
+    const r = await req<AdminFinancialPlannerOverview>(
+      "GET",
+      "/api/admin/financial-planner/overview",
+      undefined,
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.enforcement_impact.couples).toBe(1);
+    // The count is derived, not stored, so it is honest about the other two
+    // aggregates as well — neither has a row in this fixture.
+    expect(r.data.enforcement_impact.vendors).toBe(0);
+    expect(r.data.enforcement_impact.planners).toBe(0);
+  });
+});
+
+describe("POST /api/admin/financial-planner/enforcement", () => {
+  test("go-live is not gated on reaching the 200-couple cap", async () => {
+    wipeAll();
+    // Far below FOUNDING_CAP: the readiness signal is false, and the flip must
+    // still be allowed — starting to charge is a date the founder picks, not a
+    // headcount the app reaches.
+    await bootstrapCouple("fin-golive@weddly.test");
+    const adminToken = await addAdmin();
+
+    const before = await req<AdminFinancialPlannerOverview>(
+      "GET",
+      "/api/admin/financial-planner/overview",
+      undefined,
+      { token: adminToken },
+    );
+    expect(before.data.enforcement_ready).toBe(false);
+    expect(before.data.billing_enforcement_on).toBe(false);
+
+    const on = await req<AdminFinancialPlannerOverview>(
+      "POST",
+      "/api/admin/financial-planner/enforcement",
+      { on: true },
+      { token: adminToken },
+    );
+    expect(on.status).toBe(200);
+    expect(on.data.billing_enforcement_on).toBe(true);
+
+    // And it is reversible, which is what makes the button safe to offer early.
+    const off = await req<AdminFinancialPlannerOverview>(
+      "POST",
+      "/api/admin/financial-planner/enforcement",
+      { on: false },
+      { token: adminToken },
+    );
+    expect(off.status).toBe(200);
+    expect(off.data.billing_enforcement_on).toBe(false);
+  });
+
+  test("requires admin", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("fin-golive-nonadmin@weddly.test");
+    const r = await req(
+      "POST",
+      "/api/admin/financial-planner/enforcement",
+      { on: true },
+      { token },
+    );
+    expect(r.status).toBe(403);
+  });
 });
 
 describe("GET /api/admin/financial-planner/stripe-health", () => {

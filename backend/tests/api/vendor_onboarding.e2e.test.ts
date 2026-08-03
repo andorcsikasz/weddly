@@ -18,7 +18,7 @@ import { describe, expect, test } from "bun:test";
 import { VENDOR_FOUNDING_CAP, VENDOR_FOUNDING_DURATION_MS } from "@shared/vendor_billing";
 import { db } from "../../src/db";
 import { buildEmail } from "../../src/domain/emails/templates";
-import { registerAndVerify, req, wipeAll } from "../helpers";
+import { enableBillingEnforcement, registerAndVerify, req, wipeAll } from "../helpers";
 
 async function addAdmin(): Promise<string> {
   const reg = await registerAndVerify({
@@ -175,6 +175,7 @@ describe("vendor onboarding — accept → activate → live", () => {
 
   test("the founding vendor can edit; a lapsed vendor keeps the listing but loses the calendar", async () => {
     wipeAll();
+    enableBillingEnforcement();
     const admin = await addAdmin();
     const { token } = await acceptedWaitlistToken(admin, {
       email: "gate@weddly.test",

@@ -28,7 +28,13 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
-import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
+import {
+  bootstrapCouple,
+  enableBillingEnforcement,
+  registerAndVerify,
+  req,
+  wipeAll,
+} from "../helpers";
 import { db } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
 import { initVendorBilling } from "../../src/domain/vendor_billing";
@@ -724,6 +730,7 @@ describe("booking messages — couple ↔ vendor thread", () => {
     "FREE vendor: reading a lead stays free, sending and templates are PRO",
     async () => {
       wipeAll();
+      enableBillingEnforcement();
       const vendor = await bootstrapVendor("free-msg");
       // The inquiry is delivered whatever the plan (deliverInquiryFromOutreach
       // does not consult entitlement), so drop to FREE first and prove the

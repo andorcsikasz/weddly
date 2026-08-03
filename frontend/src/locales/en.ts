@@ -5332,6 +5332,9 @@ const en: LocaleMessages = {
     fin_enforce_turn_off: "Turn off",
     fin_enforce_go_live: "Go live with payments",
     fin_enforce_not_ready: "Waiting for 200 couples ({n} / {cap})",
+    fin_enforce_below_cap: "Below the 200-couple mark ({n} / {cap}). You can still go live.",
+    fin_enforce_impact:
+      "Flipping this now puts {couples} couples, {vendors} vendors and {planners} planners into read-only.",
     fin_enforce_progress_label: "Couples toward the 200 cap",
     fin_enforce_ready_signal: "200 couples reached - ready to go live with payments.",
     fin_enforce_confirm_on_title: "Go live with payments?",
