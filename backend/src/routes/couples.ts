@@ -24,6 +24,7 @@ import {
   type WeddingStyleTag,
 } from "@shared/types";
 import { COUNTRY_CODES } from "@shared/country_list";
+import type { UiLocale } from "@shared/locales";
 import { checkRealName } from "@shared/real_names";
 import { clearNameFlagIfFixed } from "../domain/name_review";
 import { CURRENCIES, isCurrency } from "@shared/currency";
@@ -292,13 +293,16 @@ function parseCountry(raw: unknown): string | null {
 }
 
 /** Pick a sensible default currency for a new couple based on the owner's
- *  signup locale. EN and ES users get EUR (broadest international fit — covers
- *  most of the EU, incl. Spain); HU and unknown/null locales default to HUF,
- *  preserving the historic HU-dominant default. The picker is just a default —
- *  the user can override during onboarding via the optional `currency` field,
- *  and they can flip via PATCH afterwards. */
-function defaultCurrencyForLocale(locale: "hu" | "en" | "es" | null): Currency {
-  return locale === "en" || locale === "es" ? "EUR" : "HUF";
+ *  signup locale. Every locale but HU gets EUR (broadest international fit —
+ *  Spain, Croatia and Germany are all eurozone); HU and unknown/null locales
+ *  default to HUF, preserving the historic HU-dominant default. Written as
+ *  "HU or nothing → HUF" rather than an allowlist of EUR locales, because the
+ *  allowlist form silently dropped each newly shipped locale into Forint until
+ *  someone remembered to extend it. The picker is just a default — the user
+ *  can override during onboarding via the optional `currency` field, and they
+ *  can flip via PATCH afterwards. */
+function defaultCurrencyForLocale(locale: UiLocale | null): Currency {
+  return locale === null || locale === "hu" ? "HUF" : "EUR";
 }
 
 const VALID_CEREMONY_KINDS: ReadonlySet<CeremonyKind> = new Set(["civil", "religious", "both"]);

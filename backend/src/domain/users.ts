@@ -1,5 +1,6 @@
 // User row → DTO mapper, plus tiny lookup helpers.
 
+import { isUiLocale, type UiLocale } from "@shared/locales";
 import type { User, UserRole, UserStatus } from "@shared/types";
 import { CONFIG } from "../config";
 import { db, now } from "../db";
@@ -138,12 +139,11 @@ export function recordVisitedNav(userId: number, path: string): boolean {
 }
 
 /** Coerce a raw DB locale value into the shape the frontend expects. We
- *  persist the shipped UI locales 'hu' | 'en' | 'es'; anything else (legacy
+ *  persist the shipped UI locales (`UI_LOCALES`); anything else (legacy
  *  'en-GB', stray 'es-419') drops to null and the client then falls back to
  *  its own navigator detection. */
-export function normaliseLocale(raw: string | null | undefined): "hu" | "en" | "es" | null {
-  if (raw === "hu" || raw === "en" || raw === "es") return raw;
-  return null;
+export function normaliseLocale(raw: string | null | undefined): UiLocale | null {
+  return isUiLocale(raw) ? raw : null;
 }
 
 export function getUserById(id: number): UserRow | null {

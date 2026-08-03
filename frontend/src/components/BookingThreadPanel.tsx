@@ -25,7 +25,8 @@ import {
 } from "@shared/booking_messages";
 import { Button, Skeleton, useToast } from "./ui";
 import { bookingMessagesApi } from "../lib/endpoints";
-import { useT } from "../lib/i18n";
+import { intlLocale } from "../lib/format";
+import { type Locale, useT } from "../lib/i18n";
 
 interface Props {
   /** Which sender kind the viewer is. Their own messages sit on the right. */
@@ -43,8 +44,10 @@ interface Props {
   composerLock?: ReactNode;
 }
 
-function formatTs(ts: number, locale: string): string {
-  return new Intl.DateTimeFormat(locale === "hu" ? "hu-HU" : locale === "es" ? "es-ES" : "en-US", {
+function formatTs(ts: number, locale: Locale): string {
+  // Via `intlLocale` so a locale added later cannot silently fall through to
+  // the en-US date format (see the same note in VendorBillingPage).
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     month: "short",
     day: "numeric",
     hour: "2-digit",

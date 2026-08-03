@@ -19,6 +19,7 @@
 // message so the future inbound webhook can route without a migration.
 
 import type { CreateOutreachCampaignInput } from "@shared/outreach";
+import { isUiLocale, type UiLocale } from "@shared/locales";
 import {
   OUTREACH_BODY_MAX_LEN,
   OUTREACH_MESSAGES_PER_WEEK_CAP,
@@ -347,7 +348,7 @@ function resolveSupplierContacts(supplierIds: string[]): SupplierContact[] {
  *  unclaimed one falls back to the directory's country → language rule (the
  *  same one the claim-invite campaign uses). Returning null keeps the legacy
  *  bilingual HU+EN stack, which is only right when we genuinely don't know. */
-function recipientLocaleFor(contact: SupplierContact): "hu" | "en" | null {
+function recipientLocaleFor(contact: SupplierContact): UiLocale | null {
   if (contact.vendorAccountId !== null) {
     const row = db
       .prepare(
@@ -358,7 +359,12 @@ function recipientLocaleFor(contact: SupplierContact): "hu" | "en" | null {
       )
       .get(contact.vendorAccountId) as { locale: string | null } | undefined;
     const raw = row?.locale?.toLowerCase();
-    if (raw) return raw === "hu" || raw.startsWith("hu-") || raw.startsWith("hu_") ? "hu" : "en";
+    if (raw) {
+      // A claimed vendor's own account language, when it names one we ship.
+      const base = raw.split(/[-_]/)[0] ?? "";
+      if (isUiLocale(base)) return base;
+      return "en";
+    }
     // Claimed but no locale captured (legacy account) — fall through to the
     // listing's country rather than guessing.
   }

@@ -1,3 +1,4 @@
+import type { UiLocale } from "./locales";
 // Vendor review-invite campaign contract, shared by the admin console and the
 // backend. This campaign is the mirror image of the claim-invite one: it mails
 // the CLAIMED listings in the directory (vendors who already run a Weddly
@@ -55,7 +56,7 @@ export interface VendorReviewCampaignSend {
   listing_id: string;
   listing_name: string;
   email: string;
-  locale: "hu" | "en";
+  locale: UiLocale;
   country: string | null;
   review_url: string;
   status: VendorReviewCampaignSendStatus;
@@ -94,7 +95,7 @@ export interface VendorReviewCampaignTarget {
   email: string;
   city: string;
   country: string;
-  locale: "hu" | "en";
+  locale: UiLocale;
 }
 
 /** One country's share of the reachable audience, as a brand-new campaign would
@@ -102,7 +103,7 @@ export interface VendorReviewCampaignTarget {
 export interface VendorReviewCampaignSegment {
   country: string;
   addresses: number;
-  locale: "hu" | "en";
+  locale: UiLocale;
 }
 
 export interface VendorReviewCampaignSegments {

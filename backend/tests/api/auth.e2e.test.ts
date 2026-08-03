@@ -1,5 +1,6 @@
 import "../setup";
 
+import { UI_LOCALES } from "@shared/locales";
 import { describe, expect, test } from "bun:test";
 import {
   req,
@@ -2478,13 +2479,64 @@ describe("POST /api/auth/locale", () => {
     expect(r.status).toBe(401);
   });
 
-  test("rejects anything that is not 'hu' or 'en'", async () => {
+  test("rejects anything that is not a shipped UI locale", async () => {
     wipeAll();
     const { token } = await bootstrapCouple("locale-bad@example.com");
-    for (const locale of ["de", "", 42, null, undefined]) {
+    // "de" used to be in this list. It is a shipped locale now, so the guard
+    // is UI_LOCALES rather than a hand-written hu/en pair — which is the whole
+    // point: the write path and the switcher can no longer disagree about what
+    // a valid language is.
+    for (const locale of ["fr", "en-GB", "hu-HU", "", 42, null, undefined]) {
       const r = await req("POST", "/api/auth/locale", { locale }, { token });
       expect(r.status).toBe(400);
     }
+  });
+
+  test("accepts every shipped UI locale, not just hu/en", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("locale-all@example.com");
+    // Spanish shipped as a UI locale in July 2026 but this endpoint still
+    // refused it, so a vendor who picked Español had the choice saved only to
+    // localStorage and came up English on their next device.
+    for (const locale of UI_LOCALES) {
+      const r = await req<{ user: { locale: string } }>(
+        "POST",
+        "/api/auth/locale",
+        { locale },
+        { token },
+      );
+      expect(r.status).toBe(200);
+      expect(r.data.user.locale).toBe(locale);
+      const me = await req<{ user: { locale: string } }>("GET", "/api/auth/me", undefined, {
+        token,
+      });
+      expect(me.data.user.locale).toBe(locale);
+    }
+  });
+
+  test("PATCH /api/users/me persists the same set, and null clears it", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("locale-patch@example.com");
+    for (const locale of UI_LOCALES) {
+      const r = await req<{ user: { locale: string | null } }>(
+        "PATCH",
+        "/api/users/me",
+        { locale },
+        { token },
+      );
+      expect(r.status).toBe(200);
+      expect(r.data.user.locale).toBe(locale);
+    }
+    const cleared = await req<{ user: { locale: string | null } }>(
+      "PATCH",
+      "/api/users/me",
+      { locale: null },
+      { token },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.user.locale).toBeNull();
+    const bad = await req("PATCH", "/api/users/me", { locale: "fr" }, { token });
+    expect(bad.status).toBe(400);
   });
 
   test("persists the pick and /api/auth/me keeps serving it", async () => {

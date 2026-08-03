@@ -849,6 +849,7 @@ const de: PartialLocaleMessages = {
     section_pricing_only: "Preise",
     label_blurb_hu: "Beschreibung (Ungarisch)",
     label_blurb_en: "Beschreibung (Englisch)",
+    label_blurb_lang: "Beschreibung ({lang})",
     blurb_lang_aria: "Sprache der Beschreibung",
     blurb_lang_filled: "bereits ausgefüllt",
     label_blurb_hint: "Bis zu 2000 Zeichen. Paare sehen das auf Ihrer Eintragskarte.",

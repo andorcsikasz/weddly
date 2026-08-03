@@ -1,6 +1,7 @@
 // Register / login / logout / me. Issues opaque session tokens.
 
 import { PRIVACY_VERSION, TERMS_VERSION } from "@shared/legal";
+import { isUiLocale, UI_LOCALES } from "@shared/locales";
 import { checkRealName } from "@shared/real_names";
 import type { AuthSession } from "@shared/types";
 import { burnPasswordVerify, hashPassword, verifyPassword } from "../auth/password";
@@ -132,7 +133,7 @@ async function handleRegister(ctx: Ctx): Promise<Response> {
   const passwordHash = await hashPassword(password);
   // Coerce locale at the boundary — only persist values the frontend +
   // backend i18n actually understand. Anything else stays null.
-  const persistedLocale = body.locale === "hu" || body.locale === "en" ? body.locale : null;
+  const persistedLocale = isUiLocale(body.locale) ? body.locale : null;
   // Acquisition snapshot: country (from IP, IP discarded), device bucket, UTM.
   const acq = buildSignupAcquisition(ctx, body);
 
@@ -331,8 +332,8 @@ interface SetLocaleBody {
 async function handleSetLocale(ctx: Ctx): Promise<Response> {
   const userId = requireAuth(ctx);
   const body = await readJson<SetLocaleBody>(ctx.req);
-  if (body.locale !== "hu" && body.locale !== "en") {
-    throw new HttpError(400, "locale must be 'hu' or 'en'");
+  if (!isUiLocale(body.locale)) {
+    throw new HttpError(400, `locale must be one of ${UI_LOCALES.join(", ")}`);
   }
   db.prepare("UPDATE users SET locale = ?, updated_at = ? WHERE id = ?").run(
     body.locale,

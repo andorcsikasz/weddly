@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
+import { pickListingBlurb } from "@shared/listing_language";
 import type { DirectorySupplier } from "@shared/suppliers";
 import { SUPPLIER_TO_BUDGET, capacityKindFor } from "@shared/suppliers";
 import type { BudgetCategory, BudgetLine, Currency } from "@shared/types";
@@ -616,7 +617,7 @@ export function SupplierCompareDialog({
             {columns.map((s) => (
               <Cell key={`a-${s.id}`}>
                 <p className="text-xs leading-relaxed text-ink-700 dark:text-paper-100">
-                  {locale === "hu" ? s.blurb_hu : s.blurb_en}
+                  {pickListingBlurb(s, locale)}
                 </p>
               </Cell>
             ))}

@@ -79,6 +79,7 @@ import {
   showsCapacity,
   showsSpokenLanguages,
 } from "@shared/suppliers";
+import { pickListingBlurb } from "@shared/listing_language";
 import type { Currency } from "@shared/types";
 import { vendorPublicId } from "@shared/vendor_slug";
 import { Pill } from "../components/admin";
@@ -827,7 +828,7 @@ function BlurbBody({
   locale: Locale;
   t: (k: string) => string;
 }) {
-  const blurb = (locale === "hu" ? detail.blurb_hu : detail.blurb_en).trim();
+  const blurb = pickListingBlurb(detail, locale);
   if (!blurb) {
     return (
       <p className="text-sm italic text-ink-500 dark:text-umber-300">

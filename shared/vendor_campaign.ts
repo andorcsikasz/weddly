@@ -15,6 +15,7 @@
 //     the mail. Opens are still recorded, they just don't gate anything.
 
 import type { VendorOffer } from "./vendor_billing";
+import type { UiLocale } from "./locales";
 
 export type VendorCampaignStatus = "paused" | "running" | "done";
 export type VendorCampaignSendStatus = "queued" | "sent" | "failed" | "skipped";
@@ -58,7 +59,7 @@ export interface VendorCampaignSend {
   listing_id: string;
   listing_name: string;
   email: string;
-  locale: "hu" | "en";
+  locale: UiLocale;
   country: string | null;
   category: string;
   status: VendorCampaignSendStatus;
@@ -95,7 +96,7 @@ export interface VendorCampaignTarget {
   category: string;
   city: string;
   country: string;
-  locale: "hu" | "en";
+  locale: UiLocale;
 }
 
 /** One country's share of the reachable audience, as a brand-new campaign would
@@ -104,7 +105,7 @@ export interface VendorCampaignTarget {
 export interface VendorCampaignSegment {
   country: string;
   addresses: number;
-  locale: "hu" | "en";
+  locale: UiLocale;
 }
 
 export interface VendorCampaignSegments {

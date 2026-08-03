@@ -21,6 +21,7 @@
 // Entries with no coordinate at all still can't be drawn; the banner under the
 // map says how many, and the list view always has the full directory.
 
+import { pickListingBlurb } from "@shared/listing_language";
 import type { DirectorySupplier } from "@shared/suppliers";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -376,7 +377,7 @@ function SupplierPopupCard({
       {!compact && s.address && <p className="mt-1 text-xs text-ink-400">{s.address}</p>}
       {!compact && (
         <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-ink-700">
-          {locale === "hu" ? s.blurb_hu : s.blurb_en}
+          {pickListingBlurb(s, locale)}
         </p>
       )}
 

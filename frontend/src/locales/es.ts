@@ -536,6 +536,7 @@ const es: LocaleMessages = {
     section_pricing_only: "Precios",
     label_blurb_hu: "Descripción (húngaro)",
     label_blurb_en: "Descripción (inglés)",
+    label_blurb_lang: "Descripción ({lang})",
     blurb_lang_aria: "Idioma de la descripción",
     blurb_lang_filled: "ya rellenado",
     label_blurb_hint: "Hasta 2000 caracteres. Las parejas lo ven en la tarjeta de tu ficha.",
@@ -1019,6 +1020,33 @@ const es: LocaleMessages = {
       conversion_title: "Conversión",
       conversion_confirmed: "Reservas confirmadas",
       conversion_rate: "De solicitud a reserva",
+    },
+    revenue: {
+      title: "Pulso de ingresos",
+      body: "Lo que está en marcha y lo que llega a continuación.",
+      booked: "Reservado",
+      booked_help:
+        "El valor acordado de tus reservas confirmadas. Dinero ya ganado, haya llegado o no.",
+      collected: "Cobrado",
+      outstanding: "Pendiente de cobro",
+      pipeline: "Cartera abierta",
+      pipeline_help:
+        "El valor que has presupuestado en solicitudes aún sin decidir. No es una previsión, solo lo que está sobre la mesa.",
+      weighted: "Ponderado",
+      weighted_help:
+        "La cartera abierta ajustada según la frecuencia con la que una solicitud en cada estado acaba en reserva. Es una estimación, no una promesa: tu propia tasa de cierre está debajo para que puedas juzgarla.",
+      estimate: "Estimación",
+      unpriced_note: "Las solicitudes sin valor registrado no se cuentan aquí ({n}).",
+      booked_unpriced_note:
+        "Las reservas confirmadas sin valor registrado no se cuentan aquí ({n}).",
+      upcoming_title: "Próximas entradas",
+      next_30: "Próximos 30 días",
+      next_60: "Próximos 60 días",
+      next_90: "Próximos 90 días",
+      average_booking: "Reserva media",
+      win_rate: "Tasa de cierre",
+      trailing_note: "Sobre {n} solicitudes decididas en los últimos {days} días.",
+      see_breakdown: "Desglose",
     },
     reviews: {
       page_title: "Reseñas",

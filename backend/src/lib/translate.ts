@@ -14,9 +14,16 @@ import { log as logger } from "./logger";
 
 const TIMEOUT_MS = 8_000;
 
-// DeepL target codes. EN must be regionalised on the TARGET side (EN-US /
-// EN-GB); the source side takes the bare language. We request EN-US.
-const TARGET_CODE: Record<TranslateLang, string> = { HU: "HU", EN: "EN-US" };
+// DeepL target codes. Two languages must be REGIONALISED on the target side
+// (DeepL rejects the bare code): English and Portuguese. The source side takes
+// the bare language for both, so this map is target-only. Everything else
+// passes straight through, which is what keeps adding a language to
+// `TranslateLang` a one-line change there and nothing here.
+const TARGET_CODE: Partial<Record<TranslateLang, string>> = { EN: "EN-US", PT: "PT-PT" };
+
+function targetCode(lang: TranslateLang): string {
+  return TARGET_CODE[lang] ?? lang;
+}
 
 function apiKey(): string | null {
   const k = process.env.DEEPL_API_KEY;
@@ -57,7 +64,7 @@ export async function translateText(
       body: JSON.stringify({
         text: [text],
         source_lang: source,
-        target_lang: TARGET_CODE[target],
+        target_lang: targetCode(target),
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });

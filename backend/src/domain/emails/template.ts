@@ -3,8 +3,12 @@
 // it reads well on mobile and in the Gmail/Outlook/Apple Mail preview pane.
 //
 // Rendering modes:
-//   - `recipientLocale="hu"` → single HU card, HU footer
-//   - `recipientLocale="en"` → single EN card, EN footer
+//   - `recipientLocale="hu"` / `"en"` → single card + footer in that language
+//   - any other shipped UI locale → single card in that language IF the kind
+//     supplied a block for it (`extra`), otherwise the EN card. Deliberately
+//     NOT the bilingual stack: a Croatian reader has no more use for Hungarian
+//     than for Finnish, and the stack exists for recipients whose language we
+//     do not know, not for one we do.
 //   - `recipientLocale=null/undefined` → bilingual fallback (HU primary on top,
 //     EN secondary below). Used for guests + pre-feature users whose
 //     `users.locale` was never captured.
@@ -12,11 +16,16 @@
 // IMPORTANT: do not pull in CSS variables or media queries, most email
 // clients strip <style> blocks. Keep everything inline.
 
+import type { UiLocale } from "@shared/locales";
 import { CONFIG } from "../../config";
 import type { EmailCategory } from "./kinds";
 
 export type { EmailCategory };
-export type RecipientLocale = "hu" | "en" | null;
+export type RecipientLocale = UiLocale | null;
+
+/** The locales whose copy is supplied per-kind through `RenderInput.extra`.
+ *  HU and EN are required on every kind and have their own top-level fields. */
+export type ExtraLocale = Exclude<UiLocale, "hu" | "en">;
 
 export interface LocaleBlock {
   /** Optional preheader (the gray inbox-preview text). Renders hidden in HTML. */
@@ -60,6 +69,12 @@ export interface RenderInput {
    *  per-guest locale yet) and users whose `users.locale` predates the
    *  feature. */
   recipientLocale?: RecipientLocale;
+  /** Per-kind copy for the locales that shipped after the HU/EN split. Every
+   *  kind supplies `hu` + `en`; this is where a kind ALSO carries Croatian,
+   *  German or Spanish. Absent (or absent for the recipient's language) means
+   *  they read the English card, which is why adding a language to one kind
+   *  never touches the other ~90. */
+  extra?: Partial<Record<ExtraLocale, LocaleBlock>>;
   /** Surface the named language on TOP of the bilingual stack. Only used
    *  when `recipientLocale` is null, when we don't know the recipient's
    *  language but DO know the submitter's, lead with the submitter's
@@ -118,7 +133,7 @@ const SOCIAL: ReadonlyArray<{ name: string; href: string; icon: string }> = [
 ];
 
 interface PickedBlock {
-  locale: "hu" | "en";
+  locale: UiLocale;
   block: LocaleBlock;
 }
 
@@ -134,9 +149,17 @@ function pickBlocks(
   en: LocaleBlock,
   locale: RecipientLocale,
   primaryLocaleHint?: "hu" | "en",
+  extra?: Partial<Record<ExtraLocale, LocaleBlock>>,
 ): PickedBlock[] {
   if (locale === "hu") return [{ locale: "hu", block: hu }];
   if (locale === "en") return [{ locale: "en", block: en }];
+  if (locale) {
+    // A locale that shipped after the HU/EN split. Its own card when this kind
+    // has been translated, English alone when it hasn't — never the bilingual
+    // HU+EN stack, which would put Hungarian in front of a German reader.
+    const block = extra?.[locale];
+    return block ? [{ locale, block }] : [{ locale: "en", block: en }];
+  }
   if (primaryLocaleHint === "en") {
     return [
       { locale: "en", block: en },
@@ -150,8 +173,8 @@ function pickBlocks(
 }
 
 export function renderEmail(input: RenderInput): RenderedEmail {
-  const { hu, en, recipientLocale, primaryLocaleHint } = input;
-  const blocks = pickBlocks(hu, en, recipientLocale ?? null, primaryLocaleHint);
+  const { hu, en, recipientLocale, primaryLocaleHint, extra } = input;
+  const blocks = pickBlocks(hu, en, recipientLocale ?? null, primaryLocaleHint, extra);
   // Subject fallback follows the primary block, for an EN-only render, the
   // EN first paragraph stands in if the kind builder returned an empty
   // subject; for bilingual (null locale) we keep the historical HU fallback
@@ -206,17 +229,13 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     unsubscribeToken?: string,
     whyOverride?: { hu: string; en: string },
   ): string {
-    const bilingual = blocks.length > 1;
-    const onlyEn = blocks.length === 1 && blocks[0]?.locale === "en";
-    const why = whyLineFor(category, bilingual, onlyEn, whyOverride);
+    // null = the bilingual stack; otherwise the one language on the card.
+    const single = blocks.length === 1 ? (blocks[0]?.locale ?? "en") : null;
+    const why = whyLineFor(category, single, whyOverride);
     // Bare label, no question in front of it: the link stays present and
     // functional (compliance + the List-Unsubscribe header), but the copy never
     // asks the reader whether they'd like to leave.
-    const unsubLabel = bilingual
-      ? "Leiratkozás / Unsubscribe"
-      : onlyEn
-        ? "Unsubscribe"
-        : "Leiratkozás";
+    const unsubLabel = footerLabels(single).unsub;
     const out: string[] = ["---", why];
     out.push("Weddly · tryweddly.com");
     out.push(SOCIAL.map((s) => `${s.name}: ${s.href}`).join(" · "));
@@ -341,7 +360,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
 
   function renderCard(
     block: LocaleBlock,
-    locale: "hu" | "en",
+    locale: UiLocale,
     primary: boolean,
     ctaUrl: string,
     category: EmailCategory,
@@ -432,19 +451,9 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     unsubscribeToken?: string,
     whyOverride?: { hu: string; en: string },
   ): string {
-    const bilingual = blocks.length > 1;
-    const onlyEn = blocks.length === 1 && blocks[0]?.locale === "en";
-    const why = whyLineForHtml(category, bilingual, onlyEn, whyOverride);
-    const unsubLabel = bilingual
-      ? "Leiratkozás / Unsubscribe"
-      : onlyEn
-        ? "Unsubscribe"
-        : "Leiratkozás";
-    const prefsLabel = bilingual
-      ? "Preferenciák / Email preferences"
-      : onlyEn
-        ? "Email preferences"
-        : "Preferenciák";
+    const single = blocks.length === 1 ? (blocks[0]?.locale ?? "en") : null;
+    const why = whyLineForHtml(category, single, whyOverride);
+    const { unsub: unsubLabel, prefs: prefsLabel } = footerLabels(single);
     // Unsubscribe line, deliberately de-emphasized: it sits at the very BOTTOM
     // of the footer (see the return below), one notch smaller than the body
     // copy, so a casual reader scanning the footer doesn't land on it, but
@@ -475,8 +484,8 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     // email). 13px is the standard floor where pixel-fitted hinting still
     // looks crisp without bumping copy density too far.
     // Bilingual help label so a HU vendor on a cold mail isn't left guessing
-    // what "Questions?" means, and the EN-only render stays clean.
-    const helpLabel = bilingual ? "Kérdés? / Questions?" : onlyEn ? "Questions?" : "Kérdés?";
+    // what "Questions?" means, and every single-language render stays clean.
+    const helpLabel = HELP_LABELS[single ?? "bilingual"] ?? HELP_LABELS.en!;
     return `
       <p style="margin:0 0 6px 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">${why}</p>
       <p style="margin:8px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;">
@@ -603,18 +612,36 @@ function renderSecondaryLinks(links: Array<{ label: string; url: string }> | und
   return `<p style="margin:14px 0 0 0;">${rows}</p>`;
 }
 
+/** The one-line "what is Weddly" orientation on cold mail, and the copy-paste
+ *  label under a forced plain URL. Both are chrome the kind builders never
+ *  author, so they live here per locale with the usual EN fallback. */
+const ORIENTATION: Partial<Record<UiLocale, string>> = {
+  hu: "A Weddly egy esküvőtervező eszköz pároknak, vendéglista, ülésrend, költségvetés, RSVP egy helyen.",
+  en: "Weddly is a wedding-planning app for couples, guest list, seating, budget, RSVP in one place.",
+  es: "Weddly es una app de organización de bodas para parejas: invitados, mesas, presupuesto y confirmaciones en un solo sitio.",
+  hr: "Weddly je alat za planiranje vjenčanja za parove: popis gostiju, raspored sjedenja, proračun i potvrde dolaska na jednom mjestu.",
+  de: "Weddly ist eine App für die Hochzeitsplanung: Gästeliste, Sitzplan, Budget und Zusagen an einem Ort.",
+};
+
+const COPY_LINK_LABEL: Partial<Record<UiLocale, string>> = {
+  hu: "Vagy másold be a böngészőbe:",
+  en: "Or copy this link into your browser:",
+  es: "O copia este enlace en tu navegador:",
+  hr: "Ili zalijepite ovu poveznicu u preglednik:",
+  de: "Oder kopieren Sie diesen Link in Ihren Browser:",
+};
+
 // Cold recipients don't necessarily know what Weddly is, the body dives
 // straight into "someone added you to our directory" without context.
 // Inject a one-line "what is Weddly" orientation between the greeting and
 // the first paragraph so the recipient has an anchor before the action ask.
 // Only renders for outreach category, transactional/lifecycle recipients
 // already have an account and don't need the intro.
-function renderOutreachOrientation(category: EmailCategory, locale: "hu" | "en"): string {
+function renderOutreachOrientation(category: EmailCategory, locale: UiLocale): string {
   if (category !== "outreach") return "";
   const copy =
-    locale === "hu"
-      ? "A Weddly egy esküvőtervező eszköz pároknak, vendéglista, ülésrend, költségvetés, RSVP egy helyen."
-      : "Weddly is a wedding-planning app for couples, guest list, seating, budget, RSVP in one place.";
+    ORIENTATION[locale] ??
+    "Weddly is a wedding-planning app for couples, guest list, seating, budget, RSVP in one place.";
   return `<p style="margin:0 0 18px 0;color:${COLOR.muted};font-size:14px;line-height:1.5;font-style:italic;">${escapeHtml(copy)}</p>`;
 }
 
@@ -630,12 +657,11 @@ function renderOutreachOrientation(category: EmailCategory, locale: "hu" | "en")
 function renderPlainUrlNote(
   ctaUrl: string,
   category: EmailCategory,
-  locale: "hu" | "en",
+  locale: UiLocale,
   force = false,
 ): string {
   if (category !== "outreach" && !force) return "";
-  const label =
-    locale === "hu" ? "Vagy másold be a böngészőbe:" : "Or copy this link into your browser:";
+  const label = COPY_LINK_LABEL[locale] ?? "Or copy this link into your browser:";
   const urlHtml = force
     ? `<a href="${escapeAttr(ctaUrl)}" style="color:${COLOR.accent};text-decoration:underline;">${escapeHtml(ctaUrl)}</a>`
     : `<span style="color:${COLOR.enInk};">${escapeHtml(ctaUrl)}</span>`;
@@ -660,6 +686,62 @@ function capPreheader(s: string): string {
 // recipient with no Weddly account) explicitly states the no-account stance —
 // telling a vendor who's never heard of us that "this concerns your account"
 // reads as phishing.
+/** Footer chrome per single-card locale. The unsubscribe / preferences labels
+ *  used to be a `bilingual ? … : onlyEn ? … : hu` chain, which meant every
+ *  locale added after HU and EN silently fell into the HUNGARIAN branch: a
+ *  German recipient would have read "Leiratkozás". Anything not listed here
+ *  reads the EN labels, which is the same fallback the card itself takes. */
+const FOOTER_LABELS: Partial<Record<UiLocale, { unsub: string; prefs: string }>> = {
+  hu: { unsub: "Leiratkozás", prefs: "Preferenciák" },
+  en: { unsub: "Unsubscribe", prefs: "Email preferences" },
+  es: { unsub: "Darse de baja", prefs: "Preferencias de correo" },
+  hr: { unsub: "Odjava s liste", prefs: "Postavke e-pošte" },
+  de: { unsub: "Abmelden", prefs: "E-Mail-Einstellungen" },
+};
+
+/** "Questions?" above the support address, per single-card locale, plus the
+ *  bilingual form under the `bilingual` key. Same EN fallback as everything
+ *  else in the footer. */
+const HELP_LABELS: Partial<Record<UiLocale | "bilingual", string>> = {
+  bilingual: "Kérdés? / Questions?",
+  hu: "Kérdés?",
+  en: "Questions?",
+  es: "¿Preguntas?",
+  hr: "Pitanja?",
+  de: "Fragen?",
+};
+
+function footerLabels(single: UiLocale | null): { unsub: string; prefs: string } {
+  if (single === null) {
+    return { unsub: "Leiratkozás / Unsubscribe", prefs: "Preferenciák / Email preferences" };
+  }
+  return FOOTER_LABELS[single] ?? FOOTER_LABELS.en!;
+}
+
+/** The "why am I getting this" line in the locales beyond HU/EN. Same fallback
+ *  rule: a locale with no entry reads the English line. */
+const WHY_LINE_EXTRA: Partial<Record<UiLocale, Record<EmailCategory, string>>> = {
+  es: {
+    lifecycle: "Recibes recordatorios ocasionales de Weddly porque tienes una cuenta con nosotros.",
+    transactional: "Recibes este correo porque tiene que ver con tu cuenta de Weddly.",
+    outreach:
+      "Recibes esto de Weddly, una app de organización de bodas. No tienes cuenta con nosotros, y este correo no crea ninguna.",
+  },
+  hr: {
+    lifecycle: "Povremene podsjetnike od Weddlyja primate jer kod nas imate račun.",
+    transactional: "Ovu poruku primate jer se tiče vašeg Weddly računa.",
+    outreach:
+      "Ovo vam šalje Weddly, aplikacija za planiranje vjenčanja. Kod nas nemate račun i ova poruka ga ne otvara.",
+  },
+  de: {
+    lifecycle:
+      "Sie erhalten gelegentliche Erinnerungen von Weddly, weil Sie ein Konto bei uns haben.",
+    transactional: "Sie erhalten diese E-Mail, weil sie Ihr Weddly-Konto betrifft.",
+    outreach:
+      "Das kommt von Weddly, einer App für die Hochzeitsplanung. Sie haben kein Konto bei uns, und diese E-Mail legt auch keines an.",
+  },
+};
+
 const WHY_LINE_TEXT: Record<EmailCategory, { hu: string; en: string; bilingual: string }> = {
   lifecycle: {
     hu: "Időnkénti emlékeztetőket kapsz a Weddly-től, mert van fiókod nálunk.",
@@ -710,30 +792,36 @@ const WHY_LINE_HTML: Record<EmailCategory, { hu: string; en: string; bilingual: 
  *  fallback shape, so we join them the same way the category map does. */
 function pickWhy(
   lines: { hu: string; en: string; bilingual: string },
-  bilingual: boolean,
-  onlyEn: boolean,
+  category: EmailCategory,
+  single: UiLocale | null,
   override?: { hu: string; en: string },
 ): string {
+  // An override is authored HU/EN only. A locale beyond those reads the EN
+  // side of it rather than the category line, since the override exists
+  // because the category line was wrong for this kind.
   if (override)
-    return bilingual ? `${override.hu} / ${override.en}` : onlyEn ? override.en : override.hu;
-  if (bilingual) return lines.bilingual;
-  return onlyEn ? lines.en : lines.hu;
+    return single === null
+      ? `${override.hu} / ${override.en}`
+      : single === "hu"
+        ? override.hu
+        : override.en;
+  if (single === null) return lines.bilingual;
+  if (single === "hu") return lines.hu;
+  return WHY_LINE_EXTRA[single]?.[category] ?? lines.en;
 }
 
 function whyLineFor(
   category: EmailCategory,
-  bilingual: boolean,
-  onlyEn: boolean,
+  single: UiLocale | null,
   override?: { hu: string; en: string },
 ): string {
-  return pickWhy(WHY_LINE_TEXT[category], bilingual, onlyEn, override);
+  return pickWhy(WHY_LINE_TEXT[category], category, single, override);
 }
 
 function whyLineForHtml(
   category: EmailCategory,
-  bilingual: boolean,
-  onlyEn: boolean,
+  single: UiLocale | null,
   override?: { hu: string; en: string },
 ): string {
-  return pickWhy(WHY_LINE_HTML[category], bilingual, onlyEn, override);
+  return pickWhy(WHY_LINE_HTML[category], category, single, override);
 }

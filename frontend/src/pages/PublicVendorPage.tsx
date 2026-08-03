@@ -13,6 +13,7 @@ import type {
   SupplierDetail,
   SupplierReview,
 } from "@shared/suppliers";
+import { pickListingBlurb } from "@shared/listing_language";
 import { REVIEW_BODY_MAX_CHARS, showsCapacity } from "@shared/suppliers";
 import { ExternalLink, Globe, MapPin, Phone, Star, Users } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -682,7 +683,7 @@ function PublicBlurb({
   locale: Locale;
   t: (k: string) => string;
 }) {
-  const blurb = (locale === "hu" ? detail.blurb_hu : detail.blurb_en).trim();
+  const blurb = pickListingBlurb(detail, locale);
   if (!blurb) {
     return (
       <p className="text-sm italic text-ink-500 dark:text-umber-300">

@@ -249,6 +249,7 @@ import type {
 } from "@shared/vendor_onboarding";
 import type { PublicVendorStats, VendorBillingStatus } from "@shared/vendor_billing";
 import type { VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
+import type { VendorRevenuePulseView } from "@shared/vendor_revenue";
 import type {
   VendorBoardStatus,
   VendorTask,
@@ -268,6 +269,7 @@ import type {
   VendorMessageTemplate,
 } from "@shared/booking_messages";
 import type { BookingQuote, QuoteLineInput } from "@shared/booking_quotes";
+import type { DateHold } from "@shared/date_holds";
 import type { VendorPointsStatus } from "@shared/vendor_points";
 import type { PlannerPointsStatus } from "@shared/planner_points";
 import type { VendorAvailabilitySettings, WeeklyHours } from "@shared/vendor_availability";
@@ -2897,6 +2899,22 @@ export const vendorAvailabilityApi = {
   }) => apiFetch<VendorAvailabilitySettings>("PUT", "/api/vendor/availability/me/pattern", body),
 };
 
+/** Live date holds: the vendor's temporary reservation of one date for one
+ *  inquiry. Reading is FREE (a lapse must not hide a hold the vendor still
+ *  has); placing, extending and releasing are PRO, like the calendar itself.
+ *  `place` is also `extend` — one call, because from the vendor's side "hold it
+ *  for another two days" is the same sentence either way. */
+export const dateHoldApi = {
+  /** Every LIVE hold this vendor has, for the calendar. */
+  mine: () => apiFetch<{ holds: DateHold[] }>("GET", "/api/vendor/date-holds"),
+  get: (bookingId: number) =>
+    apiFetch<{ hold: DateHold | null }>("GET", `/api/vendor/clients/${bookingId}/hold`),
+  place: (bookingId: number, hours: number) =>
+    apiFetch<{ hold: DateHold }>("PUT", `/api/vendor/clients/${bookingId}/hold`, { hours }),
+  release: (bookingId: number) =>
+    apiFetch<{ hold: DateHold }>("DELETE", `/api/vendor/clients/${bookingId}/hold`),
+};
+
 /** Vendor to-do board: private, vendor-scoped tasks on the kanban at
  *  /vendor/calendar?mode=tasks. FREE-tier surface (couples never see it). */
 export const vendorTaskApi = {
@@ -2955,6 +2973,15 @@ export const vendorClientsApi = {
 /** Vendor dashboard / stats rollup for the signed-in vendor's account. */
 export const vendorStatsApi = {
   get: () => apiFetch<VendorStats>("GET", "/api/vendor/stats"),
+};
+
+/** Revenue Pulse: the forward-looking half of the vendor's money (booked,
+ *  collected, outstanding, pipeline + its estimate, and the 30/60/90 cash-flow
+ *  horizons). PRO only — a FREE vendor gets 403 `vendor_pro_required` and the
+ *  callers render nothing rather than a locked teaser. Gated on the existing
+ *  `payment_tracking` feature flag, not a new one. */
+export const vendorRevenueApi = {
+  get: () => apiFetch<VendorRevenuePulseView>("GET", "/api/vendor/revenue"),
 };
 
 /** Something the stats rollup counts just changed, so VendorShell's nav badge

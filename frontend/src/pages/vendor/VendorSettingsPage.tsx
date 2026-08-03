@@ -11,7 +11,7 @@ import { useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { authApi, userApi } from "../../lib/endpoints";
-import { contentLocale, type Locale, useT } from "../../lib/i18n";
+import { LOCALE_NAMES, LOCALES, type Locale, useT } from "../../lib/i18n";
 export default function VendorSettingsPage() {
   const { t, locale, setLocale } = useT();
   const { user, refresh: refreshAuth, setSession } = useAuth();
@@ -85,7 +85,11 @@ export default function VendorSettingsPage() {
       // Optimistic: flip the UI immediately. `silent: true` because this is a
       // settings save, not the first-run currency-prompt path.
       setLocale(next, { silent: true });
-      await userApi.updateProfile({ locale: contentLocale(next) });
+      // Persist the locale ITSELF, not `contentLocale(next)`. That narrowing
+      // exists for hu/en-only CONTENT (blog posts, template text) and has no
+      // business on the account preference: it stored "en" for a vendor who
+      // picked Español, so the next device they signed in on came up English.
+      await userApi.updateProfile({ locale: next });
       await refreshAuth();
     } catch (err) {
       setLocale(locale, { silent: true });
@@ -221,12 +225,23 @@ export default function VendorSettingsPage() {
             <p className="mt-1 text-[11px] text-ink-500 dark:text-umber-300">
               {t("profile.account_locale_help")}
             </p>
+            {/* Every shipped locale, from the one shared list — this used to
+                be a hardcoded ["hu", "en"] pair, so Spanish was invisible here
+                for the year it had been shipping in every other switcher.
+                Labels come from LOCALE_NAMES (each language in its OWN name),
+                which is also what the couple, planner and public switchers
+                render: a per-locale `profile.account_locale_<l>` key would
+                have to be added for each new language and reads as the raw
+                fallback the moment someone forgets. */}
+            {/* Separate pills rather than one joined segmented bar. Two options
+                fit a 160px bar; five do not fit a phone at all, and a wrapped
+                segmented control shows its seams on the row that breaks. */}
             <div
               role="radiogroup"
               aria-label={t("vendor.settings.locale_label")}
-              className="mt-2 inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
+              className="mt-2 flex flex-wrap gap-2"
             >
-              {(["hu", "en"] as const).map((l) => {
+              {LOCALES.map((l) => {
                 const active = l === locale;
                 return (
                   <button
@@ -236,13 +251,13 @@ export default function VendorSettingsPage() {
                     aria-checked={active}
                     onClick={() => saveLocale(l)}
                     disabled={savingLocale !== null}
-                    className={`min-w-[80px] px-4 py-3 text-sm font-medium transition-colors sm:py-1.5 sm:text-xs ${
+                    className={`min-w-[80px] rounded-full border px-4 py-3 text-sm font-medium transition-colors disabled:opacity-60 sm:py-1.5 sm:text-xs ${
                       active
-                        ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                        : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
+                        ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                        : "border-ink-200 bg-paper-50 text-ink-600 hover:bg-paper-100 dark:border-umber-700 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
                     }`}
                   >
-                    {t(`profile.account_locale_${l}`)}
+                    {LOCALE_NAMES[l]}
                   </button>
                 );
               })}

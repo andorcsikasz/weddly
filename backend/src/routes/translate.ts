@@ -1,16 +1,18 @@
-// Auto-translate for the bilingual vendor "Leírás" fields (HU <-> EN). Thin
-// layer over lib/translate (DeepL). Two endpoints:
+// Auto-translate for a vendor's two description fields (their LOCAL language
+// <-> English). Thin layer over lib/translate (DeepL). Two endpoints:
 //
 //   GET  /api/translate/availability  — { available } so the UI hides the
 //                                        button when no DeepL key is configured
 //   POST /api/translate               — { text, source, target } -> { text }
 //
 // Auth-required + rate-limited per IP: DeepL is a paid upstream, so the
-// endpoint must not be usable as an open translation proxy. HU <-> EN only
-// (closed union in shared/translate.ts).
+// endpoint must not be usable as an open translation proxy. The language pair
+// stays a CLOSED union (shared/translate.ts) for the same reason — widening it
+// to every DeepL language would make this a general-purpose translation API on
+// someone else's bill.
 
 import type { TranslateLang } from "@shared/translate";
-import { TRANSLATE_MAX_CHARS } from "@shared/translate";
+import { isTranslateLang, TRANSLATE_LANGS, TRANSLATE_MAX_CHARS } from "@shared/translate";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { rateLimit, TRANSLATE_BUCKET } from "../lib/rate_limit";
 import { translateConfigured, translateText } from "../lib/translate";
@@ -22,8 +24,8 @@ function handleAvailability(): Response {
 }
 
 function parseLang(raw: unknown, field: string): TranslateLang {
-  if (raw === "HU" || raw === "EN") return raw;
-  throw new HttpError(400, `${field} must be "HU" or "EN"`);
+  if (isTranslateLang(raw)) return raw;
+  throw new HttpError(400, `${field} must be one of ${TRANSLATE_LANGS.join(", ")}`);
 }
 
 async function handleTranslate(ctx: Ctx): Promise<Response> {

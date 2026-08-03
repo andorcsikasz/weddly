@@ -773,6 +773,12 @@ export interface LocaleMessages {
     section_pricing_only: string;
     label_blurb_hu: string;
     label_blurb_en: string;
+    /** Label for the LOCAL-language description box. `{lang}` is that
+     *  language's own name, resolved from the vendor's country by
+     *  `listingLocalLanguage` — a Croatian vendor is asked for a Croatian
+     *  description, not a Hungarian one. Supersedes `label_blurb_hu`, which
+     *  only the legacy standalone editor still reads. */
+    label_blurb_lang: string;
     /** The HU/EN switch above the single description textarea, and the
      *  screen-reader name for the dot marking a language that has copy. */
     blurb_lang_aria: string;
@@ -1364,6 +1370,40 @@ export interface LocaleMessages {
       conversion_title: string;
       conversion_confirmed: string;
       conversion_rate: string;
+    };
+    /** Revenue Pulse — the forward-looking money surface (PRO only, gated on
+     *  the existing `payment_tracking` feature). Rendered twice: a compact bar
+     *  at the top of the clients list and the full breakdown on the stats page.
+     *  See `shared/vendor_revenue.ts` for what each figure means. */
+    revenue: {
+      title: string;
+      body: string;
+      booked: string;
+      booked_help: string;
+      collected: string;
+      outstanding: string;
+      pipeline: string;
+      pipeline_help: string;
+      /** The discounted pipeline. NEVER render it without `estimate` beside it. */
+      weighted: string;
+      weighted_help: string;
+      estimate: string;
+      /** Receives `{n}` — open leads left out of the pipeline for want of a
+       *  recorded value. The count is what keeps the figure honest. */
+      unpriced_note: string;
+      /** Receives `{n}` — confirmed bookings with no recorded contract value. */
+      booked_unpriced_note: string;
+      upcoming_title: string;
+      /** The three cash-flow horizons. NESTED: 60 contains 30. */
+      next_30: string;
+      next_60: string;
+      next_90: string;
+      average_booking: string;
+      win_rate: string;
+      /** Receives `{n}` (decided leads) + `{days}` (the trailing window). */
+      trailing_note: string;
+      /** The compact bar's link through to the full breakdown. */
+      see_breakdown: string;
     };
     reviews: {
       page_title: string;

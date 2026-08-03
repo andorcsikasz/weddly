@@ -83,7 +83,10 @@ describe("PATCH /api/users/me", () => {
 
   test("rejects an unknown locale code", async () => {
     const { token } = await bootstrapCouple("bad-locale@weddly.test");
-    const r = await req("PATCH", "/api/users/me", { locale: "de" }, { token });
+    // "de" used to stand in for "unknown" here. German ships as a UI locale
+    // now, so the example has to be a code we genuinely do not serve, or the
+    // test passes for the wrong reason the day we add the language.
+    const r = await req("PATCH", "/api/users/me", { locale: "fr" }, { token });
     expect(r.status).toBe(400);
   });
 

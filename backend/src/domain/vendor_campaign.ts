@@ -19,6 +19,8 @@
 // opens, and why sends are keyed by address rather than by listing.
 
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { listingLocalLanguage } from "@shared/listing_language";
+import { isUiLocale, type UiLocale } from "@shared/locales";
 import { isVendorSelfServeBlocked, supplierCategoryLabel } from "@shared/suppliers";
 import {
   type CreateVendorCampaignInput,
@@ -67,11 +69,32 @@ export function resolveListingCountry(row: { id: string; source: string; city: s
   return "HU";
 }
 
-/** Which language we write to a business in this country. Only HU and EN copy
- *  exists, so everywhere outside Hungary gets English rather than a Hungarian
- *  mail nobody in the office can read. */
-export function localeForCountry(country: string): "hu" | "en" {
-  return country.toUpperCase() === "HU" ? "hu" : "en";
+/** Which language we write to a business in this country: their own, whenever
+ *  Weddly has that language at all.
+ *
+ *  This used to be "HU or English", which was right while HU and EN were the
+ *  only copy that existed and became wrong the moment the directory took in
+ *  Croatian and German businesses — the point of the rule was never "English
+ *  for foreigners", it was "not a Hungarian mail nobody in the office can
+ *  read", and a Croatian photographer reading English is the same problem one
+ *  notch quieter. `listingLocalLanguage` is the same country→language table
+ *  the listing editor labels its description box from, so the language we
+ *  WRITE to a vendor in and the language we ask them to write in agree.
+ *
+ *  Per-kind copy is still optional: a kind with no block for this locale
+ *  renders its English card (see `pickBlocks`), so a language can be pointed
+ *  at here before every mail has been translated into it. */
+export function localeForCountry(country: string): UiLocale {
+  const local = listingLocalLanguage(country).code;
+  return isUiLocale(local) ? local : "en";
+}
+
+/** Narrow a mail locale to the pair our hu/en-only content tables are keyed by
+ *  (category labels, date formats). Same shape as the frontend's
+ *  `contentLocale`, and the same reason: a translated INTERFACE does not imply
+ *  a translated content table. */
+export function mailContentLocale(locale: string): "hu" | "en" {
+  return locale === "hu" ? "hu" : "en";
 }
 
 /** `listings.city` carries a ", XX" country suffix on the international curated
@@ -450,7 +473,7 @@ export function listSends(campaignId: number, limit: number): VendorCampaignSend
     listing_id: row.listing_id,
     listing_name: row.listing_name ?? row.listing_id,
     email: row.email,
-    locale: row.locale === "hu" ? "hu" : "en",
+    locale: isUiLocale(row.locale) ? row.locale : "en",
     country: row.country,
     category: row.category,
     status: toSendStatus(row.status),
@@ -523,7 +546,7 @@ async function sendOne(
     "vendor_claim_campaign",
     {
       listingName: target.listing_name,
-      categoryLabel: supplierCategoryLabel(target.category, target.locale),
+      categoryLabel: supplierCategoryLabel(target.category, mailContentLocale(target.locale)),
       city: target.city,
       inviteUrl: inviteUrl(claim.token),
       monthlyVisitors: VENDOR_CAMPAIGN_MONTHLY_VISITORS,
@@ -633,12 +656,12 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
       .prepare("SELECT name, city FROM listings WHERE id = ?")
       .get(row.listing_id) as { name: string; city: string } | undefined;
     if (!listing) continue;
-    const locale = row.locale === "hu" ? "hu" : "en";
+    const locale = isUiLocale(row.locale) ? row.locale : "en";
     const result = await sendKind(
       "vendor_claim_campaign_reminder",
       {
         listingName: listing.name,
-        categoryLabel: supplierCategoryLabel(row.category, locale),
+        categoryLabel: supplierCategoryLabel(row.category, mailContentLocale(locale)),
         city: displayCity(listing.city),
         inviteUrl: inviteUrl(row.claim_token as string),
         monthlyVisitors: VENDOR_CAMPAIGN_MONTHLY_VISITORS,

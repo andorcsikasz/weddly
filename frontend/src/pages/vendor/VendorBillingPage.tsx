@@ -18,8 +18,8 @@ import { type VendorBilling, type VendorBillingDetails, vendorPrice } from "@sha
 import type { VendorFeature, VendorFeatureFlags, VendorPlan } from "@shared/vendor_plan";
 import { Skeleton } from "../../components/ui";
 import { vendorBillingApi } from "../../lib/endpoints";
-import { formatDateMs, formatMoney } from "../../lib/format";
-import { useT } from "../../lib/i18n";
+import { formatDateMs, formatMoney, intlLocale } from "../../lib/format";
+import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
 
 type TKey = Parameters<ReturnType<typeof useT>["t"]>[0];
@@ -50,9 +50,12 @@ type MoneyAction = "setup" | "checkout" | "portal";
  *  here; anything unknown is treated as minor-unit, which is Stripe's default. */
 const ZERO_DECIMAL = new Set(["huf", "jpy", "krw"]);
 
-function formatInvoiceAmount(amount: number, currency: string, locale: string): string {
+function formatInvoiceAmount(amount: number, currency: string, locale: Locale): string {
   const major = ZERO_DECIMAL.has(currency.toLowerCase()) ? amount : amount / 100;
-  return new Intl.NumberFormat(locale === "hu" ? "hu-HU" : locale === "es" ? "es-ES" : "en-US", {
+  // `intlLocale`, not an inline ternary: a hand-written hu/es/else chain silently
+  // hands every locale added afterwards the en-US number format, which is how a
+  // German vendor would read their own invoices in US grouping.
+  return new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency: currency.toUpperCase(),
     maximumFractionDigits: ZERO_DECIMAL.has(currency.toLowerCase()) ? 0 : 2,

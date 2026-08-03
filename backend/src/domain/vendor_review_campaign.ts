@@ -19,6 +19,7 @@
 // insert and send leaves a 'queued' row the next sweep retries.
 
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { isUiLocale, type UiLocale } from "@shared/locales";
 import { vendorPublicId } from "@shared/vendor_slug";
 import {
   type CreateVendorReviewCampaignInput,
@@ -45,6 +46,7 @@ import {
   displayCity,
   isOptedOut,
   localeForCountry,
+  mailContentLocale,
   normalizeEmail,
 } from "./vendor_campaign";
 
@@ -65,9 +67,14 @@ export function resolveVendorCountry(vaCountry: string | null): string {
 /** Which language we write to this vendor in. Their account locale (captured at
  *  signup) wins, because it is the most reliable signal of what they can read;
  *  we fall back to the country only when the account has no locale. */
-export function localeForVendor(userLocale: string | null, country: string): "hu" | "en" {
+export function localeForVendor(userLocale: string | null, country: string): UiLocale {
   if (userLocale && userLocale.trim().length > 0) {
-    return userLocale.trim().toLowerCase().startsWith("hu") ? "hu" : "en";
+    // The account locale is the strongest signal there is: the vendor picked
+    // it themselves. Take it whenever it names a language we ship, and only
+    // then fall back to guessing from the country.
+    const base = userLocale.trim().toLowerCase().split(/[-_]/)[0] ?? "";
+    if (isUiLocale(base)) return base;
+    return "en";
   }
   return localeForCountry(country);
 }
@@ -524,7 +531,7 @@ async function sendOne(
   }
   const sendId = Number(inserted.lastInsertRowid);
   const share = shareUrlFor(reviewUrl);
-  const links = shareLinks(share, target.locale);
+  const links = shareLinks(share, mailContentLocale(target.locale));
 
   const result = await sendKind(
     "vendor_review_campaign",
@@ -536,7 +543,7 @@ async function sendOne(
       whatsappUrl: links.whatsapp,
       mailtoUrl: links.mailto,
       dashboardUrl: `${CONFIG.frontendBaseUrl}/vendor/reviews`,
-      locale: target.locale,
+      locale: mailContentLocale(target.locale),
     },
     {
       user: null,

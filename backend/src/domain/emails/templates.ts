@@ -4,10 +4,12 @@
 // out of the dispatcher's plumbing code.
 
 import { VENDOR_EARLY_CAP, VENDOR_FOUNDING_CAP } from "@shared/vendor_billing";
+import type { UiLocale } from "@shared/locales";
 import { CONFIG } from "../../config";
 import { type EmailCategory, type EmailKind, KIND_CATEGORY } from "./kinds";
 import {
   type LocaleBlock,
+  type ExtraLocale,
   type RecipientLocale,
   type RenderedEmail,
   renderEmail,
@@ -672,7 +674,10 @@ export interface VendorClaimCampaignPayload {
    *  in which case the copy drops the free-window sentence entirely rather than
    *  promising something the claim would not honour. */
   freeMonths: number;
-  locale: "hu" | "en";
+  /** The recipient's language, not a hu/en flag: it picks the subject line and
+   *  which `extra` card renders. Anything pre-translated for the copy (the
+   *  category label) is narrowed by the caller, since those tables are hu/en. */
+  locale: UiLocale;
 }
 
 /** Review-invite campaign to a CLAIMED vendor: reviews are now open to anyone,
@@ -1074,6 +1079,7 @@ export function buildEmail<K extends EmailKind>(
   const rendered = renderEmail({
     hu: built.hu,
     en: built.en,
+    extra: built.extra,
     ctaUrl,
     category,
     plainCtaUrl: built.plainCtaUrl,
@@ -1090,6 +1096,11 @@ interface RawTemplate {
   subject: string;
   hu: LocaleBlock;
   en: LocaleBlock;
+  /** Copy for the locales that shipped after the HU/EN split. Entirely
+   *  optional per kind: a kind with no block for the recipient's language
+   *  renders its English card, so translating one mail never touches the
+   *  other ninety. See `pickBlocks` in ./template. */
+  extra?: Partial<Record<ExtraLocale, LocaleBlock>>;
   ctaUrl: string;
   /** See `BuiltEmail.replyTo`. Per-kind builders set this to override the
    *  global Reply-To default; left undefined the dispatcher falls back to
@@ -1134,6 +1145,34 @@ function offerSentenceHu(freeMonths: number): string {
   return "";
 }
 
+/** The free-window closer in the locales that shipped after HU/EN. Keyed the
+ *  same way as the card itself: a locale with no entry falls back to English,
+ *  so a market can be pointed at a language before every sentence is written. */
+const OFFER_SENTENCE: Partial<Record<ExtraLocale, (freeMonths: number) => string>> = {
+  hr: (m) =>
+    m >= 12
+      ? `Prvih ${VENDOR_FOUNDING_CAP} dobavljača dobiva punu godinu na Weddlyju. Još ima mjesta.`
+      : m > 0
+        ? `${VENDOR_EARLY_CAP} dobavljača dobiva ${m} mjeseca na Weddlyju. Još ima mjesta.`
+        : "",
+  de: (m) =>
+    m >= 12
+      ? `Die ersten ${VENDOR_FOUNDING_CAP} Dienstleister bekommen ein volles Jahr auf Weddly. Es sind noch Plätze frei.`
+      : m > 0
+        ? `${VENDOR_EARLY_CAP} Dienstleister bekommen ${m} Monate auf Weddly. Es sind noch Plätze frei.`
+        : "",
+  es: (m) =>
+    m >= 12
+      ? `Los primeros ${VENDOR_FOUNDING_CAP} proveedores tienen un año completo en Weddly. Aún quedan plazas.`
+      : m > 0
+        ? `${VENDOR_EARLY_CAP} proveedores tienen ${m} meses en Weddly. Aún quedan plazas.`
+        : "",
+};
+
+function offerSentenceFor(locale: ExtraLocale, freeMonths: number): string {
+  return OFFER_SENTENCE[locale]?.(freeMonths) ?? offerSentenceEn(freeMonths);
+}
+
 function offerSentenceEn(freeMonths: number): string {
   if (freeMonths >= 12) {
     return `The first ${VENDOR_FOUNDING_CAP} vendors get a full year on Weddly. Still room.`;
@@ -1148,9 +1187,18 @@ function offerSentenceEn(freeMonths: number): string {
  *  `renderEmail` prints one card when it knows the recipient's locale and the
  *  bilingual HU+EN stack when it doesn't, so a `null` locale gets the legacy
  *  slash-joined subject and a known one gets clean single-language copy. */
-function localeSubject(locale: RecipientLocale | undefined, hu: string, en: string): string {
+function localeSubject(
+  locale: RecipientLocale | undefined,
+  hu: string,
+  en: string,
+  extra?: Partial<Record<ExtraLocale, string>>,
+): string {
   if (locale === "hu") return hu;
   if (locale === "en") return en;
+  // A locale beyond HU/EN gets its own subject when the kind wrote one, and
+  // the English subject otherwise — matching exactly what `pickBlocks` does
+  // with the card, so subject and body can never end up in two languages.
+  if (locale) return extra?.[locale] ?? en;
   return `${hu} / ${en}`;
 }
 
@@ -1212,6 +1260,34 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ctaSubtext: "The link is valid for 7 days.",
       footnote: "You'll need to confirm before you can sign in, so it's best to do it now.",
     },
+    extra: {
+      hr: {
+        preheader: "Potvrdite adresu e-pošte da kasnije možete vratiti svoj račun.",
+        greeting: `Pozdrav ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          "Dobro došli na Weddly, drago nam je što ste tu.",
+          "Sve što treba za mirno planiranje vjenčanja na jednom je mjestu: popis gostiju, raspored sjedenja, proračun, potvrde dolaska i materijali za ispis.",
+          "Ostala je još jedna sitnica: potvrdite adresu e-pošte, da svoj račun možete vratiti ako ikad zaboravite lozinku.",
+        ],
+        cta: "Potvrdite e-poštu",
+        ctaSubtext: "Poveznica vrijedi 7 dana.",
+        footnote: "Potvrda je potrebna za prijavu, pa je najbolje riješiti je odmah.",
+      },
+      de: {
+        preheader:
+          "Bestätigen Sie Ihre E-Mail-Adresse, damit Sie Ihr Konto später wiederherstellen können.",
+        greeting: `Hallo ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          "Willkommen bei Weddly, schön, dass Sie da sind.",
+          "Alles für eine entspannte Hochzeitsplanung an einem Ort: Gästeliste, Sitzplan, Budget, Zusagen und Druckvorlagen.",
+          "Eine Kleinigkeit noch: Bestätigen Sie Ihre E-Mail-Adresse, damit Sie Ihr Konto wiederherstellen können, falls Sie Ihr Passwort einmal verlieren.",
+        ],
+        cta: "E-Mail-Adresse bestätigen",
+        ctaSubtext: "Der Link ist 7 Tage gültig.",
+        footnote:
+          "Ohne Bestätigung ist keine Anmeldung möglich, erledigen Sie es also am besten gleich.",
+      },
+    },
   }),
 
   // The account exists as of a second ago. Two ways in, and the opening line
@@ -1257,6 +1333,34 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ],
         cta: "Start planning",
         footnote: "Questions? Just reply to this email, a human reads it.",
+      },
+      extra: {
+        hr: {
+          preheader: "Datum, lokacija, popis gostiju. Tim je redoslijedom najlakše.",
+          greeting: `Pozdrav ${ctx.recipientName || ""}!`.trim(),
+          paragraphs: [
+            provider
+              ? `Vaš Weddly račun je aktivan, prijavili ste se ${provider} računom. Drago nam je što ste tu.`
+              : "Potvrdili ste adresu e-pošte i vaš je Weddly račun aktivan. Drago nam je što ste tu.",
+            "Krenite odavde: upišite datum vjenčanja i lokaciju. Popis gostiju, proračun i raspored sjedenja svi se grade na tome, pa kostur nastane u nekoliko minuta.",
+            "Planirate udvoje? Pozovite partnera u radni prostor. Vidi i uređuje iste podatke, u stvarnom vremenu, bez slanja datoteka e-poštom.",
+          ],
+          cta: "Počnite planirati",
+          footnote: "Imate pitanje? Odgovorite na ovu poruku, čita je čovjek.",
+        },
+        de: {
+          preheader: "Datum, Location, Gästeliste. In dieser Reihenfolge geht es am leichtesten.",
+          greeting: `Hallo ${ctx.recipientName || ""}!`.trim(),
+          paragraphs: [
+            provider
+              ? `Ihr Weddly-Konto ist aktiv, angemeldet mit ${provider}. Schön, dass Sie da sind.`
+              : "Ihre E-Mail-Adresse ist bestätigt und Ihr Weddly-Konto ist aktiv. Schön, dass Sie da sind.",
+            "Fangen Sie hier an: Tragen Sie Hochzeitsdatum und Location ein. Gästeliste, Budget und Sitzplan bauen alle darauf auf, das Gerüst steht also in wenigen Minuten.",
+            "Zu zweit am Planen? Laden Sie Ihren Partner in den Arbeitsbereich ein. Er sieht und bearbeitet dieselben Daten in Echtzeit, ohne Dateien hin und her zu mailen.",
+          ],
+          cta: "Mit der Planung starten",
+          footnote: "Fragen? Antworten Sie einfach auf diese E-Mail, ein Mensch liest mit.",
+        },
       },
     };
   },
@@ -1342,6 +1446,29 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Set a new password",
       ctaSubtext: "Single-use link, valid for 1 hour.",
+    },
+    extra: {
+      hr: {
+        preheader: "Zatražili ste novu lozinku za svoj Weddly račun. Poveznica vrijedi 1 sat.",
+        greeting: `Pozdrav ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          "Zatražili ste novu lozinku za svoj Weddly račun. Iz sigurnosnih razloga poveznica **vrijedi 1 sat**.",
+          "Ako to niste bili vi, slobodno zanemarite ovu poruku, vaš je račun i dalje siguran.",
+        ],
+        cta: "Postavite novu lozinku",
+        ctaSubtext: "Poveznica za jednokratnu upotrebu, vrijedi 1 sat.",
+      },
+      de: {
+        preheader:
+          "Sie haben ein neues Passwort für Ihr Weddly-Konto angefordert. Der Link gilt 1 Stunde.",
+        greeting: `Hallo ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          "Sie haben ein neues Passwort für Ihr Weddly-Konto angefordert. Aus Sicherheitsgründen ist dieser Link **1 Stunde gültig**.",
+          "Falls Sie das nicht waren, können Sie diese E-Mail ignorieren, Ihr Konto bleibt sicher.",
+        ],
+        cta: "Neues Passwort festlegen",
+        ctaSubtext: "Einmal-Link, 1 Stunde gültig.",
+      },
     },
   }),
 
@@ -3409,10 +3536,15 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // subject is one string per kind, and a Hungarian subject on a mail to a
   // venue in Puglia is the fastest way into a spam folder.
   vendor_claim_campaign: (p) => ({
-    subject:
-      p.locale === "hu"
-        ? `${p.listingName} már fent van a Weddly-n`
-        : `${p.listingName} is already listed on Weddly`,
+    subject: localeSubject(
+      p.locale,
+      `${p.listingName} már fent van a Weddly-n`,
+      `${p.listingName} is already listed on Weddly`,
+      {
+        hr: `${p.listingName} je već na Weddlyju`,
+        de: `${p.listingName} steht bereits auf Weddly`,
+      },
+    ),
     ctaUrl: p.inviteUrl,
     hu: {
       preheader: `${p.categoryLabel} · ${p.city}. Vedd át a profilt, tiéd a szerkesztés.`,
@@ -3440,14 +3572,48 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       footnote: "Not the right person? Pass it to whoever runs the diary.",
       secondaryLinks: [{ label: "What is Weddly?", url: CONFIG.frontendBaseUrl }],
     },
+    extra: {
+      hr: {
+        preheader: `${p.categoryLabel} · ${p.city}. Preuzmite profil, uređujete ga sami.`,
+        greeting: "Pozdrav!",
+        paragraphs: [
+          `Na prijedlog korisnika **Weddly** je profil **${p.listingName}** dodao u katalog: ${p.categoryLabel}, ${p.city}. Već je objavljen i parovi ga vide.`,
+          `Weddly svakog mjeseca pregleda više tisuća ljudi. Ovaj je profil složen iz javno dostupnih podataka pa mu nedostaje upravo ono što donosi rezervacije: vaše fotografije, vaši paketi, vaše cijene i slobodni datumi.`,
+          offerSentenceFor("hr", p.freeMonths),
+        ].filter((x) => x.length > 0),
+        cta: "Preuzmite profil",
+        ctaSubtext: "Jedan klik, jedna lozinka.",
+        footnote: "Ne vodite vi profil? Proslijedite kolegi koji vodi kalendar.",
+        secondaryLinks: [{ label: "Što je Weddly?", url: CONFIG.frontendBaseUrl }],
+      },
+      de: {
+        preheader: `${p.categoryLabel} · ${p.city}. Übernehmen Sie das Profil, Sie bearbeiten es selbst.`,
+        greeting: "Hallo!",
+        paragraphs: [
+          `Auf Vorschlag eines Nutzers hat **Weddly** das Profil von **${p.listingName}** in den Katalog aufgenommen: ${p.categoryLabel}, ${p.city}. Es ist bereits online und Paare sehen es.`,
+          `Mehrere tausend Menschen besuchen Weddly jeden Monat. Dieses Profil ist aus öffentlichen Angaben zusammengestellt, deshalb fehlt genau das, was Buchungen bringt: Ihre eigenen Fotos, Ihre Pakete, Ihre Preise, Ihre freien Termine.`,
+          offerSentenceFor("de", p.freeMonths),
+        ].filter((x) => x.length > 0),
+        cta: "Profil übernehmen",
+        ctaSubtext: "Ein Klick, ein Passwort.",
+        footnote:
+          "Nicht die richtige Person? Geben Sie es an die Person weiter, die den Kalender führt.",
+        secondaryLinks: [{ label: "Was ist Weddly?", url: CONFIG.frontendBaseUrl }],
+      },
+    },
   }),
   // The single 2-day nudge. Shorter on purpose: they have the context from the
   // first mail, so this one is a reminder of the ask, not a re-pitch.
   vendor_claim_campaign_reminder: (p) => ({
-    subject:
-      p.locale === "hu"
-        ? `Még szerkesztheted: ${p.listingName}`
-        : `Still yours to edit: ${p.listingName}`,
+    subject: localeSubject(
+      p.locale,
+      `Még szerkesztheted: ${p.listingName}`,
+      `Still yours to edit: ${p.listingName}`,
+      {
+        hr: `Još je vaš za uređivanje: ${p.listingName}`,
+        de: `Weiterhin Ihres zum Bearbeiten: ${p.listingName}`,
+      },
+    ),
     ctaUrl: p.inviteUrl,
     hu: {
       preheader: `A(z) ${p.listingName} profilját még a Weddly kezeli helyettetek.`,
@@ -3468,6 +3634,28 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
+    },
+    extra: {
+      hr: {
+        preheader: `Profil ${p.listingName} još radi na podacima koje je Weddly složio.`,
+        greeting: "Pozdrav!",
+        paragraphs: [
+          `Prije nekoliko dana: ${p.listingName} je na Weddlyju, u kategoriji ${p.categoryLabel}. Profil još radi na podacima koje je Weddly složio.`,
+          `Preuzimanje traje nekoliko minuta. Nakon toga su fotografije, cijene i slobodni datumi vaši.`,
+          offerSentenceFor("hr", p.freeMonths),
+        ].filter((x) => x.length > 0),
+        cta: "Preuzmite profil",
+      },
+      de: {
+        preheader: `${p.listingName} läuft noch auf den Angaben, die Weddly zusammengestellt hat.`,
+        greeting: "Hallo!",
+        paragraphs: [
+          `Vor ein paar Tagen: ${p.listingName} steht auf Weddly, in der Kategorie ${p.categoryLabel}. Das Profil läuft noch auf den Angaben, die Weddly zusammengestellt hat.`,
+          `Die Übernahme dauert ein paar Minuten. Danach gehören die Fotos, die Preise und die freien Termine Ihnen.`,
+          offerSentenceFor("de", p.freeMonths),
+        ].filter((x) => x.length > 0),
+        cta: "Profil übernehmen",
+      },
     },
   }),
   // Review-invite campaign to a CLAIMED vendor. Warm, not cold: they already
@@ -3845,6 +4033,28 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ],
       cta: "Manage your listing",
     },
+    extra: {
+      hr: {
+        preheader: `${p.listingName} je od sada vaš na Weddlyju.`,
+        greeting: `Pozdrav ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `Uspjelo je: ${p.listingName} od sada pripada vašem Weddly računu dobavljača.`,
+          "Od sada podatke uređujete vi: opis, cijene, fotografije, kontakt. Parovi u javnom katalogu vide točno ono što objavite.",
+          "Ako imate pitanje ili nešto ne štima, odgovorite na ovu poruku, čitaju je ljudi.",
+        ],
+        cta: "Uredite svoj oglas",
+      },
+      de: {
+        preheader: `${p.listingName} gehört ab jetzt Ihnen auf Weddly.`,
+        greeting: `Hallo ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `Geschafft: ${p.listingName} gehört ab jetzt zu Ihrem Weddly-Dienstleisterkonto.`,
+          "Ab hier bearbeiten Sie die Angaben selbst: Beschreibung, Preise, Fotos, Kontaktdaten. Paare im öffentlichen Katalog sehen genau das, was Sie veröffentlichen.",
+          "Fragen, oder stimmt etwas nicht? Antworten Sie auf diese E-Mail, ein Mensch liest mit.",
+        ],
+        cta: "Eintrag verwalten",
+      },
+    },
   }),
 
   // An admin moved a mis-routed vendor account over to the planner side. Sent
@@ -3940,6 +4150,36 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           greeting: `Hi ${p.supplierName},`,
           paragraphs: enParas,
           cta: "Open the inquiry",
+        },
+        extra: {
+          hr: {
+            preheader: `${p.subject}${dateEn ? ` · ${dateEn}` : ""}`,
+            greeting: `Pozdrav ${p.supplierName}!`,
+            paragraphs: [
+              `**${p.coupleDisplayName}** vam se javio preko Weddlyja.`,
+              `**Tema:** ${p.subject}`,
+              `**Datum vjenčanja:** ${dateEn || "još nije određen"}`,
+              ...(sentEn ? [`**Zaprimljeno:** ${sentEn}`] : []),
+              p.canReplyInApp
+                ? "Poruka vas čeka među klijentima. Ondje možete odgovoriti i ostaje uz ostale upite."
+                : "Poruka vas čeka među klijentima, zajedno s kontaktom para, i ostaje uz ostale upite.",
+            ],
+            cta: "Otvorite upit",
+          },
+          de: {
+            preheader: `${p.subject}${dateEn ? ` · ${dateEn}` : ""}`,
+            greeting: `Hallo ${p.supplierName},`,
+            paragraphs: [
+              `**${p.coupleDisplayName}** hat sich über Weddly gemeldet.`,
+              `**Thema:** ${p.subject}`,
+              `**Hochzeitsdatum:** ${dateEn || "noch nicht festgelegt"}`,
+              ...(sentEn ? [`**Eingegangen:** ${sentEn}`] : []),
+              p.canReplyInApp
+                ? "Die Nachricht wartet in Ihrer Kundenliste. Dort antworten Sie, und sie bleibt bei Ihren übrigen Anfragen."
+                : "Die Nachricht wartet in Ihrer Kundenliste, zusammen mit den Kontaktdaten des Paares, und bleibt bei Ihren übrigen Anfragen.",
+            ],
+            cta: "Anfrage öffnen",
+          },
         },
       };
     }
@@ -4071,6 +4311,20 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         paragraphs: [`**${p.coupleName}** sent you a message:`, ...bodyParas],
         cta: "Reply in Weddly",
       },
+      extra: {
+        hr: {
+          preheader: `${p.coupleName} vam je pisao.`,
+          greeting: `Pozdrav ${ctx.recipientName || ""}!`.trim(),
+          paragraphs: [`**${p.coupleName}** vam je poslao poruku:`, ...bodyParas],
+          cta: "Odgovorite na Weddlyju",
+        },
+        de: {
+          preheader: `${p.coupleName} hat Ihnen geschrieben.`,
+          greeting: `Hallo ${ctx.recipientName || ""}!`.trim(),
+          paragraphs: [`**${p.coupleName}** hat Ihnen eine Nachricht geschickt:`, ...bodyParas],
+          cta: "In Weddly antworten",
+        },
+      },
     };
   },
 
@@ -4157,6 +4411,42 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
               "If you have room to move, you can send them a new offer on the same inquiry.",
             ],
         cta: "Open in Weddly",
+      },
+      extra: {
+        hr: {
+          preheader: p.accepted
+            ? `${p.coupleName} je prihvatio vašu ponudu na ${p.totalText}.`
+            : `${p.coupleName} je krenuo drugim putem.`,
+          greeting: `Pozdrav ${ctx.recipientName || ""}!`.trim(),
+          paragraphs: p.accepted
+            ? [
+                `**${p.coupleName}** je prihvatio vašu ponudu: **${p.title}** (${p.totalText}).`,
+                "Otvorite karticu klijenta na Weddlyju i dogovorite sljedeći korak.",
+              ]
+            : [
+                `**${p.coupleName}** ovaj put nije odabrao vašu ponudu: **${p.title}** (${p.totalText}).`,
+                ...(p.declineReason ? [`Napisali su: "${p.declineReason}"`] : []),
+                "Ako imate prostora, možete im poslati novu ponudu na isti upit.",
+              ],
+          cta: "Otvorite na Weddlyju",
+        },
+        de: {
+          preheader: p.accepted
+            ? `${p.coupleName} hat Ihr Angebot über ${p.totalText} angenommen.`
+            : `${p.coupleName} hat sich anders entschieden.`,
+          greeting: `Hallo ${ctx.recipientName || ""}!`.trim(),
+          paragraphs: p.accepted
+            ? [
+                `**${p.coupleName}** hat Ihr Angebot angenommen: **${p.title}** (${p.totalText}).`,
+                "Öffnen Sie die Kundenkarte in Weddly und stimmen Sie den nächsten Schritt ab.",
+              ]
+            : [
+                `**${p.coupleName}** hat sich diesmal anders entschieden: **${p.title}** (${p.totalText}).`,
+                ...(p.declineReason ? [`Geschrieben wurde: "${p.declineReason}"`] : []),
+                "Wenn Sie Spielraum haben, können Sie zur selben Anfrage ein neues Angebot schicken.",
+              ],
+          cta: "In Weddly öffnen",
+        },
       },
     };
   },

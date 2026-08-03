@@ -5,6 +5,7 @@
 // The DTO that comes back is the same `User` shape `/api/auth/me` returns,
 // so the frontend can drop it straight into the auth store after a PATCH.
 
+import { isUiLocale, UI_LOCALES, type UiLocale } from "@shared/locales";
 import { checkRealName } from "@shared/real_names";
 import type { User } from "@shared/types";
 import { db, now } from "../db";
@@ -43,13 +44,13 @@ function parseOptionalFullName(raw: unknown, isPerson: boolean): string | null {
   return trimmed;
 }
 
-function parseOptionalLocale(raw: unknown): "hu" | "en" | null | undefined {
+function parseOptionalLocale(raw: unknown): UiLocale | null | undefined {
   // Three states: undefined (no change), null (clear → fall back to
-  // client detection), "hu" / "en" (set explicit preference).
+  // client detection), a shipped UI locale (set explicit preference).
   if (raw === undefined) return undefined;
   if (raw === null) return null;
-  if (raw === "hu" || raw === "en") return raw;
-  throw new HttpError(400, "Locale must be 'hu', 'en', or null");
+  if (isUiLocale(raw)) return raw;
+  throw new HttpError(400, `Locale must be one of ${UI_LOCALES.join(", ")}, or null`);
 }
 
 async function handleUpdateMe(ctx: Ctx): Promise<Response> {

@@ -22,17 +22,25 @@ import { type EmailKind, type EmailSender, KIND_CATEGORY, senderForKind } from "
 import { recordEmailAttempt } from "./log";
 import { isOptedOut } from "./optouts";
 import { ensurePreferences } from "./preferences";
+import { isUiLocale } from "@shared/locales";
 import type { RecipientLocale } from "./template";
 import { buildEmail, type KindPayload } from "./templates";
 
 /** Map a raw `users.locale` value to one of the two locales our templates
  *  cover. We have HU + EN copy today; anything else (DE/FR/ES …) renders as
  *  EN until per-locale copy lands. `null` falls back to bilingual HU+EN. */
+/** A stored / supplied locale string → the language this mail renders in.
+ *
+ *  Anything we ship a UI in is honoured, including regional tags (`de-AT` is a
+ *  German reader). Everything else lands on EN rather than null: null means
+ *  "we do not know", which is what the bilingual HU+EN stack is for, and a
+ *  recipient who told us `fr` has told us something — just not something we
+ *  have copy for. */
 function normalizeRecipientLocale(raw: string | null | undefined): RecipientLocale {
   if (raw == null) return null;
   const lc = raw.toLowerCase();
-  if (lc === "hu" || lc.startsWith("hu-") || lc.startsWith("hu_")) return "hu";
-  return "en";
+  const base = lc.split(/[-_]/)[0] ?? lc;
+  return isUiLocale(base) ? base : "en";
 }
 
 interface UserLocaleRow {
@@ -211,10 +219,14 @@ async function sendKindInner<K extends EmailKind>(
   // For guest sends with a known submitter, resolve the submitter's locale
   // and bias the bilingual order toward it. Doesn't replace the bilingual
   // fallback — just reorders.
-  const primaryLocaleHint: "hu" | "en" | undefined =
+  // Only ever reorders the BILINGUAL stack, which is HU+EN, so a submitter on
+  // any other language leaves the historical HU-first order alone.
+  const submitterLocale =
     recipientLocale === null && target.submitterUserId
-      ? (lookupUserLocale(target.submitterUserId) ?? undefined)
-      : undefined;
+      ? lookupUserLocale(target.submitterUserId)
+      : null;
+  const primaryLocaleHint: "hu" | "en" | undefined =
+    submitterLocale === "hu" || submitterLocale === "en" ? submitterLocale : undefined;
   if (target.user) {
     const prefs = ensurePreferences(target.user.id);
     if (category === "lifecycle" && prefs.lifecycle_opt_out) {

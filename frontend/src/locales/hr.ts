@@ -833,6 +833,7 @@ const hr: PartialLocaleMessages = {
     section_pricing_only: "Cijene",
     label_blurb_hu: "Opis (mađarski)",
     label_blurb_en: "Opis (engleski)",
+    label_blurb_lang: "Opis ({lang})",
     blurb_lang_aria: "Jezik opisa",
     blurb_lang_filled: "već ispunjeno",
     label_blurb_hint: "Do 2000 znakova. Parovi ovo vide na kartici vašeg oglasa.",

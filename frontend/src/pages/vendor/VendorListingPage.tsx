@@ -60,6 +60,7 @@ import { listingChecklistFor } from "@shared/vendor_clients";
 import { AddressAutocomplete } from "../../components/AddressAutocomplete";
 import { SetupProgressPanel } from "../../components/VendorSetupProgress";
 import { TranslateButton } from "../../components/TranslateButton";
+import { listingLocalLanguage } from "@shared/listing_language";
 import { VendorListingPackages } from "../../components/VendorListingPackages";
 import { VendorListingVideos } from "../../components/VendorListingVideos";
 import { DateField } from "../../components/ui/DateField";
@@ -284,11 +285,14 @@ export default function VendorListingPage() {
       if (heroBlobUrl.current) URL.revokeObjectURL(heroBlobUrl.current);
     };
   }, []);
-  // Which description language the editor is showing. Starts on the language
-  // the vendor runs the app in — a vendor on the English interface writing into
-  // a Hungarian box would be the same mistake in the other direction — and
-  // falls back to HU for any locale that has no blurb column of its own.
-  const [blurbLang, setBlurbLang] = useState<"hu" | "en">(locale === "en" ? "en" : "hu");
+  // Which description language the editor is showing: the vendor's OWN
+  // language, or English. Starts on the language the vendor runs the app in —
+  // a vendor on the English interface writing into their local-language box
+  // would be the same mistake in the other direction.
+  //
+  // "local" rather than a language code because which language that is depends
+  // on the vendor's country, and the country arrives with `view` a tick later.
+  const [blurbLang, setBlurbLang] = useState<"local" | "en">(locale === "en" ? "en" : "local");
   const [galleryBusy, setGalleryBusy] = useState(false);
   // Picked-but-not-yet-stored photos, one placeholder tile each. Survives its
   // own upload only when it fails, so a failed tile is what the retry glyph
@@ -696,6 +700,13 @@ export default function VendorListingPage() {
         day: "numeric",
       }).format(new Date(priceLockedUntil))
     : null;
+
+  // The language the vendor's own-language description is in, from the country
+  // on their account. Resolves to Hungarian while `view` is still loading and
+  // for any country we have no mapping for, which is exactly the behaviour
+  // every listing had before this existed.
+  const localLang = listingLocalLanguage(view?.account.country);
+  const englishOnlyListing = localLang.code === "en";
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -1144,80 +1155,17 @@ export default function VendorListingPage() {
                   scrolled past a field they weren't writing in, twice, on every
                   visit. Same pill toggle as the interface language in Settings;
                   the dot marks a language that already has copy, which is the
-                  thing you lose by hiding the other one. */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div
-                  role="radiogroup"
-                  aria-label={t("vendor_home.blurb_lang_aria")}
-                  className="inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
-                >
-                  {(["hu", "en"] as const).map((l) => {
-                    const active = l === blurbLang;
-                    const filled = (l === "hu" ? form.blurb_hu : form.blurb_en).trim().length > 0;
-                    return (
-                      <button
-                        key={l}
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        onClick={() => setBlurbLang(l)}
-                        className={`inline-flex min-w-[84px] items-center justify-center gap-1.5 px-4 py-1.5 text-xs font-medium transition-colors ${
-                          active
-                            ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
-                            : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
-                        }`}
-                      >
-                        {t(`profile.account_locale_${l}`)}
-                        {filled && (
-                          <>
-                            <span
-                              aria-hidden="true"
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                active ? "bg-paper-50/70 dark:bg-ink-900/60" : "bg-sage-500"
-                              }`}
-                            />
-                            <span className="sr-only">{t("vendor_home.blurb_lang_filled")}</span>
-                          </>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {blurbLang === "hu" ? (
-                  <TranslateButton
-                    source="EN"
-                    target="HU"
-                    sourceText={form.blurb_en}
-                    hasExisting={form.blurb_hu.trim().length > 0}
-                    disabled={saving}
-                    onTranslated={(text) =>
-                      setForm((prev) => (prev ? { ...prev, blurb_hu: text } : prev))
-                    }
-                  />
-                ) : (
-                  <TranslateButton
-                    source="HU"
-                    target="EN"
-                    sourceText={form.blurb_hu}
-                    hasExisting={form.blurb_en.trim().length > 0}
-                    disabled={saving}
-                    onTranslated={(text) =>
-                      setForm((prev) => (prev ? { ...prev, blurb_en: text } : prev))
-                    }
-                  />
-                )}
-              </div>
-              {blurbLang === "hu" ? (
-                <textarea
-                  id="vendor-blurb-hu"
-                  aria-label={t("vendor_home.label_blurb_hu")}
-                  className="input"
-                  rows={4}
-                  maxLength={2000}
-                  value={form.blurb_hu}
-                  onChange={onChange("blurb_hu")}
-                />
-              ) : (
+                  thing you lose by hiding the other one.
+                  The pair is the vendor's OWN language and English, not
+                  Hungarian and English: a Croatian photographer was being asked
+                  for a Hungarian description of their business, which is a
+                  question with no useful answer. `blurb_hu` is still the column
+                  underneath — see shared/listing_language.ts for why the name
+                  outlived its meaning. */}
+              {englishOnlyListing ? (
+                // The vendor's own language IS English, so there is one
+                // description, not two. Showing a second "English" tab would
+                // ask them to write the same text twice.
                 <textarea
                   id="vendor-blurb-en"
                   aria-label={t("vendor_home.label_blurb_en")}
@@ -1227,6 +1175,99 @@ export default function VendorListingPage() {
                   value={form.blurb_en}
                   onChange={onChange("blurb_en")}
                 />
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div
+                      role="radiogroup"
+                      aria-label={t("vendor_home.blurb_lang_aria")}
+                      className="inline-flex overflow-hidden rounded-full border border-ink-200 dark:border-umber-700"
+                    >
+                      {(["local", "en"] as const).map((l) => {
+                        const active = l === blurbLang;
+                        const filled =
+                          (l === "local" ? form.blurb_hu : form.blurb_en).trim().length > 0;
+                        return (
+                          <button
+                            key={l}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => setBlurbLang(l)}
+                            className={`inline-flex min-w-[84px] items-center justify-center gap-1.5 px-4 py-1.5 text-xs font-medium transition-colors ${
+                              active
+                                ? "bg-ink-900 text-paper-50 dark:bg-paper-50 dark:text-ink-900"
+                                : "bg-paper-50 text-ink-600 hover:bg-paper-100 dark:bg-ink-800 dark:text-umber-200 dark:hover:bg-umber-700"
+                            }`}
+                          >
+                            {l === "local" ? localLang.label : "English"}
+                            {filled && (
+                              <>
+                                <span
+                                  aria-hidden="true"
+                                  className={`h-1.5 w-1.5 rounded-full ${
+                                    active ? "bg-paper-50/70 dark:bg-ink-900/60" : "bg-sage-500"
+                                  }`}
+                                />
+                                <span className="sr-only">
+                                  {t("vendor_home.blurb_lang_filled")}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* No button at all when DeepL has no such language — a
+                        Croatian vendor gets both fields and no machine help,
+                        which beats a button that 400s when they press it. */}
+                    {localLang.deepl !== null &&
+                      (blurbLang === "local" ? (
+                        <TranslateButton
+                          source="EN"
+                          target={localLang.deepl}
+                          sourceText={form.blurb_en}
+                          hasExisting={form.blurb_hu.trim().length > 0}
+                          disabled={saving}
+                          onTranslated={(text) =>
+                            setForm((prev) => (prev ? { ...prev, blurb_hu: text } : prev))
+                          }
+                        />
+                      ) : (
+                        <TranslateButton
+                          source={localLang.deepl}
+                          target="EN"
+                          sourceText={form.blurb_hu}
+                          hasExisting={form.blurb_en.trim().length > 0}
+                          disabled={saving}
+                          onTranslated={(text) =>
+                            setForm((prev) => (prev ? { ...prev, blurb_en: text } : prev))
+                          }
+                        />
+                      ))}
+                  </div>
+                  {blurbLang === "local" ? (
+                    <textarea
+                      id="vendor-blurb-hu"
+                      aria-label={t("vendor_home.label_blurb_lang", { lang: localLang.label })}
+                      className="input"
+                      rows={4}
+                      maxLength={2000}
+                      value={form.blurb_hu}
+                      onChange={onChange("blurb_hu")}
+                    />
+                  ) : (
+                    <textarea
+                      id="vendor-blurb-en"
+                      aria-label={t("vendor_home.label_blurb_en")}
+                      className="input"
+                      rows={4}
+                      maxLength={2000}
+                      value={form.blurb_en}
+                      onChange={onChange("blurb_en")}
+                    />
+                  )}
+                </>
               )}
             </fieldset>
 
@@ -1492,10 +1533,7 @@ export default function VendorListingPage() {
                               : "border-paper-300 text-ink-600 hover:border-ink-400 dark:border-umber-700 dark:text-umber-200 dark:hover:border-umber-500"
                           }`}
                         >
-                          {languageLabel(
-                            opt.code,
-                            locale === "hu" ? "hu" : locale === "es" ? "es" : "en",
-                          )}
+                          {languageLabel(opt.code, locale)}
                         </button>
                       );
                     })}

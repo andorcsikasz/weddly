@@ -1,6 +1,7 @@
 // Auth provider — single source of truth for the current user. Reads token
 // from localStorage on mount, hydrates the user via /api/auth/me.
 
+import { isUiLocale } from "@shared/locales";
 import type { User } from "@shared/types";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { SessionExpiredDialog } from "../components/SessionExpiredDialog";
@@ -66,7 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       return; // localStorage blocked, nothing explicit to sync
     }
-    if (saved !== "hu" && saved !== "en") return;
+    // Any shipped UI locale is worth mirroring. This was a literal hu/en pair,
+    // which is the reason a Spanish pick never reached the server from ANY
+    // switcher: the write-back simply returned early and localStorage was the
+    // only place the choice existed.
+    if (!isUiLocale(saved)) return;
     if (saved === user.locale) return;
     const picked = saved;
     authApi
