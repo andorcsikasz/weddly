@@ -1,10 +1,25 @@
-// Type-only contract for the locale tree. Both hu.ts and en.ts must satisfy this.
+// Type-only contract for the locale tree. en.ts, hu.ts and es.ts must satisfy
+// this in full; hr.ts and de.ts satisfy `PartialLocaleMessages` (below).
+
+/** A locale tree that translates SOME of the app. Every key it does define
+ *  still has to be a real key at the real path — the deep-partial mapping is
+ *  what makes a typo (`vendor.setings`) a compile error rather than a string
+ *  that silently never resolves. Keys it omits fall back to EN inside `t()`. */
+export type PartialLocaleMessages = DeepPartialMessages<LocaleMessages>;
+
+type DeepPartialMessages<T> = {
+  [K in keyof T]?: T[K] extends string ? T[K] : DeepPartialMessages<T[K]>;
+};
 
 export interface LocaleMessages {
   common: {
     save: string;
     saving: string;
     edit: string;
+    /** Bare "Delete" verb. Carries the confirm button of every delete dialog
+     *  and the aria-label + tooltip of the icon-only bin handles.
+     *  `confirm_delete` below is the wordier "Yes, delete" variant. */
+    delete: string;
     done: string;
     cancel: string;
     dismiss: string;
@@ -30,6 +45,9 @@ export interface LocaleMessages {
      *  tab — gives screen-reader users the same affordance sighted users
      *  read from the underlined icon / browser chrome. */
     opens_new_tab: string;
+    /** aria-label on the wordmark link back to the public home page, for the
+     *  standalone guest screens (RSVP, check-in) that carry no app shell. */
+    back_home_aria: string;
   };
   app: {
     name: string;
@@ -124,6 +142,8 @@ export interface LocaleMessages {
     timeline_email_sent: string;
     /** A vendor wrote on the booking thread. Receives `{vendor}`. */
     vendor_message: string;
+    /** A vendor sent a priced offer. Receives `{vendor}`. */
+    vendor_quote: string;
     /** RSVP status words used inside `rsvp_received`. */
     rsvp_yes: string;
     rsvp_no: string;
@@ -434,6 +454,10 @@ export interface LocaleMessages {
     solo_banner_title: string;
     solo_banner_body: string;
     solo_banner_cta: string;
+    grace_banner_title: string;
+    grace_banner_body: string;
+    grace_banner_cta: string;
+    grace_banner_pay: string;
     /** Planner-managed couple in viewer mode: the planner edits, the couple
      *  watches. No subscribe CTA here. */
     planner_managed_banner_title: string;
@@ -590,9 +614,14 @@ export interface LocaleMessages {
     cover_upload_error_too_large: string;
     cover_upload_error_type: string;
     cover_upload_preview_alt: string;
+    /** aria-label + tooltip on the icon-only button that clears the cover. */
+    cover_image_remove: string;
     /** Cover dropzone helper line (idle) + active drag-over state. */
     cover_drop_hint: string;
     cover_drop_active: string;
+    /** Helper line under the cover positioner: the image is dragged to pick
+     *  which part of it stays in frame. */
+    cover_position_hint: string;
     /** Save state — single shared button at the foot of the form. */
     save_button: string;
     save_saving: string;
@@ -662,8 +691,10 @@ export interface LocaleMessages {
     planner_cta: string;
   };
   /** Vendor onboarding "activate" screen — the accepted-waitlist → live vendor
-   *  flow. Reached via /vendor/activate/:token from the accept email. No card:
-   *  the first 100 vendors are free for a year. */
+   *  flow. Reached via /vendor/activate/:token from the accept email. The first
+   *  VENDOR_FOUNDING_CAP vendors are our guests for a year; the copy takes the
+   *  cap as a {cap} var rather than spelling it, so raising it moves one
+   *  constant. */
   vendor_activate: {
     page_title: string;
     page_body: string;
@@ -1180,6 +1211,60 @@ export interface LocaleMessages {
       save_failed: string;
       load_failed: string;
     };
+    /** Next Best Action — the single primary step for one client. One key per
+     *  VendorActionKey (`shared/vendor_next_action.ts`): `action_*` is the CTA
+     *  label, `hint_*` the line under it when nothing is flagged. */
+    next: {
+      title: string;
+      action_open: string;
+      action_reply: string;
+      action_follow_up: string;
+      action_await: string;
+      action_record_contract: string;
+      action_add_schedule: string;
+      action_chase_payment: string;
+      action_request_review: string;
+      action_prepare: string;
+      action_none: string;
+      hint_open: string;
+      hint_reply: string;
+      hint_follow_up: string;
+      hint_await: string;
+      hint_record_contract: string;
+      hint_add_schedule: string;
+      hint_chase_payment: string;
+      hint_request_review: string;
+      hint_prepare: string;
+      hint_none: string;
+    };
+    /** The "needs attention" band above the clients list. Every `reason_*`
+     *  carries its own number, because a row that only says "needs attention"
+     *  is a badge and a badge gets ignored. */
+    attention: {
+      /** Receives `{count}`. */
+      title: string;
+      snooze: string;
+      /** Receives `{name}`. */
+      snoozed: string;
+      snooze_failed: string;
+      /** Receives `{count}`. */
+      more: string;
+      /** Receives `{count}`. */
+      age_hours: string;
+      /** Receives `{count}`. */
+      age_days: string;
+      /** Receives `{age}`. */
+      reason_unopened: string;
+      /** Receives `{age}`. */
+      reason_unanswered: string;
+      /** Receives `{age}`. */
+      reason_payment_overdue: string;
+      /** Receives `{count}` — days UNTIL the wedding, not elapsed. */
+      reason_date_soon: string;
+      /** Receives `{age}`. */
+      reason_going_cold: string;
+      reason_review_due: string;
+    };
     payments: {
       title: string;
       intro: string;
@@ -1206,6 +1291,52 @@ export interface LocaleMessages {
       update_failed: string;
       removed: string;
       remove_failed: string;
+    };
+    /** The vendor's half of a quote (árajánlat): the section on a client card
+     *  and the editor behind it. The card itself is shared with the couple, so
+     *  everything printed ON it lives in the top-level `quotes.*`. */
+    quotes: {
+      title: string;
+      empty: string;
+      /** Opens the editor. */
+      new: string;
+      new_title: string;
+      edit_title: string;
+      title_field: string;
+      title_placeholder: string;
+      /** One priced row: what it is, how many, what one costs. */
+      line_label: string;
+      line_placeholder: string;
+      line_qty: string;
+      line_amount: string;
+      line_add: string;
+      line_remove: string;
+      deposit_field: string;
+      valid_until_field: string;
+      message_field: string;
+      message_placeholder: string;
+      saved: string;
+      save_failed: string;
+      send: string;
+      sent: string;
+      send_failed: string;
+      withdraw: string;
+      withdrawn: string;
+      withdraw_failed: string;
+      withdraw_confirm_title: string;
+      withdraw_confirm_body: string;
+      remove: string;
+      removed: string;
+      remove_failed: string;
+      remove_confirm_title: string;
+      remove_confirm_body: string;
+      /** 409 quote_not_draft: a sent offer is no longer editable. */
+      not_draft: string;
+      /** 403 vendor_pro_required. */
+      pro_required: string;
+      /** Upgrade card shown in place of the editor on FREE. */
+      locked_title: string;
+      locked_body: string;
     };
     stats: {
       page_title: string;
@@ -1720,6 +1851,41 @@ export interface LocaleMessages {
     tabs_aria: string;
     tab_threads: string;
     tab_outreach: string;
+    call_vendor: string;
+  };
+  /** A vendor's quote (árajánlat) as BOTH sides read it: the shared
+   *  `BookingQuoteCard` plus the couple's answer to it. Top-level rather than
+   *  nested under `messages` because the vendor's client card renders the same
+   *  card; the vendor's own EDITOR lives under `vendor.quotes`. */
+  quotes: {
+    /** Heading over the offers on a couple's thread. */
+    section_title: string;
+    /** Status pill, one per `QuoteStatus`. */
+    status_draft: string;
+    status_sent: string;
+    status_viewed: string;
+    status_accepted: string;
+    status_declined: string;
+    status_withdrawn: string;
+    status_expired: string;
+    total: string;
+    deposit: string;
+    /** Receives `{date}`. */
+    valid_until: string;
+    /** Label over what the couple typed when declining. */
+    decline_reason: string;
+    accept: string;
+    decline: string;
+    /** The optional reason prompt behind Decline. */
+    decline_title: string;
+    decline_label: string;
+    decline_placeholder: string;
+    /** Toasts on the couple's answer. */
+    accepted: string;
+    declined: string;
+    answer_failed: string;
+    /** 409 quote_not_answerable: the offer moved on before the tap landed. */
+    not_answerable: string;
   };
   /** Page reached from the email_change_verify confirm link. */
   change_email: {
@@ -2858,6 +3024,8 @@ export interface LocaleMessages {
     time_label: string;
     /** Expanded-row notes textarea placeholder. */
     body_placeholder: string;
+    /** Label on the chip a bare URL inside a task body is rendered as. */
+    body_open_link: string;
     /** Task checkbox a11y labels (one for each toggle direction). */
     mark_done: string;
     mark_undone: string;
@@ -2890,6 +3058,11 @@ export interface LocaleMessages {
     assignee_edit_hint: string;
     /** Inline "+ Who does this?" prompt on the quick-add task form. */
     assignee_quick_placeholder: string;
+    /** Stand-in for a partner in the owner picker while the couple has typed
+     *  no bride/groom name yet. These render where a PERSON's name goes, so
+     *  they have to read as one, not as the name of a form field. */
+    assignee_bride: string;
+    assignee_groom: string;
     idea_suggested_by: string;
     /** Cross-link from the Tasks tab toolbar to the /app/timeline Gantt view. */
     timeline_link: string;
@@ -3109,6 +3282,8 @@ export interface LocaleMessages {
     todo_manage_link: string;
     todo_check_aria: string;
     todo_uncheck_aria: string;
+    /** aria-label + tooltip on the per-row delete handle. */
+    todo_delete_aria: string;
     /** Inline "Add a task" input shown under the todo list (and in the empty
      *  state) — placeholder doubles as the field's aria-label, the aria
      *  string covers the submit button. */
@@ -4141,9 +4316,11 @@ export interface LocaleMessages {
      *  section is a screen-reader coin toss. */
     add_first_gift: string;
     add_first_request: string;
-    /** Header meta counts, each receiving `{count}`. */
+    /** Header meta counts, each receiving `{count}`. `count_received` is the
+     *  same line on the received-gifts view. */
     count_gifts: string;
     count_requests: string;
+    count_received: string;
     /** aria-label for an item's outbound shop link; receives `{host}`. */
     open_link: string;
     /** Empty states per section. */
@@ -4788,6 +4965,10 @@ export interface LocaleMessages {
     /** Pill at the end of the CostPlanningCard row list — click expands the
      *  inline add-row form. */
     add_custom_row: string;
+    /** The same affordance on the mobile card list (`AddCustomRowMobile`),
+     *  where the full-width button draws its own "+" beside the label. A
+     *  visible label, unlike the `_aria` keys below it. */
+    custom_row_add: string;
     /** Placeholder for the label input in the add-row inline form. */
     custom_row_label_placeholder: string;
     /** Placeholder for the amount input in the add-row inline form. */
@@ -4821,6 +5002,9 @@ export interface LocaleMessages {
     slider_max_aria: string;
     over_by: string;
     under_by: string;
+    /** Why the slider on this row is read-only: the amount is mirrored from a
+     *  booked supplier and changes on that supplier's card, not here. */
+    supplier_managed_hint: string;
     cat: {
       venue: string;
       catering: string;

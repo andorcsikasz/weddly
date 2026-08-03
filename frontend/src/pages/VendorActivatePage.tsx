@@ -207,10 +207,14 @@ export default function VendorActivatePage() {
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-ink-700 dark:text-paper-100">
+                  {/* The cap comes from the offer the SERVER resolved, not a
+                      number typed into the copy: the two used to be able to
+                      disagree, and the sentence is the promise. */}
                   {t(
                     freeOffer.tier === "founding"
                       ? "vendor_activate.founding_note"
                       : "vendor_activate.early_note",
+                    { cap: freeOffer.cap },
                   )}
                 </p>
               </div>

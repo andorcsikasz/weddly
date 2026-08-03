@@ -2,13 +2,18 @@
 //   - lapsed (free period over, not subscribed) → read-only band + Subscribe.
 //   - founding member → a one-time celebratory band ("you're in the first 200,
 //     free for 18 months"), dismissible and remembered in localStorage.
+//   - grace → the trial closed and the 7-day window before read-only is running.
+//     Outranks solo (it is the one band with a deadline behind it) and is NOT
+//     dismissible. Offers both routes in the same order as the trial_ended mail:
+//     invite the partner first, add payment second.
 //   - solo → a still-free workspace with no partner yet, nudged to invite their
 //     partner so the platform stays free until the wedding day past the paid
 //     launch. Dismissible; auto-hides once the paid-launch date passes.
 // Renders nothing for paying couples, during onboarding (no couple yet), or
 // before billing data loads.
 
-import { Eye, Lock, Sparkles, UserPlus, X } from "lucide-react";
+import { Clock, Eye, Lock, Sparkles, UserPlus, X } from "lucide-react";
+import { TRIAL_GRACE_MS } from "@shared/billing";
 import { intlLocale } from "../lib/format";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -22,11 +27,12 @@ const SOLO_DISMISS_KEY = "weddly.solo_invite_banner.dismissed";
 export function SubscriptionBanner() {
   const { user } = useAuth();
   const { t, locale } = useT();
-  const [mode, setMode] = useState<"none" | "lapsed" | "founding" | "solo" | "planner_viewer">(
-    "none",
-  );
+  const [mode, setMode] = useState<
+    "none" | "lapsed" | "founding" | "solo" | "planner_viewer" | "grace"
+  >("none");
   const [enabled, setEnabled] = useState(false);
   const [foundingUntil, setFoundingUntil] = useState<number | null>(null);
+  const [graceEnds, setGraceEnds] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -59,6 +65,14 @@ export function SubscriptionBanner() {
           // edits), not "subscribe to unlock" — so they get an explanatory band
           // with no subscribe CTA instead of the normal lapsed prompt.
           setMode(s.billing.reason === "planner_managed_viewer" ? "planner_viewer" : "lapsed");
+        } else if (s.billing.reason === "trial_grace") {
+          // The trial closed and the grace clock is running. This outranks the
+          // solo nudge (and is NOT dismissible) because it is the only band with
+          // a deadline behind it: the same one the trial_ended mail names.
+          setMode("grace");
+          setGraceEnds(
+            s.billing.trial_ends_at === null ? null : s.billing.trial_ends_at + TRIAL_GRACE_MS,
+          );
         } else if (!s.has_partner) {
           // Every partner-less couple: nudge them to invite their partner so the
           // platform stays free until their wedding day. Takes priority over the
@@ -107,6 +121,47 @@ export function SubscriptionBanner() {
     } catch {
       /* localStorage may be blocked — non-fatal */
     }
+  }
+
+  if (mode === "grace") {
+    // Amber, not the neutral umber the other nudges use: this one has a date on
+    // it. Both routes are offered, partner first, matching the mail's order.
+    const until = graceEnds
+      ? new Intl.DateTimeFormat(intlLocale(locale), {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }).format(new Date(graceEnds))
+      : "";
+    return (
+      <div
+        data-banner
+        className="relative border-b border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/30 dark:text-amber-100"
+      >
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2 text-sm sm:px-6 lg:px-8 xl:max-w-screen-2xl xl:px-10">
+          <Clock size={16} className="shrink-0 text-amber-700 dark:text-amber-300" aria-hidden />
+          <p className="min-w-[14rem] flex-1">
+            <span className="font-semibold">{t("billing.grace_banner_title")}</span>{" "}
+            <span className="text-amber-800 dark:text-amber-200">
+              {t("billing.grace_banner_body", { date: until })}
+            </span>
+          </p>
+          <Link to="/app/profile" className="btn-primary btn-sm">
+            {t("billing.grace_banner_cta")}
+          </Link>
+          {enabled && (
+            <button
+              type="button"
+              onClick={onSubscribe}
+              disabled={busy}
+              className="btn-ghost btn-sm shrink-0"
+            >
+              {t("billing.grace_banner_pay")}
+            </button>
+          )}
+        </div>
+      </div>
+    );
   }
 
   if (mode === "solo") {

@@ -149,6 +149,13 @@ const STUBS: KindPayload = {
   },
   onboarding_nudge: { onboardingUrl: `${BASE_URL}/onboarding` },
   onboarding_nudge_week: { onboardingUrl: `${BASE_URL}/onboarding` },
+  trial_ended: {
+    inviteUrl: `${BASE_URL}/app#invite-partner`,
+    billingUrl: `${BASE_URL}/app/settings?tab=subscription`,
+    graceEndsLabel: "8 September 2026",
+    graceDays: 7,
+    coupleDisplayName: "Mia & Lucas",
+  },
   honeymoon_nudge: {
     honeymoonUrl: `${BASE_URL}/app/honeymoon`,
     daysUntil: 62,
@@ -430,6 +437,21 @@ const STUBS: KindPayload = {
     coupleName: "Mia & Lucas",
     bodyText: "Köszönjük az ajánlatot! Egy kérdés: a második fotós is benne van az árban?",
     threadUrl: "/vendor/clients/188",
+  },
+  vendor_quote: {
+    vendorName: "Magyar Fotó Stúdió",
+    title: "Teljes napos fotózás",
+    totalText: "620 000 Ft",
+    validUntil: "2026-09-30",
+    quoteUrl: "/app/messages/188",
+  },
+  quote_response: {
+    coupleName: "Mia & Lucas",
+    title: "Teljes napos fotózás",
+    totalText: "620 000 Ft",
+    accepted: true,
+    declineReason: null,
+    quoteUrl: "/vendor/clients/188",
   },
   planner_message: {
     subject: "Venue walkthrough next week",

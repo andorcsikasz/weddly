@@ -3,6 +3,7 @@
 // translators can find every string in one place; long-form content stays
 // out of the dispatcher's plumbing code.
 
+import { VENDOR_EARLY_CAP, VENDOR_FOUNDING_CAP } from "@shared/vendor_billing";
 import { CONFIG } from "../../config";
 import { type EmailCategory, type EmailKind, KIND_CATEGORY } from "./kinds";
 import {
@@ -259,6 +260,22 @@ export interface GuestPreWeddingInfoPayload {
 }
 export interface OnboardingNudgePayload {
   onboardingUrl: string;
+}
+export interface TrialEndedPayload {
+  /** Deep link to the invite-partner surface — the route that keeps the
+   *  workspace open at no cost, so it is the primary CTA. */
+  inviteUrl: string;
+  /** The subscription settings tab, for the couple who would rather just pay
+   *  than wait on someone else. */
+  billingUrl: string;
+  /** Localised deadline (the day the grace window closes), pre-formatted per
+   *  recipient locale so the template never guesses at a date format. */
+  graceEndsLabel: string;
+  /** Days left in the grace window at send time. Named so the copy and the
+   *  entitlement gate quote one number. */
+  graceDays: number;
+  /** Workspace name, when it has one, so the mail is about THEIR wedding. */
+  coupleDisplayName: string | null;
 }
 export interface PartnerInviteReminderPayload {
   /** Deep link straight to the dashboard's invite-partner anchor, so the
@@ -833,6 +850,44 @@ export interface CoupleMessagePayload {
   threadUrl: string;
 }
 
+/** A vendor sent a priced offer against the inquiry. Same no-replyTo reasoning
+ *  as the message pair: the offer has a home in the product, and answering it
+ *  is a button there, not a sentence in a reply. */
+export interface VendorQuotePayload {
+  /** Listing name, bold in the opening line. */
+  vendorName: string;
+  /** The vendor's own title for the offer ("Teljes napos csomag"). */
+  title: string;
+  /** ALREADY FORMATTED money, in the quote's own currency. The template never
+   *  does currency math: a workspace picks its currency and only the call site
+   *  knows which `formatMoney` locale pair applies. */
+  totalText: string;
+  /** ISO YYYY-MM-DD, or null for an offer with no deadline. Rendered as-is:
+   *  a date the vendor typed is unambiguous in both languages. */
+  validUntil: string | null;
+  /** App-relative path to the offer, e.g. /app/messages/188. */
+  quoteUrl: string;
+}
+
+/** The couple answered the offer. One kind for both outcomes, because the
+ *  vendor is waiting on the same question either way, and the builder branches
+ *  on `accepted` for the subject and the body. */
+export interface QuoteResponsePayload {
+  /** Couple display name ("Mia & Lucas"), bold in the opening line. */
+  coupleName: string;
+  title: string;
+  /** ALREADY FORMATTED money, see `VendorQuotePayload.totalText`. */
+  totalText: string;
+  accepted: boolean;
+  /** What the couple typed when declining, if anything. Quoted verbatim: it is
+   *  the vendor's only way to learn why, which is the difference between a lost
+   *  lead and a lesson. Null on an accepted quote. */
+  declineReason: string | null;
+  /** App-relative path to the offer on the vendor's side, e.g.
+   *  /vendor/clients/188. */
+  quoteUrl: string;
+}
+
 export interface AdminFeedbackReplyPayload {
   /** The admin's free-form reply, one paragraph per line (line breaks kept). */
   replyText: string;
@@ -943,6 +998,7 @@ export type KindPayload = {
   guest_pre_wedding_info: GuestPreWeddingInfoPayload;
   onboarding_nudge: OnboardingNudgePayload;
   onboarding_nudge_week: OnboardingNudgePayload;
+  trial_ended: TrialEndedPayload;
   honeymoon_nudge: HoneymoonNudgePayload;
   comeback_nudge: ComebackNudgePayload;
   whats_new_2026_07: WhatsNewPayload;
@@ -987,6 +1043,8 @@ export type KindPayload = {
   supplier_outreach: SupplierOutreachPayload;
   vendor_message: VendorMessagePayload;
   couple_message: CoupleMessagePayload;
+  vendor_quote: VendorQuotePayload;
+  quote_response: QuoteResponsePayload;
   planner_access_requested: PlannerAccessRequestedPayload;
   planner_message: PlannerMessagePayload;
   planner_access_approved: PlannerAccessApprovedPayload;
@@ -1068,20 +1126,20 @@ type Builder<K extends EmailKind> = (payload: KindPayload[K], ctx: BuildContext)
  *  because the exact number moves between the send and the click. */
 function offerSentenceHu(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "Az első 100 szolgáltató egy teljes évet kap a Weddlyn. Van még hely.";
+    return `Az első ${VENDOR_FOUNDING_CAP} szolgáltató egy teljes évet kap a Weddlyn. Van még hely.`;
   }
   if (freeMonths > 0) {
-    return `300 szolgáltató ${freeMonths} hónapot kap a Weddlyn. Van még hely.`;
+    return `${VENDOR_EARLY_CAP} szolgáltató ${freeMonths} hónapot kap a Weddlyn. Van még hely.`;
   }
   return "";
 }
 
 function offerSentenceEn(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "The first 100 vendors get a full year on Weddly. Still room.";
+    return `The first ${VENDOR_FOUNDING_CAP} vendors get a full year on Weddly. Still room.`;
   }
   if (freeMonths > 0) {
-    return `300 vendors get ${freeMonths} months on Weddly. Still room.`;
+    return `${VENDOR_EARLY_CAP} vendors get ${freeMonths} months on Weddly. Still room.`;
   }
   return "";
 }
@@ -2091,6 +2149,51 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         paragraphs: [...bodyEn, ...tip],
         cta: "View details",
         footnote: "Reply to this email if anything's unclear.",
+      },
+    };
+  },
+
+  // Sent once, at the moment the trial window closes. Two rules shape it:
+  //
+  //   - It leads with what is STILL TRUE (the planner is intact), because a
+  //     couple opening a "your trial ended" mail is braced for a loss, and the
+  //     first sentence is where that fear is either confirmed or answered.
+  //   - It offers the partner route FIRST and the payment route second. That is
+  //     the honest order: inviting the partner costs the couple nothing and is
+  //     what activatePartnerFreeWindow actually grants, so leading with the card
+  //     would be selling past a better answer we already have.
+  //
+  // The deadline is stated as a date AND a day count. The date is what a person
+  // puts in a calendar; the count is what makes it feel near. Both come from one
+  // computed grace end, so they cannot disagree.
+  trial_ended: (p, ctx) => {
+    const coupleHu = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
+    const coupleEn = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
+    return {
+      subject: "A próbaidőszakotok véget ért / Your Weddly trial has ended",
+      ctaUrl: p.inviteUrl,
+      hu: {
+        preheader: `Innen két út vezet tovább. ${p.graceDays} napotok van dönteni.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `A Weddly próbaidőszakotok${coupleHu} lezárult. A tervezőtök a helyén van, minden adatotokkal együtt, és a következő ${p.graceDays} napban ugyanúgy szerkeszthető, mint eddig.`,
+          "Innen két út vezet tovább, és érdemes az elsővel kezdeni. **Ha a párod is belép a munkaterületre, az esküvőtök napjáig a vendégeink vagytok**, teljes hozzáféréssel. Ez a gyorsabb út, és a tervezésen is segít: a vendéglista, az ülésrend és a költségvetés akkor működik jól, ha ugyanazt az egy verziót szerkesztitek ketten.",
+          `A másik út, ha egyedül tervezel tovább: **${p.graceEndsLabel}-ig** add meg a fizetési adatokat, és a munkaterület megszakítás nélkül marad szerkeszthető.`,
+          "Ha kérdésed van a csomagokról vagy a számlázásról, válaszolj erre a levélre, emberek olvassák.",
+        ],
+        cta: "Meghívom a páromat",
+        secondaryLinks: [{ label: "Fizetési adatok megadása", url: p.billingUrl }],
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `Your Weddly trial${coupleEn} has ended. Your planner is exactly where you left it, with all of your data, and it stays editable for the next ${p.graceDays} days.`,
+          "There are two ways on from here, and the first is worth trying first. **If your partner joins the workspace, the two of you are our guests until your wedding day**, with everything unlocked. It is the quicker route, and it makes the planning better: the guest list, the seating and the budget only do their job when you are both editing the same single version.",
+          `The other way, if you are planning solo: add your payment details by **${p.graceEndsLabel}** and the workspace keeps editing without a break.`,
+          "If you have a question about the plans or the billing, reply to this email and a human reads it.",
+        ],
+        cta: "Invite my partner",
+        secondaryLinks: [{ label: "Add payment details", url: p.billingUrl }],
       },
     };
   },
@@ -3967,6 +4070,93 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Hi ${ctx.recipientName || "there"},`,
         paragraphs: [`**${p.coupleName}** sent you a message:`, ...bodyParas],
         cta: "Reply in Weddly",
+      },
+    };
+  },
+
+  // The vendor priced the inquiry. The headline number is in the body AND the
+  // preheader, because a quote is judged from the inbox before it is opened,
+  // and a mail that only says "you have an offer" makes the couple work for
+  // the one fact they want. The lines themselves stay in the product: the
+  // couple answers there, and the answer is what the vendor is waiting on.
+  vendor_quote: (p, ctx) => {
+    const huValid = p.validUntil ? [`Az ajánlat ${p.validUntil}-ig érvényes.`] : [];
+    const enValid = p.validUntil ? [`The offer is valid until ${p.validUntil}.`] : [];
+    return {
+      subject: `${p.vendorName} árajánlatot küldött / sent you a quote · Weddly`,
+      ctaUrl: `${CONFIG.frontendBaseUrl}${p.quoteUrl}`,
+      hu: {
+        preheader: `${p.vendorName} árajánlata: ${p.totalText}.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: [
+          `**${p.vendorName}** árajánlatot küldött a megkeresésetekre: **${p.title}**.`,
+          `Végösszeg: **${p.totalText}**.`,
+          ...huValid,
+          "A tételes bontás a Weddlyben van, és ott tudtok válaszolni is rá.",
+        ],
+        cta: "Árajánlat megnyitása",
+      },
+      en: {
+        preheader: `${p.vendorName} quoted ${p.totalText}.`,
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: [
+          `**${p.vendorName}** sent a quote for your inquiry: **${p.title}**.`,
+          `Total: **${p.totalText}**.`,
+          ...enValid,
+          "The itemised offer is in Weddly, and that is where you answer it.",
+        ],
+        cta: "Open the quote",
+      },
+    };
+  },
+
+  // The couple answered. One kind, one mail, two outcomes: the vendor is
+  // waiting on the same question either way, and splitting it into two kinds
+  // would give the same event two categories to drift apart on. A decline
+  // carries the couple's own words when they left any, because that sentence is
+  // the whole difference between a lost lead and a lesson.
+  quote_response: (p, ctx) => {
+    const huReason = p.declineReason ? [`Amit írtak: "${p.declineReason}"`] : [];
+    const enReason = p.declineReason ? [`What they wrote: "${p.declineReason}"`] : [];
+    const subject = p.accepted
+      ? `${p.coupleName} elfogadta az árajánlatot / accepted your quote · Weddly`
+      : `${p.coupleName} válaszolt az árajánlatra / answered your quote · Weddly`;
+    return {
+      subject,
+      ctaUrl: `${CONFIG.frontendBaseUrl}${p.quoteUrl}`,
+      hu: {
+        preheader: p.accepted
+          ? `${p.coupleName} elfogadta a ${p.totalText} összegű ajánlatodat.`
+          : `${p.coupleName} másik irányba indult el.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: p.accepted
+          ? [
+              `**${p.coupleName}** elfogadta az árajánlatodat: **${p.title}** (${p.totalText}).`,
+              "Nyisd meg az ügyfélkártyát a Weddlyben, és egyeztessétek a következő lépést.",
+            ]
+          : [
+              `**${p.coupleName}** ezúttal nem az ajánlatodat választotta: **${p.title}** (${p.totalText}).`,
+              ...huReason,
+              "Ha van mozgástered, küldhetsz nekik új ajánlatot ugyanerre a megkeresésre.",
+            ],
+        cta: "Megnyitás a Weddlyben",
+      },
+      en: {
+        preheader: p.accepted
+          ? `${p.coupleName} accepted your ${p.totalText} quote.`
+          : `${p.coupleName} went another way.`,
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: p.accepted
+          ? [
+              `**${p.coupleName}** accepted your quote: **${p.title}** (${p.totalText}).`,
+              "Open the client card in Weddly and agree the next step with them.",
+            ]
+          : [
+              `**${p.coupleName}** went another way on this one: **${p.title}** (${p.totalText}).`,
+              ...enReason,
+              "If you have room to move, you can send them a new offer on the same inquiry.",
+            ],
+        cta: "Open in Weddly",
       },
     };
   },

@@ -17,6 +17,7 @@ export type EmailKind =
   | "partner_invite_declined" // invitee clicked "no thanks", inviter heads-up so they can re-send to a new address
   | "partner_invite_reminder" // admin-triggered nudge to a solo couple to invite their partner
   | "founding_partner_push" // recurring (3x, 5 days apart) founding-cohort nudge: the free-until-your-wedding-day plan needs BOTH partners on the workspace
+  | "trial_ended" // the trial window closed: the grace period is running, and the mail names the two ways on (invite your partner, or add payment details)
   | "partner_left_workspace" // partner B left the workspace, owner heads-up
   | "couple_paused" // workspace paused → 30-day delete countdown started
   | "pause_feedback_request" // admin asks a couple who paused what was actually missing for them
@@ -80,6 +81,8 @@ export type EmailKind =
   | "supplier_outreach" // P2.E, couple-initiated cold outreach to a shortlisted vendor
   | "vendor_message" // a vendor answered on the booking thread, heads-up to the couple
   | "couple_message" // a couple wrote back on the booking thread, heads-up to the vendor
+  | "vendor_quote" // a vendor sent a priced offer against the inquiry, heads-up to the couple
+  | "quote_response" // the couple accepted or declined that offer, heads-up to the vendor
   | "planner_access_requested" // a planner asked a couple for workspace access, couple decides
   | "planner_message" // free-form planner → couple message (user-entered subject + body)
   | "planner_access_approved" // couple approved the planner's access request, heads-up to the planner
@@ -143,6 +146,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // is the one activatePartnerFreeWindow actually grants, and that grant is
   // refused once the cohort is full.
   founding_partner_push: "lifecycle",
+  trial_ended: "lifecycle",
   // Transactional: the owner had a partner in the workspace; that partner
   // self-unlinked via /api/users/me/leave-couple. Owner deserves to know.
   partner_left_workspace: "transactional",
@@ -342,6 +346,14 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // guard is the burst debounce in domain/booking_notify.ts, not a category.
   vendor_message: "transactional",
   couple_message: "transactional",
+  // Transactional both ways for the same reason, one step further along: this
+  // pair carries a NUMBER somebody has to answer. A vendor who is not told
+  // their offer was accepted loses the booking, and a couple who never hears
+  // an offer arrived is answering a question nobody asked them. There is no
+  // burst debounce behind these (see domain/booking_notify.ts): a second quote
+  // is a second commercial offer, never a continuation of the first.
+  vendor_quote: "transactional",
+  quote_response: "transactional",
   // Transactional: the resolution of the planner's access request, the
   // couple approved, and the planner is waiting to hear they can enter.
   planner_access_approved: "transactional",

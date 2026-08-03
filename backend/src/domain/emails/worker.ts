@@ -8,7 +8,7 @@
 // `email_dispatches(couple_id, user_id, kind)` — `markDispatched()` returns
 // false on duplicate, in which case we skip.
 
-import { FOUNDING_CAP } from "@shared/billing";
+import { FOUNDING_CAP, TRIAL_GRACE_MS, trialGraceEndsAt } from "@shared/billing";
 import { toIsoDate } from "@shared/planning_timeline";
 import { checkPartnerNames, NAME_REVIEW_GRACE_MS } from "@shared/real_names";
 import { INVITE_TTL_MS } from "@shared/types";
@@ -142,12 +142,14 @@ export function runEmailSweep(): {
   timelineEscalations: number;
   scheduledGuestMessages: number;
   nameReviewNotices: number;
+  trialEnded: number;
 } {
   const ts = now();
   const nudges = sweepOnboardingNudges(ts);
   const nudgesWeek = sweepOnboardingNudgesWeek(ts);
   const invitePartnerAuto = sweepInvitePartnerAuto(ts);
   const foundingPushes = sweepFoundingPartnerPush(ts);
+  const trialEnded = sweepTrialEnded(ts);
   const vendorShareNudges = sweepVendorProfileShareNudge(ts);
   const vendorIncompleteNudges = sweepVendorProfileIncomplete(ts);
   const plannerProfileNudges = sweepPlannerProfileNudge(ts);
@@ -190,6 +192,7 @@ export function runEmailSweep(): {
     timelineEscalations,
     scheduledGuestMessages,
     nameReviewNotices,
+    trialEnded,
   };
 }
 
@@ -719,6 +722,108 @@ function sweepFoundingPartnerPush(ts: number): number {
       },
       {
         user: { id: r.user_id, email: r.email, full_name: r.full_name },
+        couple_id: r.couple_id,
+      },
+    );
+    count++;
+    if (count >= SENDS_PER_SWEEP_CAP) break;
+  }
+  return count;
+}
+
+interface TrialEndedRow {
+  couple_id: number;
+  display_name: string | null;
+  trial_ends_at: number;
+  user_id: number;
+  email: string;
+  full_name: string | null;
+  locale: string | null;
+}
+
+/** The trial-boundary notice: once per couple, at the moment the window closes,
+ *  naming the two ways on and the date the grace period ends.
+ *
+ *  Audience rules, each mirroring something the billing code actually does:
+ *    - `trialing` with a trial_ends_at in the PAST, and still inside the grace
+ *      window. Past the grace there is nothing to offer a deadline about, and a
+ *      late first contact would arrive after the freeze, which is the one order
+ *      that makes the mail useless.
+ *    - Billing anchor only. A secondary event rides its anchor's verdict
+ *      (billingAnchorRow), so mailing about "your trial" per workspace would
+ *      write three times about one wedding.
+ *    - Not demo, not purged, verified, couple audience: the usual exclusions.
+ *
+ *  Deliberately NOT gated on having a partner. A couple who already invited
+ *  their partner but never got founding (the cohort filled) still has a real
+ *  deadline, and the mail's second route is the one that applies to them.
+ *
+ *  ONE recipient per couple, the OWNER. `email_dispatches` is unique on
+ *  (couple_id, user_id, kind), so joining every member would mail both partners
+ *  the same deadline inside a single sweep. The owner is also the person who can
+ *  act on route two, since they hold the subscription. */
+function sweepTrialEnded(ts: number): number {
+  const rows = db
+    .prepare(
+      `SELECT c.id AS couple_id, c.display_name, c.trial_ends_at,
+              u.id AS user_id, u.email, u.full_name, u.locale
+         FROM couples c
+         JOIN users u ON u.id = COALESCE(
+               (SELECT o.user_id FROM couple_members o
+                 WHERE o.couple_id = c.id AND o.role = 'owner'
+                 ORDER BY o.created_at ASC, o.user_id ASC LIMIT 1),
+               c.partner_a_id)
+        WHERE c.status = 'active'
+          AND c.is_demo = 0
+          AND c.subscription_status = 'trialing'
+          AND c.trial_ends_at IS NOT NULL
+          AND c.trial_ends_at <= ?
+          AND c.trial_ends_at > ?
+          AND u.status = 'active'
+          AND u.verified_email = 1
+          AND u.email NOT LIKE '%@purged.local'
+          AND u.email NOT LIKE '%@demo.weddly.local'
+          AND ${COUPLE_AUDIENCE_SQL}
+          AND NOT EXISTS (
+            SELECT 1 FROM email_dispatches d
+             WHERE d.couple_id = c.id AND d.kind = 'trial_ended'
+          )`,
+    )
+    .all(ts, ts - TRIAL_GRACE_MS) as TrialEndedRow[];
+
+  let count = 0;
+  for (const r of rows) {
+    const couple = getCoupleById(r.couple_id);
+    if (!couple || !isBillingAnchor(couple)) continue;
+
+    const graceEnd = trialGraceEndsAt(r.trial_ends_at);
+    // Round UP: with 6 days and 4 hours left, "6 days" reads as a day more than
+    // the couple has on the last afternoon, and a deadline must never overstate
+    // the room left.
+    const graceDays = Math.max(1, Math.ceil((graceEnd - ts) / (1000 * 60 * 60 * 24)));
+    const hu = (r.locale ?? "").toLowerCase().startsWith("hu");
+    const graceEndsLabel = new Intl.DateTimeFormat(hu ? "hu-HU" : "en-GB", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(graceEnd));
+
+    if (!markDispatched({ kind: "trial_ended", couple_id: r.couple_id, user_id: r.user_id })) {
+      continue;
+    }
+    void sendKind(
+      "trial_ended",
+      {
+        inviteUrl: `${CONFIG.frontendBaseUrl}/app#invite-partner`,
+        billingUrl: `${CONFIG.frontendBaseUrl}/app/settings?tab=subscription`,
+        graceEndsLabel,
+        graceDays,
+        coupleDisplayName:
+          r.display_name && r.display_name !== "Purged workspace" ? r.display_name : null,
+      },
+      {
+        user: { id: r.user_id, email: r.email, full_name: r.full_name ?? "" },
         couple_id: r.couple_id,
       },
     );

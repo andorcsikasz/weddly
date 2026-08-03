@@ -14,6 +14,7 @@ import {
   partnerFreeWindowEnd,
   type SubscriptionStatus,
   TRIAL_DURATION_MS,
+  TRIAL_GRACE_MS,
 } from "@shared/billing";
 import type { Currency } from "@shared/types";
 import { computeVendorEntitlement, type VendorSubscriptionStatus } from "@shared/vendor_billing";
@@ -139,6 +140,9 @@ export function enforcementImpact(nowMs: number = now()): {
       trial_ends_at: anchor.trial_ends_at,
       founding_until: anchor.founding_until,
       nowMs,
+      // Same grace the couple gate applies, or the preview would count couples
+      // who are still inside their week and overstate the freeze.
+      trialGraceMs: TRIAL_GRACE_MS,
     });
     if (entitled) continue;
     if (coupleHasBetaMember(row.id) || coupleHasAdminMember(row.id)) continue;

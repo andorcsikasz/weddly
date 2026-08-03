@@ -9,7 +9,7 @@ import {
   type StripeHealth,
   subscriptionUnitEconomics,
 } from "@shared/admin_financial_planner";
-import { MONTHLY_PRICE } from "@shared/billing";
+import { MONTHLY_PRICE, TRIAL_GRACE_MS } from "@shared/billing";
 import { db } from "../../src/db";
 import { recordGrowthEvent } from "../../src/domain/growth_events";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
@@ -114,18 +114,21 @@ describe("GET /api/admin/financial-planner/overview", () => {
 
   test("enforcement_impact counts who a flip would freeze, exempting beta and admin", async () => {
     wipeAll();
-    // Lapsed: past its trial, nothing exempting it. This is the one that counts.
+    // Lapsed: past its trial AND past the 7-day grace, nothing exempting it.
+    // Inside the grace it would still be editable, so the preview must not count
+    // it — the date has to clear both windows to be a real freeze.
+    const dead = Date.now() - (TRIAL_GRACE_MS + 86_400_000);
     const lapsed = await bootstrapCouple("fin-impact-lapsed@weddly.test");
     db.prepare(
       "UPDATE couples SET subscription_status = 'trialing', trial_ends_at = ? WHERE id = ?",
-    ).run(Date.now() - 86_400_000, lapsed.coupleId);
+    ).run(dead, lapsed.coupleId);
     // Equally lapsed, but a beta tester — never payment-obligated, so the flip
     // does not touch them and neither may the count, or the founder is quoted a
     // freeze bigger than the one that happens.
     const beta = await bootstrapCouple("fin-impact-beta@weddly.test");
     db.prepare(
       "UPDATE couples SET subscription_status = 'trialing', trial_ends_at = ? WHERE id = ?",
-    ).run(Date.now() - 86_400_000, beta.coupleId);
+    ).run(dead, beta.coupleId);
     db.prepare("UPDATE users SET is_beta_tester = 1 WHERE email = ?").run(
       "fin-impact-beta@weddly.test",
     );

@@ -47,11 +47,30 @@ export const FOUNDING_CAP = 200;
 
 /** The day the platform stops being free for solo (one-partner) workspaces.
  *  Until this date everyone can edit; after it, a couple that never invited
- *  their partner goes read-only unless they subscribe. Couples who DID invite
- *  their partner are free until their wedding day instead (see
- *  `partnerFreeWindowEnd`). Drives the "invite your partner" nudge banner copy.
- *  UTC midnight 2026-08-01. */
-export const PAID_LAUNCH_DATE = Date.UTC(2026, 7, 1);
+ *  their partner enters the grace window below, then goes read-only unless they
+ *  subscribe. Couples who DID invite their partner are free until their wedding
+ *  day instead (see `partnerFreeWindowEnd`). Drives the "invite your partner"
+ *  nudge banner copy.
+ *
+ *  END OF AUGUST 2026: this is the instant August ends (2026-09-01 UTC
+ *  midnight), not a day inside it, so a couple has the whole of the 31st. Moved
+ *  out from 2026-08-01 on 2026-08-03 per the owner; the db.ts backfill carries
+ *  the already-stamped trials forward with it, or 112 couples would keep an end
+ *  date a month behind the promise. */
+export const PAID_LAUNCH_DATE = Date.UTC(2026, 8, 1);
+
+/** How long a couple keeps editing AFTER their trial ends. The `trial_ended`
+ *  mail goes out at the boundary offering two ways on (invite your partner, or
+ *  add payment details), and this is the window it names. Access is real during
+ *  it — a notice that says "seven days" while the workspace is already frozen
+ *  would be a lie the couple reads before the first word. */
+export const TRIAL_GRACE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+
+/** When a trial's grace window closes. Pure so the entitlement verdict, the
+ *  mail's deadline line and the banner countdown quote one number. */
+export function trialGraceEndsAt(trialEndsAt: number): number {
+  return trialEndsAt + TRIAL_GRACE_MS;
+}
 
 /** End of the free window granted when partner B joins: free until the wedding
  *  day. Falls back to the generous 18-month founding window when the date is
@@ -152,6 +171,10 @@ export interface BillingStatusResponse {
 
 export type BillingReason =
   | "trialing"
+  /** Entitled: the trial is over but the 7-day grace window is still open. The
+   *  couple can edit; the banner and the `trial_ended` mail are what tell them
+   *  the clock is running and name the two ways to keep going. */
+  | "trial_grace"
   | "founding"
   | "subscribed"
   | "trial_expired"
@@ -162,14 +185,29 @@ export type BillingReason =
    *  planner does), except their own guest page when the add-on is on. */
   | "planner_managed_viewer";
 
-/** Single source of truth for "can this couple edit right now?". Pure +
+/** Single source of truth for "can this owner edit right now?". Pure +
  *  time-based so it can run on the server (gate writes) and the client
- *  (read-only UI) and agree. */
+ *  (read-only UI) and agree.
+ *
+ *  Shared by all THREE aggregates (couples, vendors, planners), which is why the
+ *  post-trial grace is an OPT-IN `trialGraceMs` rather than a constant baked in
+ *  here. It is a couples-side product decision; defaulting it on silently turned
+ *  the vendor 3-day trial into ten days and the planner trial likewise, moving
+ *  two freemium funnels nobody asked to change. Callers that want it pass it
+ *  (see `toCoupleBilling`); everyone else gets the old hard boundary. */
 export function computeEntitlement(
   status: SubscriptionStatus,
-  opts: { trial_ends_at: number | null; founding_until: number | null; nowMs: number },
+  opts: {
+    trial_ends_at: number | null;
+    founding_until: number | null;
+    nowMs: number;
+    /** Extra editable window after `trial_ends_at`. 0 (the default) is a hard
+     *  boundary, which is what vendors and planners want. */
+    trialGraceMs?: number;
+  },
 ): { entitled: boolean; reason: BillingReason } {
   const { trial_ends_at, founding_until, nowMs } = opts;
+  const trialGraceMs = opts.trialGraceMs ?? 0;
   // Paying subscribers (and the dunning grace) always have access.
   if (status === "active" || status === "past_due") {
     return { entitled: true, reason: "subscribed" };
@@ -180,6 +218,12 @@ export function computeEntitlement(
   }
   if (status === "trialing") {
     if (trial_ends_at && nowMs < trial_ends_at) return { entitled: true, reason: "trialing" };
+    // The grace window, only for callers that asked for one. A trial with no end
+    // date at all never had a boundary to grace, so it falls straight through
+    // rather than being handed extra days off a NULL.
+    if (trialGraceMs > 0 && trial_ends_at && nowMs < trial_ends_at + trialGraceMs) {
+      return { entitled: true, reason: "trial_grace" };
+    }
     return { entitled: false, reason: "trial_expired" };
   }
   if (status === "canceled") return { entitled: false, reason: "canceled" };

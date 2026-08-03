@@ -319,6 +319,15 @@ addColumnIfMissing("vendor_waitlist", "registration_number", "registration_numbe
 // supplier's update / delete flow keeps them in sync.
 addColumnIfMissing("budget_lines", "couple_supplier_id", "couple_supplier_id TEXT");
 
+// `listing_id` is the same back-reference for the OTHER kind of supplier: one
+// the couple booked out of the directory rather than typing in by hand. A
+// priced directory supplier only earns a line while it is the couple's PICK in
+// its category (a price on a candidate they are still comparing is a note, not
+// a commitment), so the line is owned by `couple_picks` + `couple_supplier_costs`
+// together and is locked here exactly like a `couple_supplier_id` line.
+// See domain/listing_budget_mirror.ts for the whole rule.
+addColumnIfMissing("budget_lines", "listing_id", "listing_id TEXT");
+
 // Custom rows can opt into the headcount-driven rescale that built-in
 // per-guest categories already get, and can pick a Lucide icon slug so the
 // row renders distinguishably in the list. Both default to fixed/no-icon so
@@ -1244,6 +1253,30 @@ db.prepare(
   ).run(trialEnd, nowMs);
 }
 
+// Carry the already-stamped trials forward whenever PAID_LAUNCH_DATE moves.
+// `startTrial` stamps `max(now + 14d, PAID_LAUNCH_DATE)`, so every couple that
+// onboarded before the launch date holds it as their literal trial_ends_at —
+// 112 of them shared 2026-08-01 when the date was pushed to the end of August
+// on 2026-08-03. Without this they would keep an end date a month behind the
+// promise, and the `trial_ended` mail would fire against the old boundary.
+//
+// Only ever moves a date FORWARD, and only for live trials, so it can never
+// shorten a window somebody is relying on, can never resurrect an expired one
+// into a fresh month, and settles to a no-op on the next boot. A couple whose
+// own 14-day window already reaches past the launch date is untouched: the
+// condition is exactly `startTrial`'s max(), read back.
+{
+  const nowMs = Date.now();
+  db.prepare(
+    `UPDATE couples
+        SET trial_ends_at = ?, updated_at = ?
+      WHERE is_demo = 0
+        AND subscription_status = 'trialing'
+        AND trial_ends_at IS NOT NULL
+        AND trial_ends_at < ?`,
+  ).run(PAID_LAUNCH_DATE, nowMs, PAID_LAUNCH_DATE);
+}
+
 // One-time grandfather: every planner that existed BEFORE planner billing
 // launched is an early adopter, so give them a founding comp (free for two years
 // from boot, no card). Idempotent — only planners with no planner_subscriptions
@@ -1948,6 +1981,16 @@ addColumnIfMissing("supplier_bookings", "first_response_at", "first_response_at 
 // the laptop must not badge again on the phone. NULL on every pre-existing row,
 // so an old untouched `requested` inquiry still counts once.
 addColumnIfMissing("supplier_bookings", "vendor_seen_at", "vendor_seen_at INTEGER");
+// "Stop putting this one in my attention band until <stamp>" — the vendor
+// dismissing a row on the clients list. Mutes the BAND ONLY, deliberately: the
+// nav badge, the unread-message count and the next action all ignore it, so a
+// snoozed lead goes quiet without going invisible. NULL on every pre-existing
+// row, which is the resting state (nothing snoozed).
+addColumnIfMissing(
+  "supplier_bookings",
+  "attention_snoozed_until",
+  "attention_snoozed_until INTEGER",
+);
 // Index on the payments table AFTER it exists (schema.sql) — every payment query
 // is scoped by booking, so the booking_id lookup is the hot path.
 db.exec(

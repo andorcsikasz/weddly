@@ -23,9 +23,9 @@
 //
 // Free-window ladder at activation (see `vendorOfferForSlots`):
 //
-//   vendors     1..100   founding cohort → 1 year free, founding badge
-//   vendors  101..400    early cohort    → 3 months free, no badge
-//   vendors    401+      3-day trial → the freemium funnel above
+//   vendors     1..500   founding cohort → 1 year free, founding badge
+//   vendors  501..800    early cohort    → 3 months free, no badge
+//   vendors    801+      3-day trial → the freemium funnel above
 //
 // Both cohorts ride `subscription_status='founding'` + `founding_until`, so the
 // entitlement math is untouched; the two are told apart by which badge column
@@ -59,7 +59,7 @@ export type VendorBillingReason =
 /** First N vendors to activate get a free founding year. Counted by granted
  *  badge (is_founding_member = 1); a slot is spent permanently on grant, so an
  *  expired year never frees it back up (mirrors the couples FOUNDING_CAP). */
-export const VENDOR_FOUNDING_CAP = 100;
+export const VENDOR_FOUNDING_CAP = 500;
 
 /** Founding free window length: one year from activation. */
 export const VENDOR_FOUNDING_DURATION_MS = 1000 * 60 * 60 * 24 * 365;

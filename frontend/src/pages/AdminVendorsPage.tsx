@@ -12,7 +12,7 @@
 import type { AdminVendorView } from "@shared/listings";
 import { formatLastActive, intlLocale } from "../lib/format";
 import { SUPPLIER_GROUPS, type SupplierCategory } from "@shared/suppliers";
-import { VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
+import { VENDOR_FOUNDING_CAP, VENDOR_FREE_LEAD_CREDITS } from "@shared/vendor_billing";
 import type { VendorPlan } from "@shared/vendor_plan";
 import {
   AlertTriangle,
@@ -457,7 +457,7 @@ function VendorCard({ vendor, onChanged }: { vendor: AdminVendorView; onChanged:
   const pay = vendorPaymentState(vendor, t, locale);
   const foundingTip = vendor.founding_until
     ? t("admin.vendors.founding_until_tooltip", { date: fmtDate(vendor.founding_until, locale) })
-    : t("admin.vendors.founding_tooltip");
+    : t("admin.vendors.founding_tooltip", { cap: VENDOR_FOUNDING_CAP });
 
   const statusPill: { tone: PillTone; Icon: typeof Store; label: string } =
     bucket === "pending"

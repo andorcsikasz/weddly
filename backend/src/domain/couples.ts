@@ -6,6 +6,7 @@ import {
   computeEntitlement,
   type SubscriptionStatus,
   SUBSCRIPTION_STATUSES,
+  TRIAL_GRACE_MS,
 } from "@shared/billing";
 import { type CoupleDesign, type CoupleDesignInput, resolveDesign } from "@shared/design";
 import { parseMealMenu } from "@shared/meals";
@@ -170,6 +171,10 @@ export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): Cou
         trial_ends_at: src.trial_ends_at,
         founding_until: src.founding_until,
         nowMs,
+        // Couples, and ONLY couples, keep editing for a week past their trial
+        // while the trial_ended mail's two routes are still open to them. The
+        // vendor and planner funnels pass nothing here and keep a hard boundary.
+        trialGraceMs: TRIAL_GRACE_MS,
       });
   // Always-free / not-yet-enforced overrides. Only consulted when the plain
   // verdict would lock the couple out, so the common paths (entitled subs, and
