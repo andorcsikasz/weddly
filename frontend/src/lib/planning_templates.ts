@@ -2,8 +2,24 @@
 // outside the locale tree because (a) they're content data, not UI labels,
 // and (b) adding 50+ keys to keys.ts triples the i18n maintenance per item.
 // Pattern mirrors `domain/suppliers_data.ts` on the backend: HU + EN inline.
+//
+// The TASK packs themselves now live in `@shared/planning_task_packs`: the
+// schedule wizard (`shared/planning_wand.ts`) needs their lead times and cannot
+// import from `frontend/src/lib/`. They are re-exported below, so every call
+// site here keeps working unchanged. Ideas stay in this file: nothing outside
+// the frontend reads them.
 
 import { contentLocale, type Locale } from "./i18n";
+
+export {
+  ALL_TASK_PACK_ITEMS,
+  HONEYMOON_EXTRA_TASKS,
+  TASK_TEMPLATE,
+  TASK_TEMPLATE_GROUPS,
+  type TaskPackGroup,
+  type TaskPackItem,
+  type TaskTemplateGroupId,
+} from "@shared/planning_task_packs";
 
 export type LocaleText = { hu: string; en: string };
 
@@ -30,177 +46,6 @@ export type ConditionTag =
   | "guest_keepsakes"
   | "printed_stationery"
   | "religious";
-
-/** Task starter set, organised into two sections the wand renders as
- *  separate groups: the universally-applicable wedding bookings + decisions
- *  every Hungarian couple makes, followed by the honeymoon trip-prep set
- *  (passport, flights, insurance…) added once the couple sets a honeymoon
- *  destination. Groups stay distinct in the modal so the wedding list isn't
- *  drowned by trip items. */
-export type TaskTemplateGroupId = "wedding" | "honeymoon";
-
-export const TASK_TEMPLATE_GROUPS: {
-  id: TaskTemplateGroupId;
-  label: LocaleText;
-  items: { title: LocaleText; deadline_days: number }[];
-}[] = [
-  {
-    id: "wedding",
-    label: { hu: "Esküvő", en: "Wedding" },
-    // Titles are kept verbatim-identical to the matching WEDDING_TIMELINE items
-    // in shared/planning_timeline.ts, so the wand and the "Build my timeline"
-    // generator de-dupe against each other on apply. deadline_days mirrors each
-    // item's lead time (months × ~30).
-    items: [
-      { title: { hu: "Helyszínt foglalni", en: "Book your venue" }, deadline_days: -365 },
-      {
-        title: { hu: "Anyakönyvvezetőt egyeztetni", en: "Confirm registrar" },
-        deadline_days: -330,
-      },
-      {
-        title: { hu: "Fotós és videós lefoglalása", en: "Book photo and video" },
-        deadline_days: -300,
-      },
-      { title: { hu: "Catering lefoglalása", en: "Book catering" }, deadline_days: -300 },
-      {
-        title: { hu: "Menyasszonyi ruha keresése", en: "Start dress shopping" },
-        deadline_days: -330,
-      },
-      { title: { hu: "Zenekar vagy DJ lefoglalása", en: "Book music or DJ" }, deadline_days: -240 },
-      { title: { hu: "Virágkötő lefoglalása", en: "Book florist" }, deadline_days: -240 },
-      {
-        title: { hu: "Menyasszonyi ruha megrendelése", en: "Order your dress" },
-        deadline_days: -240,
-      },
-      {
-        title: { hu: "Esküvői torta megrendelése", en: "Order wedding cake" },
-        deadline_days: -180,
-      },
-      { title: { hu: "Karikagyűrűk beszerzése", en: "Buy rings" }, deadline_days: -150 },
-      { title: { hu: "Meghívók kiküldése", en: "Send invitations" }, deadline_days: -120 },
-      { title: { hu: "Tanúk felkérése", en: "Ask the witnesses" }, deadline_days: -120 },
-      { title: { hu: "Végleges létszám leadása", en: "Finalize guest count" }, deadline_days: -30 },
-      {
-        title: { hu: "Házassági papírok rendezése", en: "Sort the marriage paperwork" },
-        deadline_days: -30,
-      },
-      {
-        title: { hu: "Esküvői próba egyeztetése", en: "Schedule wedding rehearsal" },
-        deadline_days: -7,
-      },
-    ],
-  },
-  {
-    id: "honeymoon",
-    label: { hu: "Nászút", en: "Honeymoon" },
-    items: [
-      {
-        title: { hu: "Útlevél lejáratot ellenőrizni", en: "Check passport validity" },
-        deadline_days: -180,
-      },
-      {
-        title: { hu: "Vízum/ESTA igényt megnézni", en: "Check visa / ESTA requirements" },
-        deadline_days: -150,
-      },
-      { title: { hu: "Repjegyet lefoglalni", en: "Book flights" }, deadline_days: -150 },
-      { title: { hu: "Szállást lefoglalni", en: "Book accommodation" }, deadline_days: -120 },
-      {
-        title: { hu: "Utasbiztosítást kötni", en: "Take out travel insurance" },
-        deadline_days: -90,
-      },
-      {
-        title: { hu: "Bankot értesíteni az utazásról", en: "Notify the bank about travel" },
-        deadline_days: -30,
-      },
-      {
-        title: {
-          hu: "Devizát váltani / kártyát ellenőrizni",
-          en: "Exchange currency / check cards",
-        },
-        deadline_days: -14,
-      },
-      {
-        title: { hu: "Reptéri transzfert szervezni", en: "Arrange airport transfer" },
-        deadline_days: -30,
-      },
-      {
-        title: { hu: "Programot tervezni a helyszínen", en: "Plan activities at destination" },
-        deadline_days: -60,
-      },
-      { title: { hu: "Csomagolási lista", en: "Pack list" }, deadline_days: -3 },
-    ],
-  },
-];
-
-/** Backwards-compatible flat task list, the wand modal still indexes its
- *  selection state into this array, so the index order must stay stable
- *  (wedding first, then honeymoon). New items get appended to the end of
- *  their group to keep prior indices pointing to the same task. */
-export const TASK_TEMPLATE: { title: LocaleText; deadline_days: number }[] =
-  TASK_TEMPLATE_GROUPS.flatMap((g) => g.items);
-
-/** Reserve honeymoon trip-prep tasks. NOT part of the base pack above, these
- *  are the backfill the honeymoon wand pulls from: for every base item a couple
- *  has already added (shown as "already on the list"), one fresh suggestion from
- *  here is appended to the bottom of the dialog so the pack always offers a full
- *  set of things still worth doing. Same HU + EN inline pattern as the groups.
- *  All real, broadly useful pre-departure tasks (no filler). */
-export const HONEYMOON_EXTRA_TASKS: { title: LocaleText }[] = [
-  { title: { hu: "Roaming vagy eSIM beállítása", en: "Set up roaming or an eSIM" } },
-  {
-    title: {
-      hu: "Oltások és utazási egészségügy ellenőrzése",
-      en: "Check vaccinations and travel health",
-    },
-  },
-  {
-    title: { hu: "Online check-in emlékeztető beállítása", en: "Set an online check-in reminder" },
-  },
-  {
-    title: {
-      hu: "Útiterv és foglalások mentése offline",
-      en: "Save the itinerary and bookings offline",
-    },
-  },
-  {
-    title: {
-      hu: "Fontos dokumentumok másolata (felhő + papír)",
-      en: "Copies of key documents (cloud + paper)",
-    },
-  },
-  {
-    title: {
-      hu: "Vészhelyzeti elérhetőségek és nagykövetség elmentése",
-      en: "Save emergency contacts and the embassy",
-    },
-  },
-  {
-    title: {
-      hu: "Hálózati adapter és töltő a célországhoz",
-      en: "Power adapter and charger for the destination",
-    },
-  },
-  { title: { hu: "Alap útipatika összeállítása", en: "Pack a basic travel first-aid kit" } },
-  {
-    title: {
-      hu: "Otthoni teendők: növények, posta, kulcs",
-      en: "Home prep: plants, mail, spare key",
-    },
-  },
-  { title: { hu: "Reptéri parkolás vagy transzfer foglalása", en: "Book airport parking" } },
-  {
-    title: {
-      hu: "Nemzetközi vezetői engedélyt igényelni",
-      en: "Apply for an international driving permit",
-    },
-  },
-  {
-    title: {
-      hu: "Pénznem és időeltolódás megnézése",
-      en: "Check the currency and time difference",
-    },
-  },
-];
 
 /** Light starter set of "what to consider adding" ideas, the obvious-but-
  *  easy-to-forget options. The Wand button drops these in as starting points
