@@ -1163,6 +1163,187 @@ describe("booking messages — couple ↔ vendor thread", () => {
   );
 });
 
+// A two-way conversation is what hands the couple the vendor's phone number.
+// The standing rule is that the catalogue carries NO contact values and the
+// number costs a reveal tap against a per-user quota; this is the one exception,
+// and the thing worth pinning is its edge, not its happy path. An inquiry alone
+// must NOT open it (or the inquiry form becomes a number dispenser), the vendor's
+// reply is the consent that does, and a couple with no thread of their own must
+// see nothing whatever another couple's conversation looks like.
+//
+// Pairs with backend/src/domain/vendor_correspondence.ts.
+describe("a phone number is earned by conversation", () => {
+  const PHONE = "+36 30 111 2233";
+
+  /** Publish a number on the listing. Written to BOTH tables on purpose: a
+   *  claimed community entry resolves through `community_suppliers` for the
+   *  thread and through the `listings` overlay for the catalogue, and a test
+   *  that seeded only one would pass or fail for the wrong reason. */
+  function publishPhone(listingId: string): void {
+    db.prepare("UPDATE listings SET contact_phone = ? WHERE id = ?").run(PHONE, listingId);
+    db.prepare("UPDATE community_suppliers SET contact_phone = ? WHERE id = ?").run(
+      PHONE,
+      Number(listingId.slice(1)),
+    );
+  }
+
+  async function coupleThread(token: string, bookingId: number): Promise<BookingThread> {
+    const r = await req<{ thread: BookingThread }>(
+      "GET",
+      `/api/messages/threads/${bookingId}`,
+      undefined,
+      { token },
+    );
+    expect(r.status).toBe(200);
+    return r.data.thread;
+  }
+
+  /** The catalogue row for one listing, as this couple receives it. */
+  async function cardFor(
+    token: string,
+    listingId: string,
+  ): Promise<{ contact_phone: string | null; has_contact_phone: boolean }> {
+    const r = await req<{
+      suppliers: { id: string; contact_phone: string | null; has_contact_phone: boolean }[];
+    }>("GET", "/api/suppliers", undefined, { token });
+    expect(r.status).toBe(200);
+    const card = r.data.suppliers.find((s) => s.id === listingId);
+    expect(card).toBeTruthy();
+    return card as { contact_phone: string | null; has_contact_phone: boolean };
+  }
+
+  test(
+    "an unanswered inquiry earns nothing, the vendor's reply earns the number",
+    async () => {
+      wipeAll();
+      const { vendorToken, coupleToken, bookingId, listingId } = await bootstrapThread("earned");
+      publishPhone(listingId);
+
+      // The couple has written (the inquiry IS their first message) and the
+      // vendor has not answered. One-sided is not a relationship.
+      const before = await coupleThread(coupleToken, bookingId);
+      expect(before.messages.some((m) => m.sender_kind === "couple")).toBe(true);
+      expect(before.counterparty_phone).toBeNull();
+
+      // ...and the card says a number exists without saying what it is, which
+      // is the un-earned state the reveal button is drawn from.
+      const cardBefore = await cardFor(coupleToken, listingId);
+      expect(cardBefore.has_contact_phone).toBe(true);
+      expect(cardBefore.contact_phone).toBeNull();
+
+      const reply = await req(
+        "POST",
+        `/api/vendor/clients/${bookingId}/messages`,
+        { body: "Yes, September 12 is free." },
+        { token: vendorToken },
+      );
+      expect(reply.status).toBe(201);
+
+      const after = await coupleThread(coupleToken, bookingId);
+      expect(after.counterparty_phone).toBe(PHONE);
+
+      const cardAfter = await cardFor(coupleToken, listingId);
+      expect(cardAfter.contact_phone).toBe(PHONE);
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  test(
+    "the number is scoped to the couple who earned it, and never faces the vendor",
+    async () => {
+      wipeAll();
+      const { vendorToken, coupleToken, bookingId, listingId } = await bootstrapThread("scoped");
+      publishPhone(listingId);
+      expect(
+        (
+          await req(
+            "POST",
+            `/api/vendor/clients/${bookingId}/messages`,
+            { body: "Happy to help." },
+            { token: vendorToken },
+          )
+        ).status,
+      ).toBe(201);
+      expect((await coupleThread(coupleToken, bookingId)).counterparty_phone).toBe(PHONE);
+
+      // A bystander couple has no thread with this vendor and is owed nothing,
+      // however chatty somebody else's conversation is.
+      const bystander = await bootstrapCouple("bystander-scoped@weddly.test");
+      const theirCard = await cardFor(bystander.token, listingId);
+      expect(theirCard.has_contact_phone).toBe(true);
+      expect(theirCard.contact_phone).toBeNull();
+
+      // The vendor's own read of the same thread: their counterparty is a
+      // couple, not a listing, so there is no number to carry.
+      const mine = await req<{ thread: BookingThread }>(
+        "GET",
+        `/api/vendor/clients/${bookingId}/messages`,
+        undefined,
+        { token: vendorToken },
+      );
+      expect(mine.status).toBe(200);
+      expect(mine.data.thread.counterparty_phone).toBeNull();
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  test(
+    "a vendor who publishes no number hands over nothing to a live conversation",
+    async () => {
+      wipeAll();
+      const { vendorToken, coupleToken, bookingId, listingId } = await bootstrapThread("nonumber");
+      expect(
+        (
+          await req(
+            "POST",
+            `/api/vendor/clients/${bookingId}/messages`,
+            { body: "Sounds good." },
+            { token: vendorToken },
+          )
+        ).status,
+      ).toBe(201);
+
+      // Earned, but there is nothing to hand over. Null rather than an empty
+      // string: the UI draws its call affordance off non-null.
+      expect((await coupleThread(coupleToken, bookingId)).counterparty_phone).toBeNull();
+      const card = await cardFor(coupleToken, listingId);
+      expect(card.has_contact_phone).toBe(false);
+      expect(card.contact_phone).toBeNull();
+    },
+    TEST_TIMEOUT_MS,
+  );
+
+  test(
+    "an anonymous browse carries no numbers even for a vendor mid-conversation",
+    async () => {
+      wipeAll();
+      const { vendorToken, bookingId, listingId } = await bootstrapThread("anon");
+      publishPhone(listingId);
+      expect(
+        (
+          await req(
+            "POST",
+            `/api/vendor/clients/${bookingId}/messages`,
+            { body: "We are free that day." },
+            { token: vendorToken },
+          )
+        ).status,
+      ).toBe(201);
+
+      const pub = await req<{
+        categories: { suppliers: { id: string; contact_phone: string | null }[] }[];
+      }>("GET", "/api/public/vendor-showcase");
+      expect(pub.status).toBe(200);
+      for (const cat of pub.data.categories ?? []) {
+        for (const s of cat.suppliers ?? []) {
+          expect(s.contact_phone ?? null).toBeNull();
+        }
+      }
+    },
+    TEST_TIMEOUT_MS,
+  );
+});
+
 // The inquiry mail is the vendor's first contact with a lead, and until now it
 // told every recipient to "reply there" while replying on the thread is PRO.
 // A FREE vendor following that instruction lands on a paywall, so the closing

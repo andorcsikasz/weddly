@@ -2566,6 +2566,7 @@ export default function SuppliersPage() {
                               supplierId={s.id}
                               onCall={() => trackSupplierClick(s.id, "phone_click")}
                               iconOnly
+                              known={s.contact_phone || s.contact_phone_alt || null}
                             />
                           )}
                           <button
@@ -3441,21 +3442,33 @@ function ReportButton({ onReport, t }: { onReport: () => void; t: (key: string) 
  *
  *  A failed fetch (offline, or the per-user quota spent) leaves the button in
  *  its unrevealed state with an error tooltip rather than pretending to have a
- *  number: a dead `tel:` link is worse than a button that says try again. */
+ *  number: a dead `tel:` link is worse than a button that says try again.
+ *
+ *  `known` is the way OUT of the two-step: the catalogue does carry the number
+ *  for a vendor this couple has corresponded with (both sides wrote), and making
+ *  someone press "show number" for a vendor they have been mailing for a week is
+ *  a lock on an open door. Given one, this renders the dial link straight away
+ *  and never calls the endpoint. */
 function PhoneReveal({
   supplierId,
   onCall,
   iconOnly,
+  known,
 }: {
   supplierId: string;
   onCall: () => void;
   /** List view's tight action cluster collapses the number even when revealed. */
   iconOnly?: boolean;
+  known?: string | null;
 }) {
   const { t } = useT();
-  const [phone, setPhone] = useState<string | null>(null);
+  const [fetched, setFetched] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Derived rather than seeded into state: the catalogue can land after this
+  // mounts, and an initial-value-only `useState(known)` would keep showing the
+  // button for a vendor whose number has since arrived.
+  const phone = known ?? fetched;
 
   async function reveal() {
     if (loading) return;
@@ -3464,7 +3477,7 @@ function PhoneReveal({
     try {
       const r = await supplierApi.contact(supplierId);
       const value = r.contact_phone || r.contact_phone_alt;
-      if (value) setPhone(value);
+      if (value) setFetched(value);
       else setFailed(true);
     } catch {
       setFailed(true);

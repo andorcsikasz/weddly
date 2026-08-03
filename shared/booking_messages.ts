@@ -70,6 +70,13 @@ export interface BookingThread {
    *  no longer resolves in the directory — see `linkableListingCategory`, which
    *  makes non-null double as "there is a card at /app/suppliers/<id> to open". */
   counterparty_category: string | null;
+  /** The vendor's published phone, on a COUPLE's read and only once BOTH sides
+   *  have written on this thread — see `bookingHasCorrespondence`. Null on a
+   *  vendor's read (their counterparty is a couple, not a listing), null while
+   *  the vendor has not answered, and null when the listing publishes no
+   *  number at all. Non-null is what the thread renders its call affordance
+   *  from, so it doubles as "this couple has earned the number". */
+  counterparty_phone: string | null;
   /** ISO 'YYYY-MM-DD', or "" when the couple had no date at inquiry time. */
   event_date: string;
   messages: BookingMessage[];

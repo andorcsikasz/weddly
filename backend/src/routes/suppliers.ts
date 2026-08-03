@@ -30,6 +30,7 @@ import {
 } from "../domain/community_suppliers";
 import { getCoupleForUser } from "../domain/couples";
 import { maskPhoneForAnonymous } from "../domain/phone_mask";
+import { correspondingListingIds } from "../domain/vendor_correspondence";
 import { curatedOverrideMap, isCuratedPubliclyVisible } from "../domain/curated_overrides";
 import { resolveSupplierBase } from "../domain/resolve_supplier";
 import { DIRECTORY } from "../domain/suppliers_data";
@@ -63,12 +64,23 @@ const VALID_CATEGORIES: ReadonlySet<SupplierCategory> = new Set(
   SUPPLIER_GROUPS.flatMap((g) => g.categories),
 );
 
+/** Shared "no listing qualifies" set, so an anonymous catalogue render costs no
+ *  allocation and no query. */
+const EMPTY_IDS: ReadonlySet<string> = new Set<string>();
+
 function withVotes(
   base: DirectorySupplierBase,
   scores: Map<string, number>,
   coupleVotes: Map<string, VoteValue> | null,
   completeIds: ReadonlySet<string>,
+  phoneEarnedIds: ReadonlySet<string>,
 ): DirectorySupplier {
+  // The exception to the nulling below, and the only one: a vendor this couple
+  // has actually corresponded with. See domain/vendor_correspondence.ts for why
+  // a two-way thread is consent. The set is the couple's own handful of
+  // conversations, so this can never turn back into "every number in one GET",
+  // which is the property the rule below is protecting.
+  const earned = phoneEarnedIds.has(base.id);
   return {
     ...base,
     // The catalogue arrives in ONE response, so a contact detail on this object
@@ -84,8 +96,8 @@ function withVotes(
     has_contact_email: Boolean(base.contact_email) && base.contact_email_flag == null,
     has_contact_phone: Boolean(base.contact_phone || base.contact_phone_alt),
     contact_email: null,
-    contact_phone: null,
-    contact_phone_alt: null,
+    contact_phone: earned ? base.contact_phone : null,
+    contact_phone_alt: earned ? (base.contact_phone_alt ?? null) : null,
     votes_score: scores.get(base.id) ?? 0,
     user_vote: (coupleVotes?.get(base.id) ?? 0) as -1 | 0 | 1,
     listing_complete: completeIds.has(base.id),
@@ -266,8 +278,13 @@ async function handleList(ctx: Ctx): Promise<Response> {
     allBase.filter((b) => b.vendor_account_id !== null).map((b) => b.id),
   );
 
+  // The vendors this couple is already talking to, whose numbers therefore ride
+  // along on the card instead of costing a reveal tap and a quota slot. One
+  // query, and none at all for an anonymous browser or a workspace-less user.
+  const phoneEarnedIds = couple ? correspondingListingIds(couple.id) : EMPTY_IDS;
+
   return json({
-    suppliers: allBase.map((b) => withVotes(b, scores, coupleVotes, completeIds)),
+    suppliers: allBase.map((b) => withVotes(b, scores, coupleVotes, completeIds, phoneEarnedIds)),
     countries,
   });
 }
@@ -771,7 +788,9 @@ async function handlePublicDirectory(ctx: Ctx): Promise<Response> {
   const completeIds = completeListingIds(
     base.filter((b) => b.vendor_account_id !== null).map((b) => b.id),
   );
-  const cards = base.map((b) => withVotes(b, scores, null, completeIds));
+  // Public browse: no session, so no correspondence and no numbers. The phone a
+  // visitor may see here is the masked teaser on the detail page, nothing else.
+  const cards = base.map((b) => withVotes(b, scores, null, completeIds, EMPTY_IDS));
 
   // Free-text match over the fields a visitor would type: the business name and
   // the town. Folded so "Fotó" finds "foto" and vice versa.

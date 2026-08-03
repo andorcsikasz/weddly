@@ -228,6 +228,10 @@ export function buildThread(args: {
   /** Only the COUPLE's read has one — a vendor's counterparty is a couple, and
    *  a couple's is a directory card. Left out means "no card to open". */
   counterpartyCategory?: string | null;
+  /** Likewise couple-only, and already gated by the caller: this builder does
+   *  not re-derive the earned-phone verdict, it renders the one it is handed.
+   *  Left out means "no number to show", which is also a vendor's read. */
+  counterpartyPhone?: string | null;
 }): BookingThread {
   markDelivered(args.booking.id, args.readerKind);
   return {
@@ -235,6 +239,7 @@ export function buildThread(args: {
     counterparty_name: args.counterpartyName,
     supplier_id: args.booking.supplier_id,
     counterparty_category: args.counterpartyCategory ?? null,
+    counterparty_phone: args.counterpartyPhone ?? null,
     event_date: args.booking.event_date,
     messages: listMessages(args.booking.id),
   };

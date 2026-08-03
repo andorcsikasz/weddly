@@ -229,7 +229,17 @@ export default function TimelinePage() {
       .filter((p) => !isSentinelPick(p.supplier_id))
       .map((p) => {
         const resolved = supplierById.get(p.supplier_id);
-        return { pick: p, supplier: resolved ?? null };
+        if (!resolved) return { pick: p, supplier: null };
+        // The number comes off the PICK first. `/api/suppliers` carries no
+        // contact values except for vendors this couple has corresponded with,
+        // so reading it off the catalogue row alone left this whole panel — the
+        // one place a couple looks up a vendor on the day — with no phone at
+        // all. The picks payload resolves the number for the couple's own picks
+        // precisely so this row works, exactly as `KeyInfoCard` does it.
+        return {
+          pick: p,
+          supplier: { ...resolved, phone: p.contact_phone ?? resolved.phone ?? null },
+        };
       });
   }, [picks, supplierById]);
 

@@ -53,6 +53,7 @@ import {
 } from "../domain/booking_messages";
 import { notifyCoupleOfVendorMessage, notifyVendorOfCoupleMessage } from "../domain/booking_notify";
 import { linkableListingCategory } from "../domain/listings";
+import { earnedBookingPhone } from "../domain/vendor_correspondence";
 
 function parseId(raw: string | undefined, label: string): number {
   const n = Number(raw);
@@ -60,8 +61,10 @@ function parseId(raw: string | undefined, label: string): number {
   return n;
 }
 
-/** The couple's display name, for the vendor's side of the thread header. */
-function coupleDisplayName(coupleId: number): string {
+/** The couple's display name, for the vendor's side of the thread header.
+ *  Exported because the quote routes address the same two parties and a second
+ *  copy of "what do we call them" would drift. */
+export function coupleDisplayName(coupleId: number): string {
   const row = db.prepare("SELECT display_name FROM couples WHERE id = ?").get(coupleId) as
     | { display_name: string | null }
     | undefined;
@@ -69,7 +72,7 @@ function coupleDisplayName(coupleId: number): string {
 }
 
 /** The listing name, for the couple's side of the thread header. */
-function vendorDisplayName(supplierId: string): string {
+export function vendorDisplayName(supplierId: string): string {
   const row = db.prepare("SELECT name FROM listings WHERE id = ?").get(supplierId) as
     | { name: string }
     | undefined;
@@ -77,8 +80,14 @@ function vendorDisplayName(supplierId: string): string {
 }
 
 /** Resolve a booking the CALLING COUPLE owns. 404 on a foreign id, mirroring
- *  getOwnedBooking on the vendor side, so bookings can't be enumerated. */
-function getCoupleBooking(ctx: Ctx, bookingId: number): { booking: BookingRow; coupleId: number } {
+ *  getOwnedBooking on the vendor side, so bookings can't be enumerated.
+ *  Exported and single-sourced ON PURPOSE: the quote routes need the same
+ *  verdict, and two copies of an authorisation check is one copy that can be
+ *  quietly wrong. */
+export function getCoupleBooking(
+  ctx: Ctx,
+  bookingId: number,
+): { booking: BookingRow; coupleId: number } {
   const userId = requireAuth(ctx);
   const couple = getCoupleForUser(userId);
   if (!couple) {
@@ -319,6 +328,7 @@ async function handleCoupleGetThread(ctx: Ctx): Promise<Response> {
     readerKind: "couple",
     counterpartyName: vendorDisplayName(booking.supplier_id),
     counterpartyCategory: linkableListingCategory(booking.supplier_id),
+    counterpartyPhone: earnedBookingPhone(booking.id, booking.supplier_id),
   });
   return json({ thread, unread: unreadCount(bookingId, "couple") });
 }
