@@ -5,10 +5,10 @@
 //
 // Layout notes (2026-07-28 redesign):
 //  - The PICTURE leads. A wishlist is a shop window, so the card grid is the
-//    default view and the image is the biggest thing on a card. Items whose link
-//    yields no og:image (Booking, most webshops behind a bot wall) get drawn
-//    line art from `GiftArt` rather than a grey box with an icon in it, so a
-//    grid of six items never has holes in it.
+//    default view and the image is the biggest thing on a card. Where the link
+//    yields no og:image (Booking, most webshops behind a bot wall) the tile
+//    falls to the shop's own logo and then to an icon the couple picks, so a
+//    grid of six items never has holes in it — see `WishlistPicture`.
 //  - One action per surface. Clicking an item edits it, so the card carries no
 //    pencil; only reorder + delete live in the hover pill.
 //  - Chrome is quiet: section titles are eyebrow labels with a count, and the
@@ -51,7 +51,13 @@ import {
 import { minorUnitFactor } from "@shared/currency";
 import type { Couple, Guest, Household } from "@shared/types";
 import { CURRENCIES, type Currency } from "@shared/types";
-import type { UpsertWishlistItemInput, WishlistItem, WishlistKind } from "@shared/wishlist";
+import type {
+  UpsertWishlistItemInput,
+  WishlistIconSlug,
+  WishlistImageKind,
+  WishlistItem,
+  WishlistKind,
+} from "@shared/wishlist";
 import { WISHLIST_KINDS, WISHLIST_MAX_DESC_LEN, WISHLIST_MAX_TITLE_LEN } from "@shared/wishlist";
 import {
   ArrowDown,
@@ -74,8 +80,12 @@ import {
   X,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
-import { GiftArtTile } from "../components/GiftArt";
 import { InfoHint } from "../components/InfoHint";
+import {
+  defaultWishlistIcon,
+  WISHLIST_ICON_CHOICES,
+  WishlistPicture,
+} from "../components/WishlistPicture";
 import { SegmentedControl, Skeleton, SmartImage, useConfirm, useToast } from "../components/ui";
 import { ApiError } from "../lib/api";
 import { coupleApi, guestApi, householdApi, receivedGiftApi, wishlistApi } from "../lib/endpoints";
@@ -94,11 +104,12 @@ const ICON_STROKE = 1.5;
 /** The single corner radius. Named rather than repeated so it stays single. */
 const R = "rounded-lg";
 
-/** The hairline that gives a tile its edge. `GiftArtTile` paints its ground in
- *  paper-100 — which is EXACTLY the app shell's light background — so a drawn
- *  item had no boundary at all in light mode and the grid read as art floating
- *  on the page. A photo tile needs it too: a white product shot on cream loses
- *  its right edge the same way. Inset, so it doesn't grow the tile. */
+/** The hairline that gives a tile its edge. `WishlistPicture` paints its ground
+ *  in paper-100 — which is EXACTLY the app shell's light background — so an
+ *  icon tile would have no boundary at all in light mode and the grid would
+ *  read as glyphs floating on the page. A photo tile needs it too: a white
+ *  product shot on cream loses its right edge the same way. Inset, so it
+ *  doesn't grow the tile. */
 const EDGE = "ring-1 ring-inset ring-paper-300 dark:ring-umber-700";
 
 /** Minor units → the whole-unit number the couple typed (and we render via
@@ -139,8 +150,9 @@ function draftTitleFromPage(raw: string): string {
   return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trim();
 }
 
-/** An item's picture: the link's resolved og:image when we have one, otherwise
- *  the drawn motif. Fills its parent, which owns the frame + aspect ratio. */
+/** An item's picture: the product photo, the shop's logo, or the icon the
+ *  couple picked. Fills its parent, which owns the frame + aspect ratio.
+ *  See `components/WishlistPicture.tsx` for why it is those three. */
 function ItemPicture({
   item,
   zoom = false,
@@ -151,37 +163,7 @@ function ItemPicture({
   zoom?: boolean;
   dense?: boolean;
 }) {
-  // A picture that won't load falls back to the motif rather than the browser's
-  // broken-image glyph — a wall of grey squares reads as "the app is broken",
-  // and the motif is the same thing an item without a link gets. Keyed by the
-  // src that failed, so a new image after an edit is given its own chance.
-  const [failedSrc, setFailedSrc] = useState<string | null>(null);
-
-  if (item.image_url && item.image_url !== failedSrc) {
-    const src = item.image_url;
-    return (
-      <SmartImage
-        src={src}
-        alt=""
-        loading="lazy"
-        onError={() => setFailedSrc(src)}
-        wrapperClassName="h-full w-full"
-        className={`h-full w-full object-cover ${
-          zoom ? "transition-transform duration-700 group-hover:scale-[1.04]" : ""
-        }`}
-      />
-    );
-  }
-  return (
-    <GiftArtTile
-      seed={item.title}
-      kind={item.kind === "request" ? "request" : "gift"}
-      dense={dense}
-      className={`h-full w-full ${
-        zoom ? "transition-transform duration-700 group-hover:scale-[1.03]" : ""
-      }`}
-    />
-  );
+  return <WishlistPicture item={item} zoom={zoom} dense={dense} className="h-full w-full" />;
 }
 
 interface DrawerInit {
@@ -578,7 +560,7 @@ function WishlistRow({
  *  The title used to be set in the display serif, italic, to mark these as the
  *  sentimental half of the list. It went with the Uber pass: two type voices in
  *  one scroll is the thing that makes a page look assembled rather than
- *  designed, and the square crop plus the drawn motif already say "not a SKU"
+ *  designed, and the square crop plus the lone icon already say "not a SKU"
  *  without a second family doing it again. */
 function RequestTile({
   item,
@@ -598,11 +580,7 @@ function RequestTile({
         aria-label={t("common.edit")}
         className={`block aspect-square w-full overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 dark:focus-visible:ring-paper-100 dark:focus-visible:ring-offset-umber-900 ${R} ${EDGE}`}
       >
-        <GiftArtTile
-          seed={item.title}
-          kind="request"
-          className="h-full w-full transition-transform duration-700 group-hover:scale-[1.03]"
-        />
+        <WishlistPicture item={item} className="h-full w-full" />
       </button>
       <div className="mt-2.5 flex items-start gap-1.5">
         <button
@@ -1807,6 +1785,15 @@ function WishlistItemDialog({
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(
     existing?.image_url ?? null,
   );
+  // Photo vs the shop's logo — the preview tile frames them differently, and the
+  // answer rides back to the server on save so the card matches what the couple
+  // approved here.
+  const [previewImageKind, setPreviewImageKind] = useState<WishlistImageKind | null>(
+    existing?.image_kind ?? null,
+  );
+  // The couple's own mark for a wish we found no picture for. Null = the
+  // kind's default, which is what the tile draws until they pick.
+  const [icon, setIcon] = useState<WishlistIconSlug | null>(existing?.icon ?? null);
   const lastFetchedUrlRef = useRef<string>(existing?.image_url ? (existing.url ?? "") : "");
   const fetchGenRef = useRef(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1819,6 +1806,7 @@ function WishlistItemDialog({
     if (newUrl.trim() !== lastFetchedUrlRef.current) {
       setPreviewStatus("idle");
       setPreviewImageUrl(null);
+      setPreviewImageKind(null);
     }
     // Paste-and-go: a pasted product link resolves without the couple having to
     // leave the field. Debounced so typing a URL by hand doesn't fire per key.
@@ -1843,6 +1831,7 @@ function WishlistItemDialog({
     const gen = ++fetchGenRef.current;
     setPreviewStatus("loading");
     setPreviewImageUrl(null);
+    setPreviewImageKind(null);
     try {
       const r = await wishlistApi.linkPreview(trimmed);
       if (gen !== fetchGenRef.current) return;
@@ -1852,6 +1841,7 @@ function WishlistItemDialog({
       }
       if (r.image_url) {
         setPreviewImageUrl(r.image_url);
+        setPreviewImageKind(r.image_kind);
         setPreviewStatus("found");
       } else {
         setPreviewStatus("miss");
@@ -1890,6 +1880,7 @@ function WishlistItemDialog({
       target_amount_minor: targetMinor,
       currency: !isGift || itemCurrency === currency ? null : itemCurrency,
       url: isGift && url.trim() ? url.trim() : null,
+      icon,
     };
     // Hand back the picture the couple is looking at. The preview endpoint has
     // already re-hosted it under our own /uploads key, so this saves the exact
@@ -1899,6 +1890,7 @@ function WishlistItemDialog({
     // that failed the first time.
     if (isGift && previewStatus === "found" && previewImageUrl) {
       body.image_url = previewImageUrl;
+      body.image_kind = previewImageKind;
     }
 
     setSubmitting(true);
@@ -1924,13 +1916,20 @@ function WishlistItemDialog({
     }
   }
 
-  // What the item will look like on the guest page: the resolved photo, or the
-  // drawn motif this exact title will get. Showing it here is the honest answer
-  // to "why does my item have no picture" — it has one, we drew it.
-  // Deliberately NOT falling back to the field label: seeding the motif with
-  // the word "Title" drew an arbitrary object for an empty form, and a
-  // different one per locale. Blank seed -> GiftArt's neutral ornament.
-  const previewSeed = title.trim();
+  // Exactly what the item will look like on the guest page — the same
+  // component the card uses, fed the values currently in the form. That is what
+  // makes the icon strip below it a preview rather than a promise.
+  const previewSubject = {
+    title: title.trim(),
+    kind,
+    image_url: previewStatus === "found" ? previewImageUrl : null,
+    image_kind: previewImageKind,
+    icon,
+  };
+  // The strip only appears when there is no picture to override. A couple whose
+  // link resolved is not choosing an icon, and offering one would ask them to
+  // decide between their product photo and a glyph.
+  const showIconPicker = !(previewStatus === "found" && previewImageUrl);
 
   return (
     <div
@@ -1957,26 +1956,13 @@ function WishlistItemDialog({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-5">
-          {/* Picture + title, side by side: the tile updates live as the title
-              is typed (the motif is derived from it) or as a link resolves. */}
+          {/* Picture + title, side by side: the tile updates live as a link
+              resolves or as an icon is picked below. */}
           <div className="mb-4 flex items-start gap-3.5">
             <span
               className={`relative block h-20 w-20 shrink-0 overflow-hidden border border-paper-300 bg-paper-100 dark:border-umber-700 dark:bg-umber-850 ${R}`}
             >
-              {previewStatus === "found" && previewImageUrl ? (
-                <img
-                  src={previewImageUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  onError={() => setPreviewStatus("miss")}
-                />
-              ) : (
-                <GiftArtTile
-                  seed={previewSeed}
-                  kind={kind === "request" ? "request" : "gift"}
-                  className="h-full w-full"
-                />
-              )}
+              <WishlistPicture item={previewSubject} className="h-full w-full" />
               {previewStatus === "loading" && (
                 <span className="absolute inset-0 flex items-center justify-center bg-paper-50/70 dark:bg-umber-900/70">
                   <Loader2
@@ -2009,6 +1995,41 @@ function WishlistItemDialog({
               {titleError ? <p className="field-error">{titleError}</p> : null}
             </div>
           </div>
+
+          {/* Icon strip. Glyphs only, no labels and no heading beyond the
+              field-label: eighteen names would be a wall of text for a choice
+              the eye makes instantly, and every one is a concrete object whose
+              tooltip carries the word for anyone who needs it. Tapping the
+              active icon clears back to the kind's default, which is the only
+              way out of a choice made by accident. */}
+          {showIconPicker && (
+            <div className="mb-4">
+              <label className="field-label">{t("wishlist_editor.icon_label")}</label>
+              <div className="flex flex-wrap gap-1.5">
+                {WISHLIST_ICON_CHOICES.map(({ slug, Icon }) => {
+                  const active = (icon ?? defaultWishlistIcon(kind)) === slug;
+                  const name = t(`wishlist_editor.icon_choice.${slug}`);
+                  return (
+                    <button
+                      key={slug}
+                      type="button"
+                      onClick={() => setIcon(active ? null : slug)}
+                      aria-pressed={active}
+                      aria-label={name}
+                      title={name}
+                      className={`flex h-9 w-9 items-center justify-center border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 dark:focus-visible:ring-paper-100 ${R} ${
+                        active
+                          ? "border-ink-900 bg-ink-900 text-paper-50 dark:border-paper-100 dark:bg-paper-100 dark:text-umber-900"
+                          : "border-paper-300 bg-white text-ink-600 hover:border-ink-900 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-100"
+                      }`}
+                    >
+                      <Icon className="h-[18px] w-[18px]" strokeWidth={ICON_STROKE} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <FormRow label={t("wishlist_editor.kind_label")}>
             {/* Segmented control rather than a native <select> so each type

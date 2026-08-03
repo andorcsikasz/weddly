@@ -1229,6 +1229,7 @@ export interface LocaleMessages {
       action_record_contract: string;
       action_add_schedule: string;
       action_chase_payment: string;
+      action_release_or_extend: string;
       action_request_review: string;
       action_prepare: string;
       action_none: string;
@@ -1239,6 +1240,7 @@ export interface LocaleMessages {
       hint_record_contract: string;
       hint_add_schedule: string;
       hint_chase_payment: string;
+      hint_release_or_extend: string;
       hint_request_review: string;
       hint_prepare: string;
       hint_none: string;
@@ -1263,6 +1265,9 @@ export interface LocaleMessages {
       reason_unopened: string;
       /** Receives `{age}`. */
       reason_unanswered: string;
+      /** Receives `{count}` — whole HOURS left on a live date hold, not
+       *  elapsed. Forward-anchored like `reason_date_soon`. */
+      reason_hold_expiring: string;
       /** Receives `{age}`. */
       reason_payment_overdue: string;
       /** Receives `{count}` — days UNTIL the wedding, not elapsed. */
@@ -1344,6 +1349,48 @@ export interface LocaleMessages {
       locked_title: string;
       locked_body: string;
     };
+    /** Live date hold: the vendor's temporary reservation of ONE date for ONE
+     *  inquiry, on the client detail. State is derived from `hold_until`
+     *  (`shared/date_holds.ts`), so every string here describes a fact, never a
+     *  stored status. */
+    holds: {
+      title: string;
+      /** One line explaining what a hold does, above the control. */
+      intro: string;
+      /** Nothing held yet. */
+      empty: string;
+      /** Receives `{date}` - the day this inquiry is about. */
+      for_date: string;
+      /** Receives `{remaining}`, e.g. "2 days". */
+      state_live: string;
+      /** Receives `{date}` - when it lapsed / was let go. */
+      state_expired: string;
+      state_released: string;
+      /** Length picker above the CTA. */
+      duration_label: string;
+      /** Receives `{count}` - option labels in the length picker. */
+      duration_hours: string;
+      duration_days: string;
+      /** Primary CTA, and the same control once a hold exists. */
+      place: string;
+      extend: string;
+      release: string;
+      release_confirm_title: string;
+      release_confirm_body: string;
+      placed: string;
+      extended: string;
+      released: string;
+      failed: string;
+      /** 400 hold_no_date: the inquiry has no scalar date to hold. */
+      no_date: string;
+      /** 400 hold_date_past. */
+      date_past: string;
+      /** 409 hold_booking_closed: the vendor archived this lead. */
+      booking_closed: string;
+      /** Upgrade card shown in place of the control on FREE. */
+      locked_title: string;
+      locked_body: string;
+    };
     stats: {
       page_title: string;
       page_body: string;
@@ -1371,7 +1418,7 @@ export interface LocaleMessages {
       conversion_confirmed: string;
       conversion_rate: string;
     };
-    /** Revenue Pulse — the forward-looking money surface (PRO only, gated on
+    /** Revenue Pulse: the forward-looking money surface (PRO only, gated on
      *  the existing `payment_tracking` feature). Rendered twice: a compact bar
      *  at the top of the clients list and the full breakdown on the stats page.
      *  See `shared/vendor_revenue.ts` for what each figure means. */
@@ -1388,10 +1435,10 @@ export interface LocaleMessages {
       weighted: string;
       weighted_help: string;
       estimate: string;
-      /** Receives `{n}` — open leads left out of the pipeline for want of a
+      /** Receives `{n}`, open leads left out of the pipeline for want of a
        *  recorded value. The count is what keeps the figure honest. */
       unpriced_note: string;
-      /** Receives `{n}` — confirmed bookings with no recorded contract value. */
+      /** Receives `{n}`, confirmed bookings with no recorded contract value. */
       booked_unpriced_note: string;
       upcoming_title: string;
       /** The three cash-flow horizons. NESTED: 60 contains 30. */
@@ -1534,6 +1581,56 @@ export interface LocaleMessages {
       data_delete_confirm_title: string;
       data_delete_confirm_body: string;
       tab_schedule: string;
+      tab_automations: string;
+    };
+    /** Automatizmusok: the three things Weddly may do on the vendor's behalf,
+     *  at /vendor/settings/automations. Every switch is off by default and the
+     *  copy has to say what leaves the building and who reads it, because that
+     *  is the whole decision the vendor is making. */
+    automations: {
+      intro: string;
+      /** FREE banner: the writes are refused, the configuration is untouched. */
+      locked: string;
+      saved: string;
+      save_failed: string;
+      /** Accessible name for each row's switch. */
+      toggle_aria: string;
+      ack_title: string;
+      ack_body: string;
+      ack_template_label: string;
+      ack_template_none: string;
+      ack_no_templates: string;
+      ack_templates_link: string;
+      /** Server said the automation has no text yet. */
+      ack_needs_body: string;
+      ack_note: string;
+      reminder_title: string;
+      reminder_body: string;
+      reminder_delay_label: string;
+      /** "{min} to {max} hours." */
+      reminder_delay_hint: string;
+      review_title: string;
+      review_body: string;
+      proposals_title: string;
+      proposals_empty: string;
+      approve: string;
+      dismiss: string;
+      approved: string;
+      dismissed: string;
+      action_failed: string;
+      activity_title: string;
+      activity_empty: string;
+      status_sent: string;
+      status_proposed: string;
+      status_approved: string;
+      status_dismissed: string;
+      status_skipped: string;
+      /** Why a run was skipped, keyed off the server's short detail string. */
+      detail_opted_out: string;
+      detail_send_failed: string;
+      key_inquiry_ack: string;
+      key_unanswered_reminder: string;
+      key_review_request: string;
     };
     /** Munkarend: the recurring weekly working hours + dated exceptions, at
      *  /vendor/settings/schedule. Icon-first by design (the +, copy and remove
@@ -1690,6 +1787,13 @@ export interface LocaleMessages {
      *  `{from}` + `{to}`. */
     legend_buffer: string;
     buffer_label: string;
+    /** A live date hold. `hold_label` receives `{name}` (the couple) and
+     *  `{remaining}`, which is built from the two below. */
+    legend_hold: string;
+    hold_label: string;
+    /** Receives `{count}`. */
+    hold_remaining_hours: string;
+    hold_remaining_days: string;
     /** Short label on a blocked day's calendar pill. */
     blocked_pill_label: string;
     /** Receives `{date}` - the day a click would block. */
@@ -4378,6 +4482,31 @@ export interface LocaleMessages {
     url_hint: string;
     url_preview_loading: string;
     url_preview_miss: string;
+    /** Label over the icon strip, shown only while the wish has no picture. */
+    icon_label: string;
+    /** One plain noun per icon, carried as the tooltip + accessible name of a
+     *  button whose face is the glyph alone. Keyed by the slug in
+     *  WISHLIST_ICON_SLUGS. */
+    icon_choice: {
+      Gift: string;
+      House: string;
+      UtensilsCrossed: string;
+      CookingPot: string;
+      Coffee: string;
+      Wine: string;
+      BedDouble: string;
+      Armchair: string;
+      Flower2: string;
+      Smartphone: string;
+      Laptop: string;
+      Camera: string;
+      Plane: string;
+      TreePalm: string;
+      Ticket: string;
+      Music: string;
+      Heart: string;
+      Mail: string;
+    };
     delete_confirm_title: string;
     delete_confirm_body: string;
     saved_toast: string;

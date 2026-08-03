@@ -141,9 +141,123 @@ function metaContent(html: string, keys: string[]): string | null {
   return null;
 }
 
+// ─── Site logo ───────────────────────────────────────────────────────────────
+//
+// A product page with no og:image used to leave the wish with no picture at
+// all. That is most of them: Booking, the big marketplaces and anything behind
+// a bot wall answer 403 to any crawler, and plenty of Hungarian webshops simply
+// ship none. The shop's OWN mark is the next best true thing we can show — a
+// wish that says IKEA under an IKEA logo is read at a glance, and it is a fact
+// about the link rather than a decoration we invented.
+//
+// Candidates in descending quality. `apple-touch-icon` is the useful one: the
+// convention is a 152–180 px square, which is a real picture at card size,
+// where `favicon.ico` is 16 px of mush (and does not sniff as jpg/png/webp, so
+// `fetchRemoteImage` would refuse it anyway).
+
+/** `<link rel="apple-touch-icon" sizes="180x180" href=…>` and friends, largest
+ *  declared size first. `sizes` is advisory and often absent — a missing one
+ *  sorts last rather than out, since plenty of sites declare a good icon with
+ *  no size at all. */
+function extractTouchIcons(html: string): Array<{ href: string; size: number }> {
+  const out: Array<{ href: string; size: number }> = [];
+  for (const tag of html.match(/<link\b[^>]*>/gi) ?? []) {
+    const rel = tag.match(/\brel\s*=\s*["']([^"']+)["']/i)?.[1]?.toLowerCase() ?? "";
+    if (!/(^|\s)(apple-touch-icon|apple-touch-icon-precomposed|icon|shortcut icon)(\s|$)/.test(rel))
+      continue;
+    const href = tag.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1]?.trim();
+    if (!href) continue;
+    // .ico and .svg never survive the downloader's magic-byte check, so
+    // spending a request on them is pure latency.
+    if (/\.(ico|svg)(?:[?#]|$)/i.test(href)) continue;
+    const sizeAttr = tag.match(/\bsizes\s*=\s*["'](\d+)x\d+["']/i)?.[1];
+    const declared = sizeAttr ? Number(sizeAttr) : 0;
+    // An apple-touch-icon with no declared size still beats a plain `icon`,
+    // which is usually the 32 px favicon.
+    const rank = declared || (rel.includes("apple") ? 120 : 1);
+    out.push({ href, size: rank });
+  }
+  return out.sort((a, b) => b.size - a.size);
+}
+
+/** `og:logo` / JSON-LD `Organization.logo` — declared by fewer sites than the
+ *  touch icon, but when present it is the brand's real mark at real size. */
+function extractDeclaredLogo(html: string): string | null {
+  const meta = metaContent(html, ["og:logo", "logo"]);
+  if (meta) return meta;
+  const re = /<script\b[^>]*\btype\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    let ld: unknown;
+    try {
+      ld = JSON.parse(m[1] ?? "");
+    } catch {
+      continue;
+    }
+    const nodes: unknown[] =
+      ld !== null &&
+      typeof ld === "object" &&
+      Array.isArray((ld as Record<string, unknown>)["@graph"])
+        ? ((ld as Record<string, unknown>)["@graph"] as unknown[])
+        : [ld];
+    for (const node of nodes) {
+      if (!node || typeof node !== "object") continue;
+      const logo = (node as Record<string, unknown>).logo;
+      if (typeof logo === "string" && logo) return logo;
+      if (logo && typeof logo === "object" && !Array.isArray(logo)) {
+        const u = (logo as Record<string, unknown>).url;
+        if (typeof u === "string" && u) return u;
+      }
+    }
+  }
+  return null;
+}
+
+/** Ordered logo candidates for a page, absolute and http(s) only. The caller
+ *  downloads them in order and keeps the first that survives; nothing here
+ *  touches the network. Exported for unit tests. */
+export function extractSiteLogos(html: string, baseUrl: string): string[] {
+  const raw = [extractDeclaredLogo(html), ...extractTouchIcons(html).map((i) => i.href)];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const candidate of raw) {
+    if (!candidate || candidate.startsWith("data:")) continue;
+    let resolved: URL;
+    try {
+      resolved = new URL(decodeEntities(candidate), baseUrl);
+    } catch {
+      continue;
+    }
+    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") continue;
+    const url = resolved.toString();
+    if (seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  // The unversioned convention, tried last: a site that declares nothing in its
+  // head very often still serves this. One speculative request, and only for a
+  // page that gave us no image and no icon at all.
+  try {
+    const guess = new URL("/apple-touch-icon.png", baseUrl).toString();
+    if (!seen.has(guess)) out.push(guess);
+  } catch {
+    /* unparseable base — the declared candidates stand on their own */
+  }
+  return out;
+}
+
+/** What the unfurler knows about a page. The wire shape plus the logo ladder,
+ *  which stays server-side: the client is handed one resolved picture, not a
+ *  list of URLs to try in the browser (the CSP would block every one of them). */
+export interface LinkPreviewResult extends WishlistLinkPreview {
+  /** Ordered logo candidates, best first. Only consulted when the product's
+   *  own photo is missing or fails to download. */
+  logo_urls: string[];
+}
+
 /** Extract the preview image + title from page HTML, resolving a relative
  *  image against `baseUrl`. Pure — no network. Exported for unit tests. */
-export function extractLinkPreview(html: string, baseUrl: string): WishlistLinkPreview {
+export function extractLinkPreview(html: string, baseUrl: string): LinkPreviewResult {
   const rawImage =
     metaContent(html, ["og:image", "og:image:url", "og:image:secure_url"]) ??
     metaContent(html, ["twitter:image", "twitter:image:src"]) ??
@@ -166,14 +280,26 @@ export function extractLinkPreview(html: string, baseUrl: string): WishlistLinkP
     (html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.trim() || null);
   if (title) title = decodeEntities(title).slice(0, 200);
 
-  return { image_url, title };
+  return {
+    image_url,
+    // The parser can only say WHAT it found, never whether the bytes will
+    // download — the caller demotes to a logo when the photo fails.
+    image_kind: image_url ? "photo" : null,
+    title,
+    logo_urls: extractSiteLogos(html, baseUrl),
+  };
 }
 
 /** Fetch a couple-supplied product URL and return its preview metadata. Never
  *  throws for the caller: any failure (blocked host, timeout, non-OK, parse
- *  miss) resolves to `{ image_url: null, title: null }`. */
-export async function fetchLinkPreview(rawUrl: string): Promise<WishlistLinkPreview> {
-  const empty: WishlistLinkPreview = { image_url: null, title: null };
+ *  miss) resolves to an empty result. */
+export async function fetchLinkPreview(rawUrl: string): Promise<LinkPreviewResult> {
+  const empty: LinkPreviewResult = {
+    image_url: null,
+    image_kind: null,
+    title: null,
+    logo_urls: [],
+  };
   let current: string;
   try {
     current = (await assertSafeUrl(rawUrl)).toString();

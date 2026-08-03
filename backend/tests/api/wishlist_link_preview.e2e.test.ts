@@ -10,7 +10,7 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { bootstrapCouple, req, wipeAll } from "../helpers";
 import type { WishlistLinkPreview } from "@shared/wishlist";
-import { extractLinkPreview } from "../../src/lib/link_preview";
+import { extractLinkPreview, extractSiteLogos } from "../../src/lib/link_preview";
 
 describe("extractLinkPreview — og:image / title parser", () => {
   test("pulls og:image + og:title (attribute order independent)", () => {
@@ -47,6 +47,59 @@ describe("extractLinkPreview — og:image / title parser", () => {
     const r = extractLinkPreview("<head></head><body>nothing</body>", "https://shop.test/");
     expect(r.image_url).toBeNull();
     expect(r.title).toBeNull();
+  });
+
+  test("an og:image is a photo; nothing found is no kind at all", () => {
+    const withImage = extractLinkPreview(
+      `<head><meta property="og:image" content="https://cdn.test/p.jpg"></head>`,
+      "https://shop.test/",
+    );
+    expect(withImage.image_kind).toBe("photo");
+    expect(extractLinkPreview("<head></head>", "https://shop.test/").image_kind).toBeNull();
+  });
+});
+
+// Most product pages publish no og:image at all — Booking, the marketplaces and
+// anything behind a bot wall answer 403 to any crawler. The shop's own mark is
+// the next true thing we can put on the card, and it beats the drawn ornament
+// that used to fill the hole.
+describe("extractSiteLogos — the fallback when a page has no photo", () => {
+  test("prefers the largest declared apple-touch-icon", () => {
+    const html = `<head>
+      <link rel="apple-touch-icon" sizes="76x76" href="/touch-76.png">
+      <link rel="apple-touch-icon" sizes="180x180" href="/touch-180.png">
+      <link rel="icon" sizes="32x32" href="/favicon-32.png">
+    </head>`;
+    const logos = extractSiteLogos(html, "https://www.ikea.com/hu/p/jostein/");
+    expect(logos[0]).toBe("https://www.ikea.com/touch-180.png");
+    expect(logos[1]).toBe("https://www.ikea.com/touch-76.png");
+    // The plain 32px favicon sorts under both touch icons.
+    expect(logos.indexOf("https://www.ikea.com/favicon-32.png")).toBeGreaterThan(1);
+  });
+
+  test("an explicitly declared brand logo outranks the icons", () => {
+    const html = `<head>
+      <link rel="apple-touch-icon" sizes="180x180" href="/touch.png">
+      <script type="application/ld+json">{"@type":"Organization","logo":{"url":"https://cdn.test/logo.png"}}</script>
+    </head>`;
+    expect(extractSiteLogos(html, "https://shop.test/p/1")[0]).toBe("https://cdn.test/logo.png");
+  });
+
+  test("skips .ico and .svg, which the downloader's magic-byte check refuses anyway", () => {
+    const html = `<head>
+      <link rel="icon" href="/favicon.ico">
+      <link rel="icon" href="/logo.svg">
+    </head>`;
+    const logos = extractSiteLogos(html, "https://shop.test/");
+    expect(logos.some((u) => u.endsWith(".ico") || u.endsWith(".svg"))).toBe(false);
+  });
+
+  test("falls back to the unversioned convention when the head declares nothing", () => {
+    // One speculative request, and only for a page that gave us neither a photo
+    // nor an icon. Plenty of sites serve it without ever naming it.
+    expect(extractSiteLogos("<head></head>", "https://shop.test/p/1")).toEqual([
+      "https://shop.test/apple-touch-icon.png",
+    ]);
   });
 });
 

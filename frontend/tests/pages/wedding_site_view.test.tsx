@@ -134,6 +134,8 @@ describe("WeddingSiteView — live mode", () => {
           currency: null,
           url: null,
           image_url: null,
+          image_kind: null,
+          icon: null,
           interest_count: 0,
           pledged_amount_minor: 0,
           viewer_has_interest: false,

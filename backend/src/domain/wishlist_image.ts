@@ -22,9 +22,10 @@
 //  - An input that is already ours (`/uploads/...`) passes straight through, so
 //    a save that carries an unchanged image costs no fetch.
 
+import type { WishlistImageKind } from "@shared/wishlist";
 import { createHash } from "node:crypto";
 import { now } from "../db";
-import { fetchLinkPreview } from "../lib/link_preview";
+import { fetchLinkPreview, type LinkPreviewResult } from "../lib/link_preview";
 import { log } from "../lib/logger";
 import { fetchRemoteImage } from "../lib/remote_image";
 import { keyFromUploadUrl, storage } from "../lib/storage";
@@ -83,14 +84,60 @@ export async function localizeWishlistImage(
   return `/uploads/${key}?v=${now()}`;
 }
 
-/** Resolve a product page's og:image and re-host it in one step. The single
- *  path both the routes and the boot backfill take from "the couple pasted a
- *  link" to "we have a thumbnail we can actually render". */
-export async function resolveWishlistImageFromLink(
+/** A picture for a wish, and what kind of picture it turned out to be. */
+export interface ResolvedWishlistPicture {
+  image_url: string | null;
+  image_kind: WishlistImageKind | null;
+}
+
+export const NO_PICTURE: ResolvedWishlistPicture = { image_url: null, image_kind: null };
+
+/** Mirror the first candidate that actually downloads, in order. The list is
+ *  short by construction (one photo, then a handful of icons), and every miss
+ *  is a fast failure inside `fetchRemoteImage`'s own timeout. */
+async function firstMirrored(
+  coupleId: number,
+  candidates: readonly (string | null | undefined)[],
+  opts: LocalizeOpts,
+): Promise<string | null> {
+  for (const candidate of candidates) {
+    const mirrored = await localizeWishlistImage(coupleId, candidate, opts);
+    if (mirrored) return mirrored;
+  }
+  return null;
+}
+
+/** Turn an already-unfurled page into a mirrored picture: the page's own
+ *  og:image first, and the SHOP'S LOGO when there isn't one.
+ *
+ *  The fallback is the point. A product page with no og:image left the wish
+ *  with no picture at all, and that is the majority of them — Booking, the
+ *  marketplaces and anything behind a bot wall answer 403 to any crawler, and
+ *  plenty of webshops ship none. The brand mark is a true fact about the link
+ *  (a wish under an IKEA logo is read at a glance) where a drawn ornament was
+ *  only ever us filling the hole.
+ *
+ *  Separate from the fetch so the link-preview endpoint, which needs the page's
+ *  title from the same unfurl, does not have to fetch it twice. */
+export async function resolveWishlistPicture(
+  coupleId: number,
+  preview: LinkPreviewResult,
+  opts: LocalizeOpts = {},
+): Promise<ResolvedWishlistPicture> {
+  const photo = await localizeWishlistImage(coupleId, preview.image_url, opts);
+  if (photo) return { image_url: photo, image_kind: "photo" };
+  // A declared og:image that would not download is the same as none: the tile
+  // has to show something, and the shop's own mark is the next true thing.
+  const logo = await firstMirrored(coupleId, preview.logo_urls, opts);
+  return logo ? { image_url: logo, image_kind: "logo" } : NO_PICTURE;
+}
+
+/** The single path both the routes and the boot backfill take from "the couple
+ *  pasted a link" to "we have a thumbnail we can actually render". */
+export async function resolveWishlistPictureFromLink(
   coupleId: number,
   pageUrl: string,
   opts: LocalizeOpts = {},
-): Promise<string | null> {
-  const preview = await fetchLinkPreview(pageUrl);
-  return localizeWishlistImage(coupleId, preview.image_url, opts);
+): Promise<ResolvedWishlistPicture> {
+  return resolveWishlistPicture(coupleId, await fetchLinkPreview(pageUrl), opts);
 }

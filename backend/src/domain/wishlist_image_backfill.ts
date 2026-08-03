@@ -28,7 +28,13 @@ import {
   listWishlistRowsNeedingImageBackfill,
   listWishlistRowsWithRemoteImage,
 } from "./wishlist";
-import { localizeWishlistImage, resolveWishlistImageFromLink } from "./wishlist_image";
+import {
+  localizeWishlistImage,
+  NO_PICTURE,
+  type ResolvedWishlistPicture,
+  resolveWishlistPictureFromLink,
+} from "./wishlist_image";
+import { normalizeImageKind } from "./wishlist";
 import { log } from "../lib/logger";
 
 // Generous ceiling — the wishlist feature is days old, so the real legacy set
@@ -41,15 +47,15 @@ const CONCURRENCY = 4;
 /** Resolve + re-host + persist the og:image for one legacy row. Never throws —
  *  a miss still stamps image_checked_at so the row drops out of the set. */
 async function backfillOne(coupleId: number, id: number, url: string): Promise<boolean> {
-  let imageUrl: string | null = null;
+  let picture: ResolvedWishlistPicture = NO_PICTURE;
   try {
-    imageUrl = await resolveWishlistImageFromLink(coupleId, url);
+    picture = await resolveWishlistPictureFromLink(coupleId, url);
   } catch {
     // Both halves are soft by contract; this catch is belt-and-braces.
-    imageUrl = null;
+    picture = NO_PICTURE;
   }
-  applyBackfilledImage(id, imageUrl);
-  return imageUrl !== null;
+  applyBackfilledImage(id, picture.image_url, picture.image_kind);
+  return picture.image_url !== null;
 }
 
 /** Sweep legacy wishlist rows missing a thumbnail and resolve each once. Safe
@@ -97,7 +103,9 @@ export async function runWishlistImageRehost(): Promise<void> {
       } catch {
         local = null;
       }
-      applyBackfilledImage(row.id, local);
+      // Carry the row's own framing across: a re-host only changes WHERE the
+      // bytes live, and dropping the kind would re-crop a logo to fill.
+      applyBackfilledImage(row.id, local, normalizeImageKind(local, row.image_kind));
       if (local) rehosted++;
     }
   }

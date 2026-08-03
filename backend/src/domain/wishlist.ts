@@ -12,11 +12,15 @@
 
 import { CURRENCIES, type Currency } from "@shared/types";
 import {
+  isWishlistIconSlug,
+  WISHLIST_ICON_SLUGS,
   WISHLIST_KINDS,
   WISHLIST_MAX_DESC_LEN,
   WISHLIST_MAX_TITLE_LEN,
   WISHLIST_MAX_URL_LEN,
   type UpsertWishlistItemInput,
+  type WishlistIconSlug,
+  type WishlistImageKind,
   type WishlistContributor,
   type WishlistContributorsResult,
   type WishlistEntry,
@@ -54,6 +58,11 @@ export interface WishlistItemRow {
   currency: string | null;
   url: string | null;
   image_url: string | null;
+  /** 'photo' | 'logo' | NULL. NULL on rows written before the logo fallback
+   *  existed, which is why `normalizeImageKind` reads it as a photo. */
+  image_kind: string | null;
+  /** Couple-chosen icon slug, or NULL for the per-kind default. */
+  icon: string | null;
   /** ms timestamp of the last og:image resolution attempt; NULL = never tried. */
   image_checked_at: number | null;
   sort_order: number;
@@ -80,6 +89,24 @@ function normalizeCurrency(raw: string | null): Currency | null {
   return raw && (CURRENCIES as readonly string[]).includes(raw) ? (raw as Currency) : null;
 }
 
+/** Stored kind → the display vocabulary. An image with no kind is a PHOTO:
+ *  every such row was written before the logo fallback shipped, and back then
+ *  the only thing we could store was a page's og:image. No image, no kind. */
+export function normalizeImageKind(
+  imageUrl: string | null,
+  raw: string | null,
+): WishlistImageKind | null {
+  if (!imageUrl) return null;
+  return raw === "logo" ? "logo" : "photo";
+}
+
+/** Stored icon slug → a slug we can actually render, or null for the per-kind
+ *  default. An unknown value (a slug we later drop from the list) degrades to
+ *  the default rather than to a missing glyph. */
+export function normalizeIcon(raw: string | null): WishlistIconSlug | null {
+  return raw && isWishlistIconSlug(raw) ? raw : null;
+}
+
 /** Couple-facing DTO returned by GET/POST/PATCH /api/wishlist. `interestCount` /
  *  `pledgedAmountMinor` are the coordination aggregates for the progress bar —
  *  the list path computes them in one batched query; create/update return a
@@ -99,6 +126,8 @@ export function toWishlistItem(
     currency: normalizeCurrency(row.currency),
     url: row.url,
     image_url: row.image_url,
+    image_kind: normalizeImageKind(row.image_url, row.image_kind),
+    icon: normalizeIcon(row.icon),
     interest_count: interestCount,
     pledged_amount_minor: pledgedAmountMinor,
     sort_order: row.sort_order,
@@ -127,6 +156,8 @@ export function toWishlistEntry(
     currency: normalizeCurrency(row.currency),
     url: row.url,
     image_url: row.image_url,
+    image_kind: normalizeImageKind(row.image_url, row.image_kind),
+    icon: normalizeIcon(row.icon),
     interest_count: interestCount,
     pledged_amount_minor: pledgedAmountMinor,
     viewer_has_interest: viewerHasInterest,
@@ -144,6 +175,8 @@ export interface ParsedWishlistItem {
   currency: Currency | null;
   url: string | null;
   image_url: string | null;
+  image_kind: WishlistImageKind | null;
+  icon: WishlistIconSlug | null;
   sort_order: number;
 }
 
@@ -246,6 +279,26 @@ function parseImageUrl(raw: unknown): string | null {
   return trimmed;
 }
 
+/** Framing hint for an explicitly supplied image. Cosmetic by design — the
+ *  worst a wrong value can do is contain a photo the couple would rather see
+ *  cropped — so an unrecognised string degrades to "photo" rather than 400ing
+ *  a save the couple cannot otherwise fix. */
+function parseImageKind(raw: unknown): WishlistImageKind | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  return raw === "logo" ? "logo" : "photo";
+}
+
+/** Icon slug, checked against the shared list rather than a shape pattern: the
+ *  frontend can only render a slug it has a component for, so anything else is
+ *  a glyph that silently never appears. */
+function parseIcon(raw: unknown): WishlistIconSlug | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw !== "string" || !isWishlistIconSlug(raw)) {
+    throw new HttpError(400, `icon must be one of ${WISHLIST_ICON_SLUGS.join(", ")} or null`);
+  }
+  return raw;
+}
+
 function parseSortOrder(raw: unknown, fallback: number): number {
   if (raw === undefined) return fallback;
   const n = Number(raw);
@@ -265,6 +318,8 @@ export function parseUpsertCreate(body: Partial<UpsertWishlistItemInput>): Parse
     currency: parseCurrency(body.currency),
     url: parseUrl(body.url),
     image_url: parseImageUrl(body.image_url),
+    image_kind: parseImageKind(body.image_kind),
+    icon: parseIcon(body.icon),
     sort_order: parseSortOrder(body.sort_order, 0),
   };
 }
@@ -290,6 +345,11 @@ export function parseUpsertPatch(
         : parseCurrency(body.currency),
     url: body.url === undefined ? existing.url : parseUrl(body.url),
     image_url: body.image_url === undefined ? existing.image_url : parseImageUrl(body.image_url),
+    image_kind:
+      body.image_kind === undefined
+        ? normalizeImageKind(existing.image_url, existing.image_kind)
+        : parseImageKind(body.image_kind),
+    icon: body.icon === undefined ? normalizeIcon(existing.icon) : parseIcon(body.icon),
     sort_order: parseSortOrder(body.sort_order, existing.sort_order),
   };
 }
@@ -343,8 +403,8 @@ export function insertWishlistItem(coupleId: number, parsed: ParsedWishlistItem)
   const result = db
     .prepare(
       `INSERT INTO wishlist_items
-         (couple_id, title, description, kind, target_amount_minor, currency, url, image_url, image_checked_at, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (couple_id, title, description, kind, target_amount_minor, currency, url, image_url, image_kind, icon, image_checked_at, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -355,6 +415,8 @@ export function insertWishlistItem(coupleId: number, parsed: ParsedWishlistItem)
       parsed.currency,
       parsed.url,
       parsed.image_url,
+      parsed.image_url ? parsed.image_kind : null,
+      parsed.icon,
       imageCheckedAt,
       parsed.sort_order,
       ts,
@@ -374,7 +436,8 @@ export function updateWishlistItem(
   db.prepare(
     `UPDATE wishlist_items SET
        title = ?, description = ?, kind = ?, target_amount_minor = ?, currency = ?,
-       url = ?, image_url = ?, image_checked_at = ?, sort_order = ?, updated_at = ?
+       url = ?, image_url = ?, image_kind = ?, icon = ?, image_checked_at = ?,
+       sort_order = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.title,
@@ -384,6 +447,10 @@ export function updateWishlistItem(
     parsed.currency,
     parsed.url,
     parsed.image_url,
+    // A cleared picture clears its framing with it, or a row that later gains
+    // a photo would inherit the old logo's contain-and-pad.
+    parsed.image_url ? parsed.image_kind : null,
+    parsed.icon,
     imageCheckedAt,
     parsed.sort_order,
     ts,
@@ -428,12 +495,14 @@ export function listWishlistRowsWithRemoteImage(limit: number): WishlistItemRow[
  *  miss) and stamp image_checked_at so the row is never swept again. Does NOT
  *  bump updated_at — this is a background system write, and bumping it would
  *  spuriously 409 a couple who has the editor open against the old value. */
-export function applyBackfilledImage(id: number, imageUrl: string | null): void {
-  db.prepare("UPDATE wishlist_items SET image_url = ?, image_checked_at = ? WHERE id = ?").run(
-    imageUrl,
-    now(),
-    id,
-  );
+export function applyBackfilledImage(
+  id: number,
+  imageUrl: string | null,
+  imageKind: WishlistImageKind | null = null,
+): void {
+  db.prepare(
+    "UPDATE wishlist_items SET image_url = ?, image_kind = ?, image_checked_at = ? WHERE id = ?",
+  ).run(imageUrl, imageUrl ? imageKind : null, now(), id);
 }
 
 export function deleteWishlistItem(id: number, coupleId: number): boolean {

@@ -33,6 +33,48 @@ export const WISHLIST_MAX_TITLE_LEN = 200;
 export const WISHLIST_MAX_DESC_LEN = 2000;
 export const WISHLIST_MAX_URL_LEN = 2048;
 
+/** What `image_url` actually holds, because the two want opposite framing.
+ *  A product PHOTO fills the tile edge to edge. A shop's own LOGO is a mark
+ *  drawn on a ground: cropped to fill, IKEA arrives as a blue wall with half
+ *  a letter in it. Null on an item with no picture at all. */
+export type WishlistImageKind = "photo" | "logo";
+
+/** Icons a couple can put on a wish we could not find a picture for. Slugs are
+ *  Lucide component names; the slug → component map lives in the frontend
+ *  (`components/WishlistPicture.tsx`) and this list is what the server
+ *  validates against, the same split as SPOKEN_LANGUAGE_OPTIONS.
+ *
+ *  Kept concrete and short: the picker is one wrapping strip in the add-a-wish
+ *  dialog, and an icon nobody can find is the same as no icon. Ordered by what
+ *  a wedding list actually asks for — home and table first, then experiences,
+ *  with the two gesture marks last for `request` items. */
+export const WISHLIST_ICON_SLUGS = [
+  "Gift",
+  "House",
+  "UtensilsCrossed",
+  "CookingPot",
+  "Coffee",
+  "Wine",
+  "BedDouble",
+  "Armchair",
+  "Flower2",
+  "Smartphone",
+  "Laptop",
+  "Camera",
+  "Plane",
+  "TreePalm",
+  "Ticket",
+  "Music",
+  "Heart",
+  "Mail",
+] as const;
+
+export type WishlistIconSlug = (typeof WISHLIST_ICON_SLUGS)[number];
+
+export function isWishlistIconSlug(value: string): value is WishlistIconSlug {
+  return (WISHLIST_ICON_SLUGS as readonly string[]).includes(value);
+}
+
 /** Couple-facing wishlist item, returned by `/api/wishlist`. `updated_at` is
  *  the value the PATCH endpoint expects back in `If-Match` for optimistic
  *  concurrency (mirrors ScheduleEvent). */
@@ -61,6 +103,15 @@ export interface WishlistItem {
    *  Null when there's no link or the fetch found no usable image. Rendered
    *  as the row/card thumbnail on both the editor and the guest page. */
   image_url: string | null;
+  /** Whether `image_url` is the product's own photo or the shop's logo (the
+   *  fallback we resolve when a page publishes no og:image). Drives framing
+   *  only — a photo is cropped to fill, a logo is contained on the ground.
+   *  Null exactly when `image_url` is. */
+  image_kind: WishlistImageKind | null;
+  /** Couple-chosen icon slug for a wish with no picture at all, from
+   *  `WISHLIST_ICON_SLUGS`. Null means "we pick one from the kind" — a gift
+   *  box for a gift, a heart for a request. */
+  icon: WishlistIconSlug | null;
   /** How many households have softly pledged ("I'd like to help") on this group
    *  gift. 0 for non-group kinds and items nobody tapped. No money moves — this
    *  is a coordination count only. */
@@ -92,6 +143,12 @@ export interface UpsertWishlistItemInput {
    *  be passed explicitly (e.g. the editor echoing back a fetched preview, or
    *  null to clear it). */
   image_url?: string | null;
+  /** Framing hint for an explicitly passed `image_url`, echoed back from the
+   *  link preview. Ignored (and re-derived) whenever the server resolves the
+   *  picture itself. */
+  image_kind?: WishlistImageKind | null;
+  /** Couple-chosen icon slug; null clears it back to the per-kind default. */
+  icon?: WishlistIconSlug | null;
   sort_order?: number;
 }
 
@@ -109,8 +166,13 @@ export interface WishlistEntry {
    *  currency). Display pairs the amount with `currency ?? couple.currency`. */
   currency: Currency | null;
   url: string | null;
-  /** Preview image resolved from `url` (og:image), or null. */
+  /** Preview image resolved from `url` (og:image, else the shop's logo), or
+   *  null. */
   image_url: string | null;
+  /** Photo vs logo — the guest card frames them differently. */
+  image_kind: WishlistImageKind | null;
+  /** The couple's chosen icon for a wish with no picture. */
+  icon: WishlistIconSlug | null;
   /** How many households have tapped "I'd like to help" on this group gift. */
   interest_count: number;
   /** Sum of the guests' soft pledge amounts, in minor units of this item's
@@ -177,9 +239,15 @@ export interface WishlistInterestToggleResult {
 
 /** Response of GET /api/wishlist/link-preview?url=… — the couple-side editor
  *  calls it when a product URL is entered to pull the og:image (and title)
- *  for the row/card thumbnail. Both fields are null when the page exposed no
- *  usable metadata; the endpoint never errors on an unreachable URL. */
+ *  for the row/card thumbnail. Every field is null when the page exposed no
+ *  usable metadata; the endpoint never errors on an unreachable URL.
+ *
+ *  `image_kind` says which of the two ladders answered: the product's own
+ *  photo, or the shop's logo when the page publishes no og:image (a bot wall,
+ *  or simply a page that ships none — most of the Hungarian webshops couples
+ *  paste). The couple gets a picture of where the wish lives either way. */
 export interface WishlistLinkPreview {
   image_url: string | null;
+  image_kind: WishlistImageKind | null;
   title: string | null;
 }

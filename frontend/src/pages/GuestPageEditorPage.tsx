@@ -816,6 +816,8 @@ export default function GuestPageEditorPage() {
             currency: it.currency,
             url: it.url,
             image_url: it.image_url,
+            image_kind: it.image_kind,
+            icon: it.icon,
             interest_count: 0,
             pledged_amount_minor: 0,
             viewer_has_interest: false,

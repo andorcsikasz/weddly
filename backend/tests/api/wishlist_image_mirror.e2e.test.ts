@@ -13,7 +13,11 @@ import { bootstrapCouple, req, wipeAll } from "../helpers";
 import { db } from "../../src/db";
 import type { WishlistItem } from "@shared/wishlist";
 import { listWishlistRowsWithRemoteImage } from "../../src/domain/wishlist";
-import { localizeWishlistImage, wishlistImageKey } from "../../src/domain/wishlist_image";
+import {
+  localizeWishlistImage,
+  resolveWishlistPicture,
+  wishlistImageKey,
+} from "../../src/domain/wishlist_image";
 import { runWishlistImageRehost } from "../../src/domain/wishlist_image_backfill";
 import type { FetchedImage } from "../../src/lib/remote_image";
 import { keyFromUploadUrl, storage } from "../../src/lib/storage";
@@ -205,5 +209,111 @@ describe("wishlist remote-image rehost sweep", () => {
     expect(listWishlistRowsWithRemoteImage(100).map((r) => r.id)).not.toContain(remote);
     // A local row was never touched.
     expect(rowOf(alreadyLocal).image_url).toBe(`/uploads/couples/${coupleId}/wishlist/aa.jpg`);
+  });
+});
+
+// A wish shows a real picture or a mark somebody chose — never a drawing we
+// guessed from the title. The ladder is photo → the shop's own logo → the
+// couple's icon, and the middle rung is the one that matters most: the majority
+// of pasted product links publish no og:image at all.
+describe("wishlist picture ladder", () => {
+  test("a page with no og:image falls back to the shop's logo, marked as one", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("wishlist-logo@weddly.test");
+    const stub = stubFetcher("png");
+
+    const picture = await resolveWishlistPicture(
+      coupleId,
+      {
+        image_url: null,
+        image_kind: null,
+        title: "JOSTEIN",
+        logo_urls: ["https://www.ikea.com/touch-180.png"],
+      },
+      { fetchImage: stub.fetchImage },
+    );
+
+    expect(stub.calls).toEqual(["https://www.ikea.com/touch-180.png"]);
+    // Mirrored under our own key like every other thumbnail — a remote logo is
+    // blocked by the CSP exactly like a remote photo.
+    expect(picture.image_url?.startsWith(`/uploads/couples/${coupleId}/wishlist/`)).toBe(true);
+    // The kind is what stops the card cropping a brand mark to fill: an IKEA
+    // logo under object-cover is a blue wall with half a letter in it.
+    expect(picture.image_kind).toBe("logo");
+  });
+
+  test("a declared og:image that will not download demotes to the logo", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("wishlist-logo-demote@weddly.test");
+    const calls: string[] = [];
+    const fetchImage = async (url: string): Promise<FetchedImage | null> => {
+      calls.push(url);
+      if (url.includes("og")) return null; // the shop 403s its own og:image
+      return { bytes: new Uint8Array([9]), ext: "png", width: 180, height: 180 };
+    };
+
+    const picture = await resolveWishlistPicture(
+      coupleId,
+      {
+        image_url: "https://cdn.shop.test/og.jpg",
+        image_kind: "photo",
+        title: null,
+        logo_urls: ["https://shop.test/apple-touch-icon.png"],
+      },
+      { fetchImage },
+    );
+
+    expect(calls).toEqual([
+      "https://cdn.shop.test/og.jpg",
+      "https://shop.test/apple-touch-icon.png",
+    ]);
+    expect(picture.image_kind).toBe("logo");
+  });
+
+  test("nothing downloadable anywhere leaves no picture, and no phantom kind", async () => {
+    wipeAll();
+    const { coupleId } = await bootstrapCouple("wishlist-no-picture@weddly.test");
+    const picture = await resolveWishlistPicture(
+      coupleId,
+      {
+        image_url: "https://cdn.test/p.jpg",
+        image_kind: "photo",
+        title: null,
+        logo_urls: ["https://x.test/i.png"],
+      },
+      { fetchImage: missFetcher },
+    );
+    // Null on both, so the card draws the couple's icon rather than a broken
+    // tile or a photo frame with nothing in it.
+    expect(picture).toEqual({ image_url: null, image_kind: null });
+  });
+
+  test("the couple's chosen icon round-trips, and a slug we can't draw is refused", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("wishlist-icon@weddly.test");
+
+    const created = await req<{ item: WishlistItem }>(
+      "POST",
+      "/api/wishlist",
+      { title: "Hosszú hétvége", kind: "gift", icon: "Plane" },
+      { token },
+    );
+    expect(created.status).toBe(201);
+    expect(created.data.item.icon).toBe("Plane");
+
+    // Null clears it back to the per-kind default rather than storing a blank.
+    const cleared = await req<{ item: WishlistItem }>(
+      "PATCH",
+      `/api/wishlist/${created.data.item.id}`,
+      { icon: null },
+      { token, headers: { "If-Match": String(created.data.item.updated_at) } },
+    );
+    expect(cleared.status).toBe(200);
+    expect(cleared.data.item.icon).toBeNull();
+
+    // A slug the frontend has no component for would render as nothing at all,
+    // so it never reaches the DB.
+    const bad = await req("POST", "/api/wishlist", { title: "x", icon: "Rocket" }, { token });
+    expect(bad.status).toBe(400);
   });
 });

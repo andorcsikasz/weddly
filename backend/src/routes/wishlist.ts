@@ -13,12 +13,18 @@ import {
   insertWishlistItem,
   listInterestStatsForItems,
   listWishlistItems,
+  normalizeImageKind,
   parseUpsertCreate,
   parseUpsertPatch,
   toWishlistItem,
   updateWishlistItem,
 } from "../domain/wishlist";
-import { localizeWishlistImage } from "../domain/wishlist_image";
+import {
+  localizeWishlistImage,
+  NO_PICTURE,
+  resolveWishlistPicture,
+  resolveWishlistPictureFromLink,
+} from "../domain/wishlist_image";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 import { fetchLinkPreview } from "../lib/link_preview";
 import { rateLimit } from "../lib/rate_limit";
@@ -43,18 +49,20 @@ async function handleCreate(ctx: Ctx): Promise<Response> {
 
   const body = await readJson<Partial<UpsertWishlistItemInput>>(ctx.req);
   const parsed = parseUpsertCreate(body);
-  // Auto-resolve the preview image from the link when the client supplied a
-  // URL but no explicit image (the common path — the editor may also pre-fetch
-  // via /link-preview and pass image_url itself, which we respect).
-  const source =
-    body.image_url === undefined
-      ? parsed.url
-        ? (await fetchLinkPreview(parsed.url)).image_url
-        : null
-      : parsed.image_url;
-  // Whatever it came from, what we STORE is our own copy — a shop's CDN is not
-  // in the CSP img-src allow-list and would render as a broken tile.
-  parsed.image_url = await localizeWishlistImage(couple.id, source);
+  // Auto-resolve the picture from the link when the client supplied a URL but
+  // no explicit image (the common path — the editor may also pre-fetch via
+  // /link-preview and pass image_url itself, which we respect). Whatever it
+  // came from, what we STORE is our own copy: a shop's CDN is not in the CSP
+  // img-src allow-list and would render as a broken tile.
+  if (body.image_url === undefined) {
+    const picture = parsed.url
+      ? await resolveWishlistPictureFromLink(couple.id, parsed.url)
+      : NO_PICTURE;
+    parsed.image_url = picture.image_url;
+    parsed.image_kind = picture.image_kind;
+  } else {
+    parsed.image_url = await localizeWishlistImage(couple.id, parsed.image_url);
+  }
   const row = insertWishlistItem(couple.id, parsed);
 
   addAuditLog({
@@ -101,19 +109,24 @@ async function handleUpdate(ctx: Ctx): Promise<Response> {
   //    -> fetch, so re-saving an item is a recovery path for a link whose
   //       preview failed the first time (e.g. a site that was briefly down).
   //  - link unchanged + image already present -> keep it (no refetch).
-  let source: string | null = parsed.image_url;
   if (body.image_url === undefined) {
     if (!parsed.url) {
-      source = null;
+      parsed.image_url = null;
+      parsed.image_kind = null;
     } else if (parsed.url !== existing.url || !existing.image_url) {
-      source = (await fetchLinkPreview(parsed.url)).image_url;
+      const picture = await resolveWishlistPictureFromLink(couple.id, parsed.url);
+      parsed.image_url = picture.image_url;
+      parsed.image_kind = picture.image_kind;
     } else {
-      source = existing.image_url;
+      // Unchanged link with a picture already on the row: keep both, and mirror
+      // locally (a no-op for a value that is already ours) so an ordinary
+      // re-save is what heals a legacy row still pointing at the shop's CDN.
+      parsed.image_url = await localizeWishlistImage(couple.id, existing.image_url);
+      parsed.image_kind = normalizeImageKind(parsed.image_url, existing.image_kind);
     }
+  } else {
+    parsed.image_url = await localizeWishlistImage(couple.id, parsed.image_url);
   }
-  // Mirror locally (a no-op for a value that is already ours), so an ordinary
-  // re-save is also what heals a legacy row still pointing at the shop's CDN.
-  parsed.image_url = await localizeWishlistImage(couple.id, source);
   const row = updateWishlistItem(id, couple.id, parsed);
 
   addAuditLog({
@@ -167,15 +180,15 @@ async function handleLinkPreview(ctx: Ctx): Promise<Response> {
   rateLimit(`wishlist:preview:${couple.id}`, "wishlist:preview", LINK_PREVIEW_BUCKET);
 
   const raw = ctx.url.searchParams.get("url")?.trim() ?? "";
-  const empty: WishlistLinkPreview = { image_url: null, title: null };
+  const empty: WishlistLinkPreview = { image_url: null, image_kind: null, title: null };
   if (!raw) return json(empty);
+  // Resolving mirrors as it goes: the editor renders the answer in an <img>,
+  // and a remote src is blocked by the CSP exactly like the saved card was.
+  // Deterministic key, so saving the item right after costs no extra storage.
+  // The title comes from the same fetch, so this is one request either way.
   const preview = await fetchLinkPreview(raw);
-  // Mirror before answering: the editor renders this in an <img>, and a remote
-  // src is blocked by the CSP exactly like the saved card was. Deterministic
-  // key, so saving the item right after costs no extra storage.
-  const image_url = await localizeWishlistImage(couple.id, preview.image_url);
-  const mirrored: WishlistLinkPreview = { ...preview, image_url };
-  return json(mirrored);
+  const picture = await resolveWishlistPicture(couple.id, preview);
+  return json({ ...picture, title: preview.title } satisfies WishlistLinkPreview);
 }
 
 export function registerWishlistRoutes(router: Router) {

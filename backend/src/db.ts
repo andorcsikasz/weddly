@@ -1383,6 +1383,41 @@ addColumnIfMissing("wishlist_items", "image_url", "image_url TEXT");
 // stamped, so the backfill is a one-time legacy sweep that never re-hammers a
 // dead link.
 addColumnIfMissing("wishlist_items", "image_checked_at", "image_checked_at INTEGER");
+// `image_kind` says whether `image_url` is the product's own photo or the
+// shop's logo, which is the fallback we resolve when a page publishes no
+// og:image. The two want opposite framing (a photo fills the tile, a logo is
+// contained on the ground), and the mirrored /uploads key cannot tell them
+// apart. NULL on every legacy row, which the mappers read as "photo" — that is
+// what those rows are, since the logo ladder did not exist when they were
+// written.
+//
+// Adding it is ALSO the one-time trigger to re-open the image sweep for linked
+// rows that never got a picture. Those were stamped `image_checked_at` by a
+// version that could only look for an og:image, so a page publishing none
+// dead-ended for good — and the logo ladder now has a real answer for exactly
+// those links. Clearing the stamp is what puts them back in
+// `listWishlistRowsNeedingImageBackfill`; the sweep re-stamps each one, so this
+// costs one attempt per row and then converges, found or not. The column's own
+// absence is the guard, so the boot that adds it is the only one that runs it.
+{
+  const cols = db.query("PRAGMA table_info(wishlist_items)").all() as { name: string }[];
+  const isNew = !cols.some((c) => c.name === "image_kind");
+  addColumnIfMissing("wishlist_items", "image_kind", "image_kind TEXT");
+  if (isNew) {
+    const r = db
+      .prepare(
+        "UPDATE wishlist_items SET image_checked_at = NULL WHERE url IS NOT NULL AND image_url IS NULL",
+      )
+      .run();
+    if (r.changes > 0) {
+      console.log(`[db.backfill] re-opened the image sweep on ${r.changes} linked wishlist row(s)`);
+    }
+  }
+}
+// `icon` is the couple's chosen glyph for a wish with no picture at all, a slug
+// from WISHLIST_ICON_SLUGS. NULL means "use the default for the kind", so every
+// existing row keeps a sensible mark with no backfill.
+addColumnIfMissing("wishlist_items", "icon", "icon TEXT");
 // `currency` is a per-item override of the couple's display currency. NULL (the
 // default for every existing row) means "inherit the couple's currency", so the
 // additive add is a safe no-op for legacy data.

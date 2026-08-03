@@ -1464,6 +1464,37 @@ CREATE TABLE IF NOT EXISTS booking_quote_lines (
 CREATE INDEX IF NOT EXISTS idx_booking_quote_lines_quote
   ON booking_quote_lines(quote_id, sort_order ASC);
 
+-- A vendor's temporary hold on ONE date for ONE inquiry ("live date hold").
+-- Hangs off the booking for the same reason the quote above does: a date held
+-- for nobody is just a blocked day, and `vendor_unavailable_dates` already is
+-- that. UNIQUE(booking_id) because extending, releasing and re-placing are all
+-- the SAME row: a second row would be a second promise about one date.
+--
+-- No state column, deliberately. live / expired / released is DERIVED from
+-- `hold_until` + `released_at` by `holdState` in shared/date_holds.ts, which is
+-- what lets a hold lapse with no cron (the next read simply says it did) and
+-- what makes extending it un-lapse it in one UPDATE. `event_date` is copied off
+-- the booking at place time so the hold reads on its own and so moving the
+-- booking's date can never transplant a hold onto a day nobody agreed to hold.
+CREATE TABLE IF NOT EXISTS booking_date_holds (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_id INTEGER NOT NULL UNIQUE REFERENCES supplier_bookings(id) ON DELETE CASCADE,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  event_date TEXT NOT NULL,                                    -- 'YYYY-MM-DD'
+  hold_until INTEGER NOT NULL,
+  released_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+-- The availability reads all ask the same question ("is this vendor holding
+-- this date right now?"), so the index is the pair they ask it with.
+CREATE INDEX IF NOT EXISTS idx_booking_date_holds_vendor_date
+  ON booking_date_holds(vendor_account_id, event_date);
+-- The directory's date filter asks the inverse ("who is holding this date?"),
+-- across every vendor at once.
+CREATE INDEX IF NOT EXISTS idx_booking_date_holds_date
+  ON booking_date_holds(event_date, hold_until);
+
 -- A vendor's canned replies ("Szabad a dátum", "Árajánlat mellékelve"). Body may
 -- contain {client_name}-style tokens, substituted at insert-into-the-composer
 -- time, not at save time, so the stored template stays reusable across clients.
@@ -1602,7 +1633,9 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
   target_amount_minor INTEGER,                                -- informational rough price; integer minor units (of `currency` when set, else the couple's); NULL when unset
   currency TEXT,                                              -- per-item currency override ('HUF'|'EUR'|'USD'); NULL = inherit the couple's display currency
   url TEXT,                                                    -- couple-pasted http(s) link; NULL when unset
-  image_url TEXT,                                              -- og:image resolved server-side from url; NULL when none
+  image_url TEXT,                                              -- og:image (else the shop's logo) resolved server-side from url; NULL when none
+  image_kind TEXT,                                             -- 'photo' | 'logo' — how to frame image_url (fill vs contain); NULL when there is no image (or a legacy row, read as 'photo')
+  icon TEXT,                                                   -- couple-chosen glyph slug (WISHLIST_ICON_SLUGS) for a wish with no picture; NULL = the default for the kind
   image_checked_at INTEGER,                                   -- last og:image resolution attempt (ms); NULL = never attempted (legacy rows the boot backfill sweeps)
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL,
@@ -2507,3 +2540,65 @@ CREATE TABLE IF NOT EXISTS planner_event_outbox (
 );
 CREATE INDEX IF NOT EXISTS idx_planner_outbox_pending
   ON planner_event_outbox(processed_at, id) WHERE processed_at IS NULL;
+
+-- ── Vendor automations ──────────────────────────────────────────────────────
+-- Per-vendor configuration for the three things Weddly may do on their behalf.
+-- One row per (account, automation); an absent row means the resting state,
+-- which is OFF, so nothing here is ever created on the vendor's behalf either.
+--
+-- `template_id` points at the vendor's OWN canned reply (vendor_message_
+-- templates), never a second copy of the text: ON DELETE SET NULL, and the
+-- sweep re-reads the body before every send, so deleting the template disarms
+-- the acknowledgement instead of sending an empty one.
+--
+-- `armed_at` is the stamp of the last switch-ON and is the floor for what the
+-- automation may act on. Without it, arming the acknowledgement would answer
+-- every inquiry already sitting in the vendor's list.
+CREATE TABLE IF NOT EXISTS vendor_automations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  automation_key TEXT NOT NULL,                                -- VendorAutomationKey
+  enabled INTEGER NOT NULL DEFAULT 0,
+  template_id INTEGER REFERENCES vendor_message_templates(id) ON DELETE SET NULL,
+  delay_hours INTEGER,                                         -- unanswered_reminder only
+  armed_at INTEGER,                                            -- last switch-ON, never retroactive
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_automations_key
+  ON vendor_automations(vendor_account_id, automation_key);
+
+-- What an automation did about one occurrence, and the idempotency ledger that
+-- makes a re-run a no-op.
+--
+-- `dedupe_key` names the OCCURRENCE ("inquiry_ack:412",
+-- "unanswered_reminder:412:1754000000000"), never the attempt, exactly as
+-- vendor_points_ledger does, so a redelivered sweep, a worker restart and a
+-- manual replay all collapse onto the single row the unique index below
+-- refuses to duplicate. Rows are inserted with INSERT OR IGNORE and the send
+-- only happens when that insert actually created the row.
+--
+-- `message_id` is the booking_messages row an acknowledgement wrote. It is what
+-- lets the reminder tell an automatic first reply from a real one: an auto-ack
+-- is not an answer, and a lead the machine acknowledged is still a lead the
+-- vendor owes a reply.
+CREATE TABLE IF NOT EXISTS vendor_automation_runs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor_account_id INTEGER NOT NULL REFERENCES vendor_accounts(id) ON DELETE CASCADE,
+  automation_key TEXT NOT NULL,                                -- VendorAutomationKey
+  booking_id INTEGER REFERENCES supplier_bookings(id) ON DELETE CASCADE,
+  dedupe_key TEXT NOT NULL,                                    -- stable per occurrence
+  status TEXT NOT NULL,                                        -- VendorAutomationStatus
+  detail TEXT,                                                 -- short reason on a skip
+  message_id INTEGER REFERENCES booking_messages(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL,
+  resolved_at INTEGER
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vendor_automation_runs_dedupe
+  ON vendor_automation_runs(vendor_account_id, dedupe_key);
+CREATE INDEX IF NOT EXISTS idx_vendor_automation_runs_vendor
+  ON vendor_automation_runs(vendor_account_id, created_at DESC);
+-- "Which vendor messages did the machine write?" — asked once per booking by
+-- the reminder's fact gathering.
+CREATE INDEX IF NOT EXISTS idx_vendor_automation_runs_message
+  ON vendor_automation_runs(message_id) WHERE message_id IS NOT NULL;
