@@ -9,6 +9,7 @@ import {
   ALL_TASK_PACK_ITEMS,
   HONEYMOON_EXTRA_TASKS,
   HONEYMOON_FLIGHTS_TASK,
+  packDueDate,
   TASK_TEMPLATE,
   TASK_TEMPLATE_GROUPS,
 } from "@shared/planning_task_packs";
@@ -77,5 +78,42 @@ describe("planning task packs: lead times", () => {
 
   test("ALL_TASK_PACK_ITEMS is exactly the groups plus the reserve", () => {
     expect(ALL_TASK_PACK_ITEMS).toHaveLength(TASK_TEMPLATE.length + HONEYMOON_EXTRA_TASKS.length);
+  });
+});
+
+describe("planning task packs: packDueDate", () => {
+  test("counts backwards from the wedding", () => {
+    expect(packDueDate("2027-06-05", -150)).toBe("2027-01-06");
+    expect(packDueDate("2027-06-05", -3)).toBe("2027-06-02");
+    expect(packDueDate("2027-06-05", 0)).toBe("2027-06-05");
+  });
+
+  test("crosses a year boundary rather than clamping inside the month", () => {
+    expect(packDueDate("2027-01-10", -30)).toBe("2026-12-11");
+  });
+
+  test("handles a leap day without drifting", () => {
+    expect(packDueDate("2028-03-01", -1)).toBe("2028-02-29");
+  });
+
+  test("no wedding date means no due date, never today", () => {
+    // A lead time with nothing to measure from is not a deadline. Dating the
+    // row anyway would hand the couple a task that reads as already overdue.
+    expect(packDueDate(null, -90)).toBeNull();
+    expect(packDueDate(undefined, -90)).toBeNull();
+    expect(packDueDate("", -90)).toBeNull();
+  });
+
+  test("an unparseable date is null rather than Invalid Date", () => {
+    expect(packDueDate("not-a-date", -30)).toBeNull();
+  });
+
+  test("every pack item yields a date on or before the wedding", () => {
+    const wedding = "2027-06-05";
+    for (const item of ALL_TASK_PACK_ITEMS) {
+      const due = packDueDate(wedding, item.deadline_days);
+      expect(due).not.toBeNull();
+      expect(String(due) <= wedding).toBe(true);
+    }
   });
 });

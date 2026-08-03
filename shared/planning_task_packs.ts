@@ -225,6 +225,22 @@ export const HONEYMOON_EXTRA_TASKS: TaskPackItem[] = [
  *  What the wizard's title lookup is built from. */
 export const ALL_TASK_PACK_ITEMS: TaskPackItem[] = [...TASK_TEMPLATE, ...HONEYMOON_EXTRA_TASKS];
 
+/** The calendar date a pack item is due, given the wedding day: `deadline_days`
+ *  is negative, so this counts BACKWARDS from the wedding. Null wedding date
+ *  means null due date, because a lead time with nothing to measure from is not
+ *  a deadline and a task dated today would read as already overdue.
+ *
+ *  Lives here, beside `deadline_days`, because two surfaces apply the same
+ *  packs: the planning task wizard and the honeymoon page. They had one copy of
+ *  this arithmetic each, and only one of them ran it. */
+export function packDueDate(weddingDate: string | null | undefined, deadlineDays: number) {
+  if (!weddingDate) return null;
+  const d = new Date(weddingDate);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setDate(d.getDate() + deadlineDays);
+  return d.toISOString().split("T")[0] ?? null;
+}
+
 /** The one "get the plane tickets" task, exported so the flight-offer save on
  *  /app/honeymoon can reuse it instead of authoring a second title for the same
  *  real-world action. It used to say "Repjegy megvásárlása" while the pack said

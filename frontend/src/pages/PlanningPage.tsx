@@ -76,6 +76,7 @@ import {
   TASK_TEMPLATE_GROUPS,
   type TaskTemplateGroupId,
   localizeText,
+  packDueDate,
   recommendedIdeas,
   rollDice,
 } from "../lib/planning_templates";
@@ -855,13 +856,7 @@ export default function PlanningPage() {
               title: localizeText(tmpl.title, locale),
               assignee: trimmed || null,
               topic: topicForIndex(idx),
-              due_date: weddingDate
-                ? (() => {
-                    const d = new Date(weddingDate);
-                    d.setDate(d.getDate() + tmpl.deadline_days);
-                    return d.toISOString().split("T")[0];
-                  })()
-                : null,
+              due_date: packDueDate(weddingDate, tmpl.deadline_days),
             },
           ]
         : [],

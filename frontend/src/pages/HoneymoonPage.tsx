@@ -63,6 +63,7 @@ import {
   HONEYMOON_FLIGHTS_TASK,
   TASK_TEMPLATE_GROUPS,
   localizeText,
+  packDueDate,
 } from "../lib/planning_templates";
 import {
   type KonzinfoInfo,
@@ -339,9 +340,18 @@ export default function HoneymoonPage() {
     }
   }
 
-  async function addHoneymoonTask(title: string): Promise<boolean> {
+  /** `dueDate` is optional because the two callers differ: the wand knows each
+   *  pack item's lead time and dates the row on the spot, while the free-text
+   *  add box has nothing to date it from and leaves that to the couple or to
+   *  the timeline's schedule wizard. */
+  async function addHoneymoonTask(title: string, dueDate?: string | null): Promise<boolean> {
     try {
-      const r = await planningApi.create({ kind: "task", topic: "honeymoon", title });
+      const r = await planningApi.create({
+        kind: "task",
+        topic: "honeymoon",
+        title,
+        ...(dueDate ? { due_date: dueDate } : {}),
+      });
       setHoneymoonTasks((prev) => [...prev, r.item]);
       return true;
     } catch (e) {
@@ -868,6 +878,7 @@ export default function HoneymoonPage() {
           onToggle={toggleTaskDone}
           onAdd={addHoneymoonTask}
           onDelete={deleteHoneymoonTask}
+          weddingDate={couple?.wedding_date ?? null}
         />
       </div>
 
@@ -2615,13 +2626,18 @@ function HoneymoonTodoSection({
   onToggle,
   onAdd,
   onDelete,
+  weddingDate,
 }: {
   items: PlanningItem[];
   onToggle: (item: PlanningItem) => Promise<void>;
   /** Create a new honeymoon-topic task with the given title. Returns true on
    *  success so the inline form can clear its input; false leaves the typed
-   *  value in place so the user can retry without re-typing. */
-  onAdd: (title: string) => Promise<boolean>;
+   *  value in place so the user can retry without re-typing. `dueDate` is set
+   *  only by the pack wizard, which knows each item's lead time. */
+  onAdd: (title: string, dueDate?: string | null) => Promise<boolean>;
+  /** Counted back from, to date each applied pack item. Null before the couple
+   *  sets a date, in which case the rows arrive undated exactly as before. */
+  weddingDate: string | null;
   /** Remove a task from the list (optimistic; parent restores on failure). */
   onDelete: (item: PlanningItem) => Promise<void>;
 }) {
@@ -2735,7 +2751,14 @@ function HoneymoonTodoSection({
     try {
       for (const it of wandPool) {
         if (!selected.has(it.title.en)) continue;
-        const ok = await onAdd(localizeText(it.title, locale));
+        // Dated on the spot from the item's own lead time. Before this, applying
+        // the pack produced a pile of undated rows that the timeline wizard then
+        // had to be opened to schedule, and every one of them landed on the same
+        // fallback day because the lead times were unreachable from there.
+        const ok = await onAdd(
+          localizeText(it.title, locale),
+          packDueDate(weddingDate, it.deadline_days),
+        );
         if (ok) added++;
       }
     } finally {
