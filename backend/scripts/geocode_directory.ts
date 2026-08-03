@@ -100,11 +100,22 @@ interface Candidate {
   reason: "missing" | "stacked" | "town";
 }
 
+/** True when the entry's `city` is the country itself rather than a town, e.g.
+ *  "Croatia, HR" on a vendor who publishes no base town. The 40 km check below
+ *  passes happily against a country centroid, so without this a nationwide
+ *  business lands on a pin in the middle of a field and the map states a
+ *  location the business never claimed. No pin beats a wrong one. */
+function cityIsWholeCountry(city: string, code: string): boolean {
+  const town = normalize(bareCity(city));
+  return town === normalize(COUNTRY_NAME.get(code) ?? "") || town === normalize(code);
+}
+
 const candidates: Candidate[] = [];
 for (const s of DIRECTORY) {
   if (!s.city) continue;
   if (VENUE_COORDS[s.id]) continue; // hand-pinned, leave alone
   if (!refresh && existing.has(s.id)) continue;
+  if (!s.address && cityIsWholeCountry(s.city, s.country)) continue;
   const placed = s.lat != null && s.lng != null;
   const stacked = placed && (pointCounts.get(`${s.lat},${s.lng}`) ?? 0) > 1;
   // No address to work from: the town itself is the best honest answer, and
