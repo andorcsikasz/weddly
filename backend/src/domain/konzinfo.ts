@@ -23,6 +23,31 @@ import { log as logger } from "../lib/logger";
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 8000;
 
+/** KONZINFO_FAKE=1 answers from a deterministic stub so the E2E suite never
+ *  reaches konzuliszolgalat.kormany.hu, mirroring HONEYMOON_PHOTO_FAKE /
+ *  GOOGLE_PLACES_FAKE / DEEPL_FAKE / ADDRESS_SUGGEST_FAKE in tests/setup.ts.
+ *  This was the last external dependency in the suite without a gate, and it
+ *  behaved exactly the way the honeymoon-photo note predicts: an 8-second
+ *  timeout against a foreign government host, inside bun's 5-second per-test
+ *  budget, so under any load the run fails on a machine problem rather than a
+ *  code one. It also meant every CI run and every local `bun test` sent live
+ *  traffic to a ministry website.
+ *
+ *  The stub is deliberately NOT empty. An empty status is the module's own
+ *  failure value, so returning it would make "the fetch worked and the page
+ *  said nothing" indistinguishable from "the fetch failed", and a test could
+ *  not tell the parse path from the fallback path. */
+function konzinfoFake(): boolean {
+  return process.env.KONZINFO_FAKE === "1";
+}
+
+const FAKE_STATUS: KonzinfoLiveStatus = {
+  last_modified: "2026.05.27.",
+  valid_today: "2026.08.01.",
+  safety_category: "I.",
+  safety_modified: "2026.05.27.",
+};
+
 interface CacheEntry {
   status: KonzinfoLiveStatus | null;
   expiresAt: number;
@@ -137,6 +162,8 @@ export function parseKonzinfoStatus(html: string): KonzinfoLiveStatus {
  *  static link regardless). A successful-but-empty parse is cached as
  *  EMPTY_STATUS so a markup change doesn't re-hammer the source every view. */
 export async function fetchKonzinfoStatus(slug: string): Promise<KonzinfoLiveStatus | null> {
+  if (konzinfoFake()) return FAKE_STATUS;
+
   const cached = statusCache.get(slug);
   if (cached && cached.expiresAt > Date.now()) return cached.status;
 

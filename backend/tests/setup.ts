@@ -164,6 +164,14 @@ process.env.GOOGLE_PLACES_FAKE = "1";
 // their 5s timeout when the whole suite ran.
 process.env.HONEYMOON_PHOTO_FAKE = "1";
 
+// Konzinfo country advisories: the same case one notch quieter, and it was the
+// last external dependency in the suite with no gate at all. The live path
+// fetches a foreign GOVERNMENT host with an 8s timeout, which does not fit
+// inside bun's 5s per-test budget, so under any load the suite failed on a
+// machine problem rather than a code one — and every run, local or CI, sent
+// real traffic to a ministry website.
+process.env.KONZINFO_FAKE = "1";
+
 // Wipe the test DB before the server boots — every run starts clean. Target
 // the SAME path the server is about to open (DB_PATH, resolved above), NOT the
 // hardcoded default: a worktree-parallel run overrides it via BUN_TEST_DB_PATH,
