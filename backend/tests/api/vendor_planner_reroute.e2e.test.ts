@@ -169,7 +169,11 @@ describe("planner listings are closed to the vendor funnel", () => {
     const row = getCampaignRow(created.data.campaign.id);
     if (!row) throw new Error("campaign vanished");
 
-    const targets: VendorCampaignTarget[] = listTargets(row, 500);
+    // No cap: targeting is `ORDER BY l.id ASC`, so a bounded limit turns this
+    // into an assertion about where the fixture sorts in the whole directory,
+    // and every curated batch that lands ids ahead of "reroute-photo-3" breaks
+    // it. What is under test is eligibility, not position.
+    const targets: VendorCampaignTarget[] = listTargets(row, Number.MAX_SAFE_INTEGER);
     const emails = targets.map((t) => t.email);
     expect(emails).toContain("photo3@example.com");
     expect(emails).not.toContain("planner3@example.com");
