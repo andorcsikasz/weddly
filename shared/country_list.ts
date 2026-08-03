@@ -12,6 +12,8 @@
 //
 // Used by both the backend (validation) and the frontend (combobox).
 
+import type { UiLocale } from "./locales";
+
 export interface CountryEntry {
   /** ISO 3166-1 alpha-2 (uppercase). The canonical join key. */
   code: string;
@@ -295,7 +297,7 @@ export const COUNTRY_CODES: ReadonlySet<string> = new Set(COUNTRIES.map((c) => c
 /** Locale-aware name for a known code. Returns the raw code as a safe
  *  fallback if the code isn't in the list (shouldn't happen after backend
  *  validation, but the UI calls this for legacy rows too). */
-export function countryName(code: string, locale: "hu" | "en" | "es"): string {
+export function countryName(code: string, locale: UiLocale): string {
   const entry = COUNTRIES.find((c) => c.code === code.toUpperCase());
   if (!entry) return code;
   return locale === "hu" ? entry.hu : entry.en;

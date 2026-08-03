@@ -1,6 +1,7 @@
 // Static suppliers directory contract. Backend curates the list (v1); the v2
 // marketplace will swap this for a `suppliers` DB table with the same shape.
 
+import { authoredLocale, type UiLocale } from "./locales";
 import type { ListingPackage } from "./listing_packages";
 import type { ListingVideo } from "./listing_videos";
 import { isSentinelPick } from "./picks";
@@ -473,9 +474,9 @@ const LANGUAGE_BY_CODE = new Map(SPOKEN_LANGUAGE_OPTIONS.map((l) => [l.code, l])
 
 /** ISO code → display name in the given locale; unknown code falls back to its
  *  uppercased code so a legacy value never renders blank. */
-export function languageLabel(code: string, locale: "hu" | "en" | "es"): string {
+export function languageLabel(code: string, locale: UiLocale): string {
   const opt = LANGUAGE_BY_CODE.get(code);
-  return opt ? opt[locale] : code.toUpperCase();
+  return opt ? opt[authoredLocale(locale)] : code.toUpperCase();
 }
 
 export function isKnownLanguage(code: string): boolean {
