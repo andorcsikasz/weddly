@@ -41,6 +41,44 @@ export type LinePlan = {
   create: NewLineDraft | null;
 };
 
+/** A line whose amounts mirror a booked supplier's own record — `planned_huf`
+ *  mirrors `couple_suppliers.price_huf`, `actual_huf` follows the paid
+ *  installments. The supplier card owns those numbers, so the server refuses
+ *  every write to the line: `PATCH /api/budget/lines/:id` answers
+ *  `409 {code:"locked"}`, and DELETE does the same. Nothing in here may ever
+ *  plan a write to one.
+ *
+ *  BOTH ownership columns count, and asking about only one is how the 409 comes
+ *  back. `couple_supplier_id` is the couple's own private row; `listing_id` is a
+ *  directory supplier they priced and then picked. The two are mutually
+ *  exclusive per line, but they lock it for the identical reason, so every
+ *  caller wants the question "does anything else own this line", never "which
+ *  of the two owns it". */
+export function isSupplierManagedLine(line: BudgetLine): boolean {
+  return line.couple_supplier_id !== null || line.listing_id !== null;
+}
+
+/** Categories whose aggregate amounts no budget surface may edit, because at
+ *  least ONE of their lines mirrors a booked supplier.
+ *
+ *  One mirrored line is enough, and that is the point rather than an
+ *  approximation: `distribute` spreads a category TOTAL across the rows it is
+ *  allowed to write, so with a mirrored row held back the bucket would settle
+ *  on `mirrored + newTotal` instead of on the number the slider was released
+ *  on, and the thumb would jump away on the next render. A control that
+ *  reliably produces a different number than the one it shows is worse than no
+ *  control. Same rule the budget table already applies to its own aggregate
+ *  inputs (`categoryBuckets.editable` in BudgetPage).
+ *
+ *  Pass the same lines the caller aggregates into buckets: a custom row is its
+ *  own row rather than part of its category's bucket, so it must not lock the
+ *  bucket it happens to share a category with. */
+export function supplierManagedCategories(lines: BudgetLine[]): Set<BudgetCategory> {
+  const locked = new Set<BudgetCategory>();
+  for (const l of lines) if (isSupplierManagedLine(l)) locked.add(l.category);
+  return locked;
+}
+
 /** Field-typed setter — a computed key (`{...line, [field]: v}`) widens to a
  *  string index signature that no longer satisfies `BudgetLine`. */
 function withAmount(line: BudgetLine, field: LineAmountField, value: number): BudgetLine {
@@ -96,10 +134,18 @@ function distribute(
   return updates.filter((l, i) => l[field] !== inCat[i]?.[field]);
 }
 
-/** Plan a new total `planned_huf` for a category. Behaviour by line count:
+/** Plan a new total `planned_huf` for a category. Behaviour by line count,
+ *  counting only the lines this couple may actually write:
  *  - 0 lines → creates one with that planned total + the supplied label.
  *  - 1 line  → updates its `planned_huf`.
- *  - N lines → scales every line proportionally to match the new total. */
+ *  - N lines → scales every line proportionally to match the new total.
+ *
+ *  Supplier-mirrored lines are skipped, exactly as in `planCategoryActual` /
+ *  `planCategoryPaid`, and for the same reason: `planned_huf` on such a line
+ *  mirrors `couple_suppliers.price_huf`, so it is owned by the supplier record
+ *  and the server 409s any PATCH to it. This one used to lack the filter, so
+ *  the slider for any category whose lines came from a booked supplier planned
+ *  a write that could not land — a guaranteed failed save, every drag. */
 export function planCategoryPlanned(
   category: BudgetCategory,
   newTotal: number,
@@ -112,8 +158,18 @@ export function planCategoryPlanned(
    *  user's custom-row values would jump around when they tweak Egyéb. */
   filter?: (line: BudgetLine) => boolean,
 ): LinePlan {
-  const inCat = lines.filter((l) => l.category === category && (filter ? filter(l) : true));
+  const scoped = lines.filter((l) => l.category === category && (filter ? filter(l) : true));
+  const inCat = scoped.filter((l) => !isSupplierManagedLine(l));
   if (inCat.length === 0) {
+    // A category whose every line is supplier-managed must NOT fall through to
+    // the create branch. A fresh free line would carry the whole new total on
+    // top of an amount the supplier already owns, so the bucket would land on
+    // `mirrored + newTotal` — a different number from the one the slider was
+    // released on, and one nothing would ever reconcile. There is nothing
+    // writable here to absorb the change, so the plan is empty. Keeping the
+    // control off the screen is `supplierManagedCategories`' job; this branch
+    // is what makes the answer safe for any caller that asks anyway.
+    if (scoped.length > 0) return { field: "planned_huf", updates: [], create: null };
     return {
       field: "planned_huf",
       updates: [],
@@ -141,7 +197,7 @@ export function planCategoryActual(
   filter?: (line: BudgetLine) => boolean,
 ): LinePlan {
   const inCat = lines.filter(
-    (l) => l.category === category && l.couple_supplier_id === null && (filter ? filter(l) : true),
+    (l) => l.category === category && !isSupplierManagedLine(l) && (filter ? filter(l) : true),
   );
   if (inCat.length === 0) {
     return {
@@ -166,7 +222,7 @@ export function planCategoryPaid(
   filter?: (line: BudgetLine) => boolean,
 ): LinePlan {
   const inCat = lines.filter(
-    (l) => l.category === category && l.couple_supplier_id === null && (filter ? filter(l) : true),
+    (l) => l.category === category && !isSupplierManagedLine(l) && (filter ? filter(l) : true),
   );
   return {
     field: "paid_huf",

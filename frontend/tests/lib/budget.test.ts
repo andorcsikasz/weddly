@@ -13,6 +13,7 @@ import {
   mergeLines,
   planCategoryPaid,
   planCategoryPlanned,
+  supplierManagedCategories,
 } from "@/lib/budget";
 
 function line(id: number, category: BudgetCategory, planned: number, actual = 0): BudgetLine {
@@ -26,6 +27,7 @@ function line(id: number, category: BudgetCategory, planned: number, actual = 0)
     paid_huf: 0,
     supplier_id: null,
     couple_supplier_id: null,
+    listing_id: null,
     notes: null,
     per_guest: false,
     icon: null,
@@ -71,6 +73,70 @@ describe("planCategoryPlanned", () => {
     const lines = [line(1, "venue", 300_000), line(2, "catering", 900_000)];
     const plan = planCategoryPlanned("venue", 400_000, lines, "Venue");
     expect(plan.updates.map((l) => l.id)).toEqual([1]);
+  });
+});
+
+/** A line mirroring a booked supplier's own record. `PATCH /api/budget/lines/
+ *  :id` answers `409 {code:"locked"}` for one of these, so a plan that names
+ *  it is a save that cannot land. */
+function mirrored(l: BudgetLine, supplierId = "sup-1"): BudgetLine {
+  return { ...l, couple_supplier_id: supplierId };
+}
+
+describe("planCategoryPlanned against supplier-mirrored lines", () => {
+  // The bug: this planner was the only one of the three that did not filter
+  // mirrored rows, so the planned slider for any category fed by a booked
+  // supplier planned a PATCH the server refuses — a guaranteed 409 on every
+  // drag, with the control offered as if nothing were wrong.
+  it("scales the free lines only and never names the mirrored one", () => {
+    const lines = [mirrored(line(1, "venue", 300_000)), line(2, "venue", 100_000)];
+    const plan = planCategoryPlanned("venue", 250_000, lines, "Venue");
+    expect(plan.create).toBeNull();
+    expect(plan.updates.map((l) => l.id)).toEqual([2]);
+    expect(plan.updates[0]?.planned_huf).toBe(250_000);
+  });
+
+  it("plans nothing when every line in the category belongs to a supplier", () => {
+    const lines = [
+      mirrored(line(1, "photo_video", 300_000)),
+      mirrored(line(2, "photo_video", 120_000), "sup-2"),
+    ];
+    const plan = planCategoryPlanned("photo_video", 900_000, lines, "Photo");
+    expect(isNoopPlan(plan)).toBe(true);
+    expect(plan.updates).toHaveLength(0);
+  });
+
+  it("does not invent a free line to absorb a supplier-owned category", () => {
+    // Falling through to the create branch would add the whole new total on
+    // TOP of the supplier's amount, so the bucket would land on 300k + 900k
+    // and the slider would read as having done something else entirely.
+    const plan = planCategoryPlanned("venue", 900_000, [mirrored(line(1, "venue", 300_000))], "V");
+    expect(plan.create).toBeNull();
+  });
+
+  it("still creates the first line for a category that owns none", () => {
+    // The create branch is about an EMPTY category, and a supplier-owned one
+    // is not empty. Guarding the regression in the other direction.
+    const plan = planCategoryPlanned("rings", 75_000, [mirrored(line(1, "venue", 300_000))], "R");
+    expect(plan.create?.planned_huf).toBe(75_000);
+  });
+});
+
+describe("supplierManagedCategories", () => {
+  it("locks a category as soon as one of its lines is mirrored", () => {
+    const lines = [mirrored(line(1, "venue", 300_000)), line(2, "venue", 100_000)];
+    expect(supplierManagedCategories(lines).has("venue")).toBe(true);
+  });
+
+  it("leaves a category the couple owns outright alone", () => {
+    const lines = [mirrored(line(1, "venue", 300_000)), line(2, "catering", 900_000)];
+    const locked = supplierManagedCategories(lines);
+    expect(locked.has("catering")).toBe(false);
+    expect([...locked]).toEqual(["venue"]);
+  });
+
+  it("is empty for a budget with no booked suppliers", () => {
+    expect(supplierManagedCategories([line(1, "venue", 300_000)]).size).toBe(0);
   });
 });
 

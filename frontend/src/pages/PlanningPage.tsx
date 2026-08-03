@@ -229,6 +229,7 @@ const URL_TEST_RE = /^https?:\/\//;
 
 /** Render a body string with bare URLs turned into "Open link" chips. */
 function BodyWithLinks({ text }: { text: string }) {
+  const { t } = useT();
   const parts = text.split(URL_SPLIT_RE);
   return (
     <>
@@ -242,7 +243,7 @@ function BodyWithLinks({ text }: { text: string }) {
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1 rounded bg-paper-100 px-1.5 py-0.5 text-xs font-medium text-blush-700 hover:bg-paper-200 dark:bg-umber-700 dark:text-blush-300 dark:hover:bg-umber-600"
           >
-            Open link
+            {t("planning.body_open_link")}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="10"

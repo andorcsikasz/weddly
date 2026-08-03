@@ -45,6 +45,7 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
+import { isSupplierManagedLine, supplierManagedCategories } from "../lib/budget";
 import { formatMoney, formatNumber, moneySliderStep } from "../lib/format";
 import { useT } from "../lib/i18n";
 
@@ -393,6 +394,18 @@ export function CostPlanningCard({
     [lines, defaultOtherLabels],
   );
 
+  // Categories the couple cannot re-plan from here, because a booked supplier
+  // owns at least one of their lines. The server refuses every write to a
+  // mirrored line, so offering the slider anyway was a control whose only
+  // possible outcome was a failed save. Derived from the SAME lines the
+  // buckets aggregate, so a supplier that mirrored into a custom row (a
+  // planner's fee lands in `other` under the business's own name) locks its
+  // own row below rather than the whole "Egyéb" bucket.
+  const supplierManaged = useMemo(
+    () => supplierManagedCategories(aggregatableLines),
+    [aggregatableLines],
+  );
+
   // Aggregate lines into category buckets. Every category in CATEGORY_ORDER
   // gets a row (even with 0 planned) so the user can slide it up from zero.
   // Custom rows are excluded — they own their own row below the buckets so
@@ -729,6 +742,7 @@ export function CostPlanningCard({
             count={count}
             widthAnchor={widthAnchor}
             currency={currency}
+            supplierManaged={supplierManaged.has(b.category)}
             onEditPlanned={onEditPlanned}
             onToggleFreeze={onToggleFreeze}
             onDrag={handleCategoryDrag}
@@ -852,6 +866,7 @@ function CategoryRowInner({
   count,
   widthAnchor,
   currency,
+  supplierManaged = false,
   onEditPlanned,
   onToggleFreeze,
   onDrag,
@@ -881,6 +896,12 @@ function CategoryRowInner({
    *  expands gently up to 75 % of cap as a row is pulled toward the rail's
    *  right edge. Floored upstream so it never hits zero. */
   widthAnchor: number;
+  /** A booked supplier owns at least one of this category's lines, so its
+   *  planned total is not ours to move: the server 409s every write to a
+   *  mirrored line, and the amount is edited on the supplier's own card. The
+   *  slider goes read-only and the row says why, rather than offering a drag
+   *  whose only outcome is a failed save. */
+  supplierManaged?: boolean;
   onEditPlanned?: (category: BudgetCategory, plannedHuf: number) => Promise<unknown>;
   onToggleFreeze?: (category: BudgetCategory) => void | Promise<void>;
   /** Drag handler — fires on each slider change with the row's category and
@@ -906,7 +927,7 @@ function CategoryRowInner({
 }) {
   const { t, locale } = useT();
   const Icon = CATEGORY_ICONS[category];
-  const editable = !!onEditPlanned;
+  const editable = !!onEditPlanned && !supplierManaged;
 
   // `plannedBaseline` already reflects any active drag (parent merges drag
   // state into the bucket value). Slider operates in display units so the
@@ -1157,6 +1178,11 @@ function CategoryRowInner({
       value={liveDisplay}
       disabled={sliderDisabled}
       onChange={(e) => {
+        // The attribute is what a browser honours; this is what makes "no
+        // write is ever planned for a row we do not own" true however the
+        // change arrives. A supplier-managed row would 409, and a frozen one
+        // is pinned on purpose.
+        if (sliderDisabled) return;
         const baselineNext = toBaseline(Number(e.target.value));
         onDrag?.(category, baselineNext);
         scheduleCommit(baselineNext);
@@ -1210,6 +1236,19 @@ function CategoryRowInner({
       })}
     </span>
   ) : null;
+  // Why the slider under it is dead. A read-only control with no explanation
+  // reads as a bug, and this one is a decision: the amount belongs to a
+  // supplier the couple has already booked, and it changes on that supplier's
+  // card. Muted ink rather than blush — nothing is wrong here, and blush is
+  // already spoken for by the freeze lock one column over.
+  const supplierManagedEl = supplierManaged ? (
+    <span
+      data-testid={`supplier-managed-${category}`}
+      className="mt-1 block text-[10px] text-ink-400 dark:text-umber-300"
+    >
+      {t("budget.supplier_managed_hint")}
+    </span>
+  ) : null;
 
   if (linkTo) {
     return (
@@ -1251,6 +1290,7 @@ function CategoryRowInner({
         {trackEl}
         {actualOverlayEl}
         {overBudgetEl}
+        {supplierManagedEl}
       </div>
       {amountTile}
       {lockTile}
@@ -1308,6 +1348,12 @@ function CustomRowInner({
   const fillPct = rowMax > 0 ? Math.max(0, Math.min(100, (liveDisplay / rowMax) * 100)) : 0;
   const step = moneySliderStep(rowMax);
   const Icon = resolveCustomIcon(line.icon);
+  // Same rule as a category row, one line at a time. A supplier whose category
+  // has no budget bucket of its own (a planner's fee, a celebrant, equipment
+  // hire — see SUPPLIER_TO_BUDGET) mirrors into `other` under the business's
+  // own name, which is exactly the shape this component treats as a custom
+  // row. Its slider and its delete both 409 server-side, so neither is offered.
+  const supplierManaged = isSupplierManagedLine(line);
   // Match CategoryRow: a "0/fő" subscript next to "0 Ft" is just noise, so
   // suppress it until the row actually has a plan.
   const perGuest =
@@ -1385,7 +1431,7 @@ function CustomRowInner({
          *  removing a custom row meant going to the budget table's mobile
          *  card. The wrapped row gives the label line the full width, so the
          *  glyph, the name and the delete all fit at every size now. */}
-        {onRemove && (
+        {onRemove && !supplierManaged && (
           <button
             type="button"
             onClick={() => onRemove(line.id)}
@@ -1405,8 +1451,10 @@ function CustomRowInner({
           max={rowMax}
           step={step}
           value={liveDisplay}
-          disabled={!onEditPlanned}
+          disabled={!onEditPlanned || supplierManaged}
           onChange={(e) => {
+            // Same guard as CategoryRow — see the comment there.
+            if (supplierManaged) return;
             const baselineNext = toBaseline(Number(e.target.value));
             onDrag?.(line.id, baselineNext);
             scheduleCommit(baselineNext);
@@ -1426,6 +1474,14 @@ function CustomRowInner({
             style={actualOverlayStyle}
             aria-hidden="true"
           />
+        )}
+        {supplierManaged && (
+          <span
+            data-testid={`supplier-managed-line-${line.id}`}
+            className="mt-1 block text-[10px] text-ink-400 dark:text-umber-300"
+          >
+            {t("budget.supplier_managed_hint")}
+          </span>
         )}
       </div>
       <span

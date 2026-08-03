@@ -29,6 +29,7 @@ function line(id: number, category: BudgetCategory, planned: number, actual = 0)
     paid_huf: 0,
     supplier_id: null,
     couple_supplier_id: null,
+    listing_id: null,
     notes: null,
     per_guest: false,
     icon: null,
@@ -47,6 +48,8 @@ function setup({
   onCountLockToggle,
   countLocked = false,
   showActualToggle = false,
+  onEditCustomRowPlanned,
+  onRemoveCustomRow,
 }: {
   lines: BudgetLine[];
   count?: number;
@@ -59,6 +62,10 @@ function setup({
   /** Matches the component default. BudgetPage passes it; the dashboard
    *  deliberately doesn't, so the toggle is absent there. */
   showActualToggle?: boolean;
+  /** Only BudgetPage wires the custom-row handlers; left undefined the rows
+   *  render read-only, which is the dashboard's shape. */
+  onEditCustomRowPlanned?: (lineId: number, planned: number) => void;
+  onRemoveCustomRow?: (lineId: number) => void;
 }) {
   return render(
     <MemoryRouter>
@@ -77,6 +84,8 @@ function setup({
           onCountLockToggle={onCountLockToggle}
           countLocked={countLocked}
           showActualToggle={showActualToggle}
+          onEditCustomRowPlanned={onEditCustomRowPlanned}
+          onRemoveCustomRow={onRemoveCustomRow}
         />
       </I18nProvider>
     </MemoryRouter>,
@@ -297,6 +306,91 @@ describe("<CostPlanningCard> headcount lock", () => {
     expect(
       screen.getByRole("button", { name: /unpin the headcount/i }).getAttribute("aria-pressed"),
     ).toBe("true");
+  });
+});
+
+describe("<CostPlanningCard> supplier-managed rows", () => {
+  // A line mirroring a booked supplier is owned by that supplier's card: the
+  // server answers 409 to every PATCH on one. The planned slider used to be
+  // offered anyway, so dragging a category whose lines all came from a booked
+  // supplier could only ever produce a failed save.
+  function mirrored(l: BudgetLine, supplierId = "sup-1"): BudgetLine {
+    return { ...l, couple_supplier_id: supplierId };
+  }
+
+  it("offers no planned drag for a category a supplier owns outright", async () => {
+    const onEditPlanned = mock(async (_cat: BudgetCategory, _planned: number) => {});
+    setup({ lines: [mirrored(line(1, "venue", 300_000))], onEditPlanned });
+
+    const slider = screen.getByRole("slider", { name: /venue/i }) as HTMLInputElement;
+    expect(slider.disabled).toBe(true);
+
+    // And nothing reaches the parent even if an event does land on it — the
+    // whole point is that no write is attempted for this category.
+    fireEvent.change(slider, { target: { value: 900_000 } });
+    fireEvent.pointerUp(slider);
+    await wait(AFTER_DEBOUNCE_MS);
+    expect(onEditPlanned).not.toHaveBeenCalled();
+  });
+
+  it("says why the row is not draggable", () => {
+    // A dead control with no explanation reads as a broken page; this one is a
+    // decision, and the couple needs to know where the number lives instead.
+    const { container } = setup({ lines: [mirrored(line(1, "venue", 300_000))] });
+    expect(container.querySelector('[data-testid="supplier-managed-venue"]')).not.toBeNull();
+  });
+
+  it("locks the category as soon as ONE of its lines is a supplier's", () => {
+    // The bucket slider writes a category TOTAL. With a mirrored row held back
+    // the free rows would absorb the whole new total and the category would
+    // settle above where the thumb was released, so a mixed category is no
+    // more draggable than a fully mirrored one.
+    const lines = [mirrored(line(1, "venue", 300_000)), line(2, "venue", 100_000)];
+    const { container } = setup({ lines });
+    expect((screen.getByRole("slider", { name: /venue/i }) as HTMLInputElement).disabled).toBe(
+      true,
+    );
+    expect(container.querySelector('[data-testid="supplier-managed-venue"]')).not.toBeNull();
+  });
+
+  it("leaves every other category alone", () => {
+    const lines = [mirrored(line(1, "venue", 300_000)), line(2, "catering", 900_000)];
+    const { container } = setup({ lines });
+    const catering = screen.getByRole("slider", { name: /catering/i }) as HTMLInputElement;
+    expect(catering.disabled).toBe(false);
+    expect(container.querySelector('[data-testid="supplier-managed-catering"]')).toBeNull();
+  });
+
+  it("locks a supplier's own custom row without locking the Egyéb bucket", async () => {
+    // A supplier category with no budget bucket of its own (planner fee,
+    // celebrant, equipment hire) mirrors into `other` under the business's own
+    // name, which is exactly the shape the panel renders as a custom row.
+    const supplierRow = { ...mirrored(line(7, "other", 400_000)), label: "Kis Anna Events" };
+    // The default label is what puts a row in the "Egyéb" bucket rather than
+    // on a row of its own — see `defaultOtherLabels` in the component.
+    const bucketRow = { ...line(8, "other", 50_000), label: "Other" };
+    const onEditCustomRowPlanned = mock((_id: number, _planned: number) => {});
+    const onRemoveCustomRow = mock((_id: number) => {});
+    const { container } = setup({
+      lines: [supplierRow, bucketRow],
+      onEditCustomRowPlanned,
+      onRemoveCustomRow,
+    });
+
+    const rowSlider = screen.getByRole("slider", { name: /Kis Anna Events/i }) as HTMLInputElement;
+    expect(rowSlider.disabled).toBe(true);
+    expect(container.querySelector('[data-testid="supplier-managed-line-7"]')).not.toBeNull();
+    // DELETE is refused for the same reason PATCH is, so the handle is gone.
+    expect(screen.queryByRole("button", { name: /Kis Anna Events/i })).toBeNull();
+
+    fireEvent.change(rowSlider, { target: { value: 900_000 } });
+    await wait(AFTER_DEBOUNCE_MS);
+    expect(onEditCustomRowPlanned).not.toHaveBeenCalled();
+
+    // The line lives outside the "other" bucket, so it must not lock it.
+    expect((screen.getByRole("slider", { name: /other/i }) as HTMLInputElement).disabled).toBe(
+      false,
+    );
   });
 });
 

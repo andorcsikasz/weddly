@@ -23,6 +23,7 @@ function line(category: BudgetCategory, planned: number, actual = 0): BudgetLine
     paid_huf: 0,
     supplier_id: null,
     couple_supplier_id: null,
+    listing_id: null,
     notes: null,
     per_guest: false,
     icon: null,

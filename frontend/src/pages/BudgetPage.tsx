@@ -65,6 +65,7 @@ import {
   guestCountBaseline,
   guestCountBounds,
   isNoopPlan,
+  isSupplierManagedLine,
   mergeLines,
   planCategoryActual,
   planCategoryPaid,
@@ -894,10 +895,17 @@ export default function BudgetPage() {
       actual: number;
       paid: number;
       editable: boolean;
+      /** The supplier-owned lines inside this bucket, kept apart so the row can
+       *  NAME them. A category row shows one aggregated number, and until it
+       *  did this there was no way to get from "Zene / DJ, 120 000 Ft paid" back
+       *  to the vendor that produced the figure without leaving the page. The
+       *  label of a mirrored line is already the supplier's own name, so this
+       *  costs no extra request. */
+      sources: BudgetLine[];
     };
     const map = new Map<BudgetCategory, Bucket>();
     for (const cat of CATEGORIES) {
-      map.set(cat, { lines: [], planned: 0, actual: 0, paid: 0, editable: true });
+      map.set(cat, { lines: [], planned: 0, actual: 0, paid: 0, editable: true, sources: [] });
     }
     for (const l of lines) {
       if (l.category === "honeymoon") continue;
@@ -908,7 +916,10 @@ export default function BudgetPage() {
       b.planned += l.planned_huf;
       b.actual += l.actual_huf;
       b.paid += l.paid_huf;
-      if (l.couple_supplier_id !== null) b.editable = false;
+      if (isSupplierManagedLine(l)) {
+        b.editable = false;
+        b.sources.push(l);
+      }
     }
     return map;
   }, [lines]);
@@ -1202,7 +1213,7 @@ export default function BudgetPage() {
                     className="scroll-mt-24 border-t border-paper-200 transition hover:bg-paper-50 dark:border-umber-700 dark:hover:bg-umber-700/60"
                   >
                     <td className="px-4 py-2 align-middle">
-                      <CategoryCell category={cat} />
+                      <CategoryCell category={cat} sources={bucket?.sources ?? []} />
                     </td>
                     <td className="px-4 py-2 align-middle">
                       {/* Planned is read-only at the row level — the per-
@@ -1675,13 +1686,43 @@ function AddLinePicker({ onPick }: { onPick: (cat: BudgetCategory) => Promise<vo
 
 /** Static category badge — icon + localized name. Replaces the old
  *  <select> dropdown so categories are fixed at line-creation time. */
-function CategoryCell({ category }: { category: BudgetCategory }) {
+/** `sources` are the supplier-owned lines folded into this category. A category
+ *  row is one aggregated number, so without naming them there is no way back
+ *  from the figure to the vendor that produced it, which is the whole reason
+ *  the amount is read-only here. The label of a mirrored line already IS the
+ *  supplier's name, and its id addresses the same card the directory uses, so
+ *  each name is a one-click link to the place the number can actually be
+ *  edited. No amount is printed beside the name on purpose: per-guest
+ *  categories scale the planned figure to headcount, and a raw per-line
+ *  amount would not add up to the scaled total sitting in the next column. */
+function CategoryCell({
+  category,
+  sources = [],
+}: {
+  category: BudgetCategory;
+  sources?: BudgetLine[];
+}) {
   const { t } = useT();
   const Icon = CATEGORY_ICONS[category];
   return (
-    <span className="inline-flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
-      <Icon size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
-      {t(`budget.cat.${category}`)}
+    <span className="inline-flex flex-col gap-0.5">
+      <span className="inline-flex items-center gap-2 text-sm text-ink-800 dark:text-paper-100">
+        <Icon size={14} className="text-ink-500 dark:text-umber-300" aria-hidden />
+        {t(`budget.cat.${category}`)}
+      </span>
+      {sources.length > 0 && (
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pl-6 text-xs text-ink-500 dark:text-umber-300">
+          {sources.map((l) => (
+            <Link
+              key={l.id}
+              to={`/app/suppliers/${l.couple_supplier_id ?? l.listing_id}`}
+              className="underline decoration-dotted underline-offset-2 transition hover:text-blush-700 dark:hover:text-blush-300"
+            >
+              {l.label}
+            </Link>
+          ))}
+        </span>
+      )}
     </span>
   );
 }
@@ -2984,7 +3025,7 @@ function AddCustomRowMobile({
         onClick={() => setOpen(true)}
         className="w-full rounded-2xl border border-dashed border-paper-300 px-3 py-3 text-sm text-ink-500 transition hover:border-ink-400 hover:text-ink-700 dark:border-umber-700 dark:text-umber-300 dark:hover:border-umber-600 dark:hover:text-paper-100"
       >
-        + {t("budget.custom_row_add_aria")}
+        + {t("budget.custom_row_add")}
       </button>
     );
   }
