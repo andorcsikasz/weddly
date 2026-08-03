@@ -30,6 +30,7 @@ import { getUserById } from "./users";
 import { getVendorAccountByOwnerUserId, type VendorAccountRow } from "./vendor_accounts";
 import { getVendorSub, toVendorBilling } from "./vendor_billing";
 import { getBookingById, type BookingRow } from "./supplier_bookings";
+import { holdSignalsFor } from "./date_holds";
 import { unreadCount, unreadCountsByBooking, vendorUnreadTotal } from "./booking_messages";
 import {
   countListingPackages,
@@ -177,11 +178,20 @@ interface MessageEdges {
 function messageEdgesFor(bookingIds: number[]): Map<number, MessageEdges> {
   const out = new Map<number, MessageEdges>();
   if (bookingIds.length === 0) return out;
+  // A message the AUTOMATION engine wrote is not a reply. An auto-acknowledgement
+  // is a machine saying "we have this"; the couple is still waiting for a human,
+  // and counting it would silence both `unanswered` and `going_cold` forever on
+  // any vendor who armed one. Excluding it here rather than in the automation
+  // module is what keeps the queue, the CTA and the reminder mail reading the
+  // same fact, which is the whole point of a single derivation.
   const rows = db
     .prepare(
       `SELECT booking_id, sender_kind, MAX(created_at) AS last_at
          FROM booking_messages
         WHERE booking_id IN (${bookingIds.map(() => "?").join(",")})
+          AND id NOT IN (
+                SELECT message_id FROM vendor_automation_runs WHERE message_id IS NOT NULL
+              )
         GROUP BY booking_id, sender_kind`,
     )
     .all(...bookingIds) as { booking_id: number; sender_kind: string; last_at: number }[];
@@ -217,12 +227,23 @@ function paymentEdgesFor(bookingIds: number[]): Map<number, PaymentEdges> {
   return out;
 }
 
+/** The two raw hold columns, or the "no hold on file" pair. Raw on purpose:
+ *  liveness is derived in `shared/vendor_next_action.ts` from the same
+ *  `holdState` every availability read uses. */
+interface HoldEdges {
+  hold_until: number | null;
+  released_at: number | null;
+}
+
+const NO_HOLD: HoldEdges = { hold_until: null, released_at: null };
+
 function buildSignals(
   row: BookingRow,
   edges: MessageEdges,
   payments: PaymentEdges,
   reviewed: boolean,
   pro: boolean,
+  hold: HoldEdges = NO_HOLD,
 ): VendorClientSignals {
   return {
     status: row.status,
@@ -236,6 +257,8 @@ function buildSignals(
     next_unpaid_due: pro ? payments.next_unpaid_due : null,
     reviewed,
     snoozed_until: attentionSnoozedUntil(row),
+    hold_until: hold.hold_until,
+    hold_released_at: hold.released_at,
     pro,
   };
 }
@@ -252,6 +275,10 @@ export function clientSignalsForBookings(
   const edges = messageEdgesFor(ids);
   const payments = pro ? paymentEdgesFor(ids) : new Map<number, PaymentEdges>();
   const reviewed = reviewedCoupleIds(accountId);
+  // One query for the whole set, same as the edges above. Fetched on FREE too:
+  // the rule itself is skipped there, but a vendor who lapses with holds on
+  // file keeps them, and the payload should not start lying about that.
+  const holds = holdSignalsFor(ids);
   for (const row of rows) {
     out.set(
       row.id,
@@ -261,6 +288,7 @@ export function clientSignalsForBookings(
         payments.get(row.id) ?? { count: 0, next_unpaid_due: null },
         reviewed.has(row.couple_id),
         pro,
+        holds.get(row.id) ?? NO_HOLD,
       ),
     );
   }

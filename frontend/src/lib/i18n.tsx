@@ -21,18 +21,17 @@ export const LOCALE_NAMES: Record<Locale, string> = {
 };
 
 /** Locales whose tree covers EVERY key in `LocaleMessages`. Drift against EN
- *  is a bug in these and `warnDriftDev` reports it in both directions. */
-const FULL_LOCALES = ["hu", "es"] as const;
-
-/** Locales that ship a DELIBERATELY partial tree: the vendor-facing surface is
- *  translated and everything else resolves through the EN fallback in `t()`.
- *  Croatian and German landed this way so vendors in those markets could work
- *  in their own language without holding the release for 7,226 keys apiece.
- *  A missing key here is expected, not drift, so the "missing in <loc>"
- *  direction of the dev check is skipped for them — 5,700 warnings per boot
- *  would bury the real ones. The other direction still fires: a key present
- *  here and absent from EN is a typo or a stale key either way. */
-const PARTIAL_LOCALES = ["hr", "de"] as const;
+ *  is a bug in these and `warnDriftDev` reports it in both directions.
+ *
+ *  Croatian and German used to sit in a second `PARTIAL_LOCALES` list: they
+ *  shipped the vendor-facing surface only, and everything else resolved
+ *  through the EN fallback in `t()`, so a Croatian couple got a Croatian
+ *  vendor portal and an English guest list. Both trees are complete now, which
+ *  is what let that list go and what makes a key added to EN without a
+ *  translation a COMPILE error (`LocaleMessages`, not `PartialLocaleMessages`)
+ *  rather than a silently English screen nobody notices. If a locale ever
+ *  ships partial again, it needs the skip-one-direction branch back. */
+const FULL_LOCALES = ["hu", "es", "hr", "de"] as const;
 
 const STORAGE_KEY = "weddly.locale";
 
@@ -197,13 +196,11 @@ async function warnDriftDev() {
     return out;
   };
   const enKeys = new Set(flatten(en as unknown as Record<string, unknown>));
-  for (const loc of [...FULL_LOCALES, ...PARTIAL_LOCALES] as const) {
+  for (const loc of FULL_LOCALES) {
     const tree = await loadTree(loc);
     const keys = new Set(flatten(tree as unknown as Record<string, unknown>));
     for (const k of keys)
       if (!enKeys.has(k)) console.warn(`[i18n] missing in en (present in ${loc}):`, k);
-    // A partial tree is missing most of EN on purpose — see PARTIAL_LOCALES.
-    if ((PARTIAL_LOCALES as readonly string[]).includes(loc)) continue;
     for (const k of enKeys) if (!keys.has(k)) console.warn(`[i18n] missing in ${loc}:`, k);
   }
 }

@@ -142,6 +142,15 @@ process.env.ADDRESS_SUGGEST_FAKE = "1";
 process.env.DEEPL_API_KEY = "test-deepl-key";
 process.env.DEEPL_FAKE = "1";
 
+// AI Concierge (vendor inbox assistant): ANTHROPIC_API_KEY is pinned NON-empty
+// so aiConfigured() reports the feature available, AI_FAKE=1 makes lib/ai.ts
+// answer from a deterministic in-process stub instead of ever calling
+// Anthropic, and AI_FAKE_FAIL is pinned OFF so only the one test that injects a
+// model failure sees it. Same shape as the DeepL / Places gates below.
+process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
+process.env.AI_FAKE = "1";
+process.env.AI_FAKE_FAIL = "";
+
 // Google Places ratings (browse-teaser ranking input): key pinned NON-empty so
 // placesConfigured() is true, GOOGLE_PLACES_FAKE=1 so the stub answers instead
 // of the billed API. Same shape as the DeepL gate above.

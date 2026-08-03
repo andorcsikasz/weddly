@@ -19,6 +19,7 @@
 // open. Both stamps are first-wins (COALESCE), so re-reading an old thread
 // never rewrites history.
 
+import type { BookingTimelineEvent } from "./booking_timeline";
 import type { UnixMs } from "./types";
 
 /** Who wrote a message. The counterparty is resolved per reader, so a thread
@@ -80,6 +81,16 @@ export interface BookingThread {
   /** ISO 'YYYY-MM-DD', or "" when the couple had no date at inquiry time. */
   event_date: string;
   messages: BookingMessage[];
+  /** The unified booking timeline: every message above PLUS the system events
+   *  around them (a quote sent, a date held, an installment paid, a status
+   *  moved), merged in one chronological list.
+   *
+   *  ALREADY SCOPED TO THIS READER. `shared/booking_timeline.ts` declares an
+   *  audience per event kind and the projector filters on it, so a vendor's
+   *  private facts are absent from the couple's payload rather than hidden by
+   *  the client. Each `message` event carries only the id of the message it
+   *  names; the body lives once, in `messages`. */
+  events: BookingTimelineEvent[];
 }
 
 /** A row in the couple's list of vendor conversations (/app/vendors inbox). */

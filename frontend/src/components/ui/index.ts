@@ -17,8 +17,10 @@ export { TagChip } from "./TagChip";
 export { TextField } from "./TextField";
 export { ViewSelect, type ViewSelectOption, type ViewSelectTone } from "./ViewSelect";
 export {
+  type ToastAction,
   type ToastInput,
   type ToastKind,
   ToastProvider,
+  UNDO_TOAST_MS,
   useToast,
 } from "./ToastProvider";

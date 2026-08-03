@@ -20,6 +20,7 @@ import {
   Eye,
   Inbox,
   RefreshCw,
+  Share2,
   Sparkles,
   TrendingUp,
   Wallet,
@@ -30,6 +31,9 @@ import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorPlan } from "@shared/vendor_plan";
 import { Skeleton, SkeletonText } from "../../components/ui";
 import { AnimatedNumber } from "../../components/AnimatedNumber";
+import { CoupleMonogram } from "../../components/CoupleMonogram";
+import { EventDate } from "../../components/EventDate";
+import { VendorShareDialog } from "../../components/VendorShareDialog";
 import { VerifiedBadge } from "../../components/VerifiedBadge";
 import {
   SetupLinger,
@@ -37,7 +41,7 @@ import {
   VendorSetupPanel,
 } from "../../components/VendorSetupProgress";
 import { vendorBillingApi, vendorListingApi, vendorStatsApi } from "../../lib/endpoints";
-import { formatDate, formatMoney } from "../../lib/format";
+import { formatMoney } from "../../lib/format";
 import { greetingKeyFor } from "../../lib/greeting";
 import { useAuth } from "../../lib/auth";
 import { useT } from "../../lib/i18n";
@@ -58,6 +62,10 @@ export default function VendorDashboardPage() {
   // the listing resolves (and for an account that has none), which is exactly
   // when there is no public page to open.
   const [listingId, setListingId] = useState<string | null>(null);
+  // The share sheet the empty "upcoming" block hands over to. Same dialog the
+  // header icon and the clients-list empty state open, so the portal keeps one
+  // share surface rather than three that drift.
+  const [shareOpen, setShareOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
   // A self-serve vendor who hasn't finished the signup wizard is bounced into
@@ -377,9 +385,33 @@ export default function VendorDashboardPage() {
           </div>
 
           {stats.upcoming.length === 0 ? (
-            <p className="py-6 text-center text-sm text-ink-500 dark:text-paper-400">
-              {t("vendor.dashboard.no_upcoming")}
-            </p>
+            // Not a grey sentence. An empty diary has exactly one lever behind
+            // it — more couples reaching the page — so the block says what is
+            // missing and hands over the share sheet that fixes it. The share
+            // button carries `steel`, the same secondary fill the clients-list
+            // empty state gives this same action (owner direction 2026-07-29);
+            // the page's one blush primary stays in the hero above.
+            <div className="flex flex-col items-center gap-3 border-y border-paper-200 py-10 text-center dark:border-umber-700">
+              <CalendarClock
+                size={26}
+                strokeWidth={1.5}
+                aria-hidden="true"
+                className="text-steel-600 dark:text-steel-300"
+              />
+              <p className="max-w-sm text-sm text-ink-500 dark:text-paper-400">
+                {t("vendor.dashboard.no_upcoming")}
+              </p>
+              {listingId && businessName && (
+                <button
+                  type="button"
+                  onClick={() => setShareOpen(true)}
+                  className="btn btn-sm inline-flex items-center gap-1.5 bg-steel-700 text-white hover:bg-steel-800"
+                >
+                  <Share2 size={15} aria-hidden="true" />
+                  {t("vendor.clients.empty_cta_share")}
+                </button>
+              )}
+            </div>
           ) : (
             <ul className="flex flex-col divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
               {stats.upcoming.map((event) => (
@@ -388,16 +420,19 @@ export default function VendorDashboardPage() {
                     to={`/vendor/clients/${event.id}`}
                     className="group -mx-2 flex items-center justify-between gap-3 px-2 py-4 transition-colors hover:bg-paper-100 dark:hover:bg-umber-800"
                   >
-                    <span
-                      className="truncate font-medium text-ink-900 dark:text-paper-50"
-                      title={event.couple_display_name}
-                    >
-                      {event.couple_display_name}
+                    <span className="flex min-w-0 items-center gap-2">
+                      <CoupleMonogram name={event.couple_display_name} />
+                      <span
+                        className="truncate font-medium text-ink-900 dark:text-paper-50"
+                        title={event.couple_display_name}
+                      >
+                        {event.couple_display_name}
+                      </span>
                     </span>
-                    <span className="flex shrink-0 items-center gap-2 text-sm text-ink-500 dark:text-paper-400">
-                      {event.event_date
-                        ? formatDate(event.event_date, locale)
-                        : t("vendor.clients.no_event_date")}
+                    <span className="flex shrink-0 items-center gap-2">
+                      {/* The Saturday, in the display serif: on a page of
+                          counts it is the one value that is an occasion. */}
+                      <EventDate date={event.event_date} />
                       <ChevronRight
                         size={16}
                         aria-hidden="true"
@@ -424,6 +459,15 @@ export default function VendorDashboardPage() {
           </section>
         )}
       </div>
+
+      {listingId && businessName && (
+        <VendorShareDialog
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          listingId={listingId}
+          listingName={businessName}
+        />
+      )}
     </div>
   );
 }
@@ -519,46 +563,54 @@ function ActionCard({ to, icon, title, body, tone }: ActionCardProps) {
   );
 }
 
+// The dashboard, one frame earlier. It is drawn on the SAME bones as the real
+// page — the hairline KPI grid, the hero number's own proportions, the upcoming
+// list's row rhythm — because a skeleton in a different layout is a second
+// layout the eye has to re-learn the moment the data lands, which reads as the
+// page jumping. (The old one framed everything in rounded cards the finished
+// page does not have.)
 function DashboardSkeleton({ title }: { title: string }) {
   return (
     <div className="flex flex-col gap-8" aria-busy="true">
-      <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
-        {title}
-      </h1>
-      {/* Hero metric */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-6 dark:border-umber-600 dark:bg-umber-900">
-        <Skeleton variant="line" width="40%" height={12} />
-        <Skeleton width={140} height={48} rounded="lg" />
-        <Skeleton variant="line" width="55%" height={12} />
+      <h1 className="sr-only">{title}</h1>
+
+      {/* Greeting */}
+      <Skeleton variant="line" width="55%" height={34} className="max-w-md" />
+
+      {/* Hero metric + its two actions */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <Skeleton variant="line" width={130} height={12} />
+          <Skeleton width={124} height={56} rounded="lg" />
+          <Skeleton variant="line" width={180} height={12} />
+        </div>
+        <div className="flex flex-col gap-2 self-start sm:flex-row sm:self-auto">
+          <Skeleton width={148} height={44} rounded="xl" />
+          <Skeleton width={148} height={44} rounded="xl" />
+        </div>
       </div>
-      {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+
+      {/* Secondary KPIs — the same hairline grid, not four cards. */}
+      <div className="grid grid-cols-2 divide-x divide-y divide-paper-200 border-y border-paper-200 lg:grid-cols-4 lg:divide-y-0 dark:divide-umber-700 dark:border-umber-700">
         {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex flex-col gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900"
-          >
-            <Skeleton variant="line" width="70%" height={10} />
-            <Skeleton width={72} height={24} rounded="md" />
+          <div key={i} className="flex flex-col gap-2 px-4 py-5 sm:px-5">
+            <Skeleton variant="line" width="70%" height={12} />
+            <Skeleton width={84} height={26} rounded="md" />
           </div>
         ))}
       </div>
-      {/* Upcoming + actions */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 lg:col-span-2 dark:border-umber-600 dark:bg-umber-900">
-          <Skeleton variant="line" width="35%" height={12} />
-          <SkeletonText lines={4} />
-        </div>
-        <div className="flex flex-col gap-3">
-          {[0, 1].map((i) => (
-            <div
-              key={i}
-              className="flex items-start gap-3 rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900"
-            >
-              <Skeleton variant="circle" width={36} />
-              <div className="flex-1">
-                <SkeletonText lines={2} lastLineWidth="80%" />
-              </div>
+
+      {/* Upcoming: monogram, name, date — the row shape it is about to hold. */}
+      <div className="flex flex-col gap-2">
+        <Skeleton variant="line" width={180} height={16} />
+        <div className="flex flex-col divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-700 dark:border-umber-700">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center justify-between gap-3 py-4">
+              <span className="flex min-w-0 items-center gap-2">
+                <Skeleton variant="circle" width={28} />
+                <Skeleton variant="line" width={140} height={14} />
+              </span>
+              <Skeleton variant="line" width={110} height={14} />
             </div>
           ))}
         </div>

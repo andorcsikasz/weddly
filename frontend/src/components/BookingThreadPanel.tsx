@@ -4,12 +4,43 @@
 // from two ends, and two copies would drift the moment one side gained a
 // feature. `side` decides which bubbles are "mine"; everything else is props.
 //
+// It renders ONE scroll, not two: the booking's system events (a quote sent, a
+// date held, an installment paid, a status moved) sit inline among the messages
+// in stamp order, because "what actually happened with this booking" was
+// previously six panels and a chat that never mentioned each other. System
+// events are drawn QUIETER than messages on purpose: they are context, not
+// conversation, so they are a centred line rather than a bubble.
+//
+// The list is driven by `events` when the server sends them, and the events are
+// ALREADY SCOPED to this reader (`shared/booking_timeline.ts` declares an
+// audience per kind, the projector filters on it). This component therefore
+// hides nothing and decides nothing about visibility: whatever arrives is
+// whatever this side is allowed to read.
+//
 // Colour note: bubbles are NEUTRAL, never blush. In the vendor portal blush
 // means "you can act on this" and nothing else, and a message someone sent is
 // not a control. The only accent in here is the send button, which is a control.
 
-import { type ReactNode, useEffect, useRef, useState } from "react";
-import { Check, CheckCheck, FileText, ImageIcon, Paperclip, Send, X } from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Bot,
+  CalendarClock,
+  Check,
+  CheckCheck,
+  CircleCheck,
+  CircleX,
+  CornerUpLeft,
+  Eye,
+  FileText,
+  ImageIcon,
+  Inbox,
+  Paperclip,
+  Send,
+  Timer,
+  Wallet,
+  X,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type {
   BookingMessage,
   BookingMessageAttachment,
@@ -23,15 +54,21 @@ import {
   MESSAGE_BODY_MAX_LEN,
   applyTemplateVars,
 } from "@shared/booking_messages";
+import type { BookingTimelineEvent, TimelineEventKind } from "@shared/booking_timeline";
+import { timelineCopyKey } from "@shared/booking_timeline";
 import { Button, Skeleton, useToast } from "./ui";
 import { bookingMessagesApi } from "../lib/endpoints";
-import { intlLocale } from "../lib/format";
+import { formatDate, formatMoney, intlLocale } from "../lib/format";
 import { type Locale, useT } from "../lib/i18n";
 
 interface Props {
   /** Which sender kind the viewer is. Their own messages sit on the right. */
   side: MessageSenderKind;
   messages: BookingMessage[];
+  /** The merged event log for this booking, already audience-scoped by the
+   *  server. Left out (or empty) means "messages only", which is what an older
+   *  caller and the component's own tests get. */
+  events?: BookingTimelineEvent[];
   loading: boolean;
   onSend: (body: string, files: File[]) => Promise<void>;
   /** Vendor-only: canned replies offered above the composer. */
@@ -120,9 +157,78 @@ function AttachmentChip({ attachment }: { attachment: BookingMessageAttachment }
   );
 }
 
+/** One glyph per event kind. Decoration only, so it is drawn on the surface it
+ *  sits on: no tinted plate behind it (the vendor-portal rule), no colour of
+ *  its own beyond the quiet ink the line is already set in. */
+const EVENT_ICON: Record<Exclude<TimelineEventKind, "message">, LucideIcon> = {
+  inquiry_sent: Inbox,
+  vendor_opened: Eye,
+  vendor_responded: CornerUpLeft,
+  booking_confirmed: CircleCheck,
+  booking_declined: CircleX,
+  booking_cancelled: CircleX,
+  booking_expired: Timer,
+  quote_sent: FileText,
+  quote_viewed: Eye,
+  quote_accepted: CircleCheck,
+  quote_declined: CircleX,
+  quote_withdrawn: Timer,
+  hold_placed: CalendarClock,
+  hold_released: CalendarClock,
+  hold_expired: Timer,
+  payment_scheduled: Wallet,
+  payment_paid: CircleCheck,
+  automation_ran: Bot,
+};
+
+/** The sentence for one system event. The key is DERIVED from the kind
+ *  (`booking_timeline.event_<kind>`), so a kind added to the projector cannot end up
+ *  rendering another kind's copy; the payload only fills the blanks. */
+function useEventText(): (event: BookingTimelineEvent) => string {
+  const { t, locale } = useT();
+  return (event: BookingTimelineEvent) => {
+    const p = event.payload;
+    // An inquiry with no date is its own sentence rather than one with a hole
+    // in it: the couple genuinely had not picked a day.
+    if (event.kind === "inquiry_sent" && !p.date)
+      return t("booking_timeline.event_inquiry_sent_nodate");
+    const name =
+      p.value === undefined
+        ? ""
+        : t(`booking_timeline.automation_${p.value}` as "booking_timeline.automation_inquiry_ack");
+    // Through the shared helper, so the panel and the contract can never
+    // disagree about what a kind's copy key is called.
+    return t(timelineCopyKey(event.kind) as "booking_timeline.event_inquiry_sent", {
+      date: p.date ? formatDate(p.date, locale) : "",
+      // Whole units of the event's own currency, like every amount in the app.
+      amount: p.amount === undefined ? "" : formatMoney(p.amount, p.currency, locale),
+      label: p.label ?? "",
+      name,
+    });
+  };
+}
+
+/** A system event: a centred, quiet line. Deliberately not a bubble and not a
+ *  card, because it is context around the conversation rather than a turn in
+ *  it. */
+function SystemEvent({ event, locale }: { event: BookingTimelineEvent; locale: Locale }) {
+  const text = useEventText()(event);
+  const Icon = EVENT_ICON[event.kind as Exclude<TimelineEventKind, "message">] ?? Inbox;
+  return (
+    <li className="flex justify-center">
+      <span className="flex max-w-[90%] items-center gap-1.5 py-0.5 text-center text-[11px] leading-relaxed text-ink-500 dark:text-paper-400">
+        <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+        <span className="min-w-0">{text}</span>
+        <span className="shrink-0 tabular-nums opacity-70">{formatTs(event.at, locale)}</span>
+      </span>
+    </li>
+  );
+}
+
 export function BookingThreadPanel({
   side,
   messages,
+  events,
   loading,
   onSend,
   templates,
@@ -140,9 +246,45 @@ export function BookingThreadPanel({
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  /** ONE scroll, in the server's order. A `message` event names a row this
+   *  component already holds, so the body lives once; anything else is a quiet
+   *  system line. With no events (an older caller, or a send that has only
+   *  optimistically appended) the messages carry the list on their own, so the
+   *  panel never goes blank while a fresh timeline is in flight. */
+  const rows = useMemo(() => {
+    const byId = new Map(messages.map((m) => [m.id, m]));
+    if (!events || events.length === 0) {
+      return messages.map((m) => ({
+        message: m,
+        event: undefined as BookingTimelineEvent | undefined,
+      }));
+    }
+    const out: { message?: BookingMessage; event?: BookingTimelineEvent }[] = [];
+    const rendered = new Set<number>();
+    for (const event of events) {
+      if (event.kind !== "message") {
+        out.push({ event });
+        continue;
+      }
+      const id = event.payload.message_id;
+      const message = id === undefined ? undefined : byId.get(id);
+      // A message the timeline names but this side has not loaded is skipped
+      // rather than drawn as an empty bubble.
+      if (!message) continue;
+      rendered.add(message.id);
+      out.push({ message, event });
+    }
+    // A message sent since the timeline was fetched (the optimistic append
+    // after a successful send) still belongs at the bottom.
+    for (const m of messages) if (!rendered.has(m.id)) out.push({ message: m });
+    return out;
+  }, [events, messages]);
+
+  // Keyed on the merged list, not on the messages: a system event arriving at
+  // the bottom moves the scroll too.
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "nearest" });
-  }, [messages.length]);
+  }, [rows.length]);
 
   const pickFiles = (picked: FileList | null) => {
     if (!picked) return;
@@ -194,39 +336,57 @@ export function BookingThreadPanel({
     );
   }
 
+  const bubble = (m: BookingMessage, automated: boolean) => {
+    const mine = m.sender_kind === side;
+    return (
+      <li key={`m${m.id}`} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+        <div
+          className={`max-w-[85%] rounded-2xl px-4 py-3 sm:max-w-[75%] ${
+            mine
+              ? "bg-ink-800 text-paper-50 dark:bg-paper-200 dark:text-ink-900"
+              : "bg-paper-100 text-ink-800 dark:bg-umber-700 dark:text-paper-100"
+          }`}
+        >
+          {m.body ? (
+            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{m.body}</p>
+          ) : null}
+          {m.attachments.map((a) => (
+            <AttachmentChip key={a.id} attachment={a} />
+          ))}
+          <span className="mt-1 flex items-center justify-end gap-1 text-[11px] opacity-70">
+            {/* A machine wrote this one. Said out loud on both sides: the vendor
+                must never be surprised by words attributed to them, and the
+                couple gets the disclosure an out-of-office already carries. */}
+            {automated ? (
+              <span
+                className="inline-flex items-center gap-1 uppercase tracking-wide"
+                title={t("booking_timeline.automated_hint")}
+              >
+                <Bot className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
+                {t("booking_timeline.automated")}
+              </span>
+            ) : null}
+            {formatTs(m.sent_at, locale)}
+            {mine ? <StatusTicks status={m.status} /> : null}
+          </span>
+        </div>
+      </li>
+    );
+  };
+
   return (
     <div className="space-y-4">
-      {messages.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="text-sm text-ink-500 dark:text-paper-400">{t("thread.empty")}</p>
       ) : (
         <ul className="max-h-[28rem] space-y-3 overflow-y-auto pr-1">
-          {messages.map((m) => {
-            const mine = m.sender_kind === side;
-            return (
-              <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 sm:max-w-[75%] ${
-                    mine
-                      ? "bg-ink-800 text-paper-50 dark:bg-paper-200 dark:text-ink-900"
-                      : "bg-paper-100 text-ink-800 dark:bg-umber-700 dark:text-paper-100"
-                  }`}
-                >
-                  {m.body ? (
-                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-                      {m.body}
-                    </p>
-                  ) : null}
-                  {m.attachments.map((a) => (
-                    <AttachmentChip key={a.id} attachment={a} />
-                  ))}
-                  <span className="mt-1 flex items-center justify-end gap-1 text-[11px] opacity-70">
-                    {formatTs(m.sent_at, locale)}
-                    {mine ? <StatusTicks status={m.status} /> : null}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
+          {rows.map((row) =>
+            row.message ? (
+              bubble(row.message, row.event?.payload.automated === true)
+            ) : row.event ? (
+              <SystemEvent key={row.event.id} event={row.event} locale={locale} />
+            ) : null,
+          )}
           <div ref={bottomRef} />
         </ul>
       )}

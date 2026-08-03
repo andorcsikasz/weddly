@@ -80,6 +80,9 @@ export type EmailKind =
   | "vendor_moved_to_planner" // admin rerouted a mis-routed vendor account to the planner side
   | "supplier_outreach" // P2.E, couple-initiated cold outreach to a shortlisted vendor
   | "vendor_message" // a vendor answered on the booking thread, heads-up to the couple
+  | "vendor_auto_reply" // the vendor's own auto-acknowledgement, sent by the automation layer
+  | "vendor_lead_reminder" // automation: the vendor's own reminder that a couple is still waiting
+  | "vendor_review_request" // automation: the vendor APPROVED asking this couple for a review
   | "couple_message" // a couple wrote back on the booking thread, heads-up to the vendor
   | "vendor_quote" // a vendor sent a priced offer against the inquiry, heads-up to the couple
   | "quote_response" // the couple accepted or declined that offer, heads-up to the vendor
@@ -345,6 +348,21 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // be told a client answered is a vendor who loses the booking. The volume
   // guard is the burst debounce in domain/booking_notify.ts, not a category.
   vendor_message: "transactional",
+  // Lifecycle, and the split from `vendor_message` above is deliberate. That one
+  // is transactional because a PERSON wrote those words and the couple is
+  // waiting on exactly them; this one is a machine acknowledging receipt, it
+  // carries nothing the couple cannot read in the app, and it is armed by the
+  // vendor rather than requested by the recipient. So it honours suppression and
+  // the unsubscribe footer, which is what makes `email_optouts` and
+  // DO_NOT_CONTACT bite on a surface that can fire on every inquiry.
+  vendor_auto_reply: "lifecycle",
+  // Lifecycle: a system-initiated reminder, exactly like every other nudge the
+  // worker sends. The vendor armed it, which is consent to the automation, not
+  // an exemption from their own mail preferences.
+  vendor_lead_reminder: "lifecycle",
+  // Lifecycle: the couple is being asked for a favour after the wedding, the
+  // same relationship (and the same category) as post_wedding_review_request.
+  vendor_review_request: "lifecycle",
   couple_message: "transactional",
   // Transactional both ways for the same reason, one step further along: this
   // pair carries a NUMBER somebody has to answer. A vendor who is not told

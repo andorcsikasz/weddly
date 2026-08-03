@@ -16,6 +16,7 @@ const TABS = [
   { id: "account", path: "account", labelKey: "vendor.settings.tab_account" },
   { id: "company", path: "company", labelKey: "vendor.settings.tab_company" },
   { id: "schedule", path: "schedule", labelKey: "vendor.settings.tab_schedule" },
+  { id: "automations", path: "automations", labelKey: "vendor.settings.tab_automations" },
   { id: "billing", path: "billing", labelKey: "vendor.settings.tab_billing" },
   { id: "data", path: "data", labelKey: "vendor.settings.tab_data" },
 ] as const;

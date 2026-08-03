@@ -23,6 +23,7 @@ import type {
   MessageSenderKind,
   VendorMessageTemplate,
 } from "@shared/booking_messages";
+import type { BookingTimelineEvent } from "@shared/booking_timeline";
 import {
   MESSAGE_BODY_MAX_LEN,
   TEMPLATE_BODY_MAX_LEN,
@@ -232,6 +233,11 @@ export function buildThread(args: {
    *  not re-derive the earned-phone verdict, it renders the one it is handed.
    *  Left out means "no number to show", which is also a vendor's read. */
   counterpartyPhone?: string | null;
+  /** The derived event log (`domain/booking_timeline.ts`), already scoped to
+   *  this reader. REQUIRED rather than optional: the timeline carries
+   *  vendor-private facts, and a caller who could forget it would ship a thread
+   *  with a silently empty history instead of a compile error. */
+  events: BookingTimelineEvent[];
 }): BookingThread {
   markDelivered(args.booking.id, args.readerKind);
   return {
@@ -242,6 +248,7 @@ export function buildThread(args: {
     counterparty_phone: args.counterpartyPhone ?? null,
     event_date: args.booking.event_date,
     messages: listMessages(args.booking.id),
+    events: args.events,
   };
 }
 

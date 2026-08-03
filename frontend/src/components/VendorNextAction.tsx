@@ -22,6 +22,7 @@ import {
   ListChecks,
   MessageSquare,
   Star,
+  Timer,
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -41,6 +42,7 @@ export const ACTION_ANCHOR: Partial<Record<VendorActionKey, string>> = {
   record_contract: "vc-crm",
   add_schedule: "vc-payments",
   chase_payment: "vc-payments",
+  release_or_extend: "vc-hold",
 };
 
 const ACTION_ICON: Record<VendorActionKey, LucideIcon> = {
@@ -51,6 +53,7 @@ const ACTION_ICON: Record<VendorActionKey, LucideIcon> = {
   record_contract: FileText,
   add_schedule: ListChecks,
   chase_payment: CircleDollarSign,
+  release_or_extend: Timer,
   request_review: Star,
   prepare: CalendarClock,
   none: Clock,
@@ -89,6 +92,11 @@ export function useAttentionReason(): (a: VendorAttention) => string {
     // elapsed-age formatting would read backwards.
     if (a.key === "date_soon") return t("vendor.attention.reason_date_soon", { count: a.days });
     if (a.key === "review_due") return t("vendor.attention.reason_review_due");
+    // Forward-anchored too: `hours` is the time LEFT on the hold, so the
+    // elapsed-age formatting would read backwards here as well.
+    if (a.key === "hold_expiring") {
+      return t("vendor.attention.reason_hold_expiring", { count: a.hours });
+    }
     return t(`vendor.attention.reason_${a.key}`, { age: age(a) });
   };
 }

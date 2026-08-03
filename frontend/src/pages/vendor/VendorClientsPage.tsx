@@ -16,22 +16,32 @@ import {
   Lock,
   type LucideIcon,
   MailOpen,
+  PanelRight,
   Search,
   Share2,
   Undo2,
   UserPlus,
   X,
 } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { Currency } from "@shared/types";
 import type { VendorClientView } from "@shared/vendor_clients";
 import { isVendorFeatureEnabled, type VendorPlan } from "@shared/vendor_plan";
 import { Skeleton, useToast } from "../../components/ui";
+import { CoupleMonogram } from "../../components/CoupleMonogram";
+import { EventDate } from "../../components/EventDate";
+import { RevenuePulseBar, useRevenuePulse } from "../../components/RevenuePulse";
+import { VendorClientDrawer } from "../../components/VendorClientDrawer";
 import { AttentionBand } from "../../components/VendorNextAction";
 import { VendorShareDialog } from "../../components/VendorShareDialog";
-import { vendorBillingApi, vendorClientsApi, vendorListingApi } from "../../lib/endpoints";
-import { formatDate, formatMoney } from "../../lib/format";
+import {
+  notifyVendorStatsStale,
+  vendorBillingApi,
+  vendorClientsApi,
+  vendorListingApi,
+} from "../../lib/endpoints";
+import { formatMoney } from "../../lib/format";
 import { useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
 
@@ -140,7 +150,7 @@ function GhostTable() {
       className="overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700"
       aria-hidden="true"
     >
-      <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-paper-300 bg-paper-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-700 sm:grid dark:border-umber-700 dark:bg-umber-850 dark:text-paper-300">
+      <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-paper-300 bg-paper-100 py-2.5 pl-4 pr-12 text-xs font-semibold uppercase tracking-wide text-ink-700 sm:grid dark:border-umber-700 dark:bg-umber-850 dark:text-paper-300">
         <span>{t("vendor.clients.col_couple")}</span>
         <span>{t("vendor.clients.col_event_date")}</span>
         <span className="text-center">{t("vendor.clients.col_status")}</span>
@@ -151,9 +161,14 @@ function GhostTable() {
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="grid grid-cols-1 gap-2 px-4 py-3.5 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3"
+            className="grid grid-cols-1 gap-2 py-3.5 pl-4 pr-12 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3"
           >
-            <Skeleton variant="line" height={14} width="70%" />
+            {/* Same shape as the real row: the monogram chip first, so the
+                list does not re-flow the instant the data lands. */}
+            <span className="flex items-center gap-2">
+              <Skeleton variant="circle" width={28} />
+              <Skeleton variant="line" height={14} width="60%" />
+            </span>
             <Skeleton variant="line" height={12} width="55%" />
             <div className="flex sm:justify-center">
               <Skeleton height={18} width={18} rounded="full" />
@@ -323,13 +338,44 @@ export default function VendorClientsPage() {
   // unknown, nothing locks — the paywall is never shown on a guess.
   const crmLocked = plan !== null && !isVendorFeatureEnabled(plan, "client_crm_detail");
 
+  // Revenue Pulse rides the EXISTING payment_tracking feature, not a flag of
+  // its own: it is the same money the payment schedule tracks, read forwards.
+  // On FREE (and while the plan is still unknown) it renders nothing at all
+  // rather than a locked teaser: this list is deliberately useful for free,
+  // and a paywall bar across the top of it would undo exactly that.
+  const pulse = useRevenuePulse(plan !== null && isVendorFeatureEnabled(plan, "payment_tracking"));
+
+  // Which row just changed state, for the settle wash. Held as an id + a timer
+  // rather than a per-row flag so the class is added and then REMOVED — a CSS
+  // animation only replays when the class arrives, so a sticky one would fire
+  // once and never again on the same row.
+  const [settledId, setSettledId] = useState<number | null>(null);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settle = useCallback((id: number) => {
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    setSettledId(id);
+    settleTimer.current = setTimeout(() => setSettledId(null), 1000);
+  }, []);
+  useEffect(
+    () => () => {
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+    },
+    [],
+  );
+
   // "Not now" on an attention row. Optimistic: the row leaves the band on the
   // click and the server call only confirms it, because a band row that lingers
   // for a round trip reads as a broken button. A failure puts it back and says
   // so — silently keeping it dismissed would hide the lead again next reload.
+  //
+  // The success toast carries the way back, and it is a REAL one: undoing
+  // PATCHes `snooze(id, null)`, which is the server's own un-snooze. A vendor
+  // who muted the wrong lead would otherwise have to wait out the whole window
+  // with no control anywhere in the app that shortens it.
   const onSnooze = useCallback(
     (client: VendorClientView) => {
       const previous = client.attention;
+      const previousUntil = client.attention_snoozed_until;
       setClients((prev) => prev.map((c) => (c.id === client.id ? { ...c, attention: null } : c)));
       vendorClientsApi
         .snooze(client.id)
@@ -341,7 +387,29 @@ export default function VendorClientsPage() {
                 : c,
             ),
           );
-          toast.success(t("vendor.attention.snoozed", { name: client.couple_display_name }));
+          toast.undo(t("vendor.attention.snoozed", { name: client.couple_display_name }), () => {
+            setClients((prev) =>
+              prev.map((c) =>
+                c.id === client.id
+                  ? { ...c, attention: previous, attention_snoozed_until: previousUntil }
+                  : c,
+              ),
+            );
+            vendorClientsApi.snooze(client.id, null).catch(() => {
+              setClients((prev) =>
+                prev.map((c) =>
+                  c.id === client.id
+                    ? {
+                        ...c,
+                        attention: null,
+                        attention_snoozed_until: res.attention_snoozed_until,
+                      }
+                    : c,
+                ),
+              );
+              toast.error(t("vendor.clients.undo_failed"));
+            });
+          });
         })
         .catch(() => {
           setClients((prev) =>
@@ -351,6 +419,67 @@ export default function VendorClientsPage() {
         });
     },
     [t, toast],
+  );
+
+  // The quick-look drawer. The row's own Link is untouched, so the full page is
+  // still one click (and one middle-click, and one bookmark) away; this is the
+  // second door, opened by the handle at the end of the row.
+  const [quickLookId, setQuickLookId] = useState<number | null>(null);
+  const quickLook = useMemo(
+    () => clients.find((c) => c.id === quickLookId) ?? null,
+    [clients, quickLookId],
+  );
+  // A row changed while the drawer was covering it. On a phone the drawer is
+  // the whole screen, so the settle underneath it happens where nobody is
+  // looking; this replays it once the list is visible again, which is the only
+  // moment the mark can do its job.
+  const changedBehindDrawer = useRef<number | null>(null);
+  const closeQuickLook = useCallback(() => {
+    setQuickLookId(null);
+    const id = changedBehindDrawer.current;
+    changedBehindDrawer.current = null;
+    if (id !== null) settle(id);
+  }, [settle]);
+
+  // A status change from the drawer. Optimistic, settled, and undoable — and
+  // the undo genuinely PATCHes the previous status back, because a toast that
+  // only repaints the row is a lie the vendor finds out about on reload.
+  const onStatusChange = useCallback(
+    (client: VendorClientView, next: string) => {
+      const previous = client.status;
+      if (next === previous || next === "") return;
+      const apply = (status: string) => {
+        setClients((prev) => prev.map((c) => (c.id === client.id ? { ...c, status } : c)));
+        settle(client.id);
+        changedBehindDrawer.current = client.id;
+      };
+      apply(next);
+      vendorClientsApi
+        .update(client.id, { status: next })
+        .then(() => {
+          // The nav badge and the bell count `requested` rows, so the shell is
+          // stale the moment a status moves.
+          notifyVendorStatsStale();
+          toast.undo(
+            t("vendor.clients.status_changed", { status: t(`vendor.clients.status_${next}`) }),
+            () => {
+              apply(previous);
+              vendorClientsApi
+                .update(client.id, { status: previous })
+                .then(() => notifyVendorStatsStale())
+                .catch(() => {
+                  apply(next);
+                  toast.error(t("vendor.clients.undo_failed"));
+                });
+            },
+          );
+        })
+        .catch(() => {
+          apply(previous);
+          toast.error(t("vendor.clients.save_failed"));
+        });
+    },
+    [settle, t, toast],
   );
 
   // Status pills: "all" plus EVERY canonical status (each with its count), so
@@ -410,6 +539,12 @@ export default function VendorClientsPage() {
       </header>
 
       {crmLocked && <UpgradeNudge />}
+
+      {/* One line of money above the leads it is about: what is quoted and
+          still undecided, and what lands in the next 30 days. The decision it
+          feeds (take this booking? hold the date? raise the price?) is made
+          looking at this list, not on a separate dashboard. */}
+      <RevenuePulseBar pulse={pulse} />
 
       {/* Everything that needs the vendor TODAY, above the list rather than
           inside it: the table is sorted by arrival, and arrival order is not
@@ -480,7 +615,7 @@ export default function VendorClientsPage() {
 
           {/* Grid "table" — header on sm+, Link rows that navigate to detail. */}
           <div className="overflow-hidden rounded-xl border border-paper-300 dark:border-umber-700">
-            <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-paper-300 bg-paper-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-700 sm:grid dark:border-umber-700 dark:bg-umber-850 dark:text-paper-300">
+            <div className="hidden grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] gap-3 border-b border-paper-300 bg-paper-100 py-2.5 pl-4 pr-12 text-xs font-semibold uppercase tracking-wide text-ink-700 sm:grid dark:border-umber-700 dark:bg-umber-850 dark:text-paper-300">
               <span>{t("vendor.clients.col_couple")}</span>
               <span>{t("vendor.clients.col_event_date")}</span>
               <span className="text-center">{t("vendor.clients.col_status")}</span>
@@ -490,12 +625,19 @@ export default function VendorClientsPage() {
 
             <ul className="divide-y divide-paper-200 bg-white dark:divide-umber-700 dark:bg-umber-800">
               {filtered.map((c) => (
-                <li key={c.id}>
+                <li
+                  key={c.id}
+                  // `relative` carries the quick-look handle, which cannot live
+                  // inside the row's Link (nested interactives) and must not
+                  // replace it (the full page is still the row's destination).
+                  className={`relative ${settledId === c.id ? "vendor-row-settle" : ""}`}
+                >
                   <Link
                     to={`/vendor/clients/${c.id}`}
-                    className="grid grid-cols-1 gap-1 px-4 py-3 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:bg-paper-100 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3 dark:hover:bg-umber-700 dark:focus-visible:bg-umber-700"
+                    className="grid grid-cols-1 gap-1 py-3 pl-4 pr-12 transition-colors hover:bg-paper-100 focus:outline-none focus-visible:bg-paper-100 sm:grid-cols-[2fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:gap-3 dark:hover:bg-umber-700 dark:focus-visible:bg-umber-700"
                   >
                     <span className="flex min-w-0 items-center gap-2">
+                      <CoupleMonogram name={c.couple_display_name} />
                       {/* The rows the nav badge is counting: a 'requested'
                           inquiry this vendor has never opened. Without the mark
                           the badge said "2" over a list of five identical amber
@@ -525,11 +667,10 @@ export default function VendorClientsPage() {
                         </span>
                       ) : null}
                     </span>
-                    <span className="text-sm text-ink-600 dark:text-paper-300">
-                      {c.event_date
-                        ? formatDate(c.event_date, locale)
-                        : t("vendor.clients.no_event_date")}
-                    </span>
+                    {/* The date is the anchor of the whole row, so it is the
+                        one value set in the display serif rather than in the
+                        same grey sans as the balance beside it. */}
+                    <EventDate date={c.event_date} />
                     <span className="sm:text-center">
                       <StatusBadge status={c.status} />
                     </span>
@@ -567,20 +708,59 @@ export default function VendorClientsPage() {
                       </ProCell>
                     </span>
                   </Link>
+                  {/* Quick look. Sits outside the Link because a button inside
+                      an anchor is invalid and unreachable by keyboard; the
+                      icon carries the meaning and the name lives in the label,
+                      so the row gains a handle and not a word. */}
+                  <button
+                    type="button"
+                    onClick={() => setQuickLookId(c.id)}
+                    aria-label={t("vendor.clients.quick_look", {
+                      name: c.couple_display_name,
+                    })}
+                    title={t("vendor.clients.quick_look", { name: c.couple_display_name })}
+                    className="absolute right-2 top-2.5 rounded-lg p-2 text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 sm:top-1/2 sm:-translate-y-1/2 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                  >
+                    <PanelRight size={16} strokeWidth={1.5} aria-hidden="true" />
+                  </button>
                 </li>
               ))}
             </ul>
           </div>
 
+          {/* Nothing matched. A dead end with a sentence in it is where a
+              vendor decides the search is broken, so the way back out is a
+              control rather than an instruction to go and find one. */}
           {filtered.length === 0 && (
-            <p className="mt-3 text-center text-sm text-ink-500 dark:text-umber-300">
-              {query.trim()
-                ? t("vendor.clients.search_no_results")
-                : t("vendor.clients.empty_body")}
-            </p>
+            <div className="mt-3 flex flex-col items-center gap-3 py-6 text-center">
+              <p className="text-sm text-ink-500 dark:text-umber-300">
+                {query.trim()
+                  ? t("vendor.clients.search_no_results")
+                  : t("vendor.clients.empty_body")}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setStatusFilter("all");
+                }}
+                className="btn btn-sm bg-blush-500 text-white hover:bg-blush-600"
+              >
+                {t("vendor.clients.clear_filters")}
+              </button>
+            </div>
           )}
         </>
       )}
+
+      <VendorClientDrawer
+        client={quickLook}
+        statuses={STATUS_ORDER}
+        currency={currency}
+        crmLocked={crmLocked}
+        onClose={closeQuickLook}
+        onStatusChange={onStatusChange}
+      />
     </div>
   );
 }

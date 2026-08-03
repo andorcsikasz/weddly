@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowUpRight, MessageCircle, Phone, Send } from "lucide-react";
 import type { BookingMessage, CoupleVendorThreadPreview } from "@shared/booking_messages";
+import type { BookingTimelineEvent } from "@shared/booking_timeline";
 import type { BookingQuote } from "@shared/booking_quotes";
 import { BookingQuoteCard } from "../components/BookingQuoteCard";
 import { BookingThreadPanel } from "../components/BookingThreadPanel";
@@ -238,6 +239,7 @@ function ThreadView({ bookingId }: { bookingId: number }) {
   const toast = useToast();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<BookingMessage[]>([]);
+  const [events, setEvents] = useState<BookingTimelineEvent[]>([]);
   const [name, setName] = useState("");
   const [vendor, setVendor] = useState<{ supplierId: string; category: string } | null>(null);
   // Non-null only once the vendor has written back — the server decides, this
@@ -257,6 +259,7 @@ function ThreadView({ bookingId }: { bookingId: number }) {
       .then(({ thread }) => {
         if (cancelled) return;
         setMessages(thread.messages);
+        setEvents(thread.events);
         setName(thread.counterparty_name);
         // A category is the server saying the card still resolves, so it is
         // also the only thing that earns the link. See `counterparty_category`.
@@ -369,7 +372,16 @@ function ThreadView({ bookingId }: { bookingId: number }) {
             ))}
           </div>
         ) : null}
-        <BookingThreadPanel side="couple" messages={messages} loading={loading} onSend={send} />
+        {/* Same panel, same merged log. The couple's copy of the timeline is
+            already stripped of the vendor's private facts server-side, so
+            nothing here decides what to hide. */}
+        <BookingThreadPanel
+          side="couple"
+          messages={messages}
+          events={events}
+          loading={loading}
+          onSend={send}
+        />
       </section>
     </div>
   );

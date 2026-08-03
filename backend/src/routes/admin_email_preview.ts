@@ -433,6 +433,23 @@ const STUBS: KindPayload = {
     attachmentCount: 1,
     threadUrl: "/app/messages/188",
   },
+  vendor_auto_reply: {
+    vendorName: "Magyar Fotó Stúdió",
+    bodyText:
+      "Köszönjük a megkeresést! Általában 24 órán belül válaszolunk, addig is nézzetek körül a portfóliónkban.",
+    threadUrl: "/app/messages/188",
+  },
+  vendor_lead_reminder: {
+    coupleName: "Mia & Lucas",
+    eventDate: "2027-06-20",
+    waitingHours: 26,
+    clientUrl: "/vendor/clients/188",
+  },
+  vendor_review_request: {
+    vendorName: "Magyar Fotó Stúdió",
+    eventDate: "2027-06-20",
+    reviewUrl: "https://tryweddly.com/vendors/magyar-foto-studio-v12?review=1",
+  },
   couple_message: {
     coupleName: "Mia & Lucas",
     bodyText: "Köszönjük az ajánlatot! Egy kérdés: a második fotós is benne van az árban?",

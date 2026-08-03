@@ -102,13 +102,18 @@ import { registerVendorListingRoutes } from "./routes/vendor_listing";
 import { registerVendorAccountRoutes } from "./routes/vendor_account";
 import { registerVendorAvailabilityRoutes } from "./routes/vendor_availability";
 import { registerVendorClientsRoutes } from "./routes/vendor_clients";
+import { registerAiAssistRoutes } from "./routes/ai_assist";
 import { registerBookingMessageRoutes } from "./routes/booking_messages";
 import { registerBookingQuoteRoutes } from "./routes/booking_quotes";
+import { registerDateHoldRoutes } from "./routes/date_holds";
 import { backfillLegacyBookingNotes } from "./domain/booking_messages";
 import { backfillNameReview, nameReviewBlock } from "./domain/name_review";
 import { registerVendorPointsRoutes } from "./routes/vendor_points";
 import { registerVendorStatsRoutes } from "./routes/vendor_stats";
+import { registerVendorRevenueRoutes } from "./routes/vendor_revenue";
 import { registerVendorTaskRoutes } from "./routes/vendor_tasks";
+import { registerVendorAutomationRoutes } from "./routes/vendor_automations";
+import { startVendorAutomationWorker } from "./domain/vendor_automations";
 import { registerPlannerBillingRoutes } from "./routes/planner_billing";
 import { registerVendorBillingRoutes } from "./routes/vendor_billing";
 import { registerHealthRoutes } from "./routes/health";
@@ -335,11 +340,15 @@ registerVendorListingRoutes(router);
 registerVendorAccountRoutes(router);
 registerVendorAvailabilityRoutes(router);
 registerVendorClientsRoutes(router);
+registerAiAssistRoutes(router);
 registerBookingMessageRoutes(router);
 registerBookingQuoteRoutes(router);
+registerDateHoldRoutes(router);
 registerVendorStatsRoutes(router);
+registerVendorRevenueRoutes(router);
 registerVendorPointsRoutes(router);
 registerVendorTaskRoutes(router);
+registerVendorAutomationRoutes(router);
 registerVendorBillingRoutes(router);
 registerPlannerBillingRoutes(router);
 registerSeoRoutes(router);
@@ -907,6 +916,11 @@ if (process.env.NODE_ENV !== "test") {
   // idempotent (dedupe_key), so booting twice awards nothing twice.
   startVendorPointsWorker();
   backfillVendorPoints();
+  // Vendor automations: acknowledge new inquiries, remind about unanswered ones,
+  // queue post-wedding review requests for the vendor to approve. Every send is
+  // behind a dedupe reservation, so a boot in the middle of a sweep re-sends
+  // nothing, and an account with nothing armed costs one indexed query.
+  startVendorAutomationWorker();
   // Same pair for the planner ledger: drain the planner outbox, then replay what
   // existing profiles / reviews / client links / accepted invitations would have
   // earned. Idempotent through dedupe_key, so booting twice awards nothing twice.

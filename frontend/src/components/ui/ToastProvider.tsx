@@ -14,15 +14,35 @@ import { useT } from "../../lib/i18n";
 
 export type ToastKind = "success" | "error" | "info";
 
+/** One control inside a toast. The reason it exists is UNDO: a confirm dialog
+ *  in front of every reversible change trains people to dismiss dialogs, while
+ *  a toast that only says what happened leaves a mis-tap with nowhere to go.
+ *  Kept generic (`label` + `onAction`) rather than hard-coded to undo, but the
+ *  window and the wording of the undo case live in `toast.undo` below so every
+ *  caller gets the same one. */
+export type ToastAction = {
+  label: string;
+  onAction: () => void;
+};
+
 export type ToastInput = {
   message: string;
   kind?: ToastKind;
   /** ms before auto-dismiss. Default 6000 (WCAG 2.2.1 — enough time to read a
    *  short notification). Set 0 to require manual dismiss. */
   duration?: number;
+  /** Optional single control, rendered beside the message. Running it dismisses
+   *  the toast: the thing it announced is no longer true. */
+  action?: ToastAction;
 };
 
 type Toast = ToastInput & { id: string; kind: ToastKind; duration: number };
+
+/** How long an undo stays on offer. Longer than the ordinary toast because the
+ *  user has to READ what happened, decide it was wrong, and reach the control;
+ *  short enough that it is gone before the next screen. Hovering or focusing
+ *  the toast pauses this clock, which is what makes 8s enough on a phone. */
+export const UNDO_TOAST_MS = 8000;
 
 /** Default auto-dismiss window. Tuned up from 4s to 6s to give screen-reader
  *  + low-vision users enough time to read short notifications without having
@@ -34,6 +54,10 @@ type ToastApi = {
   success: (message: string, duration?: number) => string;
   error: (message: string, duration?: number) => string;
   info: (message: string, duration?: number) => string;
+  /** "Done, and here is the way back." `onUndo` must genuinely REVERSE the
+   *  change on the server, not just repaint the screen: a toast that only
+   *  un-draws it is a lie the user finds out about on the next reload. */
+  undo: (message: string, onUndo: () => void) => string;
   dismiss: (id: string) => void;
 };
 
@@ -142,6 +166,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (message: string, duration?: number) => push({ message, kind: "info", duration }),
     [push],
   );
+  const undoLabel = t("common.undo");
+  const undo = useCallback(
+    (message: string, onUndo: () => void) =>
+      push({
+        message,
+        kind: "success",
+        duration: UNDO_TOAST_MS,
+        action: { label: undoLabel, onAction: onUndo },
+      }),
+    [push, undoLabel],
+  );
 
   useEffect(() => {
     const map = timers.current;
@@ -166,8 +201,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [toasts, dismiss]);
 
   const api = useMemo<ToastApi>(
-    () => ({ push, success, error, info, dismiss }),
-    [push, success, error, info, dismiss],
+    () => ({ push, success, error, info, undo, dismiss }),
+    [push, success, error, info, undo, dismiss],
   );
 
   // Split toasts by severity so we can mount them in separate live regions.
@@ -243,6 +278,22 @@ function ToastItem({
     >
       <span className="mt-0.5 shrink-0">{KIND_STYLE[toast.kind].icon}</span>
       <p className="flex-1 text-sm">{toast.message}</p>
+      {/* The action inherits the toast's own text colour rather than taking an
+          accent of its own: this component renders inside the vendor portal
+          too, where blush means "the vendor can act on it" and is spoken for.
+          An underline is enough to read as a control at this size. */}
+      {toast.action && (
+        <button
+          type="button"
+          onClick={() => {
+            toast.action?.onAction();
+            onDismiss(toast.id);
+          }}
+          className="-my-1 shrink-0 rounded-lg px-1.5 py-1 text-sm font-semibold underline underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:focus-visible:ring-umber-700"
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         type="button"
         onClick={() => onDismiss(toast.id)}

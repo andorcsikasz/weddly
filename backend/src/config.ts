@@ -205,6 +205,17 @@ export const CONFIG = {
    *  (`whsec_…`), its own endpoint in the Stripe dashboard, like the planner
    *  one. */
   stripeVendorWebhookSecret: process.env.STRIPE_VENDOR_WEBHOOK_SECRET ?? "",
+  /** Anthropic API key (`sk-ant-…`) for the vendor inbox AI Concierge. Empty =
+   *  the feature is OFF: `GET /api/ai/availability` reports `available:false`,
+   *  the assistant strip never renders, and the generate endpoint 503s. Same
+   *  "configured?" gate as DeepL / Stripe / GEMI, so the app boots and every
+   *  other surface behaves identically without it. */
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
+  /** Test-only escape hatch: when `1`, `lib/ai.ts` answers from a deterministic
+   *  in-process stub instead of calling Anthropic, so the E2E suite exercises
+   *  the whole route -> domain -> coerce pipeline with no network. Never set
+   *  this in production. */
+  aiFake: !REQUIRE_PROD_HARDENING && process.env.AI_FAKE === "1",
   /** Path to the MaxMind GeoLite2-Country `.mmdb` on disk. Lives on the `/data`
    *  persistent volume in prod so it survives redeploys. The file is NEVER
    *  committed (MaxMind's EULA forbids redistribution + it would bloat the
@@ -247,6 +258,13 @@ export const R2_ENABLED =
 /** True when a Stripe secret key is configured. Billing endpoints check this
  *  and 503 when false, mirroring the Google-OAuth "configured?" pattern. */
 export const STRIPE_ENABLED = CONFIG.stripeSecretKey !== "";
+
+/** True when the AI Concierge has a key to spend. Read the LIVE env through
+ *  `aiConfigured()` in `lib/ai.ts` rather than this constant on a request path:
+ *  the tests flip the key around a single case to prove the no-key branch, and
+ *  a value frozen at import time would answer for the whole process. This
+ *  constant is the boot-time snapshot, for logging and operator diagnostics. */
+export const AI_ENABLED = CONFIG.anthropicApiKey !== "";
 
 /** True when the Google Calendar push-sync integration is fully wired: the GSI
  *  Web client id AND its OAuth client secret are set (or the E2E fake is on).

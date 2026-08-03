@@ -37,6 +37,7 @@ import {
   ListChecks,
   Lock,
   SquareKanban,
+  Timer,
   Trash2,
 } from "lucide-react";
 import { intlLocale } from "../../lib/format";
@@ -63,6 +64,7 @@ import {
   minutesToLabel,
   type WeeklyHours,
 } from "@shared/vendor_availability";
+import type { DateHold } from "@shared/date_holds";
 import type { VendorClientView } from "@shared/vendor_clients";
 import type { VendorBoardStatus, VendorTask } from "@shared/vendor_tasks";
 import { GoogleCalendarConnect } from "../../components/GoogleCalendarConnect";
@@ -70,9 +72,11 @@ import { useConfirm } from "../../components/ui/ConfirmDialogProvider";
 import { DateField } from "../../components/ui/DateField";
 import { Dialog } from "../../components/ui/Dialog";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
+import { Skeleton } from "../../components/ui/Skeleton";
 import { useToast } from "../../components/ui/ToastProvider";
 import { ViewSelect } from "../../components/ui/ViewSelect";
 import {
+  dateHoldApi,
   vendorAvailabilityApi,
   vendorBillingApi,
   vendorClientsApi,
@@ -94,7 +98,7 @@ const MODE_KEY = "weddly.vendor_cal_mode";
  *  compact "4 ó" shown next to the lock on a partial-day pill (absent = whole
  *  day, so the pill is a lock icon with no text). */
 interface CalEvent {
-  kind: "booked" | "pending" | "blocked" | "task" | "external" | "buffer";
+  kind: "booked" | "pending" | "blocked" | "task" | "external" | "buffer" | "hold";
   date: string; // YYYY-MM-DD
   label: string;
   bookingId?: number;
@@ -172,6 +176,13 @@ function pillColor(kind: CalEvent["kind"]): string {
     // consequence, not an entry.
     case "buffer":
       return "bg-paper-100 text-ink-500 dark:bg-umber-800/50 dark:text-umber-300";
+    // A date the vendor is holding for one couple, counting down. Amber, which
+    // is the portal's warning colour, and deliberately HEAVIER than the pending
+    // pill beside it: a hold is a deadline the vendor set themselves, while a
+    // pending inquiry is only a lead. The ring, the timer glyph and the
+    // remaining time are what keep the two apart at pill size.
+    case "hold":
+      return "bg-amber-200 text-amber-900 ring-1 ring-amber-400 hover:brightness-95 dark:bg-amber-500/25 dark:text-amber-50 dark:ring-amber-500/60";
   }
 }
 
@@ -209,6 +220,8 @@ function EventGlyph({ ev, size = 10 }: { ev: CalEvent; size?: number }) {
       return <CalendarSync size={size} className="shrink-0" aria-hidden="true" />;
     case "buffer":
       return <Hourglass size={size} className="shrink-0" aria-hidden="true" />;
+    case "hold":
+      return <Timer size={size} className="shrink-0" aria-hidden="true" />;
   }
 }
 
@@ -379,6 +392,48 @@ function YearView({
 }
 
 // ── Month view ───────────────────────────────────────────────────────────────
+
+/** The month grid one frame earlier: the same frame, the same weekday header,
+ *  the same 42 cells at the same height, with a scattering of ghost pills where
+ *  the real ones land. Built on the grid's own bones rather than a generic
+ *  block, so the calendar does not resize under the vendor's eyes when the data
+ *  arrives — and, more importantly, so an empty grid never reads as an empty
+ *  diary while it is still loading. */
+function CalendarSkeleton({ weekdays }: { weekdays: string[] }) {
+  // Deterministic pill placement. A random scatter re-rolls on every render and
+  // turns the loading state into the busiest thing on the page.
+  const pillCells = new Set([3, 6, 9, 15, 17, 22, 24, 30, 33, 38]);
+  return (
+    <div
+      className="overflow-hidden rounded-2xl border border-paper-200 bg-white dark:border-umber-800 dark:bg-umber-900"
+      aria-busy="true"
+    >
+      <div className="grid grid-cols-7 border-b border-paper-200 dark:border-umber-800">
+        {weekdays.map((w) => (
+          <div
+            key={w}
+            className="px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-umber-400 dark:text-umber-500"
+          >
+            {w}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {Array.from({ length: 42 }, (_, i) => (
+          <div
+            key={i}
+            className="min-h-[6rem] border-b border-r border-paper-100 p-1.5 dark:border-umber-800"
+          >
+            <Skeleton variant="line" height={11} width={16} />
+            {pillCells.has(i) && (
+              <Skeleton height={16} width="85%" rounded="md" className="mt-1.5" />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function MonthView({
   cursor,
@@ -1128,6 +1183,10 @@ function TasksBoard({
   const [newTitle, setNewTitle] = useState("");
   const [newDue, setNewDue] = useState("");
   const todayStr = ymd(new Date());
+  // The empty board's one control puts the cursor in the field that fills it.
+  // The form is already on screen, so the honest direction is not another form,
+  // it is a shortcut to the one that is there.
+  const titleRef = useRef<HTMLInputElement>(null);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -1146,6 +1205,7 @@ function TasksBoard({
         <label className="block min-w-0 flex-1 basis-52">
           <span className="field-label">{t("vendor_calendar.task_add_label")}</span>
           <input
+            ref={titleRef}
             type="text"
             className="input w-full"
             value={newTitle}
@@ -1175,14 +1235,21 @@ function TasksBoard({
       {tasks.length === 0 ? (
         <div className="rounded-2xl border border-paper-200 bg-white p-10 text-center dark:border-umber-800 dark:bg-umber-900">
           <ListChecks
-            size={40}
-            strokeWidth={1.3}
-            className="mx-auto text-umber-300 dark:text-umber-600"
+            size={32}
+            strokeWidth={1.5}
+            className="mx-auto text-steel-600 dark:text-steel-300"
             aria-hidden="true"
           />
-          <p className="mt-3 text-sm text-umber-500 dark:text-umber-400">
+          <p className="mx-auto mt-3 max-w-sm text-sm text-umber-500 dark:text-umber-400">
             {t("vendor_calendar.tasks_empty")}
           </p>
+          <button
+            type="button"
+            onClick={() => titleRef.current?.focus()}
+            className="btn btn-sm mt-4 bg-blush-500 text-white hover:bg-blush-600"
+          >
+            {t("vendor_calendar.tasks_empty_cta")}
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
@@ -1434,7 +1501,18 @@ export default function VendorCalendarPage() {
   const [editorDate, setEditorDate] = useState<string | null>(null);
 
   const [tasks, setTasks] = useState<VendorTask[]>([]);
+  // Live date holds. Their own fetch rather than a field on the availability
+  // view: a hold is bound to an inquiry, not to the calendar's own exception
+  // layer, and reading them is FREE while blocking a day is not.
+  const [holds, setHolds] = useState<DateHold[]>([]);
   const [createBusy, setCreateBusy] = useState(false);
+  // The page used to render a complete, empty calendar while its reads were in
+  // flight: a grid with no bookings on it, no blocked days and no holds, which
+  // for the first second of every visit told the vendor their diary was clear.
+  // That is not a slow page, it is a wrong one. `loading` covers the two reads
+  // the grid is actually MADE of — the availability layer and the clients — and
+  // nothing else, so a slow Google-busy pull can't hold the calendar hostage.
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     try {
@@ -1482,20 +1560,25 @@ export default function VendorCalendarPage() {
   }
 
   useEffect(() => {
-    vendorAvailabilityApi
-      .me()
-      .then((v) => setAvailability(v))
-      .catch(() => setAvailabilityMissing(true));
+    // The two reads the grid is made of. `allSettled` rather than `all`: either
+    // one failing is already handled below, and the skeleton has to come down
+    // whichever way they land or a vendor with no listing stares at it forever.
+    void Promise.allSettled([
+      vendorAvailabilityApi
+        .me()
+        .then((v) => setAvailability(v))
+        .catch(() => setAvailabilityMissing(true)),
+      vendorClientsApi
+        .list()
+        .then((r) => setClients(r.clients))
+        .catch(() => {}),
+    ]).then(() => setLoading(false));
     vendorAvailabilityApi
       .schedule()
       .then((s) => setWorkingHours(s.working_hours))
       .catch(() => {
         /* no schedule, no off-day shading; the calendar still works */
       });
-    vendorClientsApi
-      .list()
-      .then((r) => setClients(r.clients))
-      .catch(() => {});
     vendorBillingApi
       .get()
       .then((r) => setCanEdit(r.features.calendar_availability))
@@ -1506,6 +1589,12 @@ export default function VendorCalendarPage() {
       .list()
       .then((r) => setTasks(r.tasks))
       .catch(() => {});
+    dateHoldApi
+      .mine()
+      .then((r) => setHolds(r.holds))
+      .catch(() => {
+        /* no holds, no pills; the rest of the calendar is unaffected */
+      });
   }, []);
 
   // date → blocked hours (null = whole day). The month grid + editor read this.
@@ -1553,6 +1642,16 @@ export default function VendorCalendarPage() {
         count: hours.length,
       });
     },
+    [t],
+  );
+
+  // "5h" / "3d" for a live hold. Days once there is more than a couple of them
+  // left, because "62h" is a number the vendor has to convert in their head.
+  const holdRemaining = useCallback(
+    (hours: number): string =>
+      hours >= 48
+        ? t("vendor_calendar.hold_remaining_days", { count: Math.floor(hours / 24) })
+        : t("vendor_calendar.hold_remaining_hours", { count: hours }),
     [t],
   );
 
@@ -1607,6 +1706,21 @@ export default function VendorCalendarPage() {
         minutes: { start: b.start_min, end: b.end_min },
       });
     }
+    // Dates the vendor is holding for one couple while they decide. Only LIVE
+    // holds arrive here, so a pill that is on the grid is a date genuinely off
+    // the market; a lapsed one has already let itself go.
+    const nameByBooking = new Map(clients.map((c) => [c.id, c.couple_display_name]));
+    for (const h of holds) {
+      out.push({
+        kind: "hold",
+        date: h.event_date,
+        label: t("vendor_calendar.hold_label", {
+          name: nameByBooking.get(h.booking_id) ?? "",
+          remaining: holdRemaining(h.hours_remaining),
+        }),
+        bookingId: h.booking_id,
+      });
+    }
     // Setup / teardown the schedule adds around a booking or an external event.
     // Drawn so a quiet Sunday morning explains itself.
     for (const b of availability?.buffer_blocks ?? []) {
@@ -1621,7 +1735,7 @@ export default function VendorCalendarPage() {
       });
     }
     return out;
-  }, [clients, blockedDays, blockedLabel, tasks, availability, t]);
+  }, [clients, blockedDays, blockedLabel, tasks, availability, holds, holdRemaining, t]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalEvent[]>();
@@ -1879,7 +1993,9 @@ export default function VendorCalendarPage() {
       </div>
 
       {/* Body */}
-      {mode === "tasks" ? (
+      {loading && mode === "calendar" ? (
+        <CalendarSkeleton weekdays={weekdays} />
+      ) : mode === "tasks" ? (
         <TasksBoard
           tasks={tasks}
           onMove={moveTask}
@@ -1969,6 +2085,12 @@ export default function VendorCalendarPage() {
             {/* Only rendered once something has actually been pulled, so a
                 vendor with no Google connection reads no legend entry about
                 one. */}
+            {holds.length > 0 && (
+              <span className="flex items-center gap-1.5">
+                <Timer size={12} strokeWidth={1.5} className="text-amber-600" aria-hidden="true" />
+                {t("vendor_calendar.legend_hold")}
+              </span>
+            )}
             {(availability?.buffer_blocks.length ?? 0) > 0 && (
               <span className="flex items-center gap-1.5">
                 <Hourglass

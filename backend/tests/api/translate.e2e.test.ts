@@ -102,7 +102,12 @@ describe("translate: POST /api/translate", () => {
     // it to everything DeepL does would make this a general-purpose
     // translation API on someone else's bill.
     for (const target of ["JA", "ZH", "XX", "", 42]) {
-      const r = await req("POST", "/api/translate", { text: "hi", source: "HU", target }, { token });
+      const r = await req(
+        "POST",
+        "/api/translate",
+        { text: "hi", source: "HU", target },
+        { token },
+      );
       expect(r.status).toBe(400);
     }
   });

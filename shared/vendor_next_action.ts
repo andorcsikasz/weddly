@@ -40,6 +40,7 @@
 //     unread-message count and the next action are all untouched by it, so a
 //     snoozed lead can go quiet in the queue without going invisible in the app.
 
+import { HOLD_EXPIRING_SOON_HOURS, holdState } from "./date_holds";
 import type { UnixMs } from "./types";
 
 /** The single primary action for a client. `await` and `prepare` are the two
@@ -54,6 +55,9 @@ export type VendorActionKey =
   | "record_contract"
   | "add_schedule"
   | "chase_payment"
+  /** A live date hold is about to run out. The vendor owes a DECISION, not a
+   *  message: give the couple more time, or put the date back on the market. */
+  | "release_or_extend"
   | "request_review"
   | "prepare"
   | "none";
@@ -63,16 +67,25 @@ export type VendorActionKey =
 export type VendorAttentionKey =
   | "unopened"
   | "unanswered"
+  | "hold_expiring"
   | "payment_overdue"
   | "date_soon"
   | "going_cold"
   | "review_due";
 
 /** Most urgent first. Doubles as the severity rank: a key's index is its
- *  position in the band, so ordering and precedence can't disagree. */
+ *  position in the band, so ordering and precedence can't disagree.
+ *
+ *  `hold_expiring` sits third because it is the only rule with a CLIFF: inside
+ *  a day a date the vendor took off the market goes back on it, and nothing
+ *  runs to tell anyone. An overdue installment is already late and gets no
+ *  later; an approaching wedding date arrives whatever the vendor does. Above
+ *  it are the two rules about a couple waiting on a human being, which is the
+ *  one promise the marketplace makes on the vendor's behalf. */
 export const ATTENTION_ORDER: readonly VendorAttentionKey[] = [
   "unopened",
   "unanswered",
+  "hold_expiring",
   "payment_overdue",
   "date_soon",
   "going_cold",
@@ -133,6 +146,14 @@ export interface VendorClientSignals {
   reviewed: boolean;
   /** Attention muted until this stamp, or null. */
   snoozed_until: UnixMs | null;
+  /** When the vendor's date hold on this client runs out, or null when they
+   *  never placed one. RAW, both of these: whether the hold is still LIVE is
+   *  derived here from the same two columns everything else derives it from
+   *  (`holdState`), so a hold that lapsed an hour ago needs nothing to have run
+   *  for this queue to agree with the calendar. */
+  hold_until: UnixMs | null;
+  /** When the vendor let the hold go early, or null. */
+  hold_released_at: UnixMs | null;
   /** False on the FREE tier: every money-derived rule is skipped. */
   pro: boolean;
 }
@@ -197,6 +218,24 @@ function coupleWaitingSince(s: VendorClientSignals): UnixMs | null {
   return askedAt > s.last_vendor_message_at ? askedAt : null;
 }
 
+/** When a LIVE date hold entered its last `HOLD_EXPIRING_SOON_HOURS`, or null
+ *  when there is no live hold that close to lapsing.
+ *
+ *  Deliberately silent on an ALREADY-lapsed hold: the date is back on the
+ *  market, nothing is owed, and a queue row about it would be a reminder to
+ *  regret something. It is also silent on the FREE tier, because holds are PRO
+ *  and a locked row in the one surface whose job is "do not lose this lead"
+ *  makes the free tier worse at the only thing it promises. */
+function holdExpiringSince(s: VendorClientSignals, nowMs: UnixMs): UnixMs | null {
+  if (!s.pro || s.hold_until === null) return null;
+  const live =
+    holdState({ hold_until: s.hold_until, released_at: s.hold_released_at }, nowMs) === "live";
+  if (!live) return null;
+  const window = HOLD_EXPIRING_SOON_HOURS * HOUR_MS;
+  if (s.hold_until - nowMs > window) return null;
+  return s.hold_until - window;
+}
+
 /** An unpaid installment whose due date has gone by, for a PRO vendor. */
 function paymentOverdueSince(s: VendorClientSignals, nowMs: UnixMs): number | null {
   if (!s.pro || s.next_unpaid_due === null) return null;
@@ -219,6 +258,11 @@ export function vendorNextAction(s: VendorClientSignals, nowMs: UnixMs): VendorA
     if (eventPassed) return "none";
     if (s.vendor_seen_at === null) return "open";
     if (coupleWaitingSince(s) !== null) return "reply";
+    // A hold the vendor placed themselves, about to run out. It ranks under
+    // "reply" for the same reason `hold_expiring` ranks under `unanswered`: a
+    // couple waiting on an answer comes first, and the answer is usually the
+    // thing that settles the date anyway.
+    if (holdExpiringSince(s, nowMs) !== null) return "release_or_extend";
     // The vendor answered and the couple is deciding. Two things turn patience
     // into a nudge, and both produce the SAME action, which is what keeps the
     // CTA and the reason chip from telling two stories about one lead.
@@ -266,14 +310,24 @@ export function vendorAttention(s: VendorClientSignals, nowMs: UnixMs): VendorAt
       return build("unopened", s.last_couple_message_at ?? s.created_at);
     }
     const waitingSince = coupleWaitingSince(s);
-    if (waitingSince !== null) {
-      if (hoursSince(waitingSince, nowMs) >= REPLY_DUE_HOURS) {
-        return build("unanswered", waitingSince);
-      }
-      // Inside the reply window nothing is wrong yet; the next action still says
-      // "reply", it just isn't an alarm.
-      return null;
+    if (waitingSince !== null && hoursSince(waitingSince, nowMs) >= REPLY_DUE_HOURS) {
+      return build("unanswered", waitingSince);
     }
+    // A date the vendor took off the market is about to go back on it, and
+    // nothing runs to tell them. Checked BEFORE the reply-window early return
+    // below, because a hold with two hours left is an alarm even while the
+    // couple's message is still inside the window it is fine to be answering.
+    const holdSince = holdExpiringSince(s, nowMs);
+    if (holdSince !== null) {
+      const attention = build("hold_expiring", holdSince);
+      // Forward-anchored, like `date_soon`: `hours` is the time LEFT, rounded
+      // up so a live hold never reads "0h".
+      const left = Math.max(1, Math.ceil(((s.hold_until ?? nowMs) - nowMs) / HOUR_MS));
+      return { ...attention, hours: left, days: Math.floor(left / 24) };
+    }
+    // Inside the reply window nothing is wrong yet; the next action still says
+    // "reply", it just isn't an alarm.
+    if (waitingSince !== null) return null;
     if (daysToEvent !== null && daysToEvent >= 0 && daysToEvent <= DATE_SOON_DAYS) {
       const eventMs = dateToUtcMs(s.event_date);
       const attention = build("date_soon", eventMs ?? nowMs);

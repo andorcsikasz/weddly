@@ -51,6 +51,7 @@ import {
   unreadCount,
   updateTemplate,
 } from "../domain/booking_messages";
+import { buildBookingTimeline } from "../domain/booking_timeline";
 import { notifyCoupleOfVendorMessage, notifyVendorOfCoupleMessage } from "../domain/booking_notify";
 import { linkableListingCategory } from "../domain/listings";
 import { earnedBookingPhone } from "../domain/vendor_correspondence";
@@ -191,6 +192,9 @@ async function handleVendorListMessages(ctx: Ctx): Promise<Response> {
     booking,
     readerKind: "vendor",
     counterpartyName: coupleDisplayName(booking.couple_id),
+    // The vendor sees the whole log, their own diary included. The audience is
+    // the READER, never a flag the client sends.
+    events: buildBookingTimeline({ booking, audience: "vendor" }),
   });
   return json({ thread, unread: unreadCount(bookingId, "vendor") });
 }
@@ -329,6 +333,9 @@ async function handleCoupleGetThread(ctx: Ctx): Promise<Response> {
     counterpartyName: vendorDisplayName(booking.supplier_id),
     counterpartyCategory: linkableListingCategory(booking.supplier_id),
     counterpartyPhone: earnedBookingPhone(booking.id, booking.supplier_id),
+    // Same projector, different audience: every vendor-private kind is dropped
+    // server-side, so the couple's payload never carries one to hide.
+    events: buildBookingTimeline({ booking, audience: "couple" }),
   });
   return json({ thread, unread: unreadCount(bookingId, "couple") });
 }

@@ -98,6 +98,7 @@ import type { BillingStatusResponse, PaymentMethodResponse } from "@shared/billi
 import type { GrowthEventKind } from "@shared/growth";
 import type { UiLocale } from "@shared/locales";
 import type { CompanyLookupAvailability, CompanyLookupResult } from "@shared/company_lookup";
+import type { AiAvailability, InquiryAssistResult } from "@shared/ai_assist";
 import type { TranslateAvailability, TranslateRequest, TranslateResult } from "@shared/translate";
 import type { AddressSuggestion } from "@shared/geo";
 import type { PlannerBillingStatus } from "@shared/planner_billing";
@@ -256,6 +257,7 @@ import type {
   VendorTaskCreateInput,
   VendorTaskUpdateInput,
 } from "@shared/vendor_tasks";
+import type { VendorAutomationKey, VendorAutomationsView } from "@shared/vendor_automations";
 import type {
   VendorClientDetail,
   VendorClientPayment,
@@ -2747,6 +2749,19 @@ export const translateApi = {
   translate: (body: TranslateRequest) => apiFetch<TranslateResult>("POST", "/api/translate", body),
 };
 
+/** AI Concierge — the assistant strip on the vendor's client detail. Nothing
+ *  here sends anything: `generate` returns a summary, a DRAFT reply and a
+ *  suggestion, and the vendor does the rest by hand. */
+export const aiAssistApi = {
+  /** Pure feature-flag bit. The strip hides itself entirely when false, the
+   *  same way the Fordítás button hides with no DeepL key. */
+  availability: () => apiFetch<AiAvailability>("GET", "/api/ai/availability"),
+  /** PRO + rate-limited server-side. A `generated:false` answer is the ordinary
+   *  degraded case, not an error. */
+  generate: (bookingId: number) =>
+    apiFetch<InquiryAssistResult>("POST", `/api/vendor/clients/${bookingId}/ai-assist`),
+};
+
 export const vendorListingApi = {
   me: () => apiFetch<VendorListingView>("GET", "/api/vendor/listing/me"),
   patch: (body: VendorListingEditInput) =>
@@ -2917,6 +2932,24 @@ export const dateHoldApi = {
 
 /** Vendor to-do board: private, vendor-scoped tasks on the kanban at
  *  /vendor/calendar?mode=tasks. FREE-tier surface (couples never see it). */
+/** Vendor automations (/vendor/settings/automations). The GET is FREE on
+ *  purpose so a lapsed vendor still sees the text they wrote and the switches
+ *  they chose; every write is PRO and 403s with `vendor_pro_required`. Each
+ *  call answers with the WHOLE view, so the page never has to reconcile a
+ *  patch response against its own state. */
+export const vendorAutomationApi = {
+  get: () => apiFetch<VendorAutomationsView>("GET", "/api/vendor/automations"),
+  /** Partial by contract: an absent field means "leave it alone". */
+  save: (
+    key: VendorAutomationKey,
+    body: { enabled?: boolean; template_id?: number | null; delay_hours?: number },
+  ) => apiFetch<VendorAutomationsView>("PUT", `/api/vendor/automations/${key}`, body),
+  approve: (runId: number) =>
+    apiFetch<VendorAutomationsView>("POST", `/api/vendor/automations/proposals/${runId}/approve`),
+  dismiss: (runId: number) =>
+    apiFetch<VendorAutomationsView>("POST", `/api/vendor/automations/proposals/${runId}/dismiss`),
+};
+
 export const vendorTaskApi = {
   list: () => apiFetch<{ tasks: VendorTask[] }>("GET", "/api/vendor/tasks"),
   create: (body: VendorTaskCreateInput) =>
@@ -2977,7 +3010,7 @@ export const vendorStatsApi = {
 
 /** Revenue Pulse: the forward-looking half of the vendor's money (booked,
  *  collected, outstanding, pipeline + its estimate, and the 30/60/90 cash-flow
- *  horizons). PRO only — a FREE vendor gets 403 `vendor_pro_required` and the
+ *  horizons). PRO only: a FREE vendor gets 403 `vendor_pro_required` and the
  *  callers render nothing rather than a locked teaser. Gated on the existing
  *  `payment_tracking` feature flag, not a new one. */
 export const vendorRevenueApi = {

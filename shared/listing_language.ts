@@ -13,6 +13,7 @@
 // one place that answers "local to what?".
 
 import type { UiLocale } from "./locales";
+import type { TranslateLang } from "./translate";
 
 export interface ListingLanguage {
   /** BCP-47 primary subtag, lowercase. Compared against the viewer's UI locale
@@ -24,8 +25,13 @@ export interface ListingLanguage {
   label: string;
   /** DeepL's code for this language, or null where DeepL has no such language
    *  (Croatian and Serbian, today). Null is what HIDES the auto-translate
-   *  button rather than letting it fail on send. */
-  deepl: string | null;
+   *  button rather than letting it fail on send.
+   *
+   *  Typed as `TranslateLang`, not `string`: this value is handed straight to
+   *  the translate endpoint, so a code DeepL does not accept has to be a
+   *  compile error here rather than a 400 the vendor discovers by pressing the
+   *  button. It is also what lets the editor pass it without a cast. */
+  deepl: TranslateLang | null;
 }
 
 const EN: ListingLanguage = { code: "en", label: "English", deepl: "EN" };

@@ -19,12 +19,14 @@ import type { BookingStatus, SupplierBooking, SupplierAvailability } from "@shar
 import {
   type AvailabilityException,
   DAY_MINUTES,
+  type DayAvailability,
   isBookableDay,
   resolveDayAvailability,
   subtractIntervals,
   type WorkInterval,
 } from "@shared/vendor_availability";
 import { db, now } from "../db";
+import { HttpError } from "../lib/http";
 import { isVendorEntitled, recordVendorLeadCredit } from "./vendor_billing";
 import { emitVendorEvent } from "./vendor_points";
 import {
@@ -40,6 +42,7 @@ import {
   groupBusyRows,
   listVendorExternalBusy,
 } from "./vendor_external_busy";
+import { blockingHoldFor, hasLiveHoldOn, liveHoldDatesForVendor } from "./date_holds";
 
 const VALID_STATUSES: ReadonlySet<BookingStatus> = new Set([
   "requested",
@@ -169,6 +172,23 @@ export function listOpenDates(vendorAccountId: number): string[] {
   return rows.map((r) => r.blocked_date);
 }
 
+/** Fold a LIVE date hold into a day's verdict.
+ *
+ *  A hold sits exactly where the external Google calendar sits in
+ *  `resolveDayAvailability`: BELOW an explicit per-date exception, above the
+ *  "available by default" fallback. That is why this is a wrapper around the
+ *  shared resolver rather than a fourth argument to it — the precedence it needs
+ *  is the precedence the resolver already implements for the layer above it, and
+ *  a day the vendor has spoken about by hand is theirs to decide in both
+ *  directions (a hand-blocked day stays blocked, a hand-OPENED day stays open).
+ *
+ *  Why a hold reads as busy to everyone, including the couple it is for, and
+ *  where their exemption actually lives: see the header of domain/date_holds.ts. */
+function withHold(day: DayAvailability, hasException: boolean, held: boolean): DayAvailability {
+  if (!held || hasException) return day;
+  return "unavailable";
+}
+
 /** Listings we KNOW are taken on `date`, for the directory's date filter.
  *
  *  The inverse question ("who is free?") is unanswerable and would be dishonest
@@ -210,9 +230,19 @@ export function listingIdsUnavailableOn(date: string): string[] {
             OR EXISTS (SELECT 1 FROM vendor_external_busy e
                         WHERE e.vendor_account_id = l.vendor_account_id
                           AND e.busy_date BETWEEN date(?, '-1 day') AND date(?, '+1 day'))
+            -- A live date hold. Asked about THIS date only, not a window: a
+            -- hold takes the day it names and nothing around it, because it is
+            -- a promise about a date rather than an event with a load-out.
+            OR EXISTS (SELECT 1 FROM booking_date_holds h
+                        WHERE h.vendor_account_id = l.vendor_account_id
+                          AND h.event_date = ?
+                          AND h.released_at IS NULL AND h.hold_until > ?)
           )`,
     )
-    .all(date, date, date, date, date) as Array<{ id: string; vendor_account_id: number }>;
+    .all(date, date, date, date, date, date, Date.now()) as Array<{
+    id: string;
+    vendor_account_id: number;
+  }>;
 
   const out: string[] = [];
   for (const row of rows) {
@@ -255,7 +285,14 @@ export function listingIdsUnavailableOn(date: string): string[] {
         hours: schedule.working_hours,
       }),
     });
-    if (!isBookableDay(day)) out.push(row.id);
+    // The hold layer, folded in at the same precedence the vendor's own
+    // calendar and the couple-facing payload give it, so a date filter can
+    // never disagree with the busy calendar it filters against.
+    // `ex != null` rather than `!== undefined`: bun:sqlite's `.get()` answers
+    // null for a missing row, and treating that as "there is an exception here"
+    // would let every hold be silently overruled by nothing at all.
+    const held = withHold(day, ex != null, hasLiveHoldOn(row.vendor_account_id, date));
+    if (!isBookableDay(held)) out.push(row.id);
   }
   return out;
 }
@@ -360,6 +397,8 @@ export function nextAvailableDate(vendorAccountId: number): string | null {
   const exceptions = listAvailabilityExceptions(vendorAccountId);
   // Built once for the whole scan: 365 per-date lookups would be 365 queries.
   const externalBusy = effectiveBusyMap(vendorAccountId);
+  // Same reason, same shape: the dates this vendor is holding right now.
+  const heldDates = liveHoldDatesForVendor(vendorAccountId);
   const confirmed = new Set(
     (
       db
@@ -395,7 +434,10 @@ export function nextAvailableDate(vendorAccountId: number): string | null {
         hours: schedule.working_hours,
       }),
     });
-    if (isBookableDay(state)) return iso;
+    // A date the vendor is holding is not free to offer to the next couple, so
+    // next-free walks past it. It comes back on its own the moment the hold
+    // lapses, with nothing having run in between.
+    if (isBookableDay(withHold(state, exceptions.has(iso), heldDates.has(iso)))) return iso;
   }
   return null;
 }
@@ -546,7 +588,20 @@ export function getAvailability(supplierId: string): SupplierAvailability {
   // buckets. A date that is BOTH hand-blocked and externally busy lands in
   // `unavailable` once: `mergeDates` dedupes, and full beats partial below.
   const external = externalDateBuckets(listing.vendor_account_id);
-  const fullDates = mergeDates(listFullyBlockedDates(listing.vendor_account_id), external.full);
+  // Live date holds read as fully booked here, and the couple the date is being
+  // held FOR is not exempted, because this payload is keyed on the listing and
+  // has no couple in it — the exemption lives in `createBooking`, which is the
+  // only path that turns a date into a commitment. The whole argument is in the
+  // header of domain/date_holds.ts. A date the vendor has spoken about by hand
+  // is skipped in either direction, exactly like the external calendar.
+  const exceptions = listAvailabilityExceptions(listing.vendor_account_id);
+  const heldDates = [...liveHoldDatesForVendor(listing.vendor_account_id)].filter(
+    (d) => !exceptions.has(d),
+  );
+  const fullDates = mergeDates(
+    mergeDates(listFullyBlockedDates(listing.vendor_account_id), external.full),
+    heldDates,
+  );
   const partialDates = mergeDates(
     listPartialBlockedDates(listing.vendor_account_id),
     external.partial,
@@ -577,6 +632,14 @@ export interface CreateBookingArgs {
    *  admin booking route leaves it off: that surface represents "this couple
    *  booked", which genuinely is PRO. */
   allowUnentitled?: boolean;
+  /** Record the inquiry even when another couple's LIVE date hold covers the
+   *  date. Set by the outreach path for the same reason `allowUnentitled` is:
+   *  the couple's message has already gone out by email, so refusing the row
+   *  would delete a real lead rather than defer it, and the vendor is perfectly
+   *  able to answer "sorry, that date is spoken for" themselves. The admin
+   *  booking route leaves it off, because that surface means "this couple
+   *  booked", which is exactly what a hold exists to stop. */
+  allowHeld?: boolean;
   /** When the inquiry actually happened, defaulting to now. Set only by the
    *  replay, which delivers messages a couple sent before the vendor had an
    *  account: stamping those "now" would tell the vendor a two-week-old lead
@@ -606,6 +669,27 @@ export function createBooking(args: CreateBookingArgs): SupplierBooking {
   }
   if (!args.allowUnentitled && !isVendorEntitled(listing.vendor_account_id)) {
     throw new Error("booking_free_plan: vendor is not accepting direct inquiries");
+  }
+  // The one place a live date hold actually REFUSES anything. The couple the
+  // hold was placed for goes straight through (see `blockingHoldFor`), which is
+  // what makes "publicly busy, privately still yours" honest rather than a
+  // dead end for the couple who is deciding.
+  if (
+    !args.allowHeld &&
+    args.eventDate !== "" &&
+    blockingHoldFor({
+      vendorAccountId: listing.vendor_account_id,
+      date: args.eventDate,
+      coupleId: args.coupleId,
+    }) !== null
+  ) {
+    // An HttpError rather than the `booking_*` string convention above: those
+    // two predate the code field and are translated by hand in
+    // routes/supplier_bookings.ts, and adding a third hand-translation is how
+    // the pair of them came to share one message that named only the first.
+    throw new HttpError(409, "That date is on hold for another couple", {
+      code: "booking_date_held",
+    });
   }
   const ts = args.at ?? now();
   const info = db
@@ -736,6 +820,10 @@ export function deliverInquiryFromOutreach(args: {
     // A message the couple has already emailed gets recorded whatever the
     // vendor's plan. See this function's header.
     allowUnentitled: true,
+    // And whatever the vendor is holding that date for: a written message is
+    // not a claim on the date, and dropping it would destroy the lead exactly
+    // as the entitlement check once did.
+    allowHeld: true,
     at: args.at,
   });
   insertMessage({

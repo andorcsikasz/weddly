@@ -16,6 +16,7 @@ import {
   QUOTE_TITLE_MAX,
   quoteTotal,
 } from "@shared/booking_quotes";
+import { type DateHold, HOLD_DEFAULT_HOURS, HOLD_OPTIONS_HOURS } from "@shared/date_holds";
 import type { VendorClientDetail, VendorClientPayment } from "@shared/vendor_clients";
 import type { VendorFeatureFlags } from "@shared/vendor_plan";
 import {
@@ -27,6 +28,7 @@ import {
   Lock,
   Mail,
   Plus,
+  Timer,
   Trash2,
   Undo2,
 } from "lucide-react";
@@ -47,16 +49,19 @@ import { ApiError } from "../../lib/api";
 import {
   bookingMessagesApi,
   bookingQuoteApi,
+  dateHoldApi,
   notifyVendorStatsStale,
   vendorBillingApi,
   vendorClientsApi,
 } from "../../lib/endpoints";
-import { formatDate, formatMoney, intlLocale } from "../../lib/format";
+import { formatDate, formatDateMs, formatMoney, intlLocale } from "../../lib/format";
 import { BookingQuoteCard } from "../../components/BookingQuoteCard";
+import { InquiryAssistant } from "../../components/InquiryAssistant";
 import { BookingThreadPanel } from "../../components/BookingThreadPanel";
 import { MessageTemplatesDialog } from "../../components/MessageTemplatesDialog";
 import { NextActionBar, scrollToActionTarget } from "../../components/VendorNextAction";
 import type { BookingMessage, VendorMessageTemplate } from "@shared/booking_messages";
+import type { BookingTimelineEvent } from "@shared/booking_timeline";
 import { type Locale, useT } from "../../lib/i18n";
 import { useDocumentTitle } from "../../lib/seo";
 
@@ -193,6 +198,10 @@ export default function VendorClientDetailPage() {
   // Message thread state. Loaded alongside the detail; sending is PRO, reading
   // is not, so the panel renders on FREE with the composer swapped for a nudge.
   const [messages, setMessages] = useState<BookingMessage[]>([]);
+  // The derived event log for this booking, merged into the same scroll as the
+  // messages. Vendor-scoped by the server, so it carries the diary facts the
+  // couple's copy never gets: holds, installments, automation bookkeeping.
+  const [events, setEvents] = useState<BookingTimelineEvent[]>([]);
   const [threadLoading, setThreadLoading] = useState(true);
   const [templates, setTemplates] = useState<VendorMessageTemplate[]>([]);
   const [templatesOpen, setTemplatesOpen] = useState(false);
@@ -210,6 +219,12 @@ export default function VendorClientDetailPage() {
   const [qMessage, setQMessage] = useState("");
   const [savingQuote, setSavingQuote] = useState(false);
   const [busyQuoteId, setBusyQuoteId] = useState<number | null>(null);
+
+  // The date hold on this inquiry. Read on every plan (a lapse must not hide a
+  // hold the vendor still has); placing, extending and releasing are PRO.
+  const [hold, setHold] = useState<DateHold | null>(null);
+  const [holdHours, setHoldHours] = useState(HOLD_DEFAULT_HOURS);
+  const [holdBusy, setHoldBusy] = useState(false);
 
   // Payment schedule state (seeded from the detail payload, then kept live).
   const [payments, setPayments] = useState<VendorClientPayment[]>([]);
@@ -271,6 +286,9 @@ export default function VendorClientDetailPage() {
   const canTrackPayments = features?.payment_tracking ?? false;
   const canSendMessages = features?.direct_messages ?? false;
   const canWriteQuotes = features?.quotes ?? false;
+  // Holds ride the availability calendar's own flag rather than inventing a
+  // second one: a hold IS a block on that calendar, with a deadline on it.
+  const canHoldDates = features?.calendar_availability ?? false;
 
   // The attention band on the clients list links straight to the section its
   // action belongs to (`#vc-thread`, `#vc-payments`). React Router doesn't
@@ -297,13 +315,18 @@ export default function VendorClientDetailPage() {
       .then(({ thread }) => {
         if (cancelled) return;
         setMessages(thread.messages);
+        setEvents(thread.events);
         setThreadLoading(false);
         if (thread.messages.some((m) => m.sender_kind === "couple" && m.seen_at === null)) {
           void bookingMessagesApi.vendorMarkSeen(bookingId).then(() => {
             if (!cancelled) {
               bookingMessagesApi
                 .vendorThread(bookingId)
-                .then(({ thread: fresh }) => !cancelled && setMessages(fresh.messages))
+                .then(({ thread: fresh }) => {
+                  if (cancelled) return;
+                  setMessages(fresh.messages);
+                  setEvents(fresh.events);
+                })
                 .catch(() => undefined);
             }
           });
@@ -337,6 +360,19 @@ export default function VendorClientDetailPage() {
     bookingQuoteApi
       .vendorList(bookingId)
       .then(({ quotes: list }) => !cancelled && setQuotes(list))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingId]);
+
+  // Same reason as the quotes above: reading a hold is free.
+  useEffect(() => {
+    if (!Number.isFinite(bookingId)) return;
+    let cancelled = false;
+    dateHoldApi
+      .get(bookingId)
+      .then(({ hold: current }) => !cancelled && setHold(current))
       .catch(() => undefined);
     return () => {
       cancelled = true;
@@ -459,6 +495,66 @@ export default function VendorClientDetailPage() {
     },
     [t],
   );
+
+  /** "5 hours" / "3 days" left on a live hold. Days once there is more than a
+   *  couple of them, because "62 hours" is a number to convert in your head. */
+  const holdRemainingLabel = useCallback(
+    (hours: number): string =>
+      hours >= 48
+        ? t("vendor.holds.duration_days", { count: Math.floor(hours / 24) })
+        : t("vendor.holds.duration_hours", { count: hours }),
+    [t],
+  );
+
+  /** The hold's own refusals. Each one is a hold that would mean nothing, so
+   *  the copy says which rather than "something went wrong". */
+  const holdError = useCallback(
+    (e: unknown): string => {
+      const code = errCode(e);
+      if (code === "hold_no_date") return t("vendor.holds.no_date");
+      if (code === "hold_date_past") return t("vendor.holds.date_past");
+      if (code === "hold_booking_closed") return t("vendor.holds.booking_closed");
+      if (code === "vendor_pro_required") return t("vendor.quotes.pro_required");
+      return t("vendor.holds.failed");
+    },
+    [t],
+  );
+
+  /** Place or extend, one call. The server decides which it was, and the toast
+   *  follows what came back rather than what the button said. */
+  async function onHoldDate() {
+    setHoldBusy(true);
+    const extending = hold?.state === "live";
+    try {
+      const res = await dateHoldApi.place(bookingId, holdHours);
+      setHold(res.hold);
+      toast.success(extending ? t("vendor.holds.extended") : t("vendor.holds.placed"));
+    } catch (e) {
+      toast.error(holdError(e));
+    } finally {
+      setHoldBusy(false);
+    }
+  }
+
+  async function onReleaseHold() {
+    const ok = await confirm({
+      title: t("vendor.holds.release_confirm_title"),
+      body: t("vendor.holds.release_confirm_body"),
+      confirmLabel: t("vendor.holds.release"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    setHoldBusy(true);
+    try {
+      const res = await dateHoldApi.release(bookingId);
+      setHold(res.hold);
+      toast.success(t("vendor.holds.released"));
+    } catch (e) {
+      toast.error(holdError(e));
+    } finally {
+      setHoldBusy(false);
+    }
+  }
 
   /** Accepting a quote moves `contract_value` server-side, so the summary and
    *  the CRM form are re-read rather than guessed at. */
@@ -706,6 +802,11 @@ export default function VendorClientDetailPage() {
           on the clients list. */}
       <NextActionBar client={detail} />
 
+      {/* AI Concierge. Sits under the next action because it EXPLAINS the
+          inquiry rather than deciding anything about it, and hides itself
+          entirely when the feature is unconfigured or the vendor is on FREE. */}
+      <InquiryAssistant bookingId={detail.id} pro={canEditCrm} />
+
       <section id="vc-triage" className="card grid gap-4 sm:grid-cols-2">
         {/* Status is the one summary field that is also a DECISION, so it is
             the one that gets controls rather than a label. The current state
@@ -785,10 +886,13 @@ export default function VendorClientDetailPage() {
         />
       </section>
 
-      {/* The conversation. READING is deliberately outside the PRO block: the
-          point of a lead is knowing what was asked, and a vendor who can see
-          the client at all can see their message. SENDING is PRO, so on FREE
-          the composer is replaced by the upgrade card. */}
+      {/* The conversation, and everything that happened around it: the panel
+          merges the booking's system events into the same scroll, so "what
+          actually happened with this client" is one read rather than six
+          panels. READING is deliberately outside the PRO block: the point of a
+          lead is knowing what was asked, and a vendor who can see the client at
+          all can see their message. SENDING is PRO, so on FREE the composer is
+          replaced by the upgrade card. */}
       <section id="vc-thread" className="card space-y-3">
         <h2 className="text-lg font-semibold text-ink-900 dark:text-paper-50">
           {t("vendor.clients.thread_title")}
@@ -796,6 +900,7 @@ export default function VendorClientDetailPage() {
         <BookingThreadPanel
           side="vendor"
           messages={messages}
+          events={events}
           loading={threadLoading}
           onSend={sendMessage}
           allowAttachments={canSendMessages}
@@ -827,6 +932,93 @@ export default function VendorClientDetailPage() {
           onClose={() => setTemplatesOpen(false)}
         />
       ) : null}
+
+      {/* Date hold, next to the quote it usually accompanies: price the
+          inquiry, then keep the date while the couple decides. The state is
+          derived from `hold_until` server-side, so this panel only ever
+          renders a fact, never a stored status. */}
+      <section id="vc-hold" className="card space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-ink-900 dark:text-paper-50">
+            <Timer
+              size={18}
+              strokeWidth={1.5}
+              aria-hidden="true"
+              className="text-steel-600 dark:text-steel-300"
+            />
+            {t("vendor.holds.title")}
+          </h2>
+          {hold?.state === "live" ? (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-900 dark:bg-amber-500/20 dark:text-amber-100">
+              {t("vendor.holds.state_live", {
+                remaining: holdRemainingLabel(hold.hours_remaining),
+              })}
+            </span>
+          ) : null}
+        </div>
+
+        <p className="text-sm text-ink-600 dark:text-paper-300">
+          {hold === null || hold.state === "expired" || hold.state === "released"
+            ? t("vendor.holds.intro")
+            : t("vendor.holds.for_date", { date: formatDate(hold.event_date, locale) })}
+        </p>
+
+        {/* An expired or released hold is worth saying out loud: "this lapsed
+            on Tuesday" is the thing the vendor needs to know, and it is the
+            only place the two are told apart. */}
+        {hold?.state === "expired" ? (
+          <p className="text-sm text-ink-500 dark:text-paper-400">
+            {t("vendor.holds.state_expired", { date: formatDateMs(hold.hold_until, locale) })}
+          </p>
+        ) : null}
+        {hold?.state === "released" && hold.released_at !== null ? (
+          <p className="text-sm text-ink-500 dark:text-paper-400">
+            {t("vendor.holds.state_released", { date: formatDateMs(hold.released_at, locale) })}
+          </p>
+        ) : null}
+        {hold === null ? (
+          <p className="text-sm text-ink-500 dark:text-paper-400">{t("vendor.holds.empty")}</p>
+        ) : null}
+
+        {canHoldDates ? (
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="block">
+              <label htmlFor="vc-hold-hours" className="field-label">
+                {t("vendor.holds.duration_label")}
+              </label>
+              <select
+                id="vc-hold-hours"
+                className="input w-44"
+                value={holdHours}
+                onChange={(e) => setHoldHours(Number(e.target.value))}
+              >
+                {HOLD_OPTIONS_HOURS.map((h) => (
+                  <option key={h} value={h}>
+                    {h < 48
+                      ? t("vendor.holds.duration_hours", { count: h })
+                      : t("vendor.holds.duration_days", { count: Math.floor(h / 24) })}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button onClick={onHoldDate} loading={holdBusy} loadingLabel={t("common.saving")}>
+              {hold?.state === "live" ? t("vendor.holds.extend") : t("vendor.holds.place")}
+            </Button>
+            {hold?.state === "live" ? (
+              <Button variant="outline" onClick={onReleaseHold} disabled={holdBusy}>
+                {t("vendor.holds.release")}
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          <UpgradeCard
+            title={t("vendor.holds.locked_title")}
+            body={t("vendor.holds.locked_body")}
+            cta={t("vendor.upgrade.cta")}
+            locked={t("vendor.upgrade.feature_locked")}
+          />
+        )}
+      </section>
 
       {/* Quotes. Same split as the thread above: WRITING one is PRO, reading
           what has already been sent is not, so a lapsed vendor keeps the

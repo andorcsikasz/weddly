@@ -67,6 +67,14 @@ export const ADDRESS_SUGGEST_BUCKET: BucketConfig = { capacity: 30, refillRate: 
  *  one signup's worth of typing, useless as an open geocoder proxy. */
 export const ADDRESS_SUGGEST_ANON_BUCKET: BucketConfig = { capacity: 20, refillRate: 1 / 3 };
 
+/** AI Concierge on the vendor's client detail. Keyed on the VENDOR ACCOUNT
+ *  rather than an IP (see routes/ai_assist.ts): the model call is on our bill
+ *  and the account is who spends it. A click action, one per inquiry the vendor
+ *  is looking at — the burst covers a session of triage plus a couple of
+ *  re-generations, and the slow refill keeps a scripted client from turning a
+ *  paid model into a free one. */
+export const AI_ASSIST_BUCKET: BucketConfig = { capacity: 6, refillRate: 1 / 30 };
+
 /** Auto-translate (DeepL proxy) on the vendor listing editor. A click action:
  *  the burst covers translating both blurb fields a few times, and the slow
  *  refill keeps the paid upstream from being farmed as an open translator. */

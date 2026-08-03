@@ -11,6 +11,7 @@
 // range pill.
 
 import {
+  ArrowRight,
   BarChart3,
   CalendarClock,
   Eye,
@@ -24,8 +25,9 @@ import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react
 import { Link, useNavigate } from "react-router-dom";
 import type { VendorStats } from "@shared/vendor_clients";
 import type { VendorFeatureFlags } from "@shared/vendor_plan";
-import { Skeleton, SkeletonText } from "../../components/ui";
+import { Skeleton } from "../../components/ui";
 import { AnimatedNumber } from "../../components/AnimatedNumber";
+import { RevenuePulsePanel, useRevenuePulse } from "../../components/RevenuePulse";
 import { vendorBillingApi, vendorStatsApi } from "../../lib/endpoints";
 import { formatDate, formatMoney, intlLocale } from "../../lib/format";
 import { type Locale, useT } from "../../lib/i18n";
@@ -60,6 +62,13 @@ export default function VendorStatsPage() {
     () => (stats ? bucketInquiries(stats.inquiries_by_day, range, locale) : []),
     [stats, range, locale],
   );
+
+  // The forward-looking half of this page. Gated on the EXISTING
+  // payment_tracking feature rather than advanced_stats: it is the same money
+  // the payment schedule tracks, read forwards, so there is one thing to buy.
+  // The hook must sit above the early returns below — nothing renders on FREE
+  // and nothing is even requested.
+  const pulse = useRevenuePulse(features?.payment_tracking ?? false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -180,6 +189,7 @@ export default function VendorStatsPage() {
               buckets={buckets}
               unit={t("vendor.stats.unit_inquiries")}
               empty={t("vendor.stats.trend_empty")}
+              emptyCta={t("vendor.stats.empty_cta_listing")}
             />
           </section>
 
@@ -189,13 +199,17 @@ export default function VendorStatsPage() {
               {t("vendor.stats.by_status")}
             </h2>
             {statusTotal === 0 ? (
+              // Deliberately NO second CTA. This zero and the trend's zero are
+              // the same fact seen twice, and two buttons pointing at one lever
+              // is the "four equal buttons" problem in a new costume: the panel
+              // beside this one already carries the way out.
               <div className="flex flex-col items-center gap-3 py-2">
                 <StatusDonut
                   segments={[]}
                   total={0}
                   centerLabel={t("vendor.stats.unit_inquiries")}
                 />
-                <p className="text-center text-sm text-ink-500 dark:text-paper-400">
+                <p className="max-w-xs text-center text-sm text-ink-500 dark:text-paper-400">
                   {t("vendor.stats.status_empty")}
                 </p>
               </div>
@@ -280,6 +294,13 @@ export default function VendorStatsPage() {
               ]}
             />
           </section>
+
+          {/* Revenue Pulse: what is in flight and what lands next. It closes
+              the page on purpose, because the funnel above it ends at
+              "confirmed" and the only honest next question is what that is
+              worth. Renders nothing when the vendor has recorded no money at
+              all: a wall of zeroes is not analysis. */}
+          <RevenuePulsePanel pulse={pulse} />
         </div>
       ) : (
         <>
@@ -549,17 +570,36 @@ function TrendChart({
   buckets,
   unit,
   empty,
+  emptyCta,
 }: {
   buckets: TrendBucket[];
   unit: string;
   empty: string;
+  /** Label on the one way out of an empty chart. */
+  emptyCta: string;
 }) {
   const max = Math.max(...buckets.map((b) => b.count), 0);
   if (max === 0) {
+    // An empty trend has one lever behind it: more couples reaching the page.
+    // So the panel names it and hands over the editor, rather than stating the
+    // zero and stopping. The icon is drawn on the surface, no tinted plate.
     return (
-      <p className="flex h-44 items-center justify-center text-center text-sm text-ink-500 dark:text-paper-400">
-        {empty}
-      </p>
+      <div className="flex h-44 flex-col items-center justify-center gap-3 text-center">
+        <BarChart3
+          size={26}
+          strokeWidth={1.5}
+          aria-hidden="true"
+          className="text-steel-600 dark:text-steel-300"
+        />
+        <p className="max-w-xs text-sm text-ink-500 dark:text-paper-400">{empty}</p>
+        <Link
+          to="/vendor/listing"
+          className="inline-flex items-center gap-1 text-sm font-medium text-blush-600 transition-colors hover:text-blush-700 dark:text-blush-300 dark:hover:text-blush-200"
+        >
+          {emptyCta}
+          <ArrowRight size={15} aria-hidden="true" />
+        </Link>
+      </div>
     );
   }
   // The axis top is rounded up to an even count so its midline lands on a whole
@@ -752,12 +792,18 @@ function UpgradeAnalyticsCard({
   );
 }
 
+// The stats page one frame earlier, on the same bones: the KPI row, a trend
+// panel whose ghost is BARS rather than two grey lines, the donut beside its
+// legend, and the funnel's three tracks. A skeleton that only says "something
+// rectangular is coming" teaches the eye nothing; this one is already the shape
+// of the answer, so the data lands into a layout that does not move.
 function StatsSkeleton({ title }: { title: string }) {
+  // Deterministic, not random: a shimmer that reshuffles on every re-render is
+  // the loading state drawing attention to itself.
+  const bars = [38, 62, 45, 80, 30, 55, 70, 48, 90, 42, 66, 52];
   return (
     <div className="flex flex-col gap-5" aria-busy="true">
-      <h1 className="font-grotesk text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl dark:text-paper-50">
-        {title}
-      </h1>
+      <h1 className="sr-only">{title}</h1>
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
           <div
@@ -770,15 +816,51 @@ function StatsSkeleton({ title }: { title: string }) {
         ))}
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Trend: title + range pills + a bar field at the chart's own height. */}
         <div className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
-          <Skeleton variant="line" height={12} width="40%" />
-          <SkeletonText lines={2} />
-        </div>
-        <div className="flex items-center gap-6 rounded-2xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-600 dark:bg-umber-900">
-          <Skeleton variant="circle" width={128} />
-          <div className="flex-1">
-            <SkeletonText lines={4} />
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton variant="line" height={12} width={120} />
+            <div className="flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} height={22} width={44} rounded="full" />
+              ))}
+            </div>
           </div>
+          <div className="flex h-40 items-end gap-1.5">
+            {bars.map((h, i) => (
+              <Skeleton key={i} height={`${h}%`} width="100%" rounded="sm" className="flex-1" />
+            ))}
+          </div>
+        </div>
+        {/* Donut + legend rows. */}
+        <div className="flex flex-col items-center gap-5 rounded-2xl border border-paper-300 bg-paper-50 p-5 sm:flex-row dark:border-umber-600 dark:bg-umber-900">
+          <Skeleton variant="circle" width={128} />
+          <div className="flex w-full flex-1 flex-col gap-2.5">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between gap-3">
+                <span className="flex flex-1 items-center gap-2">
+                  <Skeleton variant="circle" width={10} />
+                  <Skeleton variant="line" height={12} width="60%" />
+                </span>
+                <Skeleton variant="line" height={12} width={28} />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Funnel: three labelled tracks across the full width. */}
+        <div className="flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50 p-5 lg:col-span-2 dark:border-umber-600 dark:bg-umber-900">
+          <Skeleton variant="line" height={12} width={150} />
+          {[100, 62, 28].map((w, i) => (
+            <div key={i} className="flex flex-col gap-1.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <Skeleton variant="line" height={12} width={110} />
+                <Skeleton variant="line" height={12} width={56} />
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-paper-200 dark:bg-umber-800">
+                <Skeleton height={8} width={`${w}%`} rounded="full" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
