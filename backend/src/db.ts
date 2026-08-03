@@ -772,6 +772,18 @@ db.exec(`
 // stores NULL rather than "", so "wrote nothing" and "cleared it" read alike.
 addColumnIfMissing("households", "guest_message", "guest_message TEXT");
 
+// Does this lodging appear as a CHOICE on the public RSVP form? Default 0,
+// because these rows were only ever the couple's private logistics board and
+// silently publishing an address, a price and a booking link to every guest
+// with a code is not something an existing couple asked for.
+//
+// Turning it on is what upgrades the RSVP's accommodation question from "do
+// you need somewhere to stay?" (a bare 0/1 the couple then had to chase up by
+// hand) to "which of these?", writing `guests.accommodation_id` directly. The
+// FK and the whole assignment UI already existed; only the guest was never
+// asked.
+addColumnIfMissing("accommodations", "offer_on_rsvp", "offer_on_rsvp INTEGER NOT NULL DEFAULT 0");
+
 // Logistics assignments live on the guest row. One accommodation + one
 // transfer per guest, both nullable. We index on the foreign-key columns so
 // the LogisticsPage can pull "guests assigned to this accommodation" with a

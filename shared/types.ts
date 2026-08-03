@@ -1391,6 +1391,10 @@ export interface HouseholdMember {
   meal_choice: MealChoice | null;
   dietary: string | null;
   accommodation_needed: boolean;
+  /** Which published lodging this member picked, or `null` for none. Only ever
+   *  set when the couple offers options; the bare `accommodation_needed`
+   *  checkbox leaves it null and the couple assigns rooms afterwards. */
+  accommodation_id: number | null;
   song_request: string | null;
   /** True when this member is themselves a +1 brought by another member. The
    *  check-in form hides the "+1" chip on these rows so a +1 can't carry its
@@ -1415,6 +1419,14 @@ export interface PublicCheckinView {
    *  toggle moved off `couples`). When false, the form hides the "needs
    *  accommodation?" checkbox for this specific household. */
   rsvp_offers_accommodation: boolean;
+  /** The lodgings the couple published for guests to choose between. Empty
+   *  when they published none, and the accommodation question then stays the
+   *  bare "do you need somewhere to stay?" checkbox it has always been. */
+  accommodation_options: RsvpAccommodationOption[];
+  /** The couple's workspace currency, so a lodging's price renders in the
+   *  money the couple actually quoted it in. Only meaningful alongside
+   *  `accommodation_options`; the rest of the public form shows no amounts. */
+  currency: Currency;
   /** Mirrors `Household.rsvp_collects_meal`. When false, the meal-icon row
    *  (meat/fish/veg/vegan/child/none) is hidden on the public form for this
    *  household — useful for buffet weddings or households whose menu is
@@ -1459,6 +1471,11 @@ export interface CheckinMemberSubmit {
   meal_choice: MealChoice | null;
   dietary: string | null;
   accommodation_needed: boolean;
+  /** The lodging this member picked, from `PublicCheckinView.accommodation_options`.
+   *  Server re-checks the id belongs to this couple AND is actually offered, so
+   *  an unauthenticated submit can't park a guest somewhere the couple kept off
+   *  the form. Picking one implies `accommodation_needed`. */
+  accommodation_id?: number | null;
   song_request: string | null;
 }
 
@@ -1601,6 +1618,12 @@ export interface Accommodation {
   link: string | null;
   contact: string | null;
   notes: string | null;
+  /** Offered as a CHOICE on the public RSVP form. Default `false`: these rows
+   *  started life as the couple's private logistics board, and the name,
+   *  address, price and booking link only reach guests when the couple says
+   *  so. When at least one lodging is offered, the RSVP's accommodation
+   *  question stops being a yes/no and becomes "which of these?". */
+  offer_on_rsvp: boolean;
   created_at: UnixMs;
   updated_at: UnixMs;
 }
@@ -1613,6 +1636,21 @@ export interface UpsertAccommodationInput {
   link?: string | null;
   contact?: string | null;
   notes?: string | null;
+  offer_on_rsvp?: boolean;
+}
+
+/** One lodging as a GUEST sees it on the public RSVP. A deliberate subset of
+ *  `Accommodation`: enough to choose between places (what it is called, where
+ *  it is, what it costs, where to book), and none of the couple's own working
+ *  data. `contact`, `notes` and `capacity` are absent on purpose — a guest
+ *  picking a bed has no use for the innkeeper's phone number, and the free
+ *  capacity is a number the couple is still moving around. */
+export interface RsvpAccommodationOption {
+  id: number;
+  name: string;
+  address: string | null;
+  price_huf: Huf | null;
+  link: string | null;
 }
 
 /** A single room within an `Accommodation` (e.g. "Hálószoba", "Tetőtér").

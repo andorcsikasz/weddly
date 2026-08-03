@@ -4911,6 +4911,8 @@ export interface LocaleMessages {
     name_required: string;
     label_required: string;
     capacity_invalid: string;
+    offer_on_rsvp: string;
+    offer_on_rsvp_help: string;
     price_invalid: string;
     save_failed: string;
     accommodation_deleted: string;
@@ -6018,9 +6020,12 @@ export interface LocaleMessages {
       listing_count: string;
       incomplete: string;
       incomplete_tooltip: string;
-      missing_photos: string;
-      missing_bio: string;
+      missing_cover: string;
+      missing_gallery: string;
+      missing_description: string;
+      missing_contact: string;
       missing_pricing: string;
+      missing_capacity: string;
       missing_packages: string;
       reminders_sent: string;
       reminders_last: string;
@@ -7767,6 +7772,8 @@ export interface LocaleMessages {
     meal_section_title: string;
     dietary_section_title: string;
     dietary_other_placeholder: string;
+    accommodation_section_title: string;
+    accommodation_none: string;
     guest_message_label: string;
     guest_message_placeholder: string;
     guest_message_help: string;

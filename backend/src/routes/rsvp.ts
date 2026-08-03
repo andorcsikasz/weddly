@@ -15,7 +15,9 @@ import type {
   RsvpStatus,
 } from "@shared/types";
 import { parseMealMenu } from "@shared/meals";
+import { isCurrency } from "@shared/currency";
 import { GUEST_MESSAGE_MAX } from "@shared/rsvp";
+import { isRsvpOfferedAccommodation, listRsvpAccommodationOptions } from "../domain/accommodations";
 import { CONFIG } from "../config";
 import { db } from "../db";
 import { type CoupleRow, getCoupleById } from "../domain/couples";
@@ -155,6 +157,12 @@ function buildView(couple: CoupleRow, household: HouseholdRow): PublicCheckinVie
     // are retained server-side for back-compat (schema additive) but no
     // longer flow into the public view.
     rsvp_offers_accommodation: household.rsvp_offers_accommodation === 1,
+    // Couple-level, but only rendered when this household was asked the
+    // accommodation question at all. Empty list = the couple published no
+    // options and the form keeps its plain yes/no checkbox.
+    accommodation_options:
+      household.rsvp_offers_accommodation === 1 ? listRsvpAccommodationOptions(couple.id) : [],
+    currency: isCurrency(couple.currency) ? couple.currency : "HUF",
     rsvp_collects_meal: household.rsvp_collects_meal === 1,
     // Couple-level custom menu (labels + offered flags) so the public form
     // shows the couple's real dishes and only the slots they actually offer.
@@ -188,6 +196,7 @@ interface SubmitMemberRaw {
   meal_choice?: unknown;
   dietary?: unknown;
   accommodation_needed?: unknown;
+  accommodation_id?: unknown;
   song_request?: unknown;
 }
 
@@ -199,7 +208,7 @@ function strOrNull(raw: unknown, max: number): string | null {
   return trimmed;
 }
 
-function parseMember(raw: SubmitMemberRaw): CheckinMemberSubmit {
+function parseMember(raw: SubmitMemberRaw, coupleId: number): CheckinMemberSubmit {
   if (typeof raw.guest_id !== "number" || !Number.isFinite(raw.guest_id)) {
     throw new HttpError(400, "members[].guest_id required");
   }
@@ -209,12 +218,30 @@ function parseMember(raw: SubmitMemberRaw): CheckinMemberSubmit {
   const mealRaw = typeof raw.meal_choice === "string" ? raw.meal_choice : null;
   const meal = mealRaw && isMealChoice(mealRaw) ? mealRaw : null;
 
+  // This handler is unauthenticated, so the lodging id is verified rather than
+  // trusted: it has to be this couple's row AND one they actually published.
+  // A 400 rather than a silent drop, because a guest who picked a place and
+  // was quietly recorded as "no preference" is worse off than one who is told.
+  let accommodationId: number | null = null;
+  if (raw.accommodation_id !== null && raw.accommodation_id !== undefined) {
+    if (typeof raw.accommodation_id !== "number" || !Number.isInteger(raw.accommodation_id)) {
+      throw new HttpError(400, "members[].accommodation_id invalid");
+    }
+    if (!isRsvpOfferedAccommodation(raw.accommodation_id, coupleId)) {
+      throw new HttpError(400, "members[].accommodation_id is not an offered option");
+    }
+    accommodationId = raw.accommodation_id;
+  }
+
   return {
     guest_id: raw.guest_id,
     rsvp_status: status,
     meal_choice: meal,
+    // Picking a place IS needing one. Without this the couple could see a
+    // chosen lodging on a guest the summary still counted as needing nothing.
+    accommodation_needed: accommodationId !== null || Boolean(raw.accommodation_needed),
+    accommodation_id: accommodationId,
     dietary: strOrNull(raw.dietary, 500),
-    accommodation_needed: Boolean(raw.accommodation_needed),
     song_request: strOrNull(raw.song_request, 500),
   };
 }
@@ -241,6 +268,7 @@ function persistCheckin(
         meal_choice: m.meal_choice,
         dietary: m.dietary,
         accommodation_needed: m.accommodation_needed,
+        accommodation_id: m.accommodation_id ?? null,
         song_request: m.song_request,
       });
     }
@@ -554,7 +582,7 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
     });
   }
 
-  const parsed = body.members.map((m) => parseMember(m as SubmitMemberRaw));
+  const parsed = body.members.map((m) => parseMember(m as SubmitMemberRaw, couple.id));
   const parsedAdded = addedRaw.map((m) => parseAddedMember(m as AddedMemberRaw));
 
   const { previous, updated } = persistCheckin(couple, hh, parsed);

@@ -312,6 +312,7 @@ export function toHouseholdMember(row: GuestRow): HouseholdMember {
     meal_choice: g.meal_choice,
     dietary: g.dietary,
     accommodation_needed: g.accommodation_needed,
+    accommodation_id: g.accommodation_id,
     song_request: g.song_request,
     is_plus_one: g.is_plus_one,
     plus_one_of: g.plus_one_of,
@@ -328,6 +329,11 @@ export function applyMemberCheckin(
     meal_choice: MealChoice | null;
     dietary: string | null;
     accommodation_needed: boolean;
+    /** The lodging the guest picked, already validated by the caller as one
+     *  this couple offers. `null` means they picked none, which deliberately
+     *  CLEARS any previous pick: on a form that offers options, "no place
+     *  selected" is an answer. */
+    accommodation_id: number | null;
     song_request: string | null;
   },
 ): void {
@@ -335,7 +341,7 @@ export function applyMemberCheckin(
   db.prepare(
     `UPDATE guests SET
         rsvp_status = ?, meal_choice = ?, dietary = ?,
-        accommodation_needed = ?, song_request = ?,
+        accommodation_needed = ?, accommodation_id = ?, song_request = ?,
         rsvp_responded_at = ?, updated_at = ?
        WHERE id = ? AND household_id = ?`,
   ).run(
@@ -343,6 +349,7 @@ export function applyMemberCheckin(
     patch.meal_choice,
     patch.dietary,
     patch.accommodation_needed ? 1 : 0,
+    patch.accommodation_id,
     patch.song_request,
     ts,
     ts,

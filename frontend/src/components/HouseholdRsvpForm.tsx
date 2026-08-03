@@ -38,7 +38,7 @@ import { useNavigate } from "react-router-dom";
 import { useConfirm, useToast } from "./ui";
 import { ApiError, isOnline } from "../lib/api";
 import { rsvpApi } from "../lib/endpoints";
-import { formatDate } from "../lib/format";
+import { formatDate, formatMoney } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { drain, enqueue, makeKey, peekAll } from "../lib/rsvp_offline";
 
@@ -239,6 +239,10 @@ interface MemberDraft {
   /** Free-text remainder of `dietary` after known tags are pulled out. */
   dietary_free: string;
   accommodation_needed: boolean;
+  /** Which published lodging this member picked. Null means none, which on a
+   *  form that lists options is an answer rather than a blank. Only ever
+   *  non-null when the couple published something to choose between. */
+  accommodation_id: number | null;
   song_request: string;
   /** Per-member attached add-ons. Chip on ↔ entry exists. Name is required
    *  on submit when the chip is on. */
@@ -267,6 +271,7 @@ function fromMember(m: HouseholdMember, hostsPlusOne = false): MemberDraft {
     dietary_tags: tags,
     dietary_free: free,
     accommodation_needed: m.accommodation_needed,
+    accommodation_id: m.accommodation_id,
     song_request: m.song_request ?? "",
     plus_one: null,
     baby: null,
@@ -283,6 +288,7 @@ function toSubmit(d: MemberDraft): CheckinMemberSubmit {
     meal_choice: d.meal_choice,
     dietary: buildDietary(d.dietary_tags, d.dietary_free),
     accommodation_needed: d.accommodation_needed,
+    accommodation_id: d.accommodation_id,
     song_request: d.song_request.trim() ? d.song_request.trim() : null,
   };
 }
@@ -295,6 +301,7 @@ function hasYesData(d: MemberDraft): boolean {
       d.dietary_tags.size > 0 ||
       d.dietary_free.trim() ||
       d.accommodation_needed ||
+      d.accommodation_id !== null ||
       d.song_request.trim() ||
       d.plus_one ||
       d.baby,
@@ -342,6 +349,10 @@ export function HouseholdRsvpForm({
    *  together and signs off once. Seeded from the server so reopening the form
    *  edits the existing message rather than facing an empty box. */
   const [guestMessage, setGuestMessage] = useState<string>(view.guest_message ?? "");
+  /** Empty for every couple who never published a lodging, which is the
+   *  default and keeps the old yes/no checkbox exactly as it was. */
+  const lodgings = view.accommodation_options ?? [];
+  const currency = view.currency ?? "HUF";
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -951,7 +962,13 @@ export function HouseholdRsvpForm({
                       />
                     </div>
 
-                    {view.rsvp_offers_accommodation && (
+                    {/* Two shapes of one question. With no published lodgings
+                      this stays the yes/no it has always been; the moment the
+                      couple offers even one, "do you need somewhere to stay?"
+                      becomes "which of these?" and the answer lands straight
+                      on `guests.accommodation_id` instead of the couple
+                      chasing every guest by hand afterwards. */}
+                    {view.rsvp_offers_accommodation && lodgings.length === 0 && (
                       <label className="flex min-h-tap cursor-pointer items-center gap-3 py-1 text-sm text-ink-700 dark:text-paper-100">
                         <input
                           type="checkbox"
@@ -966,6 +983,53 @@ export function HouseholdRsvpForm({
                         />
                         {t("rsvp.checkin_member_accommodation")}
                       </label>
+                    )}
+                    {view.rsvp_offers_accommodation && lodgings.length > 0 && (
+                      <div>
+                        <p className="mb-2 text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
+                          {t("rsvp.accommodation_section_title")}
+                        </p>
+                        <div
+                          role="radiogroup"
+                          aria-label={t("rsvp.accommodation_section_title")}
+                          className="flex flex-col gap-1.5"
+                        >
+                          {/* "None" is a real option rather than the absence of
+                            one: on a form that lists places, leaving every row
+                            unpicked is indistinguishable from not having read
+                            the question. */}
+                          <LodgingOption
+                            active={d.accommodation_id === null}
+                            title={t("rsvp.accommodation_none")}
+                            onClick={() =>
+                              updateMember(d.id, {
+                                accommodation_id: null,
+                                accommodation_needed: false,
+                              })
+                            }
+                          />
+                          {lodgings.map((opt) => (
+                            <LodgingOption
+                              key={opt.id}
+                              active={d.accommodation_id === opt.id}
+                              title={opt.name}
+                              detail={opt.address}
+                              price={
+                                opt.price_huf !== null
+                                  ? formatMoney(opt.price_huf, currency, locale)
+                                  : null
+                              }
+                              link={opt.link}
+                              onClick={() =>
+                                updateMember(d.id, {
+                                  accommodation_id: opt.id,
+                                  accommodation_needed: true,
+                                })
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
                     )}
                     <div>
                       <label className="field-label">{t("rsvp.checkin_member_song")}</label>
@@ -1282,6 +1346,61 @@ export function HouseholdRsvpForm({
         </button>
       )}
     </form>
+  );
+}
+
+/** One lodging the couple published, as a full-width radio row. Wider than a
+ *  Chip on purpose: an address and a price are what someone actually chooses
+ *  between, and they do not fit on a pill.
+ *
+ *  The booking link is a real anchor nested inside the row, so its click is
+ *  stopped from selecting the option. Someone opening the hotel's page to look
+ *  has not decided yet, and silently picking it for them would be a lie the
+ *  form tells the couple. */
+function LodgingOption({
+  active,
+  title,
+  detail,
+  price,
+  link,
+  onClick,
+}: {
+  active: boolean;
+  title: string;
+  detail?: string | null;
+  price?: string | null;
+  link?: string | null;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      className={
+        active
+          ? "flex min-h-tap w-full flex-col items-start gap-0.5 rounded-xl border-2 border-ink-700 bg-ink-700 px-3 py-2 text-left text-paper-100 dark:border-paper-50 dark:bg-paper-50 dark:text-umber-900"
+          : "flex min-h-tap w-full flex-col items-start gap-0.5 rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 text-left text-ink-700 hover:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-600"
+      }
+    >
+      <span className="flex w-full flex-wrap items-baseline gap-x-2 text-sm font-medium">
+        {title}
+        {price && <span className="text-xs font-normal opacity-80">{price}</span>}
+      </span>
+      {detail && <span className="text-xs opacity-70">{detail}</span>}
+      {link && (
+        <a
+          href={link}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="text-xs underline underline-offset-2 opacity-80 hover:opacity-100"
+        >
+          {link.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+        </a>
+      )}
+    </button>
   );
 }
 

@@ -5,6 +5,7 @@
 import type {
   Accommodation,
   AccommodationRoom,
+  RsvpAccommodationOption,
   UpsertAccommodationInput,
   UpsertAccommodationRoomInput,
 } from "@shared/types";
@@ -29,6 +30,9 @@ export interface AccommodationRow {
   link: string | null;
   contact: string | null;
   notes: string | null;
+  /** 0/1 — is this one of the options guests choose between on the public
+   *  RSVP? Off by default; see the column comment in db.ts. */
+  offer_on_rsvp: number;
   created_at: number;
   updated_at: number;
 }
@@ -44,9 +48,52 @@ export function toAccommodation(row: AccommodationRow): Accommodation {
     link: row.link,
     contact: row.contact,
     notes: row.notes,
+    offer_on_rsvp: row.offer_on_rsvp === 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
+}
+
+/** The lodgings a guest is allowed to see and pick on the public RSVP. Only
+ *  the fields that help someone decide: no `contact`, no `notes`, no
+ *  `capacity`. Those are the couple's own working data and a guest choosing a
+ *  bed has no use for the innkeeper's phone number.
+ *
+ *  Ordered like the couple's own list so the RSVP and the logistics board read
+ *  in the same sequence. */
+export function listRsvpAccommodationOptions(coupleId: number): RsvpAccommodationOption[] {
+  const rows = db
+    .prepare(
+      `SELECT id, name, address, price_huf, link FROM accommodations
+        WHERE couple_id = ? AND offer_on_rsvp = 1
+        ORDER BY created_at ASC, id ASC`,
+    )
+    .all(coupleId) as {
+    id: number;
+    name: string;
+    address: string | null;
+    price_huf: number | null;
+    link: string | null;
+  }[];
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    address: r.address,
+    price_huf: r.price_huf,
+    link: r.link,
+  }));
+}
+
+/** True when this id is a lodging THIS couple actually offers on the RSVP.
+ *  The public submit is unauthenticated, so the id it sends is checked here
+ *  rather than trusted: without the `offer_on_rsvp` half a guest could park
+ *  themselves in a place the couple deliberately kept off the form, and
+ *  without the `couple_id` half they could point at another wedding's row. */
+export function isRsvpOfferedAccommodation(id: number, coupleId: number): boolean {
+  const row = db
+    .prepare("SELECT 1 FROM accommodations WHERE id = ? AND couple_id = ? AND offer_on_rsvp = 1")
+    .get(id, coupleId);
+  return row !== undefined && row !== null;
 }
 
 function parseName(raw: unknown): string {
@@ -113,6 +160,7 @@ export interface ParsedAccommodation {
   link: string | null;
   contact: string | null;
   notes: string | null;
+  offer_on_rsvp: boolean;
 }
 
 export function parseAccommodationCreate(
@@ -126,6 +174,9 @@ export function parseAccommodationCreate(
     link: parseOptionalUrl(body.link, MAX_LINK_LEN, "link"),
     contact: parseOptionalString(body.contact, MAX_CONTACT_LEN, "contact"),
     notes: parseOptionalString(body.notes, MAX_NOTES_LEN, "notes"),
+    // Publishing to guests is always an explicit act, never a side effect of
+    // adding a lodging to the couple's own board.
+    offer_on_rsvp: body.offer_on_rsvp === true,
   };
 }
 
@@ -151,6 +202,8 @@ export function parseAccommodationPatch(
       body.notes === undefined
         ? existing.notes
         : parseOptionalString(body.notes, MAX_NOTES_LEN, "notes"),
+    offer_on_rsvp:
+      body.offer_on_rsvp === undefined ? existing.offer_on_rsvp === 1 : body.offer_on_rsvp === true,
   };
 }
 
@@ -177,8 +230,9 @@ export function insertAccommodation(
   const result = db
     .prepare(
       `INSERT INTO accommodations
-         (couple_id, name, address, capacity, price_huf, link, contact, notes, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (couple_id, name, address, capacity, price_huf, link, contact, notes,
+          offer_on_rsvp, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       coupleId,
@@ -189,6 +243,7 @@ export function insertAccommodation(
       parsed.link,
       parsed.contact,
       parsed.notes,
+      parsed.offer_on_rsvp ? 1 : 0,
       ts,
       ts,
     );
@@ -205,7 +260,7 @@ export function updateAccommodation(
   db.prepare(
     `UPDATE accommodations SET
        name = ?, address = ?, capacity = ?, price_huf = ?, link = ?, contact = ?,
-       notes = ?, updated_at = ?
+       notes = ?, offer_on_rsvp = ?, updated_at = ?
      WHERE id = ? AND couple_id = ?`,
   ).run(
     parsed.name,
@@ -215,6 +270,7 @@ export function updateAccommodation(
     parsed.link,
     parsed.contact,
     parsed.notes,
+    parsed.offer_on_rsvp ? 1 : 0,
     ts,
     id,
     coupleId,

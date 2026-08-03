@@ -2024,6 +2024,7 @@ function AccommodationDialog({
   const [link, setLink] = useState(initial?.link ?? "");
   const [contact, setContact] = useState(initial?.contact ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [offerOnRsvp, setOfferOnRsvp] = useState(initial?.offer_on_rsvp ?? false);
   const [submitting, setSubmitting] = useState(false);
 
   const currencyGlyph = currencySymbol(currency, locale);
@@ -2052,6 +2053,7 @@ function AccommodationDialog({
       link: link.trim() || null,
       contact: contact.trim() || null,
       notes: notes.trim() || null,
+      offer_on_rsvp: offerOnRsvp,
     };
     setSubmitting(true);
     try {
@@ -2157,6 +2159,27 @@ function AccommodationDialog({
             placeholder={t("logistics.notes_placeholder")}
           />
         </Field>
+        {/* Publishing to guests is its own decision, deliberately last and
+          deliberately off by default: this board started as the couple's own
+          private logistics, and the name, address, price and booking link
+          only leave it when they say so. The contact and the notes never do,
+          whatever this is set to. */}
+        <label className="flex min-h-tap cursor-pointer items-start gap-3 rounded-xl border border-paper-300 px-3 py-2.5 dark:border-umber-700">
+          <input
+            type="checkbox"
+            checked={offerOnRsvp}
+            onChange={(e) => setOfferOnRsvp(e.target.checked)}
+            className="mt-0.5 h-5 w-5 cursor-pointer accent-ink-700"
+          />
+          <span className="min-w-0">
+            <span className="block text-sm font-medium text-ink-900 dark:text-paper-50">
+              {t("logistics.offer_on_rsvp")}
+            </span>
+            <span className="block text-xs text-ink-500 dark:text-umber-300">
+              {t("logistics.offer_on_rsvp_help")}
+            </span>
+          </span>
+        </label>
       </form>
     </Dialog>
   );
