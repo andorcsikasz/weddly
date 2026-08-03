@@ -4315,6 +4315,7 @@ export interface LocaleMessages {
     household_existing: string;
     household_code: string;
     household_share_link: string;
+    household_guest_message: string;
     household_share_copied: string;
     household_regenerate_code: string;
     household_regenerate_confirm_title: string;
@@ -7765,6 +7766,10 @@ export interface LocaleMessages {
      *  has the corresponding RSVP feature enabled. */
     meal_section_title: string;
     dietary_section_title: string;
+    dietary_other_placeholder: string;
+    guest_message_label: string;
+    guest_message_placeholder: string;
+    guest_message_help: string;
     /** Header above the +1/baby chip row so guests don't conflate "bringing
      *  someone" with a dietary attribute. */
     additions_section_title: string;

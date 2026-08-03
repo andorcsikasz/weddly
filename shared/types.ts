@@ -1306,6 +1306,12 @@ export interface Household {
    *  form. Default `true`. Per-member `meal_choice` values are preserved
    *  server side, so flipping off → on re-surfaces them. */
   rsvp_collects_meal: boolean;
+  /** Free text the GUEST left for the couple when they RSVP'd, `null` when
+   *  they wrote nothing. The opposite direction to `notes`, which is the
+   *  couple's own private note about this household, and a separate column so
+   *  an RSVP can never overwrite what the couple wrote. One message per party:
+   *  a family fills the form together and signs off once. */
+  guest_message: string | null;
   /** True when `guests.create` spawned this household implicitly (no
    *  `household_id` and no `new_household_label` on the request body).
    *  Lets the household tab optionally hide stub singletons via
@@ -1419,6 +1425,10 @@ export interface PublicCheckinView {
    *  `enabled` ones and uses each `label` (falling back to its own localised
    *  default when null). */
   meal_menu: MealMenu;
+  /** What this household already wrote to the couple, so a guest reopening the
+   *  form edits their message instead of facing an empty box that would blank
+   *  it on resubmit. */
+  guest_message: string | null;
   /** Mirrors `couples.is_public`. Lets the success card hide the
    *  "Open wedding page" CTA when the /w/:slug page would 404 — clicking
    *  through to a "not found" page after a successful RSVP read as broken
@@ -1437,6 +1447,10 @@ export interface CheckinSubmitBody {
   /** Optional new members the guest is bringing — partner, child, baby.
    *  Server creates them in the household with the supplied kind + RSVP. */
   added_members?: CheckinAddedMember[];
+  /** Free-text message to the couple, one per household. Omit the key
+   *  entirely to leave any existing message untouched; send `""` or `null` to
+   *  clear it. Stored on `households.guest_message`. */
+  guest_message?: string | null;
 }
 
 export interface CheckinMemberSubmit {

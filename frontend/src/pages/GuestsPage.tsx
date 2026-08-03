@@ -48,6 +48,7 @@ import {
   Leaf,
   Link2,
   Lock,
+  MessageSquareQuote,
   Milk,
   MoreHorizontal,
   Music,
@@ -2417,6 +2418,22 @@ function HouseholdCard({
           </button>
         </div>
       </header>
+
+      {/* What this party wrote to the couple when they RSVP'd. Rendered above
+        the member rows and OUTSIDE the collapse, because a message nobody
+        notices is the same as no message box at all. Quoted rather than
+        styled as a field: these are the guest's words, not a data point. */}
+      {household.guest_message && (
+        <div className="border-t border-paper-200 bg-paper-50 px-3 py-2.5 dark:border-umber-700 dark:bg-umber-800/40">
+          <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-ink-400 dark:text-umber-400">
+            <MessageSquareQuote size={12} aria-hidden />
+            {t("guests.household_guest_message")}
+          </p>
+          <p className="whitespace-pre-wrap text-sm italic text-ink-700 dark:text-paper-100">
+            {household.guest_message}
+          </p>
+        </div>
+      )}
 
       {!collapsed && (
         <ul className="divide-y divide-paper-200 dark:divide-umber-700">

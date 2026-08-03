@@ -28,6 +28,9 @@ export interface HouseholdRow {
   /** Per-household opt-out for the meal-choice icon row on the public RSVP
    *  form. Default 1 (collect). */
   rsvp_collects_meal: number;
+  /** Free text the GUEST left on the public RSVP, addressed to the couple.
+   *  Distinct from `notes`, which the couple writes about this household. */
+  guest_message: string | null;
   /** 1 when this row was spawned implicitly by `guests.create` (no
    *  `household_id` and no `new_household_label` on the request body), 0
    *  when the user deliberately created it via the households route or
@@ -291,6 +294,7 @@ export function toHousehold(
     is_supplier_household: row.is_supplier_household === 1,
     rsvp_offers_accommodation: row.rsvp_offers_accommodation === 1,
     rsvp_collects_meal: row.rsvp_collects_meal === 1,
+    guest_message: row.guest_message ?? null,
     auto_created: row.auto_created === 1,
     invited_at: row.invited_at ?? null,
     created_at: row.created_at,
@@ -345,6 +349,20 @@ export function applyMemberCheckin(
     guestId,
     householdId,
   );
+}
+
+/** Store the guest's message to the couple. Called from the public RSVP submit
+ *  only, and only when the form actually carried the key: an absent key means
+ *  "this client didn't ask about it" and must leave an existing message alone,
+ *  while an emptied box is a deliberate `null`. Pure DB write. */
+export function setHouseholdGuestMessage(
+  householdId: number,
+  coupleId: number,
+  message: string | null,
+): void {
+  db.prepare(
+    "UPDATE households SET guest_message = ?, updated_at = ? WHERE id = ? AND couple_id = ?",
+  ).run(message, now(), householdId, coupleId);
 }
 
 /** Type guards re-exported for callers parsing public payloads. */

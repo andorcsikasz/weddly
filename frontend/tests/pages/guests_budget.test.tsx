@@ -257,6 +257,7 @@ function makeHousehold(over: Partial<Household> = {}): Household {
     code: "1234",
     label: "Smith family",
     notes: null,
+    guest_message: null,
     member_ids: [1001],
     group_tag: "his_family",
     is_couple_household: false,

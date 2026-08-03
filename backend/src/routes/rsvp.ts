@@ -15,6 +15,7 @@ import type {
   RsvpStatus,
 } from "@shared/types";
 import { parseMealMenu } from "@shared/meals";
+import { GUEST_MESSAGE_MAX } from "@shared/rsvp";
 import { CONFIG } from "../config";
 import { db } from "../db";
 import { type CoupleRow, getCoupleById } from "../domain/couples";
@@ -26,6 +27,7 @@ import {
   getHouseholdByCoupleAndCode,
   type HouseholdRow,
   listMembers,
+  setHouseholdGuestMessage,
   toHouseholdMember,
 } from "../domain/households";
 import {
@@ -157,6 +159,10 @@ function buildView(couple: CoupleRow, household: HouseholdRow): PublicCheckinVie
     // Couple-level custom menu (labels + offered flags) so the public form
     // shows the couple's real dishes and only the slots they actually offer.
     meal_menu: parseMealMenu(couple.meal_menu),
+    // Echoed back so reopening the form shows what this party already wrote.
+    // Without it the box would render empty and the resubmit would clear a
+    // message the couple had already read.
+    guest_message: household.guest_message ?? null,
     wedding_site_published: couple.is_public === 1,
   };
 }
@@ -554,6 +560,14 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
   const { previous, updated } = persistCheckin(couple, hh, parsed);
   const addedRows = persistAddedMembers(couple, hh, parsedAdded);
 
+  // Household-level, so it is written once per submit rather than per member.
+  // An ABSENT key leaves the stored message alone (an older client, or a
+  // partial resubmit, must not silently erase what the couple already read);
+  // an empty string is the guest clearing it and stores NULL.
+  const messageSent = body.guest_message !== undefined;
+  const guestMessage = messageSent ? strOrNull(body.guest_message, GUEST_MESSAGE_MAX) : null;
+  if (messageSent) setHouseholdGuestMessage(hh.id, couple.id, guestMessage);
+
   notifyCouple(couple, hh, [...updated, ...addedRows], previous);
   notifyGuests(couple, [...updated, ...addedRows]);
 
@@ -568,7 +582,12 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
     payload: { counts, added_count: addedRows.length },
   });
 
-  const payload = { rsvp: buildView(couple, hh) };
+  // Re-read before rendering the answer: `hh` was loaded before the writes
+  // above, so building the view off it echoes the message the guest just
+  // REPLACED rather than the one they just sent. Members are re-read inside
+  // buildView already; the household row was the one stale piece.
+  const fresh = getHouseholdById(hh.id, couple.id) ?? hh;
+  const payload = { rsvp: buildView(couple, fresh) };
   const serialized = JSON.stringify(payload);
   setIdempotent(cacheKey, {
     status: 200,

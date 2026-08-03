@@ -32,6 +32,7 @@ import {
   Sprout,
   Wheat,
 } from "lucide-react";
+import { DIETARY_FREE_MAX, GUEST_MESSAGE_MAX } from "@shared/rsvp";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConfirm, useToast } from "./ui";
@@ -337,6 +338,10 @@ export function HouseholdRsvpForm({
     );
     return view.members.map((m) => fromMember(m, hostIds.has(m.id)));
   });
+  /** One message per household, not per member: a family fills this form
+   *  together and signs off once. Seeded from the server so reopening the form
+   *  edits the existing message rather than facing an empty box. */
+  const [guestMessage, setGuestMessage] = useState<string>(view.guest_message ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -591,6 +596,10 @@ export function HouseholdRsvpForm({
       household_code: view.household_code,
       members: drafts.map(toSubmit),
       added_members: added.length > 0 ? added : undefined,
+      // Always sent, including as "" — the box is prefilled with whatever this
+      // household wrote last time, so an emptied box is the guest deleting
+      // their message and the server has to hear about it.
+      guest_message: guestMessage.trim(),
     };
     // Stamp the idempotency key BEFORE the first attempt so any retry from
     // the offline queue dedupes against the original write. The server
@@ -926,6 +935,20 @@ export function HouseholdRsvpForm({
                           />
                         ))}
                       </div>
+                      {/* Anything the six chips can't say. `dietary_free` was
+                        already parsed out of the stored string, carried in
+                        state and re-serialised on submit — it just had no
+                        input bound to it, so a guest with a soy allergy or
+                        coeliac disease had nowhere to put it while the couple
+                        could type it from the admin side all along. */}
+                      <input
+                        className="input mt-2"
+                        value={d.dietary_free}
+                        maxLength={DIETARY_FREE_MAX}
+                        placeholder={t("rsvp.dietary_other_placeholder")}
+                        aria-label={t("rsvp.dietary_other_placeholder")}
+                        onChange={(e) => updateMember(d.id, { dietary_free: e.target.value })}
+                      />
                     </div>
 
                     {view.rsvp_offers_accommodation && (
@@ -1022,6 +1045,30 @@ export function HouseholdRsvpForm({
               </div>
             </fieldset>
           ))}
+        </div>
+
+        {/* Message to the couple — household-level, so it sits outside the
+          per-member fieldsets above. Every other free-text box on this form
+          answers a question we thought to ask; this is the one for everything
+          else, which until now had to go in "Song request" or nowhere. Shown
+          whatever anyone answered: a guest who cannot come is often exactly
+          the one with something to say. */}
+        <div className="mt-6 border-t border-paper-200 pt-5 dark:border-umber-700">
+          <label className="field-label" htmlFor="rsvp-guest-message">
+            {t("rsvp.guest_message_label")}
+          </label>
+          <textarea
+            id="rsvp-guest-message"
+            className="input min-h-[5rem] resize-y"
+            rows={3}
+            maxLength={GUEST_MESSAGE_MAX}
+            value={guestMessage}
+            placeholder={t("rsvp.guest_message_placeholder")}
+            onChange={(e) => setGuestMessage(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+            {t("rsvp.guest_message_help")}
+          </p>
         </div>
 
         {/* Pre-submit summary so guests notice when they've only answered for
