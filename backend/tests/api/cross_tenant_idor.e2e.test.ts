@@ -22,6 +22,7 @@ import { describe, expect, test } from "bun:test";
 import { db } from "../../src/db";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
+import { initVendorBilling } from "../../src/domain/vendor_billing";
 
 const MARKER = "ZZTENANTLEAKMARKER";
 const TIMEOUT = 60_000;
@@ -281,7 +282,9 @@ async function adminToken(): Promise<string> {
   return login.data.token;
 }
 
-async function bootstrapVendor(slug: string): Promise<{ vendorToken: string }> {
+async function bootstrapVendor(
+  slug: string,
+): Promise<{ vendorToken: string; listingId: string; accountId: number }> {
   const { token } = await bootstrapCouple(`vowner-${slug}@weddly.test`);
   const contactEmail = `vendor-${slug}@weddly.test`;
   const submit = await req<{ supplier: { id: string } }>(
@@ -332,7 +335,14 @@ async function bootstrapVendor(slug: string): Promise<{ vendorToken: string }> {
     full_name: `Vendor ${slug}`,
   });
   expect(complete.status).toBe(201);
-  return { vendorToken: complete.data.token };
+  const accountRow = db.prepare("SELECT id FROM vendor_accounts ORDER BY id DESC LIMIT 1").get() as
+    | { id: number }
+    | undefined;
+  return {
+    vendorToken: complete.data.token,
+    listingId: publicId,
+    accountId: accountRow?.id ?? 0,
+  };
 }
 
 describe("cross-tenant IDOR — vendor A vs vendor B", () => {
@@ -390,6 +400,186 @@ describe("cross-tenant IDOR — vendor A vs vendor B", () => {
           .get(pkgRow.id) as { name: string } | undefined;
         expect(survived?.name).toContain(MARKER);
       }
+    },
+    TIMEOUT,
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The CORRESPONDENCE aggregate — an inquiry and everything that hangs off it:
+// the message thread, the quote, the date hold. It is addressed by a booking id
+// from BOTH sides (the vendor at /api/vendor/clients/:id/*, the couple at
+// /api/messages/threads/:bookingId/*), which is exactly the shape this sweep
+// exists for, and it is also the newest and the only one carrying a price.
+//
+// A quote is the moment a vendor commits to a number and a couple accepts one,
+// so a leak here is not a privacy problem alone: `accept` writes
+// `contract_value` and confirms the booking, which is a stranger signing a
+// contract between two other parties.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A claimed PRO vendor, an onboarded couple, and one live inquiry between
+ *  them. The inquiry comes from an outreach campaign because that is the path
+ *  that produces a real booking with a real thread behind it. */
+async function seedThread(slug: string): Promise<{
+  vendorToken: string;
+  coupleToken: string;
+  bookingId: number;
+  quoteId: number;
+}> {
+  const vendor = await bootstrapVendor(slug);
+  // Quotes and holds are PRO writes; the free plan would refuse them with a 402
+  // and the probe could not tell a paywall from a scoping check.
+  initVendorBilling(vendor.accountId, "EUR");
+
+  const couple = await bootstrapCouple(`thread-${slug}@weddly.test`);
+  const sent = await req(
+    "POST",
+    "/api/outreach/campaigns",
+    {
+      subject: `${MARKER} Sept 12`,
+      body_template: `${MARKER} Are you free?`,
+      supplier_ids: [vendor.listingId],
+    },
+    { token: couple.token },
+  );
+  expect(sent.status).toBe(201);
+
+  const clients = await req<{ clients: Array<{ id: number }> }>(
+    "GET",
+    "/api/vendor/clients",
+    undefined,
+    { token: vendor.vendorToken },
+  );
+  expect(clients.status).toBe(200);
+  const bookingId = clients.data.clients[0]?.id;
+  if (!bookingId) throw new Error(`seedThread(${slug}): no booking behind the outreach`);
+
+  const quote = await req<{ quote: { id: number } }>(
+    "POST",
+    `/api/vendor/clients/${bookingId}/quotes`,
+    {
+      title: `${MARKER} Coverage`,
+      lines: [{ label: `${MARKER} Full day`, unit_amount: 1200, qty: 1 }],
+    },
+    { token: vendor.vendorToken },
+  );
+  expect(quote.status).toBe(201);
+
+  return {
+    vendorToken: vendor.vendorToken,
+    coupleToken: couple.token,
+    bookingId,
+    quoteId: quote.data.quote.id,
+  };
+}
+
+describe("cross-tenant IDOR — one inquiry's thread, quote and date hold", () => {
+  test(
+    "neither the wrong vendor nor the wrong couple can reach another pair's correspondence",
+    async () => {
+      wipeAll();
+      const a = await seedThread("ca");
+      const b = await seedThread("cb");
+
+      // CONTROL. A refusal sweep passes vacuously if a path is misspelled: the
+      // 404 that proves nothing looks exactly like the 404 that proves
+      // everything. So first confirm the RIGHT tokens do reach these routes.
+      // If one of these stops answering, the probes below are measuring air.
+      for (const [method, path, token, who] of [
+        ["GET", `/api/vendor/clients/${a.bookingId}`, a.vendorToken, "vendor"],
+        ["GET", `/api/vendor/clients/${a.bookingId}/messages`, a.vendorToken, "vendor"],
+        ["GET", `/api/vendor/clients/${a.bookingId}/quotes`, a.vendorToken, "vendor"],
+        ["GET", `/api/vendor/clients/${a.bookingId}/hold`, a.vendorToken, "vendor"],
+        ["GET", `/api/messages/threads/${a.bookingId}`, a.coupleToken, "couple"],
+        ["GET", `/api/messages/threads/${a.bookingId}/quotes`, a.coupleToken, "couple"],
+      ] as const) {
+        const own = await req<unknown>(method, path, undefined, { token });
+        if (own.status < 200 || own.status >= 300) {
+          throw new Error(
+            `CONTROL FAILED: ${who} A got ${own.status} on its OWN ${method} ${path} — ` +
+              "the refusal probes below prove nothing until this answers.",
+          );
+        }
+      }
+
+      // Vendor B against vendor A's client. `/api/vendor/clients/:id/*` keys on
+      // a booking id, so an unscoped handler here hands over another studio's
+      // lead, their thread with that couple, and the number they quoted.
+      const vendorProbes: Probe[] = [
+        { method: "GET", path: `/api/vendor/clients/${a.bookingId}` },
+        { method: "GET", path: `/api/vendor/clients/${a.bookingId}/messages` },
+        {
+          method: "POST",
+          path: `/api/vendor/clients/${a.bookingId}/messages`,
+          body: { body: "hijacked" },
+        },
+        { method: "POST", path: `/api/vendor/clients/${a.bookingId}/messages/seen` },
+        { method: "GET", path: `/api/vendor/clients/${a.bookingId}/quotes` },
+        {
+          method: "POST",
+          path: `/api/vendor/clients/${a.bookingId}/quotes`,
+          body: { title: "hijacked", lines: [{ label: "x", unit_amount: 1, qty: 1 }] },
+        },
+        { method: "GET", path: `/api/vendor/clients/${a.bookingId}/hold` },
+        {
+          method: "PUT",
+          path: `/api/vendor/clients/${a.bookingId}/hold`,
+          body: { hold_until: Date.now() + 86_400_000 },
+        },
+        { method: "DELETE", path: `/api/vendor/clients/${a.bookingId}/hold` },
+        { method: "PATCH", path: `/api/vendor/quotes/${a.quoteId}`, body: { title: "hijacked" } },
+        { method: "POST", path: `/api/vendor/quotes/${a.quoteId}/send` },
+        { method: "POST", path: `/api/vendor/quotes/${a.quoteId}/withdraw` },
+        { method: "DELETE", path: `/api/vendor/quotes/${a.quoteId}` },
+      ];
+      for (const p of vendorProbes) await probe(p, b.vendorToken, "vendor-B→A thread");
+
+      // Couple B against couple A's thread. `accept` is the sharp one: it
+      // writes contract_value and confirms the booking, so a stranger reaching
+      // it signs a contract between two other parties.
+      const coupleProbes: Probe[] = [
+        { method: "GET", path: `/api/messages/threads/${a.bookingId}` },
+        {
+          method: "POST",
+          path: `/api/messages/threads/${a.bookingId}`,
+          body: { body: "hijacked" },
+        },
+        { method: "POST", path: `/api/messages/threads/${a.bookingId}/seen` },
+        { method: "GET", path: `/api/messages/threads/${a.bookingId}/quotes` },
+        { method: "POST", path: `/api/quotes/${a.quoteId}/accept` },
+        { method: "POST", path: `/api/quotes/${a.quoteId}/decline`, body: { reason: "hijacked" } },
+      ];
+      for (const p of coupleProbes) await probe(p, b.coupleToken, "couple-B→A thread");
+
+      // A's quote is still A's: same title, still a draft nobody sent, still
+      // carrying no accepted contract value.
+      const quoteRow = db
+        .prepare(
+          "SELECT title, sent_at, accepted_at, withdrawn_at FROM booking_quotes WHERE id = ?",
+        )
+        .get(a.quoteId) as
+        | {
+            title: string;
+            sent_at: number | null;
+            accepted_at: number | null;
+            withdrawn_at: number | null;
+          }
+        | undefined;
+      expect(quoteRow?.title).toContain(MARKER);
+      expect(quoteRow?.sent_at).toBeNull();
+      expect(quoteRow?.accepted_at).toBeNull();
+      expect(quoteRow?.withdrawn_at).toBeNull();
+
+      // Nobody wrote into A's thread, and no hold was placed on A's booking.
+      const hijacked = db
+        .prepare("SELECT COUNT(*) AS n FROM booking_messages WHERE booking_id = ? AND body LIKE ?")
+        .get(a.bookingId, "%hijacked%") as { n: number };
+      expect(hijacked.n).toBe(0);
+      const holds = db
+        .prepare("SELECT COUNT(*) AS n FROM booking_date_holds WHERE booking_id = ?")
+        .get(a.bookingId) as { n: number };
+      expect(holds.n).toBe(0);
     },
     TIMEOUT,
   );
