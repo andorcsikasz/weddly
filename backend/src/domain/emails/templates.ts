@@ -191,6 +191,12 @@ export interface RsvpReceivedForCouplePayload {
   rsvpStatus: "yes" | "no" | "maybe";
   guestPageUrl: string;
   progress?: RsvpProgress;
+  /** Free text the guest left for the couple on the RSVP
+   *  (`households.guest_message`), quoted in the body when present. Absent for
+   *  the vast majority of submissions, and absent is not the same as empty:
+   *  only a message written in THIS submission is worth mailing, or every
+   *  later RSVP from the same household would re-send it. */
+  guestMessage?: string | null;
 }
 export interface RsvpReceivedHouseholdForCouplePayload {
   /** Household label as it sits in /app/guests, e.g. "Anna & Mark". */
@@ -203,6 +209,8 @@ export interface RsvpReceivedHouseholdForCouplePayload {
   }[];
   guestPageUrl: string;
   progress?: RsvpProgress;
+  /** See `RsvpReceivedForCouplePayload.guestMessage`. */
+  guestMessage?: string | null;
 }
 export interface RsvpThanksForGuestPayload {
   coupleDisplayName: string;
@@ -2158,6 +2166,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
         `**${p.guestName}** most válaszolt a meghívóra: **${rsvpStatusHu(p.rsvpStatus)}**.`,
+        rsvpMessageLineHu(p.guestMessage),
         rsvpProgressLineHu(p.progress),
         "A vendéglistán látod az ételválasztást, a +1-eket, a szállásigényt és a zenekívánságokat.",
       ].filter((line): line is string => line !== null),
@@ -2167,6 +2176,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
         `**${p.guestName}** just responded: **${rsvpStatusEn(p.rsvpStatus)}**.`,
+        rsvpMessageLineEn(p.guestMessage),
         rsvpProgressLineEn(p.progress),
         "The guest list has their meal choice, +1, accommodation, and song requests.",
       ].filter((line): line is string => line !== null),
@@ -2184,8 +2194,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       // client (the renderer collapses "\n" inside a single <p>, which used to
       // run the whole household onto one line).
       paragraphs: [
-        `${p.householdLabel} (${p.guests.length} fő) most töltötte ki a meghívót:`,
+        p.guests.length > 0
+          ? `${p.householdLabel} (${p.guests.length} fő) most töltötte ki a meghívót:`
+          : `**${p.householdLabel}** üzenetet hagyott nektek.`,
         ...p.guests.map((g) => `• ${g.name} · ${rsvpStatusHu(g.rsvpStatus)}`),
+        rsvpMessageLineHu(p.guestMessage),
         rsvpProgressLineHu(p.progress),
         "A vendéglistán látod az ételválasztást, a +1-eket, a szállásigényt és a zenekívánságokat.",
       ].filter((line): line is string => line !== null),
@@ -2194,8 +2207,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        `${p.householdLabel} (${p.guests.length} guests) just RSVPd together:`,
+        p.guests.length > 0
+          ? `${p.householdLabel} (${p.guests.length} guests) just RSVPd together:`
+          : `**${p.householdLabel}** left you a message.`,
         ...p.guests.map((g) => `• ${g.name} · ${rsvpStatusEn(g.rsvpStatus)}`),
+        rsvpMessageLineEn(p.guestMessage),
         rsvpProgressLineEn(p.progress),
         "The guest list has their meal choices, +1s, accommodation, and song requests.",
       ].filter((line): line is string => line !== null),
@@ -5021,6 +5037,22 @@ function rsvpStatusEn(status: "yes" | "no" | "maybe"): string {
   return "maybe";
 }
 
+/** The guest's own words, quoted. Returns null when they wrote nothing, so the
+ *  builder drops the line cleanly.
+ *
+ *  The text is guest-supplied and reaches the couple's inbox, so it matters
+ *  that every paragraph chunk goes through `escapeHtml` in the renderer. The
+ *  only thing that survives is `**bold**`, which a guest could technically use
+ *  to emphasise their own sentence and nothing worse. */
+function rsvpMessageLineHu(message?: string | null): string | null {
+  const text = message?.trim();
+  return text ? `Üzenetet is hagytak: „${text}"` : null;
+}
+function rsvpMessageLineEn(message?: string | null): string | null {
+  const text = message?.trim();
+  return text ? `They also left a message: "${text}"` : null;
+}
+
 /** "Eddig a vendégek 34%-a válaszolt (12/35)." Returns null when there are no
  *  guests to divide by, so the builder drops the line cleanly. */
 function rsvpProgressLineHu(p?: RsvpProgress): string | null {
@@ -5039,6 +5071,12 @@ function rsvpReceivedSubject(p: RsvpReceivedForCouplePayload): string {
 }
 
 function rsvpHouseholdSubject(p: RsvpReceivedHouseholdForCouplePayload): string {
+  // Message-only: a household came back to write something without anyone's
+  // answer moving. Handled first, because the tally below reads "all in" on an
+  // empty list (0 of 0 said yes) and would announce a wedding nobody agreed to.
+  if (p.guests.length === 0) {
+    return `${p.householdLabel}: üzenet / a message`;
+  }
   // Try to give a tight, scannable preview without leaking the whole list
   // into the subject line. Up to 2 names, then "+N".
   const names = p.guests.map((g) => g.name);

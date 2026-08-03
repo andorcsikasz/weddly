@@ -315,12 +315,22 @@ function persistCheckin(
  * in the same household changed in one submit, we collapse them into a
  * single `rsvp_received_household_for_couple` summary email per partner —
  * a family that fills the form together shouldn't generate N inbox pings.
+ *
+ * A NEW guest message counts as something worth telling them about on its own.
+ * The common case is a message written alongside a status, which rides the
+ * mail that was going out anyway; the other case is a household coming back
+ * later to say "we're arriving late", where nobody's answer moves and without
+ * this nothing would reach the couple at all.
  */
 function notifyCouple(
   couple: CoupleRow,
   household: HouseholdRow,
   members: GuestRow[],
   previous: GuestRow[],
+  /** The message as it stands after this submit, and whether this submit is
+   *  what changed it. Only a NEW message is mailed: re-sending a stored one on
+   *  every later RSVP from the same household would read as a duplicate. */
+  message: { text: string | null; changed: boolean } = { text: null, changed: false },
 ) {
   const guestPageUrl = `${CONFIG.frontendBaseUrl}/app/guests`;
   const prevById = new Map(previous.map((p) => [p.id, p]));
@@ -336,13 +346,21 @@ function notifyCouple(
     if (!isRsvpStatus(status) || status === "pending") continue;
     changed.push({ name: m.full_name, rsvpStatus: status as "yes" | "no" | "maybe" });
   }
-  if (changed.length === 0) return;
+  const newMessage = message.changed && message.text ? message.text : null;
+  if (changed.length === 0 && !newMessage) return;
 
   // In-app bell notification — fires regardless of the EMAIL digest mode below
   // (digest only governs the inbox cadence, not the in-app feed). One couple-
   // scoped row per submission; a single guest names the guest, a family RSVP
   // collapses into a count.
-  if (changed.length === 1) {
+  if (changed.length === 0) {
+    insertCoupleNotification({
+      couple_id: couple.id,
+      kind: "rsvp_guest_message",
+      data: { householdLabel: household.label },
+      link: "/app/guests",
+    });
+  } else if (changed.length === 1) {
     const only = changed[0]!;
     insertCoupleNotification({
       couple_id: couple.id,
@@ -378,7 +396,13 @@ function notifyCouple(
       const only = changed[0]!;
       void sendKind(
         "rsvp_received_for_couple",
-        { guestName: only.name, rsvpStatus: only.rsvpStatus, guestPageUrl, progress },
+        {
+          guestName: only.name,
+          rsvpStatus: only.rsvpStatus,
+          guestPageUrl,
+          progress,
+          guestMessage: newMessage,
+        },
         {
           user: { id: partner.id, email: partner.email, full_name: partner.full_name },
           couple_id: couple.id,
@@ -387,7 +411,13 @@ function notifyCouple(
     } else {
       void sendKind(
         "rsvp_received_household_for_couple",
-        { householdLabel: household.label, guests: changed, guestPageUrl, progress },
+        {
+          householdLabel: household.label,
+          guests: changed,
+          guestPageUrl,
+          progress,
+          guestMessage: newMessage,
+        },
         {
           user: { id: partner.id, email: partner.email, full_name: partner.full_name },
           couple_id: couple.id,
@@ -607,9 +637,17 @@ async function handleCheckinSubmit(ctx: Ctx): Promise<Response> {
   // an empty string is the guest clearing it and stores NULL.
   const messageSent = body.guest_message !== undefined;
   const guestMessage = messageSent ? strOrNull(body.guest_message, GUEST_MESSAGE_MAX) : null;
+  // `hh` was loaded before any of the writes above, so it still holds what the
+  // household had written BEFORE this submit. That comparison is the whole
+  // reason the couple isn't mailed the same message again every time this
+  // family reopens the form to change a meal.
+  const messageChanged = messageSent && guestMessage !== (hh.guest_message ?? null);
   if (messageSent) setHouseholdGuestMessage(hh.id, couple.id, guestMessage);
 
-  notifyCouple(couple, hh, [...updated, ...addedRows], previous);
+  notifyCouple(couple, hh, [...updated, ...addedRows], previous, {
+    text: guestMessage,
+    changed: messageChanged,
+  });
   notifyGuests(couple, [...updated, ...addedRows]);
 
   // Funnel: which household just RSVP'd, and with what breakdown.

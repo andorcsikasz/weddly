@@ -86,6 +86,9 @@ export interface WeddingSiteEditHandlers {
   onEditIntro?: () => void;
   onEditSchedule?: () => void;
   onEditUsefulInfo?: () => void;
+  /** Opens the menu editor, which lives on the Design page's print tab
+   *  alongside the card it also feeds. */
+  onEditMenu?: () => void;
   onEditPostRsvp?: () => void;
 }
 
@@ -551,6 +554,9 @@ export function WeddingSiteView({
   // every section visible so the couple can still edit hidden ones.
   const hiddenSet = new Set(view.design.website_hidden_sections);
   const sectionHidden = (s: WebsiteSectionSlug) => !isPreview && hiddenSet.has(s);
+  /** Written courses only. An empty menu renders nothing on the live page (and
+   *  the ghost in the editor), the same way an empty schedule does. */
+  const menuCourses = view.menu_card?.courses ?? [];
   // RSVP CTA look: lifted (3D), flat (filled), or outline.
   const rsvpBtnClass =
     view.design.website_button_style === "outline"
@@ -1016,6 +1022,57 @@ export function WeddingSiteView({
             <p className="mt-4 inline-flex items-center gap-1.5 text-sm" style={{ opacity: 0.7 }}>
               <Plus size={14} aria-hidden />
               {t("wedding_site.ghost.schedule_cta")}
+            </p>
+          </div>
+        </Band>
+      ) : null}
+
+      {/* ── Menu — the dinner, exactly as the printed card reads it. ─────── */}
+      {/* Placed straight after the schedule so the page runs ceremony → dinner,
+          and drawn from the SAME `menu_card` the A5 card prints, so the two can
+          never disagree. Courses stack; a course with no heading still lists
+          its dishes, which is how a couple writes a single-course menu. */}
+      {menuCourses.length > 0 && !sectionHidden("menu") ? (
+        <Band onEdit={isPreview ? e.onEditMenu : undefined} hint={editHint}>
+          <div className="text-center">
+            <Eyebrow>{t("wedding_site.menu_eyebrow")}</Eyebrow>
+            <Heading className="mt-2" treatment={headingTreatment}>
+              {t("wedding_site.menu_title")}
+            </Heading>
+            <div className="mx-auto mt-6 max-w-md space-y-5">
+              {menuCourses.map((course, i) => (
+                // Index key: courses carry no id and the couple's editor
+                // rewrites the whole array on every change.
+                // biome-ignore lint/suspicious/noArrayIndexKey: positional by nature
+                <div key={i}>
+                  {course.title && (
+                    <p
+                      className="text-[11px] uppercase tracking-[0.18em]"
+                      style={{ opacity: 0.65 }}
+                    >
+                      {course.title}
+                    </p>
+                  )}
+                  {course.lines.map((line) => (
+                    <p key={line} className="mt-1 text-base leading-relaxed">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Band>
+      ) : isPreview ? (
+        <Band onEdit={e.onEditMenu} hint={editHint}>
+          <div className="text-center">
+            <Eyebrow>{t("wedding_site.menu_eyebrow")}</Eyebrow>
+            <Heading className="mt-2" treatment={headingTreatment}>
+              {t("wedding_site.menu_title")}
+            </Heading>
+            <p className="mt-4 inline-flex items-center gap-1.5 text-sm" style={{ opacity: 0.7 }}>
+              <Plus size={14} aria-hidden />
+              {t("wedding_site.ghost.menu_cta")}
             </p>
           </div>
         </Band>

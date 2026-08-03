@@ -13,7 +13,7 @@
 // non-null in the payload, you may render it".
 
 import type { PublicDesign } from "./design";
-import type { CeremonyKind, HouseholdMember, UnixMs } from "./types";
+import type { CeremonyKind, HouseholdMember, MenuCard, UnixMs } from "./types";
 import type { WishlistEntry } from "./wishlist";
 
 export interface PublicWeddingScheduleEntry {
@@ -70,6 +70,15 @@ export interface PublicWeddingWebsiteView {
    *  welcome section, slot 2 before the RSVP ask. Visible at every tier.
    *  Optional so existing fixture literals keep compiling; absent and null
    *  both mean "slot empty, band not rendered". */
+  /** The dinner as the couple wrote it on their menu card (`couples.menu_card`).
+   *  The SAME content the A5 card prints, so the printed menu and the guest
+   *  page can never tell two stories. Optional + possibly-empty: absent, or a
+   *  card with no courses, means they haven't written one and the section
+   *  simply doesn't render.
+   *
+   *  Public at every tier, like the schedule: what is being served is
+   *  presentation content, not a detail that has to be earned by RSVPing. */
+  menu_card?: MenuCard | null;
   site_image_1_url?: string | null;
   site_image_2_url?: string | null;
   /** Pre-RSVP welcome block (markdown). Visible at every tier — the

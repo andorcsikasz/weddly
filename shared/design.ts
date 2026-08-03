@@ -726,7 +726,7 @@ export type ShadowSlug = "none" | "soft" | "pop";
 export type ButtonStyleSlug = "lifted" | "flat" | "outline";
 /** Guest-page sections the couple may hide. RSVP is intentionally NOT hideable
  *  (a couple shouldn't be able to silently turn off responses). */
-export type WebsiteSectionSlug = "intro" | "schedule" | "useful_info" | "wishlist";
+export type WebsiteSectionSlug = "intro" | "schedule" | "menu" | "useful_info" | "wishlist";
 /** Photo rendering on the guest page. "grayscale" desaturates cover/venue
  *  imagery for the black-and-white editorial look; "none" is full colour. */
 export type ImageTreatmentSlug = "none" | "grayscale";
@@ -767,6 +767,7 @@ export const BUTTON_STYLES: readonly { slug: ButtonStyleSlug; nameKey: string }[
 export const WEBSITE_SECTIONS: readonly { slug: WebsiteSectionSlug; nameKey: string }[] = [
   { slug: "intro", nameKey: "design.web.section.intro" },
   { slug: "schedule", nameKey: "design.web.section.schedule" },
+  { slug: "menu", nameKey: "design.web.section.menu" },
   { slug: "useful_info", nameKey: "design.web.section.useful_info" },
   { slug: "wishlist", nameKey: "design.web.section.wishlist" },
 ];

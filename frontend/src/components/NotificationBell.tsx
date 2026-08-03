@@ -26,6 +26,7 @@ import {
   ListChecks,
   Mail,
   MessageCircle,
+  MessageSquareQuote,
   ReceiptText,
   Send,
   Settings,
@@ -44,6 +45,7 @@ const KIND_ICON: Record<NotificationItem["kind"], IconCmp> = {
   timeline_due: CalendarClock,
   rsvp_received: Mail,
   rsvp_received_household: Mail,
+  rsvp_guest_message: MessageSquareQuote,
   partner_task_added: ClipboardList,
   timeline_email_sent: Send,
   admin_message: Info,
@@ -69,6 +71,10 @@ function useLabel() {
         return t("notifications.rsvp_received", {
           guest: String(d.guestName ?? ""),
           status: t(`notifications.rsvp_${String(d.rsvpStatus ?? "yes")}`),
+        });
+      case "rsvp_guest_message":
+        return t("notifications.rsvp_guest_message", {
+          household: String(d.householdLabel ?? ""),
         });
       case "rsvp_received_household":
         return t("notifications.rsvp_received_household", {

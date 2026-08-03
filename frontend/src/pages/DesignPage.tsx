@@ -1127,6 +1127,7 @@ export default function DesignPage() {
             site_image_2_url: couple.site_image_2_url,
             guest_page_intro: couple.guest_page_intro,
             useful_info: couple.useful_info,
+            menu_card: menuCard,
             // The embedded venue map only renders in the preview when the couple
             // turned the public-map toggle on (keeps leaflet out of the editor
             // bundle path otherwise, and mirrors what public visitors will see).

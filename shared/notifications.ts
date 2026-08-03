@@ -16,6 +16,11 @@ export type NotificationKind =
   | "timeline_due"
   | "rsvp_received"
   | "rsvp_received_household"
+  // A household left the couple a free-text message on the RSVP without
+  // anyone's answer moving (they came back later to say "we're arriving
+  // late"). Its own kind because announcing it as an RSVP would claim a
+  // response nobody made. Stored; links to /app/guests.
+  | "rsvp_guest_message"
   | "partner_task_added"
   | "timeline_email_sent"
   | "admin_message"

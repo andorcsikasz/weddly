@@ -1055,6 +1055,83 @@ describe("public venue map opt-in (design.web.venueMap)", () => {
   });
 });
 
+// ─── The menu on the guest page ─────────────────────────────────────────────
+//
+// `couples.menu_card` feeds the printed A5 card AND this page, from one column,
+// so the two can never tell a guest two different dinners. It is ungated like
+// the schedule: what is being served is presentation content, not a detail a
+// guest has to RSVP to earn.
+
+describe("public wedding: the menu", () => {
+  async function publish(email: string) {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple(email);
+    db.prepare("UPDATE couples SET is_public = 1 WHERE id = ?").run(coupleId);
+    return { token, coupleId, slug: await getSlug(coupleId) };
+  }
+
+  test("a written menu reaches an anonymous visitor", async () => {
+    const { token, slug } = await publish("wsite-menu@weddly.test");
+    const saved = await req(
+      "PATCH",
+      "/api/couples/current",
+      {
+        menu_card: {
+          courses: [
+            { title: "Előétel", lines: ["Libamáj brióssal"] },
+            { title: "Főétel", lines: ["Marhapofa vörösborban", "Sült pisztráng"] },
+          ],
+        },
+      },
+      { token },
+    );
+    expect(saved.status).toBe(200);
+
+    // No household code: the lowest tier there is.
+    const r = await req<PublicWeddingResponse>("GET", `/api/public/wedding/${slug}`);
+    expect(r.status).toBe(200);
+    expect(r.data.tier).toBe("public");
+    const courses = r.data.wedding.menu_card?.courses ?? [];
+    expect(courses).toHaveLength(2);
+    expect(courses[1]?.lines).toEqual(["Marhapofa vörösborban", "Sült pisztráng"]);
+  });
+
+  test("a couple who wrote no menu ships an empty one, never a placeholder", async () => {
+    const { slug } = await publish("wsite-menu-empty@weddly.test");
+    const r = await req<PublicWeddingResponse>("GET", `/api/public/wedding/${slug}`);
+    expect(r.status).toBe(200);
+    // Empty rather than absent or invented: the renderer decides to draw
+    // nothing, and no course name is made up for somebody's wedding.
+    expect(r.data.wedding.menu_card?.courses).toEqual([]);
+  });
+
+  test("hiding the section is a design decision the payload does not enforce", async () => {
+    const { token, slug } = await publish("wsite-menu-hidden@weddly.test");
+    await req(
+      "PATCH",
+      "/api/couples/current",
+      { menu_card: { courses: [{ title: "Főétel", lines: ["Marhapofa"] }] } },
+      { token },
+    );
+    const hide = await req(
+      "PATCH",
+      "/api/couples/current",
+      { design: { web: { hiddenSections: ["menu"] } } },
+      { token },
+    );
+    // "menu" has to be an accepted slug, or the couple could never turn the
+    // section off and the PATCH would 400.
+    expect(hide.status).toBe(200);
+
+    const r = await req<PublicWeddingResponse>("GET", `/api/public/wedding/${slug}`);
+    expect(r.data.wedding.design.website_hidden_sections).toContain("menu");
+    // The content still ships. Hiding is presentational, exactly like the
+    // intro and schedule sections; only the tier-gated fields are omitted
+    // server-side, and a dinner menu is not one of them.
+    expect(r.data.wedding.menu_card?.courses).toHaveLength(1);
+  });
+});
+
 // Force-mention the imported view type so the explicit cast above is not
 // flagged as unused on a fresh checkout where the file may compile before
 // the new helpers are referenced.

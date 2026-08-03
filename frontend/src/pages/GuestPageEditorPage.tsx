@@ -1289,6 +1289,10 @@ export default function GuestPageEditorPage() {
         cover_position_y: coverPositionY,
         guest_page_intro: guestPageIntro.trim() === "" ? null : guestPageIntro,
         useful_info: usefulInfoText.trim() === "" ? null : usefulInfoText,
+        // Read-only here: the menu is edited on the Design page's print tab,
+        // beside the card it also feeds. The preview still shows it so this
+        // editor is not lying about what the page contains.
+        menu_card: couple?.menu_card ?? null,
         location_lat: couple.location_lat,
         location_lng: couple.location_lng,
         location_radius_km: couple.location_radius_km,
@@ -1524,6 +1528,10 @@ export default function GuestPageEditorPage() {
                 onEditSchedule: () => setEditPanel("schedule"),
                 onEditVenue: () => setEditPanel("venue"),
                 onEditUsefulInfo: () => setEditPanel("useful"),
+                // The menu has no panel here: it is edited on the Design page's
+                // print tab, beside the card it also feeds, so there is exactly
+                // one place to type a dish. Same hand-off as the wishlist.
+                onEditMenu: () => navigate("/app/design/print"),
                 onEditPostRsvp: () => navigate("/app/wishlist"),
               }}
               // Direct in-place editing of the prose fields. The setters feed

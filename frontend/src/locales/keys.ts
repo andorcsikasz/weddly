@@ -1,10 +1,16 @@
-// Type-only contract for the locale tree. en.ts, hu.ts and es.ts must satisfy
-// this in full; hr.ts and de.ts satisfy `PartialLocaleMessages` (below).
+// Type-only contract for the locale tree. Every locale the app ships (en, hu,
+// es, hr, de) must satisfy this IN FULL, so a key added here without a
+// translation in all five is a compile error rather than a screen that quietly
+// renders English to someone who chose another language.
 
-/** A locale tree that translates SOME of the app. Every key it does define
- *  still has to be a real key at the real path — the deep-partial mapping is
- *  what makes a typo (`vendor.setings`) a compile error rather than a string
- *  that silently never resolves. Keys it omits fall back to EN inside `t()`. */
+/** A locale tree that translates SOME of the app. Nothing satisfies this today:
+ *  hr and de were the last partial trees and both are complete now. It stays
+ *  because `TREES` and the lazy-import map are typed against it, and because a
+ *  future locale may well land one section at a time. Every key such a tree
+ *  does define still has to be a real key at the real path: the deep-partial
+ *  mapping is what makes a typo (`vendor.setings`) a compile error rather than
+ *  a string that silently never resolves. Omitted keys fall back to EN in
+ *  `t()`. */
 export type PartialLocaleMessages = DeepPartialMessages<LocaleMessages>;
 
 type DeepPartialMessages<T> = {
@@ -37,6 +43,9 @@ export interface LocaleMessages {
     /** Aria-labels for stepper +/− buttons. */
     increment: string;
     decrement: string;
+    /** The one control a toast can carry (`toast.undo`). Reverses the change
+     *  on the SERVER, never just on screen. */
+    undo: string;
     /** Generic "Remove {label}" aria-label for chip/tag close buttons. */
     remove_item: string;
     /** Bare "Remove" word — short close-button aria-labels with no target. */
@@ -136,6 +145,7 @@ export interface LocaleMessages {
     timeline_due: string;
     rsvp_received: string;
     rsvp_received_household: string;
+    rsvp_guest_message: string;
     partner_task_added: string;
     partner_task_added_named: string;
     partner_task_added_self: string;
@@ -497,6 +507,8 @@ export interface LocaleMessages {
     location_eyebrow: string;
     schedule_eyebrow: string;
     schedule_title: string;
+    menu_eyebrow: string;
+    menu_title: string;
     rsvp_title: string;
     rsvp_body: string;
     rsvp_cta: string;
@@ -539,6 +551,7 @@ export interface LocaleMessages {
       welcome_cta: string;
       schedule_title: string;
       schedule_cta: string;
+      menu_cta: string;
       useful_info_title: string;
       useful_info_cta: string;
       post_rsvp_title: string;
@@ -1216,6 +1229,32 @@ export interface LocaleMessages {
       saved: string;
       save_failed: string;
       load_failed: string;
+      /** Aria-label + tooltip on the handle that opens the quick-look drawer.
+       *  Receives `{name}`. The row's own link still goes to the full page. */
+      quick_look: string;
+      /** The way out of a search or filter that matched nothing. */
+      clear_filters: string;
+      /** Undo toast after a status change from the drawer. Receives `{status}`,
+       *  already translated by the caller. */
+      status_changed: string;
+      /** The undo itself failed to reach the server. */
+      undo_failed: string;
+    };
+    /** The booking progress rail (`shared/booking_stage.ts`). One key per rung,
+     *  named after what happened rather than a percentage. */
+    stage: {
+      inquiry: string;
+      quoted: string;
+      booked: string;
+      deposit: string;
+      done: string;
+      /** Accessible name for the whole rail. Receives `{stage}`. */
+      aria: string;
+      /** Same, for a lead the vendor closed. Receives `{status}`. */
+      aria_closed: string;
+      /** Marks a live date hold, which rides ALONGSIDE the ladder rather than
+       *  being a rung of it. */
+      hold_live: string;
     };
     /** Next Best Action — the single primary step for one client. One key per
      *  VendorActionKey (`shared/vendor_next_action.ts`): `action_*` is the CTA
@@ -1244,6 +1283,35 @@ export interface LocaleMessages {
       hint_request_review: string;
       hint_prepare: string;
       hint_none: string;
+    };
+    /** AI Concierge — the assistant strip on the client detail. Every string
+     *  here has to keep two promises visible: the reply is a DRAFT the vendor
+     *  sends themselves, and the package suggestion is one of THEIR OWN saved
+     *  packages at THEIR OWN price. Copy that implies otherwise is a bug. */
+    assistant: {
+      title: string;
+      intro: string;
+      generate: string;
+      regenerate: string;
+      working: string;
+      /** Shown when the model gave nothing usable, the call failed, or the rate
+       *  limit bit. One quiet line — never an error that blocks the page. */
+      unavailable: string;
+      summary_title: string;
+      /** What the couple did NOT say. The half a summary always drops. */
+      missing_title: string;
+      package_title: string;
+      /** The vendor has saved no packages at all — said in words rather than
+       *  left as a gap the vendor reads as "nothing of yours fits". */
+      no_packages: string;
+      /** They have packages, none of them suits this inquiry. */
+      no_package_fit: string;
+      draft_title: string;
+      /** The standing reminder that nothing here has been sent. */
+      draft_note: string;
+      copy: string;
+      copied: string;
+      copy_failed: string;
     };
     /** The "needs attention" band above the clients list. Every `reason_*`
      *  carries its own number, because a row that only says "needs attention"
@@ -1409,6 +1477,8 @@ export interface LocaleMessages {
       views_recent: string;
       trend_title: string;
       trend_empty: string;
+      /** The one way out of an empty chart: finish the listing couples find. */
+      empty_cta_listing: string;
       range_7d: string;
       range_30d: string;
       range_90d: string;
@@ -1842,6 +1912,9 @@ export interface LocaleMessages {
     task_add: string;
     task_add_failed: string;
     tasks_empty: string;
+    /** Puts the cursor in the add-task field above the empty board, rather
+     *  than pointing at a second form that does not exist. */
+    tasks_empty_cta: string;
     board_todo: string;
     board_doing: string;
     board_done: string;
@@ -1976,6 +2049,49 @@ export interface LocaleMessages {
     /** Both receive `{name}` (the rejected file). */
     file_too_large: string;
     unsupported_file: string;
+  };
+  /** The unified booking timeline: the system events that sit inline with the
+   *  messages on a thread, read from either side.
+   *
+   *  Every `event_*` key is named after a `TimelineEventKind`
+   *  (`shared/booking_timeline.ts`) and resolved as `timeline.event_<kind>`, so
+   *  a new kind cannot ship with somebody else's sentence attached. The copy is
+   *  deliberately NEUTRAL rather than second-person for the kinds both sides
+   *  read: one string has to make sense to the couple and to the vendor. */
+  booking_timeline: {
+    /** Receives `{date}` (the wedding date the couple asked about). */
+    event_inquiry_sent: string;
+    /** The couple had picked no date yet. */
+    event_inquiry_sent_nodate: string;
+    event_vendor_opened: string;
+    event_vendor_responded: string;
+    event_booking_confirmed: string;
+    event_booking_declined: string;
+    event_booking_cancelled: string;
+    event_booking_expired: string;
+    /** The quote keys receive `{label}` (its title) and `{amount}` (already
+     *  formatted in the quote's own currency). */
+    event_quote_sent: string;
+    event_quote_viewed: string;
+    event_quote_accepted: string;
+    event_quote_declined: string;
+    event_quote_withdrawn: string;
+    /** The hold keys receive `{date}`. */
+    event_hold_placed: string;
+    event_hold_released: string;
+    event_hold_expired: string;
+    /** The installment keys receive `{label}` and `{amount}`. */
+    event_payment_scheduled: string;
+    event_payment_paid: string;
+    /** Receives `{name}`, one of the three automation labels below. */
+    event_automation_ran: string;
+    automation_inquiry_ack: string;
+    automation_unanswered_reminder: string;
+    automation_review_request: string;
+    /** Pill on a message a machine wrote, plus its tooltip. The vendor must
+     *  never be surprised by words attributed to them. */
+    automated: string;
+    automated_hint: string;
   };
   /** /app/messages — the couple's thread list, a single thread, and (second
    *  tab) the outreach history that used to live at /app/outreach. */
@@ -4011,7 +4127,13 @@ export interface LocaleMessages {
       card_radius: { sharp: string; soft: string; full: string };
       shadow: { none: string; soft: string; pop: string };
       button_style: { lifted: string; flat: string; outline: string };
-      section: { intro: string; schedule: string; useful_info: string; wishlist: string };
+      section: {
+        intro: string;
+        schedule: string;
+        menu: string;
+        useful_info: string;
+        wishlist: string;
+      };
       image_treatment: { none: string; grayscale: string };
       /** The venue-map opt-in, surfaced in the sections list. */
       map_label: string;

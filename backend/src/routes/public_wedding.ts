@@ -42,6 +42,7 @@ import type {
   WishlistInterestToggleResult,
 } from "@shared/wishlist";
 import { toPublicDesign } from "@shared/design";
+import { parseMenuCard } from "@shared/menu_card";
 import { db, now } from "../db";
 import { type CoupleRow, parseDesignJson } from "../domain/couples";
 import { recordGrowthEventFromRequest } from "../domain/growth_events";
@@ -136,6 +137,10 @@ function buildView(
     cover_position_y: couple.cover_position_y,
     cover_scale: couple.cover_scale,
     // Optional fixed-slot photos — presentation content, visible at every tier.
+    // The same menu the A5 card prints. Ungated on purpose: what is being
+    // served is presentation content, like the schedule, not something a guest
+    // has to RSVP to earn.
+    menu_card: parseMenuCard(couple.menu_card),
     site_image_1_url: couple.site_image_1_url,
     site_image_2_url: couple.site_image_2_url,
     guest_page_intro: couple.guest_page_intro,

@@ -13,6 +13,8 @@ import "../setup";
 import { describe, expect, test } from "bun:test";
 import { req, wipeAll, bootstrapCouple } from "../helpers";
 import { GUEST_MESSAGE_MAX } from "@shared/rsvp";
+import { buildEmail } from "../../src/domain/emails/templates";
+import { db } from "../../src/db";
 
 async function getSlug(token: string): Promise<string> {
   const me = await req<{ couple: { slug: string | null } }>(
@@ -153,5 +155,116 @@ describe("rsvp guest message", () => {
     expect(r.status).toBe(200);
     expect(r.data.rsvp.guest_message).toBeNull();
     expect((await firstHousehold(token)).guest_message).toBeNull();
+  });
+});
+
+// ─── The message has to reach the couple, not just the guest list ───────────
+//
+// A note nobody notices is the same as no note. The couple already gets an
+// email when an RSVP lands, so the message rides that one; and a household
+// that comes back later to write something without changing anyone's answer
+// gets an email of its own, because otherwise nothing would reach them at all.
+
+describe("rsvp guest message: notification", () => {
+  test("the message is quoted in both RSVP emails", () => {
+    const single = buildEmail(
+      "rsvp_received_for_couple",
+      {
+        guestName: "Anna Kovács",
+        rsvpStatus: "yes",
+        guestPageUrl: "https://tryweddly.com/app/guests",
+        guestMessage: "We are arriving late, the train gets in at 19:00",
+      },
+      { recipientName: "Flora" },
+    );
+    expect(single.rendered.text).toContain("the train gets in at 19:00");
+    expect(single.rendered.html).toContain("the train gets in at 19:00");
+
+    const household = buildEmail(
+      "rsvp_received_household_for_couple",
+      {
+        householdLabel: "Kovács család",
+        guests: [{ name: "Anna Kovács", rsvpStatus: "yes" }],
+        guestPageUrl: "https://tryweddly.com/app/guests",
+        guestMessage: "Can we bring our own cake?",
+      },
+      { recipientName: "Flora" },
+    );
+    expect(household.rendered.text).toContain("Can we bring our own cake?");
+  });
+
+  test("no message means no empty quote in the body", () => {
+    const built = buildEmail(
+      "rsvp_received_for_couple",
+      {
+        guestName: "Anna Kovács",
+        rsvpStatus: "yes",
+        guestPageUrl: "https://tryweddly.com/app/guests",
+      },
+      { recipientName: "Flora" },
+    );
+    expect(built.rendered.text).not.toContain("left a message");
+    expect(built.rendered.text).not.toContain("Üzenetet is hagytak");
+  });
+
+  test("a message with no status change reads as a message, not as an RSVP", () => {
+    // `guests: []` is the message-only shape. The subject helper's tally would
+    // otherwise announce "all in" off an empty list, promising a wedding
+    // nobody agreed to.
+    const built = buildEmail(
+      "rsvp_received_household_for_couple",
+      {
+        householdLabel: "Kovács család",
+        guests: [],
+        guestPageUrl: "https://tryweddly.com/app/guests",
+        guestMessage: "Actually we will be there by 18:00",
+      },
+      { recipientName: "Flora" },
+    );
+    expect(built.subject).toContain("Kovács család");
+    expect(built.subject).not.toContain("all in");
+    expect(built.rendered.text).toContain("left you a message");
+    expect(built.rendered.text).toContain("Actually we will be there by 18:00");
+    expect(built.rendered.text).not.toContain("(0 guests)");
+  });
+
+  test("a message written with the RSVP notifies once, and a re-save does not renotify", async () => {
+    const { token, slug, code, guestId } = await setup("gm-notify@weddly.test");
+
+    await submit(slug, code, guestId, { guest_message: "Bringing the dog" });
+    const first = db
+      .prepare("SELECT COUNT(*) AS n FROM email_log WHERE kind LIKE 'rsvp_received%'")
+      .get() as { n: number };
+    expect(first.n).toBeGreaterThan(0);
+
+    // Same message again, same statuses: nothing new is true, so nothing is
+    // sent. Without the before/after comparison the couple would be mailed the
+    // same sentence every time this family reopened the form.
+    await submit(slug, code, guestId, { guest_message: "Bringing the dog" });
+    const second = db
+      .prepare("SELECT COUNT(*) AS n FROM email_log WHERE kind LIKE 'rsvp_received%'")
+      .get() as { n: number };
+    expect(second.n).toBe(first.n);
+  });
+
+  test("a later message with no status change still reaches the couple", async () => {
+    const { token, slug, code, guestId } = await setup("gm-late@weddly.test");
+    await submit(slug, code, guestId);
+    const before = db
+      .prepare("SELECT COUNT(*) AS n FROM email_log WHERE kind LIKE 'rsvp_received%'")
+      .get() as { n: number };
+
+    // They come back to say something. Nobody's answer moves.
+    await submit(slug, code, guestId, { guest_message: "We will be there by 18:00" });
+    const after = db
+      .prepare("SELECT COUNT(*) AS n FROM email_log WHERE kind LIKE 'rsvp_received%'")
+      .get() as { n: number };
+    expect(after.n).toBeGreaterThan(before.n);
+
+    // And the bell says what actually happened rather than claiming an RSVP.
+    const note = db
+      .prepare("SELECT kind FROM couple_notifications ORDER BY id DESC LIMIT 1")
+      .get() as { kind: string } | undefined;
+    expect(note?.kind).toBe("rsvp_guest_message");
   });
 });
