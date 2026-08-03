@@ -224,3 +224,19 @@ export const HONEYMOON_EXTRA_TASKS: TaskPackItem[] = [
 /** Every pack item in one list: the two groups plus the honeymoon reserve.
  *  What the wizard's title lookup is built from. */
 export const ALL_TASK_PACK_ITEMS: TaskPackItem[] = [...TASK_TEMPLATE, ...HONEYMOON_EXTRA_TASKS];
+
+/** The one "get the plane tickets" task, exported so the flight-offer save on
+ *  /app/honeymoon can reuse it instead of authoring a second title for the same
+ *  real-world action. It used to say "Repjegy megvásárlása" while the pack said
+ *  "Repjegyet lefoglalni", and since both paths freeze the ALREADY-LOCALIZED
+ *  string into planning_items.title, a couple who applied the pack in Hungarian
+ *  and later saved a flight offer in English ended up looking at both
+ *  "Repjegyet lefoglalni" and "Buy the flight ticket" on one list.
+ *
+ *  Resolved by lookup rather than by index so reordering the pack cannot
+ *  silently repoint it at booking the accommodation. */
+export const HONEYMOON_FLIGHTS_TASK: TaskPackItem = (() => {
+  const found = ALL_TASK_PACK_ITEMS.find((i) => i.title.en === "Book flights");
+  if (!found) throw new Error("planning_task_packs: the honeymoon flights item is missing");
+  return found;
+})();

@@ -14,6 +14,7 @@ import { contentLocale, type Locale } from "./i18n";
 export {
   ALL_TASK_PACK_ITEMS,
   HONEYMOON_EXTRA_TASKS,
+  HONEYMOON_FLIGHTS_TASK,
   TASK_TEMPLATE,
   TASK_TEMPLATE_GROUPS,
   type TaskPackGroup,

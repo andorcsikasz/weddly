@@ -60,6 +60,7 @@ import { InfoHint } from "../components/InfoHint";
 import { Dialog, useConfirm, useToast } from "../components/ui";
 import {
   HONEYMOON_EXTRA_TASKS,
+  HONEYMOON_FLIGHTS_TASK,
   TASK_TEMPLATE_GROUPS,
   localizeText,
 } from "../lib/planning_templates";
@@ -640,8 +641,18 @@ export default function HoneymoonPage() {
       ];
       if (offer.booking_url) noteParts.push(offer.booking_url);
       const body = noteParts.join("\n\n");
-      const todoTitle = t("honeymoon.flight_save_todo_title");
-      const existingTodo = honeymoonTasks.find((i) => i.title === todoTitle);
+      // The SAME task the honeymoon pack offers, not a second title for the
+      // same action, and matched against both authored titles rather than the
+      // one the current locale happens to render. Both writers freeze the
+      // localized string into planning_items.title, so a pack applied in
+      // Hungarian was invisible to a flight saved in English and the couple got
+      // the ticket task twice, once per language.
+      const todoTitle = localizeText(HONEYMOON_FLIGHTS_TASK.title, locale);
+      const existingTodo = honeymoonTasks.find(
+        (i) =>
+          i.title === HONEYMOON_FLIGHTS_TASK.title.hu ||
+          i.title === HONEYMOON_FLIGHTS_TASK.title.en,
+      );
       if (existingTodo) {
         await planningApi.update(existingTodo.id, { body, done: false });
       } else {

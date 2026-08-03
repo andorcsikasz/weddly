@@ -1125,6 +1125,7 @@ export default function BudgetPage() {
                 readOnlyPlanned
                 readOnlyActual={!editable}
                 canDelete={canDelete}
+                sources={bucket?.sources ?? []}
                 scope={`cat:${cat}`}
                 documents={docsByScope.get(`cat:${cat}`) ?? []}
                 payments={paymentsByScope.get(`cat:${cat}`) ?? []}
@@ -2704,6 +2705,7 @@ function BudgetMobileCard({
   onDocsChanged,
   onPaymentsChanged,
   onDelete,
+  sources = [],
 }: {
   id: string;
   category: BudgetCategory;
@@ -2715,6 +2717,10 @@ function BudgetMobileCard({
   readOnlyPlanned: boolean;
   readOnlyActual: boolean;
   canDelete: boolean;
+  /** Supplier-owned lines folded into this category, named under the heading
+   *  for the same reason as the desktop row: the amount is read-only here and
+   *  the couple needs a way back to whoever owns it. */
+  sources?: BudgetLine[];
   scope: string;
   documents: BudgetDocument[];
   payments: BudgetPayment[];
@@ -2730,7 +2736,7 @@ function BudgetMobileCard({
   return (
     <article id={id} data-category={category} className="card scroll-mt-24 p-2.5">
       <header className="flex items-start justify-between gap-2">
-        <CategoryCell category={category} />
+        <CategoryCell category={category} sources={sources} />
         {/* Delta + bin sit together on the header row so the bin never
          *  earns its own line at the bottom of the card — saving ~36 px
          *  of vertical per category × 13 categories. Icon-only on mobile
