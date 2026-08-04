@@ -99,8 +99,8 @@ describe("blog: the seeder backfills translations onto existing rows", () => {
     seedBlogPostsIfEmpty();
 
     const refilled = rowOf(slug);
-    expect(refilled.es_title).toBe(SEED_TRANSLATIONS.es[slug]?.title);
-    expect(JSON.parse(refilled.es_body_json).length).toBeGreaterThan(0);
+    expect(refilled.es_title).toBe(SEED_TRANSLATIONS.es[slug]?.title ?? "");
+    expect((JSON.parse(refilled.es_body_json) as unknown[]).length).toBeGreaterThan(0);
   });
 });
 
