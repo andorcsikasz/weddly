@@ -2862,14 +2862,27 @@ export interface LocaleMessages {
     // ── Round 3: pricing block + why-us + mockup labels ───────────────
     pricing_title: string;
     pricing_body: string;
-    /** Big serif number on the price card ("5" / "1 990"). */
-    pricing_amount: string;
-    /** Superscript decimal shown after the big amount (EUR "90" → ".90");
-     *  empty for whole-unit currencies like HUF. */
-    pricing_amount_decimal: string;
+    /** Section eyebrow above the pricing deck. */
+    pricing_section_eyebrow: string;
+    /** Section headline. Leads on the VALUE PROPOSITION, not on a number: a
+     *  vendor's first inquiries are on us, so Weddly only starts earning once
+     *  it has already put work in front of them. */
+    pricing_section_title: string;
+    /** The one paragraph under the headline that says the same thing plainly
+     *  and names what each of the three sides gets. */
+    pricing_section_sub: string;
+    /** Names for the three sides of the marketplace, on the deck's tap row,
+     *  the peek cards and above the front ticket's price. */
+    pricing_tab_couples: string;
+    pricing_tab_vendors: string;
+    pricing_tab_planners: string;
+    /** Qualifier in front of an entry-tier price ("from 19 €"). Only the
+     *  planner card prices more than one tier. */
+    pricing_from: string;
     /** Per-period suffix beside the price ("/ month" / "/ hó"). */
     pricing_amount_sub: string;
-    /** Early-access window + the regular price it reverts to after the cutover. */
+    /** Early-access window + the regular price it reverts to after the cutover.
+     *  Shared by the couple and vendor tickets: the cadence is the same. */
     pricing_early_note: string;
     /** Tooltip on the price "i" — the low-cortisol / BigMac value line. */
     pricing_value_note: string;
@@ -2885,6 +2898,32 @@ export interface LocaleMessages {
      *  lives in Settings → Billing once signed in. */
     pricing_bullet_referral: string;
     pricing_v2_note: string;
+    /** Vendor ticket. The callout carries the whole proposition: the first
+     *  VENDOR_FREE_LEAD_CREDITS couples reach the vendor before anything is
+     *  charged, so nothing is billed until Weddly has already delivered work. */
+    pricing_vendor_callout: string;
+    pricing_vendor_callout_detail: string;
+    /** Tooltip on the vendor ticket's info mark: the listing itself stays up
+     *  with no subscription, which is what PRO is measured against. */
+    pricing_vendor_value_note: string;
+    pricing_vendor_bullet_1: string;
+    pricing_vendor_bullet_2: string;
+    pricing_vendor_bullet_3: string;
+    pricing_vendor_bullet_4: string;
+    pricing_vendor_bullet_5: string;
+    pricing_vendor_cta: string;
+    /** Planner ticket. Priced per tier, so the small print names the tiers
+     *  rather than a cancellation cadence. */
+    pricing_planner_note: string;
+    pricing_planner_callout: string;
+    pricing_planner_callout_detail: string;
+    pricing_planner_value_note: string;
+    pricing_planner_bullet_1: string;
+    pricing_planner_bullet_2: string;
+    pricing_planner_bullet_3: string;
+    pricing_planner_bullet_4: string;
+    pricing_planner_bullet_5: string;
+    pricing_planner_cta: string;
     /** aria-labels for the four decorative landing-page SVG mockups. */
     mockup_aria_budget: string;
     mockup_aria_guests: string;

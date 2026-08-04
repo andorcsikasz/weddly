@@ -2330,8 +2330,14 @@ const de: LocaleMessages = {
     pricing_title: "18 Monate lang sind Sie unser Gast.",
     pricing_body:
       "Kommen Sie vom ersten Kapitel an mit: die nächsten achtzehn Monate sind Sie unser Gast, alles freigeschaltet. Danach 7 € im Monat, mit zwei Wochen zum Ausprobieren und allen Funktionen.",
-    pricing_amount: "7",
-    pricing_amount_decimal: "",
+    pricing_section_eyebrow: "Preise",
+    pricing_section_title: "Erst verdienen Sie, dann wir.",
+    pricing_section_sub:
+      "Die ersten drei Paare, die einen Dienstleister erreichen, gehen auf uns. Berechnet wird also nichts, solange Weddly ihm nicht bereits Arbeit gebracht hat. Paare haben zwei Wochen zum Ausprobieren und danach achtzehn Monate als unser Gast.",
+    pricing_tab_couples: "Paare",
+    pricing_tab_vendors: "Dienstleister",
+    pricing_tab_planners: "Planer",
+    pricing_from: "ab",
     pricing_amount_sub: "/ Monat",
     pricing_early_note: "Monatlich, jederzeit kündbar · keine Jahresbindung.",
     pricing_value_note: "Hochzeitsplanung mit wenig Cortisol, zum Preis eines BigMac-Menüs.",
@@ -2346,6 +2352,29 @@ const de: LocaleMessages = {
       "Empfehlungen: 1 Monat auf uns pro eingeladenem Paar, 2 pro Dienstleister",
     pricing_v2_note:
       "Sind die frühen Plätze belegt, starten neue Paare mit den 2 Wochen zum Ausprobieren.",
+    pricing_vendor_callout: "Ihre ersten 3 Paare gehen auf uns.",
+    pricing_vendor_callout_detail:
+      "Drei Paare können Sie erreichen, bevor irgendetwas berechnet wird. Wir verdienen erst, nachdem Weddly Ihnen bereits Arbeit gebracht hat, und der erste Beitrag wird ab dem 1. des Folgemonats fällig.",
+    pricing_vendor_value_note:
+      "Ihre Seite bleibt auch ohne Abo online und bearbeitbar. Pro öffnet die direkten Anfragen, den Kalender und den Kundenbereich.",
+    pricing_vendor_bullet_1: "Ihre ersten 3 Paare gehen auf uns",
+    pricing_vendor_bullet_2: "Ihr Eintrag bleibt online, mit Abo oder ohne",
+    pricing_vendor_bullet_3: "Direkte Anfragen, Angebote und ein gemeinsamer Verlauf",
+    pricing_vendor_bullet_4: "Verfügbarkeitskalender · Google-Sync in beide Richtungen",
+    pricing_vendor_bullet_5: "Jederzeit kündbar, Ihre Seite bleibt",
+    pricing_vendor_cta: "Betrieb eintragen",
+    pricing_planner_note: "Drei Pakete · Starter, Pro, Premium.",
+    pricing_planner_callout: "Früh dabei, dann gehen die ersten 2 Jahre auf uns.",
+    pricing_planner_callout_detail:
+      "Den Planer-Bereich bauen wir noch gemeinsam mit den Büros, die ihn nutzen. Kommen Sie dazu, solange das gilt, und Ihr Paket geht zwei Jahre auf uns, alles freigeschaltet.",
+    pricing_planner_value_note:
+      "Starter trägt die ersten Kunden; Pro und Premium heben die Grenze, wenn das Büro wächst.",
+    pricing_planner_bullet_1: "Jede Hochzeit, die Sie führen, an einem Ort",
+    pricing_planner_bullet_2: "Ein öffentliches Profil im Planer-Verzeichnis",
+    pricing_planner_bullet_3: "Budget, Gäste, Sitzplan und Zeitplan je Kunde",
+    pricing_planner_bullet_4: "Weddly Punkte: je mehr Sie liefern, desto weiter vorn",
+    pricing_planner_bullet_5: "Monatlich · jederzeit kündbar",
+    pricing_planner_cta: "Büro einrichten",
     mockup_aria_budget: "Vorschau des laufenden Budgets",
     mockup_aria_guests: "Vorschau von Gästeliste und RSVP",
     mockup_aria_seating: "Vorschau der Sitzplan-Fläche",

@@ -1,5 +1,7 @@
 import {
   AlertTriangle,
+  Briefcase,
+  CalendarCheck,
   ChevronDown,
   ChevronRight,
   ClipboardList,
@@ -50,15 +52,20 @@ import { InteractiveBudgetDemo } from "../components/InteractiveBudgetDemo";
 import { PublicShell, useGuestCodePrompt } from "../components/PublicShell";
 import { useToast } from "../components/ui";
 import { publicStatsApi } from "../lib/endpoints";
-import { currencySymbol, intlLocale, localeCurrency } from "../lib/format";
+import { currencySymbol, formatNumber, intlLocale, localeCurrency } from "../lib/format";
 import { contentLocale, type Locale, useT } from "../lib/i18n";
 import { lazyWithReload } from "../lib/lazy_reload";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
 import { SEO_FAQ } from "@shared/seo_faq";
-import { VENDOR_FOUNDING_CAP } from "@shared/vendor_billing";
+// Every price the deck quotes comes from the billing contract, so the landing
+// page and Stripe cannot tell a visitor two different numbers.
+import { monthlyPrice } from "@shared/billing";
+import { plannerPrice } from "@shared/planner_billing";
+import { VENDOR_FOUNDING_CAP, vendorPrice } from "@shared/vendor_billing";
 import type { BlogPost } from "@shared/blog_posts";
 import { blogApi } from "../lib/endpoints";
+import { blogCopy } from "@shared/blog_posts";
 import { BlogCover } from "./BlogIndexPage";
 import {
   COUPLE_CARD_DECKS,
@@ -199,16 +206,6 @@ export default function LandingPage() {
     }
   }, []);
 
-  // Ticket cut-outs: the pricing card outline is clipped to a rounded rect
-  // with a semicircle bitten out of each side edge, centered on the
-  // perforation row. We use clip-path: path() rather than a mask because two
-  // masked "holes" need cross-browser composite handling that silently falls
-  // back to additive (filling the holes back in); path() is deterministic.
-  // The path is rebuilt from the measured card size + row center so the
-  // notches track the divider across locales and breakpoints.
-  const pricingCardRef = useRef<HTMLDivElement>(null);
-  const perforationRef = useRef<HTMLDivElement>(null);
-  const [ticketClip, setTicketClip] = useState<string | null>(null);
   // Touch devices have no hover, so the icon-only role chips can't reveal their
   // label the way desktop does. The first tap expands the label (so the user
   // can read what the chip is); a second tap on the now-labelled chip acts.
@@ -226,41 +223,6 @@ export default function LandingPage() {
     revealedChip === key
       ? "grid grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-out"
       : roleChipTextWrap;
-  useEffect(() => {
-    const card = pricingCardRef.current;
-    const perf = perforationRef.current;
-    if (!card || !perf) return;
-    const measure = () => {
-      const w = card.offsetWidth;
-      const h = card.offsetHeight;
-      const y = perf.offsetTop + perf.offsetHeight / 2; // row center, card coords
-      const r = 16; // corner radius, matches rounded-2xl (1rem)
-      const n = 22; // notch radius — the half-circle bitten into each edge
-      // Clockwise outline (y-down). Convex corners use sweep-flag 1; the two
-      // side notches use sweep-flag 0 so the arc bulges inward (a bite).
-      const d = [
-        `M${r},0`,
-        `H${w - r}`,
-        `A${r},${r} 0 0 1 ${w},${r}`,
-        `V${y - n}`,
-        `A${n},${n} 0 0 0 ${w},${y + n}`,
-        `V${h - r}`,
-        `A${r},${r} 0 0 1 ${w - r},${h}`,
-        `H${r}`,
-        `A${r},${r} 0 0 1 0,${h - r}`,
-        `V${y + n}`,
-        `A${n},${n} 0 0 0 0,${y - n}`,
-        `V${r}`,
-        `A${r},${r} 0 0 1 ${r},0`,
-        "Z",
-      ].join(" ");
-      setTicketClip(`path('${d}')`);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(card);
-    return () => ro.disconnect();
-  }, []);
 
   return (
     <PublicShell>
@@ -609,128 +571,23 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════ 10 · Pricing — STATIONERY ANCHOR ════════════════════════
-          Stationery-textured background; price card floats with deep
-          shadow. Leads with the founding offer (free for the first 200
-          couples), with the standard 7 €/mo as the muted after-price. */}
-      <section className="relative stationery">
-        <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-20">
-          {/* The lift shadow lives on the wrapper as a drop-shadow filter, not
-              on the card, because clip-path clips a box-shadow away. As a
-              filter on the parent it follows the card's clipped ticket outline,
-              so the shadow gets the side notches too. */}
-          <div className="relative mx-auto max-w-lg [filter:drop-shadow(0_22px_30px_rgba(16,24,48,0.20))]">
-            <div
-              ref={pricingCardRef}
-              // The dark border is a much bigger step off the surface than the
-              // light one on purpose: in dark mode the card fill and the
-              // stationery section behind it are the SAME token (umber-800), so
-              // the hairline is the only thing drawing the ticket. umber-700
-              // against umber-800 was invisible.
-              className="relative rounded-2xl bg-paper-50 dark:bg-umber-800 p-6 border border-paper-300 dark:border-umber-500 sm:p-8"
-              style={
-                ticketClip == null
-                  ? undefined
-                  : // Clip the card to the ticket outline so the side notches
-                    // are real cut-outs that reveal the textured background
-                    // behind — no painted fill.
-                    { clipPath: ticketClip, WebkitClipPath: ticketClip }
-              }
-            >
-              {/* Value-prop "burger" mark, pinned to the card's top-right corner.
-                  Tooltip opens downward since there's no room above at the top. */}
-              <span className="group absolute right-5 top-5 sm:right-6 sm:top-6">
-                <button
-                  type="button"
-                  aria-label={t("landing.pricing_value_note")}
-                  className="flex h-5 w-5 items-center justify-center rounded-full text-umber-600 transition-colors hover:text-umber-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-umber-300 dark:hover:text-paper-50"
-                >
-                  <BurgerIcon size={16} aria-hidden />
-                </button>
-                <span
-                  role="tooltip"
-                  className="pointer-events-none absolute right-0 top-full z-10 mt-2 w-60 rounded-lg bg-umber-900 px-3 py-2 text-xs leading-snug text-paper-50 opacity-0 shadow-pop transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
-                >
-                  {t("landing.pricing_value_note")}
-                </span>
-              </span>
-              <div className="flex items-end gap-2.5">
-                <span className="inline-flex items-start font-serif text-6xl leading-[0.9] text-umber-900 dark:text-paper-50 sm:text-7xl">
-                  <span>{t("landing.pricing_amount")}</span>
-                  {t("landing.pricing_amount_decimal") && (
-                    // Decimal rides high as a superscript (e.g. 5·⁵⁰): a small
-                    // top pad drops it just enough that its cap-top sits level
-                    // with the big "5" cap-top, not buried mid-numeral. The em
-                    // here is the big font's (inherited text-6xl/7xl), so the
-                    // offset scales with the responsive numeral.
-                    <span className="self-start pt-[0.05em] text-[0.4em] leading-none">
-                      .{t("landing.pricing_amount_decimal")}
-                    </span>
-                  )}
-                </span>
-                <span className="mb-2 font-serif text-3xl text-umber-600 dark:text-umber-200">
-                  {currencySymbol(localeCurrency(locale), locale)}
-                </span>
-                <span className="mb-2.5 font-grotesk text-sm text-umber-600 dark:text-umber-300">
-                  {t("landing.pricing_amount_sub")}
-                </span>
-              </div>
-              {/* Early-access window + the regular price it reverts to. */}
-              <p className="mt-1.5 font-grotesk text-xs text-umber-600 dark:text-umber-300">
-                {t("landing.pricing_early_note")}
-              </p>
-              <div className="mt-3 flex items-center gap-2.5 rounded-lg bg-umber-100 dark:bg-umber-700/50 px-3 py-2.5 ring-1 ring-umber-200/80 dark:ring-umber-600/50">
-                <p className="font-grotesk text-sm leading-snug text-umber-800 dark:text-umber-100">
-                  {t("landing.pricing_after")}
-                </p>
-                {/* Full founding-offer explanation tucked behind an info icon so
-                    the callout stays a single readable line. Tooltip shows on
-                    hover and keyboard focus. */}
-                <span className="group relative ml-auto shrink-0">
-                  <button
-                    type="button"
-                    aria-label={t("landing.pricing_after_detail")}
-                    className="flex h-5 w-5 items-center justify-center rounded-full text-umber-600 transition-colors hover:text-umber-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-umber-300 dark:hover:text-paper-50"
-                  >
-                    <Info size={16} aria-hidden />
-                  </button>
-                  <span
-                    role="tooltip"
-                    className="pointer-events-none absolute bottom-full right-0 z-10 mb-2 w-64 rounded-lg bg-umber-900 px-3 py-2 text-xs leading-snug text-paper-50 opacity-0 shadow-pop transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
-                  >
-                    {t("landing.pricing_after_detail")}
-                  </span>
-                </span>
-              </div>
-              {/* Ticket perforation between the price block and the feature
-                  list: a dashed tear-line, with the side half-circle cut-outs
-                  punched by the card mask (see the card's style above, which
-                  measures this row's center). Inset so the dashes clear the
-                  notches. */}
-              <div ref={perforationRef} className="my-5 -mx-6 sm:-mx-8" aria-hidden="true">
-                <div className="mx-7 border-t border-dashed border-paper-300 dark:border-umber-500" />
-              </div>
-              <ul className="space-y-2">
-                <IconRow tone="coffee" icon={<Gift size={16} />}>
-                  {t("landing.pricing_bullet_1")}
-                </IconRow>
-                <IconRow tone="coffee" icon={<Sparkles size={16} />}>
-                  {t("landing.pricing_bullet_2")}
-                </IconRow>
-                <IconRow tone="coffee" icon={<FileText size={16} />}>
-                  {t("landing.pricing_bullet_3")}
-                </IconRow>
-                <IconRow tone="coffee" icon={<Pause size={16} />}>
-                  {t("landing.pricing_bullet_4")}
-                </IconRow>
-                <IconRow tone="coffee" icon={<Share2 size={16} />}>
-                  {t("landing.pricing_bullet_referral")}
-                </IconRow>
-              </ul>
-              <Link to="/signup" className="btn-primary btn-lifted btn-landing btn-lg mt-6 w-full">
-                {t("landing.cta_signup")}
-              </Link>
-            </div>
+          Every price on the marketplace, one deck: couples in front, vendors
+          and planners peeking out behind. Opens on the value proposition
+          rather than on a number, because the number is not the argument. */}
+      <section id="pricing" className="relative stationery scroll-mt-20">
+        <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
+              {t("landing.pricing_section_eyebrow")}
+            </p>
+            <h2 className="mt-3 font-grotesk text-3xl font-semibold leading-[1.1] tracking-tight text-umber-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              {t("landing.pricing_section_title")}
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl font-grotesk text-base leading-relaxed text-umber-700 dark:text-umber-200">
+              {t("landing.pricing_section_sub")}
+            </p>
           </div>
+          <PricingDeck />
         </div>
       </section>
 
@@ -820,10 +677,30 @@ export default function LandingPage() {
 }
 
 /** Bottom-sticky signup CTA shown only on mobile (`lg:hidden`). Appears
- *  after the visitor scrolls past the hero so the call-to-action never
- *  goes more than a thumb-tap away; hides again when the closing-section
- *  CTA is on screen so the two don't fight visually. Honours
- *  `prefers-reduced-motion` via the CSS-level transition timing. */
+ *  after the visitor scrolls past the hero so the call-to-action never goes
+ *  more than a thumb-tap away, and stands down while anything carrying
+ *  `data-sticky-cta-stop` is on screen. Honours `prefers-reduced-motion` via
+ *  the CSS-level transition timing.
+ *
+ *  Two things claim that attribute, for two different reasons. The pricing
+ *  ticket's own "Start planning" claims it because the bar would otherwise
+ *  render a second identical black pill a hundred pixels under the first —
+ *  which is what it did, since the old rule looked only at the last 600 px of
+ *  the page and the ticket sits in the middle of it. The footer claims it
+ *  because the footer is a black slab in both themes and this bar's backdrop
+ *  is a cream scrim built for the cream page: over the slab it reads as a
+ *  smear rather than a separation.
+ *
+ *  What the old rule cost, and why it is gone: the closing section's CTA it
+ *  was hiding behind is `hidden lg:flex`, desktop-only, precisely BECAUSE this
+ *  bar exists. So on a phone the last screenful before the footer had no CTA
+ *  at all, hidden in deference to a button that was never rendered.
+ *
+ *  The measurement is a rect check inside the existing rAF-throttled scroll
+ *  handler rather than an IntersectionObserver, because the marked node is not
+ *  stable — switching the pricing deck to the vendor or planner ticket
+ *  unmounts it — and re-querying two nodes per scroll frame costs nothing
+ *  next to keeping an observer's subscriptions in sync with that. */
 function MobileStickySignup() {
   const { t } = useT();
   const [visible, setVisible] = useState(false);
@@ -836,14 +713,20 @@ function MobileStickySignup() {
         raf = 0;
         const y = window.scrollY;
         const vh = window.innerHeight;
-        const docH = document.documentElement.scrollHeight;
         // Show after the visitor has clearly cleared the hero (~75% of one
-        // viewport — calibrated to the hero + mockup-band combined height),
-        // and hide once the closing section's own CTA is in view (within the
-        // last 600 px) so the sticky bar doesn't duplicate it.
+        // viewport — calibrated to the hero + mockup-band combined height).
         const past = y > vh * 0.75;
-        const nearBottom = y + vh > docH - 600;
-        setVisible(past && !nearBottom);
+        // A stopper counts as on screen only if it is actually painted: a
+        // display:none node reports a 0x0 rect, which is how a desktop-only
+        // CTA correctly fails this test on a phone.
+        const stopped = Array.from(
+          document.querySelectorAll<HTMLElement>("[data-sticky-cta-stop]"),
+        ).some((el) => {
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 && r.height === 0) return false;
+          return r.bottom > 0 && r.top < vh;
+        });
+        setVisible(past && !stopped);
       });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -1226,8 +1109,6 @@ const FEATURED_SLUG = "bibliai-idezetek-eskuvore";
  *  or the catalogue is empty. */
 function BlogTeaser() {
   const { t, locale } = useT();
-  // Blog copy is authored in HU/EN only; ES reads it in EN.
-  const cLocale = contentLocale(locale);
   const [posts, setPosts] = useState<BlogPost[] | null>(null);
 
   useEffect(() => {
@@ -1270,27 +1151,31 @@ function BlogTeaser() {
        *  the existing 3-up grid (re-rendered below). */}
       <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-6 scroll-pl-6 sm:hidden [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {posts.map((post) => {
-          const copy = post[cLocale];
+          const { copy, category, locale: shown } = blogCopy(post, locale);
           const [y, m, d] = post.published_at.split("-").map(Number);
           const dateLabel =
             y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
           return (
             <li key={post.slug} className="w-[80vw] max-w-[20rem] shrink-0 snap-start">
               <Link
-                to={`/blog/${locale === "en" ? (post.en_slug ?? post.slug) : post.slug}`}
+                to={`/blog/${locale === "hu" ? post.slug : (post.en_slug ?? post.slug)}`}
                 className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-800 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:border-ink-700 dark:bg-umber-800"
               >
                 <BlogCover
                   url={post.cover_image_url ?? null}
                   alt={copy.title}
                   slug={post.slug}
-                  category={post.category[cLocale]}
+                  category={category}
+                  lazy
                 />
                 <div className="flex flex-1 flex-col p-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
-                    {post.category[cLocale]}
+                    {category}
                   </p>
-                  <h3 className="mt-1.5 font-grotesk text-base font-semibold leading-[1.15] tracking-tight text-umber-900 dark:text-paper-50">
+                  <h3
+                    lang={shown}
+                    className="mt-1.5 font-grotesk text-base font-semibold leading-[1.15] tracking-tight text-umber-900 dark:text-paper-50"
+                  >
                     {copy.title}
                   </h3>
                   <div className="mt-auto flex items-center gap-2 pt-2 text-[11px] text-umber-700 dark:text-umber-300">
@@ -1315,27 +1200,31 @@ function BlogTeaser() {
             even tiles instead of jagged ones. */}
         <ul className="mt-4 grid gap-x-8 gap-y-10 sm:mt-2 sm:grid-cols-3 sm:items-stretch sm:gap-y-0">
           {posts.map((post) => {
-            const copy = post[cLocale];
+            const { copy, category, locale: shown } = blogCopy(post, locale);
             const [y, m, d] = post.published_at.split("-").map(Number);
             const dateLabel =
               y && m && d ? fmt.format(new Date(Date.UTC(y, m - 1, d))) : post.published_at;
             return (
               <li key={post.slug} className="h-full">
                 <Link
-                  to={`/blog/${locale === "en" ? (post.en_slug ?? post.slug) : post.slug}`}
+                  to={`/blog/${locale === "hu" ? post.slug : (post.en_slug ?? post.slug)}`}
                   className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-800 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-ink-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
                 >
                   <BlogCover
                     url={post.cover_image_url ?? null}
                     alt={copy.title}
                     slug={post.slug}
-                    category={post.category[cLocale]}
+                    category={category}
+                    lazy
                   />
                   <div className="flex flex-1 flex-col p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-umber-500 dark:text-umber-300">
-                      {post.category[cLocale]}
+                      {category}
                     </p>
-                    <h3 className="mt-2 font-grotesk text-lg font-semibold leading-[1.15] tracking-tight text-umber-900 transition-colors group-hover:text-umber-500 dark:text-paper-50 dark:group-hover:text-umber-300 sm:text-xl">
+                    <h3
+                      lang={shown}
+                      className="mt-2 font-grotesk text-lg font-semibold leading-[1.15] tracking-tight text-umber-900 transition-colors group-hover:text-umber-500 dark:text-paper-50 dark:group-hover:text-umber-300 sm:text-xl"
+                    >
                       {copy.title}
                     </h3>
                     <div className="mt-auto flex items-center gap-3 pt-3 text-xs text-umber-700 dark:text-umber-300">
@@ -1389,6 +1278,635 @@ function IconRow({
   );
 }
 
+/** The three sides of the marketplace, each with its own price. */
+type PricingAudience = "couples" | "vendors" | "planners";
+
+/** Ring order for the pricing deck. Couples sits in the MIDDLE so the section
+ *  opens as designed: the couple ticket in front, vendors peeking out to the
+ *  left and planners to the right. Promoting a side card rotates the ring
+ *  rather than swapping two slots, so no audience can ever appear twice and
+ *  every card is one click from every other. */
+const PRICING_RING: readonly PricingAudience[] = ["vendors", "couples", "planners"];
+
+/** The ring neighbour `step` places away from `active` (-1 = left, +1 = right). */
+function ringNeighbour(active: PricingAudience, step: -1 | 1): PricingAudience {
+  const n = PRICING_RING.length;
+  const i = PRICING_RING.indexOf(active);
+  return PRICING_RING[(((i + step) % n) + n) % n] ?? active;
+}
+
+/** One bullet on a pricing ticket. */
+interface PricingBullet {
+  icon: ReactNode;
+  text: string;
+}
+
+/** Everything one audience's ticket renders. Built per render because every
+ *  string goes through `t()` and every amount through the shared price
+ *  constants — the deck never carries a number of its own. */
+interface PricingCard {
+  label: string;
+  icon: ReactNode;
+  /** Whole units of `currency` (7, 2 490). Formatted, never spelled in copy. */
+  amount: number;
+  /** Planners price three tiers, so the deck quotes the entry one and has to
+   *  say so. Couples and vendors have exactly one price. */
+  from: boolean;
+  /** Tooltip behind the mark in the card's top-right corner. */
+  valueNote: string;
+  /** Small print under the price. */
+  note: string;
+  /** The highlighted one-liner: this audience's actual offer. */
+  callout: string;
+  /** The full offer, behind the callout's info icon. */
+  calloutDetail: string;
+  bullets: PricingBullet[];
+  ctaTo: string;
+  ctaLabel: string;
+}
+
+/** Pricing deck: three tickets, one in front and two peeking out behind it.
+ *  Clicking a peek promotes it to the main card (same idiom as the
+ *  couple-cards coverflow above). The deck reserves its full footprint at
+ *  every position, so promoting a card changes only how the three overlap,
+ *  never how much room the section takes. */
+/** Reads a media query, and re-reads it whenever it flips.
+ *
+ *  The FIRST render already answers truthfully rather than starting at `false`,
+ *  so a desktop visitor never gets one frame of the narrow layout before it
+ *  widens. That is only safe because the app mounts with `createRoot`, not
+ *  `hydrateRoot` (see main.tsx): the prerendered markup is replaced outright,
+ *  so a client/server disagreement here costs nothing. The guard is for the
+ *  prerender pass itself, which has no `window`. */
+function useMediaQuery(query: string): boolean {
+  const read = () =>
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia(query).matches
+      : false;
+  const [matches, setMatches] = useState(read);
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mql = window.matchMedia(query);
+    const sync = () => setMatches(mql.matches);
+    sync();
+    mql.addEventListener("change", sync);
+    return () => mql.removeEventListener("change", sync);
+  }, [query]);
+  return matches;
+}
+
+/** Slot a card occupies right now. Derived from the ring, never stored. */
+type PricingSlot = "front" | "left" | "right";
+
+/** Signed ring distance from the front card to `id`, in [-1, 1] for a ring of
+ *  three: -1 is the card on the left, +1 the one on the right. */
+function ringDelta(id: PricingAudience, active: PricingAudience): number {
+  const n = PRICING_RING.length;
+  let d = (PRICING_RING.indexOf(id) - PRICING_RING.indexOf(active) + n) % n;
+  if (d > n / 2) d -= n;
+  return d;
+}
+
+/** Pricing deck: three tickets, one in front and two behind it. Clicking a
+ *  card behind (or swiping, or pressing an arrow key) rotates the ring and
+ *  that card BECOMES the front one, same idiom as the couple-cards coverflow
+ *  further down the page.
+ *
+ *  Two things carry the whole feel and are worth not re-deriving:
+ *
+ *  - **Every audience owns ONE node for the life of the section.** The cards
+ *    are positioned by transform off a shared centre, so promoting one makes
+ *    all three TRAVEL to their new slots rather than swapping their contents
+ *    in place. A crossfade between two stationary cards reads as a glitch; a
+ *    card that moves reads as a deck.
+ *  - **The deck's height is the TALLEST ticket, always.** An invisible grid
+ *    stack of all three bodies sizes the box (one grid cell, three children),
+ *    so the section's footprint is identical whichever card is in front, in
+ *    every locale, with no measuring. Only the overlap changes. */
+function PricingDeck() {
+  const { t, locale } = useT();
+  const [active, setActive] = useState<PricingAudience>("couples");
+  // Wide enough for two peeks to say something readable beside a 32rem card.
+  // Matches the `lg:` breakpoint the tap row hides at, so exactly one of the
+  // two controls is ever on screen.
+  const fanned = useMediaQuery("(min-width: 1024px)");
+  const stillness = useMediaQuery("(prefers-reduced-motion: reduce)");
+
+  // Ticket cut-outs: the front card's outline is clipped to a rounded rect
+  // with a semicircle bitten out of each side edge, centered on the
+  // perforation row. We use clip-path: path() rather than a mask because two
+  // masked "holes" need cross-browser composite handling that silently falls
+  // back to additive (filling the holes back in); path() is deterministic.
+  // The path is rebuilt from the measured card size + row center so the
+  // notches track the divider across locales, breakpoints AND audiences.
+  const pricingCardRef = useRef<HTMLDivElement>(null);
+  const perforationRef = useRef<HTMLDivElement>(null);
+  const [ticketClip, setTicketClip] = useState<string | null>(null);
+  useEffect(() => {
+    const card = pricingCardRef.current;
+    const perf = perforationRef.current;
+    if (!card || !perf) return;
+    const measure = () => {
+      const w = card.offsetWidth;
+      const h = card.offsetHeight;
+      const y = perf.offsetTop + perf.offsetHeight / 2; // row center, card coords
+      const r = 16; // corner radius, matches rounded-2xl (1rem)
+      const n = 22; // notch radius — the half-circle bitten into each edge
+      // Clockwise outline (y-down). Convex corners use sweep-flag 1; the two
+      // side notches use sweep-flag 0 so the arc bulges inward (a bite).
+      const d = [
+        `M${r},0`,
+        `H${w - r}`,
+        `A${r},${r} 0 0 1 ${w},${r}`,
+        `V${y - n}`,
+        `A${n},${n} 0 0 0 ${w},${y + n}`,
+        `V${h - r}`,
+        `A${r},${r} 0 0 1 ${w - r},${h}`,
+        `H${r}`,
+        `A${r},${r} 0 0 1 0,${h - r}`,
+        `V${y + n}`,
+        `A${n},${n} 0 0 0 0,${y - n}`,
+        `V${r}`,
+        `A${r},${r} 0 0 1 ${r},0`,
+        "Z",
+      ].join(" ");
+      setTicketClip(`path('${d}')`);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(card);
+    return () => ro.disconnect();
+    // `active` swaps the front card's contents, which moves the perforation
+    // row: the clip has to be rebuilt for the new ticket.
+  }, [active]);
+
+  // How far a card sits from centre in its side slots. Fanned, that is a
+  // fraction of the deck so ~11rem of each peek stays clear of the front
+  // ticket; narrow, it is the whole deck plus a gap, which turns the same
+  // three nodes into an ordinary swipe carousel with nothing peeking.
+  const deckRef = useRef<HTMLDivElement>(null);
+  const [deckW, setDeckW] = useState(0);
+  useEffect(() => {
+    const el = deckRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setDeckW(el.offsetWidth));
+    ro.observe(el);
+    setDeckW(el.offsetWidth);
+    return () => ro.disconnect();
+  }, []);
+  const step = fanned ? deckW * 0.215 : deckW + 24;
+
+  // Pointer drag. `dragPx` offsets every card live so the deck tracks the
+  // finger 1:1; on release anything past a fifth of a step commits a rotation.
+  // The click that ends a drag is swallowed, or letting go over a peek would
+  // promote a card the visitor was only sliding past.
+  const [dragPx, setDragPx] = useState(0);
+  const dragFrom = useRef<{ x: number; moved: boolean } | null>(null);
+  const swallowClick = useRef(false);
+  const rotate = (dir: -1 | 1) => {
+    const n = PRICING_RING.length;
+    const i = (PRICING_RING.indexOf(active) + dir + n) % n;
+    setActive(PRICING_RING[i] ?? active);
+  };
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    dragFrom.current = { x: e.clientX, moved: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const from = dragFrom.current;
+    if (!from) return;
+    const dx = e.clientX - from.x;
+    if (Math.abs(dx) > 4) from.moved = true;
+    setDragPx(dx);
+  };
+  const onPointerUp = () => {
+    const from = dragFrom.current;
+    dragFrom.current = null;
+    const dx = dragPx;
+    setDragPx(0);
+    if (!from) return;
+    if (from.moved) swallowClick.current = true;
+    if (step > 0 && Math.abs(dx) > step * 0.2) rotate(dx < 0 ? 1 : -1);
+  };
+
+  // Every amount comes from the shared billing constants, never from copy: a
+  // price typed into a locale file is a price that drifts from what Stripe
+  // actually charges. The visitor has no couple/vendor/planner row yet, so the
+  // currency follows their UI language exactly like the try-it budget widget.
+  const currency = localeCurrency(locale);
+  const symbol = currencySymbol(currency, locale);
+
+  const cards: Record<PricingAudience, PricingCard> = {
+    couples: {
+      label: t("landing.pricing_tab_couples"),
+      icon: <Heart size={15} strokeWidth={1.6} aria-hidden />,
+      amount: monthlyPrice(currency),
+      from: false,
+      valueNote: t("landing.pricing_value_note"),
+      note: t("landing.pricing_early_note"),
+      callout: t("landing.pricing_after"),
+      calloutDetail: t("landing.pricing_after_detail"),
+      bullets: [
+        { icon: <Gift size={16} />, text: t("landing.pricing_bullet_1") },
+        { icon: <Sparkles size={16} />, text: t("landing.pricing_bullet_2") },
+        { icon: <FileText size={16} />, text: t("landing.pricing_bullet_3") },
+        { icon: <Pause size={16} />, text: t("landing.pricing_bullet_4") },
+        { icon: <Share2 size={16} />, text: t("landing.pricing_bullet_referral") },
+      ],
+      ctaTo: "/signup",
+      ctaLabel: t("landing.cta_signup"),
+    },
+    vendors: {
+      label: t("landing.pricing_tab_vendors"),
+      icon: <Store size={15} strokeWidth={1.6} aria-hidden />,
+      amount: vendorPrice(currency),
+      from: false,
+      valueNote: t("landing.pricing_vendor_value_note"),
+      note: t("landing.pricing_early_note"),
+      callout: t("landing.pricing_vendor_callout"),
+      calloutDetail: t("landing.pricing_vendor_callout_detail"),
+      bullets: [
+        { icon: <Gift size={16} />, text: t("landing.pricing_vendor_bullet_1") },
+        { icon: <Store size={16} />, text: t("landing.pricing_vendor_bullet_2") },
+        { icon: <Mail size={16} />, text: t("landing.pricing_vendor_bullet_3") },
+        { icon: <CalendarCheck size={16} />, text: t("landing.pricing_vendor_bullet_4") },
+        { icon: <Pause size={16} />, text: t("landing.pricing_vendor_bullet_5") },
+      ],
+      ctaTo: "/vendors",
+      ctaLabel: t("landing.pricing_vendor_cta"),
+    },
+    planners: {
+      label: t("landing.pricing_tab_planners"),
+      icon: <ClipboardList size={15} strokeWidth={1.6} aria-hidden />,
+      amount: plannerPrice("starter", currency),
+      from: true,
+      valueNote: t("landing.pricing_planner_value_note"),
+      note: t("landing.pricing_planner_note"),
+      callout: t("landing.pricing_planner_callout"),
+      calloutDetail: t("landing.pricing_planner_callout_detail"),
+      bullets: [
+        { icon: <Briefcase size={16} />, text: t("landing.pricing_planner_bullet_1") },
+        { icon: <Globe size={16} />, text: t("landing.pricing_planner_bullet_2") },
+        { icon: <LayoutGrid size={16} />, text: t("landing.pricing_planner_bullet_3") },
+        { icon: <Sparkles size={16} />, text: t("landing.pricing_planner_bullet_4") },
+        { icon: <Pause size={16} />, text: t("landing.pricing_planner_bullet_5") },
+      ],
+      ctaTo: "/planners",
+      ctaLabel: t("landing.pricing_planner_cta"),
+    },
+  };
+
+  const fromLabel = t("landing.pricing_from");
+  const perMonth = t("landing.pricing_amount_sub");
+
+  return (
+    <div className="mt-10 sm:mt-12">
+      {/* Below lg there is no room either side of the ticket for a peek to say
+          anything readable, so the same three choices become a tap row. Both
+          controls drive one piece of state, so the deck has one behaviour. */}
+      <div className="mx-auto mb-7 grid max-w-lg grid-cols-3 gap-2 lg:hidden">
+        {PRICING_RING.map((id) => {
+          const card = cards[id];
+          const isActive = id === active;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={isActive}
+              onClick={() => setActive(id)}
+              className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 transition-colors duration-300 ${
+                isActive
+                  ? "border-umber-400 bg-paper-50 dark:border-umber-400 dark:bg-umber-800"
+                  : "border-paper-300 hover:bg-paper-100/70 dark:border-umber-700 dark:hover:bg-umber-800/60"
+              }`}
+            >
+              <span className="font-grotesk text-[10px] font-semibold uppercase tracking-[0.14em] text-umber-600 dark:text-umber-300">
+                {card.label}
+              </span>
+              <span className="font-serif text-lg leading-none text-umber-900 dark:text-paper-50">
+                {card.from ? `${fromLabel} ` : ""}
+                {formatNumber(card.amount, locale)} {symbol}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* The deck. Arrow keys work wherever focus sits inside it (the peeks and
+          the tap row are both real buttons, so the event reaches here), and a
+          drag anywhere on it slides the ring. overflow-x-clip keeps the narrow
+          layout's off-screen cards from widening the document; clip rather
+          than hidden so the cards' shadows still bleed vertically. */}
+      <div
+        ref={deckRef}
+        className="relative mx-auto max-w-4xl overflow-x-clip"
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            rotate(-1);
+          } else if (e.key === "ArrowRight") {
+            e.preventDefault();
+            rotate(1);
+          }
+        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        style={{ touchAction: "pan-y" }}
+      >
+        {/* The height reservation: all three bodies in ONE grid cell, so the
+            box is as tall as the tallest of them and stops changing. Nothing
+            here is visible, focusable or announced — `ghost` renders the CTA
+            as a span so the hidden copies add no tab stops. */}
+        <div className="invisible grid" aria-hidden="true">
+          {PRICING_RING.map((id) => (
+            <div
+              key={id}
+              className={`col-start-1 row-start-1 mx-auto w-full max-w-lg ${TICKET_BOX} ${TICKET_FILL_FRONT}`}
+            >
+              <PricingTicketBody card={cards[id]} audience={id} ghost />
+            </div>
+          ))}
+        </div>
+
+        {PRICING_RING.map((id) => {
+          const d = ringDelta(id, active);
+          const slot: PricingSlot = d === 0 ? "front" : d < 0 ? "left" : "right";
+          // Continuous position, so a half-finished drag renders half-way
+          // between two slots rather than snapping at the threshold.
+          const p = step > 0 ? d + dragPx / step : d;
+          const ap = Math.min(Math.abs(p), 1);
+          const isFront = slot === "front";
+          return (
+            <div
+              key={id}
+              className="absolute left-1/2 top-0 h-full w-full max-w-lg [filter:drop-shadow(0_20px_28px_rgba(16,24,48,0.16))]"
+              style={{
+                transform: `translateX(calc(-50% + ${p * step}px)) rotate(${(fanned ? 3 : 0) * p}deg) scale(${1 - 0.06 * ap})`,
+                zIndex: Math.round(20 - ap * 10),
+                transition:
+                  dragFrom.current || stillness
+                    ? "none"
+                    : "transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
+                willChange: "transform",
+              }}
+            >
+              {isFront ? (
+                <div
+                  ref={pricingCardRef}
+                  className={`relative flex h-full flex-col ${TICKET_BOX} ${TICKET_FILL_FRONT}`}
+                  style={
+                    ticketClip == null
+                      ? undefined
+                      : // Clip the card to the ticket outline so the side
+                        // notches are real cut-outs that reveal whichever card
+                        // is standing behind them.
+                        { clipPath: ticketClip, WebkitClipPath: ticketClip }
+                  }
+                >
+                  {/* Keyed on the slot so the body fades in as the card
+                      arrives, instead of the text hard-cutting mid-travel. */}
+                  <div
+                    key={slot}
+                    className={`flex h-full flex-col ${stillness ? "" : "animate-fade-in"}`}
+                  >
+                    <PricingTicketBody
+                      card={cards[id]}
+                      audience={id}
+                      perforationRef={perforationRef}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <PricingPeek
+                  side={slot}
+                  card={cards[id]}
+                  symbol={symbol}
+                  fromLabel={fromLabel}
+                  perMonth={perMonth}
+                  locale={locale}
+                  onSelect={() => {
+                    if (swallowClick.current) {
+                      swallowClick.current = false;
+                      return;
+                    }
+                    setActive(id);
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** The ticket's own box, WITHOUT a fill: hairline, radius and padding, shared
+ *  by the front card, the two peeks and the invisible height-reserving stack
+ *  so all four can never drift apart. The fill is deliberately left to each
+ *  caller rather than defaulted here and overridden: two background utilities
+ *  on one element resolve by Tailwind's own stylesheet order, not by the order
+ *  they are written in, so "override the default" is a coin toss.
+ *
+ *  The dark border is a much bigger step off the surface than the light one on
+ *  purpose: in dark mode the card fill and the stationery section behind it are
+ *  the SAME token (umber-800), so the hairline is the only thing drawing the
+ *  ticket. umber-700 against umber-800 was invisible. */
+const TICKET_BOX = "rounded-2xl border border-paper-300 p-6 dark:border-umber-500 sm:p-8";
+
+/** Fill of the card in front: the brightest surface in the deck. */
+const TICKET_FILL_FRONT = "bg-paper-50 dark:bg-umber-800";
+
+/** Fill of a card standing behind: one step back from the front card in both
+ *  themes, so depth survives even where the shadow is barely readable. */
+const TICKET_FILL_BEHIND = "bg-paper-100 dark:bg-umber-900/70";
+
+/** Everything inside the front ticket. Rendered a second time, invisibly, by
+ *  the height reservation above — `ghost` is that pass, and it downgrades the
+ *  CTA to a span so the hidden copies contribute no tab stops. */
+function PricingTicketBody({
+  card,
+  audience,
+  ghost = false,
+  perforationRef,
+}: {
+  card: PricingCard;
+  audience: PricingAudience;
+  ghost?: boolean;
+  perforationRef?: React.RefObject<HTMLDivElement | null>;
+}) {
+  const { t, locale } = useT();
+  const symbol = currencySymbol(localeCurrency(locale), locale);
+  const cta = "btn-primary btn-lifted btn-landing btn-lg mt-auto w-full";
+  return (
+    <>
+      {/* Value-prop mark, pinned to the card's top-right corner. Tooltip opens
+          downward since there's no room above at the top. The couple card
+          keeps its burger (the BigMac price anchor); the trade cards get a
+          plain info mark. */}
+      <span className="group absolute right-5 top-5 sm:right-6 sm:top-6">
+        <button
+          type="button"
+          tabIndex={ghost ? -1 : undefined}
+          aria-label={card.valueNote}
+          className="flex h-5 w-5 items-center justify-center rounded-full text-umber-600 transition-colors hover:text-umber-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-umber-300 dark:hover:text-paper-50"
+        >
+          {audience === "couples" ? (
+            <BurgerIcon size={16} aria-hidden />
+          ) : (
+            <Info size={16} aria-hidden />
+          )}
+        </button>
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute right-0 top-full z-10 mt-2 w-60 rounded-lg bg-umber-900 px-3 py-2 text-xs leading-snug text-paper-50 opacity-0 shadow-pop transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
+        >
+          {card.valueNote}
+        </span>
+      </span>
+      {/* Who this ticket is for. The deck shows three prices, so the number
+          needs a name beside it or it is just a number. */}
+      <span className="inline-flex items-center gap-1.5 font-grotesk text-[11px] font-semibold uppercase tracking-[0.18em] text-umber-500 dark:text-umber-300">
+        {card.icon}
+        {card.label}
+      </span>
+      <div className="mt-2 flex items-end gap-2.5">
+        {card.from && (
+          <span className="mb-3 font-grotesk text-sm text-umber-600 dark:text-umber-300">
+            {t("landing.pricing_from")}
+          </span>
+        )}
+        <span className="font-serif text-6xl leading-[0.9] text-umber-900 dark:text-paper-50 sm:text-7xl">
+          {formatNumber(card.amount, locale)}
+        </span>
+        <span className="mb-2 font-serif text-3xl text-umber-600 dark:text-umber-200">
+          {symbol}
+        </span>
+        <span className="mb-2.5 font-grotesk text-sm text-umber-600 dark:text-umber-300">
+          {t("landing.pricing_amount_sub")}
+        </span>
+      </div>
+      {/* Billing cadence + what the price is qualified by. */}
+      <p className="mt-1.5 font-grotesk text-xs text-umber-600 dark:text-umber-300">{card.note}</p>
+      <div className="mt-3 flex items-center gap-2.5 rounded-lg bg-umber-100 px-3 py-2.5 ring-1 ring-umber-200/80 dark:bg-umber-700/50 dark:ring-umber-600/50">
+        <p className="font-grotesk text-sm leading-snug text-umber-800 dark:text-umber-100">
+          {card.callout}
+        </p>
+        {/* Full offer tucked behind an info icon so the callout stays a single
+            readable line. Shows on hover and keyboard focus. */}
+        <span className="group relative ml-auto shrink-0">
+          <button
+            type="button"
+            tabIndex={ghost ? -1 : undefined}
+            aria-label={card.calloutDetail}
+            className="flex h-5 w-5 items-center justify-center rounded-full text-umber-600 transition-colors hover:text-umber-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 dark:text-umber-300 dark:hover:text-paper-50"
+          >
+            <Info size={16} aria-hidden />
+          </button>
+          <span
+            role="tooltip"
+            className="pointer-events-none absolute bottom-full right-0 z-10 mb-2 w-64 rounded-lg bg-umber-900 px-3 py-2 text-xs leading-snug text-paper-50 opacity-0 shadow-pop transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-umber-950"
+          >
+            {card.calloutDetail}
+          </span>
+        </span>
+      </div>
+      {/* Ticket perforation between the price block and the feature list: a
+          dashed tear-line, with the side half-circle cut-outs punched by the
+          card's clip (see the front card's style, which measures this row's
+          centre). Inset so the dashes clear the notches. */}
+      <div ref={perforationRef} className="-mx-6 my-5 sm:-mx-8" aria-hidden="true">
+        <div className="mx-7 border-t border-dashed border-paper-300 dark:border-umber-500" />
+      </div>
+      {/* Five bullets on every ticket, so the three are close to one height
+          and the deck's reserved box is never mostly empty. */}
+      <ul className="space-y-2 pb-6">
+        {card.bullets.map((bullet) => (
+          <IconRow key={bullet.text} tone="coffee" icon={bullet.icon}>
+            {bullet.text}
+          </IconRow>
+        ))}
+      </ul>
+      {/* mt-auto pins the CTA to the bottom of the reserved box, so all three
+          tickets put their button on the same line however long their copy is. */}
+      {ghost ? (
+        <span className={cta}>{card.ctaLabel}</span>
+      ) : (
+        <Link
+          to={card.ctaTo}
+          className={cta}
+          // Marks this as a real, on-page signup CTA so the mobile sticky bar
+          // stands down while it is on screen (see MobileStickySignup). Only
+          // the signup ticket claims it: the vendor and planner tickets lead
+          // somewhere else, so the sticky bar is not a duplicate of them.
+          {...(card.ctaTo === "/signup" ? { "data-sticky-cta-stop": "" } : {})}
+        >
+          {card.ctaLabel}
+        </Link>
+      )}
+    </>
+  );
+}
+
+/** One of the two tickets standing behind the front card. Shows only what fits
+ *  in the strip the front card does not cover: who it is for, and what it
+ *  costs. The whole card is the control that promotes it, so its visible text
+ *  IS its accessible name and it needs no aria-label. */
+function PricingPeek({
+  side,
+  card,
+  symbol,
+  fromLabel,
+  perMonth,
+  locale,
+  onSelect,
+}: {
+  side: "left" | "right";
+  card: PricingCard;
+  symbol: string;
+  fromLabel: string;
+  perMonth: string;
+  locale: Locale;
+  onSelect: () => void;
+}) {
+  const isLeft = side === "left";
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`flex h-full w-full flex-col items-start justify-start text-left ${TICKET_BOX} ${TICKET_FILL_BEHIND} opacity-95 transition-opacity duration-300 hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-umber-400 ${
+        // Content hugs the OUTER edge on each side: the inner two thirds of a
+        // peek sits under the front ticket, so anything laid out there is
+        // simply invisible. Narrow screens have no peeks on show at all (the
+        // cards are parked off-deck), which is why the padding is lg-only.
+        isLeft ? "lg:pr-[21rem]" : "lg:items-end lg:pl-[21rem] lg:text-right"
+      }`}
+    >
+      <span className="inline-flex items-center gap-1.5 font-grotesk text-[11px] font-semibold uppercase tracking-[0.18em] text-umber-500 dark:text-umber-300">
+        {card.icon}
+        {card.label}
+      </span>
+      {card.from && (
+        <span className="mt-2 font-grotesk text-xs text-umber-600 dark:text-umber-300">
+          {fromLabel}
+        </span>
+      )}
+      <span className={`flex items-end gap-1.5 ${card.from ? "mt-0.5" : "mt-3"}`}>
+        <span className="font-serif text-4xl leading-none text-umber-900 dark:text-paper-50">
+          {formatNumber(card.amount, locale)}
+        </span>
+        <span className="font-serif text-xl leading-none text-umber-600 dark:text-umber-200">
+          {symbol}
+        </span>
+      </span>
+      <span className="mt-1.5 font-grotesk text-xs text-umber-600 dark:text-umber-300">
+        {perMonth}
+      </span>
+    </button>
+  );
+}
 /** Couple-cards teaser: a static mini-grid of the four decks with a single
  *  CTA into the tool page. Tiles and the CTA share the same locale-aware
  *  destination, so an EN visitor lands on the EN canonical slug. */

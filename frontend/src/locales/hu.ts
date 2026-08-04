@@ -2291,8 +2291,14 @@ const hu: LocaleMessages = {
     pricing_title: "18 hónapig a vendégünk vagytok.",
     pricing_body:
       "Tartsatok velünk az első fejezettől: a következő másfél évben a vendégünk vagytok, teljes hozzáféréssel. Utána 2 490 Ft havonta, 2 hét próbaidővel, minden funkcióval.",
-    pricing_amount: "2 490",
-    pricing_amount_decimal: "",
+    pricing_section_eyebrow: "Árak",
+    pricing_section_title: "Előbb ti kerestek, utána mi.",
+    pricing_section_sub:
+      "Egy szolgáltató első három párja a vendégünk, vagyis addig semmit nem számlázunk, amíg a Weddly nem hozott nekik valódi munkát. A pároknak két hét próbaidő, utána tizennyolc hónap vendégség.",
+    pricing_tab_couples: "Pároknak",
+    pricing_tab_vendors: "Szolgáltatóknak",
+    pricing_tab_planners: "Szervezőknek",
+    pricing_from: "már",
     pricing_amount_sub: "/ hó",
     pricing_early_note: "Havidíj, bármikor lemondható · nincs éves elköteleződés.",
     pricing_value_note: "Low-cortisol esküvőszervezés egy BigMac menü áráért.",
@@ -2306,6 +2312,29 @@ const hu: LocaleMessages = {
     pricing_bullet_referral:
       "Ajánlói program: meghívott pár után 1, szolgáltató után 2 hónap ajándékba",
     pricing_v2_note: "Ha betelnek az induló helyek, az új párok a 2 hetes próbaidővel kezdenek.",
+    pricing_vendor_callout: "Az első 3 pár a vendégünk.",
+    pricing_vendor_callout_detail:
+      "Három pár érhet el téged, mielőtt bármit is számláznánk. Csak azután kezdünk keresni, hogy a Weddly már munkát tett eléd, az első díj pedig az azt követő hónap 1-jétől indul.",
+    pricing_vendor_value_note:
+      "Az oldalad előfizetés nélkül is él és szerkeszthető. A Pro nyitja meg a közvetlen megkereséseket, a naptárat és az ügyfélpultot.",
+    pricing_vendor_bullet_1: "Az első 3 pár a vendégünk",
+    pricing_vendor_bullet_2: "Az adatlapod előfizetés nélkül is fent marad",
+    pricing_vendor_bullet_3: "Közvetlen megkeresés, ajánlat, egy közös beszélgetés",
+    pricing_vendor_bullet_4: "Szabad időpontok · kétirányú Google-szinkron",
+    pricing_vendor_bullet_5: "Bármikor lemondható, az oldalad marad",
+    pricing_vendor_cta: "Add hozzá a vállalkozásod",
+    pricing_planner_note: "Három csomag · Starter, Pro, Premium.",
+    pricing_planner_callout: "Gyere korán, az első 2 év a vendégünk vagy.",
+    pricing_planner_callout_detail:
+      "A szervezői felületet még együtt építjük az irodákkal, akik használják. Amíg ez így van, a választott csomagod két évig a vendégünk, teljes hozzáféréssel.",
+    pricing_planner_value_note:
+      "A Starter elviszi az első ügyfeleket; a Pro és a Premium emeli a plafont, ahogy nő az iroda.",
+    pricing_planner_bullet_1: "Minden esküvőd egyetlen felületen",
+    pricing_planner_bullet_2: "Nyilvános profil a szervezői katalógusban",
+    pricing_planner_bullet_3: "Költségvetés, vendégek, ültetés és ütemterv ügyfelenként",
+    pricing_planner_bullet_4: "Weddly Pontok: minél többet viszel, annál előrébb kerülsz",
+    pricing_planner_bullet_5: "Havidíj · bármikor lemondható",
+    pricing_planner_cta: "Indítsd el az irodád",
     mockup_aria_budget: "Élő költségvetés-előnézet",
     mockup_aria_guests: "Vendéglista és RSVP előnézet",
     mockup_aria_seating: "Ültetésrend-előnézet",

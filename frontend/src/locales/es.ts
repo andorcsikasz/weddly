@@ -2317,8 +2317,14 @@ const es: LocaleMessages = {
     pricing_title: "Sois nuestros invitados 18 meses.",
     pricing_body:
       "Acompáñanos desde el primer capítulo: durante los próximos dieciocho meses sois nuestros invitados, con todo incluido. Después son 7 € al mes, con dos semanas para probarlo y todas las funciones incluidas.",
-    pricing_amount: "7",
-    pricing_amount_decimal: "",
+    pricing_section_eyebrow: "Precios",
+    pricing_section_title: "Primero ganáis vosotros, luego nosotros.",
+    pricing_section_sub:
+      "Las tres primeras parejas de un proveedor corren de nuestra cuenta, así que no se cobra nada hasta que Weddly ya le ha puesto trabajo delante. Las parejas tienen dos semanas para probarlo todo y luego dieciocho meses como invitados.",
+    pricing_tab_couples: "Parejas",
+    pricing_tab_vendors: "Proveedores",
+    pricing_tab_planners: "Wedding planners",
+    pricing_from: "desde",
     pricing_amount_sub: "/ mes",
     pricing_early_note: "Mensual, cancela cuando quieras · sin compromiso anual.",
     pricing_value_note: "Planear la boda sin estrés, por el precio de un menú BigMac.",
@@ -2333,6 +2339,29 @@ const es: LocaleMessages = {
       "Recomendaciones: 1 mes de regalo por pareja invitada, 2 por proveedor",
     pricing_v2_note:
       "Cuando se llenen las plazas iniciales, las nuevas parejas empiezan con la prueba de 2 semanas.",
+    pricing_vendor_callout: "Tus 3 primeras parejas corren de nuestra cuenta.",
+    pricing_vendor_callout_detail:
+      "Tres parejas pueden llegar hasta ti antes de que se cobre nada. Solo empezamos a ganar después de que Weddly ya te haya puesto trabajo delante, y la primera cuota se factura desde el día 1 del mes siguiente.",
+    pricing_vendor_value_note:
+      "Tu página sigue publicada y editable sin suscripción. Pro es lo que abre las consultas directas, el calendario y la mesa de clientes.",
+    pricing_vendor_bullet_1: "Tus 3 primeras parejas corren de nuestra cuenta",
+    pricing_vendor_bullet_2: "Tu ficha sigue publicada, con suscripción o sin ella",
+    pricing_vendor_bullet_3: "Consultas directas, presupuestos y un hilo compartido",
+    pricing_vendor_bullet_4: "Calendario de disponibilidad · sincronización Google en dos sentidos",
+    pricing_vendor_bullet_5: "Cancela cuando quieras, tu página se queda",
+    pricing_vendor_cta: "Publica tu negocio",
+    pricing_planner_note: "Tres planes · Starter, Pro, Premium.",
+    pricing_planner_callout: "Entra pronto y tus 2 primeros años corren de nuestra cuenta.",
+    pricing_planner_callout_detail:
+      "Seguimos construyendo la mesa de planners junto a los estudios que la usan. Únete mientras sea así y tu plan corre de nuestra cuenta durante dos años, con todo incluido.",
+    pricing_planner_value_note:
+      "Starter lleva tus primeros clientes; Pro y Premium suben el techo a medida que crece el estudio.",
+    pricing_planner_bullet_1: "Cada boda que llevas, en un solo espacio",
+    pricing_planner_bullet_2: "Un perfil público en el directorio de planners",
+    pricing_planner_bullet_3: "Presupuesto, invitados, mesas y cronograma por cliente",
+    pricing_planner_bullet_4: "Weddly Points: mejor posición cuanto más entregas",
+    pricing_planner_bullet_5: "Mensual · cancela cuando quieras",
+    pricing_planner_cta: "Monta tu estudio",
     mockup_aria_budget: "Maqueta del presupuesto en vivo",
     mockup_aria_guests: "Maqueta de la lista de invitados y confirmaciones",
     mockup_aria_seating: "Maqueta del lienzo de mesas",
