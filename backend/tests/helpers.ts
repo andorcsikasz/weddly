@@ -16,6 +16,7 @@ import { __testPlaintextForHash } from "../src/auth/tokens";
 import { db, VISITOR_SYSTEM_USER_EMAIL } from "../src/db";
 import { seedSupplierTaxonomy } from "../src/domain/supplier_taxonomy";
 import { __resetGoogleCalendarFake } from "../src/lib/google_calendar";
+import { resetPublicStatsCache } from "../src/routes/public_stats";
 
 /** Single-use credential token tables whose values are now stored hashed
  *  (auth/tokens.ts). Tests can't read the plaintext from the row anymore, so
@@ -339,6 +340,12 @@ export function wipeAll(): void {
   // Drop any fake Google calendars a prior test created so their event counts
   // don't leak into the next case's assertions.
   __resetGoogleCalendarFake();
+  // The landing-page counters are memoised for 60s IN PROCESS, so wiping the
+  // tables is not enough: a suite that ran less than a minute earlier leaves
+  // real counts in the cache, and the next "0/0 on an empty database" assertion
+  // reads them instead of the empty tables it just created. Passes alone, fails
+  // in a full run, which is the shape that wastes an afternoon.
+  resetPublicStatsCache();
 }
 
 /** Turn the global go-live switch ON for this test. Entitlement is DEFERRED by
