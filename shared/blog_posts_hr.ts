@@ -643,4 +643,281 @@ export const BLOG_POSTS_HR: BlogTranslationsBySlug = {
       },
     ],
   },
+  "eskuvoszervezesi-checklist-6-honapra": {
+    category: "Planiranje",
+    title: "Plan priprema u 6 mjeseci: što riješiti i kada",
+    lead: "Ako do vjenčanja imate šest mjeseci: sažeta vremenska crta od velikih odluka do zadnjeg tjedna, da se ništa ne nagomila na kraju.",
+    seo_title: "Plan priprema za vjenčanje u 6 mjeseci · Weddly",
+    seo_description:
+      "Praktičan plan priprema za 6 mjeseci: što riješiti šest, četiri, dva i mjesec dana prije vjenčanja, te u zadnjem tjednu.",
+    body: [
+      {
+        type: "p",
+        text: "Šest mjeseci do vjenčanja sasvim je izvedivo. Puno parova ima točno toliko, a uži prozor pripreme često učini usredotočenijima i manje raspršenima. Kvaka je u tome što ono što je na popisu za 12 mjeseci mirna odluka, ovdje postaje hitno. Ako prvi tjedni prođu dobro, ostatak se obično posloži sam.",
+      },
+      {
+        type: "p",
+        text: "U nastavku: što riješiti u kojoj fazi da se ništa ne nagomila na kraju.",
+      },
+      { type: "h2", text: "Šest mjeseci prije" },
+      {
+        type: "p",
+        text: "Ovo su odluke o kojima ovisi sve ostalo. U planu za 12 mjeseci razvukli biste ih kroz prvo tromjesečje; ovdje ih želite zaključiti u tjedan ili dva.",
+      },
+      {
+        type: "ul",
+        items: [
+          "odredite datum,",
+          "dogovorite stil,",
+          "postavite gornju granicu budžeta,",
+          "procijenite broj gostiju,",
+          "potpišite ugovor za prostor,",
+          "rezervirajte ključne dobavljače (foto, glazba),",
+          "prijavite namjeru sklapanja braka u matičnom uredu.",
+        ],
+      },
+      { type: "h3", text: "Savjet" },
+      {
+        type: "p",
+        text: "Neka prvi tjedan bude samo o prostoru i datumu. Nemojte u to miješati vjenčanicu, dekoraciju ni raspored sjedenja dok to dvoje ne sjedne. Sve ostalo slaže se prema njima.",
+      },
+      { type: "h2", text: "Četiri mjeseca prije" },
+      { type: "p", text: "Nakon velikih odluka dolaze detalji kojima treba vremena i probe." },
+      {
+        type: "ul",
+        items: [
+          "prva verzija popisa uzvanika,",
+          "dizajn pozivnica,",
+          "postavljanje RSVP-a,",
+          "prve probe vjenčanice i odijela,",
+          "smjer dekoracije,",
+          "rezerviran voditelj obreda,",
+          "zatražene ponude za meni i šank.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Budžet sada osvježavajte stvarnim ponudama, ne procjenama. Obično se baš tu pokaže da jednu ili dvije stavke treba stisnuti.",
+      },
+      { type: "h2", text: "Dva do tri mjeseca prije" },
+      { type: "p", text: "Odgovori i dorada. Ono što je bio plan poprima konačan oblik." },
+      {
+        type: "ul",
+        items: [
+          "pozivnice poslane,",
+          "određen rok za potvrdu dolaska (uz šest mjeseci ciljajte 4-5 tjedana prije vjenčanja),",
+          "prikupite izbor menija,",
+          "zaključite smještaj i prijevoz,",
+          "prva skica rasporeda sjedenja,",
+          "dizajn tiskanih materijala (brojevi stolova, kartice s imenima),",
+          "objasnite kumovima njihove službene zadatke.",
+        ],
+      },
+      { type: "h3", text: "Savjet" },
+      {
+        type: "p",
+        text: "Nemojte pozivnicu ostaviti za zadnji čas. Uz šest mjeseci pošaljite je najkasnije krajem trećeg mjeseca; većini gostiju treba nekoliko tjedana da odgovori.",
+      },
+      { type: "h2", text: "Mjesec dana prije" },
+      {
+        type: "p",
+        text: "Faza zaključivanja. Manje novih ideja, više toga da svi čitaju iste, svježe informacije.",
+      },
+      {
+        type: "ul",
+        items: [
+          "javite konačan broj gostiju,",
+          "zaključajte raspored sjedenja,",
+          "ispišite brojeve stolova i kartice s imenima,",
+          "dogovorite plan dana s dobavljačima,",
+          "provjerite rokove plaćanja,",
+          "objasnite obitelji i kumovima dolazak, ulogu i satnicu.",
+        ],
+      },
+      { type: "h2", text: "Tjedan dana prije" },
+      { type: "p", text: "Ostalo je samo fino podešavanje." },
+      {
+        type: "ul",
+        items: [
+          "riješite zadnje promjene među gostima,",
+          "pregledajte tiskane materijale,",
+          "potvrde dobavljača,",
+          "spakirajte komplet za hitne slučajeve,",
+          "odmorite se.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Da, odmor je na popisu. Nakon šest mjeseci zbijenih priprema zadnji tjedan treba biti sporiji od onih prije njega.",
+      },
+      { type: "h2", text: "Sažetak" },
+      {
+        type: "p",
+        text: "Šest mjeseci je dovoljno. Kvaka je u tome da prva dva-tri tjedna budu usredotočena: prostor, datum, ključni dobavljači. Kad to sjedne, ostatak ide po užoj, ali još uvijek čitljivoj vremenskoj crti. Zajednički popis zadataka, popis uzvanika koji je uvijek svjež, budžet koji se mijenja s vama i jedno mjesto u koje oboje gledate. To je dovoljno.",
+      },
+      {
+        type: "cta",
+        lead: "Weddly drži vaš budžet, popis uzvanika, potvrde dolaska i raspored sjedenja na okupu, da ne morate planirati iz nepovezanih tablica.",
+        href: "/signup",
+        label: "Počnite planirati",
+      },
+      { type: "h2", text: "Česta pitanja" },
+      { type: "h3", text: "Može li se vjenčanje isplanirati u 6 mjeseci?" },
+      {
+        type: "p",
+        text: "Može, ako su prvi tjedni usredotočeni. Većina parova to iznese u šest mjeseci, pogotovo ako broj gostiju nije ekstreman.",
+      },
+      { type: "h3", text: "Kada poslati pozivnice kad imate šest mjeseci?" },
+      {
+        type: "p",
+        text: "Najkasnije 8 do 12 tjedana prije vjenčanja, da gosti imaju vremena odgovoriti, a vi zaključiti broj.",
+      },
+      { type: "h3", text: "Što je teže izvesti u 6 mjeseci?" },
+      {
+        type: "p",
+        text: "Vjenčanicu po mjeri kad salon ima dugu listu čekanja. Tražene fotografe ili bendove koji se rezerviraju godinu dana unaprijed. Velika međunarodna vjenčanja, gdje se prije pozivnice obično šalje najava datuma. Za to je 8 do 12 mjeseci realnije.",
+      },
+      { type: "h3", text: "Kada raspored sjedenja treba biti konačan?" },
+      {
+        type: "p",
+        text: "Nakon zadnjih potvrda dolaska, obično 2 do 3 tjedna prije vjenčanja.",
+      },
+    ],
+  },
+  "eskuvoi-hagyomanyok-praktikusan": {
+    category: "Običaji",
+    title: "Vjenčani običaji, praktično: tko stavlja prsten i na koju ruku?",
+    lead: "Zaručnički prsten, vjenčano prstenje, ples s mladenkom, bacanje buketa: što zadržati, što preoblikovati, a što preskočiti.",
+    seo_title: "Vjenčani običaji, praktično · Weddly",
+    seo_description:
+      "Zaručnički prsten, vjenčano prstenje, ples s mladenkom, bacanje buketa: praktičan prolaz kroz klasične mađarske vjenčane običaje.",
+    body: [
+      {
+        type: "p",
+        text: "Vjenčani običaji katkad su predivni, a katkad zbunjujući. Tko prvi stavlja prsten? Na kojoj se ruci nosi vjenčani prsten? Što se sa zaručničkim prstenom događa tijekom obreda? I mora li se doista poštovati svaki stari običaj?",
+      },
+      {
+        type: "p",
+        text: "Dobra vijest: današnji vjenčani običaji uglavnom su mogućnosti, a ne pravila. Slijedi praktičan prolaz kroz najčešće.",
+      },
+      { type: "h2", text: "1. Zaručnički i vjenčani prsten" },
+      {
+        type: "p",
+        text: "Zaručnički prsten obično se daruje pri prosidbi, često s centralnim kamenom poput dijamanta. Vjenčani prsten stavlja se tijekom obreda i predstavlja bračni zavjet.",
+      },
+      { type: "h3", text: "Savjet" },
+      {
+        type: "p",
+        text: "Mnogi parovi nakon vjenčanja nose oba. Uobičajeno je prvo staviti vjenčani prsten (bliže srcu), a zaručnički preko njega.",
+      },
+      { type: "h2", text: "2. Koja ruka?" },
+      {
+        type: "p",
+        text: "U Mađarskoj zaručnički prsten tradicionalno stoji na lijevom prstenjaku do vjenčanja, a nakon toga vjenčani prsten preuzima desni prstenjak. U Hrvatskoj se vjenčano prstenje također najčešće nosi na desnoj ruci. Čvrsto pravilo to nije: obitelj, udobnost ili osobni ukus obično presude.",
+      },
+      { type: "h3", text: "Savjet" },
+      {
+        type: "p",
+        text: "Prije samog dana dogovorite što mladenka želi sa zaručničkim prstenom tijekom obreda. Tri su uobičajene mogućnosti: ostaviti ga na jednoj ruci i vjenčani staviti na drugu; premjestiti ga neposredno prije obreda; ili ga skinuti za obred pa ga poslije vratiti uz vjenčani.",
+      },
+      { type: "h2", text: "3. Tko prvi stavlja prsten?" },
+      {
+        type: "p",
+        text: "Na većini građanskih i crkvenih obreda mladoženja prvi stavlja prsten mladenki, a zatim ona njemu. Nije univerzalno, ali je najčešći redoslijed.",
+      },
+      { type: "p", text: "Prije obreda provjerite:" },
+      {
+        type: "ul",
+        items: [
+          "odgovaraju li prsteni,",
+          "zna li netko tko ih predaje voditelju obreda,",
+          "je li spreman jastučić, kutijica ili tanjurić,",
+          "znaju li kumovi ili dijete s prstenjem kad je njihov trenutak.",
+        ],
+      },
+      { type: "h3", text: "Savjet" },
+      {
+        type: "p",
+        text: "Od uzbuđenja, vrućine ili treme prsti znaju malo nateći. Nema veze ako prsten ne klizne iz prve. Bitan je trenutak, ne koreografija.",
+      },
+      { type: "h2", text: "4. Tko čuva prstenje prije obreda?" },
+      {
+        type: "p",
+        text: "Obično mladoženja, kum, organizator vjenčanja ili voditelj obreda. Odlučite rano i neka postoji jedna osoba koja zna gdje je prstenje, preda ga na vrijeme i provjeri da su oba tu.",
+      },
+      { type: "h2", text: "5. Nešto staro, novo, posuđeno i plavo" },
+      {
+        type: "p",
+        text: "Običaj „nešto staro, nešto novo, nešto posuđeno i nešto plavo” pojavljuje se na mnogim vjenčanjima. Nije obavezan, ali je lijep simboličan detalj.",
+      },
+      {
+        type: "ul",
+        items: [
+          "staro: obiteljski nakit, bakina maramica,",
+          "novo: haljina, cipele ili nakit,",
+          "posuđeno: ukras za kosu bliske prijateljice,",
+          "plavo: podvezica, vez, vrpca ili sitan detalj.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Ne mora biti upadljivo. Mali plavi šav ili obiteljski privjesak savršeno odrađuju posao.",
+      },
+      { type: "h2", text: "6. Ples s mladenkom" },
+      {
+        type: "p",
+        text: "U Mađarskoj se ples s mladenkom (menyasszonytánc) tradicionalno održava prije ponoći: gosti plaćaju ples s mladenkom. Nakon ponoći slijedi menyecsketánc, kad se mladenka presvuče u drugu odjeću. Hrvatska ima svoju inačicu istoga, uz otkup mladenke i skupljanje novca tijekom plesa.",
+      },
+      {
+        type: "p",
+        text: "Parovi sve češće prilagođavaju običaj: zadrže ga, skrate ili posve preskoče.",
+      },
+      {
+        type: "p",
+        text: "Ako ga zadržite, dogovorite unaprijed tko ga najavljuje, gdje stoji košarica, koliko traje, uz koju glazbu i je li mladenki uopće ugodno s tim običajem.",
+      },
+      { type: "h2", text: "7. Bacanje buketa" },
+      {
+        type: "p",
+        text: "Klasika, ali ne za svakoga. Ako mladenka ne želi baciti svoj buket, može se pripremiti zaseban buket za bacanje.",
+      },
+      { type: "p", text: "Alternative:" },
+      {
+        type: "ul",
+        items: [
+          "igra s vrpcama i buketom,",
+          "zajednička fotografija sa slobodnim gostima,",
+          "predaja buketa osobi koja vam nešto znači,",
+          "potpuno izostavljanje bacanja.",
+        ],
+      },
+      {
+        type: "cta",
+        lead: "Vjenčani običaji najbolje rade kad pristaju priči para. Zadržite ono što vam nešto znači, a ostalo oblikujte tako da vam bude prirodno.",
+        href: "/signup",
+        label: "Složite to u Weddlyju",
+      },
+      { type: "h2", text: "Česta pitanja" },
+      { type: "h3", text: "Na kojoj se ruci nosi vjenčani prsten?" },
+      {
+        type: "p",
+        text: "U Hrvatskoj najčešće na desnoj ruci, kao i u Mađarskoj. Zaručnički prsten često stoji uz njega ili ostaje na lijevoj ruci.",
+      },
+      { type: "h3", text: "Je li ples s mladenkom obavezan?" },
+      {
+        type: "p",
+        text: "Nije. Sve više parova ga izostavi, skrati ili preoblikuje ako im ne odgovara.",
+      },
+      { type: "h3", text: "Što znači „nešto posuđeno”?" },
+      {
+        type: "p",
+        text: "Predmet za sreću od nekoga koga volite, koji se nakon vjenčanja vraća. Može biti ukras za kosu, veo, komad nakita, bilo što sitno.",
+      },
+      { type: "h3", text: "Koliko presvlačenja tijekom vjenčanja?" },
+      {
+        type: "p",
+        text: "Koliko god želite. Klasika je jedno presvlačenje, ali mnogi parovi cijelu večer provedu u istoj odjeći.",
+      },
+    ],
+  },
 };

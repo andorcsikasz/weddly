@@ -125,9 +125,27 @@ describe("blog: blogCopy resolves one language for copy AND eyebrow", () => {
     published_at: "2026-01-01",
     read_minutes: 4,
     category: { hu: "Költségvetés", en: "Budget", de: "Budget-DE" },
-    hu: { title: "HU", lead: "", seo_title: "", seo_description: "", body: [{ type: "p", text: "hu" }] },
-    en: { title: "EN", lead: "", seo_title: "", seo_description: "", body: [{ type: "p", text: "en" }] },
-    de: { title: "DE", lead: "", seo_title: "", seo_description: "", body: [{ type: "p", text: "de" }] },
+    hu: {
+      title: "HU",
+      lead: "",
+      seo_title: "",
+      seo_description: "",
+      body: [{ type: "p", text: "hu" }],
+    },
+    en: {
+      title: "EN",
+      lead: "",
+      seo_title: "",
+      seo_description: "",
+      body: [{ type: "p", text: "en" }],
+    },
+    de: {
+      title: "DE",
+      lead: "",
+      seo_title: "",
+      seo_description: "",
+      body: [{ type: "p", text: "de" }],
+    },
   };
 
   test("a translated locale gets its own copy and its own label", () => {

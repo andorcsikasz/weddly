@@ -637,4 +637,284 @@ export const BLOG_POSTS_DE: BlogTranslationsBySlug = {
       },
     ],
   },
+  "eskuvoszervezesi-checklist-6-honapra": {
+    category: "Planung",
+    title: "Hochzeits-Checkliste für 6 Monate: was wann drankommt",
+    lead: "Wenn bis zur Hochzeit sechs Monate bleiben: ein gestraffter Zeitplan von den großen Entscheidungen bis zur letzten Woche, damit sich am Ende nichts staut.",
+    seo_title: "Hochzeits-Checkliste für 6 Monate · Weddly",
+    seo_description:
+      "Praktische 6-Monats-Checkliste: was sechs, vier, zwei und einen Monat vor der Hochzeit ansteht, und was in der letzten Woche.",
+    body: [
+      {
+        type: "p",
+        text: "Sechs Monate bis zur Hochzeit sind gut zu schaffen. Viele Paare haben genau so viel, und das engere Fenster macht die Planung oft konzentrierter statt ausufernder. Der Haken: Was auf einer 12-Monats-Liste eine gemütliche Entscheidung ist, wird hier dringend. Wenn die ersten Wochen gut laufen, ordnet sich der Rest meist von selbst.",
+      },
+      {
+        type: "p",
+        text: "Im Folgenden: was in welcher Phase drankommt, damit sich am Ende nichts staut.",
+      },
+      { type: "h2", text: "6 Monate vorher" },
+      {
+        type: "p",
+        text: "Das sind die Entscheidungen, von denen alles andere abhängt. In einem 12-Monats-Plan würdet ihr sie über das erste Quartal verteilen, hier sollten sie in ein, zwei Wochen stehen.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Datum festlegen,",
+          "Stil klären,",
+          "Budgetobergrenze setzen,",
+          "Gästezahl schätzen,",
+          "Location unterschreiben,",
+          "die wichtigsten Dienstleister buchen (Foto, Musik),",
+          "die Eheschließung beim Standesamt anmelden.",
+        ],
+      },
+      { type: "h3", text: "Tipp" },
+      {
+        type: "p",
+        text: "Lasst die erste Woche nur um Location und Datum gehen. Mischt weder Kleid noch Deko noch Tischordnung hinein, solange diese beiden nicht stehen. Alles andere richtet sich danach.",
+      },
+      { type: "h2", text: "4 Monate vorher" },
+      {
+        type: "p",
+        text: "Nach den großen Entscheidungen die Details, die Vorlauf und Anproben brauchen.",
+      },
+      {
+        type: "ul",
+        items: [
+          "erster Entwurf der Gästeliste,",
+          "Gestaltung der Einladungen,",
+          "RSVP aufsetzen,",
+          "erste Anproben für Kleid und Anzug,",
+          "Richtung der Deko,",
+          "Trauredner gebucht,",
+          "Angebote für Menü und Bar angefragt.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Aktualisiert das Budget jetzt mit echten Angeboten statt mit Schätzungen. Meist zeigt sich hier, dass ein, zwei Posten gekürzt werden müssen.",
+      },
+      { type: "h2", text: "2 bis 3 Monate vorher" },
+      { type: "p", text: "Rückmeldungen und Feinschliff. Aus dem Plan wird die endgültige Form." },
+      {
+        type: "ul",
+        items: [
+          "Einladungen verschickt,",
+          "RSVP-Frist gesetzt (bei sechs Monaten: 4 bis 5 Wochen vor der Hochzeit),",
+          "Menüwahl einsammeln,",
+          "Übernachtung und Transport festzurren,",
+          "erster Entwurf der Tischordnung,",
+          "Drucksachen gestalten (Tischnummern, Platzkarten),",
+          "Trauzeugen über ihre offiziellen Aufgaben informieren.",
+        ],
+      },
+      { type: "h3", text: "Tipp" },
+      {
+        type: "p",
+        text: "Schiebt die Einladung nicht auf. Bei sechs Monaten geht sie spätestens Ende des dritten Monats raus; die meisten Gäste brauchen ein paar Wochen zum Antworten.",
+      },
+      { type: "h2", text: "1 Monat vorher" },
+      {
+        type: "p",
+        text: "Die Phase des Festzurrens. Weniger neue Ideen, mehr davon, dass alle denselben aktuellen Stand lesen.",
+      },
+      {
+        type: "ul",
+        items: [
+          "endgültige Personenzahl durchgeben,",
+          "Tischordnung schließen,",
+          "Tischnummern und Platzkarten drucken,",
+          "Ablaufplan mit den Dienstleistern abstimmen,",
+          "Zahlungsfristen prüfen,",
+          "Familie und Trauzeugen über Ankunft, Rolle und Zeiten informieren.",
+        ],
+      },
+      { type: "h2", text: "1 Woche vorher" },
+      { type: "p", text: "Es bleibt nur noch Feinjustierung." },
+      {
+        type: "ul",
+        items: [
+          "letzte Änderungen bei den Gästen einarbeiten,",
+          "Drucksachen durchsehen,",
+          "Bestätigungen der Dienstleister,",
+          "Notfallkoffer packen,",
+          "ausruhen.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Ja, Ausruhen steht auf der Liste. Nach sechs Monaten gestraffter Planung sollte die letzte Woche langsamer sein als die davor.",
+      },
+      { type: "h2", text: "Fazit" },
+      {
+        type: "p",
+        text: "Sechs Monate reichen. Der Trick ist, die ersten zwei, drei Wochen konzentriert zu halten: Location, Datum, die wichtigsten Dienstleister. Stehen die, läuft der Rest auf einem engeren, aber immer noch lesbaren Zeitplan. Eine gemeinsame Checkliste, eine Gästeliste, die aktuell bleibt, ein Budget, das sich mitbewegt, und ein Ort, auf den ihr beide schaut. Mehr braucht es nicht.",
+      },
+      {
+        type: "cta",
+        lead: "Weddly hält Budget, Gästeliste, RSVPs und Tischordnung zusammen, damit ihr nicht aus voneinander getrennten Tabellen heraus planen müsst.",
+        href: "/signup",
+        label: "Jetzt loslegen",
+      },
+      { type: "h2", text: "Häufige Fragen" },
+      { type: "h3", text: "Lässt sich eine Hochzeit in 6 Monaten planen?" },
+      {
+        type: "p",
+        text: "Ja, wenn die ersten Wochen konzentriert sind. Die meisten Paare schaffen es in sechs Monaten, vor allem wenn die Gästezahl nicht extrem ist.",
+      },
+      { type: "h3", text: "Wann sollten die Einladungen bei sechs Monaten raus?" },
+      {
+        type: "p",
+        text: "Spätestens 8 bis 12 Wochen vor der Hochzeit, damit die Gäste Zeit zum Antworten haben und ihr Zeit, die Zahl festzuzurren.",
+      },
+      { type: "h3", text: "Was ist in 6 Monaten schwerer zu bekommen?" },
+      {
+        type: "p",
+        text: "Ein maßgeschneidertes Brautkleid, wenn das Atelier eine lange Warteliste hat. Gefragte Fotografinnen oder Bands, die ein Jahr im Voraus ausgebucht sind. Große internationale Hochzeiten, bei denen sonst ein Save-the-Date vor der Einladung läuft. Dafür sind 8 bis 12 Monate realistischer.",
+      },
+      { type: "h3", text: "Wann sollte die Tischordnung endgültig sein?" },
+      {
+        type: "p",
+        text: "Nach den letzten Zusagen, typischerweise 2 bis 3 Wochen vor der Hochzeit.",
+      },
+    ],
+  },
+  "eskuvoi-hagyomanyok-praktikusan": {
+    category: "Bräuche",
+    title: "Hochzeitsbräuche, praktisch: Wer steckt den Ring an, und an welche Hand?",
+    lead: "Verlobungsring, Ehering, Brauttanz, Brautstrauß: was ihr behalten, was ihr umbauen und was ihr weglassen könnt.",
+    seo_title: "Hochzeitsbräuche, praktisch · Weddly",
+    seo_description:
+      "Verlobungsring, Ehering, Brauttanz, Brautstraußwurf: ein praktischer Durchgang durch die klassischen ungarischen Hochzeitsbräuche.",
+    body: [
+      {
+        type: "p",
+        text: "Hochzeitsbräuche sind mal wunderschön, mal verwirrend. Wer steckt den Ring zuerst an? An welcher Hand sitzt der Ehering? Was passiert während der Trauung mit dem Verlobungsring? Und muss man wirklich jeden alten Brauch mitmachen?",
+      },
+      {
+        type: "p",
+        text: "Die gute Nachricht: Hochzeitsbräuche sind heute größtenteils Angebote, keine Vorschriften. Ein praktischer Durchgang durch die häufigsten.",
+      },
+      { type: "h2", text: "1. Verlobungsring und Ehering" },
+      {
+        type: "p",
+        text: "Der Verlobungsring wird meist beim Antrag überreicht, oft mit einem Stein in der Mitte, etwa einem Diamanten. Der Ehering kommt während der Trauung an den Finger und steht für das Eheversprechen.",
+      },
+      { type: "h3", text: "Tipp" },
+      {
+        type: "p",
+        text: "Viele tragen nach der Hochzeit beide. Üblich ist, den Ehering zuerst anzustecken (näher am Herzen) und den Verlobungsring darüber.",
+      },
+      { type: "h2", text: "2. Welche Hand?" },
+      {
+        type: "p",
+        text: "Im deutschsprachigen Raum sitzt der Ehering traditionell am rechten Ringfinger, der Verlobungsring bis zur Hochzeit am linken. In Ungarn ist es genauso. Eine harte Regel ist das nicht: Familie, Bequemlichkeit oder der eigene Geschmack entscheiden oft.",
+      },
+      { type: "h3", text: "Tipp" },
+      {
+        type: "p",
+        text: "Klärt vor dem Tag, was die Braut während der Trauung mit dem Verlobungsring machen möchte. Drei übliche Wege: an der einen Hand lassen und den Ehering an die andere stecken; ihn kurz vor der Trauung wechseln; oder ihn für die Trauung abnehmen und danach neben den Ehering stecken.",
+      },
+      { type: "h2", text: "3. Wer steckt den Ring zuerst an?" },
+      {
+        type: "p",
+        text: "Bei den meisten standesamtlichen und kirchlichen Trauungen steckt der Bräutigam der Braut den Ring zuerst an, danach sie ihm. Nicht überall, aber das ist die häufigste Reihenfolge.",
+      },
+      { type: "p", text: "Prüft vor der Trauung, dass:" },
+      {
+        type: "ul",
+        items: [
+          "die Ringe passen,",
+          "jemand weiß, wer sie der Traurednerin überreicht,",
+          "ein Ringkissen, eine Schachtel oder ein Schälchen bereitliegt,",
+          "die Trauzeugen oder das Ringkind ihren Einsatz kennen.",
+        ],
+      },
+      { type: "h3", text: "Tipp" },
+      {
+        type: "p",
+        text: "Aufregung, Hitze oder Nervosität lassen Finger leicht anschwellen. Es macht nichts, wenn der Ring nicht beim ersten Versuch rutscht. Der Moment zählt, nicht die Choreografie.",
+      },
+      { type: "h2", text: "4. Wer hat die Ringe vor der Trauung?" },
+      {
+        type: "p",
+        text: "Meist der Bräutigam, ein Trauzeuge, die Hochzeitsplanerin oder die Traurednerin. Entscheidet früh, und benennt eine Person, die weiß, wo die Ringe sind, sie rechtzeitig übergibt und prüft, dass beide da sind.",
+      },
+      { type: "h2", text: "5. Etwas Altes, Neues, Geliehenes, Blaues" },
+      {
+        type: "p",
+        text: "Der Brauch „etwas Altes, etwas Neues, etwas Geliehenes, etwas Blaues” taucht auf vielen Hochzeiten auf. Pflicht ist er nicht, aber ein schöner symbolischer Zug.",
+      },
+      {
+        type: "ul",
+        items: [
+          "alt: Familienschmuck, das Taschentuch der Großmutter,",
+          "neu: Kleid, Schuhe oder Schmuck,",
+          "geliehen: ein Haarschmuck von einer engen Freundin,",
+          "blau: ein Strumpfband, eine Stickerei, ein Band oder ein kleiner Akzent.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Es muss nicht auffallen. Eine kleine blaue Naht oder ein Anhänger aus der Familie reicht vollkommen.",
+      },
+      { type: "h2", text: "6. Der Brauttanz" },
+      {
+        type: "p",
+        text: "In Ungarn findet der Brauttanz (menyasszonytánc) traditionell vor Mitternacht statt: Die Gäste zahlen für einen Tanz mit der Braut. Nach Mitternacht folgt der menyecsketánc, wenn die Braut in ein zweites Kleid gewechselt hat.",
+      },
+      {
+        type: "p",
+        text: "Immer mehr Paare bauen den Brauch um: behalten, kürzen oder ganz weglassen.",
+      },
+      {
+        type: "p",
+        text: "Wenn ihr ihn behaltet, klärt vorher, wer ihn ansagt, wo der Korb steht, wie lange er dauert, welche Musik läuft und ob der Braut damit überhaupt wohl ist.",
+      },
+      { type: "h2", text: "7. Der Brautstraußwurf" },
+      {
+        type: "p",
+        text: "Ein Klassiker, aber nicht für jede. Wenn die Braut ihren echten Strauß nicht werfen möchte, lässt sich ein zweiter Wurfstrauß vorbereiten.",
+      },
+      { type: "p", text: "Alternativen:" },
+      {
+        type: "ul",
+        items: [
+          "das Bänderspiel mit dem Strauß,",
+          "ein Gruppenfoto mit den unverheirateten Gästen,",
+          "den Strauß an einen bestimmten Menschen überreichen,",
+          "den Wurf ganz weglassen.",
+        ],
+      },
+      {
+        type: "cta",
+        lead: "Hochzeitsbräuche funktionieren am besten, wenn sie zur Geschichte des Paares passen. Behaltet, was euch etwas bedeutet, und formt den Rest so, dass er sich natürlich anfühlt.",
+        href: "/signup",
+        label: "In Weddly planen",
+      },
+      { type: "h2", text: "Häufige Fragen" },
+      { type: "h3", text: "An welcher Hand sitzt der Ehering?" },
+      {
+        type: "p",
+        text: "In Deutschland, Österreich und Ungarn traditionell am rechten Ringfinger. Der Verlobungsring sitzt oft daneben oder bleibt links.",
+      },
+      { type: "h3", text: "Ist der Brauttanz Pflicht?" },
+      {
+        type: "p",
+        text: "Nein. Immer mehr Paare lassen ihn weg, kürzen ihn oder gestalten ihn um, wenn er nicht zu ihnen passt.",
+      },
+      { type: "h3", text: "Was bedeutet „etwas Geliehenes”?" },
+      {
+        type: "p",
+        text: "Ein Glücksstück von einem Menschen, den ihr liebt, das nach dem Tag zurückgeht. Ein Haarschmuck, ein Schleier, ein Schmuckstück, irgendetwas Kleines.",
+      },
+      { type: "h3", text: "Wie viele Outfitwechsel während der Hochzeit?" },
+      {
+        type: "p",
+        text: "So viele ihr wollt. Klassisch ist ein einziger Wechsel, aber viele Paare tragen den ganzen Abend dasselbe.",
+      },
+    ],
+  },
 };

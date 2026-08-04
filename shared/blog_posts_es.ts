@@ -216,7 +216,10 @@ export const BLOG_POSTS_ES: BlogTranslationsBySlug = {
         text: "Un buen plano no trata solo de quién se sienta al lado de quién: también piensa en dónde se sentirá cada uno más a gusto dentro de la sala.",
       },
       { type: "h2", text: "3. Acertad con la versión impresa" },
-      { type: "p", text: "La distribución de mesas no termina en la pantalla. Seguramente necesitaréis:" },
+      {
+        type: "p",
+        text: "La distribución de mesas no termina en la pantalla. Seguramente necesitaréis:",
+      },
       {
         type: "ul",
         items: [
@@ -643,6 +646,286 @@ export const BLOG_POSTS_ES: BlogTranslationsBySlug = {
       {
         type: "p",
         text: "Fecha, sitio, hora, fecha límite del RSVP y todo lo que ayude al invitado a decidir.",
+      },
+    ],
+  },
+  "eskuvoszervezesi-checklist-6-honapra": {
+    category: "Planificación",
+    title: "Checklist de boda en 6 meses: qué resolver y cuándo",
+    lead: "Si os quedan seis meses hasta la boda: un calendario comprimido, desde las decisiones grandes hasta la última semana, para que nada se acumule al final.",
+    seo_title: "Checklist de boda en 6 meses · Weddly",
+    seo_description:
+      "Checklist práctica de 6 meses: qué resolver seis, cuatro, dos y un mes antes de la boda, y en la última semana.",
+    body: [
+      {
+        type: "p",
+        text: "Seis meses hasta la boda es de sobra manejable. Muchísimas parejas tienen exactamente eso, y la ventana más corta suele hacer la organización más enfocada y menos dispersa. El truco: lo que en una checklist de 12 meses es una decisión tranquila, aquí se vuelve urgente. Si las primeras semanas van bien, el resto tiende a colocarse solo.",
+      },
+      {
+        type: "p",
+        text: "A continuación, qué resolver en cada etapa para que nada se acumule al final.",
+      },
+      { type: "h2", text: "6 meses antes" },
+      {
+        type: "p",
+        text: "Estas son las decisiones de las que depende todo lo demás. En un plan de 12 meses las repartiríais durante el primer trimestre; aquí conviene cerrarlas en una o dos semanas.",
+      },
+      {
+        type: "ul",
+        items: [
+          "elegir la fecha,",
+          "decidir el estilo,",
+          "fijar un techo de presupuesto,",
+          "estimar el número de invitados,",
+          "firmar el sitio,",
+          "reservar los proveedores clave (foto, música),",
+          "presentar los papeles en el registro civil.",
+        ],
+      },
+      { type: "h3", text: "Consejo" },
+      {
+        type: "p",
+        text: "Que la primera semana trate solo del sitio y de la fecha. No mezcléis vestido, decoración ni mesas hasta que esos dos estén cerrados. Todo lo demás se ordena a partir de ellos.",
+      },
+      { type: "h2", text: "4 meses antes" },
+      {
+        type: "p",
+        text: "Después de las decisiones grandes, los detalles que necesitan plazo y pruebas.",
+      },
+      {
+        type: "ul",
+        items: [
+          "primer borrador de la lista de invitados,",
+          "diseño de las invitaciones,",
+          "montar el flujo de RSVP,",
+          "primeras pruebas de vestido y traje,",
+          "dirección de la decoración,",
+          "oficiante o maestro de ceremonias reservado,",
+          "pedir presupuestos de menú y barra.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Actualizad ya el presupuesto con precios reales, no con estimaciones. Suele ser aquí donde una o dos partidas empiezan a necesitar recorte.",
+      },
+      { type: "h2", text: "2-3 meses antes" },
+      { type: "p", text: "Respuestas y ajustes. Lo que era un plan toma su forma final." },
+      {
+        type: "ul",
+        items: [
+          "invitaciones enviadas,",
+          "fecha límite del RSVP fijada (con seis meses por delante, apuntad a 4-5 semanas antes de la boda),",
+          "recoger la elección de menú,",
+          "cerrar alojamiento y transporte,",
+          "primer borrador de mesas,",
+          "diseñar la papelería (números de mesa, tarjetas de sitio),",
+          "explicar a los testigos sus tareas oficiales.",
+        ],
+      },
+      { type: "h3", text: "Consejo" },
+      {
+        type: "p",
+        text: "No dejéis la invitación para el último momento. Con seis meses, enviadla como muy tarde a final del tercer mes: la mayoría de los invitados necesita unas semanas para contestar.",
+      },
+      { type: "h2", text: "1 mes antes" },
+      {
+        type: "p",
+        text: "Fase de cierre. Menos ideas nuevas y más que todo el mundo lea la misma información actualizada.",
+      },
+      {
+        type: "ul",
+        items: [
+          "dar el número final de comensales,",
+          "cerrar el plano de mesas,",
+          "imprimir números de mesa y tarjetas de sitio,",
+          "acordar la escaleta con los proveedores,",
+          "revisar los plazos de pago,",
+          "explicar a la familia y a los testigos la hora de llegada, su papel y los tiempos.",
+        ],
+      },
+      { type: "h2", text: "1 semana antes" },
+      { type: "p", text: "Solo quedan los ajustes finos." },
+      {
+        type: "ul",
+        items: [
+          "resolver los últimos cambios de invitados,",
+          "revisar la papelería,",
+          "confirmaciones de los proveedores,",
+          "preparar el kit de emergencia,",
+          "descansar.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Sí, descansar está en la lista. Después de seis meses de organización comprimida, la última semana debería ir más despacio que las anteriores.",
+      },
+      { type: "h2", text: "Resumen" },
+      {
+        type: "p",
+        text: "Seis meses bastan. El truco es que las primeras dos o tres semanas estén enfocadas: sitio, fecha, proveedores clave. Con eso cerrado, el resto avanza por un calendario más apretado pero aún legible. Una checklist compartida, una lista de invitados al día, un presupuesto que se mueve con vosotros y un solo sitio que los dos miráis. Con eso basta.",
+      },
+      {
+        type: "cta",
+        lead: "Weddly mantiene juntos vuestro presupuesto, la lista de invitados, los RSVP y el plano de mesas, para que no tengáis que organizar desde hojas de cálculo desconectadas.",
+        href: "/signup",
+        label: "Empezar a planificar",
+      },
+      { type: "h2", text: "Preguntas frecuentes" },
+      { type: "h3", text: "¿Se puede organizar una boda en 6 meses?" },
+      {
+        type: "p",
+        text: "Sí, si las primeras semanas están enfocadas. La mayoría de las parejas lo consigue en seis meses, sobre todo si el número de invitados no es desmesurado.",
+      },
+      { type: "h3", text: "¿Cuándo hay que enviar las invitaciones con seis meses por delante?" },
+      {
+        type: "p",
+        text: "Como muy tarde entre 8 y 12 semanas antes de la boda, para que los invitados tengan tiempo de contestar y vosotros de cerrar el número final.",
+      },
+      { type: "h3", text: "¿Qué es más difícil de conseguir en 6 meses?" },
+      {
+        type: "p",
+        text: "Un vestido de novia hecho a medida cuando el taller tiene lista de espera larga. Fotógrafos o grupos muy demandados que se reservan con un año. Bodas internacionales grandes, donde lo normal es enviar un aviso de reserva antes de la invitación. Para eso, entre 8 y 12 meses es más realista.",
+      },
+      { type: "h3", text: "¿Cuándo debería estar cerrado el plano de mesas?" },
+      {
+        type: "p",
+        text: "Después de los últimos RSVP, normalmente entre 2 y 3 semanas antes de la boda.",
+      },
+    ],
+  },
+  "eskuvoi-hagyomanyok-praktikusan": {
+    category: "Tradiciones",
+    title: "Tradiciones de boda, en la práctica: ¿quién pone el anillo y dónde?",
+    lead: "Anillo de pedida, alianza, baile de la novia, ramo: qué conservar, qué reformular y qué dejar fuera.",
+    seo_title: "Tradiciones de boda, en la práctica · Weddly",
+    seo_description:
+      "Anillo de pedida, alianza, baile de la novia, lanzamiento del ramo: un recorrido práctico por las costumbres clásicas de la boda húngara.",
+    body: [
+      {
+        type: "p",
+        text: "Las tradiciones de boda a veces son preciosas y a veces confusas. ¿Quién pone el anillo primero? ¿En qué mano va la alianza? ¿Qué pasa con el anillo de pedida durante la ceremonia? ¿Y de verdad hay que cumplir todas las costumbres antiguas?",
+      },
+      {
+        type: "p",
+        text: "La buena noticia: hoy las tradiciones de boda son casi todas opciones, no reglas. Un repaso práctico a las más habituales.",
+      },
+      { type: "h2", text: "1. Anillo de pedida y alianza" },
+      {
+        type: "p",
+        text: "El anillo de pedida se entrega normalmente en la petición, a menudo con una piedra central como un diamante. La alianza se pone durante la ceremonia y representa el compromiso del matrimonio.",
+      },
+      { type: "h3", text: "Consejo" },
+      {
+        type: "p",
+        text: "Muchas parejas llevan los dos después de la boda. Un orden habitual es ponerse primero la alianza (más cerca del corazón) y encima el anillo de pedida.",
+      },
+      { type: "h2", text: "2. ¿En qué mano?" },
+      {
+        type: "p",
+        text: "En Hungría el anillo de pedida se lleva tradicionalmente en el anular izquierdo hasta la boda, y después la alianza pasa al anular derecho. En España la alianza también suele ir en la mano derecha, aunque en Cataluña y en buena parte de Latinoamérica se lleva en la izquierda. En ningún caso es una regla rígida: la familia, la comodidad o el gusto personal suelen decidir.",
+      },
+      { type: "h3", text: "Consejo" },
+      {
+        type: "p",
+        text: "Decidid antes del día qué quiere hacer la novia con el anillo de pedida durante la ceremonia. Tres opciones habituales: dejarlo en una mano y poner la alianza en la otra; cambiarlo de mano justo antes de la ceremonia; o quitárselo para la ceremonia y volver a ponérselo después junto a la alianza.",
+      },
+      { type: "h2", text: "3. ¿Quién pone el anillo primero?" },
+      {
+        type: "p",
+        text: "En la mayoría de ceremonias civiles y religiosas, el novio pone primero el anillo a la novia y después ella hace lo mismo. No es universal, pero sí el orden más común.",
+      },
+      { type: "p", text: "Antes de la ceremonia comprobad que:" },
+      {
+        type: "ul",
+        items: [
+          "los anillos entran bien,",
+          "alguien sabe quién se los entrega al oficiante,",
+          "hay un cojín, una caja o un platillo preparado,",
+          "los testigos o quien lleva los anillos conocen su momento.",
+        ],
+      },
+      { type: "h3", text: "Consejo" },
+      {
+        type: "p",
+        text: "Los nervios, el calor o la emoción pueden hinchar un poco los dedos. No pasa nada si el anillo no entra a la primera. Lo que cuenta es el momento, no la coreografía.",
+      },
+      { type: "h2", text: "4. ¿Quién guarda los anillos antes de la ceremonia?" },
+      {
+        type: "p",
+        text: "Normalmente el novio, un testigo, la persona que organiza la boda o el oficiante. Decididlo pronto y que haya alguien designado que sepa dónde están los anillos, los entregue a tiempo y compruebe que están los dos.",
+      },
+      { type: "h2", text: "5. Algo viejo, algo nuevo, algo prestado, algo azul" },
+      {
+        type: "p",
+        text: "La tradición de «algo viejo, algo nuevo, algo prestado y algo azul» aparece en muchas bodas. No es obligatoria, pero es un detalle simbólico bonito.",
+      },
+      {
+        type: "ul",
+        items: [
+          "viejo: una joya de familia, el pañuelo de la abuela,",
+          "nuevo: el vestido, los zapatos o una joya,",
+          "prestado: un adorno del pelo de una amiga cercana,",
+          "azul: una liga, un bordado, una cinta o un pequeño detalle.",
+        ],
+      },
+      {
+        type: "p",
+        text: "No hace falta que llame la atención. Una puntada azul pequeña o un colgante de familia funcionan perfectamente.",
+      },
+      { type: "h2", text: "6. El baile de la novia" },
+      {
+        type: "p",
+        text: "En Hungría el baile de la novia (menyasszonytánc) se hace tradicionalmente antes de medianoche: los invitados pagan por bailar con la novia. Después de medianoche llega el menyecsketánc, cuando la novia ya se ha cambiado a un segundo vestido.",
+      },
+      {
+        type: "p",
+        text: "Cada vez más parejas adaptan la costumbre: la mantienen, la acortan o la dejan fuera del todo.",
+      },
+      {
+        type: "p",
+        text: "Si la mantenéis, acordad de antemano quién la anuncia, dónde se pone la cesta, cuánto dura, qué música suena y si la novia está cómoda con la tradición.",
+      },
+      { type: "h2", text: "7. El lanzamiento del ramo" },
+      {
+        type: "p",
+        text: "Un clásico, pero no para todo el mundo. Si la novia no quiere lanzar su ramo, se puede preparar un ramo aparte para el lanzamiento.",
+      },
+      { type: "p", text: "Alternativas:" },
+      {
+        type: "ul",
+        items: [
+          "el juego del ramo con cintas,",
+          "una foto de grupo con los invitados solteros,",
+          "entregar el ramo a una persona que signifique algo,",
+          "no hacer el lanzamiento.",
+        ],
+      },
+      {
+        type: "cta",
+        lead: "Las tradiciones de boda funcionan mejor cuando encajan con la historia de la pareja. Conservad lo que significa algo para vosotros y dad al resto la forma que os salga natural.",
+        href: "/signup",
+        label: "Organizadlo con Weddly",
+      },
+      { type: "h2", text: "Preguntas frecuentes" },
+      { type: "h3", text: "¿En qué mano va la alianza?" },
+      {
+        type: "p",
+        text: "En Hungría y en la mayor parte de España, en el anular derecho; en Cataluña y en gran parte de Latinoamérica, en el izquierdo. El anillo de pedida suele ir al lado, o se queda en la otra mano.",
+      },
+      { type: "h3", text: "¿El baile de la novia es obligatorio?" },
+      {
+        type: "p",
+        text: "No. Cada vez más parejas lo quitan, lo acortan o lo reinventan si no les encaja.",
+      },
+      { type: "h3", text: "¿Qué significa «algo prestado»?" },
+      {
+        type: "p",
+        text: "Un objeto de buena suerte de alguien a quien queréis, que se devuelve después del día. Puede ser un adorno del pelo, un velo, una joya, cualquier cosa pequeña.",
+      },
+      { type: "h3", text: "¿Cuántos cambios de vestido durante la boda?" },
+      {
+        type: "p",
+        text: "Los que queráis. Lo clásico es un único cambio, pero muchas parejas llevan el mismo conjunto toda la noche.",
       },
     ],
   },
