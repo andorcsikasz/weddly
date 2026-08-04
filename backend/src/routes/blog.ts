@@ -6,10 +6,12 @@
 // volume under /uploads/blog/<id>.<ext>, served by the static handler in
 // server.ts.
 
-import type { BlogBlock, BlogPost } from "../../../shared/blog_posts";
+import type { BlogBlock, BlogLocale, BlogPost } from "../../../shared/blog_posts";
+import { BLOG_LOCALES } from "../../../shared/blog_posts";
 import { db, now } from "../db";
 import {
   type BlogPostRow,
+  type BlogPostWriteLocale,
   type BlogPostWritePayload,
   deleteBlogPost,
   getBlogPostById,
@@ -68,9 +70,16 @@ function parseCoverImageUrl(raw: unknown): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   if (trimmed.length > 2048) throw new HttpError(400, "cover_image_url too long");
-  // Accept either a local `/uploads/...` path (from the upload endpoint) or
-  // an external http(s) URL the admin pasted in.
-  if (trimmed.startsWith("/uploads/")) return trimmed;
+  // Accept a local `/uploads/...` path (from the upload endpoint), a
+  // `/blog-covers/...` path (the seed covers, committed under
+  // frontend/public and served straight off disk) or an external http(s)
+  // URL the admin pasted in.
+  //
+  // `/blog-covers/` was missing, and it made every SEEDED post unsaveable:
+  // the editor loads the post, sends back the cover it was given, and the
+  // write 400s on a value this app wrote itself. Nothing in the editor
+  // hinted at the cover being the problem, so it read as "save is broken".
+  if (trimmed.startsWith("/uploads/") || trimmed.startsWith("/blog-covers/")) return trimmed;
   try {
     const u = new URL(trimmed);
     if (u.protocol !== "http:" && u.protocol !== "https:") {
@@ -179,7 +188,7 @@ function parseBlocks(raw: unknown, field: string): BlogBlock[] {
   return out;
 }
 
-function parseLocalePayload(raw: unknown, locale: "hu" | "en"): BlogPostWritePayload["hu"] {
+function parseLocalePayload(raw: unknown, locale: BlogLocale): BlogPostWriteLocale {
   if (!raw || typeof raw !== "object") {
     throw new HttpError(400, `${locale} payload missing`);
   }
@@ -197,6 +206,19 @@ function parseLocalePayload(raw: unknown, locale: "hu" | "en"): BlogPostWritePay
 function parseWritePayload(raw: unknown): BlogPostWritePayload {
   if (!raw || typeof raw !== "object") throw new HttpError(400, "Payload required");
   const r = raw as Record<string, unknown>;
+  const locales: BlogPostWritePayload["locales"] = {
+    hu: parseLocalePayload(r.hu, "hu"),
+    en: parseLocalePayload(r.en, "en"),
+  };
+  // The translated locales ride the same body, one key each. Omitting one
+  // leaves what is stored alone (see BlogPostWritePayload); sending it
+  // empty is how a translation gets withdrawn.
+  for (const locale of BLOG_LOCALES) {
+    if (locale === "hu" || locale === "en") continue;
+    const block = r[locale];
+    if (block === undefined || block === null) continue;
+    locales[locale] = parseLocalePayload(block, locale);
+  }
   return {
     slug: parseSlug(r.slug),
     en_slug: r.en_slug === null || r.en_slug === undefined ? null : parseSlug(r.en_slug),
@@ -204,8 +226,7 @@ function parseWritePayload(raw: unknown): BlogPostWritePayload {
     read_minutes: parseInt0(r.read_minutes, "read_minutes", 1, 60),
     cover_image_url: parseCoverImageUrl(r.cover_image_url),
     is_published: Boolean(r.is_published),
-    hu: parseLocalePayload(r.hu, "hu"),
-    en: parseLocalePayload(r.en, "en"),
+    locales,
   };
 }
 

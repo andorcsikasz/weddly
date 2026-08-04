@@ -9338,8 +9338,7 @@ export interface LocaleMessages {
     cover_remove: string;
     cover_uploaded: string;
     save_before_upload: string;
-    locale_hu: string;
-    locale_en: string;
+    locales_tablist: string;
     field_category: string;
     field_title: string;
     field_lead: string;

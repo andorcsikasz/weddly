@@ -5,9 +5,9 @@ import { Link } from "react-router-dom";
 import { BlogCoverArt } from "../components/BlogCoverArt";
 import { PublicShell } from "../components/PublicShell";
 import { blogApi } from "../lib/endpoints";
-import { contentLocale, useT } from "../lib/i18n";
+import { type Locale, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
-import type { BlogPost } from "@shared/blog_posts";
+import { type BlogLocale, type BlogPost, blogCopy } from "@shared/blog_posts";
 
 /**
  * /blog: tile-style index of every published post. Each card has the cover
@@ -62,7 +62,7 @@ export default function BlogIndexPage() {
           <ul className="mt-12 grid items-stretch gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-16">
             {posts.map((post) => (
               <li key={post.slug} className="h-full">
-                <BlogTile post={post} locale={contentLocale(locale)} t={t} />
+                <BlogTile post={post} locale={locale} t={t} />
               </li>
             ))}
           </ul>
@@ -88,26 +88,31 @@ function BlogTile({
   t,
 }: {
   post: BlogPost;
-  locale: "hu" | "en";
+  locale: Locale;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
-  const copy = post[locale === "hu" ? "hu" : "en"];
+  // One resolver decides both the copy and the eyebrow, so a card can't show
+  // a Spanish headline under an English category label.
+  const { copy, category, locale: shown } = blogCopy(post, locale);
   return (
     <Link
-      to={locale !== "hu" ? `/blog/${post.en_slug ?? post.slug}` : `/blog/${post.slug}`}
+      to={locale === "hu" ? `/blog/${post.slug}` : `/blog/${post.en_slug ?? post.slug}`}
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-800 bg-paper-50 transition-shadow hover:shadow-pop focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:border-ink-700 dark:bg-umber-800 dark:focus-visible:ring-offset-umber-900"
     >
       <BlogCover
         url={post.cover_image_url ?? null}
         alt={copy.title}
         slug={post.slug}
-        category={post.category[locale]}
+        category={category}
       />
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blush-700 dark:text-blush-300">
-          {post.category[locale]}
+          {category}
         </p>
-        <h2 className="mt-2 font-grotesk text-xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-[1.4rem]">
+        <h2
+          lang={shown}
+          className="mt-2 font-grotesk text-xl leading-[1.15] text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-[1.4rem]"
+        >
           {copy.title}
         </h2>
         <div className="mt-auto flex items-center gap-3 pt-3 text-xs text-ink-500 dark:text-umber-300">
@@ -124,6 +129,7 @@ export function BlogCover({
   url,
   slug,
   category,
+  lazy,
 }: {
   url: string | null;
   /** Accepted for API compatibility — the SVG cover is aria-hidden and
@@ -136,6 +142,10 @@ export function BlogCover({
    *  itself no longer shows it since the card renders it next to the
    *  title. */
   category?: string;
+  /** Forwarded to BlogCoverArt — see its `lazy` prop. Set by the landing
+   *  page's teaser, where the covers are thousands of pixels below the fold;
+   *  left off in the feed, where they are the page. */
+  lazy?: boolean;
 }) {
   // BlogCoverArt handles the whole composition now: it picks the
   // photo (admin upload via `bgUrl`, else slug → DEFAULT_PHOTO_BY_SLUG,
@@ -148,13 +158,14 @@ export function BlogCover({
         slug={slug}
         bgUrl={url}
         category={category}
+        lazy={lazy}
         className="h-full w-full transition-transform duration-500 group-hover:scale-[1.02]"
       />
     </div>
   );
 }
 
-function formatDate(iso: string, locale: "hu" | "en"): string {
+function formatDate(iso: string, locale: BlogLocale): string {
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   const date = new Date(Date.UTC(y, m - 1, d));

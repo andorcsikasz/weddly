@@ -4,7 +4,19 @@
 // seeder in `domain/blog.ts`, which inserts any missing seed slug on
 // every boot so new content reaches production without a manual migration.
 
-import type { SeoLocale } from "./seo_routes";
+import { BLOG_POSTS_DE } from "./blog_posts_de";
+import { BLOG_POSTS_ES } from "./blog_posts_es";
+import { BLOG_POSTS_HR } from "./blog_posts_hr";
+import { UI_LOCALES, type UiLocale } from "./locales";
+
+/** The languages a post can carry its own copy in: the same list the UI
+ *  ships (`UI_LOCALES`), because the reader who picked Hrvatski in the
+ *  switcher is exactly the reader who should get the Croatian article.
+ *  Single-sourced for the same reason `UI_LOCALES` itself is — a locale in
+ *  the switcher that the content layer doesn't know about reads as English
+ *  with nothing to explain why. */
+export const BLOG_LOCALES = UI_LOCALES;
+export type BlogLocale = UiLocale;
 
 export type BlogBlock =
   | { type: "p"; text: string }
@@ -37,7 +49,18 @@ export interface BlogPostLocale {
   seo_description: string;
 }
 
-export interface BlogPost {
+/** Eyebrow label per locale. HU + EN are required (every post is authored in
+ *  both); the rest ride along with their translation and fall back with it. */
+export type BlogCategoryMap = { hu: string; en: string } & Partial<Record<BlogLocale, string>>;
+
+/** Per-locale copy hanging off a post. HU + EN are required for the same
+ *  reason every email kind must carry both: they are the two languages the
+ *  whole app is authored in, and one of them is always the fallback. */
+export type BlogCopyMap = { hu: BlogPostLocale; en: BlogPostLocale } & Partial<
+  Record<BlogLocale, BlogPostLocale>
+>;
+
+export type BlogPost = {
   /** Numeric primary key (admin-only; absent on seed records). */
   id?: number;
   slug: string;
@@ -50,15 +73,62 @@ export interface BlogPost {
   /** Reading-time estimate in minutes. Hand-tuned per post, not auto. */
   read_minutes: number;
   /** Eyebrow label shown above the title (category tag). One per locale. */
-  category: Record<SeoLocale, string>;
+  category: BlogCategoryMap;
   /** Hero cover image. Either a local `/uploads/blog/...` path or an
    *  external http(s) URL the admin pasted in. Null = no image set. */
   cover_image_url?: string | null;
   /** Draft (false) vs live (true). Drafts are hidden from public lists +
    *  return 404 on /blog/:slug, but still visible in the admin index. */
   is_published?: boolean;
-  hu: BlogPostLocale;
-  en: BlogPostLocale;
+} & BlogCopyMap;
+
+/** One post's copy in one locale, as the translation tables store it. The
+ *  eyebrow travels with the copy because it sits in the same DB row and is
+ *  the one label that would otherwise be left in another language above a
+ *  translated headline. */
+export interface BlogTranslation extends BlogPostLocale {
+  category: string;
+}
+
+/** Slug → translation, the shape of every `blog_posts_<locale>.ts` table. A
+ *  slug that isn't in the map simply has no translation yet; the resolver
+ *  below serves EN for it. */
+export type BlogTranslationsBySlug = Record<string, BlogTranslation>;
+
+/** True when the post carries real copy in `locale`. A block counts only
+ *  once it has BOTH a title and at least one body block: a half-filled
+ *  column (an admin who saved the eyebrow and walked away) has to read as
+ *  "not translated yet", never as an article with no text in it. */
+export function hasBlogLocale(post: BlogPost, locale: BlogLocale): boolean {
+  const copy = post[locale];
+  return Boolean(copy && copy.title.trim() && copy.body.length > 0);
+}
+
+export interface ResolvedBlogCopy {
+  /** The language the reader actually gets, after the fallback. Drives the
+   *  `lang` attribute on the rendered article and the date formatting, so
+   *  a post shown in English is never announced as Croatian. */
+  locale: BlogLocale;
+  copy: BlogPostLocale;
+  category: string;
+}
+
+/** The ONE answer to "which language does this reader get this post in?".
+ *
+ *  Falls back to EN, never to HU. This is the same rule outbound email
+ *  follows for a kind with no block in the recipient's language: Hungarian
+ *  is no more use to a German reader than English is, and EN is what every
+ *  other content fallback in the app already picks. The eyebrow follows the
+ *  copy rather than resolving on its own, so a Spanish article can't end up
+ *  under an English category label. */
+export function blogCopy(post: BlogPost, locale: BlogLocale): ResolvedBlogCopy {
+  const resolved = hasBlogLocale(post, locale) ? locale : "en";
+  const copy = post[resolved] ?? post.en;
+  return {
+    locale: resolved,
+    copy,
+    category: post.category[resolved] || post.category.en,
+  };
 }
 
 /** Cover photo per seed slug. The image bytes are committed under
@@ -106,6 +176,22 @@ export const SEED_EN_SLUG_BY_SLUG: Record<string, string> = {
   "eskuvoszervezesi-checklist-6-honapra": "wedding-planning-checklist-6-months",
   "eskuvoi-ugyintezes-lepesrol-lepesre": "wedding-paperwork-guide",
   "eskuvo-napi-checklist": "wedding-day-checklist",
+};
+
+/** The locales whose copy lives in its own table instead of inline in
+ *  `SEED_BLOG_POSTS`. Five languages in one array literal would be ~20k
+ *  lines, and someone fixing a Hungarian typo would be editing the same
+ *  file as whoever is working through the Croatian.
+ *
+ *  HU and EN stay inline because they are the AUTHORED pair: a post is
+ *  written in them, and the others are translations OF them. That is also
+ *  why a slug missing from a table here is not an error — the resolver
+ *  (`blogCopy`) serves EN for it, exactly as it does for a post an admin
+ *  created in the editor and has not translated yet. */
+export const SEED_TRANSLATIONS: Record<Exclude<BlogLocale, "hu" | "en">, BlogTranslationsBySlug> = {
+  es: BLOG_POSTS_ES,
+  hr: BLOG_POSTS_HR,
+  de: BLOG_POSTS_DE,
 };
 
 export const SEED_BLOG_POSTS: BlogPost[] = [

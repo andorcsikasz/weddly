@@ -6,9 +6,9 @@ import { NewsletterCapture } from "../components/NewsletterCapture";
 import { PublicShell } from "../components/PublicShell";
 import { ApiError } from "../lib/api";
 import { blogApi } from "../lib/endpoints";
-import { contentLocale, useT } from "../lib/i18n";
+import { useT } from "../lib/i18n";
 import { useDocumentMetaLiteral } from "../lib/seo";
-import type { BlogBlock, BlogPost } from "@shared/blog_posts";
+import { type BlogBlock, type BlogLocale, type BlogPost, blogCopy } from "@shared/blog_posts";
 import NotFoundPage from "./NotFoundPage";
 import { BlogCover } from "./BlogIndexPage";
 
@@ -95,8 +95,6 @@ function citeToBibliaUrl(cite: string): string | null {
 export default function BlogPostPage() {
   const { slug = "" } = useParams<{ slug: string }>();
   const { t, locale } = useT();
-  // Long-form blog content is authored in HU/EN only; ES reads it in EN.
-  const cLocale = contentLocale(locale);
 
   const [post, setPost] = useState<BlogPost | null>(null);
   const [related, setRelated] = useState<BlogPost[]>([]);
@@ -125,7 +123,13 @@ export default function BlogPostPage() {
     };
   }, [slug]);
 
-  const copy = post?.[cLocale];
+  // One resolver for the whole page: the article's language, its copy and
+  // its eyebrow all come out of the same call, so a post with no Croatian
+  // translation reads as English throughout instead of English prose under
+  // a Croatian category label.
+  const resolved = post ? blogCopy(post, locale) : null;
+  const copy = resolved?.copy;
+  const articleLocale = resolved?.locale ?? locale;
   useDocumentMetaLiteral(copy?.seo_title ?? "", copy?.seo_description ?? "");
 
   if (status === "not_found") return <NotFoundPage />;
@@ -135,22 +139,28 @@ export default function BlogPostPage() {
       <article className="mx-auto max-w-3xl px-5 py-12 sm:px-6 sm:py-20">
         {status === "loading" ? (
           <p className="text-sm text-ink-500 dark:text-umber-300">{t("blog.loading")}</p>
-        ) : status === "error" || !post || !copy ? (
+        ) : status === "error" || !post || !copy || !resolved ? (
           <p className="text-sm text-ink-500 dark:text-umber-300">{t("blog.load_failed")}</p>
         ) : (
           <>
             <header className="border-b border-paper-300 dark:border-umber-700 pb-10">
               <p className="text-xs font-semibold uppercase tracking-[0.32em] text-blush-700 dark:text-blush-300">
-                {post.category[cLocale]}
+                {resolved.category}
               </p>
-              <h1 className="mt-3 font-grotesk text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl">
+              <h1
+                lang={articleLocale}
+                className="mt-3 font-grotesk text-3xl leading-[1.1] text-ink-900 dark:text-paper-50 sm:text-4xl lg:text-5xl"
+              >
                 {copy.title}
               </h1>
-              <p className="mt-5 text-base leading-relaxed text-ink-600 dark:text-umber-200 sm:text-lg">
+              <p
+                lang={articleLocale}
+                className="mt-5 text-base leading-relaxed text-ink-600 dark:text-umber-200 sm:text-lg"
+              >
                 {copy.lead}
               </p>
               <div className="mt-6 flex items-center gap-3 text-xs text-ink-500 dark:text-umber-300">
-                <time dateTime={post.published_at}>{formatDate(post.published_at, cLocale)}</time>
+                <time dateTime={post.published_at}>{formatDate(post.published_at, locale)}</time>
                 <span aria-hidden>·</span>
                 <span>{t("blog.read_minutes", { n: post.read_minutes })}</span>
               </div>
@@ -161,11 +171,11 @@ export default function BlogPostPage() {
                 url={post.cover_image_url ?? null}
                 alt={copy.title}
                 slug={post.slug}
-                category={post.category[cLocale]}
+                category={resolved.category}
               />
             </figure>
 
-            <BlogBody body={copy.body} locale={cLocale} />
+            <BlogBody body={copy.body} locale={articleLocale} />
 
             <div className="mt-16">
               <NewsletterCapture source={`blog:${post.slug}`} />
@@ -178,18 +188,21 @@ export default function BlogPostPage() {
                 </p>
                 <ul className="mt-6 space-y-5">
                   {related.map((r) => {
-                    const rc = r[cLocale];
+                    const rr = blogCopy(r, locale);
                     return (
                       <li key={r.slug}>
                         <Link
-                          to={`/blog/${locale === "en" ? (r.en_slug ?? r.slug) : r.slug}`}
+                          to={`/blog/${locale === "hu" ? r.slug : (r.en_slug ?? r.slug)}`}
                           className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 focus-visible:ring-offset-4 focus-visible:ring-offset-paper-50 dark:focus-visible:ring-offset-umber-900"
                         >
                           <p className="text-xs uppercase tracking-wider text-ink-500 dark:text-umber-300">
-                            {r.category[cLocale]}
+                            {rr.category}
                           </p>
-                          <h3 className="mt-1 font-grotesk text-xl text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl">
-                            {rc.title}
+                          <h3
+                            lang={rr.locale}
+                            className="mt-1 font-grotesk text-xl text-ink-900 transition-colors group-hover:text-blush-700 dark:text-paper-50 dark:group-hover:text-blush-300 sm:text-2xl"
+                          >
+                            {rr.copy.title}
                           </h3>
                         </Link>
                       </li>
@@ -372,7 +385,7 @@ function BibleCiteLink({ cite }: { cite: string }) {
 /** Wraps the body section + Block iteration. Builds the SectionMap once
  *  per post + locale so prose-to-anchor resolution doesn't recompute on
  *  every Block render. */
-function BlogBody({ body, locale }: { body: BlogBlock[]; locale: "hu" | "en" }) {
+function BlogBody({ body, locale }: { body: BlogBlock[]; locale: BlogLocale }) {
   const sectionMap = useMemo(() => buildSectionMap(body), [body]);
   return (
     <section
@@ -518,7 +531,7 @@ function Block({ block, sectionMap }: { block: BlogBlock; sectionMap: SectionMap
   );
 }
 
-function formatDate(iso: string, locale: "hu" | "en"): string {
+function formatDate(iso: string, locale: BlogLocale): string {
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   const date = new Date(Date.UTC(y, m - 1, d));

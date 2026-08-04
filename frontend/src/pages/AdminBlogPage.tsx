@@ -9,11 +9,18 @@ import { ArrowLeft, ImagePlus, Loader2, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { AdminEmptyState, AdminPageHeader, Pill } from "../components/admin";
 import { Button, useConfirm, useToast } from "../components/ui";
-import type { AdminBlogPostPayload } from "../lib/endpoints";
+import type { AdminBlogLocalePayload, AdminBlogPostPayload } from "../lib/endpoints";
 import { adminBlogApi } from "../lib/endpoints";
-import { contentLocale, useT } from "../lib/i18n";
+import { LOCALE_NAMES, useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
-import type { BlogBlock, BlogPost } from "@shared/blog_posts";
+import {
+  BLOG_LOCALES,
+  type BlogBlock,
+  type BlogLocale,
+  type BlogPost,
+  blogCopy,
+  hasBlogLocale,
+} from "@shared/blog_posts";
 
 type View = { kind: "list" } | { kind: "edit"; postId: number } | { kind: "new" };
 
@@ -103,10 +110,25 @@ function BlogList({ onEdit, onNew }: { onEdit: (id: number) => void; onNew: () =
                       onClick={() => post.id && onEdit(post.id)}
                       className="text-left font-medium text-neutral-900 hover:underline dark:text-paper-50"
                     >
-                      {post[contentLocale(locale)].title || post.slug}
+                      {blogCopy(post, locale).copy.title || post.slug}
                     </button>
                     <p className="mt-0.5 text-xs text-neutral-500 dark:text-umber-300">
-                      {post.category[contentLocale(locale)]}
+                      {blogCopy(post, locale).category}
+                    </p>
+                    <p className="mt-1 flex flex-wrap gap-1">
+                      {BLOG_LOCALES.map((l) => (
+                        <span
+                          key={l}
+                          title={LOCALE_NAMES[l]}
+                          className={`rounded px-1 py-px font-mono text-[10px] uppercase ${
+                            hasBlogLocale(post, l)
+                              ? "bg-sage-100 text-sage-800 dark:bg-sage-900 dark:text-sage-100"
+                              : "bg-paper-200 text-neutral-400 dark:bg-umber-700 dark:text-umber-400"
+                          }`}
+                        >
+                          {l}
+                        </span>
+                      ))}
                     </p>
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-neutral-600 dark:text-umber-200">
@@ -147,42 +169,49 @@ function BlogList({ onEdit, onNew }: { onEdit: (id: number) => void; onNew: () =
 
 // ─── Editor view ────────────────────────────────────────────────────────
 
+function blankLocale(): AdminBlogLocalePayload {
+  return { category: "", title: "", lead: "", seo_title: "", seo_description: "", body: [] };
+}
+
 function blankPayload(): AdminBlogPostPayload {
-  return {
+  const draft: AdminBlogPostPayload = {
     slug: "",
     published_at: new Date().toISOString().slice(0, 10),
     read_minutes: 5,
     cover_image_url: null,
     is_published: false,
-    hu: { category: "", title: "", lead: "", seo_title: "", seo_description: "", body: [] },
-    en: { category: "", title: "", lead: "", seo_title: "", seo_description: "", body: [] },
+    hu: blankLocale(),
+    en: blankLocale(),
   };
+  for (const locale of BLOG_LOCALES) draft[locale] = blankLocale();
+  return draft;
 }
 
 function postToPayload(post: BlogPost): AdminBlogPostPayload {
-  return {
+  const draft: AdminBlogPostPayload = {
     slug: post.slug,
     published_at: post.published_at,
     read_minutes: post.read_minutes,
     cover_image_url: post.cover_image_url ?? null,
     is_published: Boolean(post.is_published),
-    hu: {
-      category: post.category.hu,
-      title: post.hu.title,
-      lead: post.hu.lead,
-      seo_title: post.hu.seo_title,
-      seo_description: post.hu.seo_description,
-      body: post.hu.body,
-    },
-    en: {
-      category: post.category.en,
-      title: post.en.title,
-      lead: post.en.lead,
-      seo_title: post.en.seo_title,
-      seo_description: post.en.seo_description,
-      body: post.en.body,
-    },
+    hu: blankLocale(),
+    en: blankLocale(),
   };
+  // Every locale is loaded into the draft, translated or not, so the editor
+  // always sends a complete body back. A locale the post has nothing for
+  // starts empty and stays empty unless someone types in it.
+  for (const locale of BLOG_LOCALES) {
+    const copy = post[locale];
+    draft[locale] = {
+      category: post.category[locale] ?? "",
+      title: copy?.title ?? "",
+      lead: copy?.lead ?? "",
+      seo_title: copy?.seo_title ?? "",
+      seo_description: copy?.seo_description ?? "",
+      body: copy?.body ?? [],
+    };
+  }
+  return draft;
 }
 
 function BlogEditor({
@@ -198,6 +227,7 @@ function BlogEditor({
   const toast = useToast();
   const confirm = useConfirm();
   const [draft, setDraft] = useState<AdminBlogPostPayload>(blankPayload);
+  const [activeLocale, setActiveLocale] = useState<BlogLocale>("hu");
   const [currentId, setCurrentId] = useState<number | null>(postId);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready">(postId === null ? "ready" : "loading");
@@ -427,17 +457,48 @@ function BlogEditor({
         </div>
       </section>
 
-      {/* Locale tabs as two panels side-by-side */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* One locale at a time. Five panels side by side would be unreadable,
+          and the tab strip is also the translation status board: a filled dot
+          means that language has a title and a body, which is exactly the
+          test the reader-facing resolver applies. */}
+      <div>
+        <div
+          role="tablist"
+          aria-label={t("admin_blog.locales_tablist")}
+          className="flex flex-wrap gap-1 border-b border-paper-300 dark:border-umber-700"
+        >
+          {BLOG_LOCALES.map((l) => {
+            const filled = Boolean(draft[l]?.title.trim() && (draft[l]?.body.length ?? 0) > 0);
+            const active = l === activeLocale;
+            return (
+              <button
+                key={l}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveLocale(l)}
+                className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-2 text-sm transition-colors ${
+                  active
+                    ? "border-blush-500 font-semibold text-neutral-900 dark:text-paper-50"
+                    : "border-transparent text-neutral-500 hover:text-neutral-800 dark:text-umber-300 dark:hover:text-paper-100"
+                }`}
+              >
+                {LOCALE_NAMES[l]}
+                <span
+                  aria-hidden
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    filled ? "bg-sage-500" : "bg-paper-400 dark:bg-umber-600"
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
         <LocalePanel
-          label={t("admin_blog.locale_hu")}
-          value={draft.hu}
-          onChange={(next) => setDraft({ ...draft, hu: next })}
-        />
-        <LocalePanel
-          label={t("admin_blog.locale_en")}
-          value={draft.en}
-          onChange={(next) => setDraft({ ...draft, en: next })}
+          key={activeLocale}
+          locale={activeLocale}
+          value={draft[activeLocale] ?? blankLocale()}
+          onChange={(next) => setDraft({ ...draft, [activeLocale]: next })}
         />
       </div>
     </form>
@@ -445,18 +506,20 @@ function BlogEditor({
 }
 
 function LocalePanel({
-  label,
+  locale,
   value,
   onChange,
 }: {
-  label: string;
-  value: AdminBlogPostPayload["hu"];
-  onChange: (next: AdminBlogPostPayload["hu"]) => void;
+  locale: BlogLocale;
+  value: AdminBlogLocalePayload;
+  onChange: (next: AdminBlogLocalePayload) => void;
 }) {
   const { t } = useT();
   return (
-    <section className="rounded-xl border border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-800">
-      <h2 className="font-semibold">{label}</h2>
+    <section
+      lang={locale}
+      className="rounded-b-xl border border-t-0 border-paper-300 bg-paper-50 p-5 dark:border-umber-700 dark:bg-umber-800"
+    >
       <div className="mt-4 space-y-3">
         <Field label={t("admin_blog.field_category")}>
           <input

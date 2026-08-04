@@ -114,6 +114,27 @@ addColumnIfMissing("blog_posts", "en_slug", "en_slug TEXT");
 db.exec(
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_blog_posts_en_slug_unique ON blog_posts(en_slug) WHERE en_slug IS NOT NULL",
 );
+// A post now carries copy in every UI locale, not just the authored HU/EN
+// pair. The columns mirror the hu_*/en_* set exactly so `toBlogPost` can
+// address them by a single template (`${locale}_title`) instead of five
+// hand-written branches. Empty is the resting value and it MEANS
+// "not translated yet": `blogCopy` reads a locale with no title or no body
+// as absent and serves EN, so shipping the columns before the copy changes
+// nothing a reader sees.
+for (const locale of ["es", "hr", "de"] as const) {
+  for (const field of ["category", "title", "lead", "seo_title", "seo_description"] as const) {
+    addColumnIfMissing(
+      "blog_posts",
+      `${locale}_${field}`,
+      `${locale}_${field} TEXT NOT NULL DEFAULT ''`,
+    );
+  }
+  addColumnIfMissing(
+    "blog_posts",
+    `${locale}_body_json`,
+    `${locale}_body_json TEXT NOT NULL DEFAULT '[]'`,
+  );
+}
 addColumnIfMissing("guests", "household_id", "household_id INTEGER REFERENCES households(id)");
 
 // Guest kind — drives the "needs a high chair" / "kid meal" affordances.

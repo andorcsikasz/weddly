@@ -8226,8 +8226,7 @@ const de: LocaleMessages = {
     cover_uploaded: "Titelbild hochgeladen.",
     save_before_upload:
       "Speichern Sie den Beitrag zuerst, danach können Sie ein Titelbild hochladen.",
-    locale_hu: "Ungarisch",
-    locale_en: "Englisch",
+    locales_tablist: "Sprache",
     field_category: "Kategorie",
     field_title: "Titel",
     field_lead: "Einleitung",

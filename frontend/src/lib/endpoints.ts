@@ -468,29 +468,28 @@ export const adminBlogApi = {
   },
 };
 
-export interface AdminBlogPostPayload {
+export interface AdminBlogLocalePayload {
+  category: string;
+  title: string;
+  lead: string;
+  seo_title: string;
+  seo_description: string;
+  body: import("@shared/blog_posts").BlogBlock[];
+}
+
+/** One key per UI locale. HU + EN are required (a post is authored in them);
+ *  the translations are optional and an omitted one means "leave the stored
+ *  copy alone" server-side, so an editor that predates a language can't wipe
+ *  it. The editor here always sends all five. */
+export type AdminBlogPostPayload = {
   slug: string;
   published_at: string;
   read_minutes: number;
   cover_image_url: string | null;
   is_published: boolean;
-  hu: {
-    category: string;
-    title: string;
-    lead: string;
-    seo_title: string;
-    seo_description: string;
-    body: import("@shared/blog_posts").BlogBlock[];
-  };
-  en: {
-    category: string;
-    title: string;
-    lead: string;
-    seo_title: string;
-    seo_description: string;
-    body: import("@shared/blog_posts").BlogBlock[];
-  };
-}
+  hu: AdminBlogLocalePayload;
+  en: AdminBlogLocalePayload;
+} & Partial<Record<import("@shared/blog_posts").BlogLocale, AdminBlogLocalePayload>>;
 
 /** Public landing-page "try the demo" endpoint. Spins up a brand-new
  *  Shrek & Fiona workspace and returns a session token. No registration,
