@@ -38,7 +38,7 @@ import type {
 } from "@shared/types";
 import { isCurrency } from "@shared/currency";
 import { MAX_PHOTOGRAPHER_LINKS } from "@shared/types";
-import { billingEnforcementOn, db, now } from "../db";
+import { billingEnforcedAt, billingEnforcementOn, db, now } from "../db";
 import { computeNameReview } from "./name_review";
 import { generateHouseholdCode, generateInviteCode, generateOrganiserCode } from "./invite_codes";
 import { isAdminEmail } from "./users";
@@ -175,6 +175,11 @@ export function toCoupleBilling(row: CoupleRow, nowMs: number = Date.now()): Cou
         // while the trial_ended mail's two routes are still open to them. The
         // vendor and planner funnels pass nothing here and keep a hard boundary.
         trialGraceMs: TRIAL_GRACE_MS,
+        // ...counted from go-live when that is later than their trial end, so
+        // the couples whose trials lapsed during the deferred-freeze period get
+        // the same week of warning as everyone else instead of being frozen the
+        // instant the switch is flipped.
+        enforcementStartedAt: billingEnforcedAt(),
       });
   // Always-free / not-yet-enforced overrides. Only consulted when the plain
   // verdict would lock the couple out, so the common paths (entitled subs, and

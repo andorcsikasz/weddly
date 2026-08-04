@@ -9,6 +9,7 @@
 
 import { expect } from "bun:test";
 
+import { TRIAL_GRACE_MS } from "@shared/billing";
 import { PRIVACY_VERSION, TERMS_VERSION, VENDOR_BETA_NOTICE_VERSION } from "@shared/legal";
 import type { AuthSession } from "@shared/types";
 import { __testPlaintextForHash } from "../src/auth/tokens";
@@ -345,8 +346,26 @@ export function wipeAll(): void {
  *  aggregate is gated: a lapsed couple, planner or vendor still reads as
  *  entitled. Any test asserting that a paywall BITES has to flip this first, or
  *  it is asserting against a wall that isn't up yet. Call after `wipeAll()`. */
+/** Age the paywall past the post-trial grace week, so a lapsed couple is really
+ *  read-only. The week counts from whichever came LATER, the trial ending or the
+ *  wall going up, so enabling enforcement this instant still owes every lapsed
+ *  couple seven days: a test that lapses a trial and flips the switch gets 200,
+ *  not 402, until this is called. Pairs with `enableBillingEnforcement` /
+ *  `setBillingEnforcement`, and reads as what it is for at the call site. */
+export function expireTrialGraceWindow(): void {
+  db.prepare("UPDATE billing_control SET enforced_at = ? WHERE id = 1").run(
+    Date.now() - (TRIAL_GRACE_MS + 60_000),
+  );
+}
+
 export function enableBillingEnforcement(): void {
-  db.exec("UPDATE billing_control SET enforcement_on = 1 WHERE id = 1");
+  // Stamps `enforced_at` exactly as `setBillingEnforcement` does in production.
+  // It is not decoration: the post-trial grace week counts from whichever came
+  // later, the trial end or the wall going up, so a helper that left it NULL
+  // would quietly test a different rule than the one that ships.
+  db.prepare("UPDATE billing_control SET enforcement_on = 1, enforced_at = ? WHERE id = 1").run(
+    Date.now(),
+  );
 }
 
 /** Recover the PLAINTEXT verify-link token for a parked signup — the value the

@@ -1326,6 +1326,20 @@ export function billingEnforcementOn(): boolean {
   return row?.enforcement_on === 1;
 }
 
+/** When the switch was last flipped ON, or null while the freeze is deferred.
+ *  This is the instant the wall APPEARS, and so the instant a couple's post-
+ *  trial grace week can start counting: a couple whose trial lapsed months
+ *  before go-live has not had a week's warning just because the calendar moved.
+ *  Returns null when enforcement is off, since there is no wall to count from
+ *  and the deferred-freeze override makes everyone entitled anyway. */
+export function billingEnforcedAt(): number | null {
+  const row = db
+    .prepare("SELECT enforcement_on, enforced_at FROM billing_control WHERE id = 1")
+    .get() as { enforcement_on: number; enforced_at: number | null } | undefined;
+  if (row?.enforcement_on !== 1) return null;
+  return row.enforced_at ?? null;
+}
+
 // JSON array of the top-N Amadeus offers cached for a given route. We used to
 // cache only the cheapest price in `price_amount`; this column carries the
 // richer payload (carrier, duration, stops, depart/arrival ISO timestamps) so

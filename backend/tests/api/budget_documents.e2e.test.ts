@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import type { BudgetDocument, BudgetLine } from "@shared/types";
 import { db } from "../../src/db";
 import { setBillingEnforcement } from "../../src/domain/billing";
-import { bootstrapCouple, req, wipeAll } from "../helpers";
+import { bootstrapCouple, expireTrialGraceWindow, req, wipeAll } from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
@@ -292,6 +292,7 @@ describe("budget documents — read-only gate (lapsed couple)", () => {
     const { token, coupleId } = await bootstrapCouple("bd-lapsed@weddly.test");
     db.prepare("UPDATE couples SET trial_ends_at = 1 WHERE id = ?").run(coupleId);
     setBillingEnforcement(true, 1);
+    expireTrialGraceWindow(); // ...and long enough ago that the grace week is over
 
     const get = await req<{ documents: BudgetDocument[] }>(
       "GET",

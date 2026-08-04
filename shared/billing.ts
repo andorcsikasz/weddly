@@ -67,9 +67,22 @@ export const PAID_LAUNCH_DATE = Date.UTC(2026, 8, 1);
 export const TRIAL_GRACE_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 /** When a trial's grace window closes. Pure so the entitlement verdict, the
- *  mail's deadline line and the banner countdown quote one number. */
-export function trialGraceEndsAt(trialEndsAt: number): number {
-  return trialEndsAt + TRIAL_GRACE_MS;
+ *  mail's deadline line and the banner countdown quote one number.
+ *
+ *  The week runs from whichever came LATER: the trial ending, or the wall
+ *  appearing. Those are usually the same moment, but they are not on go-live
+ *  day: the freeze has been deferred since launch, so most couples' trials
+ *  lapsed months before there was anything to be warned about. Counting from
+ *  the trial end alone would freeze them the instant the switch is flipped,
+ *  having sent them nothing, which is exactly the week of notice this whole
+ *  mechanism exists to give. `enforcementStartedAt` is null while the freeze is
+ *  deferred (there is no wall yet) and after any date already past, harmless. */
+export function trialGraceEndsAt(
+  trialEndsAt: number,
+  enforcementStartedAt?: number | null,
+): number {
+  const from = Math.max(trialEndsAt, enforcementStartedAt ?? 0);
+  return from + TRIAL_GRACE_MS;
 }
 
 /** End of the free window granted when partner B joins: free until the wedding
@@ -204,6 +217,10 @@ export function computeEntitlement(
     /** Extra editable window after `trial_ends_at`. 0 (the default) is a hard
      *  boundary, which is what vendors and planners want. */
     trialGraceMs?: number;
+    /** When the paywall was switched on, if it is on. The grace week never
+     *  starts before this, so a trial that lapsed while the freeze was deferred
+     *  still gets its full week of warning from go-live day. */
+    enforcementStartedAt?: number | null;
   },
 ): { entitled: boolean; reason: BillingReason } {
   const { trial_ends_at, founding_until, nowMs } = opts;
@@ -221,7 +238,11 @@ export function computeEntitlement(
     // The grace window, only for callers that asked for one. A trial with no end
     // date at all never had a boundary to grace, so it falls straight through
     // rather than being handed extra days off a NULL.
-    if (trialGraceMs > 0 && trial_ends_at && nowMs < trial_ends_at + trialGraceMs) {
+    if (
+      trialGraceMs > 0 &&
+      trial_ends_at &&
+      nowMs < Math.max(trial_ends_at, opts.enforcementStartedAt ?? 0) + trialGraceMs
+    ) {
       return { entitled: true, reason: "trial_grace" };
     }
     return { entitled: false, reason: "trial_expired" };

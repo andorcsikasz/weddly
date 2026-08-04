@@ -13,7 +13,7 @@ import { toIsoDate } from "@shared/planning_timeline";
 import { checkPartnerNames, NAME_REVIEW_GRACE_MS } from "@shared/real_names";
 import { INVITE_TTL_MS } from "@shared/types";
 import { CONFIG } from "../../config";
-import { billingEnforcementOn, db, now } from "../../db";
+import { billingEnforcedAt, billingEnforcementOn, db, now } from "../../db";
 import { log } from "../../lib/logger";
 import { reportError } from "../../lib/observability";
 import { foundingSlotsUsed, isFoundingEligible } from "../billing";
@@ -771,6 +771,12 @@ interface TrialEndedRow {
  *  That teaches them to ignore the next one. */
 function sweepTrialEnded(ts: number): number {
   if (!billingEnforcementOn()) return 0;
+  // The wall's own start date. On go-live day this is what pulls in every couple
+  // whose trial lapsed during the deferred-freeze months: their grace week runs
+  // from here, so they are inside the window and get the same notice as anyone
+  // whose trial ended yesterday. Without it the backlog would freeze in silence,
+  // which is the one outcome the notice exists to prevent.
+  const enforcedAt = billingEnforcedAt();
   const rows = db
     .prepare(
       `SELECT c.id AS couple_id, c.display_name, c.trial_ends_at,
@@ -786,7 +792,7 @@ function sweepTrialEnded(ts: number): number {
           AND c.subscription_status = 'trialing'
           AND c.trial_ends_at IS NOT NULL
           AND c.trial_ends_at <= ?
-          AND c.trial_ends_at > ?
+          AND MAX(c.trial_ends_at, ?) > ?
           AND u.status = 'active'
           AND u.verified_email = 1
           AND u.email NOT LIKE '%@purged.local'
@@ -797,14 +803,14 @@ function sweepTrialEnded(ts: number): number {
              WHERE d.couple_id = c.id AND d.kind = 'trial_ended'
           )`,
     )
-    .all(ts, ts - TRIAL_GRACE_MS) as TrialEndedRow[];
+    .all(ts, enforcedAt ?? 0, ts - TRIAL_GRACE_MS) as TrialEndedRow[];
 
   let count = 0;
   for (const r of rows) {
     const couple = getCoupleById(r.couple_id);
     if (!couple || !isBillingAnchor(couple)) continue;
 
-    const graceEnd = trialGraceEndsAt(r.trial_ends_at);
+    const graceEnd = trialGraceEndsAt(r.trial_ends_at, enforcedAt);
     // Round UP: with 6 days and 4 hours left, "6 days" reads as a day more than
     // the couple has on the last afternoon, and a deadline must never overstate
     // the room left.

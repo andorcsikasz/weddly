@@ -10,7 +10,7 @@ import type { MoodboardState } from "@shared/types";
 import { db } from "../../src/db";
 import { setBillingEnforcement } from "../../src/domain/billing";
 import { resolveBoardUrl } from "../../src/domain/moodboard";
-import { bootstrapCouple, req, wipeAll } from "../helpers";
+import { bootstrapCouple, expireTrialGraceWindow, req, wipeAll } from "../helpers";
 
 const BASE = `http://localhost:${process.env.PORT ?? "8791"}`;
 
@@ -286,6 +286,7 @@ describe("moodboard read-only gate (lapsed couple)", () => {
     const { token, coupleId } = await bootstrapCouple("mb-lapsed@weddly.test");
     db.prepare("UPDATE couples SET trial_ends_at = 1 WHERE id = ?").run(coupleId);
     setBillingEnforcement(true, 1); // paywall live, otherwise the freeze is deferred
+    expireTrialGraceWindow(); // ...and long enough ago that the grace week is over
 
     // Reads stay open.
     const get = await req<MoodboardState>("GET", "/api/moodboard", undefined, { token });

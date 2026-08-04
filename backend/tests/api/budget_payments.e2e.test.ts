@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import type { BudgetLine, BudgetPayment } from "@shared/types";
 import { db } from "../../src/db";
 import { setBillingEnforcement } from "../../src/domain/billing";
-import { bootstrapCouple, req, wipeAll } from "../helpers";
+import { bootstrapCouple, expireTrialGraceWindow, req, wipeAll } from "../helpers";
 
 /** Seed the founding cohort so a fresh couple stays on the (expirable) trial
  *  rather than being auto-granted founding — mirrors budget_documents.e2e. */
@@ -237,6 +237,7 @@ describe("budget payments — record, list, edit, delete", () => {
     const { token, coupleId } = await bootstrapCouple("bp-lapsed@weddly.test");
     db.prepare("UPDATE couples SET trial_ends_at = 1 WHERE id = ?").run(coupleId);
     setBillingEnforcement(true, 1);
+    expireTrialGraceWindow(); // ...and long enough ago that the grace week is over
 
     const read = await req<{ payments: BudgetPayment[] }>(
       "GET",

@@ -28,7 +28,13 @@ import {
 import { db, now } from "../../src/db";
 import { buildEmail } from "../../src/domain/emails/templates";
 import { runEmailSweep } from "../../src/domain/emails/worker";
-import { bootstrapCouple, enableBillingEnforcement, req, wipeAll } from "../helpers";
+import {
+  bootstrapCouple,
+  enableBillingEnforcement,
+  expireTrialGraceWindow,
+  req,
+  wipeAll,
+} from "../helpers";
 
 const DAY = 1000 * 60 * 60 * 24;
 
@@ -133,7 +139,10 @@ describe("trial grace window", () => {
     );
     expect(inGrace.status).toBe(200);
 
+    // Past the week: both the trial AND the wall have to be older than the
+    // window, or the flip itself would still be handing out grace.
     setTrialEnd(coupleId, now() - (TRIAL_GRACE_MS + DAY));
+    expireTrialGraceWindow();
     const afterGrace = await req(
       "POST",
       "/api/guests",
@@ -179,14 +188,44 @@ describe("trial_ended mail", () => {
     expect(mailCount(coupleId)).toBe(1);
   });
 
+  test("go-live day reaches the couples whose trial lapsed months ago", async () => {
+    // The whole point of the notice is a week of warning before the freeze. The
+    // freeze has been deferred since launch, so on go-live day most couples'
+    // trials are long past: counting their week from the trial end would freeze
+    // them the instant the switch is flipped, having sent them nothing. Their
+    // week runs from the WALL instead, so they are mailed and stay editable.
+    wipeAll();
+    const { coupleId, token } = await bootstrapCouple("grace-backlog@weddly.test");
+    setTrialEnd(coupleId, now() - 120 * DAY);
+
+    // Deferred: no mail, and nothing frozen.
+    expect(runEmailSweep().trialEnded).toBe(0);
+
+    enableBillingEnforcement();
+    expect(runEmailSweep().trialEnded).toBe(1);
+    expect(mailCount(coupleId)).toBe(1);
+
+    // And they can still edit, because their week started at the flip rather
+    // than four months ago.
+    const edit = await req(
+      "PATCH",
+      "/api/couples/current",
+      { display_name: "Still editable" },
+      { token },
+    );
+    expect(edit.status).toBe(200);
+  });
+
   test("a couple whose grace already ran out is not mailed", async () => {
     wipeAll();
     enableBillingEnforcement();
     const { coupleId } = await bootstrapCouple("grace-late@weddly.test");
     // Past the grace: the mail's whole content is a deadline that has gone, and
     // the workspace is already read-only. Sending it would be a notice about
-    // something the couple can no longer act on in time.
+    // something the couple can no longer act on in time. Needs the WALL to be
+    // old too, since the week counts from whichever came later.
     setTrialEnd(coupleId, now() - (TRIAL_GRACE_MS + DAY));
+    expireTrialGraceWindow();
 
     expect(runEmailSweep().trialEnded).toBe(0);
     expect(mailCount(coupleId)).toBe(0);

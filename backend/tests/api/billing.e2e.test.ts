@@ -22,7 +22,13 @@ import {
   setBillingEnforcement,
 } from "../../src/domain/billing";
 import { FOUNDING_CAP } from "@shared/billing";
-import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
+import {
+  bootstrapCouple,
+  expireTrialGraceWindow,
+  registerAndVerify,
+  req,
+  wipeAll,
+} from "../helpers";
 
 /** Seed N placeholder founding-cohort couples (`is_founding_member = 1`) so N
  *  of the FOUNDING_CAP founding slots are consumed — the cap is now counted by
@@ -205,6 +211,10 @@ describe("billing state machine", () => {
     const { token, coupleId } = await bootstrapCouple("lapse@weddly.test");
     db.prepare("UPDATE couples SET trial_ends_at = 1 WHERE id = ?").run(coupleId);
     setBillingEnforcement(true, 1); // paywall live, otherwise the freeze is deferred
+    // ...and live for longer than the post-trial grace week, which counts from
+    // whichever came later, the trial end or the wall going up. A paywall
+    // switched on a moment ago still owes this couple their seven days.
+    expireTrialGraceWindow(); // past the grace week the flip itself grants
 
     const get = await getCouple(token);
     expect(get.status).toBe(200);
@@ -441,6 +451,7 @@ describe("multi-workspace billing inheritance", () => {
       "UPDATE couples SET subscription_status = 'trialing', trial_ends_at = 1 WHERE id = ?",
     ).run(primaryId);
     setBillingEnforcement(true, 1);
+    expireTrialGraceWindow(); // past the grace week the flip itself grants
 
     // The secondary still has its own fresh, unexpired trial — but inheritance
     // from the lapsed primary wins, so it is read-only.
