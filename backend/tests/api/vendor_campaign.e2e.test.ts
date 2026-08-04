@@ -28,6 +28,7 @@ import type {
 } from "@shared/vendor_campaign";
 import { VENDOR_CAMPAIGN_REMINDER_AFTER_MS } from "@shared/vendor_campaign";
 import { db, now } from "../../src/db";
+import { buildEmail } from "../../src/domain/emails/templates";
 import { runCampaignSweep } from "../../src/domain/emails/worker";
 import { backfillListings } from "../../src/domain/listings";
 import {
@@ -81,19 +82,23 @@ function seedListing(patch: {
   category?: string;
   status?: string;
   vendor_account_id?: number | null;
+  source?: string;
+  submitter_type?: string | null;
 }): void {
   const ts = now();
   db.prepare(
     `INSERT INTO listings
-       (id, source, vendor_account_id, category, name, city, contact_email, status, created_at, updated_at)
-     VALUES (?, 'curated', ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, source, vendor_account_id, category, name, city, contact_email, submitter_type, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     patch.id,
+    patch.source ?? "curated",
     patch.vendor_account_id ?? null,
     patch.category ?? "photography",
     patch.name,
     patch.city,
     patch.contact_email,
+    patch.submitter_type ?? null,
     patch.status ?? "active",
     ts,
     ts,
@@ -357,8 +362,8 @@ describe("vendor claim-invite campaign", () => {
     expect(byEmail.get("it@x.com")?.locale).toBe("en");
     expect(byEmail.get("it@x.com")?.country).toBe("IT");
 
-    expect(lastSubjectTo("hu@x.hu")).toContain("már fent van");
-    expect(lastSubjectTo("it@x.com")).toContain("is already listed");
+    expect(lastSubjectTo("hu@x.hu")).toContain("fent van a Weddlyn");
+    expect(lastSubjectTo("it@x.com")).toContain("is on Weddly");
   });
 
   test("the invite link is one click into a completable claim", async () => {
@@ -683,5 +688,104 @@ describe("vendor campaign — held-back addresses are never targeted", () => {
     for (const row of flagged) {
       expect(eligible.has(row.contact_email.trim().toLowerCase())).toBe(false);
     }
+  });
+});
+
+// "A user suggested you" is the best opening in cold outreach and a liability
+// the moment it is not true, because the vendor who writes back to ask WHO is
+// the one who was about to claim. The invite may therefore only say it where a
+// couple really did put the business forward. These tests are the guard: the
+// branch is one careless refactor away from becoming the default again, and
+// nothing else in the system would notice.
+describe("vendor campaign — the referral line only goes where it is true", () => {
+  /** Render the invite exactly as the sender would for one seeded listing. */
+  function inviteBodyFor(target: VendorCampaignTarget): string {
+    return buildEmail(
+      "vendor_claim_campaign",
+      {
+        listingName: target.listing_name,
+        categoryLabel: "Fotós",
+        city: target.city,
+        inviteUrl: "https://weddly.test/r/vendor-invite/tok",
+        listingUrl: `https://weddly.test/vendors/${target.listing_id}`,
+        monthlyVisitors: 3000,
+        suggestedByUser: target.suggested_by_user,
+        freeMonths: 12,
+        locale: target.locale,
+      },
+      { recipientName: "", recipientLocale: target.locale },
+    ).rendered.text;
+  }
+
+  async function targetsFor(): Promise<VendorCampaignTarget[]> {
+    const campaign = await makeCampaign();
+    const r = await req<{ targets: VendorCampaignTarget[] }>(
+      "GET",
+      `/api/admin/vendor-campaigns/${campaign.id}/targets`,
+      undefined,
+      { token },
+    );
+    expect(r.status).toBe(200);
+    return r.data.targets;
+  }
+
+  test("a curated import is never told a user suggested it", async () => {
+    // The case that matters: on the live directory this is every reachable
+    // listing. Nobody put them forward, we compiled them from public sources,
+    // and our own privacy notice says so in writing.
+    seedListing({
+      id: "curated-one",
+      name: "Curated Studio",
+      city: "Budapest",
+      contact_email: "curated@example.hu",
+    });
+
+    const target = (await targetsFor()).find((t) => t.listing_id === "curated-one");
+    expect(target?.suggested_by_user).toBe(false);
+    if (!target) throw new Error("target missing");
+
+    const body = inviteBodyFor(target);
+    expect(body).not.toContain("ajánlot");
+    expect(body).not.toContain("javasol");
+    expect(body).not.toContain("suggested");
+    // What it says instead is the checkable thing: a person here put them on
+    // the list, the page exists, it is unclaimed, and here it is.
+    expect(body).toContain("listát kézzel állítjuk össze");
+    expect(body).toContain("/vendors/curated-one");
+  });
+
+  test("a listing a couple submitted does get the referral opening", async () => {
+    // `publishCoupleSupplierToDirectory` writes exactly this shape when a
+    // couple adds a vendor that is not on Weddly yet, which is the one place
+    // the sentence is earned.
+    seedListing({
+      id: "c9001",
+      name: "Couple Suggested Kft",
+      city: "Budapest",
+      contact_email: "suggested@example.hu",
+      source: "community",
+      submitter_type: "user",
+    });
+
+    const target = (await targetsFor()).find((t) => t.listing_id === "c9001");
+    expect(target?.suggested_by_user).toBe(true);
+    if (!target) throw new Error("target missing");
+    expect(inviteBodyFor(target)).toContain("ajánlotta");
+  });
+
+  test("a business that submitted ITSELF is not a referral", async () => {
+    // 'self' on a community row means the business filled the form in. Telling
+    // them a user put them forward would be a fresh untruth, not a warmer one.
+    seedListing({
+      id: "c9002",
+      name: "Self Submitted Kft",
+      city: "Budapest",
+      contact_email: "self@example.hu",
+      source: "community",
+      submitter_type: "self",
+    });
+
+    const target = (await targetsFor()).find((t) => t.listing_id === "c9002");
+    expect(target?.suggested_by_user).toBe(false);
   });
 });

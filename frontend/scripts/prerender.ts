@@ -25,6 +25,21 @@ const INDEX_HTML = `${DIST}index.html`;
 const INDEX_EN_HTML = `${DIST}index.en.html`;
 
 function escape(s: string): string {
+  // A missing key must say so. This script is NOT in the tsconfig project, so
+  // `l.some_removed_key` is not a compile error here the way it would be in
+  // src/ — it arrives as `undefined` and used to surface as
+  // "undefined is not an object (evaluating 's.replace')" from inside a helper
+  // that cannot name what was missing. That is a build failure, and therefore a
+  // DEPLOY failure, with a stack trace pointing at the wrong line: the landing
+  // copy this mirrors is edited often, and dropping a key here is the ordinary
+  // consequence of an ordinary edit.
+  if (typeof s !== "string") {
+    throw new Error(
+      "prerender: a landing copy key is missing. This body must mirror the React " +
+        "landing, so a key removed from locales/*.ts has to be removed from " +
+        "buildBody() in the same commit.",
+    );
+  }
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -120,11 +135,11 @@ function buildBody(L: LocaleMessages, locale: SeoFaqLocale): string {
     `  <article><h3>${escape(l.block_seating_title)}</h3><p>${escape(l.block_seating_body)}</p></article>`,
     `  <article><h3>${escape(l.wsite_title)}</h3><p>${escape(l.wsite_body)}</p></article>`,
     `</section>`,
-    `<section aria-labelledby="founders-heading">`,
-    `  <h2 id="founders-heading">${escape(l.founders_title)}</h2>`,
-    `  <p>${escape(l.founders_body)}</p>`,
-    `  <p>${escape(l.founders_note)}</p>`,
-    `</section>`,
+    // The couples-facing "founders" section is gone from the React landing
+    // (13251411 turned that band into the VENDOR founding round), so it is gone
+    // from here too. The two must render the same text: a body that carries a
+    // section the page does not is the crawled-vs-rendered mismatch this
+    // prerender exists to avoid, and it reads as cloaking.
     `<section aria-labelledby="pricing-heading">`,
     `  <h2 id="pricing-heading">${escape(l.pricing_title)}</h2>`,
     `  <p>${escape(l.pricing_body)}</p>`,

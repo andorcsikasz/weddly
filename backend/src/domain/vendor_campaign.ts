@@ -22,6 +22,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { listingLocalLanguage } from "@shared/listing_language";
 import { isUiLocale, type UiLocale } from "@shared/locales";
 import { isVendorSelfServeBlocked, supplierCategoryLabel } from "@shared/suppliers";
+import { vendorPublicId } from "@shared/vendor_slug";
 import {
   type CreateVendorCampaignInput,
   type UpdateVendorCampaignInput,
@@ -57,6 +58,18 @@ interface ListingTargetRow {
   category: string;
   city: string;
   contact_email: string;
+  submitter_type: string | null;
+}
+
+/** Did a Weddly user actually put this business forward? Both halves are
+ *  required on purpose. `submitter_type` alone is a mirrored column (the
+ *  listings row is written from the community row), and 'self' on it means the
+ *  business submitted ITSELF, which is not a referral at all; `source` alone
+ *  would sweep in every curated import, where the answer is simply no. The
+ *  invite's opening sentence is the source disclosure we owe the recipient, so
+ *  the predicate has to be the narrow one. */
+function suggestedByUser(row: { source: string; submitter_type: string | null }): boolean {
+  return row.source === "community" && row.submitter_type === "user";
 }
 
 /** ISO alpha-2 for any listing. Curated rows go through the directory's own
@@ -304,7 +317,7 @@ function eligibleTargets(opts: {
 }): VendorCampaignTarget[] {
   const rows = db
     .prepare(
-      `SELECT l.id, l.source, l.name, l.category, l.city, l.contact_email
+      `SELECT l.id, l.source, l.name, l.category, l.city, l.contact_email, l.submitter_type
          FROM listings l
         WHERE l.vendor_account_id IS NULL
           AND l.status = 'active'
@@ -344,6 +357,7 @@ function eligibleTargets(opts: {
       city: displayCity(row.city),
       country,
       locale: localeForCountry(country),
+      suggested_by_user: suggestedByUser(row),
     });
   }
   return out;
@@ -496,6 +510,16 @@ function pixelUrl(sendId: number): string {
   return `${CONFIG.frontendBaseUrl}/api/emails/track/campaign?t=${makeCampaignPixelToken(sendId)}`;
 }
 
+/** The listing's own public page, in the pretty form couples get. Deliberately
+ *  NOT tracked: it is the mail's proof of good faith, and a redirect through
+ *  our own domain is exactly what a sceptical recipient would not click.
+ *  Addressed by the listing's OWN id via `vendorPublicId`, never `v<accountId>`
+ *  (these rows have no account yet, and 42 of the live claimed ones kept their
+ *  curated id anyway). */
+function publicListingUrl(listingId: string, listingName: string): string {
+  return `${CONFIG.frontendBaseUrl}/vendors/${vendorPublicId(listingId, listingName)}`;
+}
+
 /** Free-window promise for the invite copy, in months. The claim itself calls
  *  `initVendorBilling`, which re-resolves the tier at that moment, so a mail
  *  sent on the last founding slot can promise a year that the claim no longer
@@ -549,7 +573,9 @@ async function sendOne(
       categoryLabel: supplierCategoryLabel(target.category, mailContentLocale(target.locale)),
       city: target.city,
       inviteUrl: inviteUrl(claim.token),
+      listingUrl: publicListingUrl(target.listing_id, target.listing_name),
       monthlyVisitors: VENDOR_CAMPAIGN_MONTHLY_VISITORS,
+      suggestedByUser: target.suggested_by_user,
       freeMonths: offerMonths(),
       locale: target.locale,
     },
@@ -653,8 +679,10 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
   let sent = 0;
   for (const row of rows) {
     const listing = db
-      .prepare("SELECT name, city FROM listings WHERE id = ?")
-      .get(row.listing_id) as { name: string; city: string } | undefined;
+      .prepare("SELECT name, city, source, submitter_type FROM listings WHERE id = ?")
+      .get(row.listing_id) as
+      | { name: string; city: string; source: string; submitter_type: string | null }
+      | undefined;
     if (!listing) continue;
     const locale = isUiLocale(row.locale) ? row.locale : "en";
     const result = await sendKind(
@@ -664,7 +692,14 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
         categoryLabel: supplierCategoryLabel(row.category, mailContentLocale(locale)),
         city: displayCity(listing.city),
         inviteUrl: inviteUrl(row.claim_token as string),
+        listingUrl: publicListingUrl(row.listing_id, listing.name),
         monthlyVisitors: VENDOR_CAMPAIGN_MONTHLY_VISITORS,
+        // Re-derived from the listing rather than remembered from the first
+        // send, so a row that changed provenance in between (a couple's
+        // submission merged into a curated twin) cannot have the reminder
+        // repeat a referral the first mail was right to claim and this one
+        // would not be.
+        suggestedByUser: suggestedByUser(listing),
         freeMonths: offerMonths(),
         locale,
       },
