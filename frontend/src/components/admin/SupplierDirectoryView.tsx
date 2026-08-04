@@ -10,6 +10,7 @@ import {
 import { intlLocale } from "../../lib/format";
 import { safeExternalHref } from "../../lib/url";
 import {
+  Ban,
   ChevronDown,
   Download,
   ExternalLink,
@@ -103,6 +104,11 @@ export function SupplierDirectoryView() {
   // reading "0" before anything loaded is a lie, and one that jumps from 0 to
   // 412 reads as a bug.
   const [facets, setFacets] = useState<AdminDirectoryFacets | null>(null);
+  /** Listing ids that are down at the BUSINESS's own request, not ours. Kept
+   *  beside the rows rather than on them because it is a different kind of
+   *  fact: the row's own status only says "hidden", and an admin about to
+   *  un-hide needs to know whose decision they would be reversing. */
+  const [removalRequested, setRemovalRequested] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [sort, setSort] = useState<SortState>({ key: "views_total", dir: "desc" });
@@ -129,6 +135,7 @@ export function SupplierDirectoryView() {
         if (cancelled) return;
         setRows(r.suppliers);
         setFacets(r.facets);
+        setRemovalRequested(new Set(r.removal_requested ?? []));
       })
       .catch((e) => {
         if (!cancelled) {
@@ -181,6 +188,42 @@ export function SupplierDirectoryView() {
         await adminSupplierApi.hide(row.community_id, trimmed.length > 0 ? trimmed : undefined);
       }
       toast.success(t("admin.hide"));
+      reload();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  /** The business itself asked to come off Weddly. This is the surface that
+   *  matters for it: the moderation card list only holds community submissions,
+   *  and most of the directory (including every curated entry) only ever
+   *  appears here. `row.id` is the listing id in both shapes, curated slug or
+   *  `c<n>`, which is exactly what the endpoint keys on. */
+  async function onRequestRemoval(row: SupplierDirectoryAdminRow) {
+    const note = await promptEntry({
+      title: t("admin.removal_confirm_title"),
+      label: t("admin.removal_note_label"),
+      placeholder: t("admin.removal_note_placeholder"),
+      helperText: t("admin.removal_help"),
+      confirmLabel: t("admin.removal_action"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (note === null) return;
+    const trimmed = note.trim();
+    setActionBusyId(row.id);
+    try {
+      const r = await adminSupplierApi.requestRemoval({
+        listing_id: row.id,
+        via: "email",
+        ...(trimmed.length > 0 ? { note: trimmed } : {}),
+      });
+      // The removal happened either way; only the confirmation can fail, and
+      // that is worth saying so the admin can follow up by hand.
+      toast.success(
+        r.mail === "sent" ? t("admin.removal_done_mailed") : t("admin.removal_done_no_mail"),
+      );
       reload();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -741,6 +784,27 @@ export function SupplierDirectoryView() {
                         ) : (
                           <EyeOff size={14} aria-hidden />
                         )}
+                      </button>
+                      {/* Sits between hide and delete because that is where it
+                          sits in meaning: more final than hiding, less than
+                          erasing. Marked when it has already been used, so the
+                          hide button beside it is not casually reversed on a
+                          business that asked to be gone. */}
+                      <button
+                        type="button"
+                        className={`btn-ghost btn-sm ${
+                          removalRequested.has(row.id) ? "text-amber-600 dark:text-amber-400" : ""
+                        }`}
+                        onClick={() => onRequestRemoval(row)}
+                        disabled={actionBusyId === row.id}
+                        title={
+                          removalRequested.has(row.id)
+                            ? t("admin.removal_badge")
+                            : t("admin.removal_hint")
+                        }
+                        aria-label={t("admin.removal_action")}
+                      >
+                        <Ban size={14} aria-hidden />
                       </button>
                       <button
                         type="button"
