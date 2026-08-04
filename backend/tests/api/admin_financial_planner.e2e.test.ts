@@ -12,6 +12,7 @@ import {
 import { MONTHLY_PRICE, TRIAL_GRACE_MS } from "@shared/billing";
 import { db } from "../../src/db";
 import { recordGrowthEvent } from "../../src/domain/growth_events";
+import { runEmailSweep } from "../../src/domain/emails/worker";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Seed N placeholder non-demo couples (negative ids) so later real couples
@@ -155,6 +156,57 @@ describe("GET /api/admin/financial-planner/overview", () => {
 });
 
 describe("POST /api/admin/financial-planner/enforcement", () => {
+  test("pressing the button starts the clocks: lapsed couples enter grace and get mailed", async () => {
+    // The whole go-live story, end to end, through the endpoint the admin
+    // button actually calls rather than the domain function under it.
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("golive-story@weddly.test");
+    // A couple whose trial lapsed long ago, i.e. the shape 111 of the 176 live
+    // workspaces are in right now.
+    db.prepare(
+      "UPDATE couples SET subscription_status = 'trialing', trial_ends_at = ? WHERE id = ?",
+    ).run(Date.now() - 120 * 86_400_000, coupleId);
+    const adminToken = await addAdmin();
+
+    // BEFORE: the freeze is deferred, so they edit freely and hear nothing.
+    expect(runEmailSweep().trialEnded).toBe(0);
+    const beforeOverview = await req<AdminFinancialPlannerOverview>(
+      "GET",
+      "/api/admin/financial-planner/overview",
+      undefined,
+      { token: adminToken },
+    );
+    // The button quotes this number before it is pressed.
+    expect(beforeOverview.data.enforcement_impact.couples).toBe(1);
+    expect(beforeOverview.data.billing_enforcement_on).toBe(false);
+
+    // PRESS.
+    const flip = await req<AdminFinancialPlannerOverview>(
+      "POST",
+      "/api/admin/financial-planner/enforcement",
+      { on: true },
+      { token: adminToken },
+    );
+    expect(flip.status).toBe(200);
+    expect(flip.data.billing_enforcement_on).toBe(true);
+
+    // AFTER: the clock started, it did not expire. They are still editable...
+    const stillEditing = await req(
+      "PATCH",
+      "/api/couples/current",
+      { display_name: "Still planning" },
+      { token },
+    );
+    expect(stillEditing.status).toBe(200);
+
+    // ...and the notice goes out on the very next sweep, naming their deadline.
+    expect(runEmailSweep().trialEnded).toBe(1);
+    const mailed = db
+      .prepare("SELECT COUNT(*) AS n FROM email_log WHERE couple_id = ? AND kind = 'trial_ended'")
+      .get(coupleId) as { n: number };
+    expect(mailed.n).toBe(1);
+  });
+
   test("go-live is not gated on reaching the 200-couple cap", async () => {
     wipeAll();
     // Far below FOUNDING_CAP: the readiness signal is false, and the flip must
