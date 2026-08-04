@@ -1229,7 +1229,10 @@ export const BLOG_POSTS_HR: BlogTranslationsBySlug = {
       { type: "ul", items: ["Gumice za kosu", "Ukosnice", "Lak za kosu", "Češalj"] },
       { type: "h2", text: "Mladoženjina torba" },
       { type: "h3", text: "Odjeća" },
-      { type: "ul", items: ["Odijelo", "Košulja", "Kravata ili leptir-mašna", "Remen", "Čarape", "Cipele"] },
+      {
+        type: "ul",
+        items: ["Odijelo", "Košulja", "Kravata ili leptir-mašna", "Remen", "Čarape", "Cipele"],
+      },
       { type: "h3", text: "Dodaci" },
       { type: "ul", items: ["Manžete", "Rupčić za džep", "Cvijet za rever", "Sat"] },
       { type: "h3", text: "Njega" },
@@ -1867,7 +1870,8 @@ export const BLOG_POSTS_HR: BlogTranslationsBySlug = {
         alt: "Dvorac Mirabell i njegovi vrtovi u Salzburgu",
         caption: "Dvorac Mirabell, Salzburg",
         credit: "Fotografija: Andrew Bossi / CC BY-SA 2.5, preko Wikimedia Commonsa",
-        creditHref: "https://commons.wikimedia.org/wiki/File:2150_-_Salzburg_-_Schloss_Mirabell.JPG",
+        creditHref:
+          "https://commons.wikimedia.org/wiki/File:2150_-_Salzburg_-_Schloss_Mirabell.JPG",
       },
       {
         type: "p",
@@ -2067,6 +2071,347 @@ export const BLOG_POSTS_HR: BlogTranslationsBySlug = {
         lead: "Našli ste prostor? U Weddlyju popis uzvanika, raspored sjedenja, budžet i zadaci žive na jednom mjestu.",
         href: "/signup",
         label: "Počnite planirati",
+      },
+    ],
+  },
+  "miert-hazasodunk-a-biblia-szerint": {
+    category: "Vjera",
+    title: "Zašto se vjenčati, prema Bibliji?",
+    lead: "Red stvaranja, savez, Isusov nauk i program za svaki dan: tako Pismo čita smisao braka.",
+    seo_title: "Zašto se vjenčati prema Bibliji? · Weddly",
+    seo_description:
+      "Što Biblija kaže o smislu braka? Red stvaranja, savez, Isusov nauk i praktičan program apostola Pavla.",
+    body: [
+      {
+        type: "p",
+        text: "Mnogi parovi na to pitanje naiđu usred priprema: čemu brak zapravo služi? Tradiciji? Romantici? Papirologiji? Biblija nudi više: brak vidi kao dar ugrađen u stvaranje, s unutarnjim ustrojem koji vrijedi razumjeti.",
+      },
+      {
+        type: "p",
+        text: "Dakle, ne dogma, nego polagana šetnja kroz ono što Pismo govori o smislu braka i zašto to i danas može progovoriti, došli vi s vjerom ili samo sa znatiželjom.",
+      },
+      { type: "h2", text: "1. Stvaranje: nije dobro biti sam" },
+      {
+        type: "p",
+        text: "Knjiga Postanka ne počinje brakom, ali brzo do njega dolazi. Drugo poglavlje bez okolišanja kaže da samoća nije punina, nego manjak.",
+      },
+      {
+        type: "blockquote",
+        cite: "Postanak 2,18",
+        text: "I reče Gospodin Bog: Nije dobro da čovjek bude sam; načinit ću mu pomoć koja mu odgovara.",
+      },
+      {
+        type: "p",
+        text: "Hebrejski izraz iza riječi „pomoć”, ezer kenegdo, teži je nego što zvuči. Znači ravnopravnog sugovornika: nekoga tko stoji nasuprot, dopunjuje, zrcali i blago ispravlja. Brak ovdje nije hijerarhija, nego susret.",
+      },
+      {
+        type: "blockquote",
+        cite: "Postanak 2,24",
+        text: "Stoga će čovjek ostaviti oca i majku i prionuti uza svoju ženu, i bit će njih dvoje jedno tijelo.",
+      },
+      {
+        type: "p",
+        text: "Tri pokreta po redu: ostaviti, prionuti, postati jedno. Brak stvara novu obitelj; ne zamjenjuje staru, ali dolazi na prvo mjesto. Pismo se tom nizu vraća iznova kao temelju braka.",
+      },
+      { type: "h2", text: "2. Brak je savez, a ne ugovor" },
+      {
+        type: "p",
+        text: "Kad govori o braku, Biblija se stalno vraća jednoj riječi: savez (hebrejski berit). Ugovor štiti interes svake strane i raskida se pri povredi. Savez je bezuvjetna obveza pred Bogom, vjernost vezana uz osobu, a ne uz njezin učinak.",
+      },
+      {
+        type: "blockquote",
+        cite: "Malahija 2,14",
+        text: "Gospodin je bio svjedok između tebe i žene tvoje mladosti, kojoj si se iznevjerio, a ona je drugarica tvoja i žena tvoga saveza.",
+      },
+      {
+        type: "p",
+        text: "Malahija brak ukorjenjuje u Božjem svjedočanstvu. „Žena tvoga saveza”, upravo ona riječ kojom Pismo opisuje Božju vezu sa svojim narodom. Po toj mjeri brak nije samo stvar vas dvoje: to je zavjet položen javno, pred trećom prisutnošću.",
+      },
+      { type: "h2", text: "3. Isus potvrđuje izvorni red" },
+      {
+        type: "p",
+        text: "Kad Isusa pitaju o rastavi, njegov odgovor ne počinje rastavom. Upućuje natrag, na stvaranje.",
+      },
+      {
+        type: "blockquote",
+        cite: "Matej 19,4-6",
+        text: "Zar niste čitali da ih je Stvoritelj od početka stvorio muško i žensko\n\ni rekao: Stoga će čovjek ostaviti oca i majku i prionuti uza svoju ženu, i bit će njih dvoje jedno tijelo?\n\nŠto je, dakle, Bog združio, čovjek neka ne rastavlja.",
+      },
+      {
+        type: "p",
+        text: "Isus ovdje ne donosi novi nauk, nego učvršćuje red stvaranja. Brak je savez koji Bog združuje. „Jedno tijelo” nije samo tjelesno: to je stapanje dvaju cijelih života.",
+      },
+      { type: "h2", text: "4. Program za svaki dan: Pavlove poslanice" },
+      {
+        type: "p",
+        text: "Peto poglavlje Poslanice Efežanima ključan je odlomak koji parovi često krivo čitaju jer izdvoje jedan redak. Prva rečenica postavlja okvir za sve ostalo.",
+      },
+      {
+        type: "blockquote",
+        cite: "Efežanima 5,21.25",
+        text: "Podložni budite jedni drugima u strahu Božjem.\n\nMuževi, ljubite svoje žene kao što je i Krist ljubio Crkvu i sam sebe predao za nju.",
+      },
+      {
+        type: "p",
+        text: "Prva rečenica daje ton: uzajamna podložnost. Tek se poslije Pavao obraća muževima, a i ondje govori o predanoj ljubavi po uzoru na Krista, ne o vlasti. Ako taj red poklizne, odlomak počinje govoriti nešto sasvim drugo.",
+      },
+      { type: "p", text: "Treće poglavlje Poslanice Kološanima bavi se svakodnevnim radom braka." },
+      {
+        type: "blockquote",
+        cite: "Kološanima 3,12-14",
+        text: "Obucite se, kao izabranici Božji, sveti i ljubljeni, u milosrdno srce, dobrostivost, poniznost, blagost, strpljivost;\n\npodnosite jedni druge i opraštajte jedni drugima ako tko ima protiv koga tužbu.\n\nA povrh svega toga obucite se u ljubav, koja je veza savršenstva.",
+      },
+      {
+        type: "p",
+        text: "Ne vrhunci. Svakodnevne kreposti: milosrđe, dobrota, strpljivost, oproštenje. Pismo brak utemeljuje na tim trajnim osobinama, a ne samo na romantici.",
+      },
+      { type: "h2", text: "5. Sukob i oproštenje" },
+      {
+        type: "p",
+        text: "Biblija brak ne uljepšava. Pretpostavlja da će biti sukoba, povreda i umora. Ne obećava da to možete izbjeći, nego samo da postoji put kroz to.",
+      },
+      {
+        type: "blockquote",
+        cite: "Efežanima 4,26",
+        text: "Srdite se, ali ne griješite; sunce neka ne zađe nad vašom srdžbom.",
+      },
+      {
+        type: "p",
+        text: "Pavao ne kaže „nemojte se ljutiti”. Kaže: nemojte pustiti da se to zagnoji. Neka sunce ne zađe nad tim, nemojte u sutra nositi ono što se danas još može ispraviti jednom riječju, jednim oproštenjem.",
+      },
+      { type: "h2", text: "6. Trostruko uže" },
+      {
+        type: "p",
+        text: "Klasičan odlomak iz Propovjednika ne govori izravno o braku, ali ga čitatelji odavno čuju kao sliku saveza.",
+      },
+      {
+        type: "blockquote",
+        cite: "Propovjednik 4,9-12",
+        text: "Bolje je dvojici nego jednome, jer imaju dobru plaću za svoj trud.\n\nPadne li jedan, drugi će ga podići.\n\nA ako tko svlada jednoga, dvojica će mu se oduprijeti; trostruko uže ne kida se lako.",
+      },
+      {
+        type: "p",
+        text: "U kršćanskom čitanju to „trostruko uže” vas ste dvoje plus Bog, tri niti spletene u jednu. Brak ovdje nije privatna veza dvoje ljudi, nego zajednička budućnost satkana od troje. Zato mnogi parovi u crkveni obred ne ulaze kao u formalnost, nego kao u sam savez.",
+      },
+      { type: "h2", text: "7. Što ostaje praktično" },
+      { type: "h3", text: "Brak nije samo stvar dvoje ljudi" },
+      {
+        type: "p",
+        text: "U Pismu je brak savez, a svaki se savez sklapa pred trećim. Zato javni zavjet, svjedoci i, za one koji vjeruju, Božja prisutnost nisu dodaci, nego srž stvari.",
+      },
+      { type: "h3", text: "Ljubav je odluka, a ne raspoloženje" },
+      {
+        type: "p",
+        text: "Ljubav o kojoj Pismo govori (hebrejski chesed, grčki agape) nije raspoloženje, nego vjeran izbor. A to tiho oslobađa: brak ne mora stajati ili padati na tome „osjećate” li to oboje danas. Stoji na izboru koji obnavljate svako jutro.",
+      },
+      { type: "h3", text: "Oproštenje je svakodnevna vježba" },
+      {
+        type: "p",
+        text: "Dva života zajedno znače stalno kapanje sitnih povreda i sitnih popravaka. Biblija ne traži da nema sukoba, samo da na njemu ne prespavate. „Neka sunce ne zađe nad vašom srdžbom” možda je najprizemniji bračni savjet koji Pismo uopće daje.",
+      },
+      {
+        type: "cta",
+        lead: "Ako i praktični dio vjenčanja (popis uzvanika, budžet, potvrde dolaska, raspored sjedenja) želite držati na jednom mjestu, krenite s Weddlyjem.",
+        href: "/signup",
+        label: "Počnite planirati",
+      },
+      { type: "h2", text: "Česta pitanja" },
+      { type: "h3", text: "Što znači da je brak savez?" },
+      {
+        type: "p",
+        text: "Savez nije ugovor. Ugovori štite interes svake strane i raskidaju se pri povredi. Savez je javna obveza pred trećim, koja vjernost veže uz osobu, a ne uz njezin učinak.",
+      },
+      { type: "h3", text: "Što znači podložnost u braku?" },
+      {
+        type: "p",
+        text: "Ključ je Efežanima 5,21: uzajamna podložnost. Ne jednosmjerna podređenost, nego pažnja, poniznost i poštovanje jedno prema drugome. Ono što se traži od muža (Ef 5,25) jest predana ljubav, a ne vlast.",
+      },
+      { type: "h3", text: "Što Biblija kaže o sukobu?" },
+      {
+        type: "p",
+        text: "Pismo ne niječe sukob. Daje okvir: govoriti istinu (Ef 4,25), brzo se pomiriti (Ef 4,26), opraštati jedni drugima (Kol 3,13). Sukob nije mana braka, nego njegov teren za održavanje.",
+      },
+      { type: "h3", text: "Mora li se vjenčati u crkvi?" },
+      {
+        type: "p",
+        text: "Građanski obred rješava pravni dio. Crkveni je odluka vjere i javni zavjet pred Bogom. To dvoje se ne isključuje: mnogi parovi imaju oboje isti dan.",
+      },
+    ],
+  },
+  "bibliai-idezetek-eskuvore": {
+    category: "Biblijski reci",
+    title: "Biblijski reci za vjenčanje: ljubav, brak i zajednički život",
+    lead: "Odabir biblijskih redaka za pozivnice, obrede i zavjete: ljubav, brak, vjernost i oproštenje.",
+    seo_title: "Biblijski reci za vjenčanje: ljubav i brak · Weddly",
+    seo_description:
+      "Odabir biblijskih redaka za vjenčanje: ljubav, brak, vjernost, oproštenje i zajednički život.",
+    body: [
+      {
+        type: "p",
+        text: "Mnogi parovi žele biblijski redak na pozivnici, na web stranici vjenčanja ili kao dio zavjeta. Slijedi odabir složen po temama: ljubav, brak, zajednički život, poštovanje i oproštenje.",
+      },
+      { type: "h2", text: "Kratki reci za pozivnice" },
+      {
+        type: "ul",
+        items: [
+          "„Najveća je među njima ljubav.”, 1Korinćanima 13,13",
+          "„Sve vaše neka bude u ljubavi.”, 1Korinćanima 16,14",
+          "„Ljubljeni, ljubimo jedni druge.”, 1Ivanova 4,7",
+          "„Bog je ljubav.”, 1Ivanova 4,8",
+          "„U ljubavi nema straha.”, 1Ivanova 4,18",
+          "„Nije dobro da čovjek bude sam.”, Postanak 2,18",
+          "„Bit će njih dvoje jedno tijelo.”, Marko 10,8",
+          "„Što je Bog združio, čovjek neka ne rastavlja.”, Marko 10,9",
+          "„Trostruko uže ne kida se lako.”, Propovjednik 4,12",
+          "„Ja sam svoga dragoga i moj dragi je moj.”, Pjesma nad pjesmama 2,16",
+          "„Ljubav je jaka kao smrt.”, Pjesma nad pjesmama 8,6",
+        ],
+      },
+      { type: "h2", text: "O ljubavi" },
+      { type: "h3", text: "1Korinćanima 13,4-8" },
+      {
+        type: "blockquote",
+        cite: "1Korinćanima 13,4-8",
+        text: "Ljubav je strpljiva, ljubav je dobrostiva; ljubav ne zavidi, ne hvasta se, ne nadima se;\n\nne čini što je nedolično, ne traži svoje, ne razdražuje se, ne pamti zlo;\n\nne raduje se nepravdi, a raduje se istini.\n\nSve pokriva, sve vjeruje, svemu se nada, sve podnosi.\n\nLjubav nikad ne prestaje.",
+      },
+      {
+        type: "p",
+        text: "Pavao ovdje ljubav gotovo rastavlja na dijelove: ne kao osjećaj, nego kao niz malih, svakodnevnih pokreta, strpljivost, dobrota, poniznost, izdržljivost. To nisu riječi koje se mogu odglumiti u jednom danu; uče se polako, u običnom životu. Brak je upravo ta učionica: vježbati, dan za danom, onu ljubav koja nikad ne prestaje.",
+      },
+      { type: "h3", text: "1Ivanova 4,7-8" },
+      {
+        type: "blockquote",
+        cite: "1Ivanova 4,7-8",
+        text: "Ljubljeni, ljubimo jedni druge, jer ljubav je od Boga; i tko god ljubi, od Boga je rođen i poznaje Boga.\n\nTko ne ljubi, ne pozna Boga, jer Bog je ljubav.",
+      },
+      {
+        type: "p",
+        text: "Ivan ide do korijena: gdje je ljubav, ondje je Bog, i onda kad ga ne imenujemo. Ljubav nije naš izum, nego odjek nečega većega. Zato kad se dvoje ljudi okrene jedno prema drugome, čine više nego što znaju: predaju dalje ljubav koja je njima najprije bila dana.",
+      },
+      { type: "h2", text: "O braku" },
+      { type: "h3", text: "Postanak 2,18.24" },
+      {
+        type: "blockquote",
+        cite: "Postanak 2,18.24",
+        text: "I reče Gospodin Bog: Nije dobro da čovjek bude sam; načinit ću mu pomoć koja mu odgovara.\n\nStoga će čovjek ostaviti oca i majku i prionuti uza svoju ženu, i bit će njih dvoje jedno tijelo.",
+      },
+      {
+        type: "p",
+        text: "U cijeloj priči o stvaranju ovo je prvo što Bog naziva ne dobrim: samoću. Ne mana, ne propust, nego jednostavno oblik ljudskosti. Stvoreni smo da nas netko drugi primi, a brak toj čežnji daje ime i dom: dva života koja se okreću jedan prema drugome jer nijedan sam sebi nije dovoljan.",
+      },
+      { type: "h3", text: "Marko 10,6-9" },
+      {
+        type: "blockquote",
+        cite: "Marko 10,6-9",
+        text: "Ali od početka stvorenja Bog ih je stvorio muško i žensko.\n\nStoga će čovjek ostaviti oca i majku i prionuti uza svoju ženu,\n\ni bit će njih dvoje jedno tijelo. Tako više nisu dvoje, nego jedno tijelo.\n\nŠto je, dakle, Bog združio, čovjek neka ne rastavlja.",
+      },
+      {
+        type: "p",
+        text: "Isus poseže natrag, na početak: brak nije privatan dogovor, nego nešto što sam Bog združuje. Ta riječ, združio, blaga je i teška u isti čas: nisu to dva života zalijepljena jedan uz drugi, nego spletena u jedno. A ono što Bog splete, traži da s time postupamo pažljivo.",
+      },
+      { type: "h3", text: "Efežanima 5,21.25" },
+      {
+        type: "blockquote",
+        cite: "Efežanima 5,21.25",
+        text: "Podložni budite jedni drugima u strahu Božjem.\n\nMuževi, ljubite svoje žene kao što je i Krist ljubio Crkvu i sam sebe predao za nju.",
+      },
+      {
+        type: "p",
+        text: "Pavao počinje uzajamnom podložnošću, a završava mužem koji ljubi kao što je Krist ljubio, ljubavlju koja je sebe darovala. Slika nije hijerarhija, nego klečanje: svatko se naginje prema drugome, spreman prvi poslužiti. Brak živi u tom zajedničkom spuštanju, gdje nitko ne pokušava pobijediti, a oboje su tiho pridržani.",
+      },
+      { type: "h2", text: "O zajedničkom životu i izdržljivosti" },
+      { type: "h3", text: "Propovjednik 4,9-12" },
+      {
+        type: "blockquote",
+        cite: "Propovjednik 4,9-12",
+        text: "Bolje je dvojici nego jednome, jer imaju dobru plaću za svoj trud.\n\nPadne li jedan, drugi će ga podići; a jao onome tko je sam kad padne, jer nema drugoga da ga podigne.\n\nA ako tko svlada jednoga, dvojica će mu se oduprijeti; trostruko uže ne kida se lako.",
+      },
+      {
+        type: "p",
+        text: "Propovjednik je trijezan: u životu se pada. Nije pitanje hoće li, nego kada. I u toj jednostavnoj činjenici leži dar sudruga, nekoga tko se sagne i podigne drugoga. Trostruko uže, koje se često čita kao par i Bog, imenuje dublju nadu: da je veza koja drži dvoje ljudi jača od svakoga od njih zasebno.",
+      },
+      { type: "h3", text: "Ruta 1,16-17" },
+      {
+        type: "blockquote",
+        cite: "Ruta 1,16-17",
+        text: "Nemoj me nagovarati da te ostavim i da se vratim od tebe; jer kamo ti ideš, idem i ja, i gdje se ti nastaniš, nastanit ću se i ja. Tvoj narod bit će moj narod i tvoj Bog moj Bog.\n\nGdje ti umreš, umrijet ću i ja, i ondje ću biti pokopana.",
+      },
+      {
+        type: "p",
+        text: "Ruta te riječi govori starijoj ženi, a ipak nose samu srž bračnog zavjeta. Ne samo idem s tobom, nego tvoj narod bit će moj narod, tvoj Bog moj Bog. To je cijelo sebe, predano bez uvjeta, ona vrsta pripadanja koju brak uči živjeti dan za danom, na sasvim običnim mjestima.",
+      },
+      { type: "h2", text: "O poštovanju, strpljivosti i oproštenju" },
+      { type: "h3", text: "Efežanima 4,1-3" },
+      {
+        type: "blockquote",
+        cite: "Efežanima 4,1-3",
+        text: "Zaklinjem vas, dakle, ja, sužanj u Gospodinu: živite dostojno poziva kojim ste pozvani,\n\nsa svom poniznošću i blagošću, sa strpljivošću, podnoseći jedni druge u ljubavi,\n\ntrudeći se sačuvati jedinstvo Duha vezom mira.",
+      },
+      {
+        type: "p",
+        text: "Pavao ne dijeli velike riječi, nego svakodnevnu odjeću zajedničkog života: poniznost, blagost, strpljivost, podnošenje jedni drugih u ljubavi. Ništa od toga ne blista, a upravo to održava mir na životu kad se dva života taru jedan o drugi. Veliko da s vjenčanja drže na mjestu bezbrojna mala da poslije njega.",
+      },
+      { type: "h3", text: "Kološanima 3,12-14" },
+      {
+        type: "blockquote",
+        cite: "Kološanima 3,12-14",
+        text: "Obucite se, kao izabranici Božji, sveti i ljubljeni, u milosrdno srce, dobrostivost, poniznost, blagost, strpljivost;\n\npodnosite jedni druge i opraštajte jedni drugima ako tko ima protiv koga tužbu: kao što je Krist oprostio vama, tako i vi.\n\nA povrh svega toga obucite se u ljubav, koja je veza savršenstva.",
+      },
+      {
+        type: "p",
+        text: "Pavao govori o oblačenju: svako jutro obuci milosrđe, dobrotu, poniznost, blagost, strpljivost, a preko svega toga ljubav, kao kaput koji drži sve ostalo na okupu. Brak nije osjećaj koji čekamo da nas obuzme; on je odjeća koju oblačimo, dan za danom, i nosimo je okrenutu prema drugome.",
+      },
+      { type: "h2", text: "Romantični odlomci iz Pjesme nad pjesmama" },
+      { type: "h3", text: "Pjesma nad pjesmama 2,10-13" },
+      {
+        type: "blockquote",
+        cite: "Pjesma nad pjesmama 2,10-13",
+        text: "Moj dragi progovori i reče mi: Ustani, ljubavi moja, ljepoto moja, i dođi.\n\nJer evo, zima je prošla, kiša je minula i otišla;\n\ncvijeće se pojavilo na zemlji, došlo je vrijeme pjesme.",
+      },
+      {
+        type: "p",
+        text: "„Ustani, ljubavi moja, i dođi”, doziva dragi, a zima, kiša i tama već su prošle. Pjesma nagoviješta nešto veće od dvoje zaljubljenih: svaki istinski početak zvuči ovako. I brak je takav poziv: duga sezona samoće privodi se kraju, a dolazi vrijeme pjesme.",
+      },
+      { type: "h3", text: "Pjesma nad pjesmama 8,6-7" },
+      {
+        type: "blockquote",
+        cite: "Pjesma nad pjesmama 8,6-7",
+        text: "Stavi me kao pečat na svoje srce, kao pečat na svoju ruku; jer ljubav je jaka kao smrt.\n\nMnoge vode ne mogu ugasiti ljubav niti je rijeke potopiti.",
+      },
+      {
+        type: "p",
+        text: "„Stavi me kao pečat na svoje srce”: onaj tko ljubi ne traži prolazno obećanje, nego trajan biljeg. A snaga ljubavi imenuje se u istom dahu sa smrću: mnoge je vode ne mogu ugasiti, nijedna je bujica ne može odnijeti. Brak preuzima takvu ljubav, jaku ne zato što su dani laki, nego zato što ostaje kroz teške.",
+      },
+      { type: "h2", text: "Kako odabrati" },
+      {
+        type: "p",
+        text: "Neka redak pristaje ugođaju. Klasičnom, svečanom obredu prirodno idu 1Korinćanima 13 ili Efežanima 5; poetičnom obredu na otvorenom bolje leži Pjesma nad pjesmama. Za pozivnicu kratak redak (1Korinćanima 13,13, Pjesma nad pjesmama 2,16) gotovo uvijek radi.",
+      },
+      {
+        type: "p",
+        text: "Ako vam je popis uzvanika raznolik, odaberite odlomak s ljudskom, svima razumljivom porukom, poput Propovjednika 4 ili Kološanima 3.",
+      },
+      {
+        type: "cta",
+        lead: "Ako i praktični dio vjenčanja (popis uzvanika, budžet, potvrde dolaska, raspored sjedenja) želite složiti na jednom mjestu, isprobajte Weddly.",
+        href: "/signup",
+        label: "Počnite planirati",
+      },
+      { type: "h2", text: "Česta pitanja" },
+      { type: "h3", text: "Koji je najpoznatiji biblijski odlomak na vjenčanjima?" },
+      {
+        type: "p",
+        text: "1Korinćanima 13, osobito odlomak „ljubav je strpljiva, ljubav je dobrostiva” i završna rečenica: „najveća je među njima ljubav”.",
+      },
+      { type: "h3", text: "Koji kratki redak odgovara pozivnici?" },
+      {
+        type: "p",
+        text: "Dobre kratke mogućnosti: 1Korinćanima 13,13, 1Ivanova 4,7, Propovjednik 4,12 i Pjesma nad pjesmama 2,16.",
+      },
+      { type: "h3", text: "Koji odlomak najbolje pristaje bračnim zavjetima?" },
+      {
+        type: "p",
+        text: "Postanak 2,24, Marko 10,6-9 i Efežanima 5 najčvršći su biblijski oslonci za savezni karakter braka.",
       },
     ],
   },

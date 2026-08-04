@@ -1244,7 +1244,10 @@ export const BLOG_POSTS_ES: BlogTranslationsBySlug = {
       { type: "ul", items: ["Gomas", "Horquillas", "Laca", "Peine"] },
       { type: "h2", text: "El neceser del novio" },
       { type: "h3", text: "Ropa" },
-      { type: "ul", items: ["Traje", "Camisa", "Corbata o pajarita", "Cinturón", "Calcetines", "Zapatos"] },
+      {
+        type: "ul",
+        items: ["Traje", "Camisa", "Corbata o pajarita", "Cinturón", "Calcetines", "Zapatos"],
+      },
       { type: "h3", text: "Complementos" },
       { type: "ul", items: ["Gemelos", "Pañuelo de bolsillo", "Flor de solapa", "Reloj"] },
       { type: "h3", text: "Aseo" },
@@ -1885,7 +1888,8 @@ export const BLOG_POSTS_ES: BlogTranslationsBySlug = {
         alt: "El palacio Mirabell y sus jardines en Salzburgo",
         caption: "Palacio Mirabell, Salzburgo",
         credit: "Foto: Andrew Bossi / CC BY-SA 2.5, vía Wikimedia Commons",
-        creditHref: "https://commons.wikimedia.org/wiki/File:2150_-_Salzburg_-_Schloss_Mirabell.JPG",
+        creditHref:
+          "https://commons.wikimedia.org/wiki/File:2150_-_Salzburg_-_Schloss_Mirabell.JPG",
       },
       {
         type: "p",
@@ -2085,6 +2089,347 @@ export const BLOG_POSTS_ES: BlogTranslationsBySlug = {
         lead: "¿Ya tenéis sitio? Con Weddly la lista de invitados, el plano de mesas, el presupuesto y las tareas viven en un mismo lugar.",
         href: "/signup",
         label: "Empezar a planificar",
+      },
+    ],
+  },
+  "miert-hazasodunk-a-biblia-szerint": {
+    category: "Fe",
+    title: "¿Por qué casarse, según la Biblia?",
+    lead: "Orden de la creación, pacto, la enseñanza de Jesús y el programa de cada día: así lee la Escritura el sentido del matrimonio.",
+    seo_title: "¿Por qué casarse según la Biblia? · Weddly",
+    seo_description:
+      "¿Qué dice la Biblia sobre el sentido del matrimonio? El orden de la creación, el pacto, la enseñanza de Jesús y el programa práctico de Pablo.",
+    body: [
+      {
+        type: "p",
+        text: "Muchas parejas llegan a la pregunta en mitad de la organización: ¿para qué sirve en realidad el matrimonio? ¿Tradición? ¿Romanticismo? ¿Papeleo? La Biblia ofrece algo más: ve el matrimonio como un don inscrito en la creación, con una estructura interna que vale la pena entender.",
+      },
+      {
+        type: "p",
+        text: "No es un tratado de dogma, entonces, sino un paseo tranquilo por lo que dice la Escritura sobre el sentido del matrimonio, y por qué puede seguir hablando hoy, tanto si venís con fe como solo con curiosidad.",
+      },
+      { type: "h2", text: "1. La creación: no es bueno estar solo" },
+      {
+        type: "p",
+        text: "El Génesis no empieza por el matrimonio, pero llega pronto a él. El capítulo 2 dice sin rodeos que estar solo no es plenitud, sino carencia.",
+      },
+      {
+        type: "blockquote",
+        cite: "Génesis 2:18",
+        text: "Y dijo Jehová Dios: No es bueno que el hombre esté solo; le haré ayuda idónea para él.",
+      },
+      {
+        type: "p",
+        text: "El hebreo que hay detrás de «ayuda idónea», ezer kenegdo, pesa más de lo que sugiere la palabra ayudante. Significa una contraparte igual, alguien que se pone enfrente, completa, refleja y corrige con suavidad. Aquí el matrimonio no es una jerarquía: es un encuentro.",
+      },
+      {
+        type: "blockquote",
+        cite: "Génesis 2:24",
+        text: "Por tanto, dejará el hombre a su padre y a su madre, y se unirá a su mujer, y serán una sola carne.",
+      },
+      {
+        type: "p",
+        text: "Tres movimientos en orden: dejar, unirse, ser uno. El matrimonio forma una familia nueva; no sustituye a la anterior, pero pasa al primer lugar. La Escritura vuelve una y otra vez a esta secuencia como fundamento del matrimonio.",
+      },
+      { type: "h2", text: "2. El matrimonio es un pacto, no un contrato" },
+      {
+        type: "p",
+        text: "La Biblia vuelve siempre a una palabra cuando habla del matrimonio: pacto (en hebreo berit). Un contrato protege el interés de cada parte y se disuelve si se incumple. Un pacto es un compromiso incondicional en presencia de Dios, una fidelidad atada a una persona y no a su rendimiento.",
+      },
+      {
+        type: "blockquote",
+        cite: "Malaquías 2:14",
+        text: "Porque Jehová ha sido testigo entre ti y la mujer de tu juventud, contra la cual has sido desleal, siendo ella tu compañera, y la mujer de tu pacto.",
+      },
+      {
+        type: "p",
+        text: "Malaquías enraíza el matrimonio en el testimonio de Dios. «La mujer de tu pacto»: la misma palabra que la Escritura usa para el vínculo de Dios con su pueblo. Con esa medida, el matrimonio no es solo cosa de dos: es una promesa hecha en público, ante una tercera presencia.",
+      },
+      { type: "h2", text: "3. Jesús confirma el orden original" },
+      {
+        type: "p",
+        text: "Cuando preguntan a Jesús por el divorcio, su respuesta no empieza por el divorcio. Apunta hacia atrás, hacia la creación.",
+      },
+      {
+        type: "blockquote",
+        cite: "Mateo 19:4-6",
+        text: "¿No habéis leído que el que los hizo al principio, varón y hembra los hizo,\n\ny dijo: Por esto el hombre dejará padre y madre, y se unirá a su mujer, y los dos serán una sola carne?\n\nPor tanto, lo que Dios juntó, no lo separe el hombre.",
+      },
+      {
+        type: "p",
+        text: "Jesús no da aquí una enseñanza nueva: refuerza el orden de la creación. El matrimonio es un pacto que Dios une. «Una sola carne» no es solo lo físico: es la fusión de dos vidas enteras.",
+      },
+      { type: "h2", text: "4. El programa de cada día: las cartas de Pablo" },
+      {
+        type: "p",
+        text: "Efesios 5 es el pasaje clave que las parejas suelen leer mal al quedarse con un solo versículo. La primera línea enmarca todo lo demás.",
+      },
+      {
+        type: "blockquote",
+        cite: "Efesios 5:21, 25",
+        text: "Someteos unos a otros en el temor de Dios.\n\nMaridos, amad a vuestras mujeres, así como Cristo amó a la iglesia, y se entregó a sí mismo por ella.",
+      },
+      {
+        type: "p",
+        text: "La primera línea da el tono: sumisión mutua. Solo después se dirige Pablo a los maridos, y aun ahí habla de un amor de entrega modelado en Cristo, no de dominio. Si ese orden se altera, el pasaje empieza a decir algo completamente distinto.",
+      },
+      { type: "p", text: "Colosenses 3 se ocupa del trabajo diario del matrimonio." },
+      {
+        type: "blockquote",
+        cite: "Colosenses 3:12-14",
+        text: "Vestíos, pues, como escogidos de Dios, santos y amados, de entrañable misericordia, de benignidad, de humildad, de mansedumbre, de paciencia;\n\nsoportándoos unos a otros, y perdonándoos unos a otros si alguno tuviere queja contra otro.\n\nY sobre todas estas cosas vestíos de amor, que es el vínculo perfecto.",
+      },
+      {
+        type: "p",
+        text: "No son momentos cumbre. Son virtudes diarias: misericordia, bondad, paciencia, perdón. La Escritura asienta el matrimonio en estas cualidades duraderas y no solo en el romanticismo.",
+      },
+      { type: "h2", text: "5. Conflicto y perdón" },
+      {
+        type: "p",
+        text: "La Biblia no maquilla el matrimonio. Da por hecho que habrá conflicto, heridas y cansancio. No promete que podáis evitarlos, solo que hay una manera de atravesarlos.",
+      },
+      {
+        type: "blockquote",
+        cite: "Efesios 4:26",
+        text: "Airaos, y no pequéis; no se ponga el sol sobre vuestro enojo.",
+      },
+      {
+        type: "p",
+        text: "Pablo no dice «no os enfadéis». Dice que no dejéis que se enquiste. Que no se ponga el sol sobre ello, que no llevéis a mañana lo que todavía hoy se puede arreglar con una palabra, con un perdón.",
+      },
+      { type: "h2", text: "6. El cordón de tres dobleces" },
+      {
+        type: "p",
+        text: "Un pasaje clásico del Eclesiastés no habla directamente del matrimonio, pero desde hace siglos se lee como imagen del pacto.",
+      },
+      {
+        type: "blockquote",
+        cite: "Eclesiastés 4:9-12",
+        text: "Mejores son dos que uno; porque tienen mejor paga de su trabajo.\n\nPorque si cayeren, el uno levantará a su compañero.\n\nY si alguno prevaleciere contra uno, dos le resistirán; y cordón de tres dobleces no se rompe pronto.",
+      },
+      {
+        type: "p",
+        text: "En la lectura cristiana, ese «cordón de tres dobleces» sois los dos más Dios: tres hebras trenzadas en una. Aquí el matrimonio no es un vínculo privado entre dos, sino un futuro compartido tejido de tres. Por eso tantas parejas entran en una ceremonia religiosa no como formalidad, sino como quien entra en el pacto mismo.",
+      },
+      { type: "h2", text: "7. Ideas para llevarse" },
+      { type: "h3", text: "El matrimonio no es solo cosa de dos" },
+      {
+        type: "p",
+        text: "En la Escritura el matrimonio es un pacto, y todo pacto se hace ante un tercero. Por eso la promesa pública, los testigos y, para quien cree, la presencia de Dios no son añadidos, sino el corazón del asunto.",
+      },
+      { type: "h3", text: "El amor es una decisión, no un estado de ánimo" },
+      {
+        type: "p",
+        text: "El amor del que habla la Escritura (en hebreo chesed, en griego agape) no es un estado de ánimo: es una elección fiel. Y eso libera en silencio: el matrimonio no tiene que sostenerse sobre si hoy los dos «lo sentís». Se sostiene sobre la elección que renováis cada mañana.",
+      },
+      { type: "h3", text: "El perdón es una práctica diaria" },
+      {
+        type: "p",
+        text: "Dos vidas juntas significan un goteo constante de pequeñas heridas y pequeñas reparaciones. La Biblia no pide que no haya conflicto, solo que no os durmáis encima. «Que no se ponga el sol sobre vuestro enojo» quizá sea el consejo matrimonial más terrenal que da la Escritura.",
+      },
+      {
+        type: "cta",
+        lead: "Si además queréis llevar en un solo sitio la parte práctica de la boda (lista de invitados, presupuesto, RSVP, mesas), empezad con Weddly.",
+        href: "/signup",
+        label: "Empezar a planificar",
+      },
+      { type: "h2", text: "Preguntas frecuentes" },
+      { type: "h3", text: "¿Qué significa que el matrimonio es un pacto?" },
+      {
+        type: "p",
+        text: "Un pacto no es un contrato. Los contratos protegen el interés de cada parte y se disuelven al incumplirse. Un pacto es un compromiso público, ante un tercero, que ata la fidelidad a una persona y no a su rendimiento.",
+      },
+      { type: "h3", text: "¿Qué significa la sumisión en el matrimonio?" },
+      {
+        type: "p",
+        text: "La clave es Efesios 5:21: sumisión mutua. No una subordinación en un solo sentido, sino atención, humildad y respeto del uno hacia el otro. Lo que se pide al marido (Ef 5:25) es amor de entrega, no dominio.",
+      },
+      { type: "h3", text: "¿Qué dice la Biblia sobre el conflicto?" },
+      {
+        type: "p",
+        text: "La Escritura no niega el conflicto. Da un marco: hablar con verdad (Ef 4:25), reconciliarse pronto (Ef 4:26), perdonarse (Col 3:13). El conflicto no es el defecto del matrimonio: es su terreno de mantenimiento.",
+      },
+      { type: "h3", text: "¿Hay que casarse por la iglesia?" },
+      {
+        type: "p",
+        text: "La ceremonia civil resuelve la parte legal. La religiosa es una decisión de fe y una promesa pública ante Dios. Las dos no se excluyen: muchas parejas celebran ambas el mismo día.",
+      },
+    ],
+  },
+  "bibliai-idezetek-eskuvore": {
+    category: "Versículos",
+    title: "Versículos bíblicos para la boda: amor, matrimonio y vida en común",
+    lead: "Una selección de versículos para invitaciones, ceremonias y votos: amor, matrimonio, fidelidad y perdón.",
+    seo_title: "Versículos bíblicos para bodas: amor y matrimonio · Weddly",
+    seo_description:
+      "Una selección de versículos bíblicos para bodas: amor, matrimonio, fidelidad, perdón y vida en común.",
+    body: [
+      {
+        type: "p",
+        text: "Muchas parejas quieren un versículo bíblico en la invitación, en la web de la boda o dentro de los votos. Abajo tenéis una selección agrupada por temas: amor, matrimonio, vida en común, respeto y perdón.",
+      },
+      { type: "h2", text: "Versículos breves para invitaciones" },
+      {
+        type: "ul",
+        items: [
+          "„El mayor de ellos es el amor.”, 1 Corintios 13,13",
+          "„Todas vuestras cosas sean hechas con amor.”, 1 Corintios 16,14",
+          "„Amados, amémonos unos a otros.”, 1 Juan 4,7",
+          "„Dios es amor.”, 1 Juan 4,8",
+          "„En el amor no hay temor.”, 1 Juan 4,18",
+          "„No es bueno que el hombre esté solo.”, Génesis 2,18",
+          "„Los dos serán una sola carne.”, Marcos 10,8",
+          "„Lo que Dios juntó, no lo separe el hombre.”, Marcos 10,9",
+          "„Cordón de tres dobleces no se rompe pronto.”, Eclesiastés 4,12",
+          "„Yo soy de mi amado, y mi amado es mío.”, Cantares 2,16",
+          "„Fuerte es como la muerte el amor.”, Cantares 8,6",
+        ],
+      },
+      { type: "h2", text: "Sobre el amor" },
+      { type: "h3", text: "1 Corintios 13:4-8" },
+      {
+        type: "blockquote",
+        cite: "1 Corintios 13:4-8",
+        text: "El amor es sufrido, es benigno; el amor no tiene envidia, el amor no es jactancioso, no se envanece;\n\nno hace nada indebido, no busca lo suyo, no se irrita, no guarda rencor;\n\nno se goza de la injusticia, mas se goza de la verdad.\n\nTodo lo sufre, todo lo cree, todo lo espera, todo lo soporta.\n\nEl amor nunca deja de ser.",
+      },
+      {
+        type: "p",
+        text: "Pablo casi desmonta aquí el amor: no como sentimiento, sino como una serie de gestos pequeños y diarios, paciencia, bondad, humildad, aguante. No son palabras que se puedan interpretar en un solo día; se aprenden despacio, en la vida corriente. El matrimonio es justo esa escuela: practicar, día tras día, la clase de amor que nunca se acaba.",
+      },
+      { type: "h3", text: "1 Juan 4:7-8" },
+      {
+        type: "blockquote",
+        cite: "1 Juan 4:7-8",
+        text: "Amados, amémonos unos a otros; porque el amor es de Dios. Todo aquel que ama, es nacido de Dios, y conoce a Dios.\n\nEl que no ama, no ha conocido a Dios; porque Dios es amor.",
+      },
+      {
+        type: "p",
+        text: "Juan va a la raíz: donde hay amor, está Dios, incluso cuando no lo nombramos. El amor no es un invento nuestro, sino el eco de algo más grande. Así que cuando dos personas se vuelven la una hacia la otra, hacen más de lo que saben: transmiten un amor que antes les fue dado.",
+      },
+      { type: "h2", text: "Sobre el matrimonio" },
+      { type: "h3", text: "Génesis 2:18, 24" },
+      {
+        type: "blockquote",
+        cite: "Génesis 2:18, 24",
+        text: "Y dijo Jehová Dios: No es bueno que el hombre esté solo; le haré ayuda idónea para él.\n\nPor tanto, dejará el hombre a su padre y a su madre, y se unirá a su mujer, y serán una sola carne.",
+      },
+      {
+        type: "p",
+        text: "En todo el relato de la creación, esto es lo primero que Dios llama no bueno: la soledad. No un defecto ni un fallo, simplemente la forma de ser humano. Estamos hechos para ser acogidos por otro, y el matrimonio da a ese anhelo un nombre y una casa: dos vidas que se vuelven la una hacia la otra porque ninguna se basta a sí misma.",
+      },
+      { type: "h3", text: "Marcos 10:6-9" },
+      {
+        type: "blockquote",
+        cite: "Marcos 10:6-9",
+        text: "Pero al principio de la creación, varón y hembra los hizo Dios.\n\nPor esto dejará el hombre a su padre y a su madre, y se unirá a su mujer,\n\ny los dos serán una sola carne; así que no son ya más dos, sino uno.\n\nPor tanto, lo que Dios juntó, no lo separe el hombre.",
+      },
+      {
+        type: "p",
+        text: "Jesús se remonta al principio: el matrimonio no es un arreglo privado, sino algo que une Dios mismo. Esa expresión, lo que Dios juntó, es suave y grave a la vez: no dos vidas pegadas una al lado de la otra, sino entretejidas en una. Y lo que Dios teje, nos pide que lo tratemos con cuidado.",
+      },
+      { type: "h3", text: "Efesios 5:21, 25" },
+      {
+        type: "blockquote",
+        cite: "Efesios 5:21, 25",
+        text: "Someteos unos a otros en el temor de Dios.\n\nMaridos, amad a vuestras mujeres, así como Cristo amó a la iglesia, y se entregó a sí mismo por ella.",
+      },
+      {
+        type: "p",
+        text: "Pablo empieza con la sumisión mutua y termina con un marido que ama como amó Cristo, un amor que se entregó del todo. La imagen no es de jerarquía, sino de rodillas en el suelo: cada uno inclinándose hacia el otro, dispuesto a servir primero. El matrimonio vive en ese descenso compartido, donde ninguno intenta ganar y los dos quedan sostenidos.",
+      },
+      { type: "h2", text: "Sobre la vida en común y el aguante" },
+      { type: "h3", text: "Eclesiastés 4:9-12" },
+      {
+        type: "blockquote",
+        cite: "Eclesiastés 4:9-12",
+        text: "Mejores son dos que uno; porque tienen mejor paga de su trabajo.\n\nPorque si cayeren, el uno levantará a su compañero; pero ¡ay del solo! que cuando cayere, no habrá segundo que lo levante.\n\nY si alguno prevaleciere contra uno, dos le resistirán; y cordón de tres dobleces no se rompe pronto.",
+      },
+      {
+        type: "p",
+        text: "El Predicador es sobrio: en la vida uno se cae. No es un si, es un cuando. Y en ese hecho simple está el regalo de tener compañía, alguien que se agacha y levanta al otro. El cordón de tres dobleces, leído a menudo como la pareja y Dios, nombra la esperanza de fondo: que el vínculo que sostiene a dos personas es más fuerte que cualquiera de ellas por separado.",
+      },
+      { type: "h3", text: "Rut 1:16-17" },
+      {
+        type: "blockquote",
+        cite: "Rut 1:16-17",
+        text: "No me ruegues que te deje, y me aparte de ti; porque a dondequiera que tú fueres, iré yo, y dondequiera que vivieres, viviré. Tu pueblo será mi pueblo, y tu Dios mi Dios.\n\nDonde tú murieres, moriré yo, y allí seré sepultada.",
+      },
+      {
+        type: "p",
+        text: "Rut dice estas palabras a una mujer mayor y, aun así, llevan dentro el corazón de un voto matrimonial. No solo iré contigo, sino tu pueblo será mi pueblo, tu Dios mi Dios. Es la entrega entera, sin condiciones, la clase de pertenencia que el matrimonio aprende a vivir día tras día, en los lugares corrientes.",
+      },
+      { type: "h2", text: "Sobre el respeto, la paciencia y el perdón" },
+      { type: "h3", text: "Efesios 4:1-3" },
+      {
+        type: "blockquote",
+        cite: "Efesios 4:1-3",
+        text: "Yo pues, preso en el Señor, os ruego que andéis como es digno de la vocación con que fuisteis llamados,\n\ncon toda humildad y mansedumbre, soportándoos con paciencia los unos a los otros en amor,\n\nsolícitos en guardar la unidad del Espíritu en el vínculo de la paz.",
+      },
+      {
+        type: "p",
+        text: "Pablo no reparte palabras grandiosas: reparte la ropa de diario de una vida compartida. Humildad, mansedumbre, paciencia, soportarse en amor. Ninguna de ellas brilla, y sin embargo son las que mantienen viva la paz cuando dos vidas rozan. El gran sí de una boda se sostiene sobre incontables síes pequeños posteriores.",
+      },
+      { type: "h3", text: "Colosenses 3:12-14" },
+      {
+        type: "blockquote",
+        cite: "Colosenses 3:12-14",
+        text: "Vestíos, pues, como escogidos de Dios, santos y amados, de entrañable misericordia, de benignidad, de humildad, de mansedumbre, de paciencia;\n\nsoportándoos unos a otros, y perdonándoos unos a otros si alguno tuviere queja contra otro: de la manera que Cristo os perdonó, así también hacedlo vosotros.\n\nY sobre todas estas cosas vestíos de amor, que es el vínculo perfecto.",
+      },
+      {
+        type: "p",
+        text: "Pablo habla de vestirse: cada mañana ponerse la misericordia, la bondad, la humildad, la mansedumbre, la paciencia, y sobre todas ellas el amor, como un abrigo que sujeta el resto. El matrimonio no es un sentimiento que se espera sentir: es una prenda que uno se pone, día tras día, y lleva puesta en dirección al otro.",
+      },
+      { type: "h2", text: "Pasajes románticos del Cantar de los Cantares" },
+      { type: "h3", text: "Cantares 2:10-13" },
+      {
+        type: "blockquote",
+        cite: "Cantares 2:10-13",
+        text: "Mi amado habló, y me dijo: Levántate, oh amiga mía, hermosa mía, y ven.\n\nPorque he aquí ha pasado el invierno, se ha mudado, la lluvia se fue;\n\nse han mostrado las flores en la tierra, el tiempo de la canción ha venido.",
+      },
+      {
+        type: "p",
+        text: "«Levántate, amada mía, y ven», llama el amado, y el invierno, la lluvia y la oscuridad ya han quedado atrás. El Cantar apunta a algo más grande que dos enamorados: todo comienzo verdadero suena así. También el matrimonio es una llamada de este tipo: la larga estación de estar solo toca a su fin y llega el tiempo de la canción.",
+      },
+      { type: "h3", text: "Cantares 8:6-7" },
+      {
+        type: "blockquote",
+        cite: "Cantares 8:6-7",
+        text: "Ponme como un sello sobre tu corazón, como una marca sobre tu brazo; porque fuerte es como la muerte el amor.\n\nLas muchas aguas no podrán apagar el amor, ni lo ahogarán los ríos.",
+      },
+      {
+        type: "p",
+        text: "«Ponme como un sello sobre tu corazón»: quien ama no pide una promesa pasajera, sino una marca que dure. Y la fuerza del amor se nombra en el mismo aliento que la muerte: muchas aguas no pueden apagarlo, ninguna riada puede llevárselo. El matrimonio asume esa clase de amor, fuerte no porque los días sean fáciles, sino porque permanece en los difíciles.",
+      },
+      { type: "h2", text: "Cómo elegir" },
+      {
+        type: "p",
+        text: "Haced que el versículo case con el tono. Una ceremonia clásica y formal pide 1 Corintios 13 o Efesios 5; una ceremonia al aire libre y poética encaja mejor con el Cantar de los Cantares. Para una invitación, un versículo corto (1 Corintios 13,13 o Cantares 2,16) funciona casi siempre.",
+      },
+      {
+        type: "p",
+        text: "Si vuestra lista de invitados es variada, elegid un pasaje de mensaje humano y comprensible para todos, como Eclesiastés 4 o Colosenses 3.",
+      },
+      {
+        type: "cta",
+        lead: "Si además queréis organizar en un solo sitio la parte práctica de la boda (lista de invitados, presupuesto, RSVP, mesas), probad Weddly.",
+        href: "/signup",
+        label: "Empezar a planificar",
+      },
+      { type: "h2", text: "Preguntas frecuentes" },
+      { type: "h3", text: "¿Cuál es el pasaje bíblico más conocido en las bodas?" },
+      {
+        type: "p",
+        text: "1 Corintios 13, sobre todo el pasaje del «el amor es sufrido, es benigno» y la línea final: «el mayor de ellos es el amor».",
+      },
+      { type: "h3", text: "¿Qué versículo corto sirve para una invitación?" },
+      {
+        type: "p",
+        text: "Buenas opciones breves: 1 Corintios 13,13, 1 Juan 4,7, Eclesiastés 4,12 y Cantares 2,16.",
+      },
+      { type: "h3", text: "¿Qué pasaje encaja mejor con los votos?" },
+      {
+        type: "p",
+        text: "Génesis 2,24, Marcos 10,6-9 y Efesios 5 son los anclajes bíblicos más sólidos para el carácter de pacto del matrimonio.",
       },
     ],
   },

@@ -1051,7 +1051,10 @@ export const BLOG_POSTS_DE: BlogTranslationsBySlug = {
         text: "Kerzen im Freien sind bei jedem Lüftchen ein Risiko. Sand, Zeitkapsel oder Wein sind draußen die sicherere Wahl.",
       },
       { type: "h2", text: "Reihenfolge beim Einzug" },
-      { type: "p", text: "Eine vorgeschriebene Reihenfolge gibt es nicht, die klassische geht so:" },
+      {
+        type: "p",
+        text: "Eine vorgeschriebene Reihenfolge gibt es nicht, die klassische geht so:",
+      },
       {
         type: "ul",
         items: [
@@ -1229,7 +1232,10 @@ export const BLOG_POSTS_DE: BlogTranslationsBySlug = {
       { type: "ul", items: ["Haargummis", "Haarklammern", "Haarspray", "Kamm"] },
       { type: "h2", text: "Die Tasche des Bräutigams" },
       { type: "h3", text: "Kleidung" },
-      { type: "ul", items: ["Anzug", "Hemd", "Krawatte oder Fliege", "Gürtel", "Socken", "Schuhe"] },
+      {
+        type: "ul",
+        items: ["Anzug", "Hemd", "Krawatte oder Fliege", "Gürtel", "Socken", "Schuhe"],
+      },
       { type: "h3", text: "Accessoires" },
       { type: "ul", items: ["Manschettenknöpfe", "Einstecktuch", "Anstecker", "Uhr"] },
       { type: "h3", text: "Pflege" },
@@ -1867,7 +1873,8 @@ export const BLOG_POSTS_DE: BlogTranslationsBySlug = {
         alt: "Schloss Mirabell und sein Garten in Salzburg",
         caption: "Schloss Mirabell, Salzburg",
         credit: "Foto: Andrew Bossi / CC BY-SA 2.5, über Wikimedia Commons",
-        creditHref: "https://commons.wikimedia.org/wiki/File:2150_-_Salzburg_-_Schloss_Mirabell.JPG",
+        creditHref:
+          "https://commons.wikimedia.org/wiki/File:2150_-_Salzburg_-_Schloss_Mirabell.JPG",
       },
       {
         type: "p",
@@ -2067,6 +2074,347 @@ export const BLOG_POSTS_DE: BlogTranslationsBySlug = {
         lead: "Location gefunden? In Weddly liegen Gästeliste, Tischordnung, Budget und Aufgaben an einem Ort.",
         href: "/signup",
         label: "Jetzt loslegen",
+      },
+    ],
+  },
+  "miert-hazasodunk-a-biblia-szerint": {
+    category: "Glaube",
+    title: "Warum heiraten, nach der Bibel?",
+    lead: "Schöpfungsordnung, Bund, die Worte Jesu und das Programm für den Alltag: So liest die Schrift den Sinn der Ehe.",
+    seo_title: "Warum heiraten nach der Bibel? · Weddly",
+    seo_description:
+      "Was sagt die Bibel über den Sinn der Ehe? Schöpfungsordnung, Bund, die Worte Jesu und das praktische Programm des Paulus.",
+    body: [
+      {
+        type: "p",
+        text: "Viele Paare stoßen mitten in der Planung auf die Frage: Wozu ist die Ehe eigentlich da? Tradition? Romantik? Papierkram? Die Bibel bietet mehr: Sie sieht die Ehe als eine in die Schöpfung eingebaute Gabe, mit einer inneren Ordnung, die sich zu verstehen lohnt.",
+      },
+      {
+        type: "p",
+        text: "Also kein Dogma, sondern ein langsamer Gang durch das, was die Schrift über den Sinn der Ehe sagt, und warum das heute noch sprechen kann, ob ihr mit Glauben kommt oder nur mit Neugier.",
+      },
+      { type: "h2", text: "1. Schöpfung: Es ist nicht gut, allein zu sein" },
+      {
+        type: "p",
+        text: "Die Genesis beginnt nicht mit der Ehe, kommt aber schnell dorthin. Kapitel 2 stellt nüchtern fest, dass Alleinsein keine Vollendung ist, sondern ein Mangel.",
+      },
+      {
+        type: "blockquote",
+        cite: "1. Mose 2,18",
+        text: "Und Gott der HERR sprach: Es ist nicht gut, dass der Mensch allein sei; ich will ihm eine Gehilfin machen, die um ihn sei.",
+      },
+      {
+        type: "p",
+        text: "Das hebräische Wort hinter „Gehilfin”, ezer kenegdo, wiegt schwerer, als es klingt. Es meint ein gleichwertiges Gegenüber: jemanden, der euch gegenübersteht, ergänzt, spiegelt, sanft korrigiert. Die Ehe ist hier keine Rangordnung, sondern eine Begegnung.",
+      },
+      {
+        type: "blockquote",
+        cite: "1. Mose 2,24",
+        text: "Darum wird ein Mann seinen Vater und seine Mutter verlassen und an seinem Weibe hangen, und sie werden sein ein Fleisch.",
+      },
+      {
+        type: "p",
+        text: "Drei Bewegungen in Folge: verlassen, sich binden, eins werden. Die Ehe bildet eine neue Familie; sie ersetzt die alte nicht, tritt aber an die erste Stelle. Die Schrift kehrt immer wieder zu dieser Abfolge als Fundament der Ehe zurück.",
+      },
+      { type: "h2", text: "2. Die Ehe ist ein Bund, kein Vertrag" },
+      {
+        type: "p",
+        text: "Die Bibel kommt beim Thema Ehe stets auf ein Wort zurück: Bund (hebräisch berit). Ein Vertrag schützt das Interesse beider Seiten und löst sich bei Verletzung auf. Ein Bund ist bedingungslose Bindung in der Gegenwart Gottes, eine Treue, die an eine Person geknüpft ist und nicht an deren Leistung.",
+      },
+      {
+        type: "blockquote",
+        cite: "Maleachi 2,14",
+        text: "Der HERR ist Zeuge gewesen zwischen dir und dem Weibe deiner Jugend, an dem du treulos handelst, obwohl sie deine Gefährtin und ein Weib deines Bundes ist.",
+      },
+      {
+        type: "p",
+        text: "Maleachi verwurzelt die Ehe im Zeugnis Gottes. „Weib deines Bundes”, genau das Wort, das die Schrift für Gottes Bindung an sein Volk verwendet. In diesem Maß ist die Ehe nicht nur eine Sache zwischen euch beiden, sondern ein Versprechen, das öffentlich vor einer dritten Gegenwart abgelegt wird.",
+      },
+      { type: "h2", text: "3. Jesus bekräftigt die ursprüngliche Ordnung" },
+      {
+        type: "p",
+        text: "Als Jesus zur Scheidung befragt wird, beginnt seine Antwort nicht bei der Scheidung. Sie verweist zurück auf die Schöpfung.",
+      },
+      {
+        type: "blockquote",
+        cite: "Matthäus 19,4-6",
+        text: "Habt ihr nicht gelesen, dass der im Anfang den Menschen geschaffen hat, sie schuf als Mann und Weib\n\nund sprach: Darum wird ein Mensch Vater und Mutter verlassen und an seinem Weibe hangen, und die zwei werden ein Fleisch sein?\n\nWas nun Gott zusammengefügt hat, das soll der Mensch nicht scheiden.",
+      },
+      {
+        type: "p",
+        text: "Jesus liefert hier keine neue Lehre, er bekräftigt die Schöpfungsordnung. Die Ehe ist ein Bund, den Gott zusammenfügt. „Ein Fleisch” meint nicht nur das Körperliche: Es ist die Verschmelzung zweier ganzer Leben.",
+      },
+      { type: "h2", text: "4. Das Programm für den Alltag: die Paulusbriefe" },
+      {
+        type: "p",
+        text: "Epheser 5 ist die Schlüsselstelle, die Paare oft falsch lesen, weil sie einen einzelnen Vers herausgreifen. Die erste Zeile rahmt das Ganze.",
+      },
+      {
+        type: "blockquote",
+        cite: "Epheser 5,21.25",
+        text: "Ordnet euch einander unter in der Furcht Gottes.\n\nIhr Männer, liebt eure Frauen, gleichwie Christus die Gemeinde geliebt und sich selbst für sie dahingegeben hat.",
+      },
+      {
+        type: "p",
+        text: "Die erste Zeile gibt die Tonart vor: gegenseitige Unterordnung. Erst danach wendet sich Paulus an die Männer, und selbst dort geht es um hingebende Liebe nach dem Vorbild Christi, nicht um Herrschaft. Verrutscht diese Reihenfolge, sagt die Stelle etwas völlig anderes.",
+      },
+      { type: "p", text: "Kolosser 3 wendet sich der täglichen Arbeit der Ehe zu." },
+      {
+        type: "blockquote",
+        cite: "Kolosser 3,12-14",
+        text: "So zieht nun an, als die Auserwählten Gottes, Heilige und Geliebte, herzliches Erbarmen, Freundlichkeit, Demut, Sanftmut, Geduld;\n\nund ertrage einer den andern und vergebt euch untereinander, wenn jemand Klage hat gegen den andern.\n\nÜber alles aber zieht die Liebe an, die da ist das Band der Vollkommenheit.",
+      },
+      {
+        type: "p",
+        text: "Keine Höhepunkte. Alltagstugenden: Erbarmen, Freundlichkeit, Geduld, Vergebung. Die Schrift gründet die Ehe auf diese haltbaren Eigenschaften und nicht allein auf Romantik.",
+      },
+      { type: "h2", text: "5. Streit und Vergebung" },
+      {
+        type: "p",
+        text: "Die Bibel schönt die Ehe nicht. Sie setzt voraus, dass es Streit, Verletzungen und Müdigkeit geben wird. Sie verspricht nicht, dass ihr das vermeiden könnt, nur dass es einen Weg hindurch gibt.",
+      },
+      {
+        type: "blockquote",
+        cite: "Epheser 4,26",
+        text: "Zürnt ihr, so sündigt nicht; lasst die Sonne nicht über eurem Zorn untergehen.",
+      },
+      {
+        type: "p",
+        text: "Paulus sagt nicht „seid nicht zornig”. Er sagt, lasst ihn nicht schwären. Lasst die Sonne nicht darüber untergehen, tragt nicht in den nächsten Tag, was sich heute noch mit einem Wort, mit einer Vergebung klären ließe.",
+      },
+      { type: "h2", text: "6. Die dreifache Schnur" },
+      {
+        type: "p",
+        text: "Eine klassische Stelle aus dem Prediger handelt nicht direkt von der Ehe, wird aber seit Langem als Bild für den Bund gelesen.",
+      },
+      {
+        type: "blockquote",
+        cite: "Prediger 4,9-12",
+        text: "So ist's ja besser zwei als eins; denn sie haben guten Lohn für ihre Mühe.\n\nFällt einer von ihnen, so hilft ihm sein Gesell auf.\n\nUnd wenn einer den einzelnen überwältigt, so widerstehen ihm die zwei; und eine dreifache Schnur reißt nicht leicht entzwei.",
+      },
+      {
+        type: "p",
+        text: "In der christlichen Lesart ist diese „dreifache Schnur” ihr beide plus Gott, drei Stränge zu einem gedreht. Die Ehe ist hier kein privates Band zwischen zweien, sondern eine gemeinsame Zukunft, aus dreien geflochten. Deshalb treten so viele Paare nicht als Formsache in eine kirchliche Trauung, sondern als Eintritt in den Bund selbst.",
+      },
+      { type: "h2", text: "7. Was praktisch bleibt" },
+      { type: "h3", text: "Die Ehe ist nicht nur eine Sache zwischen zweien" },
+      {
+        type: "p",
+        text: "In der Schrift ist die Ehe ein Bund, und jeder Bund wird vor einem Dritten geschlossen. Deshalb sind das öffentliche Versprechen, die Trauzeugen und, für Gläubige, die Gegenwart Gottes keine Zutaten, sondern der Kern der Sache.",
+      },
+      { type: "h3", text: "Liebe ist eine Entscheidung, keine Stimmung" },
+      {
+        type: "p",
+        text: "Die Liebe, von der die Schrift spricht (hebräisch chesed, griechisch agape), ist keine Stimmung, sondern eine treue Wahl. Und das befreit auf stille Weise: Die Ehe muss nicht daran hängen, ob ihr es heute beide „spürt”. Sie hängt an der Entscheidung, die ihr jeden Morgen erneuert.",
+      },
+      { type: "h3", text: "Vergebung ist eine tägliche Übung" },
+      {
+        type: "p",
+        text: "Zwei Leben miteinander heißt: ein stetes Tröpfeln kleiner Verletzungen und kleiner Reparaturen. Die Bibel verlangt nicht, dass es keinen Streit gibt, nur dass ihr nicht darauf schlaft. „Lasst die Sonne nicht über eurem Zorn untergehen” ist vielleicht der bodenständigste Eheratschlag, den die Schrift je gibt.",
+      },
+      {
+        type: "cta",
+        lead: "Wenn ihr auch den praktischen Teil der Hochzeit (Gästeliste, Budget, RSVP, Tischordnung) an einem Ort halten wollt, fangt mit Weddly an.",
+        href: "/signup",
+        label: "Jetzt loslegen",
+      },
+      { type: "h2", text: "Häufige Fragen" },
+      { type: "h3", text: "Was heißt es, dass die Ehe ein Bund ist?" },
+      {
+        type: "p",
+        text: "Ein Bund ist kein Vertrag. Verträge schützen das Interesse beider Seiten und lösen sich bei Verletzung auf. Ein Bund ist eine öffentliche Bindung vor einem Dritten, die Treue an eine Person knüpft statt an deren Leistung.",
+      },
+      { type: "h3", text: "Was bedeutet Unterordnung in der Ehe?" },
+      {
+        type: "p",
+        text: "Der Schlüssel ist Epheser 5,21: gegenseitige Unterordnung. Keine einseitige Unterwerfung, sondern Aufmerksamkeit, Demut und Respekt füreinander. Was dem Mann aufgetragen wird (Eph 5,25), ist hingebende Liebe, keine Herrschaft.",
+      },
+      { type: "h3", text: "Was sagt die Bibel über Streit?" },
+      {
+        type: "p",
+        text: "Die Schrift leugnet den Streit nicht. Sie gibt einen Rahmen: wahrhaftig reden (Eph 4,25), sich schnell versöhnen (Eph 4,26), einander vergeben (Kol 3,13). Streit ist nicht der Makel der Ehe, er ist ihr Wartungsgelände.",
+      },
+      { type: "h3", text: "Muss man kirchlich heiraten?" },
+      {
+        type: "p",
+        text: "Die standesamtliche Trauung erledigt den rechtlichen Teil. Die kirchliche ist eine Glaubensentscheidung und ein öffentliches Versprechen vor Gott. Beides schließt sich nicht aus, viele Paare haben beides am selben Tag.",
+      },
+    ],
+  },
+  "bibliai-idezetek-eskuvore": {
+    category: "Bibelverse",
+    title: "Bibelverse für eure Hochzeit: Liebe, Ehe und gemeinsames Leben",
+    lead: "Eine Auswahl von Bibelversen für Einladungen, Trauungen und Eheversprechen: Liebe, Ehe, Treue und Vergebung.",
+    seo_title: "Bibelverse für die Hochzeit: Liebe und Ehe · Weddly",
+    seo_description:
+      "Eine Auswahl von Bibelversen für Hochzeiten: Liebe, Ehe, Treue, Vergebung und gemeinsames Leben.",
+    body: [
+      {
+        type: "p",
+        text: "Viele Paare möchten einen Bibelvers auf der Einladung, auf der Hochzeitswebsite oder als Teil des Eheversprechens. Unten findet ihr eine Auswahl, nach Themen sortiert: Liebe, Ehe, gemeinsames Leben, Respekt und Vergebung.",
+      },
+      { type: "h2", text: "Kurze Verse für die Einladung" },
+      {
+        type: "ul",
+        items: [
+          "„Die Liebe ist die größte unter ihnen.”, 1. Korinther 13,13",
+          "„Alle eure Dinge lasst in der Liebe geschehen.”, 1. Korinther 16,14",
+          "„Ihr Lieben, lasst uns einander lieb haben.”, 1. Johannes 4,7",
+          "„Gott ist Liebe.”, 1. Johannes 4,8",
+          "„Furcht ist nicht in der Liebe.”, 1. Johannes 4,18",
+          "„Es ist nicht gut, dass der Mensch allein sei.”, 1. Mose 2,18",
+          "„Die zwei werden ein Fleisch sein.”, Markus 10,8",
+          "„Was Gott zusammengefügt hat, das soll der Mensch nicht scheiden.”, Markus 10,9",
+          "„Eine dreifache Schnur reißt nicht leicht entzwei.”, Prediger 4,12",
+          "„Mein Freund ist mein, und ich bin sein.”, Hoheslied 2,16",
+          "„Liebe ist stark wie der Tod.”, Hoheslied 8,6",
+        ],
+      },
+      { type: "h2", text: "Über die Liebe" },
+      { type: "h3", text: "1. Korinther 13,4-8" },
+      {
+        type: "blockquote",
+        cite: "1. Korinther 13,4-8",
+        text: "Die Liebe ist langmütig und freundlich, die Liebe eifert nicht, die Liebe treibt nicht Mutwillen, sie bläht sich nicht auf,\n\nsie verhält sich nicht ungehörig, sie sucht nicht das Ihre, sie lässt sich nicht erbittern, sie rechnet das Böse nicht zu,\n\nsie freut sich nicht über die Ungerechtigkeit, sie freut sich aber an der Wahrheit;\n\nsie erträgt alles, sie glaubt alles, sie hofft alles, sie duldet alles.\n\nDie Liebe hört niemals auf.",
+      },
+      {
+        type: "p",
+        text: "Paulus zerlegt die Liebe hier beinahe: nicht als Gefühl, sondern als eine Reihe kleiner, täglicher Bewegungen, Geduld, Freundlichkeit, Demut, Ausdauer. Das sind keine Worte, die man an einem einzigen Tag aufführen kann; man lernt sie langsam, im gewöhnlichen Leben. Die Ehe ist genau dieser Übungsraum: Tag für Tag jene Liebe zu üben, die niemals aufhört.",
+      },
+      { type: "h3", text: "1. Johannes 4,7-8" },
+      {
+        type: "blockquote",
+        cite: "1. Johannes 4,7-8",
+        text: "Ihr Lieben, lasst uns einander lieb haben; denn die Liebe ist von Gott, und wer liebt, der ist von Gott geboren und kennt Gott.\n\nWer nicht liebt, der kennt Gott nicht; denn Gott ist Liebe.",
+      },
+      {
+        type: "p",
+        text: "Johannes geht an die Wurzel: Wo Liebe ist, ist Gott, auch wenn wir ihn nicht benennen. Liebe ist keine Erfindung von uns, sondern das Echo von etwas Größerem. Wenn sich also zwei Menschen einander zuwenden, tun sie mehr, als sie wissen: Sie geben eine Liebe weiter, die ihnen zuerst geschenkt wurde.",
+      },
+      { type: "h2", text: "Über die Ehe" },
+      { type: "h3", text: "1. Mose 2,18.24" },
+      {
+        type: "blockquote",
+        cite: "1. Mose 2,18.24",
+        text: "Und Gott der HERR sprach: Es ist nicht gut, dass der Mensch allein sei; ich will ihm eine Gehilfin machen, die um ihn sei.\n\nDarum wird ein Mann seinen Vater und seine Mutter verlassen und an seinem Weibe hangen, und sie werden sein ein Fleisch.",
+      },
+      {
+        type: "p",
+        text: "In der ganzen Schöpfungserzählung ist dies das Erste, was Gott nicht gut nennt: das Alleinsein. Kein Fehler, kein Versagen, einfach die Form des Menschseins. Wir sind darauf angelegt, von einem anderen aufgenommen zu werden, und die Ehe gibt dieser Sehnsucht einen Namen und ein Zuhause: zwei Leben, die sich einander zuwenden, weil keines für sich vollständig ist.",
+      },
+      { type: "h3", text: "Markus 10,6-9" },
+      {
+        type: "blockquote",
+        cite: "Markus 10,6-9",
+        text: "Aber von Anfang der Schöpfung hat sie Gott geschaffen als Mann und Weib.\n\nDarum wird ein Mensch seinen Vater und seine Mutter verlassen und wird an seinem Weibe hangen,\n\nund die zwei werden ein Fleisch sein. So sind sie nun nicht mehr zwei, sondern ein Fleisch.\n\nWas denn Gott zusammengefügt hat, das soll der Mensch nicht scheiden.",
+      },
+      {
+        type: "p",
+        text: "Jesus greift zurück auf den Anfang: Die Ehe ist keine private Abmachung, sondern etwas, das Gott selbst zusammenfügt. Dieses Wort, zusammengefügt, ist sanft und schwer zugleich: nicht zwei Leben nebeneinandergeklebt, sondern ineinander verwoben. Und was Gott verwebt, sollen wir behutsam behandeln.",
+      },
+      { type: "h3", text: "Epheser 5,21.25" },
+      {
+        type: "blockquote",
+        cite: "Epheser 5,21.25",
+        text: "Ordnet euch einander unter in der Furcht Gottes.\n\nIhr Männer, liebt eure Frauen, gleichwie Christus die Gemeinde geliebt und sich selbst für sie dahingegeben hat.",
+      },
+      {
+        type: "p",
+        text: "Paulus beginnt mit gegenseitiger Unterordnung und endet bei einem Mann, der liebt, wie Christus geliebt hat, einer Liebe, die sich selbst weggegeben hat. Das Bild ist keine Rangordnung, sondern ein Knien: jeder neigt sich dem anderen zu, bereit, als Erster zu dienen. Die Ehe lebt in diesem gemeinsamen Sichkleinmachen, wo keiner gewinnen will und beide still gehalten sind.",
+      },
+      { type: "h2", text: "Über das gemeinsame Leben und das Durchhalten" },
+      { type: "h3", text: "Prediger 4,9-12" },
+      {
+        type: "blockquote",
+        cite: "Prediger 4,9-12",
+        text: "So ist's ja besser zwei als eins; denn sie haben guten Lohn für ihre Mühe.\n\nFällt einer von ihnen, so hilft ihm sein Gesell auf. Weh dem, der allein ist, wenn er fällt! Dann ist kein anderer da, der ihm aufhilft.\n\nUnd wenn einer den einzelnen überwältigt, so widerstehen ihm die zwei; und eine dreifache Schnur reißt nicht leicht entzwei.",
+      },
+      {
+        type: "p",
+        text: "Der Prediger ist nüchtern: Im Leben fällt man. Nicht ob, sondern wann. Und in dieser schlichten Tatsache liegt das Geschenk eines Gegenübers, jemand, der sich hinunterbeugt und den anderen aufhebt. Die dreifache Schnur, oft als das Paar und Gott gelesen, benennt die tiefere Hoffnung: dass das Band, das zwei Menschen zusammenhält, stärker ist als jeder von ihnen allein.",
+      },
+      { type: "h3", text: "Rut 1,16-17" },
+      {
+        type: "blockquote",
+        cite: "Rut 1,16-17",
+        text: "Rede mir nicht ein, dass ich dich verlassen sollte und von dir umkehren. Wo du hingehst, da will ich auch hingehen; wo du bleibst, da bleibe ich auch. Dein Volk ist mein Volk, und dein Gott ist mein Gott.\n\nWo du stirbst, da sterbe ich auch, da will ich auch begraben werden.",
+      },
+      {
+        type: "p",
+        text: "Rut spricht diese Worte zu einer älteren Frau, und doch tragen sie das Herz eines Eheversprechens in sich. Nicht nur ich komme mit dir, sondern dein Volk wird mein Volk sein, dein Gott mein Gott. Es ist die ganze Person, bedingungslos übergeben, jene Art von Zugehörigkeit, die die Ehe Tag für Tag an gewöhnlichen Orten einzulösen lernt.",
+      },
+      { type: "h2", text: "Über Respekt, Geduld und Vergebung" },
+      { type: "h3", text: "Epheser 4,1-3" },
+      {
+        type: "blockquote",
+        cite: "Epheser 4,1-3",
+        text: "So ermahne nun euch ich Gefangener in dem HERRN, dass ihr wandelt, wie sich's gebührt eurer Berufung, mit der ihr berufen seid,\n\nmit aller Demut und Sanftmut, mit Geduld, und ertraget einer den andern in Liebe\n\nund seid fleißig, zu halten die Einigkeit im Geist durch das Band des Friedens.",
+      },
+      {
+        type: "p",
+        text: "Paulus verteilt keine großen Worte, er verteilt die Alltagskleidung eines gemeinsamen Lebens: Demut, Sanftmut, Geduld, einander in Liebe ertragen. Nichts davon glänzt, und doch hält genau das den Frieden am Leben, wenn zwei Leben aneinander reiben. Das große Ja einer Hochzeit wird von unzähligen kleinen Jas danach getragen.",
+      },
+      { type: "h3", text: "Kolosser 3,12-14" },
+      {
+        type: "blockquote",
+        cite: "Kolosser 3,12-14",
+        text: "So zieht nun an, als die Auserwählten Gottes, Heilige und Geliebte, herzliches Erbarmen, Freundlichkeit, Demut, Sanftmut, Geduld;\n\nund ertrage einer den andern und vergebt euch untereinander, wenn jemand Klage hat gegen den andern; wie Christus euch vergeben hat, so vergebt auch ihr.\n\nÜber alles aber zieht die Liebe an, die da ist das Band der Vollkommenheit.",
+      },
+      {
+        type: "p",
+        text: "Paulus spricht vom Anziehen: jeden Morgen Erbarmen, Freundlichkeit, Demut, Sanftmut und Geduld anlegen, und über all dem die Liebe, wie ein Mantel, der alles andere zusammenhält. Die Ehe ist kein Gefühl, auf das man wartet; sie ist ein Kleidungsstück, das man Tag für Tag anzieht und still dem anderen zugewandt trägt.",
+      },
+      { type: "h2", text: "Romantische Stellen aus dem Hohelied" },
+      { type: "h3", text: "Hoheslied 2,10-13" },
+      {
+        type: "blockquote",
+        cite: "Hoheslied 2,10-13",
+        text: "Mein Freund antwortet und spricht zu mir: Steh auf, meine Freundin, meine Schöne, und komm her!\n\nDenn siehe, der Winter ist vergangen, der Regen ist weg und dahin;\n\ndie Blumen sind hervorgekommen im Lande, die Zeit des Singens ist gekommen.",
+      },
+      {
+        type: "p",
+        text: "„Steh auf, meine Freundin, und komm her”, ruft der Geliebte, und Winter, Regen und Dunkelheit sind schon vorüber. Das Hohelied deutet auf etwas Größeres als zwei Verliebte: Jeder echte Anfang klingt so. Auch die Ehe ist ein solcher Ruf, die lange Jahreszeit des Alleinseins geht zu Ende, und die Zeit des Singens kommt.",
+      },
+      { type: "h3", text: "Hoheslied 8,6-7" },
+      {
+        type: "blockquote",
+        cite: "Hoheslied 8,6-7",
+        text: "Setze mich wie ein Siegel auf dein Herz und wie ein Siegel auf deinen Arm. Denn Liebe ist stark wie der Tod.\n\nViele Wasser können die Liebe nicht auslöschen noch die Ströme sie ertränken.",
+      },
+      {
+        type: "p",
+        text: "„Setze mich wie ein Siegel auf dein Herz”: Wer liebt, bittet nicht um ein flüchtiges Versprechen, sondern um ein bleibendes Zeichen. Und die Stärke der Liebe wird im selben Atemzug mit dem Tod genannt: Viele Wasser können sie nicht löschen, keine Flut sie fortreißen. Die Ehe nimmt diese Art von Liebe auf, stark nicht deshalb, weil die Tage leicht sind, sondern weil sie durch die schweren hindurch bleibt.",
+      },
+      { type: "h2", text: "Wie ihr auswählt" },
+      {
+        type: "p",
+        text: "Lasst den Vers zur Stimmung passen. Zu einer klassischen, feierlichen Trauung passt 1. Korinther 13 oder Epheser 5; zu einer poetischen Trauung im Freien passt das Hohelied besser. Für eine Einladung funktioniert ein kurzer Vers (1. Korinther 13,13, Hoheslied 2,16) fast immer.",
+      },
+      {
+        type: "p",
+        text: "Wenn eure Gästeliste gemischt ist, nehmt eine Stelle mit einer menschlichen, allgemein verständlichen Botschaft wie Prediger 4 oder Kolosser 3.",
+      },
+      {
+        type: "cta",
+        lead: "Wenn ihr auch den praktischen Teil der Hochzeit (Gästeliste, Budget, RSVP, Tischordnung) an einem Ort organisieren wollt, probiert Weddly.",
+        href: "/signup",
+        label: "Jetzt loslegen",
+      },
+      { type: "h2", text: "Häufige Fragen" },
+      { type: "h3", text: "Welche Bibelstelle ist bei Hochzeiten am bekanntesten?" },
+      {
+        type: "p",
+        text: "1. Korinther 13, besonders die Stelle „die Liebe ist langmütig und freundlich” und der Schlusssatz: „die Liebe ist die größte unter ihnen”.",
+      },
+      { type: "h3", text: "Welcher kurze Vers passt auf eine Einladung?" },
+      {
+        type: "p",
+        text: "Gute kurze Möglichkeiten: 1. Korinther 13,13, 1. Johannes 4,7, Prediger 4,12 und Hoheslied 2,16.",
+      },
+      { type: "h3", text: "Welche Stelle passt am besten zum Eheversprechen?" },
+      {
+        type: "p",
+        text: "1. Mose 2,24, Markus 10,6-9 und Epheser 5 sind die stärksten biblischen Anker für den Bundescharakter der Ehe.",
       },
     ],
   },
