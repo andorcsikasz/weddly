@@ -4,8 +4,8 @@
 // UI locale is Hrvatski.
 //
 // Translated by hand rather than through the DeepL integration, which has no
-// Croatian at all — the same gap that leaves a Croatian vendor without the
-// "Fordítás" button on their own listing description.
+// Croatian at all. That is the same gap that leaves a Croatian vendor without
+// the translate button on their own listing description.
 
 import type { BlogTranslationsBySlug } from "./blog_posts";
 

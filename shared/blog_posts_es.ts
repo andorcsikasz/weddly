@@ -7,7 +7,7 @@
 // the English version is the internationally framed one: it already drops
 // the Hungary-only asides that only make sense to a reader in Budapest.
 // Where a post IS about Hungary (the paperwork guide, the three
-// "where-to-get-married" travel pieces) the country stays in — a Spanish
+// "where-to-get-married" travel pieces) the country stays in: a Spanish
 // reader marrying in Hungary is precisely who that article is for.
 
 import type { BlogTranslationsBySlug } from "./blog_posts";
