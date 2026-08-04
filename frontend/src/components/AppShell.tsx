@@ -13,6 +13,7 @@ import {
   Compass,
   Flag,
   GanttChartSquare,
+  Gauge,
   Gift,
   Globe,
   Handshake,
@@ -386,6 +387,13 @@ const ADMIN_ITEMS: AdminNavItem[] = [
     to: "/app/admin/financial-planner",
     labelKey: "admin.nav_financial_planner",
     icon: <Wallet size={18} />,
+    group: "insights",
+  },
+  {
+    to: "/app/admin/public-stats",
+    labelKey: "admin.nav_public_stats",
+    // no tabKey — goes to the phone More sheet
+    icon: <Gauge size={18} />,
     group: "insights",
   },
 ];

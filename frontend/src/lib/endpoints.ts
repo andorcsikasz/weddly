@@ -101,6 +101,11 @@ import type { CompanyLookupAvailability, CompanyLookupResult } from "@shared/com
 import type { AiAvailability, InquiryAssistResult } from "@shared/ai_assist";
 import type { TranslateAvailability, TranslateRequest, TranslateResult } from "@shared/translate";
 import type { AddressSuggestion } from "@shared/geo";
+import type {
+  AdminPublicStatsPatch,
+  AdminPublicStatsView,
+  PublicStats,
+} from "@shared/public_stats";
 import type { PlannerBillingStatus } from "@shared/planner_billing";
 import type { CoupleDesignInput } from "@shared/design";
 import type { BlogPost } from "@shared/blog_posts";
@@ -385,10 +390,12 @@ async function uploadMultipart<T>(
   return JSON.parse(text) as T;
 }
 
-/** Public landing-page counters — real onboarded couples + guests who have
- *  submitted any RSVP (yes / no / maybe). Cached server-side for 60s. */
+/** Public landing-page counters — onboarded couples, guests who have submitted
+ *  any RSVP (yes / no / maybe), vendors with a Weddly account and businesses
+ *  live in the directory. Each carries the admin display offset set at
+ *  /app/admin/public-stats. Cached server-side for 60s. */
 export const publicStatsApi = {
-  get: () => apiFetch<{ couples: number; rsvps: number; ts: number }>("GET", "/api/public/stats"),
+  get: () => apiFetch<PublicStats>("GET", "/api/public/stats"),
   /** Vendor-recruitment counters for the public /vendors page: couples
    *  planning right now, inquiry volume over the last 30 days, and the free
    *  window a signup would land in (with its remaining slots). */
@@ -2106,6 +2113,15 @@ export const adminReviewApi = {
   unflag: (reviewId: number) =>
     apiFetch<{ ok: true }>("POST", `/api/admin/reviews/${reviewId}/unflag`),
   remove: (reviewId: number) => apiFetch<{ ok: true }>("DELETE", `/api/reviews/${reviewId}`),
+};
+
+/** The display offsets on the public landing counters. The GET always carries
+ *  the measured number beside the shown one, so the admin table can never be
+ *  read as if the padded figure were the real one. The PATCH is partial. */
+export const adminPublicStatsApi = {
+  get: () => apiFetch<AdminPublicStatsView>("GET", "/api/admin/public-stats"),
+  update: (patch: AdminPublicStatsPatch) =>
+    apiFetch<AdminPublicStatsView>("PATCH", "/api/admin/public-stats", patch),
 };
 
 export const supplierCommentApi = {

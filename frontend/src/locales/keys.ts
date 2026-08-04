@@ -2807,24 +2807,24 @@ export interface LocaleMessages {
     counter_eyebrow: string;
     counter_couples_label: string;
     counter_rsvps_label: string;
-    founders_title: string;
-    /** One-line promise under the title: first 200 sign-ups are free until
-     *  their wedding day. Carries the offer now that the eyebrow is gone. */
-    founders_promise: string;
-    /** Uppercase tag under the big "200" (e.g. "free spots"). */
-    founders_seats_label: string;
-    /** Caption after the live booked count in the progress sliver. */
-    founders_joined_caption: string;
-    /** Caption after the live remaining-seats count (e.g. "left"). */
-    founders_left_caption: string;
-    founders_body: string;
-    founders_note: string;
-    founders_cta: string;
-    founders_share_prompt: string;
-    founders_share_cta: string;
-    founders_share_copied: string;
-    founders_share_title: string;
-    founders_share_text: string;
+    /** Vendor founding-round band on the landing. Addressed to the wedding
+     *  professionals who see the couple-facing page, so the copy has to be
+     *  legible to someone who arrived for a completely different reason. */
+    provendors_title: string;
+    /** One-line promise under the title: join the founding round and Weddly
+     *  Pro is theirs as our guest for the first year. */
+    provendors_promise: string;
+    /** Uppercase tag under the big remaining-seats number. */
+    provendors_seats_label: string;
+    /** Unit after the live Pro-vendor count in the supporting line. */
+    provendors_count_vendors: string;
+    /** Unit after the live directory-listing count in the supporting line. */
+    provendors_count_listings: string;
+    provendors_cta: string;
+    provendors_share_cta: string;
+    provendors_share_copied: string;
+    provendors_share_title: string;
+    provendors_share_text: string;
     product_eyebrow: string;
     product_title: string;
     block_budget_eyebrow: string;
@@ -6508,6 +6508,7 @@ export interface LocaleMessages {
     nav_planner_waitlist: string;
     nav_taxonomy: string;
     nav_financial_planner: string;
+    nav_public_stats: string;
     nav_email_preview: string;
     nav_email_list: string;
     /** Vendor management (/app/admin/vendors). */

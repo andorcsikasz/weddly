@@ -2602,3 +2602,20 @@ CREATE INDEX IF NOT EXISTS idx_vendor_automation_runs_vendor
 -- the reminder's fact gathering.
 CREATE INDEX IF NOT EXISTS idx_vendor_automation_runs_message
   ON vendor_automation_runs(message_id) WHERE message_id IS NOT NULL;
+
+-- Display offsets for the public landing counters (couples, RSVPs, Pro vendors,
+-- directory listings).
+--
+-- The measured counts are still counted from live rows on every read; this
+-- table only holds the number ADDED to each before the public payload leaves
+-- the server. Kept as its own row per counter rather than folded into any
+-- aggregate table, so the measured figure is never overwritten and setting an
+-- offset back to 0 restores the truth exactly. Read by GET /api/public/stats,
+-- written from /app/admin/public-stats, and deliberately consulted by nothing
+-- on the analytics side.
+CREATE TABLE IF NOT EXISTS public_stat_boosts (
+  key TEXT PRIMARY KEY,                                        -- 'couples' | 'rsvps' | 'vendors' | 'listings'
+  amount INTEGER NOT NULL DEFAULT 0,
+  updated_at INTEGER NOT NULL,
+  updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+);

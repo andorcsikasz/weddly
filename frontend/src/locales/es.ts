@@ -2263,23 +2263,18 @@ const es: LocaleMessages = {
     counter_eyebrow: "Números en vivo",
     counter_couples_label: "Parejas planeando",
     counter_rsvps_label: "Confirmaciones recibidas",
-    founders_title: "Esta vez, los invitados sois vosotros",
-    founders_promise:
-      "Un regalo de Weddly: acompáñanos desde el primer capítulo y sois nuestros invitados hasta el mismísimo día de vuestra boda.",
-    founders_seats_label: "plazas para madrugadores",
-    founders_joined_caption: "parejas ya dentro",
-    founders_left_caption: "restantes",
-    founders_body:
-      "Sois nuestros invitados hasta el último instante de vuestra boda: presupuesto, lista de invitados, confirmaciones, mesas, todo en un solo lugar.",
-    founders_note:
-      "Estamos poniendo la mesa para doscientas parejas. Toma asiento mientras quede sitio.",
-    founders_cta: "Registrarse",
-    founders_share_prompt: "¿Conoces a una pareja a la que le encantaría? Pásales una invitación.",
-    founders_share_cta: "Compartir el enlace",
-    founders_share_copied: "Enlace copiado. Pásalo.",
-    founders_share_title: "Weddly, planear la boda en un solo lugar",
-    founders_share_text:
-      "Estoy usando Weddly para planear nuestra boda: presupuesto, invitados, confirmaciones, mesas, todo en un solo lugar. Están recibiendo como invitadas a las primeras parejas. Pensé en ti 💍",
+    provendors_title: "En esta ronda, el invitado eres tú",
+    provendors_promise:
+      "Un regalo de Weddly: únete a la ronda fundacional y Weddly Pro es tuyo como invitado nuestro durante todo un año.",
+    provendors_seats_label: "plazas pro libres",
+    provendors_count_vendors: "proveedores Weddly Pro",
+    provendors_count_listings: "negocios en el catálogo",
+    provendors_cta: "Registrarse",
+    provendors_share_cta: "Compartir el enlace",
+    provendors_share_copied: "Enlace copiado. Pásalo.",
+    provendors_share_title: "Weddly, donde las parejas buscan a sus proveedores",
+    provendors_share_text:
+      "Las parejas planean toda su boda en Weddly y buscan aquí a sus proveedores. La ronda fundacional está abierta y el primer año eres su invitado. Pensé en ti 💍",
     product_eyebrow: "Qué incluye",
     product_title: "Las piezas que de verdad vas a usar",
     block_budget_eyebrow: "Presupuesto en vivo",
@@ -5584,6 +5579,7 @@ const es: LocaleMessages = {
     nav_blog: "Blog",
     nav_analytics: "Analíticas",
     nav_financial_planner: "Planificador financiero",
+    nav_public_stats: "Contadores públicos",
     nav_email_preview: "Plantillas de email",
     nav_email_list: "Lista de emails",
     vendors: {

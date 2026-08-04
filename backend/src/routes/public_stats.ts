@@ -1,6 +1,6 @@
 // Public landing-page counters.
 //
-//   GET /api/public/stats — { couples, rsvps, ts }
+//   GET /api/public/stats — { couples, rsvps, vendors, listings, ts }
 //   GET /api/public/vendor-stats — { visits_28d, inquiries_30d, offer }
 //
 // The second one feeds the public /vendors recruitment page. Its whole reason
@@ -10,29 +10,39 @@
 // so the pitch cannot drift away from the truth. The page self-hides any
 // counter it considers too small to show.
 //
-// `couples` is the number of real, onboarded, active workspaces (demo rows
-// stamped with `is_demo = 1` are excluded so the visible number reflects
-// actual signups, not throwaway Shrek & Fiona demos). `rsvps` is the number
-// of guest rows with a non-pending status whose couple is also real + active.
+// The first one is measured the same way (see `computePublicStatsReal` in
+// domain/public_stats.ts: onboarded non-demo workspaces, answered RSVPs on
+// those workspaces, vendor accounts, active directory listings) and then has
+// the admin-set display offset from `public_stat_boosts` ADDED before it goes
+// out. Nothing measured is ever overwritten, so zeroing every offset restores
+// the counted numbers exactly, and /app/admin/public-stats shows both.
 //
 // Cached in-process for 60s. The landing page is the highest-traffic public
-// route in the app, and these two COUNT(*)s walk the full guests table — at a
-// few thousand rows it's cheap, but caching keeps the cost flat regardless of
-// landing traffic.
+// route in the app, and these COUNT(*)s walk the full guests + listings
+// tables — at a few thousand rows it's cheap, but caching keeps the cost flat
+// regardless of landing traffic. `resetPublicStatsCache` is what makes an
+// admin edit visible immediately rather than up to a minute later; without it
+// an operator would type a number, reload the landing, see the old one and
+// reasonably conclude the save had failed.
 
+import type { PublicStats } from "@shared/public_stats";
 import type { PublicVendorStats } from "@shared/vendor_billing";
 import { db, now } from "../db";
+import { computePublicStatsReal, getStatBoosts } from "../domain/public_stats";
 import { currentVendorOffer } from "../domain/vendor_billing";
 import { json, type Router } from "../lib/http";
 
-interface PublicStats {
-  couples: number;
-  rsvps: number;
-}
+type CountedStats = Omit<PublicStats, "ts">;
 
-let cache: { ts: number; value: PublicStats } | null = null;
+let cache: { ts: number; value: CountedStats } | null = null;
 let vendorCache: { ts: number; value: PublicVendorStats } | null = null;
 const TTL_MS = 60_000;
+
+/** Drop the 60s cache. Called by the admin write path so a saved offset is on
+ *  the landing page by the time the operator reloads it. */
+export function resetPublicStatsCache() {
+  cache = null;
+}
 
 /** Window the vendor-facing demand counter looks back over. */
 const INQUIRY_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
@@ -44,26 +54,18 @@ const VISIT_WINDOW_MS = 28 * 24 * 60 * 60 * 1000;
  *  All three fire for anonymous visitors on public URLs (no auth, no PII). */
 const VISIT_KINDS = ["wedding_site.view", "rsvp.page.view", "guest.portal.view"] as const;
 
-function computeStats(): PublicStats {
-  const couples = db
-    .prepare(
-      `SELECT COUNT(*) AS n FROM couples
-       WHERE status = 'active' AND is_demo = 0 AND onboarded_at IS NOT NULL`,
-    )
-    .get() as { n: number };
-
-  const rsvps = db
-    .prepare(
-      `SELECT COUNT(*) AS n
-       FROM guests g
-       JOIN couples c ON c.id = g.couple_id
-       WHERE g.rsvp_status != 'pending'
-         AND c.is_demo = 0
-         AND c.status = 'active'`,
-    )
-    .get() as { n: number };
-
-  return { couples: couples.n, rsvps: rsvps.n };
+/** Measured counts + the admin offset on each. The public payload carries no
+ *  way to tell the two apart, which is the whole point of the offset; the
+ *  admin surface is where they are separated again. */
+function computeStats(): CountedStats {
+  const real = computePublicStatsReal();
+  const boost = getStatBoosts();
+  return {
+    couples: real.couples + boost.couples,
+    rsvps: real.rsvps + boost.rsvps,
+    vendors: real.vendors + boost.vendors,
+    listings: real.listings + boost.listings,
+  };
 }
 
 /** Vendor-facing counters. `visits_28d` sums the public page-view growth events

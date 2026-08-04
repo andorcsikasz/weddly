@@ -45,6 +45,7 @@ const AdminEmailPreviewPage = lazyWithReload(() =>
 const AdminFinancialPlannerPage = lazyWithReload(() => import("./pages/AdminFinancialPlannerPage"));
 const AdminBlogPage = lazyWithReload(() => import("./pages/AdminBlogPage"));
 const AdminCoupleCardsPage = lazyWithReload(() => import("./pages/AdminCoupleCardsPage"));
+const AdminPublicStatsPage = lazyWithReload(() => import("./pages/AdminPublicStatsPage"));
 const AdminFeedbackPage = lazyWithReload(() => import("./pages/AdminFeedbackPage"));
 const AdminFlaggedReviewsPage = lazyWithReload(() => import("./pages/AdminFlaggedReviewsPage"));
 const AdminCategoriesPage = lazyWithReload(() => import("./pages/AdminCategoriesPage"));
@@ -1287,6 +1288,16 @@ export default function App() {
               <Page>
                 <RequireAdmin>
                   <AdminCoupleCardsPage />
+                </RequireAdmin>
+              </Page>
+            }
+          />
+          <Route
+            path="admin/public-stats"
+            element={
+              <Page>
+                <RequireAdmin>
+                  <AdminPublicStatsPage />
                 </RequireAdmin>
               </Page>
             }

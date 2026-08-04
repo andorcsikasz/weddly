@@ -2278,24 +2278,18 @@ const de: LocaleMessages = {
     counter_eyebrow: "Live-Zahlen",
     counter_couples_label: "Paare in Planung",
     counter_rsvps_label: "Erhaltene RSVPs",
-    founders_title: "Diesmal sind Sie die Gäste",
-    founders_promise:
-      "Ein Geschenk von Weddly: Kommen Sie vom ersten Kapitel an mit, und Sie sind bis zu Ihrem Hochzeitstag unsere Gäste.",
-    founders_seats_label: "Early-Bird-Plätze",
-    founders_joined_caption: "Paare sind schon dabei",
-    founders_left_caption: "frei",
-    founders_body:
-      "Sie sind bis zum letzten Moment Ihrer Hochzeit unsere Gäste: Budget, Gästeliste, RSVP, Sitzplan, alles an einem Ort.",
-    founders_note:
-      "Wir decken den Tisch für zweihundert Paare. Nehmen Sie Platz, solange noch welcher frei ist.",
-    founders_cta: "Registrieren",
-    founders_share_prompt:
-      "Kennen Sie ein Paar, dem das gefallen würde? Schicken Sie ihm eine Einladung.",
-    founders_share_cta: "Link teilen",
-    founders_share_copied: "Link kopiert. Geben Sie ihn weiter.",
-    founders_share_title: "Weddly, Hochzeitsplanung an einem Ort",
-    founders_share_text:
-      "Ich plane unsere Hochzeit mit Weddly: Budget, Gäste, RSVP, Sitzplan, alles an einem Ort. Die ersten Paare sind dort zu Gast. Dachte, das könnte auch etwas für dich sein 💍",
+    provendors_title: "In dieser Runde sind Sie unser Gast",
+    provendors_promise:
+      "Ein Geschenk von Weddly: Kommen Sie in die Gründerrunde, und Weddly Pro gehört Ihnen ein ganzes Jahr lang als unser Gast.",
+    provendors_seats_label: "freie Pro-Plätze",
+    provendors_count_vendors: "Weddly-Pro-Anbieter",
+    provendors_count_listings: "Betriebe im Katalog",
+    provendors_cta: "Registrieren",
+    provendors_share_cta: "Link teilen",
+    provendors_share_copied: "Link kopiert. Geben Sie ihn weiter.",
+    provendors_share_title: "Weddly, hier suchen Paare ihre Dienstleister",
+    provendors_share_text:
+      "Paare planen ihre ganze Hochzeit mit Weddly und suchen hier ihre Dienstleister. Die Gründerrunde ist offen, und im ersten Jahr sind Sie ihr Gast. Dachte, das könnte etwas für Sie sein 💍",
     product_eyebrow: "Was drin ist",
     product_title: "Die Teile, die Sie wirklich nutzen werden",
     block_budget_eyebrow: "Live-Budget",
@@ -5634,6 +5628,7 @@ const de: LocaleMessages = {
     nav_blog: "Blog",
     nav_analytics: "Analytics",
     nav_financial_planner: "Finanzplaner",
+    nav_public_stats: "Öffentliche Zähler",
     nav_email_preview: "E-Mail-Vorlagen",
     nav_email_list: "E-Mail-Liste",
     vendors: {

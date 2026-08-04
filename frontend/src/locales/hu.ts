@@ -2238,22 +2238,18 @@ const hu: LocaleMessages = {
     counter_eyebrow: "Élő számok",
     counter_couples_label: "Tervezgető pár",
     counter_rsvps_label: "Beérkezett RSVP",
-    founders_title: "Ezúttal ti vagytok a vendégek",
-    founders_promise:
-      "Ajándék a Wēddlytől: tartsatok velünk az első fejezettől, és az esküvőtök napjáig a vendégeink vagytok.",
-    founders_seats_label: "early bird hely",
-    founders_joined_caption: "pár már foglalt",
-    founders_left_caption: "még szabad",
-    founders_body:
-      "Az esküvőtök utolsó pillanatáig a vendégeink vagytok: költségvetés, vendéglista, RSVP, ültetés, minden egy helyen.",
-    founders_note: "Kétszáz párnak terítünk. Csatlakozzatok, amíg van szabad hely az asztalnál.",
-    founders_cta: "Regisztrálok",
-    founders_share_prompt: "Ismertek egy párt, akinek jól jönne? Hívjátok meg őket.",
-    founders_share_cta: "Link megosztása",
-    founders_share_copied: "Link a vágólapon. Adjátok tovább.",
-    founders_share_title: "Wēddly, az egész esküvő egy helyen",
-    founders_share_text:
-      "A Wēddlyvel tervezzük az esküvőnket: költségvetés, vendégek, RSVP, ültetés, minden egy helyen. Az induló párokat vendégül látják. Rátok gondoltam 💍",
+    provendors_title: "Ebben a körben ti vagytok a vendégeink",
+    provendors_promise:
+      "Ajándék a Wēddlytől: csatlakozzatok az induló körhöz, és egy teljes évig a vendégeinkként használjátok a Weddly Prót.",
+    provendors_seats_label: "szabad pro hely",
+    provendors_count_vendors: "Weddly Pro szolgáltató",
+    provendors_count_listings: "cég a katalógusban",
+    provendors_cta: "Regisztrálok",
+    provendors_share_cta: "Link megosztása",
+    provendors_share_copied: "Link a vágólapon. Adjátok tovább.",
+    provendors_share_title: "Wēddly, itt keresnek szolgáltatót a párok",
+    provendors_share_text:
+      "A párok a Wēddlyn tervezik az egész esküvőjüket, és itt keresnek szolgáltatót. Most nyitott az induló kör: az első évben a vendégük vagy. Rád gondoltam 💍",
     product_eyebrow: "Mit tartalmaz",
     product_title: "Azok az elemek, amiket valóban használni fogtok",
     block_budget_eyebrow: "Élő költségvetés",
@@ -5533,6 +5529,7 @@ const hu: LocaleMessages = {
     nav_blog: "Blog",
     nav_analytics: "Analitika",
     nav_financial_planner: "Pénzügyi tervező",
+    nav_public_stats: "Nyilvános számlálók",
     nav_email_preview: "Email sablonok",
     nav_email_list: "Email lista",
     vendors: {

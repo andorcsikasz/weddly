@@ -2229,22 +2229,18 @@ const hr: LocaleMessages = {
     counter_eyebrow: "Brojke uživo",
     counter_couples_label: "Parova u planiranju",
     counter_rsvps_label: "Primljenih RSVP-a",
-    founders_title: "Ovaj put ste vi gosti",
-    founders_promise:
-      "Dar od Weddlyja: krenite s nama od prvog poglavlja i naši ste gosti sve do dana vjenčanja.",
-    founders_seats_label: "early bird mjesta",
-    founders_joined_caption: "parova je već tu",
-    founders_left_caption: "slobodno",
-    founders_body:
-      "Naši ste gosti do posljednjeg trenutka vašeg vjenčanja: proračun, popis gostiju, RSVP, raspored sjedenja, sve na jednom mjestu.",
-    founders_note: "Stol postavljamo za dvjesto parova. Sjednite dok ima mjesta.",
-    founders_cta: "Registrirajte se",
-    founders_share_prompt: "Znate par kojem bi ovo dobro došlo? Pošaljite im pozivnicu.",
-    founders_share_cta: "Podijelite poveznicu",
-    founders_share_copied: "Poveznica je kopirana. Proslijedite je.",
-    founders_share_title: "Weddly, planiranje vjenčanja na jednom mjestu",
-    founders_share_text:
-      "Naše vjenčanje planiramo u Weddlyju: proračun, gosti, RSVP, raspored sjedenja, sve na jednom mjestu. Prve parove ugošćuju. Palo mi je na pamet da bi vam moglo dobro doći 💍",
+    provendors_title: "U ovom krugu vi ste naš gost",
+    provendors_promise:
+      "Dar od Weddlyja: pridružite se početnom krugu i Weddly Pro je vaš kao naš gost punu godinu dana.",
+    provendors_seats_label: "slobodnih pro mjesta",
+    provendors_count_vendors: "Weddly Pro partnera",
+    provendors_count_listings: "tvrtki u katalogu",
+    provendors_cta: "Registrirajte se",
+    provendors_share_cta: "Podijelite poveznicu",
+    provendors_share_copied: "Poveznica je kopirana. Proslijedite je.",
+    provendors_share_title: "Weddly, ovdje parovi traže svoje partnere",
+    provendors_share_text:
+      "Parovi cijelo vjenčanje planiraju u Weddlyju i ovdje traže svoje partnere. Početni krug je otvoren, a prvu godinu ste njihov gost. Palo mi je na pamet da bi vam moglo dobro doći 💍",
     product_eyebrow: "Što je unutra",
     product_title: "Dijelovi koje ćete zaista koristiti",
     block_budget_eyebrow: "Proračun uživo",
@@ -5526,6 +5522,7 @@ const hr: LocaleMessages = {
     nav_blog: "Blog",
     nav_analytics: "Analitika",
     nav_financial_planner: "Financijski plan",
+    nav_public_stats: "Javni brojači",
     nav_email_preview: "Predlošci e-pošte",
     nav_email_list: "Popis e-adresa",
     vendors: {

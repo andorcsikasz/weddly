@@ -56,6 +56,7 @@ import { lazyWithReload } from "../lib/lazy_reload";
 import { useDocumentMeta } from "../lib/seo";
 import { Wordmark } from "../components/Wordmark";
 import { SEO_FAQ } from "@shared/seo_faq";
+import { VENDOR_FOUNDING_CAP } from "@shared/vendor_billing";
 import type { BlogPost } from "@shared/blog_posts";
 import { blogApi } from "../lib/endpoints";
 import { BlogCover } from "./BlogIndexPage";
@@ -426,14 +427,17 @@ export default function LandingPage() {
           to register. */}
       <InteractiveBudgetDemo />
 
-      {/* ════════════════════════ Founding 200 — HOSPITALITY/SCARCITY ════════════
-          The emotional FOMO beat: reframes signing up as "being our guest"
-          rather than buying. Real (honest) couples count drives the
-          "{n} of 200 founding seats taken" line; the count line self-hides
-          once we pass 200 so the offer degrades gracefully. Carries a quick
-          share affordance (native share sheet → clipboard fallback) so an
-          engaged visitor can pass Weddly to another engaged couple. */}
-      <FoundingCouplesBand />
+      {/* ═════════════════ Vendor founding round — HOSPITALITY/SCARCITY ═════════
+          The emotional FOMO beat, aimed at the wedding professionals who see
+          this page: reframes joining as "being our guest" rather than buying.
+          The hero counts down VENDOR_FOUNDING_CAP minus the vendors already
+          holding an account, so the scarcity line and the free window a signup
+          would actually be granted come from one number. Two supporting
+          figures (Pro vendors, businesses in the directory) sit under the
+          promise. Carries a quick share affordance (native share sheet →
+          clipboard fallback) so a couple who loves their photographer can pass
+          the offer straight to them. */}
+      <FoundingVendorsBand />
 
       {/* ════════════════════════ Live counters ════════════════════════
           Two real numbers — onboarded couples + RSVPs collected — fed by
@@ -924,27 +928,37 @@ function LiveStatsBand() {
   );
 }
 
-/** Founding-200 hospitality beat. Evergreen marketing copy (renders even if
- *  the stats fetch fails), with an honest "{n} of 200 founding seats taken"
- *  line driven off the real `publicStatsApi` couples count — capped at 200 and
- *  self-hidden once the table is full so we never broadcast "0 left". The
- *  share control prefers the native share sheet (best for "send it to a
- *  friend" on mobile), falling back to clipboard-copy + toast, then a visible
- *  manual-copy URL when the clipboard is refused (insecure context / iframe).
- *  The shared link carries `?ref=share`, the already-sanctioned referrer
- *  source the signup flow records on `signup_events.referrer_source`. */
-function FoundingCouplesBand() {
-  const { t } = useT();
+/** Vendor founding-round hospitality beat. Evergreen marketing copy (renders
+ *  even if the stats fetch fails), with the hero counting the free founding
+ *  places still open: VENDOR_FOUNDING_CAP minus the vendors who already hold a
+ *  Weddly account. The cap is imported, never typed, so the number on the
+ *  landing and the slot a signup would actually be granted cannot disagree —
+ *  the same rule the /vendors page follows.
+ *
+ *  Two supporting figures sit under the promise: Pro vendors on board and
+ *  businesses live in the directory. The second is the larger, older number
+ *  (curated + community + claimed), and it is what tells a vendor arriving
+ *  cold that the catalogue their competitors are in already exists.
+ *
+ *  The share control prefers the native share sheet (best for "send it to a
+ *  colleague" on mobile), falling back to clipboard-copy + toast, then a
+ *  visible manual-copy URL when the clipboard is refused (insecure context /
+ *  iframe). The shared link carries `?ref=share`, the already-sanctioned
+ *  referrer source the signup flow records on
+ *  `signup_events.referrer_source`. */
+function FoundingVendorsBand() {
+  const { t, locale } = useT();
   const toast = useToast();
-  const [couples, setCouples] = useState<number | null>(null);
+  const [stats, setStats] = useState<{ vendors: number; listings: number } | null>(null);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
+  const fmt = useMemo(() => new Intl.NumberFormat(intlLocale(locale)), [locale]);
 
   useEffect(() => {
     let cancelled = false;
     publicStatsApi
       .get()
       .then((r) => {
-        if (!cancelled) setCouples(r.couples);
+        if (!cancelled) setStats({ vendors: r.vendors, listings: r.listings });
       })
       .catch(() => {
         // Evergreen section — never block on a stats failure; we just skip
@@ -955,23 +969,23 @@ function FoundingCouplesBand() {
     };
   }, []);
 
-  // The hero counts the seats still up for grabs: how many of the 200 free
-  // founding places remain. Falls back to the full 200 when the live stats
-  // call hasn't resolved (or failed), so the promise still stands.
-  const claimed = couples === null ? null : Math.min(couples, 200);
-  const remaining = claimed === null ? null : Math.max(0, 200 - claimed);
-  const heroSeats = remaining ?? 200;
+  // The hero counts the founding places still up for grabs. Falls back to the
+  // full cap when the live stats call hasn't resolved (or failed), so the
+  // promise still stands on a page that loaded without them.
+  const taken = stats === null ? null : Math.min(stats.vendors, VENDOR_FOUNDING_CAP);
+  const remaining = taken === null ? null : Math.max(0, VENDOR_FOUNDING_CAP - taken);
+  const heroSeats = remaining ?? VENDOR_FOUNDING_CAP;
 
   async function shareFoundingLink() {
-    const url = `${window.location.origin}/?ref=share`;
+    const url = `${window.location.origin}/vendors?ref=share`;
     // Native share sheet first — the highest-leverage "send to a friend"
     // affordance on mobile. A cancelled sheet rejects with AbortError, which
     // we swallow silently (NOT a reason to fall through to clipboard).
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({
-          title: t("landing.founders_share_title"),
-          text: t("landing.founders_share_text"),
+          title: t("landing.provendors_share_title"),
+          text: t("landing.provendors_share_text"),
           url,
         });
       } catch {
@@ -983,7 +997,7 @@ function FoundingCouplesBand() {
     try {
       if (!navigator.clipboard?.writeText) throw new Error("no_clipboard");
       await navigator.clipboard.writeText(url);
-      toast.success(t("landing.founders_share_copied"));
+      toast.success(t("landing.provendors_share_copied"));
     } catch {
       setCopyFallback(url);
     }
@@ -994,8 +1008,9 @@ function FoundingCouplesBand() {
     // page so the founding offer reads as one premium "moment", not another
     // stacked section. Warm umber ground (candlelit, not corporate navy) with a
     // cream-inverse CTA as the single bright object. Two-column on desktop
-    // (pitch + promise | the 200 hero, progress and CTA). The 200 leads — it's
-    // the offer; the live booked count is a demoted progress sliver underneath.
+    // (pitch + promise + the two live figures | the remaining-seats hero and
+    // the CTA). The seat count leads — it's the offer; how many vendors and
+    // businesses are already here is the supporting evidence underneath.
     // Mobile-only breathing gap above the dark band: the cream page shows
     // through this top margin so the espresso "moment" doesn't butt straight
     // up against the budget card. ~1.4x the prior gap (the budget demo's
@@ -1008,13 +1023,35 @@ function FoundingCouplesBand() {
         {/* Left: the pitch */}
         <div className="sm:max-w-md">
           <h2 className="font-grotesk text-2xl font-medium leading-snug tracking-tight text-paper-50 sm:text-3xl dark:text-umber-900">
-            {t("landing.founders_title")}
+            {t("landing.provendors_title")}
           </h2>
           {/* Capped + balanced so the promise sits under the title in two even
               rows and never overruns the column. */}
           <p className="mx-auto mt-4 max-w-[19rem] text-balance font-grotesk text-sm leading-relaxed text-paper-300 sm:mx-0 sm:text-base dark:text-umber-700">
-            {t("landing.founders_promise")}
+            {t("landing.provendors_promise")}
           </p>
+          {/* The two supporting figures. Rendered only once the stats land —
+              a "0 vendors · 0 businesses" line under a scarcity offer reads
+              as an empty marketplace, which is the opposite of the job. */}
+          {stats && (
+            <p className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-grotesk text-xs text-paper-400 sm:justify-start dark:text-umber-600">
+              <span>
+                <span className="font-medium tabular-nums text-paper-200 dark:text-umber-800">
+                  {fmt.format(stats.vendors)}
+                </span>{" "}
+                {t("landing.provendors_count_vendors")}
+              </span>
+              <span aria-hidden className="opacity-40">
+                ·
+              </span>
+              <span>
+                <span className="font-medium tabular-nums text-paper-200 dark:text-umber-800">
+                  {fmt.format(stats.listings)}
+                </span>{" "}
+                {t("landing.provendors_count_listings")}
+              </span>
+            </p>
+          )}
         </div>
 
         {/* Right: the live remaining-seats hero + the action row */}
@@ -1024,21 +1061,21 @@ function FoundingCouplesBand() {
               <FoundingCount value={heroSeats} />
             </span>
             <span className="mt-1 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400 dark:text-umber-600">
-              {t("landing.founders_seats_label")}
+              {t("landing.provendors_seats_label")}
             </span>
           </div>
           <div className="flex items-center gap-3">
             <Link
-              to="/signup"
+              to="/vendors/signup"
               className="btn btn-landing btn-lg bg-paper-50 px-8 font-grotesk text-xs uppercase tracking-[0.2em] text-umber-950 hover:bg-paper-200 dark:bg-umber-900 dark:text-paper-50 dark:hover:bg-umber-800"
             >
-              {t("landing.founders_cta")}
+              {t("landing.provendors_cta")}
             </Link>
             <button
               type="button"
               onClick={shareFoundingLink}
-              aria-label={t("landing.founders_share_cta")}
-              title={t("landing.founders_share_cta")}
+              aria-label={t("landing.provendors_share_cta")}
+              title={t("landing.provendors_share_cta")}
               className="inline-flex h-11 w-11 items-center justify-center rounded-full text-paper-300 transition-colors hover:bg-paper-50/10 hover:text-paper-50 dark:text-umber-600 dark:hover:bg-umber-900/10 dark:hover:text-umber-900"
             >
               <Share2 size={18} aria-hidden />

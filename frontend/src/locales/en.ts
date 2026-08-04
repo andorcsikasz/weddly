@@ -2212,23 +2212,18 @@ const en: LocaleMessages = {
     counter_eyebrow: "Live numbers",
     counter_couples_label: "Couples planning",
     counter_rsvps_label: "RSVPs received",
-    founders_title: "This time, you're the guests",
-    founders_promise:
-      "A gift from Weddly: come along from the first chapter and you're our guests right up to your wedding day.",
-    founders_seats_label: "early bird spots",
-    founders_joined_caption: "couples already in",
-    founders_left_caption: "left",
-    founders_body:
-      "You're our guests until the very last moment of your wedding: budget, guest list, RSVP, seating, all in one place.",
-    founders_note:
-      "We're setting the table for two hundred couples. Take a seat while there's room.",
-    founders_cta: "Register",
-    founders_share_prompt: "Know a couple who'd love this? Pass them an invite.",
-    founders_share_cta: "Share the link",
-    founders_share_copied: "Link copied. Pass it on.",
-    founders_share_title: "Weddly, wedding planning in one place",
-    founders_share_text:
-      "I'm using Weddly to plan our wedding: budget, guests, RSVP, seating, all in one place. They're welcoming the early couples as their guests. Thought of you 💍",
+    provendors_title: "This round, you're our guest",
+    provendors_promise:
+      "A gift from Weddly: join the founding round and Weddly Pro is yours as our guest for a whole year.",
+    provendors_seats_label: "pro spots open",
+    provendors_count_vendors: "Weddly Pro vendors",
+    provendors_count_listings: "businesses listed",
+    provendors_cta: "Register",
+    provendors_share_cta: "Share the link",
+    provendors_share_copied: "Link copied. Pass it on.",
+    provendors_share_title: "Weddly, where couples look for their vendors",
+    provendors_share_text:
+      "Couples plan their whole wedding on Weddly and look for their vendors here. The founding round is open, and you're their guest for the first year. Thought of you 💍",
     product_eyebrow: "What's inside",
     product_title: "The pieces you'll actually use",
     block_budget_eyebrow: "Live budget",
@@ -5478,6 +5473,7 @@ const en: LocaleMessages = {
     nav_blog: "Blog",
     nav_analytics: "Analytics",
     nav_financial_planner: "Financial planner",
+    nav_public_stats: "Public counters",
     nav_email_preview: "Email templates",
     nav_email_list: "Email list",
     vendors: {
