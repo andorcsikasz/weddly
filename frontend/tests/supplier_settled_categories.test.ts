@@ -6,8 +6,11 @@
 // vendor they added themselves, or a "csinálom magam" entry — and every other
 // card in that category leaves the grid, the map and the counts.
 //
-// The two limits below are the ones that keep it from turning into an
-// unexplained empty list, so they are pinned here rather than left to the page.
+// A category the couple has ruled out ("nincs rá szükségem" / "magam
+// szervezem") collapses all the way to nothing, which is the one case that can
+// leave the grid empty on purpose, so the page owes it a line of copy. The limit
+// that keeps a REAL pick from blanking its category behind a filter is pinned
+// here rather than left to the page.
 
 import { describe, expect, test } from "bun:test";
 import { NOT_NEEDED_PICK, SELF_ORGANIZED_PICK } from "../../shared/picks";
@@ -81,15 +84,29 @@ describe("collapseSettledCategories", () => {
     expect(collapseSettledCategories(rows, {})).toEqual(rows);
   });
 
-  test("a sentinel pick leaves its category alone", () => {
-    // "nem kell" / "magam szervezem" settle a category without naming a vendor,
-    // so collapsing on them would empty the list with nothing in its place.
-    expect(
-      collapseSettledCategories([venueA, venueB], { venue: NOT_NEEDED_PICK }).map((s) => s.id),
-    ).toEqual(["venue-a", "venue-b"]);
+  test("a sentinel pick empties its category", () => {
+    // "nem kell" / "magam szervezem" settle a category harder than a booking
+    // does: there is no vendor to keep, and a couple who has ruled the trade
+    // out has no use for any of it. The page owes the empty category a line of
+    // copy, which is the page's job and not this function's.
+    expect(collapseSettledCategories([venueA, venueB], { venue: NOT_NEEDED_PICK })).toEqual([]);
     expect(collapseSettledCategories([photog], { photography: SELF_ORGANIZED_PICK })).toHaveLength(
-      1,
+      0,
     );
+  });
+
+  test("a sentinel empties only its own category", () => {
+    // The neighbouring trades are untouched: this is one category's decision,
+    // and it must not read as an empty directory.
+    const out = collapseSettledCategories([venueA, venueB, photog], { venue: NOT_NEEDED_PICK });
+    expect(out.map((s) => s.id)).toEqual(["photo-a"]);
+  });
+
+  test("a sentinel empties its category even with the pick's card absent", () => {
+    // The "did the chosen card survive the other filters" guard protects a REAL
+    // pick from being blanked by a city chip. A sentinel names no card, so it
+    // has nothing to survive and the guard must not apply to it.
+    expect(collapseSettledCategories([venueC], { venue: NOT_NEEDED_PICK })).toEqual([]);
   });
 
   test("a pick filtered out by something else does NOT blank its category", () => {

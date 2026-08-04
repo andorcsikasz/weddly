@@ -4987,6 +4987,9 @@ const hu: LocaleMessages = {
     suggest_supplier: "Szolgáltató",
     nearby_plus_km: "+{km} km",
     empty_filtered: "Erre a szűrésre nincs találat. Próbálj más szót vagy várost.",
+    empty_not_needed:
+      "A(z) {category} kategóriát nem szükségesnek jelölted, így itt nincs mit böngészni.",
+    empty_self_organized: "Ezt magad szervezed, így itt nincs mit böngészni.",
     load_more: "További {n} betöltése",
     bookedCard: {
       title: "Már foglaltam",

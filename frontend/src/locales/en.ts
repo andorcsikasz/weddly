@@ -4932,6 +4932,8 @@ const en: LocaleMessages = {
     suggest_supplier: "Supplier",
     nearby_plus_km: "+{km} km",
     empty_filtered: "No suppliers match this search. Try a different word or city.",
+    empty_not_needed: "You've marked {category} as not needed, so there's nothing to browse here.",
+    empty_self_organized: "You're organising this yourselves, so there's nothing to browse here.",
     load_more: "Load {n} more",
     bookedCard: {
       title: "Already booked",

@@ -4978,6 +4978,8 @@ const hr: LocaleMessages = {
     nearby_plus_km: "+{km} km",
     empty_filtered:
       "Nijedan dobavljač ne odgovara ovoj pretrazi. Pokušajte s drugom riječi ili gradom.",
+    empty_not_needed: "Označili ste {category} kao nepotrebno, pa ovdje nema što pregledavati.",
+    empty_self_organized: "Ovo organizirate sami, pa ovdje nema što pregledavati.",
     load_more: "Učitaj još {n}",
     bookedCard: {
       title: "Već rezervirano",

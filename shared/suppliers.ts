@@ -976,18 +976,25 @@ export function pickIdentityOf(s: SettledCandidate): string {
   return s.source === "self" ? (s.listing_id ?? s.id) : s.id;
 }
 
-/** Drop the rest of the trade in every category the couple has already settled
- *  with a real vendor: once a venue is booked, 289 more venues are noise, not
- *  choice.
+/** Drop the rest of the trade in every category the couple has already settled:
+ *  once a venue is booked, 289 more venues are noise, not choice.
  *
- *  Two deliberate limits:
- *  - A SENTINEL pick ("nem kell" / "magam szervezem") settles a category
- *    without naming a vendor, so collapsing on it would empty the list with
- *    nothing standing in its place. Those categories are left alone.
- *  - A category only collapses when the chosen card SURVIVED the other filters
- *    and is in `rows`. Otherwise a city chip or a price band the pick doesn't
- *    match would blank the category out, and the couple would have no way to
- *    read that as a filter rather than as an empty directory.
+ *  A SENTINEL pick ("nem kell" / "magam szervezem") settles a category HARDER
+ *  than a booking does, so it collapses that category to NOTHING. A couple who
+ *  has said they need no tent has less use for ten tent hires than a couple who
+ *  booked a venue has for ten more venues. This used to leave sentinels alone,
+ *  on the grounds that emptying a category leaves nothing standing in its
+ *  place. The answer to that is to put something there, not to keep asking a
+ *  couple to scroll past a trade they have ruled out. **A caller therefore owes the
+ *  emptied category a line of copy**, or an unexplained blank grid reads as a
+ *  broken directory.
+ *
+ *  The one limit that survives is about REAL picks only: a category collapses
+ *  to its chosen card only when that card SURVIVED the other filters and is in
+ *  `rows`. Otherwise a city chip or a price band the pick doesn't match would
+ *  blank the category out, and the couple would have no way to read that as a
+ *  filter rather than as an empty directory. A sentinel has no card to survive
+ *  anything, so it is never subject to it.
  *
  *  Order is preserved, so a caller that already sorted keeps its ranking. */
 export function collapseSettledCategories<T extends SettledCandidate>(
@@ -995,14 +1002,21 @@ export function collapseSettledCategories<T extends SettledCandidate>(
   selection: Readonly<Partial<Record<SupplierCategory, string>>>,
 ): T[] {
   const settled = new Set<SupplierCategory>();
+  const declined = new Set<SupplierCategory>();
   for (const s of rows) {
     const pick = selection[s.category];
-    if (!pick || isSentinelPick(pick)) continue;
+    if (!pick) continue;
+    if (isSentinelPick(pick)) {
+      declined.add(s.category);
+      continue;
+    }
     if (pickIdentityOf(s) === pick) settled.add(s.category);
   }
-  if (settled.size === 0) return [...rows];
+  if (settled.size === 0 && declined.size === 0) return [...rows];
   return rows.filter(
-    (s) => !settled.has(s.category) || pickIdentityOf(s) === selection[s.category],
+    (s) =>
+      !declined.has(s.category) &&
+      (!settled.has(s.category) || pickIdentityOf(s) === selection[s.category]),
   );
 }
 

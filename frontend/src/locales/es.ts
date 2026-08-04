@@ -5037,6 +5037,8 @@ const es: LocaleMessages = {
     nearby_plus_km: "+{km} km",
     empty_filtered:
       "Ningún proveedor coincide con esta búsqueda. Prueba con otra palabra o ciudad.",
+    empty_not_needed: "Has marcado {category} como no necesario, así que aquí no hay nada que ver.",
+    empty_self_organized: "Lo organizas tú, así que aquí no hay nada que ver.",
     load_more: "Cargar {n} más",
     bookedCard: {
       title: "Ya reservado",

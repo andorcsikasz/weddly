@@ -8,7 +8,7 @@
 
 import { countryName } from "@shared/country_list";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
-import { NOT_NEEDED_PICK, SELF_ORGANIZED_PICK } from "@shared/picks";
+import { NOT_NEEDED_PICK, SELF_ORGANIZED_PICK, isSentinelPick } from "@shared/picks";
 import type {
   DirectorySupplier,
   SupplierCategory,
@@ -167,8 +167,17 @@ const ACTION_CHIP =
   "inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-medium transition";
 const ACTION_CHIP_IDLE =
   "border-ink-700 bg-transparent text-ink-700 hover:border-ink-900 hover:text-ink-900 dark:border-ink-300 dark:bg-transparent dark:text-ink-100 dark:hover:border-ink-200 dark:hover:text-paper-50";
-/** Open/expanded chip — mirrors the selected category pill. */
+/** Filter-is-on chip, mirroring the selected category pill. */
 const ACTION_CHIP_ON = "border-transparent stationery-coffee text-paper-50";
+/** "The panel below is open" chip. Deliberately NOT a fill: in this row a
+ *  filled chip states something about the CATEGORY (sage for "we don't need
+ *  this", coffee for "a filter is on"), and "a form is open underneath" is
+ *  neither. Both fills used to read as one on-state, so opening the
+ *  already-booked form looked like a second, contradictory status sitting on a
+ *  sub-category already marked "nincs rá szükségem". The rotating chevron says
+ *  disclosure, which is what this actually is. */
+const ACTION_CHIP_OPEN =
+  "border-ink-900 bg-paper-200 text-ink-900 dark:border-paper-200 dark:bg-umber-700 dark:text-paper-50";
 /** "Handled" chip — a solid dark-green fill with white text once the couple
  *  ticks the sub-category as not needed, so the on-state reads a clear step
  *  above the outlined idle chips (the check inherits the white currentColor). */
@@ -883,12 +892,9 @@ export default function SuppliersPage() {
   // "Magam szervezem" — the couple decides to organize the wedding themselves
   // instead of hiring a planner. Recorded as a sentinel pick on the
   // wedding_planner category so it persists server-side + cross-partner and
-  // resolves the planning step (green + collapsed chip) via the normal pick
-  // progress machinery. Toggling it off clears the pick.
+  // greens the planning step via the normal pick progress machinery. Toggling
+  // it off clears the pick.
   const selfOrganized = selection.wedding_planner === SELF_ORGANIZED_PICK;
-  // The planning step is "resolved" once the couple has decided either way:
-  // picked/contacted a planner, or chose to self-organize.
-  const planningResolved = Boolean(selection.wedding_planner);
   const toggleSelfOrganize = useCallback(() => {
     if (coupleId === null) {
       toast.info(t("suppliers.save_no_couple"));
@@ -899,7 +905,7 @@ export default function SuppliersPage() {
     setSelectionState(next);
     if (turningOn) {
       // Fire the confetti, then immediately close the "Szervezés & koordináció"
-      // tab so the chip collapses to its green done-pill right away.
+      // tab so the step turns sage in the chain right away.
       celebrateSelection("wedding_planner", selection, next);
       setActiveGroup(null);
       setActiveCat(null);
@@ -1248,7 +1254,9 @@ export default function SuppliersPage() {
   // has booked their venue does not need 289 more venues under it. So a settled
   // category shows the card they settled it with and nothing else — whether
   // that is a directory listing they picked, a vendor they added themselves, or
-  // a "csinálom magam" entry.
+  // a "csinálom magam" entry. A category the couple has RULED OUT ("nincs rá
+  // szükségem" / "magam szervezem") shows nothing at all, and `settledEmptyNote`
+  // below is the line of copy that owes the couple an explanation for it.
   //
   // The collapse stands down for the filters that ARE a request for a list:
   // free-text search, the shortlist, verified-only and picked-only all mean the
@@ -1415,6 +1423,42 @@ export default function SuppliersPage() {
       normalize(`${p.business_name} ${p.full_name} ${p.city ?? ""} ${p.bio ?? ""}`).includes(q),
     );
   }, [planners, queryNorm]);
+
+  // The planner ACCOUNTS strip is a second list of the one trade "magam
+  // szervezem" rules out, and it lives outside `items`, so the collapse below
+  // cannot reach it. Left standing it would answer a decision the couple just
+  // made with six more planners, which is the exact noise the collapse exists
+  // to remove. The self-organize tile itself always stays: it is the way back.
+  const plannersRuledOut = collapseSettled && selfOrganized;
+  const shownPlanners = plannersRuledOut ? [] : filteredPlanners;
+  // ...and they count toward the "show the rest" offer, or its number would
+  // describe less than what reappears when the couple takes it.
+  const plannersHiddenCount = useMemo(() => {
+    if (!selfOrganized) return 0;
+    if (queryNorm || showSavedOnly || showVerifiedOnly || showPickedOnly) return 0;
+    return inCategoryScope({ category: "wedding_planner" }) ? filteredPlanners.length : 0;
+  }, [
+    selfOrganized,
+    filteredPlanners,
+    inCategoryScope,
+    queryNorm,
+    showSavedOnly,
+    showVerifiedOnly,
+    showPickedOnly,
+  ]);
+
+  /** The couple ruled this sub-category out, so the grid under it is empty ON
+   *  PURPOSE. Without this line the empty state below blames a filter, or the
+   *  country scope, for a decision the couple made themselves. */
+  const settledEmptyNote =
+    collapseSettled && activeCat && isSentinelPick(activeCatPick ?? "")
+      ? t(
+          activeCatPick === SELF_ORGANIZED_PICK
+            ? "suppliers.empty_self_organized"
+            : "suppliers.empty_not_needed",
+          { category: t(`suppliers.cat.${activeCat}`) },
+        )
+      : null;
 
   // An out-of-country verified vendor is NOT a result for the country being
   // browsed, so the two are counted, paged and labelled separately. A couple
@@ -1803,16 +1847,6 @@ export default function SuppliersPage() {
                         count={groupCounts.get(g.id) ?? 0}
                         icon={<Icon size={16} />}
                         progress={progress}
-                        // Planning collapses to a green icon-only "done" pill
-                        // once the couple resolves it (picked a planner or chose
-                        // to self-organize) and isn't currently viewing it.
-                        // Clicking it (via onClick above) re-opens the step; the
-                        // label rides in the tooltip while collapsed.
-                        collapsed={
-                          g.id === "planning_rentals" &&
-                          planningResolved &&
-                          activeGroup !== "planning_rentals"
-                        }
                         t={t}
                       />
                     </div>
@@ -1908,8 +1942,13 @@ export default function SuppliersPage() {
                 {/* "Már foglaltam" — same weight as its two neighbours: the
                     couple is choosing between three ways to settle a category
                     (booked it elsewhere / doing it ourselves / don't need it),
-                    so all three are one row of peer chips. The chip toggles the
-                    form panel that used to carry its own card header. */}
+                    so all three are one row of peer chips. This one OPENS A
+                    FORM rather than recording anything, so it takes the
+                    disclosure treatment (see ACTION_CHIP_OPEN) and never the
+                    settled fill its neighbour uses. Naming the vendor in the
+                    form is what settles the category, and that goes through the
+                    same one-pick-per-category storage, so it replaces a "nincs
+                    rá szükségem" mark rather than standing beside it. */}
                 {activeCat && (
                   <button
                     type="button"
@@ -1917,10 +1956,15 @@ export default function SuppliersPage() {
                     aria-expanded={bookedOpen}
                     aria-controls="booked-supplier-panel"
                     title={t("suppliers.bookedCard.title")}
-                    className={`${ACTION_CHIP} ${bookedOpen ? ACTION_CHIP_ON : ACTION_CHIP_IDLE}`}
+                    className={`${ACTION_CHIP} ${bookedOpen ? ACTION_CHIP_OPEN : ACTION_CHIP_IDLE}`}
                   >
                     <Bookmark size={13} aria-hidden />
                     <span className="lowercase">{t("suppliers.bookedCard.title")}</span>
+                    <ChevronDown
+                      size={12}
+                      aria-hidden
+                      className={`transition-transform ${bookedOpen ? "rotate-180" : ""}`}
+                    />
                   </button>
                 )}
                 {/* No "csinálom magam" DIY entry for planners — self-organizing
@@ -2079,7 +2123,7 @@ export default function SuppliersPage() {
               "Magam szervezem" self-organize tile leads the grid. */}
           {activeGroup === "planning_rentals" && viewMode !== "map" && (
             <section aria-label={t("planner_directory.title")} className="mb-5">
-              {filteredPlanners.length > 0 && (
+              {shownPlanners.length > 0 && (
                 <p className="mb-3 text-sm text-ink-500 dark:text-umber-300">
                   {t("planner_directory.subtitle")}
                 </p>
@@ -2087,8 +2131,10 @@ export default function SuppliersPage() {
               <div className="grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {/* "Magam szervezem" — the self-organize done-toggle, now the
                     leading card in the planner grid (was a checkbox row above).
-                    Toggling on records the sentinel pick, greens + collapses the
-                    "Szervezés & koordináció" chip, and fires confetti. */}
+                    Toggling on records the sentinel pick, greens the
+                    "Szervezés & koordináció" step, clears the planner cards
+                    beside it, and fires confetti. This tile is the one thing
+                    that never clears: it is the way back. */}
                 <button
                   type="button"
                   onClick={toggleSelfOrganize}
@@ -2123,7 +2169,7 @@ export default function SuppliersPage() {
                     </div>
                   </div>
                 </button>
-                {filteredPlanners.map((p) => (
+                {shownPlanners.map((p) => (
                   <PlannerCard
                     key={p.planner_user_id}
                     planner={p}
@@ -2136,9 +2182,11 @@ export default function SuppliersPage() {
 
           {/* The way out of the settled-category collapse. Without it a couple
           who books a venue and then wants to change their mind is looking at a
-          one-card directory with nothing to explain it. Rendered above both the
-          grid and the map, since both are collapsed. */}
-          {settledHiddenCount > 0 && (
+          one-card directory with nothing to explain it, and a couple who ruled
+          a sub-category out is looking at an empty one. Rendered above the grid
+          and the map, since both are collapsed, and its count covers the planner
+          strip above it, which "magam szervezem" empties the same way. */}
+          {settledHiddenCount + plannersHiddenCount > 0 && (
             <div className="mb-3">
               <button
                 type="button"
@@ -2154,7 +2202,9 @@ export default function SuppliersPage() {
                 <span className="lowercase">
                   {showSettledSiblings
                     ? t("suppliers.settled_collapse")
-                    : t("suppliers.settled_show_all", { n: settledHiddenCount })}
+                    : t("suppliers.settled_show_all", {
+                        n: settledHiddenCount + plannersHiddenCount,
+                      })}
                 </span>
               </button>
             </div>
@@ -2235,16 +2285,20 @@ export default function SuppliersPage() {
                 {filteredInScope.length === 0 && items.length > 0 && (
                   <div className="col-span-full flex flex-col items-center gap-2 py-8 text-center">
                     <p className="text-sm text-ink-500 dark:text-umber-300">
-                      {countryScope
-                        ? t("suppliers.empty_country", {
-                            country: countryName(countryScope, locale),
-                          })
-                        : t("suppliers.empty_filtered")}
+                      {settledEmptyNote ??
+                        (countryScope
+                          ? t("suppliers.empty_country", {
+                              country: countryName(countryScope, locale),
+                            })
+                          : t("suppliers.empty_filtered"))}
                     </p>
                     {/* When the emptiness is caused by the country scope, offer a
                     one-tap widen to "Mind"/All rather than leaving the couple
-                    at a dead end (audit item 12). */}
-                    {countryScope && (
+                    at a dead end (audit item 12). The couple's own "we don't
+                    need this" is not a dead end and gets no widen button: the
+                    way back is the "show the rest" chip above, or unticking the
+                    mark in the row of chips they ticked it in. */}
+                    {countryScope && !settledEmptyNote && (
                       <button
                         type="button"
                         onClick={() => setCountryFilter("all")}
@@ -3104,7 +3158,6 @@ function ChainStep({
   isAll,
   count,
   progress,
-  collapsed,
   t,
 }: {
   active: boolean;
@@ -3117,32 +3170,20 @@ function ChainStep({
    *  thin bars under the label — sage once a pick lands, full-tile sage tint
    *  when every sub-cat is done. */
   progress?: { done: number; total: number };
-  /** When true, render a compact green icon-only "done" pill — the label rides
-   *  in the tooltip. Used for a step the couple has resolved (e.g. planning:
-   *  picked a planner or chose to self-organize) to reclaim chain space. */
-  collapsed?: boolean;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const allDone = progress !== undefined && progress.done > 0 && progress.done >= progress.total;
-  // A green (fully resolved) step collapses to an icon-only pill to reclaim
-  // chain space — the label + count ride in the tooltip. The active step stays
-  // expanded (it renders in coffee, not green) so its sub-categories read.
-  if (collapsed || (allDone && !active)) {
-    const collapsedLabel = count !== undefined ? `${label} (${count})` : label;
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        title={collapsedLabel}
-        aria-label={collapsedLabel}
-        className="group relative flex items-center justify-center rounded-full border border-sage-600 bg-sage-600 px-3 py-2 text-white transition-colors duration-300 ease-out hover:border-sage-700 hover:bg-sage-700 dark:border-sage-600 dark:bg-sage-600 dark:text-white dark:hover:border-sage-700 dark:hover:bg-sage-700"
-      >
-        <span className="flex h-5 items-center leading-none" aria-hidden>
-          {icon}
-        </span>
-      </button>
-    );
-  }
+  // Every step keeps its label, its count and its width, whatever state it is
+  // in. A resolved step used to shrink to an icon-only pill when it was not the
+  // active one, which cost twice: the pill was an unlabelled button (the name
+  // only existed in a tooltip a touch user never sees), and because the
+  // condition read `!active`, CLICKING a step re-laid out the whole row: the
+  // step you left shrank, the step you opened grew, and every step to the right
+  // of them slid under the cursor. A second click then landed on a different
+  // category from the one it was aimed at, which is a hazard on a row whose
+  // whole job is deciding what the couple is looking at. "Done" is already said
+  // by the sage fill and the full row of progress bars; it does not also need
+  // to be said by taking the name away.
   return (
     <button
       type="button"

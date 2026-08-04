@@ -5860,6 +5860,12 @@ export interface LocaleMessages {
     nearby_plus_km: string;
     /** Empty result state when search/city filters out everything. */
     empty_filtered: string;
+    /** Empty result state when the couple ticked "nincs rá szükségem" on the
+     *  sub-category they are looking at: the grid is empty because THEY ruled
+     *  the trade out, not because a filter matched nothing. {category}. */
+    empty_not_needed: string;
+    /** Same, for "magam szervezem" on the planner step. */
+    empty_self_organized: string;
     /** "Load more" button under the grid; {n} = how many more are hidden. */
     load_more: string;
     /** "Már foglaltam" / "Already booked" card on the directory grid.

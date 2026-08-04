@@ -5081,6 +5081,9 @@ const de: LocaleMessages = {
     nearby_plus_km: "+{km} km",
     empty_filtered:
       "Kein Dienstleister passt zu dieser Suche. Versuchen Sie ein anderes Wort oder eine andere Stadt.",
+    empty_not_needed:
+      "Sie haben {category} als nicht nötig markiert, hier gibt es also nichts zu durchstöbern.",
+    empty_self_organized: "Das organisieren Sie selbst, hier gibt es also nichts zu durchstöbern.",
     load_more: "{n} weitere laden",
     bookedCard: {
       title: "Schon gebucht",
