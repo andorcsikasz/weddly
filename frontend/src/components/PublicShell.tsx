@@ -459,7 +459,14 @@ function PublicFooter() {
     // social icons and the who-are-you band all read correctly on umber-950
     // without a single duplicated colour. One tone for the whole slab, band
     // included — the two-shade split read as a seam rather than a section.
-    <footer className="dark mt-16 bg-umber-950 font-grotesk sm:mt-24">
+    <footer
+      className="dark mt-16 bg-umber-950 font-grotesk sm:mt-24"
+      // The landing page's mobile sticky CTA stands down once the footer is on
+      // screen: its backdrop is a cream scrim sized for the cream page, and
+      // over this black slab it paints a smear instead of a separation. Inert
+      // anywhere the bar does not exist, which is every other public page.
+      data-sticky-cta-stop=""
+    >
       {/* Band: who-are-you. Hidden on audience pages (/planners, /vendors)
        *  which already have their own escape-route sections immediately above
        *  the footer — showing it again here would be a duplicate. On the

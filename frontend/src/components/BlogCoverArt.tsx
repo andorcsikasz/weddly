@@ -26,7 +26,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { useId } from "react";
+import { useCallback, useId, useState } from "react";
 
 /** Per-slug content icon. Each post gets a lucide glyph that hints at
  *  the topic so the cover isn't purely photographic. Unknown slugs fall
@@ -134,19 +134,63 @@ interface BlogCoverArtProps {
    *  default from `slug`. */
   bgUrl?: string | null;
   className?: string;
+  /** Hold the photo back until the cover is near the viewport. Opt-in
+   *  because the photo is painted by an SVG `<image>`, and SVG `<image>`
+   *  has no `loading="lazy"`, so it fetches the moment it is in the DOM,
+   *  wherever on the page that is. On the landing page the blog teaser sits
+   *  roughly 7,500 px down and its three covers were ~420 KB of the first
+   *  load. Off by default so the blog feed itself, where the covers ARE the
+   *  content, keeps painting them immediately. */
+  lazy?: boolean;
 }
 
-export function BlogCoverArt({ slug, bgUrl, className }: BlogCoverArtProps) {
+/** One-shot in-view latch for the lazy cover. `rootMargin` starts the fetch
+ *  well before the card is on screen, so a scroll into the teaser finds the
+ *  photo already there rather than watching it pop in. Falls open (true) with
+ *  no IntersectionObserver, since a browser that old should still see the
+ *  picture. */
+function useNearViewport(enabled: boolean) {
+  const [near, setNear] = useState(!enabled);
+  const ref = useCallback(
+    (el: SVGSVGElement | null) => {
+      if (!enabled || el === null || typeof window === "undefined") return;
+      if (!("IntersectionObserver" in window)) {
+        setNear(true);
+        return;
+      }
+      const obs = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            setNear(true);
+            obs.disconnect();
+          }
+        },
+        { rootMargin: "600px" },
+      );
+      obs.observe(el);
+    },
+    [enabled],
+  );
+  return [ref, near] as const;
+}
+
+export function BlogCoverArt({ slug, bgUrl, className, lazy = false }: BlogCoverArtProps) {
   const Icon = (slug && ICON_BY_SLUG[slug]) || Heart;
+  const [coverRef, near] = useNearViewport(lazy);
   // `||` (not `??`) so empty-string bgUrls fall through to the slug
   // default; `??` would treat "" as a valid override and render nothing.
-  const resolvedBg = bgUrl || (slug && DEFAULT_PHOTO_BY_SLUG[slug]) || GENERIC_FALLBACK_PHOTO;
+  const photo = bgUrl || (slug && DEFAULT_PHOTO_BY_SLUG[slug]) || GENERIC_FALLBACK_PHOTO;
+  // Until it is near, the cover renders the paper composition below, the
+  // same branch an unknown slug takes, so the card never looks broken while
+  // it waits.
+  const resolvedBg = near ? photo : null;
   // useId keeps the linearGradient id unique across mounted instances —
   // SVG defs are document-global, so without this every cover would
   // share (and overwrite) the same gradient id.
   const gradId = useId().replace(/:/g, "");
   return (
     <svg
+      ref={coverRef}
       viewBox="0 0 800 500"
       preserveAspectRatio="xMidYMid slice"
       aria-hidden="true"

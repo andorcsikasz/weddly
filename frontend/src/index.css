@@ -1035,11 +1035,20 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
      enough to fill the section on any viewport, so there's never a blank
      strip below it on taller-than-16:9 windows. On a ~16:9 desktop this is
      effectively no zoom (cover ≈ 100% width); only taller windows crop a
-     little off the sides. Filter adds warmth and depth. */
+     little off the sides. Filter adds warmth and depth.
+
+     JPEG at 2560px, not the 3840px PNG it replaced. This is the landing
+     page's LCP element, and a photograph stored as PNG paid 1.6 MB for
+     lossless fidelity nobody can see: the layer is soft-focus to begin
+     with, sits under `filter: saturate()`, and is covered on its left half
+     by the cream overlay below. The JPEG is 235 KB, and 2560 still
+     oversamples every viewport this rule serves (phones take the separate
+     mobile cover). Preloaded in index.html, since a background-image is
+     not discoverable until the stylesheet has parsed. */
   .hero-photo-img {
     position: absolute;
     inset: 0;
-    background-image: url("/cover-hero.png");
+    background-image: url("/cover-hero.jpg");
     background-size: cover;
     background-position: center top;
     background-repeat: no-repeat;

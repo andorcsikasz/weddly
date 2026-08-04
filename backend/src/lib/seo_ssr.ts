@@ -916,6 +916,26 @@ function firstNonBlank(...values: (string | null | undefined)[]): string | null 
   return null;
 }
 
+/** The landing hero is a CSS `background-image`, so the browser cannot even
+ *  learn it exists until the stylesheet has downloaded and parsed, and it is
+ *  the page's LCP element, which means LCP waits on that whole chain. A
+ *  `rel=preload` starts it in parallel with the CSS instead.
+ *
+ *  Emitted for the landing route ONLY, and that is the reason it lives here
+ *  rather than as a static tag in index.html: the same `<head>` serves
+ *  /app, /blog and every vendor page, and a preload on those is a quarter of
+ *  a megabyte fetched for a hero that never renders. Preload does not honour
+ *  `display: none`, only `media`, so the two covers are split on the exact
+ *  breakpoint `.hero-photo-img` uses (639/640px) and a viewport downloads one
+ *  of them, never both. */
+function heroPreloadTags(path: string): string[] {
+  if (path !== "/" && path !== "") return [];
+  return [
+    `<link rel="preload" as="image" href="/cover-hero.jpg" fetchpriority="high" media="(min-width: 640px)" />`,
+    `<link rel="preload" as="image" href="/hero-mobile-cover.jpg" fetchpriority="high" media="(max-width: 639px)" />`,
+  ];
+}
+
 function buildHeadBlock(opts: {
   host: string | null;
   pathname: string;
@@ -1080,6 +1100,7 @@ function buildHeadBlock(opts: {
   }
 
   return [
+    ...heroPreloadTags(path),
     `<title>${escapeAttr(title)}</title>`,
     `<meta name="description" content="${escapeAttr(description)}" />`,
     `<meta name="application-name" content="${escapeAttr(defaultMeta.brandName)}" />`,

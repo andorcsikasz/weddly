@@ -24,16 +24,26 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import GuestListTemplatePage from "./pages/GuestListTemplatePage";
 import RsvpGeneratorPage from "./pages/RsvpGeneratorPage";
 import SeatingChartPage from "./pages/SeatingChartPage";
-import ImprintPage from "./pages/ImprintPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import PrivacyPage from "./pages/PrivacyPage";
 import RegisterPage from "./pages/RegisterPage";
-import SubscriptionTermsPage from "./pages/SubscriptionTermsPage";
-import TermsPage from "./pages/TermsPage";
 import VendorsPage from "./pages/VendorsPage";
 import PlannersPage from "./pages/PlannersPage";
+
+// The four legal pages are the one exception to "public routes ship eagerly",
+// and they earn it by weight rather than by traffic. Each renders the HU and
+// EN text side by side, so each one statically imports `locales/hu`: the
+// whole Hungarian translation tree, ~126 KB on the wire. Imported eagerly
+// they pull that chunk into the entry graph, which means every visitor who
+// lands on `/` in English downloads a second full locale for a Terms page
+// they are not reading. Lazy here costs a footer-link click one network
+// round trip and takes the chunk off the landing page's critical path.
+// `Page` already provides the Suspense boundary these need.
+const PrivacyPage = lazyWithReload(() => import("./pages/PrivacyPage"));
+const TermsPage = lazyWithReload(() => import("./pages/TermsPage"));
+const SubscriptionTermsPage = lazyWithReload(() => import("./pages/SubscriptionTermsPage"));
+const ImprintPage = lazyWithReload(() => import("./pages/ImprintPage"));
 
 const AppShellLayout = lazyWithReload(() =>
   import("./components/AppShell").then((m) => ({ default: m.AppShellLayout })),
