@@ -2811,15 +2811,13 @@ export interface LocaleMessages {
      *  professionals who see the couple-facing page, so the copy has to be
      *  legible to someone who arrived for a completely different reason. */
     provendors_title: string;
-    /** One-line promise under the title: join the founding round and Weddly
-     *  Pro is theirs as our guest for the first year. */
+    /** One-line promise under the title: join as a founding vendor and Weddly
+     *  Pro is theirs for the first twelve months. */
     provendors_promise: string;
     /** Uppercase tag under the big remaining-seats number. */
     provendors_seats_label: string;
-    /** Unit after the live Pro-vendor count in the supporting line. */
+    /** Unit after the live count of vendors already on board. */
     provendors_count_vendors: string;
-    /** Unit after the live directory-listing count in the supporting line. */
-    provendors_count_listings: string;
     provendors_cta: string;
     provendors_share_cta: string;
     provendors_share_copied: string;

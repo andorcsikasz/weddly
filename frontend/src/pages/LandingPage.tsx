@@ -429,12 +429,12 @@ export default function LandingPage() {
 
       {/* ═════════════════ Vendor founding round — HOSPITALITY/SCARCITY ═════════
           The emotional FOMO beat, aimed at the wedding professionals who see
-          this page: reframes joining as "being our guest" rather than buying.
-          The hero counts down VENDOR_FOUNDING_CAP minus the vendors already
-          holding an account, so the scarcity line and the free window a signup
-          would actually be granted come from one number. Two supporting
-          figures (Pro vendors, businesses in the directory) sit under the
-          promise. Carries a quick share affordance (native share sheet →
+          this page: the first twelve months of Pro are on us, so joining reads
+          as being hosted rather than buying. The hero counts down
+          VENDOR_FOUNDING_CAP minus the vendors already holding an account, so
+          the scarcity line and the window a signup would actually be granted
+          come from one number. The count of vendors already on board sits
+          under the promise. Carries a quick share affordance (native share sheet →
           clipboard fallback) so a couple who loves their photographer can pass
           the offer straight to them. */}
       <FoundingVendorsBand />
@@ -935,10 +935,9 @@ function LiveStatsBand() {
  *  landing and the slot a signup would actually be granted cannot disagree —
  *  the same rule the /vendors page follows.
  *
- *  Two supporting figures sit under the promise: Pro vendors on board and
- *  businesses live in the directory. The second is the larger, older number
- *  (curated + community + claimed), and it is what tells a vendor arriving
- *  cold that the catalogue their competitors are in already exists.
+ *  One supporting figure sits under the promise: the vendors already on board.
+ *  It is the other half of the seat arithmetic the hero shows (joined + left =
+ *  the cap), so the two numbers read as one sentence rather than two claims.
  *
  *  The share control prefers the native share sheet (best for "send it to a
  *  colleague" on mobile), falling back to clipboard-copy + toast, then a
@@ -949,7 +948,7 @@ function LiveStatsBand() {
 function FoundingVendorsBand() {
   const { t, locale } = useT();
   const toast = useToast();
-  const [stats, setStats] = useState<{ vendors: number; listings: number } | null>(null);
+  const [stats, setStats] = useState<{ vendors: number } | null>(null);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const fmt = useMemo(() => new Intl.NumberFormat(intlLocale(locale)), [locale]);
 
@@ -958,7 +957,7 @@ function FoundingVendorsBand() {
     publicStatsApi
       .get()
       .then((r) => {
-        if (!cancelled) setStats({ vendors: r.vendors, listings: r.listings });
+        if (!cancelled) setStats({ vendors: r.vendors });
       })
       .catch(() => {
         // Evergreen section — never block on a stats failure; we just skip
@@ -1030,26 +1029,15 @@ function FoundingVendorsBand() {
           <p className="mx-auto mt-4 max-w-[19rem] text-balance font-grotesk text-sm leading-relaxed text-paper-300 sm:mx-0 sm:text-base dark:text-umber-700">
             {t("landing.provendors_promise")}
           </p>
-          {/* The two supporting figures. Rendered only once the stats land —
-              a "0 vendors · 0 businesses" line under a scarcity offer reads
-              as an empty marketplace, which is the opposite of the job. */}
+          {/* The supporting figure. Rendered only once the stats land — a
+              "0 vendors joined" line under a scarcity offer reads as an empty
+              marketplace, which is the opposite of the job. */}
           {stats && (
-            <p className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-grotesk text-xs text-paper-400 sm:justify-start dark:text-umber-600">
-              <span>
-                <span className="font-medium tabular-nums text-paper-200 dark:text-umber-800">
-                  {fmt.format(stats.vendors)}
-                </span>{" "}
-                {t("landing.provendors_count_vendors")}
-              </span>
-              <span aria-hidden className="opacity-40">
-                ·
-              </span>
-              <span>
-                <span className="font-medium tabular-nums text-paper-200 dark:text-umber-800">
-                  {fmt.format(stats.listings)}
-                </span>{" "}
-                {t("landing.provendors_count_listings")}
-              </span>
+            <p className="mt-5 font-grotesk text-xs text-paper-400 dark:text-umber-600">
+              <span className="font-medium tabular-nums text-paper-200 dark:text-umber-800">
+                {fmt.format(stats.vendors)}
+              </span>{" "}
+              {t("landing.provendors_count_vendors")}
             </p>
           )}
         </div>
