@@ -99,12 +99,6 @@ export interface VendorCampaignTarget {
   city: string;
   country: string;
   locale: UiLocale;
-  /** Whether a Weddly user really did put this business forward, i.e. a
-   *  community row a couple submitted. The invite's opening sentence branches
-   *  on it, and it rides on the TARGET rather than being re-derived in the
-   *  mailer so the operator's preview and the mail that goes out cannot tell
-   *  two different stories about where a listing came from. */
-  suggested_by_user: boolean;
 }
 
 /** One country's share of the reachable audience, as a brand-new campaign would

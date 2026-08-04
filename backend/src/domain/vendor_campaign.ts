@@ -57,18 +57,6 @@ interface ListingTargetRow {
   category: string;
   city: string;
   contact_email: string;
-  submitter_type: string | null;
-}
-
-/** Did a Weddly user actually put this business forward? Both halves are
- *  required on purpose. `submitter_type` alone is a mirrored column (the
- *  listings row is written from the community row), and 'self' on it means the
- *  business submitted ITSELF, which is not a referral at all; `source` alone
- *  would sweep in every curated import, where the answer is simply no. The
- *  invite's opening sentence is the source disclosure we owe the recipient, so
- *  the predicate has to be the narrow one. */
-function suggestedByUser(row: { source: string; submitter_type: string | null }): boolean {
-  return row.source === "community" && row.submitter_type === "user";
 }
 
 /** ISO alpha-2 for any listing. Curated rows go through the directory's own
@@ -316,7 +304,7 @@ function eligibleTargets(opts: {
 }): VendorCampaignTarget[] {
   const rows = db
     .prepare(
-      `SELECT l.id, l.source, l.name, l.category, l.city, l.contact_email, l.submitter_type
+      `SELECT l.id, l.source, l.name, l.category, l.city, l.contact_email
          FROM listings l
         WHERE l.vendor_account_id IS NULL
           AND l.status = 'active'
@@ -356,7 +344,6 @@ function eligibleTargets(opts: {
       city: displayCity(row.city),
       country,
       locale: localeForCountry(country),
-      suggested_by_user: suggestedByUser(row),
     });
   }
   return out;
@@ -573,7 +560,6 @@ async function sendOne(
       city: target.city,
       inviteUrl: inviteUrl(claim.token),
       listingUrl: publicListingUrl(target.listing_id, target.listing_name),
-      suggestedByUser: target.suggested_by_user,
       freeMonths: offerMonths(),
       locale: target.locale,
     },
@@ -677,10 +663,8 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
   let sent = 0;
   for (const row of rows) {
     const listing = db
-      .prepare("SELECT name, city, source, submitter_type FROM listings WHERE id = ?")
-      .get(row.listing_id) as
-      | { name: string; city: string; source: string; submitter_type: string | null }
-      | undefined;
+      .prepare("SELECT name, city FROM listings WHERE id = ?")
+      .get(row.listing_id) as { name: string; city: string } | undefined;
     if (!listing) continue;
     const locale = isUiLocale(row.locale) ? row.locale : "en";
     const result = await sendKind(
@@ -691,12 +675,6 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
         city: displayCity(listing.city),
         inviteUrl: inviteUrl(row.claim_token as string),
         listingUrl: publicListingUrl(row.listing_id, listing.name),
-        // Re-derived from the listing rather than remembered from the first
-        // send, so a row that changed provenance in between (a couple's
-        // submission merged into a curated twin) cannot have the reminder
-        // repeat a referral the first mail was right to claim and this one
-        // would not be.
-        suggestedByUser: suggestedByUser(listing),
         freeMonths: offerMonths(),
         locale,
       },

@@ -336,16 +336,14 @@ const STUBS: KindPayload = {
     supplierName: "Bloom Studio",
     reason: "wrong_info",
   },
-  // Previewed as a CURATED listing (`suggestedByUser: false`), because that is
-  // what every reachable target on the live data is. An operator eyeballing
-  // this kind should be reading the opening that will actually go out.
+  // One opening for every recipient now, so the preview IS the mail that goes
+  // out, whichever listing an operator has in mind.
   vendor_claim_campaign: {
     listingName: "Bloom Studio",
     categoryLabel: "Fotó",
     city: "Budapest",
     inviteUrl: `${BASE_URL}/r/vendor-invite/preview`,
     listingUrl: `${BASE_URL}/vendors/bloom-studio-c1`,
-    suggestedByUser: false,
     freeMonths: 12,
     locale: "hu",
   },
@@ -355,7 +353,6 @@ const STUBS: KindPayload = {
     city: "Budapest",
     inviteUrl: `${BASE_URL}/r/vendor-invite/preview`,
     listingUrl: `${BASE_URL}/vendors/bloom-studio-c1`,
-    suggestedByUser: false,
     freeMonths: 3,
     locale: "hu",
   },

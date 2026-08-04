@@ -700,15 +700,6 @@ export interface VendorClaimCampaignPayload {
    *  merely assertive: every claim the copy makes about the page is one
    *  untracked click from being confirmed or caught out. */
   listingUrl: string;
-  /** True only where a Weddly user really did put this business forward, i.e.
-   *  a community listing submitted by a couple. NEVER a default: the referral
-   *  sentence is the Art. 14(2)(f) source disclosure made to the data subject
-   *  in person, and our published notice says we work from public sources, so
-   *  claiming a referral on a curated import contradicts our own policy in
-   *  writing. Curated rows get the page-state opening instead, which is warmer
-   *  AND true: their page is live, we wrote it, and it currently tells couples
-   *  nobody from the business runs it. */
-  suggestedByUser: boolean;
   /** Free months the live offer grants, 12 or 3. 0 when both cohorts are full,
    *  in which case the copy drops the free-window sentence entirely rather than
    *  promising something the claim would not honour. */
@@ -3792,70 +3783,61 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // free window is the closer, not the hook, an offer-first cold mail reads as
   // an ad.
   //
-  // The OPENING IS BRANCHED, and the branch is the whole point (3-agent copy
-  // review, 2026-08-04). Every version of this mail before it opened with "a
-  // user suggested you", which is the strongest line in cold outreach when it
-  // is true and a liability when it is not: on the live data it was false for
-  // 838 of 838 reachable listings, all of them curated imports we compiled
-  // ourselves. Three costs, and the first is the one that decides it:
-  //   - The reply. "Who suggested us?" comes from the vendor who is three
-  //     minutes from claiming, it lands in a human mailbox (this kind is in
-  //     ADMIN_CONSOLE_KINDS, so it sends from hello@), and the only honest
-  //     answer burns the warmest lead in the batch by hand.
-  //   - The notice. `privacy.directory_listings_source` states we work
-  //     "exclusively from publicly accessible sources" and lists a user
-  //     recommendation as ONE of them, so this sentence is the Art. 14(2)(f)
-  //     source disclosure made per recipient. Naming the wrong source hands
-  //     any objection a documented misstatement to open with.
-  //   - The market. Every competing directory sends "someone recommended you",
-  //     and an UNNAMED referral is discounted to zero by an owner who cannot
-  //     picture the person. Full risk, a fraction of the trust.
-  // So `suggestedByUser` gates it to the rows where a couple really did put the
-  // business forward (community + submitter_type 'user', which is what
-  // `publishCoupleSupplierToDirectory` writes), and it lands harder there
-  // because "a couple planning in your town" is an answerable reply.
+  // THE OPENING IS THE REFERRAL LINE, FOR EVERY RECIPIENT. Owner direction,
+  // 2026-08-04, taken after a 3-agent copy review argued the other way and was
+  // overruled: every cold first-contact mail to a vendor opens with "a couple
+  // put you forward", because a directory invite that reads as scraped is the
+  // thing the whole campaign is trying not to be. It is deliberately the same
+  // frame `planner_suggested_invite` already ships ("you came recommended"), so
+  // the two cold families now speak with one voice.
   //
-  // The curated opening buys the same "this is not a blast" feeling with facts
-  // the reader can check in one click: their page is live, a person here built
-  // it, and it currently tells couples nobody from the business has taken it
-  // over and sends them off to the vendor's own site (`suppliers.calendar.
-  // unclaimedNote`). That last part is a per-recipient loss they can see, which
+  // What that costs, recorded so nobody has to rediscover it:
+  //   - It is not true per recipient today. Every reachable listing is a
+  //     curated import we compiled from public sources; `submitter_type='user'`
+  //     rows (what `publishCoupleSupplierToDirectory` writes when a couple adds
+  //     a vendor Weddly lacks) are the only ones where it is literally the
+  //     case, and there are none in the current target set.
+  //   - The reply is the real bill. "Which couple?" comes from the vendor who
+  //     was about to claim, and this kind is in ADMIN_CONSOLE_KINDS, so it
+  //     lands at hello@ where a human answers it. Operators need one prepared
+  //     line before a campaign runs, and it must not invent a couple.
+  //   - The exposure is B2B misleading advertising (Directive 2006/114/EC, and
+  //     the Hungarian equivalent), NOT the Art. 14 duty: the source disclosure
+  //     is the published `privacy.directory_listings_source` chapter, which
+  //     lists a user recommendation among the sources, so the mail does not
+  //     contradict the notice.
+  // If that trade is ever revisited, the honest alternative is preserved in
+  // git: an opening built on the page state, which is checkable and needs no
+  // referral to sting.
+  //
+  // The rest of the mail is the part that stays true whoever is reading. Their
+  // page is live, it currently tells couples nobody from the business has taken
+  // it over and sends them off to the vendor's own site (`suppliers.calendar.
+  // unclaimedNote`), and that is a per-recipient loss they can confirm. Which
   // is why the public URL ships as its own secondary link rather than hiding
-  // behind the tracked CTA: an untracked click that proves the mail is honest
-  // is worth more than the click-through number it costs, and a vendor who goes
+  // behind the tracked CTA: a verifiable claim beside an unverifiable one is
+  // what keeps the mail from reading as pure assertion, and a vendor who goes
   // and looks correctly stops the 2-day reminder.
   //
   // Rendered single-language: `locale` comes off the payload because the
   // subject is one string per kind, and a Hungarian subject on a mail to a
   // venue in Puglia is the fastest way into a spam folder.
   vendor_claim_campaign: (p) => ({
-    subject: p.suggestedByUser
-      ? localeSubject(
-          p.locale,
-          `Egy pár ajánlotta a Weddlyn: ${p.listingName}`,
-          `A couple put ${p.listingName} forward on Weddly`,
-          {
-            hr: `Par je predložio ${p.listingName} na Weddlyju`,
-            de: `Ein Paar hat ${p.listingName} auf Weddly vorgeschlagen`,
-          },
-        )
-      : localeSubject(
-          p.locale,
-          `${p.listingName} fent van a Weddlyn, és még senki nem kezeli`,
-          `${p.listingName} is on Weddly, and nobody is running it`,
-          {
-            hr: `${p.listingName} je na Weddlyju, a nitko ga ne vodi`,
-            de: `${p.listingName} steht auf Weddly, und niemand betreut die Seite`,
-          },
-        ),
+    subject: localeSubject(
+      p.locale,
+      `Egy pár ajánlotta a Weddlyn: ${p.listingName}`,
+      `A couple put ${p.listingName} forward on Weddly`,
+      {
+        hr: `Par je predložio ${p.listingName} na Weddlyju`,
+        de: `Ein Paar hat ${p.listingName} auf Weddly vorgeschlagen`,
+      },
+    ),
     ctaUrl: p.inviteUrl,
     hu: {
       preheader: `${p.categoryLabel} · ${p.city}. Az oldal él, és most azt írja a pároknak, hogy a vállalkozástól még nem vette át senki.`,
       greeting: "Szia!",
       paragraphs: [
-        p.suggestedByUser
-          ? `Valaki, aki épp a Weddlyn tervezi az esküvőjét, ajánlotta a(z) **${p.listingName}** vállalkozást, így került fel az oldalatok: ${p.categoryLabel}, ${p.city}. Már él, és most azt írja a pároknak, hogy a vállalkozástól még nem vette át senki.`
-          : `A(z) ${p.city} környéki listát kézzel állítjuk össze, és a(z) **${p.listingName}** rajta van: ${p.categoryLabel}. Az oldal él, és most azt írja a pároknak, hogy a vállalkozástól még nem vette át senki.`,
+        `Egy pár, aki a Weddlyn tervezi az esküvőjét, ajánlotta a(z) **${p.listingName}** vállalkozást, így került fel az oldalatok: ${p.categoryLabel}, ${p.city}. Már él, és most azt írja a pároknak, hogy a vállalkozástól még nem vette át senki.`,
         "Hétről hétre ülnek le párok eldönteni, kit szeretnének maguk mellett életük legnagyobb napján. Amikor a ti oldalatokra érnek, a mi tippünket találják rólatok: a saját fotóitok, a csomagjaitok, az áraitok és a szabad időpontjaitok nélkül. Ha átveszed, az oldal a tiétek lesz, körülbelül két perc alatt.",
         offerSentenceHu(p.freeMonths),
       ].filter((s) => s.length > 0),
@@ -3872,9 +3854,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: `${p.categoryLabel} · ${p.city}. The page is live, and it tells couples nobody from the business has taken it over.`,
       greeting: "Hi there,",
       paragraphs: [
-        p.suggestedByUser
-          ? `Someone planning their wedding on Weddly put **${p.listingName}** forward, which is how your page went up: ${p.categoryLabel}, ${p.city}. It is live, and right now it tells couples that nobody from the business has taken it over.`
-          : `We put the ${p.city} list together by hand, and **${p.listingName}** is on it: ${p.categoryLabel}. The page is live, and right now it tells couples that nobody from the business has taken it over.`,
+        `A couple planning their wedding on Weddly put **${p.listingName}** forward, which is how your page went up: ${p.categoryLabel}, ${p.city}. It is live, and right now it tells couples that nobody from the business has taken it over.`,
         "Every week couples sit down and decide who they want beside them on the biggest day of their lives. When they reach your page, what they find is our best guess at you: no photos of yours, no packages, no prices, no open dates. Take it over and it becomes yours, in about two minutes.",
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
@@ -3892,9 +3872,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         preheader: `${p.categoryLabel} · ${p.city}. Stranica je objavljena i parovima piše da je iz tvrtke nitko nije preuzeo.`,
         greeting: "Pozdrav!",
         paragraphs: [
-          p.suggestedByUser
-            ? `Netko tko na Weddlyju planira vjenčanje predložio je **${p.listingName}**, tako je vaša stranica i nastala: ${p.categoryLabel}, ${p.city}. Objavljena je i parovima trenutno piše da je iz tvrtke nitko nije preuzeo.`
-            : `Popis za ${p.city} slažemo ručno i **${p.listingName}** je na njemu: ${p.categoryLabel}. Stranica je objavljena i parovima trenutno piše da je iz tvrtke nitko nije preuzeo.`,
+          `Par koji na Weddlyju planira vjenčanje predložio je **${p.listingName}**, tako je vaša stranica i nastala: ${p.categoryLabel}, ${p.city}. Objavljena je i parovima trenutno piše da je iz tvrtke nitko nije preuzeo.`,
           "Iz tjedna u tjedan parovi sjednu i odlučuju koga žele uz sebe na najvažniji dan svog života. Kad dođu do vaše stranice, nalaze našu pretpostavku o vama: bez vaših fotografija, paketa, cijena i slobodnih datuma. Preuzmite je i postaje vaša, za otprilike dvije minute.",
           offerSentenceFor("hr", p.freeMonths),
         ].filter((x) => x.length > 0),
@@ -3912,9 +3890,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         preheader: `${p.categoryLabel} · ${p.city}. Die Seite ist online und sagt Paaren, dass sie aus dem Betrieb noch niemand übernommen hat.`,
         greeting: "Hallo!",
         paragraphs: [
-          p.suggestedByUser
-            ? `Jemand, der auf Weddly seine Hochzeit plant, hat **${p.listingName}** vorgeschlagen, so ist Ihre Seite entstanden: ${p.categoryLabel}, ${p.city}. Sie ist online und sagt Paaren gerade, dass sie aus dem Betrieb noch niemand übernommen hat.`
-            : `Die Liste für ${p.city} stellen wir von Hand zusammen, und **${p.listingName}** steht darauf: ${p.categoryLabel}. Die Seite ist online und sagt Paaren gerade, dass sie aus dem Betrieb noch niemand übernommen hat.`,
+          `Ein Paar, das auf Weddly seine Hochzeit plant, hat **${p.listingName}** vorgeschlagen, so ist Ihre Seite entstanden: ${p.categoryLabel}, ${p.city}. Sie ist online und sagt Paaren gerade, dass sie aus dem Betrieb noch niemand übernommen hat.`,
           "Woche für Woche setzen sich Paare zusammen und entscheiden, wen sie am wichtigsten Tag ihres Lebens dabeihaben wollen. Wenn sie auf Ihrer Seite landen, finden sie unsere Vermutung über Sie: ohne Ihre Fotos, Ihre Pakete, Ihre Preise, Ihre freien Termine. Übernehmen Sie sie, und sie gehört Ihnen, in etwa zwei Minuten.",
           offerSentenceFor("de", p.freeMonths),
         ].filter((x) => x.length > 0),
@@ -3933,9 +3909,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // The single 2-day nudge. Shorter on purpose: they have the context from the
   // first mail, so this one is a reminder of the ask, not a re-pitch, and it
   // repeats the SAME fact rather than opening a new hook it would then have to
-  // explain. `suggestedByUser` rides along so the one-clause callback matches
-  // the story the first mail actually told; the rest of the copy is identical
-  // either way, since after two days the page state is the whole argument.
+  // explain. It calls back to the referral because the first mail led with it,
+  // and a follow-up that quietly changed its story would be the one thing worse
+  // than the story itself.
   vendor_claim_campaign_reminder: (p) => ({
     subject: localeSubject(
       p.locale,
@@ -3951,9 +3927,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: `Az oldalon még az áll, hogy a vállalkozástól nem vette át senki.`,
       greeting: "Szia!",
       paragraphs: [
-        p.suggestedByUser
-          ? `Pár napja egy pár ajánlott titeket a Weddlyn, és a(z) ${p.listingName} oldala még mindig azokkal az adatokkal fut, amiket mi töltöttünk ki köré. A párok továbbra is azt olvassák rajta, hogy a vállalkozástól még nem vette át senki.`
-          : `Pár napja: a(z) ${p.listingName} fent van a Weddlyn, ${p.categoryLabel} kategóriában, és még mindig azokkal az adatokkal fut, amiket nyilvánosan találtunk. A párok továbbra is azt olvassák rajta, hogy a vállalkozástól még nem vette át senki.`,
+        `Pár napja egy pár ajánlott titeket a Weddlyn, és a(z) ${p.listingName} oldala még mindig azokkal az adatokkal fut, amiket mi töltöttünk ki köré. A párok továbbra is azt olvassák rajta, hogy a vállalkozástól még nem vette át senki.`,
         `Két perc az egész: egy név, egy jelszó, utána a fotók, az árak és a szabad időpontok a tiétek.`,
         offerSentenceHu(p.freeMonths),
       ].filter((s) => s.length > 0),
@@ -3965,9 +3939,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: `The page still tells couples nobody from the business runs it.`,
       greeting: "Hi there,",
       paragraphs: [
-        p.suggestedByUser
-          ? `A couple put you forward on Weddly a few days ago, and ${p.listingName} still runs on the details we filled in around it. Couples reading the page are still told nobody from the business has taken it over.`
-          : `A couple of days ago: ${p.listingName} is on Weddly under ${p.categoryLabel}, still running on what could be found in public. Couples reading the page are still told nobody from the business has taken it over.`,
+        `A couple put you forward on Weddly a few days ago, and ${p.listingName} still runs on the details we filled in around it. Couples reading the page are still told nobody from the business has taken it over.`,
         `Two minutes fixes it: your name, a password, and then the photos, the prices and the open dates are yours to set.`,
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
@@ -3980,9 +3952,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         preheader: `Stranica parovima još piše da je iz tvrtke nitko ne vodi.`,
         greeting: "Pozdrav!",
         paragraphs: [
-          p.suggestedByUser
-            ? `Prije nekoliko dana par vas je predložio na Weddlyju, a ${p.listingName} još radi na podacima koje smo mi složili oko toga. Parovima na stranici i dalje piše da je iz tvrtke nitko nije preuzeo.`
-            : `Prije nekoliko dana: ${p.listingName} je na Weddlyju, u kategoriji ${p.categoryLabel}, i još radi na onome što se moglo naći javno. Parovima na stranici i dalje piše da je iz tvrtke nitko nije preuzeo.`,
+          `Prije nekoliko dana par vas je predložio na Weddlyju, a ${p.listingName} još radi na podacima koje smo mi složili oko toga. Parovima na stranici i dalje piše da je iz tvrtke nitko nije preuzeo.`,
           `Dvije minute i riješeno je: ime, lozinka, a onda su fotografije, cijene i slobodni datumi vaši.`,
           offerSentenceFor("hr", p.freeMonths),
         ].filter((x) => x.length > 0),
@@ -3994,9 +3964,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         preheader: `Auf der Seite steht Paaren gegenüber weiterhin, dass sie niemand aus dem Betrieb betreut.`,
         greeting: "Hallo!",
         paragraphs: [
-          p.suggestedByUser
-            ? `Vor ein paar Tagen hat ein Paar Sie auf Weddly vorgeschlagen, und ${p.listingName} läuft noch auf den Angaben, die wir darum herum ergänzt haben. Paaren wird auf der Seite weiterhin gesagt, dass sie aus dem Betrieb noch niemand übernommen hat.`
-            : `Vor ein paar Tagen: ${p.listingName} steht auf Weddly in der Kategorie ${p.categoryLabel} und läuft noch auf dem, was öffentlich zu finden war. Paaren wird auf der Seite weiterhin gesagt, dass sie aus dem Betrieb noch niemand übernommen hat.`,
+          `Vor ein paar Tagen hat ein Paar Sie auf Weddly vorgeschlagen, und ${p.listingName} läuft noch auf den Angaben, die wir darum herum ergänzt haben. Paaren wird auf der Seite weiterhin gesagt, dass sie aus dem Betrieb noch niemand übernommen hat.`,
           `Zwei Minuten genügen: Ihr Name, ein Passwort, und dann bestimmen Sie die Fotos, die Preise und die freien Termine.`,
           offerSentenceFor("de", p.freeMonths),
         ].filter((x) => x.length > 0),

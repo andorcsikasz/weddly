@@ -317,13 +317,12 @@ describe("who gets written to in which language", () => {
         city: "Split",
         inviteUrl: "https://weddly.test/r/vendor-invite/tok",
         listingUrl: "https://weddly.test/vendors/studio-jadran-c9",
-        suggestedByUser: false,
         freeMonths: 12,
         locale: "hr",
       },
       { recipientName: "Ivan", recipientLocale: "hr" },
     );
-    expect(built.subject).toContain("nitko ga ne vodi");
+    expect(built.subject).toContain("Par je predložio");
     expect(built.rendered.text).toContain("Preuzmite profil");
     expect(built.rendered.text).not.toContain("Take over your profile");
     expect(built.rendered.text).not.toContain("Profil átvétele");
