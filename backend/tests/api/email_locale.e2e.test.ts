@@ -317,7 +317,6 @@ describe("who gets written to in which language", () => {
         city: "Split",
         inviteUrl: "https://weddly.test/r/vendor-invite/tok",
         listingUrl: "https://weddly.test/vendors/studio-jadran-c9",
-        monthlyVisitors: 5000,
         suggestedByUser: false,
         freeMonths: 12,
         locale: "hr",

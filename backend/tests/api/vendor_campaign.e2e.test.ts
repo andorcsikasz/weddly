@@ -708,7 +708,6 @@ describe("vendor campaign — the referral line only goes where it is true", () 
         city: target.city,
         inviteUrl: "https://weddly.test/r/vendor-invite/tok",
         listingUrl: `https://weddly.test/vendors/${target.listing_id}`,
-        monthlyVisitors: 3000,
         suggestedByUser: target.suggested_by_user,
         freeMonths: 12,
         locale: target.locale,

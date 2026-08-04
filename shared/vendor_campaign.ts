@@ -29,10 +29,12 @@ export const VENDOR_CAMPAIGN_MAX_DAILY_CAP = 500;
  *  one reminder ever goes out per recipient. */
 export const VENDOR_CAMPAIGN_REMINDER_AFTER_MS = 1000 * 60 * 60 * 24 * 2;
 
-/** Monthly visitor figure quoted in the invite copy. Lives here so the number
- *  is edited in ONE place when traffic moves, rather than in four translated
- *  strings. Phrased as a floor ("several thousand") in the copy itself. */
-export const VENDOR_CAMPAIGN_MONTHLY_VISITORS = 3000;
+// The invite copy used to quote a monthly visitor figure from a constant here.
+// It is gone on purpose (owner direction, 2026-08-04): a traffic number in a
+// cold mail is a claim the reader cannot check and we have to keep true, and it
+// argues the wrong thing anyway. What moves a vendor is the couple deciding who
+// stands beside them, not our analytics. If a number is ever wanted back, it
+// belongs on a page we can update, not in an email that outlives it.
 
 export interface VendorCampaign {
   id: number;

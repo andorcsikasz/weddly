@@ -700,7 +700,6 @@ export interface VendorClaimCampaignPayload {
    *  merely assertive: every claim the copy makes about the page is one
    *  untracked click from being confirmed or caught out. */
   listingUrl: string;
-  monthlyVisitors: number;
   /** True only where a Weddly user really did put this business forward, i.e.
    *  a community listing submitted by a couple. NEVER a default: the referral
    *  sentence is the Art. 14(2)(f) source disclosure made to the data subject
@@ -3857,7 +3856,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         p.suggestedByUser
           ? `Valaki, aki épp a Weddlyn tervezi az esküvőjét, ajánlotta a(z) **${p.listingName}** vállalkozást, így került fel az oldalatok: ${p.categoryLabel}, ${p.city}. Már él, és most azt írja a pároknak, hogy a vállalkozástól még nem vette át senki.`
           : `A(z) ${p.city} környéki listát kézzel állítjuk össze, és a(z) **${p.listingName}** rajta van: ${p.categoryLabel}. Az oldal él, és most azt írja a pároknak, hogy a vállalkozástól még nem vette át senki.`,
-        `Havonta nagyjából ${p.monthlyVisitors} ember böngész a Weddlyn, és rólatok a mi verziónkat találja: a saját fotóitok, a csomagjaitok, az áraitok és a szabad időpontjaitok nélkül. Ha átveszed, mindez a tiétek, körülbelül két perc alatt.`,
+        "Hétről hétre ülnek le párok eldönteni, kit szeretnének maguk mellett életük legnagyobb napján. Amikor a ti oldalatokra érnek, a mi tippünket találják rólatok: a saját fotóitok, a csomagjaitok, az áraitok és a szabad időpontjaitok nélkül. Ha átveszed, az oldal a tiétek lesz, körülbelül két perc alatt.",
         offerSentenceHu(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Profil átvétele",
@@ -3876,7 +3875,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         p.suggestedByUser
           ? `Someone planning their wedding on Weddly put **${p.listingName}** forward, which is how your page went up: ${p.categoryLabel}, ${p.city}. It is live, and right now it tells couples that nobody from the business has taken it over.`
           : `We put the ${p.city} list together by hand, and **${p.listingName}** is on it: ${p.categoryLabel}. The page is live, and right now it tells couples that nobody from the business has taken it over.`,
-        `About ${p.monthlyVisitors} people browse Weddly in a month, and what they find is our version of you: no photos of yours, no packages, no prices, no open dates. Take the page over and all of it is yours, in about two minutes.`,
+        "Every week couples sit down and decide who they want beside them on the biggest day of their lives. When they reach your page, what they find is our best guess at you: no photos of yours, no packages, no prices, no open dates. Take it over and it becomes yours, in about two minutes.",
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
@@ -3896,7 +3895,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           p.suggestedByUser
             ? `Netko tko na Weddlyju planira vjenčanje predložio je **${p.listingName}**, tako je vaša stranica i nastala: ${p.categoryLabel}, ${p.city}. Objavljena je i parovima trenutno piše da je iz tvrtke nitko nije preuzeo.`
             : `Popis za ${p.city} slažemo ručno i **${p.listingName}** je na njemu: ${p.categoryLabel}. Stranica je objavljena i parovima trenutno piše da je iz tvrtke nitko nije preuzeo.`,
-          `Weddly svakog mjeseca pregleda oko ${p.monthlyVisitors} ljudi, a o vama nalaze našu verziju: bez vaših fotografija, paketa, cijena i slobodnih datuma. Preuzmite stranicu i sve je vaše, za otprilike dvije minute.`,
+          "Iz tjedna u tjedan parovi sjednu i odlučuju koga žele uz sebe na najvažniji dan svog života. Kad dođu do vaše stranice, nalaze našu pretpostavku o vama: bez vaših fotografija, paketa, cijena i slobodnih datuma. Preuzmite je i postaje vaša, za otprilike dvije minute.",
           offerSentenceFor("hr", p.freeMonths),
         ].filter((x) => x.length > 0),
         cta: "Preuzmite profil",
@@ -3916,7 +3915,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           p.suggestedByUser
             ? `Jemand, der auf Weddly seine Hochzeit plant, hat **${p.listingName}** vorgeschlagen, so ist Ihre Seite entstanden: ${p.categoryLabel}, ${p.city}. Sie ist online und sagt Paaren gerade, dass sie aus dem Betrieb noch niemand übernommen hat.`
             : `Die Liste für ${p.city} stellen wir von Hand zusammen, und **${p.listingName}** steht darauf: ${p.categoryLabel}. Die Seite ist online und sagt Paaren gerade, dass sie aus dem Betrieb noch niemand übernommen hat.`,
-          `Etwa ${p.monthlyVisitors} Menschen sehen sich Weddly im Monat an, und von Ihnen finden sie unsere Version: ohne Ihre Fotos, Ihre Pakete, Ihre Preise, Ihre freien Termine. Übernehmen Sie die Seite, dann gehört das alles Ihnen, in etwa zwei Minuten.`,
+          "Woche für Woche setzen sich Paare zusammen und entscheiden, wen sie am wichtigsten Tag ihres Lebens dabeihaben wollen. Wenn sie auf Ihrer Seite landen, finden sie unsere Vermutung über Sie: ohne Ihre Fotos, Ihre Pakete, Ihre Preise, Ihre freien Termine. Übernehmen Sie sie, und sie gehört Ihnen, in etwa zwei Minuten.",
           offerSentenceFor("de", p.freeMonths),
         ].filter((x) => x.length > 0),
         cta: "Profil übernehmen",

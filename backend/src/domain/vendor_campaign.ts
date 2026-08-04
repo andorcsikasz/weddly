@@ -28,7 +28,6 @@ import {
   type UpdateVendorCampaignInput,
   VENDOR_CAMPAIGN_DEFAULT_DAILY_CAP,
   VENDOR_CAMPAIGN_MAX_DAILY_CAP,
-  VENDOR_CAMPAIGN_MONTHLY_VISITORS,
   VENDOR_CAMPAIGN_REMINDER_AFTER_MS,
   type VendorCampaign,
   type VendorCampaignDetail,
@@ -574,7 +573,6 @@ async function sendOne(
       city: target.city,
       inviteUrl: inviteUrl(claim.token),
       listingUrl: publicListingUrl(target.listing_id, target.listing_name),
-      monthlyVisitors: VENDOR_CAMPAIGN_MONTHLY_VISITORS,
       suggestedByUser: target.suggested_by_user,
       freeMonths: offerMonths(),
       locale: target.locale,
@@ -693,7 +691,6 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
         city: displayCity(listing.city),
         inviteUrl: inviteUrl(row.claim_token as string),
         listingUrl: publicListingUrl(row.listing_id, listing.name),
-        monthlyVisitors: VENDOR_CAMPAIGN_MONTHLY_VISITORS,
         // Re-derived from the listing rather than remembered from the first
         // send, so a row that changed provenance in between (a couple's
         // submission merged into a curated twin) cannot have the reminder
