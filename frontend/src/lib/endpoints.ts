@@ -172,6 +172,7 @@ import type {
 import type {
   AdminDirectoryFilters,
   AdminDirectoryListResponse,
+  VendorRemovalRequestInput,
   AdminFlaggedReviewsResponse,
   CommentListResponse,
   CreateBookingBody,
@@ -3713,6 +3714,17 @@ export const adminSupplierApi = {
     apiFetch<AdminDirectoryListResponse & { filters: AdminDirectoryFilters }>(
       "GET",
       `/api/admin/suppliers/directory${buildDirectoryQuery(filters)}`,
+    ),
+  /** The business itself asked to come off Weddly. One call does both halves:
+   *  a permanent address tombstone (so no cold outreach can reach them again
+   *  from ANY campaign) and delisting the card. Also sends them the
+   *  confirmation, which is transactional so it survives the tombstone it just
+   *  wrote. See domain/vendor_removal.ts. */
+  requestRemoval: (body: VendorRemovalRequestInput) =>
+    apiFetch<{ ok: true; mail: string; supplier: CommunitySupplierAdminView | null }>(
+      "POST",
+      "/api/admin/suppliers/removal-request",
+      body as unknown as Record<string, unknown>,
     ),
   /** Streams the same filtered list as a CSV download. We hit `fetch` directly
    *  (not apiFetch) so the response stays as a Blob the caller can save. */

@@ -6238,6 +6238,17 @@ const es: LocaleMessages = {
     hide_reason_placeholder: "p. ej. enlace roto, spam…",
     hide_reason_help: "Déjalo en blanco si prefieres no registrar un motivo.",
     confirm_hide_title: "Ocultar este proveedor",
+    removal_action: "Pidió la baja",
+    removal_hint:
+      "La empresa pidió salir de Weddly: oculta la ficha y bloquea de forma permanente cualquier envío futuro a su dirección",
+    removal_confirm_title: "La empresa pidió la baja",
+    removal_note_label: "¿Qué dijeron? (opcional)",
+    removal_note_placeholder: "Escribió el 4 de agosto pidiendo la baja",
+    removal_help:
+      "Oculta la ficha y bloquea de forma permanente todos los correos futuros a su dirección. Les enviamos una confirmación con un enlace para registrarse si algún día quieren su propia ficha.",
+    removal_done_mailed: "Dado de baja, y se lo hemos dicho",
+    removal_done_no_mail: "Dado de baja. La confirmación no salió, avísales a mano",
+    removal_badge: "Pidió la baja",
     confirm_hide_body: "Las parejas no lo verán. Puedes recuperarlo en cualquier momento.",
     confirm_delete_title: "Eliminar este proveedor",
     confirm_delete_body: "Esto es permanente, no se puede deshacer.",

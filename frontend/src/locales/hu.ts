@@ -6184,6 +6184,17 @@ const hu: LocaleMessages = {
     hide_reason_placeholder: "Pl. nem létezik a cím, spam…",
     hide_reason_help: "Üresen is hagyható, csak a saját naplódhoz.",
     confirm_hide_title: "Tipp elrejtése",
+    removal_action: "Törlést kért",
+    removal_hint:
+      "A cég kérte, hogy kerüljön le a Weddly-ről: elrejti az adatlapot, és véglegesen tiltja a további megkereséseket erre a címre",
+    removal_confirm_title: "A cég kérte a törlést",
+    removal_note_label: "Mit írtak? (nem kötelező)",
+    removal_note_placeholder: "Aug. 4-én e-mailben kérte a törlést",
+    removal_help:
+      "Elrejti az adatlapot, és véglegesen tiltja az összes további megkeresést erre a címre. Küldünk nekik egy visszaigazolást, benne a regisztráció linkjével, ha egyszer mégis szeretnének saját adatlapot.",
+    removal_done_mailed: "Törölve, és értesítettük őket",
+    removal_done_no_mail: "Törölve. A visszaigazolás nem ment ki, írj nekik kézzel",
+    removal_badge: "Törlést kért",
     confirm_hide_body: "A felhasználók nem fogják látni. Bármikor visszahozhatod.",
     confirm_delete_title: "Tipp törlése",
     confirm_delete_body: "Ez végleges törlés. Nem vonható vissza.",

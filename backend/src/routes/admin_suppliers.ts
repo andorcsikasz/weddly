@@ -28,6 +28,14 @@ import {
 import { CONFIG } from "../config";
 import { getVisitorSystemUserId } from "../db";
 import { clearCuratedOverride, setCuratedOverride } from "../domain/curated_overrides";
+import {
+  isRemovalVia,
+  markRemovalMailSent,
+  recordRemovalRequest,
+  removalRequestedIds,
+} from "../domain/vendor_removal";
+import { localeForCountry, resolveListingCountry } from "../domain/vendor_campaign";
+import { curatedCountry } from "../domain/suppliers_data";
 import { sendKind } from "../domain/emails";
 import { purgeOneUser } from "../domain/purge";
 import { enrichSupplier } from "../domain/supplier_enrich";
@@ -640,6 +648,10 @@ async function handleSendVerify(ctx: Ctx): Promise<Response> {
     {
       supplierName: supplier.name,
       verifyUrl: `${CONFIG.frontendBaseUrl}/verify-supplier/${token.token}`,
+      // 'self' means the business filled the form in itself, and telling them a
+      // couple put them forward would be a fresh untruth rather than a warmer
+      // one. Same predicate as the claim invite.
+      suggestedByUser: supplier.submitter_type === "user",
     },
     {
       user: null,
@@ -795,6 +807,100 @@ function handlePurgeSubmitter(ctx: Ctx): Response {
 
 /** Resolve + validate a curated slug from the path. 404 if it isn't a real
  *  curated entry so we never write an override for a bogus id. */
+interface RemovalRequestBody {
+  listing_id?: unknown;
+  email?: unknown;
+  via?: unknown;
+  note?: unknown;
+}
+
+/** POST /api/admin/suppliers/removal-request — a business asked to come off
+ *  Weddly, and this does the whole thing in one click.
+ *
+ *  It takes the listing id in the BODY rather than the path, because unlike its
+ *  neighbours it has to serve both id shapes: the numeric-community `:id`
+ *  routes above and the curated `:slug` routes below each only ever see one,
+ *  and a business asking to be removed does not know or care which kind of row
+ *  it happens to be.
+ *
+ *  The mail goes AFTER the suppression commits, and its own send failure is
+ *  swallowed by `sendKind`'s never-throw contract. That ordering is deliberate:
+ *  if only one of the two can happen, it must be the removal. A business that
+ *  is off the site but never got the confirmation can write again; one that got
+ *  a mail promising removal while still being listed has been lied to. */
+async function handleRemovalRequest(ctx: Ctx): Promise<Response> {
+  const admin = requireAdmin(ctx);
+  const body = await readJson<RemovalRequestBody>(ctx.req).catch(() => ({}) as RemovalRequestBody);
+
+  const listingId = typeof body.listing_id === "string" ? body.listing_id.trim() : "";
+  if (!listingId) throw new HttpError(400, "listing_id required");
+  const via = isRemovalVia(body.via) ? body.via : "email";
+  const note =
+    typeof body.note === "string" && body.note.trim() ? body.note.trim().slice(0, 500) : null;
+
+  // Resolve the card, and with it the address and which lever hides it.
+  const curated = DIRECTORY.find((s) => s.id === listingId);
+  const listingRow = getListingById(listingId);
+  if (!curated && !listingRow) throw new HttpError(404, "Listing not found");
+
+  const communityId =
+    !curated && listingId.startsWith("c") && /^c\d+$/.test(listingId)
+      ? Number(listingId.slice(1))
+      : null;
+
+  const businessName = curated?.name ?? listingRow?.name ?? listingId;
+  const country = curated
+    ? curatedCountry(curated.id, curated.city)
+    : resolveListingCountry({
+        id: listingId,
+        source: listingRow?.source ?? "community",
+        city: listingRow?.city ?? "",
+      });
+
+  // The address they wrote from wins when the admin supplies one, because the
+  // listing's `contact_email` can be a general office address while the request
+  // came from the owner. Falling back to the listing keeps the common case one
+  // click.
+  const overrideEmail = typeof body.email === "string" ? body.email.trim() : "";
+  const email = overrideEmail || curated?.contact_email || listingRow?.contact_email || "";
+  if (!email) throw new HttpError(400, "No contact email on this listing, pass `email`");
+
+  const record = recordRemovalRequest({
+    listingId,
+    email,
+    communityId,
+    adminUserId: admin.id,
+    via,
+    note,
+  });
+
+  const result = await sendKind(
+    "vendor_removal_confirmed",
+    {
+      businessName,
+      registerUrl: `${CONFIG.frontendBaseUrl}/vendors`,
+    },
+    {
+      user: null,
+      guest: { email: record.email, full_name: businessName },
+      guestLocale: localeForCountry(country),
+    },
+  );
+  if (result.status === "sent") markRemovalMailSent(listingId);
+
+  // Hand back the refreshed community view when there is one, so the admin
+  // table can swap the row in place exactly like hide/unhide/approve do. A
+  // curated slug has no such row and the caller reloads instead.
+  const refreshed = communityId !== null ? getCommunitySupplierWithEmail(communityId) : null;
+
+  return json({
+    ok: true,
+    removal: { ...record, mail_sent_at: result.status === "sent" ? Date.now() : null },
+    mail: result.status,
+    supplier: refreshed ? toAdminView(refreshed, 0) : null,
+  });
+}
+
 function parseCuratedSlug(ctx: Ctx): string {
   const slug = ctx.params.slug?.trim();
   if (!slug) throw new HttpError(400, "Invalid slug");
@@ -874,7 +980,16 @@ function handleDirectory(ctx: Ctx): Response {
   // already builds, so a second request would rebuild all 1000 rows to learn
   // four numbers, and the two answers could disagree mid-edit.
   const { rows, facets } = listDirectoryWithFacets(filters);
-  return json({ suppliers: rows, facets, filters });
+  // The ids under a standing removal request, so the catalogue can mark them
+  // differently from an ordinary hide. Both look "hidden" in the row's own
+  // status, and the difference is the whole point: one is a moderation call an
+  // admin may reverse, the other is a business's own instruction.
+  return json({
+    suppliers: rows,
+    facets,
+    filters,
+    removal_requested: [...removalRequestedIds()],
+  });
 }
 
 /** RFC 4180 CSV cell: wrap in quotes and double internal quotes whenever the
@@ -983,6 +1098,9 @@ export function registerAdminSupplierRoutes(router: Router) {
   // Curated moderation (code-resident entries, keyed by slug). Registered
   // before the numeric `:id` routes so the 3-segment `curated/:slug/...` paths
   // are unambiguous.
+  // Registered ABOVE the `:id` routes so the literal path segment cannot be
+  // swallowed by the numeric-id matcher.
+  router.post("/api/admin/suppliers/removal-request", handleRemovalRequest, true);
   router.post("/api/admin/suppliers/curated/:slug/hide", handleCuratedHide, true);
   router.post("/api/admin/suppliers/curated/:slug/unhide", handleCuratedUnhide, true);
   router.delete("/api/admin/suppliers/curated/:slug", handleCuratedDelete, true);

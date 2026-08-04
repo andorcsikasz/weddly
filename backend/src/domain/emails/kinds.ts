@@ -65,6 +65,7 @@ export type EmailKind =
   | "community_supplier_published" // admin approved the listing, it's now live
   | "community_supplier_rejected" // admin rejected a pending listing during moderation
   | "community_supplier_reported" // first user report on a live listing, heads-up to the contact
+  | "vendor_removal_confirmed" // a business asked to be taken off Weddly: confirms the listing is down, and leaves the door open with a register CTA
   | "vendor_claim_campaign" // admin-run invite to an unclaimed listing's contact_email: "take over your profile"
   | "vendor_claim_campaign_reminder" // one nudge 2 days later to invites nobody clicked
   | "vendor_review_campaign" // admin-run note to a CLAIMED vendor: reviews are open to anyone, here's your link to collect 5 stars
@@ -304,6 +305,13 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // address-level opt-out (email_optouts) since there is no user row to hold a
   // preferences token, plus the List-Unsubscribe headers Gmail's bulk-sender
   // rules expect.
+  // TRANSACTIONAL, and the classification is load-bearing rather than
+  // cosmetic. Recording the removal writes the address tombstone, and the
+  // non-transactional branch of `sendKind` is gated on exactly that tombstone —
+  // so any other category would make this mail suppress itself and the business
+  // would never hear that we acted. It is also genuinely the definition: a
+  // reply the recipient triggered and is waiting on.
+  vendor_removal_confirmed: "transactional",
   vendor_claim_campaign: "outreach",
   vendor_claim_campaign_reminder: "outreach",
   vendor_review_campaign: "outreach",
@@ -453,6 +461,11 @@ const ADMIN_CONSOLE_KINDS: ReadonlySet<EmailKind> = new Set<EmailKind>([
   "vendor_activation",
   "vendor_waitlist_decision",
   "vendor_moved_to_planner",
+  // A business asked to come off Weddly and an admin actioned it. This one is
+  // the clearest case in the whole list: they wrote to a person, and the mail
+  // says "we did it" — a noreply@ sender would be telling someone their written
+  // request was handled by a mailbox that cannot hear their next sentence.
+  "vendor_removal_confirmed",
   // Campaigns: composed and released from their own admin page. The review
   // campaign is the exception noted above and is NOT in this list.
   "vendor_claim_campaign",

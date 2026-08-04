@@ -1170,6 +1170,23 @@ export interface AdminDirectoryFacets {
 export interface AdminDirectoryListResponse {
   suppliers: SupplierDirectoryAdminRow[];
   facets: AdminDirectoryFacets;
+  /** Listing ids under a standing removal request from the business itself.
+   *  Separate from the row's own hidden status on purpose: both render as
+   *  "not on the site", and the difference is exactly what an admin needs to
+   *  see before clicking unhide. A hide is our call; this is theirs. */
+  removal_requested: string[];
+}
+
+/** `POST /api/admin/suppliers/removal-request`. How the business told us. */
+export type VendorRemovalVia = "email" | "feedback" | "phone" | "other";
+
+export interface VendorRemovalRequestInput {
+  listing_id: string;
+  /** Overrides the listing's own contact_email when the owner wrote from a
+   *  different address than the one on the card. */
+  email?: string;
+  via: VendorRemovalVia;
+  note?: string;
 }
 
 // ─── Supplier detail page (admin-only v1) ───────────────────────────────────

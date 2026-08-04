@@ -2603,6 +2603,33 @@ CREATE INDEX IF NOT EXISTS idx_vendor_automation_runs_vendor
 CREATE INDEX IF NOT EXISTS idx_vendor_automation_runs_message
   ON vendor_automation_runs(message_id) WHERE message_id IS NOT NULL;
 
+-- A business that asked, in writing, to be taken off Weddly entirely.
+--
+-- This is deliberately NOT the same thing as an admin hiding a listing. A hide
+-- is a moderation call an admin may reverse tomorrow; a removal request is a
+-- standing instruction from the business itself, and the row is what stops a
+-- later admin (or a re-import of the curated file) from quietly undoing it.
+-- The EFFECTS live in their existing homes and are unchanged: the address
+-- tombstone in `email_optouts`, the delisting in `curated_supplier_overrides`
+-- (curated slugs) or `listings.status` (community/claimed). This table is the
+-- reason, the date and the person who recorded it.
+--
+-- `listing_id` is bare TEXT with no FK for the same reason supplier_reviews is:
+-- a curated slug has no `listings` row of its own until the boot upsert runs.
+CREATE TABLE IF NOT EXISTS vendor_removal_requests (
+  listing_id TEXT PRIMARY KEY,                                 -- curated slug or listings.id
+  email TEXT NOT NULL,                                         -- the address that asked, normalised
+  requested_via TEXT NOT NULL,                                 -- 'email' | 'feedback' | 'phone' | 'other'
+  note TEXT,                                                   -- what they actually said, short
+  flagged_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  mail_sent_at INTEGER,                                        -- when we confirmed it back to them
+  created_at INTEGER NOT NULL
+);
+-- "Has this business asked to be removed?" asked per address by the campaign
+-- targeting, and per listing by the admin catalogue.
+CREATE INDEX IF NOT EXISTS idx_vendor_removal_requests_email
+  ON vendor_removal_requests(email);
+
 -- Display offsets for the public landing counters (couples, RSVPs, Pro vendors,
 -- directory listings).
 --

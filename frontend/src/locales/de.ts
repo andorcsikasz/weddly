@@ -6289,6 +6289,17 @@ const de: LocaleMessages = {
     hide_reason_placeholder: "z. B. toter Link, Spam…",
     hide_reason_help: "Leer lassen, wenn Sie keinen Grund festhalten möchten.",
     confirm_hide_title: "Diesen Dienstleister ausblenden",
+    removal_action: "Löschung angefragt",
+    removal_hint:
+      "Das Unternehmen hat um Entfernung von Weddly gebeten: blendet den Eintrag aus und sperrt dauerhaft jede weitere Ansprache an diese Adresse",
+    removal_confirm_title: "Das Unternehmen hat um Entfernung gebeten",
+    removal_note_label: "Was haben sie geschrieben? (optional)",
+    removal_note_placeholder: "Am 4. August per E-Mail um Entfernung gebeten",
+    removal_help:
+      "Blendet den Eintrag aus und sperrt dauerhaft alle weiteren E-Mails an diese Adresse. Wir schicken eine Bestätigung mit einem Link zur Registrierung, falls sie irgendwann doch einen eigenen Eintrag möchten.",
+    removal_done_mailed: "Entfernt, und wir haben es ihnen gesagt",
+    removal_done_no_mail: "Entfernt. Die Bestätigung ging nicht raus, bitte von Hand melden",
+    removal_badge: "Löschung angefragt",
     confirm_hide_body: "Paare sehen ihn nicht. Sie können ihn jederzeit zurückholen.",
     confirm_delete_title: "Diesen Dienstleister löschen",
     confirm_delete_body: "Das ist endgültig, kein Zurück.",

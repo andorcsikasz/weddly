@@ -59,6 +59,17 @@ export const DO_NOT_CONTACT: ReadonlyArray<{ email: string; note: string }> = [
     email: "info@finca-monasterio.com",
     note: "Finca Monasterio (ES) — owner request, 2026-07-25",
   },
+  {
+    // Wrote in by personal email asking to be taken off Weddly entirely, so
+    // unlike the entry above this one is NOT mail-only: the listing
+    // (dj-turk-zagreb) comes down too, via a removal request recorded in
+    // `vendor_removal_requests`. Seeded here as well so the reminder cannot go
+    // out in the window before an admin gets to the button — a tombstone is
+    // cheap and a second unwanted mail to someone who has already asked twice
+    // is not.
+    email: "turkvjencanja@gmail.com",
+    note: "DJ Turk (HR) — owner request, 2026-08-04, listing removed too",
+  },
 ];
 
 /** Boot seed. `INSERT OR IGNORE`, so it is safe on every start and cannot

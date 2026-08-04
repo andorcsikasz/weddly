@@ -16,6 +16,7 @@ import {
   Pencil,
   Phone,
   Sparkles,
+  Ban,
   Trash2,
   User,
 } from "lucide-react";
@@ -253,6 +254,39 @@ function ModerationView() {
     }
   }
 
+  /** The business asked to come off Weddly. Distinct from Hide, which is our
+   *  own moderation call: this one also tombstones the address against every
+   *  cold-outreach campaign, permanently, and mails them the confirmation. The
+   *  note is what they actually said, kept short, so a later admin looking at a
+   *  hidden card can tell whose decision it was. */
+  async function onRequestRemoval(supplier: CommunitySupplierAdminView) {
+    const note = await promptEntry({
+      title: t("admin.removal_confirm_title"),
+      label: t("admin.removal_note_label"),
+      placeholder: t("admin.removal_note_placeholder"),
+      helperText: t("admin.removal_help"),
+      confirmLabel: t("admin.removal_action"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (note === null) return;
+    try {
+      const trimmed = note.trim();
+      const r = await adminSupplierApi.requestRemoval({
+        listing_id: `c${supplier.id}`,
+        via: "email",
+        ...(trimmed.length > 0 ? { note: trimmed } : {}),
+      });
+      // Say which of the two happened. The removal is done either way, but a
+      // mail that did not leave is something the admin may want to follow up by
+      // hand, and a blanket "done" would hide that.
+      if (r.supplier) replaceSupplier(r.supplier);
+      if (r.mail === "sent") toast.success(t("admin.removal_done_mailed"));
+      else toast.success(t("admin.removal_done_no_mail"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    }
+  }
+
   async function onApprove(supplier: CommunitySupplierAdminView) {
     try {
       const r = await adminSupplierApi.approve(supplier.id);
@@ -475,6 +509,7 @@ function ModerationView() {
               onSendVerify={() => onSendVerify(s)}
               onHide={() => onHide(s)}
               onUnhide={() => onUnhide(s)}
+              onRequestRemoval={() => onRequestRemoval(s)}
               onEnrich={() => onEnrich(s)}
               onDelete={() => onDelete(s)}
               enriching={enriching === s.id}
@@ -607,6 +642,7 @@ interface SupplierCardProps {
   onSendVerify: () => void;
   onHide: () => void;
   onUnhide: () => void;
+  onRequestRemoval: () => void;
   onEnrich: () => void;
   onDelete: () => void;
   enriching: boolean;
@@ -628,6 +664,7 @@ function SupplierCard({
   onSendVerify,
   onHide,
   onUnhide,
+  onRequestRemoval,
   onEnrich,
   onDelete,
   enriching,
@@ -1074,6 +1111,20 @@ function SupplierCard({
                 <Eye size={14} /> {t("admin.unhide")}
               </button>
             ) : null}
+            {/* Distinct from Hide, and deliberately sitting apart from it: Hide
+                is our moderation call and is reversible, this records the
+                BUSINESS's own instruction, tombstones their address against
+                every cold-outreach campaign for good, and mails them the
+                confirmation. */}
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={onRequestRemoval}
+              aria-label={t("admin.removal_action")}
+              title={t("admin.removal_hint")}
+            >
+              <Ban size={14} /> {t("admin.removal_action")}
+            </button>
             <button
               type="button"
               className="btn-alert btn-sm"

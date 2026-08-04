@@ -27,6 +27,16 @@ export type RecipientLocale = UiLocale | null;
  *  HU and EN are required on every kind and have their own top-level fields. */
 export type ExtraLocale = Exclude<UiLocale, "hu" | "en">;
 
+/** A per-kind replacement for the "why am I getting this" footer line. HU and
+ *  EN are required for the same reason every card requires them; anything else
+ *  is optional and falls back to EN, so a kind can override the line before it
+ *  has been translated into every shipped language. */
+export interface WhyLineOverride {
+  hu: string;
+  en: string;
+  extra?: Partial<Record<ExtraLocale, string>>;
+}
+
 export interface LocaleBlock {
   /** Optional preheader (the gray inbox-preview text). Renders hidden in HTML. */
   preheader?: string;
@@ -89,7 +99,11 @@ export interface RenderInput {
    *  (`planner_suggested_invite`). The stock outreach line claims they have no
    *  account, which the body of that mail contradicts on the first read. Use
    *  sparingly, the whole point of the category line is that it's uniform. */
-  whyLine?: { hu: string; en: string };
+  /** `extra` carries the same per-locale blocks the CARD does. Without it a
+   *  Croatian or German recipient of an overridden kind got the English line
+   *  under a fully translated body, which is the exact drift the per-locale
+   *  footer tables were introduced to end. */
+  whyLine?: WhyLineOverride;
 }
 
 export interface RenderedEmail {
@@ -794,17 +808,19 @@ function pickWhy(
   lines: { hu: string; en: string; bilingual: string },
   category: EmailCategory,
   single: UiLocale | null,
-  override?: { hu: string; en: string },
+  override?: WhyLineOverride,
 ): string {
-  // An override is authored HU/EN only. A locale beyond those reads the EN
-  // side of it rather than the category line, since the override exists
-  // because the category line was wrong for this kind.
-  if (override)
-    return single === null
-      ? `${override.hu} / ${override.en}`
-      : single === "hu"
-        ? override.hu
-        : override.en;
+  // An override replaces the CATEGORY line, so a locale it did not translate
+  // must fall back to the override's own English rather than to the category
+  // line: the override exists precisely because that line was wrong here.
+  if (override) {
+    if (single === null) return `${override.hu} / ${override.en}`;
+    if (single === "hu") return override.hu;
+    if (single === "en") return override.en;
+    // Same fallback shape as the card: this locale's line when the kind wrote
+    // one, English otherwise, never Hungarian.
+    return override.extra?.[single] ?? override.en;
+  }
   if (single === null) return lines.bilingual;
   if (single === "hu") return lines.hu;
   return WHY_LINE_EXTRA[single]?.[category] ?? lines.en;
@@ -813,7 +829,7 @@ function pickWhy(
 function whyLineFor(
   category: EmailCategory,
   single: UiLocale | null,
-  override?: { hu: string; en: string },
+  override?: WhyLineOverride,
 ): string {
   return pickWhy(WHY_LINE_TEXT[category], category, single, override);
 }
@@ -821,7 +837,7 @@ function whyLineFor(
 function whyLineForHtml(
   category: EmailCategory,
   single: UiLocale | null,
-  override?: { hu: string; en: string },
+  override?: WhyLineOverride,
 ): string {
   return pickWhy(WHY_LINE_HTML[category], category, single, override);
 }

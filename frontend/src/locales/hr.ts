@@ -6175,6 +6175,17 @@ const hr: LocaleMessages = {
     hide_reason_placeholder: "npr. mrtva poveznica, spam…",
     hide_reason_help: "Ostavite prazno ako ne želite zabilježiti razlog.",
     confirm_hide_title: "Skrivanje ovog dobavljača",
+    removal_action: "Tražili uklanjanje",
+    removal_hint:
+      "Tvrtka je tražila uklanjanje s Weddlyja: skriva oglas i trajno blokira svaku buduću poruku na njihovu adresu",
+    removal_confirm_title: "Tvrtka je tražila uklanjanje",
+    removal_note_label: "Što su rekli? (nije obavezno)",
+    removal_note_placeholder: "Javili se 4. kolovoza i tražili uklanjanje",
+    removal_help:
+      "Skriva oglas i trajno blokira sve buduće poruke na njihovu adresu. Šaljemo im potvrdu s poveznicom za registraciju, ako ikada požele vlastiti oglas.",
+    removal_done_mailed: "Uklonjeno, i javili smo im",
+    removal_done_no_mail: "Uklonjeno. Potvrda nije poslana, javite im ručno",
+    removal_badge: "Tražili uklanjanje",
     confirm_hide_body: "Parovi ga neće vidjeti. Možete ga vratiti u bilo kojem trenutku.",
     confirm_delete_title: "Brisanje ovog dobavljača",
     confirm_delete_body: "Ovo je trajno, nema povratka.",

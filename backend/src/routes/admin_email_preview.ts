@@ -261,6 +261,10 @@ const STUBS: KindPayload = {
       'Szia Bloom Studio!\n\nKöszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára. A csapatunk személyesen átnézte a profilotokat, és szeretnénk szerepeltetni titeket a pároknak ajánlott szolgáltatók között.\n\n**A következő lépés: aktiváljátok a fiókotokat a lenti „Fiók aktiválása" gombbal** (nincs szükség bankkártyára).\n\nÜdv,\nA Wēddly csapata',
     subject: "Wēddly: szívesen látnánk titeket a katalógusban",
   },
+  vendor_removal_confirmed: {
+    businessName: "Bloom Studio",
+    registerUrl: `${BASE_URL}/vendors`,
+  },
   vendor_profile_share: {
     businessName: "Bloom Studio",
     shareUrl: `${BASE_URL}/vendors/v11`,
@@ -318,6 +322,7 @@ const STUBS: KindPayload = {
   community_supplier_verify: {
     supplierName: "Bloom Studio",
     verifyUrl: `${BASE_URL}/supplier/verify?token=preview`,
+    suggestedByUser: true,
   },
   community_supplier_published: {
     supplierName: "Bloom Studio",
@@ -331,12 +336,17 @@ const STUBS: KindPayload = {
     supplierName: "Bloom Studio",
     reason: "wrong_info",
   },
+  // Previewed as a CURATED listing (`suggestedByUser: false`), because that is
+  // what every reachable target on the live data is. An operator eyeballing
+  // this kind should be reading the opening that will actually go out.
   vendor_claim_campaign: {
     listingName: "Bloom Studio",
     categoryLabel: "Fotó",
     city: "Budapest",
     inviteUrl: `${BASE_URL}/r/vendor-invite/preview`,
+    listingUrl: `${BASE_URL}/vendors/bloom-studio-c1`,
     monthlyVisitors: 3000,
+    suggestedByUser: false,
     freeMonths: 12,
     locale: "hu",
   },
@@ -345,7 +355,9 @@ const STUBS: KindPayload = {
     categoryLabel: "Fotó",
     city: "Budapest",
     inviteUrl: `${BASE_URL}/r/vendor-invite/preview`,
+    listingUrl: `${BASE_URL}/vendors/bloom-studio-c1`,
     monthlyVisitors: 3000,
+    suggestedByUser: false,
     freeMonths: 3,
     locale: "hu",
   },

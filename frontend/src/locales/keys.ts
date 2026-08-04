@@ -7247,6 +7247,22 @@ export interface LocaleMessages {
     hide_reason_placeholder: string;
     hide_reason_help: string;
     confirm_hide_title: string;
+    /** Row action: the BUSINESS asked to come off Weddly. Distinct from Hide,
+     *  which is our own moderation call and is reversible. This one also
+     *  tombstones their address against every cold-outreach campaign. */
+    removal_action: string;
+    removal_hint: string;
+    removal_confirm_title: string;
+    removal_note_label: string;
+    removal_note_placeholder: string;
+    removal_help: string;
+    /** Two outcomes worth telling apart: the removal always happened, but the
+     *  confirmation mail may not have left, and that is worth a manual note. */
+    removal_done_mailed: string;
+    removal_done_no_mail: string;
+    /** Marks a card that is down at the business's own request, so a later
+     *  admin does not casually unhide it. */
+    removal_badge: string;
     confirm_hide_body: string;
     confirm_delete_title: string;
     confirm_delete_body: string;

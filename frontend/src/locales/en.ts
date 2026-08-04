@@ -6125,6 +6125,17 @@ const en: LocaleMessages = {
     hide_reason_placeholder: "e.g. dead link, spam…",
     hide_reason_help: "Leave blank if you'd rather not log a reason.",
     confirm_hide_title: "Hide this supplier",
+    removal_action: "Requested removal",
+    removal_hint:
+      "The business asked to come off Weddly: hides the listing and blocks all future outreach to their address, permanently",
+    removal_confirm_title: "The business asked to be removed",
+    removal_note_label: "What did they say? (optional)",
+    removal_note_placeholder: "Emailed on 4 Aug asking to be taken off",
+    removal_help:
+      "Hides the listing and permanently blocks every future outreach email to their address. Sends them a confirmation with a link to register if they ever want their own listing.",
+    removal_done_mailed: "Removed, and we told them",
+    removal_done_no_mail: "Removed. The confirmation did not send, tell them by hand",
+    removal_badge: "They asked to be removed",
     confirm_hide_body: "Couples won't see it. You can bring it back any time.",
     confirm_delete_title: "Delete this supplier",
     confirm_delete_body: "This is permanent, no undo.",
