@@ -2816,8 +2816,9 @@ export interface LocaleMessages {
     provendors_promise: string;
     /** Uppercase tag under the big remaining-seats number. */
     provendors_seats_label: string;
-    /** Unit after the live count of vendors already on board. */
-    provendors_count_vendors: string;
+    /** Unit after the live count of businesses in the directory. Counts
+     *  listings, not accounts, so it must not read as "joined". */
+    provendors_count_listings: string;
     provendors_cta: string;
     provendors_share_cta: string;
     provendors_share_copied: string;

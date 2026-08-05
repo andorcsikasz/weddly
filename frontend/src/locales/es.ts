@@ -2267,7 +2267,7 @@ const es: LocaleMessages = {
     provendors_promise:
       "Únete a Weddly como proveedor fundador y disfruta de Weddly Pro durante 12 meses.",
     provendors_seats_label: "plazas libres",
-    provendors_count_vendors: "proveedores inscritos",
+    provendors_count_listings: "proveedores en el directorio",
     provendors_cta: "Reserva tu plaza",
     provendors_share_cta: "Compartir el enlace",
     provendors_share_copied: "Enlace copiado. Pásalo.",

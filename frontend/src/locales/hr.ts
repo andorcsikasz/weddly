@@ -2233,7 +2233,7 @@ const hr: LocaleMessages = {
     provendors_promise:
       "Pridružite se Weddlyju kao osnivački partner i uživajte u Weddly Prou 12 mjeseci.",
     provendors_seats_label: "slobodnih mjesta",
-    provendors_count_vendors: "partnera se pridružilo",
+    provendors_count_listings: "dobavljača u katalogu",
     provendors_cta: "Rezervirajte svoje mjesto",
     provendors_share_cta: "Podijelite poveznicu",
     provendors_share_copied: "Poveznica je kopirana. Proslijedite je.",

@@ -2282,7 +2282,7 @@ const de: LocaleMessages = {
     provendors_promise:
       "Werden Sie Gründungsanbieter bei Weddly und nutzen Sie Weddly Pro 12 Monate lang.",
     provendors_seats_label: "freie Plätze",
-    provendors_count_vendors: "Anbieter dabei",
+    provendors_count_listings: "Anbieter im Katalog",
     provendors_cta: "Platz sichern",
     provendors_share_cta: "Link teilen",
     provendors_share_copied: "Link kopiert. Geben Sie ihn weiter.",

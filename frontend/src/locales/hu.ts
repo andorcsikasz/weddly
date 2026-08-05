@@ -2242,7 +2242,7 @@ const hu: LocaleMessages = {
     provendors_promise:
       "Csatlakozzatok alapító szolgáltatóként a Wēddlyhez, és 12 hónapig tiétek a Weddly Pro.",
     provendors_seats_label: "szabad hely",
-    provendors_count_vendors: "csatlakozott szolgáltató",
+    provendors_count_listings: "szolgáltató a katalógusban",
     provendors_cta: "Lefoglalom a helyem",
     provendors_share_cta: "Link megosztása",
     provendors_share_copied: "Link a vágólapon. Adjátok tovább.",

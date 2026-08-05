@@ -71,6 +71,7 @@ import {
   COUPLE_CARD_DECKS,
   type Deck,
   DECK_SIZE,
+  deckHasCards,
   isAccentDeck,
   loadLemonadeRevealed,
   redLevel,
@@ -395,8 +396,8 @@ export default function LandingPage() {
           as being hosted rather than buying. The hero counts down
           VENDOR_FOUNDING_CAP minus the vendors already holding an account, so
           the scarcity line and the window a signup would actually be granted
-          come from one number. The count of vendors already on board sits
-          under the promise. Carries a quick share affordance (native share sheet →
+          come from one number. The size of the directory sits under the
+          promise. Carries a quick share affordance (native share sheet →
           clipboard fallback) so a couple who loves their photographer can pass
           the offer straight to them. */}
       <FoundingVendorsBand />
@@ -818,9 +819,15 @@ function LiveStatsBand() {
  *  landing and the slot a signup would actually be granted cannot disagree —
  *  the same rule the /vendors page follows.
  *
- *  One supporting figure sits under the promise: the vendors already on board.
- *  It is the other half of the seat arithmetic the hero shows (joined + left =
- *  the cap), so the two numbers read as one sentence rather than two claims.
+ *  One supporting figure sits under the promise: how many businesses are in
+ *  the directory (`listings`, not `vendors`). It answers the question a
+ *  professional actually has on this band, "is anyone here?", and the whole
+ *  catalogue is the honest answer to it — curated, community-submitted and
+ *  claimed alike. The account count is a fraction of that and reads as an
+ *  empty marketplace, which is the opposite of the job. It is deliberately
+ *  NOT arithmetic against the hero: the seats count down accounts, this
+ *  counts businesses, so the copy under it says "in the directory" rather
+ *  than "joined" and the two numbers make no claim about each other.
  *
  *  The share control prefers the native share sheet (best for "send it to a
  *  colleague" on mobile), falling back to clipboard-copy + toast, then a
@@ -831,7 +838,7 @@ function LiveStatsBand() {
 function FoundingVendorsBand() {
   const { t, locale } = useT();
   const toast = useToast();
-  const [stats, setStats] = useState<{ vendors: number } | null>(null);
+  const [stats, setStats] = useState<{ vendors: number; listings: number } | null>(null);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const fmt = useMemo(() => new Intl.NumberFormat(intlLocale(locale)), [locale]);
 
@@ -840,7 +847,7 @@ function FoundingVendorsBand() {
     publicStatsApi
       .get()
       .then((r) => {
-        if (!cancelled) setStats({ vendors: r.vendors });
+        if (!cancelled) setStats({ vendors: r.vendors, listings: r.listings });
       })
       .catch(() => {
         // Evergreen section — never block on a stats failure; we just skip
@@ -912,15 +919,16 @@ function FoundingVendorsBand() {
           <p className="mx-auto mt-4 max-w-[19rem] text-balance font-grotesk text-sm leading-relaxed text-paper-300 sm:mx-0 sm:text-base dark:text-umber-700">
             {t("landing.provendors_promise")}
           </p>
-          {/* The supporting figure. Rendered only once the stats land — a
-              "0 vendors joined" line under a scarcity offer reads as an empty
-              marketplace, which is the opposite of the job. */}
-          {stats && (
+          {/* The supporting figure. Rendered only once the stats land AND the
+              directory has something in it — a "0 vendors" line under a
+              scarcity offer reads as an empty marketplace, which is the
+              opposite of the job. */}
+          {stats && stats.listings > 0 && (
             <p className="mt-5 font-grotesk text-xs text-paper-400 dark:text-umber-600">
               <span className="font-medium tabular-nums text-paper-200 dark:text-umber-800">
-                {fmt.format(stats.vendors)}
+                {fmt.format(stats.listings)}
               </span>{" "}
-              {t("landing.provendors_count_vendors")}
+              {t("landing.provendors_count_listings")}
             </p>
           )}
         </div>
@@ -2011,7 +2019,7 @@ function CoupleCardsTeaser() {
             const isLemonade = deck.id === "lemonade";
             const isFirstDate = deck.id === "firstdate";
             const isAccent = isAccentDeck(deck.id);
-            const hasCards = deck.questionsEn.length > 0;
+            const hasCards = deckHasCards(deck);
             return (
               <li key={deck.id} className="h-full">
                 <Link
@@ -2139,7 +2147,7 @@ function CoupleCardsCarousel({ decks, toolPath }: { decks: readonly Deck[]; tool
           const isLemonade = deck.id === "lemonade";
           const isFirstDate = deck.id === "firstdate";
           const isAccent = isAccentDeck(deck.id);
-          const hasCards = deck.questionsEn.length > 0;
+          const hasCards = deckHasCards(deck);
           return (
             <Link
               key={deck.id}

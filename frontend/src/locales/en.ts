@@ -2215,7 +2215,7 @@ const en: LocaleMessages = {
     provendors_title: "Your first year of Pro is on us",
     provendors_promise: "Join Weddly as a founding vendor and enjoy Weddly Pro for 12 months.",
     provendors_seats_label: "spots left",
-    provendors_count_vendors: "vendors joined",
+    provendors_count_listings: "vendors in the directory",
     provendors_cta: "Claim your spot",
     provendors_share_cta: "Share the link",
     provendors_share_copied: "Link copied. Pass it on.",
