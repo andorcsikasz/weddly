@@ -7,7 +7,14 @@
 // but only PATCHes the server on pointer-up — otherwise we'd spam the API.
 
 import type { SeatAssignment, SeatingTable } from "@shared/types";
-import { MAX_TABLE_SEATS, chairOffsets, maxSeatsForTable, tableHalfDims } from "@shared/seating";
+import {
+  MAX_ROOM_MM,
+  MAX_TABLE_SEATS,
+  MIN_ROOM_MM,
+  chairOffsets,
+  maxSeatsForTable,
+  tableHalfDims,
+} from "@shared/seating";
 import {
   Baby,
   Locate,
@@ -27,12 +34,10 @@ import { useT } from "../../lib/i18n";
 // Default room: 12m × 9m. Wide enough for a 200-person wedding without feeling
 // cramped; the SVG scales to its container so absolute pixels don't matter.
 // These are *defaults* — the actual canvas size is per-couple state owned by
-// SeatingPage and passed as a prop, with localStorage persistence today.
+// SeatingPage and passed as a prop; it is persisted on the couples row so
+// both partners lay tables out on one floor. Bounds come from shared/seating.
 const DEFAULT_ROOM_W_MM = 12_000;
 const DEFAULT_ROOM_H_MM = 9_000;
-// Sensible bounds for the editable input: 3m (intimate) to 50m (ballroom).
-const MIN_ROOM_MM = 3_000;
-const MAX_ROOM_MM = 100_000;
 const GRID_STEP_MM = 500; // 50-cm grid lines — fine enough to plan furniture against
 
 const MIN_DIM_MM = 100;

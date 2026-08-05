@@ -114,6 +114,8 @@ function makeCouple(overrides: Partial<Couple> = {}): Couple {
     envelope_tip_amount_override: null,
     media_links: { guests: null, photographer: [], other: null },
     design: resolveDesign(null),
+    seating_room_w_mm: null,
+    seating_room_h_mm: null,
     created_at: Date.now() - 86_400_000,
     onboarded_at: Date.now() - 86_400_000,
     updated_at: Date.now(),

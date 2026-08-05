@@ -37,6 +37,20 @@ export const MIN_AISLE_MM = 800;
  *  smallest distance that still lets someone walk between them. */
 export const TABLE_KEEPOUT_MM = CHAIR_BACK_DEPTH_MM + MIN_AISLE_MM / 2;
 
+/** Room-size bounds for the seating canvas, in millimetres. Below 3 m there is
+ *  no floor to place a table on; above 100 m the mm-per-pixel scale makes the
+ *  tables too small to grab. Single-sourced because the room is now stored on
+ *  the workspace: the canvas input, the client-side clamp and the PATCH
+ *  validator all read these, and a validator that invented its own ceiling
+ *  would reject a room the editor happily lets a couple type. */
+export const MIN_ROOM_MM = 3_000;
+export const MAX_ROOM_MM = 100_000;
+
+/** True when `mm` is a room dimension the editor could have produced. */
+export function isRoomDimension(mm: unknown): mm is number {
+  return typeof mm === "number" && Number.isInteger(mm) && mm >= MIN_ROOM_MM && mm <= MAX_ROOM_MM;
+}
+
 /** Standard banquet defaults for each shape, in millimetres. The editor
  *  snaps to these whenever the user switches shape; the backend uses them
  *  to fill in width/length when the client doesn't send any.

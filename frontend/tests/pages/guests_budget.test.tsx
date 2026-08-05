@@ -230,6 +230,8 @@ function makeCouple(over: Partial<Couple> = {}): Couple {
     envelope_tip_amount_override: null,
     media_links: { guests: null, photographer: [], other: null },
     design: resolveDesign(null),
+    seating_room_w_mm: null,
+    seating_room_h_mm: null,
     created_at: 0,
     onboarded_at: 1,
     updated_at: 1,

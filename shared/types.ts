@@ -966,6 +966,13 @@ export interface Couple {
    *  back as the Botanical Green default. Drives the guest page + printable
    *  cards; the app-shell accent is unaffected. */
   design: CoupleDesign;
+  /** Seating canvas room size in millimetres — the same unit the whole seating
+   *  model is in, so the PDF renders at exact size. Null until the couple sizes
+   *  their room; the editor resolves null to the 12x9 m default. Workspace
+   *  state rather than device state: both partners lay tables out on ONE floor,
+   *  and the seating PDF is rendered from whatever room size the client sends. */
+  seating_room_w_mm: number | null;
+  seating_room_h_mm: number | null;
   created_at: UnixMs;
   onboarded_at: UnixMs | null;
   /** Server timestamp of the last write — clients use this as the `If-Match`

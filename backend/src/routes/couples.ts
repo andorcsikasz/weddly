@@ -28,6 +28,7 @@ import type { UiLocale } from "@shared/locales";
 import { checkRealName } from "@shared/real_names";
 import { clearNameFlagIfFixed } from "../domain/name_review";
 import { CURRENCIES, isCurrency } from "@shared/currency";
+import { MAX_ROOM_MM, MIN_ROOM_MM, isRoomDimension } from "@shared/seating";
 import {
   isNotifEmailCadence,
   isTimelineEmailEscalation,
@@ -185,6 +186,10 @@ interface OnboardBody {
   planning_count_locked?: unknown;
   /** Categories the couple has frozen on the cost-planning panel. */
   frozen_categories?: unknown;
+  /** Seating canvas room size in millimetres. Integer 3000..50000, or null to
+   *  fall back to the default. Sent as a pair by the seating editor. */
+  seating_room_w_mm?: unknown;
+  seating_room_h_mm?: unknown;
   /** Display currency for every money field on this couple. */
   currency?: unknown;
   /** Proactive-timeline email escalation trigger: 'off' | 'overdue' | 'overdue_due_soon'. */
@@ -1954,6 +1959,27 @@ async function handleUpdateCurrentCouple(ctx: Ctx): Promise<Response> {
         after: { planning_count_locked: next },
       });
     }
+  }
+
+  // Seating room size. `isRoomDimension` is the SAME predicate the canvas
+  // clamps with (shared/seating.ts) rather than a second set of bounds invented
+  // here — a validator with its own ceiling would reject a room the editor
+  // happily lets a couple type. Out of range is a 400, not a clamp: silently
+  // storing a different number than was sent hides the caller bug.
+  for (const col of ["seating_room_w_mm", "seating_room_h_mm"] as const) {
+    const raw = body[col];
+    if (raw === undefined) continue;
+    if (raw === null) {
+      updates.push({ col, val: null });
+      continue;
+    }
+    if (!isRoomDimension(raw)) {
+      throw new HttpError(
+        400,
+        `${col} must be an integer between ${MIN_ROOM_MM} and ${MAX_ROOM_MM}, or null`,
+      );
+    }
+    if (raw !== couple[col]) updates.push({ col, val: raw });
   }
 
   if (body.frozen_categories !== undefined) {

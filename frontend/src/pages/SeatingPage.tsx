@@ -14,6 +14,7 @@ import {
   chairOffsets,
   defaultDimsForShape,
   isDefaultTableLabel,
+  isRoomDimension,
   maxSeatsForTable,
   previewHalfDims,
   seatingProgress,
@@ -272,41 +273,62 @@ export default function SeatingPage() {
     });
   }, []);
 
-  // Hydrate room dimensions from localStorage on mount. We only persist if the
-  // saved values pass a sanity check — old/bad data should fall back to
-  // defaults rather than blow up the canvas.
-  // Skipped for demo sessions: the demo's 20×30 m default would otherwise be
-  // overwritten by whatever the visitor's real workspace had saved.
+  // Hydrate the room from the WORKSPACE, not from this device. The room used
+  // to live in a single browser-wide localStorage key, which was wrong three
+  // ways at once: partner B opened the same plan in a default 12×9 m room with
+  // the tables laid outside it, the seating PDF is rendered from a room size
+  // the client sends so the two partners printed different charts, and a couple
+  // with a second event shared one room between both weddings.
+  //
+  // The old key is still read ONCE, as a migration: a couple who sized their
+  // room before this keeps it, and the value is written straight back to the
+  // workspace so the next device gets it too. Demo sessions keep their own
+  // in-memory 20×30 m floor and never read or write either store.
+  const roomHydratedRef = useRef(false);
   useEffect(() => {
-    if (typeof window === "undefined" || isDemoSession) return;
+    if (isDemoSession || roomHydratedRef.current || !couple) return;
+    roomHydratedRef.current = true;
+    const w = couple.seating_room_w_mm;
+    const h = couple.seating_room_h_mm;
+    if (w != null && h != null) {
+      setRoomWidthMm(w);
+      setRoomHeightMm(h);
+      return;
+    }
+    if (typeof window === "undefined") return;
     try {
       const raw = window.localStorage.getItem("weddly.seating.room_dims");
       if (!raw) return;
       const parsed = JSON.parse(raw) as { w?: unknown; h?: unknown };
-      const w = Number(parsed.w);
-      const h = Number(parsed.h);
-      if (Number.isFinite(w) && w >= 3000 && w <= 50000) setRoomWidthMm(Math.round(w));
-      if (Number.isFinite(h) && h >= 3000 && h <= 50000) setRoomHeightMm(Math.round(h));
+      const lw = Math.round(Number(parsed.w));
+      const lh = Math.round(Number(parsed.h));
+      if (!isRoomDimension(lw) || !isRoomDimension(lh)) return;
+      setRoomWidthMm(lw);
+      setRoomHeightMm(lh);
+      void coupleApi
+        .update({ seating_room_w_mm: lw, seating_room_h_mm: lh })
+        .then(() => window.localStorage.removeItem("weddly.seating.room_dims"))
+        .catch(() => {
+          /* the local value still drives this session; retry next load */
+        });
     } catch {
       /* noop — corrupt entry, keep defaults */
     }
-  }, [isDemoSession]);
+  }, [isDemoSession, couple]);
 
   const updateRoom = useCallback(
     (widthMm: number, heightMm: number) => {
       setRoomWidthMm(widthMm);
       setRoomHeightMm(heightMm);
-      // Demo sessions stay in-memory — never write to the browser-wide
-      // localStorage key, so a later real workspace keeps its own dims.
+      // Demo sessions stay in-memory — a demo visitor must not write a room
+      // size onto a real workspace.
       if (isDemoSession) return;
-      try {
-        window.localStorage.setItem(
-          "weddly.seating.room_dims",
-          JSON.stringify({ w: widthMm, h: heightMm }),
-        );
-      } catch {
-        /* localStorage may throw in private mode — non-fatal */
-      }
+      if (!isRoomDimension(widthMm) || !isRoomDimension(heightMm)) return;
+      void coupleApi
+        .update({ seating_room_w_mm: widthMm, seating_room_h_mm: heightMm })
+        .catch(() => {
+          /* the canvas already moved; a failed save retries on the next drag */
+        });
     },
     [isDemoSession],
   );

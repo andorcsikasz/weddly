@@ -865,6 +865,10 @@ export const coupleApi = {
     /** Design feature — curated visual identity. Partial: any of the slugs
      *  + print toggles; only the keys present are updated. */
     design?: CoupleDesignInput;
+    /** Seating canvas room size in millimetres. Sent as a pair by the seating
+     *  editor; null clears back to the default. */
+    seating_room_w_mm?: number | null;
+    seating_room_h_mm?: number | null;
   }) => apiFetch<{ couple: Couple }>("PATCH", "/api/couples/current", body),
   /** Multipart cover-image upload — mirrors vendorListingApi.uploadHero.
    *  Server writes the file to `${UPLOADS_DIR}/couples/<id>/cover.<ext>` and

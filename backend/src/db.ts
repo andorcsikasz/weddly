@@ -2116,6 +2116,17 @@ addColumnIfMissing("couples", "name_flagged_at", "name_flagged_at INTEGER");
 // sweep sends it once per flagged couple rather than once per sweep.
 addColumnIfMissing("couples", "name_notice_sent_at", "name_notice_sent_at INTEGER");
 
+// Seating canvas room size, in millimetres, matching the units the whole
+// seating model uses (see the print-export rule in CLAUDE.md). This lived in a
+// single browser-wide localStorage key, which got it wrong in three directions
+// at once: partner B opened the same plan in a default 12x9 m room with the
+// tables laid outside it, the seating PDF is rendered from a room size the
+// CLIENT sends so the two partners printed different charts, and a couple with
+// a second event shared one room between both weddings. NULL means "never set"
+// and resolves to the 12x9 m default at read time, so nothing needs migrating.
+addColumnIfMissing("couples", "seating_room_w_mm", "seating_room_w_mm INTEGER");
+addColumnIfMissing("couples", "seating_room_h_mm", "seating_room_h_mm INTEGER");
+
 // Scheduled-send lookup for the guest broadcast worker. Table lives in
 // schema.sql; the index is created here AFTER the table exists, per the May 2026
 // additive-ordering rule. The worker scans (status='scheduled', scheduled_at<=now).

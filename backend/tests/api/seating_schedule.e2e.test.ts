@@ -2271,3 +2271,139 @@ describe("seating tables: occupied-seat disable guard", () => {
     expect(rename.data.table.disabled_seats).toEqual([2]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Seating room size. It lived in one browser-wide localStorage key, which got
+// it wrong three ways at once: partner B opened the same plan in a default
+// 12x9 m room with the tables laid outside it, the seating PDF is rendered
+// from a room size the CLIENT sends so the two partners printed different
+// charts, and a couple with a second event shared one room between both
+// weddings. It is workspace state now.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("seating room size", () => {
+  test("defaults to null, round-trips, and reaches the other partner", async () => {
+    wipeAll();
+    const { token, coupleId } = await bootstrapCouple("room-owner@weddly.test");
+
+    const fresh = await req<{ couple: { seating_room_w_mm: number | null } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(fresh.status).toBe(200);
+    // Null is "never sized", which the editor resolves to 12x9 m. Storing the
+    // default eagerly would make "untouched" and "deliberately 12x9" the same
+    // row.
+    expect(fresh.data.couple.seating_room_w_mm).toBeNull();
+
+    const saved = await req(
+      "PATCH",
+      "/api/couples/current",
+      { seating_room_w_mm: 20_000, seating_room_h_mm: 30_000 },
+      { token },
+    );
+    expect(saved.status).toBe(200);
+
+    // The second partner, a different session entirely, gets the same floor.
+    // A real-looking name on purpose: `checkRealName` refuses "Partner B".
+    const partnerB = await registerAndVerify({
+      email: "room-partner@weddly.test",
+      password: "supersafe123",
+      full_name: "Bence Kovács",
+    });
+    db.prepare("UPDATE users SET couple_id = ? WHERE id = ?").run(coupleId, partnerB.data.user.id);
+    db.prepare(
+      "INSERT OR IGNORE INTO couple_members (couple_id, user_id, role, created_at) VALUES (?, ?, 'partner', ?)",
+    ).run(coupleId, partnerB.data.user.id, Date.now());
+
+    const theirs = await req<{
+      couple: { seating_room_w_mm: number | null; seating_room_h_mm: number | null };
+    }>("GET", "/api/couples/current", undefined, { token: partnerB.data.token });
+    expect(theirs.status).toBe(200);
+    expect(theirs.data.couple.seating_room_w_mm).toBe(20_000);
+    expect(theirs.data.couple.seating_room_h_mm).toBe(30_000);
+  });
+
+  test("accepts the full range the canvas allows, and refuses what it cannot produce", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("room-bounds@weddly.test");
+
+    // 60 m is a legal room: the editor's input tops out at 100 m, so a
+    // validator with its own lower ceiling would reject a room a couple can
+    // type. Both read isRoomDimension from shared/seating.
+    const wide = await req(
+      "PATCH",
+      "/api/couples/current",
+      { seating_room_w_mm: 60_000, seating_room_h_mm: 100_000 },
+      { token },
+    );
+    expect(wide.status).toBe(200);
+
+    for (const body of [
+      { seating_room_w_mm: 2_999 },
+      { seating_room_w_mm: 100_001 },
+      { seating_room_h_mm: 12_000.5 },
+      { seating_room_h_mm: "12000" },
+    ]) {
+      const bad = await req("PATCH", "/api/couples/current", body, { token });
+      expect(`${JSON.stringify(body)} → ${bad.status}`).toBe(`${JSON.stringify(body)} → 400`);
+    }
+
+    // Out of range is a 400 rather than a clamp, so the stored room is still
+    // the last good one rather than a number nobody sent.
+    const after = await req<{ couple: { seating_room_w_mm: number | null } }>(
+      "GET",
+      "/api/couples/current",
+      undefined,
+      { token },
+    );
+    expect(after.data.couple.seating_room_w_mm).toBe(60_000);
+  });
+
+  test("null clears it back to the default", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("room-clear@weddly.test");
+    await req(
+      "PATCH",
+      "/api/couples/current",
+      { seating_room_w_mm: 18_000, seating_room_h_mm: 14_000 },
+      { token },
+    );
+    const cleared = await req(
+      "PATCH",
+      "/api/couples/current",
+      { seating_room_w_mm: null, seating_room_h_mm: null },
+      { token },
+    );
+    expect(cleared.status).toBe(200);
+    const after = await req<{
+      couple: { seating_room_w_mm: number | null; seating_room_h_mm: number | null };
+    }>("GET", "/api/couples/current", undefined, { token });
+    expect(after.data.couple.seating_room_w_mm).toBeNull();
+    expect(after.data.couple.seating_room_h_mm).toBeNull();
+  });
+
+  test("a PATCH about something else leaves the room alone", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("room-untouched@weddly.test");
+    await req(
+      "PATCH",
+      "/api/couples/current",
+      { seating_room_w_mm: 22_000, seating_room_h_mm: 16_000 },
+      { token },
+    );
+    const other = await req(
+      "PATCH",
+      "/api/couples/current",
+      { display_name: "Renamed" },
+      { token },
+    );
+    expect(other.status).toBe(200);
+    const after = await req<{
+      couple: { seating_room_w_mm: number | null; seating_room_h_mm: number | null };
+    }>("GET", "/api/couples/current", undefined, { token });
+    expect(after.data.couple.seating_room_w_mm).toBe(22_000);
+    expect(after.data.couple.seating_room_h_mm).toBe(16_000);
+  });
+});

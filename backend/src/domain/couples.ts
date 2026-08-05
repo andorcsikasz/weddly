@@ -270,6 +270,10 @@ export interface CoupleRow {
    *  everybody else: see `domain/name_review.ts`. */
   name_flagged_at: number | null;
   name_notice_sent_at: number | null;
+  /** Seating canvas room size in millimetres. NULL = never set, resolved to the
+   *  12x9 m default at read time. */
+  seating_room_w_mm: number | null;
+  seating_room_h_mm: number | null;
   is_demo: number;
   welcome_desk_active: number;
   /** Public wedding-website (/w/:slug) opt-in toggle. 0 = private (default),
@@ -604,6 +608,8 @@ export function toCouple(row: CoupleRow): Couple {
     envelope_tip_amount_override: row.envelope_tip_amount_override ?? null,
     media_links: parseMediaLinksJson(row.media_links_json),
     design: parseDesignJson(row.design_json),
+    seating_room_w_mm: row.seating_room_w_mm ?? null,
+    seating_room_h_mm: row.seating_room_h_mm ?? null,
     created_at: row.created_at,
     onboarded_at: row.onboarded_at,
     updated_at: row.updated_at,
