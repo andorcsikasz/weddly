@@ -3622,6 +3622,7 @@ const es: LocaleMessages = {
       image_treatment: { none: "Color", grayscale: "Blanco y negro" },
       map_label: "Mapa del lugar",
       map_needs_location: "Añade primero la ubicación del lugar para activar esto.",
+      map_pin_source: "Mueve el pin en vuestra página de invitados",
       map_confirm_title: "¿Mostrar la ubicación exacta?",
       map_confirm_body:
         "Cualquiera con el enlace de tu página verá el lugar exacto en un mapa, no solo los invitados confirmados.",

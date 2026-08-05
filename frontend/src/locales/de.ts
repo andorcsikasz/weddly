@@ -3654,6 +3654,7 @@ const de: LocaleMessages = {
       },
       map_label: "Karte der Location",
       map_needs_location: "Hinterlegen Sie zuerst die Adresse der Location, um das einzuschalten.",
+      map_pin_source: "Die Markierung setzt ihr auf eurer Gästeseite",
       map_confirm_title: "Genauen Ort anzeigen?",
       map_confirm_body:
         "Jeder mit dem Link zu Ihrer Seite sieht die genaue Location auf einer Karte, nicht nur zugesagte Gäste.",

@@ -1773,9 +1773,26 @@ export default function DesignPage() {
                                   {t("design.web.map_label")}
                                 </span>
                                 {hasVenueCoords ? (
-                                  <span className="mt-0.5 block text-xs text-ink-400 dark:text-umber-400">
-                                    {t("design.web.map_confirm_body")}
-                                  </span>
+                                  // The route into the guest-page editor is
+                                  // offered in BOTH states, not just while the
+                                  // location is missing. Once the pin exists the
+                                  // row used to go quiet about where it came
+                                  // from, and this block plus the LOCATION line
+                                  // in the preview beside it then read as a
+                                  // second, independently-editable place setting.
+                                  // There is one, and it is one tap away.
+                                  <>
+                                    <span className="mt-0.5 block text-xs text-ink-400 dark:text-umber-400">
+                                      {t("design.web.map_confirm_body")}
+                                    </span>
+                                    <Link
+                                      to="/app/guest-page?edit=venue"
+                                      className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-500 underline decoration-dotted underline-offset-2 transition-colors hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+                                    >
+                                      <MapPin size={11} aria-hidden />
+                                      {t("design.web.map_pin_source")}
+                                    </Link>
+                                  </>
                                 ) : (
                                   // No coords yet: the venue location lives on the
                                   // guest-page editor (a map-picked address sets the

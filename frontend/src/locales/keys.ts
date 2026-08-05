@@ -4187,6 +4187,11 @@ export interface LocaleMessages {
       /** The venue-map opt-in, surfaced in the sections list. */
       map_label: string;
       map_needs_location: string;
+      /** Where the pin actually lives, once there IS one. The row shows a
+       *  route into the guest-page editor while the location is missing and
+       *  then dropped it the moment coordinates existed, which left a block
+       *  reading as a second, independently-editable location setting. */
+      map_pin_source: string;
       map_confirm_title: string;
       map_confirm_body: string;
       map_confirm_cta: string;

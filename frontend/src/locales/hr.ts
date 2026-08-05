@@ -3589,6 +3589,7 @@ const hr: LocaleMessages = {
       },
       map_label: "Karta lokacije",
       map_needs_location: "Najprije unesite adresu lokacije da biste ovo uključili.",
+      map_pin_source: "Pomaknite oznaku na stranici za goste",
       map_confirm_title: "Prikazati točnu lokaciju?",
       map_confirm_body:
         "Svatko tko ima poveznicu na vašu stranicu vidjet će točnu lokaciju na karti, ne samo potvrđeni gosti.",
