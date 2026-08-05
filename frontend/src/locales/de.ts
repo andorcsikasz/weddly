@@ -6366,6 +6366,15 @@ const de: LocaleMessages = {
     suppliers_card_field_hidden_at: "Ausgeblendet am",
     suppliers_card_field_hide_reason: "Grund für Ausblenden",
     suppliers_card_field_open_reports: "Offene Meldungen",
+    suppliers_reports_heading: "Meldungen zu diesem Anbieter",
+    suppliers_reports_dismiss: "Alle verwerfen",
+    suppliers_reports_dismiss_confirm_title: "Diese Meldungen verwerfen?",
+    suppliers_reports_dismiss_confirm_body:
+      "Das löscht die Meldungen, nicht den Eintrag. Liegt das Problem am Eintrag selbst, blenden Sie ihn aus.",
+    suppliers_reports_dismiss_success: "Meldungen verworfen.",
+    suppliers_reports_empty: "Keine offenen Meldungen mehr.",
+    suppliers_reports_load_error:
+      "Die Meldungen konnten nicht geladen werden. Öffnen Sie die Karte erneut.",
     suppliers_card_dup_warning: "Mögliches Duplikat",
     suppliers_card_dup_warning_aria: "Warnung vor möglichem Duplikat",
     suppliers_card_dup_detail:

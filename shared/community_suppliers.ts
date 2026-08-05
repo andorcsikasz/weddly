@@ -175,3 +175,17 @@ export interface SubmitCommunitySupplierReportInput {
   /** Optional free-text detail. Max 500 chars; truncated on the route side. */
   note?: string | null;
 }
+
+/** One open report as the moderation queue renders it. The card carried only a
+ *  COUNT for a long time, which told an admin something was wrong and gave them
+ *  no way to read it or clear it — the reports piled up unread behind a badge.
+ *
+ *  `reason` is typed loosely because the column is bare TEXT: a row written
+ *  before a reason was retired still has to render rather than blank out. */
+export interface AdminCommunitySupplierReport {
+  id: number;
+  supplier_id: number;
+  reason: string;
+  note: string | null;
+  created_at: number;
+}

@@ -122,6 +122,7 @@ import type {
   WishlistLinkPreview,
 } from "@shared/wishlist";
 import type {
+  AdminCommunitySupplierReport,
   AdminListingPhotosResponse,
   AdminSupplierEditInput,
   CommunitySupplierAdminView,
@@ -3686,6 +3687,22 @@ export const adminSupplierApi = {
       "PATCH",
       `/api/admin/suppliers/${id}/notes`,
       { notes },
+    ),
+  /** Open reports filed against one community listing. Loaded on demand — the
+   *  card carries the count, this is what makes the count readable. */
+  listReports: (id: number) =>
+    apiFetch<{ reports: AdminCommunitySupplierReport[] }>(
+      "GET",
+      `/api/admin/suppliers/${id}/reports`,
+    ),
+  /** Clear every open report on a listing the moderator has decided is fine.
+   *  Dismissal is a verdict on the reports, not on the listing — hiding is its
+   *  own separate action. */
+  dismissReports: (id: number) =>
+    apiFetch<{ ok: true; dismissed: number }>(
+      "POST",
+      `/api/admin/suppliers/${id}/reports/dismiss`,
+      {},
     ),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/admin/suppliers/${id}`),
   /** Purge the ENTIRE submitter account behind a community supplier (user row +

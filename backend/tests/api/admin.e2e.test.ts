@@ -1823,6 +1823,39 @@ describe("admin suppliers — reports, notes, enrich", () => {
     expect(full.data.reports[0]?.note).toBe("All caps clickbait");
   });
 
+  test("reports list — never names the couple who complained", async () => {
+    // The moderator judges the LISTING, and the only action is dismiss-all, so
+    // the reporter's identity buys no decision and would turn a report into an
+    // accusation with a person attached. UNIQUE(supplier_id, reporter_user_id)
+    // still does the anti-brigading work server-side.
+    const adminToken = await bootstrapAdmin();
+    const { token: ownerToken } = await bootstrapCouple("owner@weddly.test");
+    const id = await insertSupplierAwaitingReview(ownerToken);
+    await req("POST", `/api/admin/suppliers/${id}/approve`, {}, { token: adminToken });
+    const { token: reporterToken } = await bootstrapCouple("reporter@weddly.test");
+    await req(
+      "POST",
+      `/api/suppliers/community/${id}/report`,
+      { reason: "fake" },
+      { token: reporterToken },
+    );
+
+    const r = await req<{ reports: Record<string, unknown>[] }>(
+      "GET",
+      `/api/admin/suppliers/${id}/reports`,
+      undefined,
+      { token: adminToken },
+    );
+    expect(r.status).toBe(200);
+    expect(r.data.reports.length).toBe(1);
+    const report = r.data.reports[0] as Record<string, unknown>;
+    expect(report.reporter_user_id).toBeUndefined();
+    expect(report.reviewed_by_user_id).toBeUndefined();
+    // What a moderator does need is all still there.
+    expect(report.reason).toBe("fake");
+    expect(typeof report.created_at).toBe("number");
+  });
+
   test("reports list — unknown supplier → 404", async () => {
     const adminToken = await bootstrapAdmin();
     const r = await req("GET", "/api/admin/suppliers/99999/reports", undefined, {

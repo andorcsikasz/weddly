@@ -6314,6 +6314,15 @@ const es: LocaleMessages = {
     suppliers_card_field_hidden_at: "Ocultado el",
     suppliers_card_field_hide_reason: "Motivo de ocultación",
     suppliers_card_field_open_reports: "Reportes abiertos",
+    suppliers_reports_heading: "Reportes sobre este proveedor",
+    suppliers_reports_dismiss: "Descartar todos",
+    suppliers_reports_dismiss_confirm_title: "¿Descartar estos reportes?",
+    suppliers_reports_dismiss_confirm_body:
+      "Esto borra los reportes, no la ficha. Si el problema es la ficha, ocúltala.",
+    suppliers_reports_dismiss_success: "Reportes descartados.",
+    suppliers_reports_empty: "No quedan reportes abiertos.",
+    suppliers_reports_load_error:
+      "No pudimos cargar los reportes. Vuelve a abrir la ficha para reintentar.",
     suppliers_card_dup_warning: "Posible duplicado",
     suppliers_card_dup_warning_aria: "Aviso de posible duplicado",
     suppliers_card_dup_detail:

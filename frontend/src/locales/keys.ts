@@ -7351,6 +7351,16 @@ export interface LocaleMessages {
     suppliers_card_field_hidden_at: string;
     suppliers_card_field_hide_reason: string;
     suppliers_card_field_open_reports: string;
+    /** Moderation panel that renders what the open reports actually say. The
+     *  card carried only a count for a long time, so reports piled up behind a
+     *  badge with no way to read or clear them. */
+    suppliers_reports_heading: string;
+    suppliers_reports_dismiss: string;
+    suppliers_reports_dismiss_confirm_title: string;
+    suppliers_reports_dismiss_confirm_body: string;
+    suppliers_reports_dismiss_success: string;
+    suppliers_reports_empty: string;
+    suppliers_reports_load_error: string;
     suppliers_card_dup_warning: string;
     suppliers_card_dup_warning_aria: string;
     suppliers_card_dup_detail: string;

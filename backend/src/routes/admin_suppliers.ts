@@ -1,7 +1,11 @@
 // Admin moderation for community-submitted suppliers. Gate every handler
 // with requireAdmin() — that checks auth + ADMIN_EMAILS allowlist.
 
-import type { AdminListingPhoto, AdminSupplierEditInput } from "@shared/community_suppliers";
+import type {
+  AdminCommunitySupplierReport,
+  AdminListingPhoto,
+  AdminSupplierEditInput,
+} from "@shared/community_suppliers";
 import {
   SUPPLIER_GROUPS,
   type SupplierCategory,
@@ -87,7 +91,19 @@ function handleListReports(ctx: Ctx): Response {
   requireAdmin(ctx);
   const id = parseId(ctx);
   if (!getCommunitySupplierById(id)) throw new HttpError(404, "Supplier not found");
-  return json({ reports: listOpenReportsForSupplier(id) });
+  // `reporter_user_id` deliberately does not ride out. A moderator judges the
+  // LISTING, and the one action here is dismiss-all, so naming the couple who
+  // complained buys no decision and turns a report into an accusation with a
+  // person attached. The UNIQUE(supplier_id, reporter_user_id) index still
+  // does the anti-brigading work server-side.
+  const reports: AdminCommunitySupplierReport[] = listOpenReportsForSupplier(id).map((r) => ({
+    id: r.id,
+    supplier_id: r.supplier_id,
+    reason: r.reason,
+    note: r.note,
+    created_at: r.created_at,
+  }));
+  return json({ reports });
 }
 
 function handleDismissReports(ctx: Ctx): Response {

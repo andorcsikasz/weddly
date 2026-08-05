@@ -1,4 +1,7 @@
-import type { CommunitySupplierAdminView } from "@shared/community_suppliers";
+import type {
+  AdminCommunitySupplierReport,
+  CommunitySupplierAdminView,
+} from "@shared/community_suppliers";
 import { languageLabel } from "@shared/suppliers";
 import { intlLocale } from "../lib/format";
 import { safeExternalHref } from "../lib/url";
@@ -513,7 +516,7 @@ function ModerationView() {
               onEnrich={() => onEnrich(s)}
               onDelete={() => onDelete(s)}
               enriching={enriching === s.id}
-              onSavedNotes={replaceSupplier}
+              onReplaceSupplier={replaceSupplier}
               locale={locale}
               initiallyExpanded={s.id === autoExpandId}
               duplicateMatches={duplicatesById.get(s.id) ?? []}
@@ -634,6 +637,142 @@ function SubmitterValue({
   );
 }
 
+/** Reasons the reporting dialog offers. Kept here as a membership test only:
+ *  `community_supplier_reports.reason` is bare TEXT, so a row written under a
+ *  reason that was later retired must still render its own stored value rather
+ *  than an unresolved `suppliers.report.reason.<x>.label` path. */
+const KNOWN_REPORT_REASONS: ReadonlySet<string> = new Set([
+  "spam",
+  "fake",
+  "offensive",
+  "wrong_info",
+  "other",
+]);
+
+function reasonLabel(t: (path: string) => string, reason: string): string {
+  return KNOWN_REPORT_REASONS.has(reason) ? t(`suppliers.report.reason.${reason}.label`) : reason;
+}
+
+/** The open reports on one listing, loaded on demand when the moderator opens
+ *  the card. Deliberately its own component so a card with no reports (the vast
+ *  majority) costs no request at all. */
+function SupplierReportsPanel({
+  supplierId,
+  count,
+  locale,
+  onDismissed,
+}: {
+  supplierId: number;
+  count: number;
+  locale: Locale;
+  onDismissed: () => void;
+}) {
+  const { t } = useT();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [reports, setReports] = useState<AdminCommunitySupplierReport[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [dismissing, setDismissing] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    setLoading(true);
+    adminSupplierApi
+      .listReports(supplierId)
+      .then((r) => {
+        if (live) setReports(r.reports);
+      })
+      .catch(() => {
+        // A failed load must read as "we could not fetch these", never as
+        // "there are none" — the count beside it says otherwise.
+        if (live) setReports(null);
+      })
+      .finally(() => {
+        if (live) setLoading(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [supplierId]);
+
+  async function onDismissAll() {
+    const ok = await confirm({
+      title: t("admin.suppliers_reports_dismiss_confirm_title"),
+      body: t("admin.suppliers_reports_dismiss_confirm_body"),
+      confirmLabel: t("admin.suppliers_reports_dismiss"),
+      cancelLabel: t("common.cancel"),
+    });
+    if (!ok) return;
+    setDismissing(true);
+    try {
+      await adminSupplierApi.dismissReports(supplierId);
+      setReports([]);
+      onDismissed();
+      toast.success(t("admin.suppliers_reports_dismiss_success"));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setDismissing(false);
+    }
+  }
+
+  return (
+    <section className="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h4 className="inline-flex items-center gap-2 font-grotesk text-sm font-semibold text-amber-900 dark:text-amber-200">
+          <Flag size={14} aria-hidden />
+          {t("admin.suppliers_reports_heading")}
+          <Pill tone="blush">{count}</Pill>
+        </h4>
+        <button
+          type="button"
+          onClick={() => void onDismissAll()}
+          disabled={dismissing || loading}
+          className="btn-outline min-h-[36px] text-xs disabled:opacity-50"
+        >
+          {dismissing ? t("common.loading") : t("admin.suppliers_reports_dismiss")}
+        </button>
+      </div>
+      {loading ? (
+        <Skeleton className="mt-3 h-12 w-full" />
+      ) : reports === null ? (
+        <p className="mt-3 text-sm text-amber-900 dark:text-amber-200">
+          {t("admin.suppliers_reports_load_error")}
+        </p>
+      ) : reports.length === 0 ? (
+        <p className="mt-3 text-sm text-amber-900 dark:text-amber-200">
+          {t("admin.suppliers_reports_empty")}
+        </p>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {reports.map((r) => (
+            <li
+              key={r.id}
+              className="rounded-md border border-amber-200 bg-white/70 p-3 text-sm dark:border-amber-900 dark:bg-umber-900/40"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Same labels the reporting dialog offers, so a moderator
+                    reads back exactly the words the couple picked. `reason` is
+                    bare TEXT, so an unknown value falls back to itself rather
+                    than rendering a raw dotted path. */}
+                <Pill tone="blush">{reasonLabel(t, r.reason)}</Pill>
+                <span className="text-xs text-neutral-500 dark:text-umber-300">
+                  {formatDateTime(r.created_at, locale)}
+                </span>
+              </div>
+              {r.note ? (
+                <p className="mt-1.5 whitespace-pre-wrap break-words text-neutral-700 dark:text-paper-200">
+                  {r.note}
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 interface SupplierCardProps {
   supplier: CommunitySupplierAdminView;
   selected: boolean;
@@ -646,7 +785,9 @@ interface SupplierCardProps {
   onEnrich: () => void;
   onDelete: () => void;
   enriching: boolean;
-  onSavedNotes: (next: CommunitySupplierAdminView) => void;
+  /** Replace this row in the parent list after any action that returns a
+   *  fresh (or locally-derived) supplier: notes save, edit, reports dismiss. */
+  onReplaceSupplier: (next: CommunitySupplierAdminView) => void;
   locale: Locale;
   /** True only for the first awaiting_review row on initial load; lets the
    *  moderator see the full detail surface for triage without an extra click. */
@@ -668,7 +809,7 @@ function SupplierCard({
   onEnrich,
   onDelete,
   enriching,
-  onSavedNotes,
+  onReplaceSupplier,
   locale,
   initiallyExpanded,
   duplicateMatches,
@@ -707,7 +848,7 @@ function SupplierCard({
     setNotesSaving(true);
     try {
       const r = await adminSupplierApi.updateNotes(s.id, notesDraft);
-      onSavedNotes(r.supplier);
+      onReplaceSupplier(r.supplier);
       toast.success(t("admin.suppliers_card_notes_save_success"));
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
@@ -825,7 +966,7 @@ function SupplierCard({
           {editing ? (
             <SupplierEditForm
               supplier={s}
-              onSaved={onSavedNotes}
+              onSaved={onReplaceSupplier}
               onCancel={() => setEditing(false)}
             />
           ) : null}
@@ -992,6 +1133,18 @@ function SupplierCard({
               </dl>
             </section>
           </div>
+
+          {/* What the reports actually SAY. The count above told a moderator
+           *  something was wrong and gave them nothing to read it with, so
+           *  reports piled up behind a badge nobody could clear. */}
+          {s.open_report_count > 0 ? (
+            <SupplierReportsPanel
+              supplierId={s.id}
+              count={s.open_report_count}
+              locale={locale}
+              onDismissed={() => onReplaceSupplier({ ...s, open_report_count: 0 })}
+            />
+          ) : null}
 
           {/* Pictures. Sits beside "Fetch from website" rather than replacing
            *  it: the sweep is the automatic path and needs a website, this is

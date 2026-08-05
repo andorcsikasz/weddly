@@ -6261,6 +6261,15 @@ const hu: LocaleMessages = {
     suppliers_card_field_hidden_at: "Elrejtve",
     suppliers_card_field_hide_reason: "Elrejtés indoka",
     suppliers_card_field_open_reports: "Nyitott bejelentések",
+    suppliers_reports_heading: "Bejelentések erről a szolgáltatóról",
+    suppliers_reports_dismiss: "Összes elvetése",
+    suppliers_reports_dismiss_confirm_title: "Elveted ezeket a bejelentéseket?",
+    suppliers_reports_dismiss_confirm_body:
+      "Ez a bejelentéseket törli, nem a kártyát. Ha magával a kártyával van a baj, inkább rejtsd el.",
+    suppliers_reports_dismiss_success: "Bejelentések elvetve.",
+    suppliers_reports_empty: "Nincs több nyitott bejelentés.",
+    suppliers_reports_load_error:
+      "Nem sikerült betölteni a bejelentéseket. Nyisd meg újra a kártyát.",
     suppliers_card_dup_warning: "Lehetséges duplikátum",
     suppliers_card_dup_warning_aria: "Lehetséges duplikátum figyelmeztetés",
     suppliers_card_dup_detail:

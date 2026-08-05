@@ -6201,6 +6201,14 @@ const en: LocaleMessages = {
     suppliers_card_field_hidden_at: "Hidden at",
     suppliers_card_field_hide_reason: "Hide reason",
     suppliers_card_field_open_reports: "Open reports",
+    suppliers_reports_heading: "Reports on this listing",
+    suppliers_reports_dismiss: "Dismiss all",
+    suppliers_reports_dismiss_confirm_title: "Dismiss these reports?",
+    suppliers_reports_dismiss_confirm_body:
+      "This clears the reports, not the listing. If the listing itself is the problem, hide it instead.",
+    suppliers_reports_dismiss_success: "Reports dismissed.",
+    suppliers_reports_empty: "No open reports left.",
+    suppliers_reports_load_error: "We couldn't load the reports. Reopen the card to try again.",
     suppliers_card_dup_warning: "Possible duplicate",
     suppliers_card_dup_warning_aria: "Possible duplicate warning",
     suppliers_card_dup_detail:

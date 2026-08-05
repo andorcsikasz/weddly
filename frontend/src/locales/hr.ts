@@ -6251,6 +6251,14 @@ const hr: LocaleMessages = {
     suppliers_card_field_hidden_at: "Skriveno",
     suppliers_card_field_hide_reason: "Razlog skrivanja",
     suppliers_card_field_open_reports: "Otvorene prijave",
+    suppliers_reports_heading: "Prijave o ovom dobavljaču",
+    suppliers_reports_dismiss: "Odbaci sve",
+    suppliers_reports_dismiss_confirm_title: "Odbaciti ove prijave?",
+    suppliers_reports_dismiss_confirm_body:
+      "Ovo briše prijave, ne i sam oglas. Ako je problem u oglasu, sakrijte ga.",
+    suppliers_reports_dismiss_success: "Prijave odbačene.",
+    suppliers_reports_empty: "Nema više otvorenih prijava.",
+    suppliers_reports_load_error: "Nismo mogli učitati prijave. Ponovno otvorite karticu.",
     suppliers_card_dup_warning: "Mogući duplikat",
     suppliers_card_dup_warning_aria: "Upozorenje o mogućem duplikatu",
     suppliers_card_dup_detail:
