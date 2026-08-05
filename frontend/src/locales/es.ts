@@ -2265,9 +2265,7 @@ const es: LocaleMessages = {
     counter_eyebrow: "Números en vivo",
     counter_couples_label: "Parejas planeando",
     counter_rsvps_label: "Confirmaciones recibidas",
-    provendors_title: "Tu primer año de Weddly Pro corre por nuestra cuenta",
-    provendors_promise:
-      "Únete a Weddly como proveedor fundador del sector nupcial y disfruta de Weddly Pro durante 12 meses.",
+    provendors_title: "Tu primer año de Weddly Pro como proveedor corre por nuestra cuenta",
     provendors_seats_label: "plazas libres",
     provendors_count_listings: "proveedores en el directorio",
     provendors_cta: "Reserva tu plaza",

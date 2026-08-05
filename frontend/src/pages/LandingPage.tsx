@@ -393,11 +393,13 @@ export default function LandingPage() {
       {/* ═════════════════ Vendor founding round — HOSPITALITY/SCARCITY ═════════
           The emotional FOMO beat, aimed at the wedding professionals who see
           this page: the first twelve months of Pro are on us, so joining reads
-          as being hosted rather than buying. The hero counts down
+          as being hosted rather than buying. One sentence carries it, and that
+          sentence has to say who the offer is for, since it lands in front of a
+          reader who came here to plan a wedding. The hero counts down
           VENDOR_FOUNDING_CAP minus the vendors already holding an account, so
           the scarcity line and the window a signup would actually be granted
-          come from one number. The size of the directory sits under the
-          promise. Carries a quick share affordance (native share sheet →
+          come from one number. The size of the directory sits under the title.
+          Carries a quick share affordance (native share sheet →
           clipboard fallback) so a couple who loves their photographer can pass
           the offer straight to them. */}
       <FoundingVendorsBand />
@@ -937,11 +939,10 @@ function FoundingVendorsBand() {
           <h2 className="font-grotesk text-2xl font-medium leading-snug tracking-tight text-paper-50 sm:text-3xl dark:text-umber-900">
             {t("landing.provendors_title")}
           </h2>
-          {/* Capped + balanced so the promise sits under the title in two even
-              rows and never overruns the column. */}
-          <p className="mx-auto mt-4 max-w-[19rem] text-balance font-grotesk text-sm leading-relaxed text-paper-300 sm:mx-0 sm:text-base dark:text-umber-700">
-            {t("landing.provendors_promise")}
-          </p>
+          {/* No second line under the title. The promise sentence said again
+              what the title already says, so the title carries the whole offer
+              (including who it is for) and the only thing under it is the
+              supporting figure. */}
           {/* The supporting figure. Rendered only once the stats land AND the
               directory has something in it — a "0 vendors" line under a
               scarcity offer reads as an empty marketplace, which is the

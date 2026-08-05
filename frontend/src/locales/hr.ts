@@ -2231,9 +2231,7 @@ const hr: LocaleMessages = {
     counter_eyebrow: "Brojke uživo",
     counter_couples_label: "Parova u planiranju",
     counter_rsvps_label: "Primljenih RSVP-a",
-    provendors_title: "Prvu godinu Weddly Proa častimo mi",
-    provendors_promise:
-      "Pridružite se Weddlyju kao jedan od osnivačkih pružatelja usluga za vjenčanja i uživajte u Weddly Prou punih 12 mjeseci.",
+    provendors_title: "Prvu godinu Weddly Proa za pružatelje usluga častimo mi",
     provendors_seats_label: "slobodnih mjesta",
     provendors_count_listings: "dobavljača u katalogu",
     provendors_cta: "Rezervirajte svoje mjesto",

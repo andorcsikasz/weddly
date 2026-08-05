@@ -2808,13 +2808,12 @@ export interface LocaleMessages {
     counter_eyebrow: string;
     counter_couples_label: string;
     counter_rsvps_label: string;
-    /** Vendor founding-round band on the landing. Addressed to the wedding
-     *  professionals who see the couple-facing page, so the copy has to be
-     *  legible to someone who arrived for a completely different reason. */
+    /** Vendor founding-round band on the landing, and the band's ONLY
+     *  sentence. Addressed to the wedding professionals who see the
+     *  couple-facing page, so it has to name both the offer and who it is for
+     *  ("as a vendor") to a reader who arrived for a completely different
+     *  reason. There is deliberately no second line under it. */
     provendors_title: string;
-    /** One-line promise under the title: join as a founding vendor and Weddly
-     *  Pro is theirs for the first twelve months. */
-    provendors_promise: string;
     /** Uppercase tag under the big remaining-seats number. */
     provendors_seats_label: string;
     /** Unit after the live count of businesses in the directory. Counts
