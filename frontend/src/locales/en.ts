@@ -7961,10 +7961,8 @@ const en: LocaleMessages = {
     page_title: "About Weddly",
     last_updated_label: "Last updated",
     last_updated_date: "2026-05-18",
-    paragraph_made_in:
-      "I've reached the age where more and more of my friends are planning weddings, and slowly so am I. I watched their best months get swallowed by an endless triangle of spreadsheets, Google Forms, and seating charts sketched on napkins. So I set out to build something far better.",
     paragraph_why:
-      "I believe a wedding, the day two people join their lives together, is one of the biggest things that can happen to a person. I want that to stay at the center, never lost in the noise of planning.",
+      "We believe a wedding, the day two people join their lives together, is one of the biggest things that can happen to a person. We want that to stay at the center, never lost in the noise of planning.",
     paragraph_contact_label: "Get in touch",
     paragraph_contact_email: "hello@tryweddly.com",
     paragraph_contact_cta: "Write a message",
@@ -7973,10 +7971,6 @@ const en: LocaleMessages = {
     principle_no_lock_in:
       "Your data is yours. Export, pause, or delete on your own terms; no support ticket required.",
     en_section_label: "English",
-    founder_placeholder: "Andor Csíkász",
-    founder_first_name: "Andor",
-    founder_role: "Founder, Wēddly",
-    photo_alt: "Portrait photo of Andor Csíkász",
   },
   blog: {
     eyebrow: "Blog",

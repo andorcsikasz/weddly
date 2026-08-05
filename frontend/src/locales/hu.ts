@@ -8039,10 +8039,8 @@ const hu: LocaleMessages = {
     page_title: "Rólunk",
     last_updated_label: "Utolsó frissítés",
     last_updated_date: "2026-05-18",
-    paragraph_made_in:
-      "Abba a korba léptem, amikor egyre több barátom szervezi az esküvőjét, és lassan én is. Végignéztem, ahogy a legszebb hónapjaik egy végtelen Excel, Google Form és kézzel rajzolt ülésrend káoszába fulladnak. Úgy döntöttem, hogy ennél sokkal jobbat építek.",
     paragraph_why:
-      "Hiszem, hogy az esküvő, az a nap, amikor két ember összeköti az életét, az egyik legnagyobb dolog, ami egy emberrel történhet. Azt akarom, hogy a szervezés zaja közben se sikkadjon el ez az érzés, hanem végig a középpontban maradjon.",
+      "Hisszük, hogy az esküvő, az a nap, amikor két ember összeköti az életét, az egyik legnagyobb dolog, ami egy emberrel történhet. Azt akarjuk, hogy a szervezés zaja közben se sikkadjon el ez az érzés, hanem végig a középpontban maradjon.",
     paragraph_contact_label: "Írjatok nekünk",
     paragraph_contact_email: "hello@tryweddly.com",
     paragraph_contact_cta: "Üzenet írása",
@@ -8052,10 +8050,6 @@ const hu: LocaleMessages = {
     principle_no_lock_in:
       "Az adataitok a tiétek. Exportáljátok, szüneteltessétek vagy töröljétek, ahogy szeretnétek; ehhez nem kell ügyfélszolgálat.",
     en_section_label: "English",
-    founder_placeholder: "Csíkász Andor",
-    founder_first_name: "Andor",
-    founder_role: "Alapító, Wēddly",
-    photo_alt: "Csíkász Andor portréfotója",
   },
   blog: {
     eyebrow: "Blog",

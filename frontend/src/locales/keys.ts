@@ -9254,17 +9254,19 @@ export interface LocaleMessages {
     complaints_title: string;
     complaints_body: string;
   };
-  /** /about — who built Weddly. `founder_placeholder` holds the founder's
-   *  name per locale and is templated into `paragraph_made_in`. */
+  /** /about: what Weddly is for and how to reach a human. Deliberately not a
+   *  founder page. The portrait, the name, the role line and the "made in"
+   *  paragraph were removed on 2026-08-05 along with their keys
+   *  (`photo_alt`, `founder_*`, `paragraph_made_in`), so re-adding a person
+   *  here means re-adding copy in all five locales, not just an image. */
   about: {
     seo_title: string;
     seo_description: string;
     page_title: string;
     last_updated_label: string;
     last_updated_date: string;
-    /** Body paragraphs as a single string each — kept plain so the page
+    /** Body paragraphs as a single string each, kept plain so the page
      *  doesn't need a markdown library. */
-    paragraph_made_in: string;
     paragraph_why: string;
     paragraph_contact_label: string;
     paragraph_contact_email: string;
@@ -9273,11 +9275,6 @@ export interface LocaleMessages {
     principle_calm: string;
     principle_no_lock_in: string;
     en_section_label: string;
-    /** Placeholder founder name — replace before going public. */
-    founder_placeholder: string;
-    founder_first_name: string;
-    founder_role: string;
-    photo_alt: string;
   };
   /** Public-facing blog index and post pages. Body content lives in the
    *  `blog_posts` DB table; these are the chrome strings around it. */

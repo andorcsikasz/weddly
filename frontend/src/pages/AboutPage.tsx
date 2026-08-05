@@ -1,15 +1,17 @@
-import { useState } from "react";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PublicShell } from "../components/PublicShell";
 import { useT } from "../lib/i18n";
 import { useDocumentMeta } from "../lib/seo";
 
+/** /about: what Weddly is for, what it will not do, and how to reach a human.
+ *  Deliberately NOT a founder page. It used to open on a portrait, a name and
+ *  a "made in" paragraph, and that block is gone: the page answers a visitor's
+ *  question about the product, and who built it is not that question. (The
+ *  portrait was also a 2.2 MB PNG, which is how it came up.) */
 export default function AboutPage() {
   const { t, locale } = useT();
   useDocumentMeta("about.seo_title", "about.seo_description");
-
-  const [photoMissing, setPhotoMissing] = useState(false);
 
   return (
     <PublicShell>
@@ -26,42 +28,6 @@ export default function AboutPage() {
         >
           {t("about.paragraph_why")}
         </blockquote>
-
-        {/* Founder card */}
-        <div className="mt-12 flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-10">
-          {/* Sketch portrait */}
-          <div className="flex-shrink-0">
-            {!photoMissing ? (
-              <img
-                src="/about-andor.png"
-                alt={t("about.photo_alt")}
-                onError={() => setPhotoMissing(true)}
-                className="h-40 w-40 rounded-2xl object-cover object-top sm:h-48 sm:w-48"
-              />
-            ) : (
-              <div className="flex h-40 w-40 items-center justify-center rounded-2xl bg-paper-200 dark:bg-umber-700 sm:h-48 sm:w-48">
-                <span className="select-none font-grotesk text-5xl font-semibold text-paper-400 dark:text-umber-500">
-                  AC
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1">
-            <p className="font-grotesk text-xl font-semibold text-ink-900 dark:text-paper-50">
-              {t("about.founder_first_name")}
-            </p>
-            <p className="mt-0.5 text-xs font-medium uppercase tracking-[0.2em] text-ink-500 dark:text-umber-300">
-              {t("about.founder_placeholder")} · {t("about.founder_role")}
-            </p>
-            <p
-              lang={locale}
-              className="mt-5 text-base leading-loose text-ink-800 dark:text-paper-100 sm:text-lg sm:leading-loose [hyphens:auto] [text-wrap:pretty]"
-            >
-              {t("about.paragraph_made_in")}
-            </p>
-          </div>
-        </div>
 
         {/* Principles */}
         <section className="mt-14 space-y-6">

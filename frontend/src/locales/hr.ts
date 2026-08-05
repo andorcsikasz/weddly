@@ -8017,10 +8017,8 @@ const hr: LocaleMessages = {
     page_title: "O Weddlyju",
     last_updated_label: "Zadnje ažuriranje",
     last_updated_date: "2026-05-18",
-    paragraph_made_in:
-      "Došao sam u godine u kojima sve više prijatelja planira vjenčanje, a polako i ja sam. Gledao sam kako im najljepši mjeseci nestaju u beskrajnom trokutu tablica, Google obrazaca i rasporeda sjedenja nacrtanih na salvetama. Zato sam odlučio napraviti nešto puno bolje.",
     paragraph_why:
-      "Vjerujem da je vjenčanje, dan kad dvoje ljudi spoji svoje živote, jedna od najvećih stvari koje se čovjeku mogu dogoditi. Želim da to ostane u središtu i da se nikad ne izgubi u buci planiranja.",
+      "Vjerujemo da je vjenčanje, dan kad dvoje ljudi spoji svoje živote, jedna od najvećih stvari koje se čovjeku mogu dogoditi. Želimo da to ostane u središtu i da se nikad ne izgubi u buci planiranja.",
     paragraph_contact_label: "Javite nam se",
     paragraph_contact_email: "hello@tryweddly.com",
     paragraph_contact_cta: "Napišite poruku",
@@ -8030,10 +8028,6 @@ const hr: LocaleMessages = {
     principle_no_lock_in:
       "Vaši podaci pripadaju vama. Izvezite ih, pauzirajte ili izbrišite kad želite, bez ijedne prijave podršci.",
     en_section_label: "English",
-    founder_placeholder: "Andor Csíkász",
-    founder_first_name: "Andor",
-    founder_role: "Osnivač, Wēddly",
-    photo_alt: "Portretna fotografija Andora Csíkásza",
   },
   blog: {
     eyebrow: "Blog",
