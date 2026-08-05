@@ -9469,7 +9469,6 @@ const es: LocaleMessages = {
     data_export_heading: "Exportar mis datos",
     data_export_desc:
       "Solicita una copia de los datos asociados a tu cuenta y a los vínculos con clientes.",
-    data_export_soon: "Próximamente",
     data_delete_desc:
       "Elimina de forma permanente tu cuenta de wedding planner y todos los vínculos con clientes. Los espacios de trabajo y los datos de tus clientes se conservan.",
   },

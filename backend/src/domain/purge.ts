@@ -19,6 +19,7 @@ import { purgeExpiredPendingSignups } from "./pending_signups";
 import { sendKind } from "./emails";
 import { listFlagsDueForPurge, markFlagPurged } from "./user_flags";
 import { recomputeSupplierAggregate } from "./reviews";
+import { plannerReviewSubjectId } from "@shared/planner_reviews";
 
 export function purgeOneCouple(
   coupleId: number,
@@ -336,6 +337,158 @@ export function purgeOneCouple(
   void storage.deletePrefix(`couples/${coupleId}/`);
 }
 
+/** Every table a planner OWNS, keyed by `planner_user_id`. Each one declares
+ *  `REFERENCES users(id) ON DELETE CASCADE`, and every one of those cascades is
+ *  INERT here for the same reason the couple sweep spells out: erasure scrubs
+ *  the `users` row in place rather than deleting it (audit_log FKs to it), so
+ *  nothing ever fires. They have to be deleted by hand, and a planner table
+ *  added later has to join this list or it silently survives erasure. */
+const PLANNER_OWNED_TABLES = [
+  "planner_client_notes",
+  "planner_clients",
+  "planner_invitations",
+  "planner_messages",
+  "planner_events",
+  "planner_portfolio",
+  "planner_packages",
+  "planner_unavailable_dates",
+  "planner_card_events",
+  "planner_points_ledger",
+  "planner_event_outbox",
+] as const;
+
+/**
+ * Right-to-erasure for a planner account, self-serve or admin-initiated.
+ *
+ * A planner is a `users` row with `user_type='planner'` and no aggregate of its
+ * own, which is why this cannot go through `purgeOneUser`: that function treats
+ * a non-null `users.couple_id` as "this user's workspace" and purges it, and a
+ * planner's pointer holds THE CLIENT'S couple id whenever they are inside a
+ * client workspace (`handleEnterClient` writes it). Routing a planner through
+ * it would erase a wedding belonging to someone else.
+ *
+ * So the contract here is the one the settings page promises: the planner's own
+ * account and every client LINK go; the clients' workspaces and data do not.
+ * `planner_clients` rows are the link, never the couple.
+ */
+export function purgeOnePlanner(
+  plannerUserId: number,
+  options: { adminInitiated?: boolean } = {},
+): void {
+  const ts = now();
+  const adminInitiated = options.adminInitiated === true;
+  const user = db
+    .prepare("SELECT id, email, full_name, user_type FROM users WHERE id = ?")
+    .get(plannerUserId) as
+    | { id: number; email: string; full_name: string; user_type: string }
+    | undefined;
+  if (!user) return;
+
+  // Reviews couples wrote ABOUT this planner live in the supplier namespace
+  // under a `planner:<id>` subject id. Read before the delete so the cache can
+  // be re-derived after the transaction commits, same as the couple sweep.
+  const reviewSubjectId = plannerReviewSubjectId(plannerUserId);
+
+  // The "your data is gone" notice has to go out BEFORE the email column is
+  // rewritten to `deleted-…@purged.local`. Fire-and-forget: a mailer failure
+  // must not abort erasure.
+  if (user.email && !user.email.endsWith("@purged.local")) {
+    void sendKind(
+      adminInitiated ? "account_admin_purged" : "account_purged",
+      { coupleDisplayName: null },
+      { user: { id: user.id, email: user.email, full_name: user.full_name }, couple_id: null },
+    );
+  }
+
+  const applyPurge = db.transaction(() => {
+    for (const table of PLANNER_OWNED_TABLES) {
+      // Table names come from the const tuple above, never from input.
+      db.prepare(`DELETE FROM ${table} WHERE planner_user_id = ?`).run(plannerUserId);
+    }
+    db.prepare("DELETE FROM planner_subscriptions WHERE user_id = ?").run(plannerUserId);
+    db.prepare("DELETE FROM planner_activation_tokens WHERE user_id = ?").run(plannerUserId);
+    // Invitations this planner ACCEPTED as a client of someone else, plus any
+    // still-pending invite naming their address.
+    db.prepare(
+      "UPDATE planner_invitations SET accepted_user_id = NULL WHERE accepted_user_id = ?",
+    ).run(plannerUserId);
+    // The application they filled in is keyed by email, not by id.
+    db.prepare("DELETE FROM planner_waitlist WHERE LOWER(email) = LOWER(?)").run(user.email);
+    db.prepare("DELETE FROM supplier_reviews WHERE supplier_id = ?").run(reviewSubjectId);
+    db.prepare("DELETE FROM supplier_aggregates WHERE supplier_id = ?").run(reviewSubjectId);
+
+    // Generic per-user PII, mirroring the orphan branch of `purgeOneUser`.
+    db.prepare("DELETE FROM sessions WHERE user_id = ?").run(plannerUserId);
+    db.prepare("DELETE FROM email_log WHERE user_id = ?").run(plannerUserId);
+    db.prepare("DELETE FROM email_dispatches WHERE user_id = ?").run(plannerUserId);
+    db.prepare("DELETE FROM email_preferences WHERE user_id = ?").run(plannerUserId);
+    db.prepare("DELETE FROM email_verification_tokens WHERE user_id = ?").run(plannerUserId);
+    db.prepare("DELETE FROM password_reset_tokens WHERE user_id = ?").run(plannerUserId);
+    db.prepare("DELETE FROM email_change_tokens WHERE user_id = ?").run(plannerUserId);
+    db.prepare("DELETE FROM supplier_votes WHERE user_id = ?").run(plannerUserId);
+    db.prepare("DELETE FROM feedback_submissions WHERE user_id = ?").run(plannerUserId);
+    db.prepare("UPDATE growth_events SET user_id = NULL WHERE user_id = ?").run(plannerUserId);
+
+    // The identity row survives as an audit_log FK target, scrubbed. Every
+    // planner_* profile column is cleared too: they are the public profile
+    // (bio, city, phone, website, avatar) and are as identifying as the name.
+    // `couple_id` is NULLed rather than followed — see the note above.
+    db.prepare(
+      `UPDATE users SET email = 'deleted-' || id || '@purged.local',
+                        password_hash = '!purged!',
+                        full_name = 'Purged user',
+                        status = 'suspended',
+                        couple_id = NULL,
+                        signup_country = NULL,
+                        device_type = NULL,
+                        utm_source = NULL,
+                        utm_medium = NULL,
+                        utm_campaign = NULL,
+                        utm_content = NULL,
+                        utm_term = NULL,
+                        business_name = NULL,
+                        planner_bio = NULL,
+                        planner_city = NULL,
+                        planner_website = NULL,
+                        planner_phone = NULL,
+                        planner_styles = NULL,
+                        planner_availability = NULL,
+                        planner_avatar_url = NULL,
+                        planner_category = NULL,
+                        planner_country = NULL,
+                        planner_registry_number = NULL,
+                        planner_vat_number = NULL,
+                        planner_legal_form = NULL,
+                        planner_address = NULL,
+                        planner_verified = 0,
+                        updated_at = ?
+         WHERE id = ?`,
+    ).run(ts, plannerUserId);
+
+    addAuditLog({
+      actor_user_id: null,
+      couple_id: null,
+      action: "planner.purge",
+      target_kind: "user",
+      target_id: plannerUserId,
+      note: adminInitiated ? "admin-initiated planner deletion" : "planner-initiated deletion",
+    });
+  });
+  applyPurge();
+
+  // A planner carrying reviews had an aggregate cache row; it was deleted
+  // above, but recompute so any subject-level derived state agrees. Outside
+  // the transaction — a stale cache must never roll back a completed erasure.
+  try {
+    recomputeSupplierAggregate(reviewSubjectId);
+  } catch (e) {
+    log.error("purge.aggregate_recompute_failed", e, { planner_user_id: plannerUserId });
+  }
+
+  // Avatar, portfolio images and package PDFs.
+  void storage.deletePrefix(`planners/${plannerUserId}/`);
+}
+
 /**
  * Admin-initiated immediate deletion of a single user.
  *
@@ -348,11 +501,27 @@ export function purgeOneUser(userId: number, options: { adminInitiated?: boolean
   const ts = now();
   const adminInitiated = options.adminInitiated === true;
   const user = db
-    .prepare("SELECT id, email, couple_id, full_name FROM users WHERE id = ?")
+    .prepare("SELECT id, email, couple_id, full_name, user_type FROM users WHERE id = ?")
     .get(userId) as
-    | { id: number; email: string; couple_id: number | null; full_name: string }
+    | {
+        id: number;
+        email: string;
+        couple_id: number | null;
+        full_name: string;
+        user_type: string;
+      }
     | undefined;
   if (!user) return;
+
+  // A planner is handled by its own sweep, and the delegation has to happen
+  // BEFORE the couple_id branch below. `users.couple_id` on a planner is the
+  // active-workspace POINTER, and `handleEnterClient` sets it to the client's
+  // couple — so a planner who was last seen inside a client would take that
+  // couple's whole wedding down with them here.
+  if (user.user_type === "planner") {
+    purgeOnePlanner(userId, { adminInitiated });
+    return;
+  }
 
   if (user.couple_id) {
     purgeOneCouple(user.couple_id, { adminInitiated });

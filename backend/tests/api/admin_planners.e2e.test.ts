@@ -269,6 +269,35 @@ describe("admin planner management", () => {
     expect(row?.email.endsWith("@purged.local")).toBe(true);
   });
 
+  test("DELETE does not take down the client workspace the planner was inside", async () => {
+    // `handleEnterClient` parks the CLIENT's couple id on `users.couple_id`.
+    // `purgeOneUser` reads that column as "this user's own workspace", so
+    // before the planner branch was added, deleting a planner who had last
+    // opened a client erased that couple's entire wedding instead.
+    const adminToken = await bootstrapAdmin();
+    const plannerId = await seedPlanner("planner-inside@weddly.test");
+    const { coupleId, token: coupleToken } = await bootstrapCouple("victim@weddly.test");
+    db.prepare(
+      "INSERT INTO planner_clients (planner_user_id, couple_id, status, created_at) VALUES (?, ?, 'active', ?)",
+    ).run(plannerId, coupleId, now());
+    db.prepare("UPDATE users SET couple_id = ? WHERE id = ?").run(coupleId, plannerId);
+
+    const res = await req("DELETE", `/api/admin/planners/${plannerId}`, undefined, {
+      token: adminToken,
+    });
+    expect(res.status).toBe(200);
+
+    const couple = db
+      .prepare("SELECT status, display_name FROM couples WHERE id = ?")
+      .get(coupleId) as { status: string; display_name: string };
+    expect(couple.status).not.toBe("deleting");
+    expect(couple.display_name).toBe("Mia & Lucas");
+    const stillUsable = await req("GET", "/api/couples/current", undefined, {
+      token: coupleToken,
+    });
+    expect(stillUsable.status).toBe(200);
+  });
+
   test("a purged planner no longer appears in the admin list", async () => {
     const adminToken = await bootstrapAdmin();
     const keep = await seedPlanner("planner-keep@weddly.test");

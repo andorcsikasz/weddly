@@ -6,6 +6,7 @@ import type { CoupleDesign } from "./design";
 import type { ListingPackage } from "./listing_packages";
 import type { UiLocale } from "./locales";
 import type { TimelineEmailEscalation } from "./notifications";
+import type { PlannerBilling } from "./planner_billing";
 import type { PlannerTierKey } from "./planner_points";
 import type { NameReview } from "./real_names";
 import type { ReviewSummary } from "./suppliers";
@@ -341,6 +342,41 @@ export interface PlannerProfileChecklist {
   /** Either half of the availability block: a kept blocked-date calendar or the
    *  free-text note. Both draw the same section for a couple. */
   has_availability: boolean;
+}
+
+/** GDPR Art. 20 takeout for a planner account, the planner-side twin of the
+ *  couple export. Deliberately NOT plan-gated: a copy of your own data is a
+ *  right, not a paid feature (same policy as `VendorDataExport`).
+ *
+ *  The per-table members are raw row dumps rather than DTOs on purpose. A
+ *  takeout has to stay complete as the schema grows, and a mapper would
+ *  silently drop every column added after it was written. */
+export interface PlannerDataExport {
+  schema_version: number;
+  exported_at: string;
+  user: {
+    id: number;
+    email: string;
+    full_name: string;
+    locale: string | null;
+    created_at: number;
+  };
+  /** The `planner_*` columns on `users` — the public profile. */
+  profile: Record<string, unknown>;
+  billing: PlannerBilling | null;
+  clients: Record<string, unknown>[];
+  client_notes: Record<string, unknown>[];
+  invitations: Record<string, unknown>[];
+  messages: Record<string, unknown>[];
+  events: Record<string, unknown>[];
+  portfolio: Record<string, unknown>[];
+  packages: Record<string, unknown>[];
+  unavailable_dates: Record<string, unknown>[];
+  points_ledger: Record<string, unknown>[];
+  /** Reviews couples wrote about this planner. */
+  reviews: Record<string, unknown>[];
+  email_log: Record<string, unknown>[];
+  audit_log_recent: Record<string, unknown>[];
 }
 
 // ─── Admin dashboard (users + couples directory) ─────────────────────────────

@@ -1,8 +1,18 @@
+// Data tab of the planner settings hub — GDPR takeout + erasure.
+//
+// Both cards used to be unfinished in opposite directions: the export was an
+// honest disabled "coming soon", while delete fired a raw unauthenticated
+// `fetch` at a route that did not exist, ignored the response, and logged the
+// planner out — so a 404 read to the user as a completed erasure. Both go
+// through `plannerApi` now, which throws on a non-2xx, so a failed delete
+// keeps the session and says so.
+
 import { Download, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useConfirm } from "../../components/ui";
+import { useConfirm, useToast } from "../../components/ui";
 import { useAuth } from "../../lib/auth";
+import { plannerApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 
 export default function PlannerSettingsData() {
@@ -10,7 +20,29 @@ export default function PlannerSettingsData() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const confirm = useConfirm();
+  const toast = useToast();
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const data = await plannerApi.exportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `weddly-planner-export-${data.exported_at.slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error(t("common.error_generic"));
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function handleDelete() {
     const ok = await confirm({
@@ -23,17 +55,21 @@ export default function PlannerSettingsData() {
     if (!ok) return;
     setDeleting(true);
     try {
-      await fetch("/api/planner/account", { method: "DELETE" });
-      logout();
-      navigate("/", { replace: true });
+      await plannerApi.deleteAccount();
     } catch {
+      // Nothing was erased, so the planner stays signed in and can retry or
+      // write to support. Logging them out here would repeat the old lie in a
+      // quieter register.
+      toast.error(t("common.error_generic"));
       setDeleting(false);
+      return;
     }
+    logout();
+    navigate("/", { replace: true });
   }
 
   return (
     <div className="mt-8 space-y-6">
-      {/* Export - endpoint not wired yet, so this is an honest coming-soon. */}
       <div className="card">
         <div className="flex items-center gap-2">
           <Download size={16} className="text-umber-500 dark:text-umber-400" aria-hidden="true" />
@@ -47,14 +83,12 @@ export default function PlannerSettingsData() {
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            disabled
-            className="btn-outline inline-flex min-h-[44px] cursor-not-allowed items-center whitespace-nowrap text-sm opacity-60"
+            disabled={exporting}
+            onClick={() => void handleExport()}
+            className="btn-outline inline-flex min-h-[44px] items-center whitespace-nowrap text-sm disabled:opacity-60"
           >
-            {t("planner_profile.data_export_button")}
+            {exporting ? t("common.loading") : t("planner_profile.data_export_button")}
           </button>
-          <span className="rounded-full bg-paper-200 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-umber-600 dark:bg-umber-800 dark:text-umber-300">
-            {t("planner_settings.data_export_soon")}
-          </span>
         </div>
       </div>
 

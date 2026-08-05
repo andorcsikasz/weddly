@@ -9517,7 +9517,6 @@ const de: LocaleMessages = {
     data_export_heading: "Meine Daten exportieren",
     data_export_desc:
       "Fordern Sie eine Kopie der Daten an, die zu Ihrem Konto und Ihren Kundenverknüpfungen gehören.",
-    data_export_soon: "Demnächst",
     data_delete_desc:
       "Löscht Ihr Planer-Konto und alle Kundenverknüpfungen endgültig. Die Arbeitsbereiche und Daten Ihrer Kunden bleiben erhalten.",
   },

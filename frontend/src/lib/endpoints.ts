@@ -65,6 +65,7 @@ import type {
   WeddingDateGoal,
   WeddingStyleTag,
   PlannerClientView,
+  PlannerDataExport,
   PlannerInviteBatchResult,
   PlannerClientCrm,
   PlannerClientNote,
@@ -4172,6 +4173,13 @@ export const plannerApi = {
     apiFetch<{ ok: boolean }>("POST", "/api/planner/complete-onboarding", {}),
   /** Opt in to be notified when paid planner plans launch. Idempotent. */
   notifyPlans: () => apiFetch<{ ok: boolean }>("POST", "/api/planner/notify-plans", {}),
+  /** GDPR Art. 20 takeout. Never plan-gated — a lapsed planner can still pull
+   *  their own data out. */
+  exportData: () => apiFetch<PlannerDataExport>("GET", "/api/planner/export"),
+  /** GDPR Art. 17 erasure, executed immediately. The planner's own account and
+   *  every client LINK go; the clients' workspaces do not. */
+  deleteAccount: () =>
+    apiFetch<{ ok: boolean; deleted_at: number }>("DELETE", "/api/planner/account"),
   // Calendar events
   listEvents: (from: string, to: string) =>
     apiFetch<{ events: PlannerEvent[] }>(

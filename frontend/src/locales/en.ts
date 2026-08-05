@@ -9314,7 +9314,6 @@ const en: LocaleMessages = {
     reference_form_close: "Cancel",
     data_export_heading: "Export my data",
     data_export_desc: "Request a copy of the data tied to your account and client links.",
-    data_export_soon: "Coming soon",
     data_delete_desc:
       "Permanently deletes your planner account and all client links. Your clients' workspaces and data are kept.",
   },

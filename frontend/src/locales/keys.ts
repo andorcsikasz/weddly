@@ -10564,7 +10564,6 @@ export interface LocaleMessages {
     reference_form_close: string;
     data_export_heading: string;
     data_export_desc: string;
-    data_export_soon: string;
     data_delete_desc: string;
   };
   /** Couple-facing planner directory rail on /app/vendors. */

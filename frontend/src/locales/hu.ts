@@ -9386,7 +9386,6 @@ const hu: LocaleMessages = {
     reference_form_close: "Mégse",
     data_export_heading: "Adataim exportálása",
     data_export_desc: "Kérd le a fiókodhoz és az ügyfélkapcsolataidhoz tartozó adatok másolatát.",
-    data_export_soon: "Hamarosan",
     data_delete_desc:
       "Véglegesen törli a tervezői fiókodat és minden ügyfélkapcsolatot. Az ügyfelek munkaterülete és adatai megmaradnak.",
   },

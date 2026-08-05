@@ -9363,7 +9363,6 @@ const hr: LocaleMessages = {
     reference_form_close: "Odustani",
     data_export_heading: "Izvoz mojih podataka",
     data_export_desc: "Zatražite kopiju podataka vezanih uz vaš račun i veze s klijentima.",
-    data_export_soon: "Uskoro",
     data_delete_desc:
       "Trajno briše vaš račun organizatora i sve veze s klijentima. Radni prostori i podaci vaših klijenata ostaju.",
   },
