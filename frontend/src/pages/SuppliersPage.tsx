@@ -8,7 +8,12 @@
 
 import { countryName } from "@shared/country_list";
 import type { CoupleSupplier } from "@shared/couple_suppliers";
-import { NOT_NEEDED_PICK, SELF_ORGANIZED_PICK, isSentinelPick } from "@shared/picks";
+import {
+  NOT_NEEDED_PICK,
+  SELF_ORGANIZED_PICK,
+  countRealPicks,
+  isSentinelPick,
+} from "@shared/picks";
 import type {
   DirectorySupplier,
   SupplierCategory,
@@ -225,15 +230,6 @@ const OUT_OF_COUNTRY_MAX = 6;
 // they resolve a category's planning step (its runner segment turns green +
 // counts as done) without highlighting any card. The picks backend accepts any
 // non-empty string id, which is what lets these ride the same storage.
-
-/** Count of categories the couple actually chose a vendor for — the number
- *  behind the "választottak" (picked) filter/badge. A "nem kell" (not-needed)
- *  mark resolves a category but is a declined choice, not a chosen vendor, so
- *  it must NOT inflate this total. (Self-organized planner and DIY entries are
- *  genuine decisions and stay counted.) */
-function countRealPicks(selection: SelectionMap): number {
-  return Object.values(selection).filter((v) => v !== NOT_NEEDED_PICK).length;
-}
 
 /** True when a selection change to `cat` just completed its whole chain group
  *  (every category in the group now picked) that wasn't complete before — the
@@ -937,12 +933,28 @@ export default function SuppliersPage() {
   // the live cost-planning slider value over the static onboarding target.
   // Only fires when the URL doesn't already carry a value; subsequent edits
   // (including clearing) take precedence.
+  //
+  // `seededGuests` is what makes that last clause true. Without it the effect
+  // has no memory of having seeded, so it re-ran on the very next render after
+  // any deliberate clear and put the value straight back. The one caller
+  // that clears `guests` is `clearNarrowingFilters`, i.e. the picked / saved
+  // chips. So the toggle whose whole job is "show my full marked set in one
+  // tap" landed on `?picked=1&guests=95`, and a couple whose chosen venue is
+  // sized for 80 tapped a chip reading "(1)" and got an empty grid. Every other
+  // narrowing param stays cleared because nothing re-seeds them; this one had a
+  // seeder and no latch. Reported 2026-08-05.
+  const seededGuests = useRef(false);
   useEffect(() => {
     if (coupleId === null) return;
-    if (params.has("guests")) return;
+    if (seededGuests.current) return;
+    if (params.has("guests")) {
+      seededGuests.current = true;
+      return;
+    }
     const stored = readCostPlanningCount(coupleId);
     const seed = stored ?? targetGuestCount;
     if (seed === null || seed <= 0) return;
+    seededGuests.current = true;
     const p = new URLSearchParams(params);
     p.set("guests", String(seed));
     setParams(p, { replace: true });
@@ -1553,6 +1565,42 @@ export default function SuppliersPage() {
   // The "választottak" (picked) filter badge counts chosen vendors only — a
   // "nem kell" mark resolves its category but is not a pick, so it's excluded.
   const pickedCount = useMemo(() => countRealPicks(selection), [selection]);
+
+  /** A marker chip is on, the couple HAS marked something, and the grid under
+   *  it is still empty: every card they marked was taken by one of the other
+   *  filters. Its own note, because the country line below reads as "Weddly has
+   *  nobody here" over a set the couple built themselves and can see the count
+   *  of two centimetres above: the one empty state a couple cannot possibly
+   *  attribute, and the one where the widen button on offer ("show all
+   *  countries") is not the lever that would bring their cards back. */
+  const markerEmptyKind: "picked" | "saved" | null = showPickedOnly
+    ? "picked"
+    : showSavedOnly
+      ? "saved"
+      : null;
+  /** ...and the marked set is empty, so there is nothing for the other filters
+   *  to be hiding. Reachable without a stale URL: un-pick your last card while
+   *  the filter is on and the chip stays (it is `aria-pressed`, it has to), so
+   *  the grid below it has to say which of the two emptinesses this is. */
+  const markerEmptyIsUnmarked =
+    markerEmptyKind === "picked"
+      ? pickedCount === 0
+      : markerEmptyKind === "saved" && saved.size === 0;
+  /** Put the marked set back on screen: drop everything that narrows WHICH
+   *  vendors are eligible and keep the marker itself. Same set the chip clears
+   *  on the way in, plus the scoping filters, since by this point we know the
+   *  couple's cards are somewhere the current scope isn't. */
+  function showEveryMarked() {
+    const p = new URLSearchParams(params);
+    clearNarrowingFilters(p);
+    p.delete("price_max");
+    p.delete("date");
+    p.delete("verified");
+    // "all", not delete: an absent param means the couple's OWN country, which
+    // is a scope, and a vendor they marked abroad would stay hidden by it.
+    p.set("country", "all");
+    setParams(p, { replace: true });
+  }
 
   const subCategories = activeGroup
     ? (SUPPLIER_GROUPS.find((g) => g.id === activeGroup)?.categories ?? [])
@@ -2286,19 +2334,47 @@ export default function SuppliersPage() {
                   <div className="col-span-full flex flex-col items-center gap-2 py-8 text-center">
                     <p className="text-sm text-ink-500 dark:text-umber-300">
                       {settledEmptyNote ??
-                        (countryScope
-                          ? t("suppliers.empty_country", {
-                              country: countryName(countryScope, locale),
-                            })
-                          : t("suppliers.empty_filtered"))}
+                        (markerEmptyKind
+                          ? t(
+                              markerEmptyKind === "picked"
+                                ? markerEmptyIsUnmarked
+                                  ? "suppliers.empty_picked_none"
+                                  : "suppliers.empty_picked_hidden"
+                                : markerEmptyIsUnmarked
+                                  ? "suppliers.empty_saved_none"
+                                  : "suppliers.empty_saved_hidden",
+                            )
+                          : countryScope
+                            ? t("suppliers.empty_country", {
+                                country: countryName(countryScope, locale),
+                              })
+                            : t("suppliers.empty_filtered"))}
                     </p>
+                    {/* The marked set is somewhere the current filters aren't,
+                    so the lever is those filters, not the country alone. With
+                    nothing marked there is no set to widen TO, and the chip
+                    above is already the way out, so the button stays off. */}
+                    {markerEmptyKind && !markerEmptyIsUnmarked && !settledEmptyNote && (
+                      <button
+                        type="button"
+                        onClick={showEveryMarked}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-ink-300 bg-paper-50 px-3 text-xs font-medium text-ink-700 transition hover:border-ink-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-umber-500 dark:hover:bg-umber-700"
+                      >
+                        <SlidersHorizontal size={13} aria-hidden />
+                        {t(
+                          markerEmptyKind === "picked"
+                            ? "suppliers.empty_picked_show_all"
+                            : "suppliers.empty_saved_show_all",
+                        )}
+                      </button>
+                    )}
                     {/* When the emptiness is caused by the country scope, offer a
                     one-tap widen to "Mind"/All rather than leaving the couple
                     at a dead end (audit item 12). The couple's own "we don't
                     need this" is not a dead end and gets no widen button: the
                     way back is the "show the rest" chip above, or unticking the
                     mark in the row of chips they ticked it in. */}
-                    {countryScope && !settledEmptyNote && (
+                    {countryScope && !settledEmptyNote && !markerEmptyKind && (
                       <button
                         type="button"
                         onClick={() => setCountryFilter("all")}

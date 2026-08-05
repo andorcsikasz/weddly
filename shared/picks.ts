@@ -42,3 +42,19 @@ const SENTINEL_PICKS: ReadonlySet<string> = new Set([SELF_ORGANIZED_PICK, NOT_NE
 export function isSentinelPick(supplierId: string): boolean {
   return SENTINEL_PICKS.has(supplierId);
 }
+
+/** How many picks are CARDS: the number the directory's "csak a választottak"
+ *  chip wears, and therefore the number of results tapping it has to produce.
+ *
+ *  Both sentinels are excluded because neither can ever match a card, and a
+ *  filter chip whose count exceeds what the filter can show is a promise the
+ *  grid then breaks with an empty state that blames the wrong thing. That is
+ *  not hypothetical: "magam szervezem" used to count here, so a couple planning
+ *  their own wedding tapped a chip reading "(1)" and got "no vendors match
+ *  these filters", with no filter to clear and nothing to explain it.
+ *
+ *  It lives here, next to the sentinels themselves, so the chip and the filter
+ *  cannot disagree about what a pick is. */
+export function countRealPicks(selection: Readonly<Record<string, string | undefined>>): number {
+  return Object.values(selection).filter((v) => Boolean(v) && !isSentinelPick(v as string)).length;
+}

@@ -6017,6 +6017,12 @@ export interface LocaleMessages {
      *  localised country name. */
     empty_country: string;
     empty_country_show_all: string;
+    empty_picked_hidden: string;
+    empty_picked_none: string;
+    empty_picked_show_all: string;
+    empty_saved_hidden: string;
+    empty_saved_none: string;
+    empty_saved_show_all: string;
     /** Heading of the tail block under the results: verified vendors who are
      *  on Weddly but work outside the country being browsed. They are kept out
      *  of the result set entirely, so this label is what explains them. */
