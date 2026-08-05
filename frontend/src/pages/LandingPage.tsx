@@ -761,14 +761,19 @@ function MobileStickySignup() {
 }
 
 /** Two-number stats strip fed by GET /api/public/stats. Self-hiding when the
- *  fetch fails OR both counters are 0 — a "0 pár · 0 RSVP" sign reads worse
- *  than no band at all. Numbers are formatted with the user's locale grouping
- *  (`Intl.NumberFormat`), and the eyebrow + labels come from the i18n bundle
- *  so EN/HU stay in sync. */
+ *  fetch fails OR every counter it still has is 0 — a "0 pár · 0 RSVP" sign
+ *  reads worse than no band at all. Numbers are formatted with the user's
+ *  locale grouping (`Intl.NumberFormat`), and the eyebrow + labels come from
+ *  the i18n bundle so EN/HU stay in sync.
+ *
+ *  A counter an admin has hidden at /app/admin/public-stats arrives as `null`
+ *  and is simply not among the tiles — hide both and the whole band goes,
+ *  which is the same self-hiding rule the zero case already followed. The band
+ *  never has to know WHY a number is missing, only that it has none to show. */
 function LiveStatsBand() {
   const { t, locale } = useT();
   const [gridRef, inView] = useInView<HTMLDivElement>();
-  const [stats, setStats] = useState<{ couples: number; rsvps: number } | null>(null);
+  const [stats, setStats] = useState<{ couples: number | null; rsvps: number | null } | null>(null);
   useEffect(() => {
     let cancelled = false;
     publicStatsApi
@@ -785,7 +790,12 @@ function LiveStatsBand() {
   }, []);
 
   if (!stats) return null;
-  if (stats.couples === 0 && stats.rsvps === 0) return null;
+  const tiles = [
+    { value: stats.couples, label: t("landing.counter_couples_label") },
+    { value: stats.rsvps, label: t("landing.counter_rsvps_label") },
+  ].filter((tile): tile is { value: number; label: string } => tile.value !== null);
+  if (tiles.length === 0) return null;
+  if (tiles.every((tile) => tile.value === 0)) return null;
 
   return (
     <section className="relative bg-paper-50 dark:bg-umber-900">
@@ -793,19 +803,21 @@ function LiveStatsBand() {
         {/* The count-up only fires once the tiles scroll into view (inView),
             so the flip plays when the user can see it — not silently on load
             while the band is still far below the fold. */}
-        <div ref={gridRef} className="mx-auto grid max-w-md grid-cols-2 gap-6 sm:gap-10">
-          <StatCounter
-            value={stats.couples}
-            locale={locale}
-            label={t("landing.counter_couples_label")}
-            run={inView}
-          />
-          <StatCounter
-            value={stats.rsvps}
-            locale={locale}
-            label={t("landing.counter_rsvps_label")}
-            run={inView}
-          />
+        <div
+          ref={gridRef}
+          className={`mx-auto grid gap-6 sm:gap-10 ${
+            tiles.length === 1 ? "max-w-[11rem] grid-cols-1" : "max-w-md grid-cols-2"
+          }`}
+        >
+          {tiles.map((tile) => (
+            <StatCounter
+              key={tile.label}
+              value={tile.value}
+              locale={locale}
+              label={tile.label}
+              run={inView}
+            />
+          ))}
         </div>
       </div>
     </section>
@@ -838,7 +850,9 @@ function LiveStatsBand() {
 function FoundingVendorsBand() {
   const { t, locale } = useT();
   const toast = useToast();
-  const [stats, setStats] = useState<{ vendors: number; listings: number } | null>(null);
+  const [stats, setStats] = useState<{ vendors: number | null; listings: number | null } | null>(
+    null,
+  );
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const fmt = useMemo(() => new Intl.NumberFormat(intlLocale(locale)), [locale]);
 
@@ -861,7 +875,16 @@ function FoundingVendorsBand() {
   // The hero counts the founding places still up for grabs. Falls back to the
   // full cap when the live stats call hasn't resolved (or failed), so the
   // promise still stands on a page that loaded without them.
-  const taken = stats === null ? null : Math.min(stats.vendors, VENDOR_FOUNDING_CAP);
+  //
+  // An admin HIDING the vendor counter is a different case from that failure
+  // and must not fall back: the fallback quotes the whole cap, which is a
+  // number about the round, and the point of hiding is to stop quoting it. The
+  // two are distinguishable because the stats did arrive (`stats !== null`)
+  // with the counter withheld, and then the seat hero simply isn't drawn —
+  // the offer copy and the CTA carry the band on their own.
+  const seatsWithheld = stats !== null && stats.vendors === null;
+  const taken =
+    stats === null || stats.vendors === null ? null : Math.min(stats.vendors, VENDOR_FOUNDING_CAP);
   const remaining = taken === null ? null : Math.max(0, VENDOR_FOUNDING_CAP - taken);
   const heroSeats = remaining ?? VENDOR_FOUNDING_CAP;
 
@@ -923,7 +946,7 @@ function FoundingVendorsBand() {
               directory has something in it — a "0 vendors" line under a
               scarcity offer reads as an empty marketplace, which is the
               opposite of the job. */}
-          {stats && stats.listings > 0 && (
+          {stats && stats.listings !== null && stats.listings > 0 && (
             <p className="mt-5 font-grotesk text-xs text-paper-400 dark:text-umber-600">
               <span className="font-medium tabular-nums text-paper-200 dark:text-umber-800">
                 {fmt.format(stats.listings)}
@@ -935,14 +958,16 @@ function FoundingVendorsBand() {
 
         {/* Right: the live remaining-seats hero + the action row */}
         <div className="flex shrink-0 flex-col items-center gap-4 sm:items-end">
-          <div className="flex flex-col items-center sm:items-end">
-            <span className="font-grotesk text-6xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-7xl dark:text-umber-900">
-              <FoundingCount value={heroSeats} />
-            </span>
-            <span className="mt-1 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400 dark:text-umber-600">
-              {t("landing.provendors_seats_label")}
-            </span>
-          </div>
+          {!seatsWithheld && (
+            <div className="flex flex-col items-center sm:items-end">
+              <span className="font-grotesk text-6xl font-light tabular-nums leading-none tracking-tighter text-paper-50 sm:text-7xl dark:text-umber-900">
+                <FoundingCount value={heroSeats} />
+              </span>
+              <span className="mt-1 font-grotesk text-[0.7rem] font-medium uppercase tracking-[0.22em] text-paper-400 dark:text-umber-600">
+                {t("landing.provendors_seats_label")}
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-3">
             <Link
               to="/vendors/signup"

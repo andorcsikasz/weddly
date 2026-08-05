@@ -2,7 +2,10 @@
 //
 // Each row is one counter: the MEASURED number (counted from live rows this
 // second), the display offset an admin has set, and their sum, which is
-// literally what an anonymous visitor sees on the landing page.
+// literally what an anonymous visitor sees on the landing page. The eye toggle
+// in that last column takes the counter off the public page altogether, which
+// is a different answer from an offset of 0 (that still publishes the measured
+// figure) and the right one while a number is too young to quote.
 //
 // The measured column is the reason this page is a table rather than four
 // inputs. Once an offset is set, the landing page stops answering "how big is
@@ -11,7 +14,7 @@
 // which. Nothing else in admin reads the offsets: /app/admin/analytics, the
 // financial planner and every campaign counter run their own queries.
 
-import { Eye, RotateCcw, Users } from "lucide-react";
+import { Eye, EyeOff, RotateCcw, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AdminPageHeader } from "../components/admin";
 import { Button, Skeleton, useToast } from "../components/ui";
@@ -20,6 +23,7 @@ import { adminPublicStatsApi } from "../lib/endpoints";
 import { useDocumentMetaLiteral } from "../lib/seo";
 import {
   type AdminPublicStatRow,
+  type AdminPublicStatsPatch,
   MAX_STAT_BOOST,
   type PublicStatKey,
   PUBLIC_STAT_KEYS,
@@ -29,26 +33,40 @@ type Loadable<T> = { status: "loading" } | { status: "ok"; data: T } | { status:
 
 /** Row copy. `where` names the surface the number appears on, so an operator
  *  can tell at a glance which figure they are about to move. */
-const LABELS: Record<PublicStatKey, { title: string; where: string }> = {
+const LABELS: Record<PublicStatKey, { title: string; where: string; hiddenNote: string }> = {
   couples: {
     title: "Tervezgető pár",
     where: 'Nyitóoldal, "Live numbers" sáv. Aktív, onboardolt, nem demo workspace-ek.',
+    hiddenNote:
+      "Elrejtve a számláló eltűnik a sávból. Ha mindkettőt elrejted, a sáv sem jelenik meg.",
   },
   rsvps: {
     title: "Beérkezett RSVP",
     where:
       "Nyitóoldal, a pár-számláló mellett. Vendégek, akik igennel/nemmel/talánnal válaszoltak.",
+    hiddenNote:
+      "Elrejtve a számláló eltűnik a sávból. Ha mindkettőt elrejted, a sáv sem jelenik meg.",
   },
   vendors: {
     title: "Weddly Pro szolgáltató",
     where:
       "Nyitóoldal, founding sáv. Ebből számol vissza az 500-as helyszámláló, és ez a szám látszik a sávban is.",
+    hiddenNote: "Elrejtve a nagy helyszámláló eltűnik; a sáv szövege és a gomb marad.",
   },
   listings: {
     title: "Katalógusban lévő cég",
     where:
       "Nyitóoldal, founding sáv második száma. Aktív listing-ek (curated + community + claimed).",
+    hiddenNote: "Elrejtve a founding sáv alatti egysoros szám tűnik el.",
   },
+};
+
+/** Every counter shown, which is what a fresh page starts from. */
+const NONE_HIDDEN: Record<PublicStatKey, boolean> = {
+  couples: false,
+  rsvps: false,
+  vendors: false,
+  listings: false,
 };
 
 export default function AdminPublicStatsPage() {
@@ -67,6 +85,10 @@ export default function AdminPublicStatsPage() {
     vendors: "0",
     listings: "0",
   });
+  // Visibility is edited in the same draft-then-save rhythm as the offsets,
+  // rather than writing on click: one Save for the whole table means an
+  // operator can never be halfway through a change without knowing it.
+  const [hiddenDraft, setHiddenDraft] = useState<Record<PublicStatKey, boolean>>(NONE_HIDDEN);
   const [saving, setSaving] = useState(false);
 
   function adopt(items: AdminPublicStatRow[]) {
@@ -75,6 +97,12 @@ export default function AdminPublicStatsPage() {
       Object.fromEntries(items.map((row) => [row.key, String(row.boost)])) as Record<
         PublicStatKey,
         string
+      >,
+    );
+    setHiddenDraft(
+      Object.fromEntries(items.map((row) => [row.key, row.hidden])) as Record<
+        PublicStatKey,
+        boolean
       >,
     );
   }
@@ -95,10 +123,12 @@ export default function AdminPublicStatsPage() {
   }, []);
 
   const rows = state.status === "ok" ? state.data : [];
-  const dirty = rows.some((row) => (draft[row.key] || "0") !== String(row.boost));
+  const dirty = rows.some(
+    (row) => (draft[row.key] || "0") !== String(row.boost) || hiddenDraft[row.key] !== row.hidden,
+  );
 
   async function save() {
-    const patch: Partial<Record<PublicStatKey, number>> = {};
+    const patch: AdminPublicStatsPatch = { hidden: { ...hiddenDraft } };
     for (const key of PUBLIC_STAT_KEYS) {
       const parsed = Number.parseInt(draft[key] || "0", 10);
       if (!Number.isFinite(parsed) || parsed < 0 || parsed > MAX_STAT_BOOST) {
@@ -127,7 +157,7 @@ export default function AdminPublicStatsPage() {
     <div className="space-y-6 px-4 sm:px-6 lg:px-8 xl:px-10">
       <AdminPageHeader
         title="Nyilvános számlálók"
-        subtitle="A nyitóoldal négy száma. A bal oszlop a valós, élő adatokból számolt érték, a jobb oldali a látogató által látott szám. A kettő különbsége az itt beállított ráadás; nullázd, és a valós számok jönnek vissza."
+        subtitle="A nyitóoldal négy száma. A bal oszlop a valós, élő adatokból számolt érték, a jobb oldali a látogató által látott szám. A kettő különbsége az itt beállított ráadás; nullázd, és a valós számok jönnek vissza. A szem ikonnal egy számláló teljesen leszedhető a nyitóoldalról."
       />
 
       {state.status === "loading" ? (
@@ -164,6 +194,7 @@ export default function AdminPublicStatsPage() {
                 {rows.map((row) => {
                   const typed = Number.parseInt(draft[row.key] || "0", 10);
                   const boost = Number.isFinite(typed) && typed >= 0 ? typed : 0;
+                  const hidden = hiddenDraft[row.key];
                   return (
                     <tr key={row.key}>
                       <Td>
@@ -171,7 +202,7 @@ export default function AdminPublicStatsPage() {
                           {LABELS[row.key].title}
                         </div>
                         <div className="mt-0.5 max-w-md text-xs leading-snug text-neutral-500 dark:text-umber-300">
-                          {LABELS[row.key].where}
+                          {hidden ? LABELS[row.key].hiddenNote : LABELS[row.key].where}
                         </div>
                       </Td>
                       <Td className="text-right tabular-nums text-neutral-600 dark:text-umber-300">
@@ -201,8 +232,49 @@ export default function AdminPublicStatsPage() {
                           />
                         </div>
                       </Td>
-                      <Td className="text-right text-base font-semibold tabular-nums text-neutral-900 dark:text-paper-50">
-                        {(row.real + boost).toLocaleString("hu-HU")}
+                      <Td className="text-right">
+                        <div className="flex items-center justify-end gap-2.5">
+                          <span
+                            className={`text-base font-semibold tabular-nums ${
+                              hidden
+                                ? "text-neutral-400 line-through dark:text-umber-400"
+                                : "text-neutral-900 dark:text-paper-50"
+                            }`}
+                          >
+                            {(row.real + boost).toLocaleString("hu-HU")}
+                          </span>
+                          {/* The hide control. `aria-pressed` rather than a
+                              checkbox: it is one button whose state is "this
+                              counter is off the public page". */}
+                          <button
+                            type="button"
+                            aria-pressed={hidden}
+                            aria-label={
+                              hidden
+                                ? `${LABELS[row.key].title} megjelenítése a nyitóoldalon`
+                                : `${LABELS[row.key].title} elrejtése a nyitóoldalról`
+                            }
+                            title={
+                              hidden
+                                ? "Elrejtve. Kattints, hogy újra látszódjon."
+                                : "Elrejtés a nyitóoldalról"
+                            }
+                            onClick={() =>
+                              setHiddenDraft((h) => ({ ...h, [row.key]: !h[row.key] }))
+                            }
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-blush-200 ${
+                              hidden
+                                ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                                : "border-paper-300 bg-white text-neutral-500 hover:bg-paper-100 dark:border-umber-600 dark:bg-umber-800 dark:text-umber-300 dark:hover:bg-umber-700"
+                            }`}
+                          >
+                            {hidden ? (
+                              <EyeOff size={15} aria-hidden />
+                            ) : (
+                              <Eye size={15} aria-hidden />
+                            )}
+                          </button>
+                        </div>
                       </Td>
                     </tr>
                   );
@@ -232,7 +304,9 @@ export default function AdminPublicStatsPage() {
           <p className="max-w-2xl text-xs leading-relaxed text-neutral-500 dark:text-umber-300">
             A ráadás csak a nyilvános nyitóoldalt érinti. Az analitika, a pénzügyi tervező és a
             kampányok számai külön lekérdezésekből jönnek, azokat ez nem mozdítja el. A valós
-            oszlopot semmi nem írja felül, így a nullázás mindig visszaadja a mért számokat.
+            oszlopot semmi nem írja felül, így a nullázás mindig visszaadja a mért számokat. Az
+            elrejtett számláló ki sem megy a szerverről (a nyilvános válaszban üres marad), tehát
+            nem csak nem látszik: nincs is ott. Bármikor visszakapcsolható, semmi nem vész el.
           </p>
         </>
       )}

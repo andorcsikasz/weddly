@@ -2643,6 +2643,7 @@ CREATE INDEX IF NOT EXISTS idx_vendor_removal_requests_email
 CREATE TABLE IF NOT EXISTS public_stat_boosts (
   key TEXT PRIMARY KEY,                                        -- 'couples' | 'rsvps' | 'vendors' | 'listings'
   amount INTEGER NOT NULL DEFAULT 0,
+  hidden INTEGER NOT NULL DEFAULT 0,                           -- 1 = withheld from every public surface (payload sends null)
   updated_at INTEGER NOT NULL,
   updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL
 );

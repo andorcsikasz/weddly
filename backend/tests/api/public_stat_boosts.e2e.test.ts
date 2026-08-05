@@ -19,6 +19,10 @@
 //  - A write busts the 60s public cache. Without that an operator saves a
 //    number, reloads the landing, sees the old one and concludes the save
 //    failed.
+//  - HIDING a counter is not the same as zeroing its offset. A hidden counter
+//    leaves the server as `null` — withheld, never rendered as 0 — while its
+//    offset waits untouched for the day it goes back on. The admin read still
+//    carries both numbers, because that is the surface that has to stay honest.
 //  - Only an admin can read or write it.
 
 import "../setup";
@@ -49,6 +53,13 @@ function rowFor(view: AdminPublicStatsView, key: string) {
   const row = view.items.find((item) => item.key === key);
   if (!row) throw new Error(`no row for ${key}`);
   return row;
+}
+
+/** A counter that should be published right now. Fails loudly rather than
+ *  coercing, so a test can never quietly compare against a withheld null. */
+function shown(value: number | null): number {
+  if (value === null) throw new Error("counter is withheld, expected a number");
+  return value;
 }
 
 describe("public stat boosts", () => {
@@ -130,8 +141,8 @@ describe("public stat boosts", () => {
   test("the vendor and listing counters ride the same offset", async () => {
     const token = await adminToken();
     const before = await req<PublicStats>("GET", "/api/public/stats");
-    const realVendors = before.data.vendors;
-    const realListings = before.data.listings;
+    const realVendors = shown(before.data.vendors);
+    const realListings = shown(before.data.listings);
 
     await req("PATCH", "/api/admin/public-stats", { vendors: 300, listings: 25 }, { token });
     const pub = await req<PublicStats>("GET", "/api/public/stats");
@@ -176,8 +187,108 @@ describe("public stat boosts", () => {
     expect(r.status).toBe(200);
     for (const key of ["couples", "rsvps", "vendors", "listings"] as const) {
       expect(typeof r.data[key]).toBe("number");
-      expect(r.data[key]).toBeGreaterThanOrEqual(0);
+      expect(shown(r.data[key])).toBeGreaterThanOrEqual(0);
     }
     expect(typeof r.data.ts).toBe("number");
+  });
+
+  test("a hidden counter leaves the server as null, and comes back unchanged", async () => {
+    const token = await adminToken();
+    const start = await req<PublicStats>("GET", "/api/public/stats");
+    const realCouples = shown(start.data.couples);
+
+    const hidden = await req<AdminPublicStatsView>(
+      "PATCH",
+      "/api/admin/public-stats",
+      { couples: 120, hidden: { couples: true } },
+      { token },
+    );
+    expect(hidden.status).toBe(200);
+    // The admin table still answers "how big is Weddly" while the public
+    // surface does not — both numbers stay on the row.
+    expect(rowFor(hidden.data, "couples").hidden).toBe(true);
+    expect(rowFor(hidden.data, "couples").real).toBe(realCouples);
+    expect(rowFor(hidden.data, "couples").shown).toBe(realCouples + 120);
+
+    // Withheld, never zeroed: a consumer that renders `0` for a missing
+    // counter would be advertising an empty product.
+    const pub = await req<PublicStats>("GET", "/api/public/stats");
+    expect(pub.data.couples).toBeNull();
+    expect(pub.data.rsvps).not.toBeNull();
+
+    // Showing it again restores the offset that was waiting underneath.
+    const back = await req<AdminPublicStatsView>(
+      "PATCH",
+      "/api/admin/public-stats",
+      { hidden: { couples: false } },
+      { token },
+    );
+    expect(rowFor(back.data, "couples").hidden).toBe(false);
+    expect(rowFor(back.data, "couples").boost).toBe(120);
+    const pubBack = await req<PublicStats>("GET", "/api/public/stats");
+    expect(pubBack.data.couples).toBe(realCouples + 120);
+  });
+
+  test("a body silent about visibility leaves a hidden counter hidden", async () => {
+    const token = await adminToken();
+    await req("PATCH", "/api/admin/public-stats", { hidden: { rsvps: true } }, { token });
+
+    // An offset edit that names no visibility must not put the counter back on
+    // the public page — the same partial contract the offsets themselves have.
+    const patched = await req<AdminPublicStatsView>(
+      "PATCH",
+      "/api/admin/public-stats",
+      { couples: 5, rsvps: 7 },
+      { token },
+    );
+    expect(rowFor(patched.data, "rsvps").hidden).toBe(true);
+    expect(rowFor(patched.data, "rsvps").boost).toBe(7);
+    expect(rowFor(patched.data, "couples").hidden).toBe(false);
+
+    // ...and a visibility map about one counter leaves the others alone.
+    const one = await req<AdminPublicStatsView>(
+      "PATCH",
+      "/api/admin/public-stats",
+      { hidden: { vendors: true } },
+      { token },
+    );
+    expect(rowFor(one.data, "rsvps").hidden).toBe(true);
+    expect(rowFor(one.data, "vendors").hidden).toBe(true);
+    expect(rowFor(one.data, "listings").hidden).toBe(false);
+
+    const pub = await req<PublicStats>("GET", "/api/public/stats");
+    expect(pub.data.rsvps).toBeNull();
+    expect(pub.data.vendors).toBeNull();
+    expect(pub.data.listings).not.toBeNull();
+  });
+
+  test("a malformed visibility map is refused, and nothing is written", async () => {
+    const token = await adminToken();
+    const notAMap = await req(
+      "PATCH",
+      "/api/admin/public-stats",
+      { hidden: "everything" },
+      { token },
+    );
+    expect(notAMap.status).toBe(400);
+    const notABoolean = await req(
+      "PATCH",
+      "/api/admin/public-stats",
+      { hidden: { couples: "yes" } },
+      { token },
+    );
+    expect(notABoolean.status).toBe(400);
+    const unknownCounter = await req(
+      "PATCH",
+      "/api/admin/public-stats",
+      { hidden: { weddings: true } },
+      { token },
+    );
+    expect(unknownCounter.status).toBe(400);
+
+    const view = await req<AdminPublicStatsView>("GET", "/api/admin/public-stats", undefined, {
+      token,
+    });
+    for (const row of view.data.items) expect(row.hidden).toBe(false);
   });
 });

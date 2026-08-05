@@ -25,10 +25,10 @@
 // an operator would type a number, reload the landing, see the old one and
 // reasonably conclude the save had failed.
 
-import type { PublicStats } from "@shared/public_stats";
+import { type PublicStats, PUBLIC_STAT_KEYS } from "@shared/public_stats";
 import type { PublicVendorStats } from "@shared/vendor_billing";
 import { db, now } from "../db";
-import { computePublicStatsReal, getStatBoosts } from "../domain/public_stats";
+import { computePublicStatsReal, getStatSettings } from "../domain/public_stats";
 import { currentVendorOffer } from "../domain/vendor_billing";
 import { json, type Router } from "../lib/http";
 
@@ -56,16 +56,20 @@ const VISIT_KINDS = ["wedding_site.view", "rsvp.page.view", "guest.portal.view"]
 
 /** Measured counts + the admin offset on each. The public payload carries no
  *  way to tell the two apart, which is the whole point of the offset; the
- *  admin surface is where they are separated again. */
+ *  admin surface is where they are separated again.
+ *
+ *  A counter an admin has HIDDEN leaves as `null` rather than as its number.
+ *  Withholding it here rather than in the page that draws it is what makes the
+ *  setting mean one thing everywhere: a surface added later cannot quote a
+ *  figure it was never handed. */
 function computeStats(): CountedStats {
   const real = computePublicStatsReal();
-  const boost = getStatBoosts();
-  return {
-    couples: real.couples + boost.couples,
-    rsvps: real.rsvps + boost.rsvps,
-    vendors: real.vendors + boost.vendors,
-    listings: real.listings + boost.listings,
-  };
+  const settings = getStatSettings();
+  const out = {} as CountedStats;
+  for (const key of PUBLIC_STAT_KEYS) {
+    out[key] = settings[key].hidden ? null : real[key] + settings[key].boost;
+  }
+  return out;
 }
 
 /** Vendor-facing counters. `visits_28d` sums the public page-view growth events

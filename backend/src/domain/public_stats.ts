@@ -1,14 +1,16 @@
-// The four public landing counters and the admin-set offset on each.
+// The four public landing counters and the admin-set presentation on each.
 //
 // `computePublicStatsReal` is the measured half: four COUNT(*)s against live
 // rows, with demo workspaces excluded everywhere so the landing never
-// advertises throwaway Shrek-&-Fiona traffic as real signups. `getStatBoosts`
+// advertises throwaway Shrek-&-Fiona traffic as real signups. `getStatSettings`
 // is the presentation half: the number an admin has chosen to add on top
-// before the payload leaves the server.
+// before the payload leaves the server, and whether the counter is being
+// published at all.
 //
 // The two are kept apart on purpose (see shared/public_stats.ts). Nothing here
 // ever writes a measured number, so setting every boost back to 0 restores the
-// counted figures exactly, and the admin surface can always show both.
+// counted figures exactly, the admin surface can always show both, and hiding
+// a counter withholds it from the public without losing anything.
 
 import {
   MAX_STAT_BOOST,
@@ -58,37 +60,40 @@ export function computePublicStatsReal(): RealPublicStats {
   return { couples: couples.n, rsvps: rsvps.n, vendors: vendors.n, listings: listings.n };
 }
 
-/** Every counter's offset, defaulting to 0 for a key with no row yet. */
-export function getStatBoosts(): Record<PublicStatKey, number> {
-  const rows = db.prepare(`SELECT key, amount FROM public_stat_boosts`).all() as {
-    key: string;
-    amount: number;
-  }[];
-  const boosts = Object.fromEntries(PUBLIC_STAT_KEYS.map((k) => [k, 0])) as Record<
-    PublicStatKey,
-    number
-  >;
-  for (const row of rows) {
-    if ((PUBLIC_STAT_KEYS as readonly string[]).includes(row.key)) {
-      boosts[row.key as PublicStatKey] = row.amount;
-    }
-  }
-  return boosts;
+/** How one counter is presented: the offset added to the measured number, and
+ *  whether the public is shown it at all. */
+export interface PublicStatSetting {
+  boost: number;
+  hidden: boolean;
+  /** When the row was last touched — the admin table's only metadata. */
+  updated_at: number | null;
 }
 
-/** When each offset was last touched — the admin table's only metadata. */
-export function getStatBoostTimestamps(): Partial<Record<PublicStatKey, number>> {
-  const rows = db.prepare(`SELECT key, updated_at FROM public_stat_boosts`).all() as {
+/** Every counter's presentation, defaulting to "published, no offset" for a
+ *  key with no row yet. A missing row and a zeroed one mean the same thing,
+ *  which is what makes deleting the table a full reset. */
+export function getStatSettings(): Record<PublicStatKey, PublicStatSetting> {
+  const rows = db
+    .prepare(`SELECT key, amount, hidden, updated_at FROM public_stat_boosts`)
+    .all() as {
     key: string;
+    amount: number;
+    hidden: number;
     updated_at: number;
   }[];
-  const out: Partial<Record<PublicStatKey, number>> = {};
+  const settings = Object.fromEntries(
+    PUBLIC_STAT_KEYS.map((k) => [k, { boost: 0, hidden: false, updated_at: null }]),
+  ) as Record<PublicStatKey, PublicStatSetting>;
   for (const row of rows) {
     if ((PUBLIC_STAT_KEYS as readonly string[]).includes(row.key)) {
-      out[row.key as PublicStatKey] = row.updated_at;
+      settings[row.key as PublicStatKey] = {
+        boost: row.amount,
+        hidden: row.hidden === 1,
+        updated_at: row.updated_at,
+      };
     }
   }
-  return out;
+  return settings;
 }
 
 /** Clamp an untrusted offset into [0, MAX_STAT_BOOST]. A negative offset is
@@ -102,27 +107,32 @@ export function normalizeBoost(value: unknown): number | null {
   return n;
 }
 
-/** Apply a partial patch. Absent keys are left alone; the returned array names
- *  the keys that actually changed, which is what the audit note records. */
-export function setStatBoosts(patch: AdminPublicStatsPatch, adminUserId: number): PublicStatKey[] {
+/** Apply a partial patch. Absent keys (and an absent `hidden` entry for a key
+ *  the body does name) are left alone; the returned array describes what
+ *  actually changed, which is what the audit note records. The row carries
+ *  both facts, so each write re-states the half the patch was silent about
+ *  from the CURRENT value rather than from a default. */
+export function setStatSettings(patch: AdminPublicStatsPatch, adminUserId: number): string[] {
   const ts = now();
-  const changed: PublicStatKey[] = [];
-  const current = getStatBoosts();
+  const changed: string[] = [];
+  const current = getStatSettings();
   const write = db.prepare(
-    `INSERT INTO public_stat_boosts (key, amount, updated_at, updated_by)
-     VALUES (?, ?, ?, ?)
+    `INSERT INTO public_stat_boosts (key, amount, hidden, updated_at, updated_by)
+     VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(key) DO UPDATE SET
        amount = excluded.amount,
+       hidden = excluded.hidden,
        updated_at = excluded.updated_at,
        updated_by = excluded.updated_by`,
   );
   const tx = db.transaction(() => {
     for (const key of PUBLIC_STAT_KEYS) {
-      const next = patch[key];
-      if (next === undefined) continue;
-      if (next === current[key]) continue;
-      write.run(key, next, ts, adminUserId);
-      changed.push(key);
+      const boost = patch[key] ?? current[key].boost;
+      const hidden = patch.hidden?.[key] ?? current[key].hidden;
+      if (boost === current[key].boost && hidden === current[key].hidden) continue;
+      write.run(key, boost, hidden ? 1 : 0, ts, adminUserId);
+      if (boost !== current[key].boost) changed.push(`${key}=${boost}`);
+      if (hidden !== current[key].hidden) changed.push(`${key}:${hidden ? "hidden" : "shown"}`);
     }
   });
   tx();

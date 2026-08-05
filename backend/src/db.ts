@@ -2347,6 +2347,13 @@ addColumnIfMissing("community_suppliers", "capacity_max", "capacity_max INTEGER"
 addColumnIfMissing("community_suppliers", "venue_style", "venue_style TEXT");
 addColumnIfMissing("community_suppliers", "spoken_languages", "spoken_languages TEXT");
 
+// ── Public counters: withholding one, which is not the same as boosting it ───
+// A boost of 0 says "the measured number is what we show"; there was no way to
+// say "we are not quoting this one at all" while the figure is young. Additive
+// flag on the same per-counter row, defaulting to 0 so every existing counter
+// keeps being published exactly as before.
+addColumnIfMissing("public_stat_boosts", "hidden", "hidden INTEGER NOT NULL DEFAULT 0");
+
 // Reserved system user that anchors the NOT-NULL author FK for verified-visitor
 // content (see above). Login-disabled (status='suspended' and password_hash that
 // can never verify); verified_email=1 + password_set=0 so no unverified-account
