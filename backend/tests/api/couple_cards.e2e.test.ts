@@ -1,6 +1,7 @@
 import "../setup";
 
 import { describe, expect, test } from "bun:test";
+import { UI_LOCALES } from "../../../shared/locales";
 import { req, wipeAll, registerAndVerify } from "../helpers";
 
 /** Bootstrap a user against ADMIN_EMAILS (set in setup.ts) and return the
@@ -82,6 +83,40 @@ describe("couple-cards feedback", () => {
     for (const body of bad) {
       const r = await req("POST", "/api/couple-cards/feedback", body);
       expect(r.status).toBe(400);
+    }
+  });
+
+  test("accepts a rating in every UI locale, and files it under that locale", async () => {
+    // The cards ship in all five languages, so a vote has to record the one
+    // the visitor was actually reading. Filing an es vote as "en" would put
+    // a Spanish snapshot in the English slot, where the admin triage's
+    // snapshot match can never find it again.
+    const adminToken = await bootstrapAdmin();
+    for (const locale of UI_LOCALES) {
+      const r = await req("POST", "/api/couple-cards/feedback", {
+        deck_id: "lemonade",
+        card_index: 3,
+        rating: "great",
+        locale,
+        question_snapshot: `snapshot-${locale}`,
+      });
+      expect(r.status).toBe(200);
+    }
+
+    const list = await req<{ items: AggregateRow[] }>(
+      "GET",
+      "/api/admin/couple-cards/feedback",
+      undefined,
+      { token: adminToken },
+    );
+    expect(list.status).toBe(200);
+    // One aggregate row per locale on the same card, each keeping its own
+    // snapshot rather than collapsing into a single hu/en pair.
+    expect(list.data.items.length).toBe(UI_LOCALES.length);
+    for (const locale of UI_LOCALES) {
+      const row = list.data.items.find((i) => i.locale === locale);
+      expect(row?.question_snapshot).toBe(`snapshot-${locale}`);
+      expect(row?.great_count).toBe(1);
     }
   });
 

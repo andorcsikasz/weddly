@@ -6,10 +6,11 @@
 
 import { Inbox } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { UiLocale } from "@shared/locales";
 import { AdminEmptyState, AdminFilterChip, AdminPageHeader } from "../components/admin";
 import { Skeleton } from "../components/ui";
 import { ApiError } from "../lib/api";
-import { COUPLE_CARD_DECKS } from "../lib/couple_cards";
+import { CARD_LOCALES, COUPLE_CARD_DECKS } from "../lib/couple_cards";
 import {
   adminCoupleCardsApi,
   type CoupleCardFeedbackAggregate,
@@ -37,8 +38,9 @@ const DECK_LABELS: Record<string, string> = {
 const CURRENT_QUESTIONS: ReadonlyMap<string, string> = (() => {
   const m = new Map<string, string>();
   for (const deck of COUPLE_CARD_DECKS) {
-    deck.questionsHu.forEach((q, i) => m.set(`${deck.id}:${i}:hu`, q));
-    deck.questionsEn.forEach((q, i) => m.set(`${deck.id}:${i}:en`, q));
+    for (const loc of CARD_LOCALES) {
+      deck.questions[loc].forEach((q, i) => m.set(`${deck.id}:${i}:${loc}`, q));
+    }
   }
   return m;
 })();
@@ -48,8 +50,8 @@ function isCurrentCard(row: CoupleCardFeedbackAggregate): boolean {
   return current !== undefined && current.trim() === row.question_snapshot.trim();
 }
 
-const LOCALE_OPTIONS = ["all", "hu", "en"] as const;
-type LocaleFilter = (typeof LOCALE_OPTIONS)[number];
+type LocaleFilter = "all" | UiLocale;
+const LOCALE_OPTIONS: readonly LocaleFilter[] = ["all", ...CARD_LOCALES];
 
 export default function AdminCoupleCardsPage() {
   useDocumentMetaLiteral(

@@ -25,7 +25,9 @@ import { contentLocale, useT } from "../lib/i18n";
 import {
   COUPLE_CARD_DECKS,
   DECK_SIZE,
+  deckHasCards,
   type DeckId,
+  deckQuestions,
   isAccentDeck,
   redLevel,
 } from "../lib/couple_cards";
@@ -243,7 +245,7 @@ export default function CoupleCardsPage() {
     // drawn; the card view assumes a full DECK_SIZE bag. Selecting them in
     // the picker still works; "Draw a card" is just a no-op until they ship.
     const def = COUPLE_CARD_DECKS.find((d) => d.id === id);
-    if (!def || def.questionsEn.length === 0) return;
+    if (!def || !deckHasCards(def)) return;
     setActiveDeck(id);
     setProgress((prev) => {
       const current = prev[id];
@@ -294,7 +296,7 @@ export default function CoupleCardsPage() {
     try {
       await coupleCardsApi.submitSuggestion({
         deck_id: activeDeck,
-        locale: locale === "hu" ? "hu" : "en",
+        locale,
         suggestion: text,
       });
       setSuggestionStatus("success");
@@ -366,7 +368,7 @@ export default function CoupleCardsPage() {
     const p = progress[activeDeck];
     if (!p) return null;
     const questionIdx = p.order[p.index] ?? 0;
-    const list = locale === "hu" ? activeDeckDef.questionsHu : activeDeckDef.questionsEn;
+    const list = deckQuestions(activeDeckDef, locale);
     return list[questionIdx] ?? null;
   }, [activeDeckDef, activeDeck, progress, locale]);
 
@@ -397,11 +399,15 @@ export default function CoupleCardsPage() {
         next.set(key, rating);
         return next;
       });
+      // The visitor's REAL locale, not contentLocale(): the cards now render
+      // in all five, and admin triage matches a vote's snapshot against the
+      // question at `deck:index:locale`. Filing a Spanish vote under "en"
+      // would never match, so the row would silently drop out of the queue.
       void coupleCardsApi.submitFeedback({
         deck_id: activeDeck,
         card_index: cardIdx,
         rating,
-        locale: contentLocale(locale),
+        locale,
         question_snapshot: currentQuestion,
       });
     },
@@ -800,7 +806,7 @@ function DeckShowcase({
                 }`}
               >
                 {"WĒDDLY · "}
-                {selected.questionsEn.length > 0
+                {deckHasCards(selected)
                   ? t("tools.couple_cards.deck_count_label", { n: DECK_SIZE })
                   : t("tools.couple_cards.deck_soon_label")}
               </span>

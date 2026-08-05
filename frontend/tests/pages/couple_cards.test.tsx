@@ -85,7 +85,7 @@ describe("CoupleCardsPage: card view", () => {
     const rootsDeck = COUPLE_CARD_DECKS.find((d) => d.id === "roots");
     expect(rootsDeck).toBeDefined();
     const text = screen.getByTestId("couple-card-question").textContent ?? "";
-    expect(rootsDeck?.questionsHu).toContain(text);
+    expect(rootsDeck?.questions.hu).toContain(text);
   });
 
   it("swap then CTA opens the newly-selected deck", () => {
@@ -96,7 +96,7 @@ describe("CoupleCardsPage: card view", () => {
     expect(screen.getByText(`1 / ${DECK_SIZE}`)).toBeInTheDocument();
     const deepDeck = COUPLE_CARD_DECKS.find((d) => d.id === "deepwater");
     const text = screen.getByTestId("couple-card-question").textContent ?? "";
-    expect(deepDeck?.questionsHu).toContain(text);
+    expect(deepDeck?.questions.hu).toContain(text);
   });
 
   it("advances to card 2/25 when 'next' is pressed and changes the question", () => {
@@ -150,7 +150,7 @@ describe("CoupleCardsPage: card view", () => {
     // don't pin a specific identity because the bag-shuffle is random).
     const rootsDeck = COUPLE_CARD_DECKS.find((d) => d.id === "roots");
     const newTop = screen.getByTestId("couple-card-question").textContent ?? "";
-    expect(rootsDeck?.questionsHu).toContain(newTop);
+    expect(rootsDeck?.questions.hu).toContain(newTop);
     expect(newTop.length).toBeGreaterThan(0);
     expect(firstCardOfRound1?.length ?? 0).toBeGreaterThan(0);
   });

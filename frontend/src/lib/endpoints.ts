@@ -3381,14 +3381,14 @@ export interface CoupleCardFeedbackInput {
   deck_id: string;
   card_index: number;
   rating: CoupleCardRating;
-  locale: "hu" | "en";
+  locale: UiLocale;
   question_snapshot: string;
 }
 
 export interface CoupleCardFeedbackAggregate {
   deck_id: string;
   card_index: number;
-  locale: "hu" | "en";
+  locale: UiLocale;
   question_snapshot: string;
   bad_count: number;
   ok_count: number;
@@ -3399,14 +3399,14 @@ export interface CoupleCardFeedbackAggregate {
 
 export interface CoupleCardSuggestionInput {
   deck_id: string;
-  locale: "hu" | "en";
+  locale: UiLocale;
   suggestion: string;
 }
 
 export interface CoupleCardSuggestion {
   id: number;
   deck_id: string;
-  locale: "hu" | "en";
+  locale: UiLocale;
   suggestion: string;
   created_at: number;
 }

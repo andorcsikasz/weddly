@@ -11,6 +11,7 @@
 // Both feed into the curator workflow for the next copy iteration; we
 // never auto-promote a suggestion into the pack.
 
+import { UI_LOCALES } from "@shared/locales";
 import { db } from "../db";
 import { requireAdmin } from "../domain/users";
 import { type Ctx, HttpError, json, readJson, type Router } from "../lib/http";
@@ -26,7 +27,12 @@ const VALID_DECKS = new Set([
   "firstdate",
 ]);
 const VALID_RATINGS = new Set(["bad", "ok", "great"]);
-const VALID_LOCALES = new Set(["hu", "en"]);
+// Every UI locale, not hu/en: the cards themselves ship in all five, and a
+// vote is only findable in admin triage if it is filed under the locale the
+// visitor was actually reading. Single-sourced so a sixth language needs no
+// edit here.
+const VALID_LOCALES: ReadonlySet<string> = new Set<string>(UI_LOCALES);
+const LOCALE_LIST = UI_LOCALES.join("|");
 
 interface SubmitBody {
   deck_id?: unknown;
@@ -57,7 +63,7 @@ async function handleSubmit(ctx: Ctx): Promise<Response> {
 
   if (!VALID_DECKS.has(deckId)) throw new HttpError(400, "Unknown deck_id");
   if (!VALID_RATINGS.has(rating)) throw new HttpError(400, "rating must be bad|ok|great");
-  if (!VALID_LOCALES.has(locale)) throw new HttpError(400, "locale must be hu|en");
+  if (!VALID_LOCALES.has(locale)) throw new HttpError(400, `locale must be ${LOCALE_LIST}`);
   if (!Number.isInteger(cardIndex) || cardIndex < 0 || cardIndex >= 25) {
     throw new HttpError(400, "card_index must be an integer in [0, 25)");
   }
@@ -129,7 +135,7 @@ async function handleSuggestionSubmit(ctx: Ctx): Promise<Response> {
   const suggestion = trimStr(body.suggestion, 600);
 
   if (!VALID_DECKS.has(deckId)) throw new HttpError(400, "Unknown deck_id");
-  if (!VALID_LOCALES.has(locale)) throw new HttpError(400, "locale must be hu|en");
+  if (!VALID_LOCALES.has(locale)) throw new HttpError(400, `locale must be ${LOCALE_LIST}`);
   if (suggestion.length < 8) throw new HttpError(400, "suggestion too short (min 8 chars)");
 
   db.prepare(
