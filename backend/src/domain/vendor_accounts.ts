@@ -329,7 +329,17 @@ export interface UpdateVendorAccountInput {
 
 /** Edit of a vendor's business details (admin surface + vendor self-serve).
  *  Only present keys are applied; returns the fresh row (or null if the
- *  account is gone). */
+ *  account is gone).
+ *
+ *  A VENDOR HAS EXACTLY ONE NAME, and this is one of its two write paths (the
+ *  other is PATCH /api/users/me, which comes straight back here). The portal
+ *  used to show two: `users.full_name` on the Fiók tab and this column on
+ *  Cégadatok, labelled "Megjelenített név" and "Megjelenő név" — two strings a
+ *  reader cannot tell apart, only one of which the header, the settings hero
+ *  and the public listing actually used. A vendor renaming themselves in the
+ *  wrong one saw nothing change anywhere and had no way to find out why
+ *  (reported 2026-08-05). So a rename here flows to BOTH the claimed listing
+ *  and the owner's `users.full_name` in the same call. */
 export function updateVendorAccount(
   id: number,
   input: UpdateVendorAccountInput,
@@ -393,6 +403,13 @@ export function updateVendorAccount(
     if (input.display_name !== undefined) {
       db.prepare(
         "UPDATE listings SET name = ?, updated_at = ? WHERE vendor_account_id = ? AND source = 'claimed'",
+      ).run(input.display_name, ts, id);
+      // ...and to the owner's account name, which is the same name (see above).
+      // A subquery rather than a second read: the owner is a NOT NULL column on
+      // the row we just wrote, so there is nothing to look up first.
+      db.prepare(
+        `UPDATE users SET full_name = ?, updated_at = ?
+          WHERE id = (SELECT owner_user_id FROM vendor_accounts WHERE id = ?)`,
       ).run(input.display_name, ts, id);
     }
   }

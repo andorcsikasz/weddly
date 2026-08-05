@@ -247,6 +247,88 @@ describe("PATCH /api/vendor/account", () => {
   });
 });
 
+describe("a vendor has ONE name", () => {
+  // Two columns, one name. `users.full_name` (Fiók tab) and
+  // `vendor_accounts.display_name` (Cégadatok tab) used to drift apart in
+  // silence, and only the second was the name anyone else could see.
+  test("renaming on the account endpoint moves the account name too", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-one-name-a@weddly.test",
+      "vendor-one-name-a@weddly.test",
+      "One Name Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-one-name-a@weddly.test",
+      "One Name Vendor",
+    );
+
+    const patch = await req<{ account: VendorAccount }>(
+      "PATCH",
+      "/api/vendor/account",
+      { display_name: "Renamed From Company Tab" },
+      { token: vendorToken },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.account.display_name).toBe("Renamed From Company Tab");
+
+    const me = await req<{ user: { full_name: string } }>("GET", "/api/auth/me", undefined, {
+      token: vendorToken,
+    });
+    expect(me.status).toBe(200);
+    expect(me.data.user.full_name).toBe("Renamed From Company Tab");
+
+    // The one name that deliberately does NOT follow: a CLAIMED listing keeps
+    // the name it was imported and moderated under. Renaming that is the
+    // listing editor's own control, with its own weekly cooldown, and the
+    // settings tabs say so in as many words when the two differ.
+    const listing = db.prepare("SELECT name FROM listings WHERE id = ?").get(listingId) as {
+      name: string;
+    };
+    expect(listing.name).toBe("One Name Studio");
+  });
+
+  test("renaming on the profile endpoint moves the business name", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-one-name-b@weddly.test",
+      "vendor-one-name-b@weddly.test",
+      "Other Name Studio",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-one-name-b@weddly.test",
+      "Other Name Vendor",
+    );
+
+    const patch = await req<{ user: { full_name: string } }>(
+      "PATCH",
+      "/api/users/me",
+      { full_name: "Renamed From Account Tab" },
+      { token: vendorToken },
+    );
+    expect(patch.status).toBe(200);
+    expect(patch.data.user.full_name).toBe("Renamed From Account Tab");
+
+    const account = db
+      .prepare(
+        "SELECT display_name FROM vendor_accounts WHERE id = (SELECT vendor_account_id FROM listings WHERE id = ?)",
+      )
+      .get(listingId) as { display_name: string };
+    expect(account.display_name).toBe("Renamed From Account Tab");
+  });
+
+  test("a couple's own name never reaches a vendor account", async () => {
+    wipeAll();
+    const { token } = await bootstrapCouple("couple-one-name@weddly.test");
+    const patch = await req("PATCH", "/api/users/me", { full_name: "Anna Kovács" }, { token });
+    expect(patch.status).toBe(200);
+    const accounts = db.prepare("SELECT COUNT(*) AS n FROM vendor_accounts").get() as { n: number };
+    expect(accounts.n).toBe(0);
+  });
+});
+
 describe("GET /api/vendor/export", () => {
   test("returns the vendor's full data snapshot", async () => {
     wipeAll();

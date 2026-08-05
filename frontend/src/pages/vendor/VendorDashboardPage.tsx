@@ -153,9 +153,11 @@ export default function VendorDashboardPage() {
     }
   }, []);
 
-  // Greet the PERSON, not the brand: "Üdv, Mézi" reads right, "Üdv, Mézi
-  // Tortaműhely" reads like two names glued together. The business name still
-  // owns the shell header + profile chip.
+  // `full_name` is the name the vendor typed at signup, which the settings tabs
+  // now keep equal to the business name (one name, see VendorSettingsPage) the
+  // moment they edit either one. Kept ahead of `businessName` because an
+  // account still loading has one and not the other, never because they say
+  // different things.
   const greetingName = user?.full_name ?? businessName ?? t("vendor.nav.brand_fallback");
   // And greet them at the hour they're actually reading it. Resolved on every
   // render rather than pinned in state: a vendor who leaves the dashboard open

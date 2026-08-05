@@ -10,6 +10,7 @@ import { checkRealName } from "@shared/real_names";
 import type { User } from "@shared/types";
 import { db, now } from "../db";
 import { getUserById, toUser } from "../domain/users";
+import { getVendorAccountByOwnerUserId, updateVendorAccount } from "../domain/vendor_accounts";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
 
 interface UpdateMeBody {
@@ -86,6 +87,18 @@ async function handleUpdateMe(ctx: Ctx): Promise<Response> {
   args.push(userId);
 
   db.prepare(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`).run(...args);
+
+  // A vendor has ONE name (see updateVendorAccount), and this endpoint is its
+  // second door: the Fiók tab writes here, the Cégadatok tab writes there, and
+  // whichever one the vendor typed into has to reach the header, the settings
+  // hero and the public listing. Routed through the domain call rather than a
+  // bare UPDATE so the claimed-listing rename comes with it.
+  if (nextName !== null && current.role === "vendor") {
+    const account = getVendorAccountByOwnerUserId(userId);
+    if (account && account.display_name !== nextName) {
+      updateVendorAccount(account.id, { display_name: nextName });
+    }
+  }
 
   const fresh = getUserById(userId);
   if (!fresh) throw new HttpError(500, "User vanished after profile update");

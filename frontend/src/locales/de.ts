@@ -1246,7 +1246,9 @@ const de: LocaleMessages = {
       company_name: "Firmenname",
       company_name_required: "Der Firmenname darf nicht leer sein.",
       company_display_name: "Anzeigename",
-      company_display_name_help: "Der Name, den Paare auf Ihrem Eintrag sehen.",
+      company_display_name_help:
+        "Der Name, den Paare auf Ihrem Eintrag sehen, und der auch in der Kopfzeile und im Reiter Konto erscheint. Ein Name, egal wo Sie ihn ändern.",
+      listing_name_differs: "Ihr öffentlicher Eintrag heißt {name}. Diesen ändern Sie hier:",
       company_legal_name: "Firmenname (offiziell)",
       company_legal_name_help:
         "Ihr rechtlicher Firmenname, klein unter dem Markennamen dargestellt.",

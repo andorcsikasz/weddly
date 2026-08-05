@@ -10,7 +10,8 @@ import { Link, useOutletContext } from "react-router-dom";
 import type { VendorAccountEditInput } from "@shared/listings";
 import { useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
-import { vendorAccountApi, vendorListingApi } from "../../lib/endpoints";
+import { useAuth } from "../../lib/auth";
+import { notifyVendorAccountStale, vendorAccountApi, vendorListingApi } from "../../lib/endpoints";
 import { useT } from "../../lib/i18n";
 import type { VendorSettingsContext } from "./VendorSettingsLayout";
 
@@ -38,6 +39,7 @@ const COMPANY_FIELDS: CompanyField[] = [
 export default function VendorSettingsCompany() {
   const { t } = useT();
   const toast = useToast();
+  const { refresh: refreshAuth } = useAuth();
   const { view, setView } = useOutletContext<VendorSettingsContext>();
 
   // --- Company identity form ---
@@ -96,6 +98,11 @@ export default function VendorSettingsCompany() {
     try {
       const res = await vendorAccountApi.update(body);
       if (view) setView({ ...view, account: res.account });
+      // The name here is the vendor's ONE name (see VendorSettingsPage): the
+      // header renders it and the server has just mirrored it onto the account
+      // name, so both have to be re-read rather than wait for a reload.
+      notifyVendorAccountStale();
+      await refreshAuth();
       toast.success(t("vendor.settings.saved"));
     } catch (err) {
       setCompanyError(err instanceof ApiError ? err.message : t("common.error_generic"));
@@ -148,6 +155,19 @@ export default function VendorSettingsCompany() {
               required
             />
             <p className="field-help mt-1">{t("vendor.settings.company_display_name_help")}</p>
+            {/* Same note as the Fiók tab: a CLAIMED listing keeps the name it
+                was imported under, and only the listing editor renames it. */}
+            {view.listing.name.trim() !== view.account.display_name.trim() && (
+              <p className="field-help mt-1">
+                {t("vendor.settings.listing_name_differs", { name: view.listing.name })}{" "}
+                <Link
+                  to="/vendor/listing"
+                  className="font-medium text-blush-700 underline underline-offset-2 dark:text-blush-300"
+                >
+                  {t("vendor.nav.listing")}
+                </Link>
+              </p>
+            )}
           </div>
           <div>
             <label htmlFor="vendor-company-legal-name" className="field-label">

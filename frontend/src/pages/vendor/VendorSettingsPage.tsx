@@ -1,20 +1,33 @@
 // Vendor settings — account (personal) tab of the settings hub. Email is
-// read-only, the display name is click-to-edit, the UI locale is a
-// radiogroup, and a change-password form rounds it out. Company identity,
-// billing and data takeout live in the sibling tabs (VendorSettingsCompany /
+// read-only, the name is click-to-edit, the UI locale is a radiogroup, and a
+// change-password form rounds it out. Company identity, billing and data
+// takeout live in the sibling tabs (VendorSettingsCompany /
 // VendorBillingPage / VendorSettingsData); VendorSettingsLayout owns the
 // hero + document title.
+//
+// The name here and "Megjelenő név" on the Cégadatok tab are ONE field shown
+// twice, not two names: same label, same help, same value, same endpoint. They
+// used to be `users.full_name` and `vendor_accounts.display_name` under two
+// labels nobody could tell apart, and only the second one was the name the
+// header, the hero and the public listing rendered — so renaming yourself in
+// the wrong one changed nothing anywhere. The server keeps the two columns in
+// lockstep (see updateVendorAccount); this tab writes through the account
+// endpoint so the listing rename rides along.
 
 import { Globe, KeyRound, ShieldCheck, UserRound } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { Link, useOutletContext } from "react-router-dom";
 import { useToast } from "../../components/ui";
 import { ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
-import { authApi, userApi } from "../../lib/endpoints";
+import { authApi, notifyVendorAccountStale, userApi, vendorAccountApi } from "../../lib/endpoints";
 import { LOCALE_NAMES, LOCALES, type Locale, useT } from "../../lib/i18n";
+import type { VendorSettingsContext } from "./VendorSettingsLayout";
+
 export default function VendorSettingsPage() {
   const { t, locale, setLocale } = useT();
   const { user, refresh: refreshAuth, setSession } = useAuth();
+  const { view, setView } = useOutletContext<VendorSettingsContext>();
   const toast = useToast();
 
   // --- Display name (click-to-edit) ---
@@ -51,8 +64,15 @@ export default function VendorSettingsPage() {
     );
   }
 
+  // The one name. `view` is the account the header and the public listing read,
+  // so it wins; `full_name` only stands in while the account is still loading
+  // (or for a vendor mid-onboarding who has no account row yet).
+  const vendorName = view?.account.display_name ?? user?.full_name ?? "";
+  const listingNameDiffers =
+    !!view && view.listing.name.trim() !== view.account.display_name.trim();
+
   function beginNameEdit() {
-    setNameInput(user?.full_name ?? "");
+    setNameInput(vendorName);
     setNameError(null);
     setEditingName(true);
   }
@@ -67,7 +87,16 @@ export default function VendorSettingsPage() {
     setSavingName(true);
     setNameError(null);
     try {
-      await userApi.updateProfile({ full_name: trimmed });
+      if (view) {
+        // Through the account endpoint, which is what also renames the claimed
+        // listing; the server mirrors it back onto `users.full_name`.
+        const res = await vendorAccountApi.update({ display_name: trimmed });
+        setView({ ...view, account: res.account });
+        notifyVendorAccountStale();
+      } else {
+        // Mid-onboarding: no account row to keep in step with yet.
+        await userApi.updateProfile({ full_name: trimmed });
+      }
       toast.success(t("profile.account_name_save_success"));
       setEditingName(false);
       await refreshAuth();
@@ -151,11 +180,12 @@ export default function VendorSettingsPage() {
             </p>
           </li>
 
-          {/* Display name — click-to-edit */}
+          {/* The vendor's one name — click-to-edit. Same label + help as the
+              Cégadatok tab on purpose: it is the same field. */}
           <li className="py-3">
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs uppercase tracking-wide text-ink-500 dark:text-umber-300">
-                {t("profile.account_name_label")}
+                {t("vendor.settings.company_display_name")}
               </span>
               {!editingName && (
                 <button
@@ -173,7 +203,7 @@ export default function VendorSettingsPage() {
               <form
                 onSubmit={saveName}
                 className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-2"
-                aria-label={t("profile.account_name_label")}
+                aria-label={t("vendor.settings.company_display_name")}
               >
                 <input
                   type="text"
@@ -211,7 +241,27 @@ export default function VendorSettingsPage() {
               </form>
             ) : (
               <p className="mt-1 text-base text-ink-800 dark:text-paper-100">
-                {user.full_name?.trim() || t("profile.account_name_placeholder")}
+                {vendorName.trim() || t("profile.account_name_placeholder")}
+              </p>
+            )}
+            <p className="mt-1 text-[11px] text-ink-500 dark:text-umber-300">
+              {t("vendor.settings.company_display_name_help")}
+            </p>
+            {/* The one name this does NOT carry: a listing the vendor CLAIMED
+                keeps the name it was imported and moderated under, and renaming
+                it is the listing editor's own control (with its own weekly
+                cooldown). That is a deliberate rule, so the only thing left to
+                fix is the silence around it: when the two differ, say so and
+                point at the field that owns the other one. */}
+            {listingNameDiffers && view && (
+              <p className="mt-1 text-[11px] text-ink-500 dark:text-umber-300">
+                {t("vendor.settings.listing_name_differs", { name: view.listing.name })}{" "}
+                <Link
+                  to="/vendor/listing"
+                  className="font-medium text-blush-700 underline underline-offset-2 dark:text-blush-300"
+                >
+                  {t("vendor.nav.listing")}
+                </Link>
               </p>
             )}
           </li>

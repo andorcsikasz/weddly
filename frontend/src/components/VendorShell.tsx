@@ -45,6 +45,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import type { VendorPlan } from "@shared/vendor_plan";
 import { useAuth } from "../lib/auth";
 import {
+  VENDOR_ACCOUNT_STALE_EVENT,
   VENDOR_STATS_STALE_EVENT,
   vendorBillingApi,
   vendorListingApi,
@@ -588,18 +589,26 @@ export function VendorShell({ children }: { children: ReactNode }) {
   const [shareOpen, setShareOpen] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    vendorListingApi
-      .me()
-      .then((view) => {
-        if (cancelled) return;
-        setBusinessName(view.account.display_name);
-        setListing({ id: view.listing.id, name: view.listing.name });
-      })
-      .catch(() => {
-        /* no listing/account yet — fall back to the generic label */
-      });
+    const load = () => {
+      vendorListingApi
+        .me()
+        .then((view) => {
+          if (cancelled) return;
+          setBusinessName(view.account.display_name);
+          setListing({ id: view.listing.id, name: view.listing.name });
+        })
+        .catch(() => {
+          /* no listing/account yet — fall back to the generic label */
+        });
+    };
+    load();
+    // A rename from either settings tab is the one edit that must show up here
+    // immediately: the header IS the name, so a stale one reads as "the save
+    // did nothing", which is what the two-name split used to feel like.
+    window.addEventListener(VENDOR_ACCOUNT_STALE_EVENT, load);
     return () => {
       cancelled = true;
+      window.removeEventListener(VENDOR_ACCOUNT_STALE_EVENT, load);
     };
   }, []);
 

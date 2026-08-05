@@ -1202,7 +1202,9 @@ const hu: LocaleMessages = {
       company_name: "Vállalkozás neve",
       company_name_required: "A vállalkozás neve nem lehet üres.",
       company_display_name: "Megjelenő név",
-      company_display_name_help: "Ezen a néven látnak a párok a hirdetésedben.",
+      company_display_name_help:
+        "Ezen a néven látnak a párok a hirdetésedben, és ez jelenik meg a fejlécben és a Fiók fülön is. Egy név, bárhol írod át.",
+      listing_name_differs: "A nyilvános hirdetésed neve ettől eltér: {name}. Azt itt írhatod át:",
       company_legal_name: "Cégnév (hivatalos)",
       company_legal_name_help:
         "Hivatalos cégnév — kicsiben, a márkanév alatt jelenik meg a profilodon.",

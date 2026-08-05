@@ -1628,6 +1628,7 @@ export interface LocaleMessages {
       company_name_required: string;
       company_display_name: string;
       company_display_name_help: string;
+      listing_name_differs: string;
       company_legal_name: string;
       company_legal_name_help: string;
       company_email: string;

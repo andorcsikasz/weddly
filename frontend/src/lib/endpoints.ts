@@ -2872,6 +2872,22 @@ export const vendorListingApi = {
   completeOnboarding: () => apiFetch<VendorListingView>("POST", "/api/vendor/onboarding/complete"),
 };
 
+/** The vendor's own name or company details just changed, so the header (which
+ *  renders `account.display_name`) is stale. Same fire-and-forget shape as
+ *  VENDOR_STATS_STALE_EVENT below: the shell fetches the account once on mount,
+ *  which would otherwise leave the OLD name in the header until a reload — the
+ *  exact "I renamed myself and nothing happened" the one-name merge is fixing. */
+export const VENDOR_ACCOUNT_STALE_EVENT = "weddly:vendor-account-stale";
+
+export function notifyVendorAccountStale(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new CustomEvent(VENDOR_ACCOUNT_STALE_EVENT));
+  } catch {
+    /* CustomEvent may not exist on some odd embeds */
+  }
+}
+
 /** Vendor self-serve account (company identity) + data takeout. The account
  *  PATCH edits the legal-payee fields (display name, contact, VAT, registry,
  *  address) — the PUBLIC listing stays on vendorListingApi. */

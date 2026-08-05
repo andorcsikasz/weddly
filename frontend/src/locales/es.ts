@@ -1224,7 +1224,9 @@ const es: LocaleMessages = {
       company_name: "Nombre del negocio",
       company_name_required: "El nombre del negocio no puede estar vacío.",
       company_display_name: "Nombre visible",
-      company_display_name_help: "El nombre que las parejas ven en tu ficha.",
+      company_display_name_help:
+        "El nombre que las parejas ven en tu ficha, y el que aparece en la cabecera y en la pestaña Cuenta. Un solo nombre, lo cambies donde lo cambies.",
+      listing_name_differs: "Tu ficha pública se llama {name}. Cámbialo aquí:",
       company_legal_name: "Nombre de la empresa (oficial)",
       company_legal_name_help:
         "El nombre legal de tu empresa — se muestra en pequeño, bajo el nombre de marca.",

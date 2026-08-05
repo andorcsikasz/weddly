@@ -1219,7 +1219,9 @@ const hr: LocaleMessages = {
       company_name: "Naziv tvrtke",
       company_name_required: "Naziv tvrtke ne može ostati prazan.",
       company_display_name: "Prikazano ime",
-      company_display_name_help: "Ime koje parovi vide na vašem oglasu.",
+      company_display_name_help:
+        "Ime koje parovi vide na vašem oglasu, a prikazuje se i u zaglavlju te na kartici Račun. Jedno ime, gdje god ga promijenili.",
+      listing_name_differs: "Vaš javni oglas nosi ime {name}. Njega mijenjate ovdje:",
       company_legal_name: "Naziv tvrtke (službeni)",
       company_legal_name_help: "Vaš pravni naziv tvrtke, prikazan sitno ispod imena brenda.",
       company_email: "Poslovna e-pošta",

@@ -1190,7 +1190,9 @@ const en: LocaleMessages = {
       company_name: "Business name",
       company_name_required: "The business name cannot be empty.",
       company_display_name: "Display name",
-      company_display_name_help: "The name couples see on your listing.",
+      company_display_name_help:
+        "The name couples see on your listing, and the one in the header and on the Account tab. One name, wherever you edit it.",
+      listing_name_differs: "Your public listing is named {name}. Change that one here:",
       company_legal_name: "Company name (official)",
       company_legal_name_help: "Your legal company name — shown small, under the brand name.",
       company_email: "Business email",
