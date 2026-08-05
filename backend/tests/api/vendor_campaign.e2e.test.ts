@@ -363,7 +363,7 @@ describe("vendor claim-invite campaign", () => {
     expect(byEmail.get("it@x.com")?.country).toBe("IT");
 
     expect(lastSubjectTo("hu@x.hu")).toContain("Egy pár ajánlotta");
-    expect(lastSubjectTo("it@x.com")).toContain("A couple put");
+    expect(lastSubjectTo("it@x.com")).toContain("A couple recommended");
   });
 
   test("the invite link is one click into a completable claim", async () => {
@@ -783,7 +783,7 @@ describe("vendor campaign — every invite opens with the referral line", () => 
       },
       { recipientName: "", recipientLocale: "en" },
     );
-    expect(built.subject).toContain("A couple put");
+    expect(built.subject).toContain("A couple recommended");
     expect(built.subject).not.toContain("nobody is running it");
   });
 });

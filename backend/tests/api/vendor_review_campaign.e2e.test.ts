@@ -348,8 +348,8 @@ describe("vendor review-invite campaign", () => {
     expect(rows.every((s) => s.status === "sent")).toBe(true);
 
     // Subject language follows the resolved per-vendor locale.
-    expect(lastSubjectTo(hu.email)).toContain("Weddly-n");
-    expect(lastSubjectTo(en.email)).toContain("open to everyone");
+    expect(lastSubjectTo(hu.email)).toContain("értékelő linketek");
+    expect(lastSubjectTo(en.email)).toContain("review link is ready");
 
     // Re-running writes nothing new: one send per (campaign, address).
     const again = await sendCampaignBatch(rowOf(campaign), 10);

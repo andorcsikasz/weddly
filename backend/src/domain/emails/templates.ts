@@ -1247,10 +1247,10 @@ function offerSentenceFor(locale: ExtraLocale, freeMonths: number): string {
 
 function offerSentenceEn(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "In this round you are our guest on Weddly for a full year, with everything the profile does. There is still room in it.";
+    return "Claiming in this round includes a full year of every profile feature, on us.";
   }
   if (freeMonths > 0) {
-    return `In this round you are our guest on Weddly for ${freeMonths} months, with everything the profile does. There is still room in it.`;
+    return `Claim it in this round and every profile feature is on us for ${freeMonths} months.`;
   }
   return "";
 }
@@ -1272,6 +1272,19 @@ function localeSubject(
   // with the card, so subject and body can never end up in two languages.
   if (locale) return extra?.[locale] ?? en;
   return `${hu} / ${en}`;
+}
+
+/** Hungarian definite article: a word starting with a vowel takes "az".
+ *  Business names lead these sentences, so "a Anna Weddings" is visible wrong. */
+function huArticle(word: string): string {
+  const first = word.trim()[0]?.toLowerCase() ?? "";
+  return "aáeéiíoóöőuúüű".includes(first) ? "az" : "a";
+}
+
+/** Strips the trailing period `hu-HU` long dates carry, so a Hungarian case
+ *  suffix can attach to the day: "2026. augusztus 3." + "-ig" → "augusztus 3-ig". */
+function huDateSuffix(label: string): string {
+  return label.replace(/\.\s*$/, "");
 }
 
 /** `2027-05-29` → "2027. május 29." / "29 May 2027". Formatted in UTC on
@@ -1307,7 +1320,7 @@ function timestampLabel(ms: number, locale: "hu" | "en"): string {
 
 const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   welcome_verify: (p, ctx) => ({
-    subject: "Üdv a Weddly-n / Welcome to Weddly",
+    subject: localeSubject(ctx.recipientLocale, "Üdv a Weddly-n", "Welcome to Weddly"),
     ctaUrl: p.verifyUrl,
     hu: {
       preheader: "Erősítsd meg az e-mail címed, hogy később vissza tudd állítani a fiókod.",
@@ -1475,7 +1488,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   },
 
   verify_resend: (p, ctx) => ({
-    subject: "Új megerősítő link / fresh verification link",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Új megerősítő link",
+      "Your new Weddly verification link",
+    ),
     ctaUrl: p.verifyUrl,
     hu: {
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
@@ -1498,7 +1515,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   password_reset: (p, ctx) => ({
-    subject: "Jelszó visszaállítás / Password reset",
+    subject: localeSubject(ctx.recipientLocale, "Jelszó visszaállítás", "Password reset"),
     ctaUrl: p.resetUrl,
     hu: {
       preheader: "Új jelszót kértél a Weddly fiókodhoz. A link 1 órán át érvényes.",
@@ -1545,7 +1562,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   password_changed: (p, ctx) => ({
-    subject: "Jelszó megváltoztatva / Password changed",
+    subject: localeSubject(ctx.recipientLocale, "Jelszó megváltoztatva", "Password changed"),
     ctaUrl: p.forgotUrl,
     hu: {
       preheader: "Megerősítjük, hogy sikeresen módosítottad a jelszavad.",
@@ -1595,7 +1612,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   new_device_signin: (p, ctx) => ({
-    subject: "Új eszközről jelentkeztél be / New device sign-in",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Új eszközről jelentkeztél be",
+      "New device sign-in",
+    ),
     ctaUrl: p.forgotUrl,
     hu: {
       preheader: `Új eszközről nyitottak meg sessiont (${p.signedInAt}).`,
@@ -1621,7 +1642,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   email_change_verify: (p, ctx) => ({
-    subject: "E-mail cím megerősítése / Confirm your new email",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "E-mail cím megerősítése",
+      "Confirm your new email",
+    ),
     ctaUrl: p.confirmUrl,
     hu: {
       preheader: "Erősítsd meg, hogy ezt az új e-mail címet szeretnéd használni a Weddly-n.",
@@ -1647,7 +1672,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   email_change_warning: (p, ctx) => ({
-    subject: "E-mail cím váltási kérelem / Email-change in flight",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "E-mail cím váltási kérelem",
+      "Your email change is in progress",
+    ),
     ctaUrl: p.forgotUrl,
     hu: {
       preheader: `Valaki új e-mail címre szeretné állítani a fiókod: ${p.newEmail}.`,
@@ -1672,7 +1701,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
 
-  partner_invite: (p) => {
+  partner_invite: (p, ctx) => {
     const coupleSuffixHu = p.coupleDisplayName
       ? ` A közös munkaterületetek neve: ${p.coupleDisplayName}.`
       : "";
@@ -1680,7 +1709,15 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ? ` Your shared workspace: ${p.coupleDisplayName}.`
       : "";
     return {
-      subject: `${p.inviterName} meghívott a Weddly-re / invited you to plan together`,
+      whyLine: {
+        hu: `Ezt azért kaptad, mert ${p.inviterName} meghívott egy közös Weddly munkaterületre. Fiók csak akkor jön létre, ha elfogadod.`,
+        en: `You're receiving this because ${p.inviterName} invited you to a shared Weddly workspace. No account is created unless you accept.`,
+      },
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `${p.inviterName} meghívott a Weddly-re`,
+        `${p.inviterName} invited you to plan together`,
+      ),
       ctaUrl: p.inviteUrl,
       hu: {
         preheader: "Közös vendéglista, ülésrend, költségvetés, egy munkamenetben.",
@@ -1698,8 +1735,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: "Hello,",
         paragraphs: [
           `${p.inviterName} started planning your wedding on Weddly and invited you to join.${coupleSuffixEn}`,
-          'One shared workspace covers guest list, seating chart, budget, RSVP links, printable place cards and table plans, in real-time sync. No more spreadsheet ping-pong or "which version was the latest?".',
-          "Open to everyone during the public beta, no vendor lock-in, your data stays yours.",
+          "One shared workspace covers your guest list, seating chart, budget, RSVP links, printable place cards and table plans, all synced in real time. No more spreadsheet ping-pong or asking which version is the latest.",
+          "Weddly is open to everyone during the public beta, with no vendor lock-in. Your data stays yours.",
         ],
         cta: "Join the workspace",
         ctaSubtext: "Link valid for 7 days.",
@@ -1716,7 +1753,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       ? ` You're now both working on ${p.coupleDisplayName}'s shared workspace.`
       : "";
     return {
-      subject: `${p.partnerName} csatlakozott / ${p.partnerName} joined your workspace`,
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `${p.partnerName} csatlakozott`,
+        `${p.partnerName} joined your workspace`,
+      ),
       ctaUrl: p.dashboardUrl,
       hu: {
         preheader: `${p.partnerName} elfogadta a meghívót.`,
@@ -1739,7 +1780,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   },
 
   partner_invite_declined: (p, ctx) => ({
-    subject: "A meghívót visszautasították / Partner invite declined",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "A meghívót visszautasították",
+      "Partner invite declined",
+    ),
     ctaUrl: p.reinviteUrl,
     hu: {
       preheader: `${p.invitedEmail} nem fogadta el a meghívót.`,
@@ -1764,7 +1809,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const coupleHu = p.coupleDisplayName ? ` ${p.coupleDisplayName} ` : " ";
     const coupleEn = p.coupleDisplayName ? ` ${p.coupleDisplayName}'s ` : " ";
     return {
-      subject: `${p.partnerName} kilépett / ${p.partnerName} left your workspace`,
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `${p.partnerName} kilépett`,
+        `${p.partnerName} left your workspace`,
+      ),
       ctaUrl: p.reinviteUrl,
       hu: {
         preheader: `${p.partnerName} kilépett a közös munkamenetből.`,
@@ -1787,27 +1836,32 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   },
 
   partner_invite_reminder: (p, ctx) => {
-    const coupleHu = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
-    const coupleEn = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
+    // The workspace name opens the sentence, so it is the bare name here rather
+    // than the parenthetical aside the old copy appended mid-paragraph.
+    const couple = p.coupleDisplayName?.trim() ?? "";
+    const coupleHu = couple || "A közös";
+    const coupleEn = couple ? `${couple}'s` : "Your";
     return {
-      subject: "Hívd meg a párodat a Weddly-re / Invite your partner to Weddly",
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Tervezzetek együtt, egy közös Weddlyben",
+        "Plan together, in one shared Weddly",
+      ),
       ctaUrl: p.invitePartnerUrl,
       hu: {
         preheader: "Egy pár klikk, és együtt tervezhettek mindent.",
         greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
         paragraphs: [
-          `Észrevettük, hogy egyedül használod a Weddly-t${coupleHu}, pedig a tervező igazán akkor erős, amikor a pároddal együtt szerkesztitek.`,
-          "Pár kattintás, és máris közös munkamenetben dolgoztok: vendéglista, ülésrend, költségvetés, RSVP linkek. Ami valamelyikőtök változtat, a másikon azonnal látszik, semmi táblázat-pingpong.",
-          "A lenti gomb visszavisz a vezérlőpultodra, közvetlenül a meghívó űrlaphoz.",
+          `${coupleHu} tervezője akkor működik igazán jól, ha mindketten ugyanazt az egy verziót látjátok.`,
+          "Egy meghívás után közösen szerkeszthetitek a vendéglistát, az ülésrendet, a költségvetést és az RSVP-ket. Minden változás azonnal megjelenik, nincs több táblázat-pingpong.",
         ],
         cta: "Pár meghívása",
       },
       en: {
         greeting: `Hi ${ctx.recipientName || "there"},`,
         paragraphs: [
-          `We noticed you're using Weddly on your own${coupleEn}, but the planner really shines when you and your partner are editing together.`,
-          "A couple of clicks and you're both in one shared workspace: guest list, seating, budget, RSVP links. Whatever either of you changes shows up instantly on the other side, no more spreadsheet ping-pong.",
-          "The button below takes you straight to the invite form on your dashboard.",
+          `${coupleEn} planner works best when you are both looking at the same single source of truth.`,
+          "One invitation gives you a shared guest list, seating plan, budget and RSVPs. Every change appears instantly, no more spreadsheet ping-pong.",
         ],
         cta: "Invite my partner",
       },
@@ -1827,7 +1881,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const coupleEn = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
     const variants = [
       {
-        subject: "Még van néhány szabad alapító hely / A few founding places are still open",
+        subject: localeSubject(
+          ctx.recipientLocale,
+          "Egy meghívásra vagytok az alapító hozzáféréstől",
+          "Your founding access is one invite away",
+        ),
         hu: {
           preheader: "Az esküvőtök napjáig a vendégeink vagytok, ha mindketten fent vagytok.",
           paragraphs: [
@@ -1914,7 +1972,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   },
 
   couple_paused: (p, ctx) => ({
-    subject: "Esküvőtervező szüneteltetve / Workspace paused",
+    subject: localeSubject(ctx.recipientLocale, "Esküvőtervező szüneteltetve", "Workspace paused"),
     ctaUrl: p.cancelUrl,
     hu: {
       preheader: `30 nap múlva (${p.scheduledDeleteDate}) véglegesen törlődik, hacsak nem mondjátok le.`,
@@ -1984,7 +2042,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   },
 
   couple_pause_cancelled: (p, ctx) => ({
-    subject: "Esküvőtervező visszaállítva / Workspace pause cancelled",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Esküvőtervező visszaállítva",
+      "Workspace pause cancelled",
+    ),
     ctaUrl: p.dashboardUrl,
     hu: {
       preheader: `${p.cancelledByName} visszavonta a szüneteltetést.`,
@@ -2008,7 +2070,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   account_purged: (p, ctx) => ({
-    subject: "Adataitok véglegesen törölve / Your data has been deleted",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Adataitok véglegesen törölve",
+      "Your data has been deleted",
+    ),
     ctaUrl: CONFIG.frontendBaseUrl,
     hu: {
       preheader: "A 30 napos szüneteltetési határidő letelt.",
@@ -2036,8 +2102,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // the user had a workspace, account-flavored when they were an orphan.
   account_admin_purged: (p, ctx) => ({
     subject: p.coupleDisplayName
-      ? "Esküvői munkaterületed törölve / Your wedding workspace has been deleted"
-      : "Fiókod törölve / Your account has been deleted",
+      ? localeSubject(
+          ctx.recipientLocale,
+          "Esküvői munkaterületed törölve",
+          "Your wedding workspace has been deleted",
+        )
+      : localeSubject(ctx.recipientLocale, "Fiókod törölve", "Your account has been deleted"),
     ctaUrl: CONFIG.frontendBaseUrl,
     hu: {
       preheader: p.coupleDisplayName
@@ -2076,15 +2146,19 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // to the email; the hourly sweep deletes the account after the deadline
   // unless the admin manually clears the flag.
   account_flagged: (p, ctx) => ({
-    subject: "Fiókod ellenőrzés alatt / Your account is under review",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Fiókod ellenőrzés alatt",
+      "Your account is under review",
+    ),
     ctaUrl: CONFIG.frontendBaseUrl,
     hu: {
-      preheader: `Válaszolj erre az e-mailre ${p.deadlineDateHu}-ig.`,
+      preheader: `Válaszolj erre az e-mailre ${huDateSuffix(p.deadlineDateHu)}-ig.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
         "A Weddly adminisztrátora megjelölte a fiókodat ellenőrzésre. Az alábbi aggály miatt kértük a visszajelzésedet:",
         `„${p.reason}"`,
-        `Ha úgy érzed, hogy ez tévedés vagy szeretnéd elmagyarázni a helyzetet, válaszolj erre az e-mailre **${p.deadlineDateHu}-ig**.`,
+        `Ha úgy érzed, hogy ez tévedés vagy szeretnéd elmagyarázni a helyzetet, válaszolj erre az e-mailre **${huDateSuffix(p.deadlineDateHu)}-ig**.`,
         "Ha eddig az időpontig nem kapunk választ, a fiókodat és a hozzátartozó adatokat (vendéglista, ülésrend, költségvetés, RSVP-k) automatikusan és véglegesen töröljük.",
       ],
       cta: "Weddly",
@@ -2106,15 +2180,19 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // NOT accusatory: most of these are a couple who typed something to get past
   // a required field months ago, not a bot.
   name_review_notice: (p, ctx) => ({
-    subject: "Kérjük, erősítsétek meg a neveteket / Please confirm your names",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Kérjük, erősítsétek meg a neveteket",
+      "Please confirm your names",
+    ),
     ctaUrl: `${CONFIG.frontendBaseUrl}/app/profile`,
     hu: {
-      preheader: `Kérjük, ${p.deadlineDateHu}-ig javítsátok a neveteket a Weddlyn.`,
+      preheader: `Kérjük, ${huDateSuffix(p.deadlineDateHu)}-ig javítsátok a neveteket a Weddlyn.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
         `Átnéztük a Weddly-fiókokat, és a tiéteken ez a név szerepel: „${p.currentNames}". Ez nem tűnik valódi névnek.`,
         "A neveitek a vendégoldalatokon, a meghívóitokon és minden üzeneten megjelennek, amit egy szolgáltató kap tőletek, ezért fontos, hogy a valódiak legyenek. Így tudjuk a közösséget is valódi jegyespárokból tartani, és távol tartani a robotokat.",
-        `Kérjük, javítsátok a neveket a profilotokban **${p.deadlineDateHu}-ig**. Utána a munkaterület addig szünetel, amíg ez megtörténik. Minden adatotok megmarad, és a javítás pillanatában minden visszatér.`,
+        `Kérjük, javítsátok a neveket a profilotokban **${huDateSuffix(p.deadlineDateHu)}-ig**. Utána a munkaterület addig szünetel, amíg ez megtörténik. Minden adatotok megmarad, és a javítás pillanatában minden visszatér.`,
         "Ha kérdésetek van, elég válaszolni erre az e-mailre.",
       ],
       cta: "Nevek javítása",
@@ -2137,7 +2215,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // closes that loop so the user isn't left with the original threatening
   // message as the last communication from us.
   account_flag_cleared: (p, ctx) => ({
-    subject: "Fiók ellenőrzés lezárva / Account review cleared",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Fiók ellenőrzés lezárva",
+      "Account review cleared",
+    ),
     ctaUrl: CONFIG.frontendBaseUrl,
     hu: {
       preheader: "A fiókodon álló jelölést feloldottuk.",
@@ -2161,7 +2243,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   free_access_granted: (p, ctx) => ({
-    subject: "Ajándék: teljes Weddly-hozzáférés / A gift: full Weddly access",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Ajándék: teljes Weddly-hozzáférés",
+      "A gift: full Weddly access",
+    ),
     ctaUrl: CONFIG.frontendBaseUrl,
     hu: {
       preheader: "Megajándékoztunk titeket teljes Weddly-hozzáféréssel.",
@@ -2189,7 +2275,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   rsvp_received_for_couple: (p, ctx) => ({
-    subject: rsvpReceivedSubject(p),
+    subject: rsvpReceivedSubject(p, ctx.recipientLocale),
     ctaUrl: p.guestPageUrl,
     hu: {
       preheader: `${p.guestName} válaszolt: ${rsvpStatusHu(p.rsvpStatus)}.`,
@@ -2215,7 +2301,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   rsvp_received_household_for_couple: (p, ctx) => ({
-    subject: rsvpHouseholdSubject(p),
+    subject: rsvpHouseholdSubject(p, ctx.recipientLocale),
     ctaUrl: p.guestPageUrl,
     hu: {
       preheader: `${p.householdLabel}: ${p.guests.length} fő válaszolt.`,
@@ -2250,7 +2336,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   rsvp_thanks_for_guest: (p, ctx) => ({
-    subject: `RSVP elküldve / RSVP confirmed, ${p.coupleDisplayName}`,
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `RSVP elküldve`,
+      `RSVP confirmed, ${p.coupleDisplayName}`,
+    ),
     ctaUrl: p.rsvpPageUrl,
     hu: {
       preheader: `Elküldtük a válaszodat ${p.coupleDisplayName} esküvőjére.`,
@@ -2273,13 +2363,17 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
 
-  guest_invite: (p) => {
+  guest_invite: (p, ctx) => {
     const dateHu = p.weddingDate ? ` **${p.weddingDate}**` : "";
     const dateEn = p.weddingDate ? ` **${p.weddingDate}**` : "";
     const greetingHuName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
     const greetingEnName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
     return {
-      subject: `${p.coupleDisplayName} meghívnak az esküvőjükre / invite you to their wedding`,
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `${p.coupleDisplayName} meghívnak az esküvőjükre`,
+        `${p.coupleDisplayName} invite you to their wedding`,
+      ),
       ctaUrl: p.rsvpUrl,
       hu: {
         preheader: "Egy kattintás, visszajelzés, ételválasztás, szállásigény.",
@@ -2305,7 +2399,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     };
   },
 
-  guest_major_update: (p) => {
+  guest_major_update: (p, ctx) => {
     const dateHu = p.weddingDate ? ` (${p.weddingDate})` : "";
     const dateEn = p.weddingDate ? ` (${p.weddingDate})` : "";
     const greetingName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
@@ -2324,7 +2418,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const subject =
       p.subject && p.subject.trim()
         ? p.subject.trim()
-        : `${p.coupleDisplayName} - fontos frissítés / an important update`;
+        : localeSubject(
+            ctx.recipientLocale,
+            `${p.coupleDisplayName} - fontos frissítés`,
+            `An important update from ${p.coupleDisplayName}`,
+          );
     return {
       subject,
       ctaUrl: p.infoUrl,
@@ -2344,7 +2442,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     };
   },
 
-  guest_pre_wedding_info: (p) => {
+  guest_pre_wedding_info: (p, ctx) => {
     const dateHu = p.weddingDate ? ` (${p.weddingDate})` : "";
     const dateEn = p.weddingDate ? ` (${p.weddingDate})` : "";
     const greetingName = p.guestName ? ` ${p.guestName.split(" ")[0]}` : "";
@@ -2364,7 +2462,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const subject =
       p.subject && p.subject.trim()
         ? p.subject.trim()
-        : `${p.coupleDisplayName} - hasznos tudnivalók az esküvő előtt / helpful info before the wedding`;
+        : localeSubject(
+            ctx.recipientLocale,
+            `${p.coupleDisplayName} - hasznos tudnivalók az esküvő előtt`,
+            `A few details before ${p.coupleDisplayName}'s wedding`,
+          );
     return {
       subject,
       ctaUrl: p.infoUrl,
@@ -2401,7 +2503,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const coupleHu = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
     const coupleEn = p.coupleDisplayName ? ` (${p.coupleDisplayName})` : "";
     return {
-      subject: "A próbaidőszakotok véget ért / Your Weddly trial has ended",
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "A próbaidőszakotok véget ért",
+        "Your Weddly trial has ended",
+      ),
       ctaUrl: p.inviteUrl,
       hu: {
         preheader: `Innen két út vezet tovább. ${p.graceDays} napotok van dönteni.`,
@@ -2430,31 +2536,37 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   },
 
   onboarding_nudge: (p, ctx) => ({
-    subject: "Folytasd ott, ahol abbahagytad / Pick up where you left off",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "A tervezőtök készen áll, amikor ti is",
+      "Your planner is ready when you are",
+    ),
     ctaUrl: p.onboardingUrl,
     hu: {
       preheader: "Pár perc, és kész az alap esküvőterveződ.",
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        "Csak észbe kaptunk: regisztráltál a Weddly-n, de még nem fejezted be az alap beállítást.",
-        "Pár perc az egész, pár adat (nevek, dátum, vendégszám), és máris kapsz egy szabható költségvetést, vendéglistát és ülésrend-vázat.",
-        "Semmi sincs kőbe vésve: amit most beírsz, később bármikor módosíthatod.",
+        "Már csak néhány alapadat hiányzik: nevek, dátum és vendégszám.",
+        "Két perc alatt elindítjuk nektek a költségvetést, a vendéglistát és az ülésrend vázát. Semmi sincs kőbe vésve, később mindent alakíthattok.",
       ],
       cta: "Befejezem a tervező beállítását",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        "Quick reminder: you signed up for Weddly but haven't finished the initial setup yet.",
-        "It only takes a few minutes, a few facts (names, date, guest count) and we'll seed a budget, guest list, and seating skeleton for you.",
-        "Nothing is set in stone: whatever you enter now, you can change later.",
+        "Only a few details stand between you and a working plan: names, date and guest count.",
+        "In two minutes, Weddly will build the first version of your budget, guest list and seating plan. Nothing is fixed, you can shape every detail later.",
       ],
       cta: "Finish my planner",
     },
   }),
 
   onboarding_nudge_week: (p, ctx) => ({
-    subject: "Egy hét telt el. Kész vagy elkezdeni? / A week in: ready to start?",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Két perc, és életre kel a tervezőtök",
+      "Two minutes to bring your planner to life",
+    ),
     ctaUrl: p.onboardingUrl,
     hu: {
       preheader: "Egy hét telt el. Kezdjük el az esküvőtök tervezését?",
@@ -2503,8 +2615,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     return {
       subject: localeSubject(
         ctx.recipientLocale,
-        "Rég jártál nálunk, közben építkeztünk",
-        "It's been a while, and we've been building",
+        `${weeks} hét alatt újraépítettük a Weddlyt`,
+        "We rebuilt Weddly while you were away",
       ),
       ctaUrl: p.appUrl,
       hu: {
@@ -2609,7 +2721,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   post_wedding_review_request: (p, ctx) => {
     const list = p.vendorNames.length > 0 ? p.vendorNames.join(", ") : "";
     return {
-      subject: "Értékeljétek a szolgáltatóitokat / Rate your wedding vendors",
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Értékeljétek a szolgáltatóitokat",
+        "Rate your wedding vendors",
+      ),
       ctaUrl: p.ctaUrl,
       hu: {
         preheader: "Egy hete volt az esküvőtök. Pár csillag a szolgáltatóknak, pár másodperc.",
@@ -2651,7 +2767,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   wedding_farewell: (p, ctx) => {
     const coupleHu = p.coupleDisplayName ? `**${p.coupleDisplayName}**, ` : "";
     return {
-      subject: "Köszönjük, hogy velünk terveztetek / Thank you for planning with us",
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Köszönjük, hogy velünk terveztetek",
+        "Thank you for planning with us",
+      ),
       ctaUrl: p.ctaUrl,
       hu: {
         preheader: "Megvolt a nagy nap. Gratulálunk, és köszönjük!",
@@ -2696,7 +2816,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const coupleHu = p.coupleDisplayName ? `${p.coupleDisplayName}, ` : "";
     const coupleEn = p.coupleDisplayName ? `${p.coupleDisplayName}, ` : "";
     return {
-      subject: "Az esküvő után jön a legjobb rész / The best part comes after the wedding",
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Az esküvő után jön a legjobb rész",
+        "The best part comes after the wedding",
+      ),
       ctaUrl: p.honeymoonUrl,
       hu: {
         preheader: `${coupleHu}${p.daysUntil} nap az esküvőig. A nászútról döntöttetek már?`,
@@ -2724,7 +2848,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   },
 
   milestone_t90: (p, ctx) => ({
-    subject: "3 hónap az esküvőtökig / 3 months to the wedding",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "90 nap: ideje véglegesíteni a tervet",
+      "90 days: time to lock the plan",
+    ),
     ctaUrl: p.dashboardUrl,
     hu: {
       preheader: `${p.coupleDisplayName}, 3 hónap maradt. Mi van még hátra?`,
@@ -2748,7 +2876,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   milestone_t30: (p, ctx) => ({
-    subject: "1 hónap! / 1 month to go",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "30 nap: kezdődik a célegyenes",
+      "30 days: the home stretch starts now",
+    ),
     ctaUrl: p.dashboardUrl,
     hu: {
       preheader: `${p.coupleDisplayName}, 30 nap. Itt egy pár fontos teendő.`,
@@ -2770,14 +2902,18 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   milestone_t7: (p, ctx) => ({
-    subject: "1 hét! / 1 week to go",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Egy hét: minden a helyén",
+      "One week: everything in its place",
+    ),
     ctaUrl: p.dashboardUrl,
     hu: {
       preheader: `${p.coupleDisplayName}, utolsó hét. Nyomtatás, ülésrend, részletek.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
         "**Egy hét**, most már tényleg közel van.",
-        "Két dolog, amit érdemes most lezárni: nyomtassátok ki a végleges ülésrendet (A4/A3) és a névkártyákat (A6) a Nyomtatás fülön; küldjétek el a végleges fejszámot a helyszínnek és a catering-nek.",
+        "Két dolog, amit érdemes most lezárni: nyomtassátok ki a végleges ülésrendet (A4/A3) és a névkártyákat (A6) a Nyomtatás fülön; küldjétek el a végleges fejszámot a helyszínnek és a cateringnek.",
         "Pihenjetek is. A nehezén túl vagytok.",
       ],
       cta: "Nyomtatás megnyitása",
@@ -2806,7 +2942,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         ? `${p.overdueCount} to-do${p.overdueCount > 1 ? "s are" : " is"} now overdue${p.dueSoonCount > 0 ? `, and ${p.dueSoonCount} ${p.dueSoonCount > 1 ? "are" : "is"} coming up` : ""}.`
         : `${p.dueSoonCount} to-do${p.dueSoonCount > 1 ? "s are" : " is"} coming up.`;
     return {
-      subject: "Csúszik pár dolog az ütemtervből / A few timeline items need you",
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Csúszik pár dolog az ütemtervből",
+        "A few timeline items need you",
+      ),
       ctaUrl: p.timelineUrl,
       hu: {
         preheader: `${p.coupleDisplayName}, ${headlineHu}`,
@@ -2840,7 +2980,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const fromEn = p.previousWeddingDate ? `${p.previousWeddingDate} → ` : "";
     const toEn = p.newWeddingDate ? `**${p.newWeddingDate}**` : "TBD (a new date will follow)";
     return {
-      subject: `Új esküvői időpont / Wedding date update, ${p.coupleDisplayName}`,
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `Új esküvői időpont`,
+        `Wedding date update, ${p.coupleDisplayName}`,
+      ),
       ctaUrl: p.rsvpPageUrl,
       hu: {
         preheader: `${p.coupleDisplayName} módosította az esküvő időpontját.`,
@@ -2867,7 +3011,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   rsvp_weekly_digest_for_couple: (p, ctx) => {
     const total = p.yesCount + p.noCount + p.maybeCount;
     return {
-      subject: `Heti RSVP összegzés / Weekly RSVP digest, ${p.coupleDisplayName}`,
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `Heti RSVP összegzés`,
+        `Weekly RSVP digest, ${p.coupleDisplayName}`,
+      ),
       ctaUrl: p.guestsUrl,
       hu: {
         preheader: `${total} új visszajelzés a múlt héten.`,
@@ -2917,8 +3065,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         paragraphs: [
           `Itt a heti moderációs összefoglaló, ${total} tétel várja a beavatkozást:`,
           `• ${p.awaitingReviewSuppliers} elfogadásra váró közösségi szolgáltató`,
-          `• ${p.newVendorWaitlistEntries} új vendor-jelentkezés`,
-          `• ${p.pendingListingClaims} függő listing-igénylés`,
+          `• ${p.newVendorWaitlistEntries} új szolgáltatói jelentkezés`,
+          `• ${p.pendingListingClaims} függő adatlap-igénylés`,
           `• ${p.unresolvedUserFlags} aktív user-flag`,
           "Bármelyik tétel egy kattintásra van az admin oldalról.",
           `Növekedés (utóbbi 7 nap / megelőző 7 nap): **${p.newCouplesThisWeek} új pár** (${sign(couplesDelta)}) · **${p.newUsersThisWeek} új felhasználó** (${sign(usersDelta)})`,
@@ -2933,7 +3081,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           `• ${p.awaitingReviewSuppliers} suppliers awaiting review`,
           `• ${p.newVendorWaitlistEntries} new vendor waitlist submissions`,
           `• ${p.pendingListingClaims} pending listing claims`,
-          `• ${p.unresolvedUserFlags} active user flags`,
+          `• ${p.unresolvedUserFlags} active user flag${p.unresolvedUserFlags === 1 ? "" : "s"}`,
           "Everything is one click away from the admin console.",
           `Growth (last 7 days / prior 7 days): **${p.newCouplesThisWeek} new couples** (${sign(couplesDelta)}) · **${p.newUsersThisWeek} new users** (${sign(usersDelta)})`,
         ],
@@ -2944,14 +3092,18 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   },
 
   rsvp_followup_missing_meal: (p, ctx) => ({
-    subject: `Egy gyors apróság maradt / One small thing, ${p.coupleDisplayName}`,
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `Egy gyors apróság maradt`,
+      `One small thing, ${p.coupleDisplayName}`,
+    ),
     ctaUrl: p.rsvpPageUrl,
     hu: {
       preheader: "Egy ételválasztás még hiányzik a visszajelzésedből.",
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
         `Köszi, hogy visszajeleztél ${p.coupleDisplayName} esküvőjére, egy mező maradt csak ki: az ételválasztás.`,
-        "Egy kattintás a visszajelzés-oldalon, és kész, a párnak így pontosabb fejszámot tudnak adni a catering-nek.",
+        "Egy kattintás a visszajelző oldalon, és kész. Így a pár pontos létszámot tud adni a cateringnek.",
       ],
       cta: "Ételválasztás megadása",
       footnote: "Csak egyszer küldjük ezt, ha most kihagyod, akkor sem fog ismét rád szólni.",
@@ -2959,23 +3111,27 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        `Thanks for RSVP'ing to ${p.coupleDisplayName}'s wedding, one field is still open: your meal choice.`,
-        "A single click on the RSVP page sorts it. Helps the couple give a cleaner headcount to their caterer.",
+        `Thanks for RSVP'ing to ${p.coupleDisplayName}'s wedding. One detail is still missing: your meal choice.`,
+        "It takes one click to add, and gives the couple an accurate count for their caterer.",
       ],
       cta: "Pick your meal",
-      footnote: "We only send this nudge once, ignoring it is fine, we won't ask again.",
+      footnote: "We only send this reminder once.",
     },
   }),
 
   rsvp_deadline_approaching: (p, ctx) => ({
-    subject: `${p.pendingCount} vendég még nem válaszolt / ${p.pendingCount} guests haven't RSVP'd`,
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `${p.pendingCount} vendég még nem válaszolt`,
+      `${p.pendingCount} guests haven't RSVP'd`,
+    ),
     ctaUrl: p.guestsUrl,
     hu: {
       preheader: `${p.coupleDisplayName}, 2 hét az esküvőig.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
         `Két hét múlva van az esküvőtök **(${p.weddingDate})**, és **${p.pendingCount} vendég** még nem küldte el az RSVP-jét.`,
-        "A vendéglistán egy kattintás emlékeztetőt küldeni mindenkinek, aki még nem válaszolt. Most a jó pillanat, innentől kezdve egyre nehezebb lesz pontos fejszámot adni a helyszínnek és a catering-nek.",
+        "A vendéglistán egy kattintás emlékeztetőt küldeni mindenkinek, aki még nem válaszolt. Most a jó pillanat, innentől kezdve egyre nehezebb lesz pontos fejszámot adni a helyszínnek és a cateringnek.",
       ],
       cta: "Vendéglista megnyitása",
       footnote: "Ezt az emlékeztetőt csak egyszer küldjük, T-14 napon.",
@@ -2992,7 +3148,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   vendor_waitlist_received: (p, ctx) => ({
-    subject: "Várólistára kerültél / You're on the Weddly vendor waitlist",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Várólistára kerültél",
+      "You're on the Weddly vendor waitlist",
+    ),
     ctaUrl: p.landingUrl,
     hu: {
       preheader: "Megkaptuk a jelentkezést, várólistán vagytok.",
@@ -3045,7 +3205,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // homepage), the URL is also shown as a clickable copy-paste fallback, and
   // the transactional footer is honest because the recipient now has a
   // pre-built account waiting. Mirrors `planner_onboarding_invite`.
-  vendor_activation: (p) => {
+  vendor_activation: (p, ctx) => {
     const name = p.businessName.trim();
     // Accept path: the admin's warm, edited body opens the letter. Resend path:
     // no admin body, so a clear default welcome + bold activation instruction.
@@ -3067,7 +3227,14 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     return {
       subject:
         p.subject?.trim() ||
-        "Aktiváld a Weddly szolgáltatói fiókod / Activate your Weddly vendor account",
+        // The business name sits in label position rather than inside the
+        // sentence: Hungarian would need an accusative suffix on it, and there
+        // is no safe way to decline an arbitrary trading name.
+        localeSubject(
+          ctx.recipientLocale,
+          `${name}: szívesen látnánk titeket a Weddly katalógusában`,
+          "We'd love to welcome you to the Weddly directory",
+        ),
       ctaUrl: p.activateUrl,
       plainCtaUrl: true,
       noUtm: true,
@@ -3091,7 +3258,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     };
   },
 
-  vendor_profile_share: (p) => {
+  vendor_profile_share: (p, ctx) => {
     const name = p.businessName.trim();
     // Only the sections that are actually empty get named, in the same order
     // in both languages so the two blocks stay parallel.
@@ -3147,7 +3314,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     );
 
     return {
-      subject: "Oszd meg a Weddly-profilod / Share your Weddly profile",
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Éles a Weddly-profilod",
+        "Your Weddly profile is live",
+      ),
       ctaUrl: p.shareUrl,
       // The CTA link IS the shareable public URL, so keep it clean: no email
       // UTM riding along into the vendor's own socials, and render it as a
@@ -3315,7 +3486,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     };
   },
 
-  vendor_profile_incomplete: (p) => {
+  vendor_profile_incomplete: (p, ctx) => {
     const name = p.businessName.trim();
     // Name only the empty sections, in the same order in both languages so the
     // two blocks stay parallel. At least one is always true here.
@@ -3362,7 +3533,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     // different framing. The worker rotates `variant` by the per-vendor count.
     const variants = [
       {
-        subject: "Fejezd be a Weddly-profilod / Finish your Weddly profile",
+        subject: localeSubject(
+          ctx.recipientLocale,
+          "Fejezd be a Weddly-profilod",
+          "Finish your Weddly profile",
+        ),
         hu: {
           preheader: "Néhány rész még hiányzik a profilodról.",
           intro:
@@ -3489,7 +3664,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     };
   },
 
-  planner_profile_incomplete: (p) => {
+  planner_profile_incomplete: (p, ctx) => {
     const name = p.fullName.trim();
     // Name the empty fields in the same order in both languages so the two
     // blocks stay parallel.
@@ -3516,7 +3691,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const enList = enMissing.length > 0 ? joinNaturalList(enMissing, "and") : "a few details";
 
     return {
-      subject: "Fejezd be a Weddly-profilod / Finish your Weddly profile",
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Fejezd be a Weddly-profilod",
+        "Finish your Weddly profile",
+      ),
       ctaUrl: p.editUrl,
       hu: {
         preheader: "Néhány adat még hiányzik a nyilvános profilodról.",
@@ -3563,8 +3742,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     };
   },
 
-  planner_provisioned: (p) => ({
-    subject: "Elkészült a szervezői fiókod / Your planner account is ready",
+  planner_provisioned: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Elkészült a szervezői fiókod",
+      "Your planner account is ready",
+    ),
     ctaUrl: p.activateUrl,
     hu: {
       preheader: `${p.businessName} profilja aktiválásra vár, két év teljes hozzáféréssel.`,
@@ -3597,16 +3780,20 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // Distinct from planner_provisioned (admin-in-person, "in your name"): here the
   // copy says "we reviewed and approved YOUR application" and the onboarding is
   // pre-filled from what they submitted. The link opens a real planner account.
-  planner_onboarding_invite: (p) => ({
-    subject: "Jóváhagytuk a jelentkezésed / Your planner application is approved",
+  planner_onboarding_invite: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Jóváhagytuk a jelentkezésed",
+      "Your planner application is approved",
+    ),
     ctaUrl: p.activateUrl,
     hu: {
       preheader: "Átnéztük a jelentkezésed, nyisd meg a szervezői fiókod.",
       greeting: `Szia ${p.plannerName}!`,
       paragraphs: [
         `Köszönjük a jelentkezésed a Weddly tervezői programjába. Átnéztük és **jóváhagytuk** a(z) **${p.businessName}** profilját.`,
-        "Már csak egy lépés van hátra: nyisd meg a fiókod a lenti gombbal, és állíts be egy jelszót. Az onboardingot **előre kitöltöttük a jelentkezésed adataival**, csak át kell nézned.",
-        `A vendégünk vagy eddig: ${p.freeUntilHu}. Nincs apró betű.`,
+        "Már csak egy lépés van hátra: nyisd meg a fiókod az alábbi gombbal, és állíts be egy jelszót. A kezdeti beállítást **előre kitöltöttük a jelentkezésed adataival**, neked csak át kell nézned.",
+        `A vendégünk vagy eddig: ${p.freeUntilHu} Nincs apró betű.`,
         `A fiók megnyitásával elfogadod az Általános Szerződési Feltételeket (${CONFIG.frontendBaseUrl}/terms) és az Adatkezelési tájékoztatót (${CONFIG.frontendBaseUrl}/privacy). Mindkettőt a gomb után is megtalálod, mielőtt véglegesítenél.`,
       ],
       cta: "Fiók megnyitása",
@@ -3641,7 +3828,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     subject:
       p.locale === "hu"
         ? "Ajánlottak titeket: itt a Weddly szervezői fiókotok"
-        : "You came recommended: your Weddly planner account is ready",
+        : "You were recommended: your Weddly account is ready",
     ctaUrl: p.activateUrl,
     plainCtaUrl: true,
     noUtm: true,
@@ -3655,7 +3842,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: "Egy felhasználónk javasolta a nevedet. A fiók kész, egy kattintás átvenni.",
       greeting: `Szia ${p.plannerName}!`,
       paragraphs: [
-        `Egy felhasználónk javasolta a nevedet, amikor esküvőszervezőket kerestünk a Weddlyre. Ennyi elég is volt: elkészítettük a **${p.businessName}** szervezői fiókját, és rád vár.`,
+        `Egy felhasználónk javasolta a nevedet, amikor esküvőszervezőket kerestünk a Weddlyre. Ennyi elég is volt: elkészítettük ${huArticle(p.businessName)} **${p.businessName}** szervezői fiókját, és rád vár.`,
         "A Weddlyn a pár és a szervező ugyanazt a felületet nézi: vendéglista, ülésrend, költségvetés, RSVP, idővonal, feladatok. Az összes ügyfeled egy vezérlőpultról megy, és nem a levelezésben kell keresned, hol tart egy esküvő.",
         // No sentence-final period after the date: a Hungarian formatted date
         // already ends in one ("2028. július 28."), and adding ours makes it two.
@@ -3682,7 +3869,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         `One of our users put your name forward when we went looking for wedding planners for Weddly. That was enough for us: the planner account for **${p.businessName}** is set up and waiting for you.`,
         "On Weddly the couple and the planner look at the same screen: guest list, seating, budget, RSVP, timeline, tasks. Every client you have runs from one dashboard, so you never have to dig through your inbox to find where a wedding stands.",
-        `Come along from the first chapter: for the next two years you are our guest, with everything unlocked. Your guest period runs until ${p.guestUntil}.`,
+        `Join us from the first chapter: for the next two years, every feature is on us. Your complimentary access runs until ${p.guestUntil}.`,
         `Straight talk about the data: your name, email address and phone number came from publicly published business contact details, and they serve this one message. We pass nothing to third parties. We process it under the legitimate-interest basis of Article 6(1)(f) GDPR, and every right you have against that stands: you can ask for a copy, a correction, a restriction or an erasure of your data at any time, and you can object to the processing. One line to ${CONFIG.supportEmail} is enough, a human reads it. Details: ${CONFIG.frontendBaseUrl}/privacy`,
       ],
       cta: "Take over your account",
@@ -3696,7 +3883,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   wedding_today_followup: (p, ctx) => ({
-    subject: `Milyen volt? / How was the wedding?, ${p.coupleDisplayName}`,
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `Segítsetek megépíteni a következő Weddlyt`,
+      `Help us build the next Weddly, ${p.coupleDisplayName}`,
+    ),
     ctaUrl: p.feedbackUrl,
     hu: {
       preheader: `Köszönjük, hogy a Weddly-vel terveztetek.`,
@@ -3720,7 +3911,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   }),
 
   wedding_today: (p, ctx) => ({
-    subject: "Ma van a nap / Today's the day 💛",
+    subject: localeSubject(ctx.recipientLocale, "Ma van a nap", "Today's the day 💛"),
     ctaUrl: CONFIG.frontendBaseUrl,
     hu: {
       preheader: `${p.coupleDisplayName}, gratulálunk!`,
@@ -3740,25 +3931,29 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       cta: "Back to Weddly",
     },
   }),
-  community_supplier_verify: (p) => ({
-    subject: "Weddly: vedd át a hirdetésed / claim your listing",
+  community_supplier_verify: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `Egy pár hozzáadta a ${p.supplierName} adatlapját`,
+      `A couple added ${p.supplierName} to Weddly`,
+    ),
     ctaUrl: p.verifyUrl,
     hu: {
       preheader: `${p.supplierName} hozzá lett adva a Weddly katalógushoz.`,
       greeting: "Szia!",
       paragraphs: [
         p.suggestedByUser
-          ? `Egy pár, aki a Weddlyn tervezi az esküvőjét, hozzáadta a vállalkozásodat (${p.supplierName}) a szolgáltató-katalógushoz.`
+          ? `Egy pár, aki a Weddlyn tervezi az esküvőjét, hozzáadta ${huArticle(p.supplierName)} ${p.supplierName} adatlapját a szolgáltatói katalógushoz.`
           : `A(z) ${p.supplierName} bekerült a Weddly szolgáltató-katalógusába.`,
-        "Ha szeretnéd, hogy a párok lássák, vedd át a hirdetést az alábbi linkkel, addig nem jelenik meg.",
-        "Ha nem te küldted és nem szeretnéd, hogy itt szerepelj, hagyd figyelmen kívül ezt a levelet. Kattintás nélkül a hirdetés nem kerül publikálásra.",
+        "Vedd át az adatlapot az alábbi linken, hogy ellenőrizhesd az információkat és láthatóvá tehesd a párok számára.",
+        "Ha nem szeretnél megjelenni, nincs teendőd: kattintás nélkül az adatlap nem kerül publikálásra.",
       ],
       // "Átvétele" instead of "megerősítése", the recipient never asked for
       // anything to confirm. "Take ownership" / "Claim" is the Yelp/GBP-
       // standard verb for this exact directory-onboarding flow; reads as
       // agency-giving rather than "click here to commit to something you
       // didn't sign up for".
-      cta: "Hirdetés átvétele",
+      cta: "Adatlap átvétele",
       ctaSubtext: "A link 7 napig érvényes.",
       secondaryLinks: [{ label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl }],
     },
@@ -3826,7 +4021,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     subject: localeSubject(
       p.locale,
       `Egy pár ajánlotta a Weddlyn: ${p.listingName}`,
-      `A couple put ${p.listingName} forward on Weddly`,
+      `A couple recommended ${p.listingName} on Weddly`,
       {
         hr: `Par je predložio ${p.listingName} na Weddlyju`,
         de: `Ein Paar hat ${p.listingName} auf Weddly vorgeschlagen`,
@@ -3855,7 +4050,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: "Hi there,",
       paragraphs: [
         `A couple planning their wedding on Weddly put **${p.listingName}** forward, which is how your page went up: ${p.categoryLabel}, ${p.city}. It is live, and right now it tells couples that nobody from the business has taken it over.`,
-        "Every week couples sit down and decide who they want beside them on the biggest day of their lives. When they reach your page, what they find is our best guess at you: no photos of yours, no packages, no prices, no open dates. Take it over and it becomes yours, in about two minutes.",
+        "Couples are already using Weddly to choose their wedding team. Right now, your page is only our best draft: it has none of your own photos, packages, prices or availability. Claim it and make it yours in about two minutes.",
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
@@ -3915,8 +4110,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   vendor_claim_campaign_reminder: (p) => ({
     subject: localeSubject(
       p.locale,
-      `Két perc, és a(z) ${p.listingName} oldal a tiétek`,
-      `Two minutes to take over ${p.listingName}`,
+      `Két perc, és a ${p.listingName} oldala a tiétek`,
+      `Two minutes to make ${p.listingName} yours`,
       {
         hr: `Dvije minute i ${p.listingName} je vaš`,
         de: `Zwei Minuten, und ${p.listingName} gehört Ihnen`,
@@ -3987,8 +4182,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   vendor_review_campaign: (p) => ({
     subject:
       p.locale === "hu"
-        ? "Mostantól bárki értékelhet titeket a Weddly-n"
-        : "Your reviews are now open to everyone on Weddly",
+        ? "Elkészült a saját Weddly értékelő linketek"
+        : "Your Weddly review link is ready",
     ctaUrl: p.ctaUrl,
     hu: {
       preheader: "A vélemények mostantól bárkitől jöhetnek. Kérj párat a korábbi pároktól.",
@@ -4013,7 +4208,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: p.businessName.trim() ? `Hi ${p.businessName.trim()},` : "Hi there,",
       paragraphs: [
         "Big news: on Weddly, **reviews are now open to everyone**. No Weddly account, no sign-up, just an email address. Anyone you've ever worked with can leave you a rating in a couple of clicks.",
-        "Most couples browsing right now don't know you yet. A handful of honest 5-star reviews from past clients is the best reference you can have. Let your work speak for you, and let couples hear it from the people who have already booked you.",
+        "Most couples browsing right now don't know you yet. A handful of honest reviews from past clients says more than any sales copy: couples hear directly from people who have already booked you.",
         `Here's your own review link, send it to a few favourite past clients: **${p.reviewUrl}**`,
       ],
       cta: "See your review page",
@@ -4032,7 +4227,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   vendor_review_campaign_reminder: (p) => ({
     subject:
       p.locale === "hu"
-        ? "Egy link, és jönnek az első csillagok"
+        ? "Egy linkre vagytok az első értékelésektől"
         : "One link away from your first reviews",
     ctaUrl: p.ctaUrl,
     hu: {
@@ -4040,7 +4235,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: p.businessName.trim() ? `Szia ${p.businessName.trim()}!` : "Szia!",
       paragraphs: [
         "Pár napja írtunk: a Weddly-n a vélemények mostantól bárkitől jöhetnek. Ha van egy-két elégedett korábbi párotok, egyetlen link elég, hogy értékeljenek.",
-        `Küldd el nekik a saját értékelő linketek: **${p.reviewUrl}**, pár csillag, és a böngésző párok máris jobban bíznak bennetek.`,
+        `Küldd el nekik a saját értékelő linketeket: **${p.reviewUrl}**. Néhány őszinte visszajelzés, és a böngésző párok máris tisztábban látják, mire számíthatnak tőletek.`,
       ],
       cta: "Nézd meg az oldalad",
       secondaryLinks: [
@@ -4053,7 +4248,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       greeting: p.businessName.trim() ? `Hi ${p.businessName.trim()},` : "Hi there,",
       paragraphs: [
         "We wrote a few days ago: reviews on Weddly are now open to anyone. If you have a happy past client or two, a single link is all it takes for them to leave you a rating.",
-        `Send them your own review link: **${p.reviewUrl}**, a few stars, and couples browsing you will trust you that much more.`,
+        `Send them your review link: **${p.reviewUrl}**. A few genuine reviews give browsing couples a much clearer reason to trust you.`,
       ],
       cta: "See your review page",
       secondaryLinks: [
@@ -4079,7 +4274,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     subject:
       p.locale === "hu"
         ? "Az egész esküvő egy nyugodt helyen"
-        : "The whole wedding, one calm place",
+        : "Your whole wedding, in one calm place",
     ctaUrl: p.ctaUrl,
     hu: {
       preheader: "Vendéglista, ülésrend, költségvetés, RSVP. Egy helyen.",
@@ -4112,10 +4307,14 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // low-friction, the whole pitch is "2 minutes and your planner is seeded".
   // Outreach category, so the footer carries the one-click unsubscribe.
   onboarding_campaign: (p) => ({
+    whyLine: {
+      hu: "Ezt azért kaptad, mert van Weddly-fiókod.",
+      en: "You're getting this because you have a Weddly account.",
+    },
     subject:
       p.locale === "hu"
         ? "2 perc, és kész az esküvőterveződ alapja"
-        : "2 minutes to set up your wedding planner",
+        : "Your wedding planner is two minutes away",
     ctaUrl: p.ctaUrl,
     hu: {
       preheader: "Regisztráltál, de a terveződ még üres. Pár adat, és indulhat.",
@@ -4148,10 +4347,14 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // The single reminder wave for the campaign above, sent only to recipients
   // still without a workspace. Warmer and shorter, framed as "we kept your spot".
   onboarding_campaign_reminder: (p) => ({
+    whyLine: {
+      hu: "Ezt azért kaptad, mert van Weddly-fiókod.",
+      en: "You're getting this because you have a Weddly account.",
+    },
     subject:
       p.locale === "hu"
         ? "Még megvan a helyed, fejezzük be együtt?"
-        : "Your spot is still saved, shall we finish?",
+        : "Your planner is ready when you are",
     ctaUrl: p.ctaUrl,
     hu: {
       preheader: "Pár napja kezdtél bele. A terveződ egy kattintásra van a kezdéstől.",
@@ -4181,18 +4384,22 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // auth) can hit /api/vendor/claim/start with a listing id, so the recipient
   // didn't necessarily start the flow themselves. The footer copy reflects
   // that ("no Weddly account, ignore = nothing happens").
-  vendor_claim_verify: (p) => ({
-    subject: "Weddly: vedd át a listingedet / claim your listing",
+  vendor_claim_verify: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `Erősítsd meg a ${p.listingName} adatlapjának átvételét`,
+      `Confirm your ${p.listingName} listing claim`,
+    ),
     ctaUrl: p.verifyUrl,
     hu: {
       preheader: `${p.listingName} listing átvétele.`,
       greeting: "Szia!",
       paragraphs: [
-        `Valaki a Weddly-n szeretné átvenni a(z) ${p.listingName} listing tulajdonjogát.`,
-        "Ha te vagy, kattints az alábbi linkre, ezzel jelszót állíthatsz be, és innentől te szerkesztheted a saját adataidat a katalógusban.",
-        "Ha nem te kezdeményezted, hagyd figyelmen kívül ezt az emailt, kattintás nélkül semmi sem történik.",
+        `Valaki a Weddlyn szeretné átvenni ${huArticle(p.listingName)} ${p.listingName} adatlapját.`,
+        "Ha te vagy, kattints az alábbi linkre. Beállíthatsz egy jelszót, és ezután te szerkesztheted az adatlapot a katalógusban.",
+        "Ha nem te kezdeményezted, hagyd figyelmen kívül ezt az e-mailt, kattintás nélkül semmi sem történik.",
       ],
-      cta: "Listing átvétele",
+      cta: "Adatlap átvétele",
       ctaSubtext: "A link 7 napig érvényes.",
       secondaryLinks: [{ label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl }],
     },
@@ -4214,13 +4421,17 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // who's asking, the claimer-typed address often differs from the inbox on
   // file, which is exactly the signal an admin wants before the link lands.
   vendor_claim_admin_alert: (p, ctx) => ({
-    subject: `Listing-igénylés indult / Claim started, ${p.listingName}`,
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `Listing-igénylés indult`,
+      `Claim started, ${p.listingName}`,
+    ),
     ctaUrl: p.adminUrl,
     hu: {
       preheader: `${p.listingName}: valaki igényelni szeretné.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        `Valaki elindította a(z) ${p.listingName} listing átvételét a Weddly katalógusban.`,
+        `Valaki elindította a ${p.listingName} adatlapjának átvételét a Weddly katalógusában.`,
         [
           `• Listing: ${p.listingName} (${p.listingId})`,
           `• Igénylő által megadott email: ${p.claimantEmail}`,
@@ -4229,7 +4440,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "A megerősítő link a listingen szereplő hivatalos címre ment, ez igazolja a tulajdonjogot. Ez a levél csak figyelmeztetés, nincs teendő, hacsak nem tűnik gyanúsnak.",
       ],
       cta: "Admin felület megnyitása",
-      footnote: "Ezt minden listing-igénylés indulásakor elküldjük az adminoknak.",
+      footnote: "Ezt minden adatlap-igénylés indulásakor elküldjük az adminoknak.",
     },
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
@@ -4251,15 +4462,19 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // 'active', it's now visible to couples. Closes the verify → moderation
   // → live loop the recipient last heard about when they clicked the verify
   // link.
-  community_supplier_published: (p) => ({
-    subject: `Élesedett a hirdetésed / ${p.supplierName} is now live`,
+  community_supplier_published: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `A ${p.supplierName} adatlapja éles`,
+      `${p.supplierName} is now live`,
+    ),
     ctaUrl: p.listingUrl,
     hu: {
       preheader: `${p.supplierName} mostantól látszik a Weddly katalógusban.`,
       greeting: "Szia!",
       paragraphs: [
         `Megnéztük és átengedtük: ${p.supplierName} mostantól szerepel a Weddly publikus szolgáltató-katalógusban.`,
-        "A párok mostantól rátalálhatnak. Ha bármi adat változna (telefonszám, weboldal, leírás), válaszolj erre az emailre, emberek olvassák.",
+        "A párok mostantól rátalálhatnak. Ha bármi adat változna (telefonszám, weboldal, leírás), válaszolj erre az e-mailre, emberek olvassák.",
       ],
       cta: "Hirdetés megnyitása",
     },
@@ -4278,8 +4493,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // a concrete answer + optional admin-typed reason; otherwise the
   // verified listing sits silently hidden and the submitter has no
   // recourse.
-  community_supplier_rejected: (p) => ({
-    subject: `Hirdetésed nem került jóváhagyásra / Listing not approved`,
+  community_supplier_rejected: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `A ${p.supplierName} adatlapját nem hagytuk jóvá`,
+      `Listing not approved`,
+    ),
     ctaUrl: CONFIG.frontendBaseUrl,
     hu: {
       preheader: `${p.supplierName} hirdetése nem ment át a moderáción.`,
@@ -4306,8 +4525,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // so they can fix wrong info before the moderation queue swallows the
   // listing for repeated reports. Only fires on the FIRST report (caller
   // gates on reportCount === 1) to keep the inbox quiet.
-  community_supplier_reported: (p) => ({
-    subject: `Visszajelzés érkezett a hirdetésedre / Feedback on your listing`,
+  community_supplier_reported: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `Frissítést kértek a ${p.supplierName} adatlapján`,
+      `Feedback on your listing`,
+    ),
     ctaUrl: CONFIG.frontendBaseUrl,
     hu: {
       preheader: `${p.supplierName} hirdetését jelentették.`,
@@ -4315,7 +4538,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         `Egy felhasználó visszajelzést küldött a(z) ${p.supplierName} hirdetésedről a Weddly katalógusban.`,
         `Jelentés oka: ${humanReportReasonHu(p.reason)}`,
-        "Ez egy elsőjelzés, most még semmi nem változik a publikus megjelenésen. Ha tudod, hogy mi az amit pontosítani lehet (cím, leírás, képek), válaszolj erre az emailre és segítünk frissíteni.",
+        "Ez egy első jelzés; a nyilvános megjelenés egyelőre nem változik. Ha tudod, mit érdemes pontosítani (például a címet, a leírást vagy a képeket), válaszolj erre az e-mailre, és segítünk frissíteni.",
       ],
       cta: "Weddly megnyitása",
     },
@@ -4335,7 +4558,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // and… nothing. This closes the loop with a Weddly-branded "you're in"
   // mail that doubles as proof-of-account for their records.
   vendor_claim_approved: (p, ctx) => ({
-    subject: `A listinged a tiéd / ${p.listingName} is yours`,
+    subject: localeSubject(ctx.recipientLocale, `A listinged a tiéd`, `${p.listingName} is yours`),
     ctaUrl: p.managerUrl,
     hu: {
       preheader: `${p.listingName} mostantól a tiéd a Weddly-n.`,
@@ -4343,7 +4566,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       paragraphs: [
         `Sikerült: ${p.listingName} mostantól a Weddly vendor fiókodhoz tartozik.`,
         "Innentől te szerkesztheted az adatokat, leírás, árak, képek, elérhetőség. A párok ugyanazt látják mint te a publikus katalógusban.",
-        "Ha kérdés van vagy bármi nem stimmel, válaszolj erre az emailre, emberek olvassák.",
+        "Ha kérdés van vagy bármi nem stimmel, válaszolj erre az e-mailre, emberek olvassák.",
       ],
       cta: "Listing kezelése",
     },
@@ -4385,7 +4608,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // the next sign-in. Framed as "we put you in the right place", not as a
   // downgrade, and it never mentions the mistake being ours or theirs.
   vendor_moved_to_planner: (p, ctx) => ({
-    subject: `A fiókod átkerült a szervezői oldalra / Your account moved to the planner side`,
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `A fiókod átkerült a szervezői oldalra`,
+      `Your account moved to the planner side`,
+    ),
     ctaUrl: p.plannerUrl,
     hu: {
       preheader: `${p.businessName}: mostantól szervezői fiók.`,
@@ -4556,7 +4783,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // this mail points them at the Planners panel to accept/decline. Reply-To is
   // the planner's email so the couple can reach back out directly.
   planner_access_requested: (p, ctx) => ({
-    subject: "Tervező hozzáférést kért / A planner requested access · Weddly",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Tervező hozzáférést kért",
+      "A planner requested access · Weddly",
+    ),
     ctaUrl: `${CONFIG.frontendBaseUrl}/app/settings/workspace`,
     replyTo: p.replyToEmail,
     hu: {
@@ -4594,7 +4825,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           ]
         : [];
     return {
-      subject: `${p.vendorName} válaszolt · Weddly`,
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `${p.vendorName} válaszolt · Weddly`,
+        `${p.vendorName} replied · Weddly`,
+      ),
       ctaUrl: `${CONFIG.frontendBaseUrl}${p.threadUrl}`,
       hu: {
         preheader: `${p.vendorName} üzenetet küldött.`,
@@ -4624,7 +4859,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   vendor_auto_reply: (p, ctx) => {
     const bodyParas = p.bodyText.split("\n").filter((line) => line.trim().length > 0);
     return {
-      subject: `${p.vendorName} visszajelzett / got back to you · Weddly`,
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `${p.vendorName} visszajelzett`,
+        `${p.vendorName} got back to you · Weddly`,
+      ),
       ctaUrl: `${CONFIG.frontendBaseUrl}${p.threadUrl}`,
       hu: {
         preheader: `${p.vendorName} megkapta a megkereséseteket.`,
@@ -4653,7 +4892,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // `vendorAttention`'s own count, so the mail and the attention band on the
   // vendor's screen can never quote two different numbers about one lead.
   vendor_lead_reminder: (p, ctx) => ({
-    subject: `${p.coupleName} még válaszra vár / is still waiting · Weddly`,
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `${p.coupleName} még válaszra vár`,
+      `${p.coupleName} are still waiting · Weddly`,
+    ),
     ctaUrl: `${CONFIG.frontendBaseUrl}${p.clientUrl}`,
     hu: {
       preheader: `${p.coupleName} ${p.waitingHours} órája vár válaszra.`,
@@ -4679,7 +4922,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // Nothing schedules this; a proposal sits in the vendor's queue until a human
   // decides, which is why the copy can speak in the vendor's name at all.
   vendor_review_request: (p, ctx) => ({
-    subject: `${p.vendorName} értékelése / Rate ${p.vendorName} · Weddly`,
+    subject: localeSubject(
+      ctx.recipientLocale,
+      `${p.vendorName} értékelése`,
+      `Rate ${p.vendorName} · Weddly`,
+    ),
     ctaUrl: p.reviewUrl,
     hu: {
       preheader: `Pár csillag ${p.vendorName} munkájára.`,
@@ -4708,7 +4955,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   couple_message: (p, ctx) => {
     const bodyParas = p.bodyText.split("\n").filter((line) => line.trim().length > 0);
     return {
-      subject: `${p.coupleName} üzenetet küldött · Weddly`,
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `${p.coupleName} üzenetet küldött · Weddly`,
+        `${p.coupleName} sent you a message · Weddly`,
+      ),
       ctaUrl: `${CONFIG.frontendBaseUrl}${p.threadUrl}`,
       hu: {
         preheader: `${p.coupleName} írt neked.`,
@@ -4748,7 +4999,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const huValid = p.validUntil ? [`Az ajánlat ${p.validUntil}-ig érvényes.`] : [];
     const enValid = p.validUntil ? [`The offer is valid until ${p.validUntil}.`] : [];
     return {
-      subject: `${p.vendorName} árajánlatot küldött / sent you a quote · Weddly`,
+      subject: localeSubject(
+        ctx.recipientLocale,
+        `${p.vendorName} árajánlatot küldött`,
+        `${p.vendorName} sent you a quote · Weddly`,
+      ),
       ctaUrl: `${CONFIG.frontendBaseUrl}${p.quoteUrl}`,
       hu: {
         preheader: `${p.vendorName} árajánlata: ${p.totalText}.`,
@@ -4784,8 +5039,16 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const huReason = p.declineReason ? [`Amit írtak: "${p.declineReason}"`] : [];
     const enReason = p.declineReason ? [`What they wrote: "${p.declineReason}"`] : [];
     const subject = p.accepted
-      ? `${p.coupleName} elfogadta az árajánlatot / accepted your quote · Weddly`
-      : `${p.coupleName} válaszolt az árajánlatra / answered your quote · Weddly`;
+      ? localeSubject(
+          ctx.recipientLocale,
+          `${p.coupleName} elfogadta az árajánlatot`,
+          `${p.coupleName} accepted your quote · Weddly`,
+        )
+      : localeSubject(
+          ctx.recipientLocale,
+          `${p.coupleName} válaszolt az árajánlatra`,
+          `${p.coupleName} answered your quote · Weddly`,
+        );
     return {
       subject,
       ctaUrl: `${CONFIG.frontendBaseUrl}${p.quoteUrl}`,
@@ -4883,7 +5146,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: "Hi there,",
         paragraphs: bodyParas,
         cta: "Open Weddly",
-        footnote: `Küldő: ${p.senderName} (${p.senderEmail}) | Weddly`,
+        footnote: `From: ${p.senderName} (${p.senderEmail}) | Weddly`,
       },
     };
   },
@@ -4891,7 +5154,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // The couple approved the planner's pending access request. Heads-up to the
   // planner that they can now enter the workspace from their dashboard.
   planner_access_approved: (p, ctx) => ({
-    subject: "Ügyfél jóváhagyta a hozzáférést / Client approved your access · Weddly",
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Ügyfél jóváhagyta a hozzáférést",
+      "Client approved your access · Weddly",
+    ),
     ctaUrl: `${CONFIG.frontendBaseUrl}/app/planner`,
     hu: {
       preheader: `${p.coupleName} jóváhagyta a hozzáférési kérésedet.`,
@@ -4916,7 +5183,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // to accept/decline from their dashboard. Reply-To is the inviting couple
   // member's email when available so the planner can reply directly.
   planner_client_invite: (p, ctx) => ({
-    subject: "Új ügyfél meghívó / New client invite · Weddly",
+    subject: localeSubject(ctx.recipientLocale, "Új ügyfél meghívó", "New client invite · Weddly"),
     ctaUrl: `${CONFIG.frontendBaseUrl}/app/planner`,
     replyTo: p.replyToEmail,
     hu: {
@@ -4942,8 +5209,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // client. The CTA carries the invitation token to the signup page. Once they
   // sign up + set up their wedding, the planner gets a pending access request
   // the couple still approves. Reply-To is the planner's email.
-  planner_email_invite: (p) => ({
-    subject: "Meghívó a Weddly-re / You're invited to Weddly · Weddly",
+  planner_email_invite: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Meghívó a Weddly-re",
+      "You're invited to Weddly · Weddly",
+    ),
     ctaUrl: p.inviteUrl,
     replyTo: p.replyToEmail,
     hu: {
@@ -4969,8 +5240,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // important nudge, which is why the CTA follows `nextStep` rather than the
   // session: an applicant who already registered months ago must be sent to
   // their own account, not through a second signup that can only 409.
-  planner_waitlist_received: (p) => ({
-    subject: "Megkaptuk a jelentkezésed / Application received · Weddly",
+  planner_waitlist_received: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Megkaptuk a jelentkezésed",
+      "Application received · Weddly",
+    ),
     ctaUrl:
       p.nextStep === "register"
         ? `${CONFIG.frontendBaseUrl}/signup`
@@ -5049,8 +5324,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // hasAccount=false → register with the SAME email (auto-grants planner);
   // hasAccount=true → the admin already granted planner on their existing
   // account, so the CTA just carries them to sign in.
-  planner_access_invite: (p) => ({
-    subject: "A tervezői fiókod készen áll / Your planner account is ready · Weddly",
+  planner_access_invite: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "A tervezői fiókod készen áll",
+      "Your planner account is ready · Weddly",
+    ),
     ctaUrl: p.hasAccount
       ? `${CONFIG.frontendBaseUrl}/app/planner`
       : `${CONFIG.frontendBaseUrl}/signup`,
@@ -5093,8 +5372,16 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // happens to reopen their settings page.
   planner_invite_outcome: (p, ctx) => ({
     subject: p.accepted
-      ? "A szervező elfogadta a meghívásod / Your planner accepted · Weddly"
-      : "A szervező elutasította a meghívásod / Your planner declined · Weddly",
+      ? localeSubject(
+          ctx.recipientLocale,
+          "A szervező elfogadta a meghívásod",
+          "Your planner accepted · Weddly",
+        )
+      : localeSubject(
+          ctx.recipientLocale,
+          "A szervező elutasította a meghívásod",
+          "Your planner declined · Weddly",
+        ),
     ctaUrl: p.accepted
       ? `${CONFIG.frontendBaseUrl}/app/settings/workspace`
       : `${CONFIG.frontendBaseUrl}/app/vendors`,
@@ -5133,8 +5420,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // Double opt-in confirm for the landing/blog newsletter capture. The address
   // gets NOTHING further unless this link is clicked, and the copy says so —
   // that's the Grtv. §6 posture in one sentence.
-  newsletter_confirm: (p) => ({
-    subject: "Erősítsd meg a feliratkozásod / Confirm your subscription · Weddly",
+  newsletter_confirm: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Erősítsd meg a feliratkozásod",
+      "Confirm your subscription · Weddly",
+    ),
     ctaUrl: p.confirmUrl,
     hu: {
       preheader: "Egy kattintás, és kész a feliratkozás.",
@@ -5161,8 +5452,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // supplier or leave a review without opening a Weddly account. One click and
   // they can contribute; the copy says exactly that. Same 7-day link posture as
   // the couples welcome verify.
-  visitor_verify: (p) => ({
-    subject: "Erősítsd meg az e-mail-címed / Confirm your email · Weddly",
+  visitor_verify: (p, ctx) => ({
+    subject: localeSubject(
+      ctx.recipientLocale,
+      "Erősítsd meg az e-mail-címed",
+      "Confirm your email · Weddly",
+    ),
     ctaUrl: p.verifyUrl,
     hu: {
       preheader: "Egy kattintás, és javasolhatsz szolgáltatót vagy írhatsz értékelést.",
@@ -5198,7 +5493,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const quoteHu = quote ? `A visszajelzésed: „${quote}”` : null;
     const quoteEn = quote ? `Your feedback: “${quote}”` : null;
     return {
-      subject: "Válasz a visszajelzésedre / Reply to your feedback · Weddly",
+      subject: localeSubject(
+        ctx.recipientLocale,
+        "Válasz a visszajelzésedre",
+        "Reply to your feedback · Weddly",
+      ),
       ctaUrl: CONFIG.frontendBaseUrl,
       replyTo: CONFIG.supportEmail,
       hu: {
@@ -5257,18 +5556,26 @@ function rsvpProgressLineEn(p?: RsvpProgress): string | null {
   return `So far ${p.pct}% of your guests have replied (${p.responded}/${p.total}).`;
 }
 
-function rsvpReceivedSubject(p: RsvpReceivedForCouplePayload): string {
-  if (p.rsvpStatus === "yes") return `${p.guestName} jön / ${p.guestName} is in`;
-  if (p.rsvpStatus === "no") return `${p.guestName} sajnos nem / ${p.guestName} can't make it`;
-  return `${p.guestName} talán / ${p.guestName} responded "maybe"`;
+function rsvpReceivedSubject(
+  p: RsvpReceivedForCouplePayload,
+  locale: RecipientLocale | undefined,
+): string {
+  if (p.rsvpStatus === "yes")
+    return localeSubject(locale, `${p.guestName} jön`, `${p.guestName} is in`);
+  if (p.rsvpStatus === "no")
+    return localeSubject(locale, `${p.guestName} sajnos nem`, `${p.guestName} can't make it`);
+  return localeSubject(locale, `${p.guestName} talán`, `${p.guestName} responded "maybe"`);
 }
 
-function rsvpHouseholdSubject(p: RsvpReceivedHouseholdForCouplePayload): string {
+function rsvpHouseholdSubject(
+  p: RsvpReceivedHouseholdForCouplePayload,
+  locale: RecipientLocale | undefined,
+): string {
   // Message-only: a household came back to write something without anyone's
   // answer moving. Handled first, because the tally below reads "all in" on an
   // empty list (0 of 0 said yes) and would announce a wedding nobody agreed to.
   if (p.guests.length === 0) {
-    return `${p.householdLabel}: üzenet / a message`;
+    return localeSubject(locale, `${p.householdLabel}: üzenet`, `${p.householdLabel}: a message`);
   }
   // Try to give a tight, scannable preview without leaking the whole list
   // into the subject line. Up to 2 names, then "+N".
@@ -5276,13 +5583,19 @@ function rsvpHouseholdSubject(p: RsvpReceivedHouseholdForCouplePayload): string 
   const headHu =
     names.length <= 2 ? names.join(" + ") : `${names.slice(0, 2).join(" + ")} +${names.length - 2}`;
   const yesCount = p.guests.filter((g) => g.rsvpStatus === "yes").length;
-  const tally =
+  const tallyHu =
     yesCount === p.guests.length
-      ? "mind jön / all in"
+      ? "mind jön"
       : yesCount > 0
-        ? `${yesCount}/${p.guests.length} jön / ${yesCount}/${p.guests.length} in`
-        : "válasz / response";
-  return `${headHu}: ${tally}`;
+        ? `${yesCount}/${p.guests.length} jön`
+        : "válasz";
+  const tallyEn =
+    yesCount === p.guests.length
+      ? "all in"
+      : yesCount > 0
+        ? `${yesCount}/${p.guests.length} in`
+        : "response";
+  return localeSubject(locale, `${headHu}: ${tallyHu}`, `${headHu}: ${tallyEn}`);
 }
 
 function rsvpThanksDetailHu(p: RsvpThanksForGuestPayload): string {

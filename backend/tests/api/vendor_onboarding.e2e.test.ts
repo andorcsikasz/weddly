@@ -309,7 +309,7 @@ describe("vendor_activation email builder points every link at the activation UR
     );
     const { html } = built.rendered;
     // Falls back to the standard bilingual activation subject.
-    expect(built.subject).toContain("Aktiváld a Weddly szolgáltatói fiókod");
+    expect(built.subject).toContain("szívesen látnánk titeket a Weddly katalógusában");
     expect(html).toContain(`href="${ACTIVATE_URL}" class="wd-cta"`);
     expect(html).toContain("Fiók aktiválása");
     // The single-use expiry line under the button (the no-card sentence that
