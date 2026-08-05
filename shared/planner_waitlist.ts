@@ -79,11 +79,12 @@ export interface DecidePlannerWaitlistInput {
   notes: string;
 }
 
-/** Pure draft builder – pre-fills the decision modal with an HU subject + body
+/** Pure draft builder: pre-fills the decision modal with an HU subject + body
  *  per outcome. Plain text, no HTML. Called from the admin frontend (to live
  *  update the modal as the outcome changes) and mirrored server-side as the
  *  authoritative default. Kept parallel to `buildEmailDraft` in
- *  `shared/vendor_waitlist.ts`. */
+ *  `shared/vendor_waitlist.ts`, including its three copy rules: no greeting
+ *  (the card greets by name), no sign-off, and no offer described here. */
 export function buildPlannerEmailDraft(
   outcome: PlannerWaitlistOutcome,
   entry: { full_name: string; company_name?: string | null },
@@ -91,40 +92,32 @@ export function buildPlannerEmailDraft(
   const name = entry.full_name || "";
   if (outcome === "accepted") {
     return {
-      subject: "Wēddly: jóváhagytuk a szervezői hozzáférésed",
+      subject: "Jóváhagytuk a szervezői hozzáférésed",
       body:
-        `Szia ${name}!\n\n` +
-        `Köszönjük, hogy jelentkeztél a Wēddly szervezői eszközeire. Átnéztük a profilodat, ` +
-        `és örömmel jelezzük: aktiváltuk a szervezői hozzáférésed.\n\n` +
-        `A következő lépés egyszerű: lépj be, és a szervezői vezérlőpultból indítsd el az ` +
-        `onboardingot – onnan hozzáadhatod az első ügyfeleidet és összekötheted a ` +
-        `munkatereiteket.\n\n` +
-        `A Wēddly még béta szakaszban van, ezért minden őszinte visszajelzésed sokat segít. ` +
-        `Ha bármi kérdésed van, válaszolj nyugodtan erre a levélre – személyesen olvassuk.\n\n` +
-        `Üdv,\nA Wēddly csapata`,
+        `Köszönjük, hogy jelentkeztél a Weddly szervezői eszközeire. Átnéztük a profilodat, ` +
+        `és aktiváltuk a szervezői hozzáférésed.\n\n` +
+        `Lépj be a szervezői vezérlőpultba, és állítsd be a profilodat. Ezután egy helyről ` +
+        `követheted az összes ügyfeled vendéglistáját, költségvetését, ütemtervét és feladatait.\n\n` +
+        `Ha bármi kérdésed van, válaszolj nyugodtan erre a levélre, ember olvassa.`,
     };
   }
   if (outcome === "under_review") {
     return {
-      subject: "Wēddly: átnézzük a jelentkezésed",
+      subject: "Átnézzük a jelentkezésed",
       body:
-        `Szia ${name}!\n\n` +
-        `Köszönjük, hogy jelentkeztél a Wēddly szervezői eszközeire. A csapatunk a következő ` +
-        `napokban átnézi a profilodat, és e-mailben jelzünk vissza a döntéssel.\n\n` +
-        `Ha addig van bármi, amit szeretnél megosztani magadról – portfólió, referenciák, ` +
-        `korábbi esküvők –, nyugodtan válaszolj erre a levélre.\n\n` +
-        `Üdv,\nA Wēddly csapata`,
+        `Köszönjük, hogy jelentkeztél a Weddly szervezői eszközeire. A következő napokban ` +
+        `átnézzük a profilodat, és e-mailben jelzünk vissza a döntéssel. Addig nincs teendőd.\n\n` +
+        `Ha van bármi, amit szeretnél megosztani magadról, portfólió, referenciák vagy korábbi ` +
+        `esküvők, nyugodtan válaszolj erre a levélre.`,
     };
   }
   // rejected
   return {
-    subject: "Wēddly: köszönjük a jelentkezést",
+    subject: "Köszönjük a jelentkezést",
     body:
-      `Szia ${name}!\n\n` +
-      `Köszönjük, hogy jelentkeztél a Wēddly szervezői eszközeire. Most még nem tudunk ` +
-      `továbblépni veled – jelenleg szűken alakítjuk a szervezői kört.\n\n` +
-      `Ez nem örökre szól: amint bővítünk, jelzünk. Ha addig változik valami nálad, ` +
-      `küldd el bátran – szívesen átnézzük újra.\n\n` +
-      `Üdv,\nA Wēddly csapata`,
+      `Köszönjük, hogy jelentkeztél a Weddly szervezői eszközeire. Most még nem tudunk ` +
+      `továbblépni veled: jelenleg szűken alakítjuk a szervezői kört.\n\n` +
+      `Ez nem örökre szól, amint bővítünk, jelzünk. Ha addig változik valami nálad, ` +
+      `küldd el bátran, szívesen átnézzük újra.`,
   };
 }

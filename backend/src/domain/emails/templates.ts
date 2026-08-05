@@ -3181,19 +3181,21 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // moderation modal; we slot that text into the standard branded shell so the
   // recipient sees a Weddly-branded mail rather than a context-less plain-text
   // reply (which is what the previous raw `sendEmail` path used to emit).
-  vendor_waitlist_decision: (p) => {
+  // The card greets by name and the draft body no longer opens with a greeting
+  // of its own; the two together used to render "Szia!" above "Szia Bloom Studio!".
+  vendor_waitlist_decision: (p, ctx) => {
     const paragraphs = splitParagraphs(p.body);
     return {
       subject: p.subject,
       ctaUrl: CONFIG.frontendBaseUrl,
       hu: {
         preheader: vendorWaitlistDecisionPreheader(p.outcome, "hu"),
-        greeting: "Szia!",
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
         paragraphs,
         cta: "Weddly megnyitása",
       },
       en: {
-        greeting: "Hi there,",
+        greeting: `Hi ${ctx.recipientName || "there"},`,
         paragraphs,
         cta: "Open Weddly",
       },
@@ -3723,19 +3725,20 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     };
   },
 
-  planner_waitlist_decision: (p) => {
+  // Same greeting rule as `vendor_waitlist_decision` above.
+  planner_waitlist_decision: (p, ctx) => {
     const paragraphs = splitParagraphs(p.body);
     return {
       subject: p.subject,
       ctaUrl: CONFIG.frontendBaseUrl,
       hu: {
         preheader: vendorWaitlistDecisionPreheader(p.outcome, "hu"),
-        greeting: "Szia!",
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
         paragraphs,
         cta: "Weddly megnyitása",
       },
       en: {
-        greeting: "Hi there,",
+        greeting: `Hi ${ctx.recipientName || "there"},`,
         paragraphs,
         cta: "Open Weddly",
       },

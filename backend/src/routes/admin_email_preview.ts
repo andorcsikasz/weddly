@@ -249,17 +249,17 @@ const STUBS: KindPayload = {
     location: "Budapest, Hungary",
     landingUrl: BASE_URL,
   },
+  // Mirrors what `buildEmailDraft("accepted", ...)` pre-fills in the admin modal.
   vendor_waitlist_decision: {
-    subject: "Your Weddly vendor application",
-    body: "Thank you for your patience. We've reviewed your submission and would love to have you on board.\n\nWe'll be in touch within the next few weeks with next steps.",
+    subject: "Bloom Studio: szívesen látnánk titeket a Weddly katalógusában",
+    body: 'Köszönjük, hogy jelentkeztetek a Weddly szolgáltatói várólistájára (Fotós). Személyesen átnéztük a profilotokat, és szeretnénk titeket a pároknak ajánlott szolgáltatók között látni.\n\n**A következő lépés: aktiváljátok a fiókotokat a lenti „Fiók aktiválása" gombbal.** A jelentkezéskor megadott adatok és képek alapján már összeraktuk a profilotokat, belépés után csak átnézitek. Az adatlap csak akkor válik láthatóvá a pároknak, amikor ti jóváhagyjátok.\n\nHa bármi kérdésetek van, válaszoljatok nyugodtan erre az e-mailre, ember olvassa.',
     outcome: "accepted",
   },
   vendor_activation: {
     businessName: "Bloom Studio",
     activateUrl: `${BASE_URL}/vendor/activate/preview-token`,
     introMessage:
-      'Szia Bloom Studio!\n\nKöszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára. A csapatunk személyesen átnézte a profilotokat, és szeretnénk szerepeltetni titeket a pároknak ajánlott szolgáltatók között.\n\n**A következő lépés: aktiváljátok a fiókotokat a lenti „Fiók aktiválása" gombbal** (nincs szükség bankkártyára).\n\nÜdv,\nA Wēddly csapata',
-    subject: "Wēddly: szívesen látnánk titeket a katalógusban",
+      'Köszönjük, hogy jelentkeztetek a Weddly szolgáltatói várólistájára. Személyesen átnéztük a profilotokat, és szeretnénk titeket a pároknak ajánlott szolgáltatók között látni.\n\n**A következő lépés: aktiváljátok a fiókotokat a lenti „Fiók aktiválása" gombbal.** Az adatlap csak akkor válik láthatóvá a pároknak, amikor ti jóváhagyjátok.',
   },
   vendor_removal_confirmed: {
     businessName: "Bloom Studio",
@@ -293,8 +293,8 @@ const STUBS: KindPayload = {
     missing: { businessName: true, city: true, bio: true, styles: false },
   },
   planner_waitlist_decision: {
-    subject: "Wēddly: jóváhagytuk a szervezői hozzáférésed",
-    body: "Szia Anna!\n\nÁtnéztük a profilodat, és aktiváltuk a szervezői hozzáférésed. Lépj be, és a szervezői vezérlőpultból indítsd el az onboardingot.\n\nÜdv,\nA Wēddly csapata",
+    subject: "Jóváhagytuk a szervezői hozzáférésed",
+    body: "Köszönjük, hogy jelentkeztél a Weddly szervezői eszközeire. Átnéztük a profilodat, és aktiváltuk a szervezői hozzáférésed.\n\nLépj be a szervezői vezérlőpultba, és állítsd be a profilodat. Ezután egy helyről követheted az összes ügyfeled vendéglistáját, költségvetését, ütemtervét és feladatait.\n\nHa bármi kérdésed van, válaszolj nyugodtan erre a levélre, ember olvassa.",
     outcome: "accepted",
   },
   planner_provisioned: {

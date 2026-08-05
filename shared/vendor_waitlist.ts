@@ -101,7 +101,17 @@ export interface DecideVendorWaitlistInput {
 /** Pure draft builder — pre-fills the template modal with an HU subject + body
  *  parameterised by business / category. Plain text, no HTML. Called from both
  *  the admin frontend (to live-update the modal as the outcome radio changes)
- *  and the backend (as the authoritative source). */
+ *  and the backend (as the authoritative source).
+ *
+ *  Three rules the copy has to keep, because this text is a default an admin
+ *  sends without reading half the time:
+ *  - No greeting line. `vendor_waitlist_decision` greets by name already, and
+ *    a second one renders as "Szia!" stacked on "Szia Bloom Studio!".
+ *  - No sign-off. None of the other 93 kinds sign one, and the footer says who
+ *    the mail is from.
+ *  - The offer is never described here. What a vendor actually gets is resolved
+ *    at activation by `currentVendorOffer()`, so a number typed into this draft
+ *    is a promise nothing enforces. */
 export function buildEmailDraft(
   outcome: VendorWaitlistOutcome,
   entry: { business_name: string; category_label: string },
@@ -110,49 +120,37 @@ export function buildEmailDraft(
   const category = entry.category_label || "";
   if (outcome === "accepted") {
     return {
-      subject: `Wēddly: szívesen látnánk titeket a katalógusban`,
+      subject: `${name}: szívesen látnánk titeket a Weddly katalógusában`,
       body:
-        `Szia ${name}!\n\n` +
-        `Köszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára (${category}). ` +
-        `A csapatunk személyesen átnézte a profilotokat, és örömmel jelezzük: szerepeltetnénk ` +
-        `titeket a Wēddly-n tervező pároknak ajánlott szolgáltatók között.\n\n` +
-        `**A következő lépés: aktiváljátok a fiókotokat a lenti „Fiók aktiválása" gombbal** ` +
-        `(nincs szükség bankkártyára). A regisztrációkor megadott adatok és képek alapján már ` +
-        `összeraktuk a profilotokat, belépés után csak átnézitek, hogy minden úgy néz-e ki, ` +
-        `ahogy szeretnétek.\n\n` +
-        `A Wēddly még béta szakaszban van, ezért minden őszinte visszajelzés aranyat ér nekünk — ` +
-        `legyen szó a felületről, az árazásról vagy arról, mit hiányoltok egy ilyen eszközből.\n\n` +
-        `Ha bármi kérdésetek van, vagy csak megosztanátok velünk valamit, válaszoljatok nyugodtan ` +
-        `erre az e-mailre — személyesen olvassuk.\n\n` +
-        `Üdv,\nA Wēddly csapata`,
+        `Köszönjük, hogy jelentkeztetek a Weddly szolgáltatói várólistájára (${category}). ` +
+        `Személyesen átnéztük a profilotokat, és szeretnénk titeket a pároknak ajánlott ` +
+        `szolgáltatók között látni.\n\n` +
+        `**A következő lépés: aktiváljátok a fiókotokat a lenti „Fiók aktiválása" gombbal.** ` +
+        `A jelentkezéskor megadott adatok és képek alapján már összeraktuk a profilotokat, ` +
+        `belépés után csak átnézitek. Az adatlap csak akkor válik láthatóvá a pároknak, ` +
+        `amikor ti jóváhagyjátok.\n\n` +
+        `Ha bármi kérdésetek van, válaszoljatok nyugodtan erre az e-mailre, ember olvassa.`,
     };
   }
   if (outcome === "under_review") {
     return {
-      subject: `Wēddly: pár nap, és jelzünk a döntéssel`,
+      subject: `${name}: pár nap, és jelzünk a döntéssel`,
       body:
-        `Szia ${name}!\n\n` +
-        `Köszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára (${category}). ` +
-        `A csapatunk a következő napokban alaposabban átnézi a profilotokat, és e-mailben jelzünk ` +
-        `vissza a végleges döntéssel.\n\n` +
-        `Ha addig van bármi, amit szeretnétek megosztani magatokról — friss portfólió, ` +
-        `referenciák, vagy bármi, amit fontosnak tartotok —, nyugodtan válaszoljatok erre ` +
-        `a levélre.\n\n` +
-        `A Wēddly még béta szakaszban van; ha bekerültök a katalógusba, nagyon hálásak leszünk ` +
-        `minden visszajelzésért, amit a felülettel kapcsolatban megosztotok velünk.\n\n` +
-        `Üdv,\nA Wēddly csapata`,
+        `Köszönjük, hogy jelentkeztetek a Weddly szolgáltatói várólistájára (${category}). ` +
+        `A következő napokban alaposabban átnézzük a profilotokat, és e-mailben jelzünk ` +
+        `vissza a döntéssel. Addig nincs teendőtök.\n\n` +
+        `Ha van bármi, amit szeretnétek megosztani magatokról, friss portfólió, referenciák ` +
+        `vagy bármi, amit fontosnak tartotok, nyugodtan válaszoljatok erre a levélre.`,
     };
   }
   // rejected
   return {
-    subject: `Wēddly: köszönjük a jelentkezést — most még nem tudunk továbblépni`,
+    subject: `${name}: köszönjük a jelentkezést`,
     body:
-      `Szia ${name}!\n\n` +
-      `Köszönjük, hogy jelentkeztetek a Wēddly szolgáltatói várólistájára (${category}). ` +
-      `A csapatunk személyesen átnézte a profilotokat, és most még nem tudunk továbblépni ` +
-      `veletek — jelenleg szűken válogatunk a kategóriátokban.\n\n` +
-      `Ez nem örökre szól: amint újra nyitunk a kategóriátokban, jelzünk. Ha addig változik ` +
-      `valami nálatok (új portfólió, új fókusz), küldjétek el bátran — szívesen átnézzük újra.\n\n` +
-      `Üdv,\nA Wēddly csapata`,
+      `Köszönjük, hogy jelentkeztetek a Weddly szolgáltatói várólistájára (${category}). ` +
+      `Személyesen átnéztük a profilotokat, és most még nem tudunk továbblépni veletek: ` +
+      `jelenleg szűken válogatunk a kategóriátokban.\n\n` +
+      `Ez nem örökre szól, amint újra nyitunk a kategóriátokban, jelzünk. Ha addig változik ` +
+      `valami nálatok (új portfólió, új fókusz), küldjétek el bátran, szívesen átnézzük újra.`,
   };
 }
