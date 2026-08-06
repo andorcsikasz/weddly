@@ -354,6 +354,15 @@ export default {
         // small overshoot (1.25) is what sells "done" in one glance; the
         // vendor setup list plays it once per finished step.
         "tick-pop": "tickPop 260ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        // The verified check FILLING IN on the listing preview: a bigger,
+        // slower relative of tick-pop, because this one fires once per listing
+        // and marks the badge a couple will see rather than a row leaving a
+        // list. The overshoot is deliberately large (1.5) and lands through a
+        // settle, so the eye is pulled to the badge and told what changed.
+        "badge-earn": "badgeEarn 720ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        // Its halo: one azure ring expanding out of the badge and fading. Pairs
+        // with the pop so the mark reads as switched ON, not just resized.
+        "badge-halo": "badgeHalo 720ms ease-out",
       },
       keyframes: {
         fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
@@ -377,6 +386,16 @@ export default {
           "0%": { opacity: "0", transform: "scale(0.4)" },
           "60%": { opacity: "1", transform: "scale(1.25)" },
           "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        badgeEarn: {
+          "0%": { transform: "scale(0.5) rotate(-28deg)" },
+          "45%": { transform: "scale(1.5) rotate(10deg)" },
+          "70%": { transform: "scale(0.92) rotate(-4deg)" },
+          "100%": { transform: "scale(1) rotate(0deg)" },
+        },
+        badgeHalo: {
+          "0%": { opacity: "0.85", transform: "scale(0.5)" },
+          "100%": { opacity: "0", transform: "scale(2.4)" },
         },
       },
     },

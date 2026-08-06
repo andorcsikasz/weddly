@@ -656,6 +656,29 @@ export default function VendorListingPage() {
   // editor's own dropzone so both react the moment a cover is chosen.
   const effectiveHeroUrl = heroPreview ?? view?.listing.hero_image_url ?? null;
 
+  // ONE checklist verdict for this page. The sticky column renders it as rows,
+  // and the preview card's verified badge fills the moment every step is done —
+  // reading the same array, so the badge a vendor watches and the list beneath
+  // it can never disagree. Derived from the LIVE form (not the saved row) so
+  // both react on the keystroke rather than after the autosave lands.
+  const setupSteps =
+    form && view
+      ? listingChecklistFor({
+          category: view.listing.category,
+          hero_image_url: effectiveHeroUrl || null,
+          blurb_hu: form.blurb_hu || null,
+          blurb_en: form.blurb_en || null,
+          city: form.city || null,
+          contact_email: form.contact_email || null,
+          contact_phone: form.contact_phone || null,
+          price_band: form.price_band === "" ? null : Number(form.price_band),
+          capacity_min: form.capacity_min === "" ? null : Number(form.capacity_min),
+          capacity_max: form.capacity_max === "" ? null : Number(form.capacity_max),
+          photo_count: view.photos?.length ?? 0,
+          package_count: view.packages?.length ?? 0,
+        })
+      : [];
+
   // Anti-fraud pricing cooldown, mirrored from the server rule
   // (shared/listings.ts): while locked the band buttons are disabled and the
   // unlock date replaces the help line, so the vendor never hits the 409.
@@ -825,6 +848,7 @@ export default function VendorListingPage() {
                 blurb={
                   locale === "hu" ? form.blurb_hu || form.blurb_en : form.blurb_en || form.blurb_hu
                 }
+                complete={setupSteps.length > 0 && setupSteps.every((s) => s.done)}
               />
             </Link>
             {/* No "open the preview" link under the card: the card itself is
@@ -851,22 +875,12 @@ export default function VendorListingPage() {
                 far along they are while scrolling the long form, and each row
                 jumps to its own section. Hidden once the listing is complete —
                 a 100% checklist is just noise. */}
-            <SetupProgressPanel
-              steps={listingChecklistFor({
-                category: view.listing.category,
-                hero_image_url: effectiveHeroUrl || null,
-                blurb_hu: form.blurb_hu || null,
-                blurb_en: form.blurb_en || null,
-                city: form.city || null,
-                contact_email: form.contact_email || null,
-                contact_phone: form.contact_phone || null,
-                price_band: form.price_band === "" ? null : Number(form.price_band),
-                capacity_min: form.capacity_min === "" ? null : Number(form.capacity_min),
-                capacity_max: form.capacity_max === "" ? null : Number(form.capacity_max),
-                photo_count: view.photos?.length ?? 0,
-                package_count: view.packages?.length ?? 0,
-              })}
-            />
+            {/* No confetti from the panel HERE: the preview card sits directly
+                above it and the verified badge on that card celebrates the same
+                instant, anchored on the thing that visibly changed. Two bursts
+                for one event read as a glitch. The dashboard's copy of the
+                checklist keeps its own, having no badge beside it. */}
+            <SetupProgressPanel steps={setupSteps} celebrate={false} />
           </aside>
 
           <form onSubmit={onSubmit} className="order-2 space-y-2.5 lg:order-1">

@@ -54,8 +54,19 @@ const EXIT_MS = TICK_MS + STRIKE_MS + COLLAPSE_MS;
  *  done it ticks, strikes through, then folds away, so the vendor SEES the
  *  thing they just did leave the list. Steps already done on mount are simply
  *  absent — replaying a celebration for work finished last week would be a lie.
- *  Emptying the list fires confetti once. The ring keeps counting every step. */
-export function SetupChecklist({ steps }: { steps: VendorListingStep[] }) {
+ *  Emptying the list fires confetti once. The ring keeps counting every step.
+ *
+ *  `celebrate` exists for the one caller that has a BETTER anchor for that
+ *  burst: the listing editor, where the verified badge on the preview card
+ *  fills at the same instant and fires from its own position. One event, one
+ *  celebration. */
+export function SetupChecklist({
+  steps,
+  celebrate = true,
+}: {
+  steps: VendorListingStep[];
+  celebrate?: boolean;
+}) {
   const { t } = useT();
   // Keys mid-exit → the ms elapsed marker that drives their stage. Held here
   // (not derived) because the row must outlive the prop that removed it.
@@ -126,10 +137,10 @@ export function SetupChecklist({ steps }: { steps: VendorListingStep[] }) {
         });
         // The whole list is gone — that's the moment worth celebrating, and
         // only when the last step was finished HERE, not on arrival.
-        if (allDone) fireConfetti();
+        if (allDone && celebrate) fireConfetti();
       }, EXIT_MS),
     );
-  }, [doneSig, allDone]);
+  }, [doneSig, allDone, celebrate]);
 
   // Pending work, plus whatever is still playing its exit, in the canonical
   // step order so nothing jumps position on its way out.
@@ -232,7 +243,13 @@ export function SetupLinger({ complete, children }: { complete: boolean; childre
 /** The listing-editor's copy of the progress: ring + percent + the checklist.
  *  Renders nothing once the list is done and its exit has played — a fully
  *  ticked list is noise on the page the vendor is already working in. */
-export function SetupProgressPanel({ steps }: { steps: VendorListingStep[] }) {
+export function SetupProgressPanel({
+  steps,
+  celebrate = true,
+}: {
+  steps: VendorListingStep[];
+  celebrate?: boolean;
+}) {
   const { t } = useT();
   const pct = listingCompletenessFor(steps);
   const visible = useSetupLinger(pct >= 100);
@@ -243,7 +260,7 @@ export function SetupProgressPanel({ steps }: { steps: VendorListingStep[] }) {
         <CompletenessRing pct={pct} size={22} stroke={3} />
         {t("vendor.setup.panel_title", { pct: String(pct) })}
       </h2>
-      <SetupChecklist steps={steps} />
+      <SetupChecklist steps={steps} celebrate={celebrate} />
     </section>
   );
 }
