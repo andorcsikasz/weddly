@@ -3,29 +3,38 @@
 // busy state + toasts + confirm) so it reads as a natural extension of the
 // gallery/reel without bloating VendorListingPage.
 //
-// Each package is a small card: a vendor-named tier, an optional free-text
-// price, an optional description, and an optional attached PDF price list. The
+// Each package is a small card: a vendor-named tier, a structured price range
+// with total/per-person mode, an optional description, and an attached PDF. The
 // name field offers category-appropriate suggestion chips (a photographer, a
 // cake studio and a venue each get relevant starting points). Every mutation
 // hits the server immediately and the parent re-renders from the returned view,
 // mirroring the videos/gallery flow.
 
-import { type ChangeEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { ChevronDown, FileText, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import type { Currency } from "@shared/currency";
 import {
   type ListingPackage,
   MAX_LISTING_PACKAGES,
   PACKAGE_DESCRIPTION_MAX,
   PACKAGE_NAME_MAX,
   PACKAGE_PDF_MAX_BYTES,
-  PACKAGE_PRICE_MAX,
   packageNameSuggestions,
 } from "@shared/listing_packages";
+import {
+  convertedPrice,
+  hasStructuredPrice,
+  PACKAGE_AMOUNT_MAX,
+  type PackagePriceMode,
+} from "@shared/listing_pricing";
 import type { VendorListingView } from "@shared/listings";
 import type { SupplierCategory } from "@shared/suppliers";
 import { ApiError } from "../lib/api";
 import { vendorListingApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { formatPackagePrice } from "../lib/listingPricing";
+import { CurrencySelect } from "./CurrencySelect";
+import { MoneyInput } from "./MoneyInput";
 import { useConfirm } from "./ui";
 import { useToast } from "./ui/ToastProvider";
 
@@ -38,20 +47,42 @@ function errCode(err: unknown): string | undefined {
 export function VendorListingPackages({
   packages,
   category,
+  currency,
+  currencyOverride,
+  capacityMin,
+  capacityMax,
   onChange,
 }: {
   packages: ListingPackage[];
   category: SupplierCategory;
+  currency: Currency;
+  currencyOverride: Currency | null;
+  capacityMin: number | null;
+  capacityMax: number | null;
   onChange: (view: VendorListingView) => void;
 }) {
   const { t, locale } = useT();
   const toast = useToast();
   const [adding, setAdding] = useState(false);
+  const [currencyBusy, setCurrencyBusy] = useState(false);
   // The card the vendor just added — starts expanded so they can fill it in
   // right away; every other card starts collapsed for a compact list.
   const [justAddedId, setJustAddedId] = useState<number | null>(null);
   const suggestions = packageNameSuggestions(category, locale);
   const atCap = packages.length >= MAX_LISTING_PACKAGES;
+
+  const saveCurrency = async (next: Currency | null) => {
+    if (currencyBusy) return;
+    setCurrencyBusy(true);
+    try {
+      onChange(await vendorListingApi.patch({ currency: next }));
+      toast.success(t("vendor_home.packages_currency_saved"));
+    } catch {
+      toast.error(t("vendor_home.packages_currency_failed"));
+    } finally {
+      setCurrencyBusy(false);
+    }
+  };
 
   const onAdd = async () => {
     if (atCap || adding) return;
@@ -79,7 +110,7 @@ export function VendorListingPackages({
     <fieldset className="vp-card p-5">
       {/* Title row carries the count, so the footer doesn't need a second line
           of chrome saying the same thing in words. */}
-      <div className="mb-4 flex items-baseline justify-between gap-3">
+      <div className="flex items-baseline justify-between gap-3">
         <legend className="font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
           {t("vendor_home.section_packages")}
         </legend>
@@ -91,6 +122,30 @@ export function VendorListingPackages({
         </span>
       </div>
 
+      <div className="mb-4 mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-paper-50 px-3 py-2 dark:bg-umber-800/55">
+        <span className="text-sm text-ink-600 dark:text-umber-200">
+          {t("vendor_home.packages_currency_label")}
+        </span>
+        <span className="flex items-center gap-2">
+          <CurrencySelect
+            value={currency}
+            onChange={(next) => void saveCurrency(next)}
+            label={t("vendor_home.packages_currency_label")}
+            size="compact"
+          />
+          {currencyOverride !== null && (
+            <button
+              type="button"
+              disabled={currencyBusy}
+              onClick={() => void saveCurrency(null)}
+              className="vp-btn-quiet text-xs"
+            >
+              {t("vendor_home.packages_currency_reset")}
+            </button>
+          )}
+        </span>
+      </div>
+
       {packages.length > 0 && (
         <ul className="divide-y divide-paper-200 border-y border-paper-200 dark:divide-umber-800 dark:border-umber-800">
           {packages.map((p) => (
@@ -98,6 +153,9 @@ export function VendorListingPackages({
               key={p.id}
               pkg={p}
               suggestions={suggestions}
+              currency={currency}
+              capacityMin={capacityMin}
+              capacityMax={capacityMax}
               onChange={onChange}
               defaultOpen={p.id === justAddedId}
             />
@@ -123,20 +181,29 @@ export function VendorListingPackages({
 function PackageCard({
   pkg,
   suggestions,
+  currency,
+  capacityMin,
+  capacityMax,
   onChange,
   defaultOpen = false,
 }: {
   pkg: ListingPackage;
   suggestions: string[];
+  currency: Currency;
+  capacityMin: number | null;
+  capacityMax: number | null;
   onChange: (view: VendorListingView) => void;
   defaultOpen?: boolean;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const confirm = useConfirm();
   const [open, setOpen] = useState(defaultOpen);
   const [name, setName] = useState(pkg.name);
-  const [priceText, setPriceText] = useState(pkg.price_text ?? "");
+  const [priceMin, setPriceMin] = useState(pkg.price_min?.toString() ?? "");
+  const [priceMax, setPriceMax] = useState(pkg.price_max?.toString() ?? "");
+  const [priceMode, setPriceMode] = useState<PackagePriceMode>(pkg.price_mode ?? "total");
+  const [retireLegacyPrice, setRetireLegacyPrice] = useState(false);
   const [description, setDescription] = useState(pkg.description ?? "");
   const [busy, setBusy] = useState(false);
   // Renaming from the collapsed header. A rename is the one edit a vendor makes
@@ -151,20 +218,33 @@ function PackageCard({
   // THIS package's fields never clobbers an in-progress edit on another card.
   useEffect(() => {
     setName(pkg.name);
-    setPriceText(pkg.price_text ?? "");
+    setPriceMin(pkg.price_min?.toString() ?? "");
+    setPriceMax(pkg.price_max?.toString() ?? "");
+    setPriceMode(pkg.price_mode ?? "total");
+    setRetireLegacyPrice(false);
     setDescription(pkg.description ?? "");
-  }, [pkg.name, pkg.price_text, pkg.description]);
+  }, [pkg.name, pkg.price_min, pkg.price_max, pkg.price_mode, pkg.description]);
 
-  const dirty =
-    name !== pkg.name ||
-    priceText !== (pkg.price_text ?? "") ||
-    description !== (pkg.description ?? "");
+  const minAmount = priceMin === "" ? null : Number(priceMin);
+  const maxAmount = priceMax === "" ? null : Number(priceMax);
+  const hasAmount = minAmount !== null || maxAmount !== null;
+  const persistedMode = hasAmount ? priceMode : null;
+  const priceDirty =
+    minAmount !== pkg.price_min ||
+    maxAmount !== pkg.price_max ||
+    persistedMode !== pkg.price_mode ||
+    retireLegacyPrice;
+
+  const dirty = name !== pkg.name || priceDirty || description !== (pkg.description ?? "");
   const nameValid = name.trim().length > 0;
 
-  // Enter in a single-line field must NOT submit the outer listing <form>.
-  const noEnterSubmit = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") e.preventDefault();
-  };
+  const draftPrice = { price_min: minAmount, price_max: maxAmount, price_mode: persistedMode };
+  const priceSummary = hasStructuredPrice(draftPrice)
+    ? formatPackagePrice({ min: minAmount, max: maxAmount }, priceMode, currency, locale, t)
+    : !retireLegacyPrice
+      ? pkg.price_text
+      : null;
+  const converted = convertedPrice(draftPrice, { min: capacityMin, max: capacityMax });
 
   const onSave = async () => {
     if (!dirty || !nameValid || busy) return;
@@ -172,7 +252,14 @@ function PackageCard({
     try {
       const view = await vendorListingApi.updatePackage(pkg.id, {
         name: name.trim(),
-        price_text: priceText.trim() || null,
+        ...(priceDirty
+          ? {
+              price_text: null,
+              price_min: minAmount,
+              price_max: maxAmount,
+              price_mode: persistedMode,
+            }
+          : {}),
         description: description.trim() || null,
       });
       onChange(view);
@@ -307,9 +394,9 @@ function PackageCard({
                 <span className="block truncate font-grotesk text-base font-semibold text-ink-900 dark:text-paper-50">
                   {name.trim() || t("vendor_home.packages_default_name")}
                 </span>
-                {priceText.trim() && (
+                {priceSummary && (
                   <span className="block truncate text-sm text-ink-500 dark:text-umber-300">
-                    {priceText.trim()}
+                    {priceSummary}
                   </span>
                 )}
               </span>
@@ -378,20 +465,97 @@ function PackageCard({
             </div>
           )}
 
-          <div>
-            <label className="vp-label" htmlFor={`pkg-price-${pkg.id}`}>
-              {t("vendor_home.packages_price_label")}
-            </label>
-            <input
-              id={`pkg-price-${pkg.id}`}
-              className="vp-input"
-              value={priceText}
-              maxLength={PACKAGE_PRICE_MAX}
-              disabled={busy}
-              placeholder={t("vendor_home.packages_price_placeholder")}
-              onChange={(e) => setPriceText(e.target.value)}
-              onKeyDown={noEnterSubmit}
-            />
+          <div className="space-y-3">
+            <div>
+              <span className="vp-label">{t("vendor_home.packages_price_mode_label")}</span>
+              <div className="mt-1 grid grid-cols-2 gap-1 rounded-xl bg-paper-100 p-1 dark:bg-umber-800">
+                {(["total", "per_person"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={priceMode === mode}
+                    disabled={busy}
+                    onClick={() => setPriceMode(mode)}
+                    className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                      priceMode === mode
+                        ? "bg-white text-ink-900 shadow-sm dark:bg-umber-700 dark:text-paper-50"
+                        : "text-ink-500 hover:text-ink-900 dark:text-umber-300 dark:hover:text-paper-50"
+                    }`}
+                  >
+                    {t(
+                      mode === "total"
+                        ? "vendor_home.packages_price_mode_total"
+                        : "vendor_home.packages_price_mode_per_person",
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label>
+                <span className="vp-label">{t("vendor_home.packages_price_min_label")}</span>
+                <span className="relative mt-1 block">
+                  <MoneyInput
+                    className="vp-input pr-14"
+                    value={priceMin}
+                    locale={locale}
+                    maxLength={String(PACKAGE_AMOUNT_MAX).length}
+                    disabled={busy}
+                    aria-label={t("vendor_home.packages_price_min_label")}
+                    onChange={setPriceMin}
+                  />
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-ink-400 dark:text-umber-400">
+                    {currency}
+                  </span>
+                </span>
+              </label>
+              <label>
+                <span className="vp-label">{t("vendor_home.packages_price_max_label")}</span>
+                <span className="relative mt-1 block">
+                  <MoneyInput
+                    className="vp-input pr-14"
+                    value={priceMax}
+                    locale={locale}
+                    maxLength={String(PACKAGE_AMOUNT_MAX).length}
+                    disabled={busy}
+                    aria-label={t("vendor_home.packages_price_max_label")}
+                    onChange={setPriceMax}
+                  />
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-ink-400 dark:text-umber-400">
+                    {currency}
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            {pkg.price_text && !hasAmount && !retireLegacyPrice && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-paper-200 px-3 py-2 text-sm dark:border-umber-700">
+                <span className="text-ink-600 dark:text-umber-200">
+                  {t("vendor_home.packages_legacy_price", { price: pkg.price_text })}
+                </span>
+                <button
+                  type="button"
+                  className="vp-btn-quiet text-xs"
+                  onClick={() => setRetireLegacyPrice(true)}
+                >
+                  {t("vendor_home.packages_legacy_remove")}
+                </button>
+              </div>
+            )}
+
+            {converted && (
+              <p className="text-sm text-ink-500 dark:text-umber-300">
+                {t("vendor_home.packages_price_equivalent", {
+                  price: formatPackagePrice(converted.range, converted.mode, currency, locale, t),
+                })}
+              </p>
+            )}
+            {minAmount !== null && maxAmount !== null && minAmount > maxAmount && (
+              <p className="text-sm text-blush-600 dark:text-blush-300">
+                {t("vendor_home.packages_price_range_invalid")}
+              </p>
+            )}
           </div>
 
           <div>
@@ -483,7 +647,12 @@ function PackageCard({
             <button
               type="button"
               onClick={() => void onSave()}
-              disabled={!dirty || !nameValid || busy}
+              disabled={
+                !dirty ||
+                !nameValid ||
+                busy ||
+                (minAmount !== null && maxAmount !== null && minAmount > maxAmount)
+              }
               className="vp-btn-primary"
             >
               {t("vendor_home.packages_save")}

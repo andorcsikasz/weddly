@@ -24,6 +24,7 @@ import {
   type VendorListingEditInput,
   type VendorListingView,
 } from "@shared/listings";
+import { isCurrency } from "@shared/currency";
 import { isKnownLanguage } from "@shared/suppliers";
 import {
   MAX_LISTING_PACKAGES,
@@ -32,6 +33,8 @@ import {
   PACKAGE_PDF_MAX_BYTES,
   PACKAGE_PRICE_MAX,
 } from "@shared/listing_packages";
+import type { PackagePriceMode } from "@shared/listing_pricing";
+import { PACKAGE_AMOUNT_MAX, isPackagePriceMode, listingCurrency } from "@shared/listing_pricing";
 import { MAX_LISTING_VIDEOS, parseVideoUrl } from "@shared/listing_videos";
 import { db, now } from "../db";
 import { type Ctx, HttpError, json, readJson, requireAuth, type Router } from "../lib/http";
@@ -97,7 +100,12 @@ export function resolveVendorListing(ctx: Ctx): VendorListingView {
       code: "listing_missing",
     });
   }
-  return { listing, account: toVendorAccount(accountRow) };
+  const account = toVendorAccount(accountRow);
+  return {
+    listing,
+    account,
+    currency: listingCurrency({ country: account.country, currency: listing.currency_override }),
+  };
 }
 
 /** Assemble the editor payload for `listing` with both media reels attached.
@@ -113,6 +121,13 @@ function listingViewWithMedia(
   return {
     listing,
     account,
+    // Resolved HERE because this is the first place that holds both halves:
+    // the vendor's explicit pick lives on the listing, the country it falls
+    // back to lives on the account.
+    currency: listingCurrency({
+      country: account.country,
+      currency: listing.currency_override,
+    }),
     ...(extra?.billing !== undefined ? { billing: extra.billing } : {}),
     photos: listListingPhotos(listing.id),
     videos: listListingVideos(listing.id),
@@ -241,6 +256,14 @@ function buildPatch(body: VendorListingEditInput): ListingPatch {
   if (capMin !== undefined) patch.capacity_min = capMin;
   const capMax = parseCapacity(body.capacity_max, "capacity_max");
   if (capMax !== undefined) patch.capacity_max = capMax;
+  if (body.currency !== undefined) {
+    if (body.currency !== null && !isCurrency(body.currency)) {
+      throw new HttpError(400, "currency must be a supported currency code or null", {
+        code: "bad_currency",
+      });
+    }
+    patch.currency = body.currency;
+  }
   const langs = parseSpokenLanguagesInput(body.spoken_languages);
   if (langs !== undefined) patch.spoken_languages = langs;
   if (body.hide_contact_public !== undefined) {
@@ -750,6 +773,66 @@ function optionalPackageText(v: unknown, field: string, max: number): string | n
   return trimmed;
 }
 
+/** Optional whole-unit money amount. `undefined` => key absent (leave alone),
+ *  `null` or an empty string => clear it. Whole units only: the listing's
+ *  currency may be forint, where a fractional amount is meaningless, and every
+ *  other money column on the platform is stored the same way. */
+function optionalPackageAmount(v: unknown, field: string): number | null | undefined {
+  if (v === undefined) return undefined;
+  if (v === null || (typeof v === "string" && v.trim() === "")) return null;
+  const n = typeof v === "string" ? Number(v.trim()) : v;
+  if (typeof n !== "number" || !Number.isFinite(n)) {
+    throw new HttpError(400, `\`${field}\` must be a number or null`, { code: "bad_field" });
+  }
+  if (!Number.isInteger(n) || n < 0) {
+    throw new HttpError(400, `\`${field}\` must be a whole number of currency units`, {
+      code: "bad_field",
+    });
+  }
+  if (n > PACKAGE_AMOUNT_MAX) {
+    throw new HttpError(400, `\`${field}\` is out of range`, { code: "bad_field" });
+  }
+  return n;
+}
+
+function optionalPriceMode(v: unknown): PackagePriceMode | null | undefined {
+  if (v === undefined) return undefined;
+  if (v === null || v === "") return null;
+  if (!isPackagePriceMode(v)) {
+    throw new HttpError(400, "`price_mode` must be 'total' or 'per_person'", {
+      code: "bad_price_mode",
+    });
+  }
+  return v;
+}
+
+/** A price the couple cannot read is worse than no price, so the two halves
+ *  have to arrive together: numbers with no mode do not say whether they buy
+ *  the day or one seat, and a mode with no numbers says nothing at all. Both
+ *  absent is fine — a package may price itself in its PDF, or not at all.
+ *
+ *  `min > max` is refused rather than swapped: a vendor who typed them the
+ *  wrong way round has a typo somewhere, and silently reinterpreting a price
+ *  is not a correction we get to make on their behalf. */
+function assertCoherentPrice(
+  min: number | null,
+  max: number | null,
+  mode: PackagePriceMode | null,
+): void {
+  const hasAmount = min !== null || max !== null;
+  if (hasAmount && mode === null) {
+    throw new HttpError(400, "`price_mode` is required with a price", {
+      code: "price_mode_missing",
+    });
+  }
+  if (!hasAmount && mode !== null) {
+    throw new HttpError(400, "`price_mode` needs a price", { code: "price_amount_missing" });
+  }
+  if (min !== null && max !== null && min > max) {
+    throw new HttpError(400, "`price_min` cannot exceed `price_max`", { code: "bad_price_range" });
+  }
+}
+
 const MAX_PDF_NAME_LEN = 120;
 
 /** Pull + validate the `file` field of a package-PDF upload: a non-empty file
@@ -794,15 +877,29 @@ async function handleAddPackage(ctx: Ctx): Promise<Response> {
       code: "packages_full",
     });
   }
-  const body = await readJson<{ name?: unknown; price_text?: unknown; description?: unknown }>(
-    ctx.req,
-  );
+  const body = await readJson<{
+    name?: unknown;
+    price_text?: unknown;
+    price_min?: unknown;
+    price_max?: unknown;
+    price_mode?: unknown;
+    description?: unknown;
+  }>(ctx.req);
   const name = requirePackageName(body.name);
   const priceText = optionalPackageText(body.price_text, "price_text", PACKAGE_PRICE_MAX);
+  const priceMin = optionalPackageAmount(body.price_min, "price_min") ?? null;
+  const priceMax = optionalPackageAmount(body.price_max, "price_max") ?? null;
+  const priceMode = optionalPriceMode(body.price_mode) ?? null;
+  assertCoherentPrice(priceMin, priceMax, priceMode);
   const description = optionalPackageText(body.description, "description", PACKAGE_DESCRIPTION_MAX);
   const pkg = addListingPackage(listing.id, {
     name,
-    price_text: priceText ?? null,
+    // Structured numbers supersede the legacy string. Keeping both would make
+    // the row carry two prices and leave readers to choose which one is true.
+    price_text: priceMode === null ? (priceText ?? null) : null,
+    price_min: priceMin,
+    price_max: priceMax,
+    price_mode: priceMode,
     description: description ?? null,
   });
   addAuditLog({
@@ -822,13 +919,43 @@ async function handleUpdatePackage(ctx: Ctx): Promise<Response> {
   const packageId = parsePackageId(ctx);
   const existing = getListingPackage(listing.id, packageId);
   if (!existing) throw new HttpError(404, "Package not found", { code: "package_not_found" });
-  const body = await readJson<{ name?: unknown; price_text?: unknown; description?: unknown }>(
-    ctx.req,
-  );
-  const patch: { name?: string; price_text?: string | null; description?: string | null } = {};
+  const body = await readJson<{
+    name?: unknown;
+    price_text?: unknown;
+    price_min?: unknown;
+    price_max?: unknown;
+    price_mode?: unknown;
+    description?: unknown;
+  }>(ctx.req);
+  const patch: {
+    name?: string;
+    price_text?: string | null;
+    price_min?: number | null;
+    price_max?: number | null;
+    price_mode?: PackagePriceMode | null;
+    description?: string | null;
+  } = {};
   if (body.name !== undefined) patch.name = requirePackageName(body.name);
   const priceText = optionalPackageText(body.price_text, "price_text", PACKAGE_PRICE_MAX);
   if (priceText !== undefined) patch.price_text = priceText;
+  const priceMin = optionalPackageAmount(body.price_min, "price_min");
+  if (priceMin !== undefined) patch.price_min = priceMin;
+  const priceMax = optionalPackageAmount(body.price_max, "price_max");
+  if (priceMax !== undefined) patch.price_max = priceMax;
+  const priceMode = optionalPriceMode(body.price_mode);
+  if (priceMode !== undefined) patch.price_mode = priceMode;
+  // Coherence is judged on the row as it will BE, not on the keys that arrived:
+  // this PATCH is partial, so clearing just the mode has to be caught against
+  // the amounts already stored rather than passing because they were absent.
+  assertCoherentPrice(
+    priceMin !== undefined ? priceMin : existing.price_min,
+    priceMax !== undefined ? priceMax : existing.price_max,
+    priceMode !== undefined ? priceMode : existing.price_mode,
+  );
+  const nextHasStructuredPrice =
+    (priceMin !== undefined ? priceMin : existing.price_min) !== null ||
+    (priceMax !== undefined ? priceMax : existing.price_max) !== null;
+  if (nextHasStructuredPrice) patch.price_text = null;
   const description = optionalPackageText(body.description, "description", PACKAGE_DESCRIPTION_MAX);
   if (description !== undefined) patch.description = description;
   updateListingPackage(listing.id, packageId, patch);
@@ -1043,6 +1170,7 @@ async function handleCompleteOnboarding(ctx: Ctx): Promise<Response> {
   const view: VendorListingView = {
     listing,
     account: { ...account, onboarding_done: true },
+    currency: listingCurrency({ country: account.country, currency: listing.currency_override }),
   };
   return json(view);
 }

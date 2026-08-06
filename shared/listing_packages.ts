@@ -1,30 +1,45 @@
 // Vendor listing "packages" (árajánlat / csomag) — the optional price offers a
 // claimed vendor can publish on their listing, up to MAX_LISTING_PACKAGES. Each
-// package is a named tier with an optional free-text price, an optional
+// package is a named tier with an optional structured price, an optional
 // description, and an optional attached PDF (a printable price list / quote).
 //
-// Why free-text price and not a number: vendors quote in wildly different shapes
-// ("250 000 Ft-tól", "€900 / nap", "5 000 Ft/fő", "egyedi ajánlat"). A single
-// string keeps every one of those expressible without a currency/parse layer,
-// and the listing has no money-amount column to reuse anyway (pricing on the
-// listing is the coarse 1..5 price_band). The PDF is where a vendor drops the
-// exact, itemised numbers.
+// The price is STRUCTURED (`price_min` / `price_max` / `price_mode`, see
+// shared/listing_pricing.ts). It used to be the free-text `price_text` below,
+// on the argument that vendors quote in wildly different shapes ("250 000
+// Ft-tól", "€900 / nap", "5 000 Ft/fő") and a string keeps all of them
+// expressible. True, and the price was then unsortable, unfilterable and
+// incomparable across listings — a couple could not weigh a 50-guest venue
+// against a 150-guest one on any common footing.
+//
+// `price_text` is KEPT, never dropped, and is still what renders for a package
+// written before this. It is deliberately NOT backfilled into the numbers: the
+// one thing the string cannot tell us is whether "€30" was the whole job or one
+// seat, and inventing that answer would publish a price the vendor never gave.
+// A vendor filling the new fields is what retires their old string.
+//
+// The PDF is still where a vendor drops the exact, itemised numbers.
 //
 // The name is vendor-chosen, but we SUGGEST category-appropriate tier names so a
 // photographer, a cake studio and a venue each get relevant starting points —
 // see PACKAGE_NAME_SUGGESTIONS, keyed by the listing's SupplierCategory.
 
+import type { PackagePrice, PackagePriceMode } from "./listing_pricing";
 import type { SupplierCategory } from "./suppliers";
 
 /** One published price offer on a claimed listing. `pdf_url` is a public
  *  `/uploads/...` URL (served like photos/videos); null when no document is
  *  attached. `pdf_name` is the original filename, shown as the download label. */
-export interface ListingPackage {
+export interface ListingPackage extends PackagePrice {
   id: number;
   name: string;
-  /** Free-text price (e.g. "250 000 Ft-tól", "€900 / nap"). Null = no price
-   *  shown; the vendor may describe pricing in the PDF instead. */
+  /** LEGACY free-text price (e.g. "250 000 Ft-tól", "€900 / nap"). Rendered
+   *  only when there is no structured price; see the header note. */
   price_text: string | null;
+  /** Whole units of the listing's currency (`listingCurrency`). */
+  price_min: number | null;
+  price_max: number | null;
+  /** Whether the numbers are the whole job or one guest's seat. */
+  price_mode: PackagePriceMode | null;
   description: string | null;
   /** Public URL of the attached PDF, or null. */
   pdf_url: string | null;

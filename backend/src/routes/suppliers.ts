@@ -23,6 +23,7 @@ import {
   parseSpokenLanguages,
   SUPPLIER_GROUPS,
 } from "@shared/suppliers";
+import { listingCurrency } from "@shared/listing_pricing";
 import { searchPublicVendors } from "../domain/vendor_search";
 import {
   listActiveCommunitySuppliers,
@@ -456,7 +457,7 @@ function buildSupplierDetail(
   // claims the listing.
   const listing = db
     .prepare(
-      `SELECT vendor_account_id, hero_image_url, spoken_languages, profile_imported
+      `SELECT vendor_account_id, hero_image_url, spoken_languages, profile_imported, currency
          FROM listings WHERE id = ?`,
     )
     .get(id) as
@@ -465,6 +466,7 @@ function buildSupplierDetail(
         hero_image_url: string | null;
         spoken_languages: string | null;
         profile_imported: number;
+        currency: string | null;
       }
     | undefined;
   if (listing) {
@@ -546,9 +548,12 @@ function buildSupplierDetail(
   };
   const gated = redactUnclaimedImport(directory, gate);
   const redacted = gate.profile_imported && gate.vendor_account_id === null;
-
   return {
     ...gated,
+    currency: listingCurrency({
+      country: directory.country,
+      currency: listing?.currency,
+    }),
     reviews_summary: reviewsSummary,
     bookable: availability.bookable,
     next_available: availability.next_available,

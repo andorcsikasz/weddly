@@ -427,15 +427,25 @@ describe("ai concierge: the couple's data does not leave for no reason", () => {
 // ─── The trust boundary, directly ───────────────────────────────────────────
 
 describe("ai concierge: coerceAssistOutput never lets the model invent", () => {
+  // A legacy row: free-text price, no structured amounts. That is deliberately
+  // the fixture, because it is the shape the assist prompt has always read and
+  // the one every package written before structured pricing still has.
   const pkg = {
     id: 7,
     name: "Full-day package",
     price_text: "450 000 Ft-tól",
+    price_min: null,
+    price_max: null,
+    price_mode: null,
     description: null,
     pdf_url: null,
     pdf_name: null,
   };
-  const ctx = { language: "en" as const, packagesById: new Map([[7, pkg]]) };
+  const ctx = {
+    language: "en" as const,
+    currency: "HUF" as const,
+    packagesById: new Map([[7, pkg]]),
+  };
 
   test("a hallucinated package id is dropped, not repaired", () => {
     const out = coerceAssistOutput(
@@ -469,7 +479,41 @@ describe("ai concierge: coerceAssistOutput never lets the model invent", () => {
     );
     expect(out?.package?.name).toBe("Full-day package");
     expect(out?.package?.price_text).toBe("450 000 Ft-tól");
+    expect(out?.package?.currency).toBe("HUF");
     expect(out?.package?.reason).toBe("Covers the whole day.");
+  });
+
+  test("a structured package copies every price field from the saved row", () => {
+    const structured = {
+      ...pkg,
+      id: 8,
+      name: "Reception",
+      price_text: null,
+      price_min: 900,
+      price_max: 1_500,
+      price_mode: "total" as const,
+    };
+    const out = coerceAssistOutput(
+      {
+        summary: "A June wedding.",
+        missing: [],
+        draft_reply: "Thanks for getting in touch.",
+        package_id: 8,
+        package_reason: "Fits the event.",
+        price_min: 1,
+        price_max: 2,
+        price_mode: "per_person",
+      },
+      { language: "en", currency: "EUR", packagesById: new Map([[8, structured]]) },
+    );
+    expect(out?.package).toMatchObject({
+      name: "Reception",
+      price_text: null,
+      price_min: 900,
+      price_max: 1_500,
+      price_mode: "total",
+      currency: "EUR",
+    });
   });
 
   test("an id arriving as a string still has to name a real row", () => {
@@ -509,7 +553,7 @@ describe("ai concierge: coerceAssistOutput never lets the model invent", () => {
   test("no saved packages is reported as such", () => {
     const out = coerceAssistOutput(
       { summary: "s", draft_reply: "d", missing: [], package_id: 7, package_reason: "r" },
-      { language: "hu", packagesById: new Map() },
+      { language: "hu", currency: "HUF", packagesById: new Map() },
     );
     expect(out?.no_packages).toBe(true);
     expect(out?.package).toBeNull();

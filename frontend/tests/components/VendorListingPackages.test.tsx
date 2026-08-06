@@ -30,6 +30,9 @@ function Providers({ children }: { children: ReactNode }) {
 function pkg(over: Partial<ListingPackage> & { id: number; name: string }): ListingPackage {
   return {
     price_text: null,
+    price_min: null,
+    price_max: null,
+    price_mode: null,
     description: null,
     pdf_url: null,
     pdf_name: null,
@@ -56,13 +59,21 @@ describe("VendorListingPackages — collapsible cards", () => {
   it("renders every package collapsed by default (no fields, summary shown)", () => {
     render(
       <Providers>
-        <VendorListingPackages packages={PACKAGES} category="cake_dessert" onChange={() => {}} />
+        <VendorListingPackages
+          packages={PACKAGES}
+          category="cake_dessert"
+          currency="EUR"
+          currencyOverride={null}
+          capacityMin={20}
+          capacityMax={80}
+          onChange={() => {}}
+        />
       </Providers>,
     );
 
     // No package body fields are mounted while collapsed.
     expect(screen.queryByLabelText("Package name")).toBeNull();
-    expect(screen.queryByLabelText("Price")).toBeNull();
+    expect(screen.queryByLabelText("Minimum price")).toBeNull();
     expect(screen.queryByText("Save")).toBeNull();
 
     // Each collapsed card is a toggle button summarising name + price.
@@ -76,7 +87,15 @@ describe("VendorListingPackages — collapsible cards", () => {
   it("expands a package when its header is clicked, and collapses again", () => {
     render(
       <Providers>
-        <VendorListingPackages packages={PACKAGES} category="cake_dessert" onChange={() => {}} />
+        <VendorListingPackages
+          packages={PACKAGES}
+          category="cake_dessert"
+          currency="EUR"
+          currencyOverride={null}
+          capacityMin={20}
+          capacityMax={80}
+          onChange={() => {}}
+        />
       </Providers>,
     );
 
@@ -88,7 +107,7 @@ describe("VendorListingPackages — collapsible cards", () => {
     // control is the chevron beside it.
     const nameInput = screen.getByLabelText("Package name") as HTMLInputElement;
     expect(nameInput.value).toBe("Tasting");
-    expect(screen.getByLabelText("Price")).toBeTruthy();
+    expect(screen.getByLabelText("Minimum price")).toBeTruthy();
     expect(screen.getByText("Save")).toBeTruthy();
 
     // Only THIS card opened — the other two stay collapsed.
@@ -98,5 +117,36 @@ describe("VendorListingPackages — collapsible cards", () => {
     fireEvent.click(screen.getByRole("button", { expanded: true }));
     expect(screen.queryByLabelText("Package name")).toBeNull();
     expect(screen.getAllByRole("button", { expanded: false }).length).toBe(3);
+  });
+
+  it("summarises a structured range and shows the capacity conversion", () => {
+    const structured = [
+      pkg({
+        id: 4,
+        name: "Reception",
+        price_min: 800,
+        price_max: 1_600,
+        price_mode: "total",
+      }),
+    ];
+    render(
+      <Providers>
+        <VendorListingPackages
+          packages={structured}
+          category="venue"
+          currency="EUR"
+          currencyOverride="EUR"
+          capacityMin={20}
+          capacityMax={80}
+          onChange={() => {}}
+        />
+      </Providers>,
+    );
+
+    expect(screen.getByText(/€800.*€1,600 total/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { expanded: false }));
+    expect(screen.getByRole("button", { name: "Total price", pressed: true })).toBeTruthy();
+    expect(screen.getByText(/Estimated equivalent:.*€10.*€80.*person/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Use country default" })).toBeTruthy();
   });
 });

@@ -478,7 +478,14 @@ export default function PublicVendorPage() {
                 <h2 className="mb-4 text-xl font-semibold tracking-tight text-ink-900 dark:text-paper-50">
                   {t("suppliers.detail.packages.title")}
                 </h2>
-                <VendorPackageGrid packages={detail.packages} t={t} />
+                <VendorPackageGrid
+                  packages={detail.packages}
+                  currency={detail.currency}
+                  capacityMin={detail.capacity_min}
+                  capacityMax={detail.capacity_max}
+                  locale={locale}
+                  t={t}
+                />
               </section>
             )}
 

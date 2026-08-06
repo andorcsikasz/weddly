@@ -1172,6 +1172,10 @@ export default function VendorListingPage() {
               <VendorListingPackages
                 packages={view.packages ?? []}
                 category={view.listing.category}
+                currency={view.currency}
+                currencyOverride={view.listing.currency_override}
+                capacityMin={view.listing.capacity_min}
+                capacityMax={view.listing.capacity_max}
                 onChange={setView}
               />
             </div>

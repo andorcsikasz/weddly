@@ -968,6 +968,19 @@ export interface LocaleMessages {
     packages_suggestions_label: string;
     packages_price_label: string;
     packages_price_placeholder: string;
+    packages_currency_label: string;
+    packages_currency_reset: string;
+    packages_currency_saved: string;
+    packages_currency_failed: string;
+    packages_price_mode_label: string;
+    packages_price_mode_total: string;
+    packages_price_mode_per_person: string;
+    packages_price_min_label: string;
+    packages_price_max_label: string;
+    packages_price_equivalent: string;
+    packages_price_range_invalid: string;
+    packages_legacy_price: string;
+    packages_legacy_remove: string;
     packages_desc_label: string;
     packages_desc_placeholder: string;
     packages_save: string;
@@ -6511,6 +6524,11 @@ export interface LocaleMessages {
         /** Per-card toggle to reveal specs beyond the default few. */
         seeFullDetails: string;
         showLess: string;
+        priceFrom: string;
+        priceUpTo: string;
+        priceTotal: string;
+        pricePerPerson: string;
+        estimatedEquivalent: string;
       };
     };
     /** Review tag labels shared between the composer (admin selects up to 5)

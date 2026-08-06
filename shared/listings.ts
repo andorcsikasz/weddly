@@ -5,6 +5,7 @@
 // because one account can own multiple listings (photo+video studios,
 // multi-city venues, agencies).
 
+import type { Currency } from "./currency";
 import type { ListingPackage } from "./listing_packages";
 import type { ListingVideo } from "./listing_videos";
 import type { SupplierAnalytics, SupplierCategory, VenueStyle } from "./suppliers";
@@ -76,6 +77,12 @@ export interface Listing {
    *  on curated entries we haven't placed. */
   capacity_min: number | null;
   capacity_max: number | null;
+  /** The currency the vendor EXPLICITLY picked for their prices, or null to
+   *  follow their country's (`currencyForCountry`). Null is a real answer, not
+   *  a missing one — read the resolved value off the surface that knows the
+   *  country (`VendorListingView.currency`, `DirectorySupplier.currency`)
+   *  rather than reaching for this. */
+  currency_override: Currency | null;
   /** ISO 639-1 codes a verbal vendor (celebrant / MC) confidently works in.
    *  Empty on every other category and until the vendor fills it in. See
    *  {@link speaksLanguages}. */
@@ -274,6 +281,10 @@ export interface VendorListingEditInput {
   price_band?: 1 | 2 | 3 | 4 | 5 | null;
   capacity_min?: number | null;
   capacity_max?: number | null;
+  /** Explicit currency for this listing's prices. `null` hands it back to the
+   *  country default, which is the resting state — see
+   *  {@link Listing.currency_override}. */
+  currency?: Currency | null;
   /** ISO 639-1 codes for a verbal vendor; ignored for other categories. */
   spoken_languages?: string[] | null;
   /** Toggle the public-page contact masking (address + email tail) for
@@ -384,6 +395,11 @@ export const MAX_LISTING_PHOTOS = 12;
 export interface VendorListingView {
   listing: Listing;
   account: VendorAccount;
+  /** The currency this listing's prices ARE in, already resolved: the vendor's
+   *  own pick if they made one, otherwise their country's. The editor formats
+   *  and validates against this; `listing.currency_override` is only for
+   *  rendering which option the picker has selected. */
+  currency: Currency;
   /** Subscription snapshot — drives the founding/trial/lapsed banner on the
    *  vendor home. Null only when the vendor has no sub row yet. */
   billing?: VendorBilling | null;

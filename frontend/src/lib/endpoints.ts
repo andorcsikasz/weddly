@@ -292,6 +292,7 @@ import type {
   VendorListingEditInput,
   VendorListingView,
 } from "@shared/listings";
+import type { PackagePriceMode } from "@shared/listing_pricing";
 import type {
   CreateOutreachCampaignInput,
   OutreachCampaign,
@@ -2848,14 +2849,28 @@ export const vendorListingApi = {
     apiFetch<VendorListingView>("PATCH", "/api/vendor/listing/me/videos/reorder", {
       ordered_ids: orderedIds,
     }),
-  /** Price offers / packages (árajánlat). Text fields are plain JSON; the
+  /** Price offers / packages (árajánlat). Price amounts are whole displayed
+   *  currency units; the optional PDF is a separate multipart call. The
    *  optional PDF is a separate multipart call. The server enforces the max-3
    *  cap (409 `packages_full`) and returns the refreshed view with `packages`. */
-  addPackage: (body: { name: string; price_text?: string | null; description?: string | null }) =>
-    apiFetch<VendorListingView>("POST", "/api/vendor/listing/me/packages", body),
+  addPackage: (body: {
+    name: string;
+    price_text?: string | null;
+    price_min?: number | null;
+    price_max?: number | null;
+    price_mode?: PackagePriceMode | null;
+    description?: string | null;
+  }) => apiFetch<VendorListingView>("POST", "/api/vendor/listing/me/packages", body),
   updatePackage: (
     packageId: number,
-    body: { name?: string; price_text?: string | null; description?: string | null },
+    body: {
+      name?: string;
+      price_text?: string | null;
+      price_min?: number | null;
+      price_max?: number | null;
+      price_mode?: PackagePriceMode | null;
+      description?: string | null;
+    },
   ) => apiFetch<VendorListingView>("PATCH", `/api/vendor/listing/me/packages/${packageId}`, body),
   deletePackage: (packageId: number) =>
     apiFetch<VendorListingView>("DELETE", `/api/vendor/listing/me/packages/${packageId}`),

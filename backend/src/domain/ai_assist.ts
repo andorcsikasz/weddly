@@ -15,7 +15,7 @@
 // NEVER SENT: the couple's email address, their phone number, their names
 // (`couples.display_name`, `bride_name`, `groom_name`), their budget, their
 // venue, their address, any other vendor's data, and — deliberately — the
-// vendor's own package PRICE TEXT. The price is attached server-side from the
+// vendor's own package PRICE. The price is attached server-side from the
 // row the model's chosen id names, which is what makes "the model never invents
 // a price" true by construction rather than by instruction: it never sees one.
 //
@@ -30,7 +30,7 @@
 // ID and nothing else about the package; an id that is not one of THIS vendor's
 // saved rows is dropped to null rather than repaired, because a suggestion
 // pointing at a package that does not exist is worse than no suggestion. Name
-// and `price_text` are copied verbatim from the row. Every string is trimmed
+// and every price field is copied verbatim from the row. Every string is trimmed
 // and capped. A missing summary or a missing draft means the answer was not
 // usable, and the caller degrades to nothing.
 
@@ -48,6 +48,8 @@ import {
   assistLanguageFor,
 } from "@shared/ai_assist";
 import type { ListingPackage } from "@shared/listing_packages";
+import type { Currency } from "@shared/currency";
+import { listingCurrency } from "@shared/listing_pricing";
 import { db } from "../db";
 import { aiJson } from "../lib/ai";
 import { listMessages } from "./booking_messages";
@@ -108,6 +110,7 @@ export interface AssistFacts {
 /** What `coerceAssistOutput` checks the model's answer against. */
 export interface AssistContext {
   language: AssistLanguage;
+  currency: Currency;
   /** THIS vendor's saved packages, by id. The only ids a suggestion may name. */
   packagesById: ReadonlyMap<number, ListingPackage>;
 }
@@ -158,7 +161,7 @@ function gatherInquiryText(booking: BookingRow): string {
 export function gatherAssistFacts(
   booking: BookingRow,
   vendorAccountId: number,
-): AssistFacts & { packageRows: ListingPackage[] } {
+): AssistFacts & { packageRows: ListingPackage[]; packageCurrency: Currency } {
   const couple = db
     .prepare(
       `SELECT target_guest_count, guest_count_kind, target_guest_count_min,
@@ -180,6 +183,9 @@ export function gatherAssistFacts(
   // which is a guess that is wrong for every claimed listing.
   const listing = getListingByVendorAccountId(vendorAccountId);
   const packageRows = listing ? listListingPackages(listing.id) : [];
+  const account = db
+    .prepare("SELECT country FROM vendor_accounts WHERE id = ?")
+    .get(vendorAccountId) as { country: string | null } | undefined;
 
   return {
     event_date: booking.event_date,
@@ -190,6 +196,10 @@ export function gatherAssistFacts(
     packages: packageRows.map((p) => ({ id: p.id, name: p.name })),
     language: assistLanguageFor(localeRow?.locale ?? null),
     packageRows,
+    packageCurrency: listingCurrency({
+      country: account?.country,
+      currency: listing?.currency_override,
+    }),
   };
 }
 
@@ -289,6 +299,10 @@ export function coerceAssistOutput(raw: unknown, ctx: AssistContext): InquiryAss
         // could not have: it was never shown a price at all.
         name: row.name,
         price_text: row.price_text,
+        price_min: row.price_min,
+        price_max: row.price_max,
+        price_mode: row.price_mode,
+        currency: ctx.currency,
         reason: cleanString(o.package_reason, PACKAGE_REASON_MAX_CHARS),
       };
     }
@@ -333,7 +347,7 @@ export async function generateInquiryAssist(
   booking: BookingRow,
   vendorAccountId: number,
 ): Promise<InquiryAssistResult> {
-  const { packageRows, ...facts } = gatherAssistFacts(booking, vendorAccountId);
+  const { packageRows, packageCurrency, ...facts } = gatherAssistFacts(booking, vendorAccountId);
   const raw = await aiJson({
     system: buildAssistSystem(facts.language),
     user: buildAssistPrompt(facts),
@@ -343,6 +357,7 @@ export async function generateInquiryAssist(
   });
   const assist = coerceAssistOutput(raw, {
     language: facts.language,
+    currency: packageCurrency,
     packagesById: new Map(packageRows.map((p) => [p.id, p])),
   });
   return assist ? { generated: true, assist } : { generated: false, assist: null };

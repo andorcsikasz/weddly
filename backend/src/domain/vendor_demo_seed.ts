@@ -98,10 +98,14 @@ const DEMO_CAKE_MEDIA = {
 /** Price offers (árajánlat) for the demo cake vendor — one per tier so the demo
  *  showcases the packages section on both the editor and the public card. Price
  *  is free-text (HU forint vs EUR); descriptions stay in the fairy-tale voice. */
+// Structured prices, in whole units of each currency, so the demo shows the
+// shapes a vendor actually types: a fixed price (min === max) and two
+// open-ended "from" ones (a min with no max). All totals — a cake studio sells
+// the cake, not a seat.
 const DEMO_CAKE_PACKAGES = [
   {
     name: { en: "Cake tasting", hu: "Kóstoló" },
-    price: { hu: "12 000 Ft", en: "€30" },
+    price: { hu: { min: 12_000, max: 12_000 }, en: { min: 30, max: 30 } },
     description: {
       en: "Five flavour samples for the couple, with a design consultation.",
       hu: "Öt ízminta a párnak, tervezési konzultációval.",
@@ -109,7 +113,7 @@ const DEMO_CAKE_PACKAGES = [
   },
   {
     name: { en: "Wedding cake", hu: "Esküvői torta" },
-    price: { hu: "95 000 Ft-tól", en: "from €250" },
+    price: { hu: { min: 95_000, max: null }, en: { min: 250, max: null } },
     description: {
       en: "A three-tier gingerbread cake with bespoke decoration.",
       hu: "Háromemeletes mézeskalács-torta, egyedi díszítéssel.",
@@ -117,7 +121,7 @@ const DEMO_CAKE_PACKAGES = [
   },
   {
     name: { en: "Full dessert table", hu: "Teljes desszertasztal" },
-    price: { hu: "180 000 Ft-tól", en: "from €480" },
+    price: { hu: { min: 180_000, max: null }, en: { min: 480, max: null } },
     description: {
       en: "Cake, pastries and gumdrops for up to 80 guests.",
       hu: "Torta, sütemények és cukorgombok akár 80 főre.",
@@ -431,9 +435,13 @@ export function seedVendorDemo(
 
     // Price offers (árajánlat) so the packages section is populated in the demo.
     for (const p of DEMO_CAKE_PACKAGES) {
+      const price = huf ? p.price.hu : p.price.en;
       addListingPackage(listing.id, {
         name: pickL(p.name, locale),
-        price_text: huf ? p.price.hu : p.price.en,
+        price_text: null,
+        price_min: price.min,
+        price_max: price.max,
+        price_mode: "total",
         description: pickL(p.description, locale),
       });
     }

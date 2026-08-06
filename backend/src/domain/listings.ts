@@ -31,6 +31,8 @@ import type {
   VendorAccount,
 } from "@shared/listings";
 import type { ListingPackage } from "@shared/listing_packages";
+import type { PackagePriceMode } from "@shared/listing_pricing";
+import { isPackagePriceMode } from "@shared/listing_pricing";
 import type { ListingVideo, VideoProvider } from "@shared/listing_videos";
 import type { VendorListingStep } from "@shared/vendor_clients";
 import { listingChecklistFor, listingCompletenessFor } from "@shared/vendor_clients";
@@ -44,6 +46,7 @@ import {
   type VenueStyle,
   VENUE_STYLES,
 } from "@shared/suppliers";
+import { isCurrency } from "@shared/currency";
 import { isCuratedPubliclyVisible } from "./curated_overrides";
 
 export interface ListingRow {
@@ -65,6 +68,7 @@ export interface ListingRow {
   name_changed_at: number | null;
   capacity_min: number | null;
   capacity_max: number | null;
+  currency: string | null;
   spoken_languages: string | null;
   venue_style: string | null;
   lat: number | null;
@@ -199,6 +203,7 @@ export function toListing(row: ListingRow): Listing {
     name_changed_at: row.name_changed_at,
     capacity_min: row.capacity_min,
     capacity_max: row.capacity_max,
+    currency_override: isCurrency(row.currency) ? row.currency : null,
     spoken_languages: parseSpokenLanguages(row.spoken_languages),
     venue_style: toVenueStyle(row.venue_style),
     lat: row.lat,
@@ -862,6 +867,8 @@ export function setVendorListingCategory(vendorAccountId: number, category: stri
  *  trip. Skips columns left undefined; explicit `null` clears the column. */
 export interface ListingPatch {
   city?: string;
+  /** Explicit price currency; null restores the country default. */
+  currency?: string | null;
   address?: string | null;
   website?: string | null;
   contact_email?: string | null;
@@ -900,6 +907,7 @@ export function patchListing(id: string, patch: ListingPatch): Listing | null {
     params.push(val);
   };
   push("city", patch.city);
+  push("currency", patch.currency);
   push("address", patch.address);
   push("website", patch.website);
   push("contact_email", patch.contact_email);
@@ -1140,6 +1148,9 @@ type ListingPackageRow = {
   id: number;
   name: string;
   price_text: string | null;
+  price_min: number | null;
+  price_max: number | null;
+  price_mode: string | null;
   description: string | null;
   pdf_url: string | null;
   pdf_name: string | null;
@@ -1150,13 +1161,20 @@ function toListingPackage(row: ListingPackageRow): ListingPackage {
     id: row.id,
     name: row.name,
     price_text: row.price_text,
+    price_min: row.price_min,
+    price_max: row.price_max,
+    // Guarded rather than cast: the column is plain TEXT and predates the
+    // union, so an unrecognised value has to read as "no structured price"
+    // instead of reaching the UI as a mode it cannot render.
+    price_mode: isPackagePriceMode(row.price_mode) ? row.price_mode : null,
     description: row.description,
     pdf_url: row.pdf_url,
     pdf_name: row.pdf_name,
   };
 }
 
-const PACKAGE_COLS = "id, name, price_text, description, pdf_url, pdf_name";
+const PACKAGE_COLS =
+  "id, name, price_text, price_min, price_max, price_mode, description, pdf_url, pdf_name";
 
 export function listListingPackages(listingId: string): ListingPackage[] {
   const rows = db
@@ -1211,19 +1229,40 @@ export function listingCompleteness(listing: Listing | null): number {
 
 export function addListingPackage(
   listingId: string,
-  input: { name: string; price_text: string | null; description: string | null },
+  input: {
+    name: string;
+    price_text: string | null;
+    price_min: number | null;
+    price_max: number | null;
+    price_mode: PackagePriceMode | null;
+    description: string | null;
+  },
 ): ListingPackage {
   const ts = now();
   const res = db
     .prepare(
-      `INSERT INTO listing_packages (listing_id, name, price_text, description, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO listing_packages
+         (listing_id, name, price_text, price_min, price_max, price_mode, description, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(listingId, input.name, input.price_text, input.description, ts, ts);
+    .run(
+      listingId,
+      input.name,
+      input.price_text,
+      input.price_min,
+      input.price_max,
+      input.price_mode,
+      input.description,
+      ts,
+      ts,
+    );
   return {
     id: Number(res.lastInsertRowid),
     name: input.name,
     price_text: input.price_text,
+    price_min: input.price_min,
+    price_max: input.price_max,
+    price_mode: input.price_mode,
     description: input.description,
     pdf_url: null,
     pdf_name: null,
@@ -1242,10 +1281,17 @@ export function getListingPackage(listingId: string, packageId: number): Listing
 export function updateListingPackage(
   listingId: string,
   packageId: number,
-  patch: { name?: string; price_text?: string | null; description?: string | null },
+  patch: {
+    name?: string;
+    price_text?: string | null;
+    price_min?: number | null;
+    price_max?: number | null;
+    price_mode?: PackagePriceMode | null;
+    description?: string | null;
+  },
 ): void {
   const sets: string[] = [];
-  const vals: (string | null)[] = [];
+  const vals: (string | number | null)[] = [];
   if (patch.name !== undefined) {
     sets.push("name = ?");
     vals.push(patch.name);
@@ -1253,6 +1299,18 @@ export function updateListingPackage(
   if (patch.price_text !== undefined) {
     sets.push("price_text = ?");
     vals.push(patch.price_text);
+  }
+  if (patch.price_min !== undefined) {
+    sets.push("price_min = ?");
+    vals.push(patch.price_min);
+  }
+  if (patch.price_max !== undefined) {
+    sets.push("price_max = ?");
+    vals.push(patch.price_max);
+  }
+  if (patch.price_mode !== undefined) {
+    sets.push("price_mode = ?");
+    vals.push(patch.price_mode);
   }
   if (patch.description !== undefined) {
     sets.push("description = ?");

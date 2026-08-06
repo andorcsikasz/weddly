@@ -3,6 +3,7 @@
 
 import { authoredLocale, type UiLocale } from "./locales";
 import type { ListingPackage } from "./listing_packages";
+import type { Currency } from "./currency";
 import type { ListingVideo } from "./listing_videos";
 import { isSentinelPick } from "./picks";
 
@@ -1589,6 +1590,10 @@ export interface SupplierAvailability {
  *  with the detail-page-only fields. The admin-only `comments_count` is
  *  omitted server-side when the caller isn't admin. */
 export interface SupplierDetail extends DirectorySupplier {
+  /** Currency of this listing's package prices, resolved from the vendor's
+   *  override or the listing country. Always present even when `packages` is
+   *  empty so the detail contract never makes a number currency-less. */
+  currency: Currency;
   reviews_summary: ReviewSummary;
   /** Number of non-deleted comments on this supplier. Admin-only field —
    *  undefined when the caller is not admin. */

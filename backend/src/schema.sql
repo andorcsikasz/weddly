@@ -1088,6 +1088,7 @@ CREATE TABLE IF NOT EXISTS listings (
   price_band INTEGER,                                          -- 1..5; null when unpriced
   capacity_min INTEGER,
   capacity_max INTEGER,
+  currency TEXT,                                               -- NULL = country default; otherwise vendor override
   venue_style TEXT,                                            -- castle | hotel | boat | … | NULL (non-venue / unclassified)
   lat REAL,
   lng REAL,
@@ -2033,15 +2034,19 @@ CREATE INDEX IF NOT EXISTS idx_listing_videos_listing ON listing_videos(listing_
 
 -- Listing packages (árajánlat / price offers). A claimed vendor publishes up to
 -- MAX_LISTING_PACKAGES (shared/listing_packages.ts) named price tiers on their
--- listing; couples see them on the public supplier detail page. `price_text` is
--- free-text (vendors quote in many shapes), `pdf_url`/`pdf_name` are the
--- optional attached price-list PDF (public /uploads key, like photos). Ordered
--- by id ASC = creation order. Keyed by the string listing_id like photos/videos.
+-- listing; couples see them on the public supplier detail page. New rows use a
+-- structured whole-unit min/max plus `price_mode` (`total` / `per_person`).
+-- `price_text` stays for legacy rows and is never guessed into numbers.
+-- `pdf_url`/`pdf_name` are the optional attached price-list PDF (public
+-- /uploads key, like photos). Ordered by id ASC = creation order.
 CREATE TABLE IF NOT EXISTS listing_packages (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   listing_id  TEXT    NOT NULL,
   name        TEXT    NOT NULL,
   price_text  TEXT,
+  price_min   INTEGER,
+  price_max   INTEGER,
+  price_mode  TEXT,
   description TEXT,
   pdf_url     TEXT,
   pdf_name    TEXT,

@@ -280,11 +280,19 @@ interface PlannerPackageRow {
   pdf_name: string | null;
 }
 
+/** Planner packages reuse the vendor DTO but NOT its structured price: the
+ *  `planner_packages` table has no amount columns, and a planner quotes a
+ *  retainer or a percentage rather than a per-guest rate, so the mode the
+ *  vendor fields carry would not fit them anyway. Nulls here mean the card
+ *  renders `price_text`, which is the only price a planner has ever had. */
 function toPlannerPackage(row: PlannerPackageRow): ListingPackage {
   return {
     id: row.id,
     name: row.name,
     price_text: row.price_text,
+    price_min: null,
+    price_max: null,
+    price_mode: null,
     description: row.description,
     pdf_url: row.pdf_url,
     pdf_name: row.pdf_name,
@@ -324,6 +332,9 @@ export function addPlannerPackage(
     id: Number(res.lastInsertRowid),
     name: input.name,
     price_text: input.price_text,
+    price_min: null,
+    price_max: null,
+    price_mode: null,
     description: input.description,
     pdf_url: null,
     pdf_name: null,

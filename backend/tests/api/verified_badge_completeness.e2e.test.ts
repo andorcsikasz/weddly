@@ -74,7 +74,14 @@ function finishListing(listingId: string): void {
       WHERE id = ?`,
   ).run(listingId);
   addListingPhoto(listingId, "/uploads/listings/1.webp");
-  addListingPackage(listingId, { name: "Teljes nap", price_text: "450 000 Ft", description: null });
+  addListingPackage(listingId, {
+    name: "Teljes nap",
+    price_text: null,
+    price_min: 450_000,
+    price_max: 450_000,
+    price_mode: "total",
+    description: null,
+  });
 }
 
 function directory(token: string) {

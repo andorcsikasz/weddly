@@ -1861,6 +1861,20 @@ addColumnIfMissing("listings", "profile_imported", "profile_imported INTEGER NOT
 // as having no email at every couple-facing exit, while an admin still sees
 // the address and the reason.
 addColumnIfMissing("listings", "contact_email_flag", "contact_email_flag TEXT");
+// The currency this listing quotes packages in. NULLABLE, and NULL is a real
+// answer rather than a missing one: it means "whatever this country trades in"
+// (`currencyForCountry`), so a whole market is correct with no row edited and
+// stays correct if a listing changes country. A value here is the vendor saying
+// otherwise on purpose. Read only through `listingCurrency`.
+addColumnIfMissing("listings", "currency", "currency TEXT");
+// Structured package pricing, replacing the free-text `price_text` (kept, and
+// still rendered for rows written before this — see shared/listing_packages.ts).
+// Whole units of the listing's currency. `price_mode` is what makes the numbers
+// readable at all: "250 000" is not a price until you know whether it buys the
+// whole job or one seat.
+addColumnIfMissing("listing_packages", "price_min", "price_min INTEGER");
+addColumnIfMissing("listing_packages", "price_max", "price_max INTEGER");
+addColumnIfMissing("listing_packages", "price_mode", "price_mode TEXT");
 // Vendor opt-in: hide the tail of the public-page address + contact email from
 // anonymous visitors (a reason to register — same gate as the always-on phone
 // mask). Off by default, so existing listings show full contact exactly as

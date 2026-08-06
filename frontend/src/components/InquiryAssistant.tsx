@@ -28,10 +28,12 @@
 // sits on a tinted medallion.
 
 import type { InquiryAssist } from "@shared/ai_assist";
+import { hasStructuredPrice } from "@shared/listing_pricing";
 import { Check, Copy, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { aiAssistApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
+import { formatPackagePrice } from "../lib/listingPricing";
 import { Button, useToast } from "./ui";
 
 type State =
@@ -45,7 +47,7 @@ type State =
   | { kind: "empty" };
 
 export function InquiryAssistant({ bookingId, pro }: { bookingId: number; pro: boolean }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const [state, setState] = useState<State>({ kind: "hidden" });
   const [draft, setDraft] = useState("");
@@ -196,7 +198,7 @@ export function InquiryAssistant({ bookingId, pro }: { bookingId: number; pro: b
           ) : null}
 
           {/* 3. The suggestion. Always one of the vendor's own saved packages,
-              with their own price text — or an honest "you have saved none". */}
+              with their own saved price — or an honest "you have saved none". */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-paper-400">
               {t("vendor.assistant.package_title")}
@@ -205,7 +207,17 @@ export function InquiryAssistant({ bookingId, pro }: { bookingId: number; pro: b
               <div className="mt-1 text-sm">
                 <p className="font-semibold text-ink-900 dark:text-paper-50">
                   {assist.package.name}
-                  {assist.package.price_text ? (
+                  {hasStructuredPrice(assist.package) && assist.package.price_mode ? (
+                    <span className="ml-2 font-normal text-ink-600 dark:text-paper-300">
+                      {formatPackagePrice(
+                        { min: assist.package.price_min, max: assist.package.price_max },
+                        assist.package.price_mode,
+                        assist.package.currency,
+                        locale,
+                        t,
+                      )}
+                    </span>
+                  ) : assist.package.price_text ? (
                     <span className="ml-2 font-normal text-ink-600 dark:text-paper-300">
                       {assist.package.price_text}
                     </span>

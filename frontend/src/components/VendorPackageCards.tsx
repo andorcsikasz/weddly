@@ -1,10 +1,10 @@
 // Vendor listing "packages" (árajánlat) card grid, shared by the in-app
 // SupplierDetailPage and the public PublicVendorPage so the two never drift.
 //
-// A package carries only free text (`price_text`, `description`) plus an
-// optional PDF — vendors quote in wildly different shapes, so there is no
-// structured spec schema to render (see shared/listing_packages.ts). This
-// component turns that free text into a scannable card: a headline zone
+// New packages carry a structured price range + total/per-person mode; legacy
+// rows keep their original `price_text`. Descriptions remain free text and an
+// optional PDF can carry the itemised quote (see shared/listing_packages.ts).
+// This component turns those fields into a scannable card: a headline zone
 // (name + a compact price), a divider, and a specs zone where each
 // "Label: value" line of the description becomes an icon + fact row. Icons
 // are picked by keyword so the eye scans glyphs instead of reading
@@ -16,7 +16,9 @@
 // demand. Every card is uniform: a flat white face with a crisp dark hairline
 // outline, Uber-style, with no singled-out "recommended" tier.
 
+import type { Currency } from "@shared/currency";
 import type { ListingPackage } from "@shared/listing_packages";
+import { convertedPrice, hasStructuredPrice, type GuestRange } from "@shared/listing_pricing";
 import {
   Camera,
   Check,
@@ -32,6 +34,8 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
+import type { Locale } from "../lib/i18n";
+import { formatPackagePrice } from "../lib/listingPricing";
 
 /** One parsed line of a package description. `label` is null for a plain
  *  feature line (no "Label: value" colon), in which case only `value` shows. */
@@ -174,14 +178,31 @@ function SpecRow({ spec }: { spec: Spec }) {
 
 function PackageCard({
   pkg,
+  currency,
+  guests,
+  locale,
   t,
 }: {
   pkg: ListingPackage;
+  currency: Currency;
+  guests: GuestRange;
+  locale: Locale;
   t: T;
 }) {
   const specs = parseSpecs(pkg.description);
   const [expanded, setExpanded] = useState(false);
-  const isEmpty = !pkg.price_text && specs.length === 0 && !pkg.pdf_url;
+  const structured = hasStructuredPrice(pkg) && pkg.price_mode !== null;
+  const primaryPrice = structured
+    ? formatPackagePrice(
+        { min: pkg.price_min, max: pkg.price_max },
+        pkg.price_mode!,
+        currency,
+        locale,
+        t,
+      )
+    : pkg.price_text;
+  const converted = structured ? convertedPrice(pkg, guests) : null;
+  const isEmpty = !primaryPrice && specs.length === 0 && !pkg.pdf_url;
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-ink-900 dark:bg-umber-900 dark:ring-umber-600">
@@ -192,10 +213,19 @@ function PackageCard({
         <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-semibold leading-snug text-ink-900 dark:text-paper-50">
           {pkg.name}
         </h3>
-        {pkg.price_text ? (
-          <p className="text-lg font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50">
-            {pkg.price_text}
-          </p>
+        {primaryPrice ? (
+          <div>
+            <p className="text-lg font-bold leading-tight tracking-tight text-ink-900 dark:text-paper-50">
+              {primaryPrice}
+            </p>
+            {converted && (
+              <p className="mt-1 text-xs text-ink-500 dark:text-umber-300">
+                {t("suppliers.detail.packages.estimatedEquivalent", {
+                  price: formatPackagePrice(converted.range, converted.mode, currency, locale, t),
+                })}
+              </p>
+            )}
+          </div>
         ) : isEmpty ? (
           <p className="text-sm italic text-ink-500 dark:text-umber-300">
             {t("suppliers.detail.packages.detailsOnRequest")}
@@ -256,11 +286,32 @@ function PackageCard({
 
 /** Responsive comparison grid of package cards. `items-stretch` (grid default)
  *  keeps every card in a row the same height so spec rows align across columns. */
-export function VendorPackageGrid({ packages, t }: { packages: ListingPackage[]; t: T }) {
+export function VendorPackageGrid({
+  packages,
+  currency,
+  capacityMin,
+  capacityMax,
+  locale,
+  t,
+}: {
+  packages: ListingPackage[];
+  currency: Currency;
+  capacityMin: number | null;
+  capacityMax: number | null;
+  locale: Locale;
+  t: T;
+}) {
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {packages.map((pkg) => (
-        <PackageCard key={pkg.id} pkg={pkg} t={t} />
+        <PackageCard
+          key={pkg.id}
+          pkg={pkg}
+          currency={currency}
+          guests={{ min: capacityMin, max: capacityMax }}
+          locale={locale}
+          t={t}
+        />
       ))}
     </div>
   );

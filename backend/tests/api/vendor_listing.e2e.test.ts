@@ -1494,6 +1494,112 @@ describe("vendor listing — packages (/api/vendor/listing/me/packages)", () => 
     expect(del.data.packages?.some((p) => p.id === p0?.id)).toBe(false);
   });
 
+  test("structured prices and listing currency round-trip with coherent validation", async () => {
+    wipeAll();
+    const { listingId } = await makeApprovedListing(
+      "owner-structured-price@weddly.test",
+      "vendor-structured-price@weddly.test",
+      "Structured Price Venue",
+    );
+    const { vendorToken } = await claimListing(
+      listingId,
+      "vendor-structured-price@weddly.test",
+      "Vendor Owner",
+    );
+
+    const initial = await req<VendorListingView>("GET", "/api/vendor/listing/me", undefined, {
+      token: vendorToken,
+    });
+    expect(initial.data.currency).toBe("HUF");
+    expect(initial.data.listing.currency_override).toBeNull();
+
+    const euro = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { currency: "EUR" },
+      { token: vendorToken },
+    );
+    expect(euro.status).toBe(200);
+    expect(euro.data.currency).toBe("EUR");
+    expect(euro.data.listing.currency_override).toBe("EUR");
+
+    const added = await req<VendorListingView>(
+      "POST",
+      "/api/vendor/listing/me/packages",
+      {
+        name: "Whole day",
+        price_min: 900,
+        price_max: 1_500,
+        price_mode: "total",
+        description: "Venue hire",
+      },
+      { token: vendorToken },
+    );
+    expect(added.status).toBe(201);
+    const pkg = added.data.packages?.[0];
+    expect(pkg).toMatchObject({
+      price_text: null,
+      price_min: 900,
+      price_max: 1_500,
+      price_mode: "total",
+    });
+
+    // PATCH coherence is checked against the resulting row, not just the keys
+    // in this request: changing one bound keeps the other and the mode.
+    const partial = await req<VendorListingView>(
+      "PATCH",
+      `/api/vendor/listing/me/packages/${pkg?.id}`,
+      { price_max: 1_800 },
+      { token: vendorToken },
+    );
+    expect(partial.status).toBe(200);
+    expect(partial.data.packages?.[0]).toMatchObject({
+      price_min: 900,
+      price_max: 1_800,
+      price_mode: "total",
+    });
+
+    const detail = await req<{
+      currency: string;
+      packages: Array<{ price_min: number | null; price_mode: string | null }>;
+    }>("GET", `/api/suppliers/${encodeURIComponent(listingId)}`, undefined, {
+      token: vendorToken,
+    });
+    expect(detail.data.currency).toBe("EUR");
+    expect(detail.data.packages[0]).toMatchObject({ price_min: 900, price_mode: "total" });
+
+    const badBodies = [
+      { name: "No mode", price_min: 100 },
+      { name: "No amount", price_mode: "total" },
+      { name: "Backwards", price_min: 200, price_max: 100, price_mode: "total" },
+      { name: "Fraction", price_min: 10.5, price_mode: "per_person" },
+      { name: "Bad mode", price_min: 100, price_mode: "hourly" },
+    ];
+    for (const body of badBodies) {
+      const bad = await req("POST", "/api/vendor/listing/me/packages", body, {
+        token: vendorToken,
+      });
+      expect(bad.status).toBe(400);
+    }
+
+    const badCurrency = await req(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { currency: "BTC" },
+      { token: vendorToken },
+    );
+    expect(badCurrency.status).toBe(400);
+
+    const reset = await req<VendorListingView>(
+      "PATCH",
+      "/api/vendor/listing/me",
+      { currency: null },
+      { token: vendorToken },
+    );
+    expect(reset.data.listing.currency_override).toBeNull();
+    expect(reset.data.currency).toBe("HUF");
+  });
+
   test("PDF upload writes a public url + name; delete clears it; non-PDF → 415", async () => {
     wipeAll();
     const { listingId } = await makeApprovedListing(

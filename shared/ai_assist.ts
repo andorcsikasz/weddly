@@ -10,7 +10,7 @@
 //
 //   * THE MODEL NEVER INVENTS A PRICE OR A TERM. The package suggestion is a
 //     SELECTION from what the vendor already saved, and the price is their own
-//     `price_text` copied verbatim server-side from the row the id names. The
+//     saved price copied verbatim server-side from the row the id names. The
 //     model returns an id, never a price string, so a hallucinated figure has
 //     nowhere to land. A vendor with no saved packages gets `no_packages: true`
 //     and `package: null` — the strip then says so rather than guessing, because
@@ -29,6 +29,9 @@
 //     200, and the strip renders nothing. The vendor's job does not depend on
 //     this feature working, so it must never be able to break the page it sits
 //     on.
+
+import type { Currency } from "./currency";
+import type { PackagePrice } from "./listing_pricing";
 
 /** The three languages the vendor portal speaks. Output follows the COUPLE's
  *  locale, not the vendor's: the draft is a reply addressed to them. */
@@ -51,7 +54,7 @@ export function assistLanguageFor(locale: string | null | undefined): AssistLang
 /** The package the assistant points at. Every field here is copied from the
  *  vendor's own `listing_packages` row, EXCEPT `reason`, which is the only
  *  sentence the model contributes. */
-export interface InquiryAssistPackage {
+export interface InquiryAssistPackage extends PackagePrice {
   /** `listing_packages.id` on the vendor's own listing. */
   package_id: number;
   /** The vendor's own package name, verbatim. */
@@ -59,6 +62,8 @@ export interface InquiryAssistPackage {
   /** The vendor's own free-text price, verbatim, or null when they never typed
    *  one. NEVER a figure the model produced. */
   price_text: string | null;
+  /** Resolved listing currency for the structured amounts. */
+  currency: Currency;
   /** One line on why this tier fits this inquiry, in `language`. */
   reason: string;
 }

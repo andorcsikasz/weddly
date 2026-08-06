@@ -188,6 +188,7 @@ beforeEach(() => {
     category: CATEGORY,
     city: "Budapest",
     country: "HU",
+    currency: "HUF",
     blurb_hu: "",
     blurb_en: "Documentary wedding photography.",
     website: "https://magyarfoto.example",
