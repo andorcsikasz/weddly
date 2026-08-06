@@ -578,6 +578,10 @@ const en: LocaleMessages = {
       "Fully booked? Hide your listing temporarily. Everything is kept and you can switch it back on anytime.",
     visibility_live: "Live",
     visibility_paused: "Paused",
+    // Sits beside the switch. "Live" alone is the pill's wording; next to a
+    // control it has to read as a state the switch is holding.
+    visibility_state_live: "Listing live",
+    visibility_pause_confirm: "Pause the listing? You'll stop receiving new inquiries.",
     visibility_moderated: "Awaiting review",
     visibility_pause_cta: "Pause listing",
     visibility_publish_cta: "Publish again",

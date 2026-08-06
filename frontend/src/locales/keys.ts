@@ -859,6 +859,12 @@ export interface LocaleMessages {
     visibility_body: string;
     visibility_live: string;
     visibility_paused: string;
+    /** State label beside the visibility SWITCH. Distinct from
+     *  `visibility_live`, which is the standalone pill on the preview card:
+     *  next to a control the word has to read as the position it is holding. */
+    visibility_state_live: string;
+    /** Asked inline on the way OFF only, since pausing stops incoming leads. */
+    visibility_pause_confirm: string;
     visibility_moderated: string;
     visibility_pause_cta: string;
     visibility_publish_cta: string;

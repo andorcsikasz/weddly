@@ -619,6 +619,8 @@ const de: LocaleMessages = {
       "Ausgebucht? Blenden Sie Ihren Eintrag vorübergehend aus. Alles bleibt erhalten und Sie können ihn jederzeit wieder einschalten.",
     visibility_live: "Online",
     visibility_paused: "Pausiert",
+    visibility_state_live: "Anzeige ist live",
+    visibility_pause_confirm: "Anzeige pausieren? Du erhältst dann keine neuen Anfragen mehr.",
     visibility_moderated: "Wartet auf Prüfung",
     visibility_pause_cta: "Eintrag pausieren",
     visibility_publish_cta: "Wieder veröffentlichen",

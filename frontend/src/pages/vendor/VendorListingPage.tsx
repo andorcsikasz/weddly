@@ -327,6 +327,9 @@ export default function VendorListingPage() {
   const [newDate, setNewDate] = useState("");
   const [availBusy, setAvailBusy] = useState(false);
   const [visibilityBusy, setVisibilityBusy] = useState(false);
+  // The inline "are you sure" under the visibility switch, raised only on the
+  // way OFF. Not a dialog: see onVisibilityChange.
+  const [pauseAsked, setPauseAsked] = useState(false);
 
   const loadView = useCallback(async () => {
     try {
@@ -524,12 +527,13 @@ export default function VendorListingPage() {
     }
   };
 
-  const onToggleVisibility = async () => {
+  const setVisibility = async (publish: boolean) => {
     if (!view || visibilityBusy) return;
     setVisibilityBusy(true);
     try {
-      const next = await vendorListingApi.setVisibility(view.listing.status !== "active");
+      const next = await vendorListingApi.setVisibility(publish);
       setView(next);
+      setPauseAsked(false);
       toast.success(
         next.listing.status === "active"
           ? t("vendor_home.visibility_published")
@@ -540,6 +544,19 @@ export default function VendorListingPage() {
     } finally {
       setVisibilityBusy(false);
     }
+  };
+
+  // Pausing is asymmetric on purpose: going dark stops every incoming lead and
+  // nothing on the page would say so afterwards, so it asks first. Coming back
+  // is instant — a vendor who wants to be visible should never have to confirm
+  // it. The question is an inline row under the switch rather than a modal,
+  // because a dialog over a one-click setting is heavier than the setting.
+  const onVisibilityChange = (next: boolean) => {
+    if (next) {
+      void setVisibility(true);
+      return;
+    }
+    setPauseAsked(true);
   };
 
   const onRemoveBlock = async (date: string) => {
@@ -1578,45 +1595,77 @@ export default function VendorListingPage() {
       )}
 
       {/* Visibility: self-serve pause for fully-booked seasons. Moderation
-          states are read-only here; the admin pipeline owns those. */}
+          states are read-only here; the admin pipeline owns those.
+
+          ONE control, and it is the same switch the "hide my contact details"
+          row above uses. This was a status pill plus a button whose label AND
+          fill colour both flipped with the state, which made it the second
+          control pattern on a page that already had a switch, and left the
+          vendor reading the button to work out what it would do. A switch says
+          where it is without being read. */}
       {view && (
         <section className="card mt-2.5 space-y-2.5 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="min-w-0 font-semibold">{t("vendor_home.visibility_title")}</h2>
-            {view.listing.status === "active" ? (
-              // Broadcast-style LIVE pill: red pulsing dot + uppercase label.
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-ink-900/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white dark:bg-white/10 dark:text-paper-100">
+            {view.listing.status === "active" || view.listing.status === "hidden" ? (
+              <div className="flex items-center gap-2.5">
                 <span
-                  aria-hidden="true"
-                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500"
+                  className={
+                    view.listing.status === "active"
+                      ? "text-sm font-medium text-sage-700 dark:text-sage-300"
+                      : "text-sm font-medium text-ink-500 dark:text-umber-300"
+                  }
+                >
+                  {visibilityBusy
+                    ? t("vendor_home.saving")
+                    : view.listing.status === "active"
+                      ? t("vendor_home.visibility_state_live")
+                      : t("vendor_home.visibility_paused")}
+                </span>
+                <Switch
+                  checked={view.listing.status === "active"}
+                  onChange={onVisibilityChange}
+                  disabled={visibilityBusy}
+                  label={t("vendor_home.visibility_title")}
+                  describedBy="vendor-visibility-hint"
                 />
-                {t("vendor_home.visibility_live")}
-              </span>
+              </div>
             ) : (
               <span className="inline-flex items-center rounded-full bg-paper-200 px-2.5 py-0.5 text-xs font-medium text-ink-600 dark:bg-umber-700 dark:text-paper-300">
-                {view.listing.status === "hidden"
-                  ? t("vendor_home.visibility_paused")
-                  : t("vendor_home.visibility_moderated")}
+                {t("vendor_home.visibility_moderated")}
               </span>
             )}
           </div>
           {view.listing.status === "active" || view.listing.status === "hidden" ? (
-            <button
-              type="button"
-              onClick={onToggleVisibility}
-              disabled={visibilityBusy}
-              className={
-                view.listing.status === "active"
-                  ? "btn btn-outline"
-                  : "btn bg-blush-500 text-white hover:bg-blush-600"
-              }
-            >
-              {visibilityBusy
-                ? t("vendor_home.saving")
-                : view.listing.status === "active"
-                  ? t("vendor_home.visibility_pause_cta")
-                  : t("vendor_home.visibility_publish_cta")}
-            </button>
+            <>
+              <p id="vendor-visibility-hint" className="text-sm text-ink-500 dark:text-umber-300">
+                {t("vendor_home.visibility_body")}
+              </p>
+              {pauseAsked && (
+                <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 dark:border-amber-400/40 dark:bg-amber-400/10">
+                  <p className="min-w-0 text-sm text-ink-700 dark:text-paper-200">
+                    {t("vendor_home.visibility_pause_confirm")}
+                  </p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPauseAsked(false)}
+                      className="btn btn-outline btn-sm"
+                    >
+                      {t("common.cancel")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void setVisibility(false)}
+                      disabled={visibilityBusy}
+                      className="btn btn-sm bg-blush-500 text-white hover:bg-blush-600"
+                    >
+                      {t("vendor_home.visibility_pause_cta")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <p className="text-sm text-ink-500 dark:text-umber-300">
               {t("vendor_home.visibility_moderated_note")}

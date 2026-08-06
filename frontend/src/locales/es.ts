@@ -604,6 +604,8 @@ const es: LocaleMessages = {
       "¿Sin disponibilidad? Oculta tu ficha temporalmente. Se conserva todo y puedes reactivarla cuando quieras.",
     visibility_live: "Activa",
     visibility_paused: "En pausa",
+    visibility_state_live: "Anuncio activo",
+    visibility_pause_confirm: "¿Pausar el anuncio? Dejarás de recibir nuevas solicitudes.",
     visibility_moderated: "Pendiente de revisión",
     visibility_pause_cta: "Pausar ficha",
     visibility_publish_cta: "Volver a publicar",

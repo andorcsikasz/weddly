@@ -587,6 +587,8 @@ const hu: LocaleMessages = {
       "Ha megtelt a naptárad, ideiglenesen elrejtheted a hirdetésed. Minden adatod megmarad, bármikor visszakapcsolhatod.",
     visibility_live: "Élő",
     visibility_paused: "Szüneteltetve",
+    visibility_state_live: "Hirdetés élesítve",
+    visibility_pause_confirm: "Biztosan szünetelteted? Nem fogsz új megkeresést kapni.",
     visibility_moderated: "Jóváhagyásra vár",
     visibility_pause_cta: "Hirdetés szüneteltetése",
     visibility_publish_cta: "Hirdetés visszakapcsolása",

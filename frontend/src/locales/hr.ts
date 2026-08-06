@@ -602,6 +602,8 @@ const hr: LocaleMessages = {
       "Popunjeni ste? Privremeno sakrijte oglas. Sve ostaje spremljeno i možete ga vratiti kad god želite.",
     visibility_live: "Objavljeno",
     visibility_paused: "Pauzirano",
+    visibility_state_live: "Oglas je aktivan",
+    visibility_pause_confirm: "Pauzirati oglas? Više nećete primati nove upite.",
     visibility_moderated: "Čeka pregled",
     visibility_pause_cta: "Pauzirajte oglas",
     visibility_publish_cta: "Objavite ponovno",
