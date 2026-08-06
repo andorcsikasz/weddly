@@ -7,10 +7,12 @@
 // listing editor — so the sheet takes its URL and its message from the caller
 // and owns nothing but the clipboard state.
 //
-// Layout: two columns. The caller's own heading/blurb (`lead`) sits above the
-// read-only link pill on the left, and every action stacks in a narrow column
-// on the right, so the whole block is roughly one paragraph tall instead of
-// five stacked rows. Below `sm` it degrades to the plain vertical stack.
+// Layout: the caller's own heading/blurb (`lead`) on top, then ONE bottom row
+// holding the read-only link and every action side by side. The actions used
+// to stack in a narrow right-hand column, which made the block four buttons
+// tall (~170px) however little the lead said; on one line with the link the
+// content is ~88px, i.e. about half. The row wraps below `sm`, where the link
+// takes the full width and the actions fall underneath it.
 
 import { Check, Copy, Link2, Mail, MessageCircle, Share2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -66,17 +68,19 @@ export function VendorShareSheet({
   };
 
   const action =
-    "inline-flex items-center gap-2 rounded-xl border border-paper-300 bg-white px-3 py-2 text-sm font-medium text-ink-700 transition hover:border-ink-900 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:bg-umber-700/60";
+    "inline-flex items-center gap-1.5 rounded-lg border border-paper-300 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-700 transition hover:border-ink-900 hover:bg-paper-100 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100 dark:hover:border-paper-200 dark:hover:bg-umber-700/60";
 
   return (
-    <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5 ${className}`}>
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        {lead}
+    <div className={`flex flex-col gap-2 ${className}`}>
+      {lead}
+
+      <div className="flex flex-wrap items-center gap-1.5">
         {/* The link, in its own read-only pill. Click to select-all; the Copy
-            action on the right is the actual copy. */}
-        <div className="flex items-center gap-2 rounded-xl border border-paper-300 bg-paper-50 px-3 py-2 dark:border-umber-700 dark:bg-umber-800/60">
+            action beside it is the actual copy. `basis-full` below `sm` keeps
+            the URL readable instead of letting it truncate to nothing. */}
+        <div className="flex min-w-0 basis-full items-center gap-2 rounded-lg border border-paper-300 bg-paper-50 px-3 py-1.5 sm:basis-auto sm:flex-1 dark:border-umber-700 dark:bg-umber-800/60">
           <Link2
-            size={15}
+            size={14}
             aria-hidden
             className="shrink-0 -rotate-45 text-ink-400 dark:text-umber-300"
           />
@@ -89,15 +93,12 @@ export function VendorShareSheet({
             className="min-w-0 flex-1 truncate bg-transparent font-mono text-xs text-ink-700 focus:outline-none dark:text-paper-100"
           />
         </div>
-      </div>
-
-      <div className="flex shrink-0 flex-col gap-1.5 sm:w-40">
         <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className={action}>
-          <MessageCircle size={16} aria-hidden="true" className="text-[#25D366]" />
+          <MessageCircle size={14} aria-hidden="true" className="text-[#25D366]" />
           <span>{t("vendor.reviews.share_whatsapp")}</span>
         </a>
         <a href={mailtoUrl} className={action}>
-          <Mail size={16} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
+          <Mail size={14} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
           <span>{t("vendor.reviews.share_email")}</span>
         </a>
         <button
@@ -105,16 +106,16 @@ export function VendorShareSheet({
           onClick={() => void copy()}
           className={
             copied
-              ? "inline-flex items-center gap-2 rounded-xl border border-sage-300 bg-sage-100 px-3 py-2 text-sm font-medium text-sage-800 dark:border-sage-700 dark:bg-sage-500/20 dark:text-sage-200"
+              ? "inline-flex items-center gap-1.5 rounded-lg border border-sage-300 bg-sage-100 px-2.5 py-1.5 text-xs font-medium text-sage-800 dark:border-sage-700 dark:bg-sage-500/20 dark:text-sage-200"
               : action
           }
         >
-          {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+          {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
           <span>{copied ? t("vendor.reviews.share_copied") : t("vendor.reviews.share_copy")}</span>
         </button>
         {canShare && (
           <button type="button" onClick={() => void share()} className={action}>
-            <Share2 size={16} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
+            <Share2 size={14} aria-hidden="true" className="text-ink-500 dark:text-umber-300" />
             <span>{t("vendor.reviews.share_native")}</span>
           </button>
         )}

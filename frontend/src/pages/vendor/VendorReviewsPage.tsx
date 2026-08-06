@@ -40,7 +40,7 @@ function CollectReviewsCard({
   const subject = locale === "hu" ? "Egy rövid értékelés?" : "A quick review?";
 
   return (
-    <section className="rounded-2xl border border-paper-300 bg-paper-50 p-4 sm:p-5 dark:border-umber-600 dark:bg-umber-900">
+    <section className="rounded-2xl border border-paper-300 bg-paper-50 p-4 dark:border-umber-600 dark:bg-umber-900">
       <VendorShareSheet
         url={shareUrl}
         message={msg}
