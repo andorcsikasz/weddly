@@ -29,9 +29,12 @@ import {
   PROFILE_MILESTONES,
   VENDOR_TIERS,
   type VendorPointsStatus,
-  nextTierForPoints,
-  tierForPoints,
-  tierProgress,
+  type VendorTierFacts,
+  meetsTier,
+  vendorNextTierFor,
+  vendorTierFor,
+  vendorTierGaps,
+  vendorTierProgress,
 } from "@shared/vendor_points";
 import { db, now } from "../../src/db";
 import { createVerificationToken } from "../../src/domain/community_suppliers";
@@ -163,34 +166,183 @@ function pointsFor(accountId: number, eventType: string): number {
   ).total;
 }
 
+/** Fill in every checklist step so `listingCompleteness` reaches 100, then let
+ *  the engine notice. A tier above the floor wants a finished listing, and the
+ *  bootstrapped community listing arrives with no cover, no gallery and no
+ *  packages, so a test about the REVIEW gate has to clear the profile one first
+ *  or it is really testing the profile gate by accident.
+ *
+ *  Deliberately goes through `emitVendorEvent` + the outbox rather than writing
+ *  ledger rows by hand: the milestone rule is the thing being relied on here, so
+ *  a test that forged its output would prove nothing about the gate. */
+function completeListing(v: { accountId: number; listingId: string }): void {
+  const ts = now();
+  db.prepare(
+    `UPDATE listings
+        SET hero_image_url = 'https://example.test/hero.jpg',
+            blurb_en = 'A complete listing',
+            contact_phone = '+36 1 555 0100',
+            price_band = 3,
+            capacity_min = 20,
+            capacity_max = 200,
+            updated_at = ?
+      WHERE id = ?`,
+  ).run(ts, v.listingId);
+  db.prepare(
+    `INSERT INTO listing_photos (listing_id, url, position_y, created_at)
+     VALUES (?, 'https://example.test/1.jpg', 50, ?)`,
+  ).run(v.listingId, ts);
+  db.prepare(
+    `INSERT INTO listing_packages (listing_id, name, price_text, description, created_at, updated_at)
+     VALUES (?, 'Full day', 'from 1000', NULL, ?, ?)`,
+  ).run(v.listingId, ts, ts);
+  emitVendorEvent(v.accountId, "profile.updated");
+  processVendorEventOutbox();
+}
+
+/** A vendor who satisfies everything a rung asks for, and then some. */
+function factsFor(tier: (typeof VENDOR_TIERS)[number]): VendorTierFacts {
+  return {
+    points: tier.min_points,
+    reviews: tier.requires.min_reviews,
+    profile_milestones: tier.requires.min_profile_milestones,
+  };
+}
+
 describe("Weddly Points: tier maths (pure)", () => {
   test("a fresh vendor sits in the floor tier, not in nothing", () => {
-    const tier = tierForPoints(0);
+    const tier = vendorTierFor({ points: 0, reviews: 0, profile_milestones: 0 });
     expect(tier.key).toBe("blue");
     expect(tier.min_points).toBe(0);
   });
 
-  test("thresholds promote exactly at min_points", () => {
+  test("the floor tier asks for nothing, so nobody can fall out of the ladder", () => {
+    const floor = VENDOR_TIERS[0];
+    expect(floor).toBeTruthy();
+    if (!floor) return;
+    expect(floor.min_points).toBe(0);
+    expect(floor.requires.min_reviews).toBe(0);
+    expect(floor.requires.min_profile_milestones).toBe(0);
+  });
+
+  test("thresholds promote exactly at min_points once the requirements are met", () => {
     const gold = VENDOR_TIERS.find((t) => t.key === "gold");
     expect(gold).toBeTruthy();
     if (!gold) return;
-    expect(tierForPoints(gold.min_points - 1).key).toBe("blue");
-    expect(tierForPoints(gold.min_points).key).toBe("gold");
+    const met = factsFor(gold);
+    expect(vendorTierFor({ ...met, points: gold.min_points - 1 }).key).toBe("blue");
+    expect(vendorTierFor(met).key).toBe("gold");
+  });
+
+  // The complaint this whole gate exists to answer: a vendor reached Gold with
+  // 40 profile + 50 first review + 15 one review + 60 one booking = 165 points
+  // and a single testimonial on the page.
+  test("points alone do not buy Gold: five reviews is a floor, not a suggestion", () => {
+    const gold = VENDOR_TIERS.find((t) => t.key === "gold");
+    expect(gold).toBeTruthy();
+    if (!gold) return;
+    expect(gold.requires.min_reviews).toBeGreaterThanOrEqual(5);
+
+    // The exact vendor from the report: comfortably past the point floor.
+    const reported: VendorTierFacts = {
+      points: 165,
+      reviews: 1,
+      profile_milestones: PROFILE_MILESTONES.length,
+    };
+    expect(reported.points).toBeGreaterThan(gold.min_points);
+    expect(vendorTierFor(reported).key).toBe("blue");
+
+    // And no amount of points fixes it: fast replies and bookings are capped
+    // per MONTH, not per lifetime, so a points-only ladder always has this hole.
+    expect(vendorTierFor({ ...reported, points: 100_000 }).key).toBe("blue");
+
+    // The fifth review promotes with no new points at all.
+    const fifth = { ...reported, points: gold.min_points, reviews: 5 };
+    expect(vendorTierFor(fifth).key).toBe("gold");
+  });
+
+  test("an unfinished listing holds a vendor at the floor whatever they earn", () => {
+    const gold = VENDOR_TIERS.find((t) => t.key === "gold");
+    if (!gold) return;
+    const facts = { ...factsFor(gold), profile_milestones: PROFILE_MILESTONES.length - 1 };
+    expect(vendorTierFor(facts).key).toBe("blue");
+  });
+
+  // `vendorTierFor` stops at the first rung that fails rather than taking the
+  // highest that passes. The two readings only agree while every requirement is
+  // non-decreasing up the table, so that property is asserted rather than
+  // assumed: a later edit that dips one rung's demand would silently let a
+  // vendor skip a rung they do not hold.
+  test("every requirement is non-decreasing up the ladder", () => {
+    for (let i = 1; i < VENDOR_TIERS.length; i++) {
+      const below = VENDOR_TIERS[i - 1];
+      const here = VENDOR_TIERS[i];
+      if (!below || !here) continue;
+      expect(here.requires.min_reviews).toBeGreaterThanOrEqual(below.requires.min_reviews);
+      expect(here.requires.min_profile_milestones).toBeGreaterThanOrEqual(
+        below.requires.min_profile_milestones,
+      );
+    }
+  });
+
+  test("a rung asks for no more reviews than the rules can actually pay for", () => {
+    // A gate above the monthly review cap would be a rung only a farm reaches.
+    const perMonth = MAX_REVIEW_POINTS_PER_MONTH / POINTS_BY_EVENT.review_collected;
+    for (const tier of VENDOR_TIERS) {
+      expect(tier.requires.min_reviews).toBeLessThanOrEqual(perMonth * 24);
+    }
   });
 
   test("the top tier renders a full ring and no next tier", () => {
     const top = VENDOR_TIERS[VENDOR_TIERS.length - 1];
     expect(top).toBeTruthy();
     if (!top) return;
-    expect(nextTierForPoints(top.min_points)).toBeNull();
-    expect(tierProgress(top.min_points)).toBe(1);
+    expect(vendorNextTierFor(factsFor(top))).toBeNull();
+    expect(vendorTierProgress(factsFor(top))).toBe(1);
   });
 
-  test("progress is a 0..1 fraction of the gap to the next tier", () => {
+  test("progress is the fraction of the requirement that is actually binding", () => {
     const gold = VENDOR_TIERS.find((t) => t.key === "gold");
     if (!gold) return;
-    expect(tierProgress(0)).toBe(0);
-    expect(tierProgress(gold.min_points / 2)).toBeCloseTo(0.5, 5);
+    expect(vendorTierProgress({ points: 0, reviews: 0, profile_milestones: 0 })).toBe(0);
+
+    // Halfway on every axis reads as half.
+    expect(
+      vendorTierProgress({
+        points: gold.min_points / 2,
+        reviews: gold.requires.min_reviews / 2,
+        profile_milestones: gold.requires.min_profile_milestones / 2,
+      }),
+    ).toBeCloseTo(0.5, 5);
+
+    // The ring must never read nearly-full for a vendor who is four reviews
+    // short: that is the old points-only lie moved into the arc.
+    const pointsRich = {
+      points: gold.min_points,
+      reviews: 1,
+      profile_milestones: gold.requires.min_profile_milestones,
+    };
+    expect(vendorTierProgress(pointsRich)).toBeCloseTo(1 / gold.requires.min_reviews, 5);
+  });
+
+  test("the gap list names every unmet requirement, with both numbers", () => {
+    const gold = VENDOR_TIERS.find((t) => t.key === "gold");
+    if (!gold) return;
+    const gaps = vendorTierGaps(
+      { points: 165, reviews: 1, profile_milestones: PROFILE_MILESTONES.length },
+      gold,
+    );
+    const reviews = gaps.find((g) => g.key === "reviews");
+    expect(reviews).toEqual({
+      key: "reviews",
+      have: 1,
+      need: gold.requires.min_reviews,
+      met: false,
+    });
+    // Points are met here, and a met requirement stays listed rather than
+    // vanishing: the list has to keep the shape of what the rung asks for.
+    expect(gaps.find((g) => g.key === "points")?.met).toBe(true);
+    expect(meetsTier({ points: 165, reviews: 1, profile_milestones: 4 }, gold)).toBe(false);
   });
 
   // The reason the thresholds are what they are. A tier table is easy to edit
@@ -210,11 +362,20 @@ describe("Weddly Points: tier maths (pure)", () => {
       POINTS_BY_EVENT.review_collected +
       3 * POINTS_BY_EVENT.fast_reply +
       0.5 * POINTS_BY_EVENT.booking_confirmed;
+    // That vendor collects one review a month, and the first one is month 1.
+    const reviewsPerMonth = 1;
+
+    // A rung is reached when BOTH its points and its requirements are, so the
+    // month is the later of the two. Modelling only the points is what let the
+    // ladder read as well-calibrated while Gold arrived in month 1.
+    const monthsFor = (tier: (typeof VENDOR_TIERS)[number]) =>
+      Math.max((tier.min_points - oneTime) / perMonth, tier.requires.min_reviews / reviewsPerMonth);
+
     const top = VENDOR_TIERS[VENDOR_TIERS.length - 1];
     expect(top).toBeTruthy();
     if (!top) return;
 
-    const monthsToTop = (top.min_points - oneTime) / perMonth;
+    const monthsToTop = monthsFor(top);
     expect(monthsToTop).toBeLessThanOrEqual(24);
     // And not trivially reachable either: a top tier a vendor stumbles into in
     // a season is a participation sticker, and every perk below it stops
@@ -223,9 +384,16 @@ describe("Weddly Points: tier maths (pure)", () => {
 
     // Each rung lands inside the run-up to the one above it, so the ladder has
     // no dead year in the middle.
-    const monthsFor = (points: number) => (points - oneTime) / perMonth;
-    expect(monthsFor(VENDOR_TIERS[1]?.min_points ?? 0)).toBeLessThanOrEqual(3);
-    expect(monthsFor(VENDOR_TIERS[2]?.min_points ?? 0)).toBeLessThanOrEqual(12);
+    const gold = VENDOR_TIERS[1];
+    const platinum = VENDOR_TIERS[2];
+    if (!gold || !platinum) return;
+    expect(monthsFor(platinum)).toBeLessThanOrEqual(12);
+
+    // Gold is the rung the gate exists for. It must take a real season of work
+    // (never again month 1), and it must still arrive inside the first half of
+    // year one, or the entry rung is a wall rather than a first step.
+    expect(monthsFor(gold)).toBeGreaterThanOrEqual(4);
+    expect(monthsFor(gold)).toBeLessThanOrEqual(6);
   });
 
   test("every rung above the floor is worth more than the one below it", () => {
@@ -516,6 +684,117 @@ describe("GET /api/vendor/points", () => {
     expect(r.data.perks).toBeTruthy();
     // Mirrors the server-side derivation exactly: no second implementation.
     expect(r.data.points).toBe(vendorPointsStatus(v.accountId).points);
+  });
+
+  test("the tier facts are counted off the ledger and ride on the DTO", async () => {
+    const v = await bootstrapVendor("facts");
+    const gold = VENDOR_TIERS.find((t) => t.key === "gold");
+    if (!gold) return;
+    completeListing(v);
+
+    // Points enough for Gold twice over, arriving as an admin correction so no
+    // review is involved: exactly the shape of the vendor who complained.
+    const { adjustVendorPoints } = await import("../../src/domain/vendor_points");
+    adjustVendorPoints(v.accountId, gold.min_points * 2, "test");
+
+    for (let i = 0; i < 4; i++) {
+      const author = await bootstrapAuthor(`facts-reviewer-${i}@test.test`);
+      createReview({
+        supplierId: v.listingId,
+        authorUserId: author.userId,
+        coupleId: null,
+        authorKind: "couple",
+        visitorId: null,
+        rating: 5,
+        body: `review ${i}`,
+        amountPaid: null,
+        amountCurrency: null,
+        amountNote: null,
+        published: true,
+        verified: true,
+        flagged: false,
+        tags: [],
+      });
+    }
+    processVendorEventOutbox();
+
+    const four = await req<VendorPointsStatus>("GET", "/api/vendor/points", undefined, {
+      token: v.token,
+    });
+    expect(four.status).toBe(200);
+    // Four reviews, points to spare, and still not Gold.
+    expect(four.data.facts.reviews).toBe(4);
+    expect(four.data.points).toBeGreaterThan(gold.min_points);
+    expect(four.data.tier).toBe("blue");
+    expect(four.data.next_tier).toBe("gold");
+    // The points gap is spent, so the UI must not be told "0 points to Gold"
+    // and left to render a sentence that has stopped meaning anything.
+    expect(four.data.points_to_next).toBe(0);
+    expect(four.data.progress).toBeLessThan(1);
+
+    const author = await bootstrapAuthor("facts-reviewer-5@test.test");
+    createReview({
+      supplierId: v.listingId,
+      authorUserId: author.userId,
+      coupleId: null,
+      authorKind: "couple",
+      visitorId: null,
+      rating: 1,
+      body: "the fifth, and a bad one: the gate counts reviews, never stars",
+      amountPaid: null,
+      amountCurrency: null,
+      amountNote: null,
+      published: true,
+      verified: true,
+      flagged: false,
+      tags: [],
+    });
+    processVendorEventOutbox();
+
+    const five = await req<VendorPointsStatus>("GET", "/api/vendor/points", undefined, {
+      token: v.token,
+    });
+    expect(five.data.facts.reviews).toBe(5);
+    expect(five.data.tier).toBe("gold");
+  });
+
+  test("a deleted review never takes a tier back", async () => {
+    // The gate counts LEDGER rows, not live reviews, so a tier can only ever go
+    // up. A vendor demoted weeks later for a review its author removed would
+    // have no way to understand it and nothing to do about it.
+    const v = await bootstrapVendor("nodemote");
+    const gold = VENDOR_TIERS.find((t) => t.key === "gold");
+    if (!gold) return;
+    completeListing(v);
+    const { adjustVendorPoints } = await import("../../src/domain/vendor_points");
+    adjustVendorPoints(v.accountId, gold.min_points, "test");
+    for (let i = 0; i < 5; i++) {
+      const author = await bootstrapAuthor(`nodemote-reviewer-${i}@test.test`);
+      createReview({
+        supplierId: v.listingId,
+        authorUserId: author.userId,
+        coupleId: null,
+        authorKind: "couple",
+        visitorId: null,
+        rating: 5,
+        body: `review ${i}`,
+        amountPaid: null,
+        amountCurrency: null,
+        amountNote: null,
+        published: true,
+        verified: true,
+        flagged: false,
+        tags: [],
+      });
+    }
+    processVendorEventOutbox();
+    expect(vendorPointsStatus(v.accountId).tier).toBe("gold");
+
+    db.prepare(
+      "UPDATE supplier_reviews SET deleted_at = ?, published = 0 WHERE supplier_id = ?",
+    ).run(now(), v.listingId);
+    expect(vendorPointsStatus(v.accountId).facts.reviews).toBe(5);
+    expect(vendorPointsStatus(v.accountId).tier).toBe("gold");
   });
 
   test("earned_by_event breaks the total down per rule, zeros included", async () => {

@@ -1078,8 +1078,27 @@ export interface LocaleMessages {
       ring_label: string;
       /** Receives `{points}` + `{tier}` — how far to the next tier. */
       to_next: string;
+      /** Same sentence when REVIEWS are what is missing rather than points.
+       *  Receives `{n}` + `{tier}`. */
+      to_next_reviews: string;
+      /** Same again when only the unfinished listing is in the way. Receives
+       *  `{tier}`. */
+      to_next_profile: string;
       /** Shown instead of `to_next` at the highest tier. */
       at_top: string;
+      /** Accessible name of the tier ladder in the dialog. */
+      ladder_label: string;
+      /** The floor tier's cost line: it asks for nothing. */
+      ladder_start: string;
+      /** What a rung costs. Receives `{points}` + `{reviews}`, both from
+       *  VENDOR_TIERS, never written into the copy. */
+      ladder_req: string;
+      /** Lead-in to the "what is still missing" list. Receives `{tier}`. */
+      gap_title: string;
+      /** One row per VendorTierGapKey. */
+      gap_points: string;
+      gap_reviews: string;
+      gap_profile: string;
       /** Tier identity names. Keyed by VendorTierKey. */
       tier: {
         blue: string;

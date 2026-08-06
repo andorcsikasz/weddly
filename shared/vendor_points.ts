@@ -131,14 +131,70 @@ export interface VendorTierPerks {
   profile_badge: boolean;
 }
 
+/** What a tier DEMANDS, beyond the point total.
+ *
+ *  Points are one fungible scalar, so a point floor alone can never say "you
+ *  need reviews": `fast_reply` and `booking_confirmed` are capped per MONTH and
+ *  not per lifetime, so for any floor a vendor with a single review reaches it
+ *  by answering inquiries for long enough. Gold was landing on vendors with one
+ *  review (40 profile + 50 first review + 15 review + 60 booking = 165) and the
+ *  badge said "this business is proven" about a page with one testimonial on it.
+ *  A requirement is the only shape that fixes that; re-pricing is not.
+ *
+ *  EVERY field here is counted off the LEDGER, never off the live tables, and
+ *  that is what makes a requirement safe:
+ *
+ *    • The ledger is append-only, so a requirement count can only go UP. A
+ *      review its author deletes, a review moderation unpublishes, a photo
+ *      taken down: none of them can quietly take a tier away weeks later. That
+ *      is the same rule profile milestones already follow ("crossing 75% and
+ *      later deleting a photo keeps the points"), applied to the gate.
+ *    • Nothing new is stored and nothing is a second source of truth: the tier
+ *      is still a pure replay of the one table, just of its shape as well as
+ *      its sum.
+ *    • The monthly review cap can't distort it. The cap stops at ten reviews a
+ *      month and the highest gate here is twenty, so no honest vendor is ever
+ *      held below a rung by a ceiling meant for farms. */
+export interface VendorTierRequirements {
+  /** `review_collected` rows: one per review, the first one included. */
+  min_reviews: number;
+  /** `profile_completeness` rows, out of `PROFILE_MILESTONES.length`. The full
+   *  four means the listing reached 100% at some point. A tier is a claim about
+   *  a business a couple can actually read about, so every rung above the floor
+   *  wants the page finished. */
+  min_profile_milestones: number;
+}
+
+/** The three facts a tier is checked against, all derived from the ledger at
+ *  read time. Nothing here is stored. */
+export interface VendorTierFacts {
+  points: number;
+  reviews: number;
+  profile_milestones: number;
+}
+
+/** One requirement measured against a vendor: what they have, what the rung
+ *  wants. Rendered as the "why am I not Gold yet" list, which is the half of
+ *  this change that keeps a gate from being a mystery. */
+export type VendorTierGapKey = "points" | "reviews" | "profile";
+
+export interface VendorTierGap {
+  key: VendorTierGapKey;
+  have: number;
+  need: number;
+  met: boolean;
+}
+
 export interface VendorTier {
   key: VendorTierKey;
   min_points: number;
+  requires: VendorTierRequirements;
   perks: VendorTierPerks;
 }
 
-/** Ascending by min_points. `blue` is the entry tier every vendor starts in, so
- *  its threshold must stay 0: `tierForPoints` relies on it as the floor.
+/** Ascending by min_points AND by every requirement. `blue` is the entry tier
+ *  every vendor starts in, so its threshold must stay 0 and it must demand
+ *  nothing: `vendorTierFor` relies on it as an unconditional floor.
  *
  *  THE THRESHOLDS ARE A TIMELINE, not round numbers picked for looks. The top
  *  of a ladder nobody can climb is worse than no ladder: it tells a vendor the
@@ -149,20 +205,29 @@ export interface VendorTier {
  *  A committed vendor — one review collected a month, three inquiries answered
  *  inside the day, a wedding booked through Weddly every second month — earns
  *  15 + 15 + 30 = 60 points a month, after a one-time 90 for finishing the
- *  profile (40) and landing a first review (50). That gives:
+ *  profile (40) and landing a first review (50). Points alone would give Gold
+ *  in month 1, which is exactly the complaint. With the review gate:
  *
- *    Gold      150   month 1      finish the profile, get one review
- *    Platinum  600   month ~9     a season of steady work
- *    Black    1500   month ~23    two wedding seasons
+ *    Gold      150 pts,  5 reviews   month 5    REVIEWS bind (points land month 1)
+ *    Platinum  600 pts, 10 reviews   month 10   reviews bind (points land ~9)
+ *    Black    1500 pts, 20 reviews   month 23   POINTS bind (reviews land 20)
  *
- *  A busy vendor (two reviews, six fast replies, a booking a month = 120/mo)
- *  reaches Black around month 12; a vendor who logs in twice a year never does,
- *  which is the point. Black is deliberately the LAST rung: it exists to be
- *  reached inside two years, not to be admired from below forever. */
+ *  So the gate bites low, where the ladder was too cheap, and lets go at the
+ *  top, where the points were already the hard part. Black stays inside two
+ *  wedding seasons; a vendor who logs in twice a year still never arrives.
+ *
+ *  Note what is deliberately NOT gated: confirmed bookings. Closing weddings
+ *  through Weddly is the most valuable thing in POINTS_BY_EVENT and it is a
+ *  harder, less fakeable proof of a real business than a review is, so a vendor
+ *  whose couples simply do not write reviews is slowed by the gate rather than
+ *  walled out by a second one. And the point floors did NOT move: the gate does
+ *  the work, so a rebalance that would have rewritten every historic total is
+ *  not needed. */
 export const VENDOR_TIERS: readonly VendorTier[] = [
   {
     key: "blue",
     min_points: 0,
+    requires: { min_reviews: 0, min_profile_milestones: 0 },
     perks: {
       search_boost: 0,
       extra_lead_credits: 0,
@@ -173,6 +238,7 @@ export const VENDOR_TIERS: readonly VendorTier[] = [
   {
     key: "gold",
     min_points: 150,
+    requires: { min_reviews: 5, min_profile_milestones: PROFILE_MILESTONES.length },
     perks: {
       search_boost: 1,
       extra_lead_credits: 1,
@@ -183,6 +249,7 @@ export const VENDOR_TIERS: readonly VendorTier[] = [
   {
     key: "platinum",
     min_points: 600,
+    requires: { min_reviews: 10, min_profile_milestones: PROFILE_MILESTONES.length },
     perks: {
       search_boost: 2,
       extra_lead_credits: 3,
@@ -193,6 +260,7 @@ export const VENDOR_TIERS: readonly VendorTier[] = [
   {
     key: "black",
     min_points: 1500,
+    requires: { min_reviews: 20, min_profile_milestones: PROFILE_MILESTONES.length },
     perks: {
       search_boost: 3,
       extra_lead_credits: 5,
@@ -202,36 +270,86 @@ export const VENDOR_TIERS: readonly VendorTier[] = [
   },
 ] as const;
 
-/** The tier a total lands in. Never returns undefined: `blue` is the floor. */
-export function tierForPoints(points: number): VendorTier {
+/** Every requirement of one rung, measured against a vendor: met or not, with
+ *  the two numbers that say how far. The order is the order the UI lists them,
+ *  cheapest first. */
+export function vendorTierGaps(facts: VendorTierFacts, tier: VendorTier): VendorTierGap[] {
+  const gap = (key: VendorTierGapKey, have: number, need: number): VendorTierGap => ({
+    key,
+    have,
+    need,
+    met: have >= need,
+  });
+  return [
+    gap("profile", facts.profile_milestones, tier.requires.min_profile_milestones),
+    gap("reviews", facts.reviews, tier.requires.min_reviews),
+    gap("points", facts.points, tier.min_points),
+  ].filter((g) => g.need > 0);
+}
+
+/** Whether a vendor holds a rung: the point floor AND every requirement. */
+export function meetsTier(facts: VendorTierFacts, tier: VendorTier): boolean {
+  return (
+    facts.points >= tier.min_points &&
+    facts.reviews >= tier.requires.min_reviews &&
+    facts.profile_milestones >= tier.requires.min_profile_milestones
+  );
+}
+
+/** The tier a vendor holds. Never returns undefined: `blue` demands nothing and
+ *  is the floor.
+ *
+ *  Walks UP and stops at the first rung that fails, rather than taking the
+ *  highest rung that happens to pass. Every requirement in VENDOR_TIERS is
+ *  non-decreasing (asserted in the suite), so the two readings agree today, and
+ *  stopping at the first failure is the one that stays honest if a later edit
+ *  makes some rung's demand dip: a vendor must never skip a rung they do not
+ *  hold to land on one they do. */
+export function vendorTierFor(facts: VendorTierFacts): VendorTier {
   let current = VENDOR_TIERS[0] as VendorTier;
   for (const tier of VENDOR_TIERS) {
-    if (points >= tier.min_points) current = tier;
+    if (!meetsTier(facts, tier)) break;
+    current = tier;
   }
   return current;
 }
 
 /** The next tier up, or null at the top. */
-export function nextTierForPoints(points: number): VendorTier | null {
-  for (const tier of VENDOR_TIERS) {
-    if (points < tier.min_points) return tier;
-  }
-  return null;
+export function vendorNextTierFor(facts: VendorTierFacts): VendorTier | null {
+  const held = vendorTierFor(facts);
+  const i = VENDOR_TIERS.findIndex((t) => t.key === held.key);
+  return VENDOR_TIERS[i + 1] ?? null;
 }
 
 export function perksForTier(key: VendorTierKey): VendorTierPerks {
   return (VENDOR_TIERS.find((t) => t.key === key) ?? VENDOR_TIERS[0])?.perks as VendorTierPerks;
 }
 
-/** 0..1 progress from the current tier's floor to the next tier's. Returns 1 at
- *  the top tier so a ring renders full rather than empty. */
-export function tierProgress(points: number): number {
-  const current = tierForPoints(points);
-  const next = nextTierForPoints(points);
+/** 0..1 progress from the held rung to the next one. Returns 1 at the top tier
+ *  so a ring renders full rather than empty.
+ *
+ *  It is the MINIMUM of the per-requirement fractions, not the points fraction:
+ *  a ring reading 95% for a vendor who is four reviews short would be the same
+ *  lie the old points-only Gold was, moved into the progress arc. The arc shows
+ *  the requirement that is actually holding them back. */
+export function vendorTierProgress(facts: VendorTierFacts): number {
+  const current = vendorTierFor(facts);
+  const next = vendorNextTierFor(facts);
   if (!next) return 1;
-  const span = next.min_points - current.min_points;
-  if (span <= 0) return 1;
-  return Math.min(1, Math.max(0, (points - current.min_points) / span));
+  const frac = (have: number, from: number, to: number) => {
+    const span = to - from;
+    if (span <= 0) return 1;
+    return Math.min(1, Math.max(0, (have - from) / span));
+  };
+  return Math.min(
+    frac(facts.points, current.min_points, next.min_points),
+    frac(facts.reviews, current.requires.min_reviews, next.requires.min_reviews),
+    frac(
+      facts.profile_milestones,
+      current.requires.min_profile_milestones,
+      next.requires.min_profile_milestones,
+    ),
+  );
 }
 
 // ── DTO ────────────────────────────────────────────────────────────────────
@@ -269,6 +387,12 @@ export interface VendorCategoryRank {
  *  time; no field is stored. */
 export interface VendorPointsStatus {
   points: number;
+  /** The three facts the tier is checked against, `points` included so the
+   *  object stands on its own. Shipped rather than kept server-side because the
+   *  tier table is shared: the UI calls `vendorTierGaps(facts, tier)` itself and
+   *  renders "4 / 5 reviews" from the same rulebook the server graded against,
+   *  which is what keeps the ladder and the verdict from drifting apart. */
+  facts: VendorTierFacts;
   tier: VendorTierKey;
   perks: VendorTierPerks;
   /** null at the top tier. */

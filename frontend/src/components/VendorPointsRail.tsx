@@ -21,15 +21,21 @@
 // chip are both mounted by VendorShell: two copies would mean two GETs on every
 // navigation for a number only one of them is showing.
 
-import { Award, ChevronRight } from "lucide-react";
+import { Award, Check, ChevronRight, Circle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   EARNABLE_EVENTS,
   FAST_REPLY_HOURS,
   POINTS_BY_EVENT,
+  PROFILE_MILESTONES,
+  VENDOR_TIERS,
   type VendorPointsStatus,
+  type VendorTier,
+  type VendorTierGap,
+  meetsTier,
   perksForTier,
+  vendorTierGaps,
 } from "@shared/vendor_points";
 import { vendorPointsApi } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -87,18 +93,43 @@ export function useVendorPoints(): VendorPointsStatus | null {
 }
 
 /** The two sentences both surfaces need: how far to the next tier, and where
- *  this vendor stands in their category. */
+ *  this vendor stands in their category.
+ *
+ *  The first one names the BINDING requirement, not always the points. Since a
+ *  tier demands reviews as well as a total, "0 points to Gold" would be true and
+ *  useless for a vendor sitting on 200 points and one review — the sentence has
+ *  to say the thing that is actually in the way, or the vendor watches a number
+ *  hit zero and nothing happen. Points first when they are short (it is the
+ *  fastest-moving one), then reviews, then the unfinished listing. */
+function nextTierLine(t: Translate, points: VendorPointsStatus): string {
+  if (points.next_tier === null) return t("vendor.points.at_top");
+  const tier = t(`vendor.points.tier.${points.next_tier}`);
+  const next = VENDOR_TIERS.find((x) => x.key === points.next_tier);
+  const unmet = next ? vendorTierGaps(points.facts, next).filter((g) => !g.met) : [];
+  const short = (key: VendorTierGap["key"]) => unmet.find((g) => g.key === key);
+  const pointsGap = short("points");
+  if (pointsGap) {
+    return t("vendor.points.to_next", {
+      points: String(pointsGap.need - pointsGap.have),
+      tier,
+    });
+  }
+  const reviewGap = short("reviews");
+  if (reviewGap) {
+    return t("vendor.points.to_next_reviews", {
+      n: String(reviewGap.need - reviewGap.have),
+      tier,
+    });
+  }
+  if (short("profile")) return t("vendor.points.to_next_profile", { tier });
+  return t("vendor.points.to_next", { points: String(points.points_to_next), tier });
+}
+
 function pointsCopy(
   t: Translate,
   points: VendorPointsStatus,
 ): { status: string; rankLine: string | null } {
-  const status =
-    points.next_tier === null
-      ? t("vendor.points.at_top")
-      : t("vendor.points.to_next", {
-          points: String(points.points_to_next),
-          tier: t(`vendor.points.tier.${points.next_tier}`),
-        });
+  const status = nextTierLine(t, points);
   const rank = points.category_rank;
   return {
     status,
@@ -270,6 +301,139 @@ export function VendorPointsRail({
   );
 }
 
+/** What one rung costs, straight from the tier table: never spelled in copy, so
+ *  a rebalance is one edit in `shared/vendor_points.ts`. */
+function tierRequirementLine(t: Translate, tier: VendorTier): string {
+  if (tier.min_points === 0 && tier.requires.min_reviews === 0) {
+    return t("vendor.points.ladder_start");
+  }
+  return t("vendor.points.ladder_req", {
+    points: String(tier.min_points),
+    reviews: String(tier.requires.min_reviews),
+  });
+}
+
+/** The whole ladder, every rung visible at once.
+ *
+ *  This is the block the dialog was missing. It showed the tier you hold and a
+ *  sentence about the next one, so a Gold vendor saw a single gold pill: the
+ *  rung they started on (Blue) and the two above it did not exist anywhere in
+ *  the app, and there was no way to see what any of them cost. A ladder you
+ *  cannot see the rest of is not a ladder.
+ *
+ *  Rungs you hold are filled, rungs you do not are OUTLINED in the same tier
+ *  colour — passed and unreached look alike on purpose, because the badge says
+ *  "this is that tier" and the fill says "this one is yours". Neutral ink and
+ *  tier colour only: a tier is a fact about the vendor, never something to act
+ *  on, so nothing here is blush. */
+function TierLadder({ points }: { points: VendorPointsStatus }) {
+  const { t } = useT();
+  return (
+    <ol aria-label={t("vendor.points.ladder_label")} className="flex flex-col pb-5">
+      {VENDOR_TIERS.map((tier) => {
+        const held = meetsTier(points.facts, tier);
+        const current = tier.key === points.tier;
+        return (
+          <li
+            key={tier.key}
+            className={`flex items-center gap-3 py-1.5 ${current ? "" : "opacity-90"}`}
+          >
+            <span className="flex w-4 shrink-0 justify-center">
+              {held ? (
+                <Check
+                  size={16}
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                  className="text-sage-600 dark:text-sage-400"
+                />
+              ) : (
+                <Circle
+                  size={16}
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                  className="text-ink-300 dark:text-umber-500"
+                />
+              )}
+            </span>
+            <span className="shrink-0">
+              <TierBadge tier={tier.key} size="sm" variant={current ? "filled" : "outline"} />
+            </span>
+            <span
+              className={`min-w-0 flex-1 text-right text-[11px] leading-tight tabular-nums ${
+                current
+                  ? "font-medium text-ink-900 dark:text-paper-50"
+                  : "text-ink-400 dark:text-umber-300"
+              }`}
+            >
+              {tierRequirementLine(t, tier)}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** Exactly what is still standing between this vendor and the next rung.
+ *
+ *  A gate with no explanation turns a too-easy Gold into a mysterious one, which
+ *  is worse: the vendor earns 60 points, nothing happens, and the program looks
+ *  broken. Every unmet requirement is named with both numbers, so the answer to
+ *  "why am I not Gold" is on the same screen as the question. Met requirements
+ *  stay listed with a tick rather than disappearing, or the list would shrink as
+ *  the vendor progresses and lose the shape of what the rung asks for. */
+function TierGapList({ points }: { points: VendorPointsStatus }) {
+  const { t } = useT();
+  const next = VENDOR_TIERS.find((x) => x.key === points.next_tier);
+  if (!next) return null;
+  const gaps = vendorTierGaps(points.facts, next);
+  if (gaps.every((g) => g.met)) return null;
+  // Profile is counted in 25% milestones; a vendor who has never seen the word
+  // "milestone" reads the percentage their listing page already shows them.
+  const shown = (g: VendorTierGap, n: number) =>
+    g.key === "profile" ? `${Math.round((n / PROFILE_MILESTONES.length) * 100)}%` : String(n);
+  return (
+    <div className="flex flex-col gap-2 pb-5">
+      <span className="text-[11px] uppercase tracking-wide text-ink-500 dark:text-umber-300">
+        {t("vendor.points.gap_title", { tier: t(`vendor.points.tier.${next.key}`) })}
+      </span>
+      <ul className="flex flex-col gap-1.5">
+        {gaps.map((gap) => (
+          <li key={gap.key} className="flex items-center gap-2.5">
+            {gap.met ? (
+              <Check
+                size={16}
+                strokeWidth={1.5}
+                aria-hidden="true"
+                className="shrink-0 text-sage-600 dark:text-sage-400"
+              />
+            ) : (
+              <Circle
+                size={16}
+                strokeWidth={1.5}
+                aria-hidden="true"
+                className="shrink-0 text-steel-600 dark:text-steel-300"
+              />
+            )}
+            <span className="min-w-0 flex-1 text-sm text-ink-700 dark:text-paper-200">
+              {t(`vendor.points.gap_${gap.key}`)}
+            </span>
+            <span
+              className={`shrink-0 font-grotesk text-sm tabular-nums ${
+                gap.met
+                  ? "text-ink-400 dark:text-umber-300"
+                  : "font-semibold text-ink-900 dark:text-paper-50"
+              }`}
+            >
+              {shown(gap, gap.have)} / {shown(gap, gap.need)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** The rulebook: what earns points, what each rule has paid THIS vendor, and
  *  what the next tier unlocks.
  *
@@ -348,6 +512,9 @@ function VendorPointsDialog({
             </span>
           )}
         </div>
+
+        <TierLadder points={points} />
+        <TierGapList points={points} />
 
         {/* Full-bleed rows on hairlines, the whole width tappable: the same list
             anatomy as the dashboard's upcoming events, and the reason the point

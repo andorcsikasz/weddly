@@ -32,10 +32,11 @@ import {
   type VendorPointsEntry,
   type VendorPointsEvent,
   type VendorPointsStatus,
-  nextTierForPoints,
+  type VendorTierFacts,
   perksForTier,
-  tierForPoints,
-  tierProgress,
+  vendorNextTierFor,
+  vendorTierFor,
+  vendorTierProgress,
 } from "@shared/vendor_points";
 import { db, now } from "../db";
 import { log } from "../lib/logger";
@@ -463,11 +464,44 @@ export function vendorCategoryRank(vendorAccountId: number): VendorCategoryRank 
   };
 }
 
+/** The three facts a tier is graded against, counted off the ledger in one
+ *  pass. Deliberately NOT read from `supplier_reviews` / `listings`:
+ *
+ *    • The ledger is append-only, so every count here can only go up. A review
+ *      its author deletes or moderation unpublishes, a photo taken down after
+ *      the profile hit 100%: none of them can take a tier away weeks later, for
+ *      a change the vendor may not even have made. Counting the live tables
+ *      would make the badge silently losable, which is the one thing that would
+ *      make vendors stop trusting it.
+ *    • It is also the same table the total comes from, so the tier stays a pure
+ *      replay of one source rather than a verdict joined across three.
+ *
+ *  `review_collected` is one row per review (the first review writes a
+ *  `first_review` row too, which is a bonus and is NOT counted here, or the
+ *  first review would count twice). */
+export function vendorTierFacts(vendorAccountId: number): VendorTierFacts {
+  const row = db
+    .prepare(
+      `SELECT COALESCE(SUM(points), 0) AS points,
+              SUM(CASE WHEN event_type = 'review_collected' THEN 1 ELSE 0 END) AS reviews,
+              SUM(CASE WHEN event_type = 'profile_completeness' THEN 1 ELSE 0 END) AS milestones
+         FROM vendor_points_ledger
+        WHERE vendor_account_id = ?`,
+    )
+    .get(vendorAccountId) as { points: number; reviews: number | null; milestones: number | null };
+  return {
+    points: row.points,
+    reviews: row.reviews ?? 0,
+    profile_milestones: row.milestones ?? 0,
+  };
+}
+
 /** Everything the dashboard needs, all derived. */
 export function vendorPointsStatus(vendorAccountId: number): VendorPointsStatus {
-  const points = vendorPointsTotal(vendorAccountId);
-  const tier = tierForPoints(points);
-  const next = nextTierForPoints(points);
+  const facts = vendorTierFacts(vendorAccountId);
+  const points = facts.points;
+  const tier = vendorTierFor(facts);
+  const next = vendorNextTierFor(facts);
   const recent = db
     .prepare(
       `SELECT id, event_type, points, created_at
@@ -479,11 +513,12 @@ export function vendorPointsStatus(vendorAccountId: number): VendorPointsStatus 
     .all(vendorAccountId, RECENT_LIMIT) as VendorPointsEntry[];
   return {
     points,
+    facts,
     tier: tier.key,
     perks: perksForTier(tier.key),
     next_tier: next?.key ?? null,
     points_to_next: next ? Math.max(0, next.min_points - points) : 0,
-    progress: tierProgress(points),
+    progress: vendorTierProgress(facts),
     recent,
     earned_by_event: pointsByEvent(vendorAccountId),
     category_rank: vendorCategoryRank(vendorAccountId),

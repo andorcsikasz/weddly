@@ -52,19 +52,42 @@ export const TIER_RING: Record<VendorTierKey, { track: string; arc: string }> = 
   },
 };
 
+/** The same four identities as an OUTLINE: ring and text in the tier's own
+ *  colour, no fill.
+ *
+ *  This is the state the ladder needed and the badge had no way to say. A rung
+ *  a vendor has passed, or has not reached yet, is still that tier and should
+ *  still look like it — drawing it in the filled style would claim they hold
+ *  it, and drawing it in flat grey would say the tier has no identity until you
+ *  own it. Blue in particular was invisible: a Gold vendor saw one gold pill and
+ *  nothing else, so the rung they started on had simply vanished from the app.
+ *
+ *  Gold's outline uses the same light/dark split its ring does: `star` (#FFD000)
+ *  as a hairline on white paper is very nearly invisible, so light mode borrows
+ *  the umber the ring already borrows. */
+const TIER_OUTLINE_CLASS: Record<VendorTierKey, string> = {
+  blue: "bg-transparent text-steel-600 ring-steel-300 dark:text-steel-200 dark:ring-steel-600/50",
+  gold: "bg-transparent text-umber-600 ring-umber-400 dark:text-star dark:ring-star/50",
+  platinum: "bg-transparent text-ink-500 ring-ink-300 dark:text-paper-200 dark:ring-paper-200/35",
+  black: "bg-transparent text-ink-700 ring-ink-400 dark:text-paper-100 dark:ring-paper-200/45",
+};
+
 export function TierBadge({
   tier,
   size = "md",
+  variant = "filled",
 }: {
   tier: VendorTierKey;
   size?: "sm" | "md";
+  /** `outline` for a rung on the ladder the vendor does not currently hold. */
+  variant?: "filled" | "outline";
 }) {
   const { t } = useT();
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full font-grotesk font-semibold uppercase tracking-wide ring-1 ${
         size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs"
-      } ${TIER_CLASS[tier]}`}
+      } ${variant === "outline" ? TIER_OUTLINE_CLASS[tier] : TIER_CLASS[tier]}`}
     >
       {t(`vendor.points.tier.${tier}`)}
     </span>
