@@ -10,6 +10,7 @@
     "dev:frontend": "cd frontend && bun run dev",
     "build": "cd frontend && bun run build",
     "build:frontend": "cd frontend && bun run build",
+    "check:migrations": "bun scripts/check-db-migrations.ts",
     "typecheck": "cd backend && bun run typecheck && cd ../frontend && bun run typecheck",
     "test": "cd backend && bun run test && cd ../frontend && bun test",
     "lint": "biome check .",

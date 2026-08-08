@@ -48,6 +48,35 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
 
+  migration-safety:
+    name: SQLite migration safety
+    runs-on: ubuntu-latest
+    steps:
+      # Full history is required: the check boots current db.ts over the exact
+      # schema that production/main had before this push or pull request.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Resolve production base revision
+        id: base
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            echo "sha=$PR_BASE_SHA" >> "$GITHUB_OUTPUT"
+          elif [ -n "$PUSH_BEFORE_SHA" ] && [ "$PUSH_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            echo "sha=$PUSH_BEFORE_SHA" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=HEAD^" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Boot current migrations twice over previous schema
+        run: bun run check:migrations --base "${{ steps.base.outputs.sha }}"
+
   test-and-build:
     name: Test & build
     runs-on: ubuntu-latest

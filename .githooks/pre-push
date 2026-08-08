@@ -9,6 +9,17 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
+# Git supplies the remote's current SHA on stdin. Keep the oldest relevant
+# production shape so a multi-commit push cannot hide an unsafe migration in
+# an earlier commit behind a later, schema-neutral commit.
+REMOTE_BASE=""
+ZERO_SHA="0000000000000000000000000000000000000000"
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  if [[ "$local_sha" = "$(git rev-parse HEAD)" && "$remote_sha" != "$ZERO_SHA" ]]; then
+    REMOTE_BASE="$remote_sha"
+  fi
+done
+
 step() { printf "\033[1;34m▶ %s\033[0m\n" "$1"; }
 ok()   { printf "\033[1;32m✓ %s\033[0m\n" "$1"; }
 die()  { printf "\033[1;31m✗ %s\033[0m\n" "$1" >&2; exit 1; }
@@ -20,6 +31,12 @@ trap cleanup EXIT INT TERM
 
 step "Extracting HEAD snapshot to $TMP"
 git archive --format=tar HEAD | tar -x -C "$TMP"
+
+if [[ -n "$REMOTE_BASE" ]] && git cat-file -e "$REMOTE_BASE^{commit}" 2>/dev/null; then
+  git show "$REMOTE_BASE:backend/src/schema.sql" > "$TMP/.migration-base-schema.sql"
+else
+  git show "HEAD^:backend/src/schema.sql" > "$TMP/.migration-base-schema.sql"
+fi
 
 # Symlink node_modules to skip the install. Source files come from HEAD; deps
 # only matter for resolution.
@@ -40,6 +57,11 @@ TEST_PORT=$(( 18000 + RANDOM % 10000 ))
 export PORT="$TEST_PORT"
 
 cd "$TMP"
+
+step "SQLite migration safety (previous schema → current, two boots)"
+bun scripts/check-db-migrations.ts \
+  --base-schema "$TMP/.migration-base-schema.sql" || die "database migration safety failed"
+ok "database migrations"
 
 step "Biome"
 bunx --bun biome check . || die "biome failed"

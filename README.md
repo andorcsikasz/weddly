@@ -27,6 +27,7 @@ bun run dev           # backend on :8787, frontend on :5173
 |---------|--------------|
 | `bun run dev` | Backend + frontend in watch mode |
 | `bun run typecheck` | Both `tsc --noEmit` runs |
+| `bun run check:migrations` | Boot current DB migrations twice over the previous schema |
 | `bun run test` | E2E suite |
 | `bun run lint:fix` | Biome format + lint, autofix |
 | `bun run build` | Vite build to `frontend/dist` |
@@ -59,7 +60,7 @@ legal/          policy templates
 ## Conventions
 
 - Money is integer Forint (HUF has no sub-unit). Never floats.
-- Schema is additive-only — `CREATE TABLE IF NOT EXISTS` + `addColumnIfMissing()`. Never drop or rename.
+- Schema is additive-only — `CREATE TABLE IF NOT EXISTS` + `addColumnIfMissing()`. Never drop or rename. Follow [the production migration rules](./docs/database-migrations.md).
 - One API client (`frontend/src/lib/endpoints.ts`). Components never call `fetch` directly.
 - Types live in `shared/`. Default to `shared/types.ts`; split into a per-domain file (e.g. `shared/suppliers.ts`) only when the cluster is large enough to be its own concern. Both sides import via `@shared/*`.
 - HU is the default locale; EN is secondary. Strings live in `frontend/src/locales/{hu,en}.ts`.
