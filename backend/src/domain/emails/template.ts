@@ -44,6 +44,15 @@ export interface LocaleBlock {
   /** Body paragraphs. Each becomes a <p>. Plain text, escaped before render. */
   paragraphs: string[];
   cta: string;
+  /** Copy that belongs after the primary action. Used when the action splits
+   *  the letter rather than closing it (for example: register yourself, or
+   *  forward this note to the person planning the wedding). */
+  postCtaParagraphs?: string[];
+  /** Optional letter-style closing, one rendered line per entry. */
+  signoff?: string[];
+  /** Omit the generic cold-email orientation and visible CTA URL when this
+   *  language block already provides a complete introduction. */
+  suppressOutreachChrome?: boolean;
   /** Plain (non-italic) line rendered directly under the CTA button. Use for
    *  load-bearing info that's part of the action, link expiry, single-use
    *  warning, time-sensitive caveats. Reserves the `footnote` slot for truly
@@ -227,6 +236,17 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         lines.push("");
         for (const link of block.secondaryLinks) lines.push(`${link.label}: ${link.url}`);
       }
+      if (block.postCtaParagraphs && block.postCtaParagraphs.length > 0) {
+        lines.push("");
+        block.postCtaParagraphs.forEach((p, index) => {
+          if (index > 0) lines.push("");
+          lines.push(paragraphToText(p));
+        });
+      }
+      if (block.signoff && block.signoff.length > 0) {
+        lines.push("");
+        lines.push(...block.signoff);
+      }
       if (block.footnote) {
         lines.push("");
         lines.push(block.footnote);
@@ -393,6 +413,8 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       const footnote = block.footnote
         ? `<p style="margin:18px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
         : "";
+      const postCtaParagraphs = renderPostCtaParagraphs(block.postCtaParagraphs, false);
+      const signoff = renderSignoff(block.signoff, false);
       // Left-aligned letter inside the white card: the greeting is a confident
       // General Sans headline, then body, then one dark espresso CTA, the
       // minimalist-precision "one statement, one action" rhythm. The dark
@@ -402,7 +424,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                 <h1 class="wd-h1" style="margin:0 0 18px 0;color:${COLOR.ink};font-family:'General Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:27px;font-weight:600;line-height:1.24;letter-spacing:-0.015em;word-break:break-word;hyphens:auto;">
                   ${escapeHtml(block.greeting)}
                 </h1>
-                ${renderOutreachOrientation(category, locale)}
+                ${block.suppressOutreachChrome ? "" : renderOutreachOrientation(category, locale)}
                 ${paras}
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0 0;">
                   <tr>
@@ -415,8 +437,14 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                   </tr>
                 </table>
                 ${renderCtaSubtext(block.ctaSubtext)}
-                ${renderPlainUrlNote(ctaUrl, category, locale, plainCtaUrl)}
+                ${
+                  block.suppressOutreachChrome
+                    ? ""
+                    : renderPlainUrlNote(ctaUrl, category, locale, plainCtaUrl)
+                }
                 ${renderSecondaryLinks(block.secondaryLinks)}
+                ${postCtaParagraphs}
+                ${signoff}
                 ${footnote}
               </td>
             </tr>`;
@@ -440,6 +468,8 @@ export function renderEmail(input: RenderInput): RenderedEmail {
     const footnote = block.footnote
       ? `<p style="margin:10px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;font-style:italic;">${escapeHtml(block.footnote)}</p>`
       : "";
+    const postCtaParagraphs = renderPostCtaParagraphs(block.postCtaParagraphs, true);
+    const signoff = renderSignoff(block.signoff, true);
     return `<tr>
               <td class="wd-secondary" lang="${locale}" style="padding:16px 40px 0 40px;">
                 <p style="margin:0 0 12px 0;color:${COLOR.muted};font-size:12px;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;" aria-hidden="true">
@@ -454,6 +484,8 @@ export function renderEmail(input: RenderInput): RenderedEmail {
                     ${escapeHtml(block.cta)} →
                   </a>
                 </p>
+                ${postCtaParagraphs}
+                ${signoff}
                 ${footnote}
               </td>
             </tr>`;
@@ -624,6 +656,22 @@ function renderSecondaryLinks(links: Array<{ label: string; url: string }> | und
     )
     .join("");
   return `<p style="margin:14px 0 0 0;">${rows}</p>`;
+}
+
+function renderPostCtaParagraphs(paragraphs: string[] | undefined, compact: boolean): string {
+  if (!paragraphs || paragraphs.length === 0) return "";
+  const style = compact
+    ? `margin:12px 0 0 0;color:${COLOR.enInk};font-size:14px;line-height:1.55;word-break:break-word;hyphens:auto;`
+    : `margin:20px 0 0 0;color:${COLOR.enInk};font-size:16px;line-height:1.6;word-break:break-word;hyphens:auto;`;
+  return paragraphs.map((p) => `<p style="${style}">${renderBold(p)}</p>`).join("");
+}
+
+function renderSignoff(lines: string[] | undefined, compact: boolean): string {
+  if (!lines || lines.length === 0) return "";
+  const style = compact
+    ? `margin:16px 0 0 0;color:${COLOR.enInk};font-size:14px;line-height:1.55;`
+    : `margin:22px 0 0 0;color:${COLOR.enInk};font-size:16px;line-height:1.6;`;
+  return `<p style="${style}">${lines.map(escapeHtml).join("<br />")}</p>`;
 }
 
 /** The one-line "what is Weddly" orientation on cold mail, and the copy-paste

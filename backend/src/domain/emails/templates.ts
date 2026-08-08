@@ -4263,16 +4263,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // The founder's own contacts, introduced to Weddly with a "you (or someone you
   // love) is getting married" angle and a register CTA. Weddly is the voice the
   // whole way through (never "I"/"me", and NEVER signed with a personal name),
-  // Uber-tight, and there is no discount / "free" framing. Outreach category, so
-  // the footer carries the one-click unsubscribe. Personalised by first name.
-  //
-  // It opens by saying WHY this address was written to, because that is the
-  // question a cold mail has to answer before any of the pitch lands, and here
-  // there is a true answer: this list is people the founder actually knows.
-  // The manifesto it used to open with (three paragraphs on changing wedding
-  // planning from the ground up) said nothing about the reader and pushed the
-  // CTA below a minute of reading. What is left is the reason, the what, and
-  // the ask.
+  // Uber-tight, and there is no discount / "free" framing. Personalised by
+  // first name.
   personal_invite: (p) => ({
     subject:
       p.locale === "hu"
@@ -4280,17 +4272,19 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         : "Your whole wedding, in one calm place",
     ctaUrl: p.ctaUrl,
     hu: {
-      preheader: "Vendéglista, ülésrend, költségvetés, RSVP. Egy helyen.",
+      preheader: "Ha te vagy valaki a környezetedben esküvőt szervez, ismerd meg a Weddlyt.",
       greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
       paragraphs: [
-        "Azért kapod ezt a levelet, mert valahonnan ismerjük egymást, és a **Weddly** most jutott el odáig, hogy megmutassuk.",
-        "Egy helyre teszi, ami ma külön táblázatokban, üzenetekben és böngészőfülekben él: a költségvetést, a vendéglistát, az online RSVP-t, az ülésrendet, a szolgáltatókat és az esküvői weboldalt.",
-        "Ha te vagy valaki a környezetedben esküvőt szervez, nyisd meg és nézd meg belülről.",
+        "Azért írunk, mert a Weddly egyik felhasználója megadta az e-mail-címedet: úgy gondolta, hogy te vagy valaki a környezetedben éppen esküvőt szervez.",
+        "Ha te készülsz a nagy napra, ismerd meg a Weddlyt:",
       ],
-      cta: "Megnézem",
-      ctaSubtext: "Két kattintás, és kész a fiók.",
-      footnote:
-        "Ismersz jegyespárt? Küldd tovább nekik. Kérdésed van? Válaszolj erre a levélre, minden sort elolvasunk.",
+      cta: "Ingyenesen regisztrálok",
+      postCtaParagraphs: [
+        "Ha pedig egy családtagod vagy barátod szervezi az esküvőjét, küldd tovább neki ezt a levelet – lehet, hogy pont jókor érkezik.",
+        "Az e-mail-címedet kizárólag ennek az e-mailnek a kiküldéséhez használjuk. Ha a jövőben is szeretnél leveleket kapni tőlünk, regisztrálj a Weddly-n.",
+      ],
+      signoff: ["Üdv,", "a Weddly csapata"],
+      suppressOutreachChrome: true,
     },
     en: {
       preheader: "Guest list, seating, budget, RSVP. In one place.",

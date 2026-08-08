@@ -22,6 +22,7 @@ import type {
 } from "@shared/personal_invite_campaign";
 import { db, now } from "../../src/db";
 import { runPersonalInviteCampaignSweep } from "../../src/domain/emails/worker";
+import { buildEmail } from "../../src/domain/emails/templates";
 import {
   getCampaignRow,
   isOptedOut,
@@ -70,6 +71,35 @@ async function createCampaign(slug: string, dailyCap = 50): Promise<PersonalInvi
 }
 
 describe("personal-invite campaign", () => {
+  test("the Hungarian invite renders the referral copy, register CTA and email-use note", () => {
+    const built = buildEmail(
+      "personal_invite",
+      {
+        name: "Anna",
+        ctaUrl: "https://weddly.test/r/invite/42.signed",
+        locale: "hu",
+      },
+      { recipientName: "Anna", recipientLocale: "hu" },
+    );
+
+    const text = built.rendered.text;
+    const opener =
+      "Azért írunk, mert a Weddly egyik felhasználója megadta az e-mail-címedet: úgy gondolta, hogy te vagy valaki a környezetedben éppen esküvőt szervez.";
+    const forward =
+      "Ha pedig egy családtagod vagy barátod szervezi az esküvőjét, küldd tovább neki ezt a levelet – lehet, hogy pont jókor érkezik.";
+    expect(text).toContain(opener);
+    expect(text).toContain("Ha te készülsz a nagy napra, ismerd meg a Weddlyt:");
+    expect(text).toContain("Ingyenesen regisztrálok:");
+    expect(text).toContain(forward);
+    expect(text).toContain(
+      "Az e-mail-címedet kizárólag ennek az e-mailnek a kiküldéséhez használjuk. Ha a jövőben is szeretnél leveleket kapni tőlünk, regisztrálj a Weddly-n.",
+    );
+    expect(text).toContain("Üdv,\na Weddly csapata");
+    expect(text.indexOf(opener)).toBeLessThan(text.indexOf("Ingyenesen regisztrálok:"));
+    expect(text.indexOf("Ingyenesen regisztrálok:")).toBeLessThan(text.indexOf(forward));
+    expect(built.rendered.html).not.toContain("Azért kapod ezt a levelet, mert ismerjük egymást");
+  });
+
   test("every admin endpoint is admin-only", async () => {
     const reg = await registerAndVerify({
       email: "notadmin@test.test",
