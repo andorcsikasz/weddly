@@ -82,9 +82,9 @@ beforeEach(async () => {
 });
 
 afterAll(() => {
-  db.exec(
-    "DROP TABLE IF EXISTS onboarding_campaign_sends; DROP TABLE IF EXISTS onboarding_campaigns;",
-  );
+  // Every backend test file shares the booted schema. Keep the canonical
+  // tables in place for later suites; only remove this suite's rows.
+  db.exec("DELETE FROM onboarding_campaign_sends; DELETE FROM onboarding_campaigns;");
 });
 
 async function createCampaign(slug: string, dailyCap = 50): Promise<OnboardingCampaign> {

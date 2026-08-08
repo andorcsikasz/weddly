@@ -5,9 +5,10 @@
 
 import "../setup";
 
-import { beforeEach, describe, expect, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import type { PublicVendorShowcase } from "@shared/suppliers";
 import { db, now } from "../../src/db";
+import { backfillListings } from "../../src/domain/listings";
 import { req, wipeAll } from "../helpers";
 
 let seq = 0;
@@ -87,6 +88,13 @@ beforeEach(() => {
   // wipeAll drops users (and cascades vendor_accounts), so the cached id from
   // the previous test no longer resolves — mint a fresh one on next use.
   ownerAccountId = null;
+});
+
+afterAll(() => {
+  // This suite deliberately empties the canonical directory. Restore it for
+  // later suites in Bun's shared backend test process.
+  db.exec("DELETE FROM listings");
+  backfillListings();
 });
 
 describe("public vendor showcase", () => {
