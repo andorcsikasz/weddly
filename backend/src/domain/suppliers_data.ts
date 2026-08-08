@@ -22515,7 +22515,10 @@ const GEOCODED_COORDS: Record<string, { lat: number; lng: number }> = {
   "feil-karikagyurugyarto": { lat: 47.477995, lng: 19.094639 },
   "feral-catering-crikvenica": { lat: 45.166648, lng: 14.704465 },
   "feszek-cukraszda-zsambek": { lat: 47.545474, lng: 18.718006 },
-  "finda-ekszer-bejelentkezes-szukseges-ekszereink-megrendelesr": { lat: 47.210158, lng: 18.467272 },
+  "finda-ekszer-bejelentkezes-szukseges-ekszereink-megrendelesr": {
+    lat: 47.210158,
+    lng: 18.467272,
+  },
   "finom-cukraszda": { lat: 47.083712, lng: 17.90287 },
   "finta-rendezvenyhaz": { lat: 47.375311, lng: 18.910752 },
   "flor-djana-pula": { lat: 44.870228, lng: 13.845531 },
@@ -22878,7 +22881,10 @@ const GEOCODED_COORDS: Record<string, { lat: number; lng: number }> = {
   "stop-cukraszda": { lat: 47.569008, lng: 18.407114 },
   "studio-ali-split": { lat: 43.510124, lng: 16.457961 },
   "studio-fm-samobor": { lat: 45.803279, lng: 15.717923 },
-  "studio-progress-nemesacel-karikagyuru-egyedi-eljegyzesi-gyur": { lat: 47.488887, lng: 19.074304 },
+  "studio-progress-nemesacel-karikagyuru-egyedi-eljegyzesi-gyur": {
+    lat: 47.488887,
+    lng: 19.074304,
+  },
   "sug-art-by-juhos-joci": { lat: 47.677747, lng: 18.777964 },
   "sweet-cakes-and-more-split": { lat: 43.505243, lng: 16.453775 },
   "sweet-mor": { lat: 47.371718, lng: 18.207869 },

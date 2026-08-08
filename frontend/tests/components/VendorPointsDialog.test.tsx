@@ -78,9 +78,7 @@ describe("the Weddly Points dialog", () => {
     expect(gold).toBeTruthy();
     if (!gold) return;
     expect(
-      within(ladder).getByText(
-        new RegExp(`${gold.min_points}.*${gold.requires.min_reviews}`),
-      ),
+      within(ladder).getByText(new RegExp(`${gold.min_points}.*${gold.requires.min_reviews}`)),
     ).toBeTruthy();
   });
 
