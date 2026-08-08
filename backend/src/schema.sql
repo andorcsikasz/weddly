@@ -754,9 +754,11 @@ CREATE TABLE IF NOT EXISTS planning_items (
 );
 CREATE INDEX IF NOT EXISTS idx_planning_couple ON planning_items(couple_id);
 CREATE INDEX IF NOT EXISTS idx_planning_kind ON planning_items(couple_id, kind, position);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_planning_checklist_template
-  ON planning_items(couple_id, checklist_template_id)
-  WHERE checklist_template_id IS NOT NULL;
+-- Unique (couple_id, checklist_template_id) partial index is created in db.ts
+-- AFTER addColumnIfMissing("planning_items", "checklist_template_id", ...).
+-- Keeping it here would crash boot on an existing database whose
+-- planning_items table predates that column: CREATE TABLE IF NOT EXISTS is a
+-- no-op, then this index would reference a column the migration has not added.
 
 -- Cache for Amadeus flight-offer lookups powering the honeymoon flight
 -- estimate card. Rows are keyed by (origin, destination_text, depart_date,
