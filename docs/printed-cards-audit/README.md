@@ -8,9 +8,10 @@ fixture-rel, 96 DPI-n készültek.
 
 - Mind a hat kártya egyetlen `PrintableCardDocument` modellből készül a
   thumbnailben, a nagy HTML-előnézetben és a PDF-ben.
-- Az Exact PDF preview és a Download ugyanazt a frissen lekért `Blob` példányt
-  használja. A cache kulcsa: kártyatípus + workspace ID + event ID + tartalom-
-  és témarevízió. Típus- vagy revízióváltáskor az URL azonnal törlődik.
+- Az egyszerre indított Exact PDF preview és Download ugyanazt a folyamatban
+  lévő, frissen lekért `Blob` példányt használja. A kérés kulcsa: kártyatípus +
+  workspace ID + event ID + tartalom- és témarevízió. Befejezett PDF-et nem
+  cache-elünk; típus- vagy revízióváltáskor az URL azonnal törlődik.
 - A Programkártya saját dekoratív A5 exportja a `/api/print/schedule-card`.
   Az A4 Run of show továbbra is külön, a Schedule oldal számára érhető el a
   `/api/print/schedule` útvonalon.
@@ -19,6 +20,26 @@ fixture-rel, 96 DPI-n készültek.
   cache ettől függetlenül mindkét azonosítót explicit tárolja.
 - Loading és üres állapotban lokalizált empty-state jelenik meg, nem valósnak
   látszó seed adat.
+
+### Szerkesztett szöveg utóaudit (2026-08-08)
+
+- A kész PDF Blob csak az egyszerre futó Exact preview + Download kérés között
+  oszlik meg. Befejezett Blob nem marad kliens-cache-ben, a PDF fetch explicit
+  `cache: "no-store"`, ezért másik böngészőfülön szerkesztett név, menü vagy
+  programpont sem ragadhat be a következő exportba.
+- A szerver revision hash minden kártyán tartalmazza a tényleges szövegmezőket,
+  nem csak az `updated_at` értékeket. Azonos milliszekundumban mentett edit is
+  új revisiont kap.
+- Hosszú vendégnév, asztalnév, párnév, helyszín és programpont több sorba törik;
+  a renderer nem használ ellipszist a nyomtatható kártyákon. A dekoratív font
+  határán hibásan eltűnő, tördelés utáni kezdő glyph esetén a teljesen beágyazott
+  Noto fallback őrzi meg a szerkesztett szöveget.
+- A maximális 6 × 6 soros menü további, azonos stílusú A5 oldalakra folytatódik.
+  Egyetlen fogás sem kerül a vágási élen kívülre.
+- Az E2E az összes adatforrást a valós HTTP writeren módosítja, mind a hat PDF-et
+  újra lekéri, `pdftotext`-tel ellenőrzi a teljes új szöveget és a régi szöveg
+  hiányát, majd `-bbox` koordinátákkal bizonyítja, hogy minden szövegdoboz a
+  fizikai oldalon belül marad.
 
 ## Komponens- és útvonaltérkép
 

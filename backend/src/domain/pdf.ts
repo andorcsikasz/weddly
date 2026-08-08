@@ -194,7 +194,12 @@ async function pickDisplayAsync(
 
 /** Wrap display text using the exact embedded face that will be drawn. The
  *  size is reduced until the requested line budget fits, but characters are
- *  never truncated. An unbroken long token is split at glyph boundaries. */
+ *  never truncated. An unbroken long token is split at glyph boundaries.
+ *
+ *  `maxLines` is a fitting target, not a destructive cap: if text still needs
+ *  more rows at the minimum readable size, every row is returned. Callers must
+ *  then paginate or reserve the measured height. Printed stationery may grow
+ *  to another page; it must never silently lose something the couple typed. */
 async function wrapDisplayText(
   pair: FontPair,
   text: string,
@@ -203,9 +208,10 @@ async function wrapDisplayText(
   minSize: number,
   maxWidthPt: number,
   maxLines: number,
+  fontOverride?: PDFFont,
 ): Promise<{ font: PDFFont; lines: string[]; size: number }> {
   const value = safe(text);
-  const font = await pickDisplayAsync(pair, value, role);
+  const font = fontOverride ?? (await pickDisplayAsync(pair, value, role));
   const wrapAtSize = (size: number): string[] => {
     const lines: string[] = [];
     let line = "";
@@ -936,63 +942,70 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
 
       const name = headingText(safe(g.full_name), input.design);
-      let nameSize = name.length > 22 ? 13 : 17;
-      const nameFont = await pickDisplayAsync(fontPair, name, "heading");
-      while (nameSize > 8 && nameFont.widthOfTextAtSize(name, nameSize) > mm(cardW - 16)) {
-        nameSize -= 0.5;
-      }
-      const nameW = nameFont.widthOfTextAtSize(name, nameSize);
+      const nameLayout = await wrapDisplayText(
+        fontPair,
+        name,
+        "heading",
+        name.length > 22 ? 13 : 17,
+        7,
+        mm(cardW - 16),
+        3,
+        // Very long display-face runs exposed a CFF/ToUnicode edge at a
+        // wrapped line boundary (the leading glyph could disappear in print).
+        // Noto is still fully embedded and is the lossless fallback used for
+        // every non-Latin name as well.
+        name.length > 60 ? fontPair.bold : undefined,
+      );
+      const nameLineMm = (nameLayout.size * 1.18) / MM_TO_PT;
       const tableLabel = input.tablesByGuestId?.get(g.id);
 
-      if (pack.cardLayout === "asymmetric") {
-        // Monochrome: name left-rag, table label pinned top-right. No centre axis.
-        page.drawText(name, {
-          x: mm(x_mm0 + 8),
-          y: mm(y_mm0_top + cardH * 0.4),
-          size: nameSize,
-          font: nameFont,
-          color: colors.text,
-          ...headingDrawOptions(input.design),
-        });
-        if (tableLabel) {
-          const t = safe(tableLabel);
-          const tFont = await pickDisplayAsync(fontPair, t, "body");
-          const tw = tFont.widthOfTextAtSize(t, 9);
-          page.drawText(t, {
-            x: mm(x_mm0 + cardW - 8) - tw,
-            y: mm(y_mm0_top + cardH - 12),
-            size: 9,
-            font: tFont,
+      const drawName = (centreYmm: number, leftAligned: boolean) => {
+        const firstBaseline = centreYmm + ((nameLayout.lines.length - 1) * nameLineMm) / 2;
+        for (const [lineIndex, line] of nameLayout.lines.entries()) {
+          const width = nameLayout.font.widthOfTextAtSize(line, nameLayout.size);
+          page.drawText(line, {
+            x: leftAligned ? mm(x_mm0 + 8) : cxPt - width / 2,
+            y: mm(firstBaseline - lineIndex * nameLineMm),
+            size: nameLayout.size,
+            font: nameLayout.font,
+            color: colors.text,
+            ...headingDrawOptions(input.design),
+          });
+        }
+      };
+
+      const tableLayout = tableLabel
+        ? await wrapDisplayText(fontPair, tableLabel, "body", 9.5, 5.5, mm(cardW - 16), 2)
+        : null;
+      const tableLineMm = tableLayout ? (tableLayout.size * 1.2) / MM_TO_PT : 0;
+      const drawTableLabel = (centreYmm: number, rightAligned: boolean) => {
+        if (!tableLayout) return;
+        const firstBaseline = centreYmm + ((tableLayout.lines.length - 1) * tableLineMm) / 2;
+        for (const [lineIndex, line] of tableLayout.lines.entries()) {
+          const width = tableLayout.font.widthOfTextAtSize(line, tableLayout.size);
+          page.drawText(line, {
+            x: rightAligned ? mm(x_mm0 + cardW - 8) - width : cxPt - width / 2,
+            y: mm(firstBaseline - lineIndex * tableLineMm),
+            size: tableLayout.size,
+            font: tableLayout.font,
             color: colors.primary,
           });
         }
+      };
+
+      if (pack.cardLayout === "asymmetric") {
+        // Monochrome: name left-rag, table label pinned top-right. No centre axis.
+        drawName(y_mm0_top + cardH * 0.4, true);
+        drawTableLabel(y_mm0_top + cardH - 12, true);
       } else {
         // Garden / Blush / Midnight: centred name, ornament, label below.
         const nameY_mm = tableLabel ? y_mm0_top + cardH * 0.52 : y_mm0_top + cardH / 2 - 3;
-        page.drawText(name, {
-          x: cxPt - nameW / 2,
-          y: mm(nameY_mm),
-          size: nameSize,
-          font: nameFont,
-          color: colors.text,
-          ...headingDrawOptions(input.design),
-        });
+        drawName(nameY_mm, false);
         // Garden's botanical sprig sits between the name and the table label.
         if (input.design.print.ornament && pack.cardLayout === "centered") {
           drawOrnament(page, pack.ornament, cxPt, mm(y_mm0_top + cardH * 0.42), 28, colors.accent);
         }
-        if (tableLabel) {
-          const t = safe(tableLabel);
-          const tFont = await pickDisplayAsync(fontPair, t, "body");
-          const tw = tFont.widthOfTextAtSize(t, 9.5);
-          page.drawText(t, {
-            x: cxPt - tw / 2,
-            y: mm(y_mm0_top + cardH * 0.2),
-            size: 9.5,
-            font: tFont,
-            color: colors.primary,
-          });
-        }
+        drawTableLabel(y_mm0_top + cardH * 0.2, false);
       }
     }
   }
@@ -1274,25 +1287,35 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
     if (pack.cardLayout === "framed") drawOvalFrame(page, box, colors.accent);
     if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
 
-    // The number is the hero — fitted big to the card width, in the pack face.
+    // The label is the hero. A table is often called something longer than a
+    // number ("Nagyszülők és keresztszülők"), so fit it as a centred block.
+    // The former non-Latin branch truncated at 64pt *before* trying a smaller
+    // size, which made edited Greek/Cyrillic labels end in an ellipsis.
     const label = headingText(t.label, input.design);
-    const usePack = isLatinSafe(label) && fontPair.packHeading;
-    const fitted = usePack ? null : await fitText(fontPair, t.label, 64, mm(W - 24), "bold");
-    const heroFont = usePack
-      ? (fontPair.packHeading as PDFFont)
-      : (fitted as { font: PDFFont }).font;
-    const drawn = usePack ? safe(label) : (fitted as { text: string }).text;
-    // Shrink to fit the card width (the number can be multi-digit).
-    let heroSize = 64;
-    while (heroSize > 24 && heroFont.widthOfTextAtSize(drawn, heroSize) > mm(W - 24)) heroSize -= 2;
-    const heroW = heroFont.widthOfTextAtSize(drawn, heroSize);
-    page.drawText(drawn, {
-      x: cxPt - heroW / 2,
-      y: mm(H / 2 - heroSize * 0.18),
-      size: heroSize,
-      font: heroFont,
-      color: colors.text,
-    });
+    const hero = await wrapDisplayText(
+      fontPair,
+      label,
+      "heading",
+      64,
+      12,
+      mm(W - 24),
+      4,
+      label.length > 60 ? fontPair.bold : undefined,
+    );
+    const heroLineMm = (hero.size * 1.12) / MM_TO_PT;
+    const heroCentreY = H / 2 - hero.size * 0.18;
+    const firstBaseline = heroCentreY + ((hero.lines.length - 1) * heroLineMm) / 2;
+    for (const [lineIndex, line] of hero.lines.entries()) {
+      const width = hero.font.widthOfTextAtSize(line, hero.size);
+      page.drawText(line, {
+        x: cxPt - width / 2,
+        y: mm(firstBaseline - lineIndex * heroLineMm),
+        size: hero.size,
+        font: hero.font,
+        color: colors.text,
+        ...headingDrawOptions(input.design),
+      });
+    }
     // Pack ornament divider under the number (centred packs), gated by toggle.
     if (input.design.print.ornament && pack.cardLayout !== "asymmetric") {
       drawOrnament(page, pack.ornament, cxPt, mm(H * 0.3), 36, colors.accent);
@@ -1352,7 +1375,9 @@ export function printLocale(raw: string | null | undefined): PrintLocale {
  *  courses. When the couple has written a menu it prints their dishes; when
  *  they haven't it keeps the original card of labelled writing rules to fill
  *  in by hand, which is a real thing to print and avoids inventing dishes for
- *  somebody's wedding. One card per A5 page. */
+ *  somebody's wedding. Content stays on one A5 page while it fits; a maximum-
+ *  size edited menu continues onto additional matching A5 pages rather than
+ *  drawing below the trim edge. */
 export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
   const { width_mm: W, height_mm: H } = FORMATS.a5;
   const pdf = await PDFDocument.create();
@@ -1362,64 +1387,87 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
   const dateText =
     input.date_text ?? formatWeddingDate(input.wedding_date, input.design.dateFormat, input.locale);
 
-  const page = pdf.addPage([mm(W), mm(H)]);
   const cxPt = mm(W / 2);
   const box = { x: 8, y: 8, w: W - 16, h: H - 16 };
-
-  // Background + frame per borderStyle, then the pack's frame ornament.
-  drawCardFrame(page, box, input.design, colors);
-  if (pack.cardLayout === "framed") drawOvalFrame(page, box, colors.accent);
-  if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
-
-  // Couple display name in the pack heading face.
   const nameSafe = headingText(safe(input.couple_display_name), input.design);
-  const nameFont = await pickDisplayAsync(fontPair, nameSafe, "heading");
-  const nameW = nameFont.widthOfTextAtSize(nameSafe, 22);
-  page.drawText(nameSafe, {
-    x: cxPt - nameW / 2,
-    y: mm(H - 40),
-    size: 22,
-    font: nameFont,
-    color: colors.text,
-    ...headingDrawOptions(input.design),
-  });
-
-  // Date, when present, in the pack body face.
-  if (dateText) {
-    const dSafe = safe(dateText);
-    const dFont = await pickDisplayAsync(fontPair, dSafe, "body");
-    const dw = dFont.widthOfTextAtSize(dSafe, 11);
-    page.drawText(dSafe, {
-      x: cxPt - dw / 2,
-      y: mm(H - 49),
-      size: 11,
-      font: dFont,
-      color: colors.primary,
-    });
-  }
-
-  // Pack ornament divider under the name/date, gated by the Ornament toggle.
-  if (input.design.print.ornament) {
-    drawOrnament(page, pack.ornament, cxPt, mm(H - 57), 40, colors.accent);
-  }
-
   const copy = input.copy ?? MENU_COPY[input.locale];
-
-  // "Menu" heading.
   const heading = headingText(copy.heading, input.design);
-  const hFont = await pickDisplayAsync(fontPair, heading, "heading");
-  const hw = hFont.widthOfTextAtSize(heading, 13);
-  page.drawText(heading, {
-    x: cxPt - hw / 2,
-    y: mm(H - 68),
-    size: 13,
-    font: hFont,
-    color: colors.primary,
-    ...headingDrawOptions(input.design),
-  });
+  const headingFont = await pickDisplayAsync(fontPair, heading, "heading");
+
+  /** Draw the repeated stationery header and return the first content
+   *  baseline. For ordinary names every coordinate is unchanged, preserving
+   *  the reviewed one-page raster. Long edited names consume real header
+   *  height and the menu paginator receives the reduced content area. */
+  const addMenuPage = async (): Promise<{ page: PDFPage; startY: number }> => {
+    const page = pdf.addPage([mm(W), mm(H)]);
+    drawCardFrame(page, box, input.design, colors);
+    if (pack.cardLayout === "framed") drawOvalFrame(page, box, colors.accent);
+    if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
+
+    const name = await wrapDisplayText(
+      fontPair,
+      nameSafe,
+      "heading",
+      22,
+      7,
+      mm(W - 28),
+      3,
+      nameSafe.length > 60 ? fontPair.bold : undefined,
+    );
+    const nameLineMm = (name.size * 1.16) / MM_TO_PT;
+    const firstNameY = H - 40 + ((name.lines.length - 1) * nameLineMm) / 2;
+    for (const [lineIndex, line] of name.lines.entries()) {
+      const width = name.font.widthOfTextAtSize(line, name.size);
+      page.drawText(line, {
+        x: cxPt - width / 2,
+        y: mm(firstNameY - lineIndex * nameLineMm),
+        size: name.size,
+        font: name.font,
+        color: colors.text,
+        ...headingDrawOptions(input.design),
+      });
+    }
+    const lastNameY = firstNameY - (name.lines.length - 1) * nameLineMm;
+
+    let dateY = H - 49;
+    if (dateText) {
+      dateY = Math.min(dateY, lastNameY - 8);
+      const date = await wrapDisplayText(fontPair, dateText, "body", 11, 7, mm(W - 32), 2);
+      const dateLineMm = (date.size * 1.15) / MM_TO_PT;
+      for (const [lineIndex, line] of date.lines.entries()) {
+        const width = date.font.widthOfTextAtSize(line, date.size);
+        page.drawText(line, {
+          x: cxPt - width / 2,
+          y: mm(dateY - lineIndex * dateLineMm),
+          size: date.size,
+          font: date.font,
+          color: colors.primary,
+        });
+      }
+      dateY -= (date.lines.length - 1) * dateLineMm;
+    }
+
+    const ornamentY = Math.min(H - 57, (dateText ? dateY : lastNameY) - 8);
+    if (input.design.print.ornament) {
+      drawOrnament(page, pack.ornament, cxPt, mm(ornamentY), 40, colors.accent);
+    }
+
+    const headingY = Math.min(H - 68, ornamentY - 11);
+    const headingWidth = headingFont.widthOfTextAtSize(heading, 13);
+    page.drawText(heading, {
+      x: cxPt - headingWidth / 2,
+      y: mm(headingY),
+      size: 13,
+      font: headingFont,
+      color: colors.primary,
+      ...headingDrawOptions(input.design),
+    });
+    return { page, startY: headingY - 20 };
+  };
 
   const written = input.menu_card.courses;
-  let yMm = H - 88;
+  let { page, startY } = await addMenuPage();
+  let yMm = startY;
 
   if (written.length === 0) {
     const empty = safe(
@@ -1437,9 +1485,9 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     return pdf.save();
   }
 
-  // The couple's own menu. Spacing is derived from how much they wrote rather
-  // than fixed, so three courses breathe and six still fit on the page instead
-  // of running off the bottom edge.
+  // The couple's own menu. Spacing is derived from how much they wrote. If the
+  // minimum readable spacing cannot contain it, add another fully styled A5
+  // page and keep drawing; no course title or dish is discarded.
   const laidOut = await Promise.all(
     written.map(async (course) => ({
       course,
@@ -1455,7 +1503,18 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
           )
         : null,
       lines: await Promise.all(
-        course.lines.map((line) => wrapDisplayText(fontPair, line, "body", 9.5, 7, mm(W - 32), 2)),
+        course.lines.map((line) =>
+          wrapDisplayText(
+            fontPair,
+            line,
+            "body",
+            9.5,
+            7,
+            mm(W - 32),
+            2,
+            line.length > 60 ? fontPair.regular : undefined,
+          ),
+        ),
       ),
     })),
   );
@@ -1466,12 +1525,34 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
       item.lines.reduce((sum, line) => sum + line.lines.length, 0),
     0,
   );
-  const available = yMm - 22; // leave a bottom margin
+  const bottomMm = 22;
+  const available = yMm - bottomMm;
   const gap = Math.max(5, Math.min(9, available / Math.max(rows + written.length, 1)));
 
+  const newPage = async () => {
+    const next = await addMenuPage();
+    page = next.page;
+    startY = next.startY;
+    yMm = startY;
+  };
+
+  const ensureLine = async () => {
+    if (yMm < bottomMm) await newPage();
+  };
+
   for (const item of laidOut) {
+    const itemRows =
+      (item.title?.lines.length ?? 0) +
+      item.lines.reduce((sum, line) => sum + line.lines.length, 0);
+    const itemHeight = itemRows * gap + gap * 0.6;
+    // Keep a whole course together when it can fit on a fresh page. A single
+    // exceptionally large course is allowed to split line-by-line below.
+    if (itemHeight <= startY - bottomMm && yMm - itemHeight < bottomMm) {
+      await newPage();
+    }
     if (item.title) {
       for (const titleLine of item.title.lines) {
+        await ensureLine();
         const width = item.title.font.widthOfTextAtSize(titleLine, item.title.size);
         page.drawText(titleLine, {
           x: cxPt - width / 2,
@@ -1486,6 +1567,7 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     }
     for (const line of item.lines) {
       for (const wrappedLine of line.lines) {
+        await ensureLine();
         const width = line.font.widthOfTextAtSize(wrappedLine, line.size);
         page.drawText(wrappedLine, {
           x: cxPt - width / 2,
@@ -1502,8 +1584,12 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     // final dish reads as a cut-off card.
     yMm -= gap * 0.6;
     if (item !== laidOut[laidOut.length - 1] && input.design.print.ornament) {
-      drawOrnament(page, pack.ornament, cxPt, mm(yMm + gap * 0.2), 22, colors.accent);
-      yMm -= gap;
+      if (yMm - gap < bottomMm) {
+        await newPage();
+      } else {
+        drawOrnament(page, pack.ornament, cxPt, mm(yMm + gap * 0.2), 22, colors.accent);
+        yMm -= gap;
+      }
     }
   }
 
@@ -1553,7 +1639,9 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
   if (pack.cardLayout === "framed") drawOvalFrame(page, box, colors.accent);
   if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
 
-  // Draw one centred (or left-ragged for Monochrome) line in the pack face.
+  // Draw a centred (or left-ragged for Monochrome) text block in the pack
+  // face. Short copy stays on the exact historical baseline; long edited
+  // names/venues wrap around it instead of running beyond the paper edge.
   const drawLine = async (
     text: string,
     sizePt: number,
@@ -1562,40 +1650,37 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
     color: ReturnType<typeof rgb>,
   ): Promise<void> => {
     const s = role === "heading" ? headingText(safe(text), input.design) : safe(text);
-    const font = await pickDisplayAsync(fontPair, s, role);
-    let fittedSize = sizePt;
-    while (fittedSize > 8 && font.widthOfTextAtSize(s, fittedSize) > mm(W - 28)) {
-      fittedSize -= 0.5;
+    const layout = await wrapDisplayText(
+      fontPair,
+      s,
+      role,
+      sizePt,
+      7,
+      mm(W - 28),
+      4,
+      s.length > 60 ? (role === "heading" ? fontPair.bold : fontPair.regular) : undefined,
+    );
+    const lineMm = (layout.size * 1.18) / MM_TO_PT;
+    const firstBaseline = yMm + ((layout.lines.length - 1) * lineMm) / 2;
+    for (const [lineIndex, line] of layout.lines.entries()) {
+      const width = layout.font.widthOfTextAtSize(line, layout.size);
+      page.drawText(line, {
+        x: isAsym ? mm(leftXmm) : cxPt - width / 2,
+        y: mm(firstBaseline - lineIndex * lineMm),
+        size: layout.size,
+        font: layout.font,
+        color,
+        ...(role === "heading" ? headingDrawOptions(input.design) : {}),
+      });
     }
-    const w = font.widthOfTextAtSize(s, fittedSize);
-    page.drawText(s, {
-      x: isAsym ? mm(leftXmm) : cxPt - w / 2,
-      y: mm(yMm),
-      size: fittedSize,
-      font,
-      color,
-      ...(role === "heading" ? headingDrawOptions(input.design) : {}),
-    });
   };
 
   // Eyebrow.
   await drawLine(copy.eyebrow, 9.5, H - 36, "body", colors.primary);
 
-  // Couple names — the hero. Shrink to fit the card width (long names happen).
-  const nameSafe = headingText(safe(input.couple_display_name), input.design);
-  const nameFont = await pickDisplayAsync(fontPair, nameSafe, "heading");
-  let nameSize = 26;
-  while (nameSize > 14 && nameFont.widthOfTextAtSize(nameSafe, nameSize) > mm(W - 24))
-    nameSize -= 1;
-  const nameW = nameFont.widthOfTextAtSize(nameSafe, nameSize);
-  page.drawText(nameSafe, {
-    x: isAsym ? mm(leftXmm) : cxPt - nameW / 2,
-    y: mm(H - 58),
-    size: nameSize,
-    font: nameFont,
-    color: colors.text,
-    ...headingDrawOptions(input.design),
-  });
+  // Couple names — the hero. The block helper preserves every character even
+  // at the 200-character profile limit.
+  await drawLine(input.couple_display_name, 26, H - 58, "heading", colors.text);
 
   // Ornament divider under the names, gated by the Ornament toggle.
   if (input.design.print.ornament) {
@@ -1615,7 +1700,9 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
   // Date — only when present.
   if (dateText) await drawLine(dateText, 14, H - 98, "heading", colors.primary);
 
-  // Venue name + city — each only when present.
+  // Venue name + city — each only when present. The canonical card document
+  // currently supplies the already-combined venue in `venue_name`; wrapping
+  // here therefore keeps the browser's complete line and the PDF in parity.
   if (input.venue_name) await drawLine(input.venue_name, 12, H - 114, "body", colors.text);
   if (input.venue_city) await drawLine(input.venue_city, 10.5, H - 124, "body", colors.primary);
 
@@ -1667,20 +1754,29 @@ export async function renderThankYouPdf(input: ThankYouInput): Promise<Uint8Arra
     color: ReturnType<typeof rgb>,
   ): Promise<void> => {
     const s = role === "heading" ? headingText(safe(text), input.design) : safe(text);
-    const font = await pickDisplayAsync(fontPair, s, role);
-    let fittedSize = sizePt;
-    while (fittedSize > 7.5 && font.widthOfTextAtSize(s, fittedSize) > mm(W - 22)) {
-      fittedSize -= 0.5;
+    const layout = await wrapDisplayText(
+      fontPair,
+      s,
+      role,
+      sizePt,
+      7,
+      mm(W - 22),
+      4,
+      s.length > 60 ? (role === "heading" ? fontPair.bold : fontPair.regular) : undefined,
+    );
+    const lineMm = (layout.size * 1.18) / MM_TO_PT;
+    const firstBaseline = yMm + ((layout.lines.length - 1) * lineMm) / 2;
+    for (const [lineIndex, line] of layout.lines.entries()) {
+      const width = layout.font.widthOfTextAtSize(line, layout.size);
+      page.drawText(line, {
+        x: isAsym ? mm(leftXmm) : cxPt - width / 2,
+        y: mm(firstBaseline - lineIndex * lineMm),
+        size: layout.size,
+        font: layout.font,
+        color,
+        ...(role === "heading" ? headingDrawOptions(input.design) : {}),
+      });
     }
-    const w = font.widthOfTextAtSize(s, fittedSize);
-    page.drawText(s, {
-      x: isAsym ? mm(leftXmm) : cxPt - w / 2,
-      y: mm(yMm),
-      size: fittedSize,
-      font,
-      color,
-      ...(role === "heading" ? headingDrawOptions(input.design) : {}),
-    });
   };
 
   // "Thank you" — the hero. Shrink to fit the narrow A6 width.
@@ -1795,7 +1891,16 @@ async function renderScheduleCardPdf(input: ScheduleCardDocument): Promise<Uint8
     const label = safe(entry.label);
     const timeFont = await pickDisplayAsync(fontPair, time, "body");
     const timeSize = 11;
-    const labelLayout = await wrapDisplayText(fontPair, label, "body", 12, 8, mm(W - 58), 2);
+    const labelLayout = await wrapDisplayText(
+      fontPair,
+      label,
+      "body",
+      12,
+      8,
+      mm(W - 58),
+      2,
+      label.length > 60 ? fontPair.regular : undefined,
+    );
     const rowLeft = isAsym ? leftPt : mm(25);
     page.drawText(time, {
       x: rowLeft,
@@ -1813,7 +1918,10 @@ async function renderScheduleCardPdf(input: ScheduleCardDocument): Promise<Uint8
         color: colors.text,
       });
     }
-    yMm -= labelLayout.lines.length > 1 ? 26 : 22;
+    // Reserve the height actually drawn. At the 200-character label limit the
+    // wrapper may legitimately need more than its two-line fitting target;
+    // using a binary 22/26mm decrement made the next edited event overwrite it.
+    yMm -= Math.max(22, labelLayout.lines.length * 5 + 6);
   }
 
   return pdf.save();

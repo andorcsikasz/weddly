@@ -3847,6 +3847,11 @@ export async function fetchPdfBlob(path: string, signal?: AbortSignal): Promise<
   const res = await fetch(path, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     signal,
+    // Printed documents are a snapshot of user-edited workspace data. Even
+    // though the server also sends Cache-Control: no-store, setting the request
+    // policy explicitly prevents a browser/service-worker cache from handing
+    // back a PDF generated before the latest name/menu/schedule edit.
+    cache: "no-store",
   });
   if (!res.ok) throw new Error(`PDF fetch failed: ${res.status}`);
   return res.blob();

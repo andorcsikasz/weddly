@@ -59,10 +59,12 @@ describe("Design -> Printed cards client parity", () => {
       design: DEFAULT_DESIGN,
       billing: { entitled: true, reason: "trialing" },
     };
-    globalThis.fetch = mock((input: RequestInfo | URL) => {
+    const printRequestCaches: Array<RequestCache | undefined> = [];
+    globalThis.fetch = mock((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes("/api/print/")) {
         printRequests.push(url);
+        printRequestCaches.push(init?.cache);
         return new Promise<Response>((resolve) =>
           setTimeout(
             () =>
@@ -155,15 +157,23 @@ describe("Design -> Printed cards client parity", () => {
     const iframeSrc = iframe.getAttribute("src");
     expect(iframeSrc).not.toBeNull();
     expect(objectUrls).toContain(iframeSrc ?? "");
-    // Preview and Download created two object URLs from one cached Blob; the
-    // endpoint itself was fetched exactly once.
+    // Preview and Download created two object URLs from one in-flight Blob; the
+    // endpoint itself was fetched exactly once while the request overlapped.
     expect(printRequests.length).toBe(1);
+    expect(printRequestCaches).toEqual(["no-store"]);
+
+    // Once that request has completed, another explicit download must refetch.
+    // A completed PDF is never retained because names/menu/schedule can have
+    // been edited in a second tab without changing this component's local key.
+    fireEvent.click(screen.getByRole("button", { name: "Letöltés" }));
+    await waitFor(() => expect(printRequests.length).toBe(2));
+    expect(printRequestCaches).toEqual(["no-store", "no-store"]);
 
     fireEvent.click(screen.getByRole("button", { name: "Köszönőkártya" }));
     await waitFor(() => expect(screen.queryByTitle("Egzakt PDF előnézet")).toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "Egzakt PDF előnézet" }));
-    await waitFor(() => expect(printRequests.length).toBe(2));
-    expect(printRequests[1]).toEndWith("/api/print/thank-you");
+    await waitFor(() => expect(printRequests.length).toBe(3));
+    expect(printRequests[2]).toEndWith("/api/print/thank-you");
     // Switch again before that delayed response resolves. The stale Thank-you
     // request must not be allowed to repopulate the Table-number iframe.
     fireEvent.click(screen.getByRole("button", { name: "Asztalszám" }));

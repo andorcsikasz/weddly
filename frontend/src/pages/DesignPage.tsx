@@ -362,7 +362,6 @@ export default function DesignPage() {
   // card). Null until the couple asks for it; revoked + recomputed per request.
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfPreviewBusy, setPdfPreviewBusy] = useState(false);
-  const cardPdfCacheRef = useRef<{ key: string; blob: Blob } | null>(null);
   const cardPdfPromiseRef = useRef<{ key: string; promise: Promise<Blob> } | null>(null);
   // Per-tile download-in-flight flag, keyed by the printable's slug.
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -640,7 +639,6 @@ export default function DesignPage() {
   // A card/data/theme revision change invalidates both actions together. Never
   // leave the iframe pointing at the previous card while a new PDF is pending.
   useEffect(() => {
-    cardPdfCacheRef.current = null;
     cardPdfPromiseRef.current = null;
     setPdfPreviewUrl((previous) => {
       if (previous) URL.revokeObjectURL(previous);
@@ -949,7 +947,10 @@ export default function DesignPage() {
     const key = `${printTemplate}:${currentDocument.workspaceId}:${currentDocument.eventId}:${JSON.stringify(designRef.current)}:${JSON.stringify(
       printTemplate === "menu" ? normalizedMenu : printDocuments[printTemplate].content,
     )}`;
-    if (cardPdfCacheRef.current?.key === key) return cardPdfCacheRef.current.blob;
+    // Share only an in-flight request (Preview + Download can be clicked
+    // together). Never retain a completed PDF: text may have been edited in a
+    // second tab or on its owning Guests/Seating/Schedule page, and export is
+    // the point where freshness matters more than avoiding one request.
     if (cardPdfPromiseRef.current?.key === key) return cardPdfPromiseRef.current.promise;
     // Hide stale output before the request. On an error the old card must not
     // come back as though it were the newly selected export.
@@ -963,7 +964,6 @@ export default function DesignPage() {
       }
       const typed =
         blob.type === "application/pdf" ? blob : blob.slice(0, blob.size, "application/pdf");
-      cardPdfCacheRef.current = { key, blob: typed };
       return typed;
     });
     cardPdfPromiseRef.current = { key, promise };
@@ -987,7 +987,6 @@ export default function DesignPage() {
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
-      cardPdfCacheRef.current = null;
       if (!(error instanceof StaleCardPdfRequest)) toast.error(t("design.cards.download_error"));
     } finally {
       setDownloading(null);
@@ -1006,7 +1005,6 @@ export default function DesignPage() {
         return URL.createObjectURL(typed);
       });
     } catch (error) {
-      cardPdfCacheRef.current = null;
       if (!(error instanceof StaleCardPdfRequest)) toast.error(t("design.cards.download_error"));
     } finally {
       setPdfPreviewBusy(false);
@@ -1444,7 +1442,6 @@ export default function DesignPage() {
                   selected={printTemplate}
                   onSelect={(tpl) => {
                     setPrintTemplate(tpl);
-                    cardPdfCacheRef.current = null;
                     cardPdfPromiseRef.current = null;
                     setPdfPreviewUrl((p) => {
                       if (p) URL.revokeObjectURL(p);

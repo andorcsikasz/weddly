@@ -276,6 +276,7 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
   }
 
   const revision = revisionOf("place_card", couple.updated_at, [
+    couple.design_json,
     ...guests.map((guest) => [guest.id, guest.updated_at, guest.full_name]),
     ...tables.map((table) => [table.id, table.updated_at, table.label]),
     ...assignments.map((assignment) => [
@@ -323,11 +324,10 @@ async function handleTableNumbers(ctx: Ctx): Promise<Response> {
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
   const tables = loadTables(couple.id);
-  const revision = revisionOf(
-    "table_number",
-    couple.updated_at,
-    tables.map((table) => table.updated_at),
-  );
+  const revision = revisionOf("table_number", couple.updated_at, [
+    couple.design_json,
+    ...tables.map((table) => [table.id, table.updated_at, table.label]),
+  ]);
   const documents =
     tables.length > 0
       ? tables.map((table) =>
@@ -363,7 +363,14 @@ async function handleMenu(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
-  const revision = revisionOf("menu", couple.updated_at, []);
+  const revision = revisionOf("menu", couple.updated_at, [
+    couple.design_json,
+    couple.display_name,
+    couple.bride_name,
+    couple.groom_name,
+    couple.wedding_date,
+    couple.menu_card,
+  ]);
   const document = buildPrintableCardDocument(
     cardSource(couple, userId, "menu", revision, {
       menuCourses: parseMenuCard(couple.menu_card).courses,
@@ -396,7 +403,15 @@ async function handleInvitation(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
-  const revision = revisionOf("invitation", couple.updated_at, []);
+  const revision = revisionOf("invitation", couple.updated_at, [
+    couple.design_json,
+    couple.display_name,
+    couple.bride_name,
+    couple.groom_name,
+    couple.wedding_date,
+    couple.venue_name,
+    couple.venue_city,
+  ]);
   const document = buildPrintableCardDocument(cardSource(couple, userId, "invitation", revision));
   const pdf = await renderPrintableCardPdf([document]);
   addAuditLog({
@@ -425,7 +440,13 @@ async function handleThankYou(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
-  const revision = revisionOf("thank_you", couple.updated_at, []);
+  const revision = revisionOf("thank_you", couple.updated_at, [
+    couple.design_json,
+    couple.display_name,
+    couple.bride_name,
+    couple.groom_name,
+    couple.wedding_date,
+  ]);
   const document = buildPrintableCardDocument(cardSource(couple, userId, "thank_you", revision));
   const pdf = await renderPrintableCardPdf([document]);
   addAuditLog({
@@ -454,11 +475,20 @@ async function handleScheduleCard(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
   const events = listScheduleEvents(couple.id);
-  const revision = revisionOf(
-    "schedule",
-    couple.updated_at,
-    events.map((event) => event.updated_at),
-  );
+  const revision = revisionOf("schedule", couple.updated_at, [
+    couple.design_json,
+    couple.display_name,
+    couple.bride_name,
+    couple.groom_name,
+    couple.wedding_date,
+    ...events.map((event) => [
+      event.id,
+      event.updated_at,
+      event.label,
+      event.starts_at_minutes,
+      event.is_key_moment,
+    ]),
+  ]);
   const document = buildPrintableCardDocument(
     cardSource(couple, userId, "schedule", revision, { schedule: events }),
   );

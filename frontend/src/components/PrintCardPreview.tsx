@@ -147,7 +147,7 @@ export function PrintCardPreview({
               {/* The number is the hero — much larger than the label, styled per
                 pack (small-caps/italic/uppercase are harmless on digits). */}
               <span
-                className={`${thumbnail ? "text-xl" : "text-7xl"} leading-none tabular-nums`}
+                className={`${thumbnail ? "text-xl" : "text-7xl"} max-w-full break-words leading-none tabular-nums`}
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
               >
                 {document.content.tableLabel}
@@ -165,7 +165,7 @@ export function PrintCardPreview({
           {document.cardType === "menu" && (
             <>
               <span
-                className={`${thumbnail ? "text-[7px]" : "text-xl"} mt-1 tracking-[0.12em]`}
+                className={`${thumbnail ? "text-[7px]" : "text-xl"} mt-1 max-w-full break-words tracking-[0.12em]`}
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
               >
                 {document.content.heading}
@@ -189,7 +189,7 @@ export function PrintCardPreview({
                   document.content.courses.map((course, i) => (
                     // Index key: courses have no id and are reordered by the
                     // editor rewriting the whole array.
-                    <div key={i} className="flex max-w-full flex-col gap-0.5 break-words">
+                    <div key={i} className="flex min-w-0 max-w-full flex-col gap-0.5 break-words">
                       {course.title && (
                         <span
                           className={`${thumbnail ? "text-[4px]" : "text-[11px]"} uppercase tracking-[0.14em]`}
@@ -215,7 +215,7 @@ export function PrintCardPreview({
           {document.cardType === "schedule" && (
             <>
               <span
-                className={`${thumbnail ? "text-[7px]" : "text-xl"} mt-1 tracking-[0.12em]`}
+                className={`${thumbnail ? "text-[7px]" : "text-xl"} mt-1 max-w-full break-words tracking-[0.12em]`}
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
               >
                 {document.content.heading}
@@ -257,7 +257,7 @@ export function PrintCardPreview({
           {document.cardType === "invitation" && (
             <>
               <span
-                className={`${thumbnail ? "text-[4px]" : "text-[11px]"} uppercase tracking-[0.18em]`}
+                className={`${thumbnail ? "text-[4px]" : "text-[11px]"} max-w-full break-words uppercase tracking-[0.18em]`}
                 style={{ color: d.accent_text }}
               >
                 {document.content.eyebrow}
@@ -269,7 +269,10 @@ export function PrintCardPreview({
                 {document.content.coupleName}
               </span>
               {divider(thumbnail ? "my-1 h-1" : "my-3")}
-              <span className={thumbnail ? "text-[4px]" : "text-sm"} style={{ color: d.text }}>
+              <span
+                className={`${thumbnail ? "text-[4px]" : "text-sm"} max-w-full break-words`}
+                style={{ color: d.text }}
+              >
                 {document.content.line}
               </span>
               {document.content.date && (
@@ -282,7 +285,7 @@ export function PrintCardPreview({
               )}
               {document.content.venue && (
                 <span
-                  className={thumbnail ? "mt-0.5 text-[4px]" : "mt-1 text-xs"}
+                  className={`${thumbnail ? "mt-0.5 text-[4px]" : "mt-1 text-xs"} max-w-full break-words`}
                   style={{ color: labelColor }}
                 >
                   {document.content.venue}
@@ -294,13 +297,16 @@ export function PrintCardPreview({
           {document.cardType === "thank_you" && (
             <>
               <span
-                className={`${thumbnail ? "text-[9px]" : "text-3xl"} mt-1 leading-[1.25]`}
+                className={`${thumbnail ? "text-[9px]" : "text-3xl"} mt-1 max-w-full break-words leading-[1.25]`}
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
               >
                 {document.content.heading}
               </span>
               {divider(thumbnail ? "my-1 h-1" : "my-3")}
-              <span className={thumbnail ? "text-[4px]" : "text-sm"} style={{ color: d.text }}>
+              <span
+                className={`${thumbnail ? "text-[4px]" : "text-sm"} max-w-full break-words`}
+                style={{ color: d.text }}
+              >
                 {document.content.line}
               </span>
               <span

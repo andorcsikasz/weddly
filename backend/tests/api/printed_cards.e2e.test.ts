@@ -23,6 +23,31 @@ function command(name: string, args: string[]): string {
   return result.stdout.toString();
 }
 
+/** Assert that every extractable glyph box is inside its physical PDF page.
+ *  Text extraction alone still succeeds when a renderer draws a complete
+ *  string beyond the trim edge, which is exactly the preview/print mismatch
+ *  this audit is meant to prevent. */
+function expectTextInsidePages(path: string): void {
+  const bbox = command("pdftotext", ["-bbox", path, "-"]);
+  const pages = [...bbox.matchAll(/<page width="([\d.]+)" height="([\d.]+)">([\s\S]*?)<\/page>/g)];
+  expect(pages.length).toBeGreaterThan(0);
+  for (const page of pages) {
+    const width = Number(page[1]);
+    const height = Number(page[2]);
+    const body = page[3] ?? "";
+    for (const word of body.matchAll(
+      /<word xMin="(-?[\d.]+)" yMin="(-?[\d.]+)" xMax="(-?[\d.]+)" yMax="(-?[\d.]+)">/g,
+    )) {
+      const [, xMinRaw, yMinRaw, xMaxRaw, yMaxRaw] = word;
+      const [xMin, yMin, xMax, yMax] = [xMinRaw, yMinRaw, xMaxRaw, yMaxRaw].map(Number);
+      expect(xMin).toBeGreaterThanOrEqual(-0.1);
+      expect(yMin).toBeGreaterThanOrEqual(-0.1);
+      expect(xMax).toBeLessThanOrEqual(width + 0.1);
+      expect(yMax).toBeLessThanOrEqual(height + 0.1);
+    }
+  }
+}
+
 async function fetchCard(token: string, cardType: (typeof PRINT_CARD_TYPES)[number]) {
   const definition = PRINT_CARD_REGISTRY[cardType];
   const response = await fetch(`${BASE}${definition.endpoint}`, {
@@ -73,7 +98,7 @@ describe("Design -> Printed cards exports", () => {
        (SELECT user_id FROM couple_members WHERE couple_id = ? LIMIT 1)`,
     ).run(coupleId);
 
-    const table = await req<{ table: { id: number } }>(
+    const table = await req<{ table: { id: number; updated_at: number } }>(
       "POST",
       "/api/seating/tables",
       {
@@ -103,15 +128,19 @@ describe("Design -> Printed cards exports", () => {
       "Zsófia Tűzkő",
     ];
     let firstGuestId = 0;
+    let firstGuestUpdatedAt = 0;
     for (const full_name of guestNames) {
-      const guest = await req<{ guest: { id: number } }>(
+      const guest = await req<{ guest: { id: number; updated_at: number } }>(
         "POST",
         "/api/guests",
         { full_name },
         { token },
       );
       expect(guest.status).toBe(201);
-      if (!firstGuestId) firstGuestId = guest.data.guest.id;
+      if (!firstGuestId) {
+        firstGuestId = guest.data.guest.id;
+        firstGuestUpdatedAt = guest.data.guest.updated_at;
+      }
     }
     const assignment = await req(
       "POST",
@@ -121,6 +150,7 @@ describe("Design -> Printed cards exports", () => {
     );
     expect(assignment.status).toBe(200);
 
+    const scheduleEvents: Array<{ id: number; updated_at: number }> = [];
     for (const event of [
       { label: "Naplementés fogadalom", starts_at_minutes: 16 * 60 + 45, is_key_moment: true },
       {
@@ -130,8 +160,14 @@ describe("Design -> Printed cards exports", () => {
       },
       { label: "Első tánc", starts_at_minutes: 21 * 60, is_key_moment: true },
     ]) {
-      const created = await req("POST", "/api/schedule", event, { token });
+      const created = await req<{ event: { id: number; updated_at: number } }>(
+        "POST",
+        "/api/schedule",
+        event,
+        { token },
+      );
       expect(created.status).toBe(201);
+      scheduleEvents.push(created.data.event);
     }
 
     const expectedPage = {
@@ -229,6 +265,106 @@ describe("Design -> Printed cards exports", () => {
       revisionByCard.get("place_card"),
     );
     expect(command("pdftotext", [movedPlaceCard.path, "-"])).toContain("Őrség");
+
+    // Full edit -> export loop. Every card source is changed through its real
+    // HTTP writer, then fetched again through the registry endpoint. This is
+    // deliberately done without sleeps: revision hashes must include the text
+    // itself and remain correct even when two writes share a millisecond stamp.
+    const editedMenu = normalizeMenuCardInput({
+      courses: Array.from({ length: 6 }, (_, courseIndex) => ({
+        title: `Edited course ${courseIndex + 1}`,
+        lines: Array.from(
+          { length: 6 },
+          (_, lineIndex) =>
+            `Edited dish ${courseIndex + 1}.${lineIndex + 1} rosemary vegetables and citrus sauce`,
+        ),
+      })),
+    });
+    const coupleEdit = await req(
+      "PATCH",
+      "/api/couples/current",
+      {
+        bride_name: "Réka",
+        groom_name: "Márton",
+        wedding_date: "2028-09-17",
+        venue_name:
+          "Edited Riverside Glasshouse with the complete garden terrace and the old oak courtyard",
+        venue_city: "Szentendre",
+        menu_card: editedMenu,
+      },
+      { token },
+    );
+    expect(coupleEdit.status).toBe(200);
+
+    const editedGuest =
+      "Edited Guest Alexandra-Magdolna Kovács-Szűcs D'Árvíz with every saved family name";
+    expect(
+      (
+        await req(
+          "PATCH",
+          `/api/guests/${firstGuestId}`,
+          { full_name: editedGuest },
+          { token, headers: { "If-Match": String(firstGuestUpdatedAt) } },
+        )
+      ).status,
+    ).toBe(200);
+
+    const editedTable =
+      "Επεξεργασμένο τραπέζι οικογένειας και φίλων με ολόκληρη την αποθηκευμένη ετικέτα";
+    expect(
+      (
+        await req(
+          "PATCH",
+          `/api/seating/tables/${table.data.table.id}`,
+          { label: editedTable },
+          { token, headers: { "If-Match": String(table.data.table.updated_at) } },
+        )
+      ).status,
+    ).toBe(200);
+
+    const editedSchedule =
+      "Edited candlelit garden ceremony with the complete processional and family welcome text";
+    expect(
+      (
+        await req(
+          "PATCH",
+          `/api/schedule/${scheduleEvents[0]!.id}`,
+          { label: editedSchedule },
+          { token, headers: { "If-Match": String(scheduleEvents[0]!.updated_at) } },
+        )
+      ).status,
+    ).toBe(200);
+
+    const editedTextByCard = new Map<string, string>();
+    for (const cardType of PRINT_CARD_TYPES) {
+      const edited = await fetchCard(token, cardType);
+      expect(edited.response.headers.get("x-weddly-data-revision")).not.toBe(
+        revisionByCard.get(cardType),
+      );
+      const text = command("pdftotext", [edited.path, "-"]);
+      editedTextByCard.set(cardType, text);
+      expect(text).not.toContain("Anna & Bence");
+      expect(text).not.toContain("…");
+      expectTextInsidePages(edited.path);
+    }
+
+    expect(editedTextByCard.get("invitation")).toContain("Réka & Márton");
+    expect(editedTextByCard.get("invitation")).toContain("Edited Riverside Glasshouse");
+    expect(editedTextByCard.get("invitation")).toContain("Szentendre");
+    expect(editedTextByCard.get("thank_you")).toContain("Réka & Márton");
+    expect(editedTextByCard.get("thank_you")).toContain("2028. szeptember 17.");
+    expect(editedTextByCard.get("schedule")?.replace(/\s/g, "")).toContain(
+      editedSchedule.replace(/\s/g, ""),
+    );
+    expect(editedTextByCard.get("menu")).toContain("Edited course 1");
+    expect(editedTextByCard.get("menu")).toContain("Edited dish 6.6");
+    expect(command("pdfinfo", [join(outputDir, "menu.pdf")])).toMatch(/Pages:\s+[2-9]/);
+    expect(editedTextByCard.get("table_number")?.replace(/\s/g, "")).toContain(
+      editedTable.replace(/\s/g, ""),
+    );
+    expect(editedTextByCard.get("place_card")?.replace(/\s/g, "")).toContain(
+      editedGuest.replace(/\s/g, ""),
+    );
 
     // The operational document intentionally remains available to the
     // Schedule page, but the card registry must never point to it.
