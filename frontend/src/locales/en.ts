@@ -2789,6 +2789,7 @@ const en: LocaleMessages = {
     board_filter_all: "All",
     board_filter_tasks: "Tasks",
     board_filter_vendors: "Vendors",
+    board_task_drag: "Drag task to another column",
     board_vendor_paid_badge: "Paid",
     board_vendor_considering_badge: "Considering",
     board_vendor_inprogress_badge: "Negotiating",

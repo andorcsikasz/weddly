@@ -2791,6 +2791,7 @@ const hr: LocaleMessages = {
     board_filter_all: "Sve",
     board_filter_tasks: "Zadaci",
     board_filter_vendors: "Dobavljači",
+    board_task_drag: "Povucite zadatak u drugi stupac",
     board_vendor_paid_badge: "Plaćeno",
     board_vendor_considering_badge: "Razmatramo",
     board_vendor_inprogress_badge: "U pregovorima",

@@ -2817,6 +2817,7 @@ const hu: LocaleMessages = {
     board_filter_all: "Mind",
     board_filter_tasks: "Feladatok",
     board_filter_vendors: "Szolgáltatók",
+    board_task_drag: "Feladat áthúzása másik oszlopba",
     board_vendor_paid_badge: "Fizetve",
     board_vendor_considering_badge: "Mérlegeljük",
     board_vendor_inprogress_badge: "Egyeztetés alatt",

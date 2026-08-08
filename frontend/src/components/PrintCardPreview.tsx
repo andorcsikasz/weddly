@@ -14,82 +14,23 @@
 // toPublicDesign (override-or-palette), reaching the DOM as inline values that
 // are design DATA, not authored literals (same pattern as the palette swatches).
 
-import { type CoupleDesign, formatWeddingDate, getBorderCss, toPublicDesign } from "@shared/design";
-import type { MenuCard } from "@shared/types";
-import type { PublicWeddingScheduleEntry } from "@shared/wedding_website";
-import { useT } from "../lib/i18n";
+import { getBorderCss, toPublicDesign } from "@shared/design";
+import type { PrintableCardDocument, PrintCardType } from "@shared/print_cards";
 import { OrnamentDivider, OrnamentFrame, headingTreatmentCss } from "./ornaments";
 
 /** Which printable the preview renders. */
-export type PrintTemplate =
-  | "place_card"
-  | "table_number"
-  | "menu"
-  | "schedule"
-  | "invitation"
-  | "thank_you";
-
-/** Workspace content shared by every event-level printed card. Undefined is
- *  reserved for isolated/sample previews; a loaded workspace passes this
- *  object even when some fields are empty, so missing data never turns back
- *  into Anna/Bence or a made-up run of show. */
-export interface PrintEventData {
-  coupleName: string | null;
-  brideName: string | null;
-  groomName: string | null;
-  weddingDate: string | null;
-  venueName: string | null;
-  venueCity: string | null;
-  schedule: readonly PublicWeddingScheduleEntry[];
-}
-
-function formatTimeOfDay(minutes: number): string {
-  const withinDay = ((minutes % 1440) + 1440) % 1440;
-  return `${String(Math.floor(withinDay / 60)).padStart(2, "0")}:${String(withinDay % 60).padStart(2, "0")}`;
-}
+export type PrintTemplate = PrintCardType;
 
 export function PrintCardPreview({
-  design,
-  template,
-  brideName,
-  menuCard,
-  event,
+  document,
+  thumbnail = false,
 }: {
-  design: CoupleDesign;
-  template: PrintTemplate;
-  brideName: string | null;
-  /** The couple's own menu, so the preview shows their dishes as they type
-   *  them. Absent or empty falls back to the generic course labels, which is
-   *  also exactly what the PDF prints in that case. */
-  menuCard?: MenuCard | null;
-  /** Live workspace data for invitation, thank-you and schedule cards. */
-  event?: PrintEventData;
+  document: PrintableCardDocument;
+  thumbnail?: boolean;
 }) {
-  const { t, locale } = useT();
+  const design = document.theme;
+  const template = document.cardType;
   const d = toPublicDesign(design);
-  const menuCourses = menuCard?.courses ?? [];
-  const sampleMode = event === undefined;
-  const eventCoupleName = sampleMode
-    ? t("design.print_preview.sample_couple")
-    : event.coupleName?.trim() ||
-      [event.brideName?.trim(), event.groomName?.trim()].filter(Boolean).join(" & ");
-  const eventDate = sampleMode
-    ? t("design.print_preview.sample_date")
-    : formatWeddingDate(event.weddingDate, design.dateFormat, locale);
-  const eventVenue = sampleMode
-    ? t("design.print_preview.invitation_venue")
-    : [event.venueName?.trim(), event.venueCity?.trim()].filter(Boolean).join(", ");
-  const scheduleRows = sampleMode
-    ? [
-        { id: "ceremony", time: "15:00", label: t("design.print_preview.sample_program.ceremony") },
-        { id: "dinner", time: "18:00", label: t("design.print_preview.sample_program.dinner") },
-        { id: "party", time: "21:00", label: t("design.print_preview.sample_program.party") },
-      ]
-    : event.schedule.slice(0, 5).map((entry) => ({
-        id: entry.id,
-        time: formatTimeOfDay(entry.starts_at_minutes),
-        label: entry.label,
-      }));
 
   // Menu / schedule / invitation / thank-you cards are taller (portrait); place
   // cards + table numbers are landscape.
@@ -154,12 +95,12 @@ export function PrintCardPreview({
   );
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className={`flex flex-col items-center ${thumbnail ? "gap-0" : "gap-3"}`}>
       <div className={`relative ${aspect} w-full max-w-[26rem]`}>
-        {ghost(10, 0.45)}
-        {ghost(5, 0.7)}
+        {ghost(thumbnail ? 2 : 10, 0.45)}
+        {ghost(thumbnail ? 1 : 5, 0.7)}
         <div
-          className={`absolute inset-0 flex flex-col ${alignCls} px-7 py-6 shadow-soft`}
+          className={`absolute inset-0 flex flex-col ${alignCls} ${thumbnail ? "px-2 py-1.5" : "px-7 py-6"} shadow-soft`}
           style={{
             backgroundColor: d.background,
             color: d.text,
@@ -170,13 +111,13 @@ export function PrintCardPreview({
         >
           {frame}
 
-          {template === "place_card" && (
+          {document.cardType === "place_card" && (
             <>
               {/* Monochrome's asymmetric tell: a small seat index pinned top-right,
                 tabular figures, no centre axis. */}
               {isLeft && (
                 <span
-                  className="absolute right-5 top-5 text-sm tabular-nums"
+                  className={`absolute tabular-nums ${thumbnail ? "right-2 top-1.5 text-[5px]" : "right-5 top-5 text-sm"}`}
                   style={{ color: d.accent_text }}
                   aria-hidden
                 >
@@ -184,162 +125,196 @@ export function PrintCardPreview({
                 </span>
               )}
               <span
-                className={`${isLeft ? "text-3xl" : "text-2xl"} mt-1 leading-tight`}
+                className={`${thumbnail ? "text-[8px]" : isLeft ? "text-3xl" : "text-2xl"} mt-1 max-w-full break-words leading-[1.25]`}
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
               >
-                {brideName?.trim() || t("design.print_preview.sample_name")}
+                {document.content.guestName}
               </span>
-              {divider("my-3")}
-              <span
-                className="text-[11px] uppercase tracking-[0.18em]"
-                style={{ color: labelColor }}
-              >
-                {t("design.print_preview.sample_table")}
-              </span>
+              {document.content.tableLabel && divider(thumbnail ? "my-1 h-1" : "my-3")}
+              {document.content.tableLabel && (
+                <span
+                  className={`${thumbnail ? "text-[4px]" : "text-[11px]"} uppercase tracking-[0.18em]`}
+                  style={{ color: labelColor }}
+                >
+                  {document.content.tableLabel}
+                </span>
+              )}
             </>
           )}
 
-          {template === "table_number" && (
+          {document.cardType === "table_number" && (
             <>
               {/* The number is the hero — much larger than the label, styled per
                 pack (small-caps/italic/uppercase are harmless on digits). */}
               <span
-                className="text-7xl leading-none tabular-nums"
+                className={`${thumbnail ? "text-xl" : "text-7xl"} leading-none tabular-nums`}
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
               >
-                12
+                {document.content.tableLabel}
               </span>
-              {divider("my-2")}
+              {divider(thumbnail ? "my-0.5 h-1" : "my-2")}
               <span
-                className="text-[11px] uppercase tracking-[0.18em]"
+                className={`${thumbnail ? "text-[4px]" : "text-[11px]"} uppercase tracking-[0.18em]`}
                 style={{ color: d.accent_text }}
               >
-                {t("design.print_preview.table_label")}
+                {document.content.footer}
               </span>
             </>
           )}
 
-          {template === "menu" && (
+          {document.cardType === "menu" && (
             <>
               <span
-                className="mt-1 text-xl tracking-[0.12em]"
+                className={`${thumbnail ? "text-[7px]" : "text-xl"} mt-1 tracking-[0.12em]`}
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
               >
-                {t("design.print_preview.menu_title")}
+                {document.content.heading}
               </span>
-              {divider("my-3")}
+              {!thumbnail && document.content.coupleName && (
+                <span className="mt-1 text-xs" style={{ color: d.accent_text }}>
+                  {document.content.coupleName}
+                </span>
+              )}
+              {!thumbnail && document.content.date && (
+                <span className="mt-0.5 text-[10px]" style={{ color: labelColor }}>
+                  {document.content.date}
+                </span>
+              )}
+              {divider(thumbnail ? "my-1 h-1" : "my-3")}
               <div
-                className={`flex flex-col gap-2 text-sm ${isLeft ? "items-start" : "items-center"}`}
+                className={`flex flex-col ${thumbnail ? "gap-0.5 text-[4px] leading-[1.2]" : "gap-2 text-sm"} ${isLeft ? "items-start" : "items-center"}`}
                 style={{ color: d.text }}
               >
-                {menuCourses.length > 0
-                  ? menuCourses.map((course, i) => (
-                      // Index key: courses have no id and are reordered by the
-                      // editor rewriting the whole array.
-                      <div key={i} className="flex flex-col gap-0.5">
-                        {course.title && (
-                          <span
-                            className="text-[11px] uppercase tracking-[0.14em]"
-                            style={{ color: d.accent_text }}
-                          >
-                            {course.title}
-                          </span>
-                        )}
-                        {course.lines.map((line) => (
-                          <span key={line}>{line}</span>
-                        ))}
-                      </div>
-                    ))
-                  : (["menu_starter", "menu_main", "menu_dessert"] as const).map((key) => (
-                      <span key={key}>{t(`design.print_preview.${key}`)}</span>
-                    ))}
-              </div>
-            </>
-          )}
-
-          {template === "schedule" && (
-            <>
-              <span
-                className="mt-1 text-xl tracking-[0.12em]"
-                style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
-              >
-                {t("design.print_preview.tpl.schedule")}
-              </span>
-              {divider("my-3")}
-              <div
-                className={`flex flex-col gap-2.5 text-sm ${isLeft ? "items-start" : "items-center"}`}
-                style={{ color: d.text }}
-              >
-                {scheduleRows.map((row) => (
-                  <span
-                    key={row.id}
-                    className={`flex items-baseline gap-2 ${isLeft ? "justify-start" : "justify-center"}`}
-                  >
-                    <span className="tabular-nums" style={{ color: d.accent_text }}>
-                      {row.time}
-                    </span>
-                    <span>{row.label}</span>
+                {document.content.courses.length > 0 ? (
+                  document.content.courses.map((course, i) => (
+                    // Index key: courses have no id and are reordered by the
+                    // editor rewriting the whole array.
+                    <div key={i} className="flex max-w-full flex-col gap-0.5 break-words">
+                      {course.title && (
+                        <span
+                          className={`${thumbnail ? "text-[4px]" : "text-[11px]"} uppercase tracking-[0.14em]`}
+                          style={{ color: d.accent_text }}
+                        >
+                          {course.title}
+                        </span>
+                      )}
+                      {course.lines.map((line) => (
+                        <span key={line}>{line}</span>
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  <span className={thumbnail ? "text-[4px]" : "text-sm"}>
+                    {document.content.emptyMessage}
                   </span>
-                ))}
+                )}
               </div>
             </>
           )}
 
-          {template === "invitation" && (
+          {document.cardType === "schedule" && (
             <>
               <span
-                className="text-[11px] uppercase tracking-[0.18em]"
-                style={{ color: d.accent_text }}
-              >
-                {t("design.print_preview.invitation_eyebrow")}
-              </span>
-              <span
-                className="mt-2 text-2xl leading-tight"
+                className={`${thumbnail ? "text-[7px]" : "text-xl"} mt-1 tracking-[0.12em]`}
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
               >
-                {eventCoupleName}
+                {document.content.heading}
               </span>
-              {divider("my-3")}
-              <span className="text-sm" style={{ color: d.text }}>
-                {t("design.print_preview.invitation_line")}
+              {!thumbnail && document.content.coupleName && (
+                <span className="mt-1 text-xs" style={{ color: d.accent_text }}>
+                  {document.content.coupleName}
+                </span>
+              )}
+              {!thumbnail && document.content.date && (
+                <span className="mt-0.5 text-[10px]" style={{ color: labelColor }}>
+                  {document.content.date}
+                </span>
+              )}
+              {divider(thumbnail ? "my-1 h-1" : "my-3")}
+              <div
+                className={`flex flex-col ${thumbnail ? "gap-0.5 text-[4px] leading-[1.2]" : "gap-2.5 text-sm"} ${isLeft ? "items-start" : "items-center"}`}
+                style={{ color: d.text }}
+              >
+                {document.content.entries.length === 0 ? (
+                  <span>{document.content.emptyMessage}</span>
+                ) : (
+                  document.content.entries.map((row) => (
+                    <span
+                      key={row.id}
+                      className={`flex max-w-full items-baseline gap-2 ${isLeft ? "justify-start" : "justify-center"}`}
+                    >
+                      <span className="tabular-nums" style={{ color: d.accent_text }}>
+                        {row.time}
+                      </span>
+                      <span className="min-w-0 break-words">{row.label}</span>
+                    </span>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+
+          {document.cardType === "invitation" && (
+            <>
+              <span
+                className={`${thumbnail ? "text-[4px]" : "text-[11px]"} uppercase tracking-[0.18em]`}
+                style={{ color: d.accent_text }}
+              >
+                {document.content.eyebrow}
               </span>
-              {eventDate && (
+              <span
+                className={`${thumbnail ? "mt-1 text-[8px]" : "mt-2 text-2xl"} max-w-full break-words leading-[1.25]`}
+                style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
+              >
+                {document.content.coupleName}
+              </span>
+              {divider(thumbnail ? "my-1 h-1" : "my-3")}
+              <span className={thumbnail ? "text-[4px]" : "text-sm"} style={{ color: d.text }}>
+                {document.content.line}
+              </span>
+              {document.content.date && (
                 <span
-                  className="mt-2 text-sm tracking-[0.12em]"
+                  className={`${thumbnail ? "mt-1 text-[4px]" : "mt-2 text-sm"} tracking-[0.12em]`}
                   style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
                 >
-                  {eventDate}
+                  {document.content.date}
                 </span>
               )}
-              {eventVenue && (
-                <span className="mt-1 text-xs" style={{ color: labelColor }}>
-                  {eventVenue}
+              {document.content.venue && (
+                <span
+                  className={thumbnail ? "mt-0.5 text-[4px]" : "mt-1 text-xs"}
+                  style={{ color: labelColor }}
+                >
+                  {document.content.venue}
                 </span>
               )}
             </>
           )}
 
-          {template === "thank_you" && (
+          {document.cardType === "thank_you" && (
             <>
               <span
-                className="mt-1 text-3xl leading-tight"
+                className={`${thumbnail ? "text-[9px]" : "text-3xl"} mt-1 leading-[1.25]`}
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
               >
-                {t("design.print_preview.thank_you_title")}
+                {document.content.heading}
               </span>
-              {divider("my-3")}
-              <span className="text-sm" style={{ color: d.text }}>
-                {t("design.print_preview.thank_you_line")}
+              {divider(thumbnail ? "my-1 h-1" : "my-3")}
+              <span className={thumbnail ? "text-[4px]" : "text-sm"} style={{ color: d.text }}>
+                {document.content.line}
               </span>
               <span
-                className="mt-2 text-base tracking-[0.12em]"
+                className={`${thumbnail ? "mt-1 text-[5px]" : "mt-2 text-base"} max-w-full break-words tracking-[0.12em]`}
                 style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
               >
-                {eventCoupleName}
+                {document.content.coupleName}
               </span>
-              {eventDate && (
-                <span className="mt-1 text-xs" style={{ color: labelColor }}>
-                  {eventDate}
+              {document.content.date && (
+                <span
+                  className={thumbnail ? "mt-0.5 text-[4px]" : "mt-1 text-xs"}
+                  style={{ color: labelColor }}
+                >
+                  {document.content.date}
                 </span>
               )}
             </>

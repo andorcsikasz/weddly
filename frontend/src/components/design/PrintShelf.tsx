@@ -10,31 +10,24 @@
 // One shelf now. Every tile is the actual card. Picking one puts it on the
 // proof desk, and the desk is what downloads.
 
-import type { CoupleDesign } from "@shared/design";
+import {
+  PRINT_CARD_TYPES,
+  type PrintableCardDocument,
+  type PrintCardType,
+} from "@shared/print_cards";
 import { useT } from "../../lib/i18n";
-import { PrintCardPreview, type PrintEventData, type PrintTemplate } from "../PrintCardPreview";
+import { PrintCardPreview, type PrintTemplate } from "../PrintCardPreview";
 
-export const PRINT_TEMPLATES: readonly PrintTemplate[] = [
-  "place_card",
-  "table_number",
-  "menu",
-  "invitation",
-  "thank_you",
-  "schedule",
-];
+export const PRINT_TEMPLATES: readonly PrintTemplate[] = PRINT_CARD_TYPES;
 
 export function PrintShelf({
-  design,
+  documents,
   selected,
   onSelect,
-  brideName,
-  event,
 }: {
-  design: CoupleDesign;
+  documents: Readonly<Record<PrintCardType, PrintableCardDocument>>;
   selected: PrintTemplate;
   onSelect: (tpl: PrintTemplate) => void;
-  brideName: string | null;
-  event?: PrintEventData;
 }) {
   const { t } = useT();
   return (
@@ -57,15 +50,11 @@ export function PrintShelf({
                   : "border-transparent hover:border-paper-400 dark:hover:border-umber-600"
               }`}
             >
-              {/* The tile IS the card, at whatever size the column allows.
-                  PrintCardPreview is width-driven, so it scales cleanly. */}
-              <span className="pointer-events-none block overflow-hidden rounded">
-                <PrintCardPreview
-                  design={design}
-                  template={tpl}
-                  brideName={brideName}
-                  event={event}
-                />
+              {/* A fixed portrait canvas makes every grid row and label align.
+                  Landscape cards are centred inside it; nothing is clipped by
+                  the selection tile, including the offset paper stack. */}
+              <span className="pointer-events-none grid aspect-[3/4] w-full place-items-center overflow-visible rounded p-0.5">
+                <PrintCardPreview document={documents[tpl]} thumbnail />
               </span>
               <span className="truncate px-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                 {name}

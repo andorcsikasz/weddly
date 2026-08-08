@@ -1,4 +1,5 @@
-// Free-form planning surface. Two tabs over the same backend table:
+// Free-form planning surface. Tasks, ideas, and decisions share the Planning
+// table; the wedding checklist is a fourth tab backed by linked task rows.
 // Feladatok (tasks — checklist with optional due date, optional assignee) +
 // Ötletek (notes — free text, auto-stamped with the partner who logged it).
 // The wedding-day run-of-show lives on its own page at /app/schedule (richer
@@ -30,6 +31,7 @@ import {
   Dices,
   Flag,
   GanttChartSquare,
+  GripVertical,
   Lightbulb,
   LayoutList,
   ListChecks,
@@ -44,6 +46,7 @@ import {
 import {
   type FocusEvent as ReactFocusEvent,
   type FormEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   useCallback,
   useEffect,
@@ -64,7 +67,7 @@ import {
   supplierApi,
 } from "../lib/endpoints";
 import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
-import { WeddingChecklistDialog } from "../components/WeddingChecklistDialog";
+import { WeddingChecklist } from "../components/WeddingChecklistDialog";
 import { MoneyInput } from "../components/MoneyInput";
 import { setSelection } from "../lib/supplier_selection";
 import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
@@ -85,10 +88,10 @@ import {
 import { useDocumentMeta } from "../lib/seo";
 
 type PlanningTabKind = Exclude<PlanningKind, "schedule">;
-/** The decision-prompt deck is a fourth surface over the same table, but its
+/** The decision-prompt deck is a separate surface over the same table, but its
  *  rows aren't a distinct PlanningKind (they're kind='task' with a seed_key) —
  *  so the tab key is its own union member, not a PlanningKind. */
-type PlanningTab = PlanningTabKind | "decision";
+type PlanningTab = PlanningTabKind | "decision" | "checklist";
 
 const TABS: { kind: PlanningTab; labelKey: string; tipKey: string }[] = [
   {
@@ -106,12 +109,18 @@ const TABS: { kind: PlanningTab; labelKey: string; tipKey: string }[] = [
     labelKey: "planning.tab_decisions",
     tipKey: "planning.tab_decisions_tip",
   },
+  {
+    kind: "checklist",
+    labelKey: "planning.checklist.title",
+    tipKey: "planning.checklist.subtitle",
+  },
 ];
 
 const TAB_ICON: Record<PlanningTab, typeof CheckCircle2> = {
   task: CheckCircle2,
   idea: Lightbulb,
   decision: ListChecks,
+  checklist: ClipboardCheck,
 };
 
 // Collapsed icon-tool group for the Tasks-tab actions (Timeline / Generate /
@@ -300,7 +309,6 @@ export default function PlanningPage() {
   // /app/schedule, so there's no schedule wand here.
   const [taskWandOpen, setTaskWandOpen] = useState(false);
   const [timelineGenOpen, setTimelineGenOpen] = useState(false);
-  const [checklistOpen, setChecklistOpen] = useState(false);
   const [weddingDate, setWeddingDate] = useState<string | null>(null);
   const [ideaWandOpen, setIdeaWandOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
@@ -510,7 +518,7 @@ export default function PlanningPage() {
   }) {
     // The decision tab has no quick-add form; this guard also narrows
     // activeKind to a real PlanningKind for the create call.
-    if (activeKind === "decision") return;
+    if (activeKind === "decision" || activeKind === "checklist") return;
     try {
       const r = await planningApi.create({ kind: activeKind, ...input });
       setItems((prev) => [...prev, r.item]);
@@ -931,7 +939,7 @@ export default function PlanningPage() {
             role="tablist"
             data-tour-target="planning-tabs"
             aria-label={t("planning.tabs_aria")}
-            className="inline-flex gap-1 rounded-2xl border border-ink-900 bg-paper-100/50 p-1 dark:border-umber-700 dark:bg-umber-700/60"
+            className="grid w-full grid-cols-2 gap-1 rounded-2xl border border-ink-900 bg-paper-100/50 p-1 sm:w-auto sm:grid-cols-4 dark:border-umber-700 dark:bg-umber-700/60"
           >
             {TABS.map((tab) => {
               const active = tab.kind === activeKind;
@@ -943,7 +951,7 @@ export default function PlanningPage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setActiveKind(tab.kind)}
-                  className={`group relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-4 py-1.5 transition-colors sm:flex-none ${
+                  className={`group relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-4 py-1.5 transition-colors ${
                     active
                       ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-umber-900 dark:text-paper-50"
                       : "text-ink-600 hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
@@ -1044,16 +1052,6 @@ export default function PlanningPage() {
                  *  Template. Each segment is icon-only until hovered, when its
                  *  label slides open (mirrors the guest toolbar). */}
                 <div className="inline-flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100">
-                  <button
-                    type="button"
-                    onClick={() => setChecklistOpen(true)}
-                    className={PLAN_TOOL_BTN}
-                    title={t("planning.checklist.action")}
-                    aria-label={t("planning.checklist.action")}
-                  >
-                    <ClipboardCheck size={16} aria-hidden="true" />
-                    <span className={PLAN_TOOL_LABEL}>{t("planning.checklist.action")}</span>
-                  </button>
                   <Link
                     to="/app/timeline"
                     className={PLAN_TOOL_BTN}
@@ -1120,6 +1118,13 @@ export default function PlanningPage() {
             tags={intakeTags}
             onSetTag={handleSetTag}
             intakeOpen={intakeOpen}
+          />
+        ) : activeKind === "checklist" ? (
+          <WeddingChecklist
+            items={items}
+            onItemsChange={setItems}
+            weddingDate={weddingDate}
+            profile={intakeTags}
           />
         ) : (
           <>
@@ -1293,15 +1298,6 @@ export default function PlanningPage() {
           onApply={onApplyTimeline}
         />
       )}
-
-      <WeddingChecklistDialog
-        open={checklistOpen}
-        onClose={() => setChecklistOpen(false)}
-        items={items}
-        onItemsChange={setItems}
-        weddingDate={weddingDate}
-        profile={intakeTags}
-      />
 
       {taskWandOpen && (
         <TaskTemplateDialog
@@ -2897,7 +2893,23 @@ const COL_STYLES: Record<KanbanCol, { topBorder: string; headerText: string; bad
   },
 };
 
-function KanbanBoard({
+type PointerDragPosition = {
+  itemId: number;
+  itemTitle: string;
+  x: number;
+  y: number;
+  grabX: number;
+  grabY: number;
+  width: number;
+};
+
+/**
+ * Tasks use native HTML drag-and-drop on mouse/trackpad and a captured Pointer
+ * Event gesture on the dedicated grip for touch and pen. Native `draggable`
+ * is not implemented consistently by mobile Safari/Chrome, so keeping the
+ * touch path explicit is what makes the same board usable on a phone.
+ */
+export function KanbanBoard({
   tasks,
   vendors,
   currency,
@@ -2919,6 +2931,8 @@ function KanbanBoard({
   const { t } = useT();
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dragOverCol, setDragOverCol] = useState<KanbanCol | null>(null);
+  const [pointerDrag, setPointerDrag] = useState<PointerDragPosition | null>(null);
+  const boardScrollRef = useRef<HTMLDivElement>(null);
 
   const cols: KanbanCol[] = ["todo", "in_progress", "done"];
   const colLabelKey: Record<KanbanCol, string> = {
@@ -2943,9 +2957,9 @@ function KanbanBoard({
     return map;
   }, [vendors, filter]);
 
-  function handleDrop(targetCol: KanbanCol) {
-    if (draggingId === null) return;
-    const task = tasks.find((t) => t.id === draggingId);
+  function handleDrop(targetCol: KanbanCol, itemId = draggingId) {
+    if (itemId === null) return;
+    const task = tasks.find((t) => t.id === itemId);
     if (!task) return;
     const from = taskKanbanCol(task);
     if (from === targetCol) return;
@@ -2958,9 +2972,39 @@ function KanbanBoard({
     }
   }
 
+  function colAtPoint(x: number, y: number): KanbanCol | null {
+    const node = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-kanban-col]");
+    const col = node?.dataset.kanbanCol;
+    return col === "todo" || col === "in_progress" || col === "done" ? col : null;
+  }
+
+  function autoScrollForPointer(x: number, y: number) {
+    const edge = 64;
+    const board = boardScrollRef.current;
+    if (board && board.scrollWidth > board.clientWidth) {
+      const rect = board.getBoundingClientRect();
+      if (x > rect.right - edge && x <= rect.right) board.scrollLeft += 18;
+      if (x < rect.left + edge && x >= rect.left) board.scrollLeft -= 18;
+    }
+
+    // Mobile columns are stacked, so a task can be carried to a column below
+    // the fold without ending the gesture to scroll the page separately.
+    if (y > window.innerHeight - edge) window.scrollBy(0, 14);
+    if (y < edge) window.scrollBy(0, -14);
+  }
+
+  function finishPointerDrag(x: number, y: number, cancelled = false) {
+    const itemId = pointerDrag?.itemId;
+    const target = cancelled ? null : colAtPoint(x, y);
+    if (target && itemId != null) handleDrop(target, itemId);
+    setPointerDrag(null);
+    setDraggingId(null);
+    setDragOverCol(null);
+  }
+
   return (
-    <div className="mt-4 overflow-x-auto pb-2">
-      <div className="flex gap-4" style={{ minWidth: "860px" }}>
+    <div ref={boardScrollRef} className="mt-4 pb-2 sm:overflow-x-auto">
+      <div className="flex flex-col gap-4 sm:min-w-[860px] sm:flex-row">
         {cols.map((col) => (
           <KanbanColumn
             key={col}
@@ -2980,15 +3024,40 @@ function KanbanBoard({
             }}
             onDragOver={() => setDragOverCol(col)}
             onDragLeave={() => setDragOverCol((prev) => (prev === col ? null : prev))}
-            onDrop={() => {
-              handleDrop(col);
+            onDrop={(itemId) => {
+              handleDrop(col, itemId);
               setDragOverCol(null);
             }}
+            onPointerDragStart={(drag) => {
+              setDraggingId(drag.itemId);
+              setPointerDrag(drag);
+              setDragOverCol(colAtPoint(drag.x, drag.y));
+            }}
+            onPointerDragMove={(drag) => {
+              autoScrollForPointer(drag.x, drag.y);
+              setPointerDrag(drag);
+              setDragOverCol(colAtPoint(drag.x, drag.y));
+            }}
+            onPointerDragEnd={(x, y) => finishPointerDrag(x, y)}
+            onPointerDragCancel={(x, y) => finishPointerDrag(x, y, true)}
             onAddVendor={onAddVendor}
             onEditVendor={onEditVendor}
           />
         ))}
       </div>
+      {pointerDrag && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed z-50 rounded-xl border border-ink-300 bg-white p-3 text-sm text-ink-900 opacity-95 shadow-pop dark:border-umber-500 dark:bg-umber-800 dark:text-paper-50"
+          style={{
+            left: pointerDrag.x - pointerDrag.grabX,
+            top: pointerDrag.y - pointerDrag.grabY,
+            width: pointerDrag.width,
+          }}
+        >
+          {pointerDrag.itemTitle}
+        </div>
+      )}
     </div>
   );
 }
@@ -3008,6 +3077,10 @@ function KanbanColumn({
   onDragOver,
   onDragLeave,
   onDrop,
+  onPointerDragStart,
+  onPointerDragMove,
+  onPointerDragEnd,
+  onPointerDragCancel,
   onAddVendor,
   onEditVendor,
 }: {
@@ -3024,7 +3097,11 @@ function KanbanColumn({
   onDragEnd: () => void;
   onDragOver: () => void;
   onDragLeave: () => void;
-  onDrop: () => void;
+  onDrop: (itemId?: number) => void;
+  onPointerDragStart: (drag: PointerDragPosition) => void;
+  onPointerDragMove: (drag: PointerDragPosition) => void;
+  onPointerDragEnd: (x: number, y: number) => void;
+  onPointerDragCancel: (x: number, y: number) => void;
   onAddVendor: () => void;
   onEditVendor: (vendor: CoupleSupplier) => void;
 }) {
@@ -3034,17 +3111,22 @@ function KanbanColumn({
 
   return (
     <div
-      className={`flex min-w-[280px] flex-1 flex-col rounded-2xl border border-paper-200 bg-paper-50 transition-colors dark:border-umber-700 dark:bg-umber-800 ${styles.topBorder} ${
+      data-kanban-col={col}
+      className={`flex min-w-0 flex-1 flex-col rounded-2xl border border-paper-200 bg-paper-50 transition-colors sm:min-w-[280px] dark:border-umber-700 dark:bg-umber-800 ${styles.topBorder} ${
         isDragTarget ? "ring-2 ring-ink-300 dark:ring-umber-400" : ""
       }`}
       onDragOver={(e) => {
         e.preventDefault();
         onDragOver();
       }}
-      onDragLeave={onDragLeave}
+      onDragLeave={(e) => {
+        if (e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)) return;
+        onDragLeave();
+      }}
       onDrop={(e) => {
         e.preventDefault();
-        onDrop();
+        const transferredId = Number(e.dataTransfer.getData("text/plain"));
+        onDrop(Number.isFinite(transferredId) && transferredId > 0 ? transferredId : undefined);
       }}
     >
       <div className="flex items-center gap-2 border-b border-paper-200 px-4 py-3 dark:border-umber-700">
@@ -3070,6 +3152,10 @@ function KanbanColumn({
             onToggleDone={onToggleTaskDone}
             onDragStart={() => onDragStart(item.id)}
             onDragEnd={onDragEnd}
+            onPointerDragStart={onPointerDragStart}
+            onPointerDragMove={onPointerDragMove}
+            onPointerDragEnd={onPointerDragEnd}
+            onPointerDragCancel={onPointerDragCancel}
           />
         ))}
         {vendors.map((vendor) => (
@@ -3103,22 +3189,89 @@ function TaskKanbanCard({
   onToggleDone,
   onDragStart,
   onDragEnd,
+  onPointerDragStart,
+  onPointerDragMove,
+  onPointerDragEnd,
+  onPointerDragCancel,
 }: {
   item: PlanningItem;
   isDragging: boolean;
   onToggleDone: (item: PlanningItem) => void;
   onDragStart: () => void;
   onDragEnd: () => void;
+  onPointerDragStart: (drag: PointerDragPosition) => void;
+  onPointerDragMove: (drag: PointerDragPosition) => void;
+  onPointerDragEnd: (x: number, y: number) => void;
+  onPointerDragCancel: (x: number, y: number) => void;
 }) {
   const { t } = useT();
   const priority = (item.priority ?? 0) as 0 | 1 | 2;
   const status = timelineStatus(item.due_date, item.done, todayIso());
+  const cardRef = useRef<HTMLDivElement>(null);
+  const activePointerRef = useRef<number | null>(null);
+  const dragGeometryRef = useRef<Pick<PointerDragPosition, "grabX" | "grabY" | "width"> | null>(
+    null,
+  );
+
+  function pointerPosition(e: ReactPointerEvent<HTMLButtonElement>): PointerDragPosition | null {
+    const geometry = dragGeometryRef.current;
+    if (!geometry) return null;
+    return {
+      itemId: item.id,
+      itemTitle: item.title,
+      x: e.clientX,
+      y: e.clientY,
+      ...geometry,
+    };
+  }
+
+  function startPointerDrag(e: ReactPointerEvent<HTMLButtonElement>) {
+    // Mouse users retain the browser-native drag preview and can grab the
+    // whole card. The explicit grip is for touch/pen, where native DnD fails.
+    if (e.pointerType === "mouse") return;
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    activePointerRef.current = e.pointerId;
+    dragGeometryRef.current = {
+      grabX: e.clientX - rect.left,
+      grabY: e.clientY - rect.top,
+      width: rect.width,
+    };
+    const drag = pointerPosition(e);
+    if (drag) onPointerDragStart(drag);
+  }
+
+  function movePointerDrag(e: ReactPointerEvent<HTMLButtonElement>) {
+    if (activePointerRef.current !== e.pointerId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const drag = pointerPosition(e);
+    if (drag) onPointerDragMove(drag);
+  }
+
+  function finishPointerGesture(e: ReactPointerEvent<HTMLButtonElement>, cancelled = false) {
+    if (activePointerRef.current !== e.pointerId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      e.currentTarget.releasePointerCapture?.(e.pointerId);
+    }
+    activePointerRef.current = null;
+    dragGeometryRef.current = null;
+    if (cancelled) onPointerDragCancel(e.clientX, e.clientY);
+    else onPointerDragEnd(e.clientX, e.clientY);
+  }
 
   return (
     <div
+      ref={cardRef}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", String(item.id));
         onDragStart();
       }}
       onDragEnd={onDragEnd}
@@ -3162,6 +3315,24 @@ function TaskKanbanCard({
             {priority === 1 ? "!" : "!!"}
           </span>
         )}
+        <button
+          type="button"
+          draggable={false}
+          aria-label={t("planning.board_task_drag")}
+          onPointerDown={startPointerDrag}
+          onPointerMove={movePointerDrag}
+          onPointerUp={(e) => finishPointerGesture(e)}
+          onPointerCancel={(e) => finishPointerGesture(e, true)}
+          onClick={(e) => {
+            // A completed pointer gesture can synthesize a click. It must not
+            // also toggle the task after the drop has changed its status.
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          className="-my-2 -mr-2 ml-1 inline-flex h-11 w-11 shrink-0 touch-none items-center justify-center rounded-lg text-ink-400 hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 sm:h-8 sm:w-8 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+        >
+          <GripVertical size={18} aria-hidden="true" />
+        </button>
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-5">
         {item.due_date && (

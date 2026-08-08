@@ -327,4 +327,46 @@ describe("who gets written to in which language", () => {
     expect(built.rendered.text).not.toContain("Take over your profile");
     expect(built.rendered.text).not.toContain("Profil átvétele");
   });
+
+  test("the Spanish claim campaign renders a matching subject and body", () => {
+    const built = buildEmail(
+      "vendor_claim_campaign",
+      {
+        listingName: "Estudio Luz",
+        categoryLabel: "Fotógrafo",
+        city: "Valencia",
+        inviteUrl: "https://weddly.test/r/vendor-invite/tok",
+        listingUrl: "https://weddly.test/vendors/estudio-luz-c10",
+        freeMonths: 12,
+        locale: "es",
+      },
+      { recipientName: "Lucía", recipientLocale: "es" },
+    );
+    expect(built.subject).toContain("Una pareja recomendó");
+    expect(built.rendered.text).toContain("Reclamar el perfil");
+    expect(built.rendered.text).not.toContain("Take over your profile");
+    expect(built.rendered.text).not.toContain("Profil átvétele");
+  });
+
+  test("vendor inquiry dates and times use the recipient's locale", () => {
+    const built = buildEmail(
+      "supplier_outreach",
+      {
+        coupleDisplayName: "Ana & Marko",
+        coupleReplyEmail: "ana@example.test",
+        coupleReplyName: "Ana",
+        supplierName: "Studio Jadran",
+        subject: "Upit za vjenčanje",
+        body: "",
+        outreachUrl: "https://weddly.test/vendor/clients/1",
+        mode: "in_account",
+        eventDate: "2026-09-12",
+        sentAt: Date.UTC(2026, 7, 6, 12, 30),
+        canReplyInApp: true,
+      },
+      { recipientName: "Ivan", recipientLocale: "hr" },
+    );
+    expect(built.rendered.text).toContain("12. rujna 2026.");
+    expect(built.rendered.text).not.toContain("12 September 2026");
+  });
 });

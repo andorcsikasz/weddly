@@ -18,6 +18,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { type PDFFont, type PDFPage, PDFDocument, degrees, rgb } from "pdf-lib";
 import {
   type CoupleDesign,
+  type FontFamilySlug,
   type FontPresetSlug,
   formatWeddingDate,
   getPalette,
@@ -26,39 +27,52 @@ import {
 import type { ScheduleEvent } from "@shared/schedule";
 import { chairOffsets, tableHalfDims } from "@shared/seating";
 import type { Guest, MenuCard, SeatAssignment, SeatingTable } from "@shared/types";
+import type { PrintableCardDocument } from "@shared/print_cards";
 
 const FONT_DIR = join(import.meta.dir, "pdf_fonts");
 const NOTO_REGULAR = readFileSync(join(FONT_DIR, "NotoSans-Regular.ttf"));
 const NOTO_BOLD = readFileSync(join(FONT_DIR, "NotoSans-Bold.ttf"));
 const NOTO_SC = readFileSync(join(FONT_DIR, "NotoSansSC-Regular.otf"));
 
-// Style-pack display fonts. Read once at module load; embedded per-document on
-// demand. Where pdf-lib/fontkit cannot safely subset a web face, the mapping
-// uses the closest bundled PDF-safe face (documented below) rather than emit a
-// file with missing glyph outlines. These cover Latin + Latin-Extended
-// (Hungarian); CJK / other scripts still route through the Noto fallback via
-// `pickFontAsync`.
+// Style-pack display fonts. Cormorant Garamond, Cormorant SC and EB Garamond
+// use the official static OTF builds and MUST be embedded whole. fontkit 1.1.1
+// corrupts their CFF subset (text operators remain but most outlines vanish),
+// while the full OTF is valid in Poppler, Preview and Acrobat. The other static
+// TrueType faces subset correctly and stay small.
 const readFont = (f: string) => readFileSync(join(FONT_DIR, f));
-const PACK_FONT_FILES: Partial<Record<FontPresetSlug, { heading: Buffer; body: Buffer }>> = {
+interface PdfFontFile {
+  bytes: Buffer;
+  subset: boolean;
+}
+const subsetFont = (file: string): PdfFontFile => ({ bytes: readFont(file), subset: true });
+const fullFont = (file: string): PdfFontFile => ({ bytes: readFont(file), subset: false });
+const PACK_FONT_FILES: Partial<
+  Record<FontPresetSlug, { heading: PdfFontFile; body: PdfFontFile }>
+> = {
   garden_serif: {
-    // fontkit 1.1.1 corrupts the bundled Cormorant subset in saved PDFs
-    // (text operators survive, most glyph outlines do not). Bodoni is the
-    // closest bundled PDF-safe display serif and keeps the card legible.
-    heading: readFont("BodoniModa-Regular.ttf"),
-    body: readFont("Jost-Light.ttf"),
+    heading: fullFont("CormorantGaramond-Italic.otf"),
+    body: subsetFont("Jost-Light.ttf"),
   },
-  mono_sans: { heading: readFont("DMSans-Bold.ttf"), body: readFont("DMSans-Regular.ttf") },
+  mono_sans: { heading: subsetFont("DMSans-Bold.ttf"), body: subsetFont("DMSans-Regular.ttf") },
   blush_bodoni: {
-    heading: readFont("BodoniModa-SemiBold.ttf"),
-    body: readFont("CrimsonText-Regular.ttf"),
+    heading: subsetFont("BodoniModa-SemiBold.ttf"),
+    body: subsetFont("CrimsonText-Regular.ttf"),
   },
   noir_smallcaps: {
-    // Cormorant SC and EB Garamond hit the same subset defect. These two
-    // already-vendored serif faces are proven by the Blush renderer and retain
-    // the Midnight card's editorial contrast without dropping characters.
-    heading: readFont("BodoniModa-SemiBold.ttf"),
-    body: readFont("CrimsonText-Regular.ttf"),
+    heading: fullFont("CormorantSC-SemiBold.otf"),
+    body: fullFont("EBGaramond-Regular.otf"),
   },
+};
+
+const FAMILY_FONT_FILES: Partial<Record<FontFamilySlug, PdfFontFile>> = {
+  cormorant: fullFont("CormorantGaramond-Italic.otf"),
+  cormorant_italic: fullFont("CormorantGaramond-Italic.otf"),
+  dm_sans: subsetFont("DMSans-Regular.ttf"),
+  jost: subsetFont("Jost-Light.ttf"),
+  bodoni_moda: subsetFont("BodoniModa-Regular.ttf"),
+  crimson_text: subsetFont("CrimsonText-Regular.ttf"),
+  cormorant_sc: fullFont("CormorantSC-SemiBold.otf"),
+  eb_garamond: fullFont("EBGaramond-Regular.otf"),
 };
 
 /** True when every codepoint is inside the Latin / Latin-Extended blocks the
@@ -176,6 +190,59 @@ async function pickDisplayAsync(
   if (face && isLatinSafe(text)) return face;
   // No pack face (or non-Latin text): headings read as bold Noto, body regular.
   return role === "heading" ? pair.bold : pair.regular;
+}
+
+/** Wrap display text using the exact embedded face that will be drawn. The
+ *  size is reduced until the requested line budget fits, but characters are
+ *  never truncated. An unbroken long token is split at glyph boundaries. */
+async function wrapDisplayText(
+  pair: FontPair,
+  text: string,
+  role: "heading" | "body",
+  startSize: number,
+  minSize: number,
+  maxWidthPt: number,
+  maxLines: number,
+): Promise<{ font: PDFFont; lines: string[]; size: number }> {
+  const value = safe(text);
+  const font = await pickDisplayAsync(pair, value, role);
+  const wrapAtSize = (size: number): string[] => {
+    const lines: string[] = [];
+    let line = "";
+    for (const word of value.split(/\s+/).filter(Boolean)) {
+      const candidate = line ? `${line} ${word}` : word;
+      if (font.widthOfTextAtSize(candidate, size) <= maxWidthPt) {
+        line = candidate;
+        continue;
+      }
+      if (line) lines.push(line);
+      line = "";
+      if (font.widthOfTextAtSize(word, size) <= maxWidthPt) {
+        line = word;
+        continue;
+      }
+      let chunk = "";
+      for (const glyph of Array.from(word)) {
+        if (chunk && font.widthOfTextAtSize(`${chunk}${glyph}`, size) > maxWidthPt) {
+          lines.push(chunk);
+          chunk = glyph;
+        } else {
+          chunk += glyph;
+        }
+      }
+      line = chunk;
+    }
+    if (line) lines.push(line);
+    return lines;
+  };
+
+  let size = startSize;
+  let lines = wrapAtSize(size);
+  while (lines.length > maxLines && size > minSize) {
+    size = Math.max(minSize, size - 0.5);
+    lines = wrapAtSize(size);
+  }
+  return { font, lines, size };
 }
 
 async function fitText(
@@ -809,7 +876,7 @@ interface PlaceCardInput {
   groom_name: string;
   /** Resolved visual identity. Drives palette, monogram, border. */
   design: CoupleDesign;
-  guests: Guest[];
+  guests: Array<Pick<Guest, "id" | "full_name">>;
   /** When provided, prints the table label below the guest name. */
   tablesByGuestId?: Map<number, string>;
 }
@@ -869,8 +936,11 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
       if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
 
       const name = headingText(safe(g.full_name), input.design);
-      const nameSize = name.length > 22 ? 13 : 17;
+      let nameSize = name.length > 22 ? 13 : 17;
       const nameFont = await pickDisplayAsync(fontPair, name, "heading");
+      while (nameSize > 8 && nameFont.widthOfTextAtSize(name, nameSize) > mm(cardW - 16)) {
+        nameSize -= 0.5;
+      }
       const nameW = nameFont.widthOfTextAtSize(name, nameSize);
       const tableLabel = input.tablesByGuestId?.get(g.id);
 
@@ -939,8 +1009,14 @@ async function buildFontPair(pdf: PDFDocument, design?: CoupleDesign): Promise<F
   const bold = await pdf.embedFont(NOTO_BOLD, { subset: true });
   let cjkFont: PDFFont | null = null;
   const pack = design ? PACK_FONT_FILES[design.fonts] : undefined;
-  const packHeading = pack ? await pdf.embedFont(pack.heading, { subset: true }) : undefined;
-  const packBody = pack ? await pdf.embedFont(pack.body, { subset: true }) : undefined;
+  const headingFile = design?.headingFont ? FAMILY_FONT_FILES[design.headingFont] : pack?.heading;
+  const bodyFile = design?.bodyFont ? FAMILY_FONT_FILES[design.bodyFont] : pack?.body;
+  const packHeading = headingFile
+    ? await pdf.embedFont(headingFile.bytes, { subset: headingFile.subset })
+    : undefined;
+  const packBody = bodyFile
+    ? await pdf.embedFont(bodyFile.bytes, { subset: bodyFile.subset })
+    : undefined;
   return {
     regular,
     bold,
@@ -954,18 +1030,18 @@ async function buildFontPair(pdf: PDFDocument, design?: CoupleDesign): Promise<F
   };
 }
 
-/** Apply a pack's heading treatment to a string before it is drawn. Midnight's
- *  PDF-safe substitute has no OpenType small-caps feature, so uppercase keeps
- *  the preset's intended display treatment explicit. */
+/** Apply the only heading treatment that changes text content. The real
+ *  Cormorant SC face handles small caps itself and the Garden face is italic. */
 function headingText(text: string, design: CoupleDesign): string {
   const style = getStylePreset(design.style).headingStyle;
-  return style === "uppercase" || style === "small_caps" ? text.toUpperCase() : text;
+  return style === "uppercase" ? text.toUpperCase() : text;
 }
 
-/** Garden's original PDF face was italic. Its safe substitute is upright, so
- *  retain the preset's editorial slant synthetically at draw time. */
+/** Kept as a draw-options hook so every heading call stays uniform. Italic and
+ *  small caps are real embedded faces; no synthetic transform is necessary. */
 function headingDrawOptions(design: CoupleDesign): { ySkew?: ReturnType<typeof degrees> } {
-  return getStylePreset(design.style).headingStyle === "italic" ? { ySkew: degrees(11) } : {};
+  void design;
+  return {};
 }
 
 /** Draw the card frame honouring the borderStyle enum (none / hairline / double
@@ -1159,7 +1235,7 @@ interface TableNumbersInput {
   bride_name: string;
   groom_name: string;
   design: CoupleDesign;
-  tables: SeatingTable[];
+  tables: Array<Pick<SeatingTable, "label"> & { footer?: string }>;
 }
 
 /** A6 table-number cards - one per seating table, a big centred label with a
@@ -1221,6 +1297,19 @@ export async function renderTableNumbersPdf(input: TableNumbersInput): Promise<U
     if (input.design.print.ornament && pack.cardLayout !== "asymmetric") {
       drawOrnament(page, pack.ornament, cxPt, mm(H * 0.3), 36, colors.accent);
     }
+    if (t.footer) {
+      const footer = safe(t.footer);
+      const footerFont = await pickDisplayAsync(fontPair, footer, "body");
+      const footerSize = 9;
+      const footerW = footerFont.widthOfTextAtSize(footer, footerSize);
+      page.drawText(footer, {
+        x: cxPt - footerW / 2,
+        y: mm(H * 0.21),
+        size: footerSize,
+        font: footerFont,
+        color: colors.primary,
+      });
+    }
   }
 
   return pdf.save();
@@ -1239,6 +1328,10 @@ interface MenuInput {
    *  labels). These used to be hardcoded English, so a Hungarian couple
    *  printed an English menu card for a Hungarian wedding. */
   locale: PrintLocale;
+  /** Canonical document values. Set by renderPrintableCardPdf; optional only
+   *  for the legacy direct renderer API. */
+  date_text?: string;
+  copy?: { heading: string; courses: readonly string[]; emptyMessage?: string };
 }
 
 /** Printed-card copy, per locale. Deliberately tiny and local to the PDF layer
@@ -1266,7 +1359,8 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
   const fontPair = await buildFontPair(pdf, input.design);
   const colors = designColors(input.design);
   const pack = getStylePreset(input.design.style);
-  const dateText = formatWeddingDate(input.wedding_date, input.design.dateFormat, "en");
+  const dateText =
+    input.date_text ?? formatWeddingDate(input.wedding_date, input.design.dateFormat, input.locale);
 
   const page = pdf.addPage([mm(W), mm(H)]);
   const cxPt = mm(W / 2);
@@ -1309,7 +1403,7 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     drawOrnament(page, pack.ornament, cxPt, mm(H - 57), 40, colors.accent);
   }
 
-  const copy = MENU_COPY[input.locale];
+  const copy = input.copy ?? MENU_COPY[input.locale];
 
   // "Menu" heading.
   const heading = headingText(copy.heading, input.design);
@@ -1325,77 +1419,91 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
   });
 
   const written = input.menu_card.courses;
-  const ruleHalf = mm((W - 40) / 2);
   let yMm = H - 88;
 
   if (written.length === 0) {
-    // Nothing written: the original card. Localised course labels over blank
-    // writing rules, evenly spaced. Still no invented dishes.
-    for (const course of copy.courses) {
-      const cSafe = headingText(safe(course), input.design);
-      const cFont = await pickDisplayAsync(fontPair, cSafe, "heading");
-      const cw = cFont.widthOfTextAtSize(cSafe, 11);
-      page.drawText(cSafe, {
-        x: cxPt - cw / 2,
-        y: mm(yMm),
-        size: 11,
-        font: cFont,
-        color: colors.text,
-        ...headingDrawOptions(input.design),
-      });
-      page.drawLine({
-        start: { x: cxPt - ruleHalf, y: mm(yMm - 6) },
-        end: { x: cxPt + ruleHalf, y: mm(yMm - 6) },
-        thickness: 0.4,
-        color: colors.accent,
-      });
-      yMm -= 28;
-    }
+    const empty = safe(
+      ("emptyMessage" in copy ? copy.emptyMessage : undefined) ?? "No menu added yet",
+    );
+    const emptyFont = await pickDisplayAsync(fontPair, empty, "body");
+    const emptyW = emptyFont.widthOfTextAtSize(empty, 11);
+    page.drawText(empty, {
+      x: cxPt - emptyW / 2,
+      y: mm(yMm),
+      size: 11,
+      font: emptyFont,
+      color: colors.text,
+    });
     return pdf.save();
   }
 
   // The couple's own menu. Spacing is derived from how much they wrote rather
   // than fixed, so three courses breathe and six still fit on the page instead
   // of running off the bottom edge.
-  const rows = written.reduce((n, c) => n + (c.title ? 1 : 0) + c.lines.length, 0);
+  const laidOut = await Promise.all(
+    written.map(async (course) => ({
+      course,
+      title: course.title
+        ? await wrapDisplayText(
+            fontPair,
+            headingText(course.title, input.design),
+            "heading",
+            11,
+            8,
+            mm(W - 32),
+            1,
+          )
+        : null,
+      lines: await Promise.all(
+        course.lines.map((line) => wrapDisplayText(fontPair, line, "body", 9.5, 7, mm(W - 32), 2)),
+      ),
+    })),
+  );
+  const rows = laidOut.reduce(
+    (count, item) =>
+      count +
+      (item.title?.lines.length ?? 0) +
+      item.lines.reduce((sum, line) => sum + line.lines.length, 0),
+    0,
+  );
   const available = yMm - 22; // leave a bottom margin
   const gap = Math.max(5, Math.min(9, available / Math.max(rows + written.length, 1)));
 
-  for (const course of written) {
-    if (course.title) {
-      const cSafe = headingText(safe(course.title), input.design);
-      const cFont = await pickDisplayAsync(fontPair, cSafe, "heading");
-      const cw = cFont.widthOfTextAtSize(cSafe, 11);
-      page.drawText(cSafe, {
-        x: cxPt - cw / 2,
-        y: mm(yMm),
-        size: 11,
-        font: cFont,
-        color: colors.primary,
-        ...headingDrawOptions(input.design),
-      });
-      yMm -= gap;
+  for (const item of laidOut) {
+    if (item.title) {
+      for (const titleLine of item.title.lines) {
+        const width = item.title.font.widthOfTextAtSize(titleLine, item.title.size);
+        page.drawText(titleLine, {
+          x: cxPt - width / 2,
+          y: mm(yMm),
+          size: item.title.size,
+          font: item.title.font,
+          color: colors.primary,
+          ...headingDrawOptions(input.design),
+        });
+        yMm -= gap;
+      }
     }
-    for (const line of course.lines) {
-      const lSafe = safe(line);
-      const lFont = await pickDisplayAsync(fontPair, lSafe, "body");
-      const lw = lFont.widthOfTextAtSize(lSafe, 9.5);
-      page.drawText(lSafe, {
-        x: cxPt - lw / 2,
-        y: mm(yMm),
-        size: 9.5,
-        font: lFont,
-        color: colors.text,
-      });
-      yMm -= gap;
+    for (const line of item.lines) {
+      for (const wrappedLine of line.lines) {
+        const width = line.font.widthOfTextAtSize(wrappedLine, line.size);
+        page.drawText(wrappedLine, {
+          x: cxPt - width / 2,
+          y: mm(yMm),
+          size: line.size,
+          font: line.font,
+          color: colors.text,
+        });
+        yMm -= gap;
+      }
     }
     // Breathing room between courses, and the pack's own divider when the
     // couple has ornaments on. Not after the last course: a rule under the
     // final dish reads as a cut-off card.
     yMm -= gap * 0.6;
-    if (course !== written[written.length - 1] && input.design.print.ornament) {
+    if (item !== laidOut[laidOut.length - 1] && input.design.print.ornament) {
       drawOrnament(page, pack.ornament, cxPt, mm(yMm + gap * 0.2), 22, colors.accent);
-      yMm -= gap * 0.4;
+      yMm -= gap;
     }
   }
 
@@ -1411,6 +1519,8 @@ interface InvitationInput {
   /** Venue lines — only rendered when present (no invented placeholder data). */
   venue_name: string | null;
   venue_city: string | null;
+  date_text?: string;
+  copy?: { eyebrow: string; line: string; rsvp: string };
 }
 
 /** A5 portrait invitation in the wedding style — the pack's frame + ornament,
@@ -1424,7 +1534,13 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
   const fontPair = await buildFontPair(pdf, input.design);
   const colors = designColors(input.design);
   const pack = getStylePreset(input.design.style);
-  const dateText = formatWeddingDate(input.wedding_date, input.design.dateFormat, "en");
+  const dateText =
+    input.date_text ?? formatWeddingDate(input.wedding_date, input.design.dateFormat, "en");
+  const copy = input.copy ?? {
+    eyebrow: "Together with their families",
+    line: "invite you to celebrate",
+    rsvp: "RSVP",
+  };
 
   const page = pdf.addPage([mm(W), mm(H)]);
   const cxPt = mm(W / 2);
@@ -1447,11 +1563,15 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
   ): Promise<void> => {
     const s = role === "heading" ? headingText(safe(text), input.design) : safe(text);
     const font = await pickDisplayAsync(fontPair, s, role);
-    const w = font.widthOfTextAtSize(s, sizePt);
+    let fittedSize = sizePt;
+    while (fittedSize > 8 && font.widthOfTextAtSize(s, fittedSize) > mm(W - 28)) {
+      fittedSize -= 0.5;
+    }
+    const w = font.widthOfTextAtSize(s, fittedSize);
     page.drawText(s, {
       x: isAsym ? mm(leftXmm) : cxPt - w / 2,
       y: mm(yMm),
-      size: sizePt,
+      size: fittedSize,
       font,
       color,
       ...(role === "heading" ? headingDrawOptions(input.design) : {}),
@@ -1459,7 +1579,7 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
   };
 
   // Eyebrow.
-  await drawLine("Together with their families", 9.5, H - 36, "body", colors.primary);
+  await drawLine(copy.eyebrow, 9.5, H - 36, "body", colors.primary);
 
   // Couple names — the hero. Shrink to fit the card width (long names happen).
   const nameSafe = headingText(safe(input.couple_display_name), input.design);
@@ -1490,7 +1610,7 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
   }
 
   // Invite line.
-  await drawLine("invite you to celebrate", 12, H - 82, "body", colors.text);
+  await drawLine(copy.line, 12, H - 82, "body", colors.text);
 
   // Date — only when present.
   if (dateText) await drawLine(dateText, 14, H - 98, "heading", colors.primary);
@@ -1500,7 +1620,7 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
   if (input.venue_city) await drawLine(input.venue_city, 10.5, H - 124, "body", colors.primary);
 
   // RSVP eyebrow pinned near the foot of the card.
-  await drawLine("RSVP", 9.5, 24, "body", colors.primary);
+  await drawLine(copy.rsvp, 9.5, 24, "body", colors.primary);
 
   return pdf.save();
 }
@@ -1511,6 +1631,8 @@ interface ThankYouInput {
   bride_name: string;
   groom_name: string;
   design: CoupleDesign;
+  date_text?: string;
+  copy?: { heading: string; line: string };
 }
 
 /** A6 thank-you card matching the place-card / table-number set — a fixed
@@ -1523,7 +1645,9 @@ export async function renderThankYouPdf(input: ThankYouInput): Promise<Uint8Arra
   const fontPair = await buildFontPair(pdf, input.design);
   const colors = designColors(input.design);
   const pack = getStylePreset(input.design.style);
-  const dateText = formatWeddingDate(input.wedding_date, input.design.dateFormat, "en");
+  const dateText =
+    input.date_text ?? formatWeddingDate(input.wedding_date, input.design.dateFormat, "en");
+  const copy = input.copy ?? { heading: "Thank you", line: "for celebrating with us" };
 
   const page = pdf.addPage([mm(W), mm(H)]);
   const cxPt = mm(W / 2);
@@ -1544,11 +1668,15 @@ export async function renderThankYouPdf(input: ThankYouInput): Promise<Uint8Arra
   ): Promise<void> => {
     const s = role === "heading" ? headingText(safe(text), input.design) : safe(text);
     const font = await pickDisplayAsync(fontPair, s, role);
-    const w = font.widthOfTextAtSize(s, sizePt);
+    let fittedSize = sizePt;
+    while (fittedSize > 7.5 && font.widthOfTextAtSize(s, fittedSize) > mm(W - 22)) {
+      fittedSize -= 0.5;
+    }
+    const w = font.widthOfTextAtSize(s, fittedSize);
     page.drawText(s, {
       x: isAsym ? mm(leftXmm) : cxPt - w / 2,
       y: mm(yMm),
-      size: sizePt,
+      size: fittedSize,
       font,
       color,
       ...(role === "heading" ? headingDrawOptions(input.design) : {}),
@@ -1556,7 +1684,7 @@ export async function renderThankYouPdf(input: ThankYouInput): Promise<Uint8Arra
   };
 
   // "Thank you" — the hero. Shrink to fit the narrow A6 width.
-  const thanksSafe = headingText(safe("Thank you"), input.design);
+  const thanksSafe = headingText(safe(copy.heading), input.design);
   const thanksFont = await pickDisplayAsync(fontPair, thanksSafe, "heading");
   let thanksSize = 30;
   while (thanksSize > 16 && thanksFont.widthOfTextAtSize(thanksSafe, thanksSize) > mm(W - 20))
@@ -1584,7 +1712,7 @@ export async function renderThankYouPdf(input: ThankYouInput): Promise<Uint8Arra
   }
 
   // "for celebrating with us" line.
-  await drawLine("for celebrating with us", 10.5, H - 74, "body", colors.text);
+  await drawLine(copy.line, 10.5, H - 74, "body", colors.text);
 
   // Couple names.
   await drawLine(input.couple_display_name, 16, H - 92, "heading", colors.primary);
@@ -1593,6 +1721,197 @@ export async function renderThankYouPdf(input: ThankYouInput): Promise<Uint8Arra
   if (dateText) await drawLine(dateText, 11, H - 104, "body", colors.primary);
 
   return pdf.save();
+}
+
+type PlaceCardDocument = Extract<PrintableCardDocument, { cardType: "place_card" }>;
+type TableNumberDocument = Extract<PrintableCardDocument, { cardType: "table_number" }>;
+type MenuDocument = Extract<PrintableCardDocument, { cardType: "menu" }>;
+type InvitationDocument = Extract<PrintableCardDocument, { cardType: "invitation" }>;
+type ThankYouDocument = Extract<PrintableCardDocument, { cardType: "thank_you" }>;
+type ScheduleCardDocument = Extract<PrintableCardDocument, { cardType: "schedule" }>;
+
+/** Decorative A5 schedule card. This is deliberately separate from the A4
+ *  operational Run of show below: no Weddly header, suppliers, notes or table
+ *  columns, and it uses the same theme primitives as every other card. */
+async function renderScheduleCardPdf(input: ScheduleCardDocument): Promise<Uint8Array> {
+  const { width_mm: W, height_mm: H } = FORMATS.a5;
+  const pdf = await PDFDocument.create();
+  const fontPair = await buildFontPair(pdf, input.theme);
+  const colors = designColors(input.theme);
+  const pack = getStylePreset(input.theme.style);
+  const page = pdf.addPage([mm(W), mm(H)]);
+  const cxPt = mm(W / 2);
+  const box = { x: 8, y: 8, w: W - 16, h: H - 16 };
+  const isAsym = pack.cardLayout === "asymmetric";
+  const leftPt = mm(18);
+
+  drawCardFrame(page, box, input.theme, colors);
+  if (pack.cardLayout === "framed") drawOvalFrame(page, box, colors.accent);
+  if (pack.cardLayout === "corners") drawDecoCorners(page, box, colors.accent);
+
+  const drawCentred = async (
+    text: string,
+    size: number,
+    yMm: number,
+    role: "heading" | "body",
+    color: ReturnType<typeof rgb>,
+  ) => {
+    const value = role === "heading" ? headingText(safe(text), input.theme) : safe(text);
+    const font = await pickDisplayAsync(fontPair, value, role);
+    let fittedSize = size;
+    while (fittedSize > 8 && font.widthOfTextAtSize(value, fittedSize) > mm(W - 36)) {
+      fittedSize -= 0.5;
+    }
+    const width = font.widthOfTextAtSize(value, fittedSize);
+    page.drawText(value, {
+      x: isAsym ? leftPt : cxPt - width / 2,
+      y: mm(yMm),
+      size: fittedSize,
+      font,
+      color,
+      ...(role === "heading" ? headingDrawOptions(input.theme) : {}),
+    });
+  };
+
+  await drawCentred(input.content.heading, 22, H - 38, "heading", colors.text);
+  if (input.content.coupleName) {
+    await drawCentred(input.content.coupleName, 11, H - 48, "body", colors.primary);
+  }
+  if (input.content.date) {
+    await drawCentred(input.content.date, 10, H - 56, "body", colors.primary);
+  }
+  if (input.theme.print.ornament) {
+    drawOrnament(page, pack.ornament, isAsym ? mm(38) : cxPt, mm(H - 66), 40, colors.accent);
+  }
+
+  if (input.content.entries.length === 0) {
+    await drawCentred(input.content.emptyMessage, 11, H - 92, "body", colors.text);
+    return pdf.save();
+  }
+
+  let yMm = H - 88;
+  for (const entry of input.content.entries) {
+    const time = safe(entry.time);
+    const label = safe(entry.label);
+    const timeFont = await pickDisplayAsync(fontPair, time, "body");
+    const timeSize = 11;
+    const labelLayout = await wrapDisplayText(fontPair, label, "body", 12, 8, mm(W - 58), 2);
+    const rowLeft = isAsym ? leftPt : mm(25);
+    page.drawText(time, {
+      x: rowLeft,
+      y: mm(yMm),
+      size: timeSize,
+      font: timeFont,
+      color: colors.primary,
+    });
+    for (const [lineIndex, line] of labelLayout.lines.entries()) {
+      page.drawText(line, {
+        x: rowLeft + mm(24),
+        y: mm(yMm - lineIndex * 5),
+        size: labelLayout.size,
+        font: labelLayout.font,
+        color: colors.text,
+      });
+    }
+    yMm -= labelLayout.lines.length > 1 ? 26 : 22;
+  }
+
+  return pdf.save();
+}
+
+/** Single entry point used by every Printed cards endpoint. The runtime guard
+ *  prevents a stale registry or caller from silently rendering the first
+ *  document with a different card type. */
+export async function renderPrintableCardPdf(
+  documents: readonly PrintableCardDocument[],
+): Promise<Uint8Array> {
+  if (documents.length === 0) throw new Error("A printable-card document is required");
+  const first = documents[0]!;
+  if (documents.some((document) => document.cardType !== first.cardType)) {
+    throw new Error("Cannot mix printed-card types in one export");
+  }
+
+  switch (first.cardType) {
+    case "place_card": {
+      const cards = documents as readonly PlaceCardDocument[];
+      const tablesByGuestId = new Map<number, string>();
+      const guests = cards.map((card, index) => {
+        if (card.content.tableLabel) tablesByGuestId.set(index + 1, card.content.tableLabel);
+        return { id: index + 1, full_name: card.content.guestName };
+      });
+      return renderPlaceCardsPdf({
+        couple_display_name: "",
+        wedding_date: null,
+        bride_name: "",
+        groom_name: "",
+        design: first.theme,
+        guests,
+        tablesByGuestId,
+      });
+    }
+    case "table_number": {
+      const cards = documents as readonly TableNumberDocument[];
+      return renderTableNumbersPdf({
+        bride_name: "",
+        groom_name: "",
+        design: first.theme,
+        tables: cards.map((card) => ({
+          label: card.content.tableLabel,
+          footer: card.content.footer,
+        })),
+      });
+    }
+    case "menu": {
+      const card = first as MenuDocument;
+      return renderMenuPdf({
+        couple_display_name: card.content.coupleName,
+        wedding_date: null,
+        bride_name: "",
+        groom_name: "",
+        design: card.theme,
+        menu_card: { courses: [...card.content.courses] },
+        locale: card.locale === "hu" || card.locale === "es" ? card.locale : "en",
+        date_text: card.content.date,
+        copy: {
+          heading: card.content.heading,
+          courses: card.content.emptyCourseLabels,
+          emptyMessage: card.content.emptyMessage,
+        },
+      });
+    }
+    case "invitation": {
+      const card = first as InvitationDocument;
+      return renderInvitationPdf({
+        couple_display_name: card.content.coupleName,
+        wedding_date: null,
+        bride_name: "",
+        groom_name: "",
+        design: card.theme,
+        venue_name: card.content.venue,
+        venue_city: null,
+        date_text: card.content.date,
+        copy: {
+          eyebrow: card.content.eyebrow,
+          line: card.content.line,
+          rsvp: card.content.rsvp,
+        },
+      });
+    }
+    case "thank_you": {
+      const card = first as ThankYouDocument;
+      return renderThankYouPdf({
+        couple_display_name: card.content.coupleName,
+        wedding_date: null,
+        bride_name: "",
+        groom_name: "",
+        design: card.theme,
+        date_text: card.content.date,
+        copy: { heading: card.content.heading, line: card.content.line },
+      });
+    }
+    case "schedule":
+      return renderScheduleCardPdf(first as ScheduleCardDocument);
+  }
 }
 
 interface ScheduleInput {

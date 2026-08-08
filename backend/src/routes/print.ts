@@ -8,20 +8,18 @@ import { type Ctx, HttpError, requireAuth, type Router } from "../lib/http";
 import { listByCoupleId as listCoupleSuppliers } from "../domain/couple_suppliers";
 import { parseMenuCard } from "@shared/menu_card";
 import { getUserById } from "../domain/users";
-import {
-  printLocale,
-  renderInvitationPdf,
-  renderMenuPdf,
-  renderPlaceCardsPdf,
-  renderSchedulePdf,
-  renderSeatingChartPdf,
-  renderTableNumbersPdf,
-  renderThankYouPdf,
-} from "../domain/pdf";
+import { renderPrintableCardPdf, renderSchedulePdf, renderSeatingChartPdf } from "../domain/pdf";
 import { listScheduleEvents } from "../domain/schedule";
 import { listGuestsByCouple, toGuest } from "../domain/guests";
 import type { GuestRow } from "../domain/guests";
 import type { SeatAssignment, SeatingTable, TableShape } from "@shared/types";
+import {
+  buildPrintableCardDocument,
+  type PrintableCardSource,
+  type PrintCardType,
+  weddingTimezoneForCountry,
+} from "@shared/print_cards";
+import { isUiLocale } from "@shared/locales";
 
 interface TableRow {
   id: number;
@@ -102,14 +100,70 @@ function loadAssignments(coupleId: number): SeatAssignment[] {
   }));
 }
 
-function pdfResponse(filename: string, body: Uint8Array): Response {
+function pdfResponse(
+  filename: string,
+  body: Uint8Array,
+  meta?: { cardType: PrintCardType; revision: string },
+): Response {
   return new Response(body, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${filename}"`,
       "Cache-Control": "no-store",
+      ...(meta
+        ? {
+            "X-Weddly-Card-Type": meta.cardType,
+            "X-Weddly-Data-Revision": meta.revision,
+          }
+        : {}),
     },
   });
+}
+
+function revisionOf(
+  cardType: PrintCardType,
+  coupleUpdatedAt: number,
+  relevantState: readonly unknown[],
+): string {
+  // FNV-1a is not a security boundary; it is a compact deterministic cache/
+  // parity token. Include relationship state too (seat assignments have no
+  // updated_at column), otherwise moving a guest could change the PDF without
+  // changing its advertised revision.
+  let hash = 0x811c9dc5;
+  for (const byte of new TextEncoder().encode(JSON.stringify(relevantState))) {
+    hash ^= byte;
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `${cardType}:${coupleUpdatedAt}:${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+function cardSource<T extends PrintCardType>(
+  couple: NonNullable<ReturnType<typeof getCoupleForUser>>,
+  userId: number,
+  cardType: T,
+  dataRevision: string,
+  patch: Partial<PrintableCardSource> = {},
+): PrintableCardSource & { cardType: T } {
+  const rawLocale = getUserById(userId)?.locale;
+  const locale = isUiLocale(rawLocale) ? rawLocale : "en";
+  return {
+    workspaceId: String(couple.id),
+    // The current domain has one wedding event per workspace. Keeping both ids
+    // explicit makes the cache key safe if that changes later.
+    eventId: String(couple.id),
+    dataRevision,
+    locale,
+    timezone: weddingTimezoneForCountry(couple.country),
+    theme: parseDesignJson(couple.design_json),
+    coupleName: couple.display_name,
+    brideName: couple.bride_name,
+    groomName: couple.groom_name,
+    weddingDate: couple.wedding_date,
+    venueName: couple.venue_name,
+    venueCity: couple.venue_city,
+    ...patch,
+    cardType,
+  };
 }
 
 async function handleSeatingChart(ctx: Ctx, fmt: "a4" | "a3"): Promise<Response> {
@@ -221,15 +275,27 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
     if (t) tablesByGuestId.set(a.guest_id, t.label);
   }
 
-  const pdf = await renderPlaceCardsPdf({
-    couple_display_name: couple.display_name,
-    wedding_date: couple.wedding_date,
-    bride_name: couple.bride_name,
-    groom_name: couple.groom_name,
-    design: parseDesignJson(couple.design_json),
-    guests,
-    tablesByGuestId,
-  });
+  const revision = revisionOf("place_card", couple.updated_at, [
+    ...guests.map((guest) => [guest.id, guest.updated_at, guest.full_name]),
+    ...tables.map((table) => [table.id, table.updated_at, table.label]),
+    ...assignments.map((assignment) => [
+      assignment.guest_id,
+      assignment.table_id,
+      assignment.seat_index,
+    ]),
+  ]);
+  const documents =
+    guests.length > 0
+      ? guests.map((guest) =>
+          buildPrintableCardDocument(
+            cardSource(couple, userId, "place_card", revision, {
+              guestName: guest.full_name,
+              guestTableLabel: tablesByGuestId.get(guest.id) ?? null,
+            }),
+          ),
+        )
+      : [buildPrintableCardDocument(cardSource(couple, userId, "place_card", revision))];
+  const pdf = await renderPrintableCardPdf(documents);
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,
@@ -238,7 +304,7 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
     target_id: couple.id,
     after: { guest_count: guests.length },
   });
-  const filename = "place-cards-a6.pdf";
+  const filename = "place-cards-a4.pdf";
   recordExport({
     coupleId: couple.id,
     userId,
@@ -248,7 +314,7 @@ async function handlePlaceCards(ctx: Ctx): Promise<Response> {
     contentType: "application/pdf",
     body: pdf,
   });
-  return pdfResponse(filename, pdf);
+  return pdfResponse(filename, pdf, { cardType: "place_card", revision });
 }
 
 async function handleTableNumbers(ctx: Ctx): Promise<Response> {
@@ -257,12 +323,20 @@ async function handleTableNumbers(ctx: Ctx): Promise<Response> {
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
   const tables = loadTables(couple.id);
-  const pdf = await renderTableNumbersPdf({
-    bride_name: couple.bride_name,
-    groom_name: couple.groom_name,
-    design: parseDesignJson(couple.design_json),
-    tables,
-  });
+  const revision = revisionOf(
+    "table_number",
+    couple.updated_at,
+    tables.map((table) => table.updated_at),
+  );
+  const documents =
+    tables.length > 0
+      ? tables.map((table) =>
+          buildPrintableCardDocument(
+            cardSource(couple, userId, "table_number", revision, { tableLabel: table.label }),
+          ),
+        )
+      : [buildPrintableCardDocument(cardSource(couple, userId, "table_number", revision))];
+  const pdf = await renderPrintableCardPdf(documents);
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,
@@ -281,7 +355,7 @@ async function handleTableNumbers(ctx: Ctx): Promise<Response> {
     contentType: "application/pdf",
     body: pdf,
   });
-  return pdfResponse(filename, pdf);
+  return pdfResponse(filename, pdf, { cardType: "table_number", revision });
 }
 
 async function handleMenu(ctx: Ctx): Promise<Response> {
@@ -289,18 +363,13 @@ async function handleMenu(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
-  const pdf = await renderMenuPdf({
-    couple_display_name: couple.display_name,
-    wedding_date: couple.wedding_date,
-    bride_name: couple.bride_name,
-    groom_name: couple.groom_name,
-    design: parseDesignJson(couple.design_json),
-    menu_card: parseMenuCard(couple.menu_card),
-    // The printed words follow the person doing the printing. Nothing on the
-    // couple row carries a language, and `users.locale` is what the rest of
-    // the product (email, currency) already reads for this.
-    locale: printLocale(getUserById(userId)?.locale ?? null),
-  });
+  const revision = revisionOf("menu", couple.updated_at, []);
+  const document = buildPrintableCardDocument(
+    cardSource(couple, userId, "menu", revision, {
+      menuCourses: parseMenuCard(couple.menu_card).courses,
+    }),
+  );
+  const pdf = await renderPrintableCardPdf([document]);
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,
@@ -319,7 +388,7 @@ async function handleMenu(ctx: Ctx): Promise<Response> {
     contentType: "application/pdf",
     body: pdf,
   });
-  return pdfResponse(filename, pdf);
+  return pdfResponse(filename, pdf, { cardType: "menu", revision });
 }
 
 async function handleInvitation(ctx: Ctx): Promise<Response> {
@@ -327,15 +396,9 @@ async function handleInvitation(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
-  const pdf = await renderInvitationPdf({
-    couple_display_name: couple.display_name,
-    wedding_date: couple.wedding_date,
-    bride_name: couple.bride_name,
-    groom_name: couple.groom_name,
-    design: parseDesignJson(couple.design_json),
-    venue_name: couple.venue_name,
-    venue_city: couple.venue_city,
-  });
+  const revision = revisionOf("invitation", couple.updated_at, []);
+  const document = buildPrintableCardDocument(cardSource(couple, userId, "invitation", revision));
+  const pdf = await renderPrintableCardPdf([document]);
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,
@@ -354,7 +417,7 @@ async function handleInvitation(ctx: Ctx): Promise<Response> {
     contentType: "application/pdf",
     body: pdf,
   });
-  return pdfResponse(filename, pdf);
+  return pdfResponse(filename, pdf, { cardType: "invitation", revision });
 }
 
 async function handleThankYou(ctx: Ctx): Promise<Response> {
@@ -362,13 +425,9 @@ async function handleThankYou(ctx: Ctx): Promise<Response> {
   const couple = getCoupleForUser(userId);
   if (!couple) throw new HttpError(400, "No couple workspace yet");
 
-  const pdf = await renderThankYouPdf({
-    couple_display_name: couple.display_name,
-    wedding_date: couple.wedding_date,
-    bride_name: couple.bride_name,
-    groom_name: couple.groom_name,
-    design: parseDesignJson(couple.design_json),
-  });
+  const revision = revisionOf("thank_you", couple.updated_at, []);
+  const document = buildPrintableCardDocument(cardSource(couple, userId, "thank_you", revision));
+  const pdf = await renderPrintableCardPdf([document]);
   addAuditLog({
     actor_user_id: userId,
     couple_id: couple.id,
@@ -387,7 +446,42 @@ async function handleThankYou(ctx: Ctx): Promise<Response> {
     contentType: "application/pdf",
     body: pdf,
   });
-  return pdfResponse(filename, pdf);
+  return pdfResponse(filename, pdf, { cardType: "thank_you", revision });
+}
+
+async function handleScheduleCard(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+  const events = listScheduleEvents(couple.id);
+  const revision = revisionOf(
+    "schedule",
+    couple.updated_at,
+    events.map((event) => event.updated_at),
+  );
+  const document = buildPrintableCardDocument(
+    cardSource(couple, userId, "schedule", revision, { schedule: events }),
+  );
+  const pdf = await renderPrintableCardPdf([document]);
+  addAuditLog({
+    actor_user_id: userId,
+    couple_id: couple.id,
+    action: "print.schedule_card",
+    target_kind: "couple",
+    target_id: couple.id,
+    after: { event_count: document.content.entries.length, revision },
+  });
+  const filename = "schedule-card-a5.pdf";
+  recordExport({
+    coupleId: couple.id,
+    userId,
+    kind: "schedule_pdf",
+    format: null,
+    filename,
+    contentType: "application/pdf",
+    body: pdf,
+  });
+  return pdfResponse(filename, pdf, { cardType: "schedule", revision });
 }
 
 async function handleSchedule(ctx: Ctx): Promise<Response> {
@@ -433,5 +527,6 @@ export function registerPrintRoutes(router: Router) {
   router.get("/api/print/menu", handleMenu, true);
   router.get("/api/print/invitation", handleInvitation, true);
   router.get("/api/print/thank-you", handleThankYou, true);
+  router.get("/api/print/schedule-card", handleScheduleCard, true);
   router.get("/api/print/schedule", handleSchedule, true);
 }

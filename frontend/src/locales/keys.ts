@@ -3501,6 +3501,7 @@ export interface LocaleMessages {
     board_filter_all: string;
     board_filter_tasks: string;
     board_filter_vendors: string;
+    board_task_drag: string;
     board_vendor_paid_badge: string;
     board_vendor_considering_badge: string;
     board_vendor_inprogress_badge: string;

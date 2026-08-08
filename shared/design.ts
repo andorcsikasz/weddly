@@ -1284,35 +1284,83 @@ export function formatWeddingDate(
     return `${day} · ${toRomanNumeral(month)} · ${toRomanNumeral(year)}`;
   }
   // "long" - month name spelled out, locale word order.
-  const monthsHu = [
-    "január",
-    "február",
-    "március",
-    "április",
-    "május",
-    "június",
-    "július",
-    "augusztus",
-    "szeptember",
-    "október",
-    "november",
-    "december",
-  ];
-  const monthsEn = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+  const months: Record<UiLocale, readonly string[]> = {
+    hu: [
+      "január",
+      "február",
+      "március",
+      "április",
+      "május",
+      "június",
+      "július",
+      "augusztus",
+      "szeptember",
+      "október",
+      "november",
+      "december",
+    ],
+    en: [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ],
+    es: [
+      "enero",
+      "febrero",
+      "marzo",
+      "abril",
+      "mayo",
+      "junio",
+      "julio",
+      "agosto",
+      "septiembre",
+      "octubre",
+      "noviembre",
+      "diciembre",
+    ],
+    hr: [
+      "siječnja",
+      "veljače",
+      "ožujka",
+      "travnja",
+      "svibnja",
+      "lipnja",
+      "srpnja",
+      "kolovoza",
+      "rujna",
+      "listopada",
+      "studenoga",
+      "prosinca",
+    ],
+    de: [
+      "Januar",
+      "Februar",
+      "März",
+      "April",
+      "Mai",
+      "Juni",
+      "Juli",
+      "August",
+      "September",
+      "Oktober",
+      "November",
+      "Dezember",
+    ],
+  };
   const idx = month - 1;
   if (idx < 0 || idx > 11) return raw;
-  return locale === "hu" ? `${year}. ${monthsHu[idx]} ${day}.` : `${monthsEn[idx]} ${day}, ${year}`;
+  if (locale === "hu") return `${year}. ${months.hu[idx]} ${day}.`;
+  if (locale === "es") return `${day} de ${months.es[idx]} de ${year}`;
+  if (locale === "hr") return `${day}. ${months.hr[idx]} ${year}.`;
+  if (locale === "de") return `${day}. ${months.de[idx]} ${year}`;
+  return `${months.en[idx]} ${day}, ${year}`;
 }

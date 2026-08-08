@@ -43,8 +43,17 @@ import {
   type WebsiteSectionSlug,
 } from "@shared/design";
 import { getContrastRatio } from "@shared/wcag";
-import type { Couple } from "@shared/types";
+import type { Couple, Guest, MenuCard, MenuCourse } from "@shared/types";
 import type { PublicWeddingScheduleEntry, PublicWeddingWebsiteView } from "@shared/wedding_website";
+import type { ScheduleEvent } from "@shared/schedule";
+import {
+  buildPrintableCardDocument,
+  PRINT_CARD_REGISTRY,
+  PRINT_CARD_TYPES,
+  type PrintableCardDocument,
+  type PrintableCardSource,
+  weddingTimezoneForCountry,
+} from "@shared/print_cards";
 import type { WishlistEntry } from "@shared/wishlist";
 import {
   AlertTriangle,
@@ -76,11 +85,7 @@ import { TuneRail, TuneRow, type TuneRowId, TuneSwitchRow } from "../components/
 import { PaletteBar, roleColors } from "../components/design/PaletteBar";
 import { SampleTable } from "../components/design/SampleTable";
 import { headingTreatmentCss, OrnamentDivider } from "../components/ornaments";
-import {
-  PrintCardPreview,
-  type PrintEventData,
-  type PrintTemplate,
-} from "../components/PrintCardPreview";
+import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
 import {
   emptyMenuCard,
   MENU_LINE_MAX,
@@ -89,7 +94,6 @@ import {
   MENU_TITLE_MAX,
   normalizeMenuCardInput,
 } from "@shared/menu_card";
-import type { MenuCard, MenuCourse } from "@shared/types";
 import { WeddingSiteView } from "../components/WeddingSiteView";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Switch, useConfirm, useToast } from "../components/ui";
@@ -97,13 +101,10 @@ import { ApiError } from "../lib/api";
 import {
   coupleApi,
   fetchPdfBlob,
-  invitationPdfUrl,
-  menuPdfUrl,
-  placeCardsUrl,
-  schedulePdfUrl,
+  guestApi,
   scheduleApi,
-  tableNumbersPdfUrl,
-  thankYouPdfUrl,
+  seatingApi,
+  type SeatingPlan,
   wishlistApi,
 } from "../lib/endpoints";
 import { useT } from "../lib/i18n";
@@ -328,6 +329,8 @@ function MenuCardEditor({
   );
 }
 
+class StaleCardPdfRequest extends Error {}
+
 export default function DesignPage() {
   const { t, locale } = useT();
   const toast = useToast();
@@ -359,6 +362,8 @@ export default function DesignPage() {
   // card). Null until the couple asks for it; revoked + recomputed per request.
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfPreviewBusy, setPdfPreviewBusy] = useState(false);
+  const cardPdfCacheRef = useRef<{ key: string; blob: Blob } | null>(null);
+  const cardPdfPromiseRef = useRef<{ key: string; promise: Promise<Blob> } | null>(null);
   // Per-tile download-in-flight flag, keyed by the printable's slug.
   const [downloading, setDownloading] = useState<string | null>(null);
   // Full-page guest-page preview overlay (Website tab). Open state + which
@@ -389,8 +394,10 @@ export default function DesignPage() {
   // Truthful preview data: the couple's real schedule + wishlist so the dark
   // schedule band and the themed cards actually render while styling. Empty
   // until fetched; the preview falls back to labelled sample beats.
-  const [previewSchedule, setPreviewSchedule] = useState<PublicWeddingScheduleEntry[]>([]);
+  const [previewSchedule, setPreviewSchedule] = useState<ScheduleEvent[]>([]);
   const [previewWishlist, setPreviewWishlist] = useState<WishlistEntry[]>([]);
+  const [printGuests, setPrintGuests] = useState<Guest[]>([]);
+  const [printSeating, setPrintSeating] = useState<SeatingPlan | null>(null);
   // Which photo slot has an upload/delete in flight (1 | 2 | null).
   const [photoBusy, setPhotoBusy] = useState<1 | 2 | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
@@ -399,18 +406,84 @@ export default function DesignPage() {
    *  is the whole point of this page. */
   const [menuCard, setMenuCard] = useState<MenuCard>(emptyMenuCard());
   const [menuSaving, setMenuSaving] = useState(false);
-  const printEvent = useMemo<PrintEventData>(
-    () => ({
+  const printDocuments = useMemo(() => {
+    const workspaceId = String(couple?.id ?? "loading");
+    const firstGuest = [...printGuests].sort((a, b) => a.full_name.localeCompare(b.full_name))[0];
+    const guestAssignment = firstGuest
+      ? printSeating?.assignments.find((assignment) => assignment.guest_id === firstGuest.id)
+      : undefined;
+    const guestTable = guestAssignment
+      ? printSeating?.tables.find((table) => table.id === guestAssignment.table_id)
+      : undefined;
+    const firstTable = printSeating?.tables[0];
+    const sourceBase = {
+      workspaceId,
+      eventId: workspaceId,
+      locale,
+      timezone: weddingTimezoneForCountry(couple?.country),
+      theme: design,
       coupleName: couple?.display_name ?? null,
       brideName: couple?.bride_name ?? null,
       groomName: couple?.groom_name ?? null,
       weddingDate: couple?.wedding_date ?? null,
       venueName: couple?.venue_name ?? null,
       venueCity: couple?.venue_city ?? null,
-      schedule: previewSchedule,
-    }),
-    [couple, previewSchedule],
-  );
+    } satisfies Omit<PrintableCardSource, "cardType" | "dataRevision">;
+    // A client-side revision describes only pixels/text that can change on the
+    // card. Do not include `couple.updated_at`: flushing an unsaved design
+    // changes that timestamp and would immediately evict the Blob that Exact
+    // preview and Download are deliberately sharing.
+    const themeRevision = JSON.stringify(design);
+    const revisions = {
+      place_card: JSON.stringify([
+        themeRevision,
+        firstGuest?.full_name ?? null,
+        guestTable?.label ?? null,
+      ]),
+      table_number: JSON.stringify([themeRevision, firstTable?.label ?? null]),
+      menu: JSON.stringify([
+        themeRevision,
+        couple?.display_name ?? null,
+        couple?.wedding_date ?? null,
+        menuCard,
+      ]),
+      invitation: JSON.stringify([
+        themeRevision,
+        couple?.display_name ?? null,
+        couple?.wedding_date ?? null,
+        couple?.venue_name ?? null,
+        couple?.venue_city ?? null,
+      ]),
+      thank_you: JSON.stringify([
+        themeRevision,
+        couple?.display_name ?? null,
+        couple?.wedding_date ?? null,
+      ]),
+      schedule: JSON.stringify([
+        themeRevision,
+        couple?.display_name ?? null,
+        couple?.wedding_date ?? null,
+        ...previewSchedule.map((entry) => [entry.id, entry.starts_at_minutes, entry.label]),
+      ]),
+    } as const;
+    const docs = {} as Record<PrintTemplate, PrintableCardDocument>;
+    for (const cardType of PRINT_CARD_TYPES) {
+      docs[cardType] = buildPrintableCardDocument({
+        ...sourceBase,
+        cardType,
+        dataRevision: revisions[cardType],
+        guestName: firstGuest?.full_name ?? null,
+        guestTableLabel: guestTable?.label ?? null,
+        tableLabel: firstTable?.label ?? null,
+        menuCourses: menuCard.courses,
+        schedule: previewSchedule,
+      });
+    }
+    return docs;
+  }, [couple, design, locale, menuCard, previewSchedule, printGuests, printSeating]);
+  const currentCardPdfKey = `${printTemplate}:${printDocuments[printTemplate].workspaceId}:${printDocuments[printTemplate].eventId}:${printDocuments[printTemplate].dataRevision}`;
+  const currentCardPdfKeyRef = useRef(currentCardPdfKey);
+  currentCardPdfKeyRef.current = currentCardPdfKey;
   // Below lg only chapter 01 starts open (small screens scroll past the whole
   // editor); at lg+ all chapters start open. Read once at mount.
   const [lgUp] = useState(
@@ -427,7 +500,7 @@ export default function DesignPage() {
         setCouple(r.couple);
         setDesign(r.couple.design);
         setSaved(r.couple.design);
-        setMenuCard(r.couple.menu_card);
+        setMenuCard(normalizeMenuCardInput(r.couple.menu_card));
         // A couple still sitting on the untouched default has never made the
         // one decision this page is about, so open the Sample Table for them.
         setStyleTableOpen(
@@ -446,17 +519,21 @@ export default function DesignPage() {
       .list()
       .then((r) => {
         if (cancelled) return;
-        setPreviewSchedule(
-          r.events.map((ev) => ({
-            id: ev.id,
-            label: ev.label,
-            starts_at_minutes: ev.starts_at_minutes,
-            duration_minutes: ev.duration_minutes,
-            location: ev.location,
-            notes: ev.notes,
-            is_key_moment: ev.is_key_moment,
-          })),
-        );
+        setPreviewSchedule(r.events);
+      })
+      .catch(() => {});
+    guestApi
+      .list()
+      .then((r) => {
+        if (!cancelled) setPrintGuests(Array.isArray(r.guests) ? r.guests : []);
+      })
+      .catch(() => {});
+    seatingApi
+      .plan()
+      .then((r) => {
+        if (!cancelled && Array.isArray(r.tables) && Array.isArray(r.assignments)) {
+          setPrintSeating(r);
+        }
       })
       .catch(() => {});
     wishlistApi
@@ -559,6 +636,17 @@ export default function DesignPage() {
       if (pdfPreviewUrlRef.current) URL.revokeObjectURL(pdfPreviewUrlRef.current);
     };
   }, []);
+
+  // A card/data/theme revision change invalidates both actions together. Never
+  // leave the iframe pointing at the previous card while a new PDF is pending.
+  useEffect(() => {
+    cardPdfCacheRef.current = null;
+    cardPdfPromiseRef.current = null;
+    setPdfPreviewUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return null;
+    });
+  }, [currentCardPdfKey]);
 
   // Deep link: a hash names an open fine-tune row. Landing on
   // /app/design/website#sections opens that row and scrolls to it, and the
@@ -732,7 +820,7 @@ export default function DesignPage() {
       setCouple(r.couple);
       // Adopt the server's normalised form so empty rows the couple left
       // behind disappear from the editor rather than lingering as ghosts.
-      setMenuCard(r.couple.menu_card);
+      setMenuCard(normalizeMenuCardInput(r.couple.menu_card));
       toast.success(t("design.menu_editor.saved"));
     } catch (err) {
       if (err instanceof ApiError && err.status === 402) {
@@ -836,15 +924,75 @@ export default function DesignPage() {
     }
   }
 
-  // Server path for the exact PDF of the currently-selected template.
-  const exactPdfPath: Record<PrintTemplate, string> = {
-    place_card: placeCardsUrl(),
-    table_number: "/api/print/table-numbers",
-    menu: "/api/print/menu",
-    invitation: invitationPdfUrl,
-    thank_you: thankYouPdfUrl,
-    schedule: schedulePdfUrl,
-  };
+  const exactPdfPath = PRINT_CARD_REGISTRY[printTemplate].endpoint;
+
+  async function ensureCurrentCardPdf(): Promise<Blob> {
+    const requestedCardKey = currentCardPdfKey;
+    const normalizedMenu = normalizeMenuCardInput(menuCard);
+    const menuDirty =
+      printTemplate === "menu" &&
+      JSON.stringify(normalizedMenu) !== JSON.stringify(couple?.menu_card ?? emptyMenuCard());
+    // Flush the exact local model before asking the server to render. This
+    // closes the 900ms autosave window in which HTML showed a new theme while
+    // the PDF still used the previous one.
+    if (couple && (dirty || menuDirty)) {
+      const result = await coupleApi.update({
+        ...(dirty ? { design: designRef.current } : {}),
+        ...(menuDirty ? { menu_card: normalizedMenu } : {}),
+      });
+      setCouple(result.couple);
+      setDesign(result.couple.design);
+      setSaved(result.couple.design);
+      setMenuCard(normalizeMenuCardInput(result.couple.menu_card));
+    }
+    const currentDocument = printDocuments[printTemplate];
+    const key = `${printTemplate}:${currentDocument.workspaceId}:${currentDocument.eventId}:${JSON.stringify(designRef.current)}:${JSON.stringify(
+      printTemplate === "menu" ? normalizedMenu : printDocuments[printTemplate].content,
+    )}`;
+    if (cardPdfCacheRef.current?.key === key) return cardPdfCacheRef.current.blob;
+    if (cardPdfPromiseRef.current?.key === key) return cardPdfPromiseRef.current.promise;
+    // Hide stale output before the request. On an error the old card must not
+    // come back as though it were the newly selected export.
+    setPdfPreviewUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return null;
+    });
+    const promise = fetchPdfBlob(exactPdfPath).then((blob) => {
+      if (currentCardPdfKeyRef.current !== requestedCardKey) {
+        throw new StaleCardPdfRequest("Printed-card selection changed during PDF generation");
+      }
+      const typed =
+        blob.type === "application/pdf" ? blob : blob.slice(0, blob.size, "application/pdf");
+      cardPdfCacheRef.current = { key, blob: typed };
+      return typed;
+    });
+    cardPdfPromiseRef.current = { key, promise };
+    try {
+      return await promise;
+    } finally {
+      if (cardPdfPromiseRef.current?.promise === promise) cardPdfPromiseRef.current = null;
+    }
+  }
+
+  async function downloadPrintedCard() {
+    if (downloading) return;
+    setDownloading(printTemplate);
+    try {
+      // Exact preview and Download receive this very same Blob instance.
+      const blob = await ensureCurrentCardPdf();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = PRINT_CARD_REGISTRY[printTemplate].filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      cardPdfCacheRef.current = null;
+      if (!(error instanceof StaleCardPdfRequest)) toast.error(t("design.cards.download_error"));
+    } finally {
+      setDownloading(null);
+    }
+  }
 
   // Fetch the real PDF and show it in the iframe below the live card. Revokes
   // any previous blob URL first so we never leak object URLs.
@@ -852,15 +1000,14 @@ export default function DesignPage() {
     if (pdfPreviewBusy) return;
     setPdfPreviewBusy(true);
     try {
-      const blob = await fetchPdfBlob(exactPdfPath[printTemplate]);
-      const typed =
-        blob.type === "application/pdf" ? blob : blob.slice(0, blob.size, "application/pdf");
+      const typed = await ensureCurrentCardPdf();
       setPdfPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return URL.createObjectURL(typed);
       });
-    } catch {
-      toast.error(t("design.cards.download_error"));
+    } catch (error) {
+      cardPdfCacheRef.current = null;
+      if (!(error instanceof StaleCardPdfRequest)) toast.error(t("design.cards.download_error"));
     } finally {
       setPdfPreviewBusy(false);
     }
@@ -1293,17 +1440,17 @@ export default function DesignPage() {
             <div className="space-y-6">
               {tab === "print" && (
                 <PrintShelf
-                  design={design}
+                  documents={printDocuments}
                   selected={printTemplate}
                   onSelect={(tpl) => {
                     setPrintTemplate(tpl);
+                    cardPdfCacheRef.current = null;
+                    cardPdfPromiseRef.current = null;
                     setPdfPreviewUrl((p) => {
                       if (p) URL.revokeObjectURL(p);
                       return null;
                     });
                   }}
-                  brideName={couple?.bride_name ?? null}
-                  event={printEvent}
                 />
               )}
 
@@ -2070,25 +2217,13 @@ export default function DesignPage() {
                   <div className="rounded-2xl border border-paper-200 bg-paper-100 p-6 dark:border-umber-700 dark:bg-umber-900">
                     <div className="grid min-h-[24rem] place-items-center">
                       <span className="block w-full max-w-[26rem] shadow-warm dark:shadow-none">
-                        <PrintCardPreview
-                          design={design}
-                          template={printTemplate}
-                          brideName={couple?.bride_name ?? null}
-                          menuCard={menuCard}
-                          event={printEvent}
-                        />
+                        <PrintCardPreview document={printDocuments[printTemplate]} />
                       </span>
                     </div>
                     <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
                       <button
                         type="button"
-                        onClick={() =>
-                          downloadCard(
-                            printTemplate,
-                            exactPdfPath[printTemplate],
-                            `weddly-${printTemplate.replace("_", "-")}.pdf`,
-                          )
-                        }
+                        onClick={() => void downloadPrintedCard()}
                         disabled={downloading !== null}
                         className="btn btn-primary btn-sm"
                       >

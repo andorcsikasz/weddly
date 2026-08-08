@@ -2850,6 +2850,7 @@ const de: LocaleMessages = {
     board_filter_all: "Alle",
     board_filter_tasks: "Aufgaben",
     board_filter_vendors: "Dienstleister",
+    board_task_drag: "Aufgabe in eine andere Spalte ziehen",
     board_vendor_paid_badge: "Bezahlt",
     board_vendor_considering_badge: "In Überlegung",
     board_vendor_inprogress_badge: "In Verhandlung",

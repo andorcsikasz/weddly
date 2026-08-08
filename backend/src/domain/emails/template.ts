@@ -678,8 +678,8 @@ function renderSignoff(lines: string[] | undefined, compact: boolean): string {
  *  label under a forced plain URL. Both are chrome the kind builders never
  *  author, so they live here per locale with the usual EN fallback. */
 const ORIENTATION: Partial<Record<UiLocale, string>> = {
-  hu: "A Weddly egy esküvőtervező eszköz pároknak, vendéglista, ülésrend, költségvetés, RSVP egy helyen.",
-  en: "Weddly is a wedding-planning app for couples, guest list, seating, budget, RSVP in one place.",
+  hu: "A Weddly egy esküvőtervező pároknak: vendéglista, ülésrend, költségvetés és RSVP egy helyen.",
+  en: "Weddly is a wedding-planning app for couples, with guest lists, seating, budgets and RSVPs in one place.",
   es: "Weddly es una app de organización de bodas para parejas: invitados, mesas, presupuesto y confirmaciones en un solo sitio.",
   hr: "Weddly je alat za planiranje vjenčanja za parove: popis gostiju, raspored sjedenja, proračun i potvrde dolaska na jednom mjestu.",
   de: "Weddly ist eine App für die Hochzeitsplanung: Gästeliste, Sitzplan, Budget und Zusagen an einem Ort.",
@@ -703,7 +703,7 @@ function renderOutreachOrientation(category: EmailCategory, locale: UiLocale): s
   if (category !== "outreach") return "";
   const copy =
     ORIENTATION[locale] ??
-    "Weddly is a wedding-planning app for couples, guest list, seating, budget, RSVP in one place.";
+    "Weddly is a wedding-planning app for couples, with guest lists, seating, budgets and RSVPs in one place.";
   return `<p style="margin:0 0 18px 0;color:${COLOR.muted};font-size:14px;line-height:1.5;font-style:italic;">${escapeHtml(copy)}</p>`;
 }
 
@@ -821,7 +821,7 @@ const WHY_LINE_TEXT: Record<EmailCategory, { hu: string; en: string; bilingual: 
     hu: "Ezt a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk, és ettől a levéltől nem is jön létre.",
     en: "You're getting this from Weddly, a wedding-planning app. You don't have an account with us, and this email doesn't create one.",
     bilingual:
-      "Ezt a Weddly esküvőtervezőtől kaptad, nincs fiókod nálunk. / You're getting this from Weddly, a wedding-planning app, you don't have an account with us.",
+      "Ezt a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk. / You're getting this from Weddly, a wedding-planning app. You don't have an account with us.",
   },
 };
 

@@ -2,7 +2,6 @@ import { checklistSections, isChecklistItemApplicable } from "@shared/wedding_ch
 import type { PlanningItem } from "@shared/types";
 import { CalendarDays, Check, ClipboardCheck, Download, Loader2, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Dialog } from "./ui";
 import {
   fetchPdfBlob,
   planningApi,
@@ -14,9 +13,7 @@ import { type Locale, useT } from "../lib/i18n";
 
 type ChecklistFilter = "all" | "todo" | "done";
 
-interface WeddingChecklistDialogProps {
-  open: boolean;
-  onClose: () => void;
+interface WeddingChecklistProps {
   items: PlanningItem[];
   onItemsChange: (updater: (items: PlanningItem[]) => PlanningItem[]) => void;
   weddingDate: string | null;
@@ -41,14 +38,12 @@ function formatShortDate(value: string, locale: Locale): string {
   }).format(date);
 }
 
-export function WeddingChecklistDialog({
-  open,
-  onClose,
+export function WeddingChecklist({
   items,
   onItemsChange,
   weddingDate,
   profile,
-}: WeddingChecklistDialogProps) {
+}: WeddingChecklistProps) {
   const { t, locale } = useT();
   const toast = useToast();
   const [filter, setFilter] = useState<ChecklistFilter>("all");
@@ -152,15 +147,16 @@ export function WeddingChecklistDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title={t("planning.checklist.title")}
-      role="dialog"
-      size="xl"
-      closeOnBackdrop
-      titleClassName="text-2xl sm:text-3xl"
+    <section
+      className="card overflow-hidden p-4 sm:p-6 dark:border-umber-700 dark:bg-umber-800"
+      aria-labelledby="wedding-checklist-title"
     >
+      <h2
+        id="wedding-checklist-title"
+        className="font-grotesk text-2xl text-ink-900 sm:text-3xl dark:text-paper-50"
+      >
+        {t("planning.checklist.title")}
+      </h2>
       {!initialized ? (
         <div className="flex min-h-[26rem] flex-col items-center justify-center px-4 py-12 text-center">
           <span className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-full bg-paper-200 text-ink-700 dark:bg-umber-700 dark:text-paper-100">
@@ -189,7 +185,7 @@ export function WeddingChecklistDialog({
           </button>
         </div>
       ) : (
-        <div className="pb-2">
+        <div className="mt-2 pb-2">
           <div className="flex flex-col gap-4 border-b border-paper-200 pb-5 dark:border-umber-700 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-sm text-ink-600 dark:text-umber-200">
@@ -311,7 +307,7 @@ export function WeddingChecklistDialog({
             ))}
           </div>
 
-          <div className="space-y-7">
+          <div className="grid items-start gap-x-8 gap-y-7 md:grid-cols-2">
             {sections.map((section) => {
               const rows = section.items.flatMap((template) => {
                 const task = taskByTemplateId.get(template.id);
@@ -402,7 +398,7 @@ export function WeddingChecklistDialog({
           </div>
         </div>
       )}
-    </Dialog>
+    </section>
   );
 }
 
