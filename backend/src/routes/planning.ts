@@ -42,6 +42,7 @@ const MAX_BODY = 5000;
 const MAX_ASSIGNEE = 80;
 const MAX_SUPPLIER_ID = 64;
 const MAX_RESOLUTION = 2000;
+const MAX_BULK_DELETE = 500;
 
 const VALID_GROUP_KEYS = new Set<string>(PROMPT_GROUPS.map((g) => g.key));
 const INTAKE_TAGS = new Set<string>(INTAKE_DIMENSIONS.map((d) => d.tag));
@@ -445,6 +446,60 @@ function handleDelete(ctx: Ctx): Response {
   return json({ ok: true });
 }
 
+/** Delete a user-selected set in one transaction. Foreign and already-deleted
+ * ids are skipped rather than exposed, matching the bulk schedule endpoint's
+ * tenant-scoped semantics. */
+async function handleBulkDelete(ctx: Ctx): Promise<Response> {
+  const userId = requireAuth(ctx);
+  const couple = getCoupleForUser(userId);
+  if (!couple) throw new HttpError(400, "No couple workspace yet");
+
+  const body = await readJson<{ ids?: unknown }>(ctx.req);
+  if (!Array.isArray(body.ids)) throw new HttpError(400, "ids must be an array");
+  if (body.ids.length === 0) throw new HttpError(400, "ids must not be empty");
+  if (body.ids.length > MAX_BULK_DELETE) {
+    throw new HttpError(400, `too many ids (max ${MAX_BULK_DELETE})`);
+  }
+
+  const ids = [...new Set(body.ids.map((raw) => Number(raw)))];
+  if (ids.some((id) => !Number.isInteger(id) || id <= 0)) {
+    throw new HttpError(400, "ids must contain positive integers");
+  }
+
+  const placeholders = ids.map(() => "?").join(", ");
+  const owned = db
+    .prepare(
+      `SELECT id, kind, title FROM planning_items
+       WHERE couple_id = ? AND id IN (${placeholders})`,
+    )
+    .all(couple.id, ...ids) as { id: number; kind: PlanningKind; title: string }[];
+
+  if (owned.length === 0) return json({ ok: true, deleted: 0 });
+
+  const ownedIds = owned.map((row) => row.id);
+  const ownedPlaceholders = ownedIds.map(() => "?").join(", ");
+  const tx = db.transaction(() => {
+    db.prepare(
+      `DELETE FROM planning_items WHERE couple_id = ? AND id IN (${ownedPlaceholders})`,
+    ).run(couple.id, ...ownedIds);
+    addAuditLog({
+      actor_user_id: userId,
+      couple_id: couple.id,
+      action: "planning.delete.bulk",
+      target_kind: "planning_item",
+      target_id: null,
+      before: {
+        count: owned.length,
+        items: owned.map(({ id, kind, title }) => ({ id, kind, title })),
+      },
+    });
+  });
+  tx();
+
+  markCoupleCalendarDirty(couple.id);
+  return json({ ok: true, deleted: owned.length });
+}
+
 // ─── decision-prompt intake profile ─────────────────────────────────────────
 // The couple's manual answers to the conditional dimensions that aren't already
 // derivable from couples.ceremony_kind / the guest list. Persisted as a small
@@ -654,6 +709,7 @@ export function registerPlanningRoutes(router: Router) {
   router.post("/api/planning", handleCreate, true);
   router.patch("/api/planning/:id", handleUpdate, true);
   router.post("/api/planning/schedule", handleBulkSchedule, true);
+  router.post("/api/planning/delete-many", handleBulkDelete, true);
   router.delete("/api/planning/:id", handleDelete, true);
   router.get("/api/planning/prompts/profile", handleGetProfile, true);
   router.put("/api/planning/prompts/profile", handlePutProfile, true);

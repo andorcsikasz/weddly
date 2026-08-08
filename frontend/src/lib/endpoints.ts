@@ -1365,6 +1365,8 @@ export const planningApi = {
   update: (id: number, body: PlanningItemPatch) =>
     apiFetch<{ item: import("@shared/types").PlanningItem }>("PATCH", `/api/planning/${id}`, body),
   remove: (id: number) => apiFetch<{ ok: true }>("DELETE", `/api/planning/${id}`),
+  removeMany: (ids: number[]) =>
+    apiFetch<{ ok: true; deleted: number }>("POST", "/api/planning/delete-many", { ids }),
   /** Schedule-wizard bulk apply: set start/due dates (and an optional priority
    *  position) on many undated tasks at once. Returns the refreshed list. */
   applySchedule: (

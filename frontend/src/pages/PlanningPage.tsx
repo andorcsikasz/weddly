@@ -313,6 +313,9 @@ export default function PlanningPage() {
   const [ideaWandOpen, setIdeaWandOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
   const [bulkApplying, setBulkApplying] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
+  const [deletingSelected, setDeletingSelected] = useState(false);
   // Board (kanban) view state — only active on the Tasks tab.
   const [viewMode, setViewMode] = useState<"list" | "board">("list");
   const [boardFilter, setBoardFilter] = useState<"all" | "tasks" | "vendors">("all");
@@ -346,6 +349,22 @@ export default function PlanningPage() {
       setViewMode("list");
     }
   }, [activeKind]);
+
+  // A selection always belongs to the list currently on screen. Switching
+  // tabs, task views, or priority filters must not leave invisible rows queued
+  // for deletion.
+  useEffect(() => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }, [activeKind, viewMode, priorityFilter]);
+
+  useEffect(() => {
+    const liveIds = new Set(items.map((item) => item.id));
+    setSelectedIds((prev) => {
+      const next = new Set([...prev].filter((id) => liveIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [items]);
 
   // Fetch vendors when the board view is first activated on the Tasks tab.
   useEffect(() => {
@@ -695,6 +714,46 @@ export default function PlanningPage() {
     }
   }
 
+  function toggleSelected(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function leaveSelectionMode() {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function onDeleteSelected() {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    const ok = await confirm({
+      title: t("planning.bulk_delete_confirm_title", { count: ids.length }),
+      body: t("planning.bulk_delete_confirm_body", { count: ids.length }),
+      confirmLabel: t("planning.bulk_delete"),
+      cancelLabel: t("common.cancel"),
+      destructive: true,
+    });
+    if (!ok) return;
+
+    setDeletingSelected(true);
+    try {
+      await planningApi.removeMany(ids);
+      const removed = new Set(ids);
+      setItems((prev) => prev.filter((item) => !removed.has(item.id)));
+      leaveSelectionMode();
+      toast.success(t("planning.bulk_delete_success", { count: ids.length }));
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : t("common.error_generic"));
+    } finally {
+      setDeletingSelected(false);
+    }
+  }
+
   const hasTaskItems = useMemo(
     () => items.some((i) => i.kind === "task" && !(i.seed_key && i.decision_status !== "promoted")),
     [items],
@@ -1010,6 +1069,20 @@ export default function PlanningPage() {
           )}
 
           <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+            {((activeKind === "task" && viewMode === "list") || activeKind === "idea") &&
+              scoped.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => (selectionMode ? leaveSelectionMode() : setSelectionMode(true))}
+                  className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+                  aria-pressed={selectionMode}
+                >
+                  <ListChecks size={14} aria-hidden="true" />
+                  <span>
+                    {t(selectionMode ? "planning.cancel_selection" : "planning.select_items")}
+                  </span>
+                </button>
+              )}
             {activeKind === "task" && (
               <>
                 {/* List / Board view toggle — anchored left of the action pill. */}
@@ -1214,6 +1287,43 @@ export default function PlanningPage() {
                 </div>
               )}
 
+            {selectionMode && (
+              <div
+                role="toolbar"
+                aria-label={t("planning.selection_toolbar")}
+                className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-ink-300 bg-paper-100/70 p-2.5 dark:border-umber-700 dark:bg-umber-800/70"
+              >
+                <span className="mr-auto text-sm font-medium text-ink-700 dark:text-paper-100">
+                  {t("planning.selected_count", { count: selectedIds.size })}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allSelected = scoped.every((item) => selectedIds.has(item.id));
+                    setSelectedIds(
+                      allSelected ? new Set() : new Set(scoped.map((item) => item.id)),
+                    );
+                  }}
+                  className="btn-ghost btn-sm"
+                >
+                  {t(
+                    scoped.every((item) => selectedIds.has(item.id))
+                      ? "planning.clear_selection"
+                      : "planning.select_all",
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void onDeleteSelected()}
+                  disabled={selectedIds.size === 0 || deletingSelected}
+                  className="btn-ghost btn-sm inline-flex items-center gap-1.5 text-blush-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-blush-300"
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                  {t("planning.bulk_delete")}
+                </button>
+              </div>
+            )}
+
             {activeKind === "task" && viewMode === "board" ? (
               <KanbanBoard
                 tasks={items.filter(
@@ -1276,6 +1386,9 @@ export default function PlanningPage() {
                             onMove={(direction) => onMove(item, direction)}
                             onDelete={() => onDelete(item)}
                             onConvertToTask={() => onConvertIdeaToTask(item)}
+                            selectionMode={selectionMode}
+                            selected={selectedIds.has(item.id)}
+                            onSelect={() => toggleSelected(item.id)}
                           />
                         ))}
                       </ul>
@@ -2141,6 +2254,9 @@ function PlanningRow({
   onMove,
   onDelete,
   onConvertToTask,
+  selectionMode,
+  selected,
+  onSelect,
 }: {
   item: PlanningItem;
   assigneeSuggestions: string[];
@@ -2157,6 +2273,9 @@ function PlanningRow({
   onDelete: () => void;
   /** Ideas only — drop this idea into the Tasks list as a real task. */
   onConvertToTask: () => void;
+  selectionMode: boolean;
+  selected: boolean;
+  onSelect: () => void;
 }) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
@@ -2208,9 +2327,19 @@ function PlanningRow({
     <li
       className={`card flex flex-wrap items-start gap-2 p-3 transition-colors sm:flex-nowrap sm:items-center sm:gap-3 ${ideaCardTint} ${
         item.done ? "bg-paper-100/50 dark:bg-umber-700/60" : ""
-      }`}
+      } ${selected ? "ring-2 ring-ink-500 dark:ring-paper-300" : ""}`}
     >
-      {item.kind === "task" && (
+      {selectionMode ? (
+        <label className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center sm:h-auto sm:w-auto">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onSelect}
+            aria-label={t("planning.item_select", { title: item.title })}
+            className="h-4 w-4 cursor-pointer accent-ink-800 dark:accent-paper-100"
+          />
+        </label>
+      ) : item.kind === "task" ? (
         <>
           <button
             type="button"
@@ -2229,8 +2358,7 @@ function PlanningRow({
             onCycle={onCyclePriority}
           />
         </>
-      )}
-      {item.kind === "idea" && (
+      ) : (
         <Lightbulb
           size={18}
           className="shrink-0 text-ink-400 dark:text-umber-300"
@@ -2238,7 +2366,7 @@ function PlanningRow({
         />
       )}
 
-      <div className="min-w-0 flex-1">
+      <div className={`min-w-0 flex-1 ${selectionMode ? "pointer-events-none select-none" : ""}`}>
         {editing ? (
           <div className="space-y-2">
             <input
@@ -2463,41 +2591,43 @@ function PlanningRow({
         )}
       </div>
 
-      <div className="ml-auto flex w-full shrink-0 items-center justify-end gap-1 border-t border-paper-200 pt-2 sm:w-auto sm:border-0 sm:pt-0 dark:border-umber-700">
-        {/* Reorder controls — vertical stack so the row stays compact. Disabled
-         *  at the boundaries; we still render them (just dimmed) so the row
-         *  width doesn't shift as items reach the top/bottom. */}
-        <div className="flex sm:flex-col">
+      {!selectionMode && (
+        <div className="ml-auto flex w-full shrink-0 items-center justify-end gap-1 border-t border-paper-200 pt-2 sm:w-auto sm:border-0 sm:pt-0 dark:border-umber-700">
+          {/* Reorder controls — vertical stack so the row stays compact. Disabled
+           *  at the boundaries; we still render them (just dimmed) so the row
+           *  width doesn't shift as items reach the top/bottom. */}
+          <div className="flex sm:flex-col">
+            <button
+              type="button"
+              onClick={() => onMove("up")}
+              disabled={!canMoveUp}
+              aria-label={t("planning.move_up")}
+              title={t("planning.move_up")}
+              className="inline-flex h-11 w-11 items-center justify-center rounded text-ink-400 hover:bg-paper-100 hover:text-ink-700 disabled:cursor-not-allowed disabled:opacity-30 sm:h-4 sm:w-6 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            >
+              <ChevronUp size={14} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onMove("down")}
+              disabled={!canMoveDown}
+              aria-label={t("planning.move_down")}
+              title={t("planning.move_down")}
+              className="inline-flex h-11 w-11 items-center justify-center rounded text-ink-400 hover:bg-paper-100 hover:text-ink-700 disabled:cursor-not-allowed disabled:opacity-30 sm:h-4 sm:w-6 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            >
+              <ChevronDown size={14} aria-hidden="true" />
+            </button>
+          </div>
           <button
             type="button"
-            onClick={() => onMove("up")}
-            disabled={!canMoveUp}
-            aria-label={t("planning.move_up")}
-            title={t("planning.move_up")}
-            className="inline-flex h-11 w-11 items-center justify-center rounded text-ink-400 hover:bg-paper-100 hover:text-ink-700 disabled:cursor-not-allowed disabled:opacity-30 sm:h-4 sm:w-6 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            onClick={onDelete}
+            aria-label={t("common.delete")}
+            className="btn-ghost btn-sm min-h-tap min-w-tap text-blush-700 sm:min-h-0 sm:min-w-0 dark:text-blush-300"
           >
-            <ChevronUp size={14} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onMove("down")}
-            disabled={!canMoveDown}
-            aria-label={t("planning.move_down")}
-            title={t("planning.move_down")}
-            className="inline-flex h-11 w-11 items-center justify-center rounded text-ink-400 hover:bg-paper-100 hover:text-ink-700 disabled:cursor-not-allowed disabled:opacity-30 sm:h-4 sm:w-6 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-          >
-            <ChevronDown size={14} aria-hidden="true" />
+            <Trash2 size={14} />
           </button>
         </div>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label={t("common.delete")}
-          className="btn-ghost btn-sm min-h-tap min-w-tap text-blush-700 sm:min-h-0 sm:min-w-0 dark:text-blush-300"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
+      )}
     </li>
   );
 }

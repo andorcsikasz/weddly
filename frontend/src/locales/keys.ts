@@ -3381,6 +3381,21 @@ export interface LocaleMessages {
     move_down: string;
     delete_confirm_title: string;
     delete_confirm_body: string;
+    /** Multi-select mode for deleting several visible planning rows at once. */
+    select_items: string;
+    cancel_selection: string;
+    selection_toolbar: string;
+    select_all: string;
+    clear_selection: string;
+    selected_count_one: string;
+    selected_count_other: string;
+    item_select: string;
+    bulk_delete: string;
+    bulk_delete_confirm_title_one: string;
+    bulk_delete_confirm_title_other: string;
+    bulk_delete_confirm_body: string;
+    bulk_delete_success_one: string;
+    bulk_delete_success_other: string;
     /** Empty-state copy per tab. */
     empty_task: string;
     empty_idea: string;

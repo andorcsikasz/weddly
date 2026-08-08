@@ -197,6 +197,72 @@ describe("planning ideas: idea_status + idea_tag", () => {
     expect(badBody.status).toBe(400);
   });
 
+  test("bulk delete removes selected rows atomically and ignores another couple's ids", async () => {
+    const mine = await bootstrapCouple("bulk-delete-mine@weddly.test");
+    const other = await bootstrapCouple("bulk-delete-other@weddly.test");
+    const first = await req<CreateResp>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Első saját feladat" },
+      { token: mine.token },
+    );
+    const second = await req<CreateResp>(
+      "POST",
+      "/api/planning",
+      { kind: "idea", title: "Második saját ötlet" },
+      { token: mine.token },
+    );
+    const foreign = await req<CreateResp>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Idegen feladat" },
+      { token: other.token },
+    );
+
+    const deleted = await req<{ ok: true; deleted: number }>(
+      "POST",
+      "/api/planning/delete-many",
+      { ids: [first.data.item.id, second.data.item.id, second.data.item.id, foreign.data.item.id] },
+      { token: mine.token },
+    );
+    expect(deleted.status).toBe(200);
+    expect(deleted.data).toEqual({ ok: true, deleted: 2 });
+
+    const mineAfter = await req<{ items: PlanningItem[] }>("GET", "/api/planning", undefined, {
+      token: mine.token,
+    });
+    expect(mineAfter.data.items).toHaveLength(0);
+    const otherAfter = await req<{ items: PlanningItem[] }>("GET", "/api/planning", undefined, {
+      token: other.token,
+    });
+    expect(otherAfter.data.items.some((item) => item.id === foreign.data.item.id)).toBe(true);
+  });
+
+  test("bulk delete validates its id list before deleting anything", async () => {
+    const { token } = await bootstrapCouple("bulk-delete-validation@weddly.test");
+    const created = await req<CreateResp>(
+      "POST",
+      "/api/planning",
+      { kind: "task", title: "Maradjon meg" },
+      { token },
+    );
+
+    const empty = await req("POST", "/api/planning/delete-many", { ids: [] }, { token });
+    expect(empty.status).toBe(400);
+    const malformed = await req(
+      "POST",
+      "/api/planning/delete-many",
+      { ids: [created.data.item.id, "not-an-id"] },
+      { token },
+    );
+    expect(malformed.status).toBe(400);
+
+    const after = await req<{ items: PlanningItem[] }>("GET", "/api/planning", undefined, {
+      token,
+    });
+    expect(after.data.items.some((item) => item.id === created.data.item.id)).toBe(true);
+  });
+
   test("assignee round-trips on a task via create and patch", async () => {
     const { token } = await bootstrapCouple();
     const created = await req<CreateResp>(
