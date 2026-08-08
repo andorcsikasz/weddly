@@ -58,11 +58,22 @@ function jsonResponse(body: unknown) {
   });
 }
 
-function mountPage(path = "/app/design/website") {
+function mountPage(
+  path = "/app/design/website",
+  events: Array<{
+    id: number;
+    label: string;
+    starts_at_minutes: number;
+    duration_minutes: number | null;
+    location: string | null;
+    notes: string | null;
+    is_key_moment: boolean;
+  }> = [],
+) {
   globalThis.fetch = mock((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes("/api/couples/current")) return Promise.resolve(jsonResponse({ couple }));
-    if (url.includes("/api/schedule")) return Promise.resolve(jsonResponse({ events: [] }));
+    if (url.includes("/api/schedule")) return Promise.resolve(jsonResponse({ events }));
     if (url.includes("/api/wishlist")) return Promise.resolve(jsonResponse({ items: [] }));
     return Promise.resolve(jsonResponse({}));
   }) as unknown as typeof fetch;
@@ -179,5 +190,53 @@ describe("<DesignPage> smoke (/app/design/print)", () => {
 
     // Print-side fine tune uses the same row vocabulary as the guest tab.
     expect(screen.getByText("Keret")).toBeInTheDocument();
+  });
+
+  it("binds invitation, thank-you and schedule previews to the active workspace", async () => {
+    mountPage("/app/design/print", [
+      {
+        id: 41,
+        label: "Naplementés fogadalom",
+        starts_at_minutes: 16 * 60 + 45,
+        duration_minutes: 45,
+        location: "Sári Udvar",
+        notes: null,
+        is_key_moment: true,
+      },
+      {
+        id: 42,
+        label: "Gyertyafényes vacsora",
+        starts_at_minutes: 19 * 60 + 15,
+        duration_minutes: null,
+        location: null,
+        notes: null,
+        is_key_moment: true,
+      },
+    ]);
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Meghívó" })).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Meghívó" }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Mia & Lucas").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Sári Udvar, Dunakiliti").length).toBeGreaterThanOrEqual(1);
+    });
+    expect(screen.queryByText("Anna & Bence")).toBeNull();
+    expect(screen.queryByText("A helyszín, Város")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Köszönőkártya" }));
+    expect(screen.getAllByText("Mia & Lucas").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("2027. június 20.")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Programkártya" }));
+    await waitFor(() => {
+      expect(screen.getAllByText("Naplementés fogadalom").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("16:45").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Gyertyafényes vacsora").length).toBeGreaterThanOrEqual(1);
+    });
+    expect(screen.queryByText("15:00")).toBeNull();
+    expect(screen.queryByText("Szertartás")).toBeNull();
   });
 });

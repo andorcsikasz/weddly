@@ -76,7 +76,11 @@ import { TuneRail, TuneRow, type TuneRowId, TuneSwitchRow } from "../components/
 import { PaletteBar, roleColors } from "../components/design/PaletteBar";
 import { SampleTable } from "../components/design/SampleTable";
 import { headingTreatmentCss, OrnamentDivider } from "../components/ornaments";
-import { PrintCardPreview, type PrintTemplate } from "../components/PrintCardPreview";
+import {
+  PrintCardPreview,
+  type PrintEventData,
+  type PrintTemplate,
+} from "../components/PrintCardPreview";
 import {
   emptyMenuCard,
   MENU_LINE_MAX,
@@ -259,7 +263,6 @@ function MenuCardEditor({
         )}
         {courses.map((course, i) => (
           // Index key: a course has no id, and reordering rewrites the array.
-          // biome-ignore lint/suspicious/noArrayIndexKey: positional by nature
           <div key={i} className="space-y-2 px-4 py-3">
             <div className="flex items-center gap-2">
               <input
@@ -396,6 +399,18 @@ export default function DesignPage() {
    *  is the whole point of this page. */
   const [menuCard, setMenuCard] = useState<MenuCard>(emptyMenuCard());
   const [menuSaving, setMenuSaving] = useState(false);
+  const printEvent = useMemo<PrintEventData>(
+    () => ({
+      coupleName: couple?.display_name ?? null,
+      brideName: couple?.bride_name ?? null,
+      groomName: couple?.groom_name ?? null,
+      weddingDate: couple?.wedding_date ?? null,
+      venueName: couple?.venue_name ?? null,
+      venueCity: couple?.venue_city ?? null,
+      schedule: previewSchedule,
+    }),
+    [couple, previewSchedule],
+  );
   // Below lg only chapter 01 starts open (small screens scroll past the whole
   // editor); at lg+ all chapters start open. Read once at mount.
   const [lgUp] = useState(
@@ -1288,6 +1303,7 @@ export default function DesignPage() {
                     });
                   }}
                   brideName={couple?.bride_name ?? null}
+                  event={printEvent}
                 />
               )}
 
@@ -2059,6 +2075,7 @@ export default function DesignPage() {
                           template={printTemplate}
                           brideName={couple?.bride_name ?? null}
                           menuCard={menuCard}
+                          event={printEvent}
                         />
                       </span>
                     </div>

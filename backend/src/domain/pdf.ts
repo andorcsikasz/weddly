@@ -32,15 +32,19 @@ const NOTO_REGULAR = readFileSync(join(FONT_DIR, "NotoSans-Regular.ttf"));
 const NOTO_BOLD = readFileSync(join(FONT_DIR, "NotoSans-Bold.ttf"));
 const NOTO_SC = readFileSync(join(FONT_DIR, "NotoSansSC-Regular.otf"));
 
-// Style-pack display fonts (the same families self-hosted on the web). Each new
-// pack carries its own heading + body face so the printed card matches the
-// guest page. Read once at module load; embedded per-document on demand. These
-// cover Latin + Latin-Extended (Hungarian); CJK / other scripts still route
-// through the Noto fallback via `pickFontAsync`.
+// Style-pack display fonts. Read once at module load; embedded per-document on
+// demand. Where pdf-lib/fontkit cannot safely subset a web face, the mapping
+// uses the closest bundled PDF-safe face (documented below) rather than emit a
+// file with missing glyph outlines. These cover Latin + Latin-Extended
+// (Hungarian); CJK / other scripts still route through the Noto fallback via
+// `pickFontAsync`.
 const readFont = (f: string) => readFileSync(join(FONT_DIR, f));
 const PACK_FONT_FILES: Partial<Record<FontPresetSlug, { heading: Buffer; body: Buffer }>> = {
   garden_serif: {
-    heading: readFont("CormorantGaramond-Italic.ttf"),
+    // fontkit 1.1.1 corrupts the bundled Cormorant subset in saved PDFs
+    // (text operators survive, most glyph outlines do not). Bodoni is the
+    // closest bundled PDF-safe display serif and keeps the card legible.
+    heading: readFont("BodoniModa-Regular.ttf"),
     body: readFont("Jost-Light.ttf"),
   },
   mono_sans: { heading: readFont("DMSans-Bold.ttf"), body: readFont("DMSans-Regular.ttf") },
@@ -49,8 +53,11 @@ const PACK_FONT_FILES: Partial<Record<FontPresetSlug, { heading: Buffer; body: B
     body: readFont("CrimsonText-Regular.ttf"),
   },
   noir_smallcaps: {
-    heading: readFont("CormorantSC-SemiBold.ttf"),
-    body: readFont("EBGaramond-Regular.ttf"),
+    // Cormorant SC and EB Garamond hit the same subset defect. These two
+    // already-vendored serif faces are proven by the Blush renderer and retain
+    // the Midnight card's editorial contrast without dropping characters.
+    heading: readFont("BodoniModa-SemiBold.ttf"),
+    body: readFont("CrimsonText-Regular.ttf"),
   },
 };
 
@@ -875,6 +882,7 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
           size: nameSize,
           font: nameFont,
           color: colors.text,
+          ...headingDrawOptions(input.design),
         });
         if (tableLabel) {
           const t = safe(tableLabel);
@@ -897,6 +905,7 @@ export async function renderPlaceCardsPdf(input: PlaceCardInput): Promise<Uint8A
           size: nameSize,
           font: nameFont,
           color: colors.text,
+          ...headingDrawOptions(input.design),
         });
         // Garden's botanical sprig sits between the name and the table label.
         if (input.design.print.ornament && pack.cardLayout === "centered") {
@@ -945,11 +954,18 @@ async function buildFontPair(pdf: PDFDocument, design?: CoupleDesign): Promise<F
   };
 }
 
-/** Apply a pack's heading treatment to a string before it's drawn: uppercase
- *  for the Monochrome grotesk (the italic + small-caps treatments are baked
- *  into the Garden / Midnight display faces themselves). */
+/** Apply a pack's heading treatment to a string before it is drawn. Midnight's
+ *  PDF-safe substitute has no OpenType small-caps feature, so uppercase keeps
+ *  the preset's intended display treatment explicit. */
 function headingText(text: string, design: CoupleDesign): string {
-  return getStylePreset(design.style).headingStyle === "uppercase" ? text.toUpperCase() : text;
+  const style = getStylePreset(design.style).headingStyle;
+  return style === "uppercase" || style === "small_caps" ? text.toUpperCase() : text;
+}
+
+/** Garden's original PDF face was italic. Its safe substitute is upright, so
+ *  retain the preset's editorial slant synthetically at draw time. */
+function headingDrawOptions(design: CoupleDesign): { ySkew?: ReturnType<typeof degrees> } {
+  return getStylePreset(design.style).headingStyle === "italic" ? { ySkew: degrees(11) } : {};
 }
 
 /** Draw the card frame honouring the borderStyle enum (none / hairline / double
@@ -1271,6 +1287,7 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     size: 22,
     font: nameFont,
     color: colors.text,
+    ...headingDrawOptions(input.design),
   });
 
   // Date, when present, in the pack body face.
@@ -1304,6 +1321,7 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
     size: 13,
     font: hFont,
     color: colors.primary,
+    ...headingDrawOptions(input.design),
   });
 
   const written = input.menu_card.courses;
@@ -1323,6 +1341,7 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
         size: 11,
         font: cFont,
         color: colors.text,
+        ...headingDrawOptions(input.design),
       });
       page.drawLine({
         start: { x: cxPt - ruleHalf, y: mm(yMm - 6) },
@@ -1353,6 +1372,7 @@ export async function renderMenuPdf(input: MenuInput): Promise<Uint8Array> {
         size: 11,
         font: cFont,
         color: colors.primary,
+        ...headingDrawOptions(input.design),
       });
       yMm -= gap;
     }
@@ -1434,6 +1454,7 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
       size: sizePt,
       font,
       color,
+      ...(role === "heading" ? headingDrawOptions(input.design) : {}),
     });
   };
 
@@ -1453,6 +1474,7 @@ export async function renderInvitationPdf(input: InvitationInput): Promise<Uint8
     size: nameSize,
     font: nameFont,
     color: colors.text,
+    ...headingDrawOptions(input.design),
   });
 
   // Ornament divider under the names, gated by the Ornament toggle.
@@ -1529,6 +1551,7 @@ export async function renderThankYouPdf(input: ThankYouInput): Promise<Uint8Arra
       size: sizePt,
       font,
       color,
+      ...(role === "heading" ? headingDrawOptions(input.design) : {}),
     });
   };
 
@@ -1545,6 +1568,7 @@ export async function renderThankYouPdf(input: ThankYouInput): Promise<Uint8Arra
     size: thanksSize,
     font: thanksFont,
     color: colors.text,
+    ...headingDrawOptions(input.design),
   });
 
   // Ornament divider, gated by the Ornament toggle.

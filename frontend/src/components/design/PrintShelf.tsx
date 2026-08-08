@@ -12,7 +12,7 @@
 
 import type { CoupleDesign } from "@shared/design";
 import { useT } from "../../lib/i18n";
-import { PrintCardPreview, type PrintTemplate } from "../PrintCardPreview";
+import { PrintCardPreview, type PrintEventData, type PrintTemplate } from "../PrintCardPreview";
 
 export const PRINT_TEMPLATES: readonly PrintTemplate[] = [
   "place_card",
@@ -28,11 +28,13 @@ export function PrintShelf({
   selected,
   onSelect,
   brideName,
+  event,
 }: {
   design: CoupleDesign;
   selected: PrintTemplate;
   onSelect: (tpl: PrintTemplate) => void;
   brideName: string | null;
+  event?: PrintEventData;
 }) {
   const { t } = useT();
   return (
@@ -58,7 +60,12 @@ export function PrintShelf({
               {/* The tile IS the card, at whatever size the column allows.
                   PrintCardPreview is width-driven, so it scales cleanly. */}
               <span className="pointer-events-none block overflow-hidden rounded">
-                <PrintCardPreview design={design} template={tpl} brideName={brideName} />
+                <PrintCardPreview
+                  design={design}
+                  template={tpl}
+                  brideName={brideName}
+                  event={event}
+                />
               </span>
               <span className="truncate px-0.5 text-[11px] font-medium text-ink-700 dark:text-paper-100">
                 {name}

@@ -493,17 +493,37 @@ describe("design: design-aware print templates", () => {
     await expectPdf("/api/print/thank-you", token);
   });
 
-  test("every style pack embeds its fonts and renders valid card PDFs", async () => {
+  test("every style pack embeds its fonts and renders accented Latin card PDFs", async () => {
     wipeAll();
     const token = await registerVerified("design-packs-print@weddly.test");
-    await onboard(token);
+    const { couple } = await onboard(token);
+    // Exercise the glyphs that exposed the broken Cormorant/EB Garamond
+    // subsets: the PDF still contained text operators, but the saved font
+    // subset dropped most outlines and viewers showed fragments of letters.
+    db.prepare(
+      `UPDATE couples
+       SET display_name = ?, bride_name = ?, groom_name = ?, wedding_date = ?, menu_card = ?
+       WHERE id = ?`,
+    ).run(
+      "Árvíztűrő Tükörfúrógép & Őz Éva",
+      "ÁÉÍÓÖŐÚÜŰ",
+      "Őz Éva",
+      "2027-06-20",
+      JSON.stringify({
+        courses: [
+          { title: "ELŐÉTEL ÁÉÍÓÖŐÚÜŰ", lines: ["Gulyásleves újházi módra"] },
+          { title: "FŐÉTEL", lines: ["Őrségi dödölle fűszeres csirkével"] },
+        ],
+      }),
+      couple.id,
+    );
     // Move off the default pack (Garden) so the first loop iteration is a real
     // change rather than a no-op PATCH (which the handler 400s).
     await req("PATCH", "/api/couples/current", { design: { style: "midnight_luxe" } }, { token });
-    // Each pack pulls in a different bundled display face (Cormorant italic /
-    // DM Sans / Bodoni + Crimson / Cormorant SC + EB Garamond) plus its own
-    // date format (Roman for Midnight) — so this catches a bad font embed or a
-    // formatter crash on any single pack.
+    // Each pack pulls in its configured PDF-safe display faces plus its own
+    // date format (Roman for Midnight), so this catches a bad font embed or a
+    // formatter crash on any single pack and keeps Latin-Extended content on
+    // every exported card path.
     for (const style of [
       "garden_romance",
       "modern_monochrome",

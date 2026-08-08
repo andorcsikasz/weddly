@@ -14,8 +14,9 @@
 // toPublicDesign (override-or-palette), reaching the DOM as inline values that
 // are design DATA, not authored literals (same pattern as the palette swatches).
 
-import { type CoupleDesign, getBorderCss, toPublicDesign } from "@shared/design";
+import { type CoupleDesign, formatWeddingDate, getBorderCss, toPublicDesign } from "@shared/design";
 import type { MenuCard } from "@shared/types";
+import type { PublicWeddingScheduleEntry } from "@shared/wedding_website";
 import { useT } from "../lib/i18n";
 import { OrnamentDivider, OrnamentFrame, headingTreatmentCss } from "./ornaments";
 
@@ -28,11 +29,31 @@ export type PrintTemplate =
   | "invitation"
   | "thank_you";
 
+/** Workspace content shared by every event-level printed card. Undefined is
+ *  reserved for isolated/sample previews; a loaded workspace passes this
+ *  object even when some fields are empty, so missing data never turns back
+ *  into Anna/Bence or a made-up run of show. */
+export interface PrintEventData {
+  coupleName: string | null;
+  brideName: string | null;
+  groomName: string | null;
+  weddingDate: string | null;
+  venueName: string | null;
+  venueCity: string | null;
+  schedule: readonly PublicWeddingScheduleEntry[];
+}
+
+function formatTimeOfDay(minutes: number): string {
+  const withinDay = ((minutes % 1440) + 1440) % 1440;
+  return `${String(Math.floor(withinDay / 60)).padStart(2, "0")}:${String(withinDay % 60).padStart(2, "0")}`;
+}
+
 export function PrintCardPreview({
   design,
   template,
   brideName,
   menuCard,
+  event,
 }: {
   design: CoupleDesign;
   template: PrintTemplate;
@@ -41,10 +62,34 @@ export function PrintCardPreview({
    *  them. Absent or empty falls back to the generic course labels, which is
    *  also exactly what the PDF prints in that case. */
   menuCard?: MenuCard | null;
+  /** Live workspace data for invitation, thank-you and schedule cards. */
+  event?: PrintEventData;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const d = toPublicDesign(design);
   const menuCourses = menuCard?.courses ?? [];
+  const sampleMode = event === undefined;
+  const eventCoupleName = sampleMode
+    ? t("design.print_preview.sample_couple")
+    : event.coupleName?.trim() ||
+      [event.brideName?.trim(), event.groomName?.trim()].filter(Boolean).join(" & ");
+  const eventDate = sampleMode
+    ? t("design.print_preview.sample_date")
+    : formatWeddingDate(event.weddingDate, design.dateFormat, locale);
+  const eventVenue = sampleMode
+    ? t("design.print_preview.invitation_venue")
+    : [event.venueName?.trim(), event.venueCity?.trim()].filter(Boolean).join(", ");
+  const scheduleRows = sampleMode
+    ? [
+        { id: "ceremony", time: "15:00", label: t("design.print_preview.sample_program.ceremony") },
+        { id: "dinner", time: "18:00", label: t("design.print_preview.sample_program.dinner") },
+        { id: "party", time: "21:00", label: t("design.print_preview.sample_program.party") },
+      ]
+    : event.schedule.slice(0, 5).map((entry) => ({
+        id: entry.id,
+        time: formatTimeOfDay(entry.starts_at_minutes),
+        label: entry.label,
+      }));
 
   // Menu / schedule / invitation / thank-you cards are taller (portrait); place
   // cards + table numbers are landscape.
@@ -191,7 +236,6 @@ export function PrintCardPreview({
                   ? menuCourses.map((course, i) => (
                       // Index key: courses have no id and are reordered by the
                       // editor rewriting the whole array.
-                      // biome-ignore lint/suspicious/noArrayIndexKey: positional by nature
                       <div key={i} className="flex flex-col gap-0.5">
                         {course.title && (
                           <span
@@ -226,21 +270,15 @@ export function PrintCardPreview({
                 className={`flex flex-col gap-2.5 text-sm ${isLeft ? "items-start" : "items-center"}`}
                 style={{ color: d.text }}
               >
-                {(
-                  [
-                    { time: "15:00", key: "ceremony" },
-                    { time: "18:00", key: "dinner" },
-                    { time: "21:00", key: "party" },
-                  ] as const
-                ).map((row) => (
+                {scheduleRows.map((row) => (
                   <span
-                    key={row.key}
+                    key={row.id}
                     className={`flex items-baseline gap-2 ${isLeft ? "justify-start" : "justify-center"}`}
                   >
                     <span className="tabular-nums" style={{ color: d.accent_text }}>
                       {row.time}
                     </span>
-                    <span>{t(`design.print_preview.sample_program.${row.key}`)}</span>
+                    <span>{row.label}</span>
                   </span>
                 ))}
               </div>
@@ -259,21 +297,25 @@ export function PrintCardPreview({
                 className="mt-2 text-2xl leading-tight"
                 style={{ color: d.text, fontFamily: d.heading_font, ...hCss }}
               >
-                {t("design.print_preview.sample_couple")}
+                {eventCoupleName}
               </span>
               {divider("my-3")}
               <span className="text-sm" style={{ color: d.text }}>
                 {t("design.print_preview.invitation_line")}
               </span>
-              <span
-                className="mt-2 text-sm tracking-[0.12em]"
-                style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
-              >
-                {t("design.print_preview.sample_date")}
-              </span>
-              <span className="mt-1 text-xs" style={{ color: labelColor }}>
-                {t("design.print_preview.invitation_venue")}
-              </span>
+              {eventDate && (
+                <span
+                  className="mt-2 text-sm tracking-[0.12em]"
+                  style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
+                >
+                  {eventDate}
+                </span>
+              )}
+              {eventVenue && (
+                <span className="mt-1 text-xs" style={{ color: labelColor }}>
+                  {eventVenue}
+                </span>
+              )}
             </>
           )}
 
@@ -293,11 +335,13 @@ export function PrintCardPreview({
                 className="mt-2 text-base tracking-[0.12em]"
                 style={{ color: d.accent_text, fontFamily: d.heading_font, ...hCss }}
               >
-                {t("design.print_preview.sample_couple")}
+                {eventCoupleName}
               </span>
-              <span className="mt-1 text-xs" style={{ color: labelColor }}>
-                {t("design.print_preview.sample_date")}
-              </span>
+              {eventDate && (
+                <span className="mt-1 text-xs" style={{ color: labelColor }}>
+                  {eventDate}
+                </span>
+              )}
             </>
           )}
 
