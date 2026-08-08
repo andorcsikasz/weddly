@@ -2030,6 +2030,10 @@ export interface PlanningItem {
    *  (prompt_kind, target, supplier category, hint, group) is looked up from the
    *  master by this key on the frontend rather than stored per row. */
   seed_key: string | null;
+  /** Stable wedding-checklist template identity. Checklist entries are normal
+   *  tasks; this link is what lets the dedicated view and PDF find them without
+   *  maintaining a second completion flag. Null on user-authored tasks. */
+  checklist_template_id: string | null;
   /** "Döntések" layer - see `DecisionStatus`. `null` on non-prompt rows. */
   decision_status: DecisionStatus | null;
   /** "Döntések" layer - the resolved decision / supplier answer, free text.

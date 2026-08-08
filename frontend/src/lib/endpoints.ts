@@ -1393,7 +1393,30 @@ export const planningApi = {
       "/api/planning/prompts/generate",
       { group },
     ),
+  /** Idempotently materialise the shared wedding checklist as normal Planning
+   *  tasks. Existing template/timeline tasks are linked where titles match. */
+  initializeChecklist: (locale: import("@shared/locales").UiLocale) =>
+    apiFetch<{
+      items: import("@shared/types").PlanningItem[];
+      created: number;
+      linked: number;
+    }>("POST", "/api/planning/checklist/initialize", { locale }),
 };
+
+export function weddingChecklistPdfUrl(options: {
+  locale: import("@shared/locales").UiLocale;
+  blank?: boolean;
+  dates?: boolean;
+  owners?: boolean;
+  remaining?: boolean;
+}): string {
+  const params = new URLSearchParams({ locale: options.locale });
+  if (options.blank) params.set("mode", "blank");
+  if (options.dates) params.set("dates", "1");
+  if (options.owners) params.set("owners", "1");
+  if (options.remaining) params.set("remaining", "1");
+  return `/api/print/wedding-checklist?${params.toString()}`;
+}
 
 export const notificationApi = {
   /** Merged bell feed: live timeline items + stored events, with the unread

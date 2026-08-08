@@ -748,11 +748,15 @@ CREATE TABLE IF NOT EXISTS planning_items (
   due_date TEXT,                                               -- ISO YYYY-MM-DD; tasks only
   scheduled_time TEXT,                                         -- HH:MM; schedule entries only
   position INTEGER NOT NULL DEFAULT 0,
+  checklist_template_id TEXT,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_planning_couple ON planning_items(couple_id);
 CREATE INDEX IF NOT EXISTS idx_planning_kind ON planning_items(couple_id, kind, position);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_planning_checklist_template
+  ON planning_items(couple_id, checklist_template_id)
+  WHERE checklist_template_id IS NOT NULL;
 
 -- Cache for Amadeus flight-offer lookups powering the honeymoon flight
 -- estimate card. Rows are keyed by (origin, destination_text, depart_date,

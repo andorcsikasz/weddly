@@ -22,6 +22,7 @@ import {
   Calendar,
   CalendarClock,
   CheckCircle2,
+  ClipboardCheck,
   ChevronDown,
   ChevronUp,
   Circle,
@@ -63,6 +64,7 @@ import {
   supplierApi,
 } from "../lib/endpoints";
 import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
+import { WeddingChecklistDialog } from "../components/WeddingChecklistDialog";
 import { MoneyInput } from "../components/MoneyInput";
 import { setSelection } from "../lib/supplier_selection";
 import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
@@ -298,6 +300,7 @@ export default function PlanningPage() {
   // /app/schedule, so there's no schedule wand here.
   const [taskWandOpen, setTaskWandOpen] = useState(false);
   const [timelineGenOpen, setTimelineGenOpen] = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
   const [weddingDate, setWeddingDate] = useState<string | null>(null);
   const [ideaWandOpen, setIdeaWandOpen] = useState(false);
   const [diceOpen, setDiceOpen] = useState(false);
@@ -1041,6 +1044,16 @@ export default function PlanningPage() {
                  *  Template. Each segment is icon-only until hovered, when its
                  *  label slides open (mirrors the guest toolbar). */}
                 <div className="inline-flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100">
+                  <button
+                    type="button"
+                    onClick={() => setChecklistOpen(true)}
+                    className={PLAN_TOOL_BTN}
+                    title={t("planning.checklist.action")}
+                    aria-label={t("planning.checklist.action")}
+                  >
+                    <ClipboardCheck size={16} aria-hidden="true" />
+                    <span className={PLAN_TOOL_LABEL}>{t("planning.checklist.action")}</span>
+                  </button>
                   <Link
                     to="/app/timeline"
                     className={PLAN_TOOL_BTN}
@@ -1280,6 +1293,15 @@ export default function PlanningPage() {
           onApply={onApplyTimeline}
         />
       )}
+
+      <WeddingChecklistDialog
+        open={checklistOpen}
+        onClose={() => setChecklistOpen(false)}
+        items={items}
+        onItemsChange={setItems}
+        weddingDate={weddingDate}
+        profile={intakeTags}
+      />
 
       {taskWandOpen && (
         <TaskTemplateDialog

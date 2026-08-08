@@ -226,12 +226,19 @@ db.exec("CREATE INDEX IF NOT EXISTS idx_planning_topic ON planning_items(couple_
 //   resolution: free-text answer / decision log ("Bevonulás: Canon in D",
 //     "Igen, van koffeinmentes kávé").
 addColumnIfMissing("planning_items", "seed_key", "seed_key TEXT");
+// Stable identity for a task materialised from the shared wedding checklist.
+// Completion stays on planning_items.done: the checklist and normal task views
+// are two presentations of the same row, never two independently-syncing flags.
+addColumnIfMissing("planning_items", "checklist_template_id", "checklist_template_id TEXT");
 addColumnIfMissing("planning_items", "decision_status", "decision_status TEXT");
 addColumnIfMissing("planning_items", "resolution", "resolution TEXT");
 // One prompt row per (couple, seed): the generator dedupes on this when it
 // lazily materialises a group, so re-opening a group never double-inserts.
 db.exec(
   "CREATE INDEX IF NOT EXISTS idx_planning_seed ON planning_items(couple_id, seed_key) WHERE seed_key IS NOT NULL",
+);
+db.exec(
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_planning_checklist_template ON planning_items(couple_id, checklist_template_id) WHERE checklist_template_id IS NOT NULL",
 );
 // Idea triage on kind='idea' rows. `idea_status` is the maybe-pile sorting
 // ('doing' | 'maybe' | 'skip', see shared IdeaStatus); `idea_tag` is a loose

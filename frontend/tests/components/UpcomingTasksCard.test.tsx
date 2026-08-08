@@ -97,6 +97,7 @@ function task(over: Partial<PlanningItem> = {}): PlanningItem {
     suggested_by_name: null,
     position: 0,
     seed_key: null,
+    checklist_template_id: null,
     decision_status: null,
     resolution: null,
     idea_status: null,

@@ -60,6 +60,7 @@ export interface PlanningItemRow {
   position: number;
   /** "Döntések" layer - stable seed identifier; NULL on normal rows. */
   seed_key: string | null;
+  checklist_template_id: string | null;
   /** "Döntések" layer - 'open' | 'decided' | 'not_relevant' | 'promoted'; NULL
    *  on non-prompt rows. */
   decision_status: string | null;
@@ -100,6 +101,7 @@ export function toPlanningItem(row: PlanningItemJoinedRow): PlanningItem {
     priority: row.priority === 1 || row.priority === 2 ? (row.priority as 1 | 2) : 0,
     position: row.position,
     seed_key: row.seed_key,
+    checklist_template_id: row.checklist_template_id,
     decision_status: isDecisionStatus(row.decision_status) ? row.decision_status : null,
     resolution: row.resolution,
     idea_status: isIdeaStatus(row.idea_status) ? row.idea_status : null,
