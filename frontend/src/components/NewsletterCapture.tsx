@@ -71,15 +71,18 @@ export function NewsletterCapture({ source }: { source: string }) {
             />
             <button
               type="submit"
-              className="btn-primary shrink-0"
-              disabled={state === "sending" || email.trim().length === 0}
+              className="btn-primary shrink-0 disabled:border disabled:border-paper-300 disabled:bg-paper-200 disabled:text-umber-600 disabled:opacity-100 dark:disabled:border-umber-600 dark:disabled:bg-umber-700 dark:disabled:text-umber-200"
+              disabled={state === "sending" || email.trim().length === 0 || !consented}
+              title={
+                email.trim().length > 0 && !consented ? t("newsletter.error_consent") : undefined
+              }
             >
               {state === "sending" ? t("newsletter.submitting") : t("newsletter.submit")}
             </button>
           </div>
           <label
             htmlFor={consentId}
-            className="mt-3 flex items-start gap-2 font-grotesk text-xs leading-relaxed text-umber-700 dark:text-umber-200"
+            className="mt-3 flex min-h-tap cursor-pointer items-start gap-2 py-1 font-grotesk text-xs leading-relaxed text-umber-700 dark:text-umber-200"
           >
             <input
               id={consentId}
@@ -89,7 +92,7 @@ export function NewsletterCapture({ source }: { source: string }) {
                 setConsented(e.target.checked);
                 if (e.target.checked) setError(null);
               }}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-umber-700"
+              className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-umber-700"
             />
             <span>
               {t("newsletter.consent")}{" "}

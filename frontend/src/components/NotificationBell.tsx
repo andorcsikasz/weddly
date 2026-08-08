@@ -32,7 +32,16 @@ import {
   Settings,
   Star,
 } from "lucide-react";
-import { type ComponentType, type SVGProps, useEffect, useRef, useState } from "react";
+import {
+  type ComponentType,
+  type CSSProperties,
+  type SVGProps,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { coupleApi, notificationApi } from "../lib/endpoints";
 import { FeedbackDialog } from "./FeedbackDialog";
@@ -193,7 +202,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
           type="button"
           onClick={onBack}
           aria-label={t("notifications.settings_back")}
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-700"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-7 sm:w-7 dark:text-umber-300 dark:hover:bg-umber-700"
         >
           <ArrowLeft size={14} aria-hidden="true" />
         </button>
@@ -300,6 +309,9 @@ export function NotificationBell() {
   const [surveyOpen, setSurveyOpen] = useState(false);
   const cancelled = useRef(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [panelPosition, setPanelPosition] = useState({ top: 72, right: 12 });
 
   useEffect(() => {
     cancelled.current = false;
@@ -308,11 +320,14 @@ export function NotificationBell() {
         .list()
         .then((feed) => {
           if (cancelled.current) return;
-          setItems(feed.items);
-          setUnread(feed.unread);
+          // Notifications are non-critical shell chrome. Keep the header usable
+          // if a stale cache, test double, or partial response omits the feed.
+          const nextItems = Array.isArray(feed?.items) ? feed.items : [];
+          setItems(nextItems);
+          setUnread(typeof feed?.unread === "number" ? feed.unread : 0);
           // Show the survey popup once — only if backend says there's a prompt
           // and this browser hasn't seen it yet.
-          const hasSurvey = feed.items.some((i) => i.kind === "feedback_survey");
+          const hasSurvey = nextItems.some((i) => i.kind === "feedback_survey");
           if (hasSurvey && !localStorage.getItem(SURVEY_POPUP_KEY)) {
             localStorage.setItem(SURVEY_POPUP_KEY, "1");
             setSurveyOpen(true);
@@ -337,7 +352,10 @@ export function NotificationBell() {
   useEffect(() => {
     if (!open) return;
     const onPointer = (e: PointerEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) {
+      if (
+        !menuRef.current?.contains(e.target as Node) &&
+        !panelRef.current?.contains(e.target as Node)
+      ) {
         setOpen(false);
         setShowSettings(false);
         setShowHistory(false);
@@ -355,6 +373,29 @@ export function NotificationBell() {
     return () => {
       document.removeEventListener("pointerdown", onPointer);
       document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // The panel is portalled to <body>, so it is positioned against the real
+  // viewport rather than the bell's header stacking context. On phones the
+  // stylesheet pins both side edges; from sm up the measured `right` value
+  // keeps the desktop panel anchored to the bell.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setPanelPosition({
+        top: Math.round(rect.bottom + 8),
+        right: Math.max(12, Math.round(window.innerWidth - rect.right)),
+      });
+    };
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, { passive: true });
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place);
     };
   }, [open]);
 
@@ -417,6 +458,7 @@ export function NotificationBell() {
       />
       <div className="relative" ref={menuRef}>
         <button
+          ref={triggerRef}
           type="button"
           onClick={toggleOpen}
           aria-label={t("notifications.aria_label")}
@@ -435,95 +477,105 @@ export function NotificationBell() {
           )}
         </button>
 
-        {open && (
-          <div
-            role="menu"
-            className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
-          >
-            {showSettings ? (
-              <SettingsPanel onBack={() => setShowSettings(false)} />
-            ) : (
-              <>
-                <div className="flex items-center justify-between border-b border-paper-200 px-4 py-3 dark:border-umber-700">
-                  <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
-                    {t("notifications.title")}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setShowSettings(true)}
-                    aria-label={t("notifications.settings_title")}
-                    title={t("notifications.settings_title")}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
-                  >
-                    <Settings size={14} aria-hidden="true" />
-                  </button>
-                </div>
-                {(() => {
-                  const unreadItems = items.filter((i) => !i.read);
-                  const readItems = items.filter((i) => i.read);
-                  const visibleItems = showHistory ? items : unreadItems;
-                  return (
-                    <>
-                      {visibleItems.length === 0 ? (
-                        <p className="px-4 py-8 text-center text-sm text-ink-500 dark:text-umber-300">
-                          {readItems.length > 0
-                            ? t("notifications.no_new")
-                            : t("notifications.empty")}
-                        </p>
-                      ) : (
-                        <ul className="max-h-96 divide-y divide-paper-200 overflow-y-auto dark:divide-umber-700">
-                          {visibleItems.map((item) => {
-                            const Icon = KIND_ICON[item.kind] ?? Bell;
-                            const overdue = item.kind === "timeline_overdue";
-                            return (
-                              <li key={item.id}>
-                                <button
-                                  type="button"
-                                  onClick={() => openItem(item)}
-                                  className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
-                                >
-                                  <span
-                                    className={`mt-0.5 shrink-0 ${overdue ? "text-blush-600 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
+        {open &&
+          createPortal(
+            <div
+              ref={panelRef}
+              role="menu"
+              className="notification-panel fixed z-50 overflow-y-auto overscroll-contain rounded-2xl border border-paper-300 bg-paper-50 shadow-pop dark:border-umber-700 dark:bg-umber-800"
+              style={
+                {
+                  top: panelPosition.top,
+                  maxHeight: `calc(100dvh - ${panelPosition.top + 12}px)`,
+                  "--notification-panel-right": `${panelPosition.right}px`,
+                } as CSSProperties
+              }
+            >
+              {showSettings ? (
+                <SettingsPanel onBack={() => setShowSettings(false)} />
+              ) : (
+                <>
+                  <div className="flex items-center justify-between border-b border-paper-200 px-4 py-3 dark:border-umber-700">
+                    <p className="font-grotesk text-sm font-semibold text-ink-900 dark:text-paper-50">
+                      {t("notifications.title")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowSettings(true)}
+                      aria-label={t("notifications.settings_title")}
+                      title={t("notifications.settings_title")}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-paper-200 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-7 sm:w-7 dark:text-umber-400 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+                    >
+                      <Settings size={14} aria-hidden="true" />
+                    </button>
+                  </div>
+                  {(() => {
+                    const unreadItems = items.filter((i) => !i.read);
+                    const readItems = items.filter((i) => i.read);
+                    const visibleItems = showHistory ? items : unreadItems;
+                    return (
+                      <>
+                        {visibleItems.length === 0 ? (
+                          <p className="px-4 py-8 text-center text-sm text-ink-500 dark:text-umber-300">
+                            {readItems.length > 0
+                              ? t("notifications.no_new")
+                              : t("notifications.empty")}
+                          </p>
+                        ) : (
+                          <ul className="max-h-[min(24rem,calc(100dvh-12rem))] divide-y divide-paper-200 overflow-y-auto overscroll-contain dark:divide-umber-700">
+                            {visibleItems.map((item) => {
+                              const Icon = KIND_ICON[item.kind] ?? Bell;
+                              const overdue = item.kind === "timeline_overdue";
+                              return (
+                                <li key={item.id}>
+                                  <button
+                                    type="button"
+                                    onClick={() => openItem(item)}
+                                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-paper-100/60 focus:outline-none focus-visible:bg-paper-100 dark:hover:bg-umber-900/40 dark:focus-visible:bg-umber-900/60"
                                   >
-                                    <Icon size={16} aria-hidden="true" />
-                                  </span>
-                                  <span
-                                    className={`min-w-0 flex-1 text-sm ${item.read ? "text-ink-600 dark:text-umber-200" : "font-medium text-ink-900 dark:text-paper-50"}`}
-                                  >
-                                    {label(item)}
-                                  </span>
-                                  {!item.read && (
                                     <span
-                                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blush-500"
-                                      aria-hidden="true"
-                                    />
-                                  )}
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                      {readItems.length > 0 && (
-                        <div className="border-t border-paper-200 px-4 py-2 dark:border-umber-700">
-                          <button
-                            type="button"
-                            onClick={() => setShowHistory((v) => !v)}
-                            className="w-full text-center text-xs text-ink-400 transition-colors hover:text-ink-700 dark:text-umber-400 dark:hover:text-paper-100"
-                          >
-                            {showHistory
-                              ? t("notifications.hide_history")
-                              : t("notifications.show_history")}
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </>
-            )}
-          </div>
-        )}
+                                      className={`mt-0.5 shrink-0 ${overdue ? "text-blush-600 dark:text-blush-300" : "text-ink-400 dark:text-umber-300"}`}
+                                    >
+                                      <Icon size={16} aria-hidden="true" />
+                                    </span>
+                                    <span
+                                      className={`min-w-0 flex-1 text-sm ${item.read ? "text-ink-600 dark:text-umber-200" : "font-medium text-ink-900 dark:text-paper-50"}`}
+                                    >
+                                      {label(item)}
+                                    </span>
+                                    {!item.read && (
+                                      <span
+                                        className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blush-500"
+                                        aria-hidden="true"
+                                      />
+                                    )}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                        {readItems.length > 0 && (
+                          <div className="border-t border-paper-200 px-4 py-2 dark:border-umber-700">
+                            <button
+                              type="button"
+                              onClick={() => setShowHistory((v) => !v)}
+                              className="min-h-tap w-full text-center text-xs text-ink-400 transition-colors hover:text-ink-700 sm:min-h-0 dark:text-umber-400 dark:hover:text-paper-100"
+                            >
+                              {showHistory
+                                ? t("notifications.hide_history")
+                                : t("notifications.show_history")}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              )}
+            </div>,
+            document.body,
+          )}
       </div>
     </>
   );

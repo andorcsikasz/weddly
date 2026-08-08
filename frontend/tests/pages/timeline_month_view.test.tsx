@@ -34,4 +34,14 @@ describe("Timeline MonthView week rows", () => {
 
     expect(container.querySelectorAll(".grid.flex-1 > div")).toHaveLength(5);
   });
+
+  it("uses the seven-day responsive grid and hides the ISO week gutter on phones", () => {
+    const { container } = renderMonth(new Date(2026, 7, 1));
+    const grids = container.querySelectorAll(".timeline-month-grid");
+
+    expect(grids.length).toBeGreaterThan(1);
+    expect(grids[0]).toHaveClass("timeline-month-grid");
+    expect(grids[1]?.firstElementChild).toHaveClass("hidden", "sm:flex");
+    expect(grids[1]?.children[1]).toHaveClass("min-w-0");
+  });
 });

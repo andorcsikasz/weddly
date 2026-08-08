@@ -1613,6 +1613,35 @@ html:not(.dark) [data-app-shell] .outline-ink-400 {
     padding-right: env(safe-area-inset-right, 0);
   }
 
+  /* Portalled notification menu. Phone edges are viewport-relative so a bell
+     near the right side cannot push the desktop-width panel off the left side.
+     Tablet+ returns to the measured bell anchor. */
+  .notification-panel {
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+  }
+  @media (min-width: 640px) {
+    .notification-panel {
+      left: auto;
+      right: var(--notification-panel-right, 0.75rem);
+      width: 20rem;
+      max-width: calc(100vw - 1.5rem);
+    }
+  }
+
+  /* Month view: phone grids spend every pixel on the seven required days;
+     the nonessential ISO-week gutter returns at the existing sm breakpoint. */
+  .timeline-month-grid {
+    --timeline-week-gutter: 0px;
+    grid-template-columns: var(--timeline-week-gutter) repeat(7, minmax(0, 1fr));
+  }
+  @media (min-width: 640px) {
+    .timeline-month-grid {
+      --timeline-week-gutter: 40px;
+    }
+  }
+
   /* Loading placeholder — a soft base with a brighter highlight that sweeps
      across the block (see `animate-shimmer` keyframes in tailwind.config.js).
      The gradient is layered on top of a flat base so the surface still has a

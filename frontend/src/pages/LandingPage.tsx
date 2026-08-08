@@ -746,18 +746,20 @@ function MobileStickySignup() {
   // on an ancestor of a focusable Link (an ARIA-in-HTML violation).
   return (
     <div
-      {...(visible ? {} : { inert: "" as unknown as boolean })}
-      className={`pointer-events-none safe-edges fixed inset-x-0 bottom-0 z-30 px-4 pb-4 pt-2 transition-opacity duration-200 lg:hidden ${
+      {...(visible ? {} : { inert: true })}
+      className={`pointer-events-none safe-edges fixed inset-x-0 bottom-0 z-30 transition-opacity duration-200 lg:hidden ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
-      <div className="absolute inset-x-0 bottom-0 -z-10 h-[calc(100%+8px)] bg-gradient-to-t from-paper-50 via-paper-50/95 to-transparent dark:from-umber-900 dark:via-umber-900/95" />
-      <Link
-        to="/signup"
-        className="btn-primary btn-lifted btn-landing btn-lg pointer-events-auto w-full"
-      >
-        {t("landing.cta_signup")}
-      </Link>
+      <div className="relative px-4 pb-4 pt-2">
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-[calc(100%+8px)] bg-gradient-to-t from-paper-50 via-paper-50/95 to-transparent dark:from-umber-900 dark:via-umber-900/95" />
+        <Link
+          to="/signup"
+          className="btn-primary btn-lifted btn-landing btn-lg pointer-events-auto w-full"
+        >
+          {t("landing.cta_signup")}
+        </Link>
+      </div>
     </div>
   );
 }
@@ -1598,32 +1600,34 @@ function PricingDeck() {
       {/* Below lg there is no room either side of the ticket for a peek to say
           anything readable, so the same three choices become a tap row. Both
           controls drive one piece of state, so the deck has one behaviour. */}
-      <div className="mx-auto mb-7 grid max-w-lg grid-cols-3 gap-2 lg:hidden">
-        {PRICING_RING.map((id) => {
-          const card = cards[id];
-          const isActive = id === active;
-          return (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={isActive}
-              onClick={() => setActive(id)}
-              className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 transition-colors duration-300 ${
-                isActive
-                  ? "border-umber-400 bg-paper-50 dark:border-umber-400 dark:bg-umber-800"
-                  : "border-paper-300 hover:bg-paper-100/70 dark:border-umber-700 dark:hover:bg-umber-800/60"
-              }`}
-            >
-              <span className="font-grotesk text-[10px] font-semibold uppercase tracking-[0.14em] text-umber-600 dark:text-umber-300">
-                {card.label}
-              </span>
-              <span className="font-serif text-lg leading-none text-umber-900 dark:text-paper-50">
-                {card.from ? `${fromLabel} ` : ""}
-                {formatNumber(card.amount, locale)} {symbol}
-              </span>
-            </button>
-          );
-        })}
+      <div className="-mx-4 mb-7 overflow-x-auto overscroll-x-contain px-4 pb-1 lg:hidden sm:mx-auto sm:max-w-lg sm:px-0">
+        <div className="flex min-w-max gap-2 sm:grid sm:min-w-0 sm:grid-cols-3">
+          {PRICING_RING.map((id) => {
+            const card = cards[id];
+            const isActive = id === active;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => setActive(id)}
+                className={`flex min-h-tap min-w-32 flex-col items-center gap-1.5 rounded-xl border px-3 py-3 transition-colors duration-300 sm:min-w-0 ${
+                  isActive
+                    ? "border-umber-400 bg-paper-50 dark:border-umber-400 dark:bg-umber-800"
+                    : "border-paper-300 hover:bg-paper-100/70 dark:border-umber-700 dark:hover:bg-umber-800/60"
+                }`}
+              >
+                <span className="whitespace-nowrap font-grotesk text-[10px] font-semibold uppercase tracking-[0.14em] text-umber-600 dark:text-umber-300">
+                  {card.label}
+                </span>
+                <span className="whitespace-nowrap font-serif text-lg leading-none text-umber-900 dark:text-paper-50">
+                  {card.from ? `${fromLabel} ` : ""}
+                  {formatNumber(card.amount, locale)} {symbol}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* The deck. Arrow keys work wherever focus sits inside it (the peeks and
@@ -1806,13 +1810,13 @@ function PricingTicketBody({
         {card.icon}
         {card.label}
       </span>
-      <div className="mt-2 flex items-end gap-2.5">
+      <div className="mt-2 flex min-w-0 flex-wrap items-end gap-x-2.5 gap-y-1">
         {card.from && (
           <span className="mb-3 font-grotesk text-sm text-umber-600 dark:text-umber-300">
             {t("landing.pricing_from")}
           </span>
         )}
-        <span className="font-serif text-6xl leading-[0.9] text-umber-900 dark:text-paper-50 sm:text-7xl">
+        <span className="min-w-0 font-serif text-[clamp(3.25rem,16vw,4.5rem)] leading-[0.9] text-umber-900 dark:text-paper-50">
           {formatNumber(card.amount, locale)}
         </span>
         <span className="mb-2 font-serif text-3xl text-umber-600 dark:text-umber-200">

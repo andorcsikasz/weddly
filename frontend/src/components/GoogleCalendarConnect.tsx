@@ -140,7 +140,7 @@ export function GoogleCalendarConnect({
   }
 
   const pillBase =
-    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 disabled:opacity-60 dark:focus-visible:ring-paper-100";
+    "inline-flex min-h-tap items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 disabled:opacity-60 sm:min-h-0 dark:focus-visible:ring-paper-100";
 
   if (!status.connected) {
     return (

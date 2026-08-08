@@ -349,7 +349,7 @@ export default function TimelinePage() {
       <div className="space-y-6">
         <header>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <h1 className="text-3xl font-grotesk text-ink-900 sm:text-4xl dark:text-paper-50">
                 {t("timeline.title")}
               </h1>
@@ -357,12 +357,12 @@ export default function TimelinePage() {
                 to="/app/planning"
                 aria-label={t("planning.title")}
                 title={t("planning.title")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:h-8 sm:w-8 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
               >
                 <ClipboardList size={18} aria-hidden="true" />
               </Link>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
               <GoogleCalendarConnect api={googleCalendarApi} keyPrefix="timeline" />
               <CountdownChip weddingDate={weddingDate} />
             </div>
@@ -383,7 +383,13 @@ export default function TimelinePage() {
         />
 
         {!loading && (
-          <CalendarBoard today={today} tasks={datedTasks} onOpenTask={(item) => setEditing(item)} />
+          <div className="hidden sm:block">
+            <CalendarBoard
+              today={today}
+              tasks={datedTasks}
+              onOpenTask={(item) => setEditing(item)}
+            />
+          </div>
         )}
 
         <UndatedCard
@@ -716,13 +722,13 @@ function ChartCard({
     // next to its neighbours — gap-1 was tuned for the five bare text chips
     // this replaced and left the pill touching the expand button.
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
         <ChartModeSwitch mode={mode} onModeChange={onModeChange} />
         {opts.showExpand && (
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-9 sm:w-9 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
             aria-label={t("timeline.expand_label")}
             title={t("timeline.expand_label")}
           >
@@ -734,11 +740,11 @@ function ChartCard({
   }
 
   const navCluster = (
-    <div className="flex items-center gap-2">
+    <div className="flex shrink-0 items-center gap-1 sm:gap-2">
       <button
         type="button"
         onClick={navToday}
-        className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium text-ink-700 transition-colors hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:text-paper-100 dark:hover:text-blush-300"
+        className="inline-flex min-h-tap items-center gap-1.5 rounded-md px-1.5 py-1 text-sm font-medium text-ink-700 transition-colors hover:text-blush-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-400 dark:text-paper-100 dark:hover:text-blush-300"
       >
         <span className="inline-block h-1.5 w-1.5 rounded-full bg-blush-500" aria-hidden="true" />
         <span>{t("timeline.today_button")}</span>
@@ -747,7 +753,7 @@ function ChartCard({
         <button
           type="button"
           onClick={() => navStep(-1)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-9 sm:w-9 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
           aria-label={t("timeline.prev_label")}
           title={t("timeline.prev_label")}
         >
@@ -756,7 +762,7 @@ function ChartCard({
         <button
           type="button"
           onClick={() => navStep(1)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 sm:h-9 sm:w-9 dark:text-umber-300 dark:hover:bg-umber-800 dark:hover:text-paper-50 dark:focus-visible:ring-paper-100"
           aria-label={t("timeline.next_label")}
           title={t("timeline.next_label")}
         >
@@ -843,7 +849,7 @@ function ChartCard({
   // week-grid (Quarter/Half-year) — the title chrome can stay uniformly serif.
   const isCalendarMode = true;
   const titleClass = isCalendarMode
-    ? "font-grotesk text-xl text-ink-900 dark:text-paper-50"
+    ? "min-w-0 font-grotesk text-lg leading-tight text-ink-900 sm:text-xl dark:text-paper-50"
     : "text-sm font-semibold uppercase tracking-wider text-ink-700 dark:text-paper-100";
 
   return (
@@ -851,8 +857,8 @@ function ChartCard({
       <section
         className={`card flex flex-col p-0 rounded-3xl shadow-pop ring-1 ring-paper-300/60 dark:ring-umber-700/60 ${inlineHeightClass}`}
       >
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
-          <div className="flex flex-wrap items-center gap-3">
+        <header className="grid grid-cols-1 gap-2 border-b border-paper-200 px-3 py-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 sm:px-5 sm:py-4 dark:border-umber-700">
+          <div className="flex min-w-0 items-center justify-between gap-2 sm:flex-wrap sm:justify-start sm:gap-3">
             {mode !== "all" && navCluster}
             <h2 className={titleClass}>{title}</h2>
           </div>
@@ -920,6 +926,7 @@ function ChartModeSwitch({
       options={options}
       onChange={onModeChange}
       ariaLabel={t("timeline.view_aria")}
+      className="[&_button:first-child]:min-h-tap sm:[&_button:first-child]:min-h-0"
     />
   );
 }
@@ -959,7 +966,7 @@ function ExpandedChart({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-ink-900/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-ink-900/50 p-3 backdrop-blur-sm sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -968,9 +975,9 @@ function ExpandedChart({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="card relative flex h-[90vh] w-[90vw] max-w-[1800px] flex-col overflow-hidden p-0 shadow-pop dark:bg-umber-800 dark:border-umber-700"
+        className="card relative flex h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-[1800px] flex-col overflow-hidden p-0 shadow-pop sm:h-[90dvh] sm:w-[90vw] dark:bg-umber-800 dark:border-umber-700"
       >
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-paper-200 px-5 py-4 dark:border-umber-700">
+        <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-paper-200 px-3 py-3 sm:gap-3 sm:px-5 sm:py-4 dark:border-umber-700">
           <h2 className="font-grotesk text-base font-medium tracking-tight text-ink-700 dark:text-paper-100">
             {title}
           </h2>

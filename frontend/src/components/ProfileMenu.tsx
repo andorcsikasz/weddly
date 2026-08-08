@@ -11,8 +11,10 @@ import {
   Layers,
   LogOut,
   MessageCircle,
+  Moon,
   Share2,
   ShieldCheck,
+  Sun,
   UserRound,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -34,7 +36,14 @@ import { LOCALE_NAMES, LOCALES, useT } from "../lib/i18n";
 export function ProfileMenu({
   onOpenFeedback,
   onOpenShare,
-}: { onOpenFeedback?: () => void; onOpenShare?: () => void } = {}) {
+  theme,
+  onToggleTheme,
+}: {
+  onOpenFeedback?: () => void;
+  onOpenShare?: () => void;
+  theme?: "light" | "dark";
+  onToggleTheme?: () => void;
+} = {}) {
   const { user, logout } = useAuth();
   const { t, locale, setLocale } = useT();
   const location = useLocation();
@@ -235,17 +244,35 @@ export function ProfileMenu({
                   setOpen(false);
                   if (l !== locale) setLocale(l);
                 }}
-                className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-paper-100 dark:hover:bg-umber-700 ${
+                className={`grid min-h-tap w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-paper-100 dark:hover:bg-umber-700 ${
                   l === locale
                     ? "font-semibold text-ink-900 dark:text-paper-50"
                     : "text-ink-700 dark:text-paper-100"
                 }`}
               >
-                <span>{LOCALE_NAMES[l]}</span>
+                <span className="min-w-0 pl-12">{LOCALE_NAMES[l]}</span>
                 {l === locale && <Check size={15} aria-hidden="true" className="shrink-0" />}
               </button>
             ))}
           </div>
+          {theme && onToggleTheme && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onToggleTheme();
+              }}
+              className="flex min-h-tap w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-paper-100 sm:hidden dark:text-paper-100 dark:hover:bg-umber-700"
+            >
+              {theme === "dark" ? (
+                <Sun size={16} aria-hidden="true" />
+              ) : (
+                <Moon size={16} aria-hidden="true" />
+              )}
+              <span>{theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}</span>
+            </button>
+          )}
           {user.is_admin && (
             <>
               <Link

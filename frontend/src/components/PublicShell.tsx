@@ -93,6 +93,7 @@ function useHeaderState(): { hidden: boolean; atTop: boolean } {
  */
 export function PublicShell({ children }: { children: ReactNode }) {
   const { t } = useT();
+  const { pathname } = useLocation();
   return (
     <div className="flex min-h-full flex-col bg-paper-50 text-umber-900 dark:bg-umber-900 dark:text-paper-100">
       <a
@@ -102,7 +103,12 @@ export function PublicShell({ children }: { children: ReactNode }) {
         {t("landing.skip_to_main")}
       </a>
       <PublicHeader />
-      <main id="main-content" className="flex-1">
+      <main
+        id="main-content"
+        className={`flex-1 ${
+          pathname === "/" ? "pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0" : ""
+        }`}
+      >
         {children}
       </main>
       <PublicFooter />
@@ -134,6 +140,18 @@ function PublicHeader() {
     setFeedbackOpen(true);
   }
 
+  // The phone menu owns the space below the header. Lock the document behind
+  // it so momentum scrolling cannot move the page while the nested language
+  // list is being used; the menu itself remains vertically scrollable.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [menuOpen]);
+
   // Deep link from mail we send to people who are NOT signed in: `/?feedback=1`
   // opens the dialog on the public page. AppShell has the same hook on `/app`,
   // but that one is behind the login wall, and the one cohort we most need to
@@ -161,7 +179,7 @@ function PublicHeader() {
         atTop
           ? "border-transparent"
           : "border-paper-300 shadow-[0_4px_16px_-8px_rgba(58,46,34,0.25)] dark:border-umber-700"
-      } ${hidden ? "-translate-y-full" : "translate-y-0"}`}
+      } ${menuOpen ? "translate-y-0" : hidden ? "-translate-y-full" : "translate-y-0"}`}
     >
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
@@ -304,7 +322,7 @@ function PublicHeader() {
         <nav
           id="public-mobile-nav"
           aria-label={t("public.nav_mobile_aria")}
-          className="border-t border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900 md:hidden"
+          className="safe-edges fixed inset-x-0 top-[68px] h-[calc(100dvh-68px)] overflow-y-auto overscroll-contain border-t border-paper-300 bg-paper-50 dark:border-umber-700 dark:bg-umber-900 sm:top-14 sm:h-[calc(100dvh-3.5rem)] md:hidden"
         >
           {/* Mobile menu rows: lucide glyph on the left, lowercase label on
            *  the right. `lowercase` is enforced via `normal-case` reset
@@ -316,7 +334,7 @@ function PublicHeader() {
           <div className="mx-auto flex max-w-7xl flex-col gap-0.5 px-4 py-3 font-grotesk text-sm text-umber-800 sm:px-6 dark:text-paper-100">
             <Link
               to="/vendors"
-              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
               <Store size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
@@ -324,7 +342,7 @@ function PublicHeader() {
             </Link>
             <Link
               to="/planners"
-              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
               <Store size={16} aria-hidden="true" className="text-umber-600 dark:text-umber-300" />
@@ -332,7 +350,7 @@ function PublicHeader() {
             </Link>
             <Link
               to="/rsvp"
-              className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
               onClick={() => setMenuOpen(false)}
             >
               <UserCheck
@@ -345,7 +363,7 @@ function PublicHeader() {
             {user ? (
               <Link
                 to="/app"
-                className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+                className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
                 onClick={() => setMenuOpen(false)}
               >
                 <LayoutDashboard
@@ -358,7 +376,7 @@ function PublicHeader() {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+                className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
                 onClick={() => setMenuOpen(false)}
               >
                 <LogIn
@@ -372,7 +390,7 @@ function PublicHeader() {
             <button
               type="button"
               onClick={openFeedback}
-              className="flex items-center gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex min-h-tap items-center gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
               <MessageSquare
                 size={16}
@@ -395,11 +413,11 @@ function PublicHeader() {
                     if (l !== locale) setLocale(l);
                     setMenuOpen(false);
                   }}
-                  className={`flex w-full items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50 ${
+                  className={`grid min-h-tap w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50 ${
                     l === locale ? "font-semibold text-umber-900 dark:text-paper-50" : ""
                   }`}
                 >
-                  <span>{LOCALE_NAMES[l]}</span>
+                  <span className="min-w-0 pl-14">{LOCALE_NAMES[l]}</span>
                   {l === locale && <Check size={16} aria-hidden="true" className="shrink-0" />}
                 </button>
               ))}
@@ -410,7 +428,7 @@ function PublicHeader() {
                 setTheme(theme === "dark" ? "light" : "dark");
                 setMenuOpen(false);
               }}
-              className="flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
+              className="flex min-h-tap items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left lowercase transition-colors hover:bg-paper-100 hover:text-umber-900 dark:hover:bg-umber-800 dark:hover:text-paper-50"
             >
               <span className="inline-flex items-center gap-3">
                 {theme === "dark" ? (

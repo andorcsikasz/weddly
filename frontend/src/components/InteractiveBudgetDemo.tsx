@@ -305,7 +305,7 @@ export function InteractiveBudgetDemo({
                 step={1}
                 value={guests}
                 onChange={(e) => setGuests(clamp(Number(e.target.value), MIN_GUESTS, MAX_GUESTS))}
-                className="mt-1.5 min-h-tap w-full cursor-pointer rounded accent-umber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umber-500 sm:mt-2 sm:min-h-0"
+                className="mt-1.5 min-h-tap w-full touch-pan-y cursor-pointer rounded accent-umber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umber-500 sm:mt-2 sm:min-h-0"
                 aria-label={t("landing.demo_guests_label")}
                 aria-valuetext={`${guests}`}
               />
@@ -331,7 +331,7 @@ export function InteractiveBudgetDemo({
                 step={range.step}
                 value={budget}
                 onChange={(e) => setBudget(clamp(Number(e.target.value), range.min, range.max))}
-                className="mt-1.5 min-h-tap w-full cursor-pointer rounded accent-umber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umber-500 sm:mt-2 sm:min-h-0"
+                className="mt-1.5 min-h-tap w-full touch-pan-y cursor-pointer rounded accent-umber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-umber-500 sm:mt-2 sm:min-h-0"
                 aria-label={t("landing.demo_budget_label")}
                 aria-valuetext={formatMoney(budget, currency, locale)}
               />

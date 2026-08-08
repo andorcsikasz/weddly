@@ -219,10 +219,7 @@ export default function MonthView({
   return (
     <div className="flex h-full flex-col">
       {/* Day-of-week header */}
-      <div
-        className="grid border-b border-paper-300 dark:border-umber-700"
-        style={{ gridTemplateColumns: "40px repeat(7, 1fr)" }}
-      >
+      <div className="timeline-month-grid grid border-b border-paper-300 dark:border-umber-700">
         <div aria-hidden="true" />
         {dayAbbrevs.map((label, idx) => {
           // Mon..Fri = 0..4 weekday, Sat/Sun = 5/6 weekend.
@@ -233,7 +230,7 @@ export default function MonthView({
           return (
             <div
               key={idx}
-              className={`px-2 py-2 text-[11px] uppercase tracking-widest ${headerClass}`}
+              className={`min-w-0 px-0.5 py-2 text-center text-[10px] uppercase tracking-wide sm:px-2 sm:text-left sm:text-[11px] sm:tracking-widest ${headerClass}`}
             >
               {label}
             </div>
@@ -248,11 +245,10 @@ export default function MonthView({
           return (
             <div
               key={weekStart.toISOString()}
-              className="relative grid border-b border-paper-200 last:border-b-0 dark:border-umber-700"
-              style={{ gridTemplateColumns: "40px repeat(7, 1fr)" }}
+              className="timeline-month-grid relative grid border-b border-paper-200 last:border-b-0 dark:border-umber-700"
             >
               {/* ISO week gutter */}
-              <div className="flex items-start justify-center pt-1.5 font-grotesk text-sm text-ink-400 dark:text-umber-400">
+              <div className="hidden items-start justify-center pt-1.5 font-grotesk text-sm text-ink-400 sm:flex dark:text-umber-400">
                 {isoWeek(weekStart)}
               </div>
 
@@ -291,7 +287,7 @@ export default function MonthView({
                 return (
                   <div
                     key={col}
-                    className={`relative min-h-[80px] border-r border-paper-200 transition-colors last:border-r-0 hover:bg-paper-100/60 dark:border-umber-700 dark:hover:bg-umber-900/50 ${cellTintClass} ${todayRing}`}
+                    className={`relative min-w-0 min-h-[72px] border-r border-paper-200 transition-colors last:border-r-0 hover:bg-paper-100/60 sm:min-h-[80px] dark:border-umber-700 dark:hover:bg-umber-900/50 ${cellTintClass} ${todayRing}`}
                   >
                     <div className="px-1.5 pt-1">
                       {isToday ? (
@@ -323,8 +319,8 @@ export default function MonthView({
                 // The 7-day region begins at the 40px gutter and fills the
                 // remainder of the row. Express position as `calc()` so it
                 // tracks any container width.
-                const leftCalc = `calc(40px + (100% - 40px) * ${bar.startCol} / 7)`;
-                const widthCalc = `calc((100% - 40px) * ${bar.span} / 7)`;
+                const leftCalc = `calc(var(--timeline-week-gutter) + (100% - var(--timeline-week-gutter)) * ${bar.startCol} / 7)`;
+                const widthCalc = `calc((100% - var(--timeline-week-gutter)) * ${bar.span} / 7)`;
                 const topPx = HEADER_OFFSET_PX + bar.lane * LANE_HEIGHT_PX;
                 return (
                   <button
@@ -332,7 +328,7 @@ export default function MonthView({
                     key={`bar-${item.id}-${bar.startCol}`}
                     onClick={() => onOpenTask(item)}
                     title={item.title}
-                    className={`absolute h-5 truncate rounded-sm px-1.5 text-left text-[11px] transition-colors hover:brightness-95 hover:ring-1 ${barClasses}`}
+                    className={`absolute h-5 min-w-0 truncate rounded-sm px-1 text-left text-[10px] transition-colors hover:brightness-95 hover:ring-1 sm:px-1.5 sm:text-[11px] ${barClasses}`}
                     style={{
                       left: leftCalc,
                       width: widthCalc,
@@ -352,8 +348,8 @@ export default function MonthView({
                 if (list.length === 0) return null;
                 const first = list[0];
                 if (!first) return null;
-                const leftCalc = `calc(40px + (100% - 40px) * ${col} / 7)`;
-                const widthCalc = `calc((100% - 40px) / 7)`;
+                const leftCalc = `calc(var(--timeline-week-gutter) + (100% - var(--timeline-week-gutter)) * ${col} / 7)`;
+                const widthCalc = `calc((100% - var(--timeline-week-gutter)) / 7)`;
                 const topPx = HEADER_OFFSET_PX + MAX_LANES * LANE_HEIGHT_PX;
                 return (
                   <button

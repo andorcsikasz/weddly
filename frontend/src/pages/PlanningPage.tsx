@@ -2043,7 +2043,7 @@ function QuickAddForm({
       onBlur={onFormBlur}
       className="card !border-ink-900 p-3 dark:!border-paper-100/40"
     >
-      <div className="flex items-center gap-2">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
         <Plus size={16} className="text-ink-400 dark:text-umber-300" aria-hidden="true" />
         <input
           ref={inputRef}
@@ -2058,13 +2058,13 @@ function QuickAddForm({
         <button
           type="submit"
           disabled={!title.trim()}
-          className="btn-primary btn-sm shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-primary btn-sm col-span-2 w-full shrink-0 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1 sm:w-auto"
         >
           {t("planning.add")}
         </button>
       </div>
       {showDetails && (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
           <input
             type="text"
             value={assignee}
@@ -2072,7 +2072,7 @@ function QuickAddForm({
             list={assigneeSuggestions.length > 0 ? assigneeListId : undefined}
             placeholder={t("planning.assignee_quick_placeholder")}
             aria-label={t("planning.assignee_label")}
-            className="w-36 rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+            className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 sm:w-36 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
             maxLength={80}
           />
           {assigneeSuggestions.length > 0 && (
@@ -2095,7 +2095,7 @@ function QuickAddForm({
             min={todayIso()}
             aria-label={t("planning.start_date_label")}
             title={t("planning.start_date_label")}
-            className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+            className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 sm:w-auto dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
           />
           <input
             type="date"
@@ -2104,7 +2104,7 @@ function QuickAddForm({
             min={maxIsoDate(startDate || todayIso(), todayIso())}
             aria-label={t("planning.due_date_label")}
             title={t("planning.due_date_label")}
-            className="rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
+            className="w-full rounded-lg border border-paper-300 bg-paper-50 px-2 py-1 text-sm text-ink-700 outline-none focus:border-ink-400 sm:w-auto dark:border-umber-700 dark:bg-umber-800 dark:text-paper-100"
           />
         </div>
       )}
@@ -2188,7 +2188,7 @@ function PlanningRow({
   const ideaCardTint = ideaStatus ? IDEA_STATUS_META[ideaStatus].cardTint : "";
   return (
     <li
-      className={`card flex items-center gap-3 p-3 transition-colors ${ideaCardTint} ${
+      className={`card flex flex-wrap items-start gap-2 p-3 transition-colors sm:flex-nowrap sm:items-center sm:gap-3 ${ideaCardTint} ${
         item.done ? "bg-paper-100/50 dark:bg-umber-700/60" : ""
       }`}
     >
@@ -2198,7 +2198,7 @@ function PlanningRow({
             type="button"
             onClick={onToggleDone}
             aria-label={item.done ? t("planning.mark_undone") : t("planning.mark_done")}
-            className="shrink-0 text-ink-500 transition-colors hover:text-ink-800 dark:text-umber-300 dark:hover:text-paper-100"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors hover:bg-paper-100 hover:text-ink-800 sm:h-auto sm:w-auto dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
           >
             {item.done ? (
               <CheckCircle2 size={18} className="text-sage-700 dark:text-sage-300" />
@@ -2303,19 +2303,19 @@ function PlanningRow({
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="min-w-0 flex-1 text-left"
+                className="min-w-0 w-full flex-1 text-left sm:w-auto"
               >
                 <p
-                  className={`truncate text-sm ${item.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
+                  className={`line-clamp-2 text-sm ${item.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}
                 >
                   {item.title}
                 </p>
               </button>
-              <div className="flex shrink-0 items-center gap-2 text-[11px] text-ink-500 dark:text-umber-300">
+              <div className="flex w-full min-w-0 flex-wrap items-center gap-2 text-[11px] text-ink-500 sm:w-auto sm:shrink-0 dark:text-umber-300">
                 {item.kind === "task" && (item.start_date || item.due_date) && (
                   <span className="inline-flex items-center gap-1">
                     <Calendar size={12} aria-hidden="true" />
@@ -2445,18 +2445,18 @@ function PlanningRow({
         )}
       </div>
 
-      <div className="flex shrink-0 items-center gap-0.5 self-center">
+      <div className="ml-auto flex w-full shrink-0 items-center justify-end gap-1 border-t border-paper-200 pt-2 sm:w-auto sm:border-0 sm:pt-0 dark:border-umber-700">
         {/* Reorder controls — vertical stack so the row stays compact. Disabled
          *  at the boundaries; we still render them (just dimmed) so the row
          *  width doesn't shift as items reach the top/bottom. */}
-        <div className="flex flex-col">
+        <div className="flex sm:flex-col">
           <button
             type="button"
             onClick={() => onMove("up")}
             disabled={!canMoveUp}
             aria-label={t("planning.move_up")}
             title={t("planning.move_up")}
-            className="inline-flex h-4 w-6 items-center justify-center rounded text-ink-400 hover:bg-paper-100 hover:text-ink-700 disabled:cursor-not-allowed disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            className="inline-flex h-11 w-11 items-center justify-center rounded text-ink-400 hover:bg-paper-100 hover:text-ink-700 disabled:cursor-not-allowed disabled:opacity-30 sm:h-4 sm:w-6 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
           >
             <ChevronUp size={14} aria-hidden="true" />
           </button>
@@ -2466,7 +2466,7 @@ function PlanningRow({
             disabled={!canMoveDown}
             aria-label={t("planning.move_down")}
             title={t("planning.move_down")}
-            className="inline-flex h-4 w-6 items-center justify-center rounded text-ink-400 hover:bg-paper-100 hover:text-ink-700 disabled:cursor-not-allowed disabled:opacity-30 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
+            className="inline-flex h-11 w-11 items-center justify-center rounded text-ink-400 hover:bg-paper-100 hover:text-ink-700 disabled:cursor-not-allowed disabled:opacity-30 sm:h-4 sm:w-6 dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-paper-100"
           >
             <ChevronDown size={14} aria-hidden="true" />
           </button>
@@ -2475,7 +2475,7 @@ function PlanningRow({
           type="button"
           onClick={onDelete}
           aria-label={t("common.delete")}
-          className="btn-ghost btn-sm text-blush-700 dark:text-blush-300"
+          className="btn-ghost btn-sm min-h-tap min-w-tap text-blush-700 sm:min-h-0 sm:min-w-0 dark:text-blush-300"
         >
           <Trash2 size={14} />
         </button>
@@ -2796,7 +2796,7 @@ function PriorityFlagButton({
         onClick={onCycle}
         aria-label={label}
         title={label}
-        className="shrink-0 text-ink-300 transition-colors hover:text-blush-600 dark:text-umber-300 dark:hover:text-blush-300"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-300 transition-colors hover:bg-paper-100 hover:text-blush-600 sm:h-auto sm:w-auto dark:text-umber-300 dark:hover:bg-umber-700 dark:hover:text-blush-300"
       >
         <Flag size={16} aria-hidden="true" />
       </button>
@@ -2808,7 +2808,7 @@ function PriorityFlagButton({
       onClick={onCycle}
       aria-label={label}
       title={label}
-      className="inline-flex h-6 shrink-0 items-center justify-center rounded-full bg-blush-100 px-2 text-xs font-bold text-blush-700 transition-colors hover:bg-blush-200 dark:bg-blush-400/15 dark:text-blush-300 dark:hover:bg-blush-400/25"
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush-100 px-2 text-xs font-bold text-blush-700 transition-colors hover:bg-blush-200 sm:h-6 sm:w-auto dark:bg-blush-400/15 dark:text-blush-300 dark:hover:bg-blush-400/25"
     >
       {priority === 1 ? "!" : "!!"}
     </button>

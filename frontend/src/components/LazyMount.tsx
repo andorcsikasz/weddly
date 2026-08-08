@@ -19,10 +19,17 @@ type Props = {
  *  Falls back to immediate mount when IntersectionObserver isn't
  *  available (older browsers, SSR). Once mounted, the children stay
  *  mounted — there's no unmount on scroll-out. */
-export function LazyMount({ children, aspectRatio, rootMargin = "200px", className }: Props) {
+export function LazyMount({ children, aspectRatio, rootMargin = "1200px 0px", className }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(
-    () => typeof window === "undefined" || !("IntersectionObserver" in window),
+    () =>
+      typeof window === "undefined" ||
+      !("IntersectionObserver" in window) ||
+      // Phone momentum scrolling can cross several reserved mockup boxes
+      // before an observer callback is painted. Mounting the two landing
+      // mockups eagerly on the true phone layout avoids a blank scroll beat;
+      // larger screens still get the below-fold render saving.
+      window.matchMedia?.("(max-width: 767px)").matches === true,
   );
 
   useEffect(() => {

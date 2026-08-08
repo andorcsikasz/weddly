@@ -805,7 +805,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {user && !inAdminView && (
               <button
                 type="button"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+                className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 sm:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
                 onClick={() => setTourOpen(true)}
                 aria-label={t("tour.aria_label")}
                 title={t("tour.aria_label")}
@@ -820,7 +820,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {user && <NotificationBell />}
             <button
               type="button"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
+              className="hidden h-11 w-11 items-center justify-center rounded-full text-ink-700 transition-colors hover:bg-paper-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2 min-[360px]:inline-flex dark:text-paper-200 dark:hover:bg-umber-800 dark:focus-visible:ring-paper-100"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               aria-label={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
               title={theme === "dark" ? t("nav.switch_to_light") : t("nav.switch_to_dark")}
@@ -832,6 +832,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             </button>
             <ProfileMenu
+              theme={theme}
+              onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
               onOpenFeedback={() => setFeedbackOpen(true)}
               onOpenShare={() => {
                 setShareSource("profile_dropdown");
