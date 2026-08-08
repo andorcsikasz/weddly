@@ -827,10 +827,14 @@ function ChartCard({
     );
   }
 
-  // Every mode now fills a fixed card height so the body never collapses to
-  // a thin strip when the couple has few tasks (the old auto-fit Gantt left
-  // blank space below the bars; the new one fills the card with structure).
-  const inlineHeightClass = "h-[70vh] min-h-[520px]";
+  // Day/week/Gantt views fill a fixed canvas so a short task list cannot
+  // collapse them. A month is different: its cells have an 80px minimum and
+  // it can contain either five or six week rows. Giving that grid the same
+  // fixed height made six-row months overflow the rounded card (the final ISO
+  // week and dates then sat on top of the section below). Let the month card
+  // take its intrinsic grid height instead; the shared minimum still prevents
+  // sparse/four-row months from collapsing.
+  const inlineHeightClass = mode === "month" ? "min-h-[520px]" : "h-[70vh] min-h-[520px]";
 
   // Calendar modes (day/week/month) get a soft serif title that reads as the
   // date headline; the Gantt-style 3M/ALL views keep the compact uppercase
@@ -854,7 +858,7 @@ function ChartCard({
           </div>
           {renderToolbar({ showExpand: true })}
         </header>
-        <div className="min-h-0 flex-1">{renderBody()}</div>
+        <div className={`${mode === "month" ? "" : "min-h-0"} flex-1`}>{renderBody()}</div>
       </section>
       {expanded && (
         <ExpandedChart
