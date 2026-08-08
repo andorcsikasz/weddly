@@ -1,3 +1,6 @@
+// Persistent fourth Planning surface. This deliberately is not a Dialog: its
+// progress, filters, and two-column task list stay visible and trackable in the
+// normal page flow.
 import { checklistSections, isChecklistItemApplicable } from "@shared/wedding_checklist";
 import type { PlanningItem } from "@shared/types";
 import { CalendarDays, Check, ClipboardCheck, Download, Loader2, UserRound } from "lucide-react";
@@ -148,8 +151,9 @@ export function WeddingChecklist({
 
   return (
     <section
-      className="card overflow-hidden p-4 sm:p-6 dark:border-umber-700 dark:bg-umber-800"
+      className="min-h-[36rem] border-y border-paper-300 py-5 sm:py-6 dark:border-umber-700"
       aria-labelledby="wedding-checklist-title"
+      data-checklist-surface="persistent"
     >
       <h2
         id="wedding-checklist-title"
@@ -186,7 +190,7 @@ export function WeddingChecklist({
         </div>
       ) : (
         <div className="mt-2 pb-2">
-          <div className="flex flex-col gap-4 border-b border-paper-200 pb-5 dark:border-umber-700 lg:flex-row lg:items-start lg:justify-between">
+          <div className="sticky top-2 z-20 -mx-2 flex flex-col gap-4 rounded-2xl border border-paper-300 bg-paper-50/95 p-4 shadow-soft backdrop-blur dark:border-umber-700 dark:bg-umber-900/95 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-sm text-ink-600 dark:text-umber-200">
                 {t("planning.checklist.subtitle")}
@@ -307,7 +311,10 @@ export function WeddingChecklist({
             ))}
           </div>
 
-          <div className="grid items-start gap-x-8 gap-y-7 md:grid-cols-2">
+          <div
+            className="grid items-start gap-x-8 gap-y-7 md:grid-cols-2"
+            data-checklist-layout="two-column"
+          >
             {sections.map((section) => {
               const rows = section.items.flatMap((template) => {
                 const task = taskByTemplateId.get(template.id);
@@ -342,26 +349,32 @@ export function WeddingChecklist({
                   <ul className="divide-y divide-paper-200 dark:divide-umber-700">
                     {rows.map(({ template, task }) => (
                       <li key={template.id} className="flex min-w-0 items-start gap-3 py-2.5">
-                        <button
-                          type="button"
-                          onClick={() => toggle(task)}
-                          disabled={savingIds.has(task.id)}
-                          aria-label={
-                            task.done ? t("planning.mark_undone") : t("planning.mark_done")
-                          }
-                          aria-pressed={task.done}
-                          className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors disabled:opacity-60 ${task.done ? "border-sage-600 bg-sage-600 text-white" : "border-ink-400 bg-paper-50 text-transparent hover:border-ink-700 dark:border-umber-300 dark:bg-umber-800"}`}
-                        >
-                          {savingIds.has(task.id) ? (
-                            <Loader2
-                              size={13}
-                              className="animate-spin text-ink-500"
-                              aria-hidden="true"
-                            />
-                          ) : (
-                            <Check size={14} strokeWidth={2.5} aria-hidden="true" />
-                          )}
-                        </button>
+                        <label className="mt-0.5 inline-flex shrink-0 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={task.done}
+                            onChange={() => toggle(task)}
+                            disabled={savingIds.has(task.id)}
+                            aria-label={
+                              task.done ? t("planning.mark_undone") : t("planning.mark_done")
+                            }
+                            className="peer sr-only"
+                          />
+                          <span
+                            aria-hidden="true"
+                            className={`inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ink-700 peer-focus-visible:ring-offset-2 peer-disabled:cursor-wait peer-disabled:opacity-60 dark:peer-focus-visible:ring-paper-100 ${task.done ? "border-sage-600 bg-sage-600 text-white" : "border-ink-400 bg-paper-50 text-transparent hover:border-ink-700 dark:border-umber-300 dark:bg-umber-800"}`}
+                          >
+                            {savingIds.has(task.id) ? (
+                              <Loader2
+                                size={13}
+                                className="animate-spin text-ink-500"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                            )}
+                          </span>
+                        </label>
                         <div className="min-w-0 flex-1">
                           <p
                             className={`break-words text-sm leading-5 ${task.done ? "text-ink-400 line-through dark:text-umber-300" : "text-ink-900 dark:text-paper-50"}`}

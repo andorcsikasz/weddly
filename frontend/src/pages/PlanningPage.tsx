@@ -67,7 +67,7 @@ import {
   supplierApi,
 } from "../lib/endpoints";
 import { DirectoryTwinNotice } from "../components/DirectoryTwinNotice";
-import { WeddingChecklist } from "../components/WeddingChecklistDialog";
+import { WeddingChecklist } from "../components/WeddingChecklist";
 import { MoneyInput } from "../components/MoneyInput";
 import { setSelection } from "../lib/supplier_selection";
 import { formatMoney, maxIsoDate, todayIso } from "../lib/format";
