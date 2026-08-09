@@ -1075,13 +1075,14 @@ export default function PlanningPage() {
                 <button
                   type="button"
                   onClick={() => (selectionMode ? leaveSelectionMode() : setSelectionMode(true))}
-                  className="btn-ghost btn-sm inline-flex min-w-[10.5rem] shrink-0 items-center justify-center gap-1.5"
+                  className="btn-ghost btn-sm inline-flex h-9 w-9 shrink-0 items-center justify-center p-0 text-blush-700 dark:text-blush-300"
                   aria-pressed={selectionMode}
+                  aria-label={t(
+                    selectionMode ? "planning.cancel_selection" : "planning.select_items",
+                  )}
+                  title={t(selectionMode ? "planning.cancel_selection" : "planning.select_items")}
                 >
-                  <ListChecks size={14} aria-hidden="true" />
-                  <span>
-                    {t(selectionMode ? "planning.cancel_selection" : "planning.select_items")}
-                  </span>
+                  <Trash2 size={17} aria-hidden="true" />
                 </button>
               )}
             {activeKind === "task" && (

@@ -109,7 +109,7 @@ describe("Planning multi-delete", () => {
     expect(screen.queryByText("Book venue")).not.toBeInTheDocument();
   });
 
-  it("keeps task actions fixed-width and opens the timeline generator", async () => {
+  it("keeps the delete selector compact and opens the timeline generator", async () => {
     render(
       <MemoryRouter>
         <I18nProvider>
@@ -126,7 +126,8 @@ describe("Planning multi-delete", () => {
     expect(toolbar).toHaveClass("flex-nowrap", "shrink-0");
 
     const selectionButton = screen.getByRole("button", { name: "Select" });
-    expect(selectionButton).toHaveClass("min-w-[10.5rem]", "shrink-0");
+    expect(selectionButton).toHaveClass("h-9", "w-9", "shrink-0");
+    expect(selectionButton.querySelector("svg")).toHaveClass("lucide-trash2");
 
     const timelineButton = screen.getByRole("button", { name: "Build my timeline" });
     expect(within(timelineButton).queryByText("Build my timeline")).not.toBeInTheDocument();
