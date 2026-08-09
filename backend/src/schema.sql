@@ -306,7 +306,7 @@ CREATE TABLE IF NOT EXISTS email_log (
   category TEXT NOT NULL,                                      -- 'transactional' | 'lifecycle'
   to_email TEXT NOT NULL,
   subject TEXT NOT NULL,
-  status TEXT NOT NULL,                                        -- 'sent' | 'failed' | 'skipped_opt_out' | 'skipped_no_provider'
+  status TEXT NOT NULL,                                        -- 'sent' | 'failed' | 'skipped_opt_out' | 'skipped_no_provider' | 'skipped_duplicate'
   error TEXT,
   payload_json TEXT,                                           -- redacted JSON of the template payload
   created_at INTEGER NOT NULL
@@ -320,6 +320,18 @@ CREATE INDEX IF NOT EXISTS idx_email_log_kind ON email_log(kind);
 -- someone who had no account at the time (partner_invite). The admin email
 -- history stitches those onto the user by address.
 CREATE INDEX IF NOT EXISTS idx_email_log_to_email ON email_log(to_email COLLATE NOCASE);
+
+-- Short-lived, address + kind keyed permission slip for mail sent from the
+-- admin console. The conditional UPSERT in domain/emails/admin_dedupe.ts makes
+-- double clicks and concurrent duplicate requests race to one winner. One row
+-- per pair bounds the table without a cleanup job; an expired row is replaced
+-- in place by the next legitimate send.
+CREATE TABLE IF NOT EXISTS admin_email_send_dedupe (
+  to_email TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  reserved_at INTEGER NOT NULL,
+  PRIMARY KEY (to_email, kind)
+);
 
 -- User-submitted ("Drop your own") suppliers. Auto-active on submit; admins
 -- can hide (status='hidden') or hard-delete. The static curated list lives in

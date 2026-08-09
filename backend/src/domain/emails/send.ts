@@ -25,6 +25,11 @@ import { ensurePreferences } from "./preferences";
 import { isUiLocale } from "@shared/locales";
 import type { RecipientLocale } from "./template";
 import { buildEmail, type KindPayload } from "./templates";
+import {
+  type AdminEmailSendReservation,
+  reservationMatches,
+  reserveAdminEmailSend,
+} from "./admin_dedupe";
 
 /** Map a raw `users.locale` value to one of the two locales our templates
  *  cover. We have HU + EN copy today; anything else (DE/FR/ES …) renders as
@@ -113,10 +118,14 @@ export interface SendTarget {
    * itself — see `ADMIN_CONSOLE_KINDS`.
    */
   sender?: EmailSender;
+  /** A reservation acquired by an admin route before it rotates a one-time
+   *  link. Most callers omit this and let the dispatcher reserve immediately
+   *  before delivery. */
+  adminEmailReservation?: AdminEmailSendReservation;
 }
 
 interface SendResult {
-  status: "sent" | "failed" | "skipped_opt_out" | "skipped_no_provider";
+  status: "sent" | "failed" | "skipped_opt_out" | "skipped_no_provider" | "skipped_duplicate";
   error?: string;
 }
 
@@ -295,8 +304,31 @@ async function sendKindInner<K extends EmailKind>(
 
   // Who this comes FROM. Resolved here, in the one chokepoint, rather than at
   // the call sites — a mailbox chosen per route is a mailbox that drifts.
-  const fromEmail =
-    senderForKind(kind, target.sender) === "admin" ? CONFIG.emailFromAdmin : CONFIG.emailFrom;
+  const sender = senderForKind(kind, target.sender);
+  const fromEmail = sender === "admin" ? CONFIG.emailFromAdmin : CONFIG.emailFrom;
+
+  // Admin sends are human-triggered and therefore especially exposed to a
+  // double click, browser retry, or two operators acting on the same row. The
+  // DB reservation is acquired before the provider call, so concurrent
+  // requests cannot both leave the building. Automatic mail keeps its own
+  // occurrence-based email_dispatches semantics and never enters this guard.
+  if (sender === "admin") {
+    const hasReservation = reservationMatches(target.adminEmailReservation, kind, recipient.email);
+    if (!hasReservation && !reserveAdminEmailSend(kind, recipient.email)) {
+      recordEmailAttempt({
+        user_id: target.user?.id ?? null,
+        couple_id: target.couple_id ?? null,
+        kind,
+        category,
+        from_email: fromEmail,
+        to_email: recipient.email,
+        subject: built.subject,
+        status: "skipped_duplicate",
+        error: "duplicate admin send blocked within 5 minutes",
+      });
+      return { status: "skipped_duplicate" };
+    }
+  }
 
   if (!CONFIG.resendApiKey) {
     // Dev/test: mailer.ts just logs to stdout, never throws. Record the

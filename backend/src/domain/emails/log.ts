@@ -4,7 +4,12 @@
 import { db, now } from "../../db";
 import type { EmailCategory, EmailKind } from "./kinds";
 
-export type EmailLogStatus = "sent" | "failed" | "skipped_opt_out" | "skipped_no_provider";
+export type EmailLogStatus =
+  | "sent"
+  | "failed"
+  | "skipped_opt_out"
+  | "skipped_no_provider"
+  | "skipped_duplicate";
 
 export interface EmailLogInput {
   user_id: number | null;

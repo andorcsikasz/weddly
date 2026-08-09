@@ -12,6 +12,7 @@ import { purgeOneUser } from "../domain/purge";
 import { setVendorListingCategory } from "../domain/listings";
 import { convertVendorToPlanner } from "../domain/planner_conversion";
 import { sendKind } from "../domain/emails/send";
+import { reserveAdminEmailSend } from "../domain/emails/admin_dedupe";
 import {
   isVendorListingIncomplete,
   sendVendorIncompleteReminder,
@@ -255,6 +256,15 @@ async function handleResendActivation(ctx: Ctx): Promise<Response> {
   if (!row) throw new HttpError(404, "Onboarding not found");
   if (row.status === "completed") throw new HttpError(400, "Vendor already activated");
 
+  // Do this before superseding the pending token; otherwise a double click
+  // could invalidate the link in the only email that was actually delivered.
+  const adminEmailReservation = reserveAdminEmailSend("vendor_activation", row.email);
+  if (!adminEmailReservation) {
+    throw new HttpError(409, "This activation email was already sent in the last 5 minutes", {
+      code: "email_recently_sent",
+    });
+  }
+
   // Supersede the exact row we're resending. createOnboardingToken only cancels
   // siblings that share a waitlist_id, so this guarantees one live token even
   // for a waitlist_id-less row.
@@ -274,6 +284,7 @@ async function handleResendActivation(ctx: Ctx): Promise<Response> {
     to: row.email,
     businessName: row.business_name,
     activateUrl,
+    adminEmailReservation,
   });
 
   addAuditLog({

@@ -14,6 +14,7 @@ import {
 } from "@shared/vendor_waitlist";
 import { SUPPLIER_CATEGORY_LABEL_HU, type SupplierCategory } from "@shared/suppliers";
 import { sendKind } from "./emails/send";
+import type { AdminEmailSendReservation } from "./emails/admin_dedupe";
 
 export { buildEmailDraftPure as buildEmailDraft };
 
@@ -70,6 +71,7 @@ export async function sendVendorActivationEmail(input: {
   activateUrl: string;
   introMessage?: string;
   subject?: string;
+  adminEmailReservation?: AdminEmailSendReservation;
 }): Promise<void> {
   await sendKind(
     "vendor_activation",
@@ -79,6 +81,10 @@ export async function sendVendorActivationEmail(input: {
       introMessage: input.introMessage,
       subject: input.subject,
     },
-    { user: null, guest: { email: input.to, full_name: input.businessName } },
+    {
+      user: null,
+      guest: { email: input.to, full_name: input.businessName },
+      adminEmailReservation: input.adminEmailReservation,
+    },
   );
 }

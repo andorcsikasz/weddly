@@ -15,6 +15,7 @@ import { CONFIG } from "../config";
 import { db, VISITOR_SYSTEM_USER_EMAIL } from "../db";
 import { grantFreeAccess, revokeFreeAccess } from "../domain/billing";
 import { sendKind } from "../domain/emails";
+import { reserveAdminEmailSend } from "../domain/emails/admin_dedupe";
 import { purgeOneUser } from "../domain/purge";
 import { getUserById, isAdminEmail, requireAdmin, type UserRow } from "../domain/users";
 import { convertUserToVendor } from "../domain/vendor_conversion";
@@ -593,6 +594,13 @@ function handleResendVerify(ctx: Ctx): Response {
   }
   if (user.verified_email) return json({ ok: true, already_verified: true });
 
+  const adminEmailReservation = reserveAdminEmailSend("verify_resend", user.email);
+  if (!adminEmailReservation) {
+    throw new HttpError(409, "This verification email was already sent in the last 5 minutes", {
+      code: "email_recently_sent",
+    });
+  }
+
   const token = createVerificationToken(userId);
   const verifyUrl = `${CONFIG.frontendBaseUrl}/verify-email/${token}`;
   void sendKind(
@@ -602,6 +610,7 @@ function handleResendVerify(ctx: Ctx): Response {
       user: { id: user.id, email: user.email, full_name: user.full_name },
       // Admin-pressed; the user's own "resend" button keeps the default sender.
       sender: "admin",
+      adminEmailReservation,
     },
   );
 
@@ -912,6 +921,13 @@ async function handleResendFlagEmail(ctx: Ctx): Promise<Response> {
   const flag = getActiveFlagForUser(userId);
   if (!flag) throw new HttpError(404, "No active flag to resend", { code: "no_active_flag" });
 
+  const adminEmailReservation = reserveAdminEmailSend("account_flagged", target.email);
+  if (!adminEmailReservation) {
+    throw new HttpError(409, "This flag email was already sent in the last 5 minutes", {
+      code: "email_recently_sent",
+    });
+  }
+
   const deadlineDate = new Date(flag.scheduled_delete_at);
   const deadlineDateHu = new Intl.DateTimeFormat("hu-HU", {
     year: "numeric",
@@ -930,6 +946,7 @@ async function handleResendFlagEmail(ctx: Ctx): Promise<Response> {
     {
       user: { id: target.id, email: target.email, full_name: target.full_name },
       couple_id: target.couple_id,
+      adminEmailReservation,
     },
   );
 

@@ -12,6 +12,10 @@ import type { PlannerInviteBatchResult } from "@shared/types";
 import { CONFIG } from "../config";
 import { db } from "../db";
 import { sendKind } from "../domain/emails";
+import {
+  type AdminEmailSendReservation,
+  reserveAdminEmailSend,
+} from "../domain/emails/admin_dedupe";
 import { runPlannerInviteBatch } from "../domain/planner_invite_batch";
 import {
   type PlannerProfileRow,
@@ -94,7 +98,13 @@ function freeUntilLabels(untilMs: number): { hu: string; en: string } {
 
 async function sendActivationEmail(
   user: { id: number; email: string; full_name: string },
-  opts: { businessName: string; category: string; token: string; foundingUntil: number },
+  opts: {
+    businessName: string;
+    category: string;
+    token: string;
+    foundingUntil: number;
+    adminEmailReservation?: AdminEmailSendReservation;
+  },
 ): Promise<void> {
   const labels = freeUntilLabels(opts.foundingUntil);
   await sendKind(
@@ -107,7 +117,7 @@ async function sendActivationEmail(
       freeUntilHu: labels.hu,
       freeUntilEn: labels.en,
     },
-    { user },
+    { user, adminEmailReservation: opts.adminEmailReservation },
   );
 }
 
@@ -195,6 +205,15 @@ async function handleResendActivation(ctx: Ctx): Promise<Response> {
   const userId = parseId(ctx);
   const planner = requirePlannerUser(userId);
 
+  // Reserve before rotating the one-time token. A duplicate request must not
+  // invalidate the link that is already on its way in the first email.
+  const adminEmailReservation = reserveAdminEmailSend("planner_provisioned", planner.email);
+  if (!adminEmailReservation) {
+    throw new HttpError(409, "This activation email was already sent in the last 5 minutes", {
+      code: "email_recently_sent",
+    });
+  }
+
   const token = reissueActivationToken(userId);
   const sub = getPlannerSub(userId);
   await sendActivationEmail(
@@ -204,6 +223,7 @@ async function handleResendActivation(ctx: Ctx): Promise<Response> {
       category: planner.planner_category ?? "",
       token,
       foundingUntil: sub?.founding_until ?? Date.now(),
+      adminEmailReservation,
     },
   );
 

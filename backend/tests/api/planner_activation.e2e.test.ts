@@ -262,6 +262,23 @@ describe("admin planner provisioning", () => {
     const res = await provision(adminToken);
     const oldToken = activationToken(res.data.user_id);
 
+    // Provisioning has just sent this exact activation kind to this address.
+    // An immediate resend is refused, and—critically—the link already in the
+    // first email remains valid instead of being rotated behind its back.
+    const duplicate = await req(
+      "POST",
+      `/api/admin/planners/${res.data.user_id}/resend-activation`,
+      {},
+      { token: adminToken },
+    );
+    expect(duplicate.status).toBe(409);
+    const stillValid = await req("GET", `/api/planner/activation/${encodeURIComponent(oldToken)}`);
+    expect(stillValid.status).toBe(200);
+
+    // Once the short cooldown has elapsed an intentional resend is allowed.
+    db.prepare(
+      "UPDATE admin_email_send_dedupe SET reserved_at = 1 WHERE kind = 'planner_provisioned'",
+    ).run();
     const resend = await req(
       "POST",
       `/api/admin/planners/${res.data.user_id}/resend-activation`,

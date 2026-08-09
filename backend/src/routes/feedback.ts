@@ -289,6 +289,11 @@ async function handleAdminReply(ctx: Ctx): Promise<Response> {
           },
     );
     emailStatus = result.status;
+    if (result.status === "skipped_duplicate") {
+      throw new HttpError(409, "This email was already sent in the last 5 minutes", {
+        code: "email_recently_sent",
+      });
+    }
   }
 
   // ── in-app bell notification leg ──

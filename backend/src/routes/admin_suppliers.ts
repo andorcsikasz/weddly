@@ -41,6 +41,7 @@ import {
 import { localeForCountry, resolveListingCountry } from "../domain/vendor_campaign";
 import { curatedCountry } from "../domain/suppliers_data";
 import { sendKind } from "../domain/emails";
+import { reserveAdminEmailSend } from "../domain/emails/admin_dedupe";
 import { purgeOneUser } from "../domain/purge";
 import { enrichSupplier } from "../domain/supplier_enrich";
 import { fetchAndStoreListingHero } from "../domain/listing_image_backfill";
@@ -658,6 +659,16 @@ async function handleSendVerify(ctx: Ctx): Promise<Response> {
     );
   }
 
+  const adminEmailReservation = reserveAdminEmailSend(
+    "community_supplier_verify",
+    supplier.contact_email,
+  );
+  if (!adminEmailReservation) {
+    throw new HttpError(409, "This verification email was already sent in the last 5 minutes", {
+      code: "email_recently_sent",
+    });
+  }
+
   const token = createVerificationToken(id);
   void sendKind(
     "community_supplier_verify",
@@ -673,6 +684,7 @@ async function handleSendVerify(ctx: Ctx): Promise<Response> {
       user: null,
       guest: { email: supplier.contact_email, full_name: supplier.name },
       submitterUserId: supplier.submitter_user_id,
+      adminEmailReservation,
     },
   );
 

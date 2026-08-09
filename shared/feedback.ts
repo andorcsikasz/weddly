@@ -26,7 +26,8 @@ export interface FeedbackReplyEntry {
   channel: FeedbackReplyChannel;
   /** Outcome of the email leg when the channel included email: one of the
    *  mailer's SendResult statuses ("sent" | "failed" | "skipped_no_provider"
-   *  | "skipped_opt_out"). Null when email wasn't part of the channel. */
+   *  | "skipped_opt_out" | "skipped_duplicate"). Null when email wasn't part
+   *  of the channel. */
   email_status: string | null;
   /** True when an in-app bell notification was delivered to the submitter's
    *  workspace (the `notification` / `both` channels). */

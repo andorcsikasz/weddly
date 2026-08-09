@@ -1,5 +1,6 @@
 import "../setup";
 import { describe, expect, test } from "bun:test";
+import { db } from "../../src/db";
 import { bootstrapCouple, registerAndVerify, req, wipeAll } from "../helpers";
 
 /** Feedback triage workflow (see shared/feedback.ts):
@@ -204,6 +205,18 @@ describe("feedback triage workflow", () => {
     expect(r.data.entry.replies[0]!.message).toBe("Thanks for flagging it, fixed now!");
     // A reply nudges a still-new row to reviewed.
     expect(r.data.entry.status).toBe("reviewed");
+
+    const duplicate = await req(
+      "POST",
+      `/api/admin/feedback/${id}/reply`,
+      { message: "Thanks for flagging it, fixed now!", channel: "email" },
+      { token: adminToken },
+    );
+    expect(duplicate.status).toBe(409);
+    const replyCount = db
+      .prepare("SELECT COUNT(*) AS n FROM feedback_replies WHERE feedback_id = ?")
+      .get(id) as { n: number };
+    expect(replyCount.n).toBe(1);
   });
 
   test("reply via in-app notification lands in the submitter's bell", async () => {

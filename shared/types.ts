@@ -433,7 +433,7 @@ export interface AdminEmailLogEntry {
   category: string;
   to_email: string;
   subject: string;
-  status: "sent" | "failed" | "skipped_opt_out" | "skipped_no_provider";
+  status: "sent" | "failed" | "skipped_opt_out" | "skipped_no_provider" | "skipped_duplicate";
   error: string | null;
   created_at: number;
 }

@@ -7,6 +7,7 @@ import { db } from "../../src/db";
 import { buildResendPayload } from "../../src/lib/mailer";
 import { scanAdminSenderIntegrity } from "../../src/domain/emails/integrity_check";
 import { senderForKind } from "../../src/domain/emails/kinds";
+import { sendKind } from "../../src/domain/emails/send";
 import { registerAndVerify, req, wipeAll } from "../helpers";
 
 // Owner rule, 2026-07-31: anything an admin sends from /app/admin/* leaves
@@ -203,5 +204,77 @@ describe("a reply reaches a human", () => {
     const headers = payload.headers as Record<string, string>;
     expect(headers["List-Unsubscribe"]).toBe("<https://x.test/u>");
     expect(Object.keys(headers).map((k) => k.toLowerCase())).not.toContain("reply-to");
+  });
+});
+
+describe("admin email duplicate guard", () => {
+  test("the same kind and address can leave the admin console only once in five minutes", async () => {
+    wipeAll();
+    const target = {
+      user: null,
+      guest: { email: "  SAME@Example.test ", full_name: "Same recipient" },
+      sender: "admin" as const,
+    };
+
+    const first = await sendKind(
+      "verify_resend",
+      { verifyUrl: "https://example.test/verify/first" },
+      target,
+    );
+    const duplicate = await sendKind(
+      "verify_resend",
+      { verifyUrl: "https://example.test/verify/second" },
+      target,
+    );
+
+    expect(first.status).toBe("skipped_no_provider");
+    expect(duplicate.status).toBe("skipped_duplicate");
+    const rows = db
+      .prepare("SELECT status FROM email_log WHERE lower(trim(to_email)) = ? ORDER BY id")
+      .all("same@example.test") as Array<{ status: string }>;
+    expect(rows.map((row) => row.status)).toEqual(["skipped_no_provider", "skipped_duplicate"]);
+  });
+
+  test("automatic sends are unaffected, and an expired admin guard can be replaced", async () => {
+    wipeAll();
+    const automaticTarget = {
+      user: null,
+      guest: { email: "repeat@example.test", full_name: "Repeat" },
+    };
+    const one = await sendKind(
+      "verify_resend",
+      { verifyUrl: "https://example.test/verify/one" },
+      automaticTarget,
+    );
+    const two = await sendKind(
+      "verify_resend",
+      { verifyUrl: "https://example.test/verify/two" },
+      automaticTarget,
+    );
+    expect(one.status).toBe("skipped_no_provider");
+    expect(two.status).toBe("skipped_no_provider");
+
+    const adminTarget = { ...automaticTarget, sender: "admin" as const };
+    expect(
+      (
+        await sendKind(
+          "verify_resend",
+          { verifyUrl: "https://example.test/verify/admin-one" },
+          adminTarget,
+        )
+      ).status,
+    ).toBe("skipped_no_provider");
+    db.prepare(
+      "UPDATE admin_email_send_dedupe SET reserved_at = 1 WHERE to_email = ? AND kind = ?",
+    ).run("repeat@example.test", "verify_resend");
+    expect(
+      (
+        await sendKind(
+          "verify_resend",
+          { verifyUrl: "https://example.test/verify/admin-two" },
+          adminTarget,
+        )
+      ).status,
+    ).toBe("skipped_no_provider");
   });
 });

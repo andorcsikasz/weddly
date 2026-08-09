@@ -196,6 +196,7 @@ export function wipeAll(): void {
     "email_change_tokens",
     "email_log",
     "email_dispatches",
+    "admin_email_send_dedupe",
     "email_preferences",
     "community_supplier_reports",
     "community_supplier_verifications",
