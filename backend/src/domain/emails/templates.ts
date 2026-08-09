@@ -19,8 +19,6 @@ import {
 export interface BuildContext {
   /** Recipient's display name for the greeting. Falls back to "" if unknown. */
   recipientName: string;
-  /** Used by the unsubscribe footer link (only rendered for lifecycle mail). */
-  unsubscribeToken?: string;
   /** Recipient's known locale (`users.locale`), or `null` for guests + users
    *  whose locale was never captured. Picks single-card vs bilingual render
    *  in `renderEmail`. */
@@ -451,6 +449,19 @@ export interface WeddingDateChangedPayload {
   newWeddingDate: string | null;
   /** Where the guest can re-check details / update their RSVP. */
   rsvpPageUrl: string;
+}
+
+export interface GroupGiftNotificationPayload {
+  /** New contributor confirmation vs update to an earlier contributor. */
+  isNewPledger: boolean;
+  itemTitle: string;
+  /** External product page when the couple supplied one. */
+  itemUrl: string | null;
+  newContributorLabel: string;
+  /** Preformatted, escaped by the shared renderer. */
+  contributorLines: string[];
+  totalText: string;
+  ownAmountText: string | null;
 }
 
 export interface RsvpDeadlineApproachingPayload {
@@ -1059,6 +1070,7 @@ export type KindPayload = {
   rsvp_received_for_couple: RsvpReceivedForCouplePayload;
   rsvp_received_household_for_couple: RsvpReceivedHouseholdForCouplePayload;
   rsvp_thanks_for_guest: RsvpThanksForGuestPayload;
+  group_gift_notification: GroupGiftNotificationPayload;
   guest_invite: GuestInvitePayload;
   guest_major_update: GuestMajorUpdatePayload;
   guest_pre_wedding_info: GuestPreWeddingInfoPayload;
@@ -1148,7 +1160,6 @@ export function buildEmail<K extends EmailKind>(
     ctaUrl,
     category,
     plainCtaUrl: built.plainCtaUrl,
-    unsubscribeToken: context.unsubscribeToken,
     recipientLocale: context.recipientLocale,
     primaryLocaleHint: context.primaryLocaleHint,
     trackingPixelUrl: context.trackingPixelUrl,
@@ -1180,9 +1191,8 @@ interface RawTemplate {
    *  clean). */
   noUtm?: boolean;
   /** Overrides the footer's per-category "why am I getting this" line. See
-   *  `RenderInput.whyLine`. Two kinds need it: `planner_suggested_invite` and
-   *  `vendor_removal_confirmed`, both because the stock category line makes a
-   *  claim about having an account that their own body copy contradicts. */
+   *  `RenderInput.whyLine`. Use it whenever the stock category line would
+   *  misstate the relationship between Weddly and the recipient. */
   whyLine?: WhyLineOverride;
 }
 
@@ -1209,10 +1219,10 @@ type Builder<K extends EmailKind> = (payload: KindPayload[K], ctx: BuildContext)
  *  because the exact number moves between the send and the click. */
 function offerSentenceHu(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "Ebben a körben egy teljes évig a vendégünk vagytok a Weddlyn, a profil minden funkciójával. Van még hely benne.";
+    return "Az átvétellel **egy év Weddly Pro** a tiétek: közvetlen megkeresések, ajánlatok, elérhetőségi naptár és ügyfélkezelés egy helyen. Az év után a profilotok a megadott adatokkal díjmentesen fent marad; a Pro üzleti funkcióit akkor folytatjátok, ha továbbra is értéket adnak nektek.";
   }
   if (freeMonths > 0) {
-    return `Ebben a körben ${freeMonths} hónapig a vendégünk vagytok a Weddlyn, a profil minden funkciójával. Van még hely benne.`;
+    return `Az átvétellel **${freeMonths} hónap Weddly Pro** a tiétek: közvetlen megkeresések, ajánlatok, elérhetőségi naptár és ügyfélkezelés egy helyen. Utána a profilotok a megadott adatokkal díjmentesen fent marad; a Pro üzleti funkcióit akkor folytatjátok, ha továbbra is értéket adnak nektek.`;
   }
   return "";
 }
@@ -1223,21 +1233,21 @@ function offerSentenceHu(freeMonths: number): string {
 const OFFER_SENTENCE: Partial<Record<ExtraLocale, (freeMonths: number) => string>> = {
   hr: (m) =>
     m >= 12
-      ? "U ovom krugu ste godinu dana naši gosti na Weddlyju, sa svime što profil nudi. Još ima mjesta."
+      ? "Preuzimanjem profila dobivate **godinu dana Weddly Pro**: izravne upite, ponude, kalendar dostupnosti i upravljanje klijentima na jednom mjestu. Nakon toga profil ostaje objavljen s vašim podacima bez naknade; Pro poslovne alate nastavljate koristiti ako vam i dalje donose vrijednost."
       : m > 0
-        ? `U ovom krugu ste ${m} mjeseca naši gosti na Weddlyju, sa svime što profil nudi. Još ima mjesta.`
+        ? `Preuzimanjem profila dobivate **${m} mjeseca Weddly Pro**: izravne upite, ponude, kalendar dostupnosti i upravljanje klijentima na jednom mjestu. Nakon toga profil ostaje objavljen s vašim podacima bez naknade; Pro poslovne alate nastavljate koristiti ako vam i dalje donose vrijednost.`
         : "",
   de: (m) =>
     m >= 12
-      ? "In dieser Runde sind Sie ein ganzes Jahr unser Gast auf Weddly, mit allem, was das Profil kann. Es sind noch Plätze frei."
+      ? "Mit der Profilübernahme erhalten Sie **ein Jahr Weddly Pro**: direkte Anfragen, Angebote, Verfügbarkeitskalender und Kundenverwaltung an einem Ort. Danach bleibt Ihr Profil mit Ihren Angaben ohne Kosten online; die Pro-Werkzeuge nutzen Sie weiter, wenn sie Ihnen weiterhin einen Mehrwert bieten."
       : m > 0
-        ? `In dieser Runde sind Sie ${m} Monate unser Gast auf Weddly, mit allem, was das Profil kann. Es sind noch Plätze frei.`
+        ? `Mit der Profilübernahme erhalten Sie **${m} Monate Weddly Pro**: direkte Anfragen, Angebote, Verfügbarkeitskalender und Kundenverwaltung an einem Ort. Danach bleibt Ihr Profil mit Ihren Angaben ohne Kosten online; die Pro-Werkzeuge nutzen Sie weiter, wenn sie Ihnen weiterhin einen Mehrwert bieten.`
         : "",
   es: (m) =>
     m >= 12
-      ? "En esta ronda sois nuestros invitados en Weddly durante un año entero, con todo lo que ofrece el perfil. Aún quedan plazas."
+      ? "Al reclamar el perfil tendréis **un año de Weddly Pro**: consultas directas, presupuestos, calendario de disponibilidad y gestión de clientes en un solo lugar. Después, el perfil seguirá publicado con vuestros datos sin coste; podéis continuar con las herramientas Pro si os siguen aportando valor."
       : m > 0
-        ? `En esta ronda sois nuestros invitados en Weddly durante ${m} meses, con todo lo que ofrece el perfil. Aún quedan plazas.`
+        ? `Al reclamar el perfil tendréis **${m} meses de Weddly Pro**: consultas directas, presupuestos, calendario de disponibilidad y gestión de clientes en un solo lugar. Después, el perfil seguirá publicado con vuestros datos sin coste; podéis continuar con las herramientas Pro si os siguen aportando valor.`
         : "",
 };
 
@@ -1247,10 +1257,10 @@ function offerSentenceFor(locale: ExtraLocale, freeMonths: number): string {
 
 function offerSentenceEn(freeMonths: number): string {
   if (freeMonths >= 12) {
-    return "Claim your profile in this round and every feature is included for a full year, on us.";
+    return "Claim your profile and **Weddly Pro is yours for one year**: direct enquiries, quotes, availability and client management in one place. Afterwards, your profile stays live with your details at no cost; keep Pro only if its business tools continue to earn their place.";
   }
   if (freeMonths > 0) {
-    return `Claim your profile in this round and every feature is included for ${freeMonths} months, on us.`;
+    return `Claim your profile and **Weddly Pro is yours for ${freeMonths} months**: direct enquiries, quotes, availability and client management in one place. Afterwards, your profile stays live with your details at no cost; keep Pro only if its business tools continue to earn their place.`;
   }
   return "";
 }
@@ -2433,6 +2443,66 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
 
+  group_gift_notification: (p, ctx) => {
+    const contributors = p.contributorLines.map((line) => `- ${line}`).join("\n");
+    return {
+      whyLine: {
+        hu: "Ezt azért kaptad, mert e-mailes értesítést kértél ehhez a közös ajándékhoz.",
+        en: "You're receiving this because you requested email updates about this group gift.",
+      },
+      subject: localeSubject(
+        ctx.recipientLocale,
+        p.isNewPledger
+          ? `Csatlakoztál a közös ajándékhoz: ${p.itemTitle}`
+          : `Bővült a közös ajándék csapata: ${p.itemTitle}`,
+        p.isNewPledger
+          ? `You joined the group gift: ${p.itemTitle}`
+          : `A new guest joined the group gift: ${p.itemTitle}`,
+      ),
+      ctaUrl: p.itemUrl ?? CONFIG.frontendBaseUrl,
+      noUtm: p.itemUrl != null,
+      hu: {
+        preheader: p.isNewPledger
+          ? `Rögzítettük a hozzájárulási szándékodat: ${p.itemTitle}.`
+          : `${p.newContributorLabel} is csatlakozott a közös ajándékhoz.`,
+        greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
+        paragraphs: p.isNewPledger
+          ? [
+              `Rögzítettük a hozzájárulási szándékodat a(z) **${p.itemTitle}** közös ajándékhoz.`,
+              p.ownAmountText ? `A vállalt összeged: **${p.ownAmountText}**.` : "",
+              contributors ? `A közös ajándék résztvevői:\n${contributors}` : "",
+              `Eddig összesen: **${p.totalText}**.`,
+              "Ez egy rugalmas szándéknyilatkozat; a részleteket közösen egyeztethetitek.",
+            ].filter((line) => line.length > 0)
+          : [
+              `**${p.newContributorLabel}** is csatlakozott a(z) **${p.itemTitle}** közös ajándékhoz.`,
+              contributors ? `A közös ajándék résztvevői:\n${contributors}` : "",
+              `Eddig összesen: **${p.totalText}**.`,
+              "Egyeztessétek a következő lépést a résztvevőkkel.",
+            ].filter((line) => line.length > 0),
+        cta: p.itemUrl ? "Ajándék megtekintése" : "Weddly megnyitása",
+      },
+      en: {
+        greeting: `Hi ${ctx.recipientName || "there"},`,
+        paragraphs: p.isNewPledger
+          ? [
+              `We've recorded your intention to contribute to the group gift **${p.itemTitle}**.`,
+              p.ownAmountText ? `Your pledged amount: **${p.ownAmountText}**.` : "",
+              contributors ? `Group gift contributors:\n${contributors}` : "",
+              `Total so far: **${p.totalText}**.`,
+              "This is a flexible expression of interest; you can coordinate the details together.",
+            ].filter((line) => line.length > 0)
+          : [
+              `**${p.newContributorLabel}** has joined the group gift **${p.itemTitle}**.`,
+              contributors ? `Group gift contributors:\n${contributors}` : "",
+              `Total so far: **${p.totalText}**.`,
+              "Coordinate the next step with the other contributors.",
+            ].filter((line) => line.length > 0),
+        cta: p.itemUrl ? "View the gift" : "Open Weddly",
+      },
+    };
+  },
+
   guest_invite: (p, ctx) => {
     const dateHu = p.weddingDate ? ` **${p.weddingDate}**` : "";
     const dateEn = p.weddingDate ? ` **${p.weddingDate}**` : "";
@@ -2575,16 +2645,16 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     return {
       subject: localeSubject(
         ctx.recipientLocale,
-        "A próbaidőszakotok véget ért",
-        "Your Weddly trial has ended",
+        "Így folytathatjátok a Weddlyben",
+        "Choose how to continue with Weddly",
       ),
       ctaUrl: p.inviteUrl,
       hu: {
         preheader: `Innen két út vezet tovább. ${p.graceDays} napotok van dönteni.`,
         greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
         paragraphs: [
-          `A Weddly próbaidőszakotok${coupleHu} lezárult. A tervezőtök a helyén van, minden adatotokkal együtt, és a következő ${p.graceDays} napban ugyanúgy szerkeszthető, mint eddig.`,
-          "Innen két út vezet tovább, és érdemes az elsővel kezdeni. **Ha a párod is belép a munkaterületre, az esküvőtök napjáig a vendégeink vagytok**, teljes hozzáféréssel. Ez a gyorsabb út, és a tervezésen is segít: a vendéglista, az ülésrend és a költségvetés akkor működik jól, ha ugyanazt az egy verziót szerkesztitek ketten.",
+          `A tervezőtök${coupleHu} minden adatotokkal együtt a helyén van, és a következő ${p.graceDays} napban ugyanúgy szerkeszthető, mint eddig.`,
+          "Két lehetőség közül választhattok. **Ha a párod is belép a munkaterületre, az esküvőtök napjáig a vendégeink vagytok**, teljes hozzáféréssel. Így a vendéglistát, az ülésrendet és a költségvetést ugyanabban a közös verzióban kezelhetitek.",
           `A másik út, ha egyedül tervezel tovább: **${p.graceEndsLabel}-ig** add meg a fizetési adatokat, és a munkaterület megszakítás nélkül marad szerkeszthető.`,
           "Ha kérdésed van a csomagokról vagy a számlázásról, válaszolj erre a levélre, és segítünk.",
         ],
@@ -2594,7 +2664,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       en: {
         greeting: `Hi ${ctx.recipientName || "there"},`,
         paragraphs: [
-          `Your Weddly trial${coupleEn} has ended. Your data is still there, and the planner will remain editable for another ${p.graceDays} days.`,
+          `Your planner${coupleEn} and all of its data are ready for you, with full editing for another ${p.graceDays} days.`,
           "You have two options. **Invite your partner and be our guests until your wedding day**, or continue on your own with a paid plan.",
           `If you choose a paid plan, add your payment details by **${p.graceEndsLabel}** to keep the workspace active without interruption.`,
           "If you have questions about plans or billing, reply to this email and our team will help.",
@@ -2616,7 +2686,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: "Pár perc, és kész az alap esküvőterveződ.",
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        "Már csak néhány alapadat hiányzik: nevek, dátum és vendégszám.",
+        "Add meg a neveket, a dátumot és a vendégszámot, és indulhat a közös tervezőtök.",
         "A beállítás körülbelül két perc. Minden adatot később is módosíthattok.",
       ],
       cta: "Befejezem a tervező beállítását",
@@ -2642,7 +2712,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: "Egy hét telt el. Kezdjük el az esküvőtök tervezését?",
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        "Egy hete regisztráltál a Weddly-n, de a terveződ még üres.",
+        "A Weddly-tervezőtök készen áll az indulásra.",
         "Add meg a neveket, az esküvő dátumát és a várható vendégszámot a költségvetés, a vendéglista és az ülésrend beállításához.",
         "Kezdd akár a vendéglistával, a többi ráér. Bármit átírhatsz később.",
       ],
@@ -2651,7 +2721,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        "It's been a week since you joined Weddly, and your planner is still empty.",
+        "Your Weddly planner is ready to get started.",
         "Add your names, wedding date and estimated guest count to set up the budget, guest list and seating plan.",
         "You can start with the guest list and complete the rest whenever you're ready. Everything can be changed later.",
       ],
@@ -3004,7 +3074,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     const listEn = titles.length > 0 ? titles.join(", ") : "";
     const headlineHu =
       p.overdueCount > 0
-        ? `${p.overdueCount} teendő már csúszik${p.dueSoonCount > 0 ? `, és ${p.dueSoonCount} hamarosan esedékes` : ""}.`
+        ? `${p.overdueCount} teendő vár frissítésre${p.dueSoonCount > 0 ? `, és ${p.dueSoonCount} hamarosan esedékes` : ""}.`
         : `${p.dueSoonCount} teendő hamarosan esedékes.`;
     const headlineEn =
       p.overdueCount > 0
@@ -3013,8 +3083,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     return {
       subject: localeSubject(
         ctx.recipientLocale,
-        "Csúszik pár dolog az ütemtervből",
-        "A few timeline items need you",
+        "A következő teendők várnak rátok",
+        "Your next timeline items are ready",
       ),
       ctaUrl: p.timelineUrl,
       hu: {
@@ -3191,16 +3261,16 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   rsvp_deadline_approaching: (p, ctx) => ({
     subject: localeSubject(
       ctx.recipientLocale,
-      `${p.pendingCount} vendég még nem válaszolt`,
-      `${p.pendingCount} guests haven't RSVP'd`,
+      "Véglegesítsétek a vendégszámot",
+      "Confirm your final guest count",
     ),
     ctaUrl: p.guestsUrl,
     hu: {
       preheader: `${p.coupleDisplayName}, 2 hét az esküvőig.`,
       greeting: `Szia ${ctx.recipientName || ""}!`.trim(),
       paragraphs: [
-        `Két hét múlva van az esküvőtök **(${p.weddingDate})**, és **${p.pendingCount} vendég** még nem küldte el az RSVP-jét.`,
-        "A vendéglistán egy kattintás emlékeztetőt küldeni mindenkinek, aki még nem válaszolt. Most a jó pillanat, innentől kezdve egyre nehezebb lesz pontos fejszámot adni a helyszínnek és a cateringnek.",
+        `Két hét múlva van az esküvőtök **(${p.weddingDate})**, és **${p.pendingCount} válasz** érkezik még a végleges vendégszámhoz.`,
+        "A vendéglistán egy kattintással emlékeztetőt küldhettek nekik. Így kényelmesen véglegesíthetitek a létszámot a helyszínnel és a cateringgel.",
       ],
       cta: "Vendéglista megnyitása",
       footnote: "Ezt az emlékeztetőt csak egyszer küldjük, T-14 napon.",
@@ -3208,8 +3278,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     en: {
       greeting: `Hi ${ctx.recipientName || "there"},`,
       paragraphs: [
-        `Your wedding is two weeks away **(${p.weddingDate})**, and **${p.pendingCount} guests** still haven't sent their RSVP.`,
-        "From the guest list, you can send a reminder to everyone who has not replied. Doing it now will give your venue and caterer more time to confirm the final numbers.",
+        `Your wedding is two weeks away **(${p.weddingDate})**, with **${p.pendingCount} replies** left to confirm the final guest count.`,
+        "Send everyone a reminder from the guest list in one click, giving your venue and caterer plenty of time to confirm the numbers.",
       ],
       cta: "Open guest list",
       footnote: "We only send this nudge once, at T-14 days.",
@@ -3504,7 +3574,8 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
    *  Two jobs, in this order and no other. First: say plainly that the listing
    *  is down and why it existed at all, because "how did you get my address"
    *  is the actual question behind a request like this and leaving it unanswered
-   *  reads as evasion. A user suggested them; a person, not a scrape.
+   *  reads as evasion. State the source we can prove for every listing:
+   *  publicly available business information.
    *
    *  Second: leave the door open ONCE, and make it a door they walk through
    *  rather than one we hold. The CTA is registration, on their own terms, and
@@ -3544,7 +3615,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Kedves ${name}!`,
         paragraphs: [
           "Az adatlapot a kérésedre töröltük a Weddly-ről. Nem jelenik meg többé a keresésben, és több levelet sem küldünk erre a címre.",
-          "Az adatlap azért volt fent, mert az egyik felhasználónk ajánlott titeket, amikor a saját esküvőjéhez keresett szolgáltatót. Nem ti regisztráltatok, és nem is kértük ehhez a hozzájárulásotokat.",
+          "Az adatlapot nyilvánosan elérhető üzleti adatokból állítottuk össze; nem ti regisztráltátok.",
           "Ha egyszer mégis szeretnétek elérhetők lenni a pároknak, saját adatlapot bármikor létrehozhattok. Az már a tiétek: ti írjátok, ti szerkesztitek, és ti döntitek el, mi látszik belőle.",
         ],
         cta: "Regisztráció",
@@ -3555,7 +3626,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         greeting: `Dear ${name},`,
         paragraphs: [
           "Your listing has been removed from Weddly at your request. It no longer appears in search, and we will not email this address again.",
-          "It was there because one of our users suggested you while looking for suppliers for their own wedding. You did not sign up, and we did not ask your permission for it.",
+          "We created the listing from publicly available business information; it was not registered by your team.",
           "If you ever do want to be reachable by couples planning a wedding, you can create your own listing whenever you like. That one is yours: you write it, you edit it, and you decide what it shows.",
         ],
         cta: "Register",
@@ -3567,7 +3638,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           greeting: `Hola, equipo de ${name}:`,
           paragraphs: [
             "Hemos eliminado el anuncio de Weddly. Ya no aparece en las búsquedas y no volveremos a escribir a esta dirección.",
-            "El anuncio existía porque una persona usuaria de Weddly os recomendó mientras buscaba proveedores para su boda. No os registrasteis ni os pedimos permiso para publicarlo.",
+            "Creamos el anuncio a partir de información empresarial pública; vuestro equipo no lo registró.",
             "Si en el futuro queréis aparecer en el directorio, podéis crear vuestro propio anuncio. Vosotros decidiréis qué información publicar y podréis editarla cuando queráis.",
           ],
           cta: "Registrarse",
@@ -3579,7 +3650,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           greeting: `Poštovani ${name},`,
           paragraphs: [
             "Na vaš smo zahtjev uklonili vaš oglas s Weddlyja. Više se ne prikazuje u pretrazi i na ovu adresu više nećemo slati e-poštu.",
-            "Oglas je postojao jer vas je jedan naš korisnik predložio dok je tražio ponuđače za vlastito vjenčanje. Vi se niste prijavili i za to vas nismo pitali za dopuštenje.",
+            "Oglas smo izradili prema javno dostupnim poslovnim podacima; vaš ga tim nije registrirao.",
             "Ako ikada poželite biti dostupni parovima koji planiraju vjenčanje, svoj oglas možete izraditi kad god želite. Taj je vaš: vi ga pišete, vi ga uređujete i vi odlučujete što se na njemu vidi.",
           ],
           cta: "Registracija",
@@ -3590,7 +3661,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
           greeting: `Sehr geehrtes Team von ${name},`,
           paragraphs: [
             "Ihr Eintrag wurde auf Ihren Wunsch von Weddly entfernt. Er erscheint nicht mehr in der Suche, und wir schreiben an diese Adresse nicht mehr.",
-            "Der Eintrag bestand, weil eine unserer Nutzerinnen oder einer unserer Nutzer Sie vorgeschlagen hat, während sie oder er Dienstleister für die eigene Hochzeit gesucht hat. Sie haben sich nicht angemeldet, und wir haben Sie dazu nicht um Erlaubnis gebeten.",
+            "Wir haben den Eintrag anhand öffentlich verfügbarer Unternehmensdaten erstellt; Ihr Team hat ihn nicht registriert.",
             "Falls Sie irgendwann doch für Paare erreichbar sein möchten, können Sie jederzeit Ihren eigenen Eintrag anlegen. Dieser gehört Ihnen: Sie schreiben ihn, Sie bearbeiten ihn, und Sie entscheiden, was er zeigt.",
           ],
           cta: "Registrieren",
@@ -3649,99 +3720,115 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       {
         subject: localeSubject(
           ctx.recipientLocale,
-          "Fejezd be a Weddly-profilod",
-          "Finish your Weddly profile",
+          "Legyen teljes a Weddly-profilotok",
+          "Complete your Weddly profile",
         ),
         hu: {
-          preheader: "Néhány rész még hiányzik a profilodról.",
+          preheader: "Adjátok hozzá a részleteket, amelyek segítik a párok döntését.",
           intro:
-            "A profilod már él a Weddly-n, de még nincs teljesen kész. A hiányzó részek nélkül kevesebb pár kattint rád.",
-          missingLead: "Ezek még hiányoznak:",
-          close: "Pár perc kitölteni, és sokkal meggyőzőbb lesz a profilod.",
-          cta: "Profil befejezése",
-        },
-        en: {
-          preheader: "A few sections are still missing from your profile.",
-          intro:
-            "Your profile is live on Weddly, but it isn't finished yet. Without the missing pieces, fewer couples click through.",
-          missingLead: "Still missing:",
-          close: "Complete these sections so couples have the information they need.",
-          cta: "Finish my profile",
-        },
-      },
-      {
-        subject: "A párok téged is néznek a Weddly-n / Couples are browsing you on Weddly",
-        hu: {
-          preheader: "Valódi párok böngésznek, a teljes profil dönt.",
-          intro:
-            "A párok a Weddly katalógusában hasonlítják össze a szolgáltatókat. A teljes profilból pontosabban látják, mit kínálsz.",
-          missingLead: "Nálad még üresen áll:",
-          close: "Egészítsd ki, hogy a legjobb formádat lássák.",
+            "A profilotok már él a Weddly-n. Egészítsétek ki, hogy a párok minden fontos információt egy helyen találjanak rólatok.",
+          missingLead: "Ezekkel lesz teljes:",
+          close: "Pár perc alatt megmutathatjátok mindazt, amit érdemes tudni rólatok.",
           cta: "Profil kiegészítése",
         },
         en: {
-          preheader: "Real couples are browsing, a full profile wins.",
+          preheader: "Add the details that help couples make their decision.",
           intro:
-            "Couples are comparing vendors on Weddly. A complete profile helps them understand what you offer.",
-          missingLead: "Yours is still empty here:",
-          close: "Complete these sections so couples have the information they need.",
+            "Your profile is live on Weddly. Complete it so couples can find every useful detail about your business in one place.",
+          missingLead: "Add these details:",
+          close: "A few minutes will give couples a clear view of what you offer.",
           cta: "Complete my profile",
         },
       },
       {
-        subject: "Az első benyomás számít / First impressions count",
+        subject: localeSubject(
+          ctx.recipientLocale,
+          "Mutassátok meg, mit kínáltok",
+          "Show couples what you offer",
+        ),
         hu: {
-          preheader: "Egy rendezett profil a legtöbbet hozza.",
+          preheader: "A teljes profilból a párok gyorsan átlátják, mit kínáltok.",
           intro:
-            "Egy rendezett, teljes profil az első benyomásnál a legtöbbet hozza. A tiéd már majdnem ott van.",
-          missingLead: "Még ennyi kell hozzá:",
-          close: "Told ki gyorsan, és készen állsz a megkeresésekre.",
-          cta: "Befejezem most",
+            "A párok a Weddly katalógusában hasonlítják össze a szolgáltatókat. A teljes profilból pontosabban látják, mit kínáltok.",
+          missingLead: "Ezeket érdemes hozzáadnotok:",
+          close: "Egészítsétek ki, hogy minden fontos részletet tőletek ismerjenek meg.",
+          cta: "Profil kiegészítése",
         },
         en: {
-          preheader: "A tidy profile makes the difference.",
+          preheader: "A complete profile helps couples quickly understand your offer.",
           intro:
-            "A tidy, complete profile makes the strongest first impression. Yours is almost there.",
-          missingLead: "Just this left:",
-          close: "Wrap it up and you're ready for enquiries.",
-          cta: "Finish it now",
+            "Couples are comparing vendors on Weddly. A complete profile helps them understand what you offer.",
+          missingLead: "Useful details to add:",
+          close: "Complete these sections so every important detail comes directly from you.",
+          cta: "Complete my profile",
         },
       },
       {
-        subject: "Több megkeresés a teljes profillal / More enquiries with a full profile",
+        subject: localeSubject(
+          ctx.recipientLocale,
+          "Az első benyomás a profilotokkal kezdődik",
+          "Your profile shapes the first impression",
+        ),
         hu: {
-          preheader: "A teljes profilok több megkeresést kapnak.",
+          preheader: "Rendezett információk, könnyebb döntés a pároknak.",
           intro:
-            "A teljes profilok érezhetően több megkeresést kapnak. A tiédből még hiányzik pár darab.",
-          missingLead: "Hiányzó részek:",
-          close: "Ha kitöltöd, nagyobb eséllyel választanak a párok.",
-          cta: "Kiegészítem",
+            "A rendezett profil segít a pároknak gyorsan megérteni, hogyan dolgoztok és mit kínáltok.",
+          missingLead: "Ezeket adjátok hozzá:",
+          close: "Egészítsétek ki pár perc alatt, és máris teljesebb képet mutattok magatokról.",
+          cta: "Profil kiegészítése",
         },
         en: {
-          preheader: "Full profiles get more enquiries.",
+          preheader: "Clear information makes it easier for couples to decide.",
           intro:
-            "Your profile is still missing a few details that couples use when comparing vendors.",
-          missingLead: "Missing sections:",
-          close: "Fill them in and more couples will choose you.",
-          cta: "Complete it",
+            "A clear profile helps couples quickly understand how you work and what you offer.",
+          missingLead: "Add these details:",
+          close: "A few minutes will give couples a fuller picture of your business.",
+          cta: "Complete my profile",
         },
       },
       {
-        subject: "Utolsó emlékeztető a profilodról / Final reminder about your profile",
+        subject: localeSubject(
+          ctx.recipientLocale,
+          "Minden fontos részlet egy profilban",
+          "Every useful detail in one profile",
+        ),
         hu: {
-          preheader: "Rövid emlékeztető: a profilod még nincs kész.",
-          intro: "Nem húzzuk az időd, csak egy emlékeztető: a profilod még nincs teljesen kész.",
-          missingLead: "Ennyi van hátra:",
-          close: "Fejezd be, amikor ráérsz, pár perc az egész, és kész a profilod.",
-          cta: "Befejezés",
+          preheader: "Segítsetek a pároknak gyorsan átlátni az ajánlatotokat.",
+          intro:
+            "A részletes profil megadja a pároknak azokat az információkat, amelyekre az összehasonlításhoz szükségük van.",
+          missingLead: "Ezekkel érdemes kiegészíteni:",
+          close: "Adjátok hozzá őket, hogy az ajánlatotok könnyen áttekinthető legyen.",
+          cta: "Profil kiegészítése",
         },
         en: {
-          preheader: "Quick reminder: your profile isn't finished.",
-          intro: "We'll keep it short, just a reminder that your profile isn't quite finished.",
-          missingLead: "This is what's left:",
-          close:
-            "Complete these sections whenever it suits you. It should only take a few minutes.",
-          cta: "Finish up",
+          preheader: "Help couples understand your offer at a glance.",
+          intro:
+            "A detailed profile gives couples the information they use when comparing vendors.",
+          missingLead: "Useful details to add:",
+          close: "Add them to make your offer easy to understand.",
+          cta: "Complete my profile",
+        },
+      },
+      {
+        subject: localeSubject(
+          ctx.recipientLocale,
+          "A profilotok készen áll a kiegészítésre",
+          "Your profile is ready to complete",
+        ),
+        hu: {
+          preheader: "Pár részlet, és a párok minden fontos információt megtalálnak.",
+          intro:
+            "A Weddly-profilotok készen áll arra, hogy a saját részleteitekkel teljessé tegyétek.",
+          missingLead: "Ezeket adjátok hozzá:",
+          close: "Pár perc az egész, és a profilotok minden fontos információt tartalmaz.",
+          cta: "Profil kiegészítése",
+        },
+        en: {
+          preheader: "A few details will give couples everything they need.",
+          intro: "Your Weddly profile is ready for the details that make it distinctly yours.",
+          missingLead: "Add these details:",
+          close: "A few minutes will put every useful detail in one place.",
+          cta: "Complete my profile",
         },
       },
     ];
@@ -3808,31 +3895,31 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     return {
       subject: localeSubject(
         ctx.recipientLocale,
-        "Fejezd be a Weddly-profilod",
-        "Finish your Weddly profile",
+        "Tedd láthatóvá a szervezői profilod",
+        "Make your planner profile visible",
       ),
       ctaUrl: p.editUrl,
       hu: {
-        preheader: "Néhány adat még hiányzik a nyilvános profilodról.",
+        preheader: "Pár adat, és a párok is megtalálhatnak a szervezői ajánlóban.",
         greeting: name ? `Szia ${name}!` : "Szia!",
         paragraphs: [
-          "Már majdnem kész a szervezői profilod a Weddly-n, de még hiányzik néhány adat ahhoz, hogy a párok megtaláljanak.",
-          `Egészítsd ki ezeket: **${huList}**. Amíg a vállalkozásod neve és a városod nincs kitöltve, a profilod nem jelenik meg a párok szervező-listájában.`,
-          "Néhány perc az egész, és onnantól a most tervező párok is rád találhatnak. A lenti gombbal egyből a szerkesztőhöz jutsz.",
+          "A szervezői profilod közel áll a megjelenéshez a Weddly-n.",
+          `Add hozzá: **${huList}**. A vállalkozásod nevével és a városoddal a párok szervezői ajánlójába is bekerülhetsz.`,
+          "Néhány perc az egész; a gomb egyből a profilszerkesztőhöz visz.",
         ],
         cta: "Profil kiegészítése",
-        ctaSubtext: "Nyisd meg a profilszerkesztőt, és töltsd ki a hiányzó mezőket.",
+        ctaSubtext: "Nyisd meg a profilszerkesztőt, és add hozzá a részleteket.",
         footnote: "Csak akkor írunk, ha van valami, amivel előrébb léphetsz a Weddly-n.",
       },
       en: {
         greeting: name ? `Hi ${name},` : "Hi there,",
         paragraphs: [
-          "Your planner profile on Weddly is almost ready, but a few details are still missing before couples can find you.",
-          `Please add: **${enList}**. Until your business name and city are filled in, your profile won't appear in the couples' planner list.`,
-          "Complete these details so your profile can appear in the planner directory. The button below opens the profile editor.",
+          "Your planner profile is close to appearing on Weddly.",
+          `Add: **${enList}**. Your business name and city make the profile eligible for the planner directory.`,
+          "It takes a few minutes; the button opens the profile editor directly.",
         ],
         cta: "Complete my profile",
-        ctaSubtext: "Open the profile editor and fill in the missing fields.",
+        ctaSubtext: "Open the profile editor and add your details.",
         footnote: "We only email when there's something useful for your Weddly profile.",
       },
     };
@@ -4088,47 +4175,21 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
   }),
   // Claim-invite campaign. Cold, so the copy has to earn the click in the first
-  // two lines: WHY this arrived, WHAT already exists (their category + town,
-  // proof we mean their actual business), and what is wrong with it (we wrote
-  // it from public data, so the things that actually sell are missing). The
-  // free window is the closer, not the hook, an offer-first cold mail reads as
-  // an ad.
+  // two lines: WHY this arrived and WHAT already exists (their category +
+  // town, proof we mean their actual business). The positive next step follows
+  // immediately. The free window is the closer, not the hook; an offer-first
+  // cold mail reads as an ad.
   //
-  // THE OPENING IS THE REFERRAL LINE, FOR EVERY RECIPIENT. Owner direction,
-  // 2026-08-04, taken after a 3-agent copy review argued the other way and was
-  // overruled: every cold first-contact mail to a vendor opens with "a couple
-  // put you forward", because a directory invite that reads as scraped is the
-  // thing the whole campaign is trying not to be. It is deliberately the same
-  // frame `planner_suggested_invite` already ships ("you came recommended"), so
-  // the two cold families now speak with one voice.
+  // The opening is built on the page state and the source we can prove for
+  // every recipient: publicly available business information. A user referral
+  // belongs only in a flow whose payload carries that fact (`suggestedByUser`).
+  // Trust is part of conversion; this campaign must never imply a personal
+  // recommendation merely to make a curated import sound warmer.
   //
-  // What that costs, recorded so nobody has to rediscover it:
-  //   - It is not true per recipient today. Every reachable listing is a
-  //     curated import we compiled from public sources; `submitter_type='user'`
-  //     rows (what `publishCoupleSupplierToDirectory` writes when a couple adds
-  //     a vendor Weddly lacks) are the only ones where it is literally the
-  //     case, and there are none in the current target set.
-  //   - The reply is the real bill. "Which couple?" comes from the vendor who
-  //     was about to claim, and this kind is in ADMIN_CONSOLE_KINDS, so it
-  //     lands at hello@ where a human answers it. Operators need one prepared
-  //     line before a campaign runs, and it must not invent a couple.
-  //   - The exposure is B2B misleading advertising (Directive 2006/114/EC, and
-  //     the Hungarian equivalent), NOT the Art. 14 duty: the source disclosure
-  //     is the published `privacy.directory_listings_source` chapter, which
-  //     lists a user recommendation among the sources, so the mail does not
-  //     contradict the notice.
-  // If that trade is ever revisited, the honest alternative is preserved in
-  // git: an opening built on the page state, which is checkable and needs no
-  // referral to sting.
-  //
-  // The rest of the mail is the part that stays true whoever is reading. Their
-  // page is live, it currently tells couples nobody from the business has taken
-  // it over and sends them off to the vendor's own site (`suppliers.calendar.
-  // unclaimedNote`), and that is a per-recipient loss they can confirm. Which
-  // is why the public URL ships as its own secondary link rather than hiding
-  // behind the tracked CTA: a verifiable claim beside an unverifiable one is
-  // what keeps the mail from reading as pure assertion, and a vendor who goes
-  // and looks correctly stops the 2-day reminder.
+  // The rest of the mail is the part that stays true whoever is reading: the
+  // page is live and ready for first-party photos, prices and availability.
+  // The public URL ships as its own secondary link so the recipient can verify
+  // the page state before deciding whether to claim it.
   //
   // Rendered single-language: `locale` comes off the payload because the
   // subject is one string per kind, and a Hungarian subject on a mail to a
@@ -4136,44 +4197,42 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   vendor_claim_campaign: (p) => ({
     subject: localeSubject(
       p.locale,
-      `Egy pár ajánlotta a Weddlyn: ${p.listingName}`,
-      `A couple recommended ${p.listingName} on Weddly`,
+      `${p.listingName}: egészítsétek ki a Weddly-profilotokat`,
+      `${p.listingName}: complete your Weddly profile`,
       {
-        es: `Una pareja recomendó ${p.listingName} en Weddly`,
-        hr: `Par je predložio ${p.listingName} na Weddlyju`,
-        de: `Ein Paar hat ${p.listingName} auf Weddly vorgeschlagen`,
+        es: `${p.listingName}: completad vuestro perfil de Weddly`,
+        hr: `${p.listingName}: dopunite svoj Weddly profil`,
+        de: `${p.listingName}: Vervollständigen Sie Ihr Weddly-Profil`,
       },
     ),
     ctaUrl: p.inviteUrl,
     hu: {
-      preheader: `${p.categoryLabel} · ${p.city}. Az oldal él, és most azt írja a pároknak, hogy a vállalkozástól még nem vette át senki.`,
+      preheader: "Saját fotók, árak és szabad időpontok: minden fontos részlet egy helyen.",
       greeting: "Szia!",
       paragraphs: [
-        `Egy pár, aki a Weddlyn tervezi az esküvőjét, ajánlotta a(z) **${p.listingName}** vállalkozást, így került fel az oldalatok: ${p.categoryLabel}, ${p.city}. Már él, és most azt írja a pároknak, hogy a vállalkozástól még nem vette át senki.`,
-        "Hétről hétre ülnek le párok eldönteni, kit szeretnének maguk mellett életük legnagyobb napján. Amikor a ti oldalatokra érnek, a mi tippünket találják rólatok: a saját fotóitok, a csomagjaitok, az áraitok és a szabad időpontjaitok nélkül. Ha átveszed, az oldal a tiétek lesz, körülbelül két perc alatt.",
+        `A(z) **${p.listingName}** profilja már elérhető a Weddly szolgáltatói katalógusában (${p.categoryLabel}, ${p.city}). Nyilvánosan elérhető üzleti adatokkal készítettük elő, ti pedig bármikor átvehetitek és a sajátotokra formálhatjátok.`,
+        "Egészítsétek ki saját fotókkal, csomagokkal, árakkal és szabad időpontokkal, hogy a párok minden fontos információt egy helyen lássanak.",
         offerSentenceHu(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Profil átvétele",
-      ctaSubtext:
-        "Két perc: egy név és egy jelszó. Ez a cím már rajta van az oldalon, így nincs más igazolni való.",
-      footnote: "Nem a te asztalod? Küldd tovább annak, aki a naptárat viszi, neki is működik.",
+      ctaSubtext: "Kb. két perc: egy név és egy jelszó.",
+      footnote: `A linket továbbíthatjátok annak, aki a profilotokat vagy a naptárat kezeli. Adatkezelési kérdésben a ${CONFIG.supportEmail} címen segítünk.`,
       secondaryLinks: [
         { label: "Nézd meg úgy, ahogy a párok látják", url: p.listingUrl },
         { label: "Mi az a Weddly?", url: CONFIG.frontendBaseUrl },
       ],
     },
     en: {
-      preheader: `${p.categoryLabel} · ${p.city}. The page is live, and it tells couples nobody from the business has taken it over.`,
+      preheader: "Your photos, pricing and availability: everything couples need in one place.",
       greeting: "Hi there,",
       paragraphs: [
-        `A couple planning their wedding on Weddly put **${p.listingName}** forward, which is how your page went up: ${p.categoryLabel}, ${p.city}. It is live, and right now it tells couples that nobody from the business has taken it over.`,
-        "Couples are already using Weddly to choose their wedding team. Right now, your page is only our best draft: it has none of your own photos, packages, prices or availability. Claim it and make it yours in about two minutes.",
+        `The profile for **${p.listingName}** is now available in the Weddly supplier directory (${p.categoryLabel}, ${p.city}). We prepared it from publicly available business information, and you can claim it and make it your own.`,
+        "Add your photos, packages, pricing and availability so couples can find every useful detail in one place.",
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
-      ctaSubtext:
-        "Two minutes: your name and a password. This address is already on the page, so there is nothing else to verify.",
-      footnote: "Not your desk? Send it on to whoever runs the diary, the link works for them too.",
+      ctaSubtext: "About two minutes: your name and a password.",
+      footnote: `You may forward the link to whoever manages your profile or diary. For data questions, contact ${CONFIG.supportEmail}.`,
       secondaryLinks: [
         { label: "See the page couples see", url: p.listingUrl },
         { label: "What is Weddly?", url: CONFIG.frontendBaseUrl },
@@ -4181,54 +4240,48 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
     },
     extra: {
       es: {
-        preheader: `${p.categoryLabel} · ${p.city}. La página está publicada e indica que nadie de la empresa la ha reclamado.`,
+        preheader: "Vuestras fotos, precios y disponibilidad: todo lo que necesitan las parejas.",
         greeting: "Hola:",
         paragraphs: [
-          `Una pareja que organiza su boda con Weddly recomendó **${p.listingName}**. Por eso creamos esta página: ${p.categoryLabel}, ${p.city}. Ya está publicada e indica que nadie de la empresa la ha reclamado.`,
-          "Las parejas ya usan Weddly para comparar proveedores. La página contiene la información que pudimos reunir, pero no incluye vuestras fotos, paquetes, precios ni disponibilidad. Podéis reclamarla y editarla en unos dos minutos.",
+          `El perfil de **${p.listingName}** ya está disponible en el directorio de proveedores de Weddly (${p.categoryLabel}, ${p.city}). Lo hemos preparado con información empresarial pública y podéis reclamarlo para hacerlo vuestro.`,
+          "Añadid vuestras fotos, paquetes, precios y disponibilidad para que las parejas encuentren toda la información importante en un solo lugar.",
           offerSentenceFor("es", p.freeMonths),
         ].filter((x) => x.length > 0),
         cta: "Reclamar el perfil",
-        ctaSubtext:
-          "Solo necesitas tu nombre y una contraseña. Esta dirección ya figura en la página, por lo que no hay nada más que verificar.",
-        footnote:
-          "Si no eres la persona responsable, reenvía este correo a quien gestione el calendario. El enlace también le funcionará.",
+        ctaSubtext: "Unos dos minutos: vuestro nombre y una contraseña.",
+        footnote: `Podéis reenviar el enlace a quien gestione el perfil o el calendario. Para consultas sobre datos: ${CONFIG.supportEmail}.`,
         secondaryLinks: [
           { label: "Ver la página como la ven las parejas", url: p.listingUrl },
           { label: "¿Qué es Weddly?", url: CONFIG.frontendBaseUrl },
         ],
       },
       hr: {
-        preheader: `${p.categoryLabel} · ${p.city}. Stranica je objavljena i parovima piše da je iz tvrtke nitko nije preuzeo.`,
+        preheader: "Vaše fotografije, cijene i dostupnost: sve važne informacije na jednom mjestu.",
         greeting: "Pozdrav!",
         paragraphs: [
-          `Par koji na Weddlyju planira vjenčanje predložio je **${p.listingName}**, tako je vaša stranica i nastala: ${p.categoryLabel}, ${p.city}. Objavljena je i parovima trenutno piše da je iz tvrtke nitko nije preuzeo.`,
-          "Iz tjedna u tjedan parovi sjednu i odlučuju koga žele uz sebe na najvažniji dan svog života. Kad dođu do vaše stranice, nalaze našu pretpostavku o vama: bez vaših fotografija, paketa, cijena i slobodnih datuma. Preuzmite je i postaje vaša, za otprilike dvije minute.",
+          `Profil tvrtke **${p.listingName}** već je dostupan u Weddly katalogu pružatelja usluga (${p.categoryLabel}, ${p.city}). Pripremili smo ga prema javno dostupnim poslovnim podacima, a vi ga možete preuzeti i urediti po svojoj mjeri.`,
+          "Dodajte svoje fotografije, pakete, cijene i slobodne termine kako bi parovi sve važne informacije pronašli na jednom mjestu.",
           offerSentenceFor("hr", p.freeMonths),
         ].filter((x) => x.length > 0),
         cta: "Preuzmite profil",
-        ctaSubtext:
-          "Dvije minute: ime i lozinka. Ova je adresa već na stranici, pa nema što dodatno potvrđivati.",
-        footnote:
-          "Niste vi zaduženi za to? Proslijedite kolegi koji vodi kalendar, link radi i njemu.",
+        ctaSubtext: "Otprilike dvije minute: ime i lozinka.",
+        footnote: `Poveznicu možete proslijediti osobi koja vodi profil ili kalendar. Za pitanja o podacima: ${CONFIG.supportEmail}.`,
         secondaryLinks: [
           { label: "Pogledajte stranicu kakvu vide parovi", url: p.listingUrl },
           { label: "Što je Weddly?", url: CONFIG.frontendBaseUrl },
         ],
       },
       de: {
-        preheader: `${p.categoryLabel} · ${p.city}. Die Seite ist online und sagt Paaren, dass sie aus dem Betrieb noch niemand übernommen hat.`,
+        preheader: "Ihre Fotos, Preise und Verfügbarkeit: alle wichtigen Angaben an einem Ort.",
         greeting: "Hallo!",
         paragraphs: [
-          `Ein Paar, das auf Weddly seine Hochzeit plant, hat **${p.listingName}** vorgeschlagen, so ist Ihre Seite entstanden: ${p.categoryLabel}, ${p.city}. Sie ist online und sagt Paaren gerade, dass sie aus dem Betrieb noch niemand übernommen hat.`,
-          "Woche für Woche setzen sich Paare zusammen und entscheiden, wen sie am wichtigsten Tag ihres Lebens dabeihaben wollen. Wenn sie auf Ihrer Seite landen, finden sie unsere Vermutung über Sie: ohne Ihre Fotos, Ihre Pakete, Ihre Preise, Ihre freien Termine. Übernehmen Sie sie, und sie gehört Ihnen, in etwa zwei Minuten.",
+          `Das Profil von **${p.listingName}** ist bereits im Weddly-Dienstleisterverzeichnis verfügbar (${p.categoryLabel}, ${p.city}). Wir haben es anhand öffentlich verfügbarer Unternehmensdaten vorbereitet; Sie können es übernehmen und individuell gestalten.`,
+          "Ergänzen Sie Ihre Fotos, Pakete, Preise und freien Termine, damit Paare alle wichtigen Angaben an einem Ort finden.",
           offerSentenceFor("de", p.freeMonths),
         ].filter((x) => x.length > 0),
         cta: "Profil übernehmen",
-        ctaSubtext:
-          "Zwei Minuten: Ihr Name und ein Passwort. Diese Adresse steht bereits auf der Seite, es gibt also nichts weiter zu bestätigen.",
-        footnote:
-          "Nicht Ihr Schreibtisch? Geben Sie es an die Person weiter, die den Kalender führt, der Link funktioniert auch für sie.",
+        ctaSubtext: "Etwa zwei Minuten: Ihr Name und ein Passwort.",
+        footnote: `Sie können den Link an die Person weiterleiten, die Ihr Profil oder Ihren Kalender verwaltet. Bei Fragen zu Daten: ${CONFIG.supportEmail}.`,
         secondaryLinks: [
           { label: "Die Seite ansehen, die Paare sehen", url: p.listingUrl },
           { label: "Was ist Weddly?", url: CONFIG.frontendBaseUrl },
@@ -4236,85 +4289,80 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       },
     },
   }),
-  // The single 2-day nudge. Shorter on purpose: they have the context from the
-  // first mail, so this one is a reminder of the ask, not a re-pitch, and it
-  // repeats the SAME fact rather than opening a new hook it would then have to
-  // explain. It calls back to the referral because the first mail led with it,
-  // and a follow-up that quietly changed its story would be the one thing worse
-  // than the story itself.
+  // The single 2-day nudge. Shorter on purpose: it restates the positive action
+  // and the durable value of the profile, rather than applying pressure through
+  // an unfinished or unclaimed state.
   vendor_claim_campaign_reminder: (p) => ({
     subject: localeSubject(
       p.locale,
-      `Két perc, és a ${p.listingName} oldala a tiétek`,
-      `Two minutes to make ${p.listingName} yours`,
+      `${p.listingName}: tegyétek teljessé a Weddly-profilotokat`,
+      `${p.listingName}: make your Weddly profile complete`,
       {
-        es: `Dos minutos para reclamar la página de ${p.listingName}`,
-        hr: `Dvije minute i ${p.listingName} je vaš`,
-        de: `Zwei Minuten, und ${p.listingName} gehört Ihnen`,
+        es: `${p.listingName}: completad vuestro perfil de Weddly`,
+        hr: `${p.listingName}: dopunite svoj Weddly profil`,
+        de: `${p.listingName}: Vervollständigen Sie Ihr Weddly-Profil`,
       },
     ),
     ctaUrl: p.inviteUrl,
     hu: {
-      preheader: `Az oldalon még az áll, hogy a vállalkozástól nem vette át senki.`,
+      preheader: "Saját fotók, árak és szabad időpontok: minden fontos részlet egy helyen.",
       greeting: "Szia!",
       paragraphs: [
-        `Pár napja egy pár ajánlott titeket a Weddlyn, és a(z) ${p.listingName} oldala még mindig azokkal az adatokkal fut, amiket mi töltöttünk ki köré. A párok továbbra is azt olvassák rajta, hogy a vállalkozástól még nem vette át senki.`,
-        `Két perc az egész: egy név, egy jelszó, utána a fotók, az árak és a szabad időpontok a tiétek.`,
+        `A(z) **${p.listingName}** Weddly-profilja készen áll az átvételre. Egészítsétek ki saját fotókkal, árakkal és szabad időpontokkal, hogy a párok a tőletek származó információk alapján dönthessenek.`,
         offerSentenceHu(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Profil átvétele",
-      footnote: "Még mindig nem a te asztalod? A link annak is működik, aki a naptárat viszi.",
+      ctaSubtext: "Kb. két perc: egy név és egy jelszó.",
+      footnote: `A linket továbbíthatjátok annak, aki a profilotokat vagy a naptárat kezeli. Adatkezelési kérdésben a ${CONFIG.supportEmail} címen segítünk.`,
       secondaryLinks: [{ label: "Nézd meg úgy, ahogy a párok látják", url: p.listingUrl }],
     },
     en: {
-      preheader: `The page still tells couples nobody from the business runs it.`,
+      preheader: "Your photos, pricing and availability: everything couples need in one place.",
       greeting: "Hi there,",
       paragraphs: [
-        `A couple put you forward on Weddly a few days ago, and ${p.listingName} still runs on the details we filled in around it. Couples reading the page are still told nobody from the business has taken it over.`,
-        `Two minutes fixes it: your name, a password, and then the photos, the prices and the open dates are yours to set.`,
+        `The Weddly profile for **${p.listingName}** is ready to claim. Add your photos, pricing and availability so couples can make decisions using information that comes directly from you.`,
         offerSentenceEn(p.freeMonths),
       ].filter((s) => s.length > 0),
       cta: "Take over your profile",
-      footnote: "Still the wrong desk? The link works for whoever runs the diary.",
+      ctaSubtext: "About two minutes: your name and a password.",
+      footnote: `You may forward the link to whoever manages your profile or diary. For data questions, contact ${CONFIG.supportEmail}.`,
       secondaryLinks: [{ label: "See the page couples see", url: p.listingUrl }],
     },
     extra: {
       es: {
-        preheader: "La página aún indica que nadie de la empresa la gestiona.",
+        preheader: "Vuestras fotos, precios y disponibilidad: todo lo que necesitan las parejas.",
         greeting: "Hola:",
         paragraphs: [
-          `Hace unos días una pareja os recomendó en Weddly. La página de ${p.listingName} sigue mostrando la información que reunimos y aún indica que nadie de la empresa la ha reclamado.`,
-          "Solo necesitas tu nombre y una contraseña. Después podrás actualizar las fotos, los precios y la disponibilidad.",
+          `El perfil de Weddly de **${p.listingName}** está listo para reclamar. Añadid vuestras fotos, precios y disponibilidad para que las parejas decidan con información que viene directamente de vosotros.`,
           offerSentenceFor("es", p.freeMonths),
         ].filter((x) => x.length > 0),
         cta: "Reclamar el perfil",
-        footnote:
-          "Si no eres la persona responsable, el enlace también funciona para quien gestione el calendario.",
+        ctaSubtext: "Unos dos minutos: vuestro nombre y una contraseña.",
+        footnote: `Podéis reenviar el enlace a quien gestione el perfil o el calendario. Para consultas sobre datos: ${CONFIG.supportEmail}.`,
         secondaryLinks: [{ label: "Ver la página como la ven las parejas", url: p.listingUrl }],
       },
       hr: {
-        preheader: `Stranica parovima još piše da je iz tvrtke nitko ne vodi.`,
+        preheader: "Vaše fotografije, cijene i dostupnost: sve važne informacije na jednom mjestu.",
         greeting: "Pozdrav!",
         paragraphs: [
-          `Prije nekoliko dana par vas je predložio na Weddlyju, a ${p.listingName} još radi na podacima koje smo mi složili oko toga. Parovima na stranici i dalje piše da je iz tvrtke nitko nije preuzeo.`,
-          `Dvije minute i riješeno je: ime, lozinka, a onda su fotografije, cijene i slobodni datumi vaši.`,
+          `Weddly profil tvrtke **${p.listingName}** spreman je za preuzimanje. Dodajte svoje fotografije, cijene i dostupnost kako bi parovi odlučivali prema informacijama koje dolaze izravno od vas.`,
           offerSentenceFor("hr", p.freeMonths),
         ].filter((x) => x.length > 0),
         cta: "Preuzmite profil",
-        footnote: "I dalje niste vi zaduženi? Link radi i kolegi koji vodi kalendar.",
+        ctaSubtext: "Otprilike dvije minute: ime i lozinka.",
+        footnote: `Poveznicu možete proslijediti osobi koja vodi profil ili kalendar. Za pitanja o podacima: ${CONFIG.supportEmail}.`,
         secondaryLinks: [{ label: "Pogledajte stranicu kakvu vide parovi", url: p.listingUrl }],
       },
       de: {
-        preheader: `Auf der Seite steht Paaren gegenüber weiterhin, dass sie niemand aus dem Betrieb betreut.`,
+        preheader: "Ihre Fotos, Preise und Verfügbarkeit: alle wichtigen Angaben an einem Ort.",
         greeting: "Hallo!",
         paragraphs: [
-          `Vor ein paar Tagen hat ein Paar Sie auf Weddly vorgeschlagen, und ${p.listingName} läuft noch auf den Angaben, die wir darum herum ergänzt haben. Paaren wird auf der Seite weiterhin gesagt, dass sie aus dem Betrieb noch niemand übernommen hat.`,
-          `Zwei Minuten genügen: Ihr Name, ein Passwort, und dann bestimmen Sie die Fotos, die Preise und die freien Termine.`,
+          `Das Weddly-Profil von **${p.listingName}** ist bereit zur Übernahme. Ergänzen Sie Ihre Fotos, Preise und freien Termine, damit Paare anhand Ihrer eigenen Angaben entscheiden können.`,
           offerSentenceFor("de", p.freeMonths),
         ].filter((x) => x.length > 0),
         cta: "Profil übernehmen",
-        footnote:
-          "Immer noch nicht Ihr Schreibtisch? Der Link funktioniert auch für die Person, die den Kalender führt.",
+        ctaSubtext: "Etwa zwei Minuten: Ihr Name und ein Passwort.",
+        footnote: `Sie können den Link an die Person weiterleiten, die Ihr Profil oder Ihren Kalender verwaltet. Bei Fragen zu Daten: ${CONFIG.supportEmail}.`,
         secondaryLinks: [{ label: "Die Seite ansehen, die Paare sehen", url: p.listingUrl }],
       },
     },
@@ -4329,6 +4377,10 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // Single-language render off `locale` (a HU subject to a vendor who signed up
   // in English reads as spam), forced by the guestLocale in the SendTarget.
   vendor_review_campaign: (p) => ({
+    whyLine: {
+      hu: "Ezt azért kaptátok, mert van Weddly szolgáltatói fiókotok.",
+      en: "You're getting this because you have a Weddly supplier account.",
+    },
     subject:
       p.locale === "hu"
         ? "Elkészült a saját Weddly értékelő linketek"
@@ -4342,12 +4394,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "A vélemények segítenek a pároknak megismerni, milyen veletek dolgozni, mielőtt felveszik veletek a kapcsolatot.",
         `Ezt a linket küldjétek el azoknak a korábbi ügyfeleknek, akiktől véleményt szeretnétek kérni: **${p.reviewUrl}**`,
       ],
-      cta: "Nézd meg az oldalad",
-      ctaSubtext: "Pontosan ezt látják a párok is, belépés nélkül megnyílik.",
+      cta: "Értékelések gyűjtése",
+      ctaSubtext: "Nyisd meg a nyilvános értékelő oldalatokat.",
       secondaryLinks: [
         { label: "Megosztás WhatsApp-on", url: p.whatsappUrl },
         { label: "Küldés e-mailben", url: p.mailtoUrl },
-        { label: "Kezelés a fiókodban", url: p.dashboardUrl },
       ],
       footnote:
         "Néhány csillag, rengeteg bizalom. A link bármikor elküldhető, akár egy régebbi páratoknak is.",
@@ -4360,12 +4411,11 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Reviews help couples understand what it is like to work with you before they get in touch.",
         `Send this review link to any past clients you would like to ask: **${p.reviewUrl}**`,
       ],
-      cta: "See your review page",
-      ctaSubtext: "This public page opens without a login.",
+      cta: "Collect reviews",
+      ctaSubtext: "Open your public review page.",
       secondaryLinks: [
         { label: "Share on WhatsApp", url: p.whatsappUrl },
         { label: "Send by email", url: p.mailtoUrl },
-        { label: "Manage in your dashboard", url: p.dashboardUrl },
       ],
       footnote: "You can use this link at any time, including for older clients.",
     },
@@ -4373,6 +4423,10 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
   // The single 7-day nudge, only to vendors who neither clicked nor opened the
   // first mail. Shorter: they have the context, this is a reminder of the ask.
   vendor_review_campaign_reminder: (p) => ({
+    whyLine: {
+      hu: "Ezt azért kaptátok, mert van Weddly szolgáltatói fiókotok.",
+      en: "You're getting this because you have a Weddly supplier account.",
+    },
     subject:
       p.locale === "hu"
         ? "Egy linkre vagytok az első értékelésektől"
@@ -4385,7 +4439,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Pár napja írtunk: a Weddly-n a vélemények mostantól bárkitől jöhetnek. Ha van egy-két elégedett korábbi párotok, egyetlen link elég, hogy értékeljenek.",
         `Küldd el nekik a saját értékelő linketeket: **${p.reviewUrl}**. Néhány őszinte visszajelzés, és a böngésző párok máris tisztábban látják, mire számíthatnak tőletek.`,
       ],
-      cta: "Nézd meg az oldalad",
+      cta: "Értékelések gyűjtése",
       secondaryLinks: [
         { label: "Megosztás WhatsApp-on", url: p.whatsappUrl },
         { label: "Küldés e-mailben", url: p.mailtoUrl },
@@ -4398,7 +4452,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "We wrote a few days ago: reviews on Weddly are now open to anyone. If you have a happy past client or two, a single link is all it takes for them to leave you a rating.",
         `Send them your review link: **${p.reviewUrl}**. Their feedback will help other couples decide whether your services are right for them.`,
       ],
-      cta: "See your review page",
+      cta: "Collect reviews",
       secondaryLinks: [
         { label: "Share on WhatsApp", url: p.whatsappUrl },
         { label: "Send by email", url: p.mailtoUrl },
@@ -4420,8 +4474,9 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       preheader: "Ha te vagy valaki a környezetedben esküvőt szervez, ismerd meg a Weddlyt.",
       greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
       paragraphs: [
-        "Azért írunk, mert a Weddly egyik felhasználója megadta az e-mail-címedet: úgy gondolta, hogy te vagy valaki a környezetedben éppen esküvőt szervez.",
-        "Ha te készülsz a nagy napra, ismerd meg a Weddlyt:",
+        "A Weddly csapatából személyesen ismerünk, ezért szeretnénk röviden bemutatni nektek a Weddlyt.",
+        "A Weddly egy helyre hozza a költségvetést, a vendéglistát, az online RSVP-t, az ülésrendet, a szolgáltatókat és az esküvői weboldalt.",
+        "Ha te vagy valaki a környezetedben esküvőt szervez, nézz körül:",
       ],
       cta: "Regisztrálok a Weddlyre",
       postCtaParagraphs: [
@@ -4459,12 +4514,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         : "Your wedding planner is two minutes away",
     ctaUrl: p.ctaUrl,
     hu: {
-      preheader: "Regisztráltál, de a terveződ még üres. Pár adat, és indulhat.",
+      preheader: "Nevek, dátum, vendégszám, és indulhat a közös tervezés.",
       greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
       paragraphs: [
-        "Regisztráltál a **Weddly**-re, de az alap beállítást még nem fejezted be, így a tervező egyelőre üres.",
+        "A **Weddly**-fiókod és az esküvőterveződ készen áll az indulásra.",
         "Add meg a neveket, az esküvő dátumát és a várható vendégszámot. Ezután máris használhatod a **költségvetést**, az online RSVP-vel összekötött **vendéglistát** és az **ülésrendet**.",
-        "Nem kell mindent egyszerre eldöntenetek: ami most még nincs meg, azt később pótolhatjátok.",
+        "Kezdjétek azzal, amit már tudtok; minden részletet bármikor módosíthattok.",
       ],
       cta: "Befejezem a beállítást",
       ctaSubtext: "2 perc az egész.",
@@ -4472,12 +4527,12 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Ezt azért kaptad, mert van egy Weddly-fiókod. Kérdésed van? Válaszolj erre a levélre.",
     },
     en: {
-      preheader: "You signed up, but your planner is still empty. A few facts and you're set.",
+      preheader: "Names, date and guest count: everything you need to get started.",
       greeting: p.name.trim() ? `Hi ${p.name.trim()},` : "Hi there,",
       paragraphs: [
-        "You signed up for **Weddly**, but you haven't finished the initial setup, so your planner is still empty.",
+        "Your **Weddly** account and wedding planner are ready to get started.",
         "Add your names, wedding date and estimated guest count to set up a flexible **budget**, a **guest list** with online RSVPs and a draft **seating plan**.",
-        "You don't have to decide everything at once: anything missing today can be filled in later.",
+        "Start with what you already know; every detail can be changed later.",
       ],
       cta: "Finish setup",
       ctaSubtext: "Takes 2 minutes.",
@@ -4499,10 +4554,10 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         : "Your planner is ready when you are",
     ctaUrl: p.ctaUrl,
     hu: {
-      preheader: "Pár napja kezdtél bele. A terveződ egy kattintásra van a kezdéstől.",
+      preheader: "A terveződ készen áll: nevek, dátum, vendégszám, és indulhat.",
       greeting: p.name.trim() ? `Szia ${p.name.trim()}!` : "Szia!",
       paragraphs: [
-        "A Weddly-fiókod elkészült, de az esküvőtervező beállítását még nem fejezted be.",
+        "A Weddly-fiókod és az esküvőterveződ készen áll.",
         "Add meg a neveket, az esküvő dátumát és a várható vendégszámot a költségvetés, a vendéglista és az ülésrend beállításához. Később mindent módosíthatsz.",
       ],
       cta: "Elkezdem most",
@@ -4510,10 +4565,10 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
       footnote: "A beállítást bármikor folytathatod.",
     },
     en: {
-      preheader: "Your account is ready. Finish setting up your wedding planner.",
+      preheader: "Your planner is ready: add names, date and guest count to begin.",
       greeting: p.name.trim() ? `Hi ${p.name.trim()},` : "Hi there,",
       paragraphs: [
-        "Your Weddly account is ready, but the planner setup is not complete yet.",
+        "Your Weddly account and wedding planner are ready.",
         "Add your names, wedding date and estimated guest count to set up the budget, guest list and seating plan. You can change everything later.",
       ],
       cta: "Start now",

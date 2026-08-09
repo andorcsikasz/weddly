@@ -550,6 +550,7 @@ async function sendOne(
       guest: { email: target.email, full_name: target.listing_name },
       guestLocale: target.locale,
       trackingPixelUrl: pixelUrl(sendId),
+      outreachUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/review-optout/${makeReviewOptOutToken(sendId)}`,
     },
   );
 
@@ -661,6 +662,7 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
         guest: { email: row.email, full_name: businessName },
         guestLocale: locale,
         trackingPixelUrl: pixelUrl(row.id),
+        outreachUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/review-optout/${makeReviewOptOutToken(row.id)}`,
       },
     );
     // Stamp regardless of outcome: one-shot nudge, no retrying a bouncing

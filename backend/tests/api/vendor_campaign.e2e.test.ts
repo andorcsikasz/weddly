@@ -362,8 +362,8 @@ describe("vendor claim-invite campaign", () => {
     expect(byEmail.get("it@x.com")?.locale).toBe("en");
     expect(byEmail.get("it@x.com")?.country).toBe("IT");
 
-    expect(lastSubjectTo("hu@x.hu")).toContain("Egy pár ajánlotta");
-    expect(lastSubjectTo("it@x.com")).toContain("A couple recommended");
+    expect(lastSubjectTo("hu@x.hu")).toContain("egészítsétek ki a Weddly-profilotokat");
+    expect(lastSubjectTo("it@x.com")).toContain("complete your Weddly profile");
   });
 
   test("the invite link is one click into a completable claim", async () => {
@@ -732,9 +732,7 @@ describe("vendor campaign — every invite opens with the referral line", () => 
     return found;
   }
 
-  test("a curated import gets the same referral opening as anything else", async () => {
-    // On the live directory this is every reachable listing, so this case IS
-    // the campaign. The copy no longer varies by provenance.
+  test("a curated import opens with its verifiable public-data source", async () => {
     seedListing({
       id: "curated-one",
       name: "Curated Studio",
@@ -743,15 +741,14 @@ describe("vendor campaign — every invite opens with the referral line", () => 
     });
 
     const body = inviteBodyFor(targetNamed(await targetsFor(), "curated-one"));
-    expect(body).toContain("Egy pár");
-    expect(body).toContain("ajánlotta");
-    // The page-state half stays: it is the part a recipient can verify, and it
-    // is what the CTA is actually about.
-    expect(body).toContain("még nem vette át senki");
+    expect(body).toContain("Nyilvánosan elérhető üzleti adatokkal");
+    expect(body).not.toContain("ajánlotta");
+    expect(body).toContain("egy év Weddly Pro");
+    expect(body).toContain("díjmentesen fent marad");
     expect(body).toContain("/vendors/curated-one");
   });
 
-  test("a listing a couple really submitted reads identically", async () => {
+  test("a community listing uses the same truthful campaign copy until provenance is passed", async () => {
     seedListing({
       id: "c9001",
       name: "Couple Suggested Kft",
@@ -762,11 +759,11 @@ describe("vendor campaign — every invite opens with the referral line", () => 
     });
 
     const body = inviteBodyFor(targetNamed(await targetsFor(), "c9001"));
-    expect(body).toContain("Egy pár");
-    expect(body).toContain("ajánlotta");
+    expect(body).toContain("Nyilvánosan elérhető üzleti adatokkal");
+    expect(body).not.toContain("ajánlotta");
   });
 
-  test("the subject leads with the referral, not the listing state", () => {
+  test("the subject leads with the profile action", () => {
     // Asserted through the builder: the end-to-end language case above already
     // proves which subject actually ships, and a second batch send here would
     // depend on how many listings earlier tests left in the shared table.
@@ -783,7 +780,7 @@ describe("vendor campaign — every invite opens with the referral line", () => 
       },
       { recipientName: "", recipientLocale: "en" },
     );
-    expect(built.subject).toContain("A couple recommended");
-    expect(built.subject).not.toContain("nobody is running it");
+    expect(built.subject).toContain("complete your Weddly profile");
+    expect(built.subject).not.toContain("recommended");
   });
 });

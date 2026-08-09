@@ -78,11 +78,8 @@ export interface RenderInput {
    *  vendor whose client mangles the button still has a plain link. Outreach
    *  mail shows this by category already, this forces it on for other kinds. */
   plainCtaUrl?: boolean;
-  /** Affects footer copy + whether unsubscribe link shows. */
+  /** Affects the explanatory footer copy. */
   category: EmailCategory;
-  /** When category=lifecycle, this is appended as ?token=… so the link is
-   *  one-click. The route is /unsubscribe/:token on the frontend. */
-  unsubscribeToken?: string;
   /** Pick a single-language render when known. `null`/omitted falls back to
    *  the historical bilingual HU+EN layout, used for guests (we don't have
    *  per-guest locale yet) and users whose `users.locale` predates the
@@ -209,10 +206,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   const html = renderHtml(input, blocks);
   return { html, text, fallbackSubject };
 
-  function renderText(
-    { ctaUrl, category, unsubscribeToken, whyLine }: RenderInput,
-    blocks: PickedBlock[],
-  ): string {
+  function renderText({ ctaUrl, category, whyLine }: RenderInput, blocks: PickedBlock[]): string {
     const lines: string[] = [];
     // Plain-text counterpart of the brand header. The macron char (U+0112) is
     // valid UTF-8 and renders fine in every modern text-mode client; the only
@@ -253,36 +247,26 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       }
       lines.push("");
     });
-    lines.push(footerText(blocks, category, unsubscribeToken, whyLine));
+    lines.push(footerText(blocks, category, whyLine));
     return lines.join("\n");
   }
 
   function footerText(
     blocks: PickedBlock[],
     category: EmailCategory,
-    unsubscribeToken?: string,
     whyOverride?: { hu: string; en: string },
   ): string {
     // null = the bilingual stack; otherwise the one language on the card.
     const single = blocks.length === 1 ? (blocks[0]?.locale ?? "en") : null;
     const why = whyLineFor(category, single, whyOverride);
-    // Bare label, no question in front of it: the link stays present and
-    // functional (compliance + the List-Unsubscribe header), but the copy never
-    // asks the reader whether they'd like to leave.
-    const unsubLabel = footerLabels(single).unsub;
     const out: string[] = ["---", why];
     out.push("Weddly · tryweddly.com");
     out.push(SOCIAL.map((s) => `${s.name}: ${s.href}`).join(" · "));
-    // Last line, to mirror the HTML footer: present and functional, just not
-    // the second thing the reader's eye lands on.
-    if (category === "lifecycle" && unsubscribeToken) {
-      out.push(`${unsubLabel}: ${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`);
-    }
     return out.join("\n");
   }
 
   function renderHtml(
-    { ctaUrl, category, plainCtaUrl, unsubscribeToken, trackingPixelUrl, whyLine }: RenderInput,
+    { ctaUrl, category, plainCtaUrl, trackingPixelUrl, whyLine }: RenderInput,
     blocks: PickedBlock[],
   ): string {
     const preheader = capPreheader(
@@ -301,7 +285,7 @@ export function renderEmail(input: RenderInput): RenderedEmail {
         `<tr><td style="padding:18px 40px 0 40px;"><div style="border-top:1px solid ${COLOR.divider};font-size:0;line-height:0;height:1px;">&nbsp;</div></td></tr>`,
       );
 
-    const footer = renderFooter(blocks, category, unsubscribeToken, whyLine);
+    const footer = renderFooter(blocks, category, whyLine);
     // `<html lang>` follows the first block so screen-reader pronunciation
     // matches the language the body opens in.
     const htmlLang = blocks[0]?.locale ?? "hu";
@@ -494,36 +478,10 @@ export function renderEmail(input: RenderInput): RenderedEmail {
   function renderFooter(
     blocks: PickedBlock[],
     category: EmailCategory,
-    unsubscribeToken?: string,
     whyOverride?: { hu: string; en: string },
   ): string {
     const single = blocks.length === 1 ? (blocks[0]?.locale ?? "en") : null;
     const why = whyLineForHtml(category, single, whyOverride);
-    const { unsub: unsubLabel, prefs: prefsLabel } = footerLabels(single);
-    // Unsubscribe line, deliberately de-emphasized: it sits at the very BOTTOM
-    // of the footer (see the return below), one notch smaller than the body
-    // copy, so a casual reader scanning the footer doesn't land on it, but
-    // anyone who wants out finds it exactly where every email keeps it. This is
-    // as quiet as it may go and stay compliant: it must remain present, a
-    // legible link, and a real colour against the card, never hidden, shrunk to
-    // nothing, or blended into the background. The one-click List-Unsubscribe
-    // header is untouched, so Gmail's native unsubscribe still works regardless.
-    // Preferences leads the pair, since dialling reminders down is the softer
-    // choice we'd rather a hesitant reader make than opt out of everything.
-    const unsubLine =
-      category === "lifecycle" && unsubscribeToken
-        ? `<p style="margin:18px 0 0 0;color:${COLOR.muted};font-size:12px;line-height:1.5;">
-            <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/app/settings/account#email-preferences`)}"
-               style="color:${COLOR.muted};text-decoration:underline;">
-              ${prefsLabel}
-            </a>
-            &nbsp;·&nbsp;
-            <a href="${escapeAttr(`${CONFIG.frontendBaseUrl}/unsubscribe/${unsubscribeToken}`)}"
-               style="color:${COLOR.muted};text-decoration:underline;">
-              ${unsubLabel}
-            </a>
-          </p>`
-        : "";
     // Footer body copy is bumped to 13px (from the previous 11/12px), that
     // was below the 14px legibility floor for the median wedding-vendor
     // demographic (40-55 y/o on a phone, presbyopic, no Dynamic Type for HTML
@@ -551,7 +509,6 @@ export function renderEmail(input: RenderInput): RenderedEmail {
       <p style="margin:16px 0 0 0;color:${COLOR.muted};font-size:13px;line-height:1.5;letter-spacing:0.04em;">
         <span style="font-family:'General Sans','Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:600;letter-spacing:0.22em;color:${COLOR.enInk};">WĒDDLY</span> · <a href="${escapeAttr(CONFIG.frontendBaseUrl)}" style="color:${COLOR.muted};text-decoration:underline;">tryweddly.com</a>
       </p>
-      ${unsubLine}
     `;
   }
 }
@@ -748,19 +705,6 @@ function capPreheader(s: string): string {
 // recipient with no Weddly account) explicitly states the no-account stance —
 // telling a vendor who's never heard of us that "this concerns your account"
 // reads as phishing.
-/** Footer chrome per single-card locale. The unsubscribe / preferences labels
- *  used to be a `bilingual ? … : onlyEn ? … : hu` chain, which meant every
- *  locale added after HU and EN silently fell into the HUNGARIAN branch: a
- *  German recipient would have read "Leiratkozás". Anything not listed here
- *  reads the EN labels, which is the same fallback the card itself takes. */
-const FOOTER_LABELS: Partial<Record<UiLocale, { unsub: string; prefs: string }>> = {
-  hu: { unsub: "Leiratkozás", prefs: "Preferenciák" },
-  en: { unsub: "Unsubscribe", prefs: "Email preferences" },
-  es: { unsub: "Darse de baja", prefs: "Preferencias de correo" },
-  hr: { unsub: "Odjava s liste", prefs: "Postavke e-pošte" },
-  de: { unsub: "Abmelden", prefs: "E-Mail-Einstellungen" },
-};
-
 /** "Questions?" above the support address, per single-card locale, plus the
  *  bilingual form under the `bilingual` key. Same EN fallback as everything
  *  else in the footer. */
@@ -773,13 +717,6 @@ const HELP_LABELS: Partial<Record<UiLocale | "bilingual", string>> = {
   de: "Fragen?",
 };
 
-function footerLabels(single: UiLocale | null): { unsub: string; prefs: string } {
-  if (single === null) {
-    return { unsub: "Leiratkozás / Unsubscribe", prefs: "Preferenciák / Email preferences" };
-  }
-  return FOOTER_LABELS[single] ?? FOOTER_LABELS.en!;
-}
-
 /** The "why am I getting this" line in the locales beyond HU/EN. Same fallback
  *  rule: a locale with no entry reads the English line. */
 const WHY_LINE_EXTRA: Partial<Record<UiLocale, Record<EmailCategory, string>>> = {
@@ -787,20 +724,20 @@ const WHY_LINE_EXTRA: Partial<Record<UiLocale, Record<EmailCategory, string>>> =
     lifecycle: "Recibes recordatorios ocasionales de Weddly porque tienes una cuenta con nosotros.",
     transactional: "Recibes este correo porque tiene que ver con tu cuenta de Weddly.",
     outreach:
-      "Recibes esto de Weddly, una app de organización de bodas. No tienes cuenta con nosotros, y este correo no crea ninguna.",
+      "Este es un mensaje de Weddly, una app de organización de bodas. Solo se crea una cuenta con tu aprobación.",
   },
   hr: {
     lifecycle: "Povremene podsjetnike od Weddlyja primate jer kod nas imate račun.",
     transactional: "Ovu poruku primate jer se tiče vašeg Weddly računa.",
     outreach:
-      "Ovo vam šalje Weddly, aplikacija za planiranje vjenčanja. Kod nas nemate račun i ova poruka ga ne otvara.",
+      "Ovo je poruka Weddlyja, aplikacije za planiranje vjenčanja. Račun se otvara samo uz vaše odobrenje.",
   },
   de: {
     lifecycle:
       "Sie erhalten gelegentliche Erinnerungen von Weddly, weil Sie ein Konto bei uns haben.",
     transactional: "Sie erhalten diese E-Mail, weil sie Ihr Weddly-Konto betrifft.",
     outreach:
-      "Das kommt von Weddly, einer App für die Hochzeitsplanung. Sie haben kein Konto bei uns, und diese E-Mail legt auch keines an.",
+      "Dies ist eine Nachricht von Weddly, einer App für die Hochzeitsplanung. Ein Konto entsteht nur mit Ihrer Zustimmung.",
   },
 };
 
@@ -818,10 +755,10 @@ const WHY_LINE_TEXT: Record<EmailCategory, { hu: string; en: string; bilingual: 
       "Ezt a fiókoddal kapcsolatban kaptad. / You're getting this because it's about your Weddly account.",
   },
   outreach: {
-    hu: "Ezt a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk, és ettől a levéltől nem is jön létre.",
-    en: "You're getting this from Weddly, a wedding-planning app. You don't have an account with us, and this email doesn't create one.",
+    hu: "Bemutatkozó levél a Weddly esküvőtervezőtől. Fiók kizárólag a te jóváhagyásoddal jön létre.",
+    en: "An introduction from Weddly, a wedding-planning app. An account is created only with your approval.",
     bilingual:
-      "Ezt a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk. / You're getting this from Weddly, a wedding-planning app. You don't have an account with us.",
+      "Bemutatkozó levél a Weddlytől; fiók csak a jóváhagyásoddal jön létre. / An introduction from Weddly; an account is created only with your approval.",
   },
 };
 
@@ -841,10 +778,10 @@ const WHY_LINE_HTML: Record<EmailCategory, { hu: string; en: string; bilingual: 
       "Ezt a levelet a fiókoddal kapcsolatban kaptad. / You got this email because it concerns your Weddly account.",
   },
   outreach: {
-    hu: "Ezt a levelet a Weddly esküvőtervezőtől kaptad. Nincs fiókod nálunk, és ettől a levéltől nem is jön létre.",
-    en: "You're receiving this from Weddly, a wedding-planning app. You don't have an account with us, and this email doesn't create one.",
+    hu: "Bemutatkozó levél a Weddly esküvőtervezőtől. Fiók kizárólag a te jóváhagyásoddal jön létre.",
+    en: "An introduction from Weddly, a wedding-planning app. An account is created only with your approval.",
     bilingual:
-      "Ezt a levelet a Weddly-től kaptad, és nincs fiókod nálunk. / You're receiving this from Weddly and you don't have an account with us.",
+      "Bemutatkozó levél a Weddlytől; fiók csak a jóváhagyásoddal jön létre. / An introduction from Weddly; an account is created only with your approval.",
   },
 };
 

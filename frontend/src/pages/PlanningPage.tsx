@@ -123,14 +123,12 @@ const TAB_ICON: Record<PlanningTab, typeof CheckCircle2> = {
   checklist: ClipboardCheck,
 };
 
-// Collapsed icon-tool group for the Tasks-tab actions (Timeline / Generate /
-// Template). Mirrors the guest toolbar: each segment shows only its icon until
-// hovered, when its label slides open (max-width + opacity) and the native
-// `title` tooltip appears. Literal class strings so Tailwind's JIT picks them up.
+// Icon-only tool group for the Tasks-tab actions (Timeline / Generate /
+// Template). The accessible name and native tooltip carry each label. Keep the
+// segments at a fixed width: revealing labels inline on hover used to grow this
+// group, wrap the toolbar, and move a target between pointer-down and pointer-up.
 const PLAN_TOOL_BTN =
-  "group flex items-center px-3 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-700/5 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-100 dark:hover:bg-paper-100/10";
-const PLAN_TOOL_LABEL =
-  "max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 group-hover:ml-1.5 group-hover:max-w-[14rem] group-hover:opacity-100";
+  "flex shrink-0 items-center px-3 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-700/5 disabled:cursor-not-allowed disabled:opacity-40 dark:text-paper-100 dark:hover:bg-paper-100/10";
 
 /** Single source of truth for the Ideas-tab category tags. Maps each
  *  `IdeaTag` to its i18n label key plus a token-based chip + dot colour
@@ -1010,7 +1008,7 @@ export default function PlanningPage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setActiveKind(tab.kind)}
-                  className={`group relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-4 py-1.5 transition-colors ${
+                  className={`group relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 transition-colors ${
                     active
                       ? "bg-ink-800 text-paper-100 shadow-soft dark:bg-umber-900 dark:text-paper-50"
                       : "text-ink-600 hover:bg-paper-200 dark:text-umber-200 dark:hover:bg-umber-700"
@@ -1068,13 +1066,16 @@ export default function PlanningPage() {
             </button>
           )}
 
-          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          <div
+            data-testid="planning-toolbar-actions"
+            className="flex shrink-0 flex-nowrap items-center gap-2 sm:ml-auto"
+          >
             {((activeKind === "task" && viewMode === "list") || activeKind === "idea") &&
               scoped.length > 0 && (
                 <button
                   type="button"
                   onClick={() => (selectionMode ? leaveSelectionMode() : setSelectionMode(true))}
-                  className="btn-ghost btn-sm inline-flex items-center gap-1.5"
+                  className="btn-ghost btn-sm inline-flex min-w-[10.5rem] shrink-0 items-center justify-center gap-1.5"
                   aria-pressed={selectionMode}
                 >
                   <ListChecks size={14} aria-hidden="true" />
@@ -1089,7 +1090,7 @@ export default function PlanningPage() {
                 <div
                   role="group"
                   aria-label={`${t("planning.view_list")} / ${t("planning.view_board")}`}
-                  className="inline-flex items-stretch overflow-hidden rounded-lg border border-ink-700 dark:border-paper-100"
+                  className="inline-flex shrink-0 items-stretch overflow-hidden rounded-lg border border-ink-700 dark:border-paper-100"
                 >
                   <button
                     type="button"
@@ -1121,10 +1122,9 @@ export default function PlanningPage() {
                   </button>
                 </div>
 
-                {/* Collapsed icon-tool group: Timeline / Generate schedule /
-                 *  Template. Each segment is icon-only until hovered, when its
-                 *  label slides open (mirrors the guest toolbar). */}
-                <div className="inline-flex items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100">
+                {/* Fixed-width icon-tool group: labels stay in title/aria-label
+                 *  so hovering never changes geometry or the click target. */}
+                <div className="inline-flex shrink-0 flex-nowrap items-stretch divide-x divide-ink-300 overflow-hidden rounded-lg border border-ink-700 dark:divide-umber-600 dark:border-paper-100">
                   <Link
                     to="/app/timeline"
                     className={PLAN_TOOL_BTN}
@@ -1132,7 +1132,6 @@ export default function PlanningPage() {
                     aria-label={t("planning.timeline_link")}
                   >
                     <GanttChartSquare size={16} aria-hidden="true" />
-                    <span className={PLAN_TOOL_LABEL}>{t("planning.timeline_link")}</span>
                   </Link>
                   <button
                     type="button"
@@ -1142,7 +1141,6 @@ export default function PlanningPage() {
                     aria-label={t("planning.timeline_gen_button")}
                   >
                     <CalendarClock size={16} aria-hidden="true" />
-                    <span className={PLAN_TOOL_LABEL}>{t("planning.timeline_gen_button")}</span>
                   </button>
                   <button
                     type="button"
@@ -1152,7 +1150,6 @@ export default function PlanningPage() {
                     aria-label={t("planning.task_template_button")}
                   >
                     <Wand2 size={16} aria-hidden="true" />
-                    <span className={PLAN_TOOL_LABEL}>{t("planning.task_template_button")}</span>
                   </button>
                 </div>
               </>

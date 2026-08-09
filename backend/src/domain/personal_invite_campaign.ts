@@ -529,6 +529,7 @@ async function sendOne(
       guest: { email: row.email, full_name: row.name || row.email },
       guestLocale: locale,
       trackingPixelUrl: pixelUrl(row.id),
+      outreachUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/invite-optout/${makeInviteOptOutToken(row.id)}`,
     },
   );
   if (result.status === "skipped_opt_out") {

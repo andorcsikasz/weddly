@@ -31,6 +31,7 @@ export type EmailKind =
   | "rsvp_received_for_couple" // couple gets a notification when a guest RSVPs
   | "rsvp_received_household_for_couple" // aggregated notification: whole party RSVP'd in one go
   | "rsvp_thanks_for_guest" // guest gets a thank-you confirmation
+  | "group_gift_notification" // guest opted into updates for a shared wishlist contribution
   | "guest_invite" // sent to a guest with a one-click /rsvp/{code} link
   | "guest_major_update" // couple-composed "something important changed" broadcast to opted-in guests
   | "guest_pre_wedding_info" // couple-composed final info summary, optional per-head envelope cost tip
@@ -54,7 +55,7 @@ export type EmailKind =
   | "vendor_waitlist_decision" // admin-edited triage reply (under_review / rejected — accepted goes via vendor_activation)
   | "vendor_activation" // admin accepted/re-sent a vendor: activation link IS the CTA button, pre-filled onboarding inside
   | "vendor_profile_share" // ~2h after a vendor creates their profile: highlight the shareable public link + nudge any empty sections
-  | "vendor_profile_incomplete" // recurring (every 2-4 days, capped) nudge to a verified vendor whose listing still lacks photo/bio/pricing/packages/availability; rotating copy variants
+  | "vendor_profile_incomplete" // two profile-completion touches (day 3 + one week later) for a verified vendor whose listing still needs public details
   | "planner_profile_incomplete" // planner's public directory profile is still missing key fields (auto nudge after signup + admin "Send reminder")
   | "planner_waitlist_decision" // admin-edited planner triage reply (accepted / under_review / rejected)
   | "planner_provisioned" // admin pre-registered a planner account (2-year comp), activation link inside
@@ -183,6 +184,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   rsvp_received_for_couple: "transactional",
   rsvp_received_household_for_couple: "transactional",
   rsvp_thanks_for_guest: "transactional",
+  group_gift_notification: "transactional",
   // Transactional: the couple explicitly clicked "send invite" for this
   // guest in /app/guests, the recipient is waiting on the link.
   guest_invite: "transactional",

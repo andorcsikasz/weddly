@@ -1,5 +1,5 @@
 // The recurring "your listing is still incomplete" reminder — a lifecycle email
-// fired on a varying 2-4 day cadence to VERIFIED vendors whose public listing
+// fired twice (day 3, then one week later) to VERIFIED vendors whose public listing
 // has an unfinished section, capped at 5 sends, with rotating copy so no two
 // reminders read the same.
 //
@@ -12,7 +12,7 @@
 //   - nothing fires inside the post-signup grace window
 //   - fires past the grace, stamps count + last_at, honours the cadence cooldown,
 //     then fires again after the gap (recurring, unlike the one-shot share nudge)
-//   - stops at the cap of 5
+//   - stops at the cap of 2
 //   - a COMPLETE listing is skipped without advancing the count
 //   - unverified vendors are excluded; demo + purged owners are excluded
 //   - the copy rotates by variant and names only the empty sections
@@ -130,7 +130,7 @@ describe("vendor incomplete-profile recurring nudge", () => {
     wipeAll();
     const id = await registerVendor("grace@test.test", "Bloom Studio");
     verify(id);
-    // Just created — the 2-day grace hasn't elapsed.
+    // Just created — the 3-day grace hasn't elapsed.
     runEmailSweep();
     expect(nudgeCount(id)).toBe(0);
     expect(readNudge(id).count).toBe(0);
@@ -152,24 +152,24 @@ describe("vendor incomplete-profile recurring nudge", () => {
     runEmailSweep();
     expect(nudgeCount(id)).toBe(1);
 
-    // Push last_at past the gap for count=1 (3 days) and it recurs.
-    setNudgeState(id, 1, 4 * DAY);
+    // Push last_at past the one-week gap and the second, final touch goes out.
+    setNudgeState(id, 1, 8 * DAY);
     runEmailSweep();
     expect(nudgeCount(id)).toBe(2);
     expect(readNudge(id).count).toBe(2);
   });
 
-  test("stops at the cap of 5 reminders", async () => {
+  test("stops at the cap of 2 reminders", async () => {
     wipeAll();
     const id = await registerVendor("capped@test.test", "Bloom Studio");
     verify(id);
     backdateCreation(id, 30 * DAY);
     // Already sent the full series, cooldown long elapsed.
-    setNudgeState(id, 5, 10 * DAY);
+    setNudgeState(id, 2, 10 * DAY);
 
     runEmailSweep();
     expect(nudgeCount(id)).toBe(0); // capped out — nothing new
-    expect(readNudge(id).count).toBe(5);
+    expect(readNudge(id).count).toBe(2);
   });
 
   test("skips a complete listing without advancing the count", async () => {

@@ -568,6 +568,7 @@ async function sendOne(
       guest: { email: target.email, full_name: target.listing_name },
       guestLocale: target.locale,
       trackingPixelUrl: pixelUrl(sendId),
+      outreachUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/email-optout/${makeCampaignOptOutToken(sendId)}`,
     },
   );
 
@@ -683,6 +684,7 @@ export async function sendCampaignReminders(limit: number, ts: number = now()): 
         guest: { email: row.email, full_name: listing.name },
         guestLocale: locale,
         trackingPixelUrl: pixelUrl(row.id),
+        outreachUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/email-optout/${makeCampaignOptOutToken(row.id)}`,
       },
     );
     // Stamp regardless of outcome: this is a one-shot nudge, and retrying a

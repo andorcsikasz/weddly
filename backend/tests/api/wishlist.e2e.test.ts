@@ -550,8 +550,8 @@ describe("group gift coordination", () => {
     );
     expect(firstToggle.status).toBe(200);
 
-    // Second household pledges — email notification to Alpha would fire here
-    // but sendRawEmail silently swallows the RESEND_API_KEY="" error.
+    // Second household pledges — a branded group-gift email to Alpha fires here;
+    // the test environment logs it because RESEND_API_KEY is unset.
     const secondToggle = await req(
       "POST",
       `/api/public/wedding/${slug}/${codeB}/wishlist/${itemId}/interest`,

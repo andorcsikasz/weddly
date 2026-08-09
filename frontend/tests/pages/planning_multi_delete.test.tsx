@@ -108,4 +108,34 @@ describe("Planning multi-delete", () => {
     await waitFor(() => expect(screen.queryByText("Confirm florist")).not.toBeInTheDocument());
     expect(screen.queryByText("Book venue")).not.toBeInTheDocument();
   });
+
+  it("keeps task actions fixed-width and opens the timeline generator", async () => {
+    render(
+      <MemoryRouter>
+        <I18nProvider>
+          <AppProviders>
+            <PlanningPage />
+          </AppProviders>
+        </I18nProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Confirm florist")).toBeInTheDocument();
+
+    const toolbar = screen.getByTestId("planning-toolbar-actions");
+    expect(toolbar).toHaveClass("flex-nowrap", "shrink-0");
+
+    const selectionButton = screen.getByRole("button", { name: "Select" });
+    expect(selectionButton).toHaveClass("min-w-[10.5rem]", "shrink-0");
+
+    const timelineButton = screen.getByRole("button", { name: "Build my timeline" });
+    expect(within(timelineButton).queryByText("Build my timeline")).not.toBeInTheDocument();
+    expect(timelineButton.className).not.toContain("group-hover:");
+
+    fireEvent.mouseEnter(timelineButton);
+    expect(screen.getByRole("button", { name: "Build my timeline" })).toBe(timelineButton);
+
+    fireEvent.click(timelineButton);
+    expect(await screen.findByRole("dialog", { name: "Build my timeline" })).toBeInTheDocument();
+  });
 });

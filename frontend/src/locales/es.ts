@@ -2903,7 +2903,7 @@ const es: LocaleMessages = {
     idea_to_task_done: "Añadida como tarea",
     checklist: {
       action: "Lista",
-      title: "Lista de boda",
+      title: "Checklist",
       subtitle: "Todo lo que hay que hacer antes del gran día, ordenado por el momento adecuado.",
       create_title: "Tu plan de boda, ya organizado.",
       create_body: "Crea una lista cronológica completa vinculada con tus tareas de Planificación.",

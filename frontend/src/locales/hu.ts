@@ -2871,7 +2871,7 @@ const hu: LocaleMessages = {
     idea_to_task_done: "Feladatként hozzáadva",
     checklist: {
       action: "Ellenőrzőlista",
-      title: "Esküvői ellenőrzőlista",
+      title: "Checklist",
       subtitle: "Minden teendő a nagy napig, akkorra rendezve, amikor igazán számít.",
       create_title: "Az esküvői tervetek, már rendszerezve.",
       create_body:

@@ -4,6 +4,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { scanEmailIntegrity } from "../../src/domain/emails/integrity_check";
+import { renderEmail } from "../../src/domain/emails/template";
 
 describe("email integrity scan", () => {
   test("no module outside the central dispatcher imports sendEmail directly", () => {
@@ -21,13 +22,10 @@ describe("email integrity scan", () => {
   });
 });
 
-// No email of ours talks the reader out of being here. On LIFECYCLE mail the
-// unsubscribe link and the List-Unsubscribe header stay exactly where they are,
-// but body copy never points at them, never invites the reader to ignore the
-// mail, and never mentions deleting an account as an option. "If this wasn't
-// you, ignore this" on a security/verify mail is a different thing and stays:
-// it is anti-phishing copy, not an exit sign. Campaign mail carries neither the
-// link nor the header any more, which the describe block at the bottom guards.
+// No email of ours talks the reader out of being here. Lifecycle and outreach
+// keep the transport-level List-Unsubscribe header, but the visible body does
+// not promote an exit. "If this wasn't you, ignore this" on security/verify
+// mail is different and stays: it is anti-phishing copy, not an exit sign.
 describe("email copy: nothing that talks the reader out of staying", () => {
   const BANNED: Array<{ pattern: RegExp; why: string }> = [
     { pattern: /leiratkozhat/i, why: "offers the reader an unsubscribe" },
@@ -115,36 +113,35 @@ describe("email copy: the offer is hospitality, not a price of zero", () => {
   });
 });
 
-// Campaign (outreach) mail offers no way out at all, by owner decision on
-// 2026-07-28: no unsubscribe link in the body, and no List-Unsubscribe header
-// for a mail client to build its own button from. That header used to be fed by
-// a caller-supplied `listUnsubscribeUrl` on SendTarget, so the guard here is
-// that the field is gone AND that both header writes still sit inside the
-// lifecycle-only branch. What deliberately stays: `email_optouts` suppression
-// (the addresses that already opted out must never be mailed again) and the
-// `/api/emails/optout-*` routes, because mail already delivered links to them.
-describe("campaign mail offers no exit", () => {
+// Lifecycle and outreach campaigns carry RFC 8058 headers. The shared
+// email_optouts tombstone then suppresses every later non-transactional send
+// to that address, while the message body keeps the control out of view.
+describe("campaign mail offers a one-click exit", () => {
   const emailsDir = join(import.meta.dir, "..", "..", "src", "domain", "emails");
   const stripComments = (src: string): string =>
     src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-  test("only lifecycle mail attaches List-Unsubscribe", () => {
+  test("lifecycle and tokenised outreach attach List-Unsubscribe", () => {
     const src = stripComments(readFileSync(join(emailsDir, "send.ts"), "utf8"));
-    // The whole campaign path went through this one field.
-    expect(src).not.toContain("listUnsubscribeUrl");
-    // Both writes, and only those two, live under the lifecycle guard.
+    expect(src).toContain("outreachUnsubscribeUrl");
     const writes = [...src.matchAll(/extraHeaders\["List-Unsubscribe(?:-Post)?"\]/g)];
-    expect(writes.length).toBe(2);
-    const guard = /if \(category === "lifecycle" && unsubscribeToken\) \{([\s\S]*?)\n {2}\}/.exec(
-      src,
-    );
-    expect(guard).not.toBeNull();
-    expect(guard?.[1]).toContain('extraHeaders["List-Unsubscribe"]');
-    expect(guard?.[1]).toContain('extraHeaders["List-Unsubscribe-Post"]');
+    expect(writes.length).toBe(4);
+    expect(src).toContain('category === "outreach" && target.outreachUnsubscribeUrl');
   });
 
-  test("no template renders an opt-out link", () => {
-    const src = stripComments(readFileSync(join(emailsDir, "templates.ts"), "utf8"));
-    expect(src).not.toContain("optOutUrl");
+  test("the shared template hides the outreach opt-out URL", () => {
+    const optOutUrl = "https://weddly.test/email-optout/signed-token";
+    const templateSource = stripComments(readFileSync(join(emailsDir, "template.ts"), "utf8"));
+    const rendered = renderEmail({
+      hu: { greeting: "Szia!", paragraphs: ["Bemutatkozás."], cta: "Megnyitás" },
+      en: { greeting: "Hi!", paragraphs: ["Introduction."], cta: "Open" },
+      ctaUrl: "https://weddly.test/open",
+      category: "outreach",
+      recipientLocale: "hu",
+    });
+    expect(templateSource).not.toContain("outreachUnsubscribeUrl");
+    expect(rendered.html).not.toContain(optOutUrl);
+    expect(rendered.text).not.toContain(optOutUrl);
+    expect(rendered.text).not.toContain("Leiratkozás");
   });
 });

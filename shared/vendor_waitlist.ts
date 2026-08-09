@@ -138,7 +138,7 @@ export function buildEmailDraft(
       body:
         `Köszönjük, hogy jelentkeztetek a Weddly szolgáltatói várólistájára (${category}). ` +
         `A következő napokban alaposabban átnézzük a profilotokat, és e-mailben jelzünk ` +
-        `vissza a döntéssel. Addig nincs teendőtök.\n\n` +
+        `vissza a következő lépéssel.\n\n` +
         `Ha van bármi, amit szeretnétek megosztani magatokról, friss portfólió, referenciák ` +
         `vagy bármi, amit fontosnak tartotok, nyugodtan válaszoljatok erre a levélre.`,
     };
@@ -148,9 +148,8 @@ export function buildEmailDraft(
     subject: `${name}: köszönjük a jelentkezést`,
     body:
       `Köszönjük, hogy jelentkeztetek a Weddly szolgáltatói várólistájára (${category}). ` +
-      `Személyesen átnéztük a profilotokat, és most még nem tudunk továbblépni veletek: ` +
-      `jelenleg szűken válogatunk a kategóriátokban.\n\n` +
-      `Ez nem örökre szól, amint újra nyitunk a kategóriátokban, jelzünk. Ha addig változik ` +
-      `valami nálatok (új portfólió, új fókusz), küldjétek el bátran, szívesen átnézzük újra.`,
+      `Ebben a körben a kategória szűkebb szolgáltatói körével indulunk.\n\n` +
+      `A jelentkezéseteket megőrizzük, és elsőként szólunk, amikor bővítjük a kört. ` +
+      `Friss portfóliót vagy új fókuszt közben is örömmel fogadunk.`,
   };
 }

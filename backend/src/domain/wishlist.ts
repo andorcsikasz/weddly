@@ -32,20 +32,7 @@ import type { HouseholdRow } from "./households";
 import { HttpError } from "../lib/http";
 import { keyFromUploadUrl } from "../lib/storage";
 import { httpUrlOrNull } from "../lib/url";
-import { sendRawEmail } from "./emails";
-
-/** Escape a user-authored string for interpolation into the raw HTML of the
- *  gift-coordination email. Item titles + household labels are couple/guest
- *  authored, so an unescaped value could inject markup into another guest's
- *  inbox; this closes that. */
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+import { sendKind } from "./emails";
 
 export interface WishlistItemRow {
   id: number;
@@ -822,94 +809,39 @@ export async function sendGroupGiftNotification(params: {
       ? Math.round((total / targetAmountMinor) * 100)
       : null;
 
-  const subject = isNewPledger
-    ? `[${itemTitle}] Köszönjük, hogy csatlakozol! / Thanks for joining!`
-    : `[${itemTitle}] Újabb vendég csatlakozott / Another guest joined`;
+  const contributorLines = contributors.map((c) => {
+    const amount =
+      c.pledgedAmountMinor != null ? formatAmount(c.pledgedAmountMinor, currency) : "—";
+    return `${c.label}${c.label === recipientLabel ? " (te / you)" : ""}: ${amount}`;
+  });
+  const totalText = `${formatAmount(total, currency)}${
+    targetAmountMinor != null ? ` / ${formatAmount(targetAmountMinor, currency)}` : ""
+  }${pct != null ? ` (${pct}%)` : ""}`;
+  const ownPledge = contributors.find((c) => c.label === recipientLabel);
+  const ownAmountText =
+    ownPledge?.pledgedAmountMinor != null
+      ? formatAmount(ownPledge.pledgedAmountMinor, currency)
+      : null;
 
-  // Build contributor table rows (HTML)
-  const tableRows = contributors
-    .map((c) => {
-      const isMe = c.label === recipientLabel;
-      const amountCell =
-        c.pledgedAmountMinor != null ? formatAmount(c.pledgedAmountMinor, currency) : "-";
-      return `<tr${isMe ? ' style="font-weight:bold"' : ""}>
-        <td>${escapeHtml(c.label)}${isMe ? " [Te/You]" : ""}</td>
-        <td>${amountCell}</td>
-      </tr>`;
-    })
-    .join("\n");
-
-  const contributorTableHtml = `
-    <table style="border-collapse:collapse;width:100%;margin:12px 0">
-      <thead>
-        <tr>
-          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc">Háztartás / Guest</th>
-          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ccc">Összeg / Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${tableRows}
-      </tbody>
-    </table>`;
-
-  const progressLine =
-    targetAmountMinor != null
-      ? `<p>Összesen / Total: <strong>${formatAmount(total, currency)} / ${formatAmount(targetAmountMinor, currency)}${pct != null ? ` (${pct}%)` : ""}</strong></p>`
-      : `<p>Összesen / Total: <strong>${formatAmount(total, currency)}</strong></p>`;
-
-  // Only render the link if it is a real http(s) URL (defense in depth: the URL
-  // is validated on write too), and escape it inside the href attribute.
+  // Only pass through a real http(s) URL. The shared renderer escapes every
+  // user-authored value and wraps this notification in the standard Weddly
+  // email shell, so gift mail now follows the same brand and locale rules as
+  // every other production send.
   const safeItemUrl = itemUrl ? httpUrlOrNull(itemUrl) : null;
-  const itemUrlLink = safeItemUrl
-    ? `<p><a href="${escapeHtml(safeItemUrl)}">Megnézheted az ajándékot / View the gift item</a></p>`
-    : "";
-
-  let bodyHtml: string;
-  if (isNewPledger) {
-    const ownPledge = contributors.find((c) => c.label === recipientLabel);
-    const ownAmount =
-      ownPledge?.pledgedAmountMinor != null
-        ? formatAmount(ownPledge.pledgedAmountMinor, currency)
-        : "nincs megadva / not specified";
-    bodyHtml = `
-      <p>Megerősítjük, hogy szándéknyilatkozatod megérkezett a(z) <strong>${escapeHtml(itemTitle)}</strong> ajándékhoz.<br>
-      <em>We've noted your intention to contribute to <strong>${escapeHtml(itemTitle)}</strong>.</em></p>
-      <p>Vállalt összeg / Your pledge: <strong>${ownAmount}</strong></p>
-      ${contributors.length > 1 ? contributorTableHtml : ""}
-      ${progressLine}
-      ${itemUrlLink}
-      <p><em>Ez egy nem kötelező szándéknyilatkozat — bármikor visszavonhatod.<br>
-      This is a non-binding expression of interest — you can withdraw at any time.</em></p>`;
-  } else {
-    bodyHtml = `
-      <p>Örömmel értesítünk, hogy <strong>${escapeHtml(newContributorLabel)}</strong> is csatlakozott a(z) <strong>${escapeHtml(itemTitle)}</strong> ajándékhoz.<br>
-      <em>Another guest joined <strong>${escapeHtml(itemTitle)}</strong>.</em></p>
-      ${contributorTableHtml}
-      ${progressLine}
-      <p><strong>Egyeztessetek a vásárlásról! / Coordinate the purchase!</strong></p>
-      ${itemUrlLink}`;
-  }
-
-  const fullHtml = `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:16px">
-    ${bodyHtml}
-    <hr style="margin-top:24px">
-    <p style="font-size:11px;color:#888">Ezt az e-mailt azért kaptad, mert megadtad e-mail-címedet egy ajándék-koordináció kapcsán a Weddly platformon.<br>
-    You received this email because you provided your address for gift coordination on the Weddly platform.</p>
-  </body></html>`;
-
-  // Plain-text version (fallback)
-  const textRows = contributors
-    .map((c) => {
-      const isMe = c.label === recipientLabel;
-      const amt = c.pledgedAmountMinor != null ? formatAmount(c.pledgedAmountMinor, currency) : "-";
-      return `${c.label}${isMe ? " [Te/You]" : ""}: ${amt}`;
-    })
-    .join("\n");
-
-  const fullText = isNewPledger
-    ? `${itemTitle} - köszönjük, hogy csatlakozol!\n\n${textRows}\n\nÖsszesen: ${formatAmount(total, currency)}${targetAmountMinor != null ? ` / ${formatAmount(targetAmountMinor, currency)}` : ""}${pct != null ? ` (${pct}%)` : ""}${itemUrl ? `\n\n${itemUrl}` : ""}`
-    : `Újabb vendég csatlakozott: ${newContributorLabel}\n\n${textRows}\n\nÖsszesen: ${formatAmount(total, currency)}${targetAmountMinor != null ? ` / ${formatAmount(targetAmountMinor, currency)}` : ""}${pct != null ? ` (${pct}%)` : ""}${itemUrl ? `\n\n${itemUrl}` : ""}`;
-
-  // sendRawEmail never throws (see domain/emails/send.ts).
-  await sendRawEmail({ to, subject, html: fullHtml, text: fullText });
+  await sendKind(
+    "group_gift_notification",
+    {
+      isNewPledger,
+      itemTitle,
+      itemUrl: safeItemUrl,
+      newContributorLabel,
+      contributorLines,
+      totalText,
+      ownAmountText,
+    },
+    {
+      user: null,
+      guest: { email: to, full_name: recipientLabel },
+    },
+  );
 }

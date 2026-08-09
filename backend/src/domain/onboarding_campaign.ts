@@ -503,6 +503,7 @@ async function sendOne(
       trackingPixelUrl: pixelUrl(row.id),
       guest: { email: row.email, full_name: row.name || row.email },
       guestLocale: locale,
+      outreachUnsubscribeUrl: `${CONFIG.frontendBaseUrl}/onboarding-optout/${makeOnboardingOptOutToken(row.id)}`,
     },
   );
   const status = result.status;

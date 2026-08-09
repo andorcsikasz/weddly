@@ -2846,7 +2846,7 @@ const hr: LocaleMessages = {
     idea_to_task_done: "Dodano kao zadatak",
     checklist: {
       action: "Popis",
-      title: "Popis za vjenčanje",
+      title: "Checklist",
       subtitle: "Sve što treba obaviti prije velikog dana, poredano prema pravom trenutku.",
       create_title: "Vaš plan vjenčanja, već organiziran.",
       create_body: "Izradite potpun kronološki popis povezan s postojećim zadacima Planiranja.",

@@ -67,13 +67,12 @@ const ONBOARDING_NUDGE_WEEK_AFTER_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 // A planner gets ~3 days to finish their profile on their own before the
 // one-shot "your profile is missing info" nudge fires.
 const PLANNER_PROFILE_NUDGE_AFTER_MS = 1000 * 60 * 60 * 24 * 3; // 3 days
-// Recurring "your listing is still incomplete" reminder. A vendor gets a 2-day
-// grace after signup, then a VARYING 2-4 day gap between reminders (so the
-// series doesn't feel robotic), capped at MAX sends. Copy variant rotates by
-// send count. The gap before the (count+1)-th reminder is indexed by count.
-const VENDOR_INCOMPLETE_GRACE_MS = 1000 * 60 * 60 * 24 * 2; // 2 days after signup
-const VENDOR_INCOMPLETE_MAX_NUDGES = 5;
-const VENDOR_INCOMPLETE_INTERVAL_DAYS = [2, 3, 4, 2, 3];
+// Two useful profile-completion touches: the first after three days, the second
+// a week later. A premium brand should not chase a vendor every 2-4 days for
+// the same action; two concrete checklists leave room for the work itself.
+const VENDOR_INCOMPLETE_GRACE_MS = 1000 * 60 * 60 * 24 * 3;
+const VENDOR_INCOMPLETE_MAX_NUDGES = 2;
+const VENDOR_INCOMPLETE_INTERVAL_DAYS = [7];
 const INVITE_PARTNER_AUTO_AFTER_MS = 1000 * 60 * 60 * 48; // 48h
 // Solo workspaces are auto-nudged at the first 10:00 UTC at or after the 48h
 // mark ("48h utáni legközelebbi 10:00"). The worker runs hourly, so the real
@@ -421,10 +420,9 @@ interface VendorIncompleteRow {
 function sweepVendorProfileIncomplete(ts: number): number {
   // Recurring reminder to verified, active vendors whose public listing is still
   // missing photo / bio / pricing / packages / availability. First send waits a
-  // 2-day grace after signup; later sends wait a VARYING 2-4 day gap keyed on
-  // how many already went out; the whole series is capped at
-  // VENDOR_INCOMPLETE_MAX_NUDGES. Copy variant rotates by send count so no two
-  // reminders read the same. Cadence + count live on vendor_accounts; the
+  // 3-day grace after signup; the second waits another week; the whole series
+  // is capped at VENDOR_INCOMPLETE_MAX_NUDGES. Cadence + count live on
+  // vendor_accounts; the
   // lifecycle opt-out + one-click unsubscribe are honoured by sendKind. Demo +
   // purged owners excluded. A vendor whose profile is already complete is picked
   // up by the query but skipped WITHOUT advancing the count, so completing then
@@ -447,7 +445,7 @@ function sweepVendorProfileIncomplete(ts: number): number {
   let count = 0;
   for (const r of rows) {
     // Cadence gate: the first send waits out the grace window from signup; every
-    // later send waits a varying 2-4 day gap indexed by the count so far.
+    // later send waits one week.
     if (r.profile_nudge_last_at === null) {
       if (r.created_at > ts - VENDOR_INCOMPLETE_GRACE_MS) continue;
     } else {

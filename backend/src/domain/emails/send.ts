@@ -109,6 +109,9 @@ export interface SendTarget {
    * caller is responsible for signing whatever token it embeds.
    */
   trackingPixelUrl?: string;
+  /** Signed per-send opt-out URL for outreach campaigns. It is rendered in the
+   *  footer and attached as the RFC 8058 one-click unsubscribe endpoint. */
+  outreachUnsubscribeUrl?: string;
   /**
    * Force the FROM mailbox for this one send. Only needed for a kind the
    * worker also fires on its own (verify_resend, partner_invite_reminder,
@@ -241,7 +244,6 @@ async function sendKindInner<K extends EmailKind>(
     if (category === "lifecycle" && prefs.lifecycle_opt_out) {
       const built = buildEmail(kind, payload, {
         recipientName: recipient.name,
-        unsubscribeToken: prefs.unsubscribe_token,
         recipientLocale,
         primaryLocaleHint,
       });
@@ -267,7 +269,6 @@ async function sendKindInner<K extends EmailKind>(
 
   const built = buildEmail(kind, payload, {
     recipientName: recipient.name,
-    unsubscribeToken,
     recipientLocale,
     primaryLocaleHint,
     trackingPixelUrl,
@@ -279,18 +280,16 @@ async function sendKindInner<K extends EmailKind>(
   // endpoint (no JS, returns a tiny HTML confirmation on GET, flips the flag
   // silently on POST) so Gmail's auto-unsubscribe bot can complete in one hit.
   //
-  // LIFECYCLE ONLY, by owner decision (2026-07-28). Campaign mail used to carry
-  // the same pair via a caller-supplied `listUnsubscribeUrl`; that branch is
-  // gone, so no outreach send advertises a way out any more. Note what did NOT
-  // change: `email_optouts` is still consulted before every send, so the
-  // addresses that already opted out stay suppressed for good, and the
-  // `/api/emails/optout-*` routes stay up because mail already sitting in
-  // inboxes links to them.
-  //
+  // Lifecycle uses the account preference token; address-level campaigns pass
+  // their own signed per-send URL. Both paths honour a one-click request before
+  // any later send through the shared suppression table.
   const extraHeaders: Record<string, string> = {};
   if (category === "lifecycle" && unsubscribeToken) {
     extraHeaders["List-Unsubscribe"] =
       `<${CONFIG.frontendBaseUrl}/api/unsubscribe/${unsubscribeToken}>`;
+    extraHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
+  } else if (category === "outreach" && target.outreachUnsubscribeUrl) {
+    extraHeaders["List-Unsubscribe"] = `<${target.outreachUnsubscribeUrl}>`;
     extraHeaders["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
   }
   const headers: Record<string, string> | undefined =
@@ -397,24 +396,6 @@ async function sendKindInner<K extends EmailKind>(
       couple_id: target.couple_id ?? null,
     });
     return { status: "failed", error: errMsg };
-  }
-}
-
-/** Send a raw ad-hoc email without going through the template/kind system.
- *  Use ONLY for one-off outreach notifications that do not fit the kind
- *  catalogue (e.g. guest group-gift coordination). The caller is responsible
- *  for constructing both HTML and plain-text bodies and for wrapping the
- *  call in a fire-and-forget `void` + try/catch. Never throws. */
-export async function sendRawEmail(opts: {
-  to: string;
-  subject: string;
-  html: string;
-  text: string;
-}): Promise<void> {
-  try {
-    await sendEmail({ to: opts.to, subject: opts.subject, html: opts.html, text: opts.text });
-  } catch {
-    // Best-effort — mirror the never-throw contract of sendKind.
   }
 }
 

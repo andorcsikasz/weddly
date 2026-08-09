@@ -106,7 +106,7 @@ export function buildPlannerEmailDraft(
       subject: "Átnézzük a jelentkezésed",
       body:
         `Köszönjük, hogy jelentkeztél a Weddly szervezői eszközeire. A következő napokban ` +
-        `átnézzük a profilodat, és e-mailben jelzünk vissza a döntéssel. Addig nincs teendőd.\n\n` +
+        `átnézzük a profilodat, és e-mailben jelentkezünk a következő lépéssel.\n\n` +
         `Ha van bármi, amit szeretnél megosztani magadról, portfólió, referenciák vagy korábbi ` +
         `esküvők, nyugodtan válaszolj erre a levélre.`,
     };
@@ -115,9 +115,9 @@ export function buildPlannerEmailDraft(
   return {
     subject: "Köszönjük a jelentkezést",
     body:
-      `Köszönjük, hogy jelentkeztél a Weddly szervezői eszközeire. Most még nem tudunk ` +
-      `továbblépni veled: jelenleg szűken alakítjuk a szervezői kört.\n\n` +
-      `Ez nem örökre szól, amint bővítünk, jelzünk. Ha addig változik valami nálad, ` +
-      `küldd el bátran, szívesen átnézzük újra.`,
+      `Köszönjük, hogy jelentkeztél a Weddly szervezői eszközeire. Ebben a körben ` +
+      `a szervezők szűkebb csoportjával indulunk.\n\n` +
+      `A jelentkezésedet megőrizzük, és elsőként szólunk, amikor bővítjük a kört. ` +
+      `Friss portfóliót vagy új referenciát közben is örömmel fogadunk.`,
   };
 }

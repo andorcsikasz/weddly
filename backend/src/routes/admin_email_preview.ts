@@ -123,6 +123,15 @@ const STUBS: KindPayload = {
     rsvpStatus: "yes",
     rsvpPageUrl: `${BASE_URL}/rsvp/preview-code`,
   },
+  group_gift_notification: {
+    isNewPledger: true,
+    itemTitle: "Hétvégi pihenés",
+    itemUrl: "https://example.com/group-gift",
+    newContributorLabel: "Kovács család",
+    contributorLines: ["Kovács család: 30 000 Ft", "Nagy család: 20 000 Ft"],
+    totalText: "50 000 Ft / 120 000 Ft (42%)",
+    ownAmountText: "30 000 Ft",
+  },
   guest_invite: {
     coupleDisplayName: "Mia & Lucas",
     guestName: "Anna Kovács",

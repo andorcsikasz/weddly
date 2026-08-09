@@ -2905,7 +2905,7 @@ const de: LocaleMessages = {
     idea_to_task_done: "Als Aufgabe hinzugefügt",
     checklist: {
       action: "Checkliste",
-      title: "Hochzeitscheckliste",
+      title: "Checklist",
       subtitle: "Alles bis zum großen Tag, geordnet nach dem richtigen Zeitpunkt.",
       create_title: "Euer Hochzeitsplan, bereits geordnet.",
       create_body:

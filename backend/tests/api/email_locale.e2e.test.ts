@@ -104,33 +104,27 @@ describe("renderEmail: recipient locale branching", () => {
     expect(r.text).toContain("Hi Anna,");
   });
 
-  test("lifecycle + unsubscribe token: footer language matches the picked locale", () => {
+  test("lifecycle footer keeps unsubscribe controls out of the visible message", () => {
     const hu = renderEmail({
       hu: HU,
       en: EN,
       ctaUrl: "https://weddly.hu/x",
       category: "lifecycle",
-      unsubscribeToken: "tok123",
       recipientLocale: "hu",
     });
-    expect(hu.text).toContain("Leiratkozás");
+    expect(hu.text).not.toContain("Leiratkozás");
     expect(hu.text).not.toContain("Unsubscribe");
-    // The link stays, the invitation to use it does not: no "don't want these?"
-    // question in front of the label, in either language.
-    expect(hu.text).not.toContain("Nem kérsz emlékeztetőket");
 
     const en = renderEmail({
       hu: HU,
       en: EN,
       ctaUrl: "https://weddly.hu/x",
       category: "lifecycle",
-      unsubscribeToken: "tok123",
       recipientLocale: "en",
     });
-    expect(en.text).toContain("Unsubscribe");
-    expect(en.text).not.toContain("Don't want updates");
+    expect(en.text).not.toContain("Unsubscribe");
     expect(en.text).not.toContain("Leiratkozás");
-    expect(en.html).toContain("Unsubscribe");
+    expect(en.html).not.toContain("Unsubscribe");
     expect(en.html).not.toContain("Leiratkozás");
   });
 });
@@ -234,21 +228,18 @@ describe("sendKind: picks up users.locale from the DB", () => {
     expect(r.text).not.toContain("Hi Anna,");
   });
 
-  test("the footer speaks the card's language, not Hungarian by default", () => {
-    // The regression this pins: the footer's unsubscribe / preferences labels
-    // used to be `bilingual ? … : onlyEn ? … : hu`, so EVERY locale added after
-    // HU and EN dropped into the Hungarian branch. A German lifecycle mail
-    // would have ended on "Leiratkozás".
+  test("the footer explanation speaks the card's language", () => {
     const de = renderEmail({
       hu: HU,
       en: EN,
       extra: { de: { greeting: "Hallo,", paragraphs: ["Text."], cta: "Öffnen" } },
       ctaUrl: "https://weddly.hu/x",
       category: "lifecycle",
-      unsubscribeToken: "tok",
       recipientLocale: "de",
     });
-    expect(de.text).toContain("Abmelden");
+    expect(de.text).toContain(
+      "Sie erhalten gelegentliche Erinnerungen von Weddly, weil Sie ein Konto bei uns haben.",
+    );
     expect(de.text).not.toContain("Leiratkozás");
 
     const hr = renderEmail({
@@ -257,20 +248,17 @@ describe("sendKind: picks up users.locale from the DB", () => {
       extra: { hr: { greeting: "Pozdrav,", paragraphs: ["Tekst."], cta: "Otvorite" } },
       ctaUrl: "https://weddly.hu/x",
       category: "lifecycle",
-      unsubscribeToken: "tok",
       recipientLocale: "hr",
     });
-    expect(hr.text).toContain("Odjava s liste");
+    expect(hr.text).toContain("Povremene podsjetnike od Weddlyja primate jer kod nas imate račun.");
     expect(hr.text).not.toContain("Leiratkozás");
 
-    // A locale with a card but no footer entry of its own still must not read
-    // Hungarian — English is the fallback everywhere in the chrome.
+    // A locale with no translated card falls back to English chrome.
     const es = renderEmail({
       hu: HU,
       en: EN,
       ctaUrl: "https://weddly.hu/x",
       category: "lifecycle",
-      unsubscribeToken: "tok",
       recipientLocale: "es",
     });
     expect(es.text).not.toContain("Leiratkozás");
@@ -322,7 +310,7 @@ describe("who gets written to in which language", () => {
       },
       { recipientName: "Ivan", recipientLocale: "hr" },
     );
-    expect(built.subject).toContain("Par je predložio");
+    expect(built.subject).toContain("dopunite svoj Weddly profil");
     expect(built.rendered.text).toContain("Preuzmite profil");
     expect(built.rendered.text).not.toContain("Take over your profile");
     expect(built.rendered.text).not.toContain("Profil átvétele");
@@ -342,7 +330,7 @@ describe("who gets written to in which language", () => {
       },
       { recipientName: "Lucía", recipientLocale: "es" },
     );
-    expect(built.subject).toContain("Una pareja recomendó");
+    expect(built.subject).toContain("completad vuestro perfil de Weddly");
     expect(built.rendered.text).toContain("Reclamar el perfil");
     expect(built.rendered.text).not.toContain("Take over your profile");
     expect(built.rendered.text).not.toContain("Profil átvétele");

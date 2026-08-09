@@ -2844,7 +2844,7 @@ const en: LocaleMessages = {
     idea_to_task_done: "Added as a task",
     checklist: {
       action: "Checklist",
-      title: "Wedding checklist",
+      title: "Checklist",
       subtitle: "Everything to do before the big day, organized by when it matters.",
       create_title: "Your wedding plan, already organized.",
       create_body:
