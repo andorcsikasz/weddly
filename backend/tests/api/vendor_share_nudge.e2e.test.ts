@@ -124,8 +124,9 @@ describe("vendor profile-share nudge", () => {
     // An empty availability calendar is never named: it means the vendor has
     // nothing booked, not that a section of their profile is blank.
     expect(html).not.toContain("availability calendar");
-    // The 5-star reviews trust nudge is present.
-    expect(html.toLowerCase()).toContain("5-star");
+    // The review nudge still asks past clients for useful decision context.
+    expect(html.toLowerCase()).toContain("past clients");
+    expect(html.toLowerCase()).toContain("leave a review");
     expect(html).toContain("/vendor/reviews");
   });
 

@@ -4423,7 +4423,7 @@ const BUILDERS: { [K in EmailKind]: Builder<K> } = {
         "Azért írunk, mert a Weddly egyik felhasználója megadta az e-mail-címedet: úgy gondolta, hogy te vagy valaki a környezetedben éppen esküvőt szervez.",
         "Ha te készülsz a nagy napra, ismerd meg a Weddlyt:",
       ],
-      cta: "Ingyenesen regisztrálok",
+      cta: "Regisztrálok a Weddlyre",
       postCtaParagraphs: [
         "Ha pedig egy családtagod vagy barátod szervezi az esküvőjét, küldd tovább neki ezt a levelet – lehet, hogy pont jókor érkezik.",
         "Az e-mail-címedet kizárólag ennek az e-mailnek a kiküldéséhez használjuk. Ha a jövőben is szeretnél leveleket kapni tőlünk, regisztrálj a Weddly-n.",

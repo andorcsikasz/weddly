@@ -89,14 +89,14 @@ describe("personal-invite campaign", () => {
       "Ha pedig egy családtagod vagy barátod szervezi az esküvőjét, küldd tovább neki ezt a levelet – lehet, hogy pont jókor érkezik.";
     expect(text).toContain(opener);
     expect(text).toContain("Ha te készülsz a nagy napra, ismerd meg a Weddlyt:");
-    expect(text).toContain("Ingyenesen regisztrálok:");
+    expect(text).toContain("Regisztrálok a Weddlyre:");
     expect(text).toContain(forward);
     expect(text).toContain(
       "Az e-mail-címedet kizárólag ennek az e-mailnek a kiküldéséhez használjuk. Ha a jövőben is szeretnél leveleket kapni tőlünk, regisztrálj a Weddly-n.",
     );
     expect(text).toContain("Üdv,\na Weddly csapata");
-    expect(text.indexOf(opener)).toBeLessThan(text.indexOf("Ingyenesen regisztrálok:"));
-    expect(text.indexOf("Ingyenesen regisztrálok:")).toBeLessThan(text.indexOf(forward));
+    expect(text.indexOf(opener)).toBeLessThan(text.indexOf("Regisztrálok a Weddlyre:"));
+    expect(text.indexOf("Regisztrálok a Weddlyre:")).toBeLessThan(text.indexOf(forward));
     expect(built.rendered.html).not.toContain("Azért kapod ezt a levelet, mert ismerjük egymást");
   });
 

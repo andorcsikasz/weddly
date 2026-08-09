@@ -361,7 +361,7 @@ describe("planner invite email", () => {
     // sentence is the reason the assertion below is not just cosmetic.
     expect(text).not.toContain("Leiratkozás");
     expect(text).not.toContain("planner-optout");
-    expect(text).toContain("tiltakozhatsz a kezelésük ellen");
+    expect(text).toContain("tiltakozhatsz az adatkezelés ellen");
     expect(text).toContain("hello@tryweddly.com");
     expect(text).not.toContain("kattints lent");
     // The stock outreach footer would claim they have no account. This one
@@ -378,7 +378,7 @@ describe("planner invite email", () => {
     expect(built.subject).toContain("recommended");
     const { text } = built.rendered;
     expect(text).toContain("Article 6(1)(f) GDPR");
-    expect(text).toContain("you can object to the processing");
+    expect(text).toContain("object to its use");
     expect(text).not.toContain("Unsubscribe");
     expect(text).not.toContain("Szia");
   });
