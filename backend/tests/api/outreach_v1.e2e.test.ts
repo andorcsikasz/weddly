@@ -492,7 +492,7 @@ describe("supplier_outreach email carries as much as the recipient needs", () =>
       },
       { recipientName: "Etyeki Kúria" },
     );
-    expect(built.rendered.text).toContain("not set yet");
+    expect(built.rendered.text).toContain("to be confirmed");
   });
 });
 

@@ -347,10 +347,10 @@ describe("planner invite email", () => {
       recipientName: "Koncsár Andi",
       recipientLocale: "hu",
     });
-    expect(built.subject).toContain("Ajánlottak");
+    expect(built.subject).toContain("Elkészült a Weddly szervezői fiókotok");
     const { html, text } = built.rendered;
     expect(html).toContain("Szellő Lovastanya");
-    expect(text).toContain("javasolta a nevedet");
+    expect(text).toContain("ajánlotta a Szellő Lovastanya vállalkozást");
     expect(text).toContain("GDPR 6. cikk");
     expect(text).toContain("nyilvánosan");
     // Activation link, untagged: a single-use account link must stay clean.

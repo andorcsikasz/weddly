@@ -269,6 +269,6 @@ describe("trial_ended mail", () => {
     // templates.ts by email_integrity.e2e.test.ts).
     expect(text).toContain("our guests");
     expect(text.toLowerCase()).not.toContain("gratis");
-    expect(built.subject).toContain("trial has ended");
+    expect(built.subject).toContain("Choose how to continue with Weddly");
   });
 });

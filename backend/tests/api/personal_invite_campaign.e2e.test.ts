@@ -86,7 +86,7 @@ describe("personal-invite campaign", () => {
     const opener =
       "A Weddly csapatából személyesen ismerünk, ezért szeretnénk röviden bemutatni nektek a Weddlyt.";
     const forward =
-      "Ha pedig egy családtagod vagy barátod szervezi az esküvőjét, küldd tovább neki ezt a levelet – lehet, hogy pont jókor érkezik.";
+      "Ha egy családtagod vagy barátod szervezi az esküvőjét, ezt a levelet neki is továbbíthatod.";
     expect(text).toContain(opener);
     expect(text).toContain("Ha te vagy valaki a környezetedben esküvőt szervez, nézz körül:");
     expect(text).toContain("Regisztrálok a Weddlyre:");
