@@ -422,8 +422,7 @@ function sweepVendorProfileIncomplete(ts: number): number {
   // missing photo / bio / pricing / packages / availability. First send waits a
   // 3-day grace after signup; the second waits another week; the whole series
   // is capped at VENDOR_INCOMPLETE_MAX_NUDGES. Cadence + count live on
-  // vendor_accounts; the
-  // lifecycle opt-out + one-click unsubscribe are honoured by sendKind. Demo +
+  // vendor_accounts; lifecycle suppression is honoured by sendKind. Demo +
   // purged owners excluded. A vendor whose profile is already complete is picked
   // up by the query but skipped WITHOUT advancing the count, so completing then
   // re-emptying a section resumes the series where it left off.

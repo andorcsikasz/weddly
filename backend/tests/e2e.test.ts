@@ -152,6 +152,9 @@ function wipeAll() {
     "email_log",
     "email_dispatches",
     "email_preferences",
+    // Admin-send reservations are intentionally durable in production, but
+    // leaking one across tests makes a later triage send look like a duplicate.
+    "admin_email_send_dedupe",
     "community_supplier_reports",
     "community_supplier_verifications",
     "community_suppliers",

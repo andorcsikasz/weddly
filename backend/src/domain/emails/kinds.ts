@@ -105,8 +105,8 @@ export type EmailCategory = "transactional" | "lifecycle" | "outreach";
  * Transactional = the user explicitly triggered the action and is waiting on
  * the email (signup, password reset, RSVP). Cannot be turned off.
  *
- * Lifecycle = system-initiated reminders. The user can opt out via the
- * unsubscribe footer link.
+ * Lifecycle = system-initiated reminders. Delivery respects the recipient's
+ * lifecycle preference.
  *
  * Outreach = cold mail to a recipient who has no Weddly account and didn't
  * trigger anything themselves, a couple added them to the supplier directory,
@@ -143,10 +143,10 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // on.
   partner_invite_declined: "transactional",
   // Lifecycle: admin manually nudges a solo couple to invite their partner —
-  // the user didn't ask for this so honour the unsubscribe footer.
+  // the user didn't ask for this, so honour their lifecycle preference.
   partner_invite_reminder: "lifecycle",
   // Lifecycle: a REPEATING marketing nudge (3 sends, 5 days apart) about the
-  // founding cohort, so it MUST honour the unsubscribe footer. The sweep also
+  // founding cohort, so it MUST honour lifecycle suppression. The sweep also
   // stops itself once the FOUNDING_CAP slots are gone — the offer it pitches
   // is the one activatePartnerFreeWindow actually grants, and that grant is
   // refused once the cohort is full.
@@ -158,7 +158,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   couple_paused: "transactional",
   // Lifecycle: they told us "missing features" on the way out and nothing
   // obliges them to say another word. An admin presses this one by hand, one
-  // couple at a time, so it honours the unsubscribe footer like every other
+  // couple at a time, so it honours lifecycle suppression like every other
   // mail nobody asked for.
   pause_feedback_request: "lifecycle",
   // Transactional: the pause was an explicit action one partner took and
@@ -195,19 +195,19 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   guest_pre_wedding_info: "transactional",
   onboarding_nudge: "lifecycle",
   onboarding_nudge_week: "lifecycle",
-  // Lifecycle: a feature nudge nobody asked for, so it honours the unsubscribe
-  // footer. Deliberately dodges the 90/30/7 milestone days, since those mails
+  // Lifecycle: a feature nudge nobody asked for, so it honours lifecycle
+  // suppression. Deliberately dodges the 90/30/7 milestone days, since those mails
   // promise in their own footnote that we only write at 90, 30 and 7 days out.
   honeymoon_nudge: "lifecycle",
   // Lifecycle: pure win-back. Nobody asked to hear from us three weeks after
-  // they last logged in, so it honours the unsubscribe footer, and it is
+  // they last logged in, so it honours lifecycle suppression, and it is
   // one-shot per workspace — a couple who is deliberately away must not be
   // followed by a drip.
   comeback_nudge: "lifecycle",
   // Lifecycle: the same win-back relationship as comeback_nudge, one rung
   // later. `comeback_nudge` is one-shot at 21 days, so a workspace quiet for
   // months already had its single automatic touch; this is the deliberate
-  // second one, sent by an operator, and it honours the unsubscribe footer for
+  // second one, sent by an operator, and it honours lifecycle suppression for
   // exactly the same reason.
   whats_new_2026_07: "lifecycle",
   post_wedding_review_request: "lifecycle",
@@ -234,7 +234,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   admin_moderation_digest: "transactional",
   // Lifecycle: couple opted into digest mode in Profile → the digest is a
   // friendly weekly summary, not a load-bearing notification. Honours the
-  // unsubscribe footer so a couple who flipped to digest can also flip
+  // lifecycle preference so a couple who flipped to digest can also switch it
   // off entirely without going back into Profile.
   rsvp_weekly_digest_for_couple: "lifecycle",
   // Outreach: vendor submitted the /vendors form but has no Weddly account —
@@ -252,13 +252,13 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   vendor_activation: "transactional",
   // Lifecycle: a system-initiated nudge ~2h after the vendor set up their
   // profile, reminding them to share the public link and finish any empty
-  // sections. The vendor didn't ask for it, so honour the unsubscribe footer.
+  // sections. The vendor didn't ask for it, so honour lifecycle suppression.
   vendor_profile_share: "lifecycle",
   // Lifecycle: recurring "your listing is still incomplete" reminder. The vendor
-  // didn't ask for it and it repeats, so it MUST honour the unsubscribe footer.
+  // didn't ask for it and it repeats, so it MUST honour lifecycle suppression.
   vendor_profile_incomplete: "lifecycle",
   // Lifecycle: automatic "finish your profile" nudge (and its admin-triggered
-  // twin). The planner didn't ask for it, so it honours the unsubscribe footer.
+  // twin). The planner didn't ask for it, so it honours lifecycle suppression.
   planner_profile_incomplete: "lifecycle",
   // Outreach: admin manually triages a planner's waitlist submission. The
   // planner expects the reply; treated like the vendor decision mail.
@@ -282,8 +282,7 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   planner_onboarding_invite: "transactional",
   // Outreach, deliberately, even though the recipient does have a (dormant)
   // account by the time this lands: they never asked for it. Cold mail must
-  // honour `email_optouts` and carry the one-click suppression header, and the
-  // recipient must be told plainly that ignoring it costs them nothing.
+  // honour address-level suppression before delivery.
   planner_suggested_invite: "outreach",
   // Transactional: the recipient just asked us to verify their own email so
   // they can contribute (suggest suppliers / write reviews). Their action, their
@@ -362,8 +361,8 @@ export const KIND_CATEGORY: Record<EmailKind, EmailCategory> = {
   // waiting on exactly them; this one is a machine acknowledging receipt, it
   // carries nothing the couple cannot read in the app, and it is armed by the
   // vendor rather than requested by the recipient. So it honours suppression and
-  // the unsubscribe footer, which is what makes `email_optouts` and
-  // DO_NOT_CONTACT bite on a surface that can fire on every inquiry.
+  // address-level suppression, which is what makes `email_optouts` and
+  // DO_NOT_CONTACT apply on a surface that can fire on every inquiry.
   vendor_auto_reply: "lifecycle",
   // Lifecycle: a system-initiated reminder, exactly like every other nudge the
   // worker sends. The vendor armed it, which is consent to the automation, not

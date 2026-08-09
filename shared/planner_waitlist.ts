@@ -98,7 +98,7 @@ export function buildPlannerEmailDraft(
         `és aktiváltuk a szervezői hozzáférésed.\n\n` +
         `Lépj be a szervezői vezérlőpultba, és állítsd be a profilodat. Ezután egy helyről ` +
         `követheted az összes ügyfeled vendéglistáját, költségvetését, ütemtervét és feladatait.\n\n` +
-        `Ha bármi kérdésed van, válaszolj nyugodtan erre a levélre, ember olvassa.`,
+        `Ha kérdésed van, válaszolj erre az e-mailre; a csapatunk segít.`,
     };
   }
   if (outcome === "under_review") {

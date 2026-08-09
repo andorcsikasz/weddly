@@ -129,7 +129,7 @@ export function buildEmailDraft(
         `A jelentkezéskor megadott adatok és képek alapján már összeraktuk a profilotokat, ` +
         `belépés után csak átnézitek. Az adatlap csak akkor válik láthatóvá a pároknak, ` +
         `amikor ti jóváhagyjátok.\n\n` +
-        `Ha bármi kérdésetek van, válaszoljatok nyugodtan erre az e-mailre, ember olvassa.`,
+        `Ha kérdésetek van, válaszoljatok erre az e-mailre; a csapatunk segít.`,
     };
   }
   if (outcome === "under_review") {

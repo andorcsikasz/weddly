@@ -112,6 +112,44 @@ describe("email copy: the offer is hospitality, not a price of zero", () => {
   });
 });
 
+describe("email copy: growth messages stay direct and positive", () => {
+  const BANNED: Array<{ pattern: RegExp; why: string }> = [
+    { pattern: /semmi baj/i, why: "uses generic reassurance instead of value" },
+    { pattern: /nincs apró betű/i, why: "uses a sales cliché" },
+    { pattern: /ne maradjatok le/i, why: "creates artificial pressure" },
+    { pattern: /egy kávé alatt/i, why: "uses an AI-like time cliché" },
+    { pattern: /nem szökött meg/i, why: "uses a forced joke" },
+    { pattern: /üresen áll/i, why: "frames an incomplete profile as a deficit" },
+    { pattern: /nagyobb eséllyel/i, why: "makes an unsupported conversion claim" },
+    { pattern: /utolsó levelünk/i, why: "leads with the end of the relationship" },
+    { pattern: /nem vette át senki/i, why: "frames profile ownership negatively" },
+    { pattern: /még mindig azokkal/i, why: "uses a negative status reminder" },
+  ];
+  const STRING_LITERAL = /"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\]|\\.)*)`/g;
+  const stripComments = (src: string): string =>
+    src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  test("templates.ts avoids pressure, deficit framing and stock AI phrases", () => {
+    const src = stripComments(
+      readFileSync(
+        join(import.meta.dir, "..", "..", "src", "domain", "emails", "templates.ts"),
+        "utf8",
+      ),
+    );
+    const hits: string[] = [];
+    for (const match of src.matchAll(STRING_LITERAL)) {
+      const literal = match[1] ?? match[2] ?? "";
+      for (const { pattern, why } of BANNED) {
+        if (pattern.test(literal)) hits.push(`  ${why}: "${literal.slice(0, 120)}"`);
+      }
+    }
+    if (hits.length > 0) {
+      throw new Error(`Growth email copy needs another tone pass:\n${hits.join("\n")}`);
+    }
+    expect(hits.length).toBe(0);
+  });
+});
+
 describe("unsubscribe controls stay out of campaign messages", () => {
   const emailsDir = join(import.meta.dir, "..", "..", "src", "domain", "emails");
   const stripComments = (src: string): string =>
