@@ -2916,6 +2916,7 @@ const es: LocaleMessages = {
       section_count: "{done} / {total}",
       section_complete: "Sección completa",
       download: "Descargar PDF",
+      download_options: "Opciones del PDF",
       download_title: "Descargar lista",
       download_body: "Elige qué quieres incluir en el PDF imprimible.",
       pdf_progress: "Incluir mi progreso",

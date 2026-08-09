@@ -2871,7 +2871,7 @@ const hu: LocaleMessages = {
     idea_to_task_done: "Feladatként hozzáadva",
     checklist: {
       action: "Ellenőrzőlista",
-      title: "Checklist",
+      title: "Esküvői ellenőrzőlista",
       subtitle: "Minden teendő a nagy napig, akkorra rendezve, amikor igazán számít.",
       create_title: "Az esküvői tervetek, már rendszerezve.",
       create_body:
@@ -2885,6 +2885,7 @@ const hu: LocaleMessages = {
       section_count: "{done} / {total}",
       section_complete: "Szakasz kész",
       download: "PDF letöltése",
+      download_options: "PDF beállításai",
       download_title: "Ellenőrzőlista letöltése",
       download_body: "Válasszátok ki, mi kerüljön a nyomtatható PDF-be.",
       pdf_progress: "Saját haladás megjelenítése",

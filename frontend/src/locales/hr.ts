@@ -2859,6 +2859,7 @@ const hr: LocaleMessages = {
       section_count: "{done} / {total}",
       section_complete: "Odjeljak dovršen",
       download: "Preuzmi PDF",
+      download_options: "Postavke PDF-a",
       download_title: "Preuzmi popis",
       download_body: "Odaberite što želite u PDF-u za ispis.",
       pdf_progress: "Uključi moj napredak",

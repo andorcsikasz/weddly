@@ -2858,6 +2858,7 @@ const en: LocaleMessages = {
       section_count: "{done} / {total}",
       section_complete: "Section complete",
       download: "Download PDF",
+      download_options: "PDF options",
       download_title: "Download checklist",
       download_body: "Choose what you'd like in your printable PDF.",
       pdf_progress: "Include my progress",

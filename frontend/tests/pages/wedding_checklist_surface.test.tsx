@@ -65,6 +65,10 @@ describe("Wedding checklist Planning surface", () => {
     expect(container.querySelector('[data-checklist-layout="two-column"]')).toHaveClass(
       "md:grid-cols-2",
     );
+    expect(screen.getByRole("button", { name: "PDF options" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
     expect(screen.getAllByRole("checkbox")).toHaveLength(2);
     expect(screen.getByRole("checkbox", { name: "Mark not done" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Mark done" })).not.toBeChecked();

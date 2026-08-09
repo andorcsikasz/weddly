@@ -3574,6 +3574,7 @@ export interface LocaleMessages {
       section_count: string;
       section_complete: string;
       download: string;
+      download_options: string;
       download_title: string;
       download_body: string;
       pdf_progress: string;

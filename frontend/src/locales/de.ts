@@ -2919,6 +2919,7 @@ const de: LocaleMessages = {
       section_count: "{done} / {total}",
       section_complete: "Abschnitt erledigt",
       download: "PDF herunterladen",
+      download_options: "PDF-Einstellungen",
       download_title: "Checkliste herunterladen",
       download_body: "Wählt aus, was im druckbaren PDF enthalten sein soll.",
       pdf_progress: "Meinen Fortschritt einbeziehen",
